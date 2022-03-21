@@ -153,4 +153,5 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertLessThanOrEqual(result, max, "Value must be below \(max)")
         XCTAssertGreaterThanOrEqual(result, min)
     }
+
 }
