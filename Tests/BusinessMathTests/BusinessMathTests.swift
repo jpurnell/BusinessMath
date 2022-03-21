@@ -181,4 +181,11 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertEqual(goodResult, true)
     }
 
+    func testConfidenceInterval() {
+        let result = confidenceInterval(mean: 0, stdDev: 1, z: 1, popSize: 10_000_000)
+        XCTAssertEqual(result.low, -0.00031622776601683794)
+        XCTAssertEqual(result.high, 0.00031622776601683794)
+    }
+    
+    func testConfidenceIntervalCI() {}
 }
