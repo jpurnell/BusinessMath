@@ -119,7 +119,6 @@ final class BusinessMathTests: XCTestCase {
     func testZScore() {
         let result = zScore(percentile: 0.975) * 1000000000000000.rounded() / 1000000000000000
         XCTAssertEqual(result, 1.959963984540054)
-        
     }
     
     func testZScoreCI() {
@@ -187,5 +186,49 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertEqual(result.high, 0.00031622776601683794)
     }
     
-    func testConfidenceIntervalCI() {}
+    func testConfidenceIntervalCI() {
+        let result = confidenceInterval(ci: 0, values: [0])
+    }
+    func testBinomial() {}
+    func testChi2cdf() {}
+    func testConfidenceIntervalProbabilistic() {}
+    func testCorrectedStandardError() {}
+    func testCorrelationBreakpoint() {}
+    func testCovarianceP(){}
+    func testDerivativeOf() {}
+    func testErfInverse() {}
+    func testEstMean() {}
+    func testFisherR(){}
+    func testHyperGeometric() {}
+    func testInterestingObservation() {}
+//    func testInverseNormalCDF() {}
+//    func testNormalCDF() {}
+    func testPoissonDistribution() {}
+    func testProbabilityDistributionFunction() {}
+    func testPValue() {}
+    func testPValueStudent() {}
+    func testRequiredSampleSize() {}
+    func testRho() {}
+    func testSampleCorrelationCoefficient() {}
+    func testStandardError() {}
+    func testStandardErrorProbabilistic() {}
+    func testTStatisticRho() {}
+//    func testUniformCDF() {}
+    func testCombination() {}
+    func testFactorial() {}
+//    func testMeanDiscrete() {}
+    func testPermutation() {}
+//    func testSpearmansRho() {}
+    func testVarianceDiscrete() {}
+    func testMeanBinomial() {}
+    func testStdDevBinomial() {}
+    func testVarianceBinomial() {}
+    func testPercentileLocation() {}
+    func testPercentileMeanStdDev() {}
+    func testZScoreRho() {}
+    func testZScorePercentile() {}
+    func testZScoreFisherR() {}
+//    func testZScoreCI() {}
+//    func testPercentileLocation() {}
+//    func testPercentileMeanStdDev() {}
 }
