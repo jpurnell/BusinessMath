@@ -8,6 +8,8 @@
 import Foundation
 import Numerics
 
-public func zScore<T: Real>(percentile: T) -> T {
-    return T.sqrt(2) * erfInv(y: ((T(2) * percentile) - T(1)))
+public func zScore<T: Real>(ci: T) -> T {
+    let lowProb = (T(1) - ci) / T(2)
+    let highProb = T(1) - lowProb
+    return zScore(percentile: highProb)
 }
