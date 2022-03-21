@@ -16,3 +16,13 @@ func factorial(_ n: Int) -> Int {
     }
     return returnValue
 }
+
+extension Int {
+    public func factorial() -> Int {
+        if self >= 0 {
+            return self == 0 ? 1 : self * (self - 1).factorial()
+        } else {
+            return 0
+        }
+    }
+}

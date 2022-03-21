@@ -135,7 +135,7 @@ final class BusinessMathTests: XCTestCase {
     }
     
     func testTriangularZero() {
-        let result = triangularDistribution(low: 0, high: 1, base: 0.5)
+        let _ = triangularDistribution(low: 0, high: 1, base: 0.5)
         let resultZero = triangularDistribution(low: 0, high: 0, base: 0)
         let resultOne = triangularDistribution(low: 1, high: 1, base: 1)
         XCTAssertEqual(resultZero, 0)
