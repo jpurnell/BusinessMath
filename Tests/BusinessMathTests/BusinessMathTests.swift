@@ -153,5 +153,23 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertLessThanOrEqual(result, max, "Value must be below \(max)")
         XCTAssertGreaterThanOrEqual(result, min)
     }
+    
+    func testNormalPDF() {}
+    func testNormalCDF() {}
+    
+    func testInverseNormalCDF() {
+        let result = inverseNormalCDF(p: 0.5, mean: 0, stdDev: 1)
+        XCTAssertEqual(result, 0)
+    }
+    
+    func testUniformCDF() {
+        let resultNeg = uniformCDF(x: -1)
+        let resultSub1 = uniformCDF(x: 0.5)
+        let resultPos = uniformCDF(x: 5)
+        
+        XCTAssertEqual(resultNeg, 0)
+        XCTAssertEqual(resultSub1, 0.5)
+        XCTAssertEqual(resultPos, 1)
+    }
 
 }
