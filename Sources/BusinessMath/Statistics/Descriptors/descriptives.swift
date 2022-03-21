@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  descriptives.swift
 //  
 //
 //  Created by Justin Purnell on 3/21/22.
@@ -17,5 +17,5 @@ public func descriptives<T: Real>(_ values: [T]) -> (mean: T, stdDev: T, skew: T
 }
 
 extension Array where Element: Real {
-    var description: String { let desc = descriptives(self.map({$0 as! Double})); return "µ:\(desc.mean)\t∂:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"}
+    var descriptives: String { let desc = descriptives(self.map({$0 as! Double})); return "µ:\(desc.mean)\t∂:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"}
 }
