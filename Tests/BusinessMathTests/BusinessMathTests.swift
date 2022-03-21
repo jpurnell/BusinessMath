@@ -171,5 +171,14 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertEqual(resultSub1, 0.5)
         XCTAssertEqual(resultPos, 1)
     }
+    
+    func testBernoulliTrial() {
+        let result = bernoulliTrial(p: 0.5)
+        var goodResult: Bool = false
+        if result == 0 || result == 1 {
+            goodResult = true
+        }
+        XCTAssertEqual(goodResult, true)
+    }
 
 }
