@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  mean.swift
 //  
 //
 //  Created by Justin Purnell on 3/21/22.
