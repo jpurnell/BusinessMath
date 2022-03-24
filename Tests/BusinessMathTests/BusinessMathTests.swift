@@ -2,6 +2,7 @@ import XCTest
 @testable import BusinessMath
 
 final class BusinessMathTests: XCTestCase {
+    
     func testMean() {
         let doubleArray: [Float] = [0.0, 1.0, 2.0, 3.0, 4.0]
         let result = mean(doubleArray)
@@ -153,9 +154,6 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(result, min)
     }
     
-    func testNormalPDF() {}
-    func testNormalCDF() {}
-    
     func testInverseNormalCDF() {
         let result = inverseNormalCDF(p: 0.5, mean: 0, stdDev: 1)
         XCTAssertEqual(result, 0)
@@ -189,6 +187,9 @@ final class BusinessMathTests: XCTestCase {
     func testConfidenceIntervalCI() {
         let result = confidenceInterval(ci: 0, values: [0])
     }
+    
+    func testNormalPDF() { }
+    func testNormalCDF() { }
     func testBinomial() {}
     func testChi2cdf() {}
     func testConfidenceIntervalProbabilistic() {}
@@ -201,8 +202,6 @@ final class BusinessMathTests: XCTestCase {
     func testFisherR(){}
     func testHyperGeometric() {}
     func testInterestingObservation() {}
-//    func testInverseNormalCDF() {}
-//    func testNormalCDF() {}
     func testPoissonDistribution() {}
     func testProbabilityDistributionFunction() {}
     func testPValue() {}
@@ -213,12 +212,9 @@ final class BusinessMathTests: XCTestCase {
     func testStandardError() {}
     func testStandardErrorProbabilistic() {}
     func testTStatisticRho() {}
-//    func testUniformCDF() {}
     func testCombination() {}
     func testFactorial() {}
-//    func testMeanDiscrete() {}
     func testPermutation() {}
-//    func testSpearmansRho() {}
     func testVarianceDiscrete() {}
     func testMeanBinomial() {}
     func testStdDevBinomial() {}
@@ -228,7 +224,4 @@ final class BusinessMathTests: XCTestCase {
     func testZScoreRho() {}
     func testZScorePercentile() {}
     func testZScoreFisherR() {}
-//    func testZScoreCI() {}
-//    func testPercentileLocation() {}
-//    func testPercentileMeanStdDev() {}
 }
