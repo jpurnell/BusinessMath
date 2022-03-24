@@ -1,4 +1,5 @@
 import XCTest
+import Numerics
 @testable import BusinessMath
 
 final class BusinessMathTests: XCTestCase {
@@ -30,14 +31,19 @@ final class BusinessMathTests: XCTestCase {
     func testVarianceS() {
         let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
         let result = varianceS(doubleArray)
-        XCTAssertEqual(result, 2)
+        XCTAssertEqual(result, 2.5)
     }
     
-    func testVarianceTDist() {
-        let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
-        let result = varianceTDist(doubleArray)
-        XCTAssertEqual(result, 2)
-    }
+//    func testVarianceTDist() {
+//        let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
+//        let result = varianceTDist(doubleArray)
+//        XCTAssertEqual(result, 2)
+//    }
+//
+//    func testStdDevTDist() {
+//        let result = stdDevTDist([0, 1, 2, 3, 4])
+//        XCTAssertEqual(result, Double.sqrt(2))
+//    }
     
     func testTStatistic() {
         let result = tStatistic(x: 1)
@@ -50,18 +56,23 @@ final class BusinessMathTests: XCTestCase {
     }
     
     func testStdDevS() {
-        let result = stdDevS([0, 1, 2, 3, 4])
-        XCTAssertEqual(result, Double.sqrt(2))
+//        let result = stdDevS([0, 1, 2, 3, 4])
+        let result = stdDevS([96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53])
+//        XCTAssertEqual(result, Double.sqrt(2))
+        let s = Int(result * 1000)
+        XCTAssertEqual(s, 27724)
     }
     
     func testStdDev() {
         let result = stdDev([0, 1, 2, 3, 4])
-        XCTAssertEqual(result, Double.sqrt(2))
+        XCTAssertEqual(result, Double.sqrt(2.5))
     }
     
-    func testStdDevTDist() {
-        let result = stdDevTDist([0, 1, 2, 3, 4])
-        XCTAssertEqual(result, Double.sqrt(2))
+    func testSkewS() {
+        let values: [Double] = [96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53]
+        let result = skewS(values)
+        let intVersion = Int(result * 100000000)
+        XCTAssertEqual(intVersion, -6157035)
     }
     
     func testCoefficientOfSkew() {
@@ -74,7 +85,7 @@ final class BusinessMathTests: XCTestCase {
         let stdDev = stdDev(array)
         let mean = mean(array)
         let result = coefficientOfVariation(stdDev, mean: mean)
-        XCTAssertEqual(result, (Double.sqrt(2) / 2) * 100)
+        XCTAssertEqual(result, (Double.sqrt(2.5) / 2) * 100)
     }
     
     func testMeanDiscrete() {
@@ -102,9 +113,7 @@ final class BusinessMathTests: XCTestCase {
         let mean = mean(array)
         let stdDev = stdDev(array)
         let result = (zStatistic(x: 1, mean: mean, stdDev: stdDev) * 1000000).rounded() / 1000000
-        print(zStatistic(x: 16.357, mean: 16, stdDev: (0.866 / sqrt(50))))
-        print(zStatistic(x: 201.3, mean: 212, stdDev: (45.5 / sqrt(150))))
-        XCTAssertEqual(result, (-1000000 * Double.sqrt(2) / 2).rounded() / 1000000)
+        XCTAssertEqual(result, -0.632456)
     }
     
     func testPercentile() {
@@ -212,9 +221,24 @@ final class BusinessMathTests: XCTestCase {
     func testStandardError() {}
     func testStandardErrorProbabilistic() {}
     func testTStatisticRho() {}
-    func testCombination() {}
-    func testFactorial() {}
-    func testPermutation() {}
+    func testFactorial() {
+        let result = factorial(4)
+        let resultZero = factorial(0)
+        let resultOne = factorial(1)
+        let resultExtension = 5.factorial()
+        XCTAssertEqual(result, 24)
+        XCTAssertEqual(resultZero, 1)
+        XCTAssertEqual(resultOne, 1)
+        XCTAssertEqual(resultExtension, 120)
+    }
+    func testCombination() {
+        let result = combination(10, c: 3)
+        XCTAssertEqual(result, 120)
+    }
+    func testPermutation() {
+        let result = permutation(5, p: 3)
+        XCTAssertEqual(result, 60)
+    }
     func testVarianceDiscrete() {}
     func testMeanBinomial() {}
     func testStdDevBinomial() {}
