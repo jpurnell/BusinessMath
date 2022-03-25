@@ -89,7 +89,6 @@ final class BusinessMathTests: XCTestCase {
         let yVar = [8.0, 11, 12, 8]
         let result = Int((covarianceP(xVar, yVar) * 100).rounded())
         XCTAssertEqual(result, 85)
-        
     }
     
     func testCovariance() {
@@ -101,6 +100,14 @@ final class BusinessMathTests: XCTestCase {
         let resultP = Int((covarianceP(xVar, yVar) * 100).rounded())
         XCTAssertNotEqual(result, resultP)
         XCTAssertEqual(result, resultS)
+    }
+    
+    func testCorrelationCoefficient() {
+        let x = [20.0, 23, 45, 78, 21]
+        let y = [200.0, 300, 500, 700, 100]
+        let result = correlationCoefficient(x, y)
+        let s = Int(result * 10000)
+        XCTAssertEqual(s, 9487)
     }
     
     func testCoefficientOfSkew() {
