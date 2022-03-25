@@ -75,6 +75,34 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertEqual(intVersion, -6157035)
     }
     
+    func testCovarianceS() {
+        // Test from https://www.educba.com/covariance-formula/
+        let xVar = [1.8, 1.5, 2.1, 2.4, 0.2]
+        let yVar = [2.5, 4.3, 4.5, 4.1, 2.2]
+        let result = Int((covarianceS(xVar, yVar) * 100).rounded())
+        XCTAssertEqual(result, 63)
+    }
+    
+    func testCovarianceP() {
+        // Test from https://www.educba.com/covariance-formula/
+        let xVar = [2, 2.8, 4, 3.2]
+        let yVar = [8.0, 11, 12, 8]
+        let result = Int((covarianceP(xVar, yVar) * 100).rounded())
+        XCTAssertEqual(result, 85)
+        
+    }
+    
+    func testCovariance() {
+        // Test from https://www.educba.com/covariance-formula/
+        let xVar = [1.8, 1.5, 2.1, 2.4, 0.2]
+        let yVar = [2.5, 4.3, 4.5, 4.1, 2.2]
+        let result = Int((covariance(xVar, yVar) * 100).rounded())
+        let resultS = Int((covarianceS(xVar, yVar) * 100).rounded())
+        let resultP = Int((covarianceP(xVar, yVar) * 100).rounded())
+        XCTAssertNotEqual(result, resultP)
+        XCTAssertEqual(result, resultS)
+    }
+    
     func testCoefficientOfSkew() {
         let result = coefficientOfSkew(mean: 1, median: 0, stdDev: 3)
         XCTAssertEqual(result, 1)
@@ -204,7 +232,6 @@ final class BusinessMathTests: XCTestCase {
     func testConfidenceIntervalProbabilistic() {}
     func testCorrectedStandardError() {}
     func testCorrelationBreakpoint() {}
-    func testCovarianceP(){}
     func testDerivativeOf() {}
     func testErfInverse() {}
     func testEstMean() {}

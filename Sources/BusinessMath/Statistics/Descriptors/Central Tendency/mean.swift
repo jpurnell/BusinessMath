@@ -9,6 +9,7 @@ import Foundation
 import Numerics
 
 // Equivalent of Excel AVERAGE(xx:xx)
+// Provides the mean of a set of numbers.
 public func mean<T: Real>(_ x: [T]) -> T {
     guard x.count > 0 else {
         return T(0)
