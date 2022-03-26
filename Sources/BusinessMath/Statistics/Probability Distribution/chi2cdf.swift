@@ -27,5 +27,5 @@ func chi2pdf<T: Real>(x: T, dF: Int) -> T {
 
         returnValue += top / bottom
     }
-        return returnValue / 1000
+        return returnValue / T(1000)
 }

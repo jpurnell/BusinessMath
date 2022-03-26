@@ -105,9 +105,12 @@ final class BusinessMathTests: XCTestCase {
     func testCorrelationCoefficient() {
         let x = [20.0, 23, 45, 78, 21]
         let y = [200.0, 300, 500, 700, 100]
-        let result = correlationCoefficient(x, y)
+        let result = correlationCoefficient(x, y, .sample)
         let s = Int(result * 10000)
         XCTAssertEqual(s, 9487)
+        let resultP = correlationCoefficient(x, y, .population)
+        let sP = Int(resultP * 10000)
+        XCTAssertEqual(sP, 9487)
     }
     
     func testCoefficientOfSkew() {
@@ -151,6 +154,39 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertEqual(result, -0.632456)
     }
     
+    func testStandardize() {
+        let result = (standardize(x: 11.96, mean: 10, stdev: 1) * 1000).rounded() / 1000
+        XCTAssertEqual(result, 1.96)
+    }
+    
+    func testNormSDist() {
+        let result = (normSDist(zScore: 1.95996398454) * 1000).rounded(.up) / 1000
+        let resultNeg = (normSDist(zScore: -1.95996398454) * 1000).rounded() / 1000
+        let resultZero = (normSDist(zScore: 0.0) * 1000).rounded() / 1000
+        XCTAssertEqual(result, 0.975)
+        XCTAssertEqual(resultNeg, 0.025)
+        XCTAssertEqual(resultZero, 0.5)
+    }
+    
+    func testNormDist() {
+        let result = normDist(x: 0, mean: 0, stdev: 1)
+        let resultNotes = (normDist(x: 10, mean: 10.1, stdev: 0.04) * 1000000).rounded(.up) / 1000000
+        XCTAssertEqual(result, 0.5)
+        XCTAssertEqual(resultNotes, 0.00621)
+    }
+    
+    func testNormInv() {
+        let resultZero = normInv(probability: 0.5, mean: 0, stdev: 1)
+        XCTAssertEqual(resultZero, 0)
+        let result = (normInv(probability: 0.975, mean: 10, stdev: 1) * 1000).rounded(.up) / 1000
+        XCTAssertEqual(result, 11.96)
+    }
+    
+    func testNormSInv() {
+        let result = (normSInv(probability: 0.975) * 1000000).rounded(.up) / 1000000
+        XCTAssertEqual(result, 1.959964)
+    }
+    
     func testPercentile() {
         let result = (percentile(zScore: 1.95996398454) * 1000).rounded() / 1000
         XCTAssertEqual(result, 0.975)
@@ -162,13 +198,13 @@ final class BusinessMathTests: XCTestCase {
     }
     
     func testZScore() {
-        let result = zScore(percentile: 0.975) * 1000000000000000.rounded() / 1000000000000000
-        XCTAssertEqual(result, 1.959963984540054)
+        let result = (zScore(percentile: 0.975) * 1000000).rounded(.up) / 1000000
+        XCTAssertEqual(result, 1.959964)
     }
-    
+
     func testZScoreCI() {
-        let result = zScore(ci: 0.95) * 1000000000000000.rounded() / 1000000000000000
-        XCTAssertEqual(result, 1.959963984540054)
+        let result = (zScore(ci: 0.95) * 1000000).rounded(.up) / 1000000
+        XCTAssertEqual(result, 1.959964)
     }
     
     func testPercentileFormal() {
@@ -232,8 +268,19 @@ final class BusinessMathTests: XCTestCase {
         let result = confidenceInterval(ci: 0, values: [0])
     }
     
-    func testNormalPDF() { }
-    func testNormalCDF() { }
+    func testNormalPDF() {
+        let result = (normalPDF(x: 1.96, mean: 0, stdDev: 1) * 100).rounded(.down) / 100
+        let resultOne = (normalPDF(x: 1.64, mean: 0, stdDev: 1) * 100).rounded() / 100
+        XCTAssertEqual(result, 0.05)
+        XCTAssertEqual(resultOne, 0.10)
+    }
+    
+    func testNormalCDF() {
+        let result = (normalCDF(x: 1.96, mean: 0, stdDev: 1) * 1000.0).rounded(.down) / 1000
+        print(result)
+        XCTAssertEqual(result, 0.975)
+    }
+    
     func testBinomial() {}
     func testChi2cdf() {}
     func testConfidenceIntervalProbabilistic() {}
@@ -277,7 +324,9 @@ final class BusinessMathTests: XCTestCase {
     func testMeanBinomial() {}
     func testStdDevBinomial() {}
     func testVarianceBinomial() {}
-    func testPercentileLocation() {}
+    func testPercentileLocation() {
+        
+    }
     func testPercentileMeanStdDev() {}
     func testZScoreRho() {}
     func testZScorePercentile() {}
