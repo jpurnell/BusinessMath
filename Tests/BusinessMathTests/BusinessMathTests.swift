@@ -31,17 +31,32 @@ final class BusinessMathTests: XCTestCase {
         testPermutation()
     }
     
-    func testMean() {
-        let doubleArray: [Float] = [0.0, 1.0, 2.0, 3.0, 4.0]
-        let result = mean(doubleArray)
-        XCTAssertEqual(result, 2.0)
-    }
+    func testCentralTendency() {
+        func testMean() {
+            let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
+            let result = mean(doubleArray)
+            XCTAssertEqual(result, 2.0)
+        }
+        
+        func testMedian() {
+            let result = median([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+            let resultOne = median([1.0, 1, 1, 1, 1, 1, 2])
+            print(result)
+            print(resultOne)
+        }
 
-    func testMode() {
-        let doubleArray: [Float] = [0.0, 2.0, 2.0, 3.0, 2.0]
-        let result = mode(doubleArray)
-        XCTAssertEqual(result, 2)
+        func testMode() {
+            let doubleArray: [Float] = [0.0, 2.0, 2.0, 3.0, 2.0]
+            let result = mode(doubleArray)
+            XCTAssertEqual(result, 2)
+        }
+        
+        testMean()
+        testMedian()
+        testMode()
+        
     }
+    
     
     func testSumOfSquaredAvgDiff() {
         let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]

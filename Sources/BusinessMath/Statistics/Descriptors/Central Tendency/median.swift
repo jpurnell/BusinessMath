@@ -13,7 +13,7 @@ import Numerics
 public func median<T: Real>(_ x: [T]) -> T {
     if x.count == 0 { return T(0) } else {
         if x.count % 2 == 0 {
-            let l = x.count / 2
+            let l = (x.count / 2) - 1
             let u = l + 1
             let lower = x[l]
             let upper = x[u]
@@ -22,7 +22,7 @@ public func median<T: Real>(_ x: [T]) -> T {
 
         } else {
             let medianIndex = (x.count + 1) / 2
-            return x[medianIndex]
+            return x[medianIndex - 1]
         }
     }
 }
