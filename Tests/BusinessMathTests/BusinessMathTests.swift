@@ -4,6 +4,33 @@ import Numerics
 
 final class BusinessMathTests: XCTestCase {
     
+    func testCombinationAndPermutation() {
+        func testFactorial() {
+            let result = factorial(4)
+            let resultZero = factorial(0)
+            let resultOne = factorial(1)
+            let resultExtension = 5.factorial()
+            XCTAssertEqual(result, 24)
+            XCTAssertEqual(resultZero, 1)
+            XCTAssertEqual(resultOne, 1)
+            XCTAssertEqual(resultExtension, 120)
+        }
+        
+        func testCombination() {
+            let result = combination(10, c: 3)
+            XCTAssertEqual(result, 120)
+        }
+        
+        func testPermutation() {
+            let result = permutation(5, p: 3)
+            XCTAssertEqual(result, 60)
+        }
+        
+        testFactorial()
+        testCombination()
+        testPermutation()
+    }
+    
     func testMean() {
         let doubleArray: [Float] = [0.0, 1.0, 2.0, 3.0, 4.0]
         let result = mean(doubleArray)
@@ -56,11 +83,8 @@ final class BusinessMathTests: XCTestCase {
     }
     
     func testStdDevS() {
-//        let result = stdDevS([0, 1, 2, 3, 4])
-        let result = stdDevS([96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53])
-//        XCTAssertEqual(result, Double.sqrt(2))
-        let s = Int(result * 1000)
-        XCTAssertEqual(s, 27724)
+        let result = (stdDevS([96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53]) * 10000.0).rounded(.up) / 10000
+        XCTAssertEqual(result, 27.7243)
     }
     
     func testStdDev() {
@@ -70,34 +94,33 @@ final class BusinessMathTests: XCTestCase {
     
     func testSkewS() {
         let values: [Double] = [96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53]
-        let result = skewS(values)
-        let intVersion = Int(result * 100000000)
-        XCTAssertEqual(intVersion, -6157035)
+        let result = (skewS(values) * 100000000.0).rounded(.up) / 100000000
+        XCTAssertEqual(result, -0.06157035)
     }
     
     func testCovarianceS() {
         // Test from https://www.educba.com/covariance-formula/
         let xVar = [1.8, 1.5, 2.1, 2.4, 0.2]
         let yVar = [2.5, 4.3, 4.5, 4.1, 2.2]
-        let result = Int((covarianceS(xVar, yVar) * 100).rounded())
-        XCTAssertEqual(result, 63)
+        let result = ((covarianceS(xVar, yVar) * 1000).rounded()) / 1000
+        XCTAssertEqual(result, 0.63)
     }
     
     func testCovarianceP() {
         // Test from https://www.educba.com/covariance-formula/
         let xVar = [2, 2.8, 4, 3.2]
         let yVar = [8.0, 11, 12, 8]
-        let result = Int((covarianceP(xVar, yVar) * 100).rounded())
-        XCTAssertEqual(result, 85)
+        let result = ((covarianceP(xVar, yVar) * 100).rounded()) / 100
+        XCTAssertEqual(result, 0.85)
     }
     
     func testCovariance() {
         // Test from https://www.educba.com/covariance-formula/
         let xVar = [1.8, 1.5, 2.1, 2.4, 0.2]
         let yVar = [2.5, 4.3, 4.5, 4.1, 2.2]
-        let result = Int((covariance(xVar, yVar) * 100).rounded())
-        let resultS = Int((covarianceS(xVar, yVar) * 100).rounded())
-        let resultP = Int((covarianceP(xVar, yVar) * 100).rounded())
+        let result = ((covariance(xVar, yVar) * 100).rounded()) / 100
+        let resultS = ((covarianceS(xVar, yVar) * 100).rounded()) / 100
+        let resultP = ((covarianceP(xVar, yVar) * 100).rounded()) / 100
         XCTAssertNotEqual(result, resultP)
         XCTAssertEqual(result, resultS)
     }
@@ -106,11 +129,11 @@ final class BusinessMathTests: XCTestCase {
         let x = [20.0, 23, 45, 78, 21]
         let y = [200.0, 300, 500, 700, 100]
         let result = correlationCoefficient(x, y, .sample)
-        let s = Int(result * 10000)
-        XCTAssertEqual(s, 9487)
+        let s = (result * 10000).rounded() / 10000
+        XCTAssertEqual(s, 0.9487)
         let resultP = correlationCoefficient(x, y, .population)
-        let sP = Int(resultP * 10000)
-        XCTAssertEqual(sP, 9487)
+        let sP = (resultP * 10000).rounded() / 10000
+        XCTAssertEqual(sP, 0.9487)
     }
     
     func testCoefficientOfSkew() {
@@ -119,7 +142,7 @@ final class BusinessMathTests: XCTestCase {
     }
     
     func testCoefficientOfVariation() {
-        let array:[Double] = [0, 1, 2, 3, 4]
+        let array: [Double] = [0, 1, 2, 3, 4]
         let stdDev = stdDev(array)
         let mean = mean(array)
         let result = coefficientOfVariation(stdDev, mean: mean)
@@ -134,7 +157,6 @@ final class BusinessMathTests: XCTestCase {
     }
     
     func testVarDiscrete() {
-        print("testing Variance Discrete")
         let prob: Double = 1/6
         let distribution = [(1.0, prob), (2, prob), (3, prob), (4, prob), (5, prob), (6, prob)]
         let result = varianceDiscrete(distribution)
@@ -209,29 +231,47 @@ final class BusinessMathTests: XCTestCase {
     
     func testPercentileFormal() {
         let result = percentile(x: 1.959963984540054, mean: 0, stdDev: 1)
-        print(percentile(x: 16.357, mean: 16, stdDev: (0.866 / sqrt(50))))
-        print(percentile(x: 31366, mean: 31000, stdDev: (1894/sqrt(100))))
+//        print(percentile(x: 16.357, mean: 16, stdDev: (0.866 / sqrt(50))))
+//        print(percentile(x: 31366, mean: 31000, stdDev: (1894/sqrt(100))))
         XCTAssertEqual(result, 0.975)
     }
     
-    func testTriangularZero() {
-        let _ = triangularDistribution(low: 0, high: 1, base: 0.5)
-        let resultZero = triangularDistribution(low: 0, high: 0, base: 0)
-        let resultOne = triangularDistribution(low: 1, high: 1, base: 1)
-        XCTAssertEqual(resultZero, 0)
-        XCTAssertEqual(resultOne, 1)
-    }
-    
-    func testUniformDistribution() {
-        let resultZero = distributionUniform(min: 0, max: 0)
-        XCTAssertEqual(resultZero, 0)
-        let resultOne = distributionUniform(min: 1, max: 1)
-        XCTAssertEqual(resultOne, 1)
-        let min = 2.0
-        let max = 40.0
-        let result = distributionUniform(min: min, max: max)
-        XCTAssertLessThanOrEqual(result, max, "Value must be below \(max)")
-        XCTAssertGreaterThanOrEqual(result, min)
+    func testSimulation() {
+        
+        func testTriangularZero() {
+            let _ = triangularDistribution(low: 0, high: 1, base: 0.5)
+            let resultZero = triangularDistribution(low: 0, high: 0, base: 0)
+            let resultOne = triangularDistribution(low: 1, high: 1, base: 1)
+            XCTAssertEqual(resultZero, 0)
+            XCTAssertEqual(resultOne, 1)
+        }
+        
+        func testUniformDistribution() {
+            let resultZero = distributionUniform(min: 0, max: 0)
+            XCTAssertEqual(resultZero, 0)
+            let resultOne = distributionUniform(min: 1, max: 1)
+            XCTAssertEqual(resultOne, 1)
+            let min = 2.0
+            let max = 40.0
+            let result = distributionUniform(min: min, max: max)
+            XCTAssertLessThanOrEqual(result, max, "Value must be below \(max)")
+            XCTAssertGreaterThanOrEqual(result, min)
+        }
+        
+        func testDistributionNormal() {
+            var array: [Double] = []
+            for _ in 0..<1000 {
+                array.append(distributionNormal())
+            }
+            let mu = (mean(array) * 10).rounded() / 10
+            let sd = (stdDev(array) * 10).rounded() / 10
+            XCTAssertEqual(mu, 0)
+            XCTAssertEqual(sd, 1)
+        }
+        
+        testTriangularZero()
+        testUniformDistribution()
+        testDistributionNormal()
     }
     
     func testInverseNormalCDF() {
@@ -264,8 +304,14 @@ final class BusinessMathTests: XCTestCase {
         XCTAssertEqual(result.high, 0.00031622776601683794)
     }
     
+    func testConfidence() {
+        let result = (confidence(alpha: 0.05, stdev: 2.5, sampleSize: 50).high * 1000000.0).rounded(.up) / 1000000.0
+        XCTAssertEqual(result, 0.692952)
+    }
+    
     func testConfidenceIntervalCI() {
         let result = confidenceInterval(ci: 0, values: [0])
+        print(result)
     }
     
     func testNormalPDF() {
@@ -277,13 +323,15 @@ final class BusinessMathTests: XCTestCase {
     
     func testNormalCDF() {
         let result = (normalCDF(x: 1.96, mean: 0, stdDev: 1) * 1000.0).rounded(.down) / 1000
-        print(result)
         XCTAssertEqual(result, 0.975)
     }
     
     func testBinomial() {}
     func testChi2cdf() {}
-    func testConfidenceIntervalProbabilistic() {}
+    func testConfidenceIntervalProbabilistic() {
+        let result = confidenceIntervalProbabilistic(0.05, observations: 50, ci: 0.95)
+        print(result)
+    }
     func testCorrectedStandardError() {}
     func testCorrelationBreakpoint() {}
     func testDerivativeOf() {}
@@ -302,24 +350,7 @@ final class BusinessMathTests: XCTestCase {
     func testStandardError() {}
     func testStandardErrorProbabilistic() {}
     func testTStatisticRho() {}
-    func testFactorial() {
-        let result = factorial(4)
-        let resultZero = factorial(0)
-        let resultOne = factorial(1)
-        let resultExtension = 5.factorial()
-        XCTAssertEqual(result, 24)
-        XCTAssertEqual(resultZero, 1)
-        XCTAssertEqual(resultOne, 1)
-        XCTAssertEqual(resultExtension, 120)
-    }
-    func testCombination() {
-        let result = combination(10, c: 3)
-        XCTAssertEqual(result, 120)
-    }
-    func testPermutation() {
-        let result = permutation(5, p: 3)
-        XCTAssertEqual(result, 60)
-    }
+    
     func testVarianceDiscrete() {}
     func testMeanBinomial() {}
     func testStdDevBinomial() {}

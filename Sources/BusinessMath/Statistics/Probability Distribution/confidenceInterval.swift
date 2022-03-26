@@ -22,3 +22,9 @@ public func confidenceInterval<T: Real>(ci: T, values: [T]) -> (low: T, high: T)
     
     return (lowValue, highValue)
 }
+
+//MARK: - Excel Compatibility – CONFIDENCE(alpha, stdev, sample size)
+public func confidence<T: Real>(alpha: T, stdev: T, sampleSize: Int) -> (low: T, high: T) {
+    let z = normSInv(probability: (T(1) - (alpha / T(2))))
+    return confidenceInterval(mean: 0, stdDev: stdev, z: z, popSize: sampleSize)
+}

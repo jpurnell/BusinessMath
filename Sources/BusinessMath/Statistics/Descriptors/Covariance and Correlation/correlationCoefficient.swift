@@ -36,16 +36,16 @@ func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) -> T {
         xDenom += T.pow(xSide, 2)
         yDenom += T.pow(ySide, 2)
     }
-    print(numerator)
-    print("\(T.sqrt(xDenom) * T.sqrt(yDenom))")
+//    print(numerator)
+//    print("\(T.sqrt(xDenom) * T.sqrt(yDenom))")
     return numerator / (T.sqrt(xDenom) * T.sqrt(yDenom))
 }
 
 public func correlationCoefficientP<T: Real>(_ x: [T], _ y: [T]) -> T {
     let numerator = covarianceP(x, y)
     let denominator = (stdDev(x, .population) * stdDev(y, .population))
-    print(numerator)
-    print(denominator)
+//    print(numerator)
+//    print(denominator)
     let r = numerator / denominator
     return r
 }

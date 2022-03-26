@@ -17,7 +17,7 @@ func boxMullerSeed<T: Real>(_ u1: T = distributionUniform(), _ u2: T = distribut
     return (z1, z2)
 }
 
-func boxMuller<T: Real>(mean: T = 0, stdDev: T = 1) -> T {
+func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
     return (stdDev * boxMullerSeed().z1) + mean
 }
 
@@ -25,6 +25,6 @@ func boxMuller<T: Real>(mean: T, variance: T) -> T {
     return boxMuller(mean: mean, stdDev: T.sqrt(variance))
 }
 
-public func distributionNormal<T: Real>(mean: T = 0, stdDev: T = 1) -> T {
+public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
     return boxMuller(mean: mean, stdDev: stdDev)
 }

@@ -9,7 +9,9 @@ import Foundation
 import Numerics
 
 public func distributionUniform<T: Real>() -> T {
-    return T(Int(drand48() * 1_000_000_000 / 1_000_000_000))
+    let randomSeed = drand48()
+    let value = T(Int(randomSeed * Double(1_000_000_000_000))) / T(1_000_000_000_000)
+    return value
 }
 
 public func distributionUniform<T: Real>(min l: T, max h: T) -> T {
