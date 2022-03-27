@@ -163,7 +163,6 @@ final class UnassortedTests: XCTestCase {
         }
 
 //        testDescriptives()
-    }
 
     func testMeanDiscrete() {
         let prob: Double = 1/6
@@ -301,6 +300,21 @@ final class UnassortedTests: XCTestCase {
     func testZScoreFisherR() {
         print("\(#function) incomplete")
     }
+
+    func testMonteCarloIntegration() {
+        func f(_ x: Double) -> Double {
+            return 2 * pow(x, 5)
+        }
+        
+        func e(_ x: Double) -> Double {
+            return Double.exp(pow(x, 2))
+        }
+        
+        let result = (integrate(f, iterations: 10000) * 100).rounded() / 100
+        let resultE = (integrate(e, iterations: 20000) * 100).rounded() / 100
+        XCTAssertEqual(result, 0.33)
+        XCTAssertEqual(resultE, 1.46)
+    }
     
     //    func testVarianceTDist() {
     //        let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
@@ -313,4 +327,5 @@ final class UnassortedTests: XCTestCase {
     //        XCTAssertEqual(result, Double.sqrt(2))
     //    }
         
-//}
+}
+
