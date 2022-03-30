@@ -33,7 +33,7 @@ final class DescriptivesTests: XCTestCase {
     func testDistributionNormal() {
         var array: [Double] = []
         for _ in 0..<1000 {
-            array.append(distributionNormal())
+            array.append(distributionNormal(mean: 0, stdDev: 1))
         }
         let mu = (mean(array) * 10).rounded() / 10
         let sd = (stdDev(array) * 10).rounded() / 10

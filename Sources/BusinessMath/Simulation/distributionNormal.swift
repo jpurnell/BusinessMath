@@ -28,3 +28,7 @@ func boxMuller<T: Real>(mean: T, variance: T) -> T {
 public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
     return boxMuller(mean: mean, stdDev: stdDev)
 }
+
+public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T {
+    return boxMuller(mean: mean, variance: variance)
+}
