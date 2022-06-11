@@ -8,7 +8,7 @@
 import Foundation
 import Numerics
 
-func chi2pdf<T: Real>(x: T, dF: Int) -> T {
+public func chi2pdf<T: Real>(x: T, dF: Int) -> T {
     var returnValue: T = 0
     guard x != 0 else { return T(0) }
     let limit = max(("\(x * T(1000))" as NSString).integerValue, 1)

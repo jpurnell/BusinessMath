@@ -9,6 +9,6 @@ import Foundation
 import Numerics
 
 // Excel Compatibility – Equivalent of Excel's NORM.S.DIST function, culumative probability = true
-func normSDist<T: Real>(zScore z: T) -> T {
+public func normSDist<T: Real>(zScore z: T) -> T {
     return percentile(zScore: z)
 }

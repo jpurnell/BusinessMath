@@ -8,6 +8,6 @@
 import Foundation
 import Numerics
 
-func fisher<T: Real>(_ r: T) -> T {
+public func fisher<T: Real>(_ r: T) -> T {
     return (T.log((1 + r) / (1 - r)) / 2)
 }

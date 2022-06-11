@@ -8,6 +8,6 @@
 import Foundation
 import Numerics
 
-func rho<T: Real>(from fisherR: T) -> T {
+public func rho<T: Real>(from fisherR: T) -> T {
     return (T.exp(2 * fisherR) - 1) / (T.exp(2 * fisherR) + 1)
 }

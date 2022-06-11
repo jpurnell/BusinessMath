@@ -8,7 +8,7 @@
 import Foundation
 import Numerics
 
-func factorial(_ n: Int) -> Int {
+public func factorial(_ n: Int) -> Int {
     var returnValue = 1
     if n == 0 { return returnValue }
     else {

@@ -7,6 +7,6 @@
 
 import Foundation
 
-func permutation(_ n: Int, p r: Int) -> Int {
+public func permutation(_ n: Int, p r: Int) -> Int {
     return (factorial(n) / factorial(n - r))
 }

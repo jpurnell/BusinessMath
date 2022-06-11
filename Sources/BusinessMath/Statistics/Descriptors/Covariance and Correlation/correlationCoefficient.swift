@@ -13,7 +13,7 @@ import Numerics
 
 // Pearson's correlation coefficient, when applied to a population, is commonly represented by the Greek letter ρ (rho) and may be referred to as the population correlation coefficient or the population Pearson correlation coefficient.
 
-func correlationCoefficient<T: Real>(_ x: [T], _ y:[T], _ population: Population = .sample) -> T {
+public func correlationCoefficient<T: Real>(_ x: [T], _ y:[T], _ population: Population = .sample) -> T {
     switch population {
         case .population:
             return correlationCoefficientP(x, y)
@@ -22,7 +22,7 @@ func correlationCoefficient<T: Real>(_ x: [T], _ y:[T], _ population: Population
     }
 }
 
-func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) -> T {
+public func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) -> T {
     if (x.count == y.count) == false { return T(0) }
     var numerator = T(0)
     var xDenom = T(0)

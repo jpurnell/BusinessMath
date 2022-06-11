@@ -8,6 +8,6 @@
 import Foundation
 import Numerics
 
-func normDist<T: Real>(x: T, mean: T, stdev: T) -> T {
+public func normDist<T: Real>(x: T, mean: T, stdev: T) -> T {
     return normalCDF(x: x, mean: mean, stdDev: stdev)
 }

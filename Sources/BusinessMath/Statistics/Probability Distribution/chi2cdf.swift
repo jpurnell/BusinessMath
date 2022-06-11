@@ -8,8 +8,6 @@
 import Foundation
 import Numerics
 
-
-
-func chi2cdf<T: Real>(x: T, dF: Int) -> T {
+public func chi2cdf<T: Real>(x: T, dF: Int) -> T {
     return 1 - chi2pdf(x: x, dF: dF)
 }

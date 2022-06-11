@@ -8,7 +8,7 @@
 import Foundation
 import Numerics
 
-func covariance<T: Real>(_ x: [T], _ y:[T], _ pop: Population = .sample) -> T {
+public func covariance<T: Real>(_ x: [T], _ y:[T], _ pop: Population = .sample) -> T {
     switch pop {
         case .population:
             return covarianceP(x, y)
@@ -17,7 +17,7 @@ func covariance<T: Real>(_ x: [T], _ y:[T], _ pop: Population = .sample) -> T {
     }
 }
 
-func covarianceS<T: Real>(_ x: [T], _ y:[T]) -> T {
+public func covarianceS<T: Real>(_ x: [T], _ y:[T]) -> T {
     if (x.count == y.count) == false { return T(0) }
     var returnNum = T(0)
     let xMean = mean(x)
@@ -28,7 +28,7 @@ func covarianceS<T: Real>(_ x: [T], _ y:[T]) -> T {
     return returnNum / T(x.count - 1)
 }
 
-func covarianceP<T: Real>(_ x: [T], _ y:[T]) -> T {
+public func covarianceP<T: Real>(_ x: [T], _ y:[T]) -> T {
     if (x.count == y.count) == false { return T(0) }
     var returnNum = T(0)
     let xMean = mean(x)
