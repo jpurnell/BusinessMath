@@ -10,6 +10,7 @@ import Numerics
 
 public func chi2pdf<T: Real>(x: T, dF: Int) -> T {
     var returnValue: T = 0
+    print("passed x \(x)")
     guard x != 0 else { print("x returned at \(x), returning 0"); return T(0) }
     let limitHigh = ("\(x * T(1000))" as NSString).integerValue
     
