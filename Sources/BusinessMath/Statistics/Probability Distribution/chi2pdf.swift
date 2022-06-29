@@ -11,8 +11,10 @@ import Numerics
 public func chi2pdf<T: Real>(x: T, dF: Int) -> T {
     var returnValue: T = 0
     guard x != 0 else { print("x returned at \(x), returning 0"); return T(0) }
-    let limit = max(("\(x * T(1000))" as NSString).integerValue, 1)
-    print("chi2pdf limit:\t\(limit) ")
+    let limitHigh = ("\(x * T(1000))" as NSString).integerValue
+    
+    let limit = max(limitHigh, 1)
+    print("limitHigh: \(limitHigh)\rchi2pdf limit:\t\(limit) ")
     if limit == 1 { return T(0) }
     for i in 1...limit {
         let x: T = T(i)/1000
