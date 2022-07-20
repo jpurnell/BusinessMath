@@ -255,48 +255,118 @@ final class UnassortedTests: XCTestCase {
         print(result)
     }
     
-    func testBinomial() {print("\(#function) incomplete")}
-    func testChi2cdf() {print("\(#function) incomplete")}
-    func testCorrectedStandardError() {print("\(#function) incomplete")}
-    func testCorrelationBreakpoint() {print("\(#function) incomplete")}
-    func testDerivativeOf() {print("\(#function) incomplete")}
-    func testErfInverse() {print("\(#function) incomplete")}
-    func testEstMean() {print("\(#function) incomplete")}
-    func testFisherR(){print("\(#function) incomplete")}
-    func testHyperGeometric() {print("\(#function) incomplete")}
-    func testInterestingObservation() {print("\(#function) incomplete")}
-    func testPoissonDistribution() {print("\(#function) incomplete")}
-    func testProbabilityDistributionFunction() {print("\(#function) incomplete")}
-    func testPValue() {print("\(#function) incomplete")}
-    func testPValueStudent() {print("\(#function) incomplete")}
-    func testRequiredSampleSize() {print("\(#function) incomplete")}
-    func testRho() {print("\(#function) incomplete")}
-    func testSampleCorrelationCoefficient() {print("\(#function) incomplete")}
-    func testStandardError() {print("\(#function) incomplete")}
-    func testStandardErrorProbabilistic() {print("\(#function) incomplete")}
-    func testTStatisticRho() {print("\(#function) incomplete")}
-    func testVarianceDiscrete() {print("\(#function) incomplete")}
+    func testBinomial() {
+        print("\(#function) incomplete")
+    }
+    
+    func testChi2cdf() {
+        print("\(#function) incomplete")
+    }
+    
+    func testCorrectedStandardError() {
+        print("\(#function) incomplete")
+    }
+    
+    func testCorrelationBreakpoint() {
+        print("\(#function) incomplete")
+    }
+    
+    func testDerivativeOf() {
+        print("\(#function) incomplete")
+    }
+    
+    func testErfInverse() {
+        print("\(#function) incomplete")
+    }
+    
+    func testEstMean() {
+        print("\(#function) incomplete")
+    }
+    
+    func testFisherR() {
+        print("\(#function) incomplete")
+    }
+    
+    func testHyperGeometric() {
+        print("\(#function) incomplete")
+    }
+    
+    func testInterestingObservation() {
+        print("\(#function) incomplete")
+    }
+    
+    func testPoissonDistribution() {
+        print("\(#function) incomplete")
+    }
+    
+    func testProbabilityDistributionFunction() {
+        print("\(#function) incomplete")
+    }
+    
+    func testPValue() {
+        print("\(#function) incomplete")
+    }
+    
+    func testPValueStudent() {
+        print("\(#function) incomplete")
+    }
+    
+    func testRequiredSampleSize() {
+        print("\(#function) incomplete")
+    }
+    
+    func testRho() {
+        print("\(#function) incomplete")
+    }
+    
+    func testSampleCorrelationCoefficient() {
+        print("\(#function) incomplete")
+    }
+    
+    func testStandardError() {
+        print("\(#function) incomplete")
+    }
+    
+    func testStandardErrorProbabilistic() {
+        print("\(#function) incomplete")
+    }
+    
+    func testTStatisticRho() {
+        print("\(#function) incomplete")
+    }
+    
+    func testVarianceDiscrete() {
+        print("\(#function) incomplete")
+    }
+    
     func testMeanBinomial() {
         print("\(#function) incomplete")
     }
+    
     func testStdDevBinomial() {
         print("\(#function) incomplete")
     }
+    
     func testVarianceBinomial() {
         print("\(#function) incomplete")
     }
+    
     func testPercentileLocation() {
-        
+        print("\(#function) incomplete")
     }
+    
     func testPercentileMeanStdDev() {
         print("\(#function) incomplete")
     }
+    
     func testZScoreRho() {
         print("\(#function) incomplete")
     }
+    
     func testZScorePercentile() {
         print("\(#function) incomplete")
     }
+    
     func testZScoreFisherR() {
         print("\(#function) incomplete")
     }
