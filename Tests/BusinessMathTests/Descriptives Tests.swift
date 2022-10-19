@@ -40,5 +40,4 @@ final class DescriptivesTests: XCTestCase {
         XCTAssertEqual(mu, 0)
         XCTAssertEqual(sd, 1)
     }
-
 }
