@@ -19,6 +19,7 @@ public func spearmansRho<T: Real>(_ independent: [T], vs variable: [T]) -> T {
     for i in 0..<independent.count {
         sigmaD += ((independentRank[i] - variableRank[i]) * (independentRank[i] - variableRank[i]))
     }
+    
     let rho = (sigmaX + sigmaY - sigmaD) / (T(2) * T.sqrt((sigmaX * sigmaY)))
     return rho
 }
