@@ -39,5 +39,5 @@ final class DescriptivesTests: XCTestCase {
         let sd = (stdDev(array) * 10).rounded() / 10
         XCTAssertEqual(mu, 0)
         XCTAssertEqual(sd, 1)
-    }
+    }   
 }

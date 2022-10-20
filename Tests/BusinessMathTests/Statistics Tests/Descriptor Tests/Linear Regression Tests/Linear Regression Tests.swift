@@ -40,4 +40,17 @@ final class LinearRegressionTests: XCTestCase {
         let result = (linearRegressionFunction(4) * 1000).rounded(.up) / 1000
         XCTAssertEqual(result, 6952.927)
     }
+    
+    func testRSquared() {
+        // Example from https://www.wallstreetmojo.com/r-squared-formula/
+        let x: [Double] = [35.56, 43.44, 73.17, 113.0]
+        let y: [Double] = [44.783, 53.982, 92.141, 135.986]
+        let carAge: [Double] = [10, 8, 3, 3, 2, 1]
+        let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
+        let carResult = (rSquared(carAge, carPrice) * 100000).rounded(.up) / 100000
+        let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
+        XCTAssertEqual(result, 0.99865)
+        XCTAssertEqual(carResult, 0.93443)
+        
+    }
 }
