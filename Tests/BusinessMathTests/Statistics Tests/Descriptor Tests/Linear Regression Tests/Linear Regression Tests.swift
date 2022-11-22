@@ -51,6 +51,12 @@ final class LinearRegressionTests: XCTestCase {
         let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
         XCTAssertEqual(result, 0.99865)
         XCTAssertEqual(carResult, 0.93443)
-        
+    }
+    
+    func testRSquaredAdjusted() {
+        let x: [Double] = [58, 61, 62, 65, 65, 68, 72, 74, 78, 85, 90, 95]
+        let y: [Double] = [1, 1, 2, 2, 1, 2, 2, 3, 3, 4, 4, 5]
+        let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
+        XCTAssertEqual(result, 0.91983)
     }
 }
