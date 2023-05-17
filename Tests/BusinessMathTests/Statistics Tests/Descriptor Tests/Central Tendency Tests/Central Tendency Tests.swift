@@ -32,5 +32,33 @@ final class CentralTendencyTests: XCTestCase {
         let result = mode(doubleArray)
         XCTAssertEqual(result, 2)
     }
+    
+    func testGeometricMean() {
+        let x: Double = 4
+        let y: Double = 9
+        let result = geometricMean(x, y)
+        XCTAssertEqual(result, 6.0)
+    }
+
+    func testArithmeticGeometricMean() {
+        let x: Double = 4
+        let y: Double = 9
+        let result = (arithmeticGeometricMean(x, y) * 10000).rounded() / 10000
+        XCTAssertEqual(result, 6.2475)
+    }
+    
+    func testHarmonicMean() {
+        let x: Double = 4
+        let y: Double = 9
+        let result = (harmonicMean(x, y) * 10000).rounded() / 10000
+        XCTAssertEqual(result, 5.5385)
+    }
+    
+    func testArithmeticHarmonicMean() {
+        let x: Double = 4
+        let y: Double = 9
+        let result = (arithmeticHarmonicMean(x, y) * 10000).rounded() / 10000
+        XCTAssertEqual(result, 6.0)
+    }
 
 }
