@@ -36,14 +36,14 @@ final class CentralTendencyTests: XCTestCase {
     func testGeometricMean() {
         let x: Double = 4
         let y: Double = 9
-        let result = geometricMean(x, y)
+        let result = geometricMean([x, y])
         XCTAssertEqual(result, 6.0)
     }
 
     func testArithmeticGeometricMean() {
         let x: Double = 4
         let y: Double = 9
-        let result = (arithmeticGeometricMean(x, y) * 10000).rounded() / 10000
+        let result = (arithmeticGeometricMean([x, y]) * 10000).rounded() / 10000
         XCTAssertEqual(result, 6.2475)
     }
     

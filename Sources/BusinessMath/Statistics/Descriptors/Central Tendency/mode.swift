@@ -8,8 +8,11 @@
 import Foundation
 import Numerics
 
-// Mode is the number that appears most frequently in a given set of samples
-// Equivalent of Excel MODE(xx:xx)
+/// Equivalent of Excel MODE(xx:xx)
+/// - Parameter x: An array of values.
+/// - Returns: Mode is the number that appears most frequently in a given set of samples
+
+
 public func mode<T: Real>(_ x: [T]) -> T {
     let counted = NSCountedSet(array: x)
     let max = counted.max { counted.count(for: $0) < counted.count(for: $1)}

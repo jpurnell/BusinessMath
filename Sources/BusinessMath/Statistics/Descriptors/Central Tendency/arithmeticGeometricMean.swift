@@ -8,12 +8,12 @@
 import Foundation
 import Numerics
 
-public func arithmeticGeometricMean<T: Real>(_ x: T, _ y: T, _ tolerance: Int = 10000) -> T {
-    var tempX = mean([x, y])
-    var tempY = geometricMean(x, y)
+public func arithmeticGeometricMean<T: Real>(_ x: [T], _ tolerance: Int = 10000) -> T {
+    var tempX = mean(x)
+    var tempY = geometricMean(x)
     while abs(tempX - tempY) > (T(1) / T(tolerance)) {
         let newTempX = mean([tempX, tempY])
-        tempY = geometricMean(tempX, tempY)
+        tempY = geometricMean([tempX, tempY])
         tempX = newTempX
     }
     return tempX

@@ -8,6 +8,6 @@
 import Foundation
 import Numerics
 
-public func geometricMean<T: Real>(_ x: T, _ y: T) -> T {
-    return T.sqrt(x * y)
+public func geometricMean<T: Real>(_ values: [T]) -> T {
+    return T.pow(values.reduce(T(1), *), T(1) / T(values.count))
 }
