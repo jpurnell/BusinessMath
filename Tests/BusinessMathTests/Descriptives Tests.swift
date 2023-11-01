@@ -10,6 +10,7 @@ import Numerics
 @testable import BusinessMath
 
 final class DescriptivesTests: XCTestCase {
+    
     func testTriangularZero() {
         let _ = triangularDistribution(low: 0, high: 1, base: 0.5)
         let resultZero = triangularDistribution(low: 0, high: 0, base: 0)
@@ -39,5 +40,6 @@ final class DescriptivesTests: XCTestCase {
         let sd = (stdDev(array) * 10).rounded() / 10
         XCTAssertEqual(mu, 0)
         XCTAssertEqual(sd, 1)
-    }   
+    }
+    
 }

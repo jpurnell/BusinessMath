@@ -1,9 +1,12 @@
 import XCTest
+import OSLog
 import Numerics
 @testable import BusinessMath
 
 final class UnassortedTests: XCTestCase {
     
+	let unassortedTestsLogger = Logger(subsystem: "Business Math > Tests > Business Math Tests", category: "Unassorted Tests")
+	
     func testStatisticsFunctions() {
 
         func testDescriptives() {
@@ -240,7 +243,7 @@ final class UnassortedTests: XCTestCase {
     
     func testConfidenceIntervalCI() {
         let result = confidenceInterval(ci: 0, values: [0])
-        print(result)
+		unassortedTestsLogger.log("Test Confidence Interval CI:\t\(result.low)\t\(result.high)")
     }
     
     func testNormalPDF() {
@@ -252,123 +255,123 @@ final class UnassortedTests: XCTestCase {
     
     func testConfidenceIntervalProbabilistic() {
         let result = confidenceIntervalProbabilistic(0.05, observations: 50, ci: 0.95)
-        print(result)
+		unassortedTestsLogger.log("Test Confidence Interval Probabilistic:\t\(result.low)\t\(result.high)")
     }
     
     func testBinomial() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testChi2cdf() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testCorrectedStandardError() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testCorrelationBreakpoint() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testDerivativeOf() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testErfInverse() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testEstMean() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testFisherR() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testHyperGeometric() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testInterestingObservation() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testPoissonDistribution() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testProbabilityDistributionFunction() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testPValue() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testPValueStudent() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testRequiredSampleSize() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testRho() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testSampleCorrelationCoefficient() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testStandardError() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testStandardErrorProbabilistic() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testTStatisticRho() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testVarianceDiscrete() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testMeanBinomial() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testStdDevBinomial() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testVarianceBinomial() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testPercentileLocation() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testPercentileMeanStdDev() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testZScoreRho() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testZScorePercentile() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
     
     func testZScoreFisherR() {
-        print("\(#function) incomplete")
+		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
     }
 
     func testMonteCarloIntegration() {

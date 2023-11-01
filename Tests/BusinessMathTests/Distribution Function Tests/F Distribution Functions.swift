@@ -6,11 +6,14 @@
 //
 
 import XCTest
+import OSLog
 import Numerics
 @testable import BusinessMath
 
 final class FDistributionTests: XCTestCase {
+	let fDistributionTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "F Distribution Tests")
+	
     func testFDistributionFunctions() {
-        print("\(#function) incomplete")
+		fDistributionTestLogger.error("\(#function, privacy: .public) incomplete")
     }
 }

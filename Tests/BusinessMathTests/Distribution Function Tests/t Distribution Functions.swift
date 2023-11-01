@@ -7,10 +7,12 @@
 
 import XCTest
 import Numerics
+import OSLog
 @testable import BusinessMath
 
 final class TDistributionTests: XCTestCase {
+	let tDistributionTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "T Distribution Tests")
     func testtDistributionFunctions() {
-        print("\(#function) incomplete")
+		tDistributionTestLogger.error("\(#function, privacy: .public) incomplete")
     }
 }

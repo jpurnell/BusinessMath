@@ -12,6 +12,7 @@ import Numerics
 //    return (1...n).map({1 / T($0)}).reduce(T(0), +)
 //}
 
-public func harmonic<T: Real>(_ n: Int, _ x: T = T(1)) -> T {
+//TODO: - LABEL THIS AS PUBLIC WHEN CORRECT
+func harmonic<T: Real>(_ n: Int, _ x: T = T(1)) -> T {
     return (1...n).map({(T(1) / T.pow(T($0), x) )}).reduce(T(0), +)
 }
