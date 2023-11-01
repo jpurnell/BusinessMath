@@ -24,11 +24,11 @@ public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T) -> T
 	print("u: \(u)")
     if u > 0 && u < fc {
         let s = u * (b - a) * (c - a)
-		print("u:\(u) < fc:\(fc)\t\(s)\n returning a + sqrt\(s):\t\(a + sqrt(s))")
+		print("u:\(u) < fc:\(fc)\t\(s)\n returning \(a) + sqrt\(s):\t\(a + sqrt(s))")
         return a + sqrt(s)
     } else {
         let s = (1 - u) * (b - a) * (b - c)
-		print("u:\(u) > fc:\(fc)\t\(s)\n returning b - sqrt\(s):\t\(b - sqrt(s))")
+		print("u:\(u) > fc:\(fc)\t\(s)\n returning \(b) - sqrt\(s):\t\(b - sqrt(s))")
         return b - sqrt(s)
     }
 }
