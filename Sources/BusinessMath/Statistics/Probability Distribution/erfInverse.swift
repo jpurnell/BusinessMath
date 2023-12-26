@@ -11,6 +11,22 @@ import Numerics
 // erfInv allows us to calculate the zScore for a desired Area under a normal curve without having to rely on a lookup table
 // https://stackoverflow.com/questions/36784763/is-there-an-inverse-error-public function-available-in-swifts-foundation-import
 
+/// Computes the inverse of the error function.
+///
+/// The error function (also called the Gauss error function) is a special function of probability theory and statistics. This method implements the inverse error function, also known as the quantile function or the percent-point function `erf-1()`. The quantile function is the function that, given a probability `y`, returns a value `x` such that `Pr[X <= x] = y`. It's particularly important in statistics for generating values of random variables for a given probability.
+///
+/// - Parameter y: The probability for which to find `x`.
+///
+/// - Returns: The value `x` that corresponds to the given `y` probability when passed to the error function. If `abs(y)` equals `1`, it returns `y * T(Int.max)`. If `abs(y)` is greater than `1`, it returns `.nan`.
+///
+/// - Precondition: `y` should be a value between `-1` and `1` (inclusive).
+/// - Complexity: O(1), since it uses a constant number of operations.
+///
+///     let y = 0.5
+///     let result = erfInv(y: y)
+///     print(result)
+///
+/// Use this function when you need to perform a quantile function or percent-point function operation on your dataset.
 public func erfInv<T: Real>(y: T) -> T {
     let center = T(7) / T(10)
     let a:[T] = [ T(0886226899) / T(1000000000), T(-1645349621) / T(1000000000),  T(0914624893) / T(1000000000), T(-0140543331) / T(1000000000)]

@@ -11,12 +11,26 @@ import Numerics
 
 final class SimulationTests: XCTestCase {
     
-    func testTriangularZero() {
-        let _ = triangularDistribution(low: 0, high: 1, base: 0.5)
-        let resultZero = triangularDistribution(low: 0, high: 0, base: 0)
-        let resultOne = triangularDistribution(low: 1, high: 1, base: 1)
-        XCTAssertEqual(resultZero, 0)
-        XCTAssertEqual(resultOne, 1)
+	func testTriangularZero() {
+		let a = 0.6
+		let b = 1.0
+		let c = 0.7
+		
+		var testBed: [Double] = []
+		for _ in stride(from: 0.0, to: 1.0, by: 0.0001) {
+			testBed.append(triangularDistribution(low: a, high: b, base: c))
+		}
+		let countUnderC = testBed.filter({$0 <= c}).count
+		let roundedCount = (Double(countUnderC) / 10.0).rounded() * 10.0
+		let roundedHigh = roundedCount * 1.02
+		let roundedLow = roundedCount * 0.98
+		let expectedObservations = ((c - a) * (2 / (b - a)) * (1 / 2) * 10000).rounded()
+		print("Approx Count Under C \(countUnderC): Expected: \(expectedObservations)")
+		
+		//TODO: Should be sliced, with the highest count as base
+		
+		XCTAssertGreaterThan(expectedObservations, roundedLow)
+		XCTAssertLessThan(expectedObservations, roundedHigh)
     }
     
     func testUniformDistribution() {
