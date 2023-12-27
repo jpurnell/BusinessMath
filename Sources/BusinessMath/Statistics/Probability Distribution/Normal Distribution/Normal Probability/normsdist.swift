@@ -10,7 +10,9 @@ import Numerics
 
 // MARK: - Excel Compatibility – Equivalent of Excel's NORM.S.DIST function, culumative probability = true
 /// Computes the cumulative distribution function (CDF) for the standard normal distribution, given a Z-Score.
-/// Excel Compatibility – Equivalent of Excel's NORM.S.DIST function, culumative probability = true/
+///
+/// Excel Compatibility – Equivalent of Excel's NORM.S.DIST function, culumative probability = true
+/// 
 /// This function computes the CDF, or the probability that a random variable X from the distribution is less than or equal to a given `z`.
 ///
 /// - Parameters:
