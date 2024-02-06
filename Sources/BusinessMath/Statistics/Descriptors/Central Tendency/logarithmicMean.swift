@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  logarithmicMean.swift
 //  
 //
 //  Created by Justin Purnell on 1/6/24.

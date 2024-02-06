@@ -14,6 +14,6 @@ final class FDistributionTests: XCTestCase {
 	let fDistributionTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "F Distribution Tests")
 	
     func testFDistributionFunctions() {
-		fDistributionTestLogger.error("\(#function, privacy: .public) incomplete")
+		fDistributionTestLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
 }

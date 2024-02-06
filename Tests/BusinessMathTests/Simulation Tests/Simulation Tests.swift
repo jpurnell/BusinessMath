@@ -10,7 +10,28 @@ import Numerics
 @testable import BusinessMath
 
 final class SimulationTests: XCTestCase {
-    
+
+	func testDistributionLogNormal() {
+		// Shape can be evaluated in Excel via histogram
+		//        var array: [Double] = []
+		//        for _ in 0..<10000 {
+		//            array.append(distributionLogNormal(mean: 0, variance: 1))
+		//        }
+		// print(array)
+		XCTAssert(true)
+	}
+	
+	func testDistributionNormal() {
+		var array: [Double] = []
+		for _ in 0..<1000 {
+			array.append(distributionNormal(mean: 0, stdDev: 1))
+		}
+		let mu = (mean(array) * 10).rounded() / 10
+		let sd = (stdDev(array) * 10).rounded() / 10
+		XCTAssertEqual(mu, 0)
+		XCTAssertEqual(sd, 1)
+	}
+
 	func testTriangularZero() {
 		let a = 0.6
 		let b = 1.0
@@ -43,27 +64,6 @@ final class SimulationTests: XCTestCase {
         let result = distributionUniform(min: min, max: max)
         XCTAssertLessThanOrEqual(result, max, "Value must be below \(max)")
         XCTAssertGreaterThanOrEqual(result, min)
-    }
-    
-    func testDistributionNormal() {
-        var array: [Double] = []
-        for _ in 0..<1000 {
-            array.append(distributionNormal(mean: 0, stdDev: 1))
-        }
-        let mu = (mean(array) * 10).rounded() / 10
-        let sd = (stdDev(array) * 10).rounded() / 10
-        XCTAssertEqual(mu, 0)
-        XCTAssertEqual(sd, 1)
-    }
-    
-    func testDistributionLogNormal() {
-        // Shape can be evaluated in Excel via histogram
-        //        var array: [Double] = []
-        //        for _ in 0..<10000 {
-        //            array.append(distributionLogNormal(mean: 0, variance: 1))
-        //        }
-        // print(array)
-        XCTAssert(true)
     }
 }
 

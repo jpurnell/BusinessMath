@@ -19,6 +19,6 @@ final class InferenceTests: XCTestCase {
     }
 
     func testpValueOfZTest() {
-		inferenceTestLogger.error("\(#function, privacy: .public) incomplete")
+		inferenceTestLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
 }

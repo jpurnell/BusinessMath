@@ -259,119 +259,119 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testBinomial() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testChi2cdf() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testCorrectedStandardError() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testCorrelationBreakpoint() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testDerivativeOf() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testErfInverse() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testEstMean() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testFisherR() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testHyperGeometric() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testInterestingObservation() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testPoissonDistribution() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testProbabilityDistributionFunction() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testPValue() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testPValueStudent() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testRequiredSampleSize() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testRho() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testSampleCorrelationCoefficient() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testStandardError() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testStandardErrorProbabilistic() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testTStatisticRho() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testVarianceDiscrete() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testMeanBinomial() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testStdDevBinomial() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testVarianceBinomial() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testPercentileLocation() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testPercentileMeanStdDev() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testZScoreRho() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testZScorePercentile() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
     
     func testZScoreFisherR() {
-		unassortedTestsLogger.error("\(#function, privacy: .public) incomplete")
+		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
 
     func testMonteCarloIntegration() {

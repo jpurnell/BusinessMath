@@ -41,9 +41,11 @@ final class CovarianceandCorrelationTests: XCTestCase {
     func testCorrelationCoefficient() {
         let x = [20.0, 23, 45, 78, 21]
         let y = [200.0, 300, 500, 700, 100]
-        let result = correlationCoefficient(x, y, .sample)
+        
+		let result = correlationCoefficient(x, y, .sample)
         let s = (result * 10000).rounded() / 10000
         XCTAssertEqual(s, 0.9487)
+		
         let resultP = correlationCoefficient(x, y, .population)
         let sP = (resultP * 10000).rounded() / 10000
         XCTAssertEqual(sP, 0.9487)

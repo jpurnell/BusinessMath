@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  contraharmonicMean.swift
 //  
 //
 //  Created by Justin Purnell on 1/6/24.
@@ -12,5 +12,11 @@ import Numerics
 
 public func contraharmonicMean<T: Real>(_ x: T, _ y: T) -> T {
 	return (T.pow(x, T(2)) + T.pow(y, T(2))) / (x + y)
+}
+
+public func contraharmonicMean<T: Real>(_ values: [T]) -> T {
+	return values.map({T.pow($0, T(2))}).reduce(0, +) / values.reduce(0, +)
+	
+//	return (T.pow(x, T(2)) + T.pow(y, T(2))) / (x + y)
 }
 

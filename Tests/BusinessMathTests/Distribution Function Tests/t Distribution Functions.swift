@@ -12,7 +12,7 @@ import OSLog
 
 final class TDistributionTests: XCTestCase {
 	let tDistributionTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "T Distribution Tests")
-    func testtDistributionFunctions() {
-		tDistributionTestLogger.error("\(#function, privacy: .public) incomplete")
+    func testTDistributionFunctions() {
+		tDistributionTestLogger.error("Test not implemented for \(self.name, privacy: .public)")
     }
 }

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  geometricMean.swift
 //  
 //
 //  Created by Justin Purnell on 5/17/23.
