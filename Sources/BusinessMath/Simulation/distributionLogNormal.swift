@@ -10,7 +10,7 @@ import Numerics
 
 // https://en.wikipedia.org/wiki/Log-normal_distribution#Related_distributions
 
-/// Returns a log normal distribution of mean µ and standard deviation ∂
+/// Returns a log normal distribution of values with mean µ and standard deviation ∂
 /// - Parameters:
 ///   - mean: The mean of the distribution
 ///   - stdDev: The standard deviation of the distribution

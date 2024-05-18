@@ -29,7 +29,9 @@ import Numerics
 ///
 /// Use this function when you need to model the number of times an event happened in a time interval.
 public func poisson<T: Real>(_ x: Int, µ: T) -> T {
-    let numerator = T.pow(µ, T(x)) * T.exp(-1 * µ)
-    let denominator = x.factorial()
-    return numerator / T(denominator)
+	if x < 0 { return T(0) } else {
+		let numerator = T.pow(µ, T(x)) * T.exp(-1 * µ)
+		let denominator = x.factorial()
+		return numerator / T(denominator)
+	}
 }
