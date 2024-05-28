@@ -1,8 +1,8 @@
 //
-//  distributionNormal.swift
+//  File.swift
+//  
 //
-//
-//  Created by Justin Purnell on 3/21/22.
+//  Created by Justin Purnell on 5/28/24.
 //
 
 import Foundation
@@ -29,10 +29,9 @@ import Numerics
 
  - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
  */
-public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
-	return boxMuller(mean: mean, stdDev: stdDev)
+public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
+	return (stdDev * boxMullerSeed().z1) + mean
 }
-
 
 /**
  Generates a single random number from a normal (Gaussian) distribution with a specified mean and variance using the Box-Muller transform.
@@ -55,6 +54,6 @@ public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
 
  - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
  */
-public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T {
-	return boxMuller(mean: mean, variance: variance)
+public func boxMuller<T: Real>(mean: T, variance: T) -> T {
+	return boxMuller(mean: mean, stdDev: T.sqrt(variance))
 }

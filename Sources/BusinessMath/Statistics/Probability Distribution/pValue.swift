@@ -31,6 +31,7 @@ import Numerics
 ///     print(result)
 ///
 /// Use this function when you need to compute the p-value to test the statistical significance of your hypothesis.
-public func pValue<T: Real>(_ independent: [T], _ variable: [T]) -> T {
-    return pValueStudent(tStatistic(independent, variable), dFr: T(independent.count - 2))
+public func pValue<T: Real>(_ independent: [T], _ variable: [T]) throws -> T {
+	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
+    return try pValueStudent(tStatistic(independent, variable), dFr: T(independent.count - 2))
 }

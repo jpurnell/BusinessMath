@@ -18,7 +18,7 @@ final class DispersionAroundtheMeanTests: XCTestCase {
 		let array: [Double] = [0, 1, 2, 3, 4]
 		let stdDev = stdDev(array)
 		let mean = mean(array)
-		let result = coefficientOfVariation(stdDev, mean: mean)
+		let result = try! coefficientOfVariation(stdDev, mean: mean)
 		XCTAssertEqual(result, (Double.sqrt(2.5) / 2) * 100)
 	}
 	

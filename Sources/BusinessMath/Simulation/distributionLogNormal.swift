@@ -14,11 +14,17 @@ import Numerics
 /// - Parameters:
 ///   - mean: The mean of the distribution
 ///   - stdDev: The standard deviation of the distribution
-/// - Returns: A Log Normal distributed value, x, centered on the mean µ with a standard deviation of ∂^2. Running this function many times will generate an array of values that is distributed log normally around µ with std dev of ∂^2
+/// - Returns: A Log Normal distributed value, x, centered on the mean µ with a standard deviation of ∂. Running this function many times will generate an array of values that is distributed log normally around µ with std dev of ∂
 public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
     return T.exp(distributionNormal(mean: mean, stdDev: stdDev))
 }
 
+	/// Returns a log normal distribution of values with mean µ and variance ∂^s
+	/// - Parameters:
+	///   - mean: The mean of the distribution
+	///   - variance: The standard deviation of the distribution
+	/// - Returns: A Log Normal distributed value, x, centered on the mean µ with a variance of ∂^2. Running this function many times will generate an array of values that is distributed log normally around µ with variance of ∂^2
 public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T {
     return T.exp(distributionNormal(mean: mean, variance: variance))
 }
+

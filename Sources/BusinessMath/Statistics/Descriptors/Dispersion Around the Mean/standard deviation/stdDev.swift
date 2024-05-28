@@ -27,14 +27,8 @@ public func stdDev<T: Real>(_ values: [T], _ pop: Population = .sample) -> T {
     }
 }
 
-// Equivalent of Excel STDEV(xx:xx)
-public func stdDevS<T: Real>(_ values: [T]) -> T {
-    return T.sqrt(varianceS(values))
-}
 
-public func stdDevP<T: Real>(_ values: [T]) -> T {
-    return T.sqrt(varianceP(values))
-}
+
 
 //public func stdDevTDist<T: Real>(_ values: [T]) -> T {
 //    return T.sqrt(varianceTDist(values))

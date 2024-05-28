@@ -54,6 +54,7 @@ public func tStatistic<T: Real>(_ rho: T, dFr: T) -> T {
 ///    print(t_statistic)
 ///
 /// Use this function when you are examining a continuous variable in relation to a binary variable and you don't assume any particular distribution for the data.
-public func tStatistic<T: Real>(_ independent: [T], _ variable: [T]) -> T {
-    return tStatistic(spearmansRho(independent, vs: variable), dFr: T(independent.count - 2))
+public func tStatistic<T: Real>(_ independent: [T], _ variable: [T]) throws -> T {
+	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
+    return try tStatistic(spearmansRho(independent, vs: variable), dFr: T(independent.count - 2))
 }

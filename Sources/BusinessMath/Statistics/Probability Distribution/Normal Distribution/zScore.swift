@@ -21,9 +21,10 @@ import Numerics
 /// - Precondition: The input arrays `independent` and `variable` must have at least 3 elements each and be of the same length.
 ///
 ///     let z = zScore([1, 2, 3], vs: [1, 2, 3])
-public func zScore<T: Real>(_ independent: [T], vs variable: [T]) -> T {
+public func zScore<T: Real>(_ independent: [T], vs variable: [T]) throws -> T {
+	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
     let n = independent.count
-    let r = spearmansRho(independent, vs: variable)
+    let r = try spearmansRho(independent, vs: variable)
     return T.sqrt( T(n - 3) / (T(106) / T(100)) ) * fisher(r)
 }
 

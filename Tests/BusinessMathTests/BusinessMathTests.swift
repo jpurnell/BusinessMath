@@ -182,7 +182,7 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testSpearmansRho() {
-        let result = spearmansRho([1, 2, 2, 2, 5], vs: [1, 2, 3, 4, 5])
+        let result = try! spearmansRho([1, 2, 2, 2, 5], vs: [1, 2, 3, 4, 5])
         XCTAssertEqual(result, 0.8944271909999159)
     }
     

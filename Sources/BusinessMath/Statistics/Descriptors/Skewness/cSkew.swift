@@ -36,6 +36,32 @@ public func coefficientOfSkew<T: Real>(mean: T, median: T, stdDev: T) -> T {
     return (T(3) * (mean - median))/stdDev
 }
 
-public func coefficientOfSkew<T: Real>(_ values: [T]) -> T {
+/**
+ Computes the coefficient of skewness for a given set of values.
+
+ The coefficient of skewness measures the asymmetry of the probability distribution of a real-valued random variable about its mean. A skewness value greater than 0 indicates a distribution with a longer right tail, and a value less than 0 indicates a distribution with a longer left tail.
+
+ - Parameters:
+	- values: An array of values for which the coefficient of skewness is to be calculated.
+
+ - Returns: The coefficient of skewness for the given dataset.
+
+ - Note:
+   - The function relies on the calculation of the mean, median, and standard deviation of the provided values, using the `mean(_:)`, `median(_:)`, and `stdDev(_:)` functions respectively.
+
+ - Requires:
+   - Implementation of the `mean(_:)`, `median(_:)`, and `stdDev(_:)` functions to compute the necessary statistics for the skewness calculation.
+
+ - Example:
+   ```swift
+   let data: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
+   let skewness = coefficientOfSkew(data)
+   ```
+
+ - Important:
+   - Ensure that the provided `values` array is not empty to avoid division by zero errors in the underlying statistical computations.
+ */
+public func coefficientOfSkew<T: Real>(_ values: [T]) throws -> T {
+	guard !values.isEmpty else { throw ArrayError.emptyArray }
     return coefficientOfSkew(mean: mean(values), median: median(values), stdDev: stdDev(values))
 }

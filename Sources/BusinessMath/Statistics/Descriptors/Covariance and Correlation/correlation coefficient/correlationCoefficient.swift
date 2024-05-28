@@ -24,27 +24,3 @@ public func correlationCoefficient<T: Real>(_ x: [T], _ y:[T], _ population: Pop
             return correlationCoefficientS(x, y)
     }
 }
-
-public func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) -> T {
-    if (x.count == y.count) == false { return T(0) }
-    var numerator = T(0)
-    var xDenom = T(0)
-    var yDenom = T(0)
-    let xMean = mean(x)
-    let yMean = mean(y)
-    for i in 0..<x.count {
-        let xSide = (x[i] - xMean)
-        let ySide = (y[i] - yMean)
-        numerator += xSide * ySide
-        xDenom += T.pow(xSide, 2)
-        yDenom += T.pow(ySide, 2)
-    }
-    return numerator / (T.sqrt(xDenom) * T.sqrt(yDenom))
-}
-
-public func correlationCoefficientP<T: Real>(_ x: [T], _ y: [T]) -> T {
-    let numerator = covarianceP(x, y)
-    let denominator = (stdDev(x, .population) * stdDev(y, .population))
-    let r = numerator / denominator
-    return r
-}

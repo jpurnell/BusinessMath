@@ -30,7 +30,7 @@ import Numerics
 ///   // randomValue will be a random number generated from the geometric distribution with parameter p = 0.5
 public func distributionGeometric<T: Real>(_ p: T) -> T {
 	var x: T = T(0)
-	var u: T = distributionUniform()
+	let u: T = distributionUniform()
 	while u <= p {
 		x = x + 1
 	}
