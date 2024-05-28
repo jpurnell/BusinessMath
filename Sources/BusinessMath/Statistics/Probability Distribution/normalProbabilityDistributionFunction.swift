@@ -27,6 +27,7 @@ import Numerics
 ///     let stdDev = 1.0
 ///     let result = normalPDF(x: x, mean: mean, stdDev: stdDev)
 ///     print(result)
+
 public func normalPDF<T: Real>(x: T, mean: T = 0, stdDev: T = 1) -> T {
     let sqrt2Pi = T.sqrt(2 * T.pi)
     let xMinusMeanSquared = (x - mean) * (x - mean)
