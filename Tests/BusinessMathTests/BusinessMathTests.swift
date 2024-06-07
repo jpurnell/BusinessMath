@@ -279,19 +279,25 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testErfInverse() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		let y = 0.5
+		let result = (erfInv(y: y)  * 10000).rounded(.down) / 10000
+		XCTAssertEqual(result, 0.4769)
     }
     
     func testEstMean() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		let probabilities = [0.1, 0.2, 0.7]
+		let result = (estMean(probabilities: probabilities) * 10000).rounded(.down) / 10000
+		XCTAssertEqual(result, 0.3333)
     }
     
     func testFisherR() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		let result = (fisher(0.5) * 10000).rounded(.down) / 10000
+		XCTAssertEqual(result, 0.5493)
     }
     
     func testHyperGeometric() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		let result: Double = hypergeometric(total: 10, r: 4, n: 3, x: 2)
+		XCTAssertEqual(result, 0.30)
     }
     
     func testInterestingObservation() {

@@ -15,7 +15,7 @@ import Numerics
 ///    - target: The value which the function should equal at the root.
 ///    - guess: An initial guess for the root.
 ///    - tolerance: The tolerance within which the result is acceptable. Defaults to `1/1,000,000`.
-///    - maxIterations: The maximum number of iterations to attempt. Defaults to 100.
+///    - maxIterations: The maximum number of iterations to attempt. Defaults to 1000.
 ///
 /// - Throws: `GoalSeekError.divisionByZero` if the function's derivative is zero, leading to a division by zero.
 /// 		  `GoalSeekError.convergenceFailed` if the method fails to converge within the maximum iterations.
@@ -26,7 +26,7 @@ import Numerics
 /// ///	```swift
 ///	let discountRate = 0.1
 ///	let cashFlows = [-1000, 200, 300, 400, 500]
-///	let result = try goalSeek(function: { x in x * x }, target: 4.0, guess: 25, tolerance: 0.0000001, maxIterations: 100)
+///	let result = try goalSeek(function: { x in x * x }, target: 4.0, guess: 25, tolerance: 0.0000001, maxIterations: 1000)
 ///	print(result)  ///	 prints the result
 ///	```
 ///

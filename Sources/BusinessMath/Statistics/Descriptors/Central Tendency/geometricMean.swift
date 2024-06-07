@@ -10,7 +10,7 @@ import Numerics
 
 /// Computes the geometric mean of a dataset.
 ///
-/// The geometric mean is a measure of central tendency, defined as the nth root of the product of n values. It is especially useful for data that grows exponentially and when dealing with percentages, ratios, and normalized data.
+/// The geometric mean is a measure of central tendency, defined as the nth root of the product of n values. It is especially useful for data that grows exponentially and when dealing with percentages, ratios, and normalized data. The geometric mean is most often used to calculate the average percentage growth rate over time of some given series.
 ///
 /// - Parameters:
 ///   - values: An array of values for which to compute the geometric mean.

@@ -21,10 +21,7 @@ import Numerics
 /// - Note: The input `x` is cast to a `Double` and then floored to obtain the integer part for calculations. The function sums the probabilities
 ///   for values from `0` to `floor(x)` to obtain the cumulative distribution function. It uses the exponential function and the power function to
 ///   calculate each term in the sum and the factorial function to normalize the probability.
-///
-/// - Example:
-///   ```swift
-///
+
 
 public func poissonCDF<T: Real>(_ x: T, µ: T) -> T {
 	guard x >= 0 else { return T(0) }
