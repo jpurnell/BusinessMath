@@ -290,6 +290,11 @@ final class UnassortedTests: XCTestCase {
 		XCTAssertEqual(result, 0.3333)
     }
     
+	func testExponentialCDF() {
+		let result = (exponentialCDF(12, λ: 1/12) * 10000.0).rounded(.down) / 10000.0
+		XCTAssertEqual(result, 0.6321)
+	}
+	
     func testFisherR() {
 		let result = (fisher(0.5) * 10000).rounded(.down) / 10000
 		XCTAssertEqual(result, 0.5493)
@@ -305,7 +310,8 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testPoissonDistribution() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		let result = (poisson(5, µ: 10) * 10000.0).rounded(.down) / 10000.0
+		XCTAssertEqual(result, 0.0378)
     }
     
     func testProbabilityDistributionFunction() {
