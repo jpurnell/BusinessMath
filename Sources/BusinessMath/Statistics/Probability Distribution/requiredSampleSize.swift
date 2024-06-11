@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  requiredSampleSize.swift
+//
 //
 //  Created by Justin Purnell on 3/21/22.
 //
@@ -84,7 +84,12 @@ public func requiredSampleSize<T: Real>(ci: T, stdDev: T, sampleMean: T, populat
 ///     print(result)
 ///
 /// Use this function when planning a survey or experiment where it's important to understand population trends.
-public func requiredSampleSizeProb<T: Real>(ci: T, prob: T, maxError: T) -> T {
+public func requiredSampleSizeProb<T: Real>(ci: T, prob: T, maxError: T, populationSize n: T?) -> T {
     let z = zScore(ci: ci)
-    return (T.pow(z, T(2)) * prob * (T(1) - prob))/(T.pow(maxError, T(2)))
+    let sampleSize = (T.pow(z, T(2)) * prob * (T(1) - prob))/(T.pow(maxError, T(2)))
+	guard let population = n else { return sampleSize }
+	let populationCorrectionNumerator = T(1) + (T.pow(z, T(2)) * prob * (T(1) - prob))
+	let populationCorrectionDenominator = (T.pow(maxError, T(2)) * population)
+	let finitePopulationCorrection = populationCorrectionNumerator / populationCorrectionDenominator
+	return sampleSize / finitePopulationCorrection
 }
