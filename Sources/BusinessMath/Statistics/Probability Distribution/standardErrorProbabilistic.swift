@@ -61,3 +61,4 @@ public func standardErrorProbabilistic<T: Real>(_ prob: T, observation n: Int, t
         return standardErrorProbabilistic(prob, observations: n) * (T.sqrt(T ((total - n)/(total - 1))))
     }
 }
+

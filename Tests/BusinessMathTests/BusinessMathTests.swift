@@ -418,6 +418,21 @@ final class UnassortedTests: XCTestCase {
 		XCTAssertEqual(resultUnlikely, 0.9082)
 		XCTAssertEqual(resultNotSignificant, 0.500)
 	}
+	
+	func testSampleSize() {
+//		Let's pretend we're sending our first A/B test. Our list has 1,000 people in it and has a 95% deliverability rate. We want to be 95% confident our winning email metrics fall within a 5-point interval of our population metrics. This will calculate the minimum number of people we need to send each variant to in order to determine significance.
+		let ci = 0.95
+		let p = 0.5
+		let n = 950.0
+		let e = 0.05
+		let result = (sampleSize(ci: ci, proportion: p, n: n, error: e) * 10000).rounded() / 10000
+		XCTAssertEqual(result, 273.5372)
+	}
+	
+	func testMarginOfError() {
+		let result = (marginOfError(0.95, sampleProportion: 0.5, sampleSize: 274, totalPopulation: 950) * 100000).rounded() / 100000
+		XCTAssertEqual(result, 0.04997)
+	}
     
     //    func testVarianceTDist() {
     //        let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
