@@ -404,6 +404,20 @@ final class UnassortedTests: XCTestCase {
         XCTAssertLessThan(result, 0.35)
         XCTAssertEqual(resultE, 1.46)
     }
+	
+	func testpValue() {
+		let obs = 500
+		let convA = 80
+		let convSig = 100
+		let convUnl = 96
+		let convIns = 80
+		let resultSignificant: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convSig) * 10000).rounded() / 10000
+		let resultUnlikely: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convUnl) * 10000).rounded() / 10000
+		let resultNotSignificant: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convIns) * 10000).rounded() / 10000
+		XCTAssertEqual(resultSignificant, 0.9504)
+		XCTAssertEqual(resultUnlikely, 0.9082)
+		XCTAssertEqual(resultNotSignificant, 0.500)
+	}
     
     //    func testVarianceTDist() {
     //        let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
