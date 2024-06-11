@@ -343,7 +343,10 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testStandardErrorProbabilistic() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		let observations = 25.0
+		let conversions = 8.0
+		let result = (standardErrorProbabilistic((conversions) / observations, observations: Int(observations)) * 10000).rounded() / 10000
+		XCTAssertEqual(result, 0.0933)
     }
     
     func testTStatisticRho() {
