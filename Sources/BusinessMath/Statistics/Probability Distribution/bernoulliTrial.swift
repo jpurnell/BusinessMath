@@ -26,7 +26,7 @@ import Numerics
 ///
 /// Use this function when you're dealing with events that only have two possible outcomes, like tossing a coin, answering a true-or-false question, etc.
 public func bernoulliTrial<T: Real>(p: T) -> Int {
-    if T(Int(drand48() * 1000000000 / 1000000000)) < p {
+	if T(Int(Double.random(in: 0...1) * 1000000000 / 1000000000)) < p {
         return 1
     }
     return 0

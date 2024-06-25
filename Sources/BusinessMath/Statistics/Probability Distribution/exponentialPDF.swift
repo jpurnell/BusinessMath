@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  exponentialPDF.swift
 //  
 //
 //  Created by Justin Purnell on 5/19/24.

@@ -23,7 +23,7 @@ import Numerics
 
  - Note:
    - The function `distributionUniform()` is assumed to generate uniformly distributed random values in the range (0, 1).
-   - The function `drand48()` is used to initialize the random seed.
+   - The function `Double.random(in:)` is used to initialize the random seed.
 
  - Example:
    ```swift
@@ -39,7 +39,7 @@ import Numerics
  */
 
 public func integrate<T: Real>(_ f: (T) -> T, iterations n: Int = 10000) -> T {
-    let randomSeed = drand48()
+	let randomSeed = Double.random(in: 0...1)
     var m = T(Int(randomSeed * Double(1_000_000_000_000))) / T(1_000_000_000_000)
     for i in 0..<n {
         m += ((f(distributionUniform()) - m)) / T((i + 1))

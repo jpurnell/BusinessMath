@@ -10,12 +10,11 @@ import Numerics
 
 /// Generates a random number from a uniform distribution over the interval [0, 1).
 ///
-/// This function generates a random number from a uniform distribution using the `drand48()` function,
+/// This function generates a random number from a uniform distribution using the `Double.random(in:)` function,
 /// which returns a non-negative `Double` uniformly distributed between 0.0 and 1.0. The result is then scaled and converted to the specified `Real` type.
 ///
 /// - Returns: A random number uniformly distributed between 0.0 (inclusive) and 1.0 (exclusive).
 ///
-/// - Note: The function uses the `drand48()` function, which requires the program to call `srand48()` at some point to seed the random number generator appropriately.
 ///
 /// - Example:
 ///   ```swift
@@ -23,7 +22,7 @@ import Numerics
 ///   // randomValue will be a uniform random number between 0.0 and 1.0
 
 public func distributionUniform<T: Real>() -> T {
-    let randomSeed = drand48()
+	let randomSeed = Double.random(in: 0...1)
     let value = T(Int(randomSeed * Double(1_000_000_000_000))) / T(1_000_000_000_000)
     return value
 }
