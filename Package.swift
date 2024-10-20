@@ -24,8 +24,7 @@ let package = Package(
                 .product(name: "Numerics", package: "swift-numerics")
             ],
 			swiftSettings: [
-				.enableExperimentalFeature("StrictConcurrency")
-			  ]
+				.enableExperimentalFeature("StrictConcurrency")			  ]
 		),
         .testTarget(
             name: "BusinessMathTests",

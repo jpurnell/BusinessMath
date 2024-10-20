@@ -61,5 +61,5 @@ public func descriptives<T: Real>(_ values: [T]) throws -> (mean: T, stdDev: T, 
 }
 
 extension Array where Element: Real {
-    public var descriptiveStatistics: String {  let desc = try! descriptives(self.map({$0 as! Double})); return "µ:\(desc.mean)\t∂:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"}
+    public var descriptiveStatistics: String {  let desc = try! descriptives(self.map({$0 as! Double})); return "µ:\(desc.mean)\tσ:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"}
 }
