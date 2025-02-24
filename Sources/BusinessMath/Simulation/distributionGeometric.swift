@@ -30,18 +30,21 @@ import Numerics
 ///   // randomValue will be a random number generated from the geometric distribution with parameter p = 0.5
 public func distributionGeometric<T: Real>(_ p: T) -> T {
 	var x: T = T(0)
-	let u: T = distributionUniform()
-	while u <= p {
+	while true {
+		let u: T = distributionUniform()
+		if u < p {
+			break
+		}
 		x = x + 1
 	}
-	return x
+	return x + 1
 }
 
-public struct GeometricDistribution: RandomNumberGenerator {
+public struct DistributionGeometric: RandomNumberGenerator {
 	let p: Double
 	
-	init(probabilityOfSuccess p: Double) {
-		self.p = p
+	public init(_ probabilityOfSuccess: Double) {
+		self.p = probabilityOfSuccess
 	}
 	
 	public func random() -> Double {
@@ -52,3 +55,4 @@ public struct GeometricDistribution: RandomNumberGenerator {
 		UInt64(random())
 	}
 }
+

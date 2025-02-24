@@ -36,7 +36,7 @@ public struct DistributionLogistic: RandomNumberGenerator {
 	let mean: Double
 	let stdDev: Double
 	
-	public init(mean: Double = 0, stdDev: Double = 1) {
+	public init(_ mean: Double = 0, _ stdDev: Double = 1) {
 		self.mean = mean
 		self.stdDev = stdDev
 	}

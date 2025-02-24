@@ -29,7 +29,7 @@ public func distributionExponential<T: Real>(λ: T) -> T {
 public struct DistributionExponential: RandomNumberGenerator {
 	let λ: Double
 	
-	init(_ λ: Double) {
+	public init(_ λ: Double) {
 		self.λ = λ
 	}
 	

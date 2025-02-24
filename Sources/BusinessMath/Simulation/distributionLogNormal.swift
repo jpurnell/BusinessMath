@@ -32,12 +32,12 @@ public struct DistributionLogNormal: RandomNumberGenerator {
 	let mean: Double
 	let stdDev: Double
 	
-	public init(mean: Double = 0, stdDev: Double = 1) {
+	public init(_ mean: Double = 0, _ stdDev: Double = 1.0) {
 		self.mean = mean
 		self.stdDev = stdDev
 	}
 	
-	public init(mean: Double = 0, variance: Double = 1) {
+	public init(mean: Double = 0, variance: Double = 1.0) {
 		self.mean = mean
 		self.stdDev = Double.sqrt(variance)
 	}

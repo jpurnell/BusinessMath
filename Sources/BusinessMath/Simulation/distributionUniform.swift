@@ -56,6 +56,11 @@ public struct DistributionUniform: RandomNumberGenerator {
 	let min: Double
 	let max: Double
 	
+	public init (_ min: Double = 0.0, _ max: Double = 1.0) {
+		self.min = min
+		self.max = max
+	}
+	
 	public func random() -> Double {
 		distributionUniform(min: min, max: max)
 	}
