@@ -65,13 +65,13 @@ public struct DistributionNormal: RandomNumberGenerator {
 	var mean: Double = 0.0
 	var stdev: Double = 1.0
 	
-	init(x: Double, mean: Double, stdev: Double) {
+	public init(x: Double, mean: Double, stdev: Double) {
 		self.x = x
 		self.mean = mean
 		self.stdev = stdev
 	}
 	
-	init(x: Double, mean: Double, variance: Double) {
+	public init(x: Double, mean: Double, variance: Double) {
 		self.x = x
 		self.mean = mean
 		self.stdev = Double.sqrt(variance)
