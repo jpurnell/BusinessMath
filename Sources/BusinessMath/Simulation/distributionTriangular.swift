@@ -47,7 +47,7 @@ public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T) -> T
     }
 }
 
-public struct DistributionTriangular: RandomNumberGenerator {
+public struct DistributionTriangular: DistributionRandom {
 	let low: Double
 	let high: Double
 	let base: Double
@@ -62,7 +62,7 @@ public struct DistributionTriangular: RandomNumberGenerator {
 		triangularDistribution(low: low, high: high, base: base)
 	}
 	
-	public func next() -> UInt64 {
-		return UInt64(random())
+	public func next() -> Double {
+		return random()
 	}
 }

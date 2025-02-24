@@ -60,7 +60,7 @@ public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T
 }
 
 
-public struct DistributionNormal: RandomNumberGenerator {
+public struct DistributionNormal: DistributionRandom {
 
 	var mean: Double = 0.0
 	var stdDev: Double = 1.0
@@ -80,7 +80,7 @@ public struct DistributionNormal: RandomNumberGenerator {
 		return distributionNormal(mean: mean, stdDev: stdDev)
 	}
 	
-	public func next() -> UInt64 {
-		return UInt64(random())
+	public func next() -> Double {
+		return random()
 	}
 }

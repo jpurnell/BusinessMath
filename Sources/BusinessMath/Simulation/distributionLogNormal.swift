@@ -28,7 +28,7 @@ public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -
     return T.exp(distributionNormal(mean: mean, variance: variance))
 }
 
-public struct DistributionLogNormal: RandomNumberGenerator {
+public struct DistributionLogNormal: DistributionRandom {
 	let mean: Double
 	let stdDev: Double
 	
@@ -46,7 +46,7 @@ public struct DistributionLogNormal: RandomNumberGenerator {
 		return distributionLogNormal(mean: mean, stdDev: stdDev)
 	}
 	
-	public func next() -> UInt64 {
-		return UInt64(random())
+	public func next() -> Double {
+		return random()
 	}
 }

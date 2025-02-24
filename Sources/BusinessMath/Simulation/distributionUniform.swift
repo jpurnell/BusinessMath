@@ -52,7 +52,7 @@ public func distributionUniform<T: Real>(min l: T, max h: T) -> T {
     return ((upper - lower) * distributionUniform()) + lower
 }
 
-public struct DistributionUniform: RandomNumberGenerator {
+public struct DistributionUniform: DistributionRandom {
 	let min: Double
 	let max: Double
 	
@@ -65,7 +65,7 @@ public struct DistributionUniform: RandomNumberGenerator {
 		distributionUniform(min: min, max: max)
 	}
 	
-	public func next() -> UInt64 {
-		return UInt64(random())
+	public func next() -> Double {
+		return random()
 	}
 }

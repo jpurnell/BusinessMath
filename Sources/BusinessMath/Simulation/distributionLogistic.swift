@@ -32,7 +32,7 @@ func distributionLogistic<T: Real>(_ p: T = distributionUniform(), _ mean: T = 0
 	return mean + magicNumber * stdDev * T.log(p / (1 - p))
 }
 
-public struct DistributionLogistic: RandomNumberGenerator {
+public struct DistributionLogistic: DistributionRandom {
 	let mean: Double
 	let stdDev: Double
 	
@@ -50,7 +50,7 @@ public struct DistributionLogistic: RandomNumberGenerator {
 		return distributionLogistic(distributionUniform(), mean, stdDev)
 	}
 	
-	public func next() -> UInt64 {
-		return UInt64(random())
+	public func next() -> Double {
+		return random()
 	}
 }

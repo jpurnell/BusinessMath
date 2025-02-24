@@ -32,7 +32,7 @@ public func distributionGamma<T: Real>(r: Int, λ: T) -> T {
 	return (0..<r).map({_ in distributionExponential(λ: λ) }).reduce(T(0), +)
 }
 
-public struct DistributionGamma {
+public struct DistributionGamma: DistributionRandom {
 	var r: Int
 	var λ: Double
 	
@@ -45,7 +45,7 @@ public struct DistributionGamma {
 		return distributionGamma(r: r, λ: λ)
 	}
 	
-	public func next() -> UInt64 {
-		return UInt64(random())
+	public func next() -> Double {
+		return random()
 	}
 }

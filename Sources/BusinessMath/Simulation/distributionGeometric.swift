@@ -40,7 +40,7 @@ public func distributionGeometric<T: Real>(_ p: T) -> T {
 	return x + 1
 }
 
-public struct DistributionGeometric: RandomNumberGenerator {
+public struct DistributionGeometric: DistributionRandom {
 	let p: Double
 	
 	public init(_ probabilityOfSuccess: Double) {
@@ -51,8 +51,10 @@ public struct DistributionGeometric: RandomNumberGenerator {
 		distributionGeometric(p)
 	}
 	
-	public func next() -> UInt64 {
-		UInt64(random())
+	public func next() -> Double {
+		return random()
 	}
 }
+
+
 
