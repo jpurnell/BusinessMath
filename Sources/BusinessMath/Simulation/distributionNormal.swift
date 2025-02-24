@@ -65,7 +65,7 @@ public struct DistributionNormal: DistributionRandom {
 	var mean: Double = 0.0
 	var stdDev: Double = 1.0
 	
-	public init(mean: Double = 0.0, stdDev: Double = 1.0) {
+	public init(_ mean: Double = 0.0, _ stdDev: Double = 1.0) {
 		self.mean = mean
 		self.stdDev = stdDev
 	}

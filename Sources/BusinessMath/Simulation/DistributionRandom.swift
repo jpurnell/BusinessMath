@@ -7,7 +7,7 @@
 
 import Numerics
 
-protocol DistributionRandom {
+public protocol DistributionRandom {
 	associatedtype T: Real
 	
 	func next() -> T
