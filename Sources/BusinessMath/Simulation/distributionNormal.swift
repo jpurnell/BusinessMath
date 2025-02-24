@@ -58,3 +58,31 @@ public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
 public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T {
 	return boxMuller(mean: mean, variance: variance)
 }
+
+
+public struct DistributionNormal: RandomNumberGenerator {
+	var x: Double = 0.0
+	var mean: Double = 0.0
+	var stdev: Double = 1.0
+	
+	init(x: Double, mean: Double, stdev: Double) {
+		self.x = x
+		self.mean = mean
+		self.stdev = stdev
+	}
+	
+	init(x: Double, mean: Double, variance: Double) {
+		self.x = x
+		self.mean = mean
+		self.stdev = Double.sqrt(variance)
+	}
+	
+	
+	public func random() -> Double {
+		return normalCDF(x: x, mean: mean, stdDev: stdev)
+	}
+	
+	public func next() -> UInt64 {
+		return UInt64(random())
+	}
+}

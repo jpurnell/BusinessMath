@@ -31,3 +31,21 @@ import Numerics
 public func distributionGamma<T: Real>(r: Int, λ: T) -> T {
 	return (0..<r).map({_ in distributionExponential(λ: λ) }).reduce(T(0), +)
 }
+
+public struct DistributionGamma {
+	var r: Int
+	var λ: Double
+	
+	public init(r: Int, λ: Double) {
+		self.r = r
+		self.λ = λ
+	}
+	
+	public func random() -> Double {
+		return distributionGamma(r: r, λ: λ)
+	}
+	
+	public func next() -> UInt64 {
+		return UInt64(random())
+	}
+}

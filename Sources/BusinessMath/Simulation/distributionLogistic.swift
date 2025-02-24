@@ -31,3 +31,26 @@ func distributionLogistic<T: Real>(_ p: T = distributionUniform(), _ mean: T = 0
 	let magicNumber = T.sqrt(3) / T.pi
 	return mean + magicNumber * stdDev * T.log(p / (1 - p))
 }
+
+public struct DistributionLogistic: RandomNumberGenerator {
+	let mean: Double
+	let stdDev: Double
+	
+	public init(mean: Double = 0, stdDev: Double = 1) {
+		self.mean = mean
+		self.stdDev = stdDev
+	}
+	
+	public init(mean: Double = 0, variance: Double = 1) {
+		self.mean = mean
+		self.stdDev = Double.sqrt(variance)
+	}
+	
+	public func random() -> Double {
+		return distributionLogistic(distributionUniform(), mean, stdDev)
+	}
+	
+	public func next() -> UInt64 {
+		return UInt64(random())
+	}
+}

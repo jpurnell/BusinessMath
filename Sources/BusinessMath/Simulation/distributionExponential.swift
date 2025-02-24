@@ -25,3 +25,19 @@ public func distributionExponential<T: Real>(λ: T) -> T {
 	let u: T = distributionUniform()
 	return T(-1) * (T(1) / λ) * T.log(1 - u)
 }
+
+public struct DistributionExponential: RandomNumberGenerator {
+	let λ: Double
+	
+	init(_ λ: Double) {
+		self.λ = λ
+	}
+	
+	public func random() -> Double {
+		distributionExponential(λ: λ)
+	}
+	
+	public func next() -> UInt64 {
+		return UInt64(random())
+	}
+}
