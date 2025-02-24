@@ -61,25 +61,23 @@ public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T
 
 
 public struct DistributionNormal: RandomNumberGenerator {
-	var x: Double = 0.0
+
 	var mean: Double = 0.0
-	var stdev: Double = 1.0
+	var stdDev: Double = 1.0
 	
-	public init(x: Double, mean: Double, stdev: Double) {
-		self.x = x
+	public init(mean: Double = 0.0, stdDev: Double = 1.0) {
 		self.mean = mean
-		self.stdev = stdev
+		self.stdDev = stdDev
 	}
 	
-	public init(x: Double, mean: Double, variance: Double) {
-		self.x = x
+	public init(mean: Double = 0.0, variance: Double = 1.0) {
 		self.mean = mean
-		self.stdev = Double.sqrt(variance)
+		self.stdDev = Double.sqrt(variance)
 	}
 	
 	
 	public func random() -> Double {
-		return normalCDF(x: x, mean: mean, stdDev: stdev)
+		return distributionNormal(mean: mean, stdDev: stdDev)
 	}
 	
 	public func next() -> UInt64 {
