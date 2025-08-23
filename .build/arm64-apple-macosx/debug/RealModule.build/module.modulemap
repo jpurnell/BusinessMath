@@ -1,0 +1,4 @@
+module RealModule {
+    header "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/RealModule.build/RealModule-Swift.h"
+    requires objc
+}

@@ -1,0 +1,95 @@
+{
+  "": {
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/master.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/BusinessMathTests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/BusinessMathTests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/BusinessMathTests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/BusinessMathTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/BusinessMathTests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Combination and Permutation Tests/Combination And Permutation Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Combination And Permutation Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Combination And Permutation Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Combination And Permutation Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Combination And Permutation Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Descriptives Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Descriptives Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Descriptives Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Descriptives Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Descriptives Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Distribution Function Tests/F Distribution Functions.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/F Distribution Functions.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/F Distribution Functions.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/F Distribution Functions~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/F Distribution Functions.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Distribution Function Tests/Inference Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Inference Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Inference Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Inference Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Inference Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Distribution Function Tests/Normal Distribution/Normal Distribution Functions.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Normal Distribution Functions.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Normal Distribution Functions.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Normal Distribution Functions~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Normal Distribution Functions.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Distribution Function Tests/t Distribution Functions.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/t Distribution Functions.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/t Distribution Functions.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/t Distribution Functions~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/t Distribution Functions.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Simulation Tests/Simulation Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Simulation Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Simulation Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Simulation Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Simulation Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Central Tendency Tests/Central Tendency Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Central Tendency Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Central Tendency Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Central Tendency Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Central Tendency Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Covariance and Correlation Tests/Covariance and Correlation Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Covariance and Correlation Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Covariance and Correlation Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Covariance and Correlation Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Covariance and Correlation Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Dispersion Around the Mean Tests/Dispersion Around the Mean Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Dispersion Around the Mean Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Dispersion Around the Mean Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Dispersion Around the Mean Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Dispersion Around the Mean Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Linear Regression Tests/Linear Regression Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Linear Regression Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Linear Regression Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Linear Regression Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Linear Regression Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Skewness Tests/Skewness Tests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Skewness Tests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Skewness Tests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Skewness Tests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Skewness Tests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Statistics Tests/Probability Distribution Tests/Binomial Descriptors/binomialDescriptorTests.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/binomialDescriptorTests.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/binomialDescriptorTests.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/binomialDescriptorTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/binomialDescriptorTests.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Tests/BusinessMathTests/Test Template.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Test Template.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Test Template.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Test Template~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathTests.build/Test Template.swiftdeps"
+  }
+}

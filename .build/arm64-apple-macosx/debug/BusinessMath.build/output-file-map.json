@@ -1,0 +1,689 @@
+{
+  "": {
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/master.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/AB Test.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/AB Test.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/AB Test.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/AB Test~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/AB Test.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/BusinessMath.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/BusinessMath.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/BusinessMath.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/BusinessMath~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/BusinessMath.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Combination and Permutation/combination.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/combination.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/combination.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/combination~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/combination.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Combination and Permutation/factorial.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/factorial.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/factorial.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/factorial~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/factorial.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Combination and Permutation/permutation.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/permutation.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/permutation.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/permutation~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/permutation.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Monte Carlo Integration.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Monte Carlo Integration.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Monte Carlo Integration.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Monte Carlo Integration~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Monte Carlo Integration.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/DistributionRandom.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionRandom.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionRandom.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionRandom~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionRandom.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/boxMuellerSeed.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerSeed.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerSeed.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerSeed~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerSeed.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/boxMuellerTransform.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerTransform.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerTransform.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerTransform~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/boxMuellerTransform.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionExponential.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionExponential.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionExponential.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionExponential~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionExponential.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionGamma.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGamma.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGamma.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGamma~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGamma.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionGeometric.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGeometric.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGeometric.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGeometric~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionGeometric.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionLogNormal.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogNormal.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogNormal.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogNormal~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogNormal.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionLogistic.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogistic.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogistic.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogistic~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionLogistic.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionNormal.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionNormal.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionNormal.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionNormal~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionNormal.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionTriangular.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionTriangular.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionTriangular.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionTriangular~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionTriangular.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Simulation/distributionUniform.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionUniform.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionUniform.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionUniform~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/distributionUniform.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Solver/Derivative.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Derivative.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Derivative.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Derivative~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Derivative.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Solver/GoalSeek.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeek.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeek.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeek~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeek.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/Katz's Statistic.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Katz's Statistic.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Katz's Statistic.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Katz's Statistic~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Katz's Statistic.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/arithmeticGeometricMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticGeometricMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticGeometricMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticGeometricMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticGeometricMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/arithmeticHarmonicMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticHarmonicMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticHarmonicMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticHarmonicMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/arithmeticHarmonicMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/contraharmonicMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/contraharmonicMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/contraharmonicMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/contraharmonicMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/contraharmonicMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/geometricMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/geometricMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/geometricMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/geometricMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/geometricMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/harmonicMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/harmonicMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/harmonicMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/harmonicMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/harmonicMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/identricMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/identricMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/identricMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/identricMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/identricMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/logarithmicMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logarithmicMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logarithmicMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logarithmicMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logarithmicMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/mean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/median.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/median.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/median.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/median~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/median.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Central Tendency/mode.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mode.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mode.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mode~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/mode.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Covariance and Correlation/Covariance/covariance.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/covariance.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/covariance.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/covariance~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/covariance.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Covariance and Correlation/Covariance/population covariance.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population covariance.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population covariance.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population covariance~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population covariance.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Covariance and Correlation/Covariance/sample covariance.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample covariance.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample covariance.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample covariance~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample covariance.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Covariance and Correlation/correlation coefficient/correlationCoefficient.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationCoefficient.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationCoefficient.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationCoefficient~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationCoefficient.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Covariance and Correlation/correlation coefficient/population correlation coefficient.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population correlation coefficient.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population correlation coefficient.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population correlation coefficient~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population correlation coefficient.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Covariance and Correlation/correlation coefficient/sample correlation coefficient.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample correlation coefficient.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample correlation coefficient.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample correlation coefficient~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample correlation coefficient.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/Population.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Population.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Population.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Population~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Population.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/coefficientOfVariation.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/coefficientOfVariation.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/coefficientOfVariation.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/coefficientOfVariation~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/coefficientOfVariation.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/indexOfDispersion.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/indexOfDispersion.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/indexOfDispersion.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/indexOfDispersion~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/indexOfDispersion.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/standard deviation/population standard deviation.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population standard deviation.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population standard deviation.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population standard deviation~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population standard deviation.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/standard deviation/sample standard deviation.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample standard deviation.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample standard deviation.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample standard deviation~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample standard deviation.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/standard deviation/stdDev.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDev.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDev.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDev~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDev.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/sumOfSquared.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sumOfSquared.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sumOfSquared.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sumOfSquared~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sumOfSquared.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/tStatistic.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatistic.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatistic.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatistic~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatistic.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/variance/population variance.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population variance.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population variance.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population variance~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/population variance.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/variance/sample variance.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample variance.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample variance.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample variance~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/sample variance.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/variance/t-distribution.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/t-distribution.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/t-distribution.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/t-distribution~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/t-distribution.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Dispersion Around the Mean/variance/variance.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/variance.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/variance.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/variance~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/variance.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Linear Regression/Intercept.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Intercept.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Intercept.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Intercept~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Intercept.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Linear Regression/Slope.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Slope.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Slope.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Slope~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/Slope.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Linear Regression/linearRegression.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/linearRegression.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/linearRegression.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/linearRegression~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/linearRegression.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Linear Regression/multiply.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/multiply.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/multiply.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/multiply~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/multiply.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Linear Regression/rSquared.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquared.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquared.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquared~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquared.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Linear Regression/rSquaredAdjusted.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquaredAdjusted.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquaredAdjusted.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquaredAdjusted~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rSquaredAdjusted.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Skewness/cSkew.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/cSkew.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/cSkew.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/cSkew~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/cSkew.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/Skewness/skew.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/skew.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/skew.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/skew~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/skew.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Descriptors/descriptives.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/descriptives.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/descriptives.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/descriptives~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/descriptives.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Discrete Distribution/meanDiscrete.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanDiscrete.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanDiscrete.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanDiscrete~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanDiscrete.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Discrete Distribution/varianceDiscrete.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceDiscrete.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceDiscrete.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceDiscrete~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceDiscrete.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Normal Deviate/inverseNormalCDF.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/inverseNormalCDF.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/inverseNormalCDF.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/inverseNormalCDF~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/inverseNormalCDF.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Normal Deviate/normInv.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normInv.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normInv.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normInv~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normInv.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Normal Probability/normalCDF.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalCDF.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalCDF.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalCDF~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalCDF.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Normal Probability/normdist.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normdist.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normdist.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normdist~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normdist.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Normal Probability/normsdist.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normsdist.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normsdist.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normsdist~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normsdist.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Normal Probability/percentileZScore.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileZScore.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileZScore.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileZScore~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileZScore.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Standard Normal Deviate/normSInv.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normSInv.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normSInv.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normSInv~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normSInv.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Standard Normal Deviate/zScorePercentile.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScorePercentile.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScorePercentile.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScorePercentile~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScorePercentile.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Standardized Score/standardize.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardize.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardize.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardize~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardize.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/Standardized Score/zStatistic.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zStatistic.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zStatistic.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zStatistic~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zStatistic.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/zScore.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScore.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScore.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScore~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScore.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/zScoreCI.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreCI.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreCI.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreCI~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreCI.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/zScoreFisherR.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreFisherR.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreFisherR.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreFisherR~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreFisherR.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Normal Distribution/zScoreRho.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreRho.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreRho.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreRho~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/zScoreRho.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Percentile/percentileLocation.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileLocation.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileLocation.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileLocation~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileLocation.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Percentile/percentileMeanStdDev.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileMeanStdDev.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileMeanStdDev.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileMeanStdDev~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/percentileMeanStdDev.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Poisson Distribution/DistributionPoisson.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionPoisson.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionPoisson.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionPoisson~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/DistributionPoisson.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Poisson Distribution/poissonCDF.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonCDF.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonCDF.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonCDF~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonCDF.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/Poisson Distribution/poissonDistribution.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonDistribution.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonDistribution.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonDistribution~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/poissonDistribution.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/bernoulliTrial.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/bernoulliTrial.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/bernoulliTrial.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/bernoulliTrial~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/bernoulliTrial.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/binomial.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/binomial.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/binomial.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/binomial~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/binomial.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/binomialDescriptors/meanBinomial.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanBinomial.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanBinomial.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanBinomial~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/meanBinomial.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/binomialDescriptors/stdDevBinomial.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDevBinomial.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDevBinomial.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDevBinomial~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/stdDevBinomial.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/binomialDescriptors/varianceBinomial.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceBinomial.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceBinomial.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceBinomial~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/varianceBinomial.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/chi2cdf.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2cdf.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2cdf.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2cdf~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2cdf.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/chi2pdf.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2pdf.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2pdf.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2pdf~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/chi2pdf.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/confidenceInterval.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceInterval.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceInterval.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceInterval~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceInterval.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/confidenceIntervalProbabilistic.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceIntervalProbabilistic.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceIntervalProbabilistic.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceIntervalProbabilistic~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/confidenceIntervalProbabilistic.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/correctedStandardError.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correctedStandardError.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correctedStandardError.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correctedStandardError~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correctedStandardError.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/correlationBreakpoint.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationBreakpoint.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationBreakpoint.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationBreakpoint~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/correlationBreakpoint.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/derivativeOf.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/derivativeOf.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/derivativeOf.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/derivativeOf~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/derivativeOf.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/erfInverse.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/erfInverse.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/erfInverse.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/erfInverse~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/erfInverse.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/estMean.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/estMean.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/estMean.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/estMean~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/estMean.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/exponentialCDF.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialCDF.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialCDF.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialCDF~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialCDF.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/exponentialPDF.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialPDF.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialPDF.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialPDF~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/exponentialPDF.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/fisherR.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/fisherR.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/fisherR.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/fisherR~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/fisherR.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/hyperGeometric.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/hyperGeometric.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/hyperGeometric.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/hyperGeometric~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/hyperGeometric.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/interestingObservation.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/interestingObservation.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/interestingObservation.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/interestingObservation~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/interestingObservation.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/logNormalPDF.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logNormalPDF.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logNormalPDF.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logNormalPDF~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/logNormalPDF.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/marginOfError.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/marginOfError.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/marginOfError.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/marginOfError~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/marginOfError.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/normalProbabilityDistributionFunction.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalProbabilityDistributionFunction.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalProbabilityDistributionFunction.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalProbabilityDistributionFunction~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/normalProbabilityDistributionFunction.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/pValue.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValue.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValue.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValue~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValue.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/pValueStudent.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValueStudent.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValueStudent.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValueStudent~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/pValueStudent.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/requiredSampleSize.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/requiredSampleSize.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/requiredSampleSize.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/requiredSampleSize~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/requiredSampleSize.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/rho.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rho.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rho.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rho~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/rho.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/standardError.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardError.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardError.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardError~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardError.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/standardErrorProbabilistic.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardErrorProbabilistic.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardErrorProbabilistic.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardErrorProbabilistic~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/standardErrorProbabilistic.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/tStatisticRho.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatisticRho.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatisticRho.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatisticRho~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/tStatisticRho.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Statistics/Probability Distribution/uniformCDF.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/uniformCDF.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/uniformCDF.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/uniformCDF~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/uniformCDF.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/extensionArray.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/extensionArray.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/extensionArray.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/extensionArray~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/extensionArray.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/spearmansRho.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/spearmansRho.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/spearmansRho.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/spearmansRho~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/spearmansRho.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/zzz In Process/Errors/ArrayError.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/ArrayError.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/ArrayError.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/ArrayError~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/ArrayError.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/zzz In Process/Errors/GoalSeekError.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeekError.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeekError.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeekError~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/GoalSeekError.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/zzz In Process/Errors/MathError.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/MathError.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/MathError.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/MathError~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/MathError.swiftdeps"
+  },
+  "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/zzz In Process/NPV.swift": {
+    "dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/NPV.d",
+    "object": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/NPV.swift.o",
+    "swiftmodule": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/NPV~partial.swiftmodule",
+    "swift-dependencies": "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/NPV.swiftdeps"
+  }
+}

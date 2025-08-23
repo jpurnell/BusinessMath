@@ -1,0 +1,4 @@
+module BusinessMath {
+    header "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMath.build/BusinessMath-Swift.h"
+    requires objc
+}
