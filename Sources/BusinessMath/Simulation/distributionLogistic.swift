@@ -27,7 +27,7 @@ import Numerics
  - Requires: The use of appropriate `Real` compatible number types for accurate results.
  */
 
-func distributionLogistic<T: Real>(_ p: T = distributionUniform(), _ mean: T = 0, _ stdDev: T = 1) -> T {
+public func distributionLogistic<T: Real>(_ p: T = distributionUniform(), _ mean: T = 0, _ stdDev: T = 1) -> T {
 	let magicNumber = T.sqrt(3) / T.pi
 	return mean + magicNumber * stdDev * T.log(p / (1 - p))
 }
