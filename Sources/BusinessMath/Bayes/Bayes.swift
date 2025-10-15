@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  Bayes.swift
 //  BusinessMath
 //
 //  Created by Justin Purnell on 9/17/25.
