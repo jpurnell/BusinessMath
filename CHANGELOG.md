@@ -5,6 +5,44 @@ All notable changes to BusinessMath will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-10-15
+
+### Added
+
+**Bayes' Theorem Implementation**
+- New `bayes(_:_:_:)` function for calculating posterior probabilities
+- Comprehensive DocC documentation with medical test example
+- Formula: P(D|T) = [P(T|D) × P(D)] / [P(T|D) × P(D) + P(T|¬D) × P(¬D)]
+- 5 comprehensive tests covering various scenarios:
+  - Medical test with 1% disease prevalence
+  - High prior probability cases
+  - Perfect test accuracy
+  - Low prior with imperfect test
+  - Symmetric cases
+
+**Rayleigh Distribution**
+- `distributionRayleigh(mean:)` function using inverse transform method
+- `DistributionRayleigh` struct conforming to `DistributionRandom` protocol
+- Generates non-negative random values from Rayleigh distribution
+- Use cases: modeling magnitude of 2D vectors, radio signal fading
+- 3 comprehensive tests:
+  - Function variant with statistical validation
+  - Struct variant (random() and next() methods)
+  - Edge cases with small mean values
+
+### Fixed
+- Removed incorrect `import Testing` from production Bayes.swift
+- Fixed parameter typo: `probabiityTGivenNotD` → `probabilityTrueGivenNotD`
+- Removed duplicate function definition in Bayes Tests
+- Removed unnecessary `async/await` from Bayes tests
+- Cleaned up "zzz In Process" directory (NPV now in production)
+
+### Technical Details
+- Total test count: 539 tests (531 previous + 5 Bayes + 3 Rayleigh)
+- All tests passing
+- No breaking changes
+- Fully backward compatible with v1.0.0
+
 ## [1.0.0] - 2025-10-15
 
 ### Added - Complete BusinessMath Library

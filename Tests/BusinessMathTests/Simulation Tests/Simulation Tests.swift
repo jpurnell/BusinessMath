@@ -66,5 +66,75 @@ final class SimulationTests: XCTestCase {
         XCTAssertLessThanOrEqual(result, max, "Value must be below \(max)")
         XCTAssertGreaterThanOrEqual(result, min)
     }
+
+	func testDistributionRayleighFunction() {
+		// Test the function variant
+		// Note: The parameter is the scale parameter σ, not the distribution mean
+		// The actual mean of a Rayleigh(σ) distribution is σ × sqrt(π/2) ≈ 1.253σ
+		let sigma = 5.0
+		let result: Double = distributionRayleigh(mean: sigma)
+
+		// Rayleigh distribution should produce non-negative values
+		XCTAssertGreaterThanOrEqual(result, 0.0, "Rayleigh values must be non-negative")
+
+		// Test multiple samples to ensure reasonable distribution
+		var samples: [Double] = []
+		for _ in 0..<1000 {
+			let sample: Double = distributionRayleigh(mean: sigma)
+			samples.append(sample)
+			XCTAssertGreaterThanOrEqual(sample, 0.0)
+		}
+
+		// Verify all samples are non-negative and within a reasonable range
+		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
+		// For Rayleigh, mean ≈ 1.253σ, so for σ=5, expect mean ≈ 6.265
+		let expectedMean = sigma * 1.253
+		let tolerance = expectedMean * 0.20  // Allow 20% deviation due to sampling variance
+		XCTAssertGreaterThan(empiricalMean, expectedMean - tolerance)
+		XCTAssertLessThan(empiricalMean, expectedMean + tolerance)
+	}
+
+	func testDistributionRayleighStruct() {
+		// Test the struct variant
+		let sigma = 10.0
+		let distribution = DistributionRayleigh(mean: sigma)
+
+		// Test random() method
+		let result1 = distribution.random()
+		XCTAssertGreaterThanOrEqual(result1, 0.0)
+
+		// Test next() method
+		let result2 = distribution.next()
+		XCTAssertGreaterThanOrEqual(result2, 0.0)
+
+		// Verify multiple samples have reasonable distribution
+		var samples: [Double] = []
+		for _ in 0..<1000 {
+			samples.append(distribution.next())
+		}
+
+		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
+		// For Rayleigh, mean ≈ 1.253σ
+		let expectedMean = sigma * 1.253
+		let tolerance = expectedMean * 0.20
+		XCTAssertGreaterThan(empiricalMean, expectedMean - tolerance)
+		XCTAssertLessThan(empiricalMean, expectedMean + tolerance)
+	}
+
+	func testDistributionRayleighSmallMean() {
+		// Test with small mean value
+		let mean = 0.5
+		let distribution = DistributionRayleigh(mean: mean)
+
+		var samples: [Double] = []
+		for _ in 0..<500 {
+			let sample = distribution.next()
+			samples.append(sample)
+			XCTAssertGreaterThanOrEqual(sample, 0.0)
+		}
+
+		// All samples should be non-negative
+		XCTAssertEqual(samples.filter({ $0 >= 0 }).count, 500)
+	}
 }
 
