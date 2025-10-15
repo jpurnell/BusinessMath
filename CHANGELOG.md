@@ -5,6 +5,103 @@ All notable changes to BusinessMath will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-10-15
+
+### Added
+
+**Beta Distribution** (CRITICAL - Phase 1 of Monte Carlo Framework)
+
+A continuous probability distribution on [0, 1] for modeling proportions, probabilities, and percentages.
+
+- `distributionBeta<T: Real>(alpha: T, beta: T) -> T` function
+- `DistributionBeta` struct conforming to `DistributionRandom` protocol
+- 10 comprehensive tests covering:
+  - Boundary validation (all values in [0, 1])
+  - Statistical properties (mean validation with various parameters)
+  - Struct methods (random() and next())
+  - Symmetric case (α = β)
+  - Skewed distributions (α > β and α < β)
+  - Edge cases (small/large parameters, uniform case)
+- **Implementation**: Uses Beta-Gamma relationship with Marsaglia-Tsang method
+  - X/(X+Y) where X~Gamma(α), Y~Gamma(β) produces Beta(α, β)
+  - Internal `gammaVariate()` function supports real-valued shape parameters
+  - Efficient acceptance-rejection sampling for Gamma generation
+- **Use Cases**:
+  - Project completion percentages
+  - Market share modeling
+  - Success rates and probabilities
+  - Bayesian analysis (conjugate prior for Bernoulli/Binomial)
+
+**Weibull Distribution** (HIGH - Phase 1 of Monte Carlo Framework)
+
+A flexible continuous distribution widely used in reliability analysis and failure modeling.
+
+- `distributionWeibull<T: Real>(shape: T, scale: T) -> T` function
+- `DistributionWeibull` struct conforming to `DistributionRandom` protocol
+- 11 comprehensive tests covering:
+  - Non-negative value validation
+  - Statistical properties (mean validation)
+  - Exponential case (shape = 1)
+  - Decreasing failure rate (shape < 1, infant mortality)
+  - Increasing failure rate (shape > 1, wear-out failures)
+  - Rayleigh-like case (shape = 2)
+  - Various scale parameters (small, large)
+  - Large shape parameter (approaches normal)
+- **Implementation**: Inverse transform method
+  - X = λ × (-ln(1 - U))^(1/k) where U ~ Uniform(0,1)
+  - Efficient and numerically stable
+- **Use Cases**:
+  - Equipment failure analysis
+  - Customer churn timing
+  - Time-to-event modeling
+  - Reliability engineering
+  - Wind speed distributions
+
+### Technical Details
+
+**New Files**:
+- `Sources/BusinessMath/Simulation/distributionBeta.swift` (199 lines)
+- `Sources/BusinessMath/Simulation/distributionWeibull.swift` (157 lines)
+- `Tests/BusinessMathTests/Distribution Tests/BetaDistributionTests.swift` (186 lines)
+- `Tests/BusinessMathTests/Distribution Tests/WeibullDistributionTests.swift` (203 lines)
+
+**Testing**:
+- Total test count: 560 tests (539 previous + 10 Beta + 11 Weibull)
+- All tests passing
+- Test execution time: < 0.1 seconds for new distribution tests
+- Comprehensive statistical validation with sampling variance tolerances
+
+**Code Quality**:
+- No breaking changes
+- Fully backward compatible with v1.2.0, v1.1.0, and v1.0.0
+- Zero new compiler warnings
+- Full Swift 6.0 concurrency support (Sendable conformance)
+- Comprehensive DocC documentation with examples
+
+**Monte Carlo Roadmap Progress**:
+- ✅ Phase 1 (v1.3.0): Beta + Weibull distributions - **COMPLETE**
+- 📋 Phase 2 (v1.4.0): Monte Carlo simulation framework - PLANNED
+- 📋 Phase 3 (v1.5.0): Correlated variables - PLANNED
+- 📋 Phase 4 (v1.6.0): TimeSeries statistical methods - PLANNED
+
+### Implementation Notes
+
+**Beta Distribution**:
+The implementation uses a sophisticated approach for generating Beta-distributed random values:
+1. Generate two independent Gamma variates: X ~ Gamma(α, 1) and Y ~ Gamma(β, 1)
+2. Return X / (X + Y)
+3. Gamma generation uses Marsaglia-Tsang's method (2000) for shape ≥ 1
+4. For shape < 1, uses transformation property: Gamma(α+1) × U^(1/α)
+
+This approach is more robust than direct Beta generation methods and handles all parameter ranges efficiently.
+
+**Weibull Distribution**:
+The inverse transform method provides:
+- Exact sampling (no approximation)
+- Efficient computation (single log and power operation)
+- Numerical stability across all parameter ranges
+- Direct relationship to uniform distribution
+
 ## [1.2.0] - 2025-10-15
 
 ### Performance
