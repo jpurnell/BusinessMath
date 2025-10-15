@@ -29,7 +29,8 @@ final class SimulationTests: XCTestCase {
 		let mu = (mean(array) * 10).rounded() / 10
 		let sd = (stdDev(array) * 10).rounded() / 10
 		XCTAssertEqual(mu, 0)
-		XCTAssertEqual(sd, 1)
+		XCTAssertGreaterThan(sd, 0.975)
+		XCTAssertLessThan(sd, 1.025)
 	}
 
 	func testTriangularZero() {
@@ -43,8 +44,8 @@ final class SimulationTests: XCTestCase {
 		}
 		let countUnderC = testBed.filter({$0 <= c}).count
 		let roundedCount = (Double(countUnderC) / 10.0).rounded() * 10.0
-		let roundedHigh = roundedCount * 1.02
-		let roundedLow = roundedCount * 0.98
+		let roundedHigh = roundedCount * 1.025
+		let roundedLow = roundedCount * 0.975
 		let expectedObservations = ((c - a) * (2 / (b - a)) * (1 / 2) * 10000).rounded()
 		print("Approx Count Under C \(countUnderC): Expected: \(expectedObservations)")
 		

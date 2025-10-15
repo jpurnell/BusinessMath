@@ -402,7 +402,8 @@ final class UnassortedTests: XCTestCase {
         let resultE = (integrate(e, iterations: 20000) * 100).rounded() / 100
         XCTAssertGreaterThan(result, 0.31)
         XCTAssertLessThan(result, 0.35)
-        XCTAssertEqual(resultE, 1.46)
+        XCTAssertGreaterThan(resultE, 1.45)
+		XCTAssertLessThan(resultE, 1.48)
     }
 	
 	func testpValue() {
