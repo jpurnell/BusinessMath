@@ -82,7 +82,7 @@ let fv = futureValue(presentValue: 100_000, rate: 0.08, periods: 5)
 // Result: ~146,933
 
 // Monthly loan payment
-let payment = payment(
+let pmt = payment(
     presentValue: 300_000,
     rate: 0.06 / 12,
     periods: 360,
@@ -98,15 +98,15 @@ Evaluate investments and projects:
 
 ```swift
 // Cash flows: initial investment, then returns
-let cashFlows = [-100_000.0, 30_000, 40_000, 50_000, 60_000]
+let cashFlows = [-250000.0, 100_000, 150_000, 200_000, 250_000, 300_000]
 
 // Calculate NPV at 10% discount rate
 let netPresentValue = npv(discountRate: 0.10, cashFlows: cashFlows)
-// Result: ~37,908 (positive NPV → good investment)
+// Result: ~472,169 (positive NPV → good investment)
 
 // Calculate IRR (rate where NPV = 0)
 let internalRate = try irr(cashFlows: cashFlows)
-// Result: ~28.7% return
+// Result: ~56.7% return
 ```
 
 ### Growth Rates
@@ -171,7 +171,7 @@ let ts = TimeSeries(
 
 // Calculate seasonal indices (4 quarters per year)
 let indices = try seasonalIndices(timeSeries: ts, periodsPerYear: 4)
-// Result: [~0.84, ~1.01, ~0.93, ~1.22] (Q4 is 22% above average)
+// Result: [~0.85, ~1.01, ~0.91, ~1.23] (Q4 is 23% above average)
 
 // Remove seasonality to see underlying trend
 let deseasonalized = try seasonallyAdjust(timeSeries: ts, indices: indices)
@@ -218,12 +218,14 @@ let forecast = try applySeasonal(timeSeries: trendForecast, indices: seasonalInd
 ```swift
 // Define investment cash flows with dates
 let dates = [
-    Date(),  // Today: initial investment
-    Date(timeIntervalSinceNow: 365 * 86400),  // Year 1
-    Date(timeIntervalSinceNow: 365 * 2 * 86400),  // Year 2
-    Date(timeIntervalSinceNow: 365 * 3 * 86400)   // Year 3
+Date(),			// Today: Initial Investment
+	Date(timeIntervalSinceNow: 365 * 86400 * 1),	// Year 1
+	Date(timeIntervalSinceNow: 365 * 86400 * 2),	// Year 2
+	Date(timeIntervalSinceNow: 365 * 86400 * 3),	// Year 3
+	Date(timeIntervalSinceNow: 365 * 86400 * 4),	// Year 4
+	Date(timeIntervalSinceNow: 365 * 86400 * 5)		// Year 5
 ]
-let cashFlows = [-100_000.0, 30_000, 50_000, 40_000]
+let cashFlows = [-250000.0, 100_000, 150_000, 200_000, 250_000, 300_000]
 
 // Calculate XNPV (irregular intervals)
 let npvValue = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
