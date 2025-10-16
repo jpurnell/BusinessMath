@@ -42,7 +42,7 @@ CODING RULES FOR BUSINESSMATH LIBRARY
 
   6. Testing
 
-  - XCTest framework
+  - Swift Testing framework
   - Test files mirror source structure (Tests/BusinessMathTests/...)
   - Use OSLog for test logging (Logger(subsystem:category:))
   - Descriptive test names (testArithmeticGeometricMean)

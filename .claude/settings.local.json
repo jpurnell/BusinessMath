@@ -7,7 +7,10 @@
       "Bash(git add:*)",
       "Bash(git push:*)",
       "Bash(git commit:*)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(git reset:*)",
+      "Bash(swift:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

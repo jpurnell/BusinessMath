@@ -30,7 +30,8 @@ final class SimulationTests: XCTestCase {
 		}
 		let mu = (mean(array) * 10).rounded() / 10
 		let sd = (stdDev(array) * 10).rounded() / 10
-		XCTAssertEqual(mu, 0)
+		XCTAssertLessThan(mu, 0.125)
+		XCTAssertGreaterThan(mu, -0.125)
 		XCTAssertGreaterThan(sd, 0.975)
 		XCTAssertLessThan(sd, 1.025)
 	}

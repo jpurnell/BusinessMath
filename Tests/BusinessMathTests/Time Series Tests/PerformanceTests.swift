@@ -40,11 +40,11 @@ struct PerformanceTests {
 	func largeTimeSeriesCreation10K() throws {
 		let size = 10_000
 
-		let duration = try measure {
+		let duration = measure {
 			// Use monthly periods (more realistic for business data and faster)
-			let periods = (0..<size).map { Period.month(year: 2000 + $0/12, month: ($0 % 12) + 1) }
-			let values = (0..<size).map { Double($0) }
-			let _ = TimeSeries(periods: periods, values: values)
+			let periods = (0..<size).map { (Period.month(year: 2000 + $0/12, month: ($0 % 12) + 1), Double($0)) }
+//			let values = (0..<size).map { print ("\(Double($0))"); return $0 }
+			let _ = TimeSeries(periods: periods.map({$0.0}), values: periods.map({Double($0.1)}))
 		}
 
 		print("  Created 10K period time series in \(String(format: "%.3f", duration))s")
@@ -55,11 +55,11 @@ struct PerformanceTests {
 	func largeTimeSeriesCreation50K() throws {
 		let size = 50_000
 
-		let duration = try measure {
+		let duration = measure {
 			// Use monthly periods for performance
-			let periods = (0..<size).map { Period.month(year: 2000 + $0/12, month: ($0 % 12) + 1) }
-			let values = (0..<size).map { Double($0) }
-			let _ = TimeSeries(periods: periods, values: values)
+			let periods = (0..<size).map { (Period.month(year: 2000 + $0/12, month: ($0 % 12) + 1), Double($0)) }
+//			let values = (0..<size).map {print ("\(Double($0))"); return $0 }
+			let _ = TimeSeries(periods: periods.map({$0.0}), values: periods.map({Double($0.1)}))
 		}
 
 		print("  Created 50K period time series in \(String(format: "%.3f", duration))s")
@@ -112,7 +112,7 @@ struct PerformanceTests {
 		let values = (0..<size).map { 100_000.0 + Double($0) * 100 + Double.random(in: -500...500) }
 		let ts = TimeSeries(periods: periods, values: values)
 
-		let duration = try measure {
+		let duration = try measure { 
 			// Chain multiple operations
 			let _ = ts
 				.mapValues { $0 * 1.1 }  // Apply 10% increase
