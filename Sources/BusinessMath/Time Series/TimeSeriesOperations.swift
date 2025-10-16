@@ -356,3 +356,53 @@ extension TimeSeries {
 		return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
 	}
 }
+
+// MARK: - Arithmetic Operators
+
+/// Adds two time series element-wise.
+///
+/// Only periods present in both series are included in the result.
+///
+/// ## Example
+/// ```swift
+/// let revenue = ts1 + ts2
+/// ```
+public func + <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
+	return lhs.zip(with: rhs, +)
+}
+
+/// Subtracts one time series from another element-wise.
+///
+/// Only periods present in both series are included in the result.
+///
+/// ## Example
+/// ```swift
+/// let netIncome = revenue - expenses
+/// ```
+public func - <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
+	return lhs.zip(with: rhs, -)
+}
+
+/// Multiplies two time series element-wise.
+///
+/// Only periods present in both series are included in the result.
+///
+/// ## Example
+/// ```swift
+/// let total = quantity * price
+/// ```
+public func * <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
+	return lhs.zip(with: rhs, *)
+}
+
+/// Divides one time series by another element-wise.
+///
+/// Only periods present in both series are included in the result.
+///
+/// ## Example
+/// ```swift
+/// let margin = profit / revenue
+/// ```
+public func / <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
+	return lhs.zip(with: rhs, /)
+}
