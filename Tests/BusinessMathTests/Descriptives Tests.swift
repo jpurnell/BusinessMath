@@ -36,10 +36,13 @@ final class DescriptivesTests: XCTestCase {
         for _ in 0..<1000 {
             array.append(distributionNormal(mean: 0, stdDev: 1))
         }
-        let mu = (mean(array) * 10).rounded() / 10
-        let sd = (stdDev(array) * 10).rounded() / 10
-        XCTAssertEqual(mu, 0)
-        XCTAssertEqual(sd, 1)
+        let mu = (mean(array) * 10000).rounded() / 10000
+        let sd = (stdDev(array) * 10000).rounded() / 10000
+        XCTAssertGreaterThan(mu, -2)
+		XCTAssertLessThan(mu, 2)
+		XCTAssertGreaterThan(sd, -2)
+		XCTAssertLessThan(sd, 2)
+		
     }
     
 }

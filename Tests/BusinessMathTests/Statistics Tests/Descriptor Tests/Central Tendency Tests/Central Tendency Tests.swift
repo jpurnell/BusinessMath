@@ -11,7 +11,7 @@ import OSLog
 @testable import BusinessMath
 
 final class CentralTendencyTests: XCTestCase {
-	let loggerCentralTendencyTest = Logger(subsystem: "Business Math > Tests > Business Math Tests > Statistics > Descriptor Tests > Central Tendency", category: "Central Tendency Tests")
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath.CentralTendencyTests", category: #function)
     
     func testArithmeticGeometricMean() {
         let x: Double = 4
@@ -57,12 +57,12 @@ final class CentralTendencyTests: XCTestCase {
     }
 	
 	func testIdentricMean() {
-		loggerCentralTendencyTest.warning("Test not implemented for \(self.name)")
+		logger.warning("Test not implemented for \(self.name)")
 		XCTAssert(true)
 	}
 	
 	func testLogarithmicMean() {
-		loggerCentralTendencyTest.warning("Test not implemented for \(self.name)")
+		logger.warning("Test not implemented for \(self.name)")
 		XCTAssert(true)
 	}
 	
@@ -76,8 +76,8 @@ final class CentralTendencyTests: XCTestCase {
 		let result = median([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
 		let resultOdd = median([0.0, 1.0, 2.0, 3.0, 4.0])
 		let resultOne = median([1.0, 1, 1, 1, 1, 1, 2])
-		print(result)
-		print(resultOne)
+		logger.info("\(result)")
+		logger.info("\(resultOne)")
 		XCTAssertEqual(result, 2.5)
 		XCTAssertEqual(resultOdd, 2.0)
 		XCTAssertEqual(resultOne, 1)

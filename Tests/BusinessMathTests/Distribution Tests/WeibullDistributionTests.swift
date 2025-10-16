@@ -8,10 +8,13 @@
 import Foundation
 import Testing
 import Numerics
+import OSLog
+
 @testable import BusinessMath
 
 @Suite("Weibull Distribution Tests")
 struct WeibullDistributionTests {
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath.WeibullDistributionTests", category: #function)
 
 	@Test("Weibull distribution function produces non-negative values")
 	func weibullFunctionNonNegative() {

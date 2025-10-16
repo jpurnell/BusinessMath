@@ -8,10 +8,13 @@
 import Foundation
 import Testing
 import Numerics
+import OSLog
+
 @testable import BusinessMath
 
 @Suite("Beta Distribution Tests")
 struct BetaDistributionTests {
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath.BetaDistributionTests", category: #function)
 
 	@Test("Beta distribution function produces values in [0, 1]")
 	func betaFunctionBounds() {

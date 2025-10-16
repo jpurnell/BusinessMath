@@ -47,11 +47,11 @@ public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T) -> T
     }
 }
 
-public struct DistributionTriangular: DistributionRandom {
+public struct DistributionTriangular: DistributionRandom, Sendable {
 	let low: Double
 	let high: Double
 	let base: Double
-	
+
 	public init(low: Double, high: Double, base: Double) {
 		self.low = low
 		self.high = high

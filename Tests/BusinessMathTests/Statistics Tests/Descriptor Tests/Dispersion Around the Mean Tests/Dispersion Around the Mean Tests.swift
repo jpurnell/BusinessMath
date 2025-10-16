@@ -11,8 +11,8 @@ import OSLog
 @testable import BusinessMath
 
 final class DispersionAroundtheMeanTests: XCTestCase {
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath.DispersionAroundtheMeanTests", category: #function)
 	
-	let loggerDispersionAroundTheMean = Logger(subsystem: "Business Math > Tests > Business Math Tests > Statistics > Descriptor Tests > Dispersion Around the Mean", category: "Dispersion Around the Mean Tests")
 
 	func testCoefficientOfVariation() {
 		let array: [Double] = [0, 1, 2, 3, 4]
@@ -23,7 +23,7 @@ final class DispersionAroundtheMeanTests: XCTestCase {
 	}
 	
 	func testIndexOfDispersion() {
-		loggerDispersionAroundTheMean.warning("Test not implemented for \(self.name)")
+		logger.warning("Test not implemented for \(self.name)")
 		XCTAssert(true)
 	}
 
@@ -66,7 +66,7 @@ final class DispersionAroundtheMeanTests: XCTestCase {
     }
 	
 	func testVarianceTDist() {
-		loggerDispersionAroundTheMean.warning("Test not implemented for \(self.name)")
+		logger.warning("Test not implemented for \(self.name)")
 		XCTAssert(true)
 	}
 }

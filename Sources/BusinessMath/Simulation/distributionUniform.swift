@@ -52,10 +52,10 @@ public func distributionUniform<T: Real>(min l: T, max h: T) -> T {
     return ((upper - lower) * distributionUniform()) + lower
 }
 
-public struct DistributionUniform: DistributionRandom {
+public struct DistributionUniform: DistributionRandom, Sendable {
 	let min: Double
 	let max: Double
-	
+
 	public init (_ min: Double = 0.0, _ max: Double = 1.0) {
 		self.min = min
 		self.max = max
