@@ -60,7 +60,7 @@ public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T
 }
 
 
-public struct DistributionNormal: DistributionRandom {
+public struct DistributionNormal: DistributionRandom, Sendable {
 
 	var mean: Double = 0.0
 	var stdDev: Double = 1.0

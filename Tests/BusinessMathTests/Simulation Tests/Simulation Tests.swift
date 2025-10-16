@@ -8,8 +8,10 @@
 import XCTest
 import Numerics
 @testable import BusinessMath
+import OSLog
 
 final class SimulationTests: XCTestCase {
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath.SimulationTests", category: #function)
 
 	func testDistributionLogNormal() {
 		// Shape can be evaluated in Excel via histogram
@@ -47,7 +49,7 @@ final class SimulationTests: XCTestCase {
 		let roundedHigh = roundedCount * 1.025
 		let roundedLow = roundedCount * 0.975
 		let expectedObservations = ((c - a) * (2 / (b - a)) * (1 / 2) * 10000).rounded()
-		print("Approx Count Under C \(countUnderC): Expected: \(expectedObservations)")
+		logger.info("Approx Count Under C \(countUnderC): Expected: \(expectedObservations)")
 		
 		//TODO: Should be sliced, with the highest count as base
 		

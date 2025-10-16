@@ -7,9 +7,12 @@
 
 import XCTest
 import Numerics
+import OSLog
+
 @testable import BusinessMath
 
 final class CovarianceandCorrelationTests: XCTestCase {
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath.CovarianceandCorrelationTests", category: #function)
 
     func testCovarianceS() {
         // Test from https://www.educba.com/covariance-formula/

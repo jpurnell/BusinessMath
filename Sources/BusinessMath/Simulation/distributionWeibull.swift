@@ -113,7 +113,7 @@ public func distributionWeibull<T: Real>(shape: T, scale: T) -> T {
 /// let constantRate = DistributionWeibull(shape: 1.0, scale: 5000.0)
 /// let mtbf = constantRate.random()  // Mean time between failures
 /// ```
-public struct DistributionWeibull: DistributionRandom {
+public struct DistributionWeibull: DistributionRandom, Sendable {
 	/// The shape parameter k (k > 0)
 	///
 	/// Controls the failure rate behavior:
