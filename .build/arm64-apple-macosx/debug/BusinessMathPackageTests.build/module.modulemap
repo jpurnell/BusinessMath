@@ -1,4 +1,0 @@
-module BusinessMathPackageTests {
-    header "/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/.build/arm64-apple-macosx/debug/BusinessMathPackageTests.build/BusinessMathPackageTests-Swift.h"
-    requires objc
-}

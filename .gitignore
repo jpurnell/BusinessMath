@@ -1,5 +1,7 @@
 .build/
 .claude/
 .DS_Store/
+.swiftpm/
 howToResume.md
 overallRules
+codingRules.md~
