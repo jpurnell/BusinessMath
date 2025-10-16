@@ -5,6 +5,324 @@ All notable changes to BusinessMath will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-10-15
+
+### Added
+
+**Operational Drivers Framework** (Phase 4 - Complete Driver-Based Financial Modeling)
+
+A comprehensive framework for modeling business variables with time-varying behavior, uncertainty, and constraints. This release enables sophisticated operational and financial models with flexible composition, Monte Carlo simulation, and period-specific logic.
+
+#### Core Components
+
+**1. Driver Protocol** (`Driver.swift`)
+
+Protocol-based abstraction for any business variable that produces values over time periods.
+
+- **Protocol**: `Driver` with associated type `Value: Real & Sendable`
+  - `sample(for period: Period) -> Value` - Generate value for specific period
+  - `name: String` - Descriptive name for tracking and debugging
+- **Type Erasure**: `AnyDriver<T>` wraps any driver for heterogeneous collections
+- **Thread Safety**: Full Sendable conformance for Swift 6.0 concurrency
+- **Composition**: Drivers can be combined with operators and functions
+
+**2. DeterministicDriver** (`DeterministicDriver.swift`)
+
+Fixed values that don't change across periods or simulations.
+
+- Use for known constants: fixed costs, tax rates, prices
+- Simplest driver type - always returns same value
+- Example: `DeterministicDriver(name: "Tax Rate", value: 0.21)`
+
+**3. ProbabilisticDriver** (`ProbabilisticDriver.swift`)
+
+Uncertain values modeled with probability distributions.
+
+- **Factory Methods** for all distribution types:
+  - `.normal(name:mean:stdDev:)` - Normal distribution
+  - `.uniform(name:min:max:)` - Uniform distribution
+  - `.triangular(name:low:high:base:)` - Triangular distribution
+  - `.beta(name:alpha:beta:)` - Beta distribution [0,1]
+  - `.weibull(name:shape:scale:)` - Weibull distribution
+  - `.gamma(name:shape:scale:)` - Gamma distribution
+  - `.exponential(name:rate:)` - Exponential distribution
+  - `.lognormal(name:mean:stdDev:)` - Lognormal distribution
+- **Custom Distributions**: Accept any `DistributionRandom` conforming type
+- **Monte Carlo Integration**: Each sample generates independent random value
+- Examples: revenue with uncertainty, variable costs, demand forecasts
+
+**4. TimeVaryingDriver** (`TimeVaryingDriver.swift`)
+
+Drivers with period-specific logic for seasonality, growth, and lifecycle effects.
+
+- **Closure-Based**: User provides function `(Period) -> Value`
+- **Access to Period Properties**: year, quarter, month, day
+- **Factory Methods**:
+  - `.withGrowth(name:baseValue:annualGrowthRate:baseYear:stdDevPercentage:)` - Compound growth with optional uncertainty
+  - `.withSeasonality(name:baseValue:q1Multiplier:q2Multiplier:q3Multiplier:q4Multiplier:stdDevPercentage:)` - Quarterly patterns
+- **Flexible Logic**: Supports any time-based calculation
+- Examples:
+  - Seasonal revenue (Q4 spike)
+  - Inflation-adjusted costs (3% annual growth)
+  - Product lifecycle (launch → growth → maturity)
+
+**5. ConstrainedDriver** (`ConstrainedDriver.swift`)
+
+Applies constraints to ensure values are realistic and valid.
+
+- **Clamping**: `.clamped(min:max:)` - Enforce value bounds
+- **Positive**: `.positive()` - No negative values (prices, quantities)
+- **Rounding**: `.rounded()`, `.floored()`, `.ceiling()` - Integer values (headcount, units)
+- **Custom Transform**: `.transformed(_:)` - Any transformation function
+- **Chaining**: Constraints can be composed: `.positive().rounded()`
+- Examples:
+  - Revenue must be positive
+  - Headcount must be integer
+  - Utilization rate clamped to [0, 1]
+
+**6. ValidatedDriver** (`ConstrainedDriver.swift`)
+
+Similar to ConstrainedDriver but throws errors instead of silent correction.
+
+- **Throwing Validation**: Detect invalid scenarios explicitly
+- **Error Handling**: Custom validation logic with error types
+- **Non-Conforming**: Does not conform to Driver protocol (throws)
+- **Fallback Support**: `.sample(for:fallback:)` method
+- Use when detection is more important than correction
+
+**7. ProductDriver** (`ProductDriver.swift`)
+
+Multiplies two drivers element-wise.
+
+- **Operator Support**: `driver1 * driver2` creates ProductDriver
+- **Generic**: Works with any driver types
+- **Use Cases**:
+  - Revenue = Quantity × Price
+  - Cost = Headcount × Salary
+  - Tax = Profit × Tax Rate
+
+**8. SumDriver** (`SumDriver.swift`)
+
+Adds or subtracts drivers.
+
+- **Operator Support**: `driver1 + driver2`, `driver1 - driver2`
+- **Multiple Terms**: Can chain operations
+- **Use Cases**:
+  - Total Cost = Fixed + Variable + Payroll
+  - Profit = Revenue - Costs
+  - Net Cash Flow = Inflows - Outflows
+
+**9. DriverProjection** (`DriverProjection.swift`)
+
+Projects drivers over time periods with deterministic or Monte Carlo simulation.
+
+- **Deterministic**: `.project()` - Single path projection
+  - Returns `TimeSeries<T>` with one value per period
+  - Fast for known/fixed drivers
+- **Monte Carlo**: `.projectMonteCarlo(iterations:)` - Probabilistic projection
+  - Returns `ProjectionResults<T>` with full statistics per period
+  - Statistics: mean, median, stdDev, min, max, skewness
+  - Percentiles: p5, p10, p25, p50, p75, p90, p95, p99
+  - Confidence intervals: 90%, 95%, 99%
+- **Period-Specific Statistics**: Each period gets independent analysis
+- **Integration**: Works seamlessly with TimeSeries framework
+
+**10. ProjectionResults** (`DriverProjection.swift`)
+
+Container for Monte Carlo projection results across multiple periods.
+
+- **Properties**:
+  - `statistics: [Period: SimulationStatistics]` - Full stats per period
+  - `percentiles: [Period: Percentiles]` - Percentile distributions
+  - `scenarios: [[Period: T]]` - All individual scenarios
+- **Methods**:
+  - `timeSeries(metric:)` - Extract specific metric as TimeSeries
+  - `.mean`, `.median`, `.p5`, `.p95` etc. - TimeSeries of statistics
+- **Visualization Ready**: Results structured for plotting and analysis
+
+#### Extensions
+
+**Period Extensions** (`Period.swift`)
+
+Added convenience properties for time-varying logic:
+
+- `var year: Int` - Calendar year (e.g., 2025)
+- `var quarter: Int` - Quarter within year (1-4)
+- `var month: Int` - Month within year (1-12)
+- `var day: Int` - Day of month (1-31)
+- Enables period-specific logic in TimeVaryingDriver closures
+
+#### Integration Example
+
+**SaaSFinancialModel** (`IntegrationExample.swift` - 900+ lines)
+
+Complete financial model demonstrating all driver capabilities:
+
+- **Revenue Model**: Growing user base with seasonality, variable pricing
+- **Cost Model**: Fixed costs with inflation, variable costs per user, dynamic payroll
+- **Full P&L**: Revenue - (Fixed + Variable + Payroll) = Profit
+- **Constraints Applied**: Users rounded to integers, all values positive
+- **Time-Varying**: 30% annual user growth, Q4 +15% seasonal boost, 3% cost inflation
+- **Monte Carlo**: 10K iterations per projection for statistical analysis
+- **Methods**:
+  - `projectDeterministic(periods:)` - Quick single-path forecast
+  - `projectMonteCarlo(periods:iterations:)` - Full uncertainty quantification
+
+**Example Usage**:
+```swift
+let model = SaaSFinancialModel()
+let quarters = Period.year(2025).quarters()
+
+// Deterministic projection
+let results = model.projectDeterministic(periods: quarters)
+print("Q1 Revenue: $\(results["Revenue"]![quarters[0]]!)")
+print("Q4 Profit: $\(results["Profit"]![quarters[3]]!)")
+
+// Monte Carlo projection
+let mcResults = model.projectMonteCarlo(periods: quarters, iterations: 10_000)
+let profitStats = mcResults["Profit"]!.statistics[quarters[0]]!
+print("Q1 Profit: $\(profitStats.mean) ± \(profitStats.stdDev)")
+print("Risk of loss: \(mcResults["Profit"]!.probabilityBelow(0.0, period: quarters[0]) * 100)%")
+```
+
+#### Technical Implementation
+
+**New Files** (Sources/BusinessMath/Operational Drivers/):
+- `Driver.swift` (102 lines)
+- `DeterministicDriver.swift` (76 lines)
+- `ProbabilisticDriver.swift` (257 lines)
+- `TimeVaryingDriver.swift` (265 lines)
+- `ConstrainedDriver.swift` (416 lines)
+- `ProductDriver.swift` (119 lines)
+- `SumDriver.swift` (100 lines)
+- `DriverProjection.swift` (223 lines)
+- `IntegrationExample.swift` (915 lines)
+
+**New Test Files** (Tests/BusinessMathTests/Operational Drivers Tests/):
+- `DeterministicDriverTests.swift` (57 lines, 5 tests)
+- `ProbabilisticDriverTests.swift` (155 lines, 9 tests)
+- `TimeVaryingDriverTests.swift` (311 lines, 12 tests)
+- `ConstrainedDriverTests.swift` (356 lines, 16 tests)
+- `OperatorTests.swift` (234 lines, 16 tests)
+- `IntegrationExampleTests.swift` (355 lines, 16 tests)
+
+#### Testing
+
+**Comprehensive Test Suite**:
+- **Total test count**: 74 new tests across 6 test suites
+- **All tests passing** (100% pass rate)
+- **Test execution time**: ~0.2 seconds for all driver tests
+- **Coverage**:
+  - Basic functionality for each driver type
+  - Operator overloading and composition
+  - Constraints and validation
+  - Time-varying logic (seasonality, growth, lifecycle)
+  - Monte Carlo projection and statistics
+  - Full integration with SaaS model
+  - Edge cases (negative values, zero periods, extreme distributions)
+
+#### Use Cases
+
+**Revenue Modeling with Uncertainty**:
+```swift
+let quantity = ProbabilisticDriver<Double>.normal(name: "Units", mean: 1000.0, stdDev: 100.0)
+    .positive()
+    .rounded()
+
+let price = ProbabilisticDriver<Double>.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
+    .positive()
+
+let revenue = quantity * price
+
+let projection = DriverProjection(driver: revenue, periods: quarters)
+let results = projection.projectMonteCarlo(iterations: 10_000)
+
+print("Expected revenue: $\(results.statistics[quarters[0]]!.mean)")
+print("95% confidence: [\(results.percentiles[quarters[0]]!.p5), \(results.percentiles[quarters[0]]!.p95)]")
+```
+
+**Seasonal Business Planning**:
+```swift
+let revenue = TimeVaryingDriver<Double>(name: "Seasonal Revenue") { period in
+    let base = 100_000.0
+    let q4Boost = period.quarter == 4 ? 1.4 : 1.0
+    return base * q4Boost
+}
+
+let projection = DriverProjection(driver: revenue, periods: quarters)
+let forecast = projection.project()
+
+print("Q1: $\(forecast[quarters[0]]!)")  // $100,000
+print("Q4: $\(forecast[quarters[3]]!)")  // $140,000
+```
+
+**Growing Costs with Inflation**:
+```swift
+let costs = TimeVaryingDriver.withGrowth(
+    name: "Operating Costs",
+    baseValue: 50_000.0,
+    annualGrowthRate: 0.03,  // 3% inflation
+    baseYear: 2025
+)
+
+let projection = DriverProjection(driver: costs, periods: periods)
+let forecast = projection.project()
+
+print("2025: $\(forecast[Period.year(2025)]!)")  // $50,000
+print("2030: $\(forecast[Period.year(2030)]!)")  // ~$57,964
+```
+
+**Headcount Planning**:
+```swift
+let users = TimeVaryingDriver.withGrowth(name: "Users", baseValue: 1000.0, annualGrowthRate: 0.30, baseYear: 2025)
+let employeesPerUser = DeterministicDriver<Double>(name: "Ratio", value: 1.0 / 50.0)
+let headcount = (users * employeesPerUser).positive().rounded()
+
+let projection = DriverProjection(driver: headcount, periods: quarters)
+let forecast = projection.project()
+
+print("Headcount: \(forecast[quarters[0]]!)")  // Integer, non-negative
+```
+
+#### Code Quality
+
+- **No breaking changes** - Fully backward compatible with v1.5.0
+- **Zero compiler warnings**
+- **Full Swift 6.0 concurrency support** - Sendable conformance throughout
+- **Comprehensive DocC documentation** - 2000+ lines with examples
+- **Test-Driven Development** - Tests written before implementation
+- **Type-safe composition** - Operators with generic constraints
+- **Clean architecture** - Protocol-based design with type erasure
+
+#### Integration with Existing Framework
+
+- **TimeSeries**: DriverProjection produces TimeSeries for seamless integration
+- **Monte Carlo**: ProjectionResults uses SimulationStatistics and Percentiles
+- **Distributions**: ProbabilisticDriver works with all 16 distribution types
+- **Period System**: TimeVaryingDriver integrates with Period arithmetic
+
+### Changed
+
+- **Period.swift**: Added convenience properties (year, quarter, month, day) for time-varying logic
+
+### Notes
+
+This release completes Phase 4 of the BusinessMath roadmap, delivering a production-ready framework for operational and financial modeling. The driver system enables:
+
+- **Flexible Modeling**: Mix deterministic, probabilistic, and time-varying components
+- **Composition**: Build complex models from simple building blocks
+- **Uncertainty Quantification**: Full Monte Carlo support with period-specific statistics
+- **Realistic Constraints**: Ensure outputs are valid (positive, integer, bounded)
+- **Time-Varying Logic**: Model seasonality, growth, and lifecycle effects
+- **Integration**: Seamlessly works with existing TimeSeries and Monte Carlo frameworks
+
+Perfect for:
+- Financial planning and budgeting (revenues, costs, headcount)
+- Scenario analysis with multiple variables
+- Operational modeling with constraints and uncertainty
+- Strategic planning with growth and seasonality
+- Risk analysis with time-varying distributions
+
 ## [1.5.0] - 2025-10-15
 
 ### Added

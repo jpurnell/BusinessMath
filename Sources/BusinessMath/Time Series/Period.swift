@@ -528,3 +528,62 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		return Period(type: .annual, date: self.date)
 	}
 }
+
+// MARK: - Convenience Properties
+
+extension Period {
+	/// The year component of this period.
+	///
+	/// ## Example
+	/// ```swift
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	/// print(q1.year)  // 2025
+	/// ```
+	public var year: Int {
+		let calendar = Calendar.current
+		return calendar.component(.year, from: startDate)
+	}
+
+	/// The quarter component of this period (1-4).
+	///
+	/// Returns the quarter based on the month:
+	/// - Q1: January - March (months 1-3)
+	/// - Q2: April - June (months 4-6)
+	/// - Q3: July - September (months 7-9)
+	/// - Q4: October - December (months 10-12)
+	///
+	/// ## Example
+	/// ```swift
+	/// let oct = Period.month(year: 2025, month: 10)
+	/// print(oct.quarter)  // 4
+	/// ```
+	public var quarter: Int {
+		let calendar = Calendar.current
+		let month = calendar.component(.month, from: startDate)
+		return ((month - 1) / 3) + 1
+	}
+
+	/// The month component of this period (1-12).
+	///
+	/// ## Example
+	/// ```swift
+	/// let jan = Period.month(year: 2025, month: 1)
+	/// print(jan.month)  // 1
+	/// ```
+	public var month: Int {
+		let calendar = Calendar.current
+		return calendar.component(.month, from: startDate)
+	}
+
+	/// The day component of this period (1-31).
+	///
+	/// ## Example
+	/// ```swift
+	/// let today = Period.day(Date())
+	/// print(today.day)  // Day of month
+	/// ```
+	public var day: Int {
+		let calendar = Calendar.current
+		return calendar.component(.day, from: startDate)
+	}
+}
