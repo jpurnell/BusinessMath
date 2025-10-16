@@ -62,7 +62,7 @@ let metadata = TimeSeriesMetadata(
 let historical = TimeSeries(periods: periods, values: revenue, metadata: metadata)
 
 print("Loaded \(historical.count) quarters of historical data")
-print("Total historical revenue: $\(historical.reduce(0, +).formatted(.number))")
+print("Total historical revenue:\t$\(historical.reduce(0, +).formatted(.number))")
 ```
 
 ## Step 2: Visualize the Data
@@ -74,9 +74,10 @@ Before modeling, understand your data's characteristics.
 let qoqGrowth = historical.growthRate(lag: 1)
 
 print("\nQuarter-over-Quarter Growth:")
-for (i, growth) in qoqGrowth.valuesArray.enumerated() {
-    let pct = growth * 100
-    print("  Q\(i+2): \(String(format: "%.1f%%", pct))")
+for (i, growth) in qoqGrowth.enumerated() {
+	let period = periods[i + 1]
+	let pct = growth * 100
+	print("Q\((period.label)):\t\(String(format: "%.1f%%", pct))")
 }
 
 // Calculate year-over-year growth (if comparing same quarter)
@@ -87,18 +88,18 @@ if historical.count >= 5 {
     for (i, growth) in yoyGrowth.valuesArray.enumerated() {
         let period = periods[i + 4]
         let pct = growth * 100
-        print("  \(period.label): \(String(format: "%.1f%%", pct))")
+        print("\t\(period.label):\t\(String(format: "%.1f%%", pct))")
     }
 }
 
 // Calculate overall CAGR
 let totalYears = 2.0
-let cagr = cagr(
+let cagrValue = cagr(
     beginningValue: revenue[0],
     endingValue: revenue[revenue.count - 1],
     years: totalYears
 )
-print("\nOverall CAGR: \(String(format: "%.1f%%", cagr * 100))")
+print("\nOverall CAGR:\t\(String(format: "%.1f%%", cagrValue * 100))")
 ```
 
 **Expected output:**
@@ -107,13 +108,13 @@ Loaded 8 quarters of historical data
 Total historical revenue: $7,590,000
 
 Quarter-over-Quarter Growth:
-  Q2: 6.2%
-  Q3: -3.5%
-  Q4: 34.1%  ← Holiday spike
-  Q1: -18.2%  ← Post-holiday drop
-  Q2: 5.6%
-  Q3: -3.2%
-  Q4: 35.9%  ← Holiday spike
+Q2023-Q2: 6.2%
+Q2023-Q3: -3.5%
+Q2023-Q4: 34.1%
+Q2024-Q1: -18.2%
+Q2024-Q2: 5.6%
+Q2024-Q3: -3.2%
+Q2024-Q4: 35.9% 
 
 Year-over-Year Growth:
   2024-Q1: 12.5%
@@ -137,22 +138,22 @@ let quarters = ["Q1", "Q2", "Q3", "Q4"]
 for (i, index) in seasonalIndices.enumerated() {
     let pct = (index - 1.0) * 100
     let direction = pct > 0 ? "above" : "below"
-    print("  \(quarters[i]): \(String(format: "%.3f", index)) (\(String(format: "%.1f%%", abs(pct))) \(direction) average)")
+    print("\t\(quarters[i]): \(String(format: "%.3f", index)) (\(String(format: "%.1f%%", abs(pct))) \(direction) average)")
 }
 
 // Verify indices average to 1.0
 let avgIndex = seasonalIndices.reduce(0.0, +) / Double(seasonalIndices.count)
-print("  Average index: \(String(format: "%.3f", avgIndex)) (should be ~1.0)")
+print("\tAverage index:\t\(String(format: "%.3f", avgIndex)) (should be ~1.0)")
 ```
 
 **Expected output:**
 ```
 Seasonal Indices:
-  Q1: 0.911 (8.9% below average)
-  Q2: 0.965 (3.5% below average)
-  Q3: 0.878 (12.2% below average)
-  Q4: 1.246 (24.6% above average)  ← Holiday season!
-  Average index: 1.000 (should be ~1.0)
+	Q1: 0.942 (5.8% below average)
+	Q2: 0.968 (3.2% below average)
+	Q3: 0.908 (9.2% below average)
+	Q4: 1.183 (18.3% above average)
+Average index:  1.000 (should be ~1.0)
 ```
 
 ## Step 4: Deseasonalize the Data
@@ -169,29 +170,29 @@ for i in 0..<historical.count {
     let original = historical.valuesArray[i]
     let adjusted = deseasonalized.valuesArray[i]
     let period = periods[i]
-    print("  \(period.label): $\(String(format: "%.0f", original)) → $\(String(format: "%.0f", adjusted))")
+    print("\t\(period.label):\t$\(String(format: "%.0f", original)) → $\(String(format: "%.0f", adjusted))")
 }
 
 // Calculate growth on deseasonalized data (clearer trend)
 let deseasonalizedGrowth = deseasonalized.growthRate(lag: 1)
 let avgGrowth = deseasonalizedGrowth.reduce(0.0, +) / Double(deseasonalizedGrowth.count)
-print("\nAverage quarterly growth (deseasonalized): \(String(format: "%.1f%%", avgGrowth * 100))")
+print("\nAverage quarterly growth (deseasonalized):\t\(String(format: "%.1f%%", avgGrowth * 100))")
 ```
 
 **Expected output:**
 ```
 Deseasonalized Revenue:
 Original → Deseasonalized
-  2023-Q1: $800,000 → $878,267
-  2023-Q2: $850,000 → $880,829
-  2023-Q3: $820,000 → $933,485
-  2023-Q4: $1,100,000 → $882,459  ← Spike removed
-  2024-Q1: $900,000 → $987,818
-  2024-Q2: $950,000 → $984,456
-  2024-Q3: $920,000 → $1,047,380
-  2024-Q4: $1,250,000 → $1,002,567  ← Spike removed
+	2023-Q1: $800000 → $849566
+	2023-Q2: $850000 → $878143
+	2023-Q3: $820000 → $903399
+	2023-Q4: $1100000 → $930069
+	2024-Q1: $900000 → $955762
+	2024-Q2: $950000 → $981454
+	2024-Q3: $920000 → $1013570
+	2024-Q4: $1250000 → $1056897
 
-Average quarterly growth (deseasonalized): 2.8%
+Average quarterly growth (deseasonalied): 3.2%
 ```
 
 ## Step 5: Fit Trend Model
@@ -204,16 +205,16 @@ var linearModel = LinearTrend<Double>()
 try linearModel.fit(to: deseasonalized)
 
 print("\nLinear Trend Model Fitted")
-print("  Model: y = mx + b")
-print("  Indicates steady absolute growth per quarter")
+print("\tModel: y = mx + b")
+print("\tIndicates steady absolute growth per quarter")
 
 // Alternative: Try exponential trend for percentage growth
 var exponentialModel = ExponentialTrend<Double>()
 try exponentialModel.fit(to: deseasonalized)
 
 print("\nExponential Trend Model Fitted")
-print("  Model: y = a × e^(bx)")
-print("  Indicates steady percentage growth per quarter")
+print("\tModel: y = a × e^(bx)")
+print("\tIndicates steady percentage growth per quarter")
 
 // For this tutorial, we'll use linear trend
 // In practice, compare models using holdout validation
@@ -231,7 +232,7 @@ let trendForecast = try linearModel.project(periods: forecastPeriods)
 
 print("\nTrend Forecast (deseasonalized):")
 for (period, value) in zip(trendForecast.periods, trendForecast.valuesArray) {
-    print("  \(period.label): $\(String(format: "%.0f", value))")
+    print("\t\(period.label):\t$\(String(format: "%.0f", value))")
 }
 
 // Step 6b: Reapply seasonal pattern
@@ -241,17 +242,17 @@ print("\nFinal Forecast (with seasonality):")
 var forecastTotal = 0.0
 for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
     forecastTotal += value
-    print("  \(period.label): $\(String(format: "%.0f", value))")
+    print("\t\(period.label):\t$\(String(format: "%.0f", value))")
 }
 
 print("\nForecast Summary:")
-print("  Total 2025 revenue: $\(String(format: "%.0f", forecastTotal))")
-print("  Average quarterly revenue: $\(String(format: "%.0f", forecastTotal / 4))")
+print("\tTotal 2025 revenue: $\(String(format: "%.0f", forecastTotal))")
+print("\tAverage quarterly revenue: $\(String(format: "%.0f", forecastTotal / 4))")
 
 // Compare to 2024
 let revenue2024 = revenue[4...7].reduce(0.0, +)
 let forecastGrowth = (forecastTotal - revenue2024) / revenue2024
-print("  Growth vs 2024: \(String(format: "%.1f%%", forecastGrowth * 100))")
+print("\tGrowth vs 2024: \(String(format: "%.1f%%", forecastGrowth * 100))")
 ```
 
 **Expected output:**
@@ -307,22 +308,19 @@ for i in 0..<2 {
 }
 
 // Calculate standard error
-let meanError = historicalErrors.reduce(0.0, +) / Double(historicalErrors.count)
-let squaredErrors = historicalErrors.map { pow($0 - meanError, 2) }
-let variance = squaredErrors.reduce(0.0, +) / Double(squaredErrors.count)
-let standardError = sqrt(variance)
+let standardError = standardError(historicalErrors)
 
 // 95% confidence interval (±1.96 standard errors)
-let confidenceLevel = 1.96
+let confidenceLevel = zScore(ci: 0.95)
 
 print("\nForecast with 95% Confidence Intervals:")
 for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
     let lower = value - (confidenceLevel * standardError)
     let upper = value + (confidenceLevel * standardError)
 
-    print("  \(period.label):")
-    print("    Point forecast: $\(String(format: "%.0f", value))")
-    print("    95% CI: [$\(String(format: "%.0f", lower)) - $\(String(format: "%.0f", upper))]")
+    print("\(period.label):")
+    print("\tPoint forecast: $\(String(format: "%.0f", value))")
+    print("\t95% CI: [$\(String(format: "%.0f", lower)) - $\(String(format: "%.0f", upper))]")
 }
 ```
 
@@ -350,9 +348,9 @@ let optimisticSeasonalForecast = try applySeasonal(
 )
 
 print("\nScenario Analysis for 2025:")
-print("  Conservative: $\(String(format: "%.0f", conservativeSeasonalForecast.reduce(0, +)))")
-print("  Base Case: $\(String(format: "%.0f", forecastTotal))")
-print("  Optimistic: $\(String(format: "%.0f", optimisticSeasonalForecast.reduce(0, +)))")
+print("\tConservative: $\(String(format: "%.0f", conservativeSeasonalForecast.reduce(0, +)))")
+print("\tBase Case: $\(String(format: "%.0f", forecastTotal))")
+print("\tOptimistic: $\(String(format: "%.0f", optimisticSeasonalForecast.reduce(0, +)))")
 ```
 
 ## Step 9: Document Assumptions
@@ -361,16 +359,16 @@ Always document the assumptions behind your forecast.
 
 ```swift
 print("\nForecast Assumptions:")
-print("  1. Historical data: 8 quarters (2023-2024)")
-print("  2. Seasonal pattern: Q4 spike of ~25% above average")
-print("  3. Trend model: Linear trend on deseasonalized data")
-print("  4. Implicit assumptions:")
-print("     - No major market disruptions")
-print("     - Historical patterns continue")
-print("     - No new products or pricing changes")
-print("     - Competitive landscape remains stable")
-print("  5. Confidence level: 95% (±\(String(format: "%.0f", confidenceLevel * standardError)))")
-print("  6. Update frequency: Recommended quarterly with actual results")
+print("\t1. Historical data: 8 quarters (2023-2024)")
+print("\t2. Seasonal pattern: Q4 spike of ~25% above average")
+print("\t3. Trend model: Linear trend on deseasonalized data")
+print("\t. Implicit assumptions:")
+print("\t\t- No major market disruptions")
+print("\t\t- Historical patterns continue")
+print("\t\t- No new products or pricing changes")
+print("\t\t- Competitive landscape remains stable")
+print("\t5. Confidence level: 95% (±\(String(format: "%.0f", confidenceLevel * standardError)))")
+print("\t6. Update frequency: Recommended quarterly with actual results")
 ```
 
 ## Complete Code
@@ -418,7 +416,7 @@ func buildRevenueModel() throws {
     // 6. Present results
     print("Revenue Forecast:")
     for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
-        print("  \(period.label): $\(String(format: "%.0f", value))")
+        print("\t\(period.label): $\(String(format: "%.0f", value))")
     }
 
     let total = finalForecast.reduce(0, +)
