@@ -313,3 +313,32 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 		return Iterator(periods: periods, values: values)
 	}
 }
+
+// MARK: - Codable Conformance
+
+extension TimeSeries: Codable where T: Codable {
+
+	private enum CodingKeys: String, CodingKey {
+		case periods
+		case values
+		case metadata
+	}
+
+	/// Encodes this time series to an encoder.
+	public func encode(to encoder: Encoder) throws {
+		var container = encoder.container(keyedBy: CodingKeys.self)
+		try container.encode(periods, forKey: .periods)
+		try container.encode(valuesArray, forKey: .values)
+		try container.encode(metadata, forKey: .metadata)
+	}
+
+	/// Decodes a time series from a decoder.
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		let periods = try container.decode([Period].self, forKey: .periods)
+		let valuesArray = try container.decode([T].self, forKey: .values)
+		let metadata = try container.decode(TimeSeriesMetadata.self, forKey: .metadata)
+
+		self.init(periods: periods, values: valuesArray, metadata: metadata)
+	}
+}
