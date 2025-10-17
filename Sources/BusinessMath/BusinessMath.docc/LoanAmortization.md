@@ -313,15 +313,15 @@ print(String(format: "  %2d | $%10.2f | $%10.2f | $%14.2f | $%13.2f",
 **Expected output:**
 ```
 Annual Summary:
-Year | Principal  | Interest   | Total Payments | Ending Balance
------|------------|------------|----------------|---------------
-   1 | $  3,724.38 | $ 17,859.42 | $   21,583.80 | $ 296,275.62
-   2 | $  3,950.87 | $ 17,632.93 | $   21,583.80 | $ 292,324.75
-   3 | $  4,192.37 | $ 17,391.43 | $   21,583.80 | $ 288,132.38
-   4 | $  4,450.04 | $ 17,133.76 | $   21,583.80 | $ 283,682.34
-   5 | $  4,725.12 | $ 16,858.68 | $   21,583.80 | $ 278,957.22
- ... |    ...     |    ...     |      ...       |     ...
-  30 | $ 21,247.87 | $    335.93 | $   21,583.80 | $         0.00
+Year | Principal   | Interest    | Total Payments  | Ending Balance
+-----|-------------|-------------|-----------------|---------------
+   1 | $   3684.04 | $  17899.78 | $      21583.82 | $    296315.96
+   2 | $   3911.26 | $  17672.56 | $      21583.82 | $    292404.71
+   3 | $   4152.50 | $  17431.32 | $      21583.82 | $    288252.21
+   4 | $   4408.61 | $  17175.21 | $      21583.82 | $    283843.60
+   5 | $   4680.53 | $  16903.29 | $      21583.82 | $    279163.07
+ ... |    ...      |    ...      |      ...        |     ...
+  30 | $  20898.41 | $    685.41 | $      21583.82 | $         0.00
 ```
 
 > **Insight:** Year 1 interest ($17,859) is tax deductible if itemizing!
@@ -426,18 +426,18 @@ Standard payment: $1,798.65
 Extra payment: $200.00
 Total payment: $1,998.65
 
-Results with $200/month extra:
-  Payoff time: 268 months (22.3 years)
-  Time saved: 92 months (7.7 years)
-  Total interest paid: $253,880.65
-  Interest saved: $93,633.92
-  Extra principal paid: $53,600.00
-  Net savings: $40,033.92
+Results with $200.00/month extra:
+	Payoff time:			279 months (23.2 years)
+	Time saved:				81 months (6.8 years)
+	Total interest paid:	$256,341.13
+	Interest saved:			$91,173.43
+	Extra principal paid:	$55,800.00
+	Net savings:			$35,373.43
 ```
 
-> **Insight:** $200/month extra saves $93k in interest and pays off 7.7 years early!
+> **Insight:** $200/month extra saves $91k in interest and pays off 6.8 years early!
 
-## Step 9: Create Reusable Function
+## Step 9: Create a Reusable Function
 
 Package everything into a reusable function.
 
