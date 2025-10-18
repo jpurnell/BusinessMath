@@ -96,7 +96,7 @@ let carLoan = presentValueAnnuity(
     periods: 60,
     type: .ordinary
 )
-// Result: ~20,655 (the car's financed value)
+// Result: ~20,690 (the car's financed value)
 ```
 
 **Lottery Annuity vs Lump Sum:**
@@ -159,7 +159,7 @@ let retirement = futureValueAnnuity(
     periods: 360,
     type: .ordinary
 )
-// Result: ~566,764 (only deposited $180,000!)
+// Result: ~609,985 (only deposited $180,000!)
 
 // With employer match (effectively $1,000/month)
 let withMatch = futureValueAnnuity(
@@ -168,7 +168,7 @@ let withMatch = futureValueAnnuity(
     periods: 360,
     type: .ordinary
 )
-// Result: ~1,133,528 (over $1 million!)
+// Result: ~1,19,971 (over $1 million!)
 ```
 
 **Formula (Ordinary):**
@@ -189,7 +189,7 @@ let collegeFund = futureValueAnnuity(
     periods: 216,
     type: .ordinary
 )
-// Result: ~104,466 (deposited only $64,800)
+// Result: ~116,206 (deposited only $64,800)
 ```
 
 **Comparing Savings Plans:**
@@ -300,7 +300,7 @@ let firstYearInterest = cumulativeInterest(
     futureValue: 0,
     type: .ordinary
 )
-// Result: ~17,866 (almost all interest in early years)
+// Result: ~17,900 (almost all interest in early years)
 
 // Total principal paid in first year
 let firstYearPrincipal = cumulativePrincipal(
@@ -312,7 +312,7 @@ let firstYearPrincipal = cumulativePrincipal(
     futureValue: 0,
     type: .ordinary
 )
-// Result: ~3,724 (only paid down 1.2% of loan)
+// Result: ~3,684 (only paid down 1.2% of loan)
 ```
 
 ## Net Present Value (NPV)
@@ -326,7 +326,7 @@ NPV discounts all cash flows to present value and sums them.
 let cashFlows = [-100_000.0, 30_000, 40_000, 50_000, 60_000]
 
 let npv = npv(discountRate: 0.10, cashFlows: cashFlows)
-// Result: ~37,908
+// Result: ~38,877
 
 // Positive NPV → accept project
 // Negative NPV → reject project
@@ -356,7 +356,7 @@ let cashFlows: [Double] = [-100_000, 50_000, 80_000]
 
 let ts = TimeSeries(periods: periods, values: cashFlows)
 let npvValue = npv(rate: 0.10, timeSeries: ts)
-// Result: ~16,529
+// Result: ~11,570
 ```
 
 ### Excel-Compatible NPV
@@ -366,11 +366,11 @@ let npvValue = npv(rate: 0.10, timeSeries: ts)
 let futureCashFlows = [30_000.0, 40_000, 50_000, 60_000]
 
 let npvExcelResult = npvExcel(rate: 0.10, cashFlows: futureCashFlows)
-// Result: ~141,908
+// Result: ~138,877
 
 // Add initial investment separately
 let totalNPV = -100_000 + npvExcelResult
-// Result: ~41,908
+// Result: ~38,877
 ```
 
 ### Investment Metrics
@@ -410,7 +410,7 @@ IRR finds the discount rate where NPV = 0.
 let cashFlows = [-100_000.0, 30_000, 40_000, 50_000, 60_000]
 
 let irr = try irr(cashFlows: cashFlows)
-// Result: ~28.7%
+// Result: ~24.9%
 
 // Compare to required rate of return:
 // IRR > required return → accept project
@@ -436,7 +436,7 @@ let mirr = try mirr(
     financeRate: 0.08,
     reinvestmentRate: 0.12
 )
-// Result: ~24.3%
+// Result: ~20.1%
 
 // MIRR is more realistic than IRR for projects with
 // multiple sign changes or different borrowing/investing rates
@@ -479,11 +479,11 @@ let dates = [
 let cashFlows = [-100_000.0, 30_000, 50_000, 40_000]
 
 let xnpvValue = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
-// Result: ~7,185 (accounts for actual timing)
+// Result: ~12,100 (accounts for actual timing)
 
 // Compare to regular NPV (assumes annual periods)
 let regularNPV = npv(discountRate: 0.10, cashFlows: cashFlows)
-// Result: ~4,186 (different due to timing assumptions)
+// Result: ~$(1,352) (different due to timing assumptions)
 ```
 
 **Formula:**
@@ -503,7 +503,7 @@ Where:
 ```swift
 // Find IRR for irregular cash flows
 let xirrValue = try xirr(dates: dates, cashFlows: cashFlows)
-// Result: ~16.2%
+// Result: ~29.4%
 
 // Verify: XNPV at XIRR should be ~0
 let xnpvAtXIRR = try xnpv(rate: xirrValue, dates: dates, cashFlows: cashFlows)
@@ -520,10 +520,10 @@ let vcDates = [
     Date(timeIntervalSinceNow: 750 * 86400),    // Series C (2+ years)
     Date(timeIntervalSinceNow: 1825 * 86400)    // Exit (5 years)
 ]
-let vcCashFlows = [-5_000_000.0, -3_000_000, -2_000_000, 25_000_000]
+let vcCashFlows = [-5_000_000.0, -3_000_000, -2_000_000, 40_000_000]
 
 let vcXIRR = try xirr(dates: vcDates, cashFlows: vcCashFlows)
-// Result: ~38.2% (excellent return)
+// Result: ~37.1% (excellent return)
 
 let vcXNPV = try xnpv(rate: 0.20, dates: vcDates, cashFlows: vcCashFlows)
 // NPV at 20% hurdle rate
