@@ -97,7 +97,7 @@ let monthly = applyGrowth(baseValue: base, rate: rate, periods: years * 12, comp
 
 // Daily compounding
 let daily = applyGrowth(baseValue: base, rate: rate, periods: years * 365, compounding: .daily)
-// Final: ~182,189
+// Final: ~182,194
 
 // Continuous compounding (e^(rt))
 let continuous = applyGrowth(baseValue: base, rate: rate, periods: years, compounding: .continuous)
