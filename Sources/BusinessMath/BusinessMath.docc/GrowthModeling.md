@@ -131,7 +131,7 @@ let populationCAGR = cagr(beginningValue: 100_000, endingValue: 125_000, years: 
 
 // Project 10 years forward
 let population2035 = 125_000 * pow(1.0456, 10)
-// Result: ~194,800 residents
+// Result: ~195,312 residents
 ```
 
 **Investment Returns:**
