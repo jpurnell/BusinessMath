@@ -252,7 +252,7 @@ let sparseValues = [100.0, 120.0, 140.0]
 let sparse = TimeSeries(periods: sparsePeriods, values: sparseValues)
 
 // Define complete range
-let allMonths = Period.month(year: 2025, month: 1)...Period.month(year: 2025, month: 5)
+let allMonths = Array(Period.month(year: 2025, month: 1)...Period.month(year: 2025, month: 5))
 
 // Forward fill
 let forwardFilled = sparse.fillForward(over: allMonths)
