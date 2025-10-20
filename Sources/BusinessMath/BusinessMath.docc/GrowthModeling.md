@@ -163,7 +163,7 @@ try trend.fit(to: historical)
 
 // Project 6 months forward
 let forecast = try trend.project(periods: 6)
-// Result: [145, 150, 155, 160, 165, 170] (approximately)
+// Result: [142, 145, 148, 152, 155, 159] (approximately)
 ```
 
 **Formula:**
@@ -267,15 +267,19 @@ Where:
 Define custom trend functions:
 
 ```swift
-// Custom quadratic trend: y = ax² + bx + c
+// Custom quadratic trend: y = 0.5x² + 10x + 100
 var trend = CustomTrend<Double> { x in
-    let a = 0.5
-    let b = 10.0
-    let c = 100.0
-    return a * x * x + b * x + c
+    return 0.5 * x * x + 10.0 * x + 100.0
 }
 
-// No fitting needed for predefined functions
+// Fit to historical data to set metadata
+let historical = TimeSeries(
+    periods: [Period.month(year: 2025, month: 1)],
+    values: [100.0]
+)
+try trend.fit(to: historical)
+
+// Project future values using the custom function
 let forecast = try trend.project(periods: 12)
 ```
 
@@ -328,7 +332,7 @@ let ts = TimeSeries(periods: periods, values: revenue)
 
 // Calculate seasonal indices (4 quarters per year)
 let indices = try seasonalIndices(timeSeries: ts, periodsPerYear: 4)
-// Result: [~0.84, ~1.01, ~0.93, ~1.22]
+// Result: [~0.85, ~1.00, ~0.91, ~1.24]
 // Q1: 16% below average
 // Q2: 1% above average
 // Q3: 7% below average
