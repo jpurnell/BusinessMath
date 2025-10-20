@@ -268,9 +268,12 @@ Define custom trend functions:
 
 ```swift
 // Custom quadratic trend: y = 0.5x² + 10x + 100
-var trend = CustomTrend<Double> { x in
+// For playgrounds, define the closure separately with explicit type
+let quadraticFunction: @Sendable (Double) -> Double = { x in
     return 0.5 * x * x + 10.0 * x + 100.0
 }
+
+var trend = CustomTrend<Double>(trendFunction: quadraticFunction)
 
 // Fit to historical data to set metadata
 let historical = TimeSeries(
