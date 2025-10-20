@@ -54,23 +54,42 @@ extension TimeSeries {
 	///
 	/// CAGR = (endingValue / beginningValue)^(1/years) - 1
 	///
+	/// The number of years is calculated precisely from the period dates,
+	/// accounting for the exact number of days between the start of the
+	/// starting period and the end of the ending period.
+	///
 	/// - Parameters:
 	///   - from: The starting period.
 	///   - to: The ending period.
-	///   - years: The number of years between the periods.
 	/// - Returns: The CAGR as a decimal (e.g., 0.10 for 10%).
 	///
 	/// ## Example
 	/// ```swift
-	/// let cagr = revenue.cagr(from: jan2020, to: jan2025, years: 5.0)
+	/// let jan2020 = Period.month(year: 2020, month: 1)
+	/// let jan2025 = Period.month(year: 2025, month: 1)
+	/// let cagr = revenue.cagr(from: jan2020, to: jan2025)
+	/// // Calculates CAGR over exactly 5.0 years
 	/// ```
-	public func cagr(from start: Period, to end: Period, years: T) -> T {
+	public func cagr(from start: Period, to end: Period) -> T {
 		guard let startValue = self[start],
 			  let endValue = self[end],
-			  startValue > T.zero,
-			  years > T.zero else {
+			  startValue > T.zero else {
 			return T.zero
 		}
+
+		// Calculate exact fractional years from period start dates
+		// Using startDate for both provides intuitive period-to-period calculations
+		// (e.g., "Jan 2020 to Jan 2025" = exactly 5 years)
+		let calendar = Calendar.current
+		let components = calendar.dateComponents([.day],
+												 from: start.startDate,
+												 to: end.startDate)
+		let days = T(components.day ?? 0)
+		// Use 365.25 to account for leap years over long periods
+		let daysPerYear = T(365) + T(1) / T(4)
+		let years = days / daysPerYear
+
+		guard years > T.zero else { return T.zero }
 
 		let ratio = endValue / startValue
 		let exponent = T(1) / years

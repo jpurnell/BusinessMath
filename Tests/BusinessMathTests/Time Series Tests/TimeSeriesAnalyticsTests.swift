@@ -65,7 +65,7 @@ struct TimeSeriesAnalyticsTests {
 			values: [100.0, 161.05]  // 5 years, ~10% CAGR
 		)
 
-		let cagr = ts.cagr(from: jan2020, to: jan2025, years: 5.0)
+		let cagr = ts.cagr(from: jan2020, to: jan2025)
 
 		#expect(abs(cagr - 0.10) < tolerance)  // 10% CAGR
 	}
@@ -80,7 +80,7 @@ struct TimeSeriesAnalyticsTests {
 			values: [100.0, 100.0]
 		)
 
-		let cagr = ts.cagr(from: jan2020, to: jan2025, years: 5.0)
+		let cagr = ts.cagr(from: jan2020, to: jan2025)
 
 		#expect(abs(cagr) < tolerance)  // 0% CAGR
 	}
