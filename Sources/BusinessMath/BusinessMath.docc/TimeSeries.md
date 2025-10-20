@@ -313,11 +313,10 @@ let ts = TimeSeries(
 let growth = ts.growthRate(lag: 1)
 // Result: [10%, 10%, 9.9%, 9.8%] (year-over-year)
 
-// CAGR over entire period
+// CAGR over entire period (automatically calculates years from dates)
 let compoundGrowth = ts.cagr(
     from: Period.year(2021),
-    to: Period.year(2025),
-    years: 4
+    to: Period.year(2025)
 )
 // Result: ~10% CAGR
 
