@@ -83,8 +83,8 @@ struct TimeSeriesTests {
 		#expect(ts[feb] == 200.0)
 	}
 
-	@Test("Initialization preserves period order")
-	func initPreservesOrder() {
+	@Test("Initialization sorts periods chronologically")
+	func initSortsPeriods() {
 		let periods = [
 			Period.month(year: 2025, month: 3),
 			Period.month(year: 2025, month: 1),
@@ -94,11 +94,11 @@ struct TimeSeriesTests {
 
 		let ts = TimeSeries(periods: periods, values: values)
 
-		// Should preserve input order, not sort
+		// Should sort by period, not preserve input order
 		let valuesArray = ts.valuesArray
-		#expect(valuesArray[0] == 300.0)
-		#expect(valuesArray[1] == 100.0)
-		#expect(valuesArray[2] == 200.0)
+		#expect(valuesArray[0] == 100.0)  // Jan (month 1)
+		#expect(valuesArray[1] == 200.0)  // Feb (month 2)
+		#expect(valuesArray[2] == 300.0)  // Mar (month 3)
 	}
 
 	@Test("Initialization handles duplicate periods by keeping last value")

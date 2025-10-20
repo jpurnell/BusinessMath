@@ -55,10 +55,13 @@ public struct TimeSeriesMetadata: Codable, Equatable, Sendable {
 /// data analysis. The generic type parameter `T` must conform to `Real`, allowing
 /// use with `Double`, `Float`, or other numeric types.
 ///
+/// Periods are always stored in chronologically sorted order, regardless of the
+/// order in which they are provided during initialization.
+///
 /// ## Creating Time Series
 ///
 /// ```swift
-/// // From arrays
+/// // From arrays (automatically sorted chronologically)
 /// let periods = [
 ///     Period.month(year: 2025, month: 1),
 ///     Period.month(year: 2025, month: 2),
@@ -67,7 +70,7 @@ public struct TimeSeriesMetadata: Codable, Equatable, Sendable {
 /// let values: [Double] = [100_000, 120_000, 150_000]
 /// let ts = TimeSeries(periods: periods, values: values)
 ///
-/// // From dictionary
+/// // From dictionary (automatically sorted chronologically)
 /// let data = [
 ///     Period.month(year: 2025, month: 1): 100_000.0,
 ///     Period.month(year: 2025, month: 2): 120_000.0
@@ -103,7 +106,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 
 	// MARK: - Properties
 
-	/// The periods in this time series, in their original order.
+	/// The periods in this time series, in chronologically sorted order.
 	public let periods: [Period]
 
 	/// The values indexed by period.
@@ -117,7 +120,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// Creates a time series from parallel arrays of periods and values.
 	///
 	/// If duplicate periods are provided, the last value for each period is kept.
-	/// The order of periods is preserved as given.
+	/// Periods are automatically sorted in ascending chronological order.
 	///
 	/// - Parameters:
 	///   - periods: The periods for this time series.
@@ -145,25 +148,8 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 			valueDict[period] = value
 		}
 
-		// For periods array, remove duplicates while preserving order
-		// Keep track of unique periods by iterating forward
-		var lastIndexOf: [Period: Int] = [:]
-
-		// First pass: find last index of each period
-		for (index, period) in periods.enumerated() {
-			lastIndexOf[period] = index
-		}
-
-		// Second pass: keep only first occurrence of each unique period
-		// (but use the value from the last occurrence, which is already in valueDict)
-		var uniquePeriods: [Period] = []
-		for (index, period) in periods.enumerated() {
-			if lastIndexOf[period] == index {
-				uniquePeriods.append(period)
-			}
-		}
-
-		self.periods = uniquePeriods
+		// Sort periods chronologically
+		self.periods = valueDict.keys.sorted()
 		self.values = valueDict
 		self.metadata = metadata
 	}
