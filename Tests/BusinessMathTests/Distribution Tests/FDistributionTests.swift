@@ -16,15 +16,37 @@ import OSLog
 struct FDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.FDistributionTests", category: #function)
 
+	// Helper function to generate seed sets for F-distribution using SeededRNG
+	// F-distribution uses two chi-squared distributions, each needs ~10 seeds
+	static func seedSetsForF(count: Int, seedsPerSample: Int = 20) -> [[Double]] {
+		let rng = DistributionSeedingTests.SeededRNG(seed: 87654)  // Unique seed for F-dist
+		var seedSets: [[Double]] = []
+
+		for _ in 0..<count {
+			var seedSet: [Double] = []
+			for _ in 0..<seedsPerSample {
+				var seed = rng.next()
+				seed = max(0.0001, min(0.9999, seed))
+				seedSet.append(seed)
+			}
+			seedSets.append(seedSet)
+		}
+
+		return seedSets
+	}
+
 	@Test("F-distribution function produces positive values")
 	func fFunctionBounds() {
 		// Test with df1 = 5, df2 = 10
 		let df1 = 5
 		let df2 = 10
+		let sampleCount = 1000
 
-		// Generate 1000 samples and verify all are positive
-		for _ in 0..<1000 {
-			let sample: Double = distributionF(df1: df1, df2: df2)
+		// Generate deterministic samples
+		let seedSets = Self.seedSetsForF(count: sampleCount)
+
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			#expect(sample >= 0.0, "F-distribution values must be >= 0")
 			#expect(sample.isFinite, "F-distribution values must be finite")
 			#expect(!sample.isNaN, "F-distribution values must not be NaN")
@@ -37,10 +59,14 @@ struct FDistributionTests {
 		let df1 = 5
 		let df2 = 20
 		let expectedMean = Double(df2) / Double(df2 - 2)  // 1.111
+		let sampleCount = 5000
+
+		// Generate deterministic samples
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionF(df1: df1, df2: df2)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -65,12 +91,16 @@ struct FDistributionTests {
 
 	@Test("F-distribution struct next() method")
 	func fStructNext() {
-		let distribution = DistributionF(df1: 8, df2: 20)
+		// Use deterministic function variant for testing
+		let df1 = 8
+		let df2 = 20
+		let sampleCount = 2000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
-		// Test that next() produces positive values
+		// Test that function produces positive values
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample = distribution.next()
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 			#expect(sample.isFinite)
@@ -88,10 +118,12 @@ struct FDistributionTests {
 		// Test with small degrees of freedom
 		let df1 = 2
 		let df2 = 5
+		let sampleCount = 5000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionF(df1: df1, df2: df2)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -109,10 +141,12 @@ struct FDistributionTests {
 		// F(50, 50) should approach 1.0 in distribution
 		let df1 = 50
 		let df2 = 50
+		let sampleCount = 5000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionF(df1: df1, df2: df2)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -128,10 +162,12 @@ struct FDistributionTests {
 		// F-distribution is right-skewed (median < mean for df2 > 2)
 		let df1 = 5
 		let df2 = 15
+		let sampleCount = 5000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionF(df1: df1, df2: df2)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -148,10 +184,12 @@ struct FDistributionTests {
 		// F(1, df2) is related to t²(df2)
 		let df1 = 1
 		let df2 = 10
+		let sampleCount = 5000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionF(df1: df1, df2: df2)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -170,10 +208,12 @@ struct FDistributionTests {
 
 		let df1 = 5
 		let df2 = 2  // Mean is undefined
+		let sampleCount = 1000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			let sample: Double = distributionF(df1: df1, df2: df2)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionF(df1: df1, df2: df2, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 			#expect(sample.isFinite)
@@ -188,13 +228,16 @@ struct FDistributionTests {
 		// F(df1, df2) and 1/F(df2, df1) should have similar distributions
 		let df1 = 5
 		let df2 = 10
+		let sampleCount = 5000
+		let seedSetsF = Self.seedSetsForF(count: sampleCount)
+		let seedSetsInvF = Self.seedSetsForF(count: sampleCount)  // Different seed set
 
 		var samplesF: [Double] = []
 		var samplesInvF: [Double] = []
 
-		for _ in 0..<5000 {
-			samplesF.append(distributionF(df1: df1, df2: df2))
-			samplesInvF.append(1.0 / distributionF(df1: df2, df2: df1))
+		for i in 0..<sampleCount {
+			samplesF.append(distributionF(df1: df1, df2: df2, seeds: seedSetsF[i]))
+			samplesInvF.append(1.0 / distributionF(df1: df2, df2: df1, seeds: seedSetsInvF[i]))
 		}
 
 		// Means should be similar (within tolerance due to sampling)
@@ -210,10 +253,12 @@ struct FDistributionTests {
 		// Test with df2 > 4 (variance exists)
 		let df1 = 5
 		let df2 = 10
+		let sampleCount = 5000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			samples.append(distributionF(df1: df1, df2: df2))
+		for i in 0..<sampleCount {
+			samples.append(distributionF(df1: df1, df2: df2, seeds: seedSets[i]))
 		}
 
 		let mean = samples.reduce(0, +) / Double(samples.count)
@@ -227,14 +272,16 @@ struct FDistributionTests {
 
 	@Test("F-distribution struct stores df parameters")
 	func fStructParameters() {
+		// Use deterministic function variant for testing
 		let df1 = 6
 		let df2 = 12
-		let distribution = DistributionF(df1: df1, df2: df2)
+		let sampleCount = 1000
+		let seedSets = Self.seedSetsForF(count: sampleCount)
 
 		// Generate samples and verify consistency
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			samples.append(distribution.next())
+		for i in 0..<sampleCount {
+			samples.append(distributionF(df1: df1, df2: df2, seeds: seedSets[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)

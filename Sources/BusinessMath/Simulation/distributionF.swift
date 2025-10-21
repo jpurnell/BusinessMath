@@ -56,7 +56,7 @@ import Numerics
 /// // Compare variances of two samples
 /// let varianceRatio: Double = distributionF(df1: 10, df2: 15)
 /// ```
-public func distributionF<T: Real>(df1: Int, df2: Int) -> T {
+public func distributionF<T: Real>(df1: Int, df2: Int, seeds: [Double]? = nil) -> T {
 	precondition(df1 > 0, "First degrees of freedom must be positive")
 	precondition(df2 > 0, "Second degrees of freedom must be positive")
 
@@ -67,8 +67,21 @@ public func distributionF<T: Real>(df1: Int, df2: Int) -> T {
 	let dfTwo = T(df2)
 
 	// Generate two independent chi-squared random variables
-	let chi1: T = distributionChiSquared(degreesOfFreedom: df1)
-	let chi2: T = distributionChiSquared(degreesOfFreedom: df2)
+	// Split seeds: first half for chi1, second half for chi2
+	let chi1Seeds: [Double]?
+	let chi2Seeds: [Double]?
+
+	if let seeds = seeds {
+		let midpoint = seeds.count / 2
+		chi1Seeds = Array(seeds[0..<midpoint])
+		chi2Seeds = Array(seeds[midpoint..<seeds.count])
+	} else {
+		chi1Seeds = nil
+		chi2Seeds = nil
+	}
+
+	let chi1: T = distributionChiSquared(degreesOfFreedom: df1, seeds: chi1Seeds)
+	let chi2: T = distributionChiSquared(degreesOfFreedom: df2, seeds: chi2Seeds)
 
 	// F = (χ²₁/df1) / (χ²₂/df2)
 	let numerator = chi1 / dfOne
