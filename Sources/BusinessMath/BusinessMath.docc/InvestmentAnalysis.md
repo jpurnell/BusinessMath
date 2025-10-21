@@ -97,9 +97,9 @@ if npvValue > 0 {
 Net Present Value Analysis
 ===========================
 Discount Rate: 12%
-NPV: $27,807.04
+NPV: $26,943.09
 ✓ Positive NPV - Investment adds value
-  For every $1 invested, you create $1.40 of value
+  For every $1 invested, you create $1.38 of value
 ```
 
 ## Step 3: Calculate IRR
@@ -137,9 +137,9 @@ print("\nVerification: NPV at IRR = $\(String(format: "%.2f", npvAtIRR)) (should
 ```
 Internal Rate of Return
 =======================
-IRR: 22.44%
+IRR: 22.83%
 Required Return: 12.00%
-✓ IRR exceeds required return by 10.44 percentage points
+✓ IRR exceeds required return by 10.83 percentage points
   Investment is attractive
 
 Verification: NPV at IRR = $0.00 (should be ~$0)
@@ -195,9 +195,9 @@ if let dpb = discountedPayback {
 ```
 Profitability Index
 ===================
-PI: 1.40
+PI: 1.38
 ✓ PI > 1.0 - Creates value
-  Returns $1.40 for every $1 invested (at 12%)
+  Returns $1.38 for every $1 invested (at 12%)
 
 Payback Period
 ==============
@@ -226,7 +226,7 @@ print("------|------------|----------")
 for rate in rates {
     let npv = npv(discountRate: rate, cashFlows: cashFlows)
     let decision = npv > 0 ? "Accept" : "Reject"
-    print(String(format: "%4.0f%% | $%9.2f | %s", rate * 100, npv, decision))
+	print(String(format: "%4.1f%% | $%9.2f | %@", (rate * 100), npv, decision))
 }
 
 // Test different sale prices
@@ -245,8 +245,8 @@ for price in salePrices {
     ]
     let npv = npv(discountRate: requiredReturn, cashFlows: flows)
     let decision = npv > 0 ? "Accept" : "Reject"
-    print(String(format: "$%7.0f | $%11.0f | $%9.2f | %s",
-                 price, proceeds, npv, decision))
+	print(String(format: "  $%7.0f | $%11.0f | $%9.2f | %@",
+			 price, proceeds, npv, decision))
 }
 
 // Find breakeven sale price (where NPV = 0)
@@ -325,7 +325,7 @@ for investment in investments {
 
     results.append((investment.name, npv, irr, pi))
 
-    print(String(format: "%-15s | $%8.0f | %6.2f%% | %.2f | %d years | ",
+    print(String(format: "%@ | $%8.0f | %6.2f%% | %.2f | %d years | ",
                  investment.name, npv, irr * 100, pi, payback))
 }
 
@@ -443,11 +443,11 @@ for scenario in scenarios {
 
     expectedNPV += expectedValue
 
-    print(String(format: "%-11s | %10.0f%% | $%9.0f | $%9.2f | $%9.2f",
+    print(String(format: "%-11@ | %10.0f%% | $%9.0f | $%9.2f | $%9.2f",
                  scenario.name, scenario.prob * 100, scenario.price, scenarioNPV, expectedValue))
 }
 
-print(String(format: "%-11s | %10s  | %10s | %10s | $%9.2f",
+print(String(format: "%-11@ | %10s  | %10s | %10s | $%9.2f",
              "Expected", "", "", "", expectedNPV))
 
 print("\nExpected NPV: $\(String(format: "%.2f", expectedNPV))")
