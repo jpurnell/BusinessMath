@@ -342,22 +342,25 @@ struct IntegrationExampleTests {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
-		// Project deterministically
-		let projections = model.projectDeterministic(periods: quarters)
+		// Run Monte Carlo to get expected values (not random samples)
+		let results = model.projectMonteCarlo(periods: quarters, iterations: 5_000)
 
-		let revenueTS = projections["revenue"]!
-		let costsTS = projections["totalCosts"]!
+		let revenueResults = results["revenue"]!
+		let costsResults = results["totalCosts"]!
 
-		let q1Revenue = revenueTS[quarters[0]]!
-		let q4Revenue = revenueTS[quarters[3]]!
-		let q1Costs = costsTS[quarters[0]]!
-		let q4Costs = costsTS[quarters[3]]!
+		// Use expected values (mean) for growth comparison
+		let q1RevenueMean = revenueResults.statistics[quarters[0]]!.mean
+		let q4RevenueMean = revenueResults.statistics[quarters[3]]!.mean
+		let q1CostsMean = costsResults.statistics[quarters[0]]!.mean
+		let q4CostsMean = costsResults.statistics[quarters[3]]!.mean
 
-		let revenueGrowth = (q4Revenue - q1Revenue) / q1Revenue
-		let costGrowth = (q4Costs - q1Costs) / q1Costs
+		let revenueGrowth = (q4RevenueMean - q1RevenueMean) / q1RevenueMean
+		let costGrowth = (q4CostsMean - q1CostsMean) / q1CostsMean
 
-		// Revenue should grow faster than costs (due to scaling)
-		#expect(revenueGrowth > costGrowth, "Revenue should outpace cost growth")
+		// Revenue should grow faster than costs (due to Q4 seasonal boost in users)
+		// Q4 users get 15% boost, which drives revenue up more than costs
+		// (variable costs also increase, but payroll is less sensitive to short-term user changes)
+		#expect(revenueGrowth > costGrowth, "Expected revenue growth should outpace expected cost growth")
 	}
 
 	@Test("Headcount scales with user base")
