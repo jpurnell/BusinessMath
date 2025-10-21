@@ -16,15 +16,36 @@ import OSLog
 struct BetaDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.BetaDistributionTests", category: #function)
 
+	// Helper function to generate seed sets for Beta distribution using SeededRNG
+	// Beta distribution uses two gamma distributions, each needs ~10 seeds
+	static func seedSetsForBeta(count: Int, seedsPerSample: Int = 20) -> [[Double]] {
+		let rng = DistributionSeedingTests.SeededRNG(seed: 76543)  // Unique seed for Beta-dist
+		var seedSets: [[Double]] = []
+
+		for _ in 0..<count {
+			var seedSet: [Double] = []
+			for _ in 0..<seedsPerSample {
+				var seed = rng.next()
+				seed = max(0.0001, min(0.9999, seed))
+				seedSet.append(seed)
+			}
+			seedSets.append(seedSet)
+		}
+
+		return seedSets
+	}
+
 	@Test("Beta distribution function produces values in [0, 1]")
 	func betaFunctionBounds() {
 		// Test with various alpha and beta values
 		let alpha = 2.0
 		let beta = 5.0
+		let sampleCount = 1000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
-		// Generate 1000 samples and verify all are in [0, 1]
-		for _ in 0..<1000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		// Generate deterministic samples and verify all are in [0, 1]
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			#expect(sample >= 0.0, "Beta values must be >= 0")
 			#expect(sample <= 1.0, "Beta values must be <= 1")
 		}
@@ -36,10 +57,12 @@ struct BetaDistributionTests {
 		let alpha = 2.0
 		let beta = 5.0
 		let expectedMean = alpha / (alpha + beta)
+		let sampleCount = 2000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -64,12 +87,16 @@ struct BetaDistributionTests {
 
 	@Test("Beta distribution struct next() method")
 	func betaStructNext() {
-		let distribution = DistributionBeta(alpha: 4.0, beta: 4.0)
+		// Use deterministic function variant for testing
+		let alpha = 4.0
+		let beta = 4.0
+		let sampleCount = 1000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
-		// Test that next() produces values in valid range
+		// Test that function produces values in valid range
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			let sample = distribution.next()
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 			#expect(sample <= 1.0)
@@ -87,10 +114,12 @@ struct BetaDistributionTests {
 		// When alpha = beta, distribution is symmetric around 0.5
 		let alpha = 10.0
 		let beta = 10.0
+		let sampleCount = 2000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -108,10 +137,12 @@ struct BetaDistributionTests {
 		let alpha = 8.0
 		let beta = 2.0
 		let expectedMean = alpha / (alpha + beta)  // 0.8
+		let sampleCount = 2000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -129,10 +160,12 @@ struct BetaDistributionTests {
 		let alpha = 2.0
 		let beta = 8.0
 		let expectedMean = alpha / (alpha + beta)  // 0.2
+		let sampleCount = 2000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -150,10 +183,12 @@ struct BetaDistributionTests {
 		// This produces a U-shaped distribution
 		let alpha = 0.5
 		let beta = 0.5
+		let sampleCount = 1000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 			#expect(sample <= 1.0)
@@ -172,10 +207,12 @@ struct BetaDistributionTests {
 		// This produces a very peaked distribution around 0.5
 		let alpha = 50.0
 		let beta = 50.0
+		let sampleCount = 2000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 			#expect(sample <= 1.0)
@@ -192,10 +229,12 @@ struct BetaDistributionTests {
 		// When α = β = 1, Beta distribution is uniform on [0, 1]
 		let alpha = 1.0
 		let beta = 1.0
+		let sampleCount = 2000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionBeta(alpha: alpha, beta: beta)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
