@@ -396,4 +396,341 @@ struct FinancialRatiosTests {
 			#expect(roe[quarter]! > roa[quarter]!, "ROE should exceed ROA with leverage")
 		}
 	}
+
+	// MARK: - Efficiency Ratio Tests
+
+	@Test("Asset Turnover - basic calculation")
+	func testAssetTurnover() throws {
+		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+
+		let assetTurnover = assetTurnover(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
+
+		let quarters = Period.year(2025).quarters()
+
+		// Q1: Revenue = 1,000k, Assets = 5,000k
+		//     Asset Turnover = 1,000k / 5,000k = 0.20
+		let q1Turnover = assetTurnover[quarters[0]]!
+		#expect(abs(q1Turnover - 0.20) < 0.01, "Q1 asset turnover should be ~0.20")
+
+		// Asset turnover should be positive for all periods
+		for quarter in quarters {
+			#expect(assetTurnover[quarter]! > 0, "Asset turnover should be positive")
+		}
+	}
+
+	@Test("Inventory Turnover - manufacturing company")
+	func testInventoryTurnover() throws {
+		let entity = Entity(id: "MFG", primaryType: .ticker, name: "Manufacturing Co")
+		let quarters = Period.year(2025).quarters()
+
+		// Revenue
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_100_000, 1_200_000, 1_300_000])
+		)
+
+		// COGS: 60% of revenue
+		let cogs = try Account(
+			entity: entity,
+			name: "Cost of Goods Sold",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [600_000, 660_000, 720_000, 780_000])
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [cogs]
+		)
+
+		// Inventory: $200k (slowly increasing)
+		var inventoryMetadata = AccountMetadata()
+		inventoryMetadata.category = "Current"
+		let inventory = try Account(
+			entity: entity,
+			name: "Inventory",
+			type: .asset,
+			timeSeries: TimeSeries(periods: quarters, values: [200_000, 210_000, 220_000, 230_000]),
+			metadata: inventoryMetadata
+		)
+
+		// Other assets
+		let otherAssets = try Account(
+			entity: entity,
+			name: "Other Assets",
+			type: .asset,
+			timeSeries: TimeSeries(periods: quarters, values: [800_000, 800_000, 800_000, 800_000])
+		)
+
+		// Equity
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_010_000, 1_020_000, 1_030_000])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			assetAccounts: [inventory, otherAssets],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		// Calculate inventory turnover
+		let turnover = try inventoryTurnover(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
+
+		// Q1: COGS = 600k, Inventory = 200k
+		//     Turnover = 600k / 200k = 3.0
+		let q1Turnover = turnover[quarters[0]]!
+		#expect(abs(q1Turnover - 3.0) < 0.1, "Q1 inventory turnover should be ~3.0")
+
+		// All periods should have positive turnover
+		for quarter in quarters {
+			#expect(turnover[quarter]! > 0, "Inventory turnover should be positive")
+		}
+	}
+
+	@Test("Days Inventory Outstanding")
+	func testDaysInventoryOutstanding() throws {
+		let entity = Entity(id: "RETAIL", primaryType: .ticker, name: "Retail Co")
+		let quarters = Period.year(2025).quarters()
+
+		// Fast-moving retail inventory
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [500_000, 500_000, 500_000, 500_000])
+		)
+
+		let cogs = try Account(
+			entity: entity,
+			name: "COGS",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [400_000, 400_000, 400_000, 400_000])
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [cogs]
+		)
+
+		var inventoryMetadata = AccountMetadata()
+		inventoryMetadata.category = "Current"
+		let inventory = try Account(
+			entity: entity,
+			name: "Inventory",
+			type: .asset,
+			timeSeries: TimeSeries(periods: quarters, values: [50_000, 50_000, 50_000, 50_000]),
+			metadata: inventoryMetadata
+		)
+
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: quarters, values: [50_000, 50_000, 50_000, 50_000])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			assetAccounts: [inventory],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		// Calculate DIO
+		let dio = try daysInventoryOutstanding(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
+
+		// Q1: COGS = 400k, Inventory = 50k
+		//     Turnover = 400k / 50k = 8
+		//     DIO = 365 / 8 = 45.625 days
+		let q1DIO = dio[quarters[0]]!
+		#expect(abs(q1DIO - 45.625) < 1.0, "Q1 DIO should be ~45.6 days")
+
+		// Lower DIO is better (faster inventory movement)
+		for quarter in quarters {
+			#expect(dio[quarter]! > 0, "DIO should be positive")
+			#expect(dio[quarter]! < 365, "DIO should be less than a year")
+		}
+	}
+
+	@Test("Receivables Turnover - B2B company")
+	func testReceivablesTurnover() throws {
+		let entity = Entity(id: "B2B", primaryType: .ticker, name: "B2B Services")
+		let quarters = Period.year(2025).quarters()
+
+		// Revenue
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_000_000, 1_000_000, 1_000_000])
+		)
+
+		let expenses = try Account(
+			entity: entity,
+			name: "Expenses",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [600_000, 600_000, 600_000, 600_000])
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [expenses]
+		)
+
+		// Receivables: customers pay in ~60 days
+		var receivablesMetadata = AccountMetadata()
+		receivablesMetadata.category = "Current"
+		let receivables = try Account(
+			entity: entity,
+			name: "Accounts Receivable",
+			type: .asset,
+			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000]),
+			metadata: receivablesMetadata
+		)
+
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			assetAccounts: [receivables],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		// Calculate receivables turnover
+		let turnover = try receivablesTurnover(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
+
+		// Q1: Revenue = 1,000k, Receivables = 200k
+		//     Turnover = 1,000k / 200k = 5.0
+		let q1Turnover = turnover[quarters[0]]!
+		#expect(abs(q1Turnover - 5.0) < 0.1, "Q1 receivables turnover should be ~5.0")
+	}
+
+	@Test("Days Sales Outstanding")
+	func testDaysSalesOutstanding() throws {
+		let entity = Entity(id: "SVC", primaryType: .ticker, name: "Service Co")
+		let quarters = Period.year(2025).quarters()
+
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [365_000, 365_000, 365_000, 365_000])
+		)
+
+		let expenses = try Account(
+			entity: entity,
+			name: "Expenses",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [expenses]
+		)
+
+		// Receivables representing 30 days of sales
+		var receivablesMetadata = AccountMetadata()
+		receivablesMetadata.category = "Current"
+		let receivables = try Account(
+			entity: entity,
+			name: "Accounts Receivable",
+			type: .asset,
+			timeSeries: TimeSeries(periods: quarters, values: [30_000, 30_000, 30_000, 30_000]),
+			metadata: receivablesMetadata
+		)
+
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: quarters, values: [30_000, 30_000, 30_000, 30_000])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			assetAccounts: [receivables],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		// Calculate DSO
+		let dso = try daysSalesOutstanding(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
+
+		// Q1: Revenue = 365k, Receivables = 30k
+		//     Turnover = 365k / 30k ≈ 12.17
+		//     DSO = 365 / 12.17 ≈ 30 days
+		let q1DSO = dso[quarters[0]]!
+		#expect(abs(q1DSO - 30.0) < 1.0, "Q1 DSO should be ~30 days")
+
+		// DSO should be reasonable (< 120 days for most businesses)
+		for quarter in quarters {
+			#expect(dso[quarter]! > 0, "DSO should be positive")
+			#expect(dso[quarter]! < 120, "DSO should be reasonable")
+		}
+	}
+
+	@Test("Missing inventory account throws error")
+	func testMissingInventory() throws {
+		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+
+		// Our test company has no inventory account
+		#expect(throws: FinancialRatioError.self) {
+			try inventoryTurnover(
+				incomeStatement: incomeStatement,
+				balanceSheet: balanceSheet
+			)
+		}
+	}
+
+	@Test("Missing receivables account throws error")
+	func testMissingReceivables() throws {
+		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+
+		// Our test company has no receivables account
+		#expect(throws: FinancialRatioError.self) {
+			try receivablesTurnover(
+				incomeStatement: incomeStatement,
+				balanceSheet: balanceSheet
+			)
+		}
+	}
 }
