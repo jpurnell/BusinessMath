@@ -16,15 +16,32 @@ import OSLog
 struct WeibullDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.WeibullDistributionTests", category: #function)
 
+	// Helper function to generate seeds for Weibull distribution using SeededRNG
+	// Weibull uses inverse transform with 1 seed per sample
+	static func seedsForWeibull(count: Int) -> [Double] {
+		let rng = DistributionSeedingTests.SeededRNG(seed: 65432)  // Unique seed for Weibull
+		var seeds: [Double] = []
+
+		for _ in 0..<count {
+			var seed = rng.next()
+			seed = max(0.0001, min(0.9999, seed))
+			seeds.append(seed)
+		}
+
+		return seeds
+	}
+
 	@Test("Weibull distribution function produces non-negative values")
 	func weibullFunctionNonNegative() {
 		// Test with various shape and scale values
 		let shape = 2.0
 		let scale = 5.0
+		let sampleCount = 1000
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
-		// Generate 1000 samples and verify all are >= 0
-		for _ in 0..<1000 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		// Generate deterministic samples and verify all are >= 0
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			#expect(sample >= 0.0, "Weibull values must be non-negative")
 		}
 	}
@@ -35,6 +52,8 @@ struct WeibullDistributionTests {
 		// Mean = scale × Γ(1 + 1/shape) = 5 × Γ(1.5) ≈ 5 × 0.8862 ≈ 4.431
 		let shape = 2.0
 		let scale = 5.0
+		let sampleCount = 2000
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		// For Weibull(k, λ), mean = λ × Γ(1 + 1/k)
 		// For k=2: Γ(1.5) = sqrt(π)/2 ≈ 0.8862
@@ -42,8 +61,8 @@ struct WeibullDistributionTests {
 		let expectedMean = scale * gamma15
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -67,12 +86,16 @@ struct WeibullDistributionTests {
 
 	@Test("Weibull distribution struct next() method")
 	func weibullStructNext() {
-		let distribution = DistributionWeibull(shape: 2.5, scale: 4.0)
+		// Use deterministic function variant for testing
+		let shape = 2.5
+		let scale = 4.0
+		let sampleCount = 1000
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
-		// Test that next() produces values in valid range
+		// Test that function produces values in valid range
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			let sample = distribution.next()
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -89,10 +112,12 @@ struct WeibullDistributionTests {
 		let shape = 1.0
 		let scale = 3.0
 		let expectedMean = scale
+		let sampleCount = 2000
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -109,10 +134,12 @@ struct WeibullDistributionTests {
 		// Example: early failures, infant mortality
 		let shape = 0.5
 		let scale = 2.0
+		let sampleCount = 1000
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -128,10 +155,12 @@ struct WeibullDistributionTests {
 		// Example: mechanical component wear
 		let shape = 3.0
 		let scale = 5.0
+		let sampleCount = 2000
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -146,10 +175,12 @@ struct WeibullDistributionTests {
 		// When shape ≈ 2, Weibull is similar to Rayleigh distribution
 		let shape = 2.0
 		let scale = 5.0
+		let sampleCount = 1500
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<1500 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -165,10 +196,12 @@ struct WeibullDistributionTests {
 		// Test with small scale parameter
 		let shape = 2.0
 		let scale = 0.5
+		let sampleCount = 500
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<500 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -183,10 +216,12 @@ struct WeibullDistributionTests {
 		// Test with large scale parameter
 		let shape = 1.5
 		let scale = 100.0
+		let sampleCount = 500
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<500 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -202,10 +237,12 @@ struct WeibullDistributionTests {
 		// Test with large shape parameter (approaches normal distribution)
 		let shape = 10.0
 		let scale = 5.0
+		let sampleCount = 1000
+		let seeds = Self.seedsForWeibull(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}

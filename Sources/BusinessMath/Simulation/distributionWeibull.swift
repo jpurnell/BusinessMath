@@ -52,9 +52,14 @@ import Numerics
 /// // Model exponential failure (constant rate)
 /// let constantRate: Double = distributionWeibull(shape: 1.0, scale: 500.0)
 /// ```
-public func distributionWeibull<T: Real>(shape: T, scale: T) -> T {
+public func distributionWeibull<T: Real>(shape: T, scale: T, seed: Double? = nil) -> T {
 	// Generate U ~ Uniform(0, 1)
-	let u: T = distributionUniform(min: T(0), max: T(1))
+	let u: T
+	if let seed = seed {
+		u = distributionUniform(min: T(0), max: T(1), seed)
+	} else {
+		u = distributionUniform(min: T(0), max: T(1))
+	}
 
 	// Use inverse transform: X = scale × (-ln(1 - U))^(1/shape)
 	let oneMinusU = T(1) - u
