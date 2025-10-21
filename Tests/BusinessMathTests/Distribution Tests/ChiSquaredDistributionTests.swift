@@ -16,14 +16,36 @@ import OSLog
 struct ChiSquaredDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.ChiSquaredDistributionTests", category: #function)
 
+	// Helper function to generate seed sets for chi-squared distribution using SeededRNG
+	// Chi-squared uses gamma distribution which needs ~10 seeds per sample
+	static func seedSetsForChiSquared(count: Int, seedsPerSample: Int = 10) -> [[Double]] {
+		let rng = DistributionSeedingTests.SeededRNG(seed: 54321)  // Different seed from t-dist
+		var seedSets: [[Double]] = []
+
+		for _ in 0..<count {
+			var seedSet: [Double] = []
+			for _ in 0..<seedsPerSample {
+				var seed = rng.next()
+				seed = max(0.0001, min(0.9999, seed))
+				seedSet.append(seed)
+			}
+			seedSets.append(seedSet)
+		}
+
+		return seedSets
+	}
+
 	@Test("Chi-squared distribution function produces positive values")
 	func chiSquaredFunctionBounds() {
 		// Test with df = 5
 		let df = 5
+		let sampleCount = 1000
 
-		// Generate 1000 samples and verify all are positive
-		for _ in 0..<1000 {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df)
+		// Generate deterministic samples
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
+
+		for i in 0..<sampleCount {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
 			#expect(sample >= 0.0, "Chi-squared values must be >= 0")
 			#expect(sample.isFinite, "Chi-squared values must be finite")
 			#expect(!sample.isNaN, "Chi-squared values must not be NaN")
@@ -36,10 +58,14 @@ struct ChiSquaredDistributionTests {
 		let df = 10
 		let expectedMean = Double(df)
 		let expectedVariance = 2.0 * Double(df)  // 20
+		let sampleCount = 5000
+
+		// Generate deterministic samples
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -69,12 +95,14 @@ struct ChiSquaredDistributionTests {
 
 	@Test("Chi-squared distribution struct next() method")
 	func chiSquaredStructNext() {
-		let distribution = DistributionChiSquared(degreesOfFreedom: 15)
+		// Use deterministic function variant for testing
+		let df = 15
+		let sampleCount = 2000
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
-		// Test that next() produces positive values
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample = distribution.next()
+		for i in 0..<sampleCount {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 			#expect(sample.isFinite)
@@ -91,10 +119,12 @@ struct ChiSquaredDistributionTests {
 	func chiSquaredDF1() {
 		// df=1 is the distribution of Z² where Z ~ N(0,1)
 		let df = 1
+		let sampleCount = 5000
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -109,10 +139,12 @@ struct ChiSquaredDistributionTests {
 	func chiSquaredDF2() {
 		// df=2 is equivalent to Exponential(0.5)
 		let df = 2
+		let sampleCount = 5000
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -127,10 +159,12 @@ struct ChiSquaredDistributionTests {
 	func chiSquaredRightSkewed() {
 		// Chi-squared is right-skewed (median < mean)
 		let df = 5
+		let sampleCount = 5000
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -148,10 +182,12 @@ struct ChiSquaredDistributionTests {
 		let df = 20
 		let expectedMean = Double(df)
 		let expectedVariance = 2.0 * Double(df)
+		let sampleCount = 5000
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -170,13 +206,15 @@ struct ChiSquaredDistributionTests {
 	func chiSquaredApproachesNormal() {
 		// Test that skewness decreases as df increases
 		// For chi-squared, skewness = sqrt(8/df)
+		let sampleCount = 5000
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
 		var samplesDF5: [Double] = []
 		var samplesDF50: [Double] = []
 
-		for _ in 0..<5000 {
-			samplesDF5.append(distributionChiSquared(degreesOfFreedom: 5))
-			samplesDF50.append(distributionChiSquared(degreesOfFreedom: 50))
+		for i in 0..<sampleCount {
+			samplesDF5.append(distributionChiSquared(degreesOfFreedom: 5, seeds: seedSets[i]))
+			samplesDF50.append(distributionChiSquared(degreesOfFreedom: 50, seeds: seedSets[i]))
 		}
 
 		// Calculate skewness: E[(X-μ)³] / σ³
@@ -207,9 +245,12 @@ struct ChiSquaredDistributionTests {
 		]
 
 		for testCase in testCases {
+			let sampleCount = 5000
+			let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
+
 			var samples: [Double] = []
-			for _ in 0..<5000 {
-				samples.append(distributionChiSquared(degreesOfFreedom: testCase.df))
+			for i in 0..<sampleCount {
+				samples.append(distributionChiSquared(degreesOfFreedom: testCase.df, seeds: seedSets[i]))
 			}
 
 			let mean = samples.reduce(0, +) / Double(samples.count)
@@ -227,12 +268,13 @@ struct ChiSquaredDistributionTests {
 	@Test("Chi-squared distribution struct stores df parameter")
 	func chiSquaredStructParameters() {
 		let df = 8
-		let distribution = DistributionChiSquared(degreesOfFreedom: df)
+		let sampleCount = 1000
+		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 
 		// Generate samples and verify consistency
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			samples.append(distribution.next())
+		for i in 0..<sampleCount {
+			samples.append(distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
