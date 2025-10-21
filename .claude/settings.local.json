@@ -12,7 +12,9 @@
       "Bash(swift:*)",
       "Bash(git log:*)",
       "Bash(git show:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(git stash:*)",
+      "Read(//private/tmp/**)"
     ],
     "deny": [],
     "ask": []
