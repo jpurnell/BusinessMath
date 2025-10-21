@@ -29,8 +29,8 @@ import Numerics
 
  - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
  */
-public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
-	return (stdDev * boxMullerSeed().z1) + mean
+public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T {
+	return (stdDev * boxMullerSeed(u1Seed, u2Seed).z1) + mean
 }
 
 /**
@@ -54,6 +54,6 @@ public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
 
  - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
  */
-public func boxMuller<T: Real>(mean: T, variance: T) -> T {
-	return boxMuller(mean: mean, stdDev: T.sqrt(variance))
+public func boxMuller<T: Real>(mean: T, variance: T, _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T {
+	return boxMuller(mean: mean, stdDev: T.sqrt(variance), u1Seed, u2Seed)
 }

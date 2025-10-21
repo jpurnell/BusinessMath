@@ -35,9 +35,9 @@ import OSLog
 ///   let randomValue: Double = triangularDistribution(low: lowerBound, high: upperBound, base: mode)
 ///   // randomValue will be a random number generated from the triangular distribution with parameters a = 0.0, b = 10.0, and c = 5.0
 
-public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T) -> T {
+public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uSeed: Double = Double.random(in: 0...1)) -> T {
     let fc = (c - a) / (b - a)
-	let u = T(Int(Double.random(in: 0...1) * 1_000_000_000)) / T(1_000_000_000)
+	let u = T(Int(uSeed * 1_000_000_000)) / T(1_000_000_000)
     if u > 0 && u < fc {
         let s = u * (b - a) * (c - a)
         return a + sqrt(s)

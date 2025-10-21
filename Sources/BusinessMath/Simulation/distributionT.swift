@@ -58,17 +58,31 @@ import Numerics
 /// // Generate values close to standard normal (high df)
 /// let nearNormal: Double = distributionT(degreesOfFreedom: 30)
 /// ```
-public func distributionT<T: Real>(degreesOfFreedom: Int) -> T {
+public func distributionT<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T {
 	precondition(degreesOfFreedom > 0, "Degrees of freedom must be positive")
 
-	// Generate Z ~ N(0,1)
-	let z: T = distributionNormal(mean: T(0), stdDev: T(1))
+	var seedIndex = 0
+
+	// Helper to get next seed
+	func nextSeed() -> Double {
+		if let seeds = seeds, seedIndex < seeds.count {
+			let seed = seeds[seedIndex]
+			seedIndex += 1
+			return seed
+		}
+		return Double.random(in: 0...1)
+	}
+
+	// Generate Z ~ N(0,1) - needs 2 seeds
+	let u1Seed = nextSeed()
+	let u2Seed = nextSeed()
+	let z: T = distributionNormal(mean: T(0), stdDev: T(1), u1Seed, u2Seed)
 
 	// Generate V ~ χ²(df) using the relationship χ²(df) = Gamma(df/2, 2)
 	let df = T(degreesOfFreedom)
 	let shape = df / T(2)
 	let scale = T(2)
-	let v = gammaVariate(shape: shape, scale: scale)
+	let v = gammaVariate(shape: shape, scale: scale, seeds: seeds, seedIndex: &seedIndex)
 
 	// T = Z / √(V/df)
 	let denominator = T.sqrt(v / df)
@@ -84,16 +98,29 @@ public func distributionT<T: Real>(degreesOfFreedom: Int) -> T {
 /// - Parameters:
 ///   - shape: The shape parameter (k > 0)
 ///   - scale: The scale parameter (θ > 0)
+///   - seeds: Optional array of seed values for deterministic generation
+///   - seedIndex: Mutable index tracking position in seed array
 /// - Returns: A random value from Gamma(shape, scale)
-private func gammaVariate<T: Real>(shape: T, scale: T) -> T {
+private func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, seedIndex: inout Int) -> T {
 	guard shape > T(0) && scale > T(0) else {
 		fatalError("Gamma shape and scale must be positive")
 	}
 
+	// Helper to get next seed
+	func nextSeed() -> Double {
+		if let seeds = seeds, seedIndex < seeds.count {
+			let seed = seeds[seedIndex]
+			seedIndex += 1
+			return seed
+		}
+		return Double.random(in: 0...1)
+	}
+
 	// For shape < 1, use the transformation property
 	if shape < T(1) {
-		let u: T = distributionUniform(min: T(0), max: T(1))
-		let x = gammaVariate(shape: shape + T(1), scale: scale)
+		let uSeed = nextSeed()
+		let u: T = distributionUniform(min: T(0), max: T(1), uSeed)
+		let x = gammaVariate(shape: shape + T(1), scale: scale, seeds: seeds, seedIndex: &seedIndex)
 		return x * T.pow(u, T(1) / shape)
 	}
 
@@ -108,14 +135,17 @@ private func gammaVariate<T: Real>(shape: T, scale: T) -> T {
 
 		// Generate v = (1 + c×Z)³ where Z ~ N(0,1)
 		repeat {
-			x = distributionNormal(mean: T(0), stdDev: T(1))
+			let u1Seed = nextSeed()
+			let u2Seed = nextSeed()
+			x = distributionNormal(mean: T(0), stdDev: T(1), u1Seed, u2Seed)
 			v = T(1) + c * x
 		} while v <= T(0)
 
 		v = v * v * v
 
 		// Generate U ~ Uniform(0,1)
-		let u: T = distributionUniform(min: T(0), max: T(1))
+		let uSeed = nextSeed()
+		let u: T = distributionUniform(min: T(0), max: T(1), uSeed)
 
 		// Acceptance test
 		let x2 = x * x

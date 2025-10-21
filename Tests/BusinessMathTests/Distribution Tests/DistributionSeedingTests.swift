@@ -35,6 +35,75 @@ struct DistributionSeedingTests {
 	/// Baseline seed for sequence generation
 	static let SEED_BASE = 0.5
 
+	// MARK: - Seed Array Generators
+
+	/// Generates a deterministic array of evenly-spaced seeds from 0.001 to 0.999
+	///
+	/// This provides uniform coverage of the [0,1] interval for Monte Carlo simulations,
+	/// ensuring reproducible results across all tests.
+	///
+	/// - Parameter count: Number of seeds to generate
+	/// - Returns: Array of evenly-spaced seeds
+	static func seedArray(count: Int) -> [Double] {
+		guard count > 0 else { return [] }
+		if count == 1 { return [0.5] }
+
+		let start = 0.001
+		let end = 0.999
+		let step = (end - start) / Double(count - 1)
+
+		return (0..<count).map { start + (Double($0) * step) }
+	}
+
+	/// Generates paired seed arrays for Box-Muller transform
+	///
+	/// Returns two arrays that can be used as u1 and u2 for Box-Muller.
+	/// The second array is the reverse of a different seed sequence to ensure
+	/// good mixing properties.
+	///
+	/// - Parameter count: Number of seed pairs to generate
+	/// - Returns: Tuple of (u1Seeds, u2Seeds)
+	static func pairedSeedArrays(count: Int) -> (u1: [Double], u2: [Double]) {
+		let u1Seeds = seedArray(count: count)
+		let u2Seeds = seedArray(count: count).reversed()
+		return (u1: u1Seeds, u2: Array(u2Seeds))
+	}
+
+	// MARK: - Seeded Random Number Generator
+
+	/// Simple Linear Congruential Generator for reproducible pseudo-random sequences
+	///
+	/// Uses LCG parameters from Numerical Recipes: a=1664525, c=1013904223, m=2^32
+	/// This provides truly random-looking but deterministic sequences for testing.
+	class SeededRNG {
+		private var state: UInt64
+
+		init(seed: UInt64 = 12345) {
+			self.state = seed
+		}
+
+		/// Generate next random Double in [0,1)
+		func next() -> Double {
+			// LCG formula: state = (a * state + c) mod m
+			let a: UInt64 = 1664525
+			let c: UInt64 = 1013904223
+			let m: UInt64 = UInt64(1) << 32  // 2^32
+
+			state = (a &* state &+ c) % m
+			return Double(state) / Double(m)
+		}
+
+		/// Generate array of random doubles
+		func nextArray(count: Int) -> [Double] {
+			return (0..<count).map { _ in next() }
+		}
+
+		/// Reset generator to initial seed
+		func reset(seed: UInt64 = 12345) {
+			self.state = seed
+		}
+	}
+
 	// MARK: - Core Seeding Validation
 
 	@Test("distributionUniform with same seed produces identical values")
@@ -358,6 +427,100 @@ struct DistributionSeedingTests {
 		#expect(var95_1 == var95_2, "Seeded VaR should be exactly identical")
 		#expect(cvar95_1 == cvar95_2, "Seeded CVaR should be exactly identical")
 		#expect(values1 == values2, "Seeded sequences should be exactly identical")
+	}
+
+	// MARK: - Seed Array Validation
+
+	@Test("seedArray generates correct number of seeds")
+	func seedArrayCount() {
+		let seeds100 = Self.seedArray(count: 100)
+		let seeds1000 = Self.seedArray(count: 1000)
+		let seeds5000 = Self.seedArray(count: 5000)
+
+		#expect(seeds100.count == 100, "Should generate 100 seeds")
+		#expect(seeds1000.count == 1000, "Should generate 1000 seeds")
+		#expect(seeds5000.count == 5000, "Should generate 5000 seeds")
+	}
+
+	@Test("seedArray provides uniform coverage of [0,1]")
+	func seedArrayUniformCoverage() {
+		let seeds = Self.seedArray(count: 1000)
+
+		// Check bounds
+		#expect(seeds.first! >= 0.001, "First seed should be >= 0.001")
+		#expect(seeds.last! <= 0.999, "Last seed should be <= 0.999")
+
+		// Check all seeds are in valid range
+		for seed in seeds {
+			#expect(seed > 0 && seed < 1, "All seeds should be in (0,1)")
+		}
+
+		// Check evenly spaced
+		let expectedStep = (0.999 - 0.001) / 999.0
+		for i in 1..<seeds.count {
+			let actualStep = seeds[i] - seeds[i-1]
+			#expect(abs(actualStep - expectedStep) < 0.000001, "Seeds should be evenly spaced")
+		}
+	}
+
+	@Test("seedArray is deterministic")
+	func seedArrayDeterministic() {
+		let seeds1 = Self.seedArray(count: 500)
+		let seeds2 = Self.seedArray(count: 500)
+
+		#expect(seeds1 == seeds2, "Same count should produce identical seed arrays")
+	}
+
+	@Test("pairedSeedArrays generates matching pairs")
+	func pairedSeedArraysValidation() {
+		let (u1, u2) = Self.pairedSeedArrays(count: 1000)
+
+		#expect(u1.count == 1000, "u1 should have correct count")
+		#expect(u2.count == 1000, "u2 should have correct count")
+
+		// u2 should be reverse of seed array
+		let forwardSeeds = Self.seedArray(count: 1000)
+		let reversedSeeds = Array(forwardSeeds.reversed())
+
+		#expect(u1 == forwardSeeds, "u1 should match forward seed array")
+		#expect(u2 == reversedSeeds, "u2 should match reversed seed array")
+	}
+
+	@Test("Monte Carlo with seed array produces exact results")
+	func monteCarloWithSeedArray() {
+		let mean = 100.0
+		let stdDev = 15.0
+		let count = 5_000
+
+		// Generate using seed array
+		let (u1Seeds, u2Seeds) = Self.pairedSeedArrays(count: count)
+
+		var values1: [Double] = []
+		for i in 0..<count {
+			let u1: Double = distributionUniform(u1Seeds[i])
+			let u2: Double = distributionUniform(u2Seeds[i])
+			let z = boxMullerSeed(u1, u2).z1 as Double
+			let normal = (stdDev * z) + mean
+			values1.append(normal)
+		}
+
+		// Regenerate with same seed array
+		var values2: [Double] = []
+		for i in 0..<count {
+			let u1: Double = distributionUniform(u1Seeds[i])
+			let u2: Double = distributionUniform(u2Seeds[i])
+			let z = boxMullerSeed(u1, u2).z1 as Double
+			let normal = (stdDev * z) + mean
+			values2.append(normal)
+		}
+
+		#expect(values1 == values2, "Same seed array should produce identical values")
+
+		// Verify statistical properties are exact
+		let mean1 = values1.reduce(0, +) / Double(values1.count)
+		let mean2 = values2.reduce(0, +) / Double(values2.count)
+
+		#expect(mean1 == mean2, "Statistics should be exactly identical")
 	}
 
 	// MARK: - Multiple Distribution Types

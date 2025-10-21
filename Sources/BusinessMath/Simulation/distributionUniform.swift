@@ -45,13 +45,15 @@ public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in
 ///   let randomValue: Double = distributionUniform(min: lowerBound, max: upperBound)
 ///   // randomValue will be a uniform random number between 5.0 and 10.0
 
-public func distributionUniform<T: Real>(min l: T, max h: T) -> T {
+public func distributionUniform<T: Real>(min l: T, max h: T, _ randomSeed: Double = Double.random(in: 0...1)) -> T {
     let lower = T.minimum(l, h)
     let upper = T.maximum(l, h)
-    return ((upper - lower) * distributionUniform()) + lower
+    return ((upper - lower) * distributionUniform(randomSeed)) + lower
 }
 
 public struct DistributionUniform: DistributionRandom, Sendable {
+	public typealias T = Double
+		
 	let min: Double
 	let max: Double
 
@@ -60,8 +62,8 @@ public struct DistributionUniform: DistributionRandom, Sendable {
 		self.max = max
 	}
 	
-	public func random() -> Double {
-		distributionUniform(min: min, max: max)
+	public func random(_ randomSeed: Double = Double.random(in: 0...1)) -> Double {
+		distributionUniform(min: min, max: max, randomSeed)
 	}
 	
 	public func next() -> Double {

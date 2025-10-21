@@ -43,19 +43,19 @@ final class SimulationTests: XCTestCase {
 		
 		var testBed: [Double] = []
 		for _ in stride(from: 0.0, to: 1.0, by: 0.0001) {
-			testBed.append(triangularDistribution(low: a, high: b, base: c))
+			testBed.append(triangularDistribution(low: a, high: b, base: c, distributionUniform()))
 		}
 		let countUnderC = testBed.filter({$0 <= c}).count
 		let roundedCount = (Double(countUnderC) / 10.0).rounded() * 10.0
-		let roundedHigh = roundedCount * 1.025
-		let roundedLow = roundedCount * 0.975
-		let expectedObservations = ((c - a) * (2 / (b - a)) * (1 / 2) * 10000).rounded()
-		logger.info("Approx Count Under C \(countUnderC): Expected: \(expectedObservations)")
+		let roundedLow = Int(roundedCount * 0.975)
+		let roundedHigh = Int(roundedCount * 1.025)
+		let expectedObservations = Int(((c - a) * (2 / (b - a)) * (1 / 2) * 10000).rounded())
+		logger.info("\t\t\tExpected: \(expectedObservations)\nApprox Count Under C: \(countUnderC)\n\t  Expected Range: \(Int(roundedLow)) - \(Int(roundedHigh)) \(countUnderC >= Int(roundedLow) && countUnderC <= Int(roundedHigh) ? "✅" : "❌")")
 		
 		//TODO: Should be sliced, with the highest count as base
 		
-		XCTAssertGreaterThan(expectedObservations, roundedLow)
-		XCTAssertLessThan(expectedObservations, roundedHigh)
+		XCTAssertGreaterThan(countUnderC, roundedLow)
+		XCTAssertLessThan(countUnderC, roundedHigh)
     }
     
     func testUniformDistribution() {
