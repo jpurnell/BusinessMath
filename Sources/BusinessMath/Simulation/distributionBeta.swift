@@ -48,82 +48,35 @@ import Numerics
 /// // Generate symmetric distribution around 0.5
 /// let symmetric: Double = distributionBeta(alpha: 5.0, beta: 5.0)
 /// ```
-public func distributionBeta<T: Real>(alpha: T, beta: T) -> T {
+public func distributionBeta<T: Real>(alpha: T, beta: T, seeds: [Double]? = nil) -> T {
 	// Special case: Beta(1, 1) is Uniform(0, 1)
 	if alpha == T(1) && beta == T(1) {
+		if let seeds = seeds, !seeds.isEmpty {
+			return distributionUniform(min: T(0), max: T(1), seeds[0])
+		}
 		return distributionUniform(min: T(0), max: T(1))
 	}
 
-	// Use the Beta-Gamma relationship: X/(X+Y) where X~Gamma(α), Y~Gamma(β)
-	let x = gammaVariate(shape: alpha, scale: T(1))
-	let y = gammaVariate(shape: beta, scale: T(1))
+	// Use the Beta-Gamma relationship: X/(X+Y) where X~Gamma(α,1), Y~Gamma(β,1)
+	// Split seeds: first half for X, second half for Y
+	var seedIndexX = 0
+	var seedIndexY = 0
+	let xSeeds: [Double]?
+	let ySeeds: [Double]?
+
+	if let seeds = seeds {
+		let midpoint = seeds.count / 2
+		xSeeds = Array(seeds[0..<midpoint])
+		ySeeds = Array(seeds[midpoint..<seeds.count])
+	} else {
+		xSeeds = nil
+		ySeeds = nil
+	}
+
+	let x = gammaVariate(shape: alpha, scale: T(1), seeds: xSeeds, seedIndex: &seedIndexX)
+	let y = gammaVariate(shape: beta, scale: T(1), seeds: ySeeds, seedIndex: &seedIndexY)
 
 	return x / (x + y)
-}
-
-/// Generates a random value from a Gamma distribution with the specified shape and scale.
-///
-/// This is an internal helper function that supports real-valued shape parameters.
-/// It uses Marsaglia and Tsang's method for shape ≥ 1, and shape transformation for shape < 1.
-///
-/// - Parameters:
-///   - shape: The shape parameter (k > 0)
-///   - scale: The scale parameter (θ > 0)
-/// - Returns: A random value from Gamma(shape, scale)
-private func gammaVariate<T: Real>(shape: T, scale: T) -> T {
-	guard shape > T(0) && scale > T(0) else {
-		fatalError("Gamma shape and scale must be positive")
-	}
-
-	// For shape < 1, use the transformation property:
-	// If X ~ Gamma(shape + 1, scale), then X × U^(1/shape) ~ Gamma(shape, scale)
-	// where U ~ Uniform(0,1)
-	if shape < T(1) {
-		let u: T = distributionUniform(min: T(0), max: T(1))
-		let x = gammaVariate(shape: shape + T(1), scale: scale)
-		return x * T.pow(u, T(1) / shape)
-	}
-
-	// Marsaglia and Tsang's method for shape ≥ 1
-	// Reference: "A Simple Method for Generating Gamma Variables" (2000)
-	let oneThird: T = T(1) / T(3)
-	let d = shape - oneThird
-	let c = T(1) / T.sqrt(T(9) * d)
-
-	while true {
-		var x: T
-		var v: T
-
-		// Generate v = (1 + c×Z)³ where Z ~ N(0,1)
-		repeat {
-			x = distributionNormal(mean: T(0), stdDev: T(1))
-			v = T(1) + c * x
-		} while v <= T(0)
-
-		v = v * v * v
-
-		// Generate U ~ Uniform(0,1)
-		let u: T = distributionUniform(min: T(0), max: T(1))
-
-		// Acceptance test
-		let x2 = x * x
-		let x4 = x2 * x2
-		let constant: T = T(331) / T(10000)  // 0.0331
-		let threshold1 = T(1) - constant * x4
-		if u < threshold1 {
-			return d * v * scale
-		}
-
-		let logU = T.log(u)
-		let logV = T.log(v)
-		let half: T = T(1) / T(2)
-		let term1 = half * x2
-		let term2 = d * (T(1) - v + logV)
-		let threshold2 = term1 + term2
-		if logU < threshold2 {
-			return d * v * scale
-		}
-	}
 }
 
 /// A type that represents a Beta distribution.
