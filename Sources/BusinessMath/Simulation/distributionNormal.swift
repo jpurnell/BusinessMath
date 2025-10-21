@@ -29,8 +29,8 @@ import Numerics
 
  - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
  */
-public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
-	return boxMuller(mean: mean, stdDev: stdDev)
+public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T {
+	return boxMuller(mean: mean, stdDev: stdDev, u1Seed, u2Seed)
 }
 
 
@@ -55,8 +55,8 @@ public func distributionNormal<T: Real>(mean: T = T(0), stdDev: T = T(1)) -> T {
 
  - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
  */
-public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1)) -> T {
-	return boxMuller(mean: mean, variance: variance)
+public func distributionNormal<T: Real>(mean: T = T(0), variance: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T {
+	return boxMuller(mean: mean, variance: variance, u1Seed, u2Seed)
 }
 
 
