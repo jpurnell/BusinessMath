@@ -21,8 +21,7 @@ import Numerics
 ///   let randomValue: Double = distributionUniform()
 ///   // randomValue will be a uniform random number between 0.0 and 1.0
 
-public func distributionUniform<T: Real>() -> T {
-	let randomSeed = Double.random(in: 0...1)
+public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in: 0...1)) -> T {
     let value = T(Int(randomSeed * Double(1_000_000_000_000))) / T(1_000_000_000_000)
     return value
 }
