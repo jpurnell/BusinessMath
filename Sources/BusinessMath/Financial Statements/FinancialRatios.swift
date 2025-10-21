@@ -551,6 +551,124 @@ public func daysSalesOutstanding<T: Real>(
 	return turnover.mapValues { daysPerYear / $0 }
 }
 
+// MARK: - Leverage Ratios (Debt Coverage)
+
+/// Interest Coverage Ratio - ability to pay interest expense from operating income.
+///
+/// Interest coverage measures how many times a company can pay its interest expense
+/// from its operating income. Higher ratio indicates greater ability to service debt.
+///
+/// ## Formula
+///
+/// ```
+/// Interest Coverage = Operating Income / Interest Expense
+/// ```
+///
+/// Also known as "Times Interest Earned" (TIE).
+///
+/// ## Interpretation
+///
+/// - **> 3.0**: Healthy coverage (low risk of defaulting on interest)
+/// - **2.0-3.0**: Acceptable coverage (some risk in downturns)
+/// - **1.5-2.0**: Thin coverage (vulnerable to profit declines)
+/// - **< 1.5**: At risk of not covering interest (financial distress)
+/// - **< 1.0**: Operating income insufficient to pay interest
+///
+/// ## Requirements
+///
+/// Income statement must have an interest expense account (identified by name).
+///
+/// ## Example
+///
+/// ```swift
+/// let coverage = try interestCoverage(incomeStatement: incomeStatement)
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Interest Coverage: \(coverage[q1]!)x")  // e.g., "Interest Coverage: 5.2x"
+/// ```
+///
+/// - Parameter incomeStatement: Income statement containing operating income and interest expense
+/// - Returns: Time series of interest coverage ratios
+/// - Throws: ``FinancialRatioError/missingExpense(_:)`` if interest expense not found
+public func interestCoverage<T: Real>(
+	incomeStatement: IncomeStatement<T>
+) throws -> TimeSeries<T> {
+	// Find interest expense in income statement
+	guard let interestExpense = incomeStatement.expenseAccounts.first(where: {
+		$0.name.localizedCaseInsensitiveContains("Interest")
+	}) else {
+		throw FinancialRatioError.missingExpense("Interest Expense")
+	}
+
+	let operatingIncome = incomeStatement.operatingIncome
+	let interestTimeSeries = interestExpense.timeSeries
+
+	// Interest Coverage = Operating Income / Interest Expense
+	return operatingIncome / interestTimeSeries
+}
+
+/// Debt Service Coverage Ratio (DSCR) - ability to pay all debt obligations.
+///
+/// DSCR measures whether a company generates sufficient operating income to cover
+/// all debt payments (both principal and interest). This is a more comprehensive
+/// measure than interest coverage alone.
+///
+/// ## Formula
+///
+/// ```
+/// DSCR = Operating Income / Total Debt Service
+/// ```
+///
+/// Where:
+/// ```
+/// Total Debt Service = Principal Payments + Interest Payments
+/// ```
+///
+/// ## Interpretation
+///
+/// - **> 1.5**: Strong coverage (preferred by lenders)
+/// - **1.25-1.5**: Adequate coverage (acceptable for most loans)
+/// - **1.0-1.25**: Tight coverage (lenders may require additional collateral)
+/// - **< 1.0**: Insufficient income to service debt (default risk)
+///
+/// ## Lender Requirements
+///
+/// - **Commercial real estate**: Typically require DSCR > 1.25
+/// - **Business loans**: Often require DSCR > 1.5
+/// - **Project finance**: May require DSCR > 2.0
+///
+/// ## Example
+///
+/// ```swift
+/// let dscr = try debtServiceCoverage(
+///     incomeStatement: incomeStatement,
+///     principalPayments: principalSeries,
+///     interestPayments: interestSeries
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing operating income
+///   - principalPayments: Time series of principal payments on debt
+///   - interestPayments: Time series of interest payments on debt
+/// - Returns: Time series of debt service coverage ratios
+public func debtServiceCoverage<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	principalPayments: TimeSeries<T>,
+	interestPayments: TimeSeries<T>
+) -> TimeSeries<T> {
+	let operatingIncome = incomeStatement.operatingIncome
+
+	// Total Debt Service = Principal + Interest
+	let totalDebtService = principalPayments + interestPayments
+
+	// DSCR = Operating Income / Total Debt Service
+	return operatingIncome / totalDebtService
+}
+
 // MARK: - Helper Functions
 
 /// Calculate average time series using beginning and ending values for each period.
