@@ -1,0 +1,59 @@
+Certainly! To generate an array of seeds for testing your `distributionUniform` function, we can create an array of random seeds between 0 and 1. Since your function uses a `Double` in the range [0, 1), we can sample values uniformly within this range.
+
+Here’s how you could generate a sample array of seeds in Swift:
+
+```swift
+import Foundation
+
+// Function to generate an array of random seeds
+func generateSeeds(count: Int) -> [Double] {
+    return (0..<count).map { _ in Double.random(in: 0...1) }
+}
+
+// Example usage
+let seedCount = 10  // You can change this to whatever number of seeds you need
+let seeds = generateSeeds(count: seedCount)
+print(seeds)
+```
+
+You would typically use the generated seeds with your `distributionUniform` function as follows:
+
+```swift
+// Assuming your distributionUniform function is defined elsewhere
+let results = seeds.map { seed in
+    distributionUniform(seed)
+}
+
+// Now you can print or utilize the `results`
+print(results)
+```
+
+You can adjust `seedCount` to generate as many seeds as you need for comprehensive testing. Each time you run this code, it will produce a new set of seeds, resulting in potentially different outcomes unless you fix the random number generation with a seed in a randomness-seeded context (like `srand` in C or using `setSeed` in some random generators).
+
+For consistent test results, consider using a fixed seed for random number generation, which would allow you to reproduce the same sequence of random numbers across different test runs. For instance, you could use a different method of random generation if your environment supports seeding, or you could manually set the values for repeatability during testing.
+Apologies for the misunderstanding! Here’s an example of a fixed array of seeds that you can use for consistent test results in your `distributionUniform` function. I’ll provide you with an array of predetermined seed values:
+
+```swift
+let fixedSeeds: [Double] = [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+]
+
+// Example usage with your distributionUniform function
+let results = fixedSeeds.map { seed in
+    distributionUniform(seed)
+}
+
+// Print the results
+print(results)
+```
+
+In this example, the array `fixedSeeds` contains ten seed values, evenly spaced from 0.0 to 0.9, which will consistently produce the same results for your deterministic function every time you run the test. You can expand or modify the array to include any specific seeds relevant to your testing scenarios. If you need a larger set of seeds, just follow the pattern and add more values as needed.
