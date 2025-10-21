@@ -259,6 +259,162 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		return totalEquity / totalAssets
 	}
 
+	/// Quick ratio (acid-test ratio) - ability to pay current liabilities with liquid assets.
+	///
+	/// The quick ratio excludes inventory from current assets, providing a more conservative
+	/// measure of liquidity than the current ratio.
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
+	/// ```
+	///
+	/// ## Interpretation
+	///
+	/// - **> 1.0**: Company can pay current liabilities with liquid assets (healthy)
+	/// - **0.5-1.0**: Acceptable liquidity for most industries
+	/// - **< 0.5**: May struggle to meet short-term obligations
+	///
+	/// ## When to Use
+	///
+	/// Quick ratio is more relevant than current ratio when:
+	/// - Inventory is slow-moving or hard to liquidate
+	/// - Company is in distress (inventory may not sell quickly)
+	/// - Comparing companies with different inventory levels
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(...)
+	/// let quickRatio = balanceSheet.quickRatio
+	///
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	/// print("Quick Ratio: \(quickRatio[q1]!)")  // e.g., "Quick Ratio: 1.2"
+	/// ```
+	public var quickRatio: TimeSeries<T> {
+		// Find inventory in current assets
+		let inventoryAccounts = assetAccounts.filter {
+			$0.metadata?.category == "Current" &&
+			$0.name.localizedCaseInsensitiveContains("Inventory")
+		}
+
+		let inventory: TimeSeries<T>
+		if !inventoryAccounts.isEmpty {
+			inventory = aggregateAccounts(inventoryAccounts)
+		} else {
+			// No inventory - quick ratio equals current ratio
+			let zero = T(0)
+			let periods = currentAssets.periods
+			let zeroValues = periods.map { _ in zero }
+			inventory = TimeSeries(periods: periods, values: zeroValues)
+		}
+
+		// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
+		let quickAssets = currentAssets - inventory
+		return quickAssets / currentLiabilities
+	}
+
+	/// Cash ratio - most conservative liquidity measure.
+	///
+	/// The cash ratio only counts cash and cash equivalents, excluding all other current assets.
+	/// This is the most stringent test of a company's ability to pay immediate obligations.
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Cash Ratio = (Cash + Cash Equivalents) / Current Liabilities
+	/// ```
+	///
+	/// ## Interpretation
+	///
+	/// - **> 0.5**: Excellent liquidity (can pay half of current liabilities with cash)
+	/// - **0.2-0.5**: Acceptable liquidity for most businesses
+	/// - **< 0.2**: Low cash reserves (may need to liquidate other assets)
+	///
+	/// ## When to Use
+	///
+	/// Cash ratio is most relevant when:
+	/// - Analyzing financial distress or bankruptcy risk
+	/// - Evaluating companies in volatile industries
+	/// - Assessing ability to weather unexpected disruptions
+	/// - Comparing cash management efficiency
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(...)
+	/// let cashRatio = balanceSheet.cashRatio
+	///
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	/// print("Cash Ratio: \(cashRatio[q1]!)")  // e.g., "Cash Ratio: 0.35"
+	/// ```
+	public var cashRatio: TimeSeries<T> {
+		// Find cash and cash equivalents in current assets
+		let cashAccounts = assetAccounts.filter {
+			$0.metadata?.category == "Current" && (
+				$0.name.localizedCaseInsensitiveContains("Cash") ||
+				$0.name.localizedCaseInsensitiveContains("Cash Equivalent") ||
+				$0.name.localizedCaseInsensitiveContains("Marketable Securities")
+			)
+		}
+
+		let cash: TimeSeries<T>
+		if !cashAccounts.isEmpty {
+			cash = aggregateAccounts(cashAccounts)
+		} else {
+			// No cash accounts found - cash ratio is zero
+			let zero = T(0)
+			let periods = currentAssets.periods
+			let zeroValues = periods.map { _ in zero }
+			cash = TimeSeries(periods: periods, values: zeroValues)
+		}
+
+		// Cash Ratio = Cash / Current Liabilities
+		return cash / currentLiabilities
+	}
+
+	/// Debt ratio - proportion of assets financed by debt.
+	///
+	/// The debt ratio measures financial leverage by comparing total liabilities to total assets.
+	/// Lower ratio indicates less risk from debt financing.
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Debt Ratio = Total Liabilities / Total Assets
+	/// ```
+	///
+	/// ## Interpretation
+	///
+	/// - **< 0.3**: Low leverage (conservative financing)
+	/// - **0.3-0.6**: Moderate leverage (typical for many industries)
+	/// - **> 0.6**: High leverage (higher financial risk)
+	///
+	/// ## Industry Variation
+	///
+	/// - **Capital-intensive industries** (utilities, telecom): 0.5-0.7 is normal
+	/// - **Technology/Services**: 0.2-0.4 is typical
+	/// - **Real estate**: 0.6-0.8 is common (asset-backed lending)
+	///
+	/// ## Related Metrics
+	///
+	/// - Debt-to-Equity Ratio = Total Liabilities / Total Equity
+	/// - Equity Ratio = Total Equity / Total Assets = 1 - Debt Ratio
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(...)
+	/// let debtRatio = balanceSheet.debtRatio
+	///
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	/// print("Debt Ratio: \(debtRatio[q1]! * 100)%")  // e.g., "Debt Ratio: 45.0%"
+	/// ```
+	public var debtRatio: TimeSeries<T> {
+		return totalLiabilities / totalAssets
+	}
+
 	// MARK: - Validation
 
 	/// Validates the accounting equation: Assets = Liabilities + Equity.
