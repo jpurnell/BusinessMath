@@ -13,13 +13,40 @@ import Numerics
 @Suite("RiskMetrics Tests")
 struct RiskMetricsTests {
 
+	// Helper to generate deterministic normal samples
+	static func generateNormalSamples(count: Int, mean: Double, stdDev: Double, seed: UInt64 = 98765) -> [Double] {
+		let rng = DistributionSeedingTests.SeededRNG(seed: seed)
+		var samples: [Double] = []
+
+		for _ in 0..<count {
+			let u1 = rng.next()
+			let u2 = rng.next()
+			let sample: Double = distributionNormal(mean: mean, stdDev: stdDev, u1, u2)
+			samples.append(sample)
+		}
+
+		return samples
+	}
+
+	// Helper to generate deterministic uniform samples
+	static func generateUniformSamples(count: Int, min: Double, max: Double, seed: UInt64 = 98765) -> [Double] {
+		let rng = DistributionSeedingTests.SeededRNG(seed: seed)
+		var samples: [Double] = []
+
+		for _ in 0..<count {
+			let u = rng.next()
+			let sample: Double = distributionUniform(min: min, max: max, u)
+			samples.append(sample)
+		}
+
+		return samples
+	}
+
 	@Test("VaR calculation at 95% confidence level")
 	func varCalculation95() {
 		// Normal distribution: N(0, 1)
 		// 95% VaR should be approximately -1.645 (5th percentile)
-		let values = (0..<10_000).map { _ in
-			DistributionNormal(0.0, 1.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 10_000, mean: 0.0, stdDev: 1.0)
 
 		let results = SimulationResults(values: values)
 		let var95 = results.valueAtRisk(confidenceLevel: 0.95)
@@ -33,9 +60,7 @@ struct RiskMetricsTests {
 	func varCalculation99() {
 		// Normal distribution: N(0, 1)
 		// 99% VaR should be approximately -2.326 (1st percentile)
-		let values = (0..<10_000).map { _ in
-			DistributionNormal(0.0, 1.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 10_000, mean: 0.0, stdDev: 1.0)
 
 		let results = SimulationResults(values: values)
 		let var99 = results.valueAtRisk(confidenceLevel: 0.99)
@@ -47,9 +72,7 @@ struct RiskMetricsTests {
 
 	@Test("VaR increases with confidence level")
 	func varIncreasesWithConfidence() {
-		let values = (0..<5_000).map { _ in
-			DistributionNormal(0.0, 1.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 5_000, mean: 0.0, stdDev: 1.0)
 
 		let results = SimulationResults(values: values)
 
@@ -66,9 +89,7 @@ struct RiskMetricsTests {
 	func cvarCalculation95() {
 		// Normal distribution: N(0, 1)
 		// 95% CVaR should be approximately -2.06 (mean of tail beyond 5th percentile)
-		let values = (0..<10_000).map { _ in
-			DistributionNormal(0.0, 1.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 10_000, mean: 0.0, stdDev: 1.0)
 
 		let results = SimulationResults(values: values)
 		let cvar95 = results.conditionalValueAtRisk(confidenceLevel: 0.95)
@@ -82,9 +103,7 @@ struct RiskMetricsTests {
 	func cvarCalculation99() {
 		// Normal distribution: N(0, 1)
 		// 99% CVaR should be approximately -2.665 (mean of tail beyond 1st percentile)
-		let values = (0..<10_000).map { _ in
-			DistributionNormal(0.0, 1.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 10_000, mean: 0.0, stdDev: 1.0)
 
 		let results = SimulationResults(values: values)
 		let cvar99 = results.conditionalValueAtRisk(confidenceLevel: 0.99)
@@ -96,9 +115,7 @@ struct RiskMetricsTests {
 
 	@Test("CVaR is always more extreme than VaR")
 	func cvarMoreExtremeThanVar() {
-		let values = (0..<5_000).map { _ in
-			DistributionNormal(0.0, 1.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 5_000, mean: 0.0, stdDev: 1.0)
 
 		let results = SimulationResults(values: values)
 
@@ -114,9 +131,7 @@ struct RiskMetricsTests {
 	@Test("VaR and CVaR with positive returns")
 	func varCvarPositiveReturns() {
 		// All positive values: simulate profitable portfolio
-		let values = (0..<5_000).map { _ in
-			DistributionNormal(1_000_000.0, 50_000.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 5_000, mean: 1_000_000.0, stdDev: 50_000.0)
 
 		let results = SimulationResults(values: values)
 
@@ -161,9 +176,7 @@ struct RiskMetricsTests {
 	func varCvarUniform() {
 		// Uniform distribution: easier to validate
 		// Uniform(0, 100): 95% VaR = 5, CVaR = 2.5 (mean of [0, 5])
-		let values = (0..<10_000).map { _ in
-			DistributionUniform(0.0, 100.0).next()
-		}
+		let values = Self.generateUniformSamples(count: 10_000, min: 0.0, max: 100.0)
 
 		let results = SimulationResults(values: values)
 
@@ -181,9 +194,7 @@ struct RiskMetricsTests {
 
 	@Test("VaR at extreme confidence levels")
 	func varExtremeConfidence() {
-		let values = (0..<10_000).map { _ in
-			DistributionNormal(0.0, 1.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 10_000, mean: 0.0, stdDev: 1.0)
 
 		let results = SimulationResults(values: values)
 
@@ -200,9 +211,7 @@ struct RiskMetricsTests {
 
 	@Test("CVaR approaches minimum value at high confidence")
 	func cvarApproachesMinimum() {
-		let values = (0..<5_000).map { _ in
-			DistributionNormal(100.0, 10.0).next()
-		}
+		let values = Self.generateNormalSamples(count: 5_000, mean: 100.0, stdDev: 10.0)
 
 		let results = SimulationResults(values: values)
 
@@ -288,14 +297,9 @@ struct RiskMetricsTests {
 
 	@Test("VaR and CVaR consistency across runs")
 	func varCvarConsistency() {
-		// Run simulation twice, verify similar results
-		let values1 = (0..<10_000).map { _ in
-			DistributionNormal(100.0, 15.0).next()
-		}
-
-		let values2 = (0..<10_000).map { _ in
-			DistributionNormal(100.0, 15.0).next()
-		}
+		// Run simulation twice with SAME seed, verify IDENTICAL results
+		let values1 = Self.generateNormalSamples(count: 10_000, mean: 100.0, stdDev: 15.0, seed: 12345)
+		let values2 = Self.generateNormalSamples(count: 10_000, mean: 100.0, stdDev: 15.0, seed: 12345)
 
 		let results1 = SimulationResults(values: values1)
 		let results2 = SimulationResults(values: values2)
@@ -306,8 +310,9 @@ struct RiskMetricsTests {
 		let cvar95_1 = results1.conditionalValueAtRisk(confidenceLevel: 0.95)
 		let cvar95_2 = results2.conditionalValueAtRisk(confidenceLevel: 0.95)
 
-		// Results should be similar but not identical
-		#expect(abs(var95_1 - var95_2) < 5.0, "VaR should be consistent across runs")
-		#expect(abs(cvar95_1 - cvar95_2) < 5.0, "CVaR should be consistent across runs")
+		// With deterministic seeding, results should be EXACTLY identical
+		#expect(var95_1 == var95_2, "VaR should be exactly identical with same seed")
+		#expect(cvar95_1 == cvar95_2, "CVaR should be exactly identical with same seed")
+		#expect(values1 == values2, "Sample arrays should be exactly identical with same seed")
 	}
 }
