@@ -37,6 +37,26 @@ import Numerics
 /// print("Q1 ROA: \(roa[q1]! * 100)%")
 /// ```
 
+// MARK: - Errors
+
+/// Errors that can occur when calculating financial ratios.
+public enum FinancialRatioError: Error, CustomStringConvertible {
+	/// Required account not found in balance sheet.
+	case missingAccount(String)
+
+	/// Required expense not found in income statement.
+	case missingExpense(String)
+
+	public var description: String {
+		switch self {
+		case .missingAccount(let name):
+			return "Required account '\(name)' not found in balance sheet"
+		case .missingExpense(let name):
+			return "Required expense '\(name)' not found in income statement"
+		}
+	}
+}
+
 // MARK: - Profitability Ratios
 
 /// Return on Assets (ROA) - measures profit generated per dollar of assets.
@@ -220,6 +240,315 @@ public func returnOnInvestedCapital<T: Real>(
 
 	// ROIC = NOPAT / Average Invested Capital
 	return nopat / averageInvestedCapital
+}
+
+// MARK: - Efficiency Ratios (Asset Turnover)
+
+/// Asset Turnover - revenue generated per dollar of total assets.
+///
+/// Asset turnover measures how efficiently a company uses its assets to generate revenue.
+/// Higher turnover indicates better asset utilization.
+///
+/// ## Formula
+///
+/// ```
+/// Asset Turnover = Revenue / Average Total Assets
+/// ```
+///
+/// ## Interpretation
+///
+/// - **> 1.0**: Company generates more than $1 of revenue per $1 of assets (efficient)
+/// - **< 1.0**: Company generates less than $1 of revenue per $1 of assets
+/// - **Industry variation**: Retail/services have higher turnover than capital-intensive industries
+///
+/// ## Industry Benchmarks
+///
+/// - **Retail**: 2.0 - 3.0 (fast-moving inventory, low asset base)
+/// - **Manufacturing**: 0.5 - 1.5 (heavy equipment, slower turnover)
+/// - **Software/Services**: 0.8 - 2.0 (low capital requirements)
+///
+/// ## Example
+///
+/// ```swift
+/// let turnover = assetTurnover(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Asset Turnover: \(turnover[q1]!)x")  // e.g., "Asset Turnover: 1.5x"
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing revenue
+///   - balanceSheet: Balance sheet containing total assets
+/// - Returns: Time series of asset turnover ratios
+public func assetTurnover<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) -> TimeSeries<T> {
+	let revenue = incomeStatement.totalRevenue
+	let totalAssets = balanceSheet.totalAssets
+
+	// Calculate average assets for each period
+	let averageAssets = averageTimeSeries(totalAssets)
+
+	// Asset Turnover = Revenue / Average Assets
+	return revenue / averageAssets
+}
+
+/// Inventory Turnover - how many times inventory is sold and replaced per period.
+///
+/// Inventory turnover measures how quickly a company sells through its inventory.
+/// Higher turnover indicates faster inventory movement (generally better).
+///
+/// ## Formula
+///
+/// ```
+/// Inventory Turnover = Cost of Goods Sold / Average Inventory
+/// ```
+///
+/// ## Interpretation
+///
+/// - **> 6**: Fast-moving inventory (retail, perishables)
+/// - **3-6**: Moderate turnover (manufacturing)
+/// - **< 3**: Slow-moving inventory (luxury goods, heavy equipment)
+///
+/// ## Requirements
+///
+/// - Balance sheet must have an account with category "Current" containing "Inventory" in the name
+/// - Income statement must have COGS (identified by name or category)
+///
+/// ## Example
+///
+/// ```swift
+/// let turnover = try inventoryTurnover(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Inventory Turnover: \(turnover[q1]!)x")  // e.g., "Inventory Turnover: 8.0x"
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing COGS
+///   - balanceSheet: Balance sheet containing inventory account
+/// - Returns: Time series of inventory turnover ratios
+/// - Throws: ``FinancialRatioError/missingAccount(_:)`` if inventory account not found
+/// - Throws: ``FinancialRatioError/missingExpense(_:)`` if COGS not found
+public func inventoryTurnover<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) throws -> TimeSeries<T> {
+	// Find COGS in income statement
+	guard let cogs = incomeStatement.expenseAccounts.first(where: {
+		$0.name.localizedCaseInsensitiveContains("Cost of Goods Sold") ||
+		$0.name.localizedCaseInsensitiveContains("COGS")
+	}) else {
+		throw FinancialRatioError.missingExpense("Cost of Goods Sold (COGS)")
+	}
+
+	// Find inventory in balance sheet (current asset)
+	guard let inventory = balanceSheet.assetAccounts.first(where: {
+		$0.metadata?.category == "Current" &&
+		$0.name.localizedCaseInsensitiveContains("Inventory")
+	}) else {
+		throw FinancialRatioError.missingAccount("Inventory")
+	}
+
+	let cogsTimeSeries = cogs.timeSeries
+	let inventoryTimeSeries = inventory.timeSeries
+
+	// Calculate average inventory for each period
+	let averageInventory = averageTimeSeries(inventoryTimeSeries)
+
+	// Inventory Turnover = COGS / Average Inventory
+	return cogsTimeSeries / averageInventory
+}
+
+/// Days Inventory Outstanding (DIO) - average number of days inventory is held.
+///
+/// DIO measures how many days, on average, it takes to sell through inventory.
+/// Lower DIO indicates faster inventory turnover (generally better for cash flow).
+///
+/// ## Formula
+///
+/// ```
+/// DIO = 365 / Inventory Turnover
+/// ```
+///
+/// Alternatively:
+/// ```
+/// DIO = (Average Inventory / COGS) × 365
+/// ```
+///
+/// ## Interpretation
+///
+/// - **< 30 days**: Very fast turnover (fresh food, fast fashion)
+/// - **30-60 days**: Fast turnover (general retail)
+/// - **60-90 days**: Moderate turnover (manufacturing)
+/// - **> 90 days**: Slow turnover (luxury goods, seasonal items)
+///
+/// ## Cash Conversion Cycle
+///
+/// DIO is part of the Cash Conversion Cycle:
+/// ```
+/// Cash Conversion Cycle = DIO + DSO - DPO
+/// ```
+/// Where DSO = Days Sales Outstanding, DPO = Days Payables Outstanding
+///
+/// ## Example
+///
+/// ```swift
+/// let dio = try daysInventoryOutstanding(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("DIO: \(dio[q1]!) days")  // e.g., "DIO: 45.6 days"
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing COGS
+///   - balanceSheet: Balance sheet containing inventory account
+/// - Returns: Time series of days inventory outstanding
+/// - Throws: ``FinancialRatioError`` if required accounts not found
+public func daysInventoryOutstanding<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) throws -> TimeSeries<T> {
+	let turnover = try inventoryTurnover(
+		incomeStatement: incomeStatement,
+		balanceSheet: balanceSheet
+	)
+
+	// DIO = 365 / Inventory Turnover
+	let daysPerYear = T(365)
+	return turnover.mapValues { daysPerYear / $0 }
+}
+
+/// Receivables Turnover - how quickly receivables are collected.
+///
+/// Receivables turnover measures how many times per period a company collects
+/// its average accounts receivable balance. Higher turnover indicates faster collection.
+///
+/// ## Formula
+///
+/// ```
+/// Receivables Turnover = Revenue / Average Accounts Receivable
+/// ```
+///
+/// ## Interpretation
+///
+/// - **> 12**: Very fast collection (< 30 days)
+/// - **6-12**: Fast collection (30-60 days)
+/// - **4-6**: Moderate collection (60-90 days)
+/// - **< 4**: Slow collection (> 90 days)
+///
+/// ## Requirements
+///
+/// - Balance sheet must have a current asset account containing "Receivable" in the name
+///
+/// ## Example
+///
+/// ```swift
+/// let turnover = try receivablesTurnover(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Receivables Turnover: \(turnover[q1]!)x")  // e.g., "Receivables Turnover: 6.0x"
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing revenue
+///   - balanceSheet: Balance sheet containing receivables account
+/// - Returns: Time series of receivables turnover ratios
+/// - Throws: ``FinancialRatioError/missingAccount(_:)`` if receivables account not found
+public func receivablesTurnover<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) throws -> TimeSeries<T> {
+	// Find accounts receivable in balance sheet (current asset)
+	guard let receivables = balanceSheet.assetAccounts.first(where: {
+		$0.metadata?.category == "Current" &&
+		$0.name.localizedCaseInsensitiveContains("Receivable")
+	}) else {
+		throw FinancialRatioError.missingAccount("Accounts Receivable")
+	}
+
+	let revenue = incomeStatement.totalRevenue
+	let receivablesTimeSeries = receivables.timeSeries
+
+	// Calculate average receivables for each period
+	let averageReceivables = averageTimeSeries(receivablesTimeSeries)
+
+	// Receivables Turnover = Revenue / Average Receivables
+	return revenue / averageReceivables
+}
+
+/// Days Sales Outstanding (DSO) - average number of days to collect receivables.
+///
+/// DSO measures how many days, on average, it takes to collect payment after a sale.
+/// Lower DSO indicates faster collection (better for cash flow).
+///
+/// ## Formula
+///
+/// ```
+/// DSO = 365 / Receivables Turnover
+/// ```
+///
+/// Alternatively:
+/// ```
+/// DSO = (Average Receivables / Revenue) × 365
+/// ```
+///
+/// ## Interpretation
+///
+/// - **< 30 days**: Excellent collection (cash businesses, net-30 terms)
+/// - **30-45 days**: Good collection (net-30 to net-45 terms)
+/// - **45-60 days**: Acceptable collection (net-60 terms)
+/// - **> 60 days**: Slow collection (may indicate collection issues)
+///
+/// ## Credit Policy Impact
+///
+/// DSO directly reflects credit policy:
+/// - Net-30 terms → DSO should be ~30-35 days
+/// - Net-60 terms → DSO should be ~60-65 days
+/// - Net-90 terms → DSO should be ~90-95 days
+///
+/// ## Example
+///
+/// ```swift
+/// let dso = try daysSalesOutstanding(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("DSO: \(dso[q1]!) days")  // e.g., "DSO: 42.5 days"
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing revenue
+///   - balanceSheet: Balance sheet containing receivables account
+/// - Returns: Time series of days sales outstanding
+/// - Throws: ``FinancialRatioError`` if required accounts not found
+public func daysSalesOutstanding<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) throws -> TimeSeries<T> {
+	let turnover = try receivablesTurnover(
+		incomeStatement: incomeStatement,
+		balanceSheet: balanceSheet
+	)
+
+	// DSO = 365 / Receivables Turnover
+	let daysPerYear = T(365)
+	return turnover.mapValues { daysPerYear / $0 }
 }
 
 // MARK: - Helper Functions
