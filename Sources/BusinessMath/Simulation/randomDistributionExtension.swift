@@ -26,7 +26,7 @@ extension Double {
 	}
 	
 	public static func randomLogistic(_ mean: Double = 0, _ stdDev: Double = 1) -> Double {
-		return distributionLogistic(distributionUniform(), mean, stdDev)
+		return distributionLogistic(mean, stdDev)
 	}
 	
 	public static func randomLogNormal(mean: Double, stdDev: Double) -> Double {

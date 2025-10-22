@@ -28,10 +28,19 @@ import Numerics
 ///   let probabilityOfSuccess: Double = 0.5
 ///   let randomValue: Double = distributionGeometric(probabilityOfSuccess)
 ///   // randomValue will be a random number generated from the geometric distribution with parameter p = 0.5
-public func distributionGeometric<T: Real>(_ p: T) -> T {
+public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T {
 	var x: T = T(0)
+	var seedIndex = 0
+
 	while true {
-		let u: T = distributionUniform()
+		let u: T
+		if let seeds = seeds, seedIndex < seeds.count {
+			u = distributionUniform(min: T(0), max: T(1), seeds[seedIndex])
+			seedIndex += 1
+		} else {
+			u = distributionUniform()
+		}
+
 		if u < p {
 			break
 		}

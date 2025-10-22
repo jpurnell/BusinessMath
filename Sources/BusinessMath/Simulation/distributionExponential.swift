@@ -21,8 +21,13 @@ import Numerics
 /// - Note: The function computes the random number using the inverse transform sampling method:
 ///   \[ X = -\frac{1}{\lambda} \
 ///
-public func distributionExponential<T: Real>(λ: T) -> T {
-	let u: T = distributionUniform()
+public func distributionExponential<T: Real>(λ: T, seed: Double? = nil) -> T {
+	let u: T
+	if let seed = seed {
+		u = distributionUniform(min: T(0), max: T(1), seed)
+	} else {
+		u = distributionUniform()
+	}
 	return T(-1) * (T(1) / λ) * T.log(1 - u)
 }
 

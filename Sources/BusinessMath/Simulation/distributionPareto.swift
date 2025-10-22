@@ -59,13 +59,18 @@ import Numerics
 /// let sales: Double = distributionPareto(scale: 1000, shape: 2.0)
 /// print("Customer value: $\(sales)")
 /// ```
-public func distributionPareto<T: Real>(scale: T, shape: T) -> T {
+public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil) -> T {
 	precondition(scale > T(0), "Pareto scale parameter must be positive")
 	precondition(shape > T(0), "Pareto shape parameter must be positive")
 
 	// Use inverse transform method: X = xₘ / U^(1/α)
 	// where U ~ Uniform(0,1)
-	let u: T = distributionUniform(min: T(0), max: T(1))
+	let u: T
+	if let seed = seed {
+		u = distributionUniform(min: T(0), max: T(1), seed)
+	} else {
+		u = distributionUniform(min: T(0), max: T(1))
+	}
 
 	// Avoid division by very small numbers
 	let epsilon: T = T(1) / T(10000000000)  // 1e-10
