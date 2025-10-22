@@ -27,7 +27,13 @@ import Numerics
  - Requires: The use of appropriate `Real` compatible number types for accurate results.
  */
 
-public func distributionLogistic<T: Real>(_ p: T = distributionUniform(), _ mean: T = 0, _ stdDev: T = 1) -> T {
+public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: Double? = nil) -> T {
+	let p: T
+	if let seed = seed {
+		p = distributionUniform(min: T(0), max: T(1), seed)
+	} else {
+		p = distributionUniform()
+	}
 	let magicNumber = T.sqrt(3) / T.pi
 	return mean + magicNumber * stdDev * T.log(p / (1 - p))
 }
@@ -47,7 +53,7 @@ public struct DistributionLogistic: DistributionRandom {
 	}
 	
 	public func random() -> Double {
-		return distributionLogistic(distributionUniform(), mean, stdDev)
+		return distributionLogistic(mean, stdDev)
 	}
 	
 	public func next() -> Double {

@@ -14,8 +14,14 @@ import Numerics
 ///
 /// - Parameter mean: The mean of the Rayleigh distribution.
 /// - Returns: A random value sampled from the Rayleigh distribution.
-public func distributionRayleigh<T: Real>(mean: T) -> T {
-    return mean * T.sqrt(T(-2) * T.log(distributionUniform(min: T(0), max: T(1))))
+public func distributionRayleigh<T: Real>(mean: T, seed: Double? = nil) -> T {
+	let u: T
+	if let seed = seed {
+		u = distributionUniform(min: T(0), max: T(1), seed)
+	} else {
+		u = distributionUniform(min: T(0), max: T(1))
+	}
+    return mean * T.sqrt(T(-2) * T.log(u))
 }
 
 /// A type that represents a Rayleigh distribution.

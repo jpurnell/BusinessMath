@@ -28,8 +28,22 @@ import Numerics
 ///   let randomValue: Double = distributionGamma(r: shapeParameter, λ: rateParameter)
 ///   // randomValue will be a random number generated from the Gamma distribution with parameters r = 3 and λ = 2.0
 
-public func distributionGamma<T: Real>(r: Int, λ: T) -> T {
-	return (0..<r).map({_ in distributionExponential(λ: λ) }).reduce(T(0), +)
+public func distributionGamma<T: Real>(r: Int, λ: T, seeds: [Double]? = nil) -> T {
+	if let seeds = seeds {
+		// Use provided seeds for deterministic generation
+		let requiredSeeds = min(r, seeds.count)
+		var sum: T = T(0)
+		for i in 0..<requiredSeeds {
+			sum += distributionExponential(λ: λ, seed: seeds[i])
+		}
+		// If not enough seeds, generate remaining randomly
+		for _ in requiredSeeds..<r {
+			sum += distributionExponential(λ: λ)
+		}
+		return sum
+	} else {
+		return (0..<r).map({_ in distributionExponential(λ: λ) }).reduce(T(0), +)
+	}
 }
 
 /// Generates a random value from a Gamma distribution using Marsaglia and Tsang's method.

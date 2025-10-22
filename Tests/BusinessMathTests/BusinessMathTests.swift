@@ -5,7 +5,7 @@ import Numerics
 
 final class UnassortedTests: XCTestCase {
     
-	let unassortedTestsLogger = Logger(subsystem: "Business Math > Tests > Business Math Tests", category: "Unassorted Tests")
+	let unassortedTestsLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > BusinessMathTests.swift", category: #function)
 	
     func testStatisticsFunctions() {
 
@@ -243,7 +243,7 @@ final class UnassortedTests: XCTestCase {
     
     func testConfidenceIntervalCI() {
         let result = confidenceInterval(ci: 0, values: [0])
-		unassortedTestsLogger.log("Test Confidence Interval CI:\t\(result.low)\t\(result.high)")
+		unassortedTestsLogger.info("Test Confidence Interval CI:\t\(result.low)\t\(result.high)")
     }
     
     func testNormalPDF() {
@@ -255,7 +255,7 @@ final class UnassortedTests: XCTestCase {
     
     func testConfidenceIntervalProbabilistic() {
         let result = confidenceIntervalProbabilistic(0.05, observations: 50, ci: 0.95)
-		unassortedTestsLogger.log("Test Confidence Interval Probabilistic:\t\(result.low)\t\(result.high)")
+		unassortedTestsLogger.info("Test Confidence Interval Probabilistic:\t\(result.low)\t\(result.high)")
     }
     
     func testBinomial() {

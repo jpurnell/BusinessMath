@@ -76,8 +76,6 @@ final class CentralTendencyTests: XCTestCase {
 		let result = median([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
 		let resultOdd = median([0.0, 1.0, 2.0, 3.0, 4.0])
 		let resultOne = median([1.0, 1, 1, 1, 1, 1, 2])
-		logger.info("\(result)")
-		logger.info("\(resultOne)")
 		XCTAssertEqual(result, 2.5)
 		XCTAssertEqual(resultOdd, 2.0)
 		XCTAssertEqual(resultOne, 1)

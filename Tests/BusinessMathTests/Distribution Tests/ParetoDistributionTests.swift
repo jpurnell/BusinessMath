@@ -16,15 +16,39 @@ import OSLog
 struct ParetoDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.ParetoDistributionTests", category: #function)
 
+	// Helper function to generate seeds for Pareto distribution using SeededRNG
+	// Pareto uses inverse transform with 1 seed per sample
+	static func seedsForPareto(count: Int) -> [Double] {
+		let rng = DistributionSeedingTests.SeededRNG(seed: 54321)  // Unique seed for Pareto
+		var seeds: [Double] = []
+
+		for _ in 0..<count {
+			var seed = rng.next()
+			seed = max(0.0001, min(0.9999, seed))
+			seeds.append(seed)
+		}
+
+		return seeds
+	}
+
 	@Test("Pareto distribution function produces values >= scale")
 	func paretoFunctionBounds() {
 		// Test with scale = 1.0, shape = 2.0
 		let scale = 1.0
 		let shape = 2.0
 
-		// Generate 1000 samples and verify all are >= scale
-		for _ in 0..<1000 {
-			let sample: Double = distributionPareto(scale: scale, shape: shape)
+		// Generate 1000 samples
+
+
+		let sampleCount = 1000
+
+
+		let seeds = Self.seedsForPareto(count: sampleCount)
+
+
+
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			#expect(sample >= scale, "Pareto values must be >= scale parameter")
 			#expect(sample.isFinite, "Pareto values must be finite")
 			#expect(!sample.isNaN, "Pareto values must not be NaN")
@@ -39,10 +63,13 @@ struct ParetoDistributionTests {
 		let scale = 1.0
 		let shape = 3.0
 		let expectedMean = (shape * scale) / (shape - 1)  // 1.5
+		
+		let sampleCount = 1000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionPareto(scale: scale, shape: shape)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -54,11 +81,14 @@ struct ParetoDistributionTests {
 
 	@Test("Pareto distribution struct random() method")
 	func paretoStructRandom() {
-		let distribution = DistributionPareto(scale: 1.0, shape: 2.0)
+		let scale = 1.0
+		let shape = 2.0
+		let sampleCount = 1000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		// Test that random() produces values >= scale
-		for _ in 0..<100 {
-			let sample = distribution.random()
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			#expect(sample >= 1.0)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
@@ -67,12 +97,15 @@ struct ParetoDistributionTests {
 
 	@Test("Pareto distribution struct next() method")
 	func paretoStructNext() {
-		let distribution = DistributionPareto(scale: 10.0, shape: 2.5)
+		let scale = 10.0
+		let shape = 2.5
+		let sampleCount = 2000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		// Test that next() produces values >= scale
 		var samples: [Double] = []
-		for _ in 0..<2000 {
-			let sample = distribution.next()
+		for i in 0..<sampleCount {
+			let sample = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 10.0)
 			#expect(sample.isFinite)
@@ -90,10 +123,13 @@ struct ParetoDistributionTests {
 		// Shape ≈ 1.5 models the classic 80/20 rule
 		let scale = 1.0
 		let shape = 1.5
+		
+		let sampleCount = 2000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<10000 {
-			let sample: Double = distributionPareto(scale: scale, shape: shape)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -115,13 +151,16 @@ struct ParetoDistributionTests {
 	func paretoDifferentScales() {
 		// Test that scale parameter shifts minimum value
 		let shape = 2.0
+		
+		let sampleCount = 5000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		var samplesScale1: [Double] = []
 		var samplesScale10: [Double] = []
 
-		for _ in 0..<5000 {
-			samplesScale1.append(distributionPareto(scale: 1.0, shape: shape))
-			samplesScale10.append(distributionPareto(scale: 10.0, shape: shape))
+		for i in 0..<sampleCount {
+			samplesScale1.append(distributionPareto(scale: 1.0, shape: shape, seed: seeds[i]))
+			samplesScale10.append(distributionPareto(scale: 10.0, shape: shape, seed: seeds[i]))
 		}
 
 		// All scale=1 samples should be >= 1
@@ -144,10 +183,13 @@ struct ParetoDistributionTests {
 		// High shape means less inequality (more concentrated around minimum)
 		let scale = 1.0
 		let shape = 10.0
+		
+		let sampleCount = 5000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionPareto(scale: scale, shape: shape)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -164,10 +206,13 @@ struct ParetoDistributionTests {
 		// Low shape means high inequality (long tail, extreme values)
 		let scale = 1.0
 		let shape = 1.2
+		
+		let sampleCount = 5000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionPareto(scale: scale, shape: shape)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -184,10 +229,13 @@ struct ParetoDistributionTests {
 		// Pareto has heavier tail than exponential
 		let scale = 1.0
 		let shape = 2.0
+		
+		let sampleCount = 10000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<10000 {
-			let sample: Double = distributionPareto(scale: scale, shape: shape)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -207,11 +255,14 @@ struct ParetoDistributionTests {
 			(1.0, 3.0, 1.5),    // (3×1)/(3-1) = 1.5
 			(2.0, 4.0, 2.67),   // (4×2)/(4-1) = 8/3 ≈ 2.67
 		]
+		
+		let sampleCount = 5000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		for testCase in testCases {
 			var samples: [Double] = []
-			for _ in 0..<5000 {
-				samples.append(distributionPareto(scale: testCase.scale, shape: testCase.shape))
+			for i in 0..<sampleCount {
+				samples.append(distributionPareto(scale: testCase.scale, shape: testCase.shape, seed: seeds[i]))
 			}
 
 			let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -229,10 +280,13 @@ struct ParetoDistributionTests {
 		let scale = 1.0
 		let shape = 2.0
 		let expectedMedian = scale * pow(2.0, 1.0/shape)  // 1 × 2^0.5 = 1.414
+		
+		let sampleCount = 5000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		var samples: [Double] = []
-		for _ in 0..<5000 {
-			let sample: Double = distributionPareto(scale: scale, shape: shape)
+		for i in 0..<sampleCount {
+			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -247,12 +301,14 @@ struct ParetoDistributionTests {
 	func paretoStructParameters() {
 		let scale = 5.0
 		let shape = 3.0
-		let distribution = DistributionPareto(scale: scale, shape: shape)
+		
+		let sampleCount = 1000
+		let seeds = Self.seedsForPareto(count: sampleCount)
 
 		// Generate samples and verify consistency
 		var samples: [Double] = []
-		for _ in 0..<1000 {
-			samples.append(distribution.next())
+		for i in 0..<sampleCount {
+			samples.append(distributionPareto(scale: scale, shape: shape, seed: seeds[i]))
 		}
 
 		// All values should be >= scale
