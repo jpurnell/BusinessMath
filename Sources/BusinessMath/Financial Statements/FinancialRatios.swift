@@ -671,46 +671,5 @@ public func debtServiceCoverage<T: Real>(
 
 // MARK: - Helper Functions
 
-/// Calculate average time series using beginning and ending values for each period.
-///
-/// For financial ratios that use average balance sheet values:
-/// - First period: Uses beginning value (no prior period)
-/// - Subsequent periods: (Beginning + Ending) / 2
-///
-/// This approach is standard in financial analysis to smooth period fluctuations.
-///
-/// - Parameter timeSeries: The time series to average
-/// - Returns: Time series of averaged values
-private func averageTimeSeries<T: Real>(_ timeSeries: TimeSeries<T>) -> TimeSeries<T> {
-	let periods = timeSeries.periods
-	guard !periods.isEmpty else {
-		return timeSeries
-	}
-
-	var averagedValues: [Period: T] = [:]
-	let two = T(2)
-
-	for i in 0..<periods.count {
-		let currentPeriod = periods[i]
-		let currentValue = timeSeries[currentPeriod]!
-
-		if i == 0 {
-			// First period: no prior period, use current value
-			averagedValues[currentPeriod] = currentValue
-		} else {
-			// Subsequent periods: average of prior and current
-			let priorPeriod = periods[i - 1]
-			let priorValue = timeSeries[priorPeriod]!
-			averagedValues[currentPeriod] = (priorValue + currentValue) / two
-		}
-	}
-
-	return TimeSeries(
-		data: averagedValues,
-		metadata: TimeSeriesMetadata(
-			name: "Averaged \(timeSeries.metadata.name)",
-			description: timeSeries.metadata.description,
-			unit: timeSeries.metadata.unit
-		)
-	)
-}
+// Note: averageTimeSeries() is defined in TimeSeriesExtensions.swift
+// and shared across all financial statement analysis modules.

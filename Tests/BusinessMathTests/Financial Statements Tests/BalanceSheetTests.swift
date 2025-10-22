@@ -580,6 +580,315 @@ struct BalanceSheetTests {
 		#expect(materialized.workingCapital[q1] == 60_000)
 	}
 
+	// MARK: - Liquidity Ratios (Quick, Cash)
+
+	@Test("Quick Ratio - with inventory")
+	func testQuickRatio() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		// Cash: $50k
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+
+		// Accounts Receivable: $30k
+		let ar = try makeARAccount(entity: entity, periods: periods)
+
+		// Inventory: $20k (should be excluded from quick ratio)
+		var inventoryMetadata = AccountMetadata()
+		inventoryMetadata.category = "Current"
+		let inventory = try Account(
+			entity: entity,
+			name: "Inventory",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [20_000, 20_000, 20_000, 20_000]),
+			metadata: inventoryMetadata
+		)
+
+		// Accounts Payable: $20k
+		let ap = try makeAPAccount(entity: entity, periods: periods)
+
+		let equity = try makeEquityAccount(entity: entity, periods: periods)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, ar, inventory],
+			liabilityAccounts: [ap],
+			equityAccounts: [equity]
+		)
+
+		let quickRatio = balanceSheet.quickRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
+		// = (50k + 30k + 20k - 20k) / 20k
+		// = 80k / 20k = 4.0
+		#expect(quickRatio[q1]! == 4.0, "Quick ratio should be 4.0")
+
+		// Quick ratio should be lower than current ratio (due to inventory exclusion)
+		let currentRatio = balanceSheet.currentRatio
+		#expect(quickRatio[q1]! < currentRatio[q1]!, "Quick ratio should be less than current ratio when inventory exists")
+	}
+
+	@Test("Quick Ratio - no inventory")
+	func testQuickRatioNoInventory() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		// Service company with no inventory
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+		let ar = try makeARAccount(entity: entity, periods: periods)
+		let ap = try makeAPAccount(entity: entity, periods: periods)
+		let equity = try makeEquityAccount(entity: entity, periods: periods)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, ar],
+			liabilityAccounts: [ap],
+			equityAccounts: [equity]
+		)
+
+		let quickRatio = balanceSheet.quickRatio
+		let currentRatio = balanceSheet.currentRatio
+
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Without inventory, quick ratio should equal current ratio
+		#expect(quickRatio[q1]! == currentRatio[q1]!, "Quick ratio should equal current ratio when no inventory")
+	}
+
+	@Test("Cash Ratio - basic calculation")
+	func testCashRatio() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		// Cash: $50k
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+
+		// AR: $30k (not included in cash ratio)
+		let ar = try makeARAccount(entity: entity, periods: periods)
+
+		// AP: $20k
+		let ap = try makeAPAccount(entity: entity, periods: periods)
+
+		let equity = try makeEquityAccount(entity: entity, periods: periods)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, ar],
+			liabilityAccounts: [ap],
+			equityAccounts: [equity]
+		)
+
+		let cashRatio = balanceSheet.cashRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Cash Ratio = Cash / Current Liabilities
+		// = 50k / 20k = 2.5
+		#expect(cashRatio[q1]! == 2.5, "Cash ratio should be 2.5")
+
+		// Cash ratio should be lower than both current and quick ratios
+		let currentRatio = balanceSheet.currentRatio
+		let quickRatio = balanceSheet.quickRatio
+		#expect(cashRatio[q1]! < quickRatio[q1]!, "Cash ratio should be less than quick ratio")
+		#expect(cashRatio[q1]! < currentRatio[q1]!, "Cash ratio should be less than current ratio")
+	}
+
+	@Test("Cash Ratio - with marketable securities")
+	func testCashRatioWithSecurities() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+
+		// Marketable securities should be included in cash ratio
+		var securitiesMetadata = AccountMetadata()
+		securitiesMetadata.category = "Current"
+		let securities = try Account(
+			entity: entity,
+			name: "Marketable Securities",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [10_000, 10_000, 10_000, 10_000]),
+			metadata: securitiesMetadata
+		)
+
+		let ap = try makeAPAccount(entity: entity, periods: periods)
+		let equity = try makeEquityAccount(entity: entity, periods: periods)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, securities],
+			liabilityAccounts: [ap],
+			equityAccounts: [equity]
+		)
+
+		let cashRatio = balanceSheet.cashRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Cash Ratio = (Cash + Marketable Securities) / Current Liabilities
+		// = (50k + 10k) / 20k = 3.0
+		#expect(cashRatio[q1]! == 3.0, "Cash ratio should include marketable securities")
+	}
+
+	@Test("Cash Ratio - no cash accounts")
+	func testCashRatioNoCash() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		// Company with only AR (no cash)
+		let ar = try makeARAccount(entity: entity, periods: periods)
+		let ap = try makeAPAccount(entity: entity, periods: periods)
+		let equity = try makeEquityAccount(entity: entity, periods: periods)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [ar],
+			liabilityAccounts: [ap],
+			equityAccounts: [equity]
+		)
+
+		let cashRatio = balanceSheet.cashRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// With no cash, cash ratio should be 0
+		#expect(cashRatio[q1]! == 0.0, "Cash ratio should be 0 when no cash accounts exist")
+	}
+
+	// MARK: - Leverage Ratios (Debt Ratio)
+
+	@Test("Debt Ratio - basic calculation")
+	func testDebtRatio() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+		let equipment = try makeEquipmentAccount(entity: entity, periods: periods)
+
+		let ap = try makeAPAccount(entity: entity, periods: periods)
+		let debt = try makeLongTermDebtAccount(entity: entity, periods: periods)
+
+		let equity = try makeEquityAccount(entity: entity, periods: periods)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, equipment],
+			liabilityAccounts: [ap, debt],
+			equityAccounts: [equity]
+		)
+
+		let debtRatio = balanceSheet.debtRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Total Assets = 50k + 100k = 150k
+		// Total Liabilities = 20k + 80k = 100k
+		// Debt Ratio = 100k / 150k = 0.6667
+		let expectedDebtRatio = 100_000.0 / 150_000.0
+		#expect(abs(debtRatio[q1]! - expectedDebtRatio) < 0.001, "Debt ratio should be ~0.667")
+	}
+
+	@Test("Debt Ratio - no debt")
+	func testDebtRatioNoDebt() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		// Company with no liabilities (100% equity financed)
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+		let equity = try makeEquityAccount(entity: entity, periods: periods)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		let debtRatio = balanceSheet.debtRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Debt Ratio = 0 / 50k = 0
+		#expect(debtRatio[q1]! == 0.0, "Debt ratio should be 0 with no liabilities")
+	}
+
+	@Test("Debt Ratio - high leverage")
+	func testDebtRatioHighLeverage() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+		let equipment = try makeEquipmentAccount(entity: entity, periods: periods)
+
+		// High debt load
+		let debt = try Account(
+			entity: entity,
+			name: "Total Debt",
+			type: .liability,
+			timeSeries: TimeSeries(periods: periods, values: [120_000, 120_000, 120_000, 120_000])
+		)
+
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [30_000, 30_000, 30_000, 30_000])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, equipment],
+			liabilityAccounts: [debt],
+			equityAccounts: [equity]
+		)
+
+		let debtRatio = balanceSheet.debtRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Total Assets = 50k + 100k = 150k
+		// Total Liabilities = 120k
+		// Debt Ratio = 120k / 150k = 0.80 (high leverage)
+		#expect(abs(debtRatio[q1]! - 0.80) < 0.01, "Debt ratio should be ~0.80")
+		#expect(debtRatio[q1]! > 0.6, "Should indicate high leverage")
+	}
+
+	@Test("Debt Ratio vs Equity Ratio")
+	func testDebtRatioVsEquityRatio() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		let cash = try makeCashAccount(entity: entity, periods: periods)
+		let ap = try makeAPAccount(entity: entity, periods: periods)
+
+		// Create equity that balances: Assets (50k) = Liabilities (20k) + Equity (30k)
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [30_000, 33_000, 36_000, 39_000])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash],
+			liabilityAccounts: [ap],
+			equityAccounts: [equity]
+		)
+
+		let debtRatio = balanceSheet.debtRatio
+		let equityRatio = balanceSheet.equityRatio
+		let q1 = Period.quarter(year: 2024, quarter: 1)
+
+		// Debt Ratio + Equity Ratio should equal 1.0
+		let sum = debtRatio[q1]! + equityRatio[q1]!
+		#expect(abs(sum - 1.0) < 0.001, "Debt ratio + equity ratio should equal 1.0")
+	}
+
 	// MARK: - Codable
 
 	@Test("Balance sheet is Codable")

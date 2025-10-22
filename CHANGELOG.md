@@ -5,6 +5,138 @@ All notable changes to BusinessMath will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2025-10-21
+
+### Added
+
+**Financial Ratios & Metrics Framework** (Topic 5 - Complete)
+
+Comprehensive financial analysis toolkit including valuation metrics, DuPont analysis, and credit scoring systems. All implementations follow Test-Driven Development (TDD) methodology with 48 passing tests.
+
+#### Valuation Metrics (`ValuationMetrics.swift`)
+
+Market-based valuation ratios combining financial statements with market data:
+
+**1. Market Capitalization**
+- Basic building block for all valuation metrics
+- Supports variable shares outstanding (TimeSeries) for buybacks/dilutions
+- Foundation for P/E, P/B, P/S calculations
+
+**2. Price Ratios**
+- **Price-to-Earnings (P/E)**: Market price relative to earnings per share
+  - Support for both basic and diluted shares
+  - Industry benchmarks and interpretation guidelines
+- **Price-to-Book (P/B)**: Market value vs. book value (shareholders' equity)
+- **Price-to-Sales (P/S)**: Revenue-based valuation for unprofitable companies
+
+**3. Enterprise Value Metrics**
+- **Enterprise Value (EV)**: Capital-structure-neutral valuation (Market Cap + Debt - Cash)
+  - Uses interest-bearing debt only (excludes operating liabilities)
+  - Cash includes marketable securities
+- **EV/EBITDA**: Most popular M&A valuation multiple
+- **EV/Sales**: Alternative for unprofitable or high-growth companies
+
+#### DuPont Analysis (`DuPontAnalysis.swift`)
+
+ROE decomposition for identifying profitability drivers:
+
+**1. 3-Way DuPont Analysis**
+- Net Profit Margin × Asset Turnover × Equity Multiplier = ROE
+- Separates profitability, efficiency, and leverage
+- Identifies specific areas for ROE improvement
+
+**2. 5-Way DuPont Analysis**
+- Extended decomposition: Tax Burden × Interest Burden × EBIT Margin × Asset Turnover × Equity Multiplier
+- Separates operating performance from financing decisions
+- More granular analysis of ROE components
+
+#### Credit Metrics (`CreditMetrics.swift`)
+
+Composite scores for bankruptcy prediction and fundamental strength:
+
+**1. Altman Z-Score**
+- 5-component bankruptcy prediction model
+- Weighted formula: 1.2×A + 1.4×B + 3.3×C + 0.6×D + 1.0×E
+- Zones: Safe (Z > 2.99), Grey (1.81-2.99), Distress (Z < 1.81)
+- Originally developed for manufacturing companies
+
+**2. Piotroski F-Score**
+- 9-point fundamental strength assessment (0-9 scale)
+- **Profitability signals** (4 points): Net income, OCF, ROA improvement, earnings quality
+- **Leverage signals** (3 points): Decreasing debt, improving current ratio, no dilution
+- **Efficiency signals** (2 points): Improving gross margin and asset turnover
+- Useful for value investing and fundamental screening
+
+#### Enhanced Balance Sheet Properties
+
+**New Properties** (`BalanceSheet.swift`)
+- `retainedEarnings`: Accumulated profits (filtered by category "Retained")
+- `longTermDebt`: Interest-bearing long-term debt (filtered by category "Long-Term")
+- Required for Altman Z-Score and Piotroski F-Score calculations
+
+### Changed
+
+**Code Quality Improvements**
+
+**1. Extracted Shared Utility** (`TimeSeriesExtensions.swift`)
+- Created shared `averageTimeSeries()` function
+- Eliminated duplicate implementation in `FinancialRatios.swift` and `DuPontAnalysis.swift`
+- Reduces code duplication (~60 lines)
+- Single source of truth for period-to-period averaging
+- Used across ROA, ROE, asset turnover, inventory turnover, and DuPont analyses
+
+### Tests
+
+**Comprehensive Test Coverage** (48 tests total)
+
+**ValuationMetrics Tests** (9 tests)
+- P/E ratio with high-growth companies
+- P/B for value stock analysis
+- P/S for revenue multiples
+- Enterprise value for leveraged and cash-rich companies
+- EV/EBITDA and EV/Sales multiples
+- Earnings yield as P/E inverse
+
+**DuPont Analysis Tests** (7 tests)
+- 3-way and 5-way decomposition
+- High-margin vs. high-turnover business models
+- Component verification and ROE improvement strategies
+- Interest burden impact analysis
+
+**Credit Metrics Tests** (9 tests)
+- Altman Z-Score: Safe zone, grey zone, and distress zone detection
+- Z-Score component verification
+- Piotroski F-Score: Strong vs. weak companies
+- Individual signal calculations (all 9 signals)
+- Year-over-year improvement detection
+- Boundary cases (zero debt, zero equity issuance)
+
+**Financial Ratios Tests** (23 tests)
+- Existing profitability, efficiency, liquidity, and leverage ratios
+- All tests continue to pass
+
+### Technical Details
+
+**Test-Driven Development (TDD)**
+- All implementations strictly follow TDD methodology
+- Tests written first, then implementation to satisfy tests
+- Ensures API contracts match actual usage patterns
+
+**API Design Decisions**
+- `sharesOutstanding` parameter uses `TimeSeries<T>` (not scalar) to support:
+  - Stock buybacks (shares decrease over time)
+  - New share issuances and dilution
+  - Stock splits
+  - Realistic modeling of actual companies
+- All valuation metrics accept TimeSeries inputs for time-series analysis
+- Credit scores return struct types with detailed component breakdowns
+
+**Implementation Notes**
+- Altman Z-Score uses constant TimeSeries for coefficients (avoids scalar multiplication limitations)
+- Piotroski F-Score implements all 9 binary signals as specified in academic literature
+- EBITDA calculation requires D&A tag on depreciation accounts (category "Non-Cash" + tag "D&A")
+- Gross profit requires COGS category "COGS" (not "Operating")
+
 ## [1.8.1] - 2025-10-20
 
 ### Fixed
