@@ -1,10 +1,9 @@
 .build/
 .claude/
-.DS_Store/
+.DS_Store
 .swiftpm/
 howToResume.md
 overallRules
 codingRules.md~
-Time Series
-./Time Series/
-Sources/BusinessMath/"zzz\ In\ Process"
+Time Series/
+Sources/BusinessMath/zzz In Process/
