@@ -218,12 +218,155 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		return aggregateAccounts(current)
 	}
 
+	/// Cash and cash equivalents (used in enterprise value calculation).
+	///
+	/// Includes cash and marketable securities. This is the liquid cash that would
+	/// be available to an acquirer and is subtracted when calculating enterprise value.
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Cash and Equivalents = Cash + Marketable Securities
+	/// ```
+	///
+	/// ## Identification
+	///
+	/// Accounts are identified as cash equivalents if they are current assets and:
+	/// - Name contains "Cash"
+	/// - Name contains "Cash Equivalent"
+	/// - Name contains "Marketable Securities"
+	///
+	/// ## Use Case
+	///
+	/// Primary use is in enterprise value calculation:
+	/// ```
+	/// EV = Market Cap + Debt - Cash and Equivalents
+	/// ```
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(...)
+	/// let cash = balanceSheet.cashAndEquivalents
+	///
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	/// print("Cash: $\(cash[q1]!)")  // e.g., "Cash: $500,000"
+	/// ```
+	public var cashAndEquivalents: TimeSeries<T> {
+		let cashAccounts = assetAccounts.filter {
+			$0.metadata?.category == "Current" && (
+				$0.name.localizedCaseInsensitiveContains("Cash") ||
+				$0.name.localizedCaseInsensitiveContains("Cash Equivalent") ||
+				$0.name.localizedCaseInsensitiveContains("Marketable Securities")
+			)
+		}
+
+		if !cashAccounts.isEmpty {
+			return aggregateAccounts(cashAccounts)
+		} else {
+			// No cash accounts found - return zero series
+			let zero = T(0)
+			let zeroValues = periods.map { _ in zero }
+			return TimeSeries(periods: periods, values: zeroValues)
+		}
+	}
+
+	/// Interest-bearing debt (loans, bonds, notes payable, leases).
+	///
+	/// Returns only the debt that carries interest expense, excluding operating liabilities
+	/// like accounts payable and accrued expenses. This is the relevant debt for enterprise
+	/// value calculation and capital structure analysis.
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Interest-bearing Debt = Sum of liability accounts with category="Debt"
+	/// ```
+	///
+	/// ## Identification
+	///
+	/// Accounts are identified as interest-bearing debt if they are liabilities and:
+	/// - metadata.category == "Debt" (preferred method)
+	/// - OR name contains "Debt", "Loan", "Bond", "Note Payable", "Lease"
+	///
+	/// ## Common Interest-bearing Debt
+	///
+	/// - **Short-term**: Current portion of long-term debt, short-term loans, lines of credit
+	/// - **Long-term**: Term loans, bonds payable, notes payable, capital leases
+	///
+	/// ## Excluded (Operating Liabilities)
+	///
+	/// - Accounts payable
+	/// - Accrued expenses
+	/// - Deferred revenue
+	/// - Taxes payable
+	///
+	/// ## Use Cases
+	///
+	/// - Enterprise value calculation
+	/// - Debt-to-equity ratio (interest-bearing debt only)
+	/// - Net debt calculation (interest-bearing debt - cash)
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(...)
+	/// let debt = balanceSheet.interestBearingDebt
+	///
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	/// print("Total Debt: $\(debt[q1]!)")  // e.g., "Total Debt: $2,000,000"
+	/// ```
+	public var interestBearingDebt: TimeSeries<T> {
+		// Find debt accounts by category or name
+		let debtAccounts = liabilityAccounts.filter {
+			// Preferred: explicit category tag
+			if $0.metadata?.category == "Debt" {
+				return true
+			}
+
+			// Fallback: name-based identification
+			let name = $0.name.lowercased()
+			return name.contains("debt") ||
+				   name.contains("loan") ||
+				   name.contains("bond") ||
+				   name.contains("note payable") ||
+				   name.contains("lease")
+		}
+
+		if !debtAccounts.isEmpty {
+			return aggregateAccounts(debtAccounts)
+		} else {
+			// No debt accounts found - return zero series (some companies are debt-free)
+			let zero = T(0)
+			let zeroValues = periods.map { _ in zero }
+			return TimeSeries(periods: periods, values: zeroValues)
+		}
+	}
+
 	/// Current liabilities (liabilities with category "Current").
 	///
 	/// Current liabilities are expected to be paid within one year.
 	public var currentLiabilities: TimeSeries<T> {
 		let current = liabilityAccounts.filter { $0.metadata?.category == "Current" }
 		return aggregateAccounts(current)
+	}
+
+	/// Long-term debt (bonds, notes payable, term loans with maturity > 1 year).
+	///
+	/// Filters liability accounts with category "Long-Term" for credit metrics
+	/// like Altman Z-Score and Piotroski F-Score.
+	public var longTermDebt: TimeSeries<T> {
+		let ltDebt = liabilityAccounts.filter { $0.metadata?.category == "Long-Term" }
+		return aggregateAccounts(ltDebt)
+	}
+
+	/// Retained earnings (accumulated profits not distributed as dividends).
+	///
+	/// Filters equity accounts with category "Retained" for credit metrics
+	/// like Altman Z-Score and Piotroski F-Score.
+	public var retainedEarnings: TimeSeries<T> {
+		let retained = equityAccounts.filter { $0.metadata?.category == "Retained" }
+		return aggregateAccounts(retained)
 	}
 
 	/// Working capital (current assets - current liabilities).

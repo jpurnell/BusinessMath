@@ -1,11 +1,12 @@
 import Testing
 import Foundation
+import OSLog
 @testable import BusinessMath
 
 /// Test suite for valuation metrics (P/E, P/B, P/S, EV multiples)
 @Suite("Valuation Metrics Tests")
 struct ValuationMetricsTests {
-
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath > \(#file)", category: "\(#function)")
 	// MARK: - Test Data Setup
 
 	/// Creates a test company with market data for valuation metrics testing
@@ -15,7 +16,7 @@ struct ValuationMetricsTests {
 		IncomeStatement<Double>,
 		BalanceSheet<Double>,
 		TimeSeries<Double>,
-		Double
+		TimeSeries<Double>
 	) {
 		let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc")
 		let quarters = Period.year(2025).quarters()
@@ -53,6 +54,7 @@ struct ValuationMetricsTests {
 
 		var depreciationMetadata = AccountMetadata()
 		depreciationMetadata.category = "Non-Cash"
+		depreciationMetadata.tags.append("D&A")
 		let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
@@ -170,7 +172,8 @@ struct ValuationMetricsTests {
 		// Market Data
 		// Stock price rises over the year (growth stock)
 		let marketPrice = TimeSeries(periods: quarters, values: [150.0, 160.0, 170.0, 180.0])
-		let sharesOutstanding = 1_000.0 // 1,000 shares outstanding
+		// Shares remain constant (no buybacks this scenario)
+		let sharesOutstanding = TimeSeries(periods: quarters, values: [1_000.0, 1_000.0, 1_000.0, 1_000.0])
 
 		return (entity, incomeStatement, balanceSheet, marketPrice, sharesOutstanding)
 	}
@@ -310,18 +313,21 @@ struct ValuationMetricsTests {
 			sharesOutstanding: sharesOutstanding
 		)
 
-		let marketCap = sharesOutstanding * 200.0 // 200K
+		// Calculate market cap: price * shares = 200 * 1000 = 200,000
+		let marketCap = marketCapitalization(marketPrice: marketPrice, sharesOutstanding: sharesOutstanding)
+		let q4MarketCap = marketCap[quarters[3]]!
 
 		// By Q4, cash (65K) exceeds debt (44K), making this a net cash company
 		// EV should be less than market cap in Q4
 		let q4EV = ev[quarters[3]]!
-		#expect(q4EV < marketCap, "EV should be less than market cap when cash > debt")
+		#expect(q4EV < q4MarketCap, "EV should be less than market cap when cash > debt")
 
 		// As cash grows and debt shrinks, EV should approach market cap - net cash
 		// Q1: Cash=50K, Debt=50K -> EV = 200K (no net cash)
 		// Q4: Cash=65K, Debt=44K -> EV = 179K (21K net cash)
 		let q1EV = ev[quarters[0]]!
-		#expect(q1EV <= marketCap, "EV should be at most equal to market cap when debt = cash")
+		let q1MarketCap = marketCap[quarters[0]]!
+		#expect(q1EV <= q1MarketCap, "EV should be at most equal to market cap when debt = cash")
 		#expect(q4EV < q1EV, "EV should decrease as company becomes more cash-rich")
 	}
 

@@ -366,36 +366,5 @@ public func dupontAnalysis5Way<T: Real>(
 
 // MARK: - Helper Functions
 
-/// Calculates period-over-period average of a time series.
-///
-/// For period i:
-/// - If i = 0: Uses beginning value (no prior period available)
-/// - If i > 0: Uses (prior value + current value) / 2
-///
-/// This is the standard approach for calculating average balance sheet values.
-///
-/// - Parameter timeSeries: The time series to average
-/// - Returns: A new time series with averaged values
-private func averageTimeSeries<T: Real>(_ timeSeries: TimeSeries<T>) -> TimeSeries<T> {
-	let periods = timeSeries.periods
-	var averagedValues: [Period: T] = [:]
-	let two = T(2)
-
-	for i in 0..<periods.count {
-		let currentValue = timeSeries[periods[i]]!
-		if i == 0 {
-			// First period: use beginning value
-			averagedValues[periods[i]] = currentValue
-		} else {
-			// Calculate average of prior and current
-			let priorValue = timeSeries[periods[i - 1]]!
-			averagedValues[periods[i]] = (priorValue + currentValue) / two
-		}
-	}
-
-	return TimeSeries(data: averagedValues, metadata: TimeSeriesMetadata(
-		name: "Averaged \(timeSeries.metadata.name)",
-		description: timeSeries.metadata.description,
-		unit: timeSeries.metadata.unit
-	))
-}
+// Note: averageTimeSeries() is defined in TimeSeriesExtensions.swift
+// and shared across all financial statement analysis modules.

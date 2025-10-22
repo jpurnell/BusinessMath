@@ -41,6 +41,8 @@ struct FinancialRatiosTests {
 		)
 
 		// Operating Expenses: $400k per quarter
+		var opexMetadata = AccountMetadata()
+		opexMetadata.category = "Operating"
 		let opexAccount = try Account(
 			entity: entity,
 			name: "Operating Expenses",
@@ -48,7 +50,8 @@ struct FinancialRatiosTests {
 			timeSeries: TimeSeries(
 				periods: quarters,
 				values: [400_000, 400_000, 400_000, 400_000]
-			)
+			),
+			metadata: opexMetadata
 		)
 
 		// Interest Expense: $50k per quarter
@@ -732,5 +735,261 @@ struct FinancialRatiosTests {
 				balanceSheet: balanceSheet
 			)
 		}
+	}
+
+	// MARK: - Leverage Ratio Tests (Interest Coverage, DSCR)
+
+	@Test("Interest Coverage - basic calculation")
+	func testInterestCoverage() throws {
+		let (_, incomeStatement, _) = try createTestCompany()
+
+		// Calculate interest coverage
+		let coverage = try interestCoverage(incomeStatement: incomeStatement)
+
+		let quarters = Period.year(2025).quarters()
+
+		// Q1: Operating Income = Revenue - OpEx = 1,000k - 400k = 600k
+		//     Interest Expense = 50k
+		//     Coverage = 600k / 50k = 12.0x
+		let q1Coverage = coverage[quarters[0]]!
+		#expect(abs(q1Coverage - 12.0) < 0.1, "Q1 interest coverage should be ~12.0x")
+
+		// Q2: Operating Income = 1,100k - 400k = 700k
+		//     Interest Expense = 50k
+		//     Coverage = 700k / 50k = 14.0x
+		let q2Coverage = coverage[quarters[1]]!
+		#expect(abs(q2Coverage - 14.0) < 0.1, "Q2 interest coverage should be ~14.0x")
+
+		// All quarters should have healthy coverage (> 3.0)
+		for quarter in quarters {
+			#expect(coverage[quarter]! > 3.0, "Interest coverage should be healthy (> 3.0)")
+		}
+	}
+
+	@Test("Interest Coverage - distressed company")
+	func testInterestCoverageLow() throws {
+		let entity = Entity(id: "DST", primaryType: .ticker, name: "Distressed Co")
+		let quarters = Period.year(2025).quarters()
+
+		// Low revenue
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [100_000, 100_000, 100_000, 100_000])
+		)
+
+		// High operating expenses
+		var opexMetadata = AccountMetadata()
+		opexMetadata.category = "Operating"
+		let opex = try Account(
+			entity: entity,
+			name: "Operating Expenses",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [70_000, 70_000, 70_000, 70_000]),
+			metadata: opexMetadata
+		)
+
+		// High interest expense (relative to operating income)
+		let interest = try Account(
+			entity: entity,
+			name: "Interest Expense",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [25_000, 25_000, 25_000, 25_000])
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [opex, interest]
+		)
+
+		// Calculate interest coverage
+		let coverage = try interestCoverage(incomeStatement: incomeStatement)
+
+		// Operating Income = 100k - 70k = 30k
+		// Interest Expense = 25k
+		// Coverage = 30k / 25k = 1.2x (risky)
+		let q1Coverage = coverage[quarters[0]]!
+		#expect(abs(q1Coverage - 1.2) < 0.1, "Low interest coverage should be ~1.2x")
+		#expect(q1Coverage < 2.0, "Coverage should be below healthy threshold")
+	}
+
+	@Test("Interest Coverage - missing interest expense")
+	func testInterestCoverageMissingExpense() throws {
+		let entity = Entity(id: "NID", primaryType: .ticker, name: "No Interest Debt Co")
+		let quarters = Period.year(2025).quarters()
+
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_000_000, 1_000_000, 1_000_000])
+		)
+
+		let opex = try Account(
+			entity: entity,
+			name: "Operating Expenses",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [400_000, 400_000, 400_000, 400_000])
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [opex]
+		)
+
+		// Should throw error when no interest expense found
+		#expect(throws: FinancialRatioError.self) {
+			try interestCoverage(incomeStatement: incomeStatement)
+		}
+	}
+
+	@Test("Debt Service Coverage Ratio - basic calculation")
+	func testDebtServiceCoverage() throws {
+		let (_, incomeStatement, _) = try createTestCompany()
+
+		let quarters = Period.year(2025).quarters()
+
+		// Create principal and interest payment series
+		let principalPayments = TimeSeries(
+			periods: quarters,
+			values: [100_000.0, 100_000.0, 100_000.0, 100_000.0]
+		)
+
+		let interestPayments = TimeSeries(
+			periods: quarters,
+			values: [50_000.0, 50_000.0, 50_000.0, 50_000.0]
+		)
+
+		// Calculate DSCR
+		let dscr = debtServiceCoverage(
+			incomeStatement: incomeStatement,
+			principalPayments: principalPayments,
+			interestPayments: interestPayments
+		)
+
+		// Q1: Operating Income = 600k
+		//     Total Debt Service = 100k + 50k = 150k
+		//     DSCR = 600k / 150k = 4.0x
+		let q1DSCR = dscr[quarters[0]]!
+		#expect(abs(q1DSCR - 4.0) < 0.1, "Q1 DSCR should be ~4.0x")
+
+		// All quarters should have strong coverage (> 1.5)
+		for quarter in quarters {
+			#expect(dscr[quarter]! > 1.5, "DSCR should be strong (> 1.5)")
+		}
+	}
+
+	@Test("Debt Service Coverage Ratio - tight coverage")
+	func testDebtServiceCoverageTight() throws {
+		let entity = Entity(id: "TGT", primaryType: .ticker, name: "Tight Coverage Co")
+		let quarters = Period.year(2025).quarters()
+
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [500_000, 500_000, 500_000, 500_000])
+		)
+
+		var opexMetadata = AccountMetadata()
+		opexMetadata.category = "Operating"
+		let opex = try Account(
+			entity: entity,
+			name: "Operating Expenses",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [350_000, 350_000, 350_000, 350_000]),
+			metadata: opexMetadata
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [opex]
+		)
+
+		// High debt payments relative to operating income
+		let principalPayments = TimeSeries(
+			periods: quarters,
+			values: [100_000.0, 100_000.0, 100_000.0, 100_000.0]
+		)
+
+		let interestPayments = TimeSeries(
+			periods: quarters,
+			values: [30_000.0, 30_000.0, 30_000.0, 30_000.0]
+		)
+
+		let dscr = debtServiceCoverage(
+			incomeStatement: incomeStatement,
+			principalPayments: principalPayments,
+			interestPayments: interestPayments
+		)
+
+		// Operating Income = 500k - 350k = 150k
+		// Total Debt Service = 100k + 30k = 130k
+		// DSCR = 150k / 130k ≈ 1.15x (tight)
+		let q1DSCR = dscr[quarters[0]]!
+		#expect(abs(q1DSCR - 1.15) < 0.05, "DSCR should be ~1.15x")
+		#expect(q1DSCR > 1.0, "DSCR should be above 1.0 (can service debt)")
+		#expect(q1DSCR < 1.25, "DSCR should be below 1.25 (tight coverage)")
+	}
+
+	@Test("Debt Service Coverage Ratio - insufficient coverage")
+	func testDebtServiceCoverageInsufficient() throws {
+		let entity = Entity(id: "INS", primaryType: .ticker, name: "Insufficient Coverage Co")
+		let quarters = Period.year(2025).quarters()
+
+		let revenue = try Account(
+			entity: entity,
+			name: "Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
+		)
+
+		var opexMetadata = AccountMetadata()
+		opexMetadata.category = "Operating"
+		let opex = try Account(
+			entity: entity,
+			name: "Operating Expenses",
+			type: .expense,
+			timeSeries: TimeSeries(periods: quarters, values: [150_000, 150_000, 150_000, 150_000]),
+			metadata: opexMetadata
+		)
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			revenueAccounts: [revenue],
+			expenseAccounts: [opex]
+		)
+
+		// Debt payments exceed operating income
+		let principalPayments = TimeSeries(
+			periods: quarters,
+			values: [60_000.0, 60_000.0, 60_000.0, 60_000.0]
+		)
+
+		let interestPayments = TimeSeries(
+			periods: quarters,
+			values: [20_000.0, 20_000.0, 20_000.0, 20_000.0]
+		)
+
+		let dscr = debtServiceCoverage(
+			incomeStatement: incomeStatement,
+			principalPayments: principalPayments,
+			interestPayments: interestPayments
+		)
+
+		// Operating Income = 200k - 150k = 50k
+		// Total Debt Service = 60k + 20k = 80k
+		// DSCR = 50k / 80k = 0.625 (insufficient!)
+		let q1DSCR = dscr[quarters[0]]!
+		#expect(abs(q1DSCR - 0.625) < 0.05, "DSCR should be ~0.625")
+		#expect(q1DSCR < 1.0, "DSCR < 1.0 indicates insufficient coverage")
 	}
 }
