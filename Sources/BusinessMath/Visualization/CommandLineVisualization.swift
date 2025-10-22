@@ -167,3 +167,173 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 
 	return output
 }
+
+// MARK: - Tornado Diagram Plotting
+
+/// Renders a tornado diagram for command-line display showing sensitivity analysis results.
+///
+/// Creates a horizontal bar chart showing the impact of each input driver on an output metric.
+/// Drivers are displayed in order of impact (largest first), with bars extending left and right
+/// from a central baseline representing the base case output.
+///
+/// ## Output Format
+///
+/// ```
+/// Tornado Diagram - Sensitivity Analysis
+/// Base Case: 1,000.00
+///
+/// Revenue        ◄████████████████████████████►             Impact: 500.00 (50.0%)
+///                750                     1000                     1250
+///
+/// Costs          ◄████████████████►                         Impact: 300.00 (30.0%)
+///                850            1000                1150
+///
+/// Marketing      ◄████►                                     Impact: 100.00 (10.0%)
+///                950   1000              1050
+/// ```
+///
+/// ## Features
+///
+/// - **Ranked by impact**: Drivers with the largest impact appear first
+/// - **Bidirectional bars**: Shows both decrease and increase scenarios
+/// - **Base case marker**: Central vertical line shows baseline
+/// - **Impact metrics**: Shows absolute and percentage impact
+/// - **Value labels**: Shows low/base/high values for each driver
+///
+/// ## Interpretation
+///
+/// - **Bar length**: Longer bars = greater impact on output
+/// - **Left side**: Output when driver is decreased
+/// - **Right side**: Output when driver is increased
+/// - **Asymmetry**: Unequal left/right bars indicate non-linear relationships
+///
+/// ## Parameters
+///
+/// - Parameter analysis: The tornado diagram analysis results from `runTornadoAnalysis(...)`
+///
+/// - Returns: A formatted string containing the complete tornado diagram visualization
+///
+/// ## Example
+///
+/// ```swift
+/// let tornado = try runTornadoAnalysis(
+///     baseCase: baseCase,
+///     entity: entity,
+///     periods: periods,
+///     inputDrivers: ["Revenue", "Costs", "Marketing"],
+///     variationPercent: 0.20,
+///     steps: 2,
+///     builder: builder
+/// ) { projection in
+///     projection.incomeStatement.netIncome[q1]!
+/// }
+///
+/// let plot = plotTornadoDiagram(tornado)
+/// print(plot)
+/// ```
+///
+/// - Complexity: O(n) where n is the number of input drivers
+public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
+	// Handle empty analysis
+	guard !analysis.inputs.isEmpty else {
+		return "Empty tornado diagram (no inputs)"
+	}
+
+	let baseCaseOutput = analysis.baseCaseOutput
+
+	// Find the maximum deviation from base case for scaling
+	var maxDeviation = 0.0
+	for input in analysis.inputs {
+		let low = analysis.lowValues[input] ?? baseCaseOutput
+		let high = analysis.highValues[input] ?? baseCaseOutput
+
+		let leftDev = abs(baseCaseOutput - low)
+		let rightDev = abs(high - baseCaseOutput)
+
+		maxDeviation = max(maxDeviation, leftDev, rightDev)
+	}
+
+	// Configuration
+	let maxBarWidth = 25  // Max characters for each side (left/right)
+	let maxInputNameWidth = analysis.inputs.map { $0.count }.max() ?? 15
+
+	// Determine decimal places based on magnitude
+	let maxValue = max(abs(baseCaseOutput), maxDeviation) * 2
+	let decimalPlaces: Int
+	if maxValue > 1000 {
+		decimalPlaces = 0
+	} else if maxValue > 10 {
+		decimalPlaces = 1
+	} else {
+		decimalPlaces = 2
+	}
+
+	// Build output string
+	var output = "Tornado Diagram - Sensitivity Analysis\n"
+	output += String(format: "Base Case: %.\(decimalPlaces)f\n\n", baseCaseOutput)
+
+	// Render each input (already sorted by impact)
+	for input in analysis.inputs {
+		let low = analysis.lowValues[input] ?? baseCaseOutput
+		let high = analysis.highValues[input] ?? baseCaseOutput
+		let impact = analysis.impacts[input] ?? 0.0
+
+		// Calculate deviations from base case
+		let leftDeviation = baseCaseOutput - low
+		let rightDeviation = high - baseCaseOutput
+
+		// Calculate bar widths (proportional to deviation)
+		let leftWidth: Int
+		let rightWidth: Int
+
+		if maxDeviation > 0 {
+			leftWidth = Int((abs(leftDeviation) / maxDeviation) * Double(maxBarWidth))
+			rightWidth = Int((abs(rightDeviation) / maxDeviation) * Double(maxBarWidth))
+		} else {
+			leftWidth = 0
+			rightWidth = 0
+		}
+
+		// Create bars with direction indicators
+		let leftBar = String(repeating: "█", count: leftWidth)
+		let rightBar = String(repeating: "█", count: rightWidth)
+
+		// Pad input name for alignment
+		let paddedName = input.padding(toLength: maxInputNameWidth, withPad: " ", startingAt: 0)
+
+		// Calculate percentage impact
+		let percentImpact = baseCaseOutput != 0 ? (abs(impact) / abs(baseCaseOutput)) * 100.0 : 0.0
+
+		// Pad bars: left bar is right-aligned (padding on left), right bar is left-aligned (padding on right)
+		let paddedLeftBar = String(repeating: " ", count: maxBarWidth - leftWidth) + leftBar
+		let paddedRightBar = rightBar.padding(toLength: maxBarWidth, withPad: " ", startingAt: 0)
+
+		// Format the bar line
+		let barLine = String(format: "%@ ◄%@│%@►",
+			paddedName,
+			paddedLeftBar,
+			paddedRightBar
+		)
+
+		// Format impact info
+		let impactInfo = String(format: " Impact: %.\(decimalPlaces)f (%.\(decimalPlaces == 0 ? 1 : decimalPlaces)f%%)",
+			impact, percentImpact)
+
+		output += barLine + impactInfo + "\n"
+
+		// Add value labels underneath
+		let valueLabels = String(format: "%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f\n",
+			String(repeating: " ", count: maxInputNameWidth + 3),
+			low,
+			String(repeating: " ", count: maxBarWidth - 8),
+			baseCaseOutput,
+			String(repeating: " ", count: maxBarWidth - 8),
+			high
+		)
+
+		output += valueLabels + "\n"
+	}
+
+	return output
+}
+
