@@ -8,11 +8,12 @@
 import Foundation
 import Testing
 import Numerics
+import OSLog
 @testable import BusinessMath
 
 @Suite("MonteCarloSimulation Tests")
 struct MonteCarloSimulationTests {
-
+	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 	@Test("MonteCarloSimulation basic initialization")
 	func monteCarloSimulationInitialization() {
 		// Create a simple simulation
@@ -217,6 +218,7 @@ struct MonteCarloSimulationTests {
 
 		// Generate histogram
 		let histogram = results.histogram(bins: 20)
+		logger.info("Monte Carlo Simulation - Complex Model Results:\n\n\(plotHistogram(histogram))")
 		#expect(histogram.count == 20)
 	}
 

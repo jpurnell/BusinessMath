@@ -8,11 +8,12 @@
 import Foundation
 import Testing
 import Numerics
+import OSLog
 @testable import BusinessMath
 
 @Suite("SimulationResults Tests")
 struct SimulationResultsTests {
-
+	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 	@Test("SimulationResults initialization from values")
 	func simulationResultsInitialization() {
 		// Generate 1000 samples from a normal distribution
@@ -75,7 +76,7 @@ struct SimulationResultsTests {
 
 		// Generate histogram with 10 bins
 		let histogram = results.histogram(bins: 10)
-
+		logger.info("Simulation Results:\n\n\(plotHistogram(histogram))")
 		#expect(histogram.count == 10, "Should have 10 bins")
 
 		// Each bin should have roughly equal counts (uniform distribution)
@@ -192,7 +193,7 @@ struct SimulationResultsTests {
 		let results = SimulationResults(values: values)
 
 		let histogram = results.histogram(bins: 5)
-
+		logger.info("Simulation Results - Extreme Values:\n\n\(plotHistogram(histogram))")
 		// Verify all values are captured
 		let totalCount = histogram.map { $0.count }.reduce(0, +)
 		#expect(totalCount == 7, "All values should be in histogram")
@@ -261,7 +262,7 @@ struct SimulationResultsTests {
 		let results = SimulationResults(values: values)
 
 		let histogram = results.histogram(bins: 20)
-
+		logger.info("Simulation Results - Histogram Coverage Test:\n\n\(plotHistogram(histogram))") 
 		// First bin should start at or below min
 		#expect(histogram.first!.range.lowerBound <= results.statistics.min)
 

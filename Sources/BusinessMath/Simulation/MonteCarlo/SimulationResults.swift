@@ -42,8 +42,10 @@ import Numerics
 /// print("95% confidence: [\(results.percentiles.p5), \(results.percentiles.p95)]")
 /// print("Probability of revenue > $1.2M: \(results.probabilityAbove(1_200_000))")
 ///
-/// // Generate histogram for visualization
+/// // Generate and plot histogram for visualization
 /// let histogram = results.histogram(bins: 20)
+/// let plot = plotHistogram(histogram)
+/// print(plot)
 /// ```
 public struct SimulationResults: Sendable {
 
@@ -176,8 +178,16 @@ public struct SimulationResults: Sendable {
 	///     print("Bin \(index): [\(bin.range.lowerBound), \(bin.range.upperBound)): \(bin.count) values")
 	/// }
 	///
-	/// // Use histogram data for plotting
-	/// plotHistogram(histogram)
+	/// // Visualize with command-line plot
+	/// let plot = plotHistogram(histogram)
+	/// print(plot)
+	///
+	/// // Output:
+	/// // Histogram (20 bins, 10,000 samples):
+	/// //
+	/// // [   85.00 -    90.00):  ████████ 234 (  2.3%)
+	/// // [   90.00 -    95.00):  ████████████ 456 (  4.6%)
+	/// // ...
 	/// ```
 	public func histogram(bins: Int) -> [(range: Range<Double>, count: Int)] {
 		guard bins > 0 else { return [] }
