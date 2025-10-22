@@ -627,18 +627,21 @@ public func runTwoWaySensitivity(
 ///
 /// ## Visualization
 ///
-/// The data is structured for easy charting:
+/// The data is structured for easy charting. Use `plotTornadoDiagram(_:)` for command-line visualization:
 ///
 /// ```swift
-/// // For each input, create a horizontal bar showing the range
-/// for input in tornado.inputs {
-///     let low = tornado.lowValues[input]!
-///     let high = tornado.highValues[input]!
-///     let baseCase = tornado.baseCaseOutput
+/// let plot = plotTornadoDiagram(tornado)
+/// print(plot)
 ///
-///     // Draw bar from low to high, with marker at base case
-///     // Length of bar represents impact
-/// }
+/// // Output:
+/// // Tornado Diagram - Sensitivity Analysis
+/// // Base Case: 1,000.00
+/// //
+/// // Revenue    ◄████████████████████████████►     Impact: 500.00 (50.0%)
+/// //            750                     1000                 1250
+/// //
+/// // Costs      ◄████████████████►                 Impact: 300.00 (30.0%)
+/// //            850            1000        1150
 /// ```
 ///
 /// ## Topics

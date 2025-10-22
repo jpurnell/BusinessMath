@@ -7,11 +7,12 @@
 
 import Testing
 import Numerics
+import OSLog
 @testable import BusinessMath
 
 @Suite("Tornado Diagram Tests")
 struct TornadoDiagramTests {
-
+	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 	// MARK: - Test Helpers
 
 	private func createTestEntity() -> Entity {
@@ -119,6 +120,8 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		let plot = plotTornadoDiagram(tornado)
+		logger.info("Tornado diagram - Basic Test:\n\n\(plot)")
 
 		// Verify structure
 		#expect(tornado.inputs.count == 3)
@@ -165,6 +168,9 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		
+		let plot = plotTornadoDiagram(tornado)
+		logger.info("Tornado diagram - Diagram Ranking:\n\n\(plot)")
 
 		// In this model: NetIncome = Price * Volume - Cost * Volume
 		// NetIncome = Volume * (Price - Cost)
@@ -211,6 +217,9 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		
+		let plot = plotTornadoDiagram(tornado)
+		logger.info("Tornado diagram - Low/High Values Test:\n\n\(plot)")
 
 		// Verify we have low and high values for each input
 		for input in tornado.inputs {
@@ -254,6 +263,9 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		
+		let plot = plotTornadoDiagram(tornado)
+		logger.info("Tornado diagram - Single Inputs Test:\n\n\(plot)")
 
 		#expect(tornado.inputs.count == 1)
 		#expect(tornado.inputs.first == "Price")
@@ -291,6 +303,9 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		
+		let plot10 = plotTornadoDiagram(tornado10)
+		logger.info("Tornado diagram - 10% Variation:\n\n\(plot10)")
 
 		// Test with 30% variation
 		let tornado30 = try runTornadoAnalysis(
@@ -306,6 +321,10 @@ struct TornadoDiagramTests {
 			return projection.incomeStatement.netIncome[q1]!
 		}
 
+		
+		let plot30 = plotTornadoDiagram(tornado30)
+		logger.info("Tornado diagram - 30% Variation:\n\n\(plot30)")
+		
 		// Larger variation should produce larger impacts
 		let price10Impact = tornado10.impacts["Price"]!
 		let price30Impact = tornado30.impacts["Price"]!
@@ -346,6 +365,9 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		
+		let plot = plotTornadoDiagram(tornado)
+		logger.info("Tornado diagram - Base Case Test:\n\n\(plot)")
 
 		// Verify base case value is stored
 		#expect(tornado.baseCaseOutput > 0.0)
@@ -391,6 +413,9 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		
+		let plot = plotTornadoDiagram(tornado)
+		logger.info("Tornado diagram - Zero Variation:\n\n\(plot)")
 
 		// Impact should be zero (no variation)
 		#expect(tornado.impacts["Price"]! == 0.0)
@@ -483,6 +508,8 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
+		let plot = plotTornadoDiagram(tornado)
+		logger.info("Tornado diagram - Many Inputs Test:\n\n\(plot)")
 
 		// Should have all 5 inputs ranked
 		#expect(tornado.inputs.count == 5)
