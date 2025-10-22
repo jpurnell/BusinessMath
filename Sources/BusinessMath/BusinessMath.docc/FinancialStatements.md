@@ -1,0 +1,407 @@
+# Building Financial Statements
+
+Learn how to model complete financial statements including Income Statement, Balance Sheet, and Cash Flow Statement.
+
+## Overview
+
+BusinessMath provides a comprehensive framework for creating period-based financial statements. This tutorial shows you how to build a complete three-statement model from operational drivers.
+
+## Topics
+
+### Understanding Financial Statements
+
+Financial statements are the primary way businesses report their financial performance and position. BusinessMath models three core statements:
+
+- **Income Statement**: Revenue, expenses, and profitability over a period
+- **Balance Sheet**: Assets, liabilities, and equity at a point in time
+- **Cash Flow Statement**: Cash inflows and outflows over a period
+
+### Creating an Entity
+
+Every financial model starts with an entity (company):
+
+```swift
+import BusinessMath
+
+// Define the company
+let company = Entity(
+    id: "ACME001",
+    primaryType: .ticker,
+    name: "Acme Corporation",
+    ticker: "ACME",
+    description: "Leading provider of widgets"
+)
+```
+
+### Building an Income Statement
+
+The Income Statement shows profitability over time:
+
+```swift
+// Define the periods we're modeling
+let q1 = Period.quarter(year: 2025, quarter: 1)
+let q2 = Period.quarter(year: 2025, quarter: 2)
+let q3 = Period.quarter(year: 2025, quarter: 3)
+let q4 = Period.quarter(year: 2025, quarter: 4)
+let periods = [q1, q2, q3, q4]
+
+// Revenue
+let revenue = Account(
+    name: "Product Revenue",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [1_000_000, 1_100_000, 1_200_000, 1_300_000]
+    ),
+    type: .revenue
+)
+
+// Cost of Goods Sold
+let cogs = Account(
+    name: "Cost of Goods Sold",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [400_000, 440_000, 480_000, 520_000]
+    ),
+    type: .costOfRevenue
+)
+
+// Operating Expenses
+let salary = Account(
+    name: "Salaries",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [200_000, 200_000, 200_000, 200_000]
+    ),
+    type: .operatingExpense,
+    metadata: AccountMetadata(category: "Personnel")
+)
+
+let marketing = Account(
+    name: "Marketing",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [50_000, 60_000, 70_000, 80_000]
+    ),
+    type: .operatingExpense,
+    metadata: AccountMetadata(category: "Sales & Marketing")
+)
+
+// Interest and Taxes
+let interestExpense = Account(
+    name: "Interest Expense",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [10_000, 10_000, 10_000, 10_000]
+    ),
+    type: .nonOperatingExpense,
+    metadata: AccountMetadata(category: "Financing")
+)
+
+let taxExpense = Account(
+    name: "Income Tax",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [60_000, 69_000, 78_000, 87_000]
+    ),
+    type: .tax,
+    metadata: AccountMetadata(category: "Tax")
+)
+
+// Create the Income Statement
+let incomeStatement = IncomeStatement(
+    entity: company,
+    revenueAccounts: [revenue],
+    expenseAccounts: [cogs, salary, marketing, interestExpense, taxExpense]
+)
+
+// Access computed values
+print("Q1 Revenue: $\(incomeStatement.totalRevenue[q1]!)")
+print("Q1 Gross Profit: $\(incomeStatement.grossProfit[q1]!)")
+print("Q1 Operating Income: $\(incomeStatement.operatingIncome[q1]!)")
+print("Q1 Net Income: $\(incomeStatement.netIncome[q1]!)")
+
+// Calculate margins
+print("Q1 Gross Margin: \(incomeStatement.grossMargin[q1]! * 100)%")
+print("Q1 Net Margin: \(incomeStatement.netMargin[q1]! * 100)%")
+```
+
+### Building a Balance Sheet
+
+The Balance Sheet shows financial position at a point in time:
+
+```swift
+// Assets
+let cash = Account(
+    name: "Cash and Equivalents",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [500_000, 600_000, 750_000, 900_000]
+    ),
+    type: .asset,
+    metadata: AccountMetadata(category: "Current Assets", subCategory: "Cash")
+)
+
+let receivables = Account(
+    name: "Accounts Receivable",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [300_000, 330_000, 360_000, 390_000]
+    ),
+    type: .asset,
+    metadata: AccountMetadata(category: "Current Assets")
+)
+
+let ppe = Account(
+    name: "Property, Plant & Equipment",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [1_000_000, 980_000, 960_000, 940_000]
+    ),
+    type: .asset,
+    metadata: AccountMetadata(category: "Fixed Assets")
+)
+
+// Liabilities
+let payables = Account(
+    name: "Accounts Payable",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [150_000, 165_000, 180_000, 195_000]
+    ),
+    type: .liability,
+    metadata: AccountMetadata(category: "Current Liabilities")
+)
+
+let longTermDebt = Account(
+    name: "Long-term Debt",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [500_000, 500_000, 500_000, 500_000]
+    ),
+    type: .liability,
+    metadata: AccountMetadata(category: "Long-term Liabilities")
+)
+
+// Equity
+let commonStock = Account(
+    name: "Common Stock",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [1_000_000, 1_000_000, 1_000_000, 1_000_000]
+    ),
+    type: .equity,
+    metadata: AccountMetadata(category: "Equity")
+)
+
+let retainedEarnings = Account(
+    name: "Retained Earnings",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [150_000, 245_000, 390_000, 535_000]
+    ),
+    type: .equity,
+    metadata: AccountMetadata(category: "Equity")
+)
+
+// Create the Balance Sheet
+let balanceSheet = BalanceSheet(
+    entity: company,
+    assetAccounts: [cash, receivables, ppe],
+    liabilityAccounts: [payables, longTermDebt],
+    equityAccounts: [commonStock, retainedEarnings]
+)
+
+// Access computed values
+print("Q1 Total Assets: $\(balanceSheet.totalAssets[q1]!)")
+print("Q1 Total Liabilities: $\(balanceSheet.totalLiabilities[q1]!)")
+print("Q1 Total Equity: $\(balanceSheet.totalEquity[q1]!)")
+
+// Verify balance sheet equation: Assets = Liabilities + Equity
+let assets = balanceSheet.totalAssets[q1]!
+let liabilities = balanceSheet.totalLiabilities[q1]!
+let equity = balanceSheet.totalEquity[q1]!
+print("Balance Check: \(assets == liabilities + equity)")
+
+// Calculate ratios
+print("Q1 Current Ratio: \(balanceSheet.currentRatio[q1]!)")
+print("Q1 Debt-to-Equity: \(balanceSheet.debtToEquity[q1]!)")
+```
+
+### Building a Cash Flow Statement
+
+The Cash Flow Statement tracks cash movements:
+
+```swift
+// Operating Activities
+let cashFromOperations = Account(
+    name: "Cash from Operations",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [280_000, 345_000, 420_000, 480_000]
+    ),
+    type: .cashFlow,
+    metadata: AccountMetadata(category: "Operating Activities")
+)
+
+// Investing Activities
+let capex = Account(
+    name: "Capital Expenditures",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [-50_000, -30_000, -40_000, -60_000]
+    ),
+    type: .cashFlow,
+    metadata: AccountMetadata(category: "Investing Activities")
+)
+
+// Financing Activities
+let debtProceeds = Account(
+    name: "Debt Proceeds",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [0, 0, 0, 0]
+    ),
+    type: .cashFlow,
+    metadata: AccountMetadata(category: "Financing Activities")
+)
+
+let dividends = Account(
+    name: "Dividends Paid",
+    timeSeries: TimeSeries(
+        periods: periods,
+        values: [-30_000, -35_000, -40_000, -45_000]
+    ),
+    type: .cashFlow,
+    metadata: AccountMetadata(category: "Financing Activities")
+)
+
+// Create the Cash Flow Statement
+let cashFlowStatement = CashFlowStatement(
+    entity: company,
+    accounts: [cashFromOperations, capex, debtProceeds, dividends]
+)
+
+// Access computed values
+print("Q1 Operating Cash Flow: $\(cashFlowStatement.operatingCashFlow[q1]!)")
+print("Q1 Investing Cash Flow: $\(cashFlowStatement.investingCashFlow[q1]!)")
+print("Q1 Financing Cash Flow: $\(cashFlowStatement.financingCashFlow[q1]!)")
+print("Q1 Net Cash Flow: $\(cashFlowStatement.netCashFlow[q1]!)")
+
+// Free Cash Flow (Operating - CapEx)
+print("Q1 Free Cash Flow: $\(cashFlowStatement.freeCashFlow[q1]!)")
+```
+
+### Complete Three-Statement Model
+
+Here's how to build a complete integrated model:
+
+```swift
+// 1. Build all three statements (as shown above)
+
+// 2. Create a Financial Projection that ties them together
+struct CompanyProjection {
+    let entity: Entity
+    let periods: [Period]
+    let incomeStatement: IncomeStatement
+    let balanceSheet: BalanceSheet
+    let cashFlowStatement: CashFlowStatement
+
+    // Validation: Check that statements are consistent
+    func validate() -> Bool {
+        for period in periods {
+            // Balance sheet must balance
+            let assets = balanceSheet.totalAssets[period]!
+            let liabilities = balanceSheet.totalLiabilities[period]!
+            let equity = balanceSheet.totalEquity[period]!
+
+            if abs(assets - (liabilities + equity)) > 0.01 {
+                return false
+            }
+        }
+        return true
+    }
+
+    // Summary report
+    func printSummary(for period: Period) {
+        print("=== \(entity.name) - \(period) ===")
+        print("\nIncome Statement:")
+        print("  Revenue: $\(incomeStatement.totalRevenue[period]!)")
+        print("  Net Income: $\(incomeStatement.netIncome[period]!)")
+        print("  Net Margin: \(incomeStatement.netMargin[period]! * 100)%")
+
+        print("\nBalance Sheet:")
+        print("  Total Assets: $\(balanceSheet.totalAssets[period]!)")
+        print("  Total Equity: $\(balanceSheet.totalEquity[period]!)")
+        print("  Debt-to-Equity: \(balanceSheet.debtToEquity[period]!)")
+
+        print("\nCash Flow:")
+        print("  Operating CF: $\(cashFlowStatement.operatingCashFlow[period]!)")
+        print("  Free Cash Flow: $\(cashFlowStatement.freeCashFlow[period]!)")
+    }
+}
+
+let projection = CompanyProjection(
+    entity: company,
+    periods: periods,
+    incomeStatement: incomeStatement,
+    balanceSheet: balanceSheet,
+    cashFlowStatement: cashFlowStatement
+)
+
+// Validate and print
+if projection.validate() {
+    print("✓ Financial statements are balanced")
+    projection.printSummary(for: q1)
+} else {
+    print("✗ Financial statements do not balance")
+}
+```
+
+### Working with Account Metadata
+
+Organize accounts using metadata:
+
+```swift
+// Find all current assets
+let currentAssets = balanceSheet.assetAccounts.filter {
+    $0.metadata?.category == "Current Assets"
+}
+
+// Calculate current assets total
+let currentAssetsTotal = currentAssets.reduce(TimeSeries<Double>()) { result, account in
+    result + account.timeSeries
+}
+
+// Find all operating expenses
+let opex = incomeStatement.expenseAccounts.filter {
+    $0.type == .operatingExpense
+}
+
+// Group expenses by category
+let expensesByCategory = Dictionary(grouping: incomeStatement.expenseAccounts) {
+    $0.metadata?.category ?? "Uncategorized"
+}
+
+for (category, accounts) in expensesByCategory {
+    let total = accounts.reduce(0.0) { sum, account in
+        sum + (account.timeSeries[q1] ?? 0.0)
+    }
+    print("\(category): $\(total)")
+}
+```
+
+## Next Steps
+
+- Learn about <doc:FinancialRatios> for analyzing financial performance
+- Explore <doc:ScenarioAnalysis> for modeling different outcomes
+- See <doc:BuildingRevenueModel> for creating operational drivers
+
+## Related Topics
+
+- ``Entity``
+- ``Account``
+- ``IncomeStatement``
+- ``BalanceSheet``
+- ``CashFlowStatement``
+- ``TimeSeries``
+- ``Period``
