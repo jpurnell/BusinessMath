@@ -28,7 +28,7 @@ The library is designed for:
 - **Precision**: Uses actual calendar calculations (365.25 days/year) for financial accuracy
 - **Concurrency**: Full Swift 6 compliance with Sendable conformance throughout
 - **Documentation**: Comprehensive DocC documentation with formulas and real-world examples
-- **Testing**: Over 500 tests covering edge cases, real-world scenarios, and integration workflows
+- **Testing**: Over 1,100 tests covering edge cases, real-world scenarios, and integration workflows
 
 ## Topics
 
@@ -42,6 +42,10 @@ The library is designed for:
 ### Tutorials
 
 - <doc:BuildingRevenueModel>
+- <doc:FinancialStatements>
+- <doc:ScenarioAnalysis>
+- <doc:FinancialRatios>
+- <doc:Visualization>
 - <doc:LoanAmortization>
 - <doc:InvestmentAnalysis>
 
