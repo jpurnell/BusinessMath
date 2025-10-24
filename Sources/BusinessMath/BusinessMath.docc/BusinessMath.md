@@ -43,6 +43,7 @@ The library is designed for:
 
 - <doc:BuildingRevenueModel>
 - <doc:FinancialStatementsGuide>
+- <doc:BuildingFinancialReports>
 - <doc:ScenarioAnalysisGuide>
 - <doc:FinancialRatiosGuide>
 - <doc:VisualizationGuide>
