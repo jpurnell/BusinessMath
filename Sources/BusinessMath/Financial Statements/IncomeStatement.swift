@@ -206,27 +206,29 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 
 	/// Gross profit (revenue - cost of goods sold).
 	///
-	/// COGS accounts are identified by `metadata.category == "COGS"`.
+	/// COGS accounts are identified by `expenseType == .costOfGoodsSold`.
 	public var grossProfit: TimeSeries<T> {
-		let cogs = expenseAccounts.filter { $0.metadata?.category == "COGS" }
+		let cogs = expenseAccounts.filter { $0.expenseType == .costOfGoodsSold }
 		let cogsTotal = aggregateAccounts(cogs)
 		return totalRevenue - cogsTotal
 	}
 
-	/// Operating income (gross profit - operating expenses).
+	/// Operating income (gross profit - operating expenses - D&A).
 	///
-	/// Operating expenses are identified by `metadata.category == "Operating"`.
+	/// Operating expenses include both `.operatingExpense` and `.depreciationAmortization`.
 	public var operatingIncome: TimeSeries<T> {
-		let opex = expenseAccounts.filter { $0.metadata?.category == "Operating" }
+		let opex = expenseAccounts.filter {
+			$0.expenseType == .operatingExpense || $0.expenseType == .depreciationAmortization
+		}
 		let opexTotal = aggregateAccounts(opex)
 		return grossProfit - opexTotal
 	}
 
 	/// EBITDA (Earnings Before Interest, Taxes, Depreciation, and Amortization).
 	///
-	/// Adds back depreciation and amortization (identified by tag "D&A") to operating income.
+	/// Adds back depreciation and amortization (identified by `expenseType == .depreciationAmortization`) to operating income.
 	public var ebitda: TimeSeries<T> {
-		let da = expenseAccounts.filter { $0.metadata?.tags.contains("D&A") ?? false }
+		let da = expenseAccounts.filter { $0.expenseType == .depreciationAmortization }
 		let daTotal = aggregateAccounts(da)
 		return operatingIncome + daTotal
 	}

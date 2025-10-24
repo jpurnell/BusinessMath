@@ -251,4 +251,56 @@ struct BetaDistributionTests {
 		#expect(Double(binCount) > Double(expectedBinCount) - binTolerance)
 		#expect(Double(binCount) < Double(expectedBinCount) + binTolerance)
 	}
+	
+	// 1. Add variance verification for peaked distributions
+	@Test("Beta distribution variance properties")
+	func betaVariance() {
+		let alpha = 2.0, beta = 5.0
+		let expectedVariance = (alpha * beta) / (pow(alpha + beta, 2) * (alpha + beta + 1))
+		let sampleCount = 5000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
+
+		let samples = (0..<sampleCount).map { i in
+			distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
+		}
+
+		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
+		let empiricalVariance = samples.map { pow($0 - empiricalMean, 2) }.reduce(0, +) / Double(samples.count - 1)
+
+		#expect(abs(empiricalVariance - expectedVariance) < 0.01)
+	}
+
+	// 2. Test edge case behavior more rigorously
+	@Test("Beta distribution extreme parameter values")
+	func betaExtremeParameters() {
+		// Test very small parameters
+		let tinySample: Double = distributionBeta(alpha: 0.1, beta: 0.1, seeds: Array(repeating: 0.5, count: 20))
+		#expect(tinySample >= 0.0 && tinySample <= 1.0)
+
+		// Test very large parameters
+		let largeSample: Double = distributionBeta(alpha: 1000.0, beta: 1000.0, seeds: Array(repeating: 0.5, count: 20))
+		#expect(largeSample >= 0.0 && largeSample <= 1.0)
+	}
+
+	// 3. Add correlation test for consecutive samples
+	@Test("Beta distribution independence")
+	func betaIndependence() {
+		let alpha = 2.0, beta = 2.0
+		let sampleCount = 1000
+		let seedSets = Self.seedSetsForBeta(count: sampleCount)
+
+		let samples = (0..<sampleCount).map { i in
+			distributionBeta(alpha: alpha, beta: beta, seeds: seedSets[i])
+		}
+
+		// Simple autocorrelation test - consecutive samples shouldn't be correlated
+		var correlationSum = 0.0
+		for i in 0..<(sampleCount - 1) {
+			correlationSum += samples[i] * samples[i + 1]
+		}
+		let autocorrelation = correlationSum / Double(sampleCount - 1)
+		let expected = Double.pow(0.5, 2) // For symmetric case, mean = 0.5
+
+		#expect(abs(autocorrelation - expected) < 0.05)
+	}
 }

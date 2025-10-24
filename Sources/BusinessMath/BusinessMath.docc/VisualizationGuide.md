@@ -10,9 +10,9 @@ BusinessMath provides command-line visualization tools for exploring data and pr
 
 These visualizations work in any terminal environment and are perfect for CLI applications, scripts, and quick data exploration.
 
-## Topics
+## Content
 
-### Histogram Visualization
+## Histogram Visualization
 
 Histograms show the distribution of values, making it easy to see patterns, central tendency, and outliers.
 
@@ -108,7 +108,7 @@ let probDelay = completionDays.probabilityAbove(deadlineDays)
 print("Probability of missing deadline: \(probDelay * 100)%")
 ```
 
-### Tornado Diagram Visualization
+## Tornado Diagram Visualization
 
 Tornado diagrams show which inputs have the greatest impact on outputs, making them essential for sensitivity analysis.
 
@@ -240,7 +240,7 @@ for input in baseTornado.inputs {
 }
 ```
 
-### Combining Visualizations
+## Combining Visualizations
 
 Use both histograms and tornado diagrams together for comprehensive analysis:
 
@@ -276,7 +276,7 @@ print("- 90% of outcomes fall between \(simResults.percentiles.p5) and \(simResu
 print("- Probability of meeting target: \(simResults.probabilityAbove(target) * 100)%")
 ```
 
-### Exporting Visualizations
+## Exporting Visualizations
 
 Save visualizations to files for reports or documentation:
 
@@ -321,7 +321,7 @@ Generated: \(Date())
 try report.write(toFile: "outputs/full_report.txt", atomically: true, encoding: .utf8)
 ```
 
-### Best Practices
+## Best Practices
 
 #### Histograms
 1. **Choose appropriate bin count**: Too few loses detail, too many adds noise
@@ -346,13 +346,13 @@ try report.write(toFile: "outputs/full_report.txt", atomically: true, encoding: 
 
 ## Limitations
 
-### Current Limitations
+## Current Limitations
 - Text-based only (no graphical plots)
 - Fixed Unicode characters (requires Unicode terminal support)
 - No interactive features
 - No color coding (terminal-dependent)
 
-### Future Enhancements
+## Future Enhancements
 Planned for companion packages:
 - **BusinessMathCharts**: Swift Charts integration for graphical plots
 - **BusinessMathUI**: Optional SwiftUI interface for interactive visualization
@@ -361,8 +361,8 @@ Planned for companion packages:
 
 ## Next Steps
 
-- Learn about <doc:ScenarioAnalysis> to generate data for tornado diagrams
-- Explore <doc:FinancialRatios> for metrics to visualize
+- Learn about <doc:ScenarioAnalysisGuide> to generate data for tornado diagrams
+- Explore <doc:FinancialRatiosGuide> for metrics to visualize
 - See <doc:GettingStarted> for simulation examples
 
 ## Related Topics

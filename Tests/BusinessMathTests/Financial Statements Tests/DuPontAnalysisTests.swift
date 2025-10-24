@@ -14,65 +14,52 @@ struct DuPontAnalysisTests {
 		let entity = Entity(id: "TEST", primaryType: .ticker, name: "Test Company")
 		let quarters = Period.year(2025).quarters()
 
-		// Income Statement - moderate profitability
-		var revenueMetadata = AccountMetadata()
-		revenueMetadata.category = "Operating"
+		// Income Statement - moderate profitability	
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
 			type: .revenue,
-			timeSeries: TimeSeries(periods: quarters, values: [1_000, 1_100, 1_200, 1_300]),
-			metadata: revenueMetadata
+			timeSeries: TimeSeries(periods: quarters, values: [1_000, 1_100, 1_200, 1_300])
 		)
 
-		var cogsMetadata = AccountMetadata()
-		cogsMetadata.category = "Operating"
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [600, 660, 720, 780]),
-			metadata: cogsMetadata
+			expenseType: .costOfGoodsSold
 		)
 
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [200, 220, 240, 260]),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
-		var daMetadata = AccountMetadata()
-		daMetadata.category = "Non-Cash"
 		let da = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [50, 50, 50, 50]),
-			metadata: daMetadata
+			expenseType: .depreciationAmortization
 		)
 
-		var interestMetadata = AccountMetadata()
-		interestMetadata.category = "Interest"
 		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [20, 20, 20, 20]),
-			metadata: interestMetadata
+			expenseType: .interestExpense
 		)
 
-		var taxMetadata = AccountMetadata()
-		taxMetadata.category = "Tax"
 		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [32.5, 37.5, 42.5, 47.5]),
-			metadata: taxMetadata
+			expenseType: .taxExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -82,65 +69,53 @@ struct DuPontAnalysisTests {
 			expenseAccounts: [cogs, opex, da, interest, tax]
 		)
 
-		// Balance Sheet
-		var cashMetadata = AccountMetadata()
-		cashMetadata.category = "Current"
+		// Balance Sheet	
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130]),
-			metadata: cashMetadata
+			assetType: .cashAndEquivalents
 		)
 
-		var arMetadata = AccountMetadata()
-		arMetadata.category = "Current"
 		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [150, 165, 180, 195]),
-			metadata: arMetadata
+			assetType: .accountsReceivable
 		)
 
-		var ppeMetadata = AccountMetadata()
-		ppeMetadata.category = "Non-Current"
 		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [800, 850, 900, 950]),
-			metadata: ppeMetadata
+			assetType: .propertyPlantEquipment
 		)
 
-		var apMetadata = AccountMetadata()
-		apMetadata.category = "Current"
 		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130]),
-			metadata: apMetadata
+			liabilityType: .accountsPayable
 		)
 
-		var debtMetadata = AccountMetadata()
-		debtMetadata.category = "Long-Term"
 		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			metadata: debtMetadata
+			liabilityType: .longTermDebt
 		)
 
-		var equityMetadata = AccountMetadata()
-		equityMetadata.category = "Common"
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [650, 715, 780, 845]),
-			metadata: equityMetadata
+			equityType: .retainedEarnings
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -230,35 +205,28 @@ struct DuPontAnalysisTests {
 		let entity = Entity(id: "LUXURY", primaryType: .ticker, name: "Luxury Goods Co")
 		let quarters = Period.year(2025).quarters()
 
-		// High margin business: 40% gross margin, 20% net margin
-		var revenueMetadata = AccountMetadata()
-		revenueMetadata.category = "Operating"
+		// High margin business: 40% gross margin, 20% net margin	
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
 			type: .revenue,
-			timeSeries: TimeSeries(periods: quarters, values: [500, 500, 500, 500]),
-			metadata: revenueMetadata
+			timeSeries: TimeSeries(periods: quarters, values: [500, 500, 500, 500])
 		)
 
-		var cogsMetadata = AccountMetadata()
-		cogsMetadata.category = "Operating"
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			metadata: cogsMetadata
+			expenseType: .costOfGoodsSold
 		)
 
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [100, 100, 100, 100]),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -268,25 +236,21 @@ struct DuPontAnalysisTests {
 			expenseAccounts: [cogs, opex]
 		)
 
-		// Large asset base (luxury inventory, stores)
-		var inventoryMetadata = AccountMetadata()
-		inventoryMetadata.category = "Current"
+		// Large asset base (luxury inventory, stores)	
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000]),
-			metadata: inventoryMetadata
+			assetType: .inventory
 		)
 
-		var equityMetadata = AccountMetadata()
-		equityMetadata.category = "Common"
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000]),
-			metadata: equityMetadata
+			equityType: .retainedEarnings
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -317,35 +281,28 @@ struct DuPontAnalysisTests {
 		let entity = Entity(id: "RETAIL", primaryType: .ticker, name: "Retail Co")
 		let quarters = Period.year(2025).quarters()
 
-		// Low margin business: 2% net margin
-		var revenueMetadata = AccountMetadata()
-		revenueMetadata.category = "Operating"
+		// Low margin business: 2% net margin	
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
 			type: .revenue,
-			timeSeries: TimeSeries(periods: quarters, values: [5000, 5000, 5000, 5000]),
-			metadata: revenueMetadata
+			timeSeries: TimeSeries(periods: quarters, values: [5000, 5000, 5000, 5000])
 		)
 
-		var cogsMetadata = AccountMetadata()
-		cogsMetadata.category = "Operating"
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [4500, 4500, 4500, 4500]),
-			metadata: cogsMetadata
+			expenseType: .costOfGoodsSold
 		)
 
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [400, 400, 400, 400]),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -355,25 +312,21 @@ struct DuPontAnalysisTests {
 			expenseAccounts: [cogs, opex]
 		)
 
-		// Small asset base (fast inventory turnover)
-		var inventoryMetadata = AccountMetadata()
-		inventoryMetadata.category = "Current"
+		// Small asset base (fast inventory turnover)	
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			metadata: inventoryMetadata
+			assetType: .inventory
 		)
 
-		var equityMetadata = AccountMetadata()
-		equityMetadata.category = "Common"
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			metadata: equityMetadata
+			equityType: .retainedEarnings
 		)
 
 		let balanceSheet = try BalanceSheet(

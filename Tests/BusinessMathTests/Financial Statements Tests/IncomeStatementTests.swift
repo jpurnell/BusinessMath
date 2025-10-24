@@ -45,43 +45,36 @@ struct IncomeStatementTests {
 	func makeCogsAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [40_000, 44_000, 48_000, 52_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "COGS"
 		return try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: timeSeries,
-			metadata: metadata
+			expenseType: .costOfGoodsSold
 		)
 	}
 
 	func makeOpexAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [20_000, 22_000, 24_000, 26_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "Operating"
 		return try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: timeSeries,
-			metadata: metadata
+			expenseType: .operatingExpense
 		)
 	}
 
 	func makeDAAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [5_000, 5_000, 5_000, 5_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "Operating"
-		metadata.tags = ["D&A"]
 		return try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			type: .expense,
 			timeSeries: timeSeries,
-			metadata: metadata
+			expenseType: .depreciationAmortization
 		)
 	}
 

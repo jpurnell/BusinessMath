@@ -343,4 +343,175 @@ struct ExponentialDistributionTests {
 		// P(X > 5) = e^(-5) ≈ 0.0067 (< 1%)
 		#expect(extremePercent < 0.02, "Extreme values should be rare")
 	}
+	
+	@Test("Exponential relationship to other distributions")
+	func exponentialDistributionRelationships() {
+		// Exponential is special case of Gamma(1, 1/λ)
+		// Also related to Poisson process
+		let λ = 2.0
+		let sampleCount = 5000
+		let seeds = Self.seedsForExponential(count: sampleCount)
+
+		var exponentialSamples: [Double] = []
+		for i in 0..<sampleCount {
+			exponentialSamples.append(distributionExponential(λ: λ, seed: seeds[i]))
+		}
+
+		// Compare with Gamma(1, 1/λ) - should be identical
+		var gammaSamples: [Double] = []
+		var seedIndex = 0
+		for i in 0..<sampleCount {
+			// Gamma(shape=1, scale=1/λ) = Exponential(λ)
+			gammaSamples.append(gammaVariate(shape: 1.0, scale: 1.0/λ, seeds: [seeds[i]], seedIndex: &seedIndex))
+		}
+
+		let expMean = exponentialSamples.reduce(0, +) / Double(exponentialSamples.count)
+		let gammaMean = gammaSamples.reduce(0, +) / Double(gammaSamples.count)
+
+		#expect(abs(expMean - gammaMean) < 0.1, "Exponential should match Gamma(1, 1/λ)")
+	}
+	
+	@Test("Minimum of exponential random variables")
+	func exponentialMinimumProperty() {
+		// min(X₁, X₂, ..., Xₙ) ~ Exponential(λ₁ + λ₂ + ... + λₙ)
+		let λ1 = 1.0
+		let λ2 = 2.0
+		let expectedλ = λ1 + λ2  // 3.0
+		let expectedMean = 1.0 / expectedλ  // ≈ 0.333
+
+		let sampleCount = 5000
+		let seeds = Self.seedsForExponential(count: sampleCount * 2)
+
+		var minSamples: [Double] = []
+		for i in 0..<sampleCount {
+			let sample1 = distributionExponential(λ: λ1, seed: seeds[i])
+			let sample2 = distributionExponential(λ: λ2, seed: seeds[i + sampleCount])
+			minSamples.append(min(sample1, sample2))
+		}
+
+		let empiricalMean = minSamples.reduce(0, +) / Double(minSamples.count)
+		#expect(abs(empiricalMean - expectedMean) < 0.05,
+			   "Minimum of exponentials should have rate = sum of rates")
+	}
+	
+	@Test("Exponential constant hazard rate")
+	func exponentialConstantHazardRate() {
+		// Hazard rate h(t) = f(t) / (1 - F(t)) = λ (constant)
+		let λ = 1.5
+		let sampleCount = 10000
+		let seeds = Self.seedsForExponential(count: sampleCount)
+
+		var samples: [Double] = []
+		for i in 0..<sampleCount {
+			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+		}
+
+		// Estimate hazard rate at different time points
+		let timePoints: [Double] = [0.5, 1.0, 2.0, 3.0]
+
+		for t in timePoints {
+			// Count samples in [t, t+Δt] and surviving past t
+			let Δt = 0.1
+			let inInterval = samples.filter { $0 >= t && $0 < t + Δt }.count
+			let surviving = samples.filter { $0 >= t }.count
+
+			if surviving > 0 {
+				let empiricalHazard = Double(inInterval) / (Double(surviving) * Δt)
+				#expect(abs(empiricalHazard - λ) < 0.5,
+					   "Hazard rate should be approximately constant at λ")
+			}
+		}
+	}
+	
+	@Test("Exponential parameter validation")
+	func exponentialParameterValidation() {
+		// Test edge cases for λ parameter
+		let edgeCases: [(λ: Double, description: String)] = [
+			(0.001, "very small rate"),
+			(1000.0, "very large rate"),
+			(1e-10, "extremely small rate"),
+			(1e10, "extremely large rate")
+		]
+
+		for testCase in edgeCases {
+			let sample = distributionExponential(λ: testCase.λ, seed: 0.5)
+			#expect(sample >= 0, "Should handle \(testCase.description)")
+			#expect(sample.isFinite, "Should produce finite value for \(testCase.description)")
+		}
+	}
+	
+	@Test("Exponential moment generating function")
+	func exponentialMGF() {
+		// MGF: M(t) = λ / (λ - t) for t < λ
+		// This implies E[X] = 1/λ, Var(X) = 1/λ²
+		let λ = 2.0
+		let sampleCount = 10000
+		let seeds = Self.seedsForExponential(count: sampleCount)
+
+		var samples: [Double] = []
+		for i in 0..<sampleCount {
+			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+		}
+
+		let mean = samples.reduce(0, +) / Double(samples.count)
+		let variance = samples.map { pow($0 - mean, 2) }.reduce(0, +) / Double(samples.count)
+
+		let expectedMean = 1.0 / λ
+		let expectedVariance = 1.0 / (λ * λ)
+
+		#expect(abs(mean - expectedMean) < 0.05, "Mean should match 1/λ")
+		#expect(abs(variance - expectedVariance) < 0.05, "Variance should match 1/λ²")
+	}
+	
+	@Test("Exponential order statistics")
+	func exponentialOrderStatistics() {
+		// For exponential, the order statistics have nice properties
+		let λ = 1.0
+		let sampleCount = 5000
+		let n = 5  // Sample size for order statistics
+		let seeds = Self.seedsForExponential(count: sampleCount * n)
+
+		var minValues: [Double] = []
+
+		for i in 0..<sampleCount {
+			var sample: [Double] = []
+			for j in 0..<n {
+				sample.append(distributionExponential(λ: λ, seed: seeds[i * n + j]))
+			}
+			minValues.append(sample.min()!)
+		}
+
+		// Minimum of n exponentials should be Exponential(nλ)
+		let minMean = minValues.reduce(0, +) / Double(minValues.count)
+		let expectedMinMean = 1.0 / (Double(n) * λ)  // 0.2
+
+		#expect(abs(minMean - expectedMinMean) < 0.02,
+			   "Minimum of n exponentials should have mean 1/(nλ)")
+	}
+	
+	@Test("Exponential distribution stress test")
+	func exponentialStressTest() {
+		// Test with very large sample sizes
+		let λ = 1.0
+		let veryLargeSampleCount = 100000
+		let seeds = Self.seedsForExponential(count: veryLargeSampleCount)
+
+		var samples: [Double] = []
+		for i in 0..<veryLargeSampleCount {
+			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+		}
+
+		// With large samples, statistics should be very accurate
+		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
+		let expectedMean = 1.0 / λ
+
+		#expect(abs(empiricalMean - expectedMean) < 0.01,
+			   "Large sample mean should be very close to theoretical")
+
+		// Variance should also be accurate
+		let variance = samples.map { pow($0 - empiricalMean, 2) }.reduce(0, +) / Double(samples.count)
+		let expectedVariance = 1.0 / (λ * λ)
+		#expect(abs(variance - expectedVariance) < 0.01,
+			   "Large sample variance should be very close to theoretical")
+	}
 }

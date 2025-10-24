@@ -205,52 +205,65 @@ struct CreditMetricsTests {
 		]
 
 		// Income Statement - unprofitable, declining revenue
-				let revenue = try Account(
+		var revenueMetadata = AccountMetadata()
+		revenueMetadata.category = "Operating"
+		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
 			type: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [80_000, 70_000]), // Declining
-			
+			metadata: revenueMetadata
 		)
 
-				let cogs = try Account(
+		var cogsMetadata = AccountMetadata()
+		cogsMetadata.category = "COGS"
+		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 48_000]), // Margin worsening: 37.5% -> 31.4%
-			expenseType: .costOfGoodsSold
+			metadata: cogsMetadata
 		)
 
-				let opex = try Account(
+		var opexMetadata = AccountMetadata()
+		opexMetadata.category = "Operating"
+		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [35_000, 35_000]),
-			expenseType: .operatingExpense
+			metadata: opexMetadata
 		)
 
-				let depreciation = try Account(
+		var depreciationMetadata = AccountMetadata()
+		depreciationMetadata.category = "Non-Cash"
+		depreciationMetadata.tags.append("D&A")
+		let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [8_000, 8_000]),
-			expenseType: .depreciationAmortization
+			metadata: depreciationMetadata
 		)
 
-				let interest = try Account(
+		var interestMetadata = AccountMetadata()
+		interestMetadata.category = "Interest"
+		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000, 12_000]), // High interest burden
-			expenseType: .interestExpense
+			metadata: interestMetadata
 		)
 
-				let tax = try Account(
+		var taxMetadata = AccountMetadata()
+		taxMetadata.category = "Tax"
+		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [0, 0]), // No taxes (unprofitable)
-			expenseType: .taxExpense
+			metadata: taxMetadata
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -261,76 +274,94 @@ struct CreditMetricsTests {
 		)
 
 		// Balance Sheet - negative working capital, high debt
-				let cash = try Account(
+		var cashMetadata = AccountMetadata()
+		cashMetadata.category = "Current"
+		let cash = try Account(
 			entity: entity,
 			name: "Cash",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]), // Burning cash
-			assetType: .cashAndEquivalents
+			metadata: cashMetadata
 		)
 
-				let ar = try Account(
+		var arMetadata = AccountMetadata()
+		arMetadata.category = "Current"
+		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000]),
-			assetType: .accountsReceivable
+			metadata: arMetadata
 		)
 
-				let inventory = try Account(
+		var inventoryMetadata = AccountMetadata()
+		inventoryMetadata.category = "Current"
+		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [25_000, 30_000]), // Excess inventory
-			assetType: .inventory
+			metadata: inventoryMetadata
 		)
 
-				let ppe = try Account(
+		var ppeMetadata = AccountMetadata()
+		ppeMetadata.category = "Non-Current"
+		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000, 55_000]), // Asset impairment
-			assetType: .propertyPlantEquipment
+			metadata: ppeMetadata
 		)
 
-				let ap = try Account(
+		var apMetadata = AccountMetadata()
+		apMetadata.category = "Current"
+		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000, 35_000]), // Can't pay vendors
-			liabilityType: .accountsPayable
+			metadata: apMetadata
 		)
 
-				let shortTermDebt = try Account(
+		var shortTermDebtMetadata = AccountMetadata()
+		shortTermDebtMetadata.category = "Current"
+		let shortTermDebt = try Account(
 			entity: entity,
 			name: "Short-Term Debt",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000, 25_000]),
-			liabilityType: .shortTermDebt
+			metadata: shortTermDebtMetadata
 		)
 
-				let debt = try Account(
+		var debtMetadata = AccountMetadata()
+		debtMetadata.category = "Long-Term"
+		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [80_000, 85_000]), // Taking on more debt
-			liabilityType: .longTermDebt
+			metadata: debtMetadata
 		)
 
-				let retainedEarnings = try Account(
+		var retainedEarningsMetadata = AccountMetadata()
+		retainedEarningsMetadata.category = "Retained"
+		let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [-25_000, -48_000]), // Accumulated losses
-			equityType: .retainedEarnings
+			metadata: retainedEarningsMetadata
 		)
 
-				let commonStock = try Account(
+		var commonStockMetadata = AccountMetadata()
+		commonStockMetadata.category = "Common"
+		let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000, 15_000]), // Desperate equity raise
-			equityType: .commonStock
+			metadata: commonStockMetadata
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -342,28 +373,34 @@ struct CreditMetricsTests {
 		)
 
 		// Cash Flow Statement - negative operating cash flow
-				let cfOperations = try Account(
+		var cfOperationsMetadata = AccountMetadata()
+		cfOperationsMetadata.category = "Operating"
+		let cfOperations = try Account(
 			entity: entity,
 			name: "Cash from Operations",
 			type: .operating,
 			timeSeries: TimeSeries(periods: quarters, values: [-15_000, -20_000]), // Negative OCF
-			
+			metadata: cfOperationsMetadata
 		)
 
-				let cfInvesting = try Account(
+		var cfInvestingMetadata = AccountMetadata()
+		cfInvestingMetadata.category = "Investing"
+		let cfInvesting = try Account(
 			entity: entity,
 			name: "Cash from Investing",
 			type: .investing,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]), // Selling assets
-			
+			metadata: cfInvestingMetadata
 		)
 
-				let cfFinancing = try Account(
+		var cfFinancingMetadata = AccountMetadata()
+		cfFinancingMetadata.category = "Financing"
+		let cfFinancing = try Account(
 			entity: entity,
 			name: "Cash from Financing",
 			type: .financing,
 			timeSeries: TimeSeries(periods: quarters, values: [8_000, 15_000]), // Raising debt/equity
-			
+			metadata: cfFinancingMetadata
 		)
 
 		let cashFlowStatement = try CashFlowStatement(
@@ -438,51 +475,65 @@ struct CreditMetricsTests {
 		let quarters = [Period.quarter(year: 2025, quarter: 1)]
 
 		// Moderate financials
-				let revenue = try Account(
+		var revenueMetadata = AccountMetadata()
+		revenueMetadata.category = "Operating"
+		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
 			type: .revenue,
-			timeSeries: TimeSeries(periods: quarters, values: [100_000])
+			timeSeries: TimeSeries(periods: quarters, values: [100_000]),
+			metadata: revenueMetadata
 		)
 
-				let cogs = try Account(
+		var cogsMetadata = AccountMetadata()
+		cogsMetadata.category = "COGS"
+		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000]),
-			expenseType: .costOfGoodsSold
+			metadata: cogsMetadata
 		)
 
-				let opex = try Account(
+		var opexMetadata = AccountMetadata()
+		opexMetadata.category = "Operating"
+		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [25_000]),
-			expenseType: .operatingExpense
+			metadata: opexMetadata
 		)
 
-				let depreciation = try Account(
+		var depreciationMetadata = AccountMetadata()
+		depreciationMetadata.category = "Non-Cash"
+		depreciationMetadata.tags.append("D&A")
+		let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000]),
-			expenseType: .depreciationAmortization
+			metadata: depreciationMetadata
 		)
 
-				let interest = try Account(
+		var interestMetadata = AccountMetadata()
+		interestMetadata.category = "Interest"
+		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [3_000]),
-			expenseType: .interestExpense
+			metadata: interestMetadata
 		)
 
-				let tax = try Account(
+		var taxMetadata = AccountMetadata()
+		taxMetadata.category = "Tax"
+		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [2_000]),
-			expenseType: .taxExpense
+			metadata: taxMetadata
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -492,68 +543,84 @@ struct CreditMetricsTests {
 			expenseAccounts: [cogs, opex, depreciation, interest, tax]
 		)
 
-				let cash = try Account(
+		var cashMetadata = AccountMetadata()
+		cashMetadata.category = "Current"
+		let cash = try Account(
 			entity: entity,
 			name: "Cash",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000]),
-			assetType: .cashAndEquivalents
+			metadata: cashMetadata
 		)
 
-				let ar = try Account(
+		var arMetadata = AccountMetadata()
+		arMetadata.category = "Current"
+		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000]),
-			assetType: .accountsReceivable
+			metadata: arMetadata
 		)
 
-				let inventory = try Account(
+		var inventoryMetadata = AccountMetadata()
+		inventoryMetadata.category = "Current"
+		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000]),
-			assetType: .inventory
+			metadata: inventoryMetadata
 		)
 
-				let ppe = try Account(
+		var ppeMetadata = AccountMetadata()
+		ppeMetadata.category = "Non-Current"
+		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [80_000]),
-			assetType: .propertyPlantEquipment
+			metadata: ppeMetadata
 		)
 
-				let ap = try Account(
+		var apMetadata = AccountMetadata()
+		apMetadata.category = "Current"
+		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000]),
-			liabilityType: .accountsPayable
+			metadata: apMetadata
 		)
 
-				let debt = try Account(
+		var debtMetadata = AccountMetadata()
+		debtMetadata.category = "Long-Term"
+		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000]),
-			liabilityType: .longTermDebt
+			metadata: debtMetadata
 		)
 
-				let retainedEarnings = try Account(
+		var retainedEarningsMetadata = AccountMetadata()
+		retainedEarningsMetadata.category = "Retained"
+		let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000]),
-			equityType: .retainedEarnings
+			metadata: retainedEarningsMetadata
 		)
 
-				let commonStock = try Account(
+		var commonStockMetadata = AccountMetadata()
+		commonStockMetadata.category = "Common"
+		let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000]),
-			equityType: .commonStock
+			metadata: commonStockMetadata
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -769,51 +836,65 @@ struct CreditMetricsTests {
 		]
 
 		// Minimal setup with zero debt
-				let revenue = try Account(
+		var revenueMetadata = AccountMetadata()
+		revenueMetadata.category = "Operating"
+		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
 			type: .revenue,
-			timeSeries: TimeSeries(periods: quarters, values: [100_000, 110_000])
+			timeSeries: TimeSeries(periods: quarters, values: [100_000, 110_000]),
+			metadata: revenueMetadata
 		)
 
-				let cogs = try Account(
+		var cogsMetadata = AccountMetadata()
+		cogsMetadata.category = "COGS"
+		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000, 65_000]),
-			expenseType: .costOfGoodsSold
+			metadata: cogsMetadata
 		)
 
-				let opex = try Account(
+		var opexMetadata = AccountMetadata()
+		opexMetadata.category = "Operating"
+		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000, 22_000]),
-			expenseType: .operatingExpense
+			metadata: opexMetadata
 		)
 
-				let depreciation = try Account(
+		var depreciationMetadata = AccountMetadata()
+		depreciationMetadata.category = "Non-Cash"
+		depreciationMetadata.tags.append("D&A")
+		let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000]),
-			expenseType: .depreciationAmortization
+			metadata: depreciationMetadata
 		)
 
-				let interest = try Account(
+		var interestMetadata = AccountMetadata()
+		interestMetadata.category = "Interest"
+		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [0, 0]), // Zero debt
-			expenseType: .interestExpense
+			metadata: interestMetadata
 		)
 
-				let tax = try Account(
+		var taxMetadata = AccountMetadata()
+		taxMetadata.category = "Tax"
+		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [4_000, 5_000]),
-			expenseType: .taxExpense
+			metadata: taxMetadata
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -823,44 +904,54 @@ struct CreditMetricsTests {
 			expenseAccounts: [cogs, opex, depreciation, interest, tax]
 		)
 
-				let cash = try Account(
+		var cashMetadata = AccountMetadata()
+		cashMetadata.category = "Current"
+		let cash = try Account(
 			entity: entity,
 			name: "Cash",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 55_000]),
-			assetType: .cashAndEquivalents
+			metadata: cashMetadata
 		)
 
-				let ppe = try Account(
+		var ppeMetadata = AccountMetadata()
+		ppeMetadata.category = "Non-Current"
+		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000]),
-			assetType: .propertyPlantEquipment
+			metadata: ppeMetadata
 		)
 
-				let ap = try Account(
+		var apMetadata = AccountMetadata()
+		apMetadata.category = "Current"
+		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000, 11_000]),
-			liabilityType: .accountsPayable
+			metadata: apMetadata
 		)
 
-				let retainedEarnings = try Account(
+		var retainedEarningsMetadata = AccountMetadata()
+		retainedEarningsMetadata.category = "Retained"
+		let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 111_000]),
-			equityType: .retainedEarnings
+			metadata: retainedEarningsMetadata
 		)
 
-				let commonStock = try Account(
+		var commonStockMetadata = AccountMetadata()
+		commonStockMetadata.category = "Common"
+		let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [40_000, 40_000]), // No new equity
-			equityType: .commonStock
+			metadata: commonStockMetadata
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -871,25 +962,34 @@ struct CreditMetricsTests {
 			equityAccounts: [retainedEarnings, commonStock]
 		)
 
-				let cfOperations = try Account(
+		var cfOperationsMetadata = AccountMetadata()
+		cfOperationsMetadata.category = "Operating"
+		let cfOperations = try Account(
 			entity: entity,
 			name: "Cash from Operations",
 			type: .operating,
-			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000])
+			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000]),
+			metadata: cfOperationsMetadata
 		)
 
-				let cfInvesting = try Account(
+		var cfInvestingMetadata = AccountMetadata()
+		cfInvestingMetadata.category = "Investing"
+		let cfInvesting = try Account(
 			entity: entity,
 			name: "Cash from Investing",
 			type: .investing,
-			timeSeries: TimeSeries(periods: quarters, values: [-5_000, -6_000])
+			timeSeries: TimeSeries(periods: quarters, values: [-5_000, -6_000]),
+			metadata: cfInvestingMetadata
 		)
 
-				let cfFinancing = try Account(
+		var cfFinancingMetadata = AccountMetadata()
+		cfFinancingMetadata.category = "Financing"
+		let cfFinancing = try Account(
 			entity: entity,
 			name: "Cash from Financing",
 			type: .financing,
-			timeSeries: TimeSeries(periods: quarters, values: [-5_000, -7_000])
+			timeSeries: TimeSeries(periods: quarters, values: [-5_000, -7_000]),
+			metadata: cfFinancingMetadata
 		)
 
 		let cashFlowStatement = try CashFlowStatement(

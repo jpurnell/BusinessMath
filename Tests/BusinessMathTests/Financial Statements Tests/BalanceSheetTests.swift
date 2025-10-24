@@ -34,70 +34,60 @@ struct BalanceSheetTests {
 	func makeCashAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [50_000, 55_000, 60_000, 65_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "Current"
 		return try Account(
 			entity: entity,
 			name: "Cash",
 			type: .asset,
 			timeSeries: timeSeries,
-			metadata: metadata
+			assetType: .cashAndEquivalents
 		)
 	}
 
 	func makeARAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [30_000, 33_000, 36_000, 39_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "Current"
 		return try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			type: .asset,
 			timeSeries: timeSeries,
-			metadata: metadata
+			assetType: .accountsReceivable
 		)
 	}
 
 	func makeEquipmentAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [100_000, 95_000, 90_000, 85_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "Fixed"
 		return try Account(
 			entity: entity,
 			name: "Equipment",
 			type: .asset,
 			timeSeries: timeSeries,
-			metadata: metadata
+			assetType: .propertyPlantEquipment
 		)
 	}
 
 	func makeAPAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [20_000, 22_000, 24_000, 26_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "Current"
 		return try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			type: .liability,
 			timeSeries: timeSeries,
-			metadata: metadata
+			liabilityType: .accountsPayable
 		)
 	}
 
 	func makeLongTermDebtAccount(entity: Entity, periods: [Period]) throws -> Account<Double> {
 		let values: [Double] = [80_000, 78_000, 76_000, 74_000]
 		let timeSeries = TimeSeries(periods: periods, values: values)
-		var metadata = AccountMetadata()
-		metadata.category = "Long-term"
 		return try Account(
 			entity: entity,
 			name: "Long-term Debt",
 			type: .liability,
 			timeSeries: timeSeries,
-			metadata: metadata
+			liabilityType: .longTermDebt
 		)
 	}
 
@@ -108,7 +98,8 @@ struct BalanceSheetTests {
 			entity: entity,
 			name: "Retained Earnings",
 			type: .equity,
-			timeSeries: timeSeries
+			timeSeries: timeSeries,
+			equityType: .retainedEarnings
 		)
 	}
 
@@ -594,14 +585,12 @@ struct BalanceSheetTests {
 		let ar = try makeARAccount(entity: entity, periods: periods)
 
 		// Inventory: $20k (should be excluded from quick ratio)
-		var inventoryMetadata = AccountMetadata()
-		inventoryMetadata.category = "Current"
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: periods, values: [20_000, 20_000, 20_000, 20_000]),
-			metadata: inventoryMetadata
+			assetType: .inventory
 		)
 
 		// Accounts Payable: $20k
@@ -704,14 +693,12 @@ struct BalanceSheetTests {
 		let cash = try makeCashAccount(entity: entity, periods: periods)
 
 		// Marketable securities should be included in cash ratio
-		var securitiesMetadata = AccountMetadata()
-		securitiesMetadata.category = "Current"
 		let securities = try Account(
 			entity: entity,
 			name: "Marketable Securities",
 			type: .asset,
 			timeSeries: TimeSeries(periods: periods, values: [10_000, 10_000, 10_000, 10_000]),
-			metadata: securitiesMetadata
+			assetType: .cashAndEquivalents
 		)
 
 		let ap = try makeAPAccount(entity: entity, periods: periods)
