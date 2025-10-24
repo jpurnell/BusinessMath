@@ -168,6 +168,18 @@ public struct Account<T: Real & Sendable>: Codable, Sendable where T: Codable {
 	/// The time series of values for this account.
 	public let timeSeries: TimeSeries<T>
 
+	/// Subtype for asset accounts (nil for non-asset accounts).
+	public let assetType: AssetType?
+
+	/// Subtype for liability accounts (nil for non-liability accounts).
+	public let liabilityType: LiabilityType?
+
+	/// Subtype for expense accounts (nil for non-expense accounts).
+	public let expenseType: ExpenseType?
+
+	/// Subtype for equity accounts (nil for non-equity accounts).
+	public let equityType: EquityType?
+
 	/// Optional metadata for categorization and description.
 	public var metadata: AccountMetadata?
 
@@ -178,6 +190,10 @@ public struct Account<T: Real & Sendable>: Codable, Sendable where T: Codable {
 	///   - name: The account name (must not be empty)
 	///   - type: The account type
 	///   - timeSeries: The time series of values (must not be empty)
+	///   - assetType: Subtype for asset accounts (required if type is .asset)
+	///   - liabilityType: Subtype for liability accounts (required if type is .liability)
+	///   - expenseType: Subtype for expense accounts (required if type is .expense)
+	///   - equityType: Subtype for equity accounts (required if type is .equity)
 	///   - metadata: Optional metadata
 	///
 	/// - Throws: ``AccountError/invalidName`` if name is empty
@@ -187,6 +203,10 @@ public struct Account<T: Real & Sendable>: Codable, Sendable where T: Codable {
 		name: String,
 		type: AccountType,
 		timeSeries: TimeSeries<T>,
+		assetType: AssetType? = nil,
+		liabilityType: LiabilityType? = nil,
+		expenseType: ExpenseType? = nil,
+		equityType: EquityType? = nil,
 		metadata: AccountMetadata? = nil
 	) throws {
 		guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -200,6 +220,10 @@ public struct Account<T: Real & Sendable>: Codable, Sendable where T: Codable {
 		self.name = name
 		self.type = type
 		self.timeSeries = timeSeries
+		self.assetType = assetType
+		self.liabilityType = liabilityType
+		self.expenseType = expenseType
+		self.equityType = equityType
 		self.metadata = metadata
 	}
 

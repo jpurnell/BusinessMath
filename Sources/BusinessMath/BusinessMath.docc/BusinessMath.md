@@ -42,10 +42,13 @@ The library is designed for:
 ### Tutorials
 
 - <doc:BuildingRevenueModel>
-- <doc:FinancialStatements>
-- <doc:ScenarioAnalysis>
-- <doc:FinancialRatios>
-- <doc:Visualization>
+- <doc:FinancialStatementsGuide>
+- <doc:ScenarioAnalysisGuide>
+- <doc:FinancialRatiosGuide>
+- <doc:VisualizationGuide>
+- <doc:DebtAndFinancingGuide>
+- <doc:EquityFinancingGuide>
+- <doc:LeaseAccountingGuide>
 - <doc:LoanAmortization>
 - <doc:InvestmentAnalysis>
 

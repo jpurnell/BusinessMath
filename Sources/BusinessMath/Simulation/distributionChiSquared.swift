@@ -7,6 +7,7 @@
 
 import Foundation
 import Numerics
+import OSLog
 
 /// Generates a random value from a Chi-squared distribution with the specified degrees of freedom.
 ///
@@ -55,8 +56,16 @@ import Numerics
 /// // Generate variance estimates
 /// let variance: Double = distributionChiSquared(degreesOfFreedom: 20)
 /// ```
+@available(macOS 11.0, *)
 public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T {
-	precondition(degreesOfFreedom > 0, "Degrees of freedom must be positive")
+	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
+	guard degreesOfFreedom > 0 else {
+			#if DEBUG
+			logger.error("Invalid degrees of freedom: \(degreesOfFreedom). Using default value of 1.")
+			#endif
+			// Return minimum valid distribution (df=1)
+			return distributionChiSquared(degreesOfFreedom: 1, seeds: seeds)
+		}
 
 	var seedIndex = 0
 
@@ -66,6 +75,14 @@ public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Doubl
 	let scale = T(2)
 
 	return gammaVariate(shape: shape, scale: scale, seeds: seeds, seedIndex: &seedIndex)
+}
+
+@available(macOS 11.0, *)
+public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) throws -> T {
+	guard degreesOfFreedom > 0 else {
+		throw DistributionError.invalidDegreesOfFreedom(degreesOfFreedom)
+	}
+	return distributionChiSquared(degreesOfFreedom: degreesOfFreedom, seeds: seeds)
 }
 
 /// A type that represents a Chi-squared distribution.
@@ -98,6 +115,7 @@ public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Doubl
 /// let varianceTest = DistributionChiSquared(degreesOfFreedom: 25)
 /// let sample = varianceTest.next()
 /// ```
+@available(macOS 11.0, *)
 public struct DistributionChiSquared: DistributionRandom {
 	/// The degrees of freedom parameter (df > 0)
 	let degreesOfFreedom: Int

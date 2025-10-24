@@ -349,10 +349,9 @@ public func inventoryTurnover<T: Real>(
 		throw FinancialRatioError.missingExpense("Cost of Goods Sold (COGS)")
 	}
 
-	// Find inventory in balance sheet (current asset)
+	// Find inventory in balance sheet
 	guard let inventory = balanceSheet.assetAccounts.first(where: {
-		$0.metadata?.category == "Current" &&
-		$0.name.localizedCaseInsensitiveContains("Inventory")
+		$0.assetType == .inventory
 	}) else {
 		throw FinancialRatioError.missingAccount("Inventory")
 	}
@@ -472,10 +471,9 @@ public func receivablesTurnover<T: Real>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) throws -> TimeSeries<T> {
-	// Find accounts receivable in balance sheet (current asset)
+	// Find accounts receivable in balance sheet
 	guard let receivables = balanceSheet.assetAccounts.first(where: {
-		$0.metadata?.category == "Current" &&
-		$0.name.localizedCaseInsensitiveContains("Receivable")
+		$0.assetType == .accountsReceivable
 	}) else {
 		throw FinancialRatioError.missingAccount("Accounts Receivable")
 	}

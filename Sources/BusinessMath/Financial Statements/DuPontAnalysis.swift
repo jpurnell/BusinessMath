@@ -288,35 +288,13 @@ public func dupontAnalysis5Way<T: Real>(
 	let totalAssets = balanceSheet.totalAssets
 	let totalEquity = balanceSheet.totalEquity
 
-	// Calculate EBIT (Operating Income) = Operating Income - D&A
-	// Note: operatingIncome may not include D&A, so we need to subtract it
-	let operatingIncome = incomeStatement.operatingIncome
-
-	// Find D&A expenses
-	let daAccounts = incomeStatement.expenseAccounts.filter {
-		$0.metadata?.category == "Non-Cash" &&
-		($0.name.localizedCaseInsensitiveContains("Depreciation") ||
-		 $0.name.localizedCaseInsensitiveContains("Amortization"))
-	}
-
-	let da: TimeSeries<T>
-	if !daAccounts.isEmpty {
-		da = daAccounts.dropFirst().reduce(daAccounts[0].timeSeries) { $0 + $1.timeSeries }
-	} else {
-		let zero = T(0)
-		let periods = operatingIncome.periods
-		let zeroValues = periods.map { _ in zero }
-		da = TimeSeries(periods: periods, values: zeroValues)
-	}
-
-	// EBIT = Operating Income - D&A
-	// If D&A is categorized as "Non-Cash", it may not be included in operating income
-	// so we need to subtract it to get true EBIT
-	let ebit = operatingIncome - da
+	// EBIT is the operating income (which already subtracts D&A)
+	// Operating Income = Revenue - COGS - Operating Expenses - D&A
+	let ebit = incomeStatement.operatingIncome
 
 	// Calculate EBT (Earnings Before Tax) = Net Income + Tax
 	let taxAccounts = incomeStatement.expenseAccounts.filter {
-		$0.metadata?.category == "Tax"
+		$0.expenseType == .taxExpense
 	}
 
 	let taxExpense: TimeSeries<T>

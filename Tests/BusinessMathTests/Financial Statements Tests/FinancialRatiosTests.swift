@@ -40,9 +40,7 @@ struct FinancialRatiosTests {
 			)
 		)
 
-		// Operating Expenses: $400k per quarter
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
+		// Operating Expenses: $400k per quarter	
 		let opexAccount = try Account(
 			entity: entity,
 			name: "Operating Expenses",
@@ -51,7 +49,7 @@ struct FinancialRatiosTests {
 				periods: quarters,
 				values: [400_000, 400_000, 400_000, 400_000]
 			),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
 		// Interest Expense: $50k per quarter
@@ -452,15 +450,13 @@ struct FinancialRatiosTests {
 			expenseAccounts: [cogs]
 		)
 
-		// Inventory: $200k (slowly increasing)
-		var inventoryMetadata = AccountMetadata()
-		inventoryMetadata.category = "Current"
+		// Inventory: $200k (slowly increasing)	
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [200_000, 210_000, 220_000, 230_000]),
-			metadata: inventoryMetadata
+			assetType: .inventory
 		)
 
 		// Other assets
@@ -531,14 +527,12 @@ struct FinancialRatiosTests {
 			expenseAccounts: [cogs]
 		)
 
-		var inventoryMetadata = AccountMetadata()
-		inventoryMetadata.category = "Current"
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 50_000, 50_000, 50_000]),
-			metadata: inventoryMetadata
+			assetType: .inventory
 		)
 
 		let equity = try Account(
@@ -602,15 +596,13 @@ struct FinancialRatiosTests {
 			expenseAccounts: [expenses]
 		)
 
-		// Receivables: customers pay in ~60 days
-		var receivablesMetadata = AccountMetadata()
-		receivablesMetadata.category = "Current"
+		// Receivables: customers pay in ~60 days	
 		let receivables = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000]),
-			metadata: receivablesMetadata
+			assetType: .accountsReceivable
 		)
 
 		let equity = try Account(
@@ -666,15 +658,13 @@ struct FinancialRatiosTests {
 			expenseAccounts: [expenses]
 		)
 
-		// Receivables representing 30 days of sales
-		var receivablesMetadata = AccountMetadata()
-		receivablesMetadata.category = "Current"
+		// Receivables representing 30 days of sales	
 		let receivables = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000, 30_000, 30_000, 30_000]),
-			metadata: receivablesMetadata
+			assetType: .accountsReceivable
 		)
 
 		let equity = try Account(
@@ -779,15 +769,13 @@ struct FinancialRatiosTests {
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 100_000, 100_000, 100_000])
 		)
 
-		// High operating expenses
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
+		// High operating expenses	
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [70_000, 70_000, 70_000, 70_000]),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
 		// High interest expense (relative to operating income)
@@ -896,14 +884,12 @@ struct FinancialRatiosTests {
 			timeSeries: TimeSeries(periods: quarters, values: [500_000, 500_000, 500_000, 500_000])
 		)
 
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [350_000, 350_000, 350_000, 350_000]),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -951,14 +937,12 @@ struct FinancialRatiosTests {
 			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
 		)
 
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [150_000, 150_000, 150_000, 150_000]),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
 		let incomeStatement = try IncomeStatement(

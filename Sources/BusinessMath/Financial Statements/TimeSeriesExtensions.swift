@@ -78,3 +78,49 @@ internal func averageTimeSeries<T: Real>(_ timeSeries: TimeSeries<T>) -> TimeSer
 		)
 	)
 }
+
+extension TimeSeries where T: Real {
+	/// Calculates period-over-period growth rates.
+	///
+	/// Growth rate is calculated as: (Current Value - Prior Value) / Prior Value
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let revenue = TimeSeries(periods: quarters, values: [100, 110, 121, 133.1])
+	/// let growth = revenue.periodOverPeriodGrowth()
+	/// // Q2: 0.10 (10%), Q3: 0.10 (10%), Q4: 0.10 (10%)
+	/// ```
+	///
+	/// - Returns: TimeSeries of growth rates (as decimals). First period is excluded.
+	public func periodOverPeriodGrowth() -> TimeSeries<T> {
+		let periods = self.periods
+		guard periods.count > 1 else {
+			return TimeSeries(periods: [], values: [])
+		}
+
+		var growthValues: [Period: T] = [:]
+
+		for i in 1..<periods.count {
+			let currentPeriod = periods[i]
+			let priorPeriod = periods[i - 1]
+
+			let currentValue = self[currentPeriod]!
+			let priorValue = self[priorPeriod]!
+
+			if priorValue != T(0) {
+				let growth = (currentValue - priorValue) / priorValue
+				growthValues[currentPeriod] = growth
+			}
+		}
+
+		return TimeSeries(
+			data: growthValues,
+			metadata: TimeSeriesMetadata(
+				name: "\(self.metadata.name) Growth",
+				description: "Period-over-period growth rate",
+				unit: nil
+			)
+		)
+	}
+}

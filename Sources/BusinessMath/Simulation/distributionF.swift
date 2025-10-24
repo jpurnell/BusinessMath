@@ -7,6 +7,7 @@
 
 import Foundation
 import Numerics
+import OSLog
 
 /// Generates a random value from an F-distribution with the specified degrees of freedom.
 ///
@@ -56,10 +57,28 @@ import Numerics
 /// // Compare variances of two samples
 /// let varianceRatio: Double = distributionF(df1: 10, df2: 15)
 /// ```
+@available(macOS 11.0, *)
 public func distributionF<T: Real>(df1: Int, df2: Int, seeds: [Double]? = nil) -> T {
-	precondition(df1 > 0, "First degrees of freedom must be positive")
-	precondition(df2 > 0, "Second degrees of freedom must be positive")
+	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
+//	precondition(df1 > 0, "First degrees of freedom must be positive")
+//	precondition(df2 > 0, "Second degrees of freedom must be positive")
 
+	guard df1 > 0 else {
+			#if DEBUG
+			logger.error("Invalid first degrees of freedom: \(df1). Using default value of 1.")
+			#endif
+			// Use minimum valid value
+			return distributionF(df1: 1, df2: df2, seeds: seeds)
+		}
+
+		guard df2 > 0 else {
+			#if DEBUG
+			logger.error("Invalid second degrees of freedom: \(df2). Using default value of 1.")
+			#endif
+			// Use minimum valid value
+			return distributionF(df1: df1, df2: 1, seeds: seeds)
+		}
+	
 	// F(df1, df2) = (χ²(df1)/df1) / (χ²(df2)/df2)
 	// where χ²(df) = Gamma(df/2, 2)
 
@@ -121,6 +140,7 @@ public func distributionF<T: Real>(df1: Int, df2: Int, seeds: [Double]? = nil) -
 /// let varianceTest = DistributionF(df1: 10, df2: 12)
 /// let ratio = varianceTest.next()
 /// ```
+@available(macOS 11.0, *)
 public struct DistributionF: DistributionRandom {
 	/// The first degrees of freedom (numerator, df1 > 0)
 	let df1: Int

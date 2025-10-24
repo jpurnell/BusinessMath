@@ -21,66 +21,52 @@ struct ValuationMetricsTests {
 		let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc")
 		let quarters = Period.year(2025).quarters()
 
-		// Income Statement - profitable growth company
-		var revenueMetadata = AccountMetadata()
-		revenueMetadata.category = "Operating"
+		// Income Statement - profitable growth company	
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
 			type: .revenue,
-			timeSeries: TimeSeries(periods: quarters, values: [100_000, 110_000, 120_000, 130_000]),
-			metadata: revenueMetadata
+			timeSeries: TimeSeries(periods: quarters, values: [100_000, 110_000, 120_000, 130_000])
 		)
 
-		var cogsMetadata = AccountMetadata()
-		cogsMetadata.category = "Operating"
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [40_000, 44_000, 48_000, 52_000]),
-			metadata: cogsMetadata
+			expenseType: .costOfGoodsSold
 		)
 
-		var opexMetadata = AccountMetadata()
-		opexMetadata.category = "Operating"
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000, 32_000, 34_000, 36_000]),
-			metadata: opexMetadata
+			expenseType: .operatingExpense
 		)
 
-		var depreciationMetadata = AccountMetadata()
-		depreciationMetadata.category = "Non-Cash"
-		depreciationMetadata.tags.append("D&A")
 		let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000, 5_000, 5_000]),
-			metadata: depreciationMetadata
+			expenseType: .depreciationAmortization
 		)
 
-		var interestMetadata = AccountMetadata()
-		interestMetadata.category = "Interest"
 		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [1_000, 1_000, 1_000, 1_000]),
-			metadata: interestMetadata
+			expenseType: .interestExpense
 		)
 
-		var taxMetadata = AccountMetadata()
-		taxMetadata.category = "Tax"
 		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			type: .expense,
 			timeSeries: TimeSeries(periods: quarters, values: [6_000, 7_000, 8_000, 9_000]),
-			metadata: taxMetadata
+			expenseType: .taxExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -90,75 +76,61 @@ struct ValuationMetricsTests {
 			expenseAccounts: [cogs, opex, depreciation, interest, tax]
 		)
 
-		// Balance Sheet
-		var cashMetadata = AccountMetadata()
-		cashMetadata.category = "Current"
+		// Balance Sheet	
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 55_000, 60_000, 65_000]),
-			metadata: cashMetadata
+			assetType: .cashAndEquivalents
 		)
 
-		var arMetadata = AccountMetadata()
-		arMetadata.category = "Current"
 		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000, 22_000, 24_000, 26_000]),
-			metadata: arMetadata
+			assetType: .accountsReceivable
 		)
 
-		var inventoryMetadata = AccountMetadata()
-		inventoryMetadata.category = "Current"
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000, 16_000, 17_000, 18_000]),
-			metadata: inventoryMetadata
+			assetType: .inventory
 		)
 
-		var ppeMetadata = AccountMetadata()
-		ppeMetadata.category = "Non-Current"
 		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			type: .asset,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000, 110_000, 115_000]),
-			metadata: ppeMetadata
+			assetType: .propertyPlantEquipment
 		)
 
-		var apMetadata = AccountMetadata()
-		apMetadata.category = "Current"
 		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000, 16_000, 17_000, 18_000]),
-			metadata: apMetadata
+			liabilityType: .accountsPayable
 		)
 
-		var debtMetadata = AccountMetadata()
-		debtMetadata.category = "Long-Term"
 		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			type: .liability,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 48_000, 46_000, 44_000]),
-			metadata: debtMetadata
+			liabilityType: .longTermDebt
 		)
 
-		var equityMetadata = AccountMetadata()
-		equityMetadata.category = "Common"
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
 			type: .equity,
 			timeSeries: TimeSeries(periods: quarters, values: [120_000, 138_000, 148_000, 166_000]),
-			metadata: equityMetadata
+			equityType: .retainedEarnings
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -347,12 +319,11 @@ struct ValuationMetricsTests {
 		let quarters = Period.year(2025).quarters()
 
 		// Q1: EV = 150K (calculated above)
-		// EBITDA = Operating Income + D&A
-		// Operating Income = Revenue - COGS - OpEx = 100K - 40K - 30K = 30K
-		// EBITDA = 30K + 5K = 35K
-		// EV/EBITDA = 150K / 35K = 4.29
+		// Operating Income (EBIT) = Revenue - COGS - OpEx - D&A = 100K - 40K - 30K - 5K = 25K
+		// EBITDA = Operating Income + D&A = 25K + 5K = 30K
+		// EV/EBITDA = 150K / 30K = 5.0
 		let q1EVtoEBITDA = evEbitda[quarters[0]]!
-		#expect(abs(q1EVtoEBITDA - 4.29) < 0.1, "Q1 EV/EBITDA should be ~4.29")
+		#expect(abs(q1EVtoEBITDA - 5.0) < 0.1, "Q1 EV/EBITDA should be ~5.0")
 
 		// Typical range is 8-15x, but this is a very profitable company with low debt
 		for quarter in quarters {

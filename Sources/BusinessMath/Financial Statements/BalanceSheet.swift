@@ -210,11 +210,18 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 
 	// MARK: - Liquidity Metrics
 
-	/// Current assets (assets with category "Current").
+	/// Current assets (assets with subtype indicating current/short-term).
 	///
 	/// Current assets are expected to be converted to cash within one year.
+	/// Includes: cash, accounts receivable, inventory, and other current assets.
 	public var currentAssets: TimeSeries<T> {
-		let current = assetAccounts.filter { $0.metadata?.category == "Current" }
+		let current = assetAccounts.filter {
+			guard let assetType = $0.assetType else { return false }
+			return assetType == .cashAndEquivalents ||
+				   assetType == .accountsReceivable ||
+				   assetType == .inventory ||
+				   assetType == .otherCurrentAsset
+		}
 		return aggregateAccounts(current)
 	}
 
@@ -254,11 +261,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ```
 	public var cashAndEquivalents: TimeSeries<T> {
 		let cashAccounts = assetAccounts.filter {
-			$0.metadata?.category == "Current" && (
-				$0.name.localizedCaseInsensitiveContains("Cash") ||
-				$0.name.localizedCaseInsensitiveContains("Cash Equivalent") ||
-				$0.name.localizedCaseInsensitiveContains("Marketable Securities")
-			)
+			$0.assetType == .cashAndEquivalents
 		}
 
 		if !cashAccounts.isEmpty {
@@ -317,20 +320,14 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// print("Total Debt: $\(debt[q1]!)")  // e.g., "Total Debt: $2,000,000"
 	/// ```
 	public var interestBearingDebt: TimeSeries<T> {
-		// Find debt accounts by category or name
+		// Find debt accounts by subtype
 		let debtAccounts = liabilityAccounts.filter {
-			// Preferred: explicit category tag
-			if $0.metadata?.category == "Debt" {
-				return true
-			}
-
-			// Fallback: name-based identification
-			let name = $0.name.lowercased()
-			return name.contains("debt") ||
-				   name.contains("loan") ||
-				   name.contains("bond") ||
-				   name.contains("note payable") ||
-				   name.contains("lease")
+			guard let liabilityType = $0.liabilityType else { return false }
+			return liabilityType == .shortTermDebt ||
+				   liabilityType == .currentPortionLongTermDebt ||
+				   liabilityType == .longTermDebt ||
+				   liabilityType == .bonds ||
+				   liabilityType == .capitalLeases
 		}
 
 		if !debtAccounts.isEmpty {
@@ -343,29 +340,42 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		}
 	}
 
-	/// Current liabilities (liabilities with category "Current").
+	/// Current liabilities (liabilities expected to be paid within one year).
 	///
-	/// Current liabilities are expected to be paid within one year.
+	/// Includes: accounts payable, accrued expenses, short-term debt,
+	/// current portion of long-term debt, and other current liabilities.
 	public var currentLiabilities: TimeSeries<T> {
-		let current = liabilityAccounts.filter { $0.metadata?.category == "Current" }
+		let current = liabilityAccounts.filter {
+			guard let liabilityType = $0.liabilityType else { return false }
+			return liabilityType == .accountsPayable ||
+				   liabilityType == .accruedExpenses ||
+				   liabilityType == .shortTermDebt ||
+				   liabilityType == .currentPortionLongTermDebt ||
+				   liabilityType == .otherCurrentLiability
+		}
 		return aggregateAccounts(current)
 	}
 
 	/// Long-term debt (bonds, notes payable, term loans with maturity > 1 year).
 	///
-	/// Filters liability accounts with category "Long-Term" for credit metrics
-	/// like Altman Z-Score and Piotroski F-Score.
+	/// Filters liability accounts with subtype indicating long-term debt.
+	/// Used for credit metrics like Altman Z-Score and Piotroski F-Score.
 	public var longTermDebt: TimeSeries<T> {
-		let ltDebt = liabilityAccounts.filter { $0.metadata?.category == "Long-Term" }
+		let ltDebt = liabilityAccounts.filter {
+			guard let liabilityType = $0.liabilityType else { return false }
+			return liabilityType == .longTermDebt ||
+				   liabilityType == .bonds ||
+				   liabilityType == .capitalLeases
+		}
 		return aggregateAccounts(ltDebt)
 	}
 
 	/// Retained earnings (accumulated profits not distributed as dividends).
 	///
-	/// Filters equity accounts with category "Retained" for credit metrics
-	/// like Altman Z-Score and Piotroski F-Score.
+	/// Filters equity accounts with subtype .retainedEarnings.
+	/// Used for credit metrics like Altman Z-Score and Piotroski F-Score.
 	public var retainedEarnings: TimeSeries<T> {
-		let retained = equityAccounts.filter { $0.metadata?.category == "Retained" }
+		let retained = equityAccounts.filter { $0.equityType == .retainedEarnings }
 		return aggregateAccounts(retained)
 	}
 
@@ -383,6 +393,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// Measures ability to pay short-term obligations. A ratio above 1.0
 	/// indicates sufficient current assets to cover current liabilities.
 	public var currentRatio: TimeSeries<T> {
+		print("Calculating current ratio with current Assets of \(currentAssets) and current liabilities of \(currentLiabilities)")
 		return currentAssets / currentLiabilities
 	}
 
@@ -438,8 +449,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	public var quickRatio: TimeSeries<T> {
 		// Find inventory in current assets
 		let inventoryAccounts = assetAccounts.filter {
-			$0.metadata?.category == "Current" &&
-			$0.name.localizedCaseInsensitiveContains("Inventory")
+			$0.assetType == .inventory
 		}
 
 		let inventory: TimeSeries<T>
@@ -495,11 +505,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	public var cashRatio: TimeSeries<T> {
 		// Find cash and cash equivalents in current assets
 		let cashAccounts = assetAccounts.filter {
-			$0.metadata?.category == "Current" && (
-				$0.name.localizedCaseInsensitiveContains("Cash") ||
-				$0.name.localizedCaseInsensitiveContains("Cash Equivalent") ||
-				$0.name.localizedCaseInsensitiveContains("Marketable Securities")
-			)
+			$0.assetType == .cashAndEquivalents
 		}
 
 		let cash: TimeSeries<T>

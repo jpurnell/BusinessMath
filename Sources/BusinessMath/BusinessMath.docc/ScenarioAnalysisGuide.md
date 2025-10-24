@@ -10,9 +10,9 @@ BusinessMath provides powerful tools for scenario planning and sensitivity analy
 - Identify the most impactful drivers (tornado diagrams)
 - Run Monte Carlo simulations for risk analysis
 
-## Topics
+## Content
 
-### Understanding Scenarios
+## Understanding Scenarios
 
 A scenario represents a complete set of assumptions about the future. Businesses typically model:
 - **Base Case**: Most likely outcome
@@ -20,7 +20,7 @@ A scenario represents a complete set of assumptions about the future. Businesses
 - **Worst Case**: Conservative assumptions
 - **Custom Scenarios**: Specific situations (e.g., "Economic Recession")
 
-### Creating Your First Scenario
+## Creating Your First Scenario
 
 Start with operational drivers and a builder function:
 
@@ -135,7 +135,7 @@ let baseProjection = try runner.run(
 print("Base Case Q1 Net Income: $\(baseProjection.incomeStatement.netIncome[q1]!)")
 ```
 
-### Creating Multiple Scenarios
+## Creating Multiple Scenarios
 
 Build best and worst case scenarios:
 
@@ -198,7 +198,7 @@ let range = bestProjection.incomeStatement.netIncome[q1]! -
 print("Range: $\(range)")
 ```
 
-### One-Way Sensitivity Analysis
+## One-Way Sensitivity Analysis
 
 Analyze how one input affects the output:
 
@@ -230,7 +230,7 @@ let sensitivity = deltaIncome / deltaRevenue
 print("\nSensitivity: For every $1 increase in revenue, net income increases by $\(sensitivity)")
 ```
 
-### Tornado Diagram Analysis
+## Tornado Diagram Analysis
 
 Identify which drivers have the greatest impact:
 
@@ -267,7 +267,7 @@ let plot = plotTornadoDiagram(tornado)
 print("\n" + plot)
 ```
 
-### Two-Way Sensitivity Analysis
+## Two-Way Sensitivity Analysis
 
 Analyze interactions between two inputs:
 
@@ -306,7 +306,7 @@ for (i, revenue) in twoWaySensitivity.inputValues1.enumerated() {
 }
 ```
 
-### Monte Carlo Simulation
+## Monte Carlo Simulation
 
 Model uncertainty with probabilistic inputs:
 
@@ -387,21 +387,21 @@ print("\n" + histPlot)
 
 ## Best Practices
 
-### Scenario Design
+## Scenario Design
 
 1. **Start Simple**: Begin with 3 scenarios (base, best, worst)
 2. **Be Realistic**: Base assumptions on historical data and market research
 3. **Document Assumptions**: Clearly state what each scenario represents
 4. **Test Extremes**: Include stress tests for extreme but plausible events
 
-### Sensitivity Analysis
+## Sensitivity Analysis
 
 1. **Focus on Key Drivers**: Don't test every input - focus on the most uncertain
 2. **Use Consistent Ranges**: ±10%, ±20%, or ±30% are common choices
 3. **Interpret Results**: Large impact + high uncertainty = highest risk
 4. **Update Regularly**: Rerun as new information becomes available
 
-### Monte Carlo Simulation
+## Monte Carlo Simulation
 
 1. **Choose Appropriate Distributions**:
    - Revenue: Normal or Log-Normal
@@ -414,8 +414,8 @@ print("\n" + histPlot)
 
 ## Next Steps
 
-- Learn about <doc:FinancialRatios> for analyzing scenario results
-- Explore <doc:Visualization> for creating charts and diagrams
+- Learn about <doc:FinancialRatiosGuide> for analyzing scenario results
+- Explore <doc:VisualizationGuide> for creating charts and diagrams
 - See <doc:BuildingRevenueModel> for more complex drivers
 
 ## Related Topics

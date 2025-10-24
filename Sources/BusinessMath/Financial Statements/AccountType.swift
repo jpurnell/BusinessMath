@@ -33,7 +33,7 @@ import Foundation
 /// ## Example
 /// ```swift
 /// let revenueAccount = Account(name: "Sales", type: .revenue, timeSeries: salesTS)
-/// let assetAccount = Account(name: "Cash", type: .asset, timeSeries: cashTS)
+/// let assetAccount = Account(name: "Cash", type: .asset, subtype: .cashAndEquivalents, timeSeries: cashTS)
 /// ```
 public enum AccountType: String, Codable, Equatable, Sendable {
 	// MARK: - Income Statement Accounts
@@ -81,6 +81,154 @@ public enum AccountType: String, Codable, Equatable, Sendable {
 	///
 	/// Examples: Issuing stock, Borrowing money, Paying dividends, Repaying debt
 	case financing
+}
+
+// MARK: - AssetType
+
+/// Subcategory for asset accounts.
+///
+/// Provides granular classification of assets for balance sheet calculations
+/// without relying on string-based metadata.
+///
+/// ## Example
+/// ```swift
+/// let cash = Account(name: "Cash", type: .asset, subtype: .cashAndEquivalents, ...)
+/// let inventory = Account(name: "Inventory", type: .asset, subtype: .inventory, ...)
+/// ```
+public enum AssetType: String, Codable, Equatable, Sendable {
+	// MARK: - Current Assets
+
+	/// Cash and cash equivalents (liquid assets).
+	case cashAndEquivalents
+
+	/// Accounts receivable (amounts owed by customers).
+	case accountsReceivable
+
+	/// Inventory (goods held for sale).
+	case inventory
+
+	/// Other current assets (prepaid expenses, etc.).
+	case otherCurrentAsset
+
+	// MARK: - Long-Term Assets
+
+	/// Property, plant, and equipment (fixed assets).
+	case propertyPlantEquipment
+
+	/// Intangible assets (patents, goodwill, etc.).
+	case intangibleAssets
+
+	/// Long-term investments.
+	case investments
+
+	/// Other long-term assets.
+	case otherLongTermAsset
+}
+
+// MARK: - LiabilityType
+
+/// Subcategory for liability accounts.
+///
+/// Provides granular classification of liabilities for balance sheet and
+/// leverage calculations without relying on string-based metadata.
+///
+/// ## Example
+/// ```swift
+/// let debt = Account(name: "Senior Notes", type: .liability, subtype: .longTermDebt, ...)
+/// let ap = Account(name: "Accounts Payable", type: .liability, subtype: .accountsPayable, ...)
+/// ```
+public enum LiabilityType: String, Codable, Equatable, Sendable {
+	// MARK: - Current Liabilities
+
+	/// Accounts payable (amounts owed to suppliers).
+	case accountsPayable
+
+	/// Accrued expenses (wages, utilities, etc.).
+	case accruedExpenses
+
+	/// Short-term debt (debt maturing within 1 year).
+	case shortTermDebt
+
+	/// Current portion of long-term debt.
+	case currentPortionLongTermDebt
+
+	/// Other current liabilities.
+	case otherCurrentLiability
+
+	// MARK: - Long-Term Liabilities
+
+	/// Long-term debt (loans, term debt).
+	case longTermDebt
+
+	/// Bonds payable.
+	case bonds
+
+	/// Capital lease obligations.
+	case capitalLeases
+
+	/// Preferred stock (treated as quasi-debt for capital structure).
+	case preferredStock
+
+	/// Other long-term liabilities.
+	case otherLongTermLiability
+}
+
+// MARK: - ExpenseType
+
+/// Subcategory for expense accounts.
+///
+/// Provides granular classification of expenses for income statement
+/// calculations without relying on string-based metadata.
+///
+/// ## Example
+/// ```swift
+/// let cogs = Account(name: "Cost of Goods Sold", type: .expense, subtype: .costOfGoodsSold, ...)
+/// let interest = Account(name: "Interest Expense", type: .expense, subtype: .interestExpense, ...)
+/// ```
+public enum ExpenseType: String, Codable, Equatable, Sendable {
+	/// Cost of goods sold (direct costs of production).
+	case costOfGoodsSold
+
+	/// Operating expenses (SG&A, R&D, etc.).
+	case operatingExpense
+
+	/// Depreciation and amortization.
+	case depreciationAmortization
+
+	/// Interest expense.
+	case interestExpense
+
+	/// Tax expense.
+	case taxExpense
+}
+
+// MARK: - EquityType
+
+/// Subcategory for equity accounts.
+///
+/// Provides granular classification of equity for balance sheet calculations
+/// without relying on string-based metadata.
+///
+/// ## Example
+/// ```swift
+/// let stock = Account(name: "Common Stock", type: .equity, subtype: .commonStock, ...)
+/// let retained = Account(name: "Retained Earnings", type: .equity, subtype: .retainedEarnings, ...)
+/// ```
+public enum EquityType: String, Codable, Equatable, Sendable {
+	/// Common stock (par value + additional paid-in capital).
+	case commonStock
+
+	/// Retained earnings (accumulated profits).
+	case retainedEarnings
+
+	/// Additional paid-in capital (APIC).
+	case additionalPaidInCapital
+
+	/// Treasury stock (repurchased shares).
+	case treasuryStock
+
+	/// Accumulated other comprehensive income (AOCI).
+	case accumulatedOtherComprehensiveIncome
 }
 
 // MARK: - AccountCategory

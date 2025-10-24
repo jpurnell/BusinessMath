@@ -6,9 +6,7 @@ Learn how to model complete financial statements including Income Statement, Bal
 
 BusinessMath provides a comprehensive framework for creating period-based financial statements. This tutorial shows you how to build a complete three-statement model from operational drivers.
 
-## Topics
-
-### Understanding Financial Statements
+## Understanding Financial Statements
 
 Financial statements are the primary way businesses report their financial performance and position. BusinessMath models three core statements:
 
@@ -16,7 +14,7 @@ Financial statements are the primary way businesses report their financial perfo
 - **Balance Sheet**: Assets, liabilities, and equity at a point in time
 - **Cash Flow Statement**: Cash inflows and outflows over a period
 
-### Creating an Entity
+## Creating an Entity
 
 Every financial model starts with an entity (company):
 
@@ -24,16 +22,17 @@ Every financial model starts with an entity (company):
 import BusinessMath
 
 // Define the company
-let company = Entity(
-    id: "ACME001",
-    primaryType: .ticker,
-    name: "Acme Corporation",
-    ticker: "ACME",
-    description: "Leading provider of widgets"
+let acme = Entity(
+	id: "ACME001",
+	primaryType: .ticker,
+	name: "Acme Corporation",
+	identifiers: [.ticker: "ACME"],
+	currency: "USD",
+	metadata: ["description": "Leading provider of widgets"]
 )
 ```
 
-### Building an Income Statement
+## Building an Income Statement
 
 The Income Statement shows profitability over time:
 
@@ -46,86 +45,94 @@ let q4 = Period.quarter(year: 2025, quarter: 4)
 let periods = [q1, q2, q3, q4]
 
 // Revenue
-let revenue = Account(
-    name: "Product Revenue",
-    timeSeries: TimeSeries(
-        periods: periods,
-        values: [1_000_000, 1_100_000, 1_200_000, 1_300_000]
-    ),
-    type: .revenue
+let revenue = try Account(
+	entity: acme,
+	name: "Product Revenue",
+	type: .revenue,
+	timeSeries: TimeSeries(
+		periods: periods,
+		values: [1_000_000, 1_100_000, 1_200_000, 1_300_000]
+	),
 )
 
 // Cost of Goods Sold
-let cogs = Account(
-    name: "Cost of Goods Sold",
-    timeSeries: TimeSeries(
-        periods: periods,
-        values: [400_000, 440_000, 480_000, 520_000]
-    ),
-    type: .costOfRevenue
+let cogs = try Account(
+	entity: acme,
+	name: "Cost of Goods Sold",
+	type: .expense,
+	timeSeries: TimeSeries(
+		periods: periods,
+		values: [400_000, 440_000, 480_000, 520_000]
+	),
+	metadata: AccountMetadata(category: "COGS")
 )
 
 // Operating Expenses
-let salary = Account(
-    name: "Salaries",
-    timeSeries: TimeSeries(
-        periods: periods,
-        values: [200_000, 200_000, 200_000, 200_000]
-    ),
-    type: .operatingExpense,
-    metadata: AccountMetadata(category: "Personnel")
+let salary = try Account(
+	entity: acme,
+	name: "Salaries",
+	type: .expense,
+	timeSeries: TimeSeries(
+		periods: periods,
+		values: [200_000, 200_000, 200_000, 200_000]
+	),
+	metadata: AccountMetadata(category: "Operating", subCategory: "Salary")
 )
 
-let marketing = Account(
-    name: "Marketing",
-    timeSeries: TimeSeries(
-        periods: periods,
-        values: [50_000, 60_000, 70_000, 80_000]
-    ),
-    type: .operatingExpense,
-    metadata: AccountMetadata(category: "Sales & Marketing")
+let marketing = try Account(
+	entity: acme,
+	name: "Marketing",
+	type: .expense,
+	timeSeries: TimeSeries(
+		periods: periods,
+		values: [50_000, 60_000, 70_000, 80_000]
+	),
+	metadata: AccountMetadata(category: "Operating", subCategory: "Marketing")
 )
 
 // Interest and Taxes
-let interestExpense = Account(
-    name: "Interest Expense",
-    timeSeries: TimeSeries(
-        periods: periods,
-        values: [10_000, 10_000, 10_000, 10_000]
-    ),
-    type: .nonOperatingExpense,
-    metadata: AccountMetadata(category: "Financing")
+let interestExpense = try Account(
+	entity: acme,
+	name: "Interest Expense",
+	type: .expense,
+	timeSeries: TimeSeries(
+		periods: periods,
+		values: [10_000, 10_000, 10_000, 10_000]
+	),
+	metadata: AccountMetadata(category: "Financing", subCategory: "Interest")
 )
 
-let taxExpense = Account(
-    name: "Income Tax",
-    timeSeries: TimeSeries(
-        periods: periods,
-        values: [60_000, 69_000, 78_000, 87_000]
-    ),
-    type: .tax,
-    metadata: AccountMetadata(category: "Tax")
+let incomeTax = try Account(
+	entity: acme,
+	name: "Income Tax",
+	type: .expense,
+	timeSeries: TimeSeries(
+		periods: periods,
+		values: [60_000, 69_000, 78_000, 87_000]
+	),
+	metadata: AccountMetadata(category: "Tax")
 )
 
 // Create the Income Statement
-let incomeStatement = IncomeStatement(
-    entity: company,
-    revenueAccounts: [revenue],
-    expenseAccounts: [cogs, salary, marketing, interestExpense, taxExpense]
+let incomeStatement = try IncomeStatement(
+	entity: acme,
+	periods: periods,
+	revenueAccounts: [revenue],
+	expenseAccounts: [cogs, salary, marketing, interestExpense, incomeTax]
 )
 
 // Access computed values
-print("Q1 Revenue: $\(incomeStatement.totalRevenue[q1]!)")
-print("Q1 Gross Profit: $\(incomeStatement.grossProfit[q1]!)")
-print("Q1 Operating Income: $\(incomeStatement.operatingIncome[q1]!)")
-print("Q1 Net Income: $\(incomeStatement.netIncome[q1]!)")
+print("\nQ1 Revenue:\t\t\t\(incomeStatement.totalRevenue[q1]!.currency())")
+print("Q1 Gross Profit:\t\(incomeStatement.grossProfit[q1]!.currency())")
+print("Q1 Operating Income:\(incomeStatement.operatingIncome[q1]!.currency())")
+print("Q1 Net Income:\t\t\(incomeStatement.netIncome[q1]!.currency())")
 
 // Calculate margins
-print("Q1 Gross Margin: \(incomeStatement.grossMargin[q1]! * 100)%")
-print("Q1 Net Margin: \(incomeStatement.netMargin[q1]! * 100)%")
+print("Q1 Gross Margin:\t\(incomeStatement.grossMargin[q1]! * 100)%")
+print("Q1 Net Margin:\t\t\(incomeStatement.netMargin[q1]! * 100)%")
 ```
 
-### Building a Balance Sheet
+## Building a Balance Sheet
 
 The Balance Sheet shows financial position at a point in time:
 
@@ -227,7 +234,7 @@ print("Q1 Current Ratio: \(balanceSheet.currentRatio[q1]!)")
 print("Q1 Debt-to-Equity: \(balanceSheet.debtToEquity[q1]!)")
 ```
 
-### Building a Cash Flow Statement
+## Building a Cash Flow Statement
 
 The Cash Flow Statement tracks cash movements:
 
@@ -291,7 +298,7 @@ print("Q1 Net Cash Flow: $\(cashFlowStatement.netCashFlow[q1]!)")
 print("Q1 Free Cash Flow: $\(cashFlowStatement.freeCashFlow[q1]!)")
 ```
 
-### Complete Three-Statement Model
+## Complete Three-Statement Model
 
 Here's how to build a complete integrated model:
 
@@ -357,7 +364,7 @@ if projection.validate() {
 }
 ```
 
-### Working with Account Metadata
+## Working with Account Metadata
 
 Organize accounts using metadata:
 
@@ -392,8 +399,8 @@ for (category, accounts) in expensesByCategory {
 
 ## Next Steps
 
-- Learn about <doc:FinancialRatios> for analyzing financial performance
-- Explore <doc:ScenarioAnalysis> for modeling different outcomes
+- Learn about <doc:FinancialRatiosGuide> for analyzing financial performance
+- Explore <doc:ScenarioAnalysisGuide> for modeling different outcomes
 - See <doc:BuildingRevenueModel> for creating operational drivers
 
 ## Related Topics

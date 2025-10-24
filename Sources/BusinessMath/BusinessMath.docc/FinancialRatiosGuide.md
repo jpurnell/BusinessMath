@@ -6,9 +6,9 @@ Learn how to analyze financial performance using key ratios and metrics.
 
 BusinessMath provides comprehensive financial ratio analysis to evaluate profitability, efficiency, liquidity, solvency, and valuation. This tutorial shows you how to calculate and interpret key metrics for investment analysis and business performance evaluation.
 
-## Topics
+## Content
 
-### Understanding Financial Ratios
+## Understanding Financial Ratios
 
 Financial ratios fall into five main categories:
 
@@ -18,7 +18,7 @@ Financial ratios fall into five main categories:
 - **Solvency**: Can the company meet long-term obligations?
 - **Valuation**: What is the company worth relative to earnings/assets?
 
-### Profitability Ratios
+## Profitability Ratios
 
 Measure how well a company generates profit from its operations:
 
@@ -71,7 +71,7 @@ print("ROIC: \(profitability.roic[q1]! * 100)%")
 - **ROE > 15%** indicates strong shareholder returns
 - **ROIC > WACC** means the company creates value
 
-### Efficiency Ratios
+## Efficiency Ratios
 
 Measure how well a company uses its assets:
 
@@ -101,7 +101,7 @@ print("Cash Conversion Cycle: \(ccc) days")
 - **Shorter CCC** = less cash tied up in operations
 - Compare to industry benchmarks
 
-### Liquidity Ratios
+## Liquidity Ratios
 
 Measure ability to meet short-term obligations:
 
@@ -132,7 +132,7 @@ if currentRatio < 1.0 {
 - **Cash Ratio > 0.5** is strong
 - Too high may indicate poor asset utilization
 
-### Solvency Ratios
+## Solvency Ratios
 
 Measure ability to meet long-term obligations:
 
@@ -175,7 +175,7 @@ if interestCoverage < 2.0 {
 - **Interest Coverage > 3x** is generally safe
 - Industry context matters (utilities vs tech)
 
-### Valuation Metrics
+## Valuation Metrics
 
 Determine market value relative to fundamentals:
 
@@ -215,7 +215,7 @@ print("Earnings Yield: \(earningsYield * 100)%")
   - > 3.0: Premium valuation
 - **EV/EBITDA**: Better than P/E for comparing companies with different capital structures
 
-### DuPont Analysis
+## DuPont Analysis
 
 Decompose ROE to understand its drivers:
 
@@ -263,7 +263,7 @@ print("ROE: \(dupont5.roe[q1]! * 100)%")
 - **High Equity Multiplier**: Using leverage (banks)
 - Use to compare companies and identify ROE drivers
 
-### Credit Metrics
+## Credit Metrics
 
 Assess bankruptcy risk and financial strength:
 
@@ -316,7 +316,7 @@ if fScore >= 7 {
   - 5-7: Solid
   - 0-4: Weak
 
-### Comparing Companies
+## Comparing Companies
 
 Analyze multiple companies side-by-side:
 
@@ -387,7 +387,7 @@ if tech_roe > retail_roe {
 }
 ```
 
-### Tracking Trends Over Time
+## Tracking Trends Over Time
 
 Monitor how ratios change:
 
@@ -422,25 +422,25 @@ print("\nQ2 ROE growth vs Q1: \(qoq_growth)%")
 
 Typical ranges by industry:
 
-### Technology Companies
+## Technology Companies
 - **Gross Margin**: 60-80%
 - **ROE**: 15-30%
 - **D/E**: 0.1-0.5 (low leverage)
 - **Asset Turnover**: 0.5-1.0
 
-### Retail Companies
+## Retail Companies
 - **Gross Margin**: 25-40%
 - **ROE**: 15-25%
 - **D/E**: 0.5-1.5
 - **Asset Turnover**: 2.0-4.0 (high)
 
-### Manufacturing
+## Manufacturing
 - **Gross Margin**: 30-50%
 - **ROE**: 10-20%
 - **D/E**: 0.8-1.5
 - **Asset Turnover**: 1.0-2.0
 
-### Financial Services
+## Financial Services
 - **Net Margin**: 15-25%
 - **ROE**: 10-15%
 - **D/E**: 5.0-10.0 (high leverage)
@@ -462,7 +462,7 @@ Typical ranges by industry:
 ## Next Steps
 
 - Learn about <doc:ScenarioAnalysis> to model ratio sensitivity
-- Explore <doc:Visualization> for charting trends
+- Explore <doc:VisualizationGuide> for charting trends
 - See <doc:FinancialStatements> for building the underlying data
 
 ## Related Topics
