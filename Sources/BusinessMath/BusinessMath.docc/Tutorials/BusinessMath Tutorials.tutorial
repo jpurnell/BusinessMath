@@ -39,6 +39,7 @@
         Calculate profitability, efficiency, liquidity, and valuation metrics.
 
         @TutorialReference(tutorial: "doc:FinancialRatiosGuide")
+        @TutorialReference(tutorial: "doc:BuildingFinancialReports")
     }
 
     @Chapter(name: "Debt & Financing Models") {
