@@ -62,7 +62,7 @@ let metadata = TimeSeriesMetadata(
 let historical = TimeSeries(periods: periods, values: revenue, metadata: metadata)
 
 print("Loaded \(historical.count) quarters of historical data")
-print("Total historical revenue:\t$\(historical.reduce(0, +).formatted(.number))")
+print("Total historical revenue:\t\(historical.reduce(0, +).currency())")
 ```
 
 ## Step 2: Visualize the Data
@@ -131,18 +131,18 @@ Identify the recurring seasonal pattern (Q4 spike in our case).
 
 ```swift
 // Calculate seasonal indices (4 quarters per year)
-let seasonalIndices = try seasonalIndices(timeSeries: historical, periodsPerYear: 4)
+let seasonalInds = try seasonalIndices(timeSeries: historical, periodsPerYear: 4)
 
 print("\nSeasonal Indices:")
 let quarters = ["Q1", "Q2", "Q3", "Q4"]
-for (i, index) in seasonalIndices.enumerated() {
-    let pct = (index - 1.0) * 100
-    let direction = pct > 0 ? "above" : "below"
-    print("\t\(quarters[i]): \(String(format: "%.3f", index)) (\(String(format: "%.1f%%", abs(pct))) \(direction) average)")
+for (i, index) in seasonalInds.enumerated() {
+	let pct = (index - 1.0) * 100
+	let direction = pct > 0 ? "above" : "below"
+	print("\t\(quarters[i]): \(String(format: "%.3f", index)) (\(String(format: "%.1f%%", abs(pct))) \(direction) average)")
 }
 
 // Verify indices average to 1.0
-let avgIndex = seasonalIndices.reduce(0.0, +) / Double(seasonalIndices.count)
+let avgIndex = seasonalInds.reduce(0.0, +) / Double(seasonalInds.count)
 print("\tAverage index:\t\(String(format: "%.3f", avgIndex)) (should be ~1.0)")
 ```
 
@@ -170,7 +170,7 @@ for i in 0..<historical.count {
     let original = historical.valuesArray[i]
     let adjusted = deseasonalized.valuesArray[i]
     let period = periods[i]
-    print("\t\(period.label):\t$\(String(format: "%.0f", original)) → $\(String(format: "%.0f", adjusted))")
+	print("\t\(period.label):\t\(original.currency()) → \(adjusted.currency())")
 }
 
 // Calculate growth on deseasonalized data (clearer trend)
@@ -183,14 +183,14 @@ print("\nAverage quarterly growth (deseasonalized):\t\(String(format: "%.1f%%", 
 ```
 Deseasonalized Revenue:
 Original → Deseasonalized
-	2023-Q1: $800000 → $849566
-	2023-Q2: $850000 → $878143
-	2023-Q3: $820000 → $903399
-	2023-Q4: $1100000 → $930069
-	2024-Q1: $900000 → $955762
-	2024-Q2: $950000 → $981454
-	2024-Q3: $920000 → $1013570
-	2024-Q4: $1250000 → $1056897
+	2023-Q1:	$800,000.00 → $849,565.81
+	2023-Q2:	$850,000.00 → $878,143.10
+	2023-Q3:	$820,000.00 → $903,399.08
+	2023-Q4:	$1,100,000.00 → $930,069.02
+	2024-Q1:	$900,000.00 → $955,761.54
+	2024-Q2:	$950,000.00 → $981,454.05
+	2024-Q3:	$920,000.00 → $1,013,569.69
+	2024-Q4:	$1,250,000.00 → $1,056,896.62
 
 Average quarterly growth (deseasonalied): 3.2%
 ```
@@ -232,7 +232,7 @@ let trendForecast = try linearModel.project(periods: forecastPeriods)
 
 print("\nTrend Forecast (deseasonalized):")
 for (period, value) in zip(trendForecast.periods, trendForecast.valuesArray) {
-    print("\t\(period.label):\t$\(String(format: "%.0f", value))")
+	print("\t\(period.label):\t$\(value.currency())")
 }
 
 // Step 6b: Reapply seasonal pattern
@@ -242,12 +242,12 @@ print("\nFinal Forecast (with seasonality):")
 var forecastTotal = 0.0
 for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
     forecastTotal += value
-    print("\t\(period.label):\t$\(String(format: "%.0f", value))")
+	print("\t\(period.label):\t\(value.currency())")
 }
 
 print("\nForecast Summary:")
-print("\tTotal 2025 revenue: $\(String(format: "%.0f", forecastTotal))")
-print("\tAverage quarterly revenue: $\(String(format: "%.0f", forecastTotal / 4))")
+print("\tTotal 2025 revenue: \(forecastTotal.currency())")
+print("\tAverage quarterly revenue: \((forecastTotal / 4).currency())")
 
 // Compare to 2024
 let revenue2024 = revenue[4...7].reduce(0.0, +)
@@ -258,21 +258,21 @@ print("\tGrowth vs 2024: \(String(format: "%.1f%%", forecastGrowth * 100))")
 **Expected output:**
 ```
 Trend Forecast (deseasonalized):
-  2025-Q1: $1,020,000
-  2025-Q2: $1,037,000
-  2025-Q3: $1,054,000
-  2025-Q4: $1,071,000
+	2025-Q1:	$1,074,052.33
+	2025-Q2:	$1,102,484.55
+	2025-Q3:	$1,130,916.76
+	2025-Q4:	$1,159,348.98
 
 Final Forecast (with seasonality):
-  2025-Q1: $929,000
-  2025-Q2: $1,001,000
-  2025-Q3: $925,000
-  2025-Q4: $1,335,000  ← Holiday spike applied
+	2025-Q1:	$1,011,389.41
+	2025-Q2:	$1,067,151.66
+	2025-Q3:	$1,026,513.94
+	2025-Q4:	$1,371,171.22
 
 Forecast Summary:
-  Total 2025 revenue: $4,190,000
-  Average quarterly revenue: $1,048,000
-  Growth vs 2024: 4.8%
+	Total 2025 revenue: $4,476,226.23
+	Average quarterly revenue: $1,119,056.56
+	Growth vs 2024: 11.3%
 ```
 
 ## Step 7: Calculate Confidence Intervals
@@ -320,7 +320,7 @@ for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
 
     print("\(period.label):")
     print("\tPoint forecast: $\(String(format: "%.0f", value))")
-    print("\t95% CI: [$\(String(format: "%.0f", lower)) - $\(String(format: "%.0f", upper))]")
+	print("\t95% CI: [\(lower.currency()) - \(upper.currency())]")
 }
 ```
 
@@ -334,8 +334,8 @@ var conservativeModel = LinearTrend<Double>()
 try conservativeModel.fit(to: deseasonalized)
 let conservativeForecast = try conservativeModel.project(periods: forecastPeriods)
 let conservativeSeasonalForecast = try applySeasonal(
-    timeSeries: conservativeForecast,
-    indices: seasonalIndices.map { 1.0 + ($0 - 1.0) * 0.5 }  // Dampen seasonality
+	timeSeries: conservativeForecast,
+	indices: seasonalInds.map { 1.0 + ($0 - 1.0) * 0.5 }  // Dampen seasonality
 )
 
 // Optimistic scenario (150% of trend growth)
@@ -343,14 +343,15 @@ var optimisticModel = LinearTrend<Double>()
 try optimisticModel.fit(to: deseasonalized)
 let optimisticForecast = try optimisticModel.project(periods: forecastPeriods)
 let optimisticSeasonalForecast = try applySeasonal(
-    timeSeries: optimisticForecast,
-    indices: seasonalIndices.map { 1.0 + ($0 - 1.0) * 1.5 }  // Amplify seasonality
+	timeSeries: optimisticForecast,
+	indices: seasonalInds.map { 1.0 + ($0 - 1.0) * 1.5 }  // Amplify seasonality
 )
 
 print("\nScenario Analysis for 2025:")
-print("\tConservative: $\(String(format: "%.0f", conservativeSeasonalForecast.reduce(0, +)))")
-print("\tBase Case: $\(String(format: "%.0f", forecastTotal))")
-print("\tOptimistic: $\(String(format: "%.0f", optimisticSeasonalForecast.reduce(0, +)))")
+print("\tConservative: \(conservativeSeasonalForecast.reduce(0, +).currency())")
+print("\tBase Case: \(forecastTotal.currency())")
+print("\tOptimistic: \(optimisticSeasonalForecast.reduce(0, +).currency())")
+
 ```
 
 ## Step 9: Document Assumptions

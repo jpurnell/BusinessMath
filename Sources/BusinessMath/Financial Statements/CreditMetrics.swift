@@ -438,3 +438,30 @@ public func piotroskiScore<T: Real>(
 		signals: signals
 	)
 }
+
+/// Alias for ``piotroskiScore(incomeStatement:balanceSheet:cashFlowStatement:period:priorPeriod:)``.
+///
+/// This function provides an alternative name that matches common financial analysis terminology.
+///
+/// - Parameters:
+///   - incomeStatement: Income statement for analysis
+///   - balanceSheet: Balance sheet for analysis
+///   - cashFlowStatement: Cash flow statement for analysis
+///   - period: Current period being analyzed
+///   - priorPeriod: Prior period for comparison
+/// - Returns: Piotroski F-Score (0-9) with breakdown by category
+public func piotroskiFScore<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>,
+	cashFlowStatement: CashFlowStatement<T>,
+	period: Period,
+	priorPeriod: Period
+) -> PiotroskiScore {
+	return piotroskiScore(
+		incomeStatement: incomeStatement,
+		balanceSheet: balanceSheet,
+		cashFlowStatement: cashFlowStatement,
+		period: period,
+		priorPeriod: priorPeriod
+	)
+}
