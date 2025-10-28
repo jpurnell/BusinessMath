@@ -20,44 +20,55 @@ Start by creating a cap table with founding shareholders:
 ```swift
 import BusinessMath
 
-// Create cap table with two founders
-var capTable = CapTable(companyName: "Acme Inc")
-
-// Add founders with initial equity split
-capTable.addShareholder(Shareholder(
+// Create founders as shareholders
+let alice = CapTable.Shareholder(
     name: "Alice",
     shares: 7_000_000,
-    pricePerShare: 0.001,
-    shareClass: .common
-))
+    investmentDate: Date(),
+    pricePerShare: 0.001
+)
 
-capTable.addShareholder(Shareholder(
+let bob = CapTable.Shareholder(
     name: "Bob",
     shares: 3_000_000,
-    pricePerShare: 0.001,
-    shareClass: .common
-))
+    investmentDate: Date(),
+    pricePerShare: 0.001
+)
+
+// Create cap table with founders
+var capTable = CapTable(
+    shareholders: [alice, bob],
+    optionPool: 0
+)
 
 // Check ownership
-let aliceOwnership = capTable.ownershipPercentage(shareholder: "Alice")
+let ownership = capTable.ownership()
+let aliceOwnership = ownership["Alice"]!
 print("Alice owns: \(aliceOwnership * 100)%")  // 70%
 ```
 
 ## Adding an Option Pool
 
-Most VCs require an option pool for employee equity:
+Most VCs require an option pool for employee equity. Option pools are typically created as part of a financing round:
 
 ```swift
-// Create 10% post-money option pool before Series A
-// This dilutes founders proportionally
-let dilutedCapTable = capTable.addOptionPool(
-    poolSize: 0.10,
-    timing: .postRound
+// Calculate what a 10% post-money option pool means for dilution
+let poolPercent = 0.10
+let currentShares = capTable.totalShares
+
+// Pool will be 10% of total after creation
+let poolShares = (poolPercent / (1.0 - poolPercent)) * currentShares
+
+// Create updated cap table with option pool
+let dilutedCapTable = CapTable(
+    shareholders: capTable.shareholders,
+    optionPool: poolShares
 )
 
-// Option pool dilutes everyone
-let newOwnership = dilutedCapTable.ownershipPercentage(shareholder: "Alice")
-print("Alice after option pool: \(newOwnership * 100)%")  // 63%
+// Option pool dilutes everyone proportionally
+let newOwnership = dilutedCapTable.ownership()
+let aliceNewOwnership = newOwnership["Alice"]!
+print("Alice after option pool: \(aliceNewOwnership * 100)%")  // ~63.6%
 ```
 
 ## Modeling a Series A Round
@@ -66,21 +77,21 @@ Add your first institutional financing round:
 
 ```swift
 // Series A: $2M at $8M pre-money valuation
-let seriesA = capTable.modelFinancingRound(
-    investment: 2_000_000,
+let seriesA = capTable.modelRound(
+    newInvestment: 2_000_000,
     preMoneyValuation: 8_000_000,
+    optionPoolIncrease: 0.15,  // Add 15% option pool
     investorName: "VC Fund I",
-    shareClass: .preferredA,
-    liquidationPreference: 1.0,
-    participating: false
+    poolTiming: .postRound
 )
 
 // Check post-round ownership
-let postRoundOwnership = seriesA.ownershipPercentage(shareholder: "Alice")
-print("Alice after Series A: \(postRoundOwnership * 100)%")
+let postRoundOwnership = seriesA.ownership()
+let alicePostRound = postRoundOwnership["Alice"]!
+print("Alice after Series A: \(alicePostRound * 100)%")
 
 // VC owns 20% ($2M / $10M post-money)
-let vcOwnership = seriesA.ownershipPercentage(shareholder: "VC Fund I")
+let vcOwnership = postRoundOwnership["VC Fund I"]!
 print("VC owns: \(vcOwnership * 100)%")
 ```
 
@@ -90,30 +101,34 @@ Model pre-seed or seed financing with SAFEs:
 
 ```swift
 // Company issues $500K SAFE at $10M post-money cap
-let safeTerms = SAFETerm(
-    cap: 10_000_000,
-    discount: nil,
+let safe = SAFE(
+    investment: 500_000,
+    postMoneyCap: 10_000_000,
     type: .postMoney
 )
 
-let conversion = safeTerms.convertToEquity(
-    investment: 500_000,
-    valuationAtConversion: 8_000_000  // Series A price
-)
+// Convert at Series A valuation
+let conversion = safe.convert(seriesAValuation: 8_000_000)
 
 print("SAFE converts to \(conversion.shares) shares")
-print("Ownership: \(conversion.ownershipPercentOverride! * 100)%")  // 5%
+print("Price per share: $\(conversion.pricePerShare)")
+print("Ownership: \(conversion.ownershipPercent * 100)%")  // 5%
 ```
 
-Add the SAFE to your cap table:
+Add the SAFE investor to your cap table:
 
 ```swift
-capTable.addShareholder(Shareholder(
+let safeInvestor = CapTable.Shareholder(
     name: "Angel Investor",
     shares: conversion.shares,
-    pricePerShare: conversion.pricePerShare,
-    shareClass: .safe
-))
+    investmentDate: Date(),
+    pricePerShare: conversion.pricePerShare
+)
+
+let capTableWithSafe = CapTable(
+    shareholders: capTable.shareholders + [safeInvestor],
+    optionPool: capTable.optionPool
+)
 ```
 
 ## Convertible Notes
@@ -121,23 +136,30 @@ capTable.addShareholder(Shareholder(
 Model convertible debt with interest and conversion:
 
 ```swift
-// $250K note at 20% discount, 6% annual interest
-let noteTerms = ConvertibleNoteTerm(
+// $250K note at 20% discount, 6% annual interest, $5M cap
+let note = ConvertibleNote(
     principal: 250_000,
-    interestRate: 0.06,
+    valuationCap: 5_000_000,
     discount: 0.20,
-    cap: 5_000_000,
-    timeToMaturity: 1.0  // 1 year
+    interestRate: 0.06
 )
 
-// Convert at Series A pricing
-let noteConversion = noteTerms.convertToEquity(
-    valuationAtConversion: 8_000_000,
-    timeElapsed: 1.0  // Full year elapsed
+// Series A price per share
+let seriesAPricePerShare = 1.00
+
+// Convert at Series A pricing (after 1 year)
+let noteConversion = convertNote(
+    principal: note.principal,
+    valuationCap: note.valuationCap,
+    discount: note.discount,
+    seriesAPricePerShare: seriesAPricePerShare,
+    interestRate: note.interestRate,
+    timeHeld: 1.0  // 1 year
 )
 
 print("Note converts to \(noteConversion.shares) shares")
-print("Applied \(noteConversion.appliedTerm)")  // .cap or .discount
+print("At price: $\(noteConversion.pricePerShare)")
+print("Applied \(noteConversion.appliedTerm)")  // .cap or .seriesAPrice
 ```
 
 ## Vesting Schedules
@@ -147,16 +169,18 @@ Model employee stock options with standard 4-year vest:
 ```swift
 // Grant 100K options to an employee
 let optionGrant = OptionGrant(
-    grantee: "Employee",
+    recipient: "Employee",
     shares: 100_000,
     strikePrice: 0.50,  // FMV at grant
-    vestingSchedule: .standard,  // 4 year, 1 year cliff
-    grantDate: Date()
+    grantDate: Date(),
+    vestingYears: 4.0,
+    vestingSchedule: .standard  // 4 year, 1 year cliff
 )
 
 // Check vested shares after 18 months
-let monthsElapsed = 18.0 * 30.0 * 24 * 3600  // seconds
-let vestedShares = optionGrant.vestedShares(timeElapsed: monthsElapsed)
+let grantDate = optionGrant.grantDate
+let checkDate = Calendar.current.date(byAdding: .month, value: 18, to: grantDate)!
+let vestedShares = optionGrant.vestedShares(at: checkDate)
 print("Vested after 18 months: \(vestedShares)")  // ~37,500 shares
 ```
 
@@ -166,29 +190,44 @@ Handle down rounds with anti-dilution protection:
 
 ```swift
 // Series B at lower valuation than Series A
-// Full ratchet protection for Series A investors
+// Down from $10M post-Series A to $6M pre-money
 let downRound = capTable.modelDownRound(
     newInvestment: 3_000_000,
-    newValuation: 6_000_000,  // Down from $10M post-Series A
-    protectedShareClass: .preferredA,
-    protectionType: .fullRatchet
+    preMoneyValuation: 6_000_000,
+    payToPlayParticipants: ["VC Fund I"]  // Investors participating in down round
 )
 
-// Series A shares are repriced to match Series B
-// This prevents Series A dilution
+// Creates new investor at lower valuation
+// Pay-to-play: participating investors avoid additional dilution
 ```
 
-For weighted average protection (more founder-friendly):
+For manual anti-dilution adjustments, use the standalone functions:
 
 ```swift
-let downRoundWA = capTable.modelDownRound(
-    newInvestment: 3_000_000,
-    newValuation: 6_000_000,
-    protectedShareClass: .preferredA,
-    protectionType: .weightedAverage
+// Full ratchet: adjust Series A shares based on new price
+let originalShares = 2_000_000.0
+let originalPrice = 1.00
+let newPrice = 0.67  // Series B price
+
+let adjustedShares = applyAntiDilution(
+    originalShares: originalShares,
+    originalPrice: originalPrice,
+    newPrice: newPrice,
+    type: .fullRatchet
 )
 
-// Partial protection based on amount raised
+print("Series A shares after full ratchet: \(adjustedShares)")
+
+// Weighted average (more founder-friendly)
+let waShares = applyWeightedAverageAntiDilution(
+    originalShares: originalShares,
+    originalPrice: originalPrice,
+    newPrice: newPrice,
+    newShares: 3_000_000,
+    fullyDilutedBefore: capTable.fullyDilutedShares()
+)
+
+print("Series A shares after weighted average: \(waShares)")
 ```
 
 ## Liquidation Preferences
@@ -196,39 +235,49 @@ let downRoundWA = capTable.modelDownRound(
 Model exit scenarios with preference stacks:
 
 ```swift
-// Series A: 1x non-participating preferred
-capTable.addShareholder(Shareholder(
+// Create shareholders with liquidation preferences
+let vcFundA = CapTable.Shareholder(
     name: "VC Fund I",
     shares: 2_000_000,
+    investmentDate: Date(),
     pricePerShare: 1.00,
-    shareClass: .preferredA,
+    antiDilution: nil,
     liquidationPreference: 1.0,
     participating: false  // Takes preference OR pro-rata, whichever is higher
-))
+)
 
-// Series B: 2x participating preferred
-capTable.addShareholder(Shareholder(
+let vcFundB = CapTable.Shareholder(
     name: "VC Fund II",
     shares: 1_500_000,
+    investmentDate: Date(),
     pricePerShare: 2.00,
-    shareClass: .preferredB,
+    antiDilution: nil,
     liquidationPreference: 2.0,
     participating: true  // Gets preference PLUS pro-rata
-))
+)
+
+// Build cap table with preference stack
+let preferenceCapTable = CapTable(
+    shareholders: [alice, bob, vcFundA, vcFundB],
+    optionPool: 1_000_000
+)
 ```
 
 Calculate liquidation waterfall at various exit values:
 
 ```swift
 // Low exit: $5M (below total invested capital)
-let lowExit = capTable.liquidationWaterfall(exitValue: 5_000_000)
+let lowExit = preferenceCapTable.liquidationWaterfall(exitValue: 5_000_000)
 for (shareholder, payout) in lowExit {
     print("\(shareholder): $\(payout)")
 }
 // Series B gets 2x preference first, then Series A gets remainder
 
 // High exit: $50M
-let highExit = capTable.liquidationWaterfall(exitValue: 50_000_000)
+let highExit = preferenceCapTable.liquidationWaterfall(exitValue: 50_000_000)
+for (shareholder, payout) in highExit {
+    print("\(shareholder): $\(payout)")
+}
 // Non-participating preferred converts to common
 // Participating preferred gets preference + upside
 ```
@@ -240,66 +289,78 @@ Here's a complete multi-round scenario:
 ```swift
 import BusinessMath
 
-// Formation
-var capTable = CapTable(companyName: "Startup Inc")
-
-// Founders
-capTable.addShareholder(Shareholder(
+// Formation - Create founders
+let founder1 = CapTable.Shareholder(
     name: "Founder 1",
     shares: 6_000_000,
-    pricePerShare: 0.001,
-    shareClass: .common
-))
-
-capTable.addShareholder(Shareholder(
-    name: "Founder 2",
-    shares: 4_000_000,
-    pricePerShare: 0.001,
-    shareClass: .common
-))
-
-// Pre-seed SAFE: $500K at $5M post-money
-let safeTerms = SAFETerm(cap: 5_000_000, discount: nil, type: .postMoney)
-let safeConversion = safeTerms.convertToEquity(
-    investment: 500_000,
-    valuationAtConversion: 5_000_000
+    investmentDate: Date(),
+    pricePerShare: 0.001
 )
 
-capTable.addShareholder(Shareholder(
+let founder2 = CapTable.Shareholder(
+    name: "Founder 2",
+    shares: 4_000_000,
+    investmentDate: Date(),
+    pricePerShare: 0.001
+)
+
+var capTable = CapTable(
+    shareholders: [founder1, founder2],
+    optionPool: 0
+)
+
+// Pre-seed SAFE: $500K at $5M post-money
+let safe = SAFE(
+    investment: 500_000,
+    postMoneyCap: 5_000_000,
+    type: .postMoney
+)
+
+let safeConversion = safe.convert(seriesAValuation: 5_000_000)
+
+let preSeedFund = CapTable.Shareholder(
     name: "Pre-seed Fund",
     shares: safeConversion.shares,
-    pricePerShare: safeConversion.pricePerShare,
-    shareClass: .safe
-))
+    investmentDate: Date(),
+    pricePerShare: safeConversion.pricePerShare
+)
+
+capTable = CapTable(
+    shareholders: capTable.shareholders + [preSeedFund],
+    optionPool: capTable.optionPool
+)
 
 // Seed: $2M at $8M pre-money
-let seedRound = capTable.modelFinancingRound(
-    investment: 2_000_000,
+let seedRound = capTable.modelRound(
+    newInvestment: 2_000_000,
     preMoneyValuation: 8_000_000,
+    optionPoolIncrease: 0.0,  // No pool yet
     investorName: "Seed Fund",
-    shareClass: .preferredSeed,
-    liquidationPreference: 1.0,
-    participating: false
+    poolTiming: .postRound
 )
 
 // Add 15% option pool post-Seed
-let withPool = seedRound.addOptionPool(poolSize: 0.15, timing: .postRound)
+let poolShares = (0.15 / (1.0 - 0.15)) * seedRound.totalShares
+let withPool = CapTable(
+    shareholders: seedRound.shareholders,
+    optionPool: poolShares
+)
 
 // Series A: $10M at $40M pre-money
-let seriesA = withPool.modelFinancingRound(
-    investment: 10_000_000,
+let seriesA = withPool.modelRound(
+    newInvestment: 10_000_000,
     preMoneyValuation: 40_000_000,
+    optionPoolIncrease: 0.0,  // Pool already exists
     investorName: "Series A Lead",
-    shareClass: .preferredA,
-    liquidationPreference: 1.0,
-    participating: false
+    poolTiming: .postRound
 )
 
 // Final cap table summary
 print("=== Cap Table Post-Series A ===")
+let ownership = seriesA.ownership()
 for shareholder in seriesA.shareholders {
-    let ownership = seriesA.ownershipPercentage(shareholder: shareholder.name)
-    print("\(shareholder.name): \(ownership * 100)% - \(shareholder.shareClass)")
+    let ownershipPct = ownership[shareholder.name]!
+    print("\(shareholder.name): \(ownershipPct * 100)%")
 }
 
 // Outstanding vs fully diluted
@@ -311,7 +372,7 @@ print("Fully Diluted: \(fullyDiluted)")
 // Exit scenario: $100M acquisition
 print("\n=== Exit: $100M ===")
 let exitProceeds = seriesA.liquidationWaterfall(exitValue: 100_000_000)
-for (shareholder, payout) in exitProceeds {
+for (shareholder, payout) in exitProceeds.sorted(by: { $0.value > $1.value }) {
     print("\(shareholder): $\(String(format: "%.2f", payout))")
 }
 ```
@@ -324,10 +385,10 @@ Track how ownership changes through rounds:
 // Track founder ownership through each round
 let founderName = "Founder 1"
 
-let formation = capTable.ownershipPercentage(shareholder: founderName)
-let postSeed = seedRound.ownershipPercentage(shareholder: founderName)
-let postPool = withPool.ownershipPercentage(shareholder: founderName)
-let postSeriesA = seriesA.ownershipPercentage(shareholder: founderName)
+let formation = capTable.ownership()[founderName]!
+let postSeed = seedRound.ownership()[founderName]!
+let postPool = withPool.ownership()[founderName]!
+let postSeriesA = seriesA.ownership()[founderName]!
 
 print("Ownership trajectory:")
 print("Formation: \(formation * 100)%")
@@ -342,34 +403,50 @@ print("Post-Series A: \(postSeriesA * 100)%")
 
 ```swift
 // Pre-money: Pool dilutes existing shareholders before new investment
-let preMoneyPool = capTable.addOptionPool(poolSize: 0.15, timing: .preRound)
+let preMoneyRound = capTable.modelRound(
+    newInvestment: 2_000_000,
+    preMoneyValuation: 8_000_000,
+    optionPoolIncrease: 0.15,
+    investorName: "Investor",
+    poolTiming: .preRound
+)
 
 // Post-money: Pool dilutes everyone including new investor
-let postMoneyPool = capTable.addOptionPool(poolSize: 0.15, timing: .postRound)
+let postMoneyRound = capTable.modelRound(
+    newInvestment: 2_000_000,
+    preMoneyValuation: 8_000_000,
+    optionPoolIncrease: 0.15,
+    investorName: "Investor",
+    poolTiming: .postRound
+)
 
-// Post-money is more founder-friendly (less dilution from pool)
+// Pre-round is more founder-friendly (investor bears pool dilution)
 ```
 
 ### Multiple SAFEs with Different Caps
 
 ```swift
 // Early SAFE: $100K at $5M cap
-let earlySafe = SAFETerm(cap: 5_000_000, discount: nil, type: .postMoney)
-let earlySafeConversion = earlySafe.convertToEquity(
+let earlySafe = SAFE(
     investment: 100_000,
-    valuationAtConversion: 10_000_000
+    postMoneyCap: 5_000_000,
+    type: .postMoney
 )
+
+let earlySafeConversion = earlySafe.convert(seriesAValuation: 10_000_000)
 
 // Later SAFE: $500K at $8M cap
-let laterSafe = SAFETerm(cap: 8_000_000, discount: nil, type: .postMoney)
-let laterSafeConversion = laterSafe.convertToEquity(
+let laterSafe = SAFE(
     investment: 500_000,
-    valuationAtConversion: 10_000_000
+    postMoneyCap: 8_000_000,
+    type: .postMoney
 )
 
+let laterSafeConversion = laterSafe.convert(seriesAValuation: 10_000_000)
+
 // Early SAFE gets better terms (lower cap = more ownership)
-print("Early SAFE ownership: \(earlySafeConversion.ownershipPercentOverride!)")
-print("Later SAFE ownership: \(laterSafeConversion.ownershipPercentOverride!)")
+print("Early SAFE ownership: \(earlySafeConversion.ownershipPercent * 100)%")
+print("Later SAFE ownership: \(laterSafeConversion.ownershipPercent * 100)%")
 ```
 
 ### 409A Valuations for Option Grants
@@ -377,12 +454,14 @@ print("Later SAFE ownership: \(laterSafeConversion.ownershipPercentOverride!)")
 ```swift
 // Calculate FMV for common stock options
 let preferredPrice = 2.00  // Series A price
-let commonFMV = capTable.commonStockFMV(
+let discountFactor = 0.40  // Typical 40% discount
+
+let commonFMV = calculate409APrice(
     preferredPrice: preferredPrice,
-    discountFactor: 0.40  // Typical 40% discount
+    discount: discountFactor
 )
 
-print("Strike price for options: $\(commonFMV)")  // ~$0.80
+print("Strike price for options: $\(commonFMV)")  // $1.20 (60% of preferred)
 ```
 
 ## Next Steps

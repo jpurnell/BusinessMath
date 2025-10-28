@@ -37,127 +37,123 @@ Create financial statements for each period you want to analyze. For a quarterly
 ### Income Statement for Q1
 
 ```swift
-let q1 = Period.quarter(year: 2025, quarter: 1)
+let periods = (1...4).map({Period.quarter(year: 2025, quarter: $0)})
 
 // Revenue accounts
 let revenue = try Account(
-    entity: entity,
-    name: "Product Revenue",
-    type: .revenue,
-    timeSeries: TimeSeries(periods: [q1], values: [1_000_000])
+	entity: entity,
+	name: "Product Revenue",
+	type: .revenue,
+	timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_100_000, 1_200_000, 1_100_000])
 )
 
-// Expense accounts
-let cogs = try Account(
-    entity: entity,
-    name: "Cost of Goods Sold",
-    type: .expense,
-    timeSeries: TimeSeries(periods: [q1], values: [400_000]),
-    expenseType: .costOfGoodsSold
-)
+	// Expense accounts
+	let cogs = try Account(
+		entity: entity,
+		name: "Cost of Goods Sold",
+		type: .expense,
+		timeSeries: TimeSeries(periods: periods, values: [400_000, 450_000, 475_000, 440_000]),
+		expenseType: .costOfGoodsSold
+	)
 
-let opex = try Account(
-    entity: entity,
-    name: "Operating Expenses",
-    type: .expense,
-    timeSeries: TimeSeries(periods: [q1], values: [300_000]),
-    expenseType: .operatingExpense
-)
+	let opex = try Account(
+		entity: entity,
+		name: "Operating Expenses",
+		type: .expense,
+		timeSeries: TimeSeries(periods: periods, values: [300_000, 325_000, 310_000, 330_000]),
+		expenseType: .operatingExpense
+	)
 
-let depreciation = try Account(
-    entity: entity,
-    name: "Depreciation & Amortization",
-    type: .expense,
-    timeSeries: TimeSeries(periods: [q1], values: [50_000]),
-    expenseType: .depreciationAmortization
-)
+	let depreciation = try Account(
+		entity: entity,
+		name: "Depreciation & Amortization",
+		type: .expense,
+		timeSeries: TimeSeries(periods: periods, values: [50_000, 55_000, 60_000, 52_000]),
+		expenseType: .depreciationAmortization
+	)
 
-let interest = try Account(
-    entity: entity,
-    name: "Interest Expense",
-    type: .expense,
-    timeSeries: TimeSeries(periods: [q1], values: [25_000]),
-    expenseType: .interestExpense
-)
+	let interest = try Account(
+		entity: entity,
+		name: "Interest Expense",
+		type: .expense,
+		timeSeries: TimeSeries(periods: periods, values: [25_000, 25_000, 25_000, 25_000]),
+		expenseType: .interestExpense
+	)
 
-let tax = try Account(
-    entity: entity,
-    name: "Income Tax",
-    type: .expense,
-    timeSeries: TimeSeries(periods: [q1], values: [47_250]),
-    expenseType: .taxExpense
-)
+	let tax = try Account(
+		entity: entity,
+		name: "Income Tax",
+		type: .expense,
+		timeSeries: TimeSeries(periods: periods, values: [47_250, 50_000, 50_250, 50_000]),
+		expenseType: .taxExpense
+	)
 
-// Create income statement
-let incomeStatement = try IncomeStatement(
-    entity: entity,
-    periods: [q1],
-    revenueAccounts: [revenue],
-    expenseAccounts: [cogs, opex, depreciation, interest, tax]
-)
-```
+	// Create income statement
+	let incomeStatement = try IncomeStatement(
+		entity: entity,
+		periods: periods,
+		revenueAccounts: [revenue],
+		expenseAccounts: [cogs, opex, depreciation, interest, tax]
+	)
 
-### Balance Sheet for Q1
+	// Asset accounts
+	let cash = try Account(
+		entity: entity,
+		name: "Cash & Equivalents",
+		type: .asset,
+		timeSeries: TimeSeries(periods: periods, values: [500_000, 520_000, 550_000, 570_000]),
+		assetType: .cashAndEquivalents
+	)
 
-```swift
-// Asset accounts
-let cash = try Account(
-    entity: entity,
-    name: "Cash & Equivalents",
-    type: .asset,
-    timeSeries: TimeSeries(periods: [q1], values: [500_000]),
-    assetType: .cashAndEquivalents
-)
-
-let receivables = try Account(
-    entity: entity,
-    name: "Accounts Receivable",
-    type: .asset,
-    timeSeries: TimeSeries(periods: [q1], values: [300_000]),
-    assetType: .accountsReceivable
-)
+	let receivables = try Account(
+		entity: entity,
+		name: "Accounts Receivable",
+		type: .asset,
+		timeSeries: TimeSeries(periods: periods, values: [300_000, 280_000, 260_000, 270_000]),
+		assetType: .accountsReceivable
+	)
 
 let ppe = try Account(
-    entity: entity,
-    name: "Property, Plant & Equipment",
-    type: .asset,
-    timeSeries: TimeSeries(periods: [q1], values: [2_000_000]),
-    assetType: .propertyPlantEquipment
+	entity: entity,
+	name: "Property, Plant & Equipment",
+	type: .asset,
+	timeSeries: TimeSeries(periods: periods, values: [2_000_000, 2_000_000, 2_000_000, 2_000_000]),
+	assetType: .propertyPlantEquipment
 )
 
 // Liability accounts
 let payables = try Account(
-    entity: entity,
-    name: "Accounts Payable",
-    type: .liability,
-    timeSeries: TimeSeries(periods: [q1], values: [200_000]),
-    liabilityType: .accountsPayable
+	entity: entity,
+	name: "Accounts Payable",
+	type: .liability,
+	timeSeries: TimeSeries(periods: periods, values: [200_000, 180_000, 160_000, 180_000]),
+	liabilityType: .accountsPayable
 )
 
 let debt = try Account(
-    entity: entity,
-    name: "Long-Term Debt",
-    type: .liability,
-    timeSeries: TimeSeries(periods: [q1], values: [1_000_000]),
-    liabilityType: .longTermDebt
+	entity: entity,
+	name: "Long-Term Debt",
+	type: .liability,
+	timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_000_000, 1_000_000, 1_000_000]),
+	liabilityType: .longTermDebt
 )
 
 // Equity accounts
 let equity = try Account(
-    entity: entity,
-    name: "Shareholders' Equity",
-    type: .equity,
-    timeSeries: TimeSeries(periods: [q1], values: [1_600_000]),
-    equityType: .retainedEarnings
+	entity: entity,
+	name: "Shareholders' Equity",
+	type: .equity,
+	timeSeries: TimeSeries(periods: periods, values: [1_600_000, 1_700_000, 1_800_000, 1_750_000]),
+	equityType: .retainedEarnings
 )
 
 // Create balance sheet
 let balanceSheet = try BalanceSheet(
-    entity: entity,
-    periods: [q1],
-    assetAccounts: [cash, receivables, ppe],
-    liabilityAccounts: [payables, debt],
-    equityAccounts: [equity]
+	entity: entity,
+	periods: periods,
+	assetAccounts: [cash, receivables, ppe],
+	liabilityAccounts: [payables, debt],
+	equityAccounts: [equity]
 )
 ```
 
@@ -203,11 +199,11 @@ The `FinancialPeriodSummary` combines your income statement, balance sheet, and 
 
 ```swift
 let q1Summary = try FinancialPeriodSummary(
-    entity: entity,
-    period: q1,
-    incomeStatement: incomeStatement,
-    balanceSheet: balanceSheet,
-    operationalMetrics: q1Metrics
+	entity: entity,
+	period: periods[0],
+	incomeStatement: incomeStatement,
+	balanceSheet: balanceSheet,
+	operationalMetrics: operationalMetrics[0]
 )
 
 // Access key metrics
@@ -235,15 +231,14 @@ Once you have multiple period summaries, create a `MultiPeriodReport` for trend 
 
 ```swift
 // Create summaries for all four quarters
-let quarters = Period.year(2025).quarters()
-let summaries = try quarters.indices.map {
-    try FinancialPeriodSummary(
-        entity: entity,
-        period: quarters[$0],
-        incomeStatement: incomeStatements[$0],
-        balanceSheet: balanceSheets[$0],
-        operationalMetrics: operationalMetrics[$0]
-    )
+let summaries = try periods.indices.map { index in
+	try FinancialPeriodSummary(
+		entity: entity,
+		period: periods[index],
+		incomeStatement: incomeStatement,
+		balanceSheet: balanceSheet,
+		operationalMetrics: operationalMetrics[index]
+	)
 }
 
 // Create multi-period report

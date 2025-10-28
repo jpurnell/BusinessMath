@@ -549,6 +549,84 @@ public func daysSalesOutstanding<T: Real>(
 	return turnover.mapValues { daysPerYear / $0 }
 }
 
+/// Days Payable Outstanding (DPO) - average number of days to pay suppliers.
+///
+/// DPO measures how many days, on average, a company takes to pay its suppliers.
+/// Higher DPO means the company is taking longer to pay (keeping cash longer).
+///
+/// ## Formula
+///
+/// ```
+/// DPO = (Average Accounts Payable / COGS) × 365
+/// ```
+///
+/// ## Interpretation
+///
+/// - **> 90 days**: Slow payment (may strain supplier relationships)
+/// - **60-90 days**: Moderate payment terms
+/// - **30-60 days**: Fast payment (net-30 to net-60 terms)
+/// - **< 30 days**: Very fast payment
+///
+/// ## Strategic Implications
+///
+/// - **Higher DPO**: Preserves cash, but may damage supplier relationships
+/// - **Lower DPO**: Builds goodwill, may earn early payment discounts
+/// - Compare to credit terms (net-30, net-60, etc.)
+///
+/// ## Cash Conversion Cycle
+///
+/// DPO reduces the cash conversion cycle:
+/// ```
+/// Cash Conversion Cycle = DIO + DSO - DPO
+/// ```
+///
+/// ## Example
+///
+/// ```swift
+/// let dpo = try daysPayableOutstanding(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("DPO: \(dpo[q1]!) days")  // e.g., "DPO: 45.2 days"
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing COGS
+///   - balanceSheet: Balance sheet containing accounts payable
+/// - Returns: Time series of days payable outstanding
+/// - Throws: ``FinancialRatioError`` if required accounts not found
+public func daysPayableOutstanding<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) throws -> TimeSeries<T> {
+	// Find COGS in income statement
+	guard let cogs = incomeStatement.expenseAccounts.first(where: {
+		$0.name.localizedCaseInsensitiveContains("Cost of Goods Sold") ||
+		$0.name.localizedCaseInsensitiveContains("COGS")
+	}) else {
+		throw FinancialRatioError.missingExpense("Cost of Goods Sold (COGS)")
+	}
+
+	// Find accounts payable in balance sheet
+	guard let payables = balanceSheet.liabilityAccounts.first(where: {
+		$0.liabilityType == .accountsPayable
+	}) else {
+		throw FinancialRatioError.missingAccount("Accounts Payable")
+	}
+
+	let cogsTimeSeries = cogs.timeSeries
+	let payablesTimeSeries = payables.timeSeries
+
+	// Calculate average payables for each period
+	let averagePayables = averageTimeSeries(payablesTimeSeries)
+
+	// DPO = (Average Payables / COGS) × 365
+	let daysPerYear = T(365)
+	return (averagePayables / cogsTimeSeries).mapValues { $0 * daysPerYear }
+}
+
 // MARK: - Leverage Ratios (Debt Coverage)
 
 /// Interest Coverage Ratio - ability to pay interest expense from operating income.
@@ -671,3 +749,546 @@ public func debtServiceCoverage<T: Real>(
 
 // Note: averageTimeSeries() is defined in TimeSeriesExtensions.swift
 // and shared across all financial statement analysis modules.
+
+// MARK: - Convenience Structs for Ratio Analysis
+
+/// Profitability ratios - measures profit generation efficiency.
+///
+/// Contains all key profitability metrics in a single structure for easy analysis.
+///
+/// ## Example
+///
+/// ```swift
+/// let profitability = profitabilityRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Gross Margin: \(profitability.grossMargin[q1]! * 100)%")
+/// print("ROE: \(profitability.roe[q1]! * 100)%")
+/// ```
+public struct ProfitabilityRatios<T: Real & Sendable>: Sendable where T: Codable {
+	/// Gross profit as percentage of revenue
+	public let grossMargin: TimeSeries<T>
+
+	/// Operating income as percentage of revenue
+	public let operatingMargin: TimeSeries<T>
+
+	/// Net income as percentage of revenue
+	public let netMargin: TimeSeries<T>
+
+	/// EBITDA as percentage of revenue
+	public let ebitdaMargin: TimeSeries<T>
+
+	/// Return on Assets - Net Income / Average Assets
+	public let roa: TimeSeries<T>
+
+	/// Return on Equity - Net Income / Average Equity
+	public let roe: TimeSeries<T>
+
+	/// Return on Invested Capital - NOPAT / Average Invested Capital
+	public let roic: TimeSeries<T>
+
+	public init(
+		grossMargin: TimeSeries<T>,
+		operatingMargin: TimeSeries<T>,
+		netMargin: TimeSeries<T>,
+		ebitdaMargin: TimeSeries<T>,
+		roa: TimeSeries<T>,
+		roe: TimeSeries<T>,
+		roic: TimeSeries<T>
+	) {
+		self.grossMargin = grossMargin
+		self.operatingMargin = operatingMargin
+		self.netMargin = netMargin
+		self.ebitdaMargin = ebitdaMargin
+		self.roa = roa
+		self.roe = roe
+		self.roic = roic
+	}
+}
+
+/// Calculate all profitability ratios at once.
+///
+/// Convenience function that computes all key profitability metrics and returns them
+/// in a single structure. Assumes a 21% tax rate for ROIC calculation.
+///
+/// ## Example
+///
+/// ```swift
+/// let profitability = profitabilityRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// print("Gross Margin: \(profitability.grossMargin[q1]! * 100)%")
+/// print("ROE: \(profitability.roe[q1]! * 100)%")
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing revenue and expenses
+///   - balanceSheet: Balance sheet containing assets and equity
+/// - Returns: Structure containing all profitability ratios
+public func profitabilityRatios<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) -> ProfitabilityRatios<T> where T: ExpressibleByFloatLiteral {
+	let taxRate: T = 0.21
+	return ProfitabilityRatios(
+		grossMargin: incomeStatement.grossMargin,
+		operatingMargin: incomeStatement.operatingMargin,
+		netMargin: incomeStatement.netMargin,
+		ebitdaMargin: incomeStatement.ebitdaMargin,
+		roa: returnOnAssets(incomeStatement: incomeStatement, balanceSheet: balanceSheet),
+		roe: returnOnEquity(incomeStatement: incomeStatement, balanceSheet: balanceSheet),
+		roic: returnOnInvestedCapital(incomeStatement: incomeStatement, balanceSheet: balanceSheet, taxRate: taxRate)
+	)
+}
+
+/// Calculate all profitability ratios at once with custom tax rate.
+///
+/// Convenience function that computes all key profitability metrics and returns them
+/// in a single structure with a custom tax rate for ROIC calculation.
+///
+/// ## Example
+///
+/// ```swift
+/// let profitability = profitabilityRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     taxRate: 0.25
+/// )
+///
+/// print("ROIC: \(profitability.roic[q1]! * 100)%")
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing revenue and expenses
+///   - balanceSheet: Balance sheet containing assets and equity
+///   - taxRate: Corporate tax rate for ROIC calculation
+/// - Returns: Structure containing all profitability ratios
+public func profitabilityRatios<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>,
+	taxRate: T
+) -> ProfitabilityRatios<T> {
+	return ProfitabilityRatios(
+		grossMargin: incomeStatement.grossMargin,
+		operatingMargin: incomeStatement.operatingMargin,
+		netMargin: incomeStatement.netMargin,
+		ebitdaMargin: incomeStatement.ebitdaMargin,
+		roa: returnOnAssets(incomeStatement: incomeStatement, balanceSheet: balanceSheet),
+		roe: returnOnEquity(incomeStatement: incomeStatement, balanceSheet: balanceSheet),
+		roic: returnOnInvestedCapital(incomeStatement: incomeStatement, balanceSheet: balanceSheet, taxRate: taxRate)
+	)
+}
+
+/// Efficiency ratios - measures asset utilization effectiveness.
+///
+/// Contains all key efficiency metrics including turnover ratios and cash conversion cycle.
+///
+/// ## Example
+///
+/// ```swift
+/// let efficiency = try efficiencyRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Asset Turnover: \(efficiency.assetTurnover[q1]!)x")
+/// print("Cash Conversion Cycle: \(efficiency.cashConversionCycle[q1]!) days")
+/// ```
+public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
+	/// Revenue / Average Assets
+	public let assetTurnover: TimeSeries<T>
+
+	/// COGS / Average Inventory
+	public let inventoryTurnover: TimeSeries<T>
+
+	/// Revenue / Average Receivables
+	public let receivablesTurnover: TimeSeries<T>
+
+	/// Average days to collect receivables
+	public let daysSalesOutstanding: TimeSeries<T>
+
+	/// Average days inventory is held
+	public let daysInventoryOutstanding: TimeSeries<T>
+
+	/// Average days to pay suppliers
+	public let daysPayableOutstanding: TimeSeries<T>
+
+	/// Cash conversion cycle (DIO + DSO - DPO)
+	public let cashConversionCycle: TimeSeries<T>
+
+	public init(
+		assetTurnover: TimeSeries<T>,
+		inventoryTurnover: TimeSeries<T>,
+		receivablesTurnover: TimeSeries<T>,
+		daysSalesOutstanding: TimeSeries<T>,
+		daysInventoryOutstanding: TimeSeries<T>,
+		daysPayableOutstanding: TimeSeries<T>,
+		cashConversionCycle: TimeSeries<T>
+	) {
+		self.assetTurnover = assetTurnover
+		self.inventoryTurnover = inventoryTurnover
+		self.receivablesTurnover = receivablesTurnover
+		self.daysSalesOutstanding = daysSalesOutstanding
+		self.daysInventoryOutstanding = daysInventoryOutstanding
+		self.daysPayableOutstanding = daysPayableOutstanding
+		self.cashConversionCycle = cashConversionCycle
+	}
+}
+
+/// Calculate all efficiency ratios at once.
+///
+/// Convenience function that computes all key efficiency metrics and returns them
+/// in a single structure. Includes cash conversion cycle calculation.
+///
+/// ## Example
+///
+/// ```swift
+/// let efficiency = try efficiencyRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// print("Asset Turnover: \(efficiency.assetTurnover[q1]!)x")
+/// print("CCC: \(efficiency.cashConversionCycle[q1]!) days")
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing revenue and COGS
+///   - balanceSheet: Balance sheet containing assets and working capital accounts
+/// - Returns: Structure containing all efficiency ratios
+/// - Throws: ``FinancialRatioError`` if required accounts not found
+public func efficiencyRatios<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) throws -> EfficiencyRatios<T> {
+	let assetTurnoverRatio = assetTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let inventoryTurnoverRatio = try inventoryTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let receivablesTurnoverRatio = try receivablesTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let dso = try daysSalesOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let dio = try daysInventoryOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let dpo = try daysPayableOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+
+	// Cash Conversion Cycle = DIO + DSO - DPO
+	let ccc = dio + dso - dpo
+
+	return EfficiencyRatios(
+		assetTurnover: assetTurnoverRatio,
+		inventoryTurnover: inventoryTurnoverRatio,
+		receivablesTurnover: receivablesTurnoverRatio,
+		daysSalesOutstanding: dso,
+		daysInventoryOutstanding: dio,
+		daysPayableOutstanding: dpo,
+		cashConversionCycle: ccc
+	)
+}
+
+/// Liquidity ratios - measures ability to meet short-term obligations.
+///
+/// Contains all key liquidity metrics for assessing near-term financial health.
+///
+/// ## Example
+///
+/// ```swift
+/// let liquidity = liquidityRatios(balanceSheet: balanceSheet)
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Current Ratio: \(liquidity.currentRatio[q1]!)")
+/// print("Quick Ratio: \(liquidity.quickRatio[q1]!)")
+/// ```
+public struct LiquidityRatios<T: Real & Sendable>: Sendable where T: Codable {
+	/// Current Assets / Current Liabilities
+	public let currentRatio: TimeSeries<T>
+
+	/// (Current Assets - Inventory) / Current Liabilities
+	public let quickRatio: TimeSeries<T>
+
+	/// Cash / Current Liabilities
+	public let cashRatio: TimeSeries<T>
+
+	/// Current Assets - Current Liabilities
+	public let workingCapital: TimeSeries<T>
+
+	public init(
+		currentRatio: TimeSeries<T>,
+		quickRatio: TimeSeries<T>,
+		cashRatio: TimeSeries<T>,
+		workingCapital: TimeSeries<T>
+	) {
+		self.currentRatio = currentRatio
+		self.quickRatio = quickRatio
+		self.cashRatio = cashRatio
+		self.workingCapital = workingCapital
+	}
+}
+
+/// Calculate all liquidity ratios at once.
+///
+/// Convenience function that computes all key liquidity metrics and returns them
+/// in a single structure.
+///
+/// ## Example
+///
+/// ```swift
+/// let liquidity = liquidityRatios(balanceSheet: balanceSheet)
+///
+/// print("Current Ratio: \(liquidity.currentRatio[q1]!)")
+/// print("Working Capital: $\(liquidity.workingCapital[q1]!)")
+/// ```
+///
+/// - Parameter balanceSheet: Balance sheet containing assets and liabilities
+/// - Returns: Structure containing all liquidity ratios
+public func liquidityRatios<T: Real>(
+	balanceSheet: BalanceSheet<T>
+) -> LiquidityRatios<T> {
+	return LiquidityRatios(
+		currentRatio: balanceSheet.currentRatio,
+		quickRatio: balanceSheet.quickRatio,
+		cashRatio: balanceSheet.cashRatio,
+		workingCapital: balanceSheet.workingCapital
+	)
+}
+
+/// Solvency ratios - measures ability to meet long-term obligations.
+///
+/// Contains all key solvency metrics for assessing long-term financial health and leverage.
+///
+/// ## Example
+///
+/// ```swift
+/// let solvency = try solvencyRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("Debt-to-Equity: \(solvency.debtToEquity[q1]!)")
+/// print("Interest Coverage: \(solvency.interestCoverage[q1]!)x")
+/// ```
+public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
+	/// Total Liabilities / Total Equity
+	public let debtToEquity: TimeSeries<T>
+
+	/// Total Liabilities / Total Assets
+	public let debtToAssets: TimeSeries<T>
+
+	/// Total Equity / Total Assets
+	public let equityRatio: TimeSeries<T>
+
+	/// Operating Income / Interest Expense
+	public let interestCoverage: TimeSeries<T>
+
+	/// Operating Income / (Principal + Interest)
+	public let debtServiceCoverage: TimeSeries<T>?
+
+	public init(
+		debtToEquity: TimeSeries<T>,
+		debtToAssets: TimeSeries<T>,
+		equityRatio: TimeSeries<T>,
+		interestCoverage: TimeSeries<T>,
+		debtServiceCoverage: TimeSeries<T>? = nil
+	) {
+		self.debtToEquity = debtToEquity
+		self.debtToAssets = debtToAssets
+		self.equityRatio = equityRatio
+		self.interestCoverage = interestCoverage
+		self.debtServiceCoverage = debtServiceCoverage
+	}
+}
+
+/// Calculate all solvency ratios at once.
+///
+/// Convenience function that computes all key solvency metrics and returns them
+/// in a single structure. Debt service coverage is optional and requires
+/// principal and interest payment data.
+///
+/// ## Example
+///
+/// ```swift
+/// let solvency = try solvencyRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// print("Debt-to-Equity: \(solvency.debtToEquity[q1]!)")
+/// print("Interest Coverage: \(solvency.interestCoverage[q1]!)x")
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing operating income and interest
+///   - balanceSheet: Balance sheet containing assets, liabilities, and equity
+///   - principalPayments: Optional time series of principal payments
+///   - interestPayments: Optional time series of interest payments
+/// - Returns: Structure containing all solvency ratios
+/// - Throws: ``FinancialRatioError`` if required accounts not found
+public func solvencyRatios<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>,
+	principalPayments: TimeSeries<T>? = nil,
+	interestPayments: TimeSeries<T>? = nil
+) throws -> SolvencyRatios<T> {
+	let interestCoverageRatio = try interestCoverage(incomeStatement: incomeStatement)
+
+	// Calculate debt service coverage if payment data provided
+	let dscr: TimeSeries<T>?
+	if let principal = principalPayments, let interest = interestPayments {
+		dscr = debtServiceCoverage(
+			incomeStatement: incomeStatement,
+			principalPayments: principal,
+			interestPayments: interest
+		)
+	} else {
+		dscr = nil
+	}
+
+	return SolvencyRatios(
+		debtToEquity: balanceSheet.debtToEquity,
+		debtToAssets: balanceSheet.debtRatio,
+		equityRatio: balanceSheet.equityRatio,
+		interestCoverage: interestCoverageRatio,
+		debtServiceCoverage: dscr
+	)
+}
+
+/// Valuation metrics - market-based valuation ratios.
+///
+/// Contains all key market valuation metrics for assessing whether a stock is
+/// over or undervalued relative to fundamentals.
+///
+/// ## Example
+///
+/// ```swift
+/// let valuation = valuationMetrics(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     sharesOutstanding: 1_000_000,
+///     marketPrice: 50.0
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("P/E Ratio: \(valuation.priceToEarnings[q1]!)")
+/// print("EV/EBITDA: \(valuation.evToEbitda[q1]!)")
+/// ```
+public struct ValuationMetrics<T: Real & Sendable>: Sendable where T: Codable {
+	/// Market capitalization (shares × price)
+	public let marketCap: TimeSeries<T>
+
+	/// Price-to-Earnings ratio
+	public let priceToEarnings: TimeSeries<T>
+
+	/// Price-to-Book ratio
+	public let priceToBook: TimeSeries<T>
+
+	/// Price-to-Sales ratio
+	public let priceToSales: TimeSeries<T>
+
+	/// Enterprise Value (Market Cap + Debt - Cash)
+	public let enterpriseValue: TimeSeries<T>
+
+	/// EV / EBITDA ratio
+	public let evToEbitda: TimeSeries<T>
+
+	/// EV / Sales ratio
+	public let evToSales: TimeSeries<T>
+
+	public init(
+		marketCap: TimeSeries<T>,
+		priceToEarnings: TimeSeries<T>,
+		priceToBook: TimeSeries<T>,
+		priceToSales: TimeSeries<T>,
+		enterpriseValue: TimeSeries<T>,
+		evToEbitda: TimeSeries<T>,
+		evToSales: TimeSeries<T>
+	) {
+		self.marketCap = marketCap
+		self.priceToEarnings = priceToEarnings
+		self.priceToBook = priceToBook
+		self.priceToSales = priceToSales
+		self.enterpriseValue = enterpriseValue
+		self.evToEbitda = evToEbitda
+		self.evToSales = evToSales
+	}
+}
+
+/// Calculate all valuation metrics at once.
+///
+/// Convenience function that computes all key market valuation metrics and returns them
+/// in a single structure. Requires market data (shares outstanding and price per share).
+///
+/// ## Example
+///
+/// ```swift
+/// let valuation = valuationMetrics(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     sharesOutstanding: 1_000_000,
+///     marketPrice: 50.0
+/// )
+///
+/// print("P/E: \(valuation.priceToEarnings[q1]!)")
+/// print("EV/EBITDA: \(valuation.evToEbitda[q1]!)")
+/// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing earnings and revenue
+///   - balanceSheet: Balance sheet containing assets, debt, and equity
+///   - sharesOutstanding: Number of shares outstanding (can vary by period)
+///   - marketPrice: Market price per share (can vary by period)
+/// - Returns: Structure containing all valuation metrics
+public func valuationMetrics<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>,
+	sharesOutstanding: T,
+	marketPrice: T
+) -> ValuationMetrics<T> {
+	let netIncome = incomeStatement.netIncome
+	let revenue = incomeStatement.totalRevenue
+	let ebitda = incomeStatement.ebitda
+	let equity = balanceSheet.totalEquity
+	let debt = balanceSheet.totalLiabilities
+
+	// Find cash in balance sheet (if available)
+	let cash: TimeSeries<T>
+	if let cashAccount = balanceSheet.assetAccounts.first(where: { $0.assetType == .cashAndEquivalents }) {
+		cash = cashAccount.timeSeries
+	} else {
+		// If no cash account, assume zero
+		cash = TimeSeries(periods: netIncome.periods, values: Array(repeating: T.zero, count: netIncome.periods.count))
+	}
+
+	// Market Cap = Shares Outstanding × Price
+	let marketCap = netIncome.mapValues { _ in sharesOutstanding * marketPrice }
+
+	// P/E = Market Cap / Net Income
+	let pe = marketCap / netIncome
+
+	// P/B = Market Cap / Equity
+	let pb = marketCap / equity
+
+	// P/S = Market Cap / Revenue
+	let ps = marketCap / revenue
+
+	// EV = Market Cap + Debt - Cash
+	let ev = marketCap + debt - cash
+
+	// EV/EBITDA
+	let evToEbitda = ev / ebitda
+
+	// EV/Sales
+	let evToSales = ev / revenue
+
+	return ValuationMetrics(
+		marketCap: marketCap,
+		priceToEarnings: pe,
+		priceToBook: pb,
+		priceToSales: ps,
+		enterpriseValue: ev,
+		evToEbitda: evToEbitda,
+		evToSales: evToSales
+	)
+}

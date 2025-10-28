@@ -281,9 +281,10 @@ Track dilution through funding rounds:
 ```swift
 // Series A: $5M at $15M pre-money
 capTable = capTable.modelRound(
-    preMoneyValuation: 15_000_000,
-    investment: 5_000_000,
-    investorName: "VC Fund A"
+	newInvestment: 5_000_000,
+	preMoneyValuation: 15_000_000,
+	optionPoolIncrease: 0.0,
+	investorName: "VC Fund A"
 )
 
 let postSeriesA = capTable.ownership()
@@ -292,9 +293,10 @@ print("VC Fund A: \(postSeriesA["VC Fund A"]! * 100)%")                   // 25%
 
 // Series B: $15M at $50M pre-money
 capTable = capTable.modelRound(
-    preMoneyValuation: 50_000_000,
-    investment: 15_000_000,
-    investorName: "VC Fund B"
+	newInvestment: 15_000_000,
+	preMoneyValuation: 50_000_000,
+	optionPoolIncrease: 0.0,
+	investorName: "VC Fund B"
 )
 
 let postSeriesB = capTable.ownership()
@@ -310,8 +312,9 @@ let prePoolShares = 10_000_000.0
 let poolSize = 2_000_000.0  // 2M share option pool
 
 let dilution = optionPoolDilution(
-    poolSize: poolSize,
-    prePoolShares: prePoolShares
+	currentShares: prePoolShares,
+	optionPoolPercent: poolSize / (prePoolShares + poolSize),
+	timing: .postRound
 )
 
 print("Founder dilution from option pool: \(dilution * 100)%")  // 16.67%
@@ -334,14 +337,14 @@ print("Shares after full ratchet: \(adjustedShares)")  // 2,000,000
 
 // Weighted average is less dilutive
 let weightedShares = applyWeightedAverageAntiDilution(
-    originalShares: 1_000_000,
-    originalPrice: 2.00,
-    newPrice: 1.00,
-    newShares: 500_000,
-    fullyDilutedBeforeRound: 10_000_000
+    originalShares: 8_000_000,
+    originalPrice: 1.00,
+    newPrice: 0.50,
+    newShares: 6_000_000,
+    fullyDilutedBeforeRound: 1_000_000
 )
 
-print("Shares after weighted average: \(weightedShares)")  // ~1,476,190
+print("Shares after weighted average: \(weightedShares)")  // ~14,000,000
 ```
 
 ### SAFE & Convertible Notes
@@ -362,10 +365,10 @@ print("Conversion price: $\(conversion.pricePerShare)")
 
 // Convertible note with discount and cap
 let noteConversion = convertNote(
-    principal: 500_000,
-    valuationCap: 8_000_000,
-    discount: 0.20,
-    seriesAPrice: 2.00
+	principal: 500_000,
+	valuationCap: 8_000_000,
+	discount: 0.20,
+	seriesAPricePerShare: 2.0
 )
 
 print("Note converts to \(noteConversion.shares) shares")
@@ -475,7 +478,7 @@ print("Lease Liability: $\(lease.presentValue())")
 print("Right-of-Use Asset: $\(lease.rightOfUseAsset())")
 
 // Generate amortization schedule
-let schedule = lease.liabilitySchedule()
+let schedule = lease.detailedSchedule()
 for (index, entry) in schedule.prefix(12).enumerated() {
     print("Month \(index + 1):")
     print("  Payment: $\(entry.payment)")
@@ -498,9 +501,9 @@ let transaction = SaleAndLeaseback(
     discountRate: 0.06
 )
 
-print("Gain on Sale: $\(transaction.gainOnSale)")
-print("PV of Lease Obligations: $\(transaction.leaseObligationPV)")
-print("Net Cash Benefit: $\(transaction.netCashBenefit)")
+print("Gain on Sale: \(transaction.gainOnSale.currency())")
+print("PV of Lease Obligations: \(transaction.leaseObligationPV.currency())")
+print("Net Cash Benefit: \(transaction.netCashBenefit.currency())")
 print("Economically Beneficial? \(transaction.isEconomicallyBeneficial)")
 ```
 
@@ -555,15 +558,15 @@ let structure = CapitalStructure(
 )
 
 print("=== Debt Analysis ===")
-print("Quarterly Payment: $\(schedule.payment[schedule.periods.first!]!)")
-print("Annual Debt Service: $\(schedule.payment[schedule.periods.first!]! * 4)")
-print("Total Interest (Life of Loan): $\(schedule.totalInterest)")
+print("Quarterly Payment: \(termLoanSchedule.payment[termLoanSchedule.periods.first!]!.currency())")
+print("Annual Debt Service: \((termLoanSchedule.payment[termLoanSchedule.periods.first!]! * 4).currency())")
+print("Total Interest (Life of Loan): \(termLoanSchedule.totalInterest.currency())")
 print()
 print("=== Capital Structure ===")
-print("WACC: \(structure.wacc * 100)%")
-print("Debt Ratio: \(structure.debtRatio * 100)%")
-print("Annual Tax Shield: $\(structure.annualTaxShield)")
-print("After-tax Cost of Debt: \(structure.afterTaxCostOfDebt * 100)%")
+print("WACC: \(termLoanStructure.wacc * 100)%")
+print("Debt Ratio: \(termLoanStructure.debtRatio * 100)%")
+print("Annual Tax Shield: \(termLoanStructure.annualTaxShield.currency())")
+print("After-tax Cost of Debt: \(termLoanStructure.afterTaxCostOfDebt * 100)%")
 ```
 
 ### Modeling a Financing Round
@@ -575,27 +578,39 @@ Track a startup through multiple rounds:
 let founder1 = CapTable.Shareholder(name: "Founder 1", shares: 6_000_000, investmentDate: Date(), pricePerShare: 0.001)
 let founder2 = CapTable.Shareholder(name: "Founder 2", shares: 4_000_000, investmentDate: Date(), pricePerShare: 0.001)
 
-var capTable = CapTable(shareholders: [founder1, founder2], optionPool: 0)
+var initialCapTable = CapTable(shareholders: [founder1, founder2], optionPool: 0)
 
 print("=== At Founding ===")
-var ownership = capTable.ownership()
-print("Founder 1: \(ownership["Founder 1"]! * 100)%")
-print("Founder 2: \(ownership["Founder 2"]! * 100)%")
+var initialOwnership = initialCapTable.ownership()
+print("Founder 1: \(initialOwnership["Founder 1"]! * 100)%")
+print("Founder 2: \(initialOwnership["Founder 2"]! * 100)%")
 
 // Seed: $2M at $8M pre
-capTable = capTable.modelRound(preMoneyValuation: 8_000_000, investment: 2_000_000, investorName: "Seed Investors")
+initialCapTable = initialCapTable.modelRound(
+	newInvestment: 2_000_000,
+	preMoneyValuation: 8_000_000,
+	optionPoolIncrease: 0.0,
+	investorName: "Seed Investors",
+	poolTiming: .postRound
+)
+
 print("\n=== After Seed ($2M at $8M pre) ===")
-ownership = capTable.ownership()
-for (name, pct) in ownership.sorted(by: { $0.value > $1.value }) {
-    print("\(name): \(pct * 100)%")
+initialOwnership = initialCapTable.ownership()
+for (name, pct) in initialOwnership.sorted(by: { $0.value > $1.value }) {
+	print("\(name): \(pct * 100)%")
 }
 
 // Series A: $10M at $40M pre
-capTable = capTable.modelRound(preMoneyValuation: 40_000_000, investment: 10_000_000, investorName: "Series A Lead")
+initialCapTable = initialCapTable.modelRound(
+	newInvestment: 10_000_000,
+	preMoneyValuation: 40_000_000,
+	optionPoolIncrease: 0.0,
+	investorName: "Series A Lead"
+)
 print("\n=== After Series A ($10M at $40M pre) ===")
-ownership = capTable.ownership()
-for (name, pct) in ownership.sorted(by: { $0.value > $1.value }) {
-    print("\(name): \(pct * 100)%")
+initialOwnership = initialCapTable.ownership()
+for (name, pct) in initialOwnership.sorted(by: { $0.value > $1.value }) {
+	print("\(name): \(pct * 100)%")
 }
 ```
 
