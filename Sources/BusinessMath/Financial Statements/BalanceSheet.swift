@@ -393,16 +393,15 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// Measures ability to pay short-term obligations. A ratio above 1.0
 	/// indicates sufficient current assets to cover current liabilities.
 	public var currentRatio: TimeSeries<T> {
-		print("Calculating current ratio with current Assets of \(currentAssets) and current liabilities of \(currentLiabilities)")
 		return currentAssets / currentLiabilities
 	}
 
-	/// Debt-to-equity ratio (total liabilities / total equity).
+	/// Debt-to-equity ratio (interest-bearing debt / total equity).
 	///
 	/// Measures financial leverage. Higher ratios indicate more debt relative
 	/// to equity, which increases financial risk.
 	public var debtToEquity: TimeSeries<T> {
-		return totalLiabilities / totalEquity
+		return interestBearingDebt / totalEquity
 	}
 
 	/// Equity ratio (total equity / total assets).
