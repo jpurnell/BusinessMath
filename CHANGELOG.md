@@ -5,6 +5,272 @@ All notable changes to BusinessMath will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2025-10-29
+
+### Added
+
+**Debt & Financing Models Framework** (Topic 6 - Complete)
+
+Comprehensive debt instruments, capital structure analysis, equity financing, and lease accounting implementations. All implementations follow Test-Driven Development (TDD) methodology with 140 comprehensive tests.
+
+#### Debt Instruments (`DebtInstrument.swift`)
+
+Complete debt modeling with multiple amortization methods:
+
+**1. Amortization Methods**
+- **Level Payment**: Fixed payment amount, declining interest over time (most common)
+- **Straight Line**: Equal principal payments, declining total payments
+- **Bullet Payment**: Interest-only payments, principal due at maturity
+- **Custom**: User-defined payment schedule
+
+**2. Debt Properties**
+- Principal, interest rate, term, payment frequency
+- Amortization schedule with period-by-period breakdown
+- Interest expense, principal reduction, remaining balance
+- Total interest paid over life of loan
+- Effective annual rate calculation
+
+**3. Real-World Applications**
+- Mortgages, car loans, corporate bonds
+- Term loans, revolving credit
+- Multiple payment frequencies: monthly, quarterly, annual
+
+#### Capital Structure (`CapitalStructure.swift`)
+
+WACC calculations and optimal capital structure analysis:
+
+**1. Weighted Average Cost of Capital (WACC)**
+- Cost of equity (CAPM-based or user-specified)
+- After-tax cost of debt
+- Market value vs. book value weighting
+- Tax shield benefit of debt
+
+**2. Capital Asset Pricing Model (CAPM)**
+- Cost of equity = Risk-Free Rate + Beta × Market Risk Premium
+- Beta levering/unlevering for comparable analysis
+- Supports custom risk-free rates and market premiums
+
+**3. Capital Structure Optimization**
+- Debt-to-equity ratio analysis
+- Target capital structure adjustments
+- Industry comparisons (tech vs. utilities)
+
+#### Equity Financing (`EquityFinancing.swift`)
+
+Startup financing, cap tables, and dilution analysis:
+
+**1. Cap Table Management**
+- Shareholder tracking with ownership percentages
+- Outstanding vs. fully diluted share counts
+- Price per share and valuation calculations
+- Pre-money and post-money valuations
+
+**2. Financing Rounds**
+- Model Series A, B, C+ rounds
+- Calculate dilution from new investments
+- Option pool creation and dilution
+- Pre-round vs. post-round timing
+
+**3. SAFEs and Convertible Notes**
+- Simple Agreement for Future Equity (post-money and pre-money SAFEs)
+- Convertible note conversion with cap, discount, and interest
+- Conversion at Series A pricing
+- Term priority (cap vs. discount application)
+
+**4. Option Grants and Vesting**
+- Standard 4-year vest with 1-year cliff
+- Vested shares calculation at any date
+- Employee option pool management
+- Strike price (409A valuation)
+
+**5. Down Rounds and Anti-Dilution**
+- Model down rounds (lower valuation than previous)
+- Full ratchet anti-dilution protection
+- Weighted average anti-dilution (broad-based)
+- Pay-to-play provisions
+
+**6. Liquidation Preferences**
+- 1x, 2x, or custom preference multiples
+- Participating vs. non-participating preferred
+- Liquidation waterfall calculations
+- Exit scenario modeling
+
+#### Debt Covenants (`DebtCovenants.swift`)
+
+Loan agreement compliance tracking:
+
+**1. Financial Covenants**
+- Maximum leverage ratio (Debt/EBITDA)
+- Minimum debt service coverage ratio (DSCR)
+- Minimum interest coverage ratio
+- Minimum EBITDA threshold
+- Maximum debt-to-equity ratio
+- Minimum current ratio
+- Minimum net worth
+
+**2. Covenant Monitoring**
+- Compliance checking across periods
+- Covenant headroom calculation
+- Breach detection and reporting
+- Custom covenant support
+
+**3. Covenant Management**
+- Cure periods
+- Waiver tracking
+- Violation reports
+
+#### Lease Accounting (`LeaseAccounting.swift`)
+
+IFRS 16 / ASC 842 compliant lease accounting:
+
+**1. Right-of-Use (ROU) Asset**
+- Initial recognition at present value of lease payments
+- Depreciation (straight-line over lease term)
+- Initial direct costs inclusion
+- Lease incentives (prepayments, landlord contributions)
+
+**2. Lease Liability**
+- Present value of future lease payments
+- Amortization using effective interest method
+- Payment allocation (principal + interest)
+- Lease modification handling
+
+**3. Discount Rates**
+- Implicit rate in lease (if known)
+- Incremental borrowing rate (fallback)
+- Custom rate support
+
+**4. Lease Types**
+- Operating leases (new standard requires ROU asset)
+- Finance leases (same treatment under new standard)
+- Short-term lease exemption (< 12 months)
+- Low-value lease exemption
+
+**5. Lease Analysis**
+- Total lease commitment calculation
+- Maturity analysis (future payments by year)
+- Lease vs. buy decision support
+- Lease modification (extension, reduction, termination)
+- Sale and leaseback with gain/loss recognition
+
+**6. Disclosure Requirements**
+- ROU asset carrying value over time
+- Total undiscounted future commitments
+- Payments by maturity bucket
+- Weighted average discount rate
+
+### Enhanced
+
+**Improved API Usability**
+
+**1. Altman Z-Score Enhancement**
+- Added scalar value overload for single-period calculations
+- Simplified API: `altmanZScore(..., period:, marketPrice:, sharesOutstanding:)`
+- Previous multi-period TimeSeries API still available
+- More intuitive for point-in-time analysis
+
+**2. Graceful Error Handling for Ratios**
+- Made efficiency ratio properties optional when accounts may not exist
+  - `inventoryTurnover`, `receivablesTurnover`, `daysInventoryOutstanding`, etc.
+- Made solvency ratio properties optional
+  - `interestCoverage` when no interest expense exists
+- Changed throwing functions to non-throwing with `try?` for optional calculations
+- Service companies without inventory/payables now handled gracefully
+
+**3. Histogram Bin Optimization**
+- Added automatic bin calculation using Sturges' Rule and Freedman-Diaconis rule
+- `histogram()` with no parameters now calculates optimal bins (matching Matplotlib/Seaborn)
+- Manual bin specification still supported: `histogram(bins: 20)`
+- Uses maximum of both methods for adequate resolution
+
+### Fixed
+
+**Documentation Corrections**
+
+**1. Tutorial Accuracy Updates**
+- Fixed `EquityFinancingGuide.md` to match actual API
+  - Corrected `CapTable` initialization
+  - Fixed `Shareholder` creation syntax
+  - Updated SAFE and ConvertibleNote types
+  - Removed non-existent methods
+- Fixed `ScenarioAnalysisGuide.md` Monte Carlo section
+  - Corrected `ProbabilisticDriver` initialization (requires `DistributionNormal` object)
+  - Fixed `runFinancialSimulation` function signature
+  - Updated results analysis API (closure-based metric extraction)
+  - Removed non-existent `randomSeed` parameter
+
+### Tests
+
+**Comprehensive Test Coverage** (140 tests for Topic 6)
+
+**Debt Instrument Tests** (32 tests)
+- Level payment amortization calculations
+- Straight-line amortization
+- Bullet payment interest calculations
+- Custom payment schedules
+- Multiple payment frequencies
+- High interest rate scenarios
+- Edge cases: single payment, zero interest, very short/long terms
+
+**Capital Structure Tests** (15 tests)
+- WACC calculation with various capital structures
+- CAPM cost of equity
+- Beta levering/unlevering
+- After-tax cost of debt
+- Optimal capital structure analysis
+- Industry comparisons (tech vs. utility)
+- Modigliani-Miller propositions
+
+**Equity Financing Tests** (37 tests)
+- Cap table with multiple shareholders
+- Financing rounds (Series A, B, C)
+- SAFE conversions (post-money and pre-money)
+- Convertible note conversions with caps and discounts
+- Option grants and vesting schedules
+- Option pool dilution (pre-round vs. post-round timing)
+- Down rounds with pay-to-play
+- Anti-dilution adjustments (full ratchet, weighted average)
+- Liquidation preferences (1x, 2x, participating, non-participating)
+- 409A strike price calculation
+- Fully diluted share count
+
+**Debt Covenants Tests** (14 tests)
+- Financial covenant compliance
+- Covenant breach detection
+- Covenant headroom calculation
+- Multiple covenant monitoring
+- Custom covenant definitions
+- Cure periods
+- Waiver tracking
+
+**Lease Accounting Tests** (42 tests)
+- ROU asset initial recognition
+- ROU asset depreciation
+- Lease liability amortization
+- Discount rate calculation (implicit and incremental borrowing rate)
+- Short-term and low-value lease exemptions
+- Lease modifications (extension, reduction, termination)
+- Sale and leaseback accounting
+- Initial direct costs
+- Prepayments and landlord incentives
+- Maturity analysis
+- Lease vs. buy decision analysis
+
+### Documentation
+
+**New Tutorials**
+- Enhanced existing guides with corrected API examples
+- All code examples verified against actual implementations
+
+### Statistics
+
+**Overall Library Status** (as of v1.11.0)
+- **Total Tests**: 1,385 passing
+- **Test Suites**: 78 suites
+- **Topics Completed**: 6 of 10 major topics
+- **Test Coverage**: >90% for all new components
+- **Documentation**: Comprehensive DocC documentation for all new APIs
+
 ## [1.9.0] - 2025-10-21
 
 ### Added
