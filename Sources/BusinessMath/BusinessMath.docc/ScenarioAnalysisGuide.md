@@ -29,10 +29,9 @@ import BusinessMath
 
 // Define the company and periods
 let company = Entity(
-    id: "TECH001",
-    primaryType: .ticker,
-    name: "TechCo",
-    ticker: "TECH"
+ id: "TECH001",
+ primaryType: .ticker,
+ name: "TechCo"
 )
 
 let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -50,86 +49,103 @@ baseOverrides["OpEx"] = AnyDriver(baseOpEx)
 
 // Create base case scenario
 let baseCase = FinancialScenario(
-    name: "Base Case",
-    description: "Expected performance",
-    driverOverrides: baseOverrides
+ name: "Base Case",
+ description: "Expected performance",
+ driverOverrides: baseOverrides
 )
 
 // Define how to build financial statements from drivers
-let builder: ScenarioRunner.StatementBuilder = { drivers, entity, periods in
-    // Extract driver values
-    let revenue = drivers["Revenue"]!.sample(for: periods[0])
-    let costs = drivers["Costs"]!.sample(for: periods[0])
-    let opex = drivers["OpEx"]!.sample(for: periods[0])
+let builder: ScenarioRunner.StatementBuilder = { drivers, periods in
+ // Extract driver values
+ let revenue = drivers["Revenue"]!.sample(for: periods[0])
+ let costs = drivers["Costs"]!.sample(for: periods[0])
+ let opex = drivers["OpEx"]!.sample(for: periods[0])
 
-    // Build Income Statement
-    let revenueAccount = Account(
-        name: "Revenue",
-        timeSeries: TimeSeries(periods: periods, values: Array(repeating: revenue, count: periods.count)),
-        type: .revenue
-    )
+ // Build Income Statement
+ let revenueAccount = try Account(
+	entity: company,
+	name: "Revenue",
+	type: .revenue,
+	timeSeries: TimeSeries(periods: periods, values: Array(repeating: revenue, count: periods.count)),
+	 
+ )
 
-    let cogsAccount = Account(
-        name: "COGS",
-        timeSeries: TimeSeries(periods: periods, values: Array(repeating: costs, count: periods.count)),
-        type: .costOfRevenue
-    )
+ let cogsAccount = try Account(
+	entity: company,
+	name: "COGS",
+	type: .expense,
+	timeSeries: TimeSeries(periods: periods, values: Array(repeating: costs, count: periods.count)),
+	expenseType: .costOfGoodsSold,
+	
+ )
 
-    let opexAccount = Account(
-        name: "Operating Expenses",
-        timeSeries: TimeSeries(periods: periods, values: Array(repeating: opex, count: periods.count)),
-        type: .operatingExpense
-    )
+ let opexAccount = try Account(
+	entity: company,
+	name: "Operating Expenses",
+	type: .expense,
+	timeSeries: TimeSeries(periods: periods, values: Array(repeating: opex, count: periods.count)),
+	expenseType: .operatingExpense
+	
+ )
 
-    let incomeStatement = IncomeStatement(
-        entity: entity,
-        revenueAccounts: [revenueAccount],
-        expenseAccounts: [cogsAccount, opexAccount]
-    )
+ let incomeStatement = try IncomeStatement(
+	 entity: company,
+	 periods: periods,
+	 revenueAccounts: [revenueAccount],
+	 expenseAccounts: [cogsAccount, opexAccount]
+ )
 
-    // Build simple Balance Sheet (required for complete projection)
-    let cashAccount = Account(
-        name: "Cash",
-        timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000, 600_000, 650_000]),
-        type: .asset
-    )
+ // Build simple Balance Sheet (required for complete projection)
+ let cashAccount = try Account(
+	entity: company,
+	name: "Cash",
+	type: .asset,
+	timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000, 600_000, 650_000]),
+	assetType: .cashAndEquivalents
+ )
 
-    let equityAccount = Account(
-        name: "Equity",
-        timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000, 600_000, 650_000]),
-        type: .equity
-    )
+ let equityAccount = try Account(
+	entity: company,
+	name: "Equity",
+	type: .equity,
+	timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000, 600_000, 650_000])
+ )
 
-    let balanceSheet = BalanceSheet(
-        entity: entity,
-        assetAccounts: [cashAccount],
-        liabilityAccounts: [],
-        equityAccounts: [equityAccount]
-    )
+ let balanceSheet = try BalanceSheet(
+	 entity: company,
+	 periods: periods,
+	 assetAccounts: [cashAccount],
+	 liabilityAccounts: [],
+	 equityAccounts: [equityAccount]
+ )
 
-    // Build simple Cash Flow Statement
-    let cfAccount = Account(
-        name: "Operating Cash Flow",
-        timeSeries: incomeStatement.netIncome,
-        type: .cashFlow,
-        metadata: AccountMetadata(category: "Operating Activities")
-    )
+ // Build simple Cash Flow Statement
+ let cfAccount = try Account(
+	entity: company,
+	name: "Operating Cash Flow",
+	type: .operating,
+	timeSeries: incomeStatement.netIncome,
+	metadata: AccountMetadata(category: "Operating Activities")
+ )
 
-    let cashFlowStatement = CashFlowStatement(
-        entity: entity,
-        accounts: [cfAccount]
-    )
+ let cashFlowStatement = try CashFlowStatement(
+	entity: company,
+	periods: periods,
+	operatingAccounts: [cfAccount],
+	investingAccounts: [],
+	financingAccounts: []
+ )
 
-    return (incomeStatement, balanceSheet, cashFlowStatement)
+ return (incomeStatement, balanceSheet, cashFlowStatement)
 }
 
 // Run the base case
 let runner = ScenarioRunner()
 let baseProjection = try runner.run(
-    scenario: baseCase,
-    entity: company,
-    periods: quarters,
-    builder: builder
+ scenario: baseCase,
+ entity: company,
+ periods: quarters,
+ builder: builder
 )
 
 print("Base Case Q1 Net Income: $\(baseProjection.incomeStatement.netIncome[q1]!)")
@@ -290,7 +306,7 @@ let twoWaySensitivity = try runTwoWaySensitivity(
 
 // Print data table
 print("\n=== Two-Way Sensitivity: Revenue × Costs ===")
-print(String(format: "%12s", ""), terminator: "")
+print(String(format: "%12@", ""), terminator: "")
 for cost in twoWaySensitivity.inputValues2 {
     print(String(format: "%10.0f", cost), terminator: "")
 }
@@ -311,19 +327,15 @@ for (i, revenue) in twoWaySensitivity.inputValues1.enumerated() {
 Model uncertainty with probabilistic inputs:
 
 ```swift
-// Create probabilistic drivers (using existing deterministic seed)
+// Create probabilistic drivers with proper distributions
 let uncertainRevenue = ProbabilisticDriver(
     name: "Revenue",
-    mean: 1_000_000,
-    standardDeviation: 100_000,
-    distribution: .normal
+    distribution: DistributionNormal(mean: 1_000_000.0, standardDeviation: 100_000.0)
 )
 
 let uncertainCosts = ProbabilisticDriver(
     name: "Costs",
-    mean: 600_000,
-    standardDeviation: 50_000,
-    distribution: .normal
+    distribution: DistributionNormal(mean: 600_000.0, standardDeviation: 50_000.0)
 )
 
 var monteCarloOverrides: [String: AnyDriver<Double>] = [:]
@@ -338,51 +350,57 @@ let uncertainScenario = FinancialScenario(
 )
 
 // Run simulation (10,000 iterations)
-let simulation = FinancialSimulation(
-    baseScenario: uncertainScenario,
-    iterations: 10_000,
-    randomSeed: 42  // For reproducibility
-)
-
-let results = try simulation.run(
+let simulation = try runFinancialSimulation(
+    scenario: uncertainScenario,
     entity: company,
     periods: quarters,
+    iterations: 10_000,
     builder: builder
-) { projection in
+)
+
+// Define metric extractor for net income
+let netIncomeMetric: (FinancialProjection) -> Double = { projection in
     return projection.incomeStatement.netIncome[q1]!
 }
 
-// Analyze results
+// Analyze results - basic statistics
 print("\n=== Monte Carlo Simulation Results (10,000 iterations) ===")
-print("Mean Net Income: $\(Int(results.statistics.mean))")
-print("Std Deviation: $\(Int(results.statistics.stdDev))")
-print("Min: $\(Int(results.statistics.min))")
-print("Max: $\(Int(results.statistics.max))")
+let meanIncome = simulation.mean(metric: netIncomeMetric)
+print("Mean Net Income: $\(Int(meanIncome))")
+
+// Calculate percentiles
 print("\nPercentiles:")
-print("  5th:  $\(Int(results.percentiles.p5))")
-print("  25th: $\(Int(results.percentiles.p25))")
-print("  50th: $\(Int(results.percentiles.p50)) (median)")
-print("  75th: $\(Int(results.percentiles.p75))")
-print("  95th: $\(Int(results.percentiles.p95))")
+let p5 = simulation.percentile(0.05, metric: netIncomeMetric)
+let p25 = simulation.percentile(0.25, metric: netIncomeMetric)
+let p50 = simulation.percentile(0.50, metric: netIncomeMetric)  // Median
+let p75 = simulation.percentile(0.75, metric: netIncomeMetric)
+let p95 = simulation.percentile(0.95, metric: netIncomeMetric)
+
+print("  5th:  $\(Int(p5))")
+print("  25th: $\(Int(p25))")
+print("  50th: $\(Int(p50)) (median)")
+print("  75th: $\(Int(p75))")
+print("  95th: $\(Int(p95))")
 
 // Risk metrics
 print("\nRisk Metrics:")
-let var95 = results.riskMetrics.valueAtRisk(confidenceLevel: 0.95)
-let cvar95 = results.riskMetrics.conditionalValueAtRisk(confidenceLevel: 0.95)
+let var95 = simulation.valueAtRisk(0.95, metric: netIncomeMetric)
+let cvar95 = simulation.conditionalValueAtRisk(0.95, metric: netIncomeMetric)
 print("Value at Risk (95%): $\(Int(var95))")
 print("CVaR (95%): $\(Int(cvar95))")
 
-// Probability analysis
-let probLoss = results.probabilityBelow(0)
-let probAbove200k = results.probabilityAbove(200_000)
-print("\nProbability Analysis:")
-print("Probability of loss (NI < $0): \(probLoss * 100)%")
-print("Probability NI > $200k: \(probAbove200k * 100)%")
+// Confidence intervals
+let ci90 = simulation.confidenceInterval(0.90, metric: netIncomeMetric)
+print("90% Confidence Interval: [$\(Int(ci90.lowerBound)), $\(Int(ci90.upperBound))]")
 
-// Visualize distribution
-let histogram = results.histogram(bins: 20)
-let histPlot = plotHistogram(histogram)
-print("\n" + histPlot)
+// Probability analysis
+print("\nProbability Analysis:")
+let probLoss = simulation.probabilityOfLoss(metric: netIncomeMetric)
+let probBelow100k = simulation.probabilityBelow(100_000, metric: netIncomeMetric)
+let probAbove200k = simulation.probabilityAbove(200_000, metric: netIncomeMetric)
+print("Probability of loss (NI < $0): \(String(format: "%.1f", probLoss * 100))%")
+print("Probability NI < $100k: \(String(format: "%.1f", probBelow100k * 100))%")
+print("Probability NI > $200k: \(String(format: "%.1f", probAbove200k * 100))%")
 ```
 
 ## Best Practices
@@ -426,6 +444,6 @@ print("\n" + histPlot)
 - ``runSensitivity(baseCase:entity:periods:inputDriver:inputRange:steps:builder:outputExtractor:)``
 - ``runTornadoAnalysis(baseCase:entity:periods:inputDrivers:variationPercent:steps:builder:outputExtractor:)``
 - ``FinancialSimulation``
-- ``SimulationResults``
+- ``runFinancialSimulation(scenario:entity:periods:iterations:builder:)``
+- ``ProbabilisticDriver``
 - ``plotTornadoDiagram(_:)``
-- ``plotHistogram(_:)``

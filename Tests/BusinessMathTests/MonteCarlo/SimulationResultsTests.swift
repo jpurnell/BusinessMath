@@ -262,11 +262,134 @@ struct SimulationResultsTests {
 		let results = SimulationResults(values: values)
 
 		let histogram = results.histogram(bins: 20)
-		logger.info("Simulation Results - Histogram Coverage Test:\n\n\(plotHistogram(histogram))") 
+		logger.info("Simulation Results - Histogram Coverage Test:\n\n\(plotHistogram(histogram))")
 		// First bin should start at or below min
 		#expect(histogram.first!.range.lowerBound <= results.statistics.min)
 
 		// Last bin should end at or above max
 		#expect(histogram.last!.range.upperBound >= results.statistics.max)
+	}
+
+	@Test("SimulationResults automatic bin calculation")
+	func simulationResultsAutomaticBins() {
+		// Generate normal distribution data
+		let values = (0..<10_000).map { _ in distributionNormal(mean: 100.0, stdDev: 15.0) }
+		let results = SimulationResults(values: values)
+
+		// Test automatic bin calculation (no bins parameter)
+		let histogramAuto = results.histogram()
+		logger.info("Automatic bins: \(histogramAuto.count) bins for 10,000 samples")
+
+		// Verify histogram is created
+		#expect(!histogramAuto.isEmpty, "Should create histogram automatically")
+
+		// Verify all values are captured
+		let totalCount = histogramAuto.map { $0.count }.reduce(0, +)
+		#expect(totalCount == 10_000, "All values should be in histogram")
+
+		// For 10,000 samples:
+		// Sturges: ceil(log2(10000) + 1) = ceil(13.29 + 1) = ceil(14.29) = 15
+		// FD depends on IQR, but should be reasonable
+		// Bin count should be >= 1 and <= 1000
+		#expect(histogramAuto.count >= 1 && histogramAuto.count <= 1000)
+
+		// Should have reasonable resolution (not too few, not too many)
+		#expect(histogramAuto.count >= 10 && histogramAuto.count <= 100,
+			"For 10k samples, should have 10-100 bins")
+	}
+
+	@Test("SimulationResults automatic bins vs manual bins")
+	func simulationResultsAutoBinsComparison() {
+		let values = (0..<5_000).map { _ in distributionUniform(min: 0.0, max: 100.0) }
+		let results = SimulationResults(values: values)
+
+		// Automatic
+		let histAuto = results.histogram()
+
+		// Manual with common bin count
+		let hist20 = results.histogram(bins: 20)
+
+		logger.info("Automatic: \(histAuto.count) bins, Manual: \(hist20.count) bins")
+
+		// Both should capture all values
+		#expect(histAuto.map { $0.count }.reduce(0, +) == 5_000)
+		#expect(hist20.map { $0.count }.reduce(0, +) == 5_000)
+
+		// Automatic should choose a reasonable number
+		#expect(histAuto.count > 0)
+	}
+
+	@Test("SimulationResults automatic bins with small dataset")
+	func simulationResultsAutoBinsSmallDataset() {
+		// With small datasets, Sturges' Rule gives small bin counts
+		let values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+		let results = SimulationResults(values: values)
+
+		let histogram = results.histogram()
+		logger.info("Small dataset (n=10): \(histogram.count) bins")
+
+		// For 10 samples: Sturges = ceil(log2(10) + 1) = ceil(4.32) = 5
+		// Should have reasonable bin count for small dataset
+		#expect(histogram.count >= 1 && histogram.count <= 10)
+
+		// All values captured
+		#expect(histogram.map { $0.count }.reduce(0, +) == 10)
+	}
+
+	@Test("SimulationResults automatic bins with large dataset")
+	func simulationResultsAutoBinsLargeDataset() {
+		// Large dataset should get more bins
+		let values = (0..<100_000).map { _ in distributionNormal(mean: 50.0, stdDev: 10.0) }
+		let results = SimulationResults(values: values)
+
+		let histogram = results.histogram()
+		logger.info("Large dataset (n=100k): \(histogram.count) bins")
+
+		// For 100k samples: Sturges = ceil(log2(100000) + 1) = ceil(17.61) = 18
+		// FD will likely give more due to large sample size
+		#expect(histogram.count >= 15)
+
+		// But should be clamped at max 1000
+		#expect(histogram.count <= 1000)
+
+		// All values captured
+		#expect(histogram.map { $0.count }.reduce(0, +) == 100_000)
+	}
+
+	@Test("SimulationResults automatic bins with outliers")
+	func simulationResultsAutoBinsWithOutliers() {
+		// Dataset with outliers - FD rule should be robust
+		var values: [Double] = (0..<1_000).map { _ in distributionNormal(mean: 50.0, stdDev: 5.0) }
+		// Add outliers
+		values.append(contentsOf: [1.0, 2.0, 200.0, 250.0])
+
+		let results = SimulationResults(values: values)
+
+		let histogram = results.histogram()
+		logger.info("With outliers (n=1004): \(histogram.count) bins")
+
+		// Should handle outliers gracefully
+		#expect(!histogram.isEmpty)
+
+		// All values including outliers should be captured
+		#expect(histogram.map { $0.count }.reduce(0, +) == 1_004)
+
+		// Verify outliers are in the bins
+		#expect(histogram.first!.range.lowerBound <= 1.0)
+		#expect(histogram.last!.range.upperBound >= 250.0)
+	}
+
+	@Test("SimulationResults automatic bins with constant values")
+	func simulationResultsAutoBinsConstant() {
+		// All same values - special case
+		let values = Array(repeating: 42.0, count: 100)
+		let results = SimulationResults(values: values)
+
+		let histogram = results.histogram()
+		logger.info("Constant values: \(histogram.count) bin(s)")
+
+		// Should create single bin for constant values
+		#expect(histogram.count == 1, "Single bin for constant values")
+		#expect(histogram[0].count == 100, "All values in single bin")
 	}
 }

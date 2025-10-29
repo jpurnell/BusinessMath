@@ -186,27 +186,37 @@ struct RatioConvenienceFunctionsTests {
 	func testEfficiencyRatios() throws {
 		let (incomeStatement, balanceSheet) = try createTestFinancialStatements()
 
-		let efficiency = try efficiencyRatios(
+		let efficiency = efficiencyRatios(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet
 		)
 
 		let q1 = periods[0]
 
-		// Verify all metrics are present
+		// Asset turnover is always available
 		#expect(efficiency.assetTurnover[q1]! > 0.0)
-		#expect(efficiency.inventoryTurnover[q1]! > 0.0)
-		#expect(efficiency.receivablesTurnover[q1]! > 0.0)
-		#expect(efficiency.daysSalesOutstanding[q1]! > 0.0)
-		#expect(efficiency.daysInventoryOutstanding[q1]! > 0.0)
-		#expect(efficiency.daysPayableOutstanding[q1]! > 0.0)
+
+		// With our test data, all optional metrics should be present
+		#expect(efficiency.inventoryTurnover != nil)
+		#expect(efficiency.receivablesTurnover != nil)
+		#expect(efficiency.daysSalesOutstanding != nil)
+		#expect(efficiency.daysInventoryOutstanding != nil)
+		#expect(efficiency.daysPayableOutstanding != nil)
+		#expect(efficiency.cashConversionCycle != nil)
+
+		// Verify values are reasonable
+		#expect(efficiency.inventoryTurnover![q1]! > 0.0)
+		#expect(efficiency.receivablesTurnover![q1]! > 0.0)
+		#expect(efficiency.daysSalesOutstanding![q1]! > 0.0)
+		#expect(efficiency.daysInventoryOutstanding![q1]! > 0.0)
+		#expect(efficiency.daysPayableOutstanding![q1]! > 0.0)
 
 		// Cash Conversion Cycle = DIO + DSO - DPO
-		let expectedCCC = efficiency.daysInventoryOutstanding[q1]! +
-						  efficiency.daysSalesOutstanding[q1]! -
-						  efficiency.daysPayableOutstanding[q1]!
+		let expectedCCC = efficiency.daysInventoryOutstanding![q1]! +
+						  efficiency.daysSalesOutstanding![q1]! -
+						  efficiency.daysPayableOutstanding![q1]!
 
-		#expect(abs(efficiency.cashConversionCycle[q1]! - expectedCCC) < 0.01)
+		#expect(abs(efficiency.cashConversionCycle![q1]! - expectedCCC) < 0.01)
 	}
 
 	@Test("liquidityRatios() returns all liquidity metrics")
@@ -234,20 +244,23 @@ struct RatioConvenienceFunctionsTests {
 	func testSolvencyRatios() throws {
 		let (incomeStatement, balanceSheet) = try createTestFinancialStatements()
 
-		let solvency = try solvencyRatios(
+		let solvency = solvencyRatios(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet
 		)
 
 		let q1 = periods[0]
 
-		// Verify all metrics are present
+		// Leverage ratios are always available
 		#expect(solvency.debtToEquity[q1]! > 0.0)
 		#expect(solvency.debtToAssets[q1]! > 0.0)
 		#expect(solvency.debtToAssets[q1]! < 1.0) // Should be less than 100%
 		#expect(solvency.equityRatio[q1]! > 0.0)
 		#expect(solvency.equityRatio[q1]! < 1.0)
-		#expect(solvency.interestCoverage[q1]! > 1.0) // Should cover interest
+
+		// With our test data, interest coverage should be present
+		#expect(solvency.interestCoverage != nil)
+		#expect(solvency.interestCoverage![q1]! > 1.0) // Should cover interest
 
 		// Debt-to-assets + equity ratio should equal 1.0
 		let sum = solvency.debtToAssets[q1]! + solvency.equityRatio[q1]!
@@ -264,7 +277,7 @@ struct RatioConvenienceFunctionsTests {
 		let principal = TimeSeries(periods: periods, values: [10_000, 10_000])
 		let interest = TimeSeries(periods: periods, values: [25_000, 25_000])
 
-		let solvency = try solvencyRatios(
+		let solvency = solvencyRatios(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet,
 			principalPayments: principal,
@@ -373,5 +386,125 @@ struct RatioConvenienceFunctionsTests {
 		let marginRatio = profitability.grossMargin[q2]! / profitability.grossMargin[q1]!
 		#expect(marginRatio > 0.9)
 		#expect(marginRatio < 1.1)
+	}
+
+	@Test("Service company without inventory/payables/interest handles gracefully")
+	func testServiceCompanyWithoutOptionalAccounts() throws {
+		// Create a service company with no inventory, payables, or interest expense
+
+		// Revenue
+		let revenue = try Account(
+			entity: entity,
+			name: "Service Revenue",
+			type: .revenue,
+			timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000])
+		)
+
+		// Operating expenses (no COGS for service company)
+		let opex = try Account(
+			entity: entity,
+			name: "Operating Expenses",
+			type: .expense,
+			timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
+			expenseType: .operatingExpense
+		)
+
+		// Tax
+		let tax = try Account(
+			entity: entity,
+			name: "Income Tax",
+			type: .expense,
+			timeSeries: TimeSeries(periods: periods, values: [42_000, 46_200]),
+			expenseType: .taxExpense
+		)
+
+		// Create income statement (no COGS, no interest expense)
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: periods,
+			revenueAccounts: [revenue],
+			expenseAccounts: [opex, tax]
+		)
+
+		// Assets (no inventory)
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000]),
+			assetType: .cashAndEquivalents
+		)
+
+		// No receivables for cash-only business
+		let ppe = try Account(
+			entity: entity,
+			name: "Equipment",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [100_000, 95_000]),
+			assetType: .propertyPlantEquipment
+		)
+
+		// Liabilities (no payables, no debt)
+		let currentLiab = try Account(
+			entity: entity,
+			name: "Accrued Expenses",
+			type: .liability,
+			timeSeries: TimeSeries(periods: periods, values: [50_000, 55_000]),
+			liabilityType: .accruedExpenses
+		)
+
+		// Equity
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [250_000, 260_000]),
+			equityType: .retainedEarnings
+		)
+
+		// Create balance sheet
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, ppe],
+			liabilityAccounts: [currentLiab],
+			equityAccounts: [equity]
+		)
+
+		// Test efficiency ratios
+		let efficiency = efficiencyRatios(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
+
+		let q1 = periods[0]
+
+		// Asset turnover should always be available
+		#expect(efficiency.assetTurnover[q1]! > 0.0)
+
+		// Optional metrics should be nil
+		#expect(efficiency.inventoryTurnover == nil, "No inventory account, should be nil")
+		#expect(efficiency.daysInventoryOutstanding == nil, "No inventory account, should be nil")
+		#expect(efficiency.receivablesTurnover == nil, "No receivables account, should be nil")
+		#expect(efficiency.daysSalesOutstanding == nil, "No receivables account, should be nil")
+		#expect(efficiency.daysPayableOutstanding == nil, "No payables account, should be nil")
+		#expect(efficiency.cashConversionCycle == nil, "Missing components, should be nil")
+
+		// Test solvency ratios
+		let solvency = solvencyRatios(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
+
+		// Leverage ratios should be available
+		// Debt-to-equity will be low since we only have accrued expenses (no long-term debt)
+		#expect(solvency.debtToEquity[q1]! >= 0.0)
+		#expect(solvency.debtToAssets[q1]! >= 0.0)
+		#expect(solvency.debtToAssets[q1]! < 1.0)
+		#expect(solvency.equityRatio[q1]! > 0.0)
+
+		// Interest coverage should be nil (no interest expense)
+		#expect(solvency.interestCoverage == nil, "No interest expense, should be nil")
+		#expect(solvency.debtServiceCoverage == nil, "No payment data, should be nil")
 	}
 }

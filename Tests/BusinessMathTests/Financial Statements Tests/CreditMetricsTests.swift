@@ -621,6 +621,36 @@ struct CreditMetricsTests {
 		#expect(abs(actualZ - expectedZ) < 0.01, "Z-Score calculation should match formula")
 	}
 
+	@Test("Altman Z-Score - single period with scalar values")
+	func testZScoreSinglePeriod() throws {
+		let (_, incomeStatement, balanceSheet, _, _) = try createHealthyCompany()
+		let q1 = Period.quarter(year: 2025, quarter: 1)
+
+		// Use simpler API with scalar values instead of TimeSeries
+		let z = altmanZScore(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet,
+			period: q1,
+			marketPrice: 120.0,
+			sharesOutstanding: 1_000.0
+		)
+
+		// Healthy company should have Z-Score > 2.99 (safe zone)
+		#expect(z > 2.99, "Healthy company should be in safe zone (Z > 2.99)")
+
+		// Verify this matches the multi-period version
+		let marketPrice = TimeSeries(periods: balanceSheet.periods, values: [100.0, 120.0])
+		let sharesOutstanding = TimeSeries(periods: balanceSheet.periods, values: [1_000.0, 1_000.0])
+		let zScores = altmanZScore(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet,
+			marketPrice: marketPrice,
+			sharesOutstanding: sharesOutstanding
+		)
+
+		#expect(abs(z - zScores[q1]!) < 0.01, "Single-period and multi-period results should match")
+	}
+
 	// MARK: - Piotroski F-Score Tests
 
 	@Test("Piotroski F-Score - strong company scores high")

@@ -178,15 +178,14 @@ public struct PiotroskiScore {
 /// ## Example
 ///
 /// ```swift
-/// let zScore = altmanZScore(
+/// // For a single period
+/// let z = altmanZScore(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
-///     marketPrice: marketPrice,
-///     sharesOutstanding: sharesOutstanding
+///     period: Period.quarter(year: 2025, quarter: 1),
+///     marketPrice: 50.0,
+///     sharesOutstanding: 1_000_000
 /// )
-///
-/// let currentPeriod = Period.quarter(year: 2025, quarter: 1)
-/// let z = zScore[currentPeriod]!
 ///
 /// switch z {
 /// case ..<1.81:
@@ -196,7 +195,65 @@ public struct PiotroskiScore {
 /// default:
 ///     print("✓ Safe Zone (Z = \(z)): Low bankruptcy risk")
 /// }
+///
+/// // For multiple periods
+/// let zScores = altmanZScore(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     marketPrice: marketPriceSeries,
+///     sharesOutstanding: sharesOutstandingSeries
+/// )
+/// let z = zScores[period]!
 /// ```
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing EBIT and sales
+///   - balanceSheet: Balance sheet with working capital, retained earnings, assets, liabilities
+///   - period: Period to calculate Z-Score for
+///   - marketPrice: Stock price per share for the period
+///   - sharesOutstanding: Number of shares outstanding for the period
+/// - Returns: Z-Score for the specified period
+public func altmanZScore<T: Real>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>,
+	period: Period,
+	marketPrice: T,
+	sharesOutstanding: T
+) -> T {
+	// Component A: Working Capital / Total Assets
+	let workingCapital = (balanceSheet.currentAssets - balanceSheet.currentLiabilities)[period]!
+	let totalAssets = balanceSheet.totalAssets[period]!
+	let a = workingCapital / totalAssets
+
+	// Component B: Retained Earnings / Total Assets
+	let retainedEarnings = balanceSheet.retainedEarnings[period]!
+	let b = retainedEarnings / totalAssets
+
+	// Component C: EBIT / Total Assets
+	let ebit = incomeStatement.operatingIncome[period]!
+	let c = ebit / totalAssets
+
+	// Component D: Market Value of Equity / Total Liabilities
+	let marketValue = marketPrice * sharesOutstanding
+	let totalLiabilities = balanceSheet.totalLiabilities[period]!
+	let d = marketValue / totalLiabilities
+
+	// Component E: Sales / Total Assets
+	let sales = incomeStatement.totalRevenue[period]!
+	let e = sales / totalAssets
+
+	// Z-Score = 1.2×A + 1.4×B + 3.3×C + 0.6×D + 1.0×E
+	let coeffA = T(12) / T(10)  // 1.2
+	let coeffB = T(14) / T(10)  // 1.4
+	let coeffC = T(33) / T(10)  // 3.3
+	let coeffD = T(6) / T(10)   // 0.6
+
+	return coeffA * a + coeffB * b + coeffC * c + coeffD * d + e
+}
+
+/// Altman Z-Score for multiple periods - bankruptcy prediction model for manufacturing companies.
+///
+/// Calculates Z-Scores across all periods in the financial statements.
 ///
 /// - Parameters:
 ///   - incomeStatement: Income statement containing EBIT and sales

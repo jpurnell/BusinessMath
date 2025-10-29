@@ -79,16 +79,14 @@ let goodHistogram = results.histogram(bins: 20)
 // Too many bins (100) - too granular, hard to see pattern
 let fineHistogram = results.histogram(bins: 100)
 
-// Rule of thumb: sqrt(n) or between 10-30 bins for most datasets
-let n = results.values.count
-let suggestedBins = Int(sqrt(Double(n)))
-let autoHistogram = results.histogram(bins: suggestedBins)
+// We have implemented Seaborn's automatic binning method, which selects the maximum bin count between Sturges' and Freedman-Diaconis rules. This often provides a better starting point for exploration by ensuring sufficient detail in the visualization.
 ```
 
 #### Using Histograms for Analysis
 
 ```swift
 // Example: Analyzing project completion time
+let projectDurations = (0..<500).map({_ in distributionNormal(mean: 200, stdDev: 14)})
 let completionDays = SimulationResults(values: projectDurations)
 let hist = completionDays.histogram(bins: 20)
 

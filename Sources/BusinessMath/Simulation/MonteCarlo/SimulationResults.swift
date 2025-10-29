@@ -165,14 +165,22 @@ public struct SimulationResults: Sendable {
 	/// Divides the range of values into equal-width bins and counts how many values fall into each bin.
 	/// Useful for creating charts and understanding the distribution shape.
 	///
-	/// - Parameter bins: The number of bins to create (must be > 0)
+	/// When `bins` is not specified, automatically calculates the optimal number of bins using
+	/// the maximum of Sturges' Rule and the Freedman-Diaconis rule (matching Matplotlib/Seaborn behavior).
+	///
+	/// - Parameter bins: The number of bins to create (must be > 0). If nil, automatically calculates optimal bin count.
 	/// - Returns: An array of tuples containing the range and count for each bin
 	///
 	/// ## Example
 	///
 	/// ```swift
 	/// let results = SimulationResults(values: simulationOutputs)
-	/// let histogram = results.histogram(bins: 20)
+	///
+	/// // Automatic bin calculation (recommended)
+	/// let histogram = results.histogram()
+	///
+	/// // Or specify exact number of bins
+	/// let histogram20 = results.histogram(bins: 20)
 	///
 	/// for (index, bin) in histogram.enumerated() {
 	///     print("Bin \(index): [\(bin.range.lowerBound), \(bin.range.upperBound)): \(bin.count) values")
@@ -189,9 +197,17 @@ public struct SimulationResults: Sendable {
 	/// // [   90.00 -    95.00):  ████████████ 456 (  4.6%)
 	/// // ...
 	/// ```
-	public func histogram(bins: Int) -> [(range: Range<Double>, count: Int)] {
-		guard bins > 0 else { return [] }
+	public func histogram(bins: Int? = nil) -> [(range: Range<Double>, count: Int)] {
 		guard !values.isEmpty else { return [] }
+
+		// Calculate optimal bin count if not specified
+		let binCount: Int
+		if let bins = bins {
+			guard bins > 0 else { return [] }
+			binCount = bins
+		} else {
+			binCount = calculateOptimalBins()
+		}
 
 		let minValue = statistics.min
 		let maxValue = statistics.max
@@ -203,14 +219,14 @@ public struct SimulationResults: Sendable {
 
 		// Calculate bin width
 		let range = maxValue - minValue
-		let binWidth = range / Double(bins)
+		let binWidth = range / Double(binCount)
 
 		// Create bins
 		var histogram: [(range: Range<Double>, count: Int)] = []
 
-		for i in 0..<bins {
+		for i in 0..<binCount {
 			let lowerBound = minValue + Double(i) * binWidth
-			let upperBound = (i == bins - 1) ? maxValue + 0.0001 : minValue + Double(i + 1) * binWidth
+			let upperBound = (i == binCount - 1) ? maxValue + 0.0001 : minValue + Double(i + 1) * binWidth
 
 			let binRange = lowerBound..<upperBound
 
@@ -221,6 +237,53 @@ public struct SimulationResults: Sendable {
 		}
 
 		return histogram
+	}
+
+	/// Calculates the optimal number of bins for histogram generation.
+	///
+	/// Uses the maximum of two methods (matching Matplotlib/Seaborn behavior):
+	/// - **Sturges' Rule**: `ceil(log2(n) + 1)` - Works well for normally distributed data
+	/// - **Freedman-Diaconis Rule**: `2 × IQR / n^(1/3)` - Robust to outliers
+	///
+	/// The maximum is taken to ensure adequate resolution for visualizing the distribution.
+	///
+	/// - Returns: The optimal number of bins (minimum of 1, maximum of 1000)
+	///
+	/// ## Algorithm Details
+	///
+	/// **Sturges' Rule**:
+	/// - Based on information theory
+	/// - Assumes roughly normal distribution
+	/// - Formula: `ceil(log2(n) + 1)`
+	///
+	/// **Freedman-Diaconis Rule**:
+	/// - Uses interquartile range (IQR = Q3 - Q1)
+	/// - More robust to outliers than Sturges
+	/// - Formula: bin_width = `2 × IQR / n^(1/3)`, bins = `ceil(range / bin_width)`
+	private func calculateOptimalBins() -> Int {
+		let n = Double(values.count)
+
+		// Sturges' Rule: ceil(log2(n) + 1)
+		let sturgesBins = Int(ceil(log2(n) + 1.0))
+
+		// Freedman-Diaconis Rule: 2 × IQR / n^(1/3)
+		let iqr = percentiles.interquartileRange
+		let binWidth = 2.0 * iqr / pow(n, 1.0 / 3.0)
+
+		let fdBins: Int
+		if binWidth > 0 {
+			let range = statistics.max - statistics.min
+			fdBins = Int(ceil(range / binWidth))
+		} else {
+			// If IQR is 0 (all values in middle 50% are the same), fall back to Sturges
+			fdBins = sturgesBins
+		}
+
+		// Use maximum of the two methods (like Matplotlib/Seaborn)
+		let optimalBins = max(sturgesBins, fdBins)
+
+		// Clamp between reasonable bounds
+		return max(1, min(optimalBins, 1000))
 	}
 
 	// MARK: - Confidence Intervals
