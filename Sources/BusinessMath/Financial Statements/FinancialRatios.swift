@@ -888,48 +888,58 @@ public func profitabilityRatios<T: Real>(
 ///
 /// Contains all key efficiency metrics including turnover ratios and cash conversion cycle.
 ///
+/// ## Optional Properties
+///
+/// Some properties may be nil if the required accounts are not present:
+/// - `inventoryTurnover`, `daysInventoryOutstanding`: Require inventory account (not all companies track inventory)
+/// - `receivablesTurnover`, `daysSalesOutstanding`: Require accounts receivable (not all companies have credit sales)
+/// - `daysPayableOutstanding`: Requires accounts payable (not all companies track payables)
+/// - `cashConversionCycle`: Requires all three working capital metrics above
+///
 /// ## Example
 ///
 /// ```swift
-/// let efficiency = try efficiencyRatios(
+/// let efficiency = efficiencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
 /// print("Asset Turnover: \(efficiency.assetTurnover[q1]!)x")
-/// print("Cash Conversion Cycle: \(efficiency.cashConversionCycle[q1]!) days")
+/// if let ccc = efficiency.cashConversionCycle {
+///     print("Cash Conversion Cycle: \(ccc[q1]!) days")
+/// }
 /// ```
 public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
-	/// Revenue / Average Assets
+	/// Revenue / Average Assets (always available)
 	public let assetTurnover: TimeSeries<T>
 
-	/// COGS / Average Inventory
-	public let inventoryTurnover: TimeSeries<T>
+	/// COGS / Average Inventory (nil if no inventory account)
+	public let inventoryTurnover: TimeSeries<T>?
 
-	/// Revenue / Average Receivables
-	public let receivablesTurnover: TimeSeries<T>
+	/// Revenue / Average Receivables (nil if no receivables account)
+	public let receivablesTurnover: TimeSeries<T>?
 
-	/// Average days to collect receivables
-	public let daysSalesOutstanding: TimeSeries<T>
+	/// Average days to collect receivables (nil if no receivables account)
+	public let daysSalesOutstanding: TimeSeries<T>?
 
-	/// Average days inventory is held
-	public let daysInventoryOutstanding: TimeSeries<T>
+	/// Average days inventory is held (nil if no inventory account)
+	public let daysInventoryOutstanding: TimeSeries<T>?
 
-	/// Average days to pay suppliers
-	public let daysPayableOutstanding: TimeSeries<T>
+	/// Average days to pay suppliers (nil if no payables account)
+	public let daysPayableOutstanding: TimeSeries<T>?
 
-	/// Cash conversion cycle (DIO + DSO - DPO)
-	public let cashConversionCycle: TimeSeries<T>
+	/// Cash conversion cycle: DIO + DSO - DPO (nil if any component missing)
+	public let cashConversionCycle: TimeSeries<T>?
 
 	public init(
 		assetTurnover: TimeSeries<T>,
-		inventoryTurnover: TimeSeries<T>,
-		receivablesTurnover: TimeSeries<T>,
-		daysSalesOutstanding: TimeSeries<T>,
-		daysInventoryOutstanding: TimeSeries<T>,
-		daysPayableOutstanding: TimeSeries<T>,
-		cashConversionCycle: TimeSeries<T>
+		inventoryTurnover: TimeSeries<T>?,
+		receivablesTurnover: TimeSeries<T>?,
+		daysSalesOutstanding: TimeSeries<T>?,
+		daysInventoryOutstanding: TimeSeries<T>?,
+		daysPayableOutstanding: TimeSeries<T>?,
+		cashConversionCycle: TimeSeries<T>?
 	) {
 		self.assetTurnover = assetTurnover
 		self.inventoryTurnover = inventoryTurnover
@@ -944,38 +954,58 @@ public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// Calculate all efficiency ratios at once.
 ///
 /// Convenience function that computes all key efficiency metrics and returns them
-/// in a single structure. Includes cash conversion cycle calculation.
+/// in a single structure. Gracefully handles missing accounts by returning nil for
+/// ratios that cannot be calculated.
+///
+/// ## Optional Ratios
+///
+/// Ratios are nil if required accounts are missing:
+/// - Inventory-related metrics require inventory account
+/// - Receivables-related metrics require accounts receivable
+/// - Payables-related metrics require accounts payable
+/// - Cash conversion cycle requires all three working capital components
 ///
 /// ## Example
 ///
 /// ```swift
-/// let efficiency = try efficiencyRatios(
+/// let efficiency = efficiencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
+/// // Asset turnover is always available
 /// print("Asset Turnover: \(efficiency.assetTurnover[q1]!)x")
-/// print("CCC: \(efficiency.cashConversionCycle[q1]!) days")
+///
+/// // Check for optional metrics
+/// if let ccc = efficiency.cashConversionCycle {
+///     print("CCC: \(ccc[q1]!) days")
+/// } else {
+///     print("CCC not available (missing working capital accounts)")
+/// }
 /// ```
 ///
 /// - Parameters:
-///   - incomeStatement: Income statement containing revenue and COGS
-///   - balanceSheet: Balance sheet containing assets and working capital accounts
-/// - Returns: Structure containing all efficiency ratios
-/// - Throws: ``FinancialRatioError`` if required accounts not found
+///   - incomeStatement: Income statement containing revenue and optionally COGS
+///   - balanceSheet: Balance sheet containing assets and optionally working capital accounts
+/// - Returns: Structure containing all efficiency ratios (some may be nil)
 public func efficiencyRatios<T: Real>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
-) throws -> EfficiencyRatios<T> {
+) -> EfficiencyRatios<T> {
 	let assetTurnoverRatio = assetTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let inventoryTurnoverRatio = try inventoryTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let receivablesTurnoverRatio = try receivablesTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let dso = try daysSalesOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let dio = try daysInventoryOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let dpo = try daysPayableOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let inventoryTurnoverRatio = try? inventoryTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let receivablesTurnoverRatio = try? receivablesTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let dso = try? daysSalesOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let dio = try? daysInventoryOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let dpo = try? daysPayableOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 
-	// Cash Conversion Cycle = DIO + DSO - DPO
-	let ccc = dio + dso - dpo
+	// Cash Conversion Cycle = DIO + DSO - DPO (only if all three available)
+	let ccc: TimeSeries<T>?
+	if let dio = dio, let dso = dso, let dpo = dpo {
+		ccc = dio + dso - dpo
+	} else {
+		ccc = nil
+	}
 
 	return EfficiencyRatios(
 		assetTurnover: assetTurnoverRatio,
@@ -1058,39 +1088,47 @@ public func liquidityRatios<T: Real>(
 ///
 /// Contains all key solvency metrics for assessing long-term financial health and leverage.
 ///
+/// ## Optional Properties
+///
+/// Some properties may be nil if the required accounts are not present:
+/// - `interestCoverage`: Requires interest expense (not all companies have debt)
+/// - `debtServiceCoverage`: Optional, requires principal and interest payment data
+///
 /// ## Example
 ///
 /// ```swift
-/// let solvency = try solvencyRatios(
+/// let solvency = solvencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
 /// print("Debt-to-Equity: \(solvency.debtToEquity[q1]!)")
-/// print("Interest Coverage: \(solvency.interestCoverage[q1]!)x")
+/// if let coverage = solvency.interestCoverage {
+///     print("Interest Coverage: \(coverage[q1]!)x")
+/// }
 /// ```
 public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
-	/// Total Liabilities / Total Equity
+	/// Total Liabilities / Total Equity (always available)
 	public let debtToEquity: TimeSeries<T>
 
-	/// Total Liabilities / Total Assets
+	/// Total Liabilities / Total Assets (always available)
 	public let debtToAssets: TimeSeries<T>
 
-	/// Total Equity / Total Assets
+	/// Total Equity / Total Assets (always available)
 	public let equityRatio: TimeSeries<T>
 
-	/// Operating Income / Interest Expense
-	public let interestCoverage: TimeSeries<T>
+	/// Operating Income / Interest Expense (nil if no interest expense)
+	public let interestCoverage: TimeSeries<T>?
 
-	/// Operating Income / (Principal + Interest)
+	/// Operating Income / (Principal + Interest) (nil if payment data not provided)
 	public let debtServiceCoverage: TimeSeries<T>?
 
 	public init(
 		debtToEquity: TimeSeries<T>,
 		debtToAssets: TimeSeries<T>,
 		equityRatio: TimeSeries<T>,
-		interestCoverage: TimeSeries<T>,
+		interestCoverage: TimeSeries<T>? = nil,
 		debtServiceCoverage: TimeSeries<T>? = nil
 	) {
 		self.debtToEquity = debtToEquity
@@ -1104,35 +1142,47 @@ public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// Calculate all solvency ratios at once.
 ///
 /// Convenience function that computes all key solvency metrics and returns them
-/// in a single structure. Debt service coverage is optional and requires
-/// principal and interest payment data.
+/// in a single structure. Gracefully handles missing accounts by returning nil for
+/// ratios that cannot be calculated.
+///
+/// ## Optional Ratios
+///
+/// Ratios are nil if required accounts are missing:
+/// - `interestCoverage`: Requires interest expense account (not all companies have debt)
+/// - `debtServiceCoverage`: Requires principal and interest payment data (optional parameter)
 ///
 /// ## Example
 ///
 /// ```swift
-/// let solvency = try solvencyRatios(
+/// let solvency = solvencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
+/// // Leverage ratios are always available
 /// print("Debt-to-Equity: \(solvency.debtToEquity[q1]!)")
-/// print("Interest Coverage: \(solvency.interestCoverage[q1]!)x")
+///
+/// // Interest coverage may be nil for debt-free companies
+/// if let coverage = solvency.interestCoverage {
+///     print("Interest Coverage: \(coverage[q1]!)x")
+/// } else {
+///     print("No interest expense (debt-free company)")
+/// }
 /// ```
 ///
 /// - Parameters:
-///   - incomeStatement: Income statement containing operating income and interest
+///   - incomeStatement: Income statement containing operating income and optionally interest
 ///   - balanceSheet: Balance sheet containing assets, liabilities, and equity
 ///   - principalPayments: Optional time series of principal payments
 ///   - interestPayments: Optional time series of interest payments
-/// - Returns: Structure containing all solvency ratios
-/// - Throws: ``FinancialRatioError`` if required accounts not found
+/// - Returns: Structure containing all solvency ratios (some may be nil)
 public func solvencyRatios<T: Real>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
 	principalPayments: TimeSeries<T>? = nil,
 	interestPayments: TimeSeries<T>? = nil
-) throws -> SolvencyRatios<T> {
-	let interestCoverageRatio = try interestCoverage(incomeStatement: incomeStatement)
+) -> SolvencyRatios<T> {
+	let interestCoverageRatio = try? interestCoverage(incomeStatement: incomeStatement)
 
 	// Calculate debt service coverage if payment data provided
 	let dscr: TimeSeries<T>?

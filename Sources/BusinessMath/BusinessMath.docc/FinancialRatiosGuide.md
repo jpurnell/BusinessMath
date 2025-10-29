@@ -270,9 +270,11 @@ Assess bankruptcy risk and financial strength:
 ```swift
 // Altman Z-Score (bankruptcy prediction)
 let altmanZ = altmanZScore(
-    incomeStatement: incomeStatement,
-    balanceSheet: balanceSheet
-)
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     marketPrice: marketPrice,
+///     sharesOutstanding: sharesOutstanding
+/// )
 
 print("\n=== Altman Z-Score ===")
 print("Z-Score: \(altmanZ[q1]!)")
@@ -294,9 +296,9 @@ let piotroski = piotroskiFScore(
 )
 
 print("\n=== Piotroski F-Score ===")
-print("F-Score: \(Int(piotroski[q1]!)) / 9")
+print("F-Score: \(Int(piotroski.totalScore)) / 9")
 
-let fScore = Int(piotroski[q1]!)
+let fScore = Int(piotroski.totalScore)
 if fScore >= 7 {
     print("✓ Strong fundamentals")
 } else if fScore >= 4 {
@@ -394,13 +396,13 @@ Monitor how ratios change:
 ```swift
 // Analyze trends across quarters
 print("\n=== Profitability Trends ===")
-print("Period        ROE     ROA    Net Margin")
+print("Period       ROE      ROA    Net Margin")
 for period in periods {
     let roe = profitability.roe[period]!
     let roa = profitability.roa[period]!
     let margin = profitability.netMargin[period]!
 
-    print(String(format: "%-12s  %5.1f%%  %5.1f%%  %5.1f%%",
+    print(String(format: "%-12@     %5.1f%%  %5.1f%%  %5.1f%%",
         String(describing: period),
         roe * 100,
         roa * 100,
