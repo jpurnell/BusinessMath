@@ -5,7 +5,77 @@ All notable changes to BusinessMath will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.11.0] - 2025-10-29
+---
+
+## BusinessMath MCP Server
+
+### [1.12.0] - 2024-10-29
+
+#### 🎉 Major Release: Official MCP SDK Migration + Full Protocol Support
+
+This release represents a complete transformation of the BusinessMath MCP Server, migrating from a custom MCP implementation to the official SDK and adding comprehensive protocol support.
+
+#### Added
+
+**MCP Protocol Support:**
+- ✨ **Resources (10 total)** - Comprehensive documentation, examples, and reference data
+  - 4 documentation resources (TVM, statistics, Monte Carlo, forecasting)
+  - 3 real-world examples (investment analysis, loan comparison, risk modeling)
+  - 3 reference datasets (financial glossary JSON, interest rates, distribution guide)
+- ✨ **Prompts (6 total)** - Guided analysis workflow templates
+  - Investment analysis, financing comparison, risk assessment
+  - Revenue forecasting, portfolio analysis, debt analysis
+- ✨ **Logging Support** - Built-in logging with stderr output
+- ✨ **HTTP Transport (Experimental)** - Server-side deployment infrastructure
+  - Command-line: `--http <port>`
+  - Endpoints: GET /health, GET /mcp, POST /mcp
+  - Note: Full SSE support planned for future releases
+
+**New Tool Categories:**
+- ✨ **Statistical Analysis (7 tools)** - Correlation, regression, confidence intervals, z-scores
+- ✨ **Monte Carlo Simulation (7 tools)** - Risk modeling, distributions, VaR, sensitivity analysis
+
+**Total: 43 tools across 6 categories**
+
+#### Changed
+
+- 🔧 **Migrated to Official MCP SDK** (`modelcontextprotocol/swift-sdk` v0.10.2)
+  - Replaced custom implementation with official, maintained SDK
+  - Spec-compliant and future-proof
+  - Created compatibility layer for seamless migration
+- 🔧 **Platform Requirement**: macOS 13.0+ (updated from 11.0)
+- 🔧 **All tools refactored** to use official SDK types
+- 🔧 **Enhanced server metadata** with comprehensive instructions
+
+#### Technical Details
+
+**Architecture:**
+- Custom MCPSwift removed, official SDK integrated
+- Compatibility layer enables zero-change tool migration
+- Type-safe, Sendable, async/await throughout
+- Executable: 7.9MB (debug), includes all features
+
+**New Files:**
+- `Resources.swift` (870 lines) - 10 resources
+- `Prompts.swift` (520 lines) - 6 guided workflows
+- `HTTPServerTransport.swift` (320 lines) - Custom HTTP server
+- `ValueExtensions.swift`, `ToolDefinition.swift`, `MCPCompat.swift`
+- `HTTP_MODE_README.md` - HTTP documentation
+
+**Usage:**
+```bash
+# Production (stdio mode)
+./businessmath-mcp-server
+
+# Experimental (HTTP mode)
+./businessmath-mcp-server --http 8080
+```
+
+---
+
+## BusinessMath Library
+
+### [1.11.0] - 2025-10-29
 
 ### Added
 
