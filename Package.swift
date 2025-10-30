@@ -52,7 +52,8 @@ let package = Package(
             name: "BusinessMathMCPServer",
             dependencies: ["BusinessMathMCP"],
             swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency")
+                .enableUpcomingFeature("StrictConcurrency"),
+				.unsafeFlags(["-parse-as-library"])
             ]
         ),
         .testTarget(
