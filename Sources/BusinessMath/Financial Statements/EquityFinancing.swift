@@ -174,7 +174,7 @@ public struct CapTable {
         var common: [Shareholder] = []
 
         for shareholder in shareholders {
-            if let liquidationPref = shareholder.liquidationPreference,
+            if let _ = shareholder.liquidationPreference,
                let isParticipating = shareholder.participating {
                 if isParticipating {
                     participating.append(shareholder)
