@@ -3,28 +3,26 @@ import BusinessMathMCP
 import MCP
 import Logging
 
-// MARK: - Server Configuration
-
-/// Determine transport mode from command line arguments
-enum TransportMode {
-    case stdio
-    case http(port: Int)
-
-    static func parse() -> TransportMode {
-        let args = CommandLine.arguments
-        if let httpIndex = args.firstIndex(of: "--http"),
-           httpIndex + 1 < args.count,
-           let port = Int(args[httpIndex + 1]) {
-            return .http(port: port)
-        }
-        return .stdio
-    }
-}
-
 // MARK: - Main Entry Point
 
 @main
 struct BusinessMathMCPServerMain {
+    /// Determine transport mode from command line arguments
+    enum TransportMode {
+        case stdio
+        case http(port: Int)
+
+        static func parse() -> TransportMode {
+            let args = CommandLine.arguments
+            if let httpIndex = args.firstIndex(of: "--http"),
+               httpIndex + 1 < args.count,
+               let port = Int(args[httpIndex + 1]) {
+                return .http(port: port)
+            }
+            return .stdio
+        }
+    }
+
     static func main() async {
         do {
             // Create providers
@@ -33,7 +31,7 @@ struct BusinessMathMCPServerMain {
             let promptProvider = PromptProvider()
 
             // Register all tool handlers
-            print("Registering tools...", to: &standardError)
+            fputs("Registering tools...\n", stderr)
 
             // TVM Tools (9 tools)
             for handler in getTVMTools() {
@@ -65,7 +63,7 @@ struct BusinessMathMCPServerMain {
                 try await toolRegistry.register(handler.toToolDefinition())
             }
 
-            print("✓ Registered 43 tools", to: &standardError)
+            fputs("✓ Registered 43 tools\n", stderr)
 
             // Create and configure the MCP server using official SDK
             let server = Server(
@@ -142,26 +140,26 @@ struct BusinessMathMCPServerMain {
 
             switch transportMode {
             case .stdio:
-                print("✓ Starting server with stdio transport", to: &standardError)
+                fputs("✓ Starting server with stdio transport\n", stderr)
                 try await server.start(transport: StdioTransport())
 
             case .http(let port):
-                print("✓ Starting server with HTTP transport on port \(port)", to: &standardError)
-                print("  Server will be available at http://localhost:\(port)", to: &standardError)
-                print("  Endpoints:", to: &standardError)
-                print("    - POST /mcp     : JSON-RPC requests", to: &standardError)
-                print("    - GET /mcp      : Server info", to: &standardError)
-                print("    - GET /health   : Health check", to: &standardError)
-                print("", to: &standardError)
-                print("  Note: HTTP transport is experimental.", to: &standardError)
-                print("  Full bidirectional SSE support is planned for future releases.", to: &standardError)
-                print("", to: &standardError)
+                fputs("✓ Starting server with HTTP transport on port \(port)\n", stderr)
+                fputs("  Server will be available at http://localhost:\(port)\n", stderr)
+                fputs("  Endpoints:\n", stderr)
+                fputs("    - POST /mcp     : JSON-RPC requests\n", stderr)
+                fputs("    - GET /mcp      : Server info\n", stderr)
+                fputs("    - GET /health   : Health check\n", stderr)
+                fputs("\n", stderr)
+                fputs("  Note: HTTP transport is experimental.\n", stderr)
+                fputs("  Full bidirectional SSE support is planned for future releases.\n", stderr)
+                fputs("\n", stderr)
 
                 let httpTransport = HTTPServerTransport(port: UInt16(port))
                 try await server.start(transport: httpTransport)
             }
 
-            print("✓ Server started successfully", to: &standardError)
+            fputs("✓ Server started successfully\n", stderr)
 
             // Wait for completion
             await server.waitUntilCompleted()
@@ -173,19 +171,6 @@ struct BusinessMathMCPServerMain {
                 fputs("Reason: \(failureReason)\n", stderr)
             }
             exit(1)
-        }
-    }
-}
-
-// MARK: - Helper Extensions
-
-/// FileHandle extension to write to stderr
-nonisolated(unsafe) var standardError = FileHandle.standardError
-
-extension FileHandle: @retroactive TextOutputStream {
-    public func write(_ string: String) {
-        if let data = string.data(using: .utf8) {
-            try? self.write(contentsOf: data)
         }
     }
 }
