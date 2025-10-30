@@ -71,6 +71,11 @@ This release represents a complete transformation of the BusinessMath MCP Server
 ./businessmath-mcp-server --http 8080
 ```
 
+#### Fixed
+- **Async Main Entry Point** - Wrapped main code in `@main struct` with `async static func main()` for proper Swift 6 async/await support
+- **Strict Concurrency** - Fixed global `standardError` variable with `nonisolated(unsafe)` for Swift 6 compliance
+- Server now starts successfully without segmentation faults
+
 ---
 
 ## BusinessMath Library
