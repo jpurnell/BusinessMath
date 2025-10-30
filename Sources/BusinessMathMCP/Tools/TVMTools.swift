@@ -440,7 +440,33 @@ public struct AnnuityFutureValueTool: MCPToolHandler, Sendable {
 public struct XNPVTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "calculate_xnpv",
-        description: "Calculate Net Present Value for irregular cash flows with specific dates",
+        description: """
+        Calculate Net Present Value for irregular cash flows with specific dates.
+
+        Use this when cash flows occur at irregular intervals (not annually).
+        For regular annual cash flows, use calculate_npv instead.
+
+        REQUIRED STRUCTURE:
+        {
+          "rate": 0.10,
+          "cashFlows": [
+            {"date": "2024-01-15T00:00:00Z", "amount": -100000},
+            {"date": "2024-06-15T00:00:00Z", "amount": 30000},
+            {"date": "2025-01-15T00:00:00Z", "amount": 40000}
+          ]
+        }
+
+        Example: Investment with irregular quarterly payments
+        {
+          "rate": 0.08,
+          "cashFlows": [
+            {"date": "2024-01-01T00:00:00Z", "amount": -50000},
+            {"date": "2024-04-15T00:00:00Z", "amount": 15000},
+            {"date": "2024-08-20T00:00:00Z", "amount": 20000},
+            {"date": "2024-12-10T00:00:00Z", "amount": 25000}
+          ]
+        }
+        """,
         inputSchema: MCPToolInputSchema(
             properties: [
                 "rate": MCPSchemaProperty(
@@ -449,7 +475,13 @@ public struct XNPVTool: MCPToolHandler, Sendable {
                 ),
                 "cashFlows": MCPSchemaProperty(
                     type: "array",
-                    description: "Array of objects with 'date' (ISO 8601 string) and 'amount' (number) properties",
+                    description: """
+                    Array of cash flow objects. Each object must have:
+                    • date (string): ISO 8601 format (e.g., "2024-01-15T00:00:00Z")
+                    • amount (number): Cash flow amount (negative for outflows, positive for inflows)
+
+                    Example: [{"date": "2024-01-01T00:00:00Z", "amount": -100000}, {"date": "2024-06-15T00:00:00Z", "amount": 50000}]
+                    """,
                     items: MCPSchemaItems(type: "object")
                 )
             ],
@@ -531,17 +563,51 @@ public struct XNPVTool: MCPToolHandler, Sendable {
 public struct XIRRTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "calculate_xirr",
-        description: "Calculate Internal Rate of Return for irregular cash flows with specific dates",
+        description: """
+        Calculate Internal Rate of Return for irregular cash flows with specific dates.
+
+        Use this when cash flows occur at irregular intervals (not annually).
+        For regular annual cash flows, use calculate_irr instead.
+
+        REQUIRED STRUCTURE:
+        {
+          "cashFlows": [
+            {"date": "2024-01-01T00:00:00Z", "amount": -100000},
+            {"date": "2024-06-15T00:00:00Z", "amount": 30000},
+            {"date": "2024-12-20T00:00:00Z", "amount": 80000}
+          ]
+        }
+
+        Example: Real estate investment with irregular cash flows
+        {
+          "cashFlows": [
+            {"date": "2024-01-01T00:00:00Z", "amount": -250000},
+            {"date": "2024-03-15T00:00:00Z", "amount": 5000},
+            {"date": "2024-09-01T00:00:00Z", "amount": 8000},
+            {"date": "2025-06-30T00:00:00Z", "amount": 300000}
+          ],
+          "guess": 0.1
+        }
+
+        Returns annualized rate of return accounting for exact timing of cash flows.
+        """,
         inputSchema: MCPToolInputSchema(
             properties: [
                 "cashFlows": MCPSchemaProperty(
                     type: "array",
-                    description: "Array of objects with 'date' (ISO 8601 string) and 'amount' (number) properties",
+                    description: """
+                    Array of cash flow objects with exact dates. Each object must have:
+                    • date (string): ISO 8601 format (e.g., "2024-01-15T00:00:00Z")
+                    • amount (number): Cash flow amount (first should be negative investment)
+
+                    Must include at least one negative and one positive cash flow.
+                    Example: [{"date": "2024-01-01T00:00:00Z", "amount": -100000}, {"date": "2024-12-31T00:00:00Z", "amount": 110000}]
+                    """,
                     items: MCPSchemaItems(type: "object")
                 ),
                 "guess": MCPSchemaProperty(
                     type: "number",
-                    description: "Initial guess for XIRR (default: 0.1 for 10%)"
+                    description: "Initial guess for XIRR (default: 0.1 for 10%). Only needed if calculation fails to converge."
                 )
             ],
             required: ["cashFlows"]
