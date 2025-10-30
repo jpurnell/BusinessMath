@@ -297,6 +297,91 @@ Monte Carlo simulation uses random sampling to model uncertainty and risk in qua
 3. Run thousands of iterations
 4. Analyze results (statistics, percentiles, VaR)
 
+## Complete Examples
+
+### Example 1: Simple Revenue Simulation
+Model revenue with $1M mean and $200K standard deviation:
+
+```json
+{
+  "inputs": [
+    {
+      "name": "Revenue",
+      "distribution": "normal",
+      "parameters": {"mean": 1000000, "stdDev": 200000}
+    }
+  ],
+  "calculation": "{0}",
+  "iterations": 10000
+}
+```
+
+### Example 2: Profit Simulation (Revenue - Costs)
+Model profit as the difference between uncertain revenue and costs:
+
+```json
+{
+  "inputs": [
+    {
+      "name": "Revenue",
+      "distribution": "normal",
+      "parameters": {"mean": 1000000, "stdDev": 200000}
+    },
+    {
+      "name": "Costs",
+      "distribution": "normal",
+      "parameters": {"mean": 600000, "stdDev": 100000}
+    }
+  ],
+  "calculation": "{0} - {1}",
+  "iterations": 10000
+}
+```
+
+### Example 3: Profit Margin Simulation
+Calculate profit margin percentage: (Revenue - Costs) / Revenue * 100
+
+```json
+{
+  "inputs": [
+    {
+      "name": "Revenue",
+      "distribution": "normal",
+      "parameters": {"mean": 1000000, "stdDev": 200000}
+    },
+    {
+      "name": "Costs",
+      "distribution": "uniform",
+      "parameters": {"min": 500000, "max": 700000}
+    }
+  ],
+  "calculation": "({0} - {1}) / {0} * 100",
+  "iterations": 10000
+}
+```
+
+### Example 4: Project Value with Triangular Estimates
+Use triangular distribution for expert estimates (min, most likely, max):
+
+```json
+{
+  "inputs": [
+    {
+      "name": "Project Cost",
+      "distribution": "triangular",
+      "parameters": {"min": 80000, "mode": 100000, "max": 150000}
+    },
+    {
+      "name": "Project Benefit",
+      "distribution": "triangular",
+      "parameters": {"min": 120000, "mode": 180000, "max": 250000}
+    }
+  ],
+  "calculation": "{1} - {0}",
+  "iterations": 10000
+}
+```
+
 ## Risk Metrics
 - **Value at Risk (VaR)**: Maximum loss at given confidence level
 - **Expected Value**: Mean outcome
