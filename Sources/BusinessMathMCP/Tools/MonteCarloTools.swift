@@ -227,42 +227,96 @@ public struct RunMonteCarloTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "run_monte_carlo",
         description: """
-        Run a Monte Carlo simulation to model uncertainty.
+        Run a Monte Carlo simulation to model uncertainty and risk.
 
-        Define uncertain input variables with distributions, then specify a
-        calculation that combines them to produce an outcome.
+        This tool simulates thousands of scenarios by randomly sampling from
+        probability distributions you define for uncertain inputs, then
+        calculates an outcome for each scenario.
 
-        The simulation runs many iterations (typically 1,000-10,000), sampling
-        from input distributions each time, and builds a distribution of outcomes.
+        REQUIRED STRUCTURE:
+        {
+          "inputs": [
+            {
+              "name": "Revenue",
+              "distribution": "normal",
+              "parameters": {"mean": 1000000, "stdDev": 200000}
+            }
+          ],
+          "calculation": "{0}",
+          "iterations": 10000
+        }
 
-        Supported operations in calculations:
-        • Basic: +, -, *, /
-        • Functions: pow(base, exp), sqrt, exp, log
-        • References: inputs by index (e.g., {0}, {1}, {2})
+        COMPLETE EXAMPLES:
 
-        Example: Profit = Revenue - Costs
-          inputs: [{name: "Revenue", dist: "normal", params: {mean: 1000000, stdDev: 100000}},
-                   {name: "Costs", dist: "normal", params: {mean: 700000, stdDev: 50000}}]
-          calculation: "{0} - {1}"
-          iterations: 10000
+        1. Simple Revenue Model:
+        {
+          "inputs": [{
+            "name": "Revenue",
+            "distribution": "normal",
+            "parameters": {"mean": 1000000, "stdDev": 200000}
+          }],
+          "calculation": "{0}",
+          "iterations": 10000
+        }
 
-        Returns comprehensive statistics and percentiles.
+        2. Profit Model (Revenue - Costs):
+        {
+          "inputs": [
+            {
+              "name": "Revenue",
+              "distribution": "normal",
+              "parameters": {"mean": 1000000, "stdDev": 200000}
+            },
+            {
+              "name": "Costs",
+              "distribution": "normal",
+              "parameters": {"mean": 600000, "stdDev": 100000}
+            }
+          ],
+          "calculation": "{0} - {1}",
+          "iterations": 10000
+        }
+
+        Returns comprehensive statistics, percentiles, and risk metrics.
         """,
         inputSchema: MCPToolInputSchema(
             properties: [
                 "inputs": MCPSchemaProperty(
                     type: "array",
                     description: """
-                    Array of input variables, each with:
-                    • name: Variable name
-                    • distribution: Distribution type (normal, uniform, triangular, etc.)
-                    • parameters: Distribution parameters
+                    Array of uncertain input variables. Each object must have:
+                    • name (string): Variable name (e.g., "Revenue", "Costs")
+                    • distribution (string): "normal", "uniform", or "triangular"
+                    • parameters (object): Distribution parameters
+                      - normal: {mean: number, stdDev: number}
+                      - uniform: {min: number, max: number}
+                      - triangular: {min: number, max: number, mode: number}
+
+                    Example:
+                    [
+                      {
+                        "name": "Revenue",
+                        "distribution": "normal",
+                        "parameters": {"mean": 1000000, "stdDev": 200000}
+                      },
+                      {
+                        "name": "Costs",
+                        "distribution": "normal",
+                        "parameters": {"mean": 600000, "stdDev": 100000}
+                      }
+                    ]
                     """,
                     items: MCPSchemaItems(type: "object")
                 ),
                 "calculation": MCPSchemaProperty(
                     type: "string",
-                    description: "Calculation formula using {0}, {1}, etc. to reference inputs"
+                    description: """
+                    Formula combining inputs using {0}, {1}, {2}, etc.
+                    Examples:
+                    • Profit: "{0} - {1}" (Revenue - Costs)
+                    • Margin: "({0} - {1}) / {0}" ((Revenue - Costs) / Revenue)
+                    • Growth: "{0} * (1 + {1})" (Base * (1 + Rate))
+                    """
                 ),
                 "iterations": MCPSchemaProperty(
                     type: "number",
