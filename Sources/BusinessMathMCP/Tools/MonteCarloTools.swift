@@ -774,9 +774,32 @@ public struct SensitivityAnalysisTool: MCPToolHandler, Sendable {
 
         Helps identify which variables have the most impact on results.
 
-        Example: How sensitive is profit to changes in revenue vs. costs?
+        REQUIRED STRUCTURE (Percent Change):
+        {
+          "baseValue": 1000000,
+          "variableRange": {"percentChange": 20},
+          "calculation": "{0} * 0.4",
+          "variableName": "Revenue"
+        }
 
-        Returns sensitivity metrics and a table of input-output relationships.
+        REQUIRED STRUCTURE (Explicit Range):
+        {
+          "baseValue": 1000000,
+          "variableRange": {"min": 800000, "max": 1200000},
+          "calculation": "{0} - 600000",
+          "variableName": "Revenue"
+        }
+
+        Example: Test profit sensitivity to revenue changes (±30%)
+        {
+          "baseValue": 1000000,
+          "variableRange": {"percentChange": 30},
+          "calculation": "{0} - 600000",
+          "variableName": "Revenue",
+          "steps": 15
+        }
+
+        Returns sensitivity metrics and input-output table showing impact.
         """,
         inputSchema: MCPToolInputSchema(
             properties: [
@@ -787,22 +810,26 @@ public struct SensitivityAnalysisTool: MCPToolHandler, Sendable {
                 "variableRange": MCPSchemaProperty(
                     type: "object",
                     description: """
-                    Range to test, either:
-                    • {percentChange: 20} - test ±20% from base
-                    • {min: 80, max: 120} - test explicit range
+                    Range to test the variable. Use ONE of:
+                    • {"percentChange": 20} - test ±20% from base value
+                    • {"min": 80, "max": 120} - test explicit min/max range
+
+                    Examples:
+                    - {"percentChange": 25} tests 75% to 125% of base
+                    - {"min": 500000, "max": 1500000} tests explicit range
                     """
                 ),
                 "calculation": MCPSchemaProperty(
                     type: "string",
-                    description: "Calculation formula using {0} to reference the variable"
+                    description: "Formula using {0} to reference the variable. Example: \"{0} * 1.2 - 50000\""
                 ),
                 "steps": MCPSchemaProperty(
                     type: "number",
-                    description: "Number of steps to test (default: 11)"
+                    description: "Number of test points (default: 11). More steps = smoother analysis."
                 ),
                 "variableName": MCPSchemaProperty(
                     type: "string",
-                    description: "Name of the variable being tested"
+                    description: "Name of the variable being tested (optional, for display)"
                 )
             ],
             required: ["baseValue", "variableRange", "calculation"]
@@ -906,30 +933,55 @@ public struct TornadoAnalysisTool: MCPToolHandler, Sendable {
         Creates a "tornado diagram" (visualized as text) showing which
         variables have the most influence on results.
 
-        Each variable is tested at:
-        • Low value (e.g., -20% from base)
-        • High value (e.g., +20% from base)
+        REQUIRED STRUCTURE:
+        {
+          "variables": [
+            {"name": "Revenue", "baseValue": 1000000, "lowValue": 800000, "highValue": 1200000},
+            {"name": "Costs", "baseValue": 600000, "lowValue": 500000, "highValue": 700000}
+          ],
+          "calculation": "{0} - {1}"
+        }
 
-        Variables are ranked by the range of outcomes they produce.
+        Example: Identify key profit drivers
+        {
+          "variables": [
+            {"name": "Revenue", "baseValue": 1000000, "lowValue": 900000, "highValue": 1100000},
+            {"name": "Operating Costs", "baseValue": 600000, "lowValue": 550000, "highValue": 650000},
+            {"name": "Marketing Costs", "baseValue": 100000, "lowValue": 80000, "highValue": 120000}
+          ],
+          "calculation": "{0} - {1} - {2}"
+        }
 
-        Example: Identify key drivers of project NPV
+        Example: Project NPV sensitivity
+        {
+          "variables": [
+            {"name": "Initial Investment", "baseValue": 500000, "lowValue": 450000, "highValue": 600000},
+            {"name": "Annual Cash Flow", "baseValue": 150000, "lowValue": 120000, "highValue": 180000},
+            {"name": "Discount Rate", "baseValue": 0.1, "lowValue": 0.08, "highValue": 0.12}
+          ],
+          "calculation": "{1} / {2} - {0}"
+        }
+
+        Returns ranked list showing which variables have the greatest impact.
         """,
         inputSchema: MCPToolInputSchema(
             properties: [
                 "variables": MCPSchemaProperty(
                     type: "array",
                     description: """
-                    Array of variables to test, each with:
-                    • name: Variable name
-                    • baseValue: Current/expected value
-                    • lowValue: Pessimistic value
-                    • highValue: Optimistic value
+                    Array of variables to test. Each object must have:
+                    • name (string): Variable name for display
+                    • baseValue (number): Expected/current value
+                    • lowValue (number): Pessimistic scenario value
+                    • highValue (number): Optimistic scenario value
+
+                    Example: [{"name": "Revenue", "baseValue": 1000000, "lowValue": 800000, "highValue": 1200000}]
                     """,
                     items: MCPSchemaItems(type: "object")
                 ),
                 "calculation": MCPSchemaProperty(
                     type: "string",
-                    description: "Calculation formula using {0}, {1}, etc. to reference variables"
+                    description: "Formula using {0}, {1}, {2}, etc. to reference variables in order. Example: \"{0} - {1} - {2}\" for Revenue - Cost1 - Cost2"
                 )
             ],
             required: ["variables", "calculation"]

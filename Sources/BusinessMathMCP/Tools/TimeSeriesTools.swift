@@ -7,25 +7,84 @@ import BusinessMath
 public struct CreateTimeSeriesTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "create_time_series",
-        description: "Create a time series from periods and values",
+        description: """
+        Create a time series from periods and values for analysis.
+
+        Supports annual, quarterly, monthly, and daily time periods.
+        Use for analyzing trends, growth, seasonality, and forecasting.
+
+        REQUIRED STRUCTURE:
+        {
+          "data": [
+            {"period": {"year": 2023, "type": "annual"}, "value": 100000},
+            {"period": {"year": 2024, "type": "annual"}, "value": 120000}
+          ]
+        }
+
+        EXAMPLES:
+
+        1. Annual Revenue:
+        {
+          "data": [
+            {"period": {"year": 2021, "type": "annual"}, "value": 1000000},
+            {"period": {"year": 2022, "type": "annual"}, "value": 1200000},
+            {"period": {"year": 2023, "type": "annual"}, "value": 1450000}
+          ],
+          "name": "Annual Revenue",
+          "unit": "USD"
+        }
+
+        2. Quarterly Sales:
+        {
+          "data": [
+            {"period": {"year": 2024, "month": 1, "type": "quarterly"}, "value": 250000},
+            {"period": {"year": 2024, "month": 4, "type": "quarterly"}, "value": 280000},
+            {"period": {"year": 2024, "month": 7, "type": "quarterly"}, "value": 310000},
+            {"period": {"year": 2024, "month": 10, "type": "quarterly"}, "value": 350000}
+          ],
+          "name": "Q1-Q4 2024 Sales",
+          "unit": "USD"
+        }
+
+        3. Monthly Revenue:
+        {
+          "data": [
+            {"period": {"year": 2024, "month": 1, "type": "monthly"}, "value": 85000},
+            {"period": {"year": 2024, "month": 2, "type": "monthly"}, "value": 92000},
+            {"period": {"year": 2024, "month": 3, "type": "monthly"}, "value": 88000}
+          ]
+        }
+
+        Period types: "annual", "quarterly", "monthly", "daily"
+        """,
         inputSchema: MCPToolInputSchema(
             properties: [
                 "data": MCPSchemaProperty(
                     type: "array",
-                    description: "Array of objects with 'period' (year/month/etc) and 'value' properties",
+                    description: """
+                    Array of time series data points. Each object must have:
+                    • period (object): Time period with fields:
+                      - year (number): Required for all types
+                      - month (number): Required for quarterly/monthly/daily (1-12)
+                      - day (number): Required for daily only (1-31)
+                      - type (string): "annual", "quarterly", "monthly", or "daily"
+                    • value (number): Numeric value for this period
+
+                    Example: [{"period": {"year": 2024, "month": 1, "type": "monthly"}, "value": 100000}]
+                    """,
                     items: MCPSchemaItems(type: "object")
                 ),
                 "name": MCPSchemaProperty(
                     type: "string",
-                    description: "Name of the time series"
+                    description: "Name of the time series (optional)"
                 ),
                 "description": MCPSchemaProperty(
                     type: "string",
-                    description: "Description of the time series"
+                    description: "Description of the time series (optional)"
                 ),
                 "unit": MCPSchemaProperty(
                     type: "string",
-                    description: "Unit of measurement (e.g., 'USD', 'units')"
+                    description: "Unit of measurement, e.g., 'USD', 'units', 'customers' (optional)"
                 )
             ],
             required: ["data"]
