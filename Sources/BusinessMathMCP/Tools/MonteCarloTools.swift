@@ -334,7 +334,8 @@ public struct RunMonteCarloTool: MCPToolHandler, Sendable {
             throw ToolError.invalidArguments("Missing arguments")
         }
 
-        guard let inputsArray = args["inputs"]?.value as? [[String: Any]] else {
+        // Extract array of AnyCodable objects
+        guard let inputsAnyCodable = args["inputs"]?.value as? [AnyCodable] else {
             throw ToolError.invalidArguments("Missing or invalid 'inputs' array")
         }
 
@@ -348,11 +349,27 @@ public struct RunMonteCarloTool: MCPToolHandler, Sendable {
         // Parse inputs and create distributions
         var simulationInputs: [SimulationInput] = []
 
-        for inputDict in inputsArray {
-            guard let name = inputDict["name"] as? String,
-                  let distType = inputDict["distribution"] as? String,
-                  let params = inputDict["parameters"] as? [String: Double] else {
+        for (index, inputAnyCodable) in inputsAnyCodable.enumerated() {
+            guard let inputDict = inputAnyCodable.value as? [String: AnyCodable] else {
+                throw ToolError.invalidArguments("inputs[\(index)] must be an object")
+            }
+
+            guard let name = inputDict["name"]?.value as? String,
+                  let distType = inputDict["distribution"]?.value as? String,
+                  let paramsAnyCodable = inputDict["parameters"]?.value as? [String: AnyCodable] else {
                 throw ToolError.invalidArguments("Each input must have 'name', 'distribution', and 'parameters'")
+            }
+
+            // Extract parameters as doubles
+            var params: [String: Double] = [:]
+            for (key, value) in paramsAnyCodable {
+                if let doubleVal = value.value as? Double {
+                    params[key] = doubleVal
+                } else if let intVal = value.value as? Int {
+                    params[key] = Double(intVal)
+                } else {
+                    throw ToolError.invalidArguments("Parameter '\(key)' must be a number")
+                }
             }
 
             // Create SimulationInput directly based on distribution type
