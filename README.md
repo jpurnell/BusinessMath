@@ -10,7 +10,84 @@ A comprehensive Swift library for business mathematics, time series analysis, an
 
 BusinessMath provides production-ready implementations of essential business and financial calculations. Built with modern Swift features including generics, strict concurrency (Swift 6), and comprehensive documentation, it's designed for financial analysts, business planners, data scientists, and software engineers building financial applications.
 
-## Key Features
+## 🤖 MCP Server (NEW in v1.12.0)
+
+BusinessMath now includes a **Model Context Protocol (MCP) server** that exposes all functionality to AI assistants like Claude Desktop, enabling natural language financial analysis and modeling.
+
+### What's Included
+
+**✨ 43 Computational Tools** across 6 categories:
+- **Time Value of Money** (9 tools): NPV, IRR, PV, FV, payments, annuities, XNPV, XIRR
+- **Time Series Analysis** (6 tools): Growth rates, moving averages, CAGR, comparisons
+- **Forecasting** (8 tools): Trend analysis, seasonal adjustment, projections
+- **Debt & Financing** (6 tools): Amortization, WACC, CAPM, coverage ratios
+- **Statistical Analysis** (7 tools): Correlation, regression, confidence intervals, z-scores
+- **Monte Carlo Simulation** (7 tools): Risk modeling, distributions, sensitivity analysis
+
+**📚 10 Resources** providing comprehensive documentation:
+- Time Value of Money formulas and examples
+- Statistical analysis reference
+- Monte Carlo simulation guide
+- Investment analysis examples
+- Loan amortization examples
+- Financial glossary (JSON)
+- Distribution reference
+
+**🎯 6 Prompt Templates** for guided workflows:
+- Investment analysis
+- Financing comparison
+- Risk assessment
+- Revenue forecasting
+- Portfolio analysis
+- Debt analysis
+
+### Quick Start with MCP Server
+
+**Using Claude Desktop** (Recommended - stdio mode):
+
+1. Build the server:
+```bash
+swift build -c release
+```
+
+2. Configure Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "businessmath": {
+      "command": "/path/to/BusinessMath/.build/release/businessmath-mcp-server"
+    }
+  }
+}
+```
+
+3. Restart Claude Desktop and start using natural language:
+   - "Calculate the NPV of an investment with initial cost $100,000 and annual returns of $30,000 for 5 years at 10% discount rate"
+   - "Run a Monte Carlo simulation with 10,000 iterations for a revenue model with normal distribution (mean: $1M, stddev: $200K)"
+   - "Create a 30-year amortization schedule for a $300,000 loan at 6% interest"
+
+**HTTP Mode** (Experimental):
+```bash
+.build/release/businessmath-mcp-server --http 8080
+```
+
+See [HTTP_MODE_README.md](HTTP_MODE_README.md) for details and limitations. HTTP mode is experimental; stdio mode is recommended for production use.
+
+### Technical Details
+
+- Built with the **official MCP Swift SDK** (v0.10.2)
+- Full support for MCP capabilities: tools, resources, prompts, logging
+- macOS 13.0+ required
+- Comprehensive error handling and validation
+- Strict concurrency (Swift 6) for thread safety
+
+### Documentation
+
+- **[CHANGELOG.md](CHANGELOG.md)** - Complete version history and release notes
+- **[HTTP_MODE_README.md](HTTP_MODE_README.md)** - HTTP transport documentation
+- **MCP Resources** - Access via `resources/read` in Claude Desktop for comprehensive guides
+
+## Library Features
 
 ### 📅 Temporal Structures
 - Period types (daily, monthly, quarterly, annual) with arithmetic operations
