@@ -32,7 +32,7 @@ import Numerics
 ///
 
 
-func goalSeek<T: Real>(function: @escaping (T) -> T, target: T, guess: T, tolerance: T = T(1) / T(1000000), maxIterations: Int = 1000) throws -> T {
+public func goalSeek<T: Real>(function: @escaping (T) -> T, target: T, guess: T, tolerance: T = T(1) / T(1000000), maxIterations: Int = 1000) throws -> T {
 	var x0 = guess
 	var iteration = 0
 	

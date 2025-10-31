@@ -371,6 +371,34 @@ extension Dictionary where Key == String, Value == AnyCodable {
         let timeSeriesJSON = try decoder.decode(TimeSeriesJSON.self, from: jsonData)
         return try timeSeriesJSON.toTimeSeries()
     }
+
+    /// Check if a key exists
+    public func hasKey(_ key: String) -> Bool {
+        return self[key] != nil
+    }
+
+    /// Get a double from a nested object
+    public func getDoubleFromObject(_ objectKey: String, key: String) throws -> Double {
+        guard let objectValue = self[objectKey] else {
+            throw ToolError.missingRequiredArgument(objectKey)
+        }
+
+        guard let dict = objectValue.value as? [String: AnyCodable] else {
+            throw ToolError.invalidArguments("\(objectKey) must be an object")
+        }
+
+        guard let value = dict[key] else {
+            throw ToolError.missingRequiredArgument("\(objectKey).\(key)")
+        }
+
+        if let doubleVal = value.value as? Double {
+            return doubleVal
+        } else if let intVal = value.value as? Int {
+            return Double(intVal)
+        } else {
+            throw ToolError.invalidArguments("\(objectKey).\(key) must be a number")
+        }
+    }
 }
 
 // MARK: - Tool Handler Conversion

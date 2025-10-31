@@ -388,7 +388,7 @@ struct BalanceSheetTests {
 		#expect(ratio[q1] == 4.0)
 	}
 
-	@Test("Debt to equity is total liabilities divided by total equity")
+	@Test("Debt to equity is interest-bearing debt divided by total equity")
 	func debtToEquity() throws {
 		let entity = makeEntity()
 		let periods = makePeriods()
@@ -409,8 +409,8 @@ struct BalanceSheetTests {
 		let ratio = balanceSheet.debtToEquity
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
-		// Liabilities: 100k, Equity: 80k, Ratio: 1.25
-		#expect(ratio[q1] == 1.25)
+		// Interest-bearing debt: 80k, Equity: 80k, Ratio: 1.0
+		#expect(ratio[q1] == 1.0)
 	}
 
 	@Test("Equity ratio is total equity divided by total assets")
@@ -567,7 +567,7 @@ struct BalanceSheetTests {
 		#expect(materialized.currentAssets[q1] == 80_000)
 		#expect(materialized.currentLiabilities[q1] == 20_000)
 		#expect(materialized.currentRatio[q1] == 4.0)
-		#expect(materialized.debtToEquity[q1] == 1.25)
+		#expect(materialized.debtToEquity[q1] == 1.0)  // Interest-bearing debt (80k) / Equity (80k)
 		#expect(materialized.workingCapital[q1] == 60_000)
 	}
 
