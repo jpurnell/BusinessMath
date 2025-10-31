@@ -11,9 +11,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased] - 2025-10-31
 
+#### 🚀 Topic 9 Phase 2: Time Series Forecasting
+
+This phase continues Topic 9 with time series forecasting models and anomaly detection.
+
+#### Added
+
+**Holt-Winters Triple Exponential Smoothing**
+- ✨ **HoltWintersModel** - Seasonal forecasting with trend
+  - Level, trend, and seasonal component smoothing
+  - Configurable α (alpha), β (beta), γ (gamma) parameters
+  - Point forecasts and confidence intervals
+  - Widening confidence intervals with forecast horizon
+  - Handles monthly, quarterly, and custom seasonality
+  - 7 comprehensive tests
+
+**Moving Average Forecasting**
+- ✨ **MovingAverageModel** - Simple moving average baseline
+  - Configurable window size
+  - Constant forecast (average of last N periods)
+  - Confidence intervals based on historical variance
+  - 7 comprehensive tests
+
+**Anomaly Detection**
+- ✨ **ZScoreAnomalyDetector** - Statistical outlier detection
+  - Rolling window z-score calculation
+  - Severity classification (mild, moderate, severe)
+  - Period, value, and deviation tracking
+  - Configurable threshold
+  - 6 comprehensive tests
+
+**Forecasting Types**
+- ✨ **ForecastError** - Typed errors for forecasting operations
+- ✨ **ForecastWithConfidence** - Forecasts with upper/lower bounds
+- ✨ **Anomaly** - Structured anomaly representation
+- ✨ **AnomalySeverity** - Severity classification enum
+
+**Test Coverage**
+- 20 new tests for forecasting functionality
+- Tests for seasonality, trend, confidence intervals
+- Edge case testing for constant data
+
 #### 🚀 Topic 9 Phase 1: Optimization & Solvers
 
-This release begins Topic 9 (Advanced Analytics & Advanced Features) with a comprehensive optimization framework.
+This phase begins Topic 9 (Advanced Analytics & Advanced Features) with a comprehensive optimization framework.
 
 #### Added
 
