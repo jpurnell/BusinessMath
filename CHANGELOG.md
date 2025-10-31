@@ -11,6 +11,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased] - 2025-10-31
 
+#### 🚀 Topic 9 Phase 1: Optimization & Solvers
+
+This release begins Topic 9 (Advanced Analytics & Advanced Features) with a comprehensive optimization framework.
+
+#### Added
+
+**Optimization Framework**
+- ✨ **Optimizer Protocol** - Generic interface for optimization algorithms
+  - Supports constraints and bounds
+  - Iteration history tracking
+  - Convergence detection
+  - 9 framework tests
+
+**Newton-Raphson Optimizer**
+- ✨ **NewtonRaphsonOptimizer** - Root-finding using Newton-Raphson method
+  - Numerical derivative calculation (first and second order)
+  - Quadratic convergence near solutions
+  - Configurable tolerance and max iterations
+  - Constraint and bound support
+  - 7 comprehensive tests (5 passing, 2 edge cases)
+
+**Gradient Descent Optimizer**
+- ✨ **GradientDescentOptimizer** - First-order optimization with momentum
+  - Momentum support for accelerated convergence
+  - Numerical gradient computation
+  - Learning rate configuration
+  - Divergence detection
+  - 7 comprehensive tests (6 passing, 1 edge case)
+
+**Capital Allocation Optimizer**
+- ✨ **CapitalAllocationOptimizer** - Project portfolio optimization
+  - Greedy allocation by ROI
+  - 0-1 Knapsack (integer programming) for optimal allocation
+  - Project ROI calculation
+  - Budget constraint enforcement
+  - 11 comprehensive tests (all passing)
+
+#### Testing
+- Added 34 new optimization tests
+- 31/34 tests passing (91% pass rate)
+- Total test suite: 1,502 tests across 92 suites
+
+---
+
 #### 🎯 Topic 8 Complete: I/O & Integration - Validation, Audit, and Schema Management
 
 This release completes Topic 8 by implementing comprehensive data validation, audit logging, and schema management infrastructure.
