@@ -61,17 +61,27 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
-        fputs("✓ Registered 43 tools\n", stderr)
+        // Hypothesis Testing Tools (6 tools)
+        for handler in getHypothesisTestingTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Advanced Statistics Tools (13 tools)
+        for handler in getAdvancedStatisticsTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        fputs("✓ Registered 62 tools\n", stderr)
 
         // Create and configure the MCP server using official SDK
         let server = Server(
             name: "BusinessMath MCP Server",
-            version: "1.12.1",
+            version: "1.14.0",
             instructions: """
             Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and statistical analysis server.
 
             **Capabilities**:
-            - 43 computational tools across 6 categories
+            - 62 computational tools across 11 categories
             - 10 documentation and example resources
             - 6 prompt templates for common financial analyses
 
@@ -82,6 +92,11 @@ struct BusinessMathMCPServerMain {
             4. Debt & Financing: Amortization, WACC, CAPM, coverage ratios
             5. Statistical Analysis: Correlation, regression, confidence intervals
             6. Monte Carlo Simulation: Risk modeling, distributions, sensitivity analysis
+            7. Hypothesis Testing: T-tests, chi-square, sample size, A/B testing, p-values
+            8. Probability Distributions: Binomial, Poisson, exponential, hypergeometric, log-normal
+            9. Combinatorics: Combinations, permutations, factorial
+            10. Statistical Means: Geometric, harmonic, weighted average
+            11. Analysis Tools: Goal seek, data tables
 
             **Resources**: Access comprehensive documentation, examples, and reference data using resources/read
             **Prompts**: Use prompt templates for guided analysis workflows

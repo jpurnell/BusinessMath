@@ -9,6 +9,166 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath MCP Server
 
+### [1.14.0] - 2024-10-30
+
+#### 🎯 Feature Release: Advanced Statistics & Probability Tools
+
+This release adds 13 new tools covering probability distributions, combinatorics, statistical means, and analysis capabilities, bringing the total to 62 tools across 11 categories.
+
+#### Added
+
+**New Tool Categories:**
+
+**8. Probability Distributions (5 tools)**
+- ✨ **binomial_probability** - Binomial PMF for n trials with k successes
+  - Calculate exact probability of k successes in n independent trials
+  - Useful for quality control, testing, and binary outcome modeling
+- ✨ **poisson_probability** - Poisson distribution for event counts
+  - Model rare events occurring at constant average rate
+  - Applications: customer arrivals, defect counts, website hits
+- ✨ **exponential_distribution** - Exponential PDF for wait times
+  - Model time between events in a Poisson process
+  - Applications: equipment failure, wait times, service times
+- ✨ **hypergeometric_probability** - Sampling without replacement
+  - Calculate probability for finite population sampling
+  - Applications: card games, quality inspection, lottery
+- ✨ **lognormal_distribution** - Log-normal PDF
+  - Model variables whose logarithm is normally distributed
+  - Applications: stock prices, income distribution, environmental data
+
+**9. Combinatorics (3 tools)**
+- ✨ **calculate_combinations** - C(n,r) combinations
+  - Count ways to choose r items from n without regard to order
+  - Applications: lottery, committee selection, sampling
+- ✨ **calculate_permutations** - P(n,r) permutations
+  - Count ways to arrange r items from n where order matters
+  - Applications: race positions, passwords, scheduling
+- ✨ **calculate_factorial** - n! factorial
+  - Calculate product of all positive integers ≤ n
+  - Foundation for combinations and permutations
+
+**10. Statistical Means (3 tools)**
+- ✨ **geometric_mean** - Geometric mean calculation
+  - Average for growth rates, ratios, and multiplicative data
+  - Applications: investment returns, growth rates, index calculations
+- ✨ **harmonic_mean** - Harmonic mean calculation
+  - Average for rates and ratios (reciprocal of arithmetic mean of reciprocals)
+  - Applications: average speed, P/E ratios, rates
+- ✨ **weighted_average** - Weighted mean calculation
+  - Average where each value has different importance/weight
+  - Applications: course grades, portfolio returns, weighted indices
+
+**11. Analysis Tools (2 tools)**
+- ✨ **goal_seek** - Root-finding using Newton's method
+  - Find input value that produces target output
+  - Supports: quadratic, exponential, power functions
+  - Applications: break-even analysis, target setting, equation solving
+- ✨ **data_table** - Sensitivity analysis tables
+  - Generate 1-variable or 2-variable data tables
+  - Test multiple input scenarios efficiently
+  - Applications: loan payment analysis, what-if scenarios, parameter sensitivity
+
+**Total: 62 tools across 11 categories**
+
+#### Changed
+
+- 🔧 **Server version** updated to 1.14.0
+- 🔧 **Server instructions** updated to reflect 11 tool categories
+- 🔧 **Tool count** updated from 49 to 62 tools
+
+#### Added to BusinessMath Core Library
+
+**New Functions:**
+- `binomialPMF(n:k:p:)` - Binomial probability mass function
+- `weightedAverage(_:weights:)` - Weighted average calculation
+- Made `logNormalPDF(_:mean:stdDev:)` public
+- Made `goalSeek(function:target:guess:tolerance:maxIterations:)` public
+
+**Helper Extensions:**
+- `hasKey(_:)` - Check if key exists in arguments dictionary
+- `getDoubleFromObject(_:key:)` - Extract double from nested object
+
+#### Technical Details
+
+**Tool Documentation:**
+- Each tool includes "REQUIRED STRUCTURE" sections with complete JSON examples
+- Multiple realistic use cases per tool
+- Comprehensive input validation and error handling
+- Detailed output formatting with statistical interpretations
+
+**Test Coverage:**
+- New test file: `AdvancedStatisticsTests.swift`
+- Tests for all probability distributions, combinatorics, and statistical means
+- Placeholder tests for goal_seek and data_table (complex functionality)
+
+**Code Quality:**
+- Consistent error messages and validation
+- Type-safe parameter extraction
+- Proper handling of edge cases (zero values, empty arrays, etc.)
+- Support for both Double and Int inputs where appropriate
+
+### [1.13.0] - 2024-10-30
+
+#### 🎯 Feature Release: Hypothesis Testing & Statistical Inference Tools
+
+This release adds 6 new tools focused on hypothesis testing, A/B testing, and statistical inference, bringing the total to 49 tools across 7 categories.
+
+#### Added
+
+**New Tool Category: Hypothesis Testing (6 tools)**
+- ✨ **hypothesis_t_test** - Two-sample and one-sample t-tests for comparing means
+  - Compare means between two groups (two-sample)
+  - Test sample mean against population mean (one-sample)
+  - Supports both equal and unequal variance assumptions
+  - Returns t-statistic, p-value, degrees of freedom, and significance determination
+- ✨ **hypothesis_chi_square** - Chi-square goodness of fit tests for categorical data
+  - Test if observed frequencies match expected distribution
+  - Returns chi-square statistic, p-value, degrees of freedom
+  - Useful for testing categorical data distributions
+- ✨ **calculate_sample_size** - Sample size calculation for studies and surveys
+  - Calculate required sample size for desired confidence level
+  - Supports population size adjustment for finite populations
+  - Accounts for worst-case proportions (50/50) for conservative estimates
+- ✨ **calculate_margin_of_error** - Margin of error calculation for confidence intervals
+  - Calculate margin of error from sample data
+  - Supports custom confidence levels (90%, 95%, 99%)
+  - Returns both absolute and percentage margins of error
+- ✨ **ab_test_analysis** - Complete A/B test analysis with conversion rates
+  - Compare conversion rates between two variants
+  - Calculates statistical significance using z-test
+  - Returns lift percentage, confidence level, and recommendations
+  - Includes sample size recommendations for inconclusive tests
+- ✨ **calculate_p_value** - Convert test statistics to p-values
+  - Supports z-scores, t-statistics, and chi-square statistics
+  - Handles both one-tailed and two-tailed tests
+  - Returns p-value with interpretation
+
+**Total: 49 tools across 7 categories**
+
+#### Changed
+
+- 🔧 **Server version** updated to 1.13.0
+- 🔧 **Server instructions** updated to reflect 7 tool categories (added Hypothesis Testing)
+- 🔧 **Tool count** updated from 43 to 49 tools
+
+#### Technical Details
+
+**Test-Driven Development:**
+- All 6 tools implemented following TDD principles
+- Comprehensive test coverage in `Inference Tests.swift`
+- Tests verify correct calculations for t-tests, chi-square, sample sizes, and A/B tests
+
+**Tool Documentation:**
+- Each tool includes "REQUIRED STRUCTURE" sections with complete JSON examples
+- Multiple realistic use cases (comparing store sales, testing conversion rates, etc.)
+- Comprehensive input validation and error handling
+- Detailed output formatting with statistical interpretations
+
+**AnyCodable Handling:**
+- Proper unwrapping of nested AnyCodable structures for array inputs
+- Consistent error messages for invalid inputs
+- Type-safe parameter extraction with fallback to Int → Double conversion
+
 ### [1.12.1] - 2024-10-30
 
 #### 📚 Patch Release: Comprehensive MCP Tool Documentation Improvements

@@ -398,8 +398,8 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 
 	/// Debt-to-equity ratio (interest-bearing debt / total equity).
 	///
-	/// Measures financial leverage. Higher ratios indicate more debt relative
-	/// to equity, which increases financial risk.
+	/// Measures financial leverage using only interest-bearing debt (excludes non-interest liabilities
+	/// like accounts payable). Higher ratios indicate more debt relative to equity, which increases financial risk.
 	public var debtToEquity: TimeSeries<T> {
 		return interestBearingDebt / totalEquity
 	}

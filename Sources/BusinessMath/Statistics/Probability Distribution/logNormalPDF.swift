@@ -50,7 +50,7 @@ func g<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
 ///   // result should be the probability density of x = 1 for the log-normal distribution with mean 0 and stdDev 1
 ///   ```
 
-func logNormalPDF<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
+public func logNormalPDF<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
 	let denominator = T.sqrt(2 * .pi) * stdDev * x
 	let exponent = -T.pow((T.log(x) - µ), T(2)) / (T(2) * T.pow(stdDev, T(2)))
 	let probAtX = T.exp(exponent) / denominator
