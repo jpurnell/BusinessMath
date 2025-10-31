@@ -127,8 +127,8 @@ public enum FinancialValidation {
 		///
 		/// - Parameters:
 		///   - minMargin: Minimum expected gross margin. Defaults to -0.20 (20% loss).
-		///   - maxMargin: Maximum expected gross margin. Defaults to 1.00 (100%).
-		public init(minMargin: T = -0.20, maxMargin: T = 1.00) {
+		///   - maxMargin: Maximum expected gross margin. Defaults to 0.90 (90%).
+		public init(minMargin: T = -0.20, maxMargin: T = 0.90) {
 			self.minMargin = minMargin
 			self.maxMargin = maxMargin
 		}
