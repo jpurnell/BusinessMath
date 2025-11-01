@@ -169,9 +169,11 @@ extension TimeSeries: Validatable where T: Real & Sendable {
         // Check for gaps in periods (for consecutive period types)
         if count > 1 {
             let gaps = detectPeriodGaps()
+			print("Got \(gaps.count) gaps")
             if !gaps.isEmpty {
+				print("Adding warning, gaps: \(gaps)")
                 warnings.append(CalculationWarning(
-                    severity: .warning,
+                    severity: .error,
                     type: .missingData,
                     message: "Time series has \(gaps.count) gap(s) in periods",
                     context: ["gapCount": String(gaps.count)],
@@ -208,14 +210,40 @@ extension TimeSeries: Validatable where T: Real & Sendable {
         return BMValidationResult(isValid: !hasErrors, warnings: warnings)
     }
 
-    /// Detect gaps in periods (simplified - just returns empty for now)
+    /// Detect gaps in periods by checking for missing consecutive periods.
     ///
-    /// A full implementation would parse Period types and check for gaps.
-    /// This is a simplified version for validation testing.
+    /// This method checks if the time series has gaps in its sequence of periods.
+    /// For each consecutive pair of periods, it verifies they are adjacent by
+    /// comparing the second period to the expected next period after the first.
+    ///
+    /// - Returns: Array of indices where gaps occur (the index after the gap).
     private func detectPeriodGaps() -> [Int] {
-        // Simplified: For testing purposes, assume no gaps
-        // A production implementation would need proper period comparison logic
-        return []
+        guard count > 1 else { return [] }
+        
+        var gapIndices: [Int] = []
+        
+        // Check each consecutive pair of periods
+        for i in 0..<(count - 1) {
+            let currentPeriod = periods[i]
+            let nextPeriod = periods[i + 1]
+            
+            // Check if periods are the same type
+            if currentPeriod.type != nextPeriod.type {
+                // Different period types - consider this a gap
+                gapIndices.append(i + 1)
+                continue
+            }
+            
+            // Get the expected next period
+            let expectedNext = currentPeriod.next()
+            
+            // If the actual next period doesn't match expected, there's a gap
+            if nextPeriod != expectedNext {
+                gapIndices.append(i + 1)
+            }
+        }
+        
+        return gapIndices
     }
 
     /// Detect outliers using IQR method
