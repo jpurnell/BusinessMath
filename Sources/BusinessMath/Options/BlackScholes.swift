@@ -187,7 +187,16 @@ public struct BlackScholesModel<T: Real & Sendable> {
 		let absX = abs(x)
 
 		let t = T(1) / (T(1) + p * absX)
-		let y = T(1) - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * T.exp(-absX * absX)
+		
+		// Break down the polynomial evaluation into steps
+		let term1 = a5 * t + a4
+		let term2 = term1 * t + a3
+		let term3 = term2 * t + a2
+		let term4 = term3 * t + a1
+		let polynomial = term4 * t
+		
+		let expTerm = T.exp(-absX * absX)
+		let y = T(1) - polynomial * expTerm
 
 		return sign * y
 	}

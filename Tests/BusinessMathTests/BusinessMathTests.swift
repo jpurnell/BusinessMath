@@ -302,7 +302,8 @@ final class UnassortedTests: XCTestCase {
     
     func testHyperGeometric() {
 		let result: Double = hypergeometric(total: 10, r: 4, n: 3, x: 2)
-		XCTAssertEqual(result, 0.30)
+		let resultRounded = (result * 100.0).rounded() / 100.0
+		XCTAssertEqual(resultRounded, 0.30)
     }
     
     func testInterestingObservation() {

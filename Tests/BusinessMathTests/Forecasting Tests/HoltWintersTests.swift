@@ -168,10 +168,9 @@ struct HoltWintersTests {
 		try model.train(on: data)
 
 		let forecast = model.predict(periods: 24)  // 2 years
-
-		// Q4 months (10, 11, 12) should be higher than others
+		// Q4 months (10, 11, 12), positions (9, 10, 11) should be higher than others
 		// Check second year of forecast
-		let q4Months = [10, 11, 12].map { forecast.valuesArray[$0 + 12] }
+		let q4Months = [9, 10, 11].map { print("getting \(forecast.valuesArray[$0 + 12])"); return forecast.valuesArray[$0 + 12] }
 		let otherMonths = [1, 2, 3, 4, 5, 6].map { forecast.valuesArray[$0 + 12] }
 
 		let avgQ4 = q4Months.reduce(0, +) / Double(q4Months.count)

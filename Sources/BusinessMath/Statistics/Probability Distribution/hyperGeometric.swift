@@ -24,7 +24,7 @@ import Numerics
 ///
 /// - Note: Returns 0 for invalid parameter combinations (negative values, x > r, n > total, etc.)
 
-public func hypergeometric<T: Real>(total: Int, r: Int, n: Int, x: Int) -> T {
+public func hypergeometric<T: BinaryFloatingPoint>(total: Int, r: Int, n: Int, x: Int) -> T {
     // Validate inputs
     guard total >= 0, r >= 0, n >= 0, x >= 0 else { return 0 }
     guard r <= total else { return 0 }
@@ -38,7 +38,8 @@ public func hypergeometric<T: Real>(total: Int, r: Int, n: Int, x: Int) -> T {
     let logDenominator = logCombination(total, c: n)
     
     let logResult = logNumerator - logDenominator
-	return T(Int(exp(logResult)))
+    let result = exp(logResult)
+	return T(result)
 }
 
 /// Computes the natural logarithm of the combination (n choose r).

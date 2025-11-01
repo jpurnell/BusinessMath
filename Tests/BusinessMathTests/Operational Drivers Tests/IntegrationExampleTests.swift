@@ -100,13 +100,20 @@ struct IntegrationExampleTests {
 			#expect(timeSeries.count == 4, "Should have 4 quarters")
 		}
 
-		// Verify Q4 seasonal boost in users
+		// Note: The "deterministic" projection still samples from probabilistic distributions
+		// (e.g., users have 10% uncertainty), so individual samples may vary.
+		// For consistent comparisons, we should use the expected values from Monte Carlo.
+		// Here we just verify the structure and that values are reasonable.
+
 		let usersTS = projections["users"]!
 		let q1Users = usersTS[quarters[0]]!
 		let q4Users = usersTS[quarters[3]]!
-		#expect(q4Users > q1Users, "Q4 should have more users (seasonal boost)")
+		
+		// Verify users are in reasonable ranges
+		#expect(q1Users >= 800.0 && q1Users <= 1200.0, "Q1 users should be around 1000 ± uncertainty")
+		#expect(q4Users >= 920.0 && q4Users <= 1380.0, "Q4 users should be around 1150 (1000 × 1.15) ± uncertainty")
 
-		// Verify growth in fixed costs (inflation)
+		// Verify growth in fixed costs (inflation) - this IS deterministic
 		let fixedCostsTS = projections["fixedCosts"]!
 		let q1Fixed = fixedCostsTS[quarters[0]]!
 		let q4Fixed = fixedCostsTS[quarters[3]]!
@@ -119,6 +126,28 @@ struct IntegrationExampleTests {
 		// Profit will vary based on revenue (seasonal) vs costs (more stable)
 		// Just verify both are finite
 		#expect(q1Profit.isFinite && q4Profit.isFinite, "Profits should be finite")
+	}
+
+	@Test("Verify Q4 seasonal boost in expected values")
+	func verifyQ4SeasonalBoostInExpectedValues() {
+		let model = SaaSFinancialModel()
+		let quarters = Period.year(2025).quarters()
+
+		// Run Monte Carlo to get expected values (which eliminates random variation)
+		let results = model.projectMonteCarlo(periods: quarters, iterations: 5_000)
+		let usersResults = results["users"]!
+
+		// Use expected values (mean) for comparison
+		let q1UsersMean = usersResults.statistics[quarters[0]]!.mean
+		let q4UsersMean = usersResults.statistics[quarters[3]]!.mean
+
+		// Q4 should have 15% more users than Q1 (seasonal boost)
+		// Expected Q1: 1000, Expected Q4: 1150
+		#expect(q4UsersMean > q1UsersMean, "Q4 expected users should be higher than Q1")
+		
+		let boost = (q4UsersMean - q1UsersMean) / q1UsersMean
+		#expect(boost > 0.12, "Q4 boost should be at least 12% (accounting for rounding)")
+		#expect(boost < 0.18, "Q4 boost should be at most 18% (15% ± margin)")
 	}
 
 	// MARK: - Monte Carlo Simulation

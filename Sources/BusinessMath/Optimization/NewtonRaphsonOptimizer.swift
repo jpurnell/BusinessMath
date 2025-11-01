@@ -24,7 +24,9 @@ import Numerics
 /// x_{n+1} = x_n - f'(x_n) / f''(x_n)
 /// ```
 ///
-/// where f'(x) is the first derivative and f''(x) is the second derivative.
+/// where f'(x) is the first derivative (gradient) and f''(x) is the second
+/// derivative (Hessian for 1D). This finds points where f'(x) = 0, which are
+/// candidates for local minima or maxima.
 ///
 /// ## Usage
 ///
@@ -57,10 +59,19 @@ import Numerics
 ///
 /// ## Convergence
 ///
-/// Newton-Raphson converges quadratically near the minimum, but may:
+/// Newton-Raphson converges quadratically near a local minimum when:
+/// - The function is sufficiently smooth (twice differentiable)
+/// - The initial point is close enough to the minimum
+/// - The second derivative (Hessian) is positive and bounded away from zero
+///
+/// The algorithm may:
 /// - Diverge if started far from the minimum
-/// - Fail if the second derivative is zero or near zero
-/// - Jump over bounds if not carefully constrained
+/// - Fail if the second derivative is zero or near zero (inflection point)
+/// - Find saddle points or maxima instead of minima if f''(x) < 0
+/// - Require projection when constraints are active
+///
+/// For constrained optimization, the algorithm projects iterates to the feasible
+/// region and may converge to boundary points where the constraint is active.
 public struct NewtonRaphsonOptimizer<T>: Optimizer where T: Real & Sendable & Codable {
 
 	// MARK: - Properties
@@ -117,34 +128,39 @@ public struct NewtonRaphsonOptimizer<T>: Optimizer where T: Real & Sendable & Co
 			x = clamp(x, lower: bounds.lower, upper: bounds.upper)
 		}
 
+		// Apply constraints to initial value
+		x = projectToFeasibleRegion(x, constraints: constraints, bounds: bounds)
+
 		for iteration in 0..<maxIterations {
 			let fx = objective(x)
-			let derivative = numericalFirstDerivative(objective, at: x)
+			let firstDerivative = numericalFirstDerivative(objective, at: x)
+			let secondDerivative = numericalSecondDerivative(objective, at: x)
 
 			// Record history
 			history.append(IterationHistory(
 				iteration: iteration,
 				value: x,
 				objective: fx,
-				gradient: derivative
+				gradient: firstDerivative
 			))
 
-			// Check convergence (function value near zero - root finding)
-			if abs(fx) < tolerance {
+			// Check convergence (gradient near zero - optimization)
+			if abs(firstDerivative) < tolerance {
 				converged = true
 				break
 			}
 
-			// Newton-Raphson update for root finding
-			// x_{n+1} = x_n - f(x_n) / f'(x_n)
+			// Newton-Raphson update for optimization
+			// x_{n+1} = x_n - f'(x_n) / f''(x_n)
 			var step: T
-			// Use a reasonable epsilon for checking if derivative is too small
-			let epsilon = tolerance / 10000
-			if abs(derivative) > epsilon {
-				step = fx / derivative
+			// Use a reasonable epsilon for checking if second derivative is too small
+			let epsilon = tolerance / 1000
+			if abs(secondDerivative) > epsilon {
+				step = firstDerivative / secondDerivative
 			} else {
-				// Derivative too small - can't proceed reliably
-				break
+				// Second derivative too small or negative - use gradient descent step
+				// This handles cases where Newton's method would fail
+				step = firstDerivative * stepSize * 10
 			}
 
 			var xNew = x - step
@@ -154,44 +170,28 @@ public struct NewtonRaphsonOptimizer<T>: Optimizer where T: Real & Sendable & Co
 				xNew = clamp(xNew, lower: bounds.lower, upper: bounds.upper)
 			}
 
-			// Check constraints
-			var constraintsSatisfied = true
-			for constraint in constraints {
-				if !constraint.isSatisfied(xNew) {
-					constraintsSatisfied = false
-					break
-				}
+			// Project to feasible region (respecting constraints)
+			xNew = projectToFeasibleRegion(xNew, constraints: constraints, bounds: bounds)
+
+			// If projection didn't work or we're at a constraint boundary,
+			// check if we're at a constrained minimum
+			if !allConstraintsSatisfied(xNew, constraints: constraints) {
+				// If we can't satisfy constraints, try to find feasible point
+				// by moving along the gradient toward feasibility
+				xNew = findFeasiblePoint(
+					from: x,
+					constraints: constraints,
+					bounds: bounds,
+					objective: objective
+				)
 			}
 
-			// If constraints violated, reduce step size
-			if !constraintsSatisfied {
-				var stepScale = tolerance * 5000  // Start at 0.5 for typical tolerance
-				for _ in 0..<10 {
-					xNew = x - step * stepScale
-					if let bounds = bounds {
-						xNew = clamp(xNew, lower: bounds.lower, upper: bounds.upper)
-					}
-
-					constraintsSatisfied = true
-					for constraint in constraints {
-						if !constraint.isSatisfied(xNew) {
-							constraintsSatisfied = false
-							break
-						}
-					}
-
-					if constraintsSatisfied {
-						break
-					}
-
-					stepScale = stepScale / 2
-				}
-			}
-
+			// Check if we're making progress
+			let movement = abs(xNew - x)
 			x = xNew
 
-			// Check if step is very small
-			if abs(step) < tolerance {
+			// Check if step is very small (converged)
+			if movement < tolerance {
 				converged = true
 				break
 			}
@@ -245,5 +245,126 @@ public struct NewtonRaphsonOptimizer<T>: Optimizer where T: Real & Sendable & Co
 	/// - Returns: The clamped value.
 	private func clamp(_ value: T, lower: T, upper: T) -> T {
 		return max(lower, min(upper, value))
+	}
+
+	/// Checks if all constraints are satisfied.
+	///
+	/// - Parameters:
+	///   - value: The value to check.
+	///   - constraints: The constraints to check.
+	/// - Returns: True if all constraints are satisfied.
+	private func allConstraintsSatisfied(
+		_ value: T,
+		constraints: [Constraint<T>]
+	) -> Bool {
+		for constraint in constraints {
+			if !constraint.isSatisfied(value) {
+				return false
+			}
+		}
+		return true
+	}
+
+	/// Projects a value to the nearest feasible point.
+	///
+	/// This method attempts to find the nearest point that satisfies all constraints.
+	/// For simple bound constraints, it clamps the value. For more complex constraints,
+	/// it may need to search.
+	///
+	/// - Parameters:
+	///   - value: The value to project.
+	///   - constraints: The constraints to satisfy.
+	///   - bounds: Optional bounds.
+	/// - Returns: A feasible value that satisfies constraints.
+	private func projectToFeasibleRegion(
+		_ value: T,
+		constraints: [Constraint<T>],
+		bounds: (lower: T, upper: T)?
+	) -> T {
+		var x = value
+
+		// First apply bounds
+		if let bounds = bounds {
+			x = clamp(x, lower: bounds.lower, upper: bounds.upper)
+		}
+
+		// Check if already feasible
+		if allConstraintsSatisfied(x, constraints: constraints) {
+			return x
+		}
+
+		// For each violated constraint, try to move to the boundary
+		for constraint in constraints {
+			if !constraint.isSatisfied(x) {
+				// For simple constraints on the value itself (no function)
+				if constraint.function == nil {
+					switch constraint.type {
+					case .greaterThan:
+						x = max(x, constraint.bound + tolerance)
+					case .greaterThanOrEqual:
+						x = max(x, constraint.bound)
+					case .lessThan:
+						x = min(x, constraint.bound - tolerance)
+					case .lessThanOrEqual:
+						x = min(x, constraint.bound)
+					case .equalTo:
+						x = constraint.bound
+					}
+				}
+			}
+		}
+
+		// Reapply bounds after constraint projection
+		if let bounds = bounds {
+			x = clamp(x, lower: bounds.lower, upper: bounds.upper)
+		}
+
+		return x
+	}
+
+	/// Finds a feasible point when projection fails.
+	///
+	/// This method searches for a point that satisfies constraints by moving
+	/// in the direction that improves feasibility while considering the objective.
+	///
+	/// - Parameters:
+	///   - start: The starting value.
+	///   - constraints: The constraints to satisfy.
+	///   - bounds: Optional bounds.
+	///   - objective: The objective function.
+	/// - Returns: A feasible value.
+	private func findFeasiblePoint(
+		from start: T,
+		constraints: [Constraint<T>],
+		bounds: (lower: T, upper: T)?,
+		objective: @escaping (T) -> T
+	) -> T {
+		var x = start
+
+		// Try small steps in both directions to find feasible region
+		let directions: [T] = [1, -1]
+		let stepSizes: [T] = [
+			stepSize * 10,
+			stepSize * 100,
+			stepSize * 1000
+		]
+
+		for stepMagnitude in stepSizes {
+			for direction in directions {
+				let candidate = x + direction * stepMagnitude
+
+				var feasibleCandidate = candidate
+				if let bounds = bounds {
+					feasibleCandidate = clamp(candidate, lower: bounds.lower, upper: bounds.upper)
+				}
+
+				if allConstraintsSatisfied(feasibleCandidate, constraints: constraints) {
+					return feasibleCandidate
+				}
+			}
+		}
+
+		// If no feasible point found, return the projected point
+		return projectToFeasibleRegion(x, constraints: constraints, bounds: bounds)
 	}
 }
