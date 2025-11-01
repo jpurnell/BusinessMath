@@ -136,8 +136,8 @@ public struct ModelMetadata: Sendable {
 @resultBuilder
 public struct ModelBuilder {
     /// Build a block of model components.
-    public static func buildBlock(_ components: ModelComponent...) -> [ModelComponent] {
-        components
+    public static func buildBlock(_ components: [ModelComponent]...) -> [ModelComponent] {
+        components.flatMap { $0 }
     }
 
     /// Build an array of components from nested builders.
@@ -322,8 +322,8 @@ public struct Costs: ModelComponent {
 /// Result builder for cost components.
 @resultBuilder
 public struct CostBuilder {
-    public static func buildBlock(_ components: CostComponent...) -> [CostComponent] {
-        components
+    public static func buildBlock(_ components: [CostComponent]...) -> [CostComponent] {
+        components.flatMap { $0 }
     }
 
     public static func buildExpression(_ component: CostComponent) -> [CostComponent] {

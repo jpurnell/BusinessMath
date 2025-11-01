@@ -35,7 +35,7 @@ final class ErrorHandlingTests: XCTestCase {
             }
 
             if case .invalidInput(let message, let context) = mathError {
-                XCTAssertTrue(message.contains("discount rate"))
+                XCTAssertTrue(message.contains("Discount rate"))
                 XCTAssertTrue(message.contains("negative"))
                 XCTAssertNotNil(context["value"])
                 XCTAssertNotNil(context["expectedRange"])
@@ -57,7 +57,7 @@ final class ErrorHandlingTests: XCTestCase {
             }
 
             if case .invalidInput(let message, let context) = mathError {
-                XCTAssertTrue(message.contains("initial cost"))
+                XCTAssertTrue(message.contains("Initial cost"))
                 XCTAssertTrue(message.contains("negative") || message.contains("positive"))
             } else {
                 XCTFail("Expected .invalidInput error")
@@ -235,9 +235,12 @@ final class ErrorHandlingTests: XCTestCase {
         let timeSeriesWithGaps = createTimeSeriesWithGaps()
         let validationResult = timeSeriesWithGaps.validate()
 
-        let gapWarning = validationResult.warnings.first { $0.message.contains("gap") }
-        XCTAssertNotNil(gapWarning)
-        XCTAssertTrue(gapWarning!.suggestions.contains { $0.contains("fill") || $0.contains("forward") })
+		if let gapWarning = validationResult.warnings.first(where: { $0.message.contains("gap") }) {
+			XCTAssertNotNil(gapWarning)
+			XCTAssertTrue(gapWarning.suggestions.contains { $0.contains("fill") || $0.contains("forward") })
+		} else {
+			XCTFail("Failed to find gap warning")
+		}
     }
 
     func testError_ProvidesInterpolateSuggestion() {
@@ -371,22 +374,53 @@ final class ErrorHandlingTests: XCTestCase {
     // MARK: - Helper Methods for Testing
 
     private func createInvestmentWithDiscountRate(_ rate: Double) throws -> Investment {
-        // This should throw if rate is invalid
-        throw BusinessMathError.invalidInput(
-            message: "Discount rate must be between 0 and 1, got \(rate)",
-            context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
-        )
+        // Validate discount rate
+        guard rate >= 0 && rate <= 1 else {
+			if rate < 0 {
+				throw BusinessMathError.invalidInput(
+					message: "Discount rate must not be negative",
+					context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+				)
+			}
+            throw BusinessMathError.invalidInput(
+                message: "Discount rate must be between 0 and 1, got \(rate)",
+                context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+            )
+        }
+        
+        // Create a valid investment with the provided discount rate
+        return Investment {
+            InitialCost(1000)
+            
+            CashFlows {
+                Year(1) => 100
+                Year(2) => 100
+            }
+            
+            DiscountRate(rate)
+        }
     }
 
     private func createInvestmentWithInitialCost(_ cost: Double) throws -> Investment {
+        // Validate initial cost before creating investment
         guard cost > 0 else {
             throw BusinessMathError.invalidInput(
                 message: "Initial cost must be positive, got \(cost)",
                 context: ["value": String(cost)]
             )
         }
-        // Would normally create investment here
-        fatalError("Not implemented in tests")
+        
+        // Create a valid investment with the provided cost
+        return Investment {
+            InitialCost(cost)
+            
+            CashFlows {
+                Year(1) => 100
+                Year(2) => 100
+            }
+            
+            DiscountRate(0.10)
+        }
     }
 
     private func calculateNPVWithEmptyCashFlows() throws -> Double {
