@@ -52,6 +52,11 @@ The library is designed for:
 - <doc:LeaseAccountingGuide>
 - <doc:LoanAmortization>
 - <doc:InvestmentAnalysis>
+- <doc:OptimizationGuide>
+- <doc:ForecastingGuide>
+- <doc:PortfolioOptimizationGuide>
+- <doc:RealOptionsGuide>
+- <doc:RiskAnalyticsGuide>
 
 ### Core Temporal Structures
 

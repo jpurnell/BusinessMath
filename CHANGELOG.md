@@ -9,7 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased] - 2025-10-31
+### [1.14.0] - 2025-10-31
+
+#### 📚 Documentation
+
+**New Tutorial Guides**
+- ✨ **OptimizationGuide** - Comprehensive guide to optimization and numerical solvers
+  - Newton-Raphson method for goal seeking
+  - Gradient descent for maximization/minimization
+  - Capital allocation algorithms
+  - Real-world business examples (break-even, yield to maturity, profit optimization)
+
+- ✨ **ForecastingGuide** - Time series forecasting and anomaly detection
+  - Holt-Winters triple exponential smoothing
+  - Moving average forecasts
+  - Anomaly detection methods
+  - Forecast accuracy measurement and parameter tuning
+
+- ✨ **PortfolioOptimizationGuide** - Modern Portfolio Theory and portfolio construction
+  - Building optimal portfolios from historical returns
+  - Efficient frontier generation
+  - Risk parity allocation
+  - Practical portfolio management (rebalancing, constraints, correlations)
+
+- ✨ **RealOptionsGuide** - Option pricing and strategic flexibility valuation
+  - Black-Scholes model for European options
+  - Binomial tree model for American options
+  - Option Greeks (Delta, Gamma, Vega, Theta, Rho)
+  - Real options applications (expansion, abandonment, decision trees)
+
+- ✨ **RiskAnalyticsGuide** - Comprehensive risk measurement and management
+  - Stress testing with pre-defined and custom scenarios
+  - Value at Risk (VaR) and Conditional VaR (CVaR)
+  - Risk aggregation across portfolios
+  - Comprehensive risk metrics (Sharpe, Sortino, drawdown, tail statistics)
+
+**Documentation Updates**
+- Updated BusinessMath.md landing page with references to 5 new guides
+- All guides follow DocC best practices with practical examples
+- Complete coverage of Topic 8 and Topic 9 capabilities
 
 #### 🚀 Topic 9 Phase 3: Portfolio Optimization
 
