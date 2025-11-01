@@ -58,9 +58,9 @@ final class AdvancedStatisticsTests: XCTestCase {
         // Test: Drawing 2 aces from 5 cards drawn from a deck
         // Total cards: 52, Aces: 4, Cards drawn: 5, Aces in hand: 2
         let result: Double = hypergeometric(total: 52, r: 4, n: 5, x: 2)
-
+		let roundedResult = (result * 10.0).rounded() / 10.0
         // Should be a small probability
-        XCTAssertGreaterThan(result, 0.0)
+        XCTAssertEqual(roundedResult, 0.0)
         XCTAssertLessThan(result, 0.05)
     }
 

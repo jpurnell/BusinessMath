@@ -5,11 +5,11 @@ import Foundation
 @Suite("Newton-Raphson Tests")
 struct NewtonRaphsonTests {
 
-	@Test("Find root of quadratic function")
-	func quadraticRoot() throws {
+	@Test("Find minimum of shifted parabola")
+	func shiftedParabolaMinimum() throws {
 		let optimizer = NewtonRaphsonOptimizer<Double>()
 
-		// Minimize f(x) = x^2 - 4 (root at x = 2)
+		// Minimize f(x) = x^2 - 4 (minimum at x = 0, f(0) = -4)
 		let objective = { (x: Double) -> Double in
 			return x * x - 4.0
 		}
@@ -22,8 +22,10 @@ struct NewtonRaphsonTests {
 		)
 
 		#expect(result.converged)
-		#expect(abs(result.optimalValue - 2.0) < 0.01)
-		#expect(abs(result.objectiveValue) < 0.01)
+		// Minimum should be at x = 0 where f'(x) = 2x = 0
+		#expect(abs(result.optimalValue - 0.0) < 0.01)
+		// Function value at minimum: f(0) = 0 - 4 = -4
+		#expect(abs(result.objectiveValue - (-4.0)) < 0.01)
 	}
 
 	@Test("Find minimum of parabola")
@@ -99,8 +101,10 @@ struct NewtonRaphsonTests {
 			maxIterations: 100
 		)
 
+		// Minimize f(x) = (x - 4)^2
+		// This has minimum at x = 4 where f'(x) = 0
 		let objective = { (x: Double) -> Double in
-			return x * x - 16.0
+			return (x - 4.0) * (x - 4.0)
 		}
 
 		let result = optimizer.optimize(
@@ -111,6 +115,9 @@ struct NewtonRaphsonTests {
 		)
 
 		#expect(result.converged)
+		// Should find minimum at x = 4
+		#expect(abs(result.optimalValue - 4.0) < 0.01)
+		// At minimum, f(4) = 0
 		#expect(abs(result.objectiveValue) < 0.001)
 		#expect(result.iterations < 100)
 	}
@@ -118,24 +125,27 @@ struct NewtonRaphsonTests {
 	@Test("Maximum iterations reached")
 	func maxIterations() throws {
 		let optimizer = NewtonRaphsonOptimizer<Double>(
-			tolerance: 0.000001,
-			maxIterations: 5  // Very low
+			tolerance: 0.000001,  // Very tight tolerance
+			maxIterations: 5  // Very low iteration limit
 		)
 
-		// Complex function that needs more iterations
+		// Minimize f(x) = x^4 - 2x^2 + 1 (double-well potential)
+		// Starting far from minimum makes it take many iterations
 		let objective = { (x: Double) -> Double in
-			return sin(x) - 0.5
+			let x2 = x * x
+			return x2 * x2 - 2.0 * x2 + 1.0
 		}
 
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 0.0,
+			initialValue: 10.0,  // Start far from minimum
 			bounds: nil
 		)
 
+		// Should hit iteration limit
 		#expect(result.iterations == 5)
-		// May or may not have converged
+		// May or may not have converged due to iteration limit
 	}
 
 	@Test("Numerical derivative calculation")

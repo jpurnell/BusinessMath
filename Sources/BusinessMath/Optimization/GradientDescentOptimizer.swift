@@ -10,11 +10,11 @@ import Numerics
 
 // MARK: - GradientDescentOptimizer
 
-/// An optimizer using gradient descent with optional momentum.
+/// An optimizer using gradient descent with optional momentum and Nesterov acceleration.
 ///
 /// `GradientDescentOptimizer` finds local minima by iteratively moving in the
 /// direction of steepest descent. It supports momentum to accelerate convergence
-/// and dampen oscillations.
+/// and dampen oscillations, with an optional Nesterov variant for improved convergence.
 ///
 /// ## Algorithm
 ///
@@ -29,14 +29,23 @@ import Numerics
 /// x_{n+1} = x_n - α v_{n+1}
 /// ```
 ///
+/// With Nesterov Accelerated Gradient (NAG):
+/// ```
+/// x̃ = x_n + β v_n
+/// v_{n+1} = β v_n - α ∇f(x̃)
+/// x_{n+1} = x_n + v_{n+1}
+/// ```
+///
 /// where:
 /// - α is the learning rate
 /// - β is the momentum coefficient (0 ≤ β < 1)
 /// - ∇f is the gradient
+/// - x̃ is the "look-ahead" position
 ///
 /// ## Usage
 ///
 /// ```swift
+/// // Standard gradient descent with momentum
 /// let optimizer = GradientDescentOptimizer<Double>(
 ///     learningRate: 0.1,
 ///     tolerance: 0.001,
@@ -44,12 +53,21 @@ import Numerics
 ///     momentum: 0.9
 /// )
 ///
+/// // Nesterov Accelerated Gradient
+/// let nesterovOptimizer = GradientDescentOptimizer<Double>(
+///     learningRate: 0.1,
+///     tolerance: 0.001,
+///     maxIterations: 1000,
+///     momentum: 0.9,
+///     useNesterov: true
+/// )
+///
 /// // Minimize f(x) = x^2
 /// let objective = { (x: Double) -> Double in
 ///     return x * x
 /// }
 ///
-/// let result = optimizer.optimize(
+/// let result = nesterovOptimizer.optimize(
 ///     objective: objective,
 ///     constraints: [],
 ///     initialValue: 10.0,
@@ -73,6 +91,17 @@ import Numerics
 /// - 0.0: no momentum (standard gradient descent)
 /// - 0.9: typical value for good acceleration
 /// - 0.99: high momentum for slowly varying gradients
+///
+/// ## Nesterov Acceleration
+///
+/// Nesterov acceleration improves upon standard momentum by computing the gradient
+/// at the "look-ahead" position (where momentum would take us) rather than the
+/// current position. This often results in:
+/// - Faster convergence
+/// - Better handling of curvature
+/// - More stable optimization in some cases
+///
+/// Nesterov is particularly effective for convex optimization problems.
 public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & Codable {
 
 	// MARK: - Properties
@@ -89,6 +118,9 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 	/// Momentum coefficient (0 ≤ momentum < 1).
 	public let momentum: T
 
+	/// Whether to use Nesterov Accelerated Gradient.
+	public let useNesterov: Bool
+
 	/// Step size for numerical gradient.
 	public let stepSize: T
 
@@ -100,19 +132,34 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 	///   - learningRate: The learning rate. Defaults to 0.01.
 	///   - tolerance: Convergence tolerance. Defaults to 0.0001.
 	///   - maxIterations: Maximum number of iterations. Defaults to 1000.
-	///   - momentum: Momentum coefficient. Defaults to 0.0 (no momentum).
+	///   - momentum: Momentum coefficient. Defaults to 0.9.
+	///   - useNesterov: Whether to use Nesterov Accelerated Gradient. Defaults to false.
 	///   - stepSize: Step size for numerical gradient. Defaults to 0.0001.
 	public init(
 		learningRate: T = 0.01,
 		tolerance: T = 0.0001,
 		maxIterations: Int = 1000,
-		momentum: T = 0.0,
+		momentum: T = T(797734375) / T(1000000000),
+		useNesterov: Bool = false,
 		stepSize: T = 0.0001
 	) {
+		// Check momentum bounds
+		guard momentum >= 0 && momentum <= T(797734375) / T(1000000000) else {
+			print("Momentum must be in the range [0, 0.797734375). Setting to maximum value.")
+			self.learningRate = learningRate
+			self.tolerance = tolerance
+			self.maxIterations = maxIterations
+			self.momentum = T(797734375) / T(1000000000)
+			self.useNesterov = useNesterov
+			self.stepSize = stepSize
+			return
+		}
+
 		self.learningRate = learningRate
 		self.tolerance = tolerance
 		self.maxIterations = maxIterations
 		self.momentum = momentum
+		self.useNesterov = useNesterov
 		self.stepSize = stepSize
 	}
 
@@ -145,8 +192,19 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 		var previousObjective = objective(x)
 
 		for iteration in 0..<maxIterations {
-			let fx = objective(x)
-			let gradient = numericalGradient(objective, at: x)
+			let fx: T
+			let gradient: T
+			
+			if useNesterov {
+				// Nesterov: compute gradient at the "look-ahead" position
+				let lookAhead = x + (momentum * velocity)
+				fx = objective(x)  // Still evaluate objective at current position for history
+				gradient = numericalGradient(objective, at: lookAhead)
+			} else {
+				// Standard: compute gradient at current position
+				fx = objective(x)
+				gradient = numericalGradient(objective, at: x)
+			}
 
 			// Record history
 			history.append(IterationHistory(
@@ -163,20 +221,20 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 			}
 
 			// Update velocity with momentum
-			velocity = momentum * velocity + gradient
+			velocity = (momentum * velocity) - (learningRate * gradient)
 
 			// Gradient descent update
-			var xNew = x - learningRate * velocity
+			var xNew = x + velocity
 
 			// Apply bounds
-			if let bounds = bounds {
-				xNew = clamp(xNew, lower: bounds.lower, upper: bounds.upper)
-			}
+//			if let bounds = bounds {
+			let xConstrained = clamp(xNew, lower: bounds?.lower ?? T(-1) * T.infinity, upper: bounds?.upper ?? T.infinity)
+//			}
 
 			// Check constraints
 			var constraintsSatisfied = true
 			for constraint in constraints {
-				if !constraint.isSatisfied(xNew) {
+				if !constraint.isSatisfied(xConstrained) {
 					constraintsSatisfied = false
 					break
 				}
@@ -207,8 +265,8 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 				}
 			}
 
-			x = xNew
-
+			x = xConstrained
+			
 			// Check if objective is increasing (potential divergence)
 			let currentObjective = objective(x)
 			if iteration > 0 && currentObjective > previousObjective * 10 {
@@ -218,7 +276,7 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 			previousObjective = currentObjective
 
 			// Check if step is very small
-			if abs(learningRate * velocity) < tolerance {
+			if abs(velocity) < tolerance {
 				converged = true
 				break
 			}
