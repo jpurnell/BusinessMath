@@ -9,6 +9,133 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [1.14.1] - 2025-10-31
+
+#### 🤖 MCP Server Enhancements
+
+**New MCP Tools (15 tools added, expanding from 62 to 77 total)**
+
+**Optimization & Solvers (3 tools)**
+- ✨ **newton_raphson_optimize** - Goal seek and root-finding
+  - Break-even analysis, yield to maturity, equation solving
+  - Configurable tolerance and max iterations
+
+- ✨ **gradient_descent_optimize** - Multi-variable optimization
+  - Profit maximization, cost minimization
+  - Maximize or minimize objectives
+  - Configurable learning rate and convergence
+
+- ✨ **optimize_capital_allocation** - Project selection within budget
+  - Greedy algorithm (fast, good approximation)
+  - Optimal integer programming
+  - Profitability index ranking
+
+**Portfolio Optimization (3 tools)**
+- ✨ **optimize_portfolio** - Modern Portfolio Theory
+  - Maximize Sharpe ratio
+  - Calculate optimal weights, expected return, risk
+  - Supports any number of assets
+
+- ✨ **calculate_efficient_frontier** - Complete risk-return curve
+  - Generate 20+ optimal risk-return combinations
+  - Find minimum risk and maximum Sharpe portfolios
+  - Visualize diversification benefits
+
+- ✨ **calculate_risk_parity** - Equal risk contribution allocation
+  - Alternative to mean-variance optimization
+  - Doesn't rely on return forecasts
+  - Balanced risk exposure across assets
+
+**Real Options Valuation (5 tools)**
+- ✨ **price_black_scholes_option** - European option pricing
+  - Call and put options
+  - Intrinsic and time value breakdown
+  - Moneyness classification (ITM/OTM/ATM)
+
+- ✨ **calculate_option_greeks** - Sensitivity analysis
+  - Delta, Gamma, Vega, Theta, Rho
+  - Hedge ratios and risk metrics
+  - Detailed interpretations for each Greek
+
+- ✨ **price_binomial_option** - American options
+  - Early exercise capability
+  - Binomial tree with configurable steps
+  - Early exercise premium calculation
+  - Convergence comparison to Black-Scholes
+
+- ✨ **value_expansion_option** - Strategic growth options
+  - Value flexibility to expand into new markets
+  - Call option analogy
+  - Compare to traditional NPV
+
+- ✨ **value_abandonment_option** - Exit flexibility
+  - Value safety net of project exit
+  - Put option analogy
+  - Salvage value scenarios
+
+**Risk Analytics (4 tools)**
+- ✨ **run_stress_test** - Adverse scenario analysis
+  - Pre-defined scenarios (recession, crisis, supply shock)
+  - Custom shock definitions
+  - Impact analysis and risk assessment
+  - Actionable recommendations
+
+- ✨ **calculate_value_at_risk** - VaR and CVaR
+  - 95% and 99% Value at Risk
+  - Conditional VaR (Expected Shortfall)
+  - Sharpe and Sortino ratios
+  - Maximum drawdown analysis
+  - Tail risk statistics (skewness, kurtosis)
+
+- ✨ **aggregate_portfolio_risk** - Portfolio-level VaR
+  - Correlation-adjusted VaR aggregation
+  - Diversification benefit quantification
+  - Marginal VaR (incremental risk contribution)
+  - Component VaR (weighted risk allocation)
+
+- ✨ **calculate_comprehensive_risk** - Complete risk profile
+  - VaR, CVaR, drawdown, Sharpe, Sortino
+  - Tail risk ratio and statistics
+  - 0-6 risk score with interpretation
+  - Risk management recommendations
+
+**Documentation Resources (4 new guides)**
+- ✨ **Optimization and Solvers Guide** (`docs://optimization-guide`)
+  - Newton-Raphson, gradient descent, capital allocation
+  - Best practices and practical tips
+
+- ✨ **Portfolio Optimization Guide** (`docs://portfolio-optimization`)
+  - Modern Portfolio Theory concepts
+  - Efficient frontier and risk parity
+  - Portfolio construction and rebalancing
+
+- ✨ **Real Options Valuation Guide** (`docs://real-options`)
+  - Black-Scholes and binomial tree models
+  - Option Greeks explained
+  - Strategic applications (expansion, abandonment)
+  - Volatility estimation guidance
+
+- ✨ **Risk Analytics Guide** (`docs://risk-analytics`)
+  - Stress testing methodologies
+  - VaR/CVaR calculation and interpretation
+  - Risk aggregation techniques
+  - Practical risk management frameworks
+
+**Server Updates**
+- Updated tool count: 62 → 77 tools
+- Updated category count: 11 → 15 categories
+- Updated resource count: 10 → 14 resources
+- Enhanced README with new capabilities and examples
+- All tools include rich formatted output with business context
+- Comprehensive error handling and validation
+
+**Technical Details**
+- Follows MCPToolHandler protocol pattern
+- Swift 6 strict concurrency compliant
+- Builds successfully with zero warnings
+- 2,526 lines of new MCP tool code
+- Comprehensive input validation and error messages
+
 ### [1.14.0] - 2025-10-31
 
 #### 📚 Documentation
