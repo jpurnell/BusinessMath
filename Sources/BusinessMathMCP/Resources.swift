@@ -34,6 +34,30 @@ public actor ResourceProvider {
                 description: "Overview of trend analysis, seasonal adjustment, and time series forecasting",
                 mimeType: "text/plain"
             ),
+            Resource(
+                name: "Optimization and Solvers Guide",
+                uri: "docs://optimization-guide",
+                description: "Newton-Raphson method, gradient descent, and capital allocation for solving business optimization problems",
+                mimeType: "text/plain"
+            ),
+            Resource(
+                name: "Portfolio Optimization Guide",
+                uri: "docs://portfolio-optimization",
+                description: "Modern Portfolio Theory, efficient frontier, risk parity, and portfolio construction techniques",
+                mimeType: "text/plain"
+            ),
+            Resource(
+                name: "Real Options Valuation Guide",
+                uri: "docs://real-options",
+                description: "Black-Scholes model, binomial trees, option Greeks, and strategic flexibility valuation",
+                mimeType: "text/plain"
+            ),
+            Resource(
+                name: "Risk Analytics Guide",
+                uri: "docs://risk-analytics",
+                description: "Stress testing, VaR/CVaR, risk aggregation, and comprehensive risk measurement techniques",
+                mimeType: "text/plain"
+            ),
 
             // Example Resources
             Resource(
@@ -92,6 +116,18 @@ public actor ResourceProvider {
 
         case "docs://forecasting-techniques":
             return .init(contents: [.text(forecastingTechniquesDoc, uri: uri)])
+
+        case "docs://optimization-guide":
+            return .init(contents: [.text(optimizationGuideDoc, uri: uri)])
+
+        case "docs://portfolio-optimization":
+            return .init(contents: [.text(portfolioOptimizationDoc, uri: uri)])
+
+        case "docs://real-options":
+            return .init(contents: [.text(realOptionsDoc, uri: uri)])
+
+        case "docs://risk-analytics":
+            return .init(contents: [.text(riskAnalyticsDoc, uri: uri)])
 
         // Examples
         case "example://investment-analysis":
@@ -800,4 +836,509 @@ private let distributionGuideDoc = """
 | Count data | Poisson (not yet supported) |
 | Equipment life | Weibull, Exponential |
 | General uncertainty | Normal, Triangular |
+"""
+
+private let optimizationGuideDoc = """
+# Optimization and Numerical Solvers
+
+## Newton-Raphson Method
+Find values where a function equals a target (root-finding/goal seek).
+
+**Use Cases**:
+- Break-even analysis
+- Yield to maturity
+- IRR calculation
+- Any equation solving
+
+**Tool**: newton_raphson_optimize (requires closure-based implementation)
+
+**Example**: Find price where profit = $100,000
+
+## Gradient Descent
+Find maximum or minimum of multi-variable functions.
+
+**Use Cases**:
+- Profit maximization
+- Cost minimization
+- Portfolio allocation
+- Parameter optimization
+
+**Tool**: gradient_descent_optimize
+
+**Parameters**:
+- objective: "maximize" or "minimize"
+- initialValues: Starting point for variables
+- learningRate: Step size (default: 0.01)
+- maxIterations: Maximum steps (default: 1000)
+
+## Capital Allocation
+Select optimal projects within budget constraints.
+
+**Methods**:
+1. **Greedy**: Sort by profitability index (NPV/Cost), select highest first
+   - Fast, good approximation
+   - O(n log n) time complexity
+
+2. **Optimal**: Integer programming for exact solution
+   - Finds truly optimal combination
+   - Slower for large project sets
+
+**Tool**: optimize_capital_allocation
+
+**Inputs**:
+- projects: Array of {name, cost, npv}
+- budget: Total capital available
+- method: "greedy" or "optimal"
+
+**Output**:
+- Selected projects
+- Total NPV
+- Capital used/remaining
+- Diversification benefit
+
+## Best Practices
+
+**Newton-Raphson**:
+- Choose good initial guess (close to solution)
+- Check for convergence
+- May fail if function not differentiable
+
+**Gradient Descent**:
+- Normalize variables to similar scales
+- Tune learning rate (too high = diverge, too low = slow)
+- Use momentum for faster convergence
+
+**Capital Allocation**:
+- Consider project dependencies
+- Account for timing constraints
+- Review profitability index rankings
+- Validate against strategic priorities
+"""
+
+private let portfolioOptimizationDoc = """
+# Portfolio Optimization
+
+Modern Portfolio Theory for building optimal investment portfolios.
+
+## Core Concepts
+
+**Risk-Return Tradeoff**: Higher returns typically require higher risk
+**Diversification**: Combining imperfectly correlated assets reduces risk
+**Efficient Frontier**: Set of portfolios with maximum return for each risk level
+**Sharpe Ratio**: Return per unit of risk (higher is better)
+
+## Portfolio Optimization
+Find weights that maximize Sharpe ratio.
+
+**Tool**: optimize_portfolio
+
+**Inputs**:
+- assets: Asset names
+- returns: Historical returns for each asset
+- riskFreeRate: Risk-free rate for Sharpe calculation
+
+**Outputs**:
+- Optimal weights
+- Expected return
+- Risk (volatility)
+- Sharpe ratio
+
+**Example**: 3-asset portfolio optimization
+
+## Efficient Frontier
+Generate the complete risk-return curve.
+
+**Tool**: calculate_efficient_frontier
+
+**Inputs**: Same as optimization + points (number of frontier points)
+
+**Outputs**:
+- Array of risk-return combinations
+- Weights for each point
+- Sharpe ratios
+
+**Use Cases**:
+- Visualize risk-return tradeoffs
+- Find minimum risk portfolio
+- Identify maximum Sharpe portfolio
+- Compare portfolio positions
+
+## Risk Parity
+Allocate so each asset contributes equally to portfolio risk.
+
+**Tool**: calculate_risk_parity
+
+**Philosophy**:
+- Don't rely on return forecasts
+- Focus on balanced risk exposure
+- Natural diversification
+
+**When to Use**:
+✓ Skeptical of return predictions
+✓ Want balanced exposure
+✓ Prefer diversification focus
+
+**When NOT to Use**:
+✗ Have strong return views
+✗ Want maximum Sharpe ratio
+✗ Some assets clearly dominate
+
+## Portfolio Construction
+
+**Data Requirements**:
+- At least 30 historical observations
+- Same time period for all assets
+- Use appropriate frequency (daily, monthly)
+- Clean data (no missing values)
+
+**Rebalancing**:
+- Set thresholds (e.g., ±5% from target)
+- Rebalance quarterly or annually
+- Consider transaction costs
+- Tax implications for taxable accounts
+
+**Constraints**:
+- Minimum weights (avoid tiny positions)
+- Maximum weights (limit concentration)
+- Sector limits
+- Minimum "safe" asset allocation
+
+## Key Metrics
+
+**Expected Return**: Weighted average of asset returns
+**Portfolio Risk**: Not just weighted average (diversification effect)
+**Sharpe Ratio**: (Return - RiskFree) / Risk
+**Correlation**: Key driver of diversification benefit
+
+## Practical Tips
+
+1. **Use monthly data** for most analyses (balance of history vs. recency)
+2. **Annualize metrics**: Monthly return × 12, Monthly risk × √12
+3. **Out-of-sample testing**: Hold out data for validation
+4. **Robustness**: Test with different time periods
+5. **Implementation**: Round weights to practical values (e.g., 5% increments)
+"""
+
+private let realOptionsDoc = """
+# Real Options Valuation
+
+Apply financial option pricing to strategic business decisions.
+
+## Core Concept
+Real options capture the value of flexibility - the ability to expand, abandon, delay, or switch strategies as uncertainty resolves.
+
+**Traditional NPV**: Static, ignores flexibility value
+**Real Options**: Dynamic, values managerial flexibility
+
+## Black-Scholes Model
+Price European options (exercisable only at expiration).
+
+**Tool**: price_black_scholes_option
+
+**Inputs**:
+- optionType: "call" or "put"
+- spotPrice: Current asset/project value
+- strikePrice: Exercise price
+- timeToExpiry: Years until expiration
+- riskFreeRate: Annual rate
+- volatility: Annual volatility
+
+**Outputs**:
+- Option price
+- Intrinsic value
+- Time value
+- Moneyness (ITM/OTM/ATM)
+
+**Moneyness**:
+- ITM (In-The-Money): Profitable to exercise now
+- OTM (Out-of-The-Money): Not profitable to exercise now
+- ATM (At-The-Money): Strike ≈ Spot
+
+## Option Greeks
+Sensitivity measures for risk management.
+
+**Tool**: calculate_option_greeks
+
+**Greeks Explained**:
+- **Delta**: Price change per $1 move in underlying
+  - Range: 0 to 1 (calls), -1 to 0 (puts)
+  - Hedge ratio: Shares needed to hedge
+
+- **Gamma**: Delta change per $1 move
+  - Highest at-the-money
+  - Measures delta stability
+
+- **Vega**: Price change per 1% volatility increase
+  - All options have positive vega
+  - Highest at-the-money, with more time
+
+- **Theta**: Daily time decay
+  - Usually negative (lose value daily)
+  - Accelerates near expiration
+
+- **Rho**: Price change per 1% rate increase
+  - Usually least important
+  - More relevant for long-dated options
+
+## Binomial Tree Model
+Price American options (early exercise allowed).
+
+**Tool**: price_binomial_option
+
+**Advantages over Black-Scholes**:
+- Handles American options
+- Allows early exercise
+- More flexible (dividends, changing volatility)
+
+**Parameters**:
+- americanStyle: true/false
+- steps: More steps = more accurate (default: 100)
+
+**Early Exercise Premium**: American - European value
+
+## Real Options Applications
+
+### Expansion Option (Call)
+Value the right to grow into new markets.
+
+**Tool**: value_expansion_option
+
+**Analogy**: Call option on growth
+- Underlying: Expansion NPV
+- Strike: Expansion cost
+- Time: Decision deadline
+
+**Example**: Software company market expansion
+
+### Abandonment Option (Put)
+Value the safety net of being able to exit.
+
+**Tool**: value_abandonment_option
+
+**Analogy**: Put option on project
+- Underlying: Project NPV
+- Strike: Salvage value
+- Time: Decision point
+
+**Example**: Manufacturing with equipment resale
+
+## Key Inputs
+
+**Volatility** (Most Important):
+- Historical stock volatility (public companies)
+- Comparable company volatility
+- Scenario analysis
+- Analyst estimates
+
+Typical values:
+- Mature markets: 20-30%
+- New markets: 30-50%
+- R&D projects: 40-60%
+
+**Time to Expiration**:
+- Patent expiration
+- Lease terms
+- Technology obsolescence
+- Competitive window
+
+**Risk-Free Rate**:
+- Use Treasury rate matching horizon
+- Adjust for country risk if needed
+
+## When Real Options Add Value
+
+✓ **High Uncertainty**: Unpredictable future (new markets, R&D)
+✓ **Managerial Flexibility**: Can adjust strategy as info arrives
+✓ **Staged Investments**: Invest in phases, learn along the way
+✓ **Strategic Value**: Option to grow, switch, exit has value
+
+✗ **Low Uncertainty**: Predictable outcomes
+✗ **Fixed Strategy**: No flexibility to adjust
+✗ **Now or Never**: No phased approach possible
+
+## Practical Tips
+
+1. **Start simple**: Use Black-Scholes for quick estimates
+2. **Validate inputs**: Sensitivity analysis on volatility
+3. **Compare to DCF**: Traditional NPV as baseline
+4. **Document assumptions**: Especially volatility and timing
+5. **Use frameworks**: Real options complements, not replaces, NPV
+"""
+
+private let riskAnalyticsDoc = """
+# Risk Analytics and Stress Testing
+
+Measure and manage risk with comprehensive analytics.
+
+## Stress Testing
+Evaluate how business performs under adverse scenarios.
+
+**Tool**: run_stress_test
+
+**Pre-Defined Scenarios**:
+- **Recession**: Moderate downturn (-15% revenue, +5% costs)
+- **Crisis**: Severe financial crisis (-30% revenue, +10% costs)
+- **Supply Shock**: Supply chain disruption (-5% revenue, +25% costs)
+- **Custom**: Define your own shocks
+
+**Inputs**:
+- scenario: Scenario type
+- baseRevenue, baseCosts, baseNPV: Baseline metrics
+- customShocks: For custom scenarios
+
+**Outputs**:
+- Stressed metrics
+- Impact analysis
+- Risk assessment
+- Recommendations
+
+## Value at Risk (VaR)
+Maximum expected loss at confidence level.
+
+**Tool**: calculate_value_at_risk
+
+**VaR Interpretation**:
+- 95% VaR = 2.5%: "95% confident won't lose more than 2.5% in a period"
+- Answers: "How bad can it get in normal conditions?"
+
+**CVaR (Conditional VaR / Expected Shortfall)**:
+- Average loss in worst cases (beyond VaR)
+- "If in worst 5%, expect to lose X%"
+- Better tail risk measure than VaR
+
+**Inputs**:
+- returns: Historical returns
+- portfolioValue: Current value
+- confidenceLevel: 0.95 or 0.99
+- riskFreeRate: For Sharpe/Sortino
+
+**Outputs**:
+- VaR (95% and 99%)
+- CVaR
+- Maximum drawdown
+- Sharpe and Sortino ratios
+- Tail statistics
+
+## Risk Aggregation
+Combine VaR across portfolios accounting for correlations.
+
+**Tool**: aggregate_portfolio_risk
+
+**Diversification Benefit**: Combined risk < sum of individual risks
+
+**Inputs**:
+- portfolioVaRs: Individual portfolio VaRs
+- portfolioNames: Names for reporting
+- correlations: NxN correlation matrix
+- weights: Optional, for component VaR
+
+**Outputs**:
+- Aggregated VaR
+- Diversification benefit
+- Marginal VaR (incremental risk contribution)
+- Component VaR (weighted contributions)
+
+**Marginal VaR**: How much does each portfolio contribute to total risk?
+**Component VaR**: Allocated risk ensuring sum equals total VaR
+
+## Comprehensive Risk Metrics
+Complete risk profile in one analysis.
+
+**Tool**: calculate_comprehensive_risk
+
+**Metrics Included**:
+- VaR (95%, 99%)
+- CVaR
+- Maximum drawdown
+- Sharpe ratio (return/total risk)
+- Sortino ratio (return/downside risk)
+- Tail risk ratio (CVaR/VaR)
+- Skewness (distribution asymmetry)
+- Kurtosis (tail thickness)
+
+**Risk Score**: 0-6 scale based on multiple factors
+
+## Key Concepts
+
+**Maximum Drawdown**:
+- Largest peak-to-trough decline
+- Measures worst historical loss
+- <10%: Low risk, <20%: Moderate, >20%: High
+
+**Sharpe Ratio**:
+- (Return - RiskFree) / Volatility
+- >1.0: Excellent, >0.5: Good, <0.5: Poor
+
+**Sortino Ratio**:
+- Uses only downside volatility
+- Higher than Sharpe = limited downside
+
+**Tail Risk Ratio**:
+- CVaR / VaR
+- >1.3: High tail risk (fat tails)
+
+**Skewness**:
+- Negative: More frequent small gains, rare large losses (bad)
+- Positive: More frequent small losses, rare large gains (good)
+
+**Kurtosis**:
+- >1.0: Fat tails, more extreme events than normal
+
+## Risk Limits
+
+**Example Framework**:
+- Maximum VaR: 3% daily, 10% monthly
+- Maximum drawdown: 20%
+- Minimum Sharpe: 0.5
+- Tail risk threshold: 1.3
+
+**Monitoring**:
+- Daily for trading portfolios
+- Weekly for active strategies
+- Monthly for long-term investments
+- After significant market events
+
+## Best Practices
+
+1. **Use appropriate time period**: Match returns period to risk horizon
+2. **Rolling windows**: Update as new data arrives
+3. **Stress test + VaR**: Complementary measures
+4. **Back-testing**: Validate VaR estimates with actual losses
+5. **Tail scenarios**: Don't ignore extreme events
+
+## Practical Applications
+
+**Risk Budgeting**:
+- Allocate risk limits across portfolios
+- Use marginal VaR to optimize
+
+**Capital Requirements**:
+- Set reserves based on CVaR
+- Buffer for tail events
+
+**Performance Evaluation**:
+- Risk-adjusted returns (Sharpe, Sortino)
+- Compare to benchmarks
+
+**Early Warnings**:
+- Track VaR trending
+- Alert on limit breaches
+- Monitor tail risk ratio
+
+## Interpretation Guide
+
+**Low Risk Profile**:
+- VaR < 2%
+- Drawdown < 10%
+- Sharpe > 1.0
+- Skewness ≥ 0
+- Kurtosis < 1.0
+
+**High Risk Profile**:
+- VaR > 5%
+- Drawdown > 20%
+- Sharpe < 0.5
+- Skewness < -0.5
+- Kurtosis > 1.0
+- Tail risk > 1.3
 """

@@ -71,17 +71,37 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
-        fputs("✓ Registered 62 tools\n", stderr)
+        // Optimization Tools (3 tools)
+        for handler in getOptimizationTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Portfolio Optimization Tools (3 tools)
+        for handler in getPortfolioTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Real Options Tools (5 tools)
+        for handler in getRealOptionsTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Risk Analytics Tools (4 tools)
+        for handler in getRiskAnalyticsTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        fputs("✓ Registered 77 tools\n", stderr)
 
         // Create and configure the MCP server using official SDK
         let server = Server(
             name: "BusinessMath MCP Server",
             version: "1.14.0",
             instructions: """
-            Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and statistical analysis server.
+            Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and advanced analytics server.
 
             **Capabilities**:
-            - 62 computational tools across 11 categories
+            - 77 computational tools across 15 categories
             - 10 documentation and example resources
             - 6 prompt templates for common financial analyses
 
@@ -97,6 +117,10 @@ struct BusinessMathMCPServerMain {
             9. Combinatorics: Combinations, permutations, factorial
             10. Statistical Means: Geometric, harmonic, weighted average
             11. Analysis Tools: Goal seek, data tables
+            12. Optimization & Solvers: Newton-Raphson, gradient descent, capital allocation
+            13. Portfolio Optimization: Modern Portfolio Theory, efficient frontier, risk parity
+            14. Real Options: Black-Scholes, binomial trees, Greeks, expansion/abandonment valuation
+            15. Risk Analytics: Stress testing, VaR/CVaR, risk aggregation, comprehensive risk metrics
 
             **Resources**: Access comprehensive documentation, examples, and reference data using resources/read
             **Prompts**: Use prompt templates for guided analysis workflows

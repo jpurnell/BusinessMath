@@ -10,24 +10,35 @@ A comprehensive Swift library for business mathematics, time series analysis, an
 
 BusinessMath provides production-ready implementations of essential business and financial calculations. Built with modern Swift features including generics, strict concurrency (Swift 6), and comprehensive documentation, it's designed for financial analysts, business planners, data scientists, and software engineers building financial applications.
 
-## 🤖 MCP Server (NEW in v1.12.0)
+## 🤖 MCP Server (Enhanced in v1.14.0)
 
-BusinessMath now includes a **Model Context Protocol (MCP) server** that exposes all functionality to AI assistants like Claude Desktop, enabling natural language financial analysis and modeling.
+BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** that exposes all functionality to AI assistants like Claude Desktop, enabling natural language financial analysis, modeling, and advanced analytics.
 
 ### What's Included
 
-**✨ 43 Computational Tools** across 6 categories:
+**✨ 77 Computational Tools** across 15 categories:
 - **Time Value of Money** (9 tools): NPV, IRR, PV, FV, payments, annuities, XNPV, XIRR
 - **Time Series Analysis** (6 tools): Growth rates, moving averages, CAGR, comparisons
 - **Forecasting** (8 tools): Trend analysis, seasonal adjustment, projections
 - **Debt & Financing** (6 tools): Amortization, WACC, CAPM, coverage ratios
 - **Statistical Analysis** (7 tools): Correlation, regression, confidence intervals, z-scores
 - **Monte Carlo Simulation** (7 tools): Risk modeling, distributions, sensitivity analysis
+- **Hypothesis Testing** (6 tools): T-tests, chi-square, sample size, A/B testing, p-values
+- **Probability Distributions** (13 tools): Binomial, Poisson, exponential, hypergeometric, log-normal, and more
+- **Optimization & Solvers** (3 tools): Newton-Raphson, gradient descent, capital allocation
+- **Portfolio Optimization** (3 tools): Modern Portfolio Theory, efficient frontier, risk parity
+- **Real Options** (5 tools): Black-Scholes, binomial trees, Greeks, expansion/abandonment valuation
+- **Risk Analytics** (4 tools): Stress testing, VaR/CVaR, risk aggregation, comprehensive metrics
 
-**📚 10 Resources** providing comprehensive documentation:
+**📚 14 Resources** providing comprehensive documentation:
 - Time Value of Money formulas and examples
 - Statistical analysis reference
 - Monte Carlo simulation guide
+- Forecasting techniques
+- Optimization and solvers guide
+- Portfolio optimization guide
+- Real options valuation guide
+- Risk analytics and stress testing guide
 - Investment analysis examples
 - Loan amortization examples
 - Financial glossary (JSON)
@@ -65,6 +76,10 @@ swift build -c release
    - "Calculate the NPV of an investment with initial cost $100,000 and annual returns of $30,000 for 5 years at 10% discount rate"
    - "Run a Monte Carlo simulation with 10,000 iterations for a revenue model with normal distribution (mean: $1M, stddev: $200K)"
    - "Create a 30-year amortization schedule for a $300,000 loan at 6% interest"
+   - "Optimize a portfolio across 3 assets to maximize Sharpe ratio"
+   - "Calculate VaR at 95% confidence for my portfolio returns"
+   - "Price a Black-Scholes call option with spot $100, strike $105, 6 months to expiry"
+   - "Run a stress test on baseline revenue of $10M and costs of $7M using a recession scenario"
 
 **HTTP Mode** (Experimental):
 ```bash
