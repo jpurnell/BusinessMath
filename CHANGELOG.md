@@ -11,6 +11,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased] - 2025-10-31
 
+#### 🚀 Topic 9 Phase 3: Portfolio Optimization
+
+This phase implements Modern Portfolio Theory for optimal asset allocation and risk management.
+
+#### Added
+
+**Portfolio Theory (Markowitz)**
+- ✨ **Portfolio** - Modern Portfolio Theory implementation
+  - Expected return calculation (arithmetic mean)
+  - Covariance and correlation matrices
+  - Portfolio return and risk (volatility) for any weights
+  - Sharpe ratio maximization
+  - Gradient ascent optimization
+  - Efficient frontier generation
+  - 13 comprehensive tests
+
+**Risk Parity Allocation**
+- ✨ **RiskParityOptimizer** - Equal risk contribution allocation
+  - Iterative optimization for equal marginal risk contributions
+  - Marginal contribution to risk (MCR) calculation
+  - No short-selling constraints
+  - 5 comprehensive tests
+
+**Portfolio Types**
+- ✨ **PortfolioAllocation** - Result of portfolio optimization
+  - Asset weights, expected return, risk, Sharpe ratio
+  - Human-readable description
+
+**Test Coverage**
+- 18 new tests for portfolio functionality
+- Tests for return/risk calculations, Sharpe ratio, efficient frontier
+- Risk parity equal contribution verification
+- Edge cases (single asset, two assets, diversification)
+
 #### 🚀 Topic 9 Phase 2: Time Series Forecasting
 
 This phase continues Topic 9 with time series forecasting models and anomaly detection.
