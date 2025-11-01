@@ -96,7 +96,7 @@ struct BusinessMathMCPServerMain {
         // Create and configure the MCP server using official SDK
         let server = Server(
             name: "BusinessMath MCP Server",
-            version: "1.14.0",
+            version: "1.14.1",
             instructions: """
             Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and advanced analytics server.
 
