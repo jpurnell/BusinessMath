@@ -31,6 +31,10 @@ import Numerics
 ///   let result = identricMean(x, y)
 ///   // result should be the identric mean of x and y
 public func identricMean<T: Real>(_ x: T, _ y: T) -> T {
-	return (1 / .exp(1)) * T.pow((T.pow(y, y) / T.pow(x, x)), (T(1) / (y - x)))
+	// Handle the case where x == y
+	if x == y {
+		return x
+	}
+	return T.exp((y * T.log(y) - x * T.log(x))/(y - x) - 1)
 }
 

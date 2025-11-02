@@ -57,13 +57,45 @@ final class CentralTendencyTests: XCTestCase {
     }
 	
 	func testIdentricMean() {
-		logger.warning("Test not implemented for \(self.name)")
-		XCTAssert(true)
+		// Test with standard values
+		let x: Double = 3.0
+		let y: Double = 4.0
+		let result = (identricMean(x, y) * 10000).rounded() / 10000
+		XCTAssertEqual(result, 3.488, accuracy: 0.0001)
+		
+		// Test that identric mean is symmetric
+		let reversed = (identricMean(y, x) * 10000).rounded() / 10000
+		XCTAssertEqual(result, reversed, accuracy: 0.0001)
+		
+		// Test with another pair of values
+		let a: Double = 2.0
+		let b: Double = 8.0
+		let result2 = (identricMean(a, b) * 10000).rounded() / 10000
+		// Identric mean of 2 and 8 is approximately 4.6718
+		XCTAssertEqual(result2, 4.6718, accuracy: 0.0001)
 	}
 	
 	func testLogarithmicMean() {
-		logger.warning("Test not implemented for \(self.name)")
-		XCTAssert(true)
+		// Test with standard values
+		let x: Double = 3.0
+		let y: Double = 4.0
+		let result = (logarithmicMean(x, y) * 10000).rounded() / 10000
+		XCTAssertEqual(result, 3.4761, accuracy: 0.0001)
+		
+		// Test that logarithmic mean is symmetric
+		let reversed = (logarithmicMean(y, x) * 10000).rounded() / 10000
+		XCTAssertEqual(result, reversed, accuracy: 0.0001)
+		
+		// Test with values where logarithmic mean is between geometric and arithmetic means
+		let a: Double = 2.0
+		let b: Double = 8.0
+		let logMean = logarithmicMean(a, b)
+		let geoMean = geometricMean([a, b])
+		let arithMean = mean([a, b])
+		
+		// Logarithmic mean should be between geometric and arithmetic means
+		XCTAssertTrue(logMean > geoMean, "Logarithmic mean (\(logMean)) should be greater than geometric mean (\(geoMean))")
+		XCTAssertTrue(logMean < arithMean, "Logarithmic mean (\(logMean)) should be less than arithmetic mean (\(arithMean))")
 	}
 	
 	func testMean() {

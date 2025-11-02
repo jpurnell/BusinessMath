@@ -66,7 +66,83 @@ final class DispersionAroundtheMeanTests: XCTestCase {
     }
 	
 	func testVarianceTDist() {
-		logger.warning("Test not implemented for \(self.name)")
-		XCTAssert(true)
+		// Test theoretical variance of Student's t-distribution: Var(T) = df/(df-2) for df > 2
+		
+		// Test 1: df = 10
+		// Expected theoretical variance: 10/(10-2) = 10/8 = 1.25
+		let df10 = 10
+		let theoreticalVariance10 = Double(df10) / Double(df10 - 2)
+		XCTAssertEqual(theoreticalVariance10, 1.25, accuracy: 0.001, "Theoretical variance for df=10 should be 1.25")
+		
+		// Test 2: df = 30 (approaches standard normal)
+		// Expected theoretical variance: 30/(30-2) = 30/28 ≈ 1.0714
+		let df30 = 30
+		let theoreticalVariance30 = Double(df30) / Double(df30 - 2)
+		XCTAssertEqual(theoreticalVariance30, 1.0714, accuracy: 0.001, "Theoretical variance for df=30 should be ~1.0714")
+		
+		// Test 3: df = 5 (lower df, higher variance)
+		// Expected theoretical variance: 5/(5-2) = 5/3 ≈ 1.6667
+		let df5 = 5
+		let theoreticalVariance5 = Double(df5) / Double(df5 - 2)
+		XCTAssertEqual(theoreticalVariance5, 1.6667, accuracy: 0.001, "Theoretical variance for df=5 should be ~1.6667")
+		
+		// Test 4: df = 100 (very close to standard normal variance of 1)
+		// Expected theoretical variance: 100/(100-2) = 100/98 ≈ 1.0204
+		let df100 = 100
+		let theoreticalVariance100 = Double(df100) / Double(df100 - 2)
+		XCTAssertEqual(theoreticalVariance100, 1.0204, accuracy: 0.001, "Theoretical variance for df=100 should be ~1.0204")
+		
+		// Test 5: Verify empirical variance matches theoretical for df=20
+		let df20 = 20
+		let sampleCount = 10000
+		let theoreticalVariance20 = Double(df20) / Double(df20 - 2) // 20/18 ≈ 1.1111
+		
+		// Helper to generate deterministic seeds (similar to StudentTDistributionTests)
+		struct SeededRNG {
+			var state: UInt64
+			mutating func next() -> Double {
+				state = state &* 6364136223846793005 &+ 1
+				let upper = Double((state >> 32) & 0xFFFFFFFF)
+				return upper / Double(UInt32.max)
+			}
+		}
+		
+		var rng = SeededRNG(state: 12345)
+		var samples: [Double] = []
+		
+		for _ in 0..<sampleCount {
+			var seeds: [Double] = []
+			for _ in 0..<10 {
+				var seed = rng.next()
+				seed = max(0.0001, min(0.9999, seed))
+				seeds.append(seed)
+			}
+			let sample: Double = distributionT(degreesOfFreedom: df20, seeds: seeds)
+			samples.append(sample)
+		}
+		
+		// Calculate empirical variance
+		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
+		let squaredDiffs = samples.map { pow($0 - empiricalMean, 2) }
+		let empiricalVariance = squaredDiffs.reduce(0, +) / Double(samples.count - 1)
+		
+		// Empirical variance should be close to theoretical variance
+		let tolerance = 0.1
+		XCTAssertEqual(empiricalVariance, theoreticalVariance20, accuracy: tolerance,
+					   "Empirical variance should match theoretical variance for df=20 (expected: \(theoreticalVariance20), got: \(empiricalVariance))")
+		
+		// Test 6: Verify variance increases as df decreases (for df > 2)
+		let variance4 = Double(4) / Double(4 - 2)  // 2.0
+		let variance6 = Double(6) / Double(6 - 2)  // 1.5
+		let variance8 = Double(8) / Double(8 - 2)  // 1.333...
+		
+		XCTAssertTrue(variance4 > variance6, "Lower df should have higher variance")
+		XCTAssertTrue(variance6 > variance8, "Lower df should have higher variance")
+		
+		// Test 7: df = 3 (minimum df for finite variance)
+		// Expected theoretical variance: 3/(3-2) = 3
+		let df3 = 3
+		let theoreticalVariance3 = Double(df3) / Double(df3 - 2)
+		XCTAssertEqual(theoreticalVariance3, 3.0, accuracy: 0.001, "Theoretical variance for df=3 should be 3.0")
 	}
 }

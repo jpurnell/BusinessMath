@@ -9,7 +9,6 @@ struct LiquidityRatiosTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath  > LiquidityRatiosTests", category: #function)
     @Test("Calculate current ratio correctly")
     func testCurrentRatio() {
-//		logger.warning("Not yet implemented:\t\(#function) in:\n\(#file):\(#line)")
         let currentAssets: Double = 15000.0
         let currentLiabilities: Double = 10000.0
         let result = currentRatio(currentAssets: currentAssets, currentLiabilities: currentLiabilities)
@@ -18,7 +17,6 @@ struct LiquidityRatiosTests {
 
     @Test("Calculate quick ratio correctly")
     func testQuickRatio() {
-//		logger.warning("Not yet implemented:\t\(#function) in:\n\(#file):\(#line)")
         let currentAssets: Double = 20000.0
         let inventory: Double = 5000.0
         let currentLiabilities: Double = 15000.0

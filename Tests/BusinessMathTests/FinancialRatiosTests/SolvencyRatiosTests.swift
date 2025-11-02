@@ -8,7 +8,6 @@ struct SolvencyRatiosTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath", category: "\(#function)")
     @Test("Calculate debt to equity ratio correctly")
     func testDebtToEquityRatio() {
-//		logger.warning("Not yet implemented:\t\(#function) in:\n\(#file):\(#line)")
         let totalLiabilities: Double = 40000.0
         let shareholderEquity: Double = 100000.0
         let result = debtToEquity(totalLiabilities: totalLiabilities, shareholderEquity: shareholderEquity)
@@ -17,7 +16,6 @@ struct SolvencyRatiosTests {
 
     @Test("Calculate interest coverage ratio correctly")
     func testInterestCoverageRatio() {
-//		logger.warning("Not yet implemented:\t\(#function) in:\n\(#file):\(#line)")
         let earningsBeforeInterestAndTax: Double = 6000.0
         let interestExpense: Double = 2000.0
         let result = interestCoverage(earningsBeforeInterestAndTax: earningsBeforeInterestAndTax, interestExpense: interestExpense)
