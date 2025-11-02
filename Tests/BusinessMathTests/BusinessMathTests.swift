@@ -316,31 +316,116 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testProbabilityDistributionFunction() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test normal PDF values at key points
+		let result = (normalPDF(x: 0, mean: 0, stdDev: 1) * 10000.0).rounded() / 10000
+		let resultAtOne = (normalPDF(x: 1, mean: 0, stdDev: 1) * 10000.0).rounded() / 10000
+		let resultAtTwo = (normalPDF(x: 2, mean: 0, stdDev: 1) * 10000.0).rounded() / 10000
+		
+		// At mean (x=0), standard normal should be approximately 0.3989
+		XCTAssertEqual(result, 0.3989, accuracy: 0.0001)
+		// At x=1, should be approximately 0.2420
+		XCTAssertEqual(resultAtOne, 0.2420, accuracy: 0.0001)
+		// At x=2, should be approximately 0.0540
+		XCTAssertEqual(resultAtTwo, 0.0540, accuracy: 0.0001)
     }
     
     func testPValue() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// This test is already implemented below as testpValue()
+		// Testing A/B test p-value calculation
+		let obs = 500
+		let convA = 80
+		let convB = 100
+		let result: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convB) * 10000).rounded() / 10000
+		XCTAssertEqual(result, 0.9504)
     }
     
     func testPValueStudent() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test p-value calculation using Student's t-distribution
+		// Example: t-value of 2.0 with 10 degrees of freedom
+		let tValue = 2.0
+		let degreesOfFreedom = 10.0
+		let result = (pValueStudent(tValue, dFr: degreesOfFreedom) * 10000).rounded() / 10000
+		
+		// The PDF value at t=2.0 with df=10 should be approximately 0.0611
+		XCTAssertEqual(result, 0.0611, accuracy: 0.001)
+		
+		// Test at t=0 (center of distribution)
+		let resultAtZero = (pValueStudent(0.0, dFr: degreesOfFreedom) * 10000).rounded() / 10000
+		XCTAssertGreaterThan(resultAtZero, 0.35) // Should be high at center
     }
     
     func testRequiredSampleSize() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test sample size calculation for confidence intervals
+		// Given: 95% CI, 50% proportion, population of 950, 5% margin of error
+		let ci = 0.95
+		let proportion = 0.5
+		let population = 950.0
+		let error = 0.05
+		let result = (sampleSize(ci: ci, proportion: proportion, n: population, error: error) * 10000).rounded() / 10000
+		
+		// Should be approximately 273.5372 (matches existing testSampleSize)
+		XCTAssertEqual(result, 273.5372)
+		
+		// Test with different confidence level (90%)
+		let result90 = sampleSize(ci: 0.90, proportion: proportion, n: population, error: error)
+		XCTAssertLessThan(result90, result) // Lower confidence requires smaller sample
     }
     
     func testRho() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test Spearman's rho correlation coefficient
+		// Perfect positive correlation
+		let perfectPositive = try! spearmansRho([1, 2, 3, 4, 5], vs: [1, 2, 3, 4, 5])
+		XCTAssertEqual(perfectPositive, 1.0, accuracy: 0.0001)
+		
+		// Perfect negative correlation
+		let perfectNegative = try! spearmansRho([1, 2, 3, 4, 5], vs: [5, 4, 3, 2, 1])
+		XCTAssertEqual(perfectNegative, -1.0, accuracy: 0.0001)
+		
+		// Test with tied ranks (existing test case)
+		let result = try! spearmansRho([1, 2, 2, 2, 5], vs: [1, 2, 3, 4, 5])
+		XCTAssertEqual(result, 0.8944271909999159, accuracy: 0.0001)
     }
     
     func testSampleCorrelationCoefficient() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test Pearson correlation coefficient (sample)
+		// Test case from existing tests with known relationship
+		let x = [20.0, 23, 45, 78, 21]
+		let y = [200.0, 300, 500, 700, 100]
+		let result = correlationCoefficient(x, y, .sample)
+		let rounded = (result * 10000).rounded() / 10000
+		
+		// Should be approximately 0.9487 (matches existing test)
+		XCTAssertEqual(rounded, 0.9487)
+		
+		// Test perfect correlation
+		let perfectCorr = correlationCoefficient([1.0, 2, 3, 4, 5], [2.0, 4, 6, 8, 10], .sample)
+		XCTAssertEqual(perfectCorr, 1.0, accuracy: 0.0001)
+		
+		// Test no correlation
+		let noCorr = correlationCoefficient([1.0, 2, 3, 4, 5], [5.0, 3, 1, 4, 2], .sample)
+		XCTAssertLessThan(abs(noCorr), 0.5) // Weak or no correlation
     }
     
     func testStandardError() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test standard error calculation from standard deviation
+		let sampleStdDev = 1.5
+		let observations = 100
+		let result = (standardError(sampleStdDev, observations: observations) * 10000).rounded() / 10000
+		
+		// SE = stdDev / sqrt(n) = 1.5 / sqrt(100) = 1.5 / 10 = 0.15
+		XCTAssertEqual(result, 0.15)
+		
+		// Test standard error from array
+		let values: [Double] = [0, 1, 2, 3, 4]
+		let resultFromArray = (standardError(values) * 10000).rounded() / 10000
+		let expectedStdDev = stdDev(values)
+		let expectedSE = (expectedStdDev / Double.sqrt(5.0) * 10000).rounded() / 10000
+		XCTAssertEqual(resultFromArray, expectedSE)
+		
+		// Test with larger sample size
+		let largerSample = Array(repeating: 2.0, count: 400)
+		let seOfConstant = standardError(largerSample)
+		XCTAssertEqual(seOfConstant, 0.0) // No variance means SE is 0
     }
     
     func testStandardErrorProbabilistic() {
@@ -351,43 +436,159 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testTStatisticRho() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test t-statistic calculation from correlation coefficient
+		// Example: rho = 0.8, degrees of freedom = 10
+		let rho = 0.8
+		let degreesOfFreedom = 10.0
+		let result = (tStatistic(rho, dFr: degreesOfFreedom) * 10000).rounded() / 10000
+		
+		// t = rho * sqrt(df / (1 - rho^2))
+		// t = 0.8 * sqrt(10 / (1 - 0.64)) = 0.8 * sqrt(10 / 0.36) = 0.8 * sqrt(27.778) = 0.8 * 5.27 = 4.216
+		XCTAssertEqual(result, 4.2164, accuracy: 0.001)
+		
+		// Test with array inputs using Spearman's rho
+		let independent: [Double] = [8.0, 2.0, 11.0, 6.0, 5.0]
+		let variable: [Double] = [3.0, 10.0, 3.0, 6.0, 8.0]
+		let resultFromArrays = try! tStatistic(independent, variable)
+		
+		// Should return a valid t-statistic
+		XCTAssertNotEqual(resultFromArrays, 0.0)
     }
     
     func testVarianceDiscrete() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// This is already implemented as testVarDiscrete() above
+		// Testing discrete probability distribution variance
+		let prob: Double = 1/6
+		let distribution = [(1.0, prob), (2, prob), (3, prob), (4, prob), (5, prob), (6, prob)]
+		let result = varianceDiscrete(distribution)
+		XCTAssertEqual(result, (35.0 / 12.0))
     }
     
     func testMeanBinomial() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test mean of binomial distribution
+		// Mean = n * p
+		let n = 100
+		let p = 0.5
+		let result = meanBinomial(n: n, prob: p)
+		
+		// For 100 trials with p=0.5, mean should be 50
+		XCTAssertEqual(result, 50.0)
+		
+		// Test with different probability
+		let result2 = meanBinomial(n: 50, prob: 0.3)
+		XCTAssertEqual(result2, 15.0) // 50 * 0.3 = 15
     }
     
     func testStdDevBinomial() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test standard deviation of binomial distribution
+		// StdDev = sqrt(n * p * (1 - p))
+		let n = 100
+		let p = 0.5
+		let result = (stdDevBinomial(n: n, prob: p) * 10000).rounded() / 10000
+		
+		// sqrt(100 * 0.5 * 0.5) = sqrt(25) = 5
+		XCTAssertEqual(result, 5.0)
+		
+		// Test with different values
+		let result2 = (stdDevBinomial(n: 50, prob: 0.3) * 10000).rounded() / 10000
+		// sqrt(50 * 0.3 * 0.7) = sqrt(10.5) = 3.24
+		XCTAssertEqual(result2, 3.2404, accuracy: 0.001)
     }
     
     func testVarianceBinomial() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test variance of binomial distribution
+		// Variance = n * p * (1 - p)
+		let n = 100
+		let p = 0.5
+		let result = varianceBinomial(n: n, prob: p)
+		
+		// 100 * 0.5 * 0.5 = 25
+		XCTAssertEqual(result, 25.0)
+		
+		// Test with different values
+		let result2 = varianceBinomial(n: 50, prob: 0.3)
+		// 50 * 0.3 * 0.7 = 10.5
+		XCTAssertEqual(result2, 10.5)
     }
     
     func testPercentileLocation() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test finding value at a given percentile
+		let values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+		
+		// Note: The function uses integer division for percentile calculation
+		// This may not work as expected with the current implementation
+		// Testing what it actually does
+		let sortedValues = values.sorted()
+		
+		// For a proper test, we'd need values that work with the formula
+		// (values.count + 1) * (percentile / 100)
+		// With 10 items: (10+1) * (25/100) = 11 * 0 = 0 (integer division)
+		let testValues = Array(1...100)
+		let result25 = PercentileLocation(25, values: testValues)
+		
+		// With 100 items: (100+1) * (25/100) = 101 * 0 = 0 due to integer division
+		// This function appears to have a bug - it should use Double division
+		XCTAssertGreaterThan(result25, 0)
     }
     
     func testPercentileMeanStdDev() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test percentile calculation using mean and standard deviation
+		// This is the same as the existing testPercentileFormal
+		let result = percentile(x: 1.959963984540054, mean: 0, stdDev: 1)
+		XCTAssertEqual(result, 0.975, accuracy: 0.001)
+		
+		// Test with different values
+		let result2 = percentile(x: 0, mean: 0, stdDev: 1)
+		XCTAssertEqual(result2, 0.5, accuracy: 0.001) // At mean, percentile is 50%
+		
+		// Test negative value
+		let result3 = percentile(x: -1.96, mean: 0, stdDev: 1)
+		XCTAssertEqual(result3, 0.025, accuracy: 0.001) // 2.5th percentile
     }
     
     func testZScoreRho() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test z-score calculation for correlation coefficient testing
+		// This uses Fisher's r-to-z transformation
+		let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+		let y = [2.0, 4.0, 5.0, 4.0, 5.0]
+		
+		let result = try! zScore(x, vs: y)
+		
+		// Z-score should be a reasonable value for this correlation
+		XCTAssertNotEqual(result, 0.0)
+		XCTAssertGreaterThan(abs(result), 0.0)
     }
     
     func testZScorePercentile() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test z-score for a given percentile (inverse normal)
+		// This is similar to testZScoreCI
+		let result = (zScore(ci: 0.95) * 1000000).rounded(.up) / 1000000
+		
+		// For 95% confidence interval, z-score should be ~1.96
+		XCTAssertEqual(result, 1.959964)
+		
+		// Test for 99% confidence
+		let result99 = (zScore(ci: 0.99) * 1000000).rounded(.down) / 1000000
+		XCTAssertGreaterThan(result99, 2.5) // Should be ~2.576
+		XCTAssertLessThan(result99, 2.6)
     }
     
     func testZScoreFisherR() {
-		unassortedTestsLogger.error("Test not implemented for \(self.name, privacy: .public)")
+		// Test Fisher's r-to-z transformation
+		let r = 0.5
+		let fisherZ = (fisher(r) * 10000).rounded(.down) / 10000
+		
+		// Fisher's z for r=0.5 should be ~0.5493
+		XCTAssertEqual(fisherZ, 0.5493)
+		
+		// Test that Fisher transformation is monotonic
+		let r1 = fisher(0.3)
+		let r2 = fisher(0.7)
+		XCTAssertLessThan(r1, r2) // Higher correlation should give higher Fisher z
+		
+		// Test extreme values
+		let r_near_zero = fisher(0.0)
+		XCTAssertEqual(r_near_zero, 0.0, accuracy: 0.0001)
     }
 
     func testMonteCarloIntegration() {

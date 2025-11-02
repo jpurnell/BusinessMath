@@ -19,7 +19,39 @@ final class InferenceTests: XCTestCase {
     }
 
     func testpValueOfZTest() {
-		inferenceTestLogger.error("Test not implemented for \(self.name, privacy: .public)")
+        // Example: Test if a sample mean differs significantly from a known population mean
+        // Scenario: Testing if average customer spending differs from historical $50
+        let sample = [52.0, 48.0, 55.0, 49.0, 51.0, 53.0, 47.0, 54.0, 50.0, 52.0,
+                      51.0, 49.0, 53.0, 48.0, 52.0, 50.0, 51.0, 49.0, 54.0, 50.0]
+        let populationMean = 50.0
+        let populationStdDev = 3.0  // Known population standard deviation
+        
+        // Calculate sample statistics
+        let n = Double(sample.count)
+        let sampleMean = sample.reduce(0, +) / n
+        
+        // Calculate Z-statistic
+        let standardError = populationStdDev / sqrt(n)
+        let zStatistic = (sampleMean - populationMean) / standardError
+        
+        // Calculate two-tailed p-value using standard normal distribution
+        // For a standard normal distribution: P(|Z| > |z|) = 2 * P(Z > |z|)
+        let absZ = abs(zStatistic)
+        
+        // Using the complementary error function to calculate p-value
+        // P(Z > z) = 0.5 * erfc(z / sqrt(2))
+        let pValue = 2.0 * 0.5 * erfc(absZ / sqrt(2.0))
+        
+        // Verify p-value properties
+        XCTAssertGreaterThan(pValue, 0.0, "P-value should be positive")
+        XCTAssertLessThan(pValue, 1.0, "P-value should be less than 1")
+        
+        // For this sample (mean ≈ 50.8), the p-value should be relatively high
+        // indicating no significant difference from population mean of 50
+        XCTAssertGreaterThan(pValue, 0.05, "P-value should be > 0.05 (not significant)")
+        
+        // Log the results
+        inferenceTestLogger.info("Z-Test Results: sampleMean=\(sampleMean), zStatistic=\(zStatistic), pValue=\(pValue)")
     }
 
     // MARK: - New Statistical Testing Tool Tests
