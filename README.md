@@ -134,7 +134,7 @@ See [HTTP_MODE_README.md](HTTP_MODE_README.md) for details and limitations. HTTP
 - Sub-millisecond financial calculations
 - Complete forecasts in < 50ms
 - Handles datasets up to 50K periods
-- See [PERFORMANCE.md](Time%20Series/PERFORMANCE.md) for details
+- See [PERFORMANCE.md](Examples/PERFORMANCE.md) for details
 
 ## Installation
 
