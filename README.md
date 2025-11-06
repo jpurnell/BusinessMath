@@ -374,7 +374,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 - **Documentation**: See the `.docc` folder for comprehensive guides
 - **Issues**: Report bugs or request features via GitHub Issues
-- **Performance**: Check [PERFORMANCE.md](Time%20Series/PERFORMANCE.md) for optimization tips
+- **Performance**: Check [PERFORMANCE.md](Examples/PERFORMANCE.md) for optimization tips
 
 ---
 
