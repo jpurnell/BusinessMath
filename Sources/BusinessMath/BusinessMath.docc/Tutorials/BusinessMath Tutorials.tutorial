@@ -1,7 +1,0 @@
-@Tutorials(name: "BusinessMath Guides") {
-    @Intro(title: "Building Financial Models with BusinessMath") {
-        Learn how to build complete financial models, from simple time series to complex three-statement projections.
-
-        Explore our comprehensive guides covering time series analysis, financial statements, scenario planning, and more.
-    }
-}
