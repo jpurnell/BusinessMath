@@ -1,7 +1,6 @@
 .build/
 .claude/
 .DS_Store
-.swiftpm/*
 !.swiftpm/xcode/
 howToResume.md
 overallRules
