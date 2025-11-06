@@ -1,69 +1,7 @@
-@Tutorials(name: "BusinessMath") {
+@Tutorials(name: "BusinessMath Guides") {
     @Intro(title: "Building Financial Models with BusinessMath") {
         Learn how to build complete financial models, from simple time series to complex three-statement projections.
 
-        @Image(source: "businessmath-hero", alt: "A financial chart showing revenue growth")
-    }
-
-    ## Essentials
-
-    Get started with the core concepts of financial modeling.
-
-    @Chapter(name: "Time Series & Financial Statements") {
-        Learn the fundamental building blocks of financial models.
-
-        @Image(source: "timeseries-icon", alt: "Time series icon")
-
-        Build a complete understanding of temporal data structures and financial statements.
-
-        @TutorialReference(tutorial: "doc:BuildingRevenueModel")
-        @TutorialReference(tutorial: "doc:FinancialStatementsGuide")
-    }
-
-    @Chapter(name: "Scenario Planning & Analysis") {
-        Model uncertainty and analyze multiple outcomes.
-
-        @Image(source: "scenario-icon", alt: "Scenario analysis icon")
-
-        Create scenario models, run sensitivity analysis, and use Monte Carlo simulation.
-
-        @TutorialReference(tutorial: "doc:ScenarioAnalysisGuide")
-        @TutorialReference(tutorial: "doc:VisualizationGuide")
-    }
-
-    @Chapter(name: "Financial Analysis & Metrics") {
-        Analyze financial performance with comprehensive ratios and metrics.
-
-        @Image(source: "metrics-icon", alt: "Financial metrics icon")
-
-        Calculate profitability, efficiency, liquidity, and valuation metrics.
-
-        @TutorialReference(tutorial: "doc:FinancialRatiosGuide")
-        @TutorialReference(tutorial: "doc:BuildingFinancialReports")
-    }
-
-    @Chapter(name: "Debt & Financing Models") {
-        Master corporate finance with debt instruments and equity financing models.
-
-        @Image(source: "finance-icon", alt: "Financing icon")
-
-        Model loans, capital structure, equity rounds, covenants, and leases.
-
-        @TutorialReference(tutorial: "doc:DebtAndFinancingGuide")
-		@TutorialReference(tutorial: "doc:EquityFinancingGuide")
-    }
-
-    ## Advanced Topics
-
-    @Chapter(name: "Time Value of Money") {
-        Master present value, future value, and investment analysis.
-
-        @Image(source: "tvm-icon", alt: "Time value icon")
-
-        Build loan amortization schedules and evaluate investment opportunities.
-
-        @TutorialReference(tutorial: "doc:LoanAmortization")
-        @TutorialReference(tutorial: "doc:InvestmentAnalysis")
-		@TutorialReference(tutorial: "doc:LeaseAccountingGuide")
+        Explore our comprehensive guides covering time series analysis, financial statements, scenario planning, and more.
     }
 }
