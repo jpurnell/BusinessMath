@@ -58,8 +58,5 @@ let package = Package(
         .testTarget(
             name: "BusinessMathTests",
             dependencies: ["BusinessMath"]),
-        .testTarget(
-            name: "BusinessMathMCPTests",
-            dependencies: ["BusinessMathMCP"]),
     ]
 )
