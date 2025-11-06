@@ -1,4 +1,4 @@
-# ``BusinessMath``
+# BusinessMath
 
 A comprehensive Swift library for business mathematics, time series analysis, and financial modeling.
 
@@ -58,51 +58,43 @@ The library is designed for:
 - <doc:RealOptionsGuide>
 - <doc:RiskAnalyticsGuide>
 
+<!--
+Note: API reference symbols below require building the package.
+To view the complete API documentation with all symbols, build the package in Xcode
+or use: swift build && xcrun docc preview ...
+
 ### Core Temporal Structures
 
-- ``Period``
-- ``PeriodType``
-- ``FiscalCalendar``
+- Period
+- PeriodType
+- FiscalCalendar
 
 ### Time Series
 
-- ``TimeSeries``
-- ``TimeSeriesMetadata``
+- TimeSeries
+- TimeSeriesMetadata
 
 ### Time Value of Money
 
-- ``presentValue(futureValue:rate:periods:)``
-- ``futureValue(presentValue:rate:periods:)``
-- ``presentValueAnnuity(payment:rate:periods:type:)``
-- ``futureValueAnnuity(payment:rate:periods:type:)``
-- ``payment(presentValue:rate:periods:futureValue:type:)``
-- ``npv(discountRate:cashFlows:)``
-- ``irr(cashFlows:guess:tolerance:maxIterations:)``
-- ``xnpv(rate:dates:cashFlows:)``
-- ``xirr(dates:cashFlows:guess:tolerance:maxIterations:)``
+- presentValue, futureValue, payment functions
+- NPV, IRR, XNPV, XIRR functions
+- Annuity calculations
 
 ### Growth and Forecasting
 
-- ``growthRate(from:to:)``
-- ``cagr(beginningValue:endingValue:years:)``
-- ``TrendModel``
-- ``LinearTrend``
-- ``ExponentialTrend``
-- ``LogisticTrend``
+- Growth rate and CAGR calculations
+- TrendModel, LinearTrend, ExponentialTrend, LogisticTrend
 
 ### Seasonality
 
-- ``seasonalIndices(timeSeries:periodsPerYear:)``
-- ``seasonallyAdjust(timeSeries:indices:)``
-- ``decomposeTimeSeries(timeSeries:periodsPerYear:method:)``
-- ``TimeSeriesDecomposition``
+- Seasonal indices, adjustment, and decomposition
+- TimeSeriesDecomposition
 
 ### Supporting Types
 
-- ``AnnuityType``
-- ``CompoundingFrequency``
-- ``DecompositionMethod``
-- ``AggregationMethod``
+- AnnuityType, CompoundingFrequency
+- DecompositionMethod, AggregationMethod
+-->
 
 ## See Also
 
