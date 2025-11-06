@@ -144,7 +144,7 @@ Add BusinessMath to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/BusinessMath.git", from: "1.0.0")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "1.0.0")
 ]
 ```
 
@@ -267,7 +267,7 @@ BusinessMath is optimized for real-world business applications:
 | Trend fitting (1000 points) | ~170ms | ✅ User-initiated operations |
 | Seasonal decomposition | ~150ms | ✅ Background processing |
 
-See [PERFORMANCE.md](Time%20Series/PERFORMANCE.md) for detailed benchmarks and optimization guidance.
+See [PERFORMANCE.md](Examples/PERFORMANCE.md) for detailed benchmarks and optimization guidance.
 
 ## Examples
 
