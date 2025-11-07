@@ -148,22 +148,35 @@ struct NewtonRaphsonTests {
 		// May or may not have converged due to iteration limit
 	}
 
-	@Test("Numerical derivative calculation")
-	func numericalDerivative() throws {
-		let optimizer = NewtonRaphsonOptimizer<Double>(stepSize: 0.0001)
+	@Test("Optimizer uses numerical derivatives correctly")
+	func numericalDerivativesWork() throws {
+		let optimizer = NewtonRaphsonOptimizer<Double>(
+			tolerance: 0.001,
+			stepSize: 0.0001
+		)
 
 		// For f(x) = x^3, f'(x) = 3x^2
-		// At x = 2, derivative should be ~12
-
+		// Critical points where f'(x) = 0 are at x = 0
+		// f''(x) = 6x, so f''(0) = 0 (inflection point, not minimum)
+		
+		// Use a function with clear minimum: f(x) = (x - 2)^2
+		// This has minimum at x = 2 where f'(x) = 2(x-2) = 0
+		// f''(2) = 2 > 0, confirming it's a minimum
 		let objective = { (x: Double) -> Double in
-			return x * x * x
+			let diff = x - 2.0
+			return diff * diff
 		}
 
-		// Test numerical derivative at x = 2
-		let x = 2.0
-		let h = 0.0001
-		let derivativeApprox = (objective(x + h) - objective(x - h)) / (2 * h)
+		let result = optimizer.optimize(
+			objective: objective,
+			constraints: [],
+			initialValue: 0.0,
+			bounds: nil
+		)
 
-		#expect(abs(derivativeApprox - 12.0) < 0.01)
+		// If numerical derivatives work correctly, optimizer should find x ≈ 2
+		#expect(result.converged)
+		#expect(abs(result.optimalValue - 2.0) < 0.01)
+		#expect(abs(result.objectiveValue) < 0.001)  // f(2) = 0
 	}
 }

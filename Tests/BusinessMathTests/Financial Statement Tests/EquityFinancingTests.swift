@@ -670,7 +670,6 @@ struct EquityFinancingTests {
         let noteAmount = 1_000_000.0
         let valuationCap = 8_000_000.0
         let discount = 0.20
-        let seriesAValuation = 20_000_000.0
         let seriesAPrice = 2.0
 
         let conversion = convertNote(
@@ -680,9 +679,10 @@ struct EquityFinancingTests {
             seriesAPricePerShare: seriesAPrice
         )
 
-        // Cap gives better deal when Series A valuation > cap
-        // Discounted price = $2.00 * 0.8 = $1.60
-        // Cap price = $8M valuation price (likely < $1.60)
+        // Cap gives better deal when the cap price is lower than the discounted price
+        // Discounted price = $2.00 * (1 - 0.20) = $2.00 * 0.8 = $1.60
+        // Cap price = $8M / 10M shares = $0.80
+        // Since $0.80 < $1.60, the cap is better for the noteholder
         // Should use cap
         #expect(conversion.appliedTerm == .cap)
     }

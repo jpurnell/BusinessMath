@@ -56,7 +56,7 @@ extension BusinessMathError: LocalizedError {
             if let value = context["value"] {
                 description += " (provided: \(value))"
             }
-            if let expectedRange = context["expectedRange"] as? String {
+				if let expectedRange = context["expectedRange"] {
                 description += " (expected: \(expectedRange))"
             }
             return description
@@ -65,7 +65,7 @@ extension BusinessMathError: LocalizedError {
             return "\(operation) calculation failed: \(reason)"
 
         case .divisionByZero(let context):
-            if let operation = context["operation"] as? String {
+				if let operation = context["operation"] {
                 return "Division by zero in \(operation)"
             }
             return "Division by zero"
@@ -93,7 +93,7 @@ extension BusinessMathError: LocalizedError {
             return "Possible solutions:\n" + suggestions.map { "• \($0)" }.joined(separator: "\n")
 
         case .invalidInput(_, let context):
-            if let expectedRange = context["expectedRange"] as? String {
+            if let expectedRange = context["expectedRange"] {
                 return "Please provide a value within the range: \(expectedRange)"
             }
             return "Please check your input values and try again"

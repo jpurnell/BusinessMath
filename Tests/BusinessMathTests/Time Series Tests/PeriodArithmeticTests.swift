@@ -250,7 +250,7 @@ struct PeriodArithmeticTests {
 	// MARK: - Distance: Period.distance(to:)
 
 	@Test("Distance from January to February is 1")
-	func distanceOneMonth() {
+	func distanceOneMonth() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 
@@ -259,7 +259,7 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Distance from January to April is 3")
-	func distanceThreeMonths() {
+	func distanceThreeMonths() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let apr = Period.month(year: 2025, month: 4)
 
@@ -268,7 +268,7 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Distance backward is negative")
-	func distanceBackward() {
+	func distanceBackward() throws {
 		let apr = Period.month(year: 2025, month: 4)
 		let jan = Period.month(year: 2025, month: 1)
 
@@ -277,14 +277,14 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Distance from same period to itself is 0")
-	func distanceSame() {
+	func distanceSame() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let distance = jan.distance(to: jan)
 		#expect(distance == 0)
 	}
 
 	@Test("Distance across years")
-	func distanceAcrossYears() {
+	func distanceAcrossYears() throws {
 		let dec2024 = Period.month(year: 2024, month: 12)
 		let mar2025 = Period.month(year: 2025, month: 3)
 
@@ -293,7 +293,7 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Distance for quarters")
-	func distanceQuarters() {
+	func distanceQuarters() throws {
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 		let q3 = Period.quarter(year: 2025, quarter: 3)
 
@@ -302,7 +302,7 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Distance for years")
-	func distanceYears() {
+	func distanceYears() throws {
 		let year2020 = Period.year(2020)
 		let year2025 = Period.year(2025)
 
@@ -311,7 +311,7 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Distance for days")
-	func distanceDays() {
+	func distanceDays() throws {
 		var components = DateComponents()
 		components.year = 2025
 		components.month = 1
@@ -329,14 +329,26 @@ struct PeriodArithmeticTests {
 		#expect(distance == 9)
 	}
 
-	@Test("Distance between different period types should fail or handle gracefully")
-	func distanceDifferentTypes() {
+	@Test("Distance between different period types throws error")
+	func distanceDifferentTypes() throws {
 		let month = Period.month(year: 2025, month: 1)
 		let quarter = Period.quarter(year: 2025, quarter: 1)
 
-		// Implementation choice: could throw error, return nil, or calculate based on dates
-		// For now, let's document that this is a precondition failure scenario
-		// distance(to:) should only work with same period types
+		// Verify that attempting to calculate distance throws the correct error
+		#expect(throws: PeriodError.typeMismatch(from: .monthly, to: .quarterly)) {
+			month.distance(to: quarter)
+		}
+		
+		// Also verify the reverse direction
+		#expect(throws: PeriodError.typeMismatch(from: .quarterly, to: .monthly)) {
+			quarter.distance(to: month)
+		}
+		
+		// Verify different combinations
+		let day = Period.day(Date())
+		#expect(throws: PeriodError.typeMismatch(from: .monthly, to: .daily)) {
+			month.distance(to: day)
+		}
 	}
 
 	// MARK: - Range: Period...Period
@@ -535,7 +547,7 @@ struct PeriodArithmeticTests {
 	// MARK: - Validation
 
 	@Test("Distance and arithmetic are consistent")
-	func distanceArithmeticConsistency() {
+	func distanceArithmeticConsistency() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let apr = Period.month(year: 2025, month: 4)
 
@@ -554,7 +566,7 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Range count equals distance plus one")
-	func rangeCountEqualsDistance() {
+	func rangeCountEqualsDistance() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let mar = Period.month(year: 2025, month: 3)
 

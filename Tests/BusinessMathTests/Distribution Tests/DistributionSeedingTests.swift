@@ -159,20 +159,16 @@ struct DistributionSeedingTests {
 		let z1Values = normals.map { $0.z1 }
 		let z2Values = normals.map { $0.z2 }
 
-		// Normal distribution should have mean ≈ 0
-		let z1Mean = z1Values.reduce(0, +) / Double(z1Values.count)
-		let z2Mean = z2Values.reduce(0, +) / Double(z2Values.count)
-
-		// With fixed seeds, we get exact values (not random)
-		// Just verify they're finite and reasonable
+		// With fixed seeds, we get exact deterministic values (not random)
+		// Just verify they're finite and reasonable for a standard normal
 		for z1 in z1Values {
 			#expect(z1.isFinite, "z1 should be finite")
-			#expect(abs(z1) < 10, "z1 should be reasonable")
+			#expect(abs(z1) < 10, "z1 should be reasonable for standard normal")
 		}
 
 		for z2 in z2Values {
 			#expect(z2.isFinite, "z2 should be finite")
-			#expect(abs(z2) < 10, "z2 should be reasonable")
+			#expect(abs(z2) < 10, "z2 should be reasonable for standard normal")
 		}
 	}
 
@@ -271,13 +267,15 @@ struct DistributionSeedingTests {
 			values.append(normal)
 		}
 
-		// Calculate statistics (these will be exact, not random!)
+		// Calculate multiple statistics (exact, not random, due to deterministic seeding)
 		let sampleMean = values.reduce(0, +) / Double(values.count)
 		let variance = values.map { pow($0 - sampleMean, 2) }.reduce(0, +) / Double(values.count - 1)
 		let sampleStdDev = sqrt(variance)
+		let minValue = values.min()!
+		let maxValue = values.max()!
 
 		// With deterministic seeding, we get exact reproducible statistics
-		// Regenerate and verify identical
+		// Regenerate and verify all statistics are identical
 		var values2: [Double] = []
 		for i in 0..<count {
 			let seed1 = Self.SEED_U1 + (Double(i) * 0.0001)
@@ -293,8 +291,18 @@ struct DistributionSeedingTests {
 		}
 
 		let sampleMean2 = values2.reduce(0, +) / Double(values2.count)
+		let variance2 = values2.map { pow($0 - sampleMean2, 2) }.reduce(0, +) / Double(values2.count - 1)
+		let sampleStdDev2 = sqrt(variance2)
+		let minValue2 = values2.min()!
+		let maxValue2 = values2.max()!
 
-		#expect(sampleMean == sampleMean2, "Same seeds should produce identical statistics")
+		// Verify all statistics are exactly identical (not just close)
+		#expect(sampleMean == sampleMean2, "Same seeds should produce identical mean")
+		#expect(variance == variance2, "Same seeds should produce identical variance")
+		#expect(sampleStdDev == sampleStdDev2, "Same seeds should produce identical standard deviation")
+		#expect(minValue == minValue2, "Same seeds should produce identical minimum")
+		#expect(maxValue == maxValue2, "Same seeds should produce identical maximum")
+		#expect(values == values2, "Same seeds should produce identical value sequences")
 	}
 
 	// MARK: - Seed Range Validation

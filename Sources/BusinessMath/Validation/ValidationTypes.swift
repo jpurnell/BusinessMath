@@ -54,7 +54,7 @@ public struct ValidationError: Error, CustomStringConvertible {
 	public let field: String
 
 	/// The value that failed validation.
-	public let value: Any
+	public let value: any Sendable
 
 	/// The name of the validation rule that failed.
 	public let rule: String
@@ -75,7 +75,7 @@ public struct ValidationError: Error, CustomStringConvertible {
 	///   - suggestion: Optional suggestion for fixing the error.
 	public init(
 		field: String,
-		value: Any,
+		value: any Sendable,
 		rule: String,
 		message: String,
 		suggestion: String? = nil

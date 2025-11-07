@@ -12,7 +12,7 @@ struct AnomalyDetectionTests {
 		let periods = (0..<100).map { Period.day( Date(timeIntervalSince1970: Double($0 * 86400))) }
 		var values: [Double] = []
 
-		for i in 0..<100 {
+		for _ in 0..<100 {
 			// Normal variation ±5 around 100
 			values.append(100.0 + Double.random(in: -5.0...5.0))
 		}
@@ -89,21 +89,25 @@ struct AnomalyDetectionTests {
 
 		let anomalies = detector.detect(in: data, threshold: 2.0)
 
-		// Check severity levels
-		var hasMild = false
-		var hasSevere = false
-
-		for anomaly in anomalies {
-			if anomaly.severity == .mild {
-				hasMild = true
-			}
-			if anomaly.severity == .severe {
-				hasSevere = true
-			}
+		// With large anomalies (150 vs 100, and 50 vs 100), 
+		// we should detect at least one severe anomaly
+		#expect(!anomalies.isEmpty, "Should detect anomalies in data with known outliers")
+		
+		let hasSevere = anomalies.contains { $0.severity == .severe }
+		#expect(hasSevere, "Large deviation (±50 from mean) should be classified as severe")
+		
+		// Verify that severity classification is working by checking deviation scores
+		// Severe anomalies should have higher deviation scores than mild ones
+		let severeAnomalies = anomalies.filter { $0.severity == .severe }
+		let mildAnomalies = anomalies.filter { $0.severity == .mild }
+		
+		if !severeAnomalies.isEmpty && !mildAnomalies.isEmpty {
+			let minSevereScore = severeAnomalies.map { $0.deviationScore }.min()!
+			let maxMildScore = mildAnomalies.map { $0.deviationScore }.max()!
+			
+			#expect(minSevereScore > maxMildScore, 
+					"Severe anomalies should have higher deviation scores than mild ones")
 		}
-
-		// With large anomalies (150 vs 100), should have severe
-		#expect(hasSevere)
 	}
 
 	@Test("Anomaly deviation score")

@@ -161,16 +161,55 @@ public struct ModelInspector: Sendable {
 
     /// Identify components that are defined but not used
     ///
+    /// This method identifies several categories of potentially unused components:
+    /// - Scenarios with no adjustments (empty scenario definitions)
+    /// - Scenarios with adjustments that reference non-existent components
+    /// - Duplicate scenario names (later definitions shadow earlier ones)
+    ///
     /// - Returns: Array of unused component names
     public func identifyUnusedComponents() -> [String] {
         var unused: [String] = []
-
-        // In the current model structure, all defined components are used
-        // This is a placeholder for more complex models with conditional logic
-
-        // Check for scenarios that might not be applied
-        // (Scenarios are definitions, not necessarily unused)
-
+        
+        // Check for scenarios with no adjustments (effectively unused)
+        for scenario in model.scenarios {
+            if scenario.adjustments.isEmpty {
+                unused.append(scenario.name)
+            }
+        }
+        
+        // Check for scenarios that reference non-existent specific components
+        let revenueNames = Set(model.revenueComponents.map { $0.name })
+        let costNames = Set(model.costComponents.map { $0.name })
+        
+        for scenario in model.scenarios {
+            for adjustment in scenario.adjustments {
+                if case .specific(let componentName) = adjustment.target {
+                    // Check if the referenced component actually exists
+                    if !revenueNames.contains(componentName) && !costNames.contains(componentName) {
+                        // This scenario references a non-existent component
+                        if !unused.contains(scenario.name) {
+                            unused.append(scenario.name)
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Check for duplicate scenario names (only the last one would be used)
+        var scenarioNameCounts: [String: Int] = [:]
+        for scenario in model.scenarios {
+            scenarioNameCounts[scenario.name, default: 0] += 1
+        }
+        
+        // If there are duplicates, the earlier ones are effectively unused
+        for (name, count) in scenarioNameCounts where count > 1 {
+            // Add the duplicate scenario names (we can't distinguish which specific one)
+            // but we know there are duplicates
+            if !unused.contains(name) {
+                unused.append("\(name) (duplicate definition)")
+            }
+        }
+        
         return unused
     }
 
@@ -282,8 +321,18 @@ public struct ModelInspector: Sendable {
             for issue in validation.issues {
                 summary += "  • \(issue)\n"
             }
+            summary += "\n"
         } else {
             summary += "✓ Model structure is valid\n"
+        }
+
+        // Check for unused components
+        let unusedComponents = identifyUnusedComponents()
+        if !unusedComponents.isEmpty {
+            summary += "\n⚠️  Unused Components Detected:\n"
+            for component in unusedComponents {
+                summary += "  • \(component)\n"
+            }
         }
 
         return summary

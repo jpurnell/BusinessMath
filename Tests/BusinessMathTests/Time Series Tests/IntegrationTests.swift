@@ -155,16 +155,11 @@ struct IntegrationTests {
 			metadata: TimeSeriesMetadata(name: "Monthly Revenue", unit: "USD")
 		)
 
-		// Manually aggregate to quarterly by summing each quarter's months
-		var quarterlyValues: [Double] = []
-		for quarter in 0..<4 {
-			let start = quarter * 3
-			let end = start + 3
-			let quarterTotal = monthlyRevenue[start..<end].reduce(0.0, +)
-			quarterlyValues.append(quarterTotal)
-		}
+		// Use the built-in aggregate method to sum monthly data to quarterly
+		let quarterly = monthly.aggregate(to: .quarterly, method: .sum)
 
 		// Check totals
+		let quarterlyValues = quarterly.valuesArray
 		#expect(abs(quarterlyValues[0] - 33_000.0) < tolerance)
 		#expect(abs(quarterlyValues[1] - 42_000.0) < tolerance)
 		#expect(abs(quarterlyValues[2] - 51_000.0) < tolerance)
@@ -201,14 +196,9 @@ struct IntegrationTests {
 			metadata: TimeSeriesMetadata(name: "Monthly Revenue")
 		)
 
-		// Manually aggregate to annual by summing each year's months
-		var annualValues: [Double] = []
-		for year in 0..<2 {
-			let start = year * 12
-			let end = start + 12
-			let yearTotal = values[start..<end].reduce(0.0, +)
-			annualValues.append(yearTotal)
-		}
+		// Aggregate to annual using the TimeSeries method
+		let annual = monthly.aggregate(to: .annual, method: .sum)
+		let annualValues = annual.valuesArray
 
 		// Should have 2 years
 		#expect(annualValues.count == 2)
@@ -226,7 +216,6 @@ struct IntegrationTests {
 
 		#expect(cagrValue > 0)
 	}
-
 	// MARK: - Investment Analysis Workflows
 
 	@Test("Complete investment analysis workflow")

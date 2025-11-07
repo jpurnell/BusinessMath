@@ -32,14 +32,24 @@ public struct FitLinearTrendTool: MCPToolHandler, Sendable {
         var model = LinearTrend<Double>()
         try model.fit(to: ts)
 
-        // Get the fitted parameters by projecting 1 period
-        let projection = try model.project(periods: 1)
+        // Project one period to demonstrate the fitted model
+        let sampleProjection = try model.project(periods: 1)
+        let nextValue = sampleProjection.valuesArray.first ?? 0
+        let lastValue = ts.valuesArray.last ?? 0
+        let periodChange = nextValue - lastValue
+        
+        // Format change with explicit sign
+        let changeSign = periodChange >= 0 ? "+" : ""
+        let changeFormatted = "\(changeSign)\(periodChange.formatDecimal())"
 
         let result = """
         Linear Trend Model Fitted:
         • Data Points: \(ts.count)
         • Period Range: \(ts.periods.first?.label ?? "N/A") to \(ts.periods.last?.label ?? "N/A")
         • Model Type: Linear (y = mx + b)
+        • Last Historical Value: \(lastValue.formatDecimal())
+        • Next Projected Value: \(nextValue.formatDecimal())
+        • Period-to-Period Change: \(changeFormatted)
 
         Use this fitted model with 'forecast_trend' to project future values.
         """
@@ -418,17 +428,17 @@ public struct DecomposeTimeSeriesTo: MCPToolHandler, Sendable {
         var residualSample = ""
 
         let trendData = zip(decomposition.trend.periods, decomposition.trend.valuesArray)
-        for (index, (period, value)) in trendData.prefix(sampleSize).enumerated() {
+		for (_, (period, value)) in trendData.prefix(sampleSize).enumerated() {
             trendSample += "\n    \(period.label): \(value.formatDecimal())"
         }
 
         let seasonalData = zip(decomposition.seasonal.periods, decomposition.seasonal.valuesArray)
-        for (index, (period, value)) in seasonalData.prefix(sampleSize).enumerated() {
+		for (_, (period, value)) in seasonalData.prefix(sampleSize).enumerated() {
             seasonalSample += "\n    \(period.label): \(value.formatDecimal(decimals: 3))"
         }
 
         let residualData = zip(decomposition.residual.periods, decomposition.residual.valuesArray)
-        for (index, (period, value)) in residualData.prefix(sampleSize).enumerated() {
+		for (_, (period, value)) in residualData.prefix(sampleSize).enumerated() {
             residualSample += "\n    \(period.label): \(value.formatDecimal(decimals: 3))"
         }
 

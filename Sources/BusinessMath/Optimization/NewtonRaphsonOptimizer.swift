@@ -339,7 +339,7 @@ public struct NewtonRaphsonOptimizer<T>: Optimizer where T: Real & Sendable & Co
 		bounds: (lower: T, upper: T)?,
 		objective: @escaping (T) -> T
 	) -> T {
-		var x = start
+		let x = start
 
 		// Try small steps in both directions to find feasible region
 		let directions: [T] = [1, -1]

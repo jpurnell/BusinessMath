@@ -21,7 +21,7 @@ class ModelTestCase: XCTestCase {
         _ model: FinancialModel,
         hasRevenue expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #file,
+		file: StaticString = #filePath,
         line: UInt = #line
     ) {
         let actual = model.calculateRevenue()
@@ -40,7 +40,7 @@ class ModelTestCase: XCTestCase {
         _ model: FinancialModel,
         hasCosts expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         let revenue = model.calculateRevenue()
@@ -60,7 +60,7 @@ class ModelTestCase: XCTestCase {
         _ model: FinancialModel,
         hasProfit expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         let actual = model.calculateProfit()
@@ -78,7 +78,7 @@ class ModelTestCase: XCTestCase {
     func assertModel(
         _ model: FinancialModel,
         hasRevenueComponentCount expected: Int,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         XCTAssertEqual(
@@ -94,7 +94,7 @@ class ModelTestCase: XCTestCase {
     func assertModel(
         _ model: FinancialModel,
         hasCostComponentCount expected: Int,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         XCTAssertEqual(
@@ -113,7 +113,7 @@ class ModelTestCase: XCTestCase {
         _ investment: Investment,
         hasNPV expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         XCTAssertEqual(
@@ -129,7 +129,7 @@ class ModelTestCase: XCTestCase {
     /// Assert that an investment has a positive NPV.
     func assertInvestmentIsPositive(
         _ investment: Investment,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         XCTAssertGreaterThan(
@@ -146,7 +146,7 @@ class ModelTestCase: XCTestCase {
         _ investment: Investment,
         hasIRR expected: Double,
         accuracy: Double = 0.001,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         guard let actualIRR = investment.irr else {
@@ -169,7 +169,7 @@ class ModelTestCase: XCTestCase {
     func assertTimeSeries<T: Real>(
         _ series: TimeSeries<T>,
         hasCount expected: Int,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         XCTAssertEqual(
@@ -186,7 +186,7 @@ class ModelTestCase: XCTestCase {
         _ series: TimeSeries<T>,
         hasValue expected: T,
         atIndex index: Int,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         guard index < series.count else {
@@ -209,7 +209,7 @@ class ModelTestCase: XCTestCase {
     func assertScenarioSet(
         _ scenarioSet: ScenarioSet,
         hasCount expected: Int,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         XCTAssertEqual(
@@ -225,7 +225,7 @@ class ModelTestCase: XCTestCase {
     func assertScenarioSet(
         _ scenarioSet: ScenarioSet,
         hasScenarioNamed name: String,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         let found = scenarioSet.scenario(named: name) != nil
@@ -370,7 +370,7 @@ public enum TestUtilities {
         _ actual: Double,
         _ expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         XCTAssertEqual(actual, expected, accuracy: accuracy, file: file, line: line)

@@ -5,6 +5,39 @@ import Foundation
 @Suite("Market Data Tests")
 struct MarketDataTests {
 
+	// MARK: - Mock URL Protocol
+
+	final class MockURLProtocol: URLProtocol {
+		nonisolated(unsafe) static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+
+		override class func canInit(with request: URLRequest) -> Bool {
+			return true
+		}
+
+		override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+			return request
+		}
+
+		override func startLoading() {
+			guard let handler = MockURLProtocol.requestHandler else {
+				fatalError("Handler is not set.")
+			}
+
+			do {
+				let (response, data) = try handler(request)
+				client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+				client?.urlProtocol(self, didLoad: data)
+				client?.urlProtocolDidFinishLoading(self)
+			} catch {
+				client?.urlProtocol(self, didFailWithError: error)
+			}
+		}
+
+		override func stopLoading() {
+			// Required but we don't need to do anything
+		}
+	}
+
 	// MARK: - Mock Provider
 
 	final class MockMarketDataProvider: MarketDataProvider {
@@ -106,20 +139,62 @@ struct MarketDataTests {
 	// MARK: - Yahoo Finance Specific Tests
 
 	@Test("Yahoo Finance URL construction")
-	func yahooFinanceURL() throws {
-		// Test URL building logic
+	func yahooFinanceURL() async throws {
+		// Create a mock session that captures the request
+		let configuration = URLSessionConfiguration.ephemeral
+		configuration.protocolClasses = [MockURLProtocol.self]
+		let session = URLSession(configuration: configuration)
+		
 		let symbol = "AAPL"
 		let from = Date(timeIntervalSince1970: 1609459200)  // 2021-01-01
 		let to = Date(timeIntervalSince1970: 1640995200)    // 2022-01-01
 
-		let expectedBaseURL = "https://query1.finance.yahoo.com/v7/finance/download/AAPL"
-		// URL should contain period1, period2, interval, events parameters
-
-		// This would be tested in actual YahooFinanceProvider implementation
+		// Set up mock response
+		MockURLProtocol.requestHandler = { request in
+			let url = request.url!
+			
+			// Verify the URL components
+			#expect(url.scheme == "https")
+			#expect(url.host == "query1.finance.yahoo.com")
+			#expect(url.path == "/v7/finance/download/\(symbol)")
+			
+			// Verify query parameters
+			let components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+			let queryItems = components.queryItems ?? []
+			
+			let period1 = queryItems.first(where: { $0.name == "period1" })
+			let period2 = queryItems.first(where: { $0.name == "period2" })
+			let interval = queryItems.first(where: { $0.name == "interval" })
+			let events = queryItems.first(where: { $0.name == "events" })
+			
+			#expect(period1?.value == "1609459200")
+			#expect(period2?.value == "1640995200")
+			#expect(interval?.value == "1d")
+			#expect(events?.value == "history")
+			
+			// Return a minimal CSV response
+			let csvData = """
+			Date,Open,High,Low,Close,Adj Close,Volume
+			2021-01-04,133.52,133.61,126.76,129.41,129.41,143301900
+			""".data(using: .utf8)!
+			
+			let response = HTTPURLResponse(
+				url: url,
+				statusCode: 200,
+				httpVersion: nil,
+				headerFields: nil
+			)!
+			
+			return (response, csvData)
+		}
+		
+		// Test the provider
+		let provider = YahooFinanceProvider(session: session)
+		_ = try await provider.fetchStockPrice(symbol: symbol, from: from, to: to)
 	}
 
 	@Test("Yahoo Finance CSV parsing")
-	func yahooCSVParsing() throws {
+	func yahooCSVParsing() async throws {
 		let csv = """
 		Date,Open,High,Low,Close,Adj Close,Volume
 		2024-01-02,185.00,186.50,184.00,185.64,185.64,50000000
@@ -127,24 +202,38 @@ struct MarketDataTests {
 		2024-01-04,186.50,187.50,186.00,187.23,187.23,52000000
 		"""
 
-		// Mock parsing logic
-		let lines = csv.components(separatedBy: "\n")
-		var prices: [Double] = []
+		// Set up mock session
+		let configuration = URLSessionConfiguration.ephemeral
+		configuration.protocolClasses = [MockURLProtocol.self]
+		let session = URLSession(configuration: configuration)
 
-		for (index, line) in lines.enumerated() {
-			guard index > 0, !line.isEmpty else { continue }
-
-			let columns = line.components(separatedBy: ",")
-			guard columns.count >= 5 else { continue }
-
-			if let close = Double(columns[4]) {
-				prices.append(close)
-			}
+		MockURLProtocol.requestHandler = { request in
+			let csvData = csv.data(using: .utf8)!
+			let response = HTTPURLResponse(
+				url: request.url!,
+				statusCode: 200,
+				httpVersion: nil,
+				headerFields: nil
+			)!
+			return (response, csvData)
 		}
 
-		#expect(prices.count == 3)
-		#expect(prices[0] == 185.64)
-		#expect(prices[2] == 187.23)
+		// Test the provider's CSV parsing through fetchStockPrice
+		let provider = YahooFinanceProvider(session: session)
+		let timeSeries = try await provider.fetchStockPrice(
+			symbol: "AAPL",
+			from: Date(timeIntervalSince1970: 1704153600),  // 2024-01-02
+			to: Date(timeIntervalSince1970: 1704326400)     // 2024-01-04
+		)
+
+		// Verify the parsed data
+		#expect(timeSeries.valuesArray.count == 3)
+		#expect(timeSeries.valuesArray[0] == 185.64)
+		#expect(timeSeries.valuesArray[1] == 186.15)
+		#expect(timeSeries.valuesArray[2] == 187.23)
+		
+		// Verify periods were parsed correctly
+		#expect(timeSeries.periods.count == 3)
 	}
 
 	// MARK: - Error Handling

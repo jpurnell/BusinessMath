@@ -296,13 +296,13 @@ struct FinancialValidationTests {
 
 	// MARK: - Cash Flow Reconciliation
 
-	@Test("Cash flow reconciles with balance sheet")
+	@Test("Cash flow reconciles with balance sheet - valid")
 	func cashFlowReconciles() throws {
 		let entity = makeEntity()
 		let periods = makePeriods()
 
-		// Beginning cash: 50, Net change: 10, Ending cash: 60
-		let beginningCash = try Account(
+		// Cash: Q1 = 50,000, Q2 = 60,000 (change of +10,000)
+		let cash = try Account(
 			entity: entity,
 			name: "Cash",
 			type: .asset,
@@ -321,14 +321,163 @@ struct FinancialValidationTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [beginningCash],
+			assetAccounts: [cash],
 			liabilityAccounts: [],
 			equityAccounts: [equity]
 		)
 
 		// Create cash flow statement with matching net change
-		// (Implementation depends on CashFlowStatement structure)
+		// Operating: 15,000 per period
+		// Investing: -8,000 per period
+		// Financing: 3,000 per period
+		// Net: 10,000 per period (matches cash change in Q2)
+		
+		let operatingCF = try Account(
+			entity: entity,
+			name: "Cash from Operations",
+			type: .operating,
+			timeSeries: TimeSeries(periods: periods, values: [15_000.0, 15_000.0])
+		)
 
-		// For now, this is a placeholder for the actual test
+		let investingCF = try Account(
+			entity: entity,
+			name: "Cash from Investing",
+			type: .investing,
+			timeSeries: TimeSeries(periods: periods, values: [-8_000.0, -8_000.0])
+		)
+
+		let financingCF = try Account(
+			entity: entity,
+			name: "Cash from Financing",
+			type: .financing,
+			timeSeries: TimeSeries(periods: periods, values: [3_000.0, 3_000.0])
+		)
+
+		let cashFlowStmt = try CashFlowStatement(
+			entity: entity,
+			periods: periods,
+			operatingAccounts: [operatingCF],
+			investingAccounts: [investingCF],
+			financingAccounts: [financingCF]
+		)
+
+		let rule = FinancialValidation.CashFlowReconciliation<Double>()
+		let context = ValidationContext(fieldName: "Cash Flow Reconciliation")
+
+		let result = rule.validate((cashFlowStmt, balanceSheet), context: context)
+
+		#expect(result.isValid)
+		#expect(result.errors.isEmpty)
+	}
+
+	@Test("Cash flow doesn't reconcile - invalid")
+	func cashFlowDoesNotReconcile() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		// Cash: Q1 = 50,000, Q2 = 60,000 (change of +10,000)
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			assetType: .cashAndEquivalents
+		)
+
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			equityType: .commonStock
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		// Cash flow statement with NON-matching net change
+		// Net: 15,000 per period (doesn't match +10,000 cash change)
+		let operatingCF = try Account(
+			entity: entity,
+			name: "Cash from Operations",
+			type: .operating,
+			timeSeries: TimeSeries(periods: periods, values: [15_000.0, 15_000.0])
+		)
+
+		let cashFlowStmt = try CashFlowStatement(
+			entity: entity,
+			periods: periods,
+			operatingAccounts: [operatingCF],
+			investingAccounts: [],
+			financingAccounts: []
+		)
+
+		let rule = FinancialValidation.CashFlowReconciliation<Double>()
+		let context = ValidationContext(fieldName: "Cash Flow Reconciliation")
+
+		let result = rule.validate((cashFlowStmt, balanceSheet), context: context)
+
+		#expect(!result.isValid)
+		#expect(result.errors.count > 0)
+		#expect(result.errors[0].message.contains("does not reconcile"))
+	}
+
+	@Test("Cash flow reconciliation with tolerance")
+	func cashFlowReconciliationWithTolerance() throws {
+		let entity = makeEntity()
+		let periods = makePeriods()
+
+		// Cash: Q1 = 50,000, Q2 = 60,000 (change of +10,000)
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			assetType: .cashAndEquivalents
+		)
+
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			equityType: .commonStock
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		// Cash flow slightly off (10,004 vs 10,000) but within tolerance of 5
+		let operatingCF = try Account(
+			entity: entity,
+			name: "Cash from Operations",
+			type: .operating,
+			timeSeries: TimeSeries(periods: periods, values: [10_004.0, 10_004.0])
+		)
+
+		let cashFlowStmt = try CashFlowStatement(
+			entity: entity,
+			periods: periods,
+			operatingAccounts: [operatingCF],
+			investingAccounts: [],
+			financingAccounts: []
+		)
+
+		let rule = FinancialValidation.CashFlowReconciliation<Double>(tolerance: 5.0)
+		let context = ValidationContext(fieldName: "Cash Flow Reconciliation")
+
+		let result = rule.validate((cashFlowStmt, balanceSheet), context: context)
+
+		#expect(result.isValid)
 	}
 }

@@ -73,7 +73,7 @@ struct PerformanceTests {
 		let values = (0..<size).map { Double($0) }
 		let ts = TimeSeries(periods: periods, values: values)
 
-		let duration = try measure {
+		let duration = measure {
 			// Random access 1000 times
 			for _ in 0..<1000 {
 				let idx = Int.random(in: 0..<size)
@@ -92,7 +92,7 @@ struct PerformanceTests {
 		let values = (0..<size).map { Double($0) }
 		let ts = TimeSeries(periods: periods, values: values)
 
-		let duration = try measure {
+		let duration = measure {
 			var sum = 0.0
 			for value in ts {
 				sum += value
@@ -112,7 +112,7 @@ struct PerformanceTests {
 		let values = (0..<size).map { 100_000.0 + Double($0) * 100 + Double.random(in: -500...500) }
 		let ts = TimeSeries(periods: periods, values: values)
 
-		let duration = try measure { 
+		let duration = measure {
 			// Chain multiple operations
 			let _ = ts
 				.mapValues { $0 * 1.1 }  // Apply 10% increase
@@ -132,7 +132,7 @@ struct PerformanceTests {
 		let values = (0..<size).map { _ in 100.0 + Double.random(in: -10...10) }
 		let ts = TimeSeries(periods: periods, values: values)
 
-		let duration = try measure {
+		let duration = measure {
 			let _ = ts.movingAverage(window: 12)  // 12-month MA
 		}
 
@@ -147,7 +147,7 @@ struct PerformanceTests {
 		let values = (0..<size).map { _ in 100.0 + Double.random(in: -10...10) }
 		let ts = TimeSeries(periods: periods, values: values)
 
-		let duration = try measure {
+		let duration = measure {
 			let _ = ts.exponentialMovingAverage(alpha: 0.3)
 		}
 
@@ -161,7 +161,7 @@ struct PerformanceTests {
 	func npv100CashFlows() throws {
 		let cashFlows = (0..<100).map { $0 == 0 ? -1_000_000.0 : 50_000.0 }
 
-		let duration = try measure {
+		let duration = measure {
 			for _ in 0..<1000 {
 				let _ = npv(discountRate: 0.10, cashFlows: cashFlows)
 			}
@@ -175,7 +175,7 @@ struct PerformanceTests {
 	func npv1000CashFlows() throws {
 		let cashFlows = (0..<1000).map { $0 == 0 ? -10_000_000.0 : 50_000.0 }
 
-		let duration = try measure {
+		let duration = measure {
 			for _ in 0..<100 {
 				let _ = npv(discountRate: 0.10, cashFlows: cashFlows)
 			}
@@ -191,7 +191,7 @@ struct PerformanceTests {
 	func irr10CashFlows() throws {
 		let cashFlows = [-100_000.0, 20_000, 25_000, 30_000, 35_000, 40_000, 45_000, 50_000, 55_000, 60_000]
 
-		let duration = try measure {
+		let duration = measure {
 			for _ in 0..<100 {
 				let _ = try? irr(cashFlows: cashFlows)
 			}
@@ -205,7 +205,7 @@ struct PerformanceTests {
 	func irr50CashFlows() throws {
 		let cashFlows = (0..<50).map { $0 == 0 ? -1_000_000.0 : 50_000.0 }
 
-		let duration = try measure {
+		let duration = measure {
 			for _ in 0..<50 {
 				let _ = try? irr(cashFlows: cashFlows)
 			}
@@ -223,7 +223,7 @@ struct PerformanceTests {
 		let dates = (0..<20).map { baseDate.addingTimeInterval(Double($0 * 30) * 86400) }  // ~Monthly
 		let cashFlows = (0..<20).map { $0 == 0 ? -100_000.0 : 10_000.0 }
 
-		let duration = try measure {
+		let duration = measure {
 			for _ in 0..<50 {
 				let _ = try? xirr(dates: dates, cashFlows: cashFlows)
 			}
@@ -239,7 +239,7 @@ struct PerformanceTests {
 		let dates = (0..<100).map { baseDate.addingTimeInterval(Double($0 * 7) * 86400) }  // Weekly
 		let cashFlows = (0..<100).map { $0 == 0 ? -500_000.0 : 10_000.0 }
 
-		let duration = try measure {
+		let duration = measure {
 			for _ in 0..<100 {
 				let _ = try? xnpv(rate: 0.12, dates: dates, cashFlows: cashFlows)
 			}
@@ -426,7 +426,7 @@ struct PerformanceTests {
 		let cashFlows = [-100_000.0, 20_000, 25_000, 30_000, 35_000, 40_000, 45_000, 50_000]
 		let rate = 0.12
 
-		let duration = try measure {
+		let duration = measure {
 			// Calculate all investment metrics
 			let _ = npv(discountRate: rate, cashFlows: cashFlows)
 			let _ = try? irr(cashFlows: cashFlows)
@@ -446,7 +446,7 @@ struct PerformanceTests {
 		// This test verifies we can create multiple large time series without issues
 		let size = 10_000
 
-		let duration = try measure {
+		let duration = measure {
 			var series: [TimeSeries<Double>] = []
 
 			for i in 0..<10 {

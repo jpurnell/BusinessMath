@@ -27,5 +27,9 @@ import Numerics
 ///     let result = percentileLocation(percentile, values: values)
 ///     print(result)
 public func PercentileLocation<T: Comparable>(_ percentile: Int, values: [T]) -> T {
-    return values.sorted()[(values.count + 1)*(percentile / 100)]
+    let sorted = values.sorted()
+    let index = Int(Double(sorted.count + 1) * Double(percentile) / 100.0)
+    // Clamp index to valid array bounds
+    let clampedIndex = max(0, min(index, sorted.count - 1))
+    return sorted[clampedIndex]
 }

@@ -102,8 +102,10 @@ struct GradientDescentTests {
 			bounds: nil
 		)
 
-		// May not converge with too high learning rate
-		// This is OK - just testing behavior
+		// With too high learning rate, should either not converge
+		// or produce a result far from optimal
+		let isGoodResult = result.converged && abs(result.optimalValue) < 0.1
+		#expect(!isGoodResult, "High learning rate should prevent good convergence")
 	}
 
 	@Test("Gradient descent with bounds")
@@ -163,19 +165,27 @@ struct GradientDescentTests {
 
 	@Test("Numerical gradient calculation")
 	func numericalGradient() throws {
-		let optimizer = GradientDescentOptimizer<Double>(learningRate: 0.1)
+		let optimizer = GradientDescentOptimizer<Double>(
+			learningRate: 0.1,
+			tolerance: 0.01,
+			maxIterations: 100
+		)
 
-		// For f(x) = x^3, f'(x) = 3x^2
-		// At x = 2, gradient should be 12
-
+		// For f(x) = x^3 - 6x^2 + 9x, f'(x) = 3x^2 - 12x + 9
+		// This has minima, so the optimizer can find them
 		let objective = { (x: Double) -> Double in
-			return x * x * x
+			return x * x * x - 6 * x * x + 9 * x
 		}
 
-		let x = 2.0
-		let h = 0.0001
-		let gradient = (objective(x + h) - objective(x - h)) / (2 * h)
+		// Start from x = 0, should find minimum at x = 3
+		let result = optimizer.optimize(
+			objective: objective,
+			constraints: [],
+			initialValue: 0.0,
+			bounds: nil
+		)
 
-		#expect(abs(gradient - 12.0) < 0.01)
+		#expect(result.converged)
+		#expect(abs(result.optimalValue - 3.0) < 0.2)
 	}
 }

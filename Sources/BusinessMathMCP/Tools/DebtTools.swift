@@ -81,12 +81,8 @@ public struct CreateAmortizationScheduleTool: MCPToolHandler, Sendable {
         let schedule = debt.schedule()
         let periodsArray = schedule.periods.sorted()
 
-        guard let firstPeriod = periodsArray.first,
-              let lastPeriod = periodsArray.last else {
-            throw ToolError.executionFailed("create_amortization_schedule", "Schedule generation failed")
-        }
-
-        let periodicPayment = schedule.payment[firstPeriod] ?? 0
+        // Get the periodic payment amount (all payments are equal in level payment amortization)
+        let periodicPayment = periodsArray.first.flatMap { schedule.payment[$0] } ?? 0
         let totalPayments = periodicPayment * Double(periodsArray.count)
 
         var scheduleDetails = ""
