@@ -603,8 +603,6 @@ public struct CalculateMarginOfErrorTool: MCPToolHandler {
         let ci = confidence(alpha: alpha, stdev: stdDev, sampleSize: Int(n))
 
         let marginOfError = ci.high
-        let lowerBound = -marginOfError
-        let upperBound = marginOfError
 
         let result = """
         ## Margin of Error Calculation
@@ -619,7 +617,7 @@ public struct CalculateMarginOfErrorTool: MCPToolHandler {
 
         **Confidence Interval:**
         If the sample mean is M, the true population mean is likely between:
-        - Lower Bound: M - \(marginOfError.formatDecimal()) = M + (\(lowerBound.formatDecimal()))
+        - Lower Bound: M - \(marginOfError.formatDecimal())
         - Upper Bound: M + \(marginOfError.formatDecimal())
 
         **Interpretation:**

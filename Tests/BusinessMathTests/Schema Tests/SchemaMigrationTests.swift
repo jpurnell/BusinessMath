@@ -51,7 +51,7 @@ struct SchemaMigrationTests {
 		let manager = MigrationManager()
 		manager.register(Migration_v1_to_v2())
 
-		var data: [String: Any] = [
+		let data: [String: Any] = [
 			"name": "Acme Corp"
 		]
 
@@ -68,7 +68,7 @@ struct SchemaMigrationTests {
 		manager.register(Migration_v2_to_v3())
 		manager.register(Migration_v3_to_v4())
 
-		var data: [String: Any] = [
+		let data: [String: Any] = [
 			"name": "Acme Corp",
 			"revenue": 100_00.0  // In cents
 		]
@@ -87,7 +87,7 @@ struct SchemaMigrationTests {
 		manager.register(Migration_v1_to_v2())
 		manager.register(Migration_v2_to_v3())
 
-		var data: [String: Any] = [
+		let data: [String: Any] = [
 			"revenue": 100_000.0
 		]
 
@@ -137,7 +137,7 @@ struct SchemaMigrationTests {
 		let manager = MigrationManager()
 		manager.register(Migration_v1_to_v2())
 
-		var data: [String: Any] = [
+		let data: [String: Any] = [
 			"name": "Acme Corp",
 			"revenue": 100_000.0,
 			"employees": 50
@@ -175,7 +175,7 @@ struct SchemaMigrationTests {
 		let manager = MigrationManager()
 		manager.register(ComplexMigration())
 
-		var data: [String: Any] = [
+		let data: [String: Any] = [
 			"name": "John Doe"
 		]
 

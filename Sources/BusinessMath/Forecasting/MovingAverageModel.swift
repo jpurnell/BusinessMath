@@ -114,10 +114,11 @@ public struct MovingAverageModel<T: Real & Sendable & Codable> {
 			)
 		}
 
-		// Calculate standard deviation of historical values
-		let mean = historicalValues.reduce(T(0), +) / T(historicalValues.count)
-		let squaredDiffs = historicalValues.map { ($0 - mean) * ($0 - mean) }
-		let variance = squaredDiffs.reduce(T(0), +) / T(max(historicalValues.count - 1, 1))
+		// Calculate standard deviation of the last `window` values (same values used for moving average)
+		// Note: We use the windowed values to match the forecast methodology
+		let windowedValues = Array(historicalValues.suffix(window))
+		let squaredDiffs = windowedValues.map { ($0 - average) * ($0 - average) }
+		let variance = squaredDiffs.reduce(T(0), +) / T(max(window - 1, 1))
 		let standardError = T.sqrt(variance / T(window))
 
 		// Z-score for confidence level
@@ -137,15 +138,14 @@ public struct MovingAverageModel<T: Real & Sendable & Codable> {
 		}
 
 		// Confidence intervals (constant width since forecast is constant)
+		// Note: All forecast values equal the moving average, so we can build intervals directly
 		let margin = zScore * standardError
+		let lower = average - margin
+		let upper = average + margin
 
-		var lowerValues: [T] = []
-		var upperValues: [T] = []
-
-		for value in forecast.valuesArray {
-			lowerValues.append(value - margin)
-			upperValues.append(value + margin)
-		}
+		// Create arrays of the constant lower and upper bounds for all forecast periods
+		let lowerValues = Array(repeating: lower, count: periods)
+		let upperValues = Array(repeating: upper, count: periods)
 
 		return ForecastWithConfidence(
 			forecast: forecast,

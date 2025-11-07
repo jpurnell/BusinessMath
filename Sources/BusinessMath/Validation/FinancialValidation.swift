@@ -172,4 +172,101 @@ public enum FinancialValidation {
 			return warnings.isEmpty ? .valid : .validWithWarnings(warnings)
 		}
 	}
+
+	// MARK: - Cash Flow Reconciliation
+
+	/// Validates that cash flow statement reconciles with balance sheet cash changes.
+	///
+	/// This rule checks that the net cash flow from the cash flow statement matches
+	/// the change in cash and cash equivalents on the balance sheet between periods.
+	public struct CashFlowReconciliation<T>: ValidationRule where T: Real & Sendable & Codable & Comparable {
+		public typealias Value = (cashFlowStatement: CashFlowStatement<T>, balanceSheet: BalanceSheet<T>)
+
+		private let tolerance: T
+
+		/// Creates a cash flow reconciliation validation rule.
+		///
+		/// - Parameter tolerance: The tolerance for rounding errors. Defaults to 0.01.
+		public init(tolerance: T = 0.01) {
+			self.tolerance = tolerance
+		}
+
+		public func validate(_ value: (cashFlowStatement: CashFlowStatement<T>, balanceSheet: BalanceSheet<T>)?, context: ValidationContext) -> ValidationResult {
+			guard let value = value else {
+				return .invalid([ValidationError(
+					field: context.fieldName,
+					value: "nil",
+					rule: "CashFlowReconciliation",
+					message: "Cash flow statement and balance sheet cannot be nil"
+				)])
+			}
+
+			let cashFlowStmt = value.cashFlowStatement
+			let balanceSheet = value.balanceSheet
+
+			// Ensure entities match
+			guard cashFlowStmt.entity == balanceSheet.entity else {
+				return .invalid([ValidationError(
+					field: context.fieldName,
+					value: "entity mismatch",
+					rule: "CashFlowReconciliation",
+					message: "Cash flow statement and balance sheet must be for the same entity"
+				)])
+			}
+
+			var errors: [ValidationError] = []
+
+			// Get cash balances from balance sheet
+			let cashAccounts = balanceSheet.assetAccounts.filter { $0.assetType == .cashAndEquivalents }
+			guard !cashAccounts.isEmpty else {
+				return .invalid([ValidationError(
+					field: context.fieldName,
+					value: "no cash accounts",
+					rule: "CashFlowReconciliation",
+					message: "Balance sheet must have at least one cash account"
+				)])
+			}
+
+			// Sum all cash accounts to get total cash per period
+			var totalCash = cashAccounts[0].timeSeries
+			for account in cashAccounts.dropFirst() {
+				totalCash = totalCash + account.timeSeries
+			}
+
+			// Check reconciliation for each consecutive period pair
+			let netCashFlow = cashFlowStmt.netCashFlow
+
+			for i in 1..<balanceSheet.periods.count {
+				let currentPeriod = balanceSheet.periods[i]
+				let previousPeriod = balanceSheet.periods[i - 1]
+
+				guard let currentCash = totalCash[currentPeriod],
+					  let previousCash = totalCash[previousPeriod],
+					  let periodNetCashFlow = netCashFlow[currentPeriod] else {
+					continue
+				}
+
+				let cashChange = currentCash - previousCash
+				let diff = abs(cashChange - periodNetCashFlow)
+
+				if diff > tolerance {
+					errors.append(ValidationError(
+						field: "\(context.fieldName) - \(currentPeriod.label)",
+						value: [
+							"Beginning Cash": previousCash,
+							"Ending Cash": currentCash,
+							"Cash Change": cashChange,
+							"Net Cash Flow": periodNetCashFlow,
+							"Difference": diff
+						],
+						rule: "CashFlowReconciliation",
+						message: "Cash flow does not reconcile with balance sheet (difference: \(diff))",
+						suggestion: "Check that all cash flows are properly categorized and that cash accounts are complete"
+					))
+				}
+			}
+
+			return errors.isEmpty ? .valid : .invalid(errors)
+		}
+	}
 }

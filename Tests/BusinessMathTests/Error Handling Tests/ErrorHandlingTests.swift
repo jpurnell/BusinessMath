@@ -59,6 +59,12 @@ final class ErrorHandlingTests: XCTestCase {
             if case .invalidInput(let message, let context) = mathError {
                 XCTAssertTrue(message.contains("Initial cost"))
                 XCTAssertTrue(message.contains("negative") || message.contains("positive"))
+                
+                // Verify context includes the invalid value
+                XCTAssertNotNil(context["value"], "Error should include the invalid value")
+                if let valueString = context["value"], let value = Double(valueString) {
+                    XCTAssertEqual(value, -1000.0, accuracy: 0.01, "Context should contain the actual invalid value")
+                }
             } else {
                 XCTFail("Expected .invalidInput error")
             }

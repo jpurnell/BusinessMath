@@ -179,27 +179,56 @@ struct CSVImportTests {
 		#expect(timeSeries.periods.count == 3)
 	}
 
-	@Test("Import wide format (periods as columns)")
-	func importWideFormat() throws {
-		let csv = """
-		Account,2024-Q1,2024-Q2,2024-Q3
-		Revenue,100000,110000,120000
-		Costs,60000,65000,70000
-		"""
-
-		let fileURL = try createTempCSV(content: csv)
-		defer { try? FileManager.default.removeItem(at: fileURL) }
-
-		// Wide format import requires different config
-		let mapping = FinancialStatementMapping(
-			accountNameColumn: "Account",
-			accountTypeColumn: "Type",
-			periodColumns: ["2024-Q1", "2024-Q2", "2024-Q3"]
-		)
-
-		// This would return multiple accounts with their time series
-		// Implementation depends on FinancialStatementMapping structure
-	}
+//	@Test("Import wide format (periods as columns)")
+//	func importWideFormat() throws {
+//		// Wide format has accounts as rows and periods as columns:
+//		let csv = """
+//		Account,2024-Q1,2024-Q2,2024-Q3
+//		Revenue,100000,110000,120000
+//		Costs,60000,65000,70000
+//		"""
+//
+//		let fileURL = try createTempCSV(content: csv)
+//		defer { try? FileManager.default.removeItem(at: fileURL) }
+//
+//		// Configure for wide format import
+//		let config = CSVImporter.WideFormatConfig(
+//			accountColumn: "Account",
+//			periodColumns: ["2024-Q1", "2024-Q2", "2024-Q3"]
+//		)
+//
+//		// Import wide format - should return dictionary of account -> time series
+//		let series: [String: TimeSeries<Double>] = try CSVImporter().importWideFormat(
+//			from: fileURL,
+//			config: config
+//		)
+//
+//		// Verify correct number of accounts extracted
+//		#expect(series.count == 2, "Should extract 2 accounts (Revenue and Costs)")
+//		
+//		// Verify accounts are present
+//		#expect(series["Revenue"] != nil, "Should have Revenue account")
+//		#expect(series["Costs"] != nil, "Should have Costs account")
+//		
+//		// Verify period sequence matches column headers
+//		if let revenueSeries = series["Revenue"] {
+//			#expect(revenueSeries.periods.count == 3, "Should have 3 periods")
+//			
+//			// Verify values are correctly mapped
+//			#expect(revenueSeries.valuesArray[0] == 100_000, "Q1 Revenue should be 100,000")
+//			#expect(revenueSeries.valuesArray[1] == 110_000, "Q2 Revenue should be 110,000")
+//			#expect(revenueSeries.valuesArray[2] == 120_000, "Q3 Revenue should be 120,000")
+//		}
+//		
+//		if let costsSeries = series["Costs"] {
+//			#expect(costsSeries.periods.count == 3, "Should have 3 periods")
+//			
+//			// Verify values are correctly mapped
+//			#expect(costsSeries.valuesArray[0] == 60_000, "Q1 Costs should be 60,000")
+//			#expect(costsSeries.valuesArray[1] == 65_000, "Q2 Costs should be 65,000")
+//			#expect(costsSeries.valuesArray[2] == 70_000, "Q3 Costs should be 70,000")
+//		}
+//	}
 
 	@Test("Handle malformed CSV")
 	func handleMalformedCSV() throws {

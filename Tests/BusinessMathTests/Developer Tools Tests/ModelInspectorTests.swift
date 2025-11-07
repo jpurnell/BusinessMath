@@ -134,8 +134,88 @@ final class ModelInspectorTests: XCTestCase {
 
     // MARK: - Unused Components Tests
 
-    func testModelInspector_IdentifiesUnusedComponents() {
-        // Given: A model with scenarios but some unused
+    func testModelInspector_IdentifiesUnusedComponents_EmptyScenarios() {
+        // Given: A model with an empty scenario (no adjustments)
+        let model = FinancialModel {
+            Revenue {
+                RevenueComponent(name: "Sales", amount: 100_000)
+            }
+
+            Costs {
+                Fixed("Salaries", 50_000)
+            }
+
+            ModelScenario("Optimistic")
+                .adjust(.revenue, by: 0.20)
+
+            ModelScenario("Empty Scenario")  // No adjustments - effectively unused
+
+            ModelScenario("Pessimistic")
+                .adjust(.revenue, by: -0.20)
+        }
+
+        // When: Identifying unused components
+        let inspector = ModelInspector(model: model)
+        let unused = inspector.identifyUnusedComponents()
+
+        // Then: Should identify the empty scenario
+        XCTAssertEqual(unused.count, 1)
+        XCTAssertTrue(unused.contains("Empty Scenario"))
+    }
+    
+    func testModelInspector_IdentifiesUnusedComponents_InvalidReferences() {
+        // Given: A model with a scenario that references a non-existent component
+        let model = FinancialModel {
+            Revenue {
+                RevenueComponent(name: "Sales", amount: 100_000)
+            }
+
+            Costs {
+                Fixed("Salaries", 50_000)
+            }
+
+            ModelScenario("Bad Scenario")
+                .adjust(.specific("NonExistentComponent"), by: 0.10)
+        }
+
+        // When: Identifying unused components
+        let inspector = ModelInspector(model: model)
+        let unused = inspector.identifyUnusedComponents()
+
+        // Then: Should identify the scenario with invalid reference
+        XCTAssertEqual(unused.count, 1)
+        XCTAssertTrue(unused.contains("Bad Scenario"))
+    }
+    
+    func testModelInspector_IdentifiesUnusedComponents_DuplicateNames() {
+        // Given: A model with duplicate scenario names
+        let model = FinancialModel {
+            Revenue {
+                RevenueComponent(name: "Sales", amount: 100_000)
+            }
+
+            Costs {
+                Fixed("Salaries", 50_000)
+            }
+
+            ModelScenario("Base Case")
+                .adjust(.revenue, by: 0.10)
+
+            ModelScenario("Base Case")  // Duplicate name
+                .adjust(.revenue, by: 0.20)
+        }
+
+        // When: Identifying unused components
+        let inspector = ModelInspector(model: model)
+        let unused = inspector.identifyUnusedComponents()
+
+        // Then: Should identify duplicate scenario names
+        XCTAssertEqual(unused.count, 1)
+        XCTAssertTrue(unused.contains("Base Case (duplicate definition)"))
+    }
+    
+    func testModelInspector_IdentifiesUnusedComponents_ValidModel() {
+        // Given: A model with properly defined scenarios
         let model = FinancialModel {
             Revenue {
                 RevenueComponent(name: "Sales", amount: 100_000)
@@ -149,16 +229,15 @@ final class ModelInspectorTests: XCTestCase {
                 .adjust(.revenue, by: 0.20)
 
             ModelScenario("Pessimistic")
-                .adjust(.revenue, by: -0.20)
+                .adjust(.costs, by: 0.10)
         }
 
         // When: Identifying unused components
         let inspector = ModelInspector(model: model)
         let unused = inspector.identifyUnusedComponents()
 
-        // Then: All components are used (scenarios defined but may not be applied yet)
-        // This is more relevant for complex models with conditional logic
-        XCTAssertTrue(unused.isEmpty || unused.count >= 0, "Should identify unused components if any")
+        // Then: Should not identify any unused components
+        XCTAssertTrue(unused.isEmpty, "Valid model should have no unused components")
     }
 
     // MARK: - Model Structure Validation Tests
@@ -224,6 +303,29 @@ final class ModelInspectorTests: XCTestCase {
         XCTAssertTrue(summary.contains("Total Revenue:"))
         XCTAssertTrue(summary.contains("Total Costs:"))
         XCTAssertTrue(summary.contains("Profit:"))
+    }
+    
+    func testModelInspector_SummaryIncludesUnusedComponents() {
+        // Given: A model with unused components
+        let model = FinancialModel {
+            Revenue {
+                RevenueComponent(name: "Sales", amount: 100_000)
+            }
+
+            Costs {
+                Fixed("Expenses", 50_000)
+            }
+
+            ModelScenario("Empty")  // No adjustments
+        }
+
+        // When: Generating summary report
+        let inspector = ModelInspector(model: model)
+        let summary = inspector.generateSummary()
+
+        // Then: Should include unused component warnings
+        XCTAssertTrue(summary.contains("Unused Components Detected"))
+        XCTAssertTrue(summary.contains("Empty"))
     }
 
     // MARK: - Complex Model Handling Tests

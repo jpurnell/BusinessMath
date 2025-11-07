@@ -75,11 +75,19 @@ struct StressTestingTests {
 		let scenario = StressScenario<Double>.recession
 		let baselineNPV = 1_000_000.0
 		let scenarioNPV = 850_000.0
-		let impact = scenarioNPV - baselineNPV
+		
+		let result = ScenarioResult(
+			scenario: scenario,
+			baselineNPV: baselineNPV,
+			scenarioNPV: scenarioNPV,
+			impact: scenarioNPV - baselineNPV
+		)
 
-		// Create a mock result structure
-		#expect(impact < 0.0) // Should be negative for recession
-		#expect(abs(impact) == 150_000.0)
+		#expect(result.scenario.name == "Recession")
+		#expect(result.baselineNPV == 1_000_000.0)
+		#expect(result.scenarioNPV == 850_000.0)
+		#expect(result.impact < 0.0) // Should be negative for recession
+		#expect(result.impact == -150_000.0)
 	}
 
 	@Test("Stress test report identifies worst case")

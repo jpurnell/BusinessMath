@@ -31,7 +31,7 @@ public enum StandardValidation {
 	// MARK: - NonNegative
 
 	/// Validates that a number is non-negative (>= 0).
-	public struct NonNegative<T: Real & Comparable>: ValidationRule {
+	public struct NonNegative<T: Real & Comparable & Sendable>: ValidationRule {
 		public typealias Value = T
 
 		public init() {}
@@ -63,7 +63,7 @@ public enum StandardValidation {
 	// MARK: - Positive
 
 	/// Validates that a number is positive (> 0).
-	public struct Positive<T: Real & Comparable>: ValidationRule {
+	public struct Positive<T: Real & Comparable & Sendable>: ValidationRule {
 		public typealias Value = T
 
 		public init() {}
@@ -95,7 +95,7 @@ public enum StandardValidation {
 	// MARK: - Range
 
 	/// Validates that a number falls within a specified range.
-	public struct Range<T: Real & Comparable>: ValidationRule {
+	public struct Range<T: Real & Comparable & Sendable>: ValidationRule {
 		public typealias Value = T
 
 		private let min: T

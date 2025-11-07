@@ -400,8 +400,8 @@ public struct LogNormalDistributionTool: MCPToolHandler {
         }
 
         let x = try args.getDouble("x")
-        let mean = try args.getDoubleOptional("mean") ?? 0.0
-        let stddev = try args.getDoubleOptional("stddev") ?? 1.0
+        let mean = args.getDoubleOptional("mean") ?? 0.0
+        let stddev = args.getDoubleOptional("stddev") ?? 1.0
 
         guard x > 0.0 else {
             throw ToolError.invalidArguments("x must be positive for log-normal distribution")
@@ -948,8 +948,8 @@ public struct GoalSeekTool: MCPToolHandler {
         let formulaType = try args.getString("formula_type")
         let target = try args.getDouble("target")
         let initialGuess = try args.getDouble("initial_guess")
-        let tolerance = try args.getDoubleOptional("tolerance") ?? 0.000001
-        let maxIterations = try args.getIntOptional("max_iterations") ?? 1000
+        let tolerance = args.getDoubleOptional("tolerance") ?? 0.000001
+        let maxIterations = args.getIntOptional("max_iterations") ?? 1000
 
         // Define function based on type
         let function: (Double) -> Double

@@ -102,10 +102,10 @@ public struct FieldDefinition: Sendable {
 
 		case .object:
 			// Accept dictionaries (not arrays)
-			if let dict = value as? [String: Any] {
+				if value is [String: Any] {
 				return true
 			}
-			if let dict = value as? [AnyHashable: Any] {
+				if value is [AnyHashable: Any] {
 				// Also accept AnyHashable keys
 				return true
 			}
@@ -232,7 +232,7 @@ public struct DataSchema: Sendable {
 			if !field.validateType(value) {
 				errors.append(ValidationError(
 					field: field.name,
-					value: value,
+					value: String(describing: value),
 					rule: "Type",
 					message: "Field '\(field.name)' has incorrect type (expected \(field.type))"
 				))
@@ -246,7 +246,7 @@ public struct DataSchema: Sendable {
 				if !field.validateType(value) {
 					errors.append(ValidationError(
 						field: field.name,
-						value: value,
+						value: String(describing: value),
 						rule: "Type",
 						message: "Field '\(field.name)' has incorrect type (expected \(field.type))"
 					))

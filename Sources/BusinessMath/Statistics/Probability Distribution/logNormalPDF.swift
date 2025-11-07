@@ -24,9 +24,13 @@ import Numerics
 	///   where `π` is approximately 3.14159.
 
 func g<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
-	let e = T(1) / (stdDev * T.sqrt(2 * .pi))
-	let f = T.exp( (T(-1) / T(2)) * T.pow((x - µ), T(2))) / T.pow(stdDev, T(2))
-	return e * f
+	let coefficient = T(1) / (stdDev * T.sqrt(2 * .pi))
+	
+	// Use direct multiplication instead of T.pow() to avoid NaN with negative values
+	// See note in logNormalPDF for detailed explanation
+	let diff = x - µ
+	let exponent = -(diff * diff) / (T(2) * stdDev * stdDev)
+	return coefficient * T.exp(exponent)
 }
 
 /// Computes the value of the log-normal distribution's probability density function (PDF).
@@ -52,7 +56,14 @@ func g<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
 
 public func logNormalPDF<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
 	let denominator = T.sqrt(2 * .pi) * stdDev * x
-	let exponent = -T.pow((T.log(x) - µ), T(2)) / (T(2) * T.pow(stdDev, T(2)))
+	
+	// Note: We use direct multiplication (logDiff * logDiff) instead of T.pow(logDiff, T(2))
+	// to square the value. This is because T.pow() with generic Real types can produce NaN
+	// when the base is negative (which happens when log(x) < µ, e.g., log(0.01) ≈ -4.605).
+	// Direct multiplication is more numerically stable, more efficient, and handles negative
+	// values correctly since (-a) * (-a) = a² for all real numbers.
+	let logDiff = T.log(x) - µ
+	let exponent = -(logDiff * logDiff) / (T(2) * stdDev * stdDev)
 	let probAtX = T.exp(exponent) / denominator
 	return probAtX
 }

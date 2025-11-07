@@ -133,10 +133,7 @@ public actor PromptProvider {
             return GetPrompt.Result(
                 description: "Unknown prompt",
                 messages: [
-                    Prompt.Message(
-                        role: .user,
-                        content: .text(text: "Error: Prompt '\(name)' not found")
-                    )
+                    Prompt.Message.user(.text(text: "Error: Prompt '\(name)' not found"))
                 ]
             )
         }

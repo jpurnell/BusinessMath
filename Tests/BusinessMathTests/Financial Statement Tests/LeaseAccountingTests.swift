@@ -611,9 +611,10 @@ struct LeaseAccountingTests {
         // Buy option
         let purchasePrice = 95_000.0
         let residualValue = 10_000.0
-        let discountRate = 0.07
-
-        let buyPV = purchasePrice - (residualValue / pow(1.07, 1.0))
+        
+        // Discount residual value back from end of 1 year
+        let pvResidualValue = residualValue / pow(1.07, 1.0)
+        let buyPV = purchasePrice - pvResidualValue
 
         // Compare NPVs
         let analysis = LeaseVsBuyAnalysis(
@@ -621,7 +622,28 @@ struct LeaseAccountingTests {
             buyPV: buyPV
         )
 
-        #expect(analysis.recommendation != nil)
+        // Verify the analysis makes a recommendation
+        #expect(!analysis.recommendation.isEmpty, "Should provide a recommendation")
+        
+        // Verify it recommends the right option based on NAL
+        // NAL = buyPV - leasePV (positive means leasing is better)
+        let expectedNAL = buyPV - leasePV
+        #expect(abs(analysis.netAdvantageToLeasing - expectedNAL) < 1.0, "NAL should equal buy PV minus lease PV")
+        
+        // Verify shouldLease matches the sign of NAL
+        if expectedNAL > 0 {
+            #expect(analysis.shouldLease, "Should recommend lease when NAL is positive")
+            #expect(analysis.recommendation.contains("Lease"), "Recommendation should mention leasing")
+        } else {
+            #expect(!analysis.shouldLease, "Should recommend buy when NAL is negative")
+            #expect(analysis.recommendation.contains("Buy"), "Recommendation should mention buying")
+        }
+        
+        // Verify savings percentage calculation
+        if buyPV > 0 {
+            let expectedSavingsPercent = expectedNAL / buyPV
+            #expect(abs(analysis.savingsPercentage - expectedSavingsPercent) < 0.001, "Savings percentage should be correct")
+        }
     }
 
     // MARK: - Operating Lease (Pre-IFRS 16 Comparison)
@@ -645,13 +667,27 @@ struct LeaseAccountingTests {
             discountRate: 0.06
         )
 
-        let rouAsset = lease.rightOfUseAsset()
+        // Under IFRS 16, expense = depreciation + interest
         let depreciation = lease.depreciation(period: q1)
         let interestExpense = lease.interestExpense(period: q1)
         let newStandardExpense = depreciation + interestExpense
 
-        // New standard front-loads expenses
-        #expect(newStandardExpense > oldStandardExpense)
+        // New standard front-loads expenses (higher in early periods)
+        #expect(newStandardExpense > oldStandardExpense, 
+                "IFRS 16 should have higher expense in first period than operating lease")
+        
+        // Verify over the full lease term, total expense is the same
+        var totalOldStandard = 0.0
+        var totalNewStandard = 0.0
+        
+        for period in periods {
+            totalOldStandard += payments[period]!
+            totalNewStandard += lease.depreciation(period: period) + lease.interestExpense(period: period)
+        }
+        
+        // Total expense over life of lease should be approximately equal
+        #expect(abs(totalOldStandard - totalNewStandard) < 10.0, 
+                "Total expense over lease life should be similar under both standards")
     }
 
     // MARK: - Disclosure Requirements

@@ -128,6 +128,7 @@ struct MonteCarloSimulationTests {
 		let error10000 = abs(results10000.statistics.mean - 100.0)
 
 		// On average, 10K should be more accurate (though not guaranteed in single test)
+		#expect(error1000 < 15.0, "1K iterations should be within 3 standard errors")
 		#expect(error10000 < 5.0, "10K iterations should be very close to true mean")
 	}
 

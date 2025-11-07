@@ -88,12 +88,16 @@ struct SimulationResultsTests {
 			#expect(histogram[i].range.lowerBound < histogram[i + 1].range.lowerBound, "Bins should be ordered")
 		}
 
-		// For uniform distribution, each bin should have roughly equal counts
-		let expectedCountPerBin = 1_000.0 / 10.0  // 100
-		for bin in histogram {
-			#expect(Double(bin.count) > 50 && Double(bin.count) < 150, "Bins should be roughly equal for uniform")
+			// For uniform distribution, each bin should have roughly equal counts
+			let expectedCountPerBin = 1_000.0 / 10.0  // 100
+			let tolerance = 0.5  // Allow 50% deviation
+			for bin in histogram {
+				let lower = expectedCountPerBin * (1 - tolerance)
+				let upper = expectedCountPerBin * (1 + tolerance)
+				#expect(Double(bin.count) > lower && Double(bin.count) < upper,
+						"Bins should be roughly equal for uniform distribution")
+			}
 		}
-	}
 
 	@Test("SimulationResults histogram with different bin counts")
 	func simulationResultsHistogramBinCounts() {

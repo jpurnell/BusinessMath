@@ -81,17 +81,17 @@ struct RiskMetricsTests {
 
 	@Test("Max drawdown identifies largest peak-to-trough decline")
 	func maxDrawdownCalculation() throws {
-		// Simulate portfolio that goes: 100 -> 120 -> 80 -> 110
-		let values = [100.0, 110.0, 120.0, 100.0, 80.0, 90.0, 110.0]
+		// Simulate returns that create portfolio path: 1.0 -> 1.1 -> 1.2 -> 1.0 -> 0.8 -> 0.9 -> 1.1
+		// Peak is 1.2, trough is 0.8, so max drawdown = (1.2 - 0.8) / 1.2 = 33.3%
 		let returns = [0.10, 0.091, -0.167, -0.20, 0.125, 0.222]
 		let periods = returns.enumerated().map { Period.month(year: 2025 + ($0.offset / 12), month: ($0.offset % 12) + 1) }
 		let timeSeries = TimeSeries(periods: periods, values: returns)
 
 		let metrics = ComprehensiveRiskMetrics(returns: timeSeries, riskFreeRate: 0.02)
 
-		// Max drawdown from 120 to 80 = (120 - 80) / 120 = 33.3%
-		#expect(metrics.maxDrawdown > 0.0)
-		#expect(metrics.maxDrawdown < 1.0) // Should be a percentage
+		// Max drawdown from peak (1.2) to trough (0.8) ≈ 33.3%
+		#expect(metrics.maxDrawdown > 0.30)
+		#expect(metrics.maxDrawdown < 0.35)
 	}
 
 	@Test("No drawdown for monotonically increasing series")

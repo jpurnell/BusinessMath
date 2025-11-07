@@ -512,23 +512,35 @@ final class UnassortedTests: XCTestCase {
     }
     
     func testPercentileLocation() {
-		// Test finding value at a given percentile
-		let values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+		// Test finding value at a given percentile using nearest-rank method
+		let values = Array(1...100).map { Double($0) }
 		
-		// Note: The function uses integer division for percentile calculation
-		// This may not work as expected with the current implementation
-		// Testing what it actually does
-		let sortedValues = values.sorted()
+		// Test 25th percentile - should return approximately 25
+		let result25 = PercentileLocation(25, values: values)
+		unassortedTestsLogger.info("25th percentile result: \(result25)")
+		XCTAssertEqual(result25, 25.0, accuracy: 1.0)
 		
-		// For a proper test, we'd need values that work with the formula
-		// (values.count + 1) * (percentile / 100)
-		// With 10 items: (10+1) * (25/100) = 11 * 0 = 0 (integer division)
-		let testValues = Array(1...100)
-		let result25 = PercentileLocation(25, values: testValues)
+		// Test 50th percentile (median) - should return approximately 50
+		let result50 = PercentileLocation(50, values: values)
+		unassortedTestsLogger.info("50th percentile result: \(result50)")
+		XCTAssertEqual(result50, 50.0, accuracy: 1.0)
 		
-		// With 100 items: (100+1) * (25/100) = 101 * 0 = 0 due to integer division
-		// This function appears to have a bug - it should use Double division
-		XCTAssertGreaterThan(result25, 0)
+		// Test 75th percentile - should return approximately 75
+		let result75 = PercentileLocation(75, values: values)
+		unassortedTestsLogger.info("75th percentile result: \(result75)")
+		XCTAssertEqual(result75, 75.0, accuracy: 1.0)
+		
+		// Test edge cases
+		let result0 = PercentileLocation(0, values: values)
+		XCTAssertEqual(result0, 1.0) // Should return first element
+		
+		let result100 = PercentileLocation(100, values: values)
+		XCTAssertEqual(result100, 100.0) // Should return last element
+		
+		// Test with smaller dataset
+		let smallValues: [Double] = [1, 2, 3, 4, 5]
+		let smallResult50 = PercentileLocation(50, values: smallValues)
+		XCTAssertEqual(smallResult50, 3.0, accuracy: 1.0) // Median of 5 elements
     }
     
     func testPercentileMeanStdDev() {

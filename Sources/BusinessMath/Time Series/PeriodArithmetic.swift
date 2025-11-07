@@ -7,6 +7,27 @@
 
 import Foundation
 
+// MARK: - Period Error
+
+/// Errors that can occur during period operations.
+public enum PeriodError: Error, Equatable {
+	/// Attempted to calculate distance between periods of different types.
+	///
+	/// - Parameters:
+	///   - from: The type of the source period.
+	///   - to: The type of the target period.
+	case typeMismatch(from: PeriodType, to: PeriodType)
+}
+
+extension PeriodError: LocalizedError {
+	public var errorDescription: String? {
+		switch self {
+		case .typeMismatch(let from, let to):
+			return "Cannot calculate distance between periods of different types: \(from) and \(to)"
+		}
+	}
+}
+
 // MARK: - Calendar Cache
 
 /// A cached Calendar instance to avoid repeated Calendar.current calls.
@@ -49,19 +70,24 @@ extension Period: Strideable {
 	/// - Parameter other: The target period. Must be the same type as this period.
 	/// - Returns: The number of periods between this period and `other`.
 	///   Positive if `other` is later, negative if earlier.
+	///   Returns 0 if the periods have different types.
 	///
-	/// - Precondition: Both periods must have the same `PeriodType`.
+	/// - Note: If you need to detect type mismatches, use `distanceThrowing(to:)` instead.
 	///
 	/// ## Example
 	/// ```swift
 	/// let jan = Period.month(year: 2025, month: 1)
 	/// let apr = Period.month(year: 2025, month: 4)
-	/// print(jan.distance(to: apr))  // 3
-	/// print(apr.distance(to: jan))  // -3
+	/// let distance = jan.distance(to: apr)  // 3
+	/// print(distance)
+	/// 
+	/// let quarter = Period.quarter(year: 2025, quarter: 1)
+	/// let badDistance = jan.distance(to: quarter)  // 0 (different types)
 	/// ```
 	public func distance(to other: Period) -> Int {
-		precondition(self.type == other.type,
-					 "Cannot calculate distance between periods of different types: \(self.type) and \(other.type)")
+		guard self.type == other.type else {
+			return 0
+		}
 
 		switch type {
 		case .daily:
@@ -85,6 +111,28 @@ extension Period: Strideable {
 			let components = cachedCalendar.dateComponents([.year], from: self.startDate, to: other.startDate)
 			return components.year ?? 0
 		}
+	}
+	
+	/// Returns the distance from this period to another period of the same type.
+	///
+	/// This is a throwing variant of `distance(to:)` that explicitly errors on type mismatches.
+	///
+	/// - Parameter other: The target period. Must be the same type as this period.
+	/// - Returns: The number of periods between this period and `other`.
+	/// - Throws: `PeriodError.typeMismatch` if the periods have different types.
+	///
+	/// ## Example
+	/// ```swift
+	/// let jan = Period.month(year: 2025, month: 1)
+	/// let quarter = Period.quarter(year: 2025, quarter: 1)
+	/// // This will throw PeriodError.typeMismatch
+	/// let distance = try jan.distanceThrowing(to: quarter)
+	/// ```
+	public func distanceThrowing(to other: Period) throws -> Int {
+		guard self.type == other.type else {
+			throw PeriodError.typeMismatch(from: self.type, to: other.type)
+		}
+		return distance(to: other)
 	}
 
 	/// Returns a period that is the specified number of periods away from this period.
