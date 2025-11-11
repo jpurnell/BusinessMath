@@ -227,82 +227,89 @@ func runReidsRaisinsDemo() {
 
     struct ParameterTest {
         let name: String
-        let getValue: (ReidsRaisinsModel) -> Double
-        let setValue: (inout ReidsRaisinsModel, Double) -> Void
         let lowValue: Double
         let highValue: Double
+        let evaluate: (inout ReidsRaisinsModel, Double) -> Void
     }
 
     let parameters: [ParameterTest] = [
         ParameterTest(
             name: "Open-Market Grape Price",
-            getValue: { $0.openMarketPrice },
-            setValue: { $0.openMarketPrice = $1 },
             lowValue: 0.20,
-            highValue: 0.35
+            highValue: 0.35,
+            evaluate: { $0.openMarketPrice = $1 }
         ),
         ParameterTest(
             name: "Raisin Selling Price",
-            getValue: { $0.raisinPrice },
-            setValue: { $0.raisinPrice = $1 },
             lowValue: 1.80,
-            highValue: 2.60
+            highValue: 2.60,
+            evaluate: { $0.raisinPrice = $1 }
         ),
         ParameterTest(
             name: "Contract Grape Quantity",
-            getValue: { $0.contractQuantity },
-            setValue: { $0.contractQuantity = $1 },
             lowValue: 750_000,
-            highValue: 1_250_000
+            highValue: 1_250_000,
+            evaluate: { $0.contractQuantity = $1 }
         ),
         ParameterTest(
             name: "Contract Grape Price",
-            getValue: { $0.contractGrapePrice },
-            setValue: { $0.contractGrapePrice = $1 },
             lowValue: 0.20,
-            highValue: 0.30
+            highValue: 0.30,
+            evaluate: { $0.contractGrapePrice = $1 }
         )
     ]
 
-    var impacts: [(name: String, lowProfit: Double, highProfit: Double, impact: Double)] = []
+    // Calculate impacts for each parameter
+    var impacts: [String: Double] = [:]
+    var lowValues: [String: Double] = [:]
+    var highValues: [String: Double] = [:]
 
     for param in parameters {
         var lowModel = baseCase
-        param.setValue(&lowModel, param.lowValue)
+        param.evaluate(&lowModel, param.lowValue)
         let lowProfit = lowModel.calculateProfit()
 
         var highModel = baseCase
-        param.setValue(&highModel, param.highValue)
+        param.evaluate(&highModel, param.highValue)
         let highProfit = highModel.calculateProfit()
 
-        let impact = abs(highProfit - lowProfit)
-        impacts.append((param.name, lowProfit, highProfit, impact))
+        lowValues[param.name] = lowProfit
+        highValues[param.name] = highProfit
+        impacts[param.name] = abs(highProfit - lowProfit)
     }
 
-    impacts.sort { $0.impact > $1.impact }
-
-    print("Parameters ranked by impact on profit:\n")
-
-    for (index, result) in impacts.enumerated() {
-        print("\(index + 1). \(result.name)")
-        print("   Low:    $\(Int(result.lowProfit).formatted())")
-        print("   High:   $\(Int(result.highProfit).formatted())")
-        print("   Impact: $\(Int(result.impact).formatted())")
-        print()
+    // Rank parameters by impact (descending)
+    let rankedInputs = parameters.map { $0.name }.sorted { name1, name2 in
+        let impact1 = impacts[name1] ?? 0.0
+        let impact2 = impacts[name2] ?? 0.0
+        return impact1 > impact2
     }
 
-    print("Visual Tornado Diagram:\n")
+    // Create TornadoDiagramAnalysis object
+    let tornadoAnalysis = TornadoDiagramAnalysis(
+        inputs: rankedInputs,
+        impacts: impacts,
+        lowValues: lowValues,
+        highValues: highValues,
+        baseCaseOutput: profit
+    )
 
-    let maxImpact = impacts.first?.impact ?? 1.0
-    let barWidth = 50
+    // Use BusinessMath's built-in visualization
+    let tornadoPlot = plotTornadoDiagram(tornadoAnalysis)
+    print(tornadoPlot)
 
-    for result in impacts {
-        let percentOfMax = result.impact / maxImpact
-        let bars = Int(percentOfMax * Double(barWidth))
+    // Print detailed breakdown
+    print("\nDetailed Impact Analysis:")
+    for (index, input) in tornadoAnalysis.inputs.enumerated() {
+        let impact = tornadoAnalysis.impacts[input]!
+        let low = tornadoAnalysis.lowValues[input]!
+        let high = tornadoAnalysis.highValues[input]!
+        let percentImpact = (impact / abs(profit)) * 100.0
 
-        print(String(format: "%-30s", result.name), terminator: " ")
-        print(String(repeating: "█", count: bars), terminator: "")
-        print(" $\(Int(result.impact).formatted())")
+        print("\n\(index + 1). \(input)")
+        print("   Low scenario:  $\(Int(low).formatted())")
+        print("   High scenario: $\(Int(high).formatted())")
+        print("   Impact range:  $\(Int(impact).formatted()) (\(String(format: "%.1f", percentImpact))% of base profit)")
     }
 
     print("\n" + "=" * 50)
