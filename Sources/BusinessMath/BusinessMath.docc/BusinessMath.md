@@ -58,6 +58,10 @@ The library is designed for:
 - <doc:RealOptionsGuide>
 - <doc:RiskAnalyticsGuide>
 
+### Case Studies
+
+- <doc:ReidsRaisinsExample>
+
 <!--
 Note: API reference symbols below require building the package.
 To view the complete API documentation with all symbols, build the package in Xcode
