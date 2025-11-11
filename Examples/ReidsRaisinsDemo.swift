@@ -223,41 +223,40 @@ func runReidsRaisinsDemo() {
 
     // Question D: Tornado Chart
     print("\nQUESTION D: Tornado Chart Analysis")
+    print("Using ±10% variation for all parameters")
     print("=" * 50)
 
     struct ParameterTest {
         let name: String
-        let lowValue: Double
-        let highValue: Double
-        let evaluate: (inout ReidsRaisinsModel, Double) -> Void
+        let baseValue: Double
+        let setValue: (inout ReidsRaisinsModel, Double) -> Void
     }
 
     let parameters: [ParameterTest] = [
         ParameterTest(
             name: "Open-Market Grape Price",
-            lowValue: 0.20,
-            highValue: 0.35,
-            evaluate: { $0.openMarketPrice = $1 }
+            baseValue: 0.30,
+            setValue: { $0.openMarketPrice = $1 }
         ),
         ParameterTest(
             name: "Raisin Selling Price",
-            lowValue: 2.00,  // ±10% around optimal
-            highValue: 2.40,
-            evaluate: { $0.raisinPrice = $1 }
+            baseValue: 2.20,
+            setValue: { $0.raisinPrice = $1 }
         ),
         ParameterTest(
             name: "Contract Grape Quantity",
-            lowValue: 750_000,
-            highValue: 1_250_000,
-            evaluate: { $0.contractQuantity = $1 }
+            baseValue: 1_000_000,
+            setValue: { $0.contractQuantity = $1 }
         ),
         ParameterTest(
             name: "Contract Grape Price",
-            lowValue: 0.20,
-            highValue: 0.30,
-            evaluate: { $0.contractGrapePrice = $1 }
+            baseValue: 0.25,
+            setValue: { $0.contractGrapePrice = $1 }
         )
     ]
+
+    // Fixed percentage variation (standard tornado chart methodology)
+    let variationPercent = 0.10  // ±10%
 
     // Calculate impacts for each parameter
     var impacts: [String: Double] = [:]
@@ -265,15 +264,19 @@ func runReidsRaisinsDemo() {
     var highValues: [String: Double] = [:]
 
     for param in parameters {
+        // Calculate low value (-10% from base)
+        let lowParamValue = param.baseValue * (1 - variationPercent)
         var lowModel = baseCase
-        param.evaluate(&lowModel, param.lowValue)
+        param.setValue(&lowModel, lowParamValue)
         let profitAtLow = lowModel.calculateProfit()
 
+        // Calculate high value (+10% from base)
+        let highParamValue = param.baseValue * (1 + variationPercent)
         var highModel = baseCase
-        param.evaluate(&highModel, param.highValue)
+        param.setValue(&highModel, highParamValue)
         let profitAtHigh = highModel.calculateProfit()
 
-        // Store results - use min/max of OUTCOMES, not parameter values
+        // Store results - use min/max of OUTCOMES
         let minProfit = min(profitAtLow, profitAtHigh)
         let maxProfit = max(profitAtLow, profitAtHigh)
 

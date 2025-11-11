@@ -391,48 +391,47 @@ Maximum profit: $448,125
 
 ## Question D: Tornado Chart Analysis
 
-Identify which parameters have the greatest impact on profit using BusinessMath's built-in tornado diagram analysis:
+Identify which parameters have the greatest impact on profit using tornado diagram analysis. Following standard practice, we'll vary each parameter by **±10% from its base-case value**.
 
 ```swift
 import BusinessMath
 
 print("\n=== Tornado Chart: Parameter Sensitivity Analysis ===")
+print("Using ±10% variation for all parameters")
 print()
 
-// Define parameters to test with their ranges
+// Define parameters to test with their base values
 struct ParameterTest {
     let name: String
-    let lowValue: Double
-    let highValue: Double
-    let evaluate: (inout ReidsRaisinsModel, Double) -> Void
+    let baseValue: Double
+    let setValue: (inout ReidsRaisinsModel, Double) -> Void
 }
 
 let parameters: [ParameterTest] = [
     ParameterTest(
         name: "Open-Market Grape Price",
-        lowValue: 0.20,   // Historical low
-        highValue: 0.35,  // Historical high
-        evaluate: { $0.openMarketPrice = $1 }
+        baseValue: 0.30,
+        setValue: { $0.openMarketPrice = $1 }
     ),
     ParameterTest(
         name: "Raisin Selling Price",
-        lowValue: 2.00,   // -$0.20 from base (±10%)
-        highValue: 2.40,  // +$0.20 from base (±10%)
-        evaluate: { $0.raisinPrice = $1 }
+        baseValue: 2.20,
+        setValue: { $0.raisinPrice = $1 }
     ),
     ParameterTest(
         name: "Contract Grape Quantity",
-        lowValue: 750_000,    // -25%
-        highValue: 1_250_000, // +25%
-        evaluate: { $0.contractQuantity = $1 }
+        baseValue: 1_000_000,
+        setValue: { $0.contractQuantity = $1 }
     ),
     ParameterTest(
         name: "Contract Grape Price",
-        lowValue: 0.20,  // -20%
-        highValue: 0.30, // +20%
-        evaluate: { $0.contractGrapePrice = $1 }
+        baseValue: 0.25,
+        setValue: { $0.contractGrapePrice = $1 }
     )
 ]
+
+// Fixed percentage variation (standard tornado chart methodology)
+let variationPercent = 0.10  // ±10%
 
 // Calculate impacts for each parameter
 var impacts: [String: Double] = [:]
@@ -440,24 +439,25 @@ var lowValues: [String: Double] = [:]
 var highValues: [String: Double] = [:]
 
 for param in parameters {
-    // Test low parameter value
+    // Calculate low value (-10% from base)
+    let lowParamValue = param.baseValue * (1 - variationPercent)
     var lowModel = baseCase
-    param.evaluate(&lowModel, param.lowValue)
+    param.setValue(&lowModel, lowParamValue)
     let profitAtLow = lowModel.calculateProfit()
 
-    // Test high parameter value
+    // Calculate high value (+10% from base)
+    let highParamValue = param.baseValue * (1 + variationPercent)
     var highModel = baseCase
-    param.evaluate(&highModel, param.highValue)
+    param.setValue(&highModel, highParamValue)
     let profitAtHigh = highModel.calculateProfit()
 
-    // Store results - use min/max of OUTCOMES, not parameter values
-    // This ensures the tornado chart displays correctly
+    // Store results - use min/max of OUTCOMES
     let minProfit = min(profitAtLow, profitAtHigh)
     let maxProfit = max(profitAtLow, profitAtHigh)
 
     lowValues[param.name] = minProfit
     highValues[param.name] = maxProfit
-    impacts[param.name] = maxProfit - minProfit
+    impacts[param.name] = maxProfit - minProfit  // Absolute difference
 }
 
 // Rank parameters by impact (descending)
@@ -498,43 +498,48 @@ for (index, input) in tornadoAnalysis.inputs.enumerated() {
 **Expected Output:**
 ```
 === Tornado Chart: Parameter Sensitivity Analysis ===
+Using ±10% variation for all parameters
 
 Tornado Diagram - Sensitivity Analysis
 Base Case: 448125
 
-Raisin Selling Price      ◄█████████████████████████│█████████████████████████►  Impact: 485625 (108.4%)
-                             -437500                448125                 485625
+Open-Market Grape Price   ◄█████████████████████████│█████████████████████████►  Impact: 131250 (29.3%)
+                             404375                 448125                 535625
 
-Open-Market Grape Price   ◄█████████████████████████│█████████████████████████►  Impact: 484375 (108.1%)
-                             175000                 448125                 659375
+Contract Grape Price      ◄████████████│████████████►                            Impact: 100000 (22.3%)
+                             398125     448125      498125
 
-Contract Grape Price      ◄████│████►                                            Impact: 100000 (22.3%)
-                             398125  448125  498125
+Raisin Selling Price      ◄████████│████████►                                    Impact: 65625 (14.6%)
+                             417187   448125  482812
 
-Contract Grape Quantity   ◄█│█►                                                  Impact: 38750 (8.6%)
+Contract Grape Quantity   ◄███│███►                                              Impact: 38750 (8.6%)
                              428750  448125  467500
 
 Detailed Impact Analysis:
 
-1. Raisin Selling Price
-   Low scenario:  $-437,500
-   High scenario: $48,125
-   Impact range:  $485,625 (108.4% of base profit)
+1. Open-Market Grape Price
+   Parameter variation: $0.27 to $0.33 (±10%)
+   Low profit:  $404,375
+   High profit: $535,625
+   Impact range: $131,250 (29.3% of base profit)
 
-2. Open-Market Grape Price
-   Low scenario:  $175,000
-   High scenario: $659,375
-   Impact range:  $484,375 (108.1% of base profit)
+2. Contract Grape Price
+   Parameter variation: $0.225 to $0.275 (±10%)
+   Low profit:  $398,125
+   High profit: $498,125
+   Impact range: $100,000 (22.3% of base profit)
 
-3. Contract Grape Price
-   Low scenario:  $398,125
-   High scenario: $498,125
-   Impact range:  $100,000 (22.3% of base profit)
+3. Raisin Selling Price
+   Parameter variation: $1.98 to $2.42 (±10%)
+   Low profit:  $417,187
+   High profit: $482,812
+   Impact range: $65,625 (14.6% of base profit)
 
 4. Contract Grape Quantity
-   Low scenario:  $428,750
-   High scenario: $467,500
-   Impact range:  $38,750 (8.6% of base profit)
+   Parameter variation: 900,000 to 1,100,000 lbs (±10%)
+   Low profit:  $428,750
+   High profit: $467,500
+   Impact range: $38,750 (8.6% of base profit)
 ```
 
 ## Key Insights from Analysis
