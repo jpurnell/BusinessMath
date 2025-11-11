@@ -241,8 +241,8 @@ func runReidsRaisinsDemo() {
         ),
         ParameterTest(
             name: "Raisin Selling Price",
-            lowValue: 1.80,
-            highValue: 2.60,
+            lowValue: 2.00,  // ±10% around optimal
+            highValue: 2.40,
             evaluate: { $0.raisinPrice = $1 }
         ),
         ParameterTest(

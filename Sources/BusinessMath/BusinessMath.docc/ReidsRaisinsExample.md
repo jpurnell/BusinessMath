@@ -416,8 +416,8 @@ let parameters: [ParameterTest] = [
     ),
     ParameterTest(
         name: "Raisin Selling Price",
-        lowValue: 1.80,   // -$0.40 from base
-        highValue: 2.60,  // +$0.40 from base
+        lowValue: 2.00,   // -$0.20 from base (±10%)
+        highValue: 2.40,  // +$0.20 from base (±10%)
         evaluate: { $0.raisinPrice = $1 }
     ),
     ParameterTest(

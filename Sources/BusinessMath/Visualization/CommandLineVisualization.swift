@@ -279,10 +279,13 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		let impact = analysis.impacts[input] ?? 0.0
 
 		// Calculate deviations from base case
+		// Handle cases where base case might not be between low and high
+		// (e.g., when base case is at an optimum)
 		let leftDeviation = baseCaseOutput - low
 		let rightDeviation = high - baseCaseOutput
 
 		// Calculate bar widths (proportional to deviation)
+		// Use absolute values since deviations can be negative
 		let leftWidth: Int
 		let rightWidth: Int
 
