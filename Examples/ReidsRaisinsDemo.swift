@@ -316,6 +316,78 @@ func runReidsRaisinsDemo() {
         print("   Impact range:  $\(Int(impact).formatted()) (\(String(format: "%.1f", percentImpact))% of base profit)")
     }
 
+    // Question E: Monte Carlo Simulation
+    print("\nQUESTION E: Monte Carlo Simulation with Uncertain Demand")
+    print("=" * 50)
+
+    // Create a model function that takes demand as input
+    func calculateProfitWithDemand(demand: Double) -> Double {
+        var model = baseCase
+        model.raisinPrice = 2.20  // Fixed price
+
+        let revenue = model.raisinPrice * demand
+        let totalGrapes = model.grapesNeeded(demand: demand)
+        let grapes = model.grapeCost(totalGrapesNeeded: totalGrapes)
+        let coating = model.coatingCost(demand: demand)
+        let processing = model.processingCost(totalGrapesNeeded: totalGrapes)
+
+        let totalCost = grapes + coating + processing + model.fixedOverhead
+        return revenue - totalCost
+    }
+
+    // Create Monte Carlo simulation
+    var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+        let demand = inputs[0]
+        return calculateProfitWithDemand(demand: demand)
+    }
+
+    // Add uncertain demand input
+    simulation.addInput(SimulationInput(
+        name: "Raisin Demand",
+        distribution: DistributionNormal(
+            mean: 750_000.0,
+            standardDeviation: 187_500.0  // 25% of mean
+        ),
+        metadata: ["unit": "lbs", "description": "Customer orders for sugar-coated raisins"]
+    ))
+
+    print("Running 10,000 Monte Carlo iterations...")
+    let results = try simulation.run()
+
+    print("\n=== Simulation Results ===")
+    print("Mean profit: $\(Int(results.statistics.mean).formatted())")
+    print("Standard deviation: $\(Int(results.statistics.standardDeviation).formatted())")
+    print()
+
+    print("Profit Distribution:")
+    print("  5th percentile:  $\(Int(results.percentiles.p5).formatted())")
+    print("  25th percentile: $\(Int(results.percentiles.p25).formatted())")
+    print("  50th percentile (median): $\(Int(results.percentiles.p50).formatted())")
+    print("  75th percentile: $\(Int(results.percentiles.p75).formatted())")
+    print("  95th percentile: $\(Int(results.percentiles.p95).formatted())")
+    print()
+
+    print("Risk Analysis:")
+    let probLoss = results.probabilityBelow(0)
+    print("  Probability of loss: \(String(format: "%.2f", probLoss * 100))%")
+
+    let probBelow200k = results.probabilityBelow(200_000)
+    print("  Probability profit < $200k: \(String(format: "%.2f", probBelow200k * 100))%")
+
+    let probAbove600k = results.probabilityAbove(600_000)
+    print("  Probability profit > $600k: \(String(format: "%.2f", probAbove600k * 100))%")
+    print()
+
+    print("Confidence Intervals:")
+    let ci68 = results.confidenceInterval(0.68)
+    let ci95 = results.confidenceInterval(0.95)
+    print("  68% CI: [$\(Int(ci68.lowerBound).formatted()), $\(Int(ci68.upperBound).formatted())]")
+    print("  95% CI: [$\(Int(ci95.lowerBound).formatted()), $\(Int(ci95.upperBound).formatted())]")
+    print()
+
+    let var95 = results.valueAtRisk(0.95)
+    print("Value at Risk (95%): $\(Int(var95).formatted())")
+
     print("\n" + "=" * 50)
     print("Demo complete! See ReidsRaisinsExample.md for full tutorial.")
 }

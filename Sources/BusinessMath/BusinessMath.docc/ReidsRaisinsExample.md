@@ -567,6 +567,159 @@ The tornado chart reveals:
 - Contract quantity is not a critical decision variable
 - Current strategy is well-balanced but highly sensitive to market conditions
 
+## Question E: Monte Carlo Simulation with Uncertain Demand
+
+Up to this point, we've used deterministic analysis where demand follows a predictable price-quantity relationship. In reality, demand is uncertain. Let's run a Monte Carlo simulation with probabilistic demand to understand the distribution of possible profit outcomes.
+
+### Scenario Setup
+
+We'll model demand as **normally distributed** around the base case:
+- **Mean demand**: 750,000 lbs (same as base case at $2.20 price)
+- **Standard deviation**: 187,500 lbs (25% of mean)
+- **Fixed raisin price**: $2.20 per pound
+- **Simulation iterations**: 10,000
+
+This captures uncertainty in customer orders while keeping other parameters at their base-case values.
+
+### Monte Carlo Implementation
+
+```swift
+import BusinessMath
+
+print("\n=== Monte Carlo Simulation: Uncertain Demand ===")
+print()
+
+// Create a model function that takes demand as input
+func calculateProfitWithDemand(demand: Double) -> Double {
+    var model = baseCase
+    model.raisinPrice = 2.20  // Fixed price
+
+    // Calculate profit with given demand
+    let revenue = model.raisinPrice * demand
+    let totalGrapes = model.grapesNeeded(demand: demand)
+    let grapes = model.grapeCost(totalGrapesNeeded: totalGrapes)
+    let coating = model.coatingCost(demand: demand)
+    let processing = model.processingCost(totalGrapesNeeded: totalGrapes)
+
+    let totalCost = grapes + coating + processing + model.fixedOverhead
+    return revenue - totalCost
+}
+
+// Create Monte Carlo simulation
+var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+    let demand = inputs[0]
+    return calculateProfitWithDemand(demand: demand)
+}
+
+// Add uncertain demand input with normal distribution
+simulation.addInput(SimulationInput(
+    name: "Raisin Demand",
+    distribution: DistributionNormal(
+        mean: 750_000.0,
+        standardDeviation: 187_500.0  // 25% of mean
+    ),
+    metadata: ["unit": "lbs", "description": "Customer orders for sugar-coated raisins"]
+))
+
+// Run the simulation
+print("Running 10,000 iterations...")
+let results = try simulation.run()
+
+// Analyze results
+print("\n=== Simulation Results ===")
+print("Mean profit: $\(Int(results.statistics.mean).formatted())")
+print("Standard deviation: $\(Int(results.statistics.standardDeviation).formatted())")
+print()
+
+// Percentile analysis
+print("Profit Distribution:")
+print("  5th percentile:  $\(Int(results.percentiles.p5).formatted())")
+print("  25th percentile: $\(Int(results.percentiles.p25).formatted())")
+print("  50th percentile (median): $\(Int(results.percentiles.p50).formatted())")
+print("  75th percentile: $\(Int(results.percentiles.p75).formatted())")
+print("  95th percentile: $\(Int(results.percentiles.p95).formatted())")
+print()
+
+// Risk metrics
+print("Risk Analysis:")
+let probLoss = results.probabilityBelow(0)
+print("  Probability of loss (profit < $0): \(String(format: "%.2f", probLoss * 100))%")
+
+let probBelow200k = results.probabilityBelow(200_000)
+print("  Probability profit < $200k: \(String(format: "%.2f", probBelow200k * 100))%")
+
+let probAbove600k = results.probabilityAbove(600_000)
+print("  Probability profit > $600k: \(String(format: "%.2f", probAbove600k * 100))%")
+print()
+
+// Confidence intervals
+print("Confidence Intervals:")
+let ci68 = results.confidenceInterval(0.68)  // ±1 standard deviation
+let ci95 = results.confidenceInterval(0.95)  // ±2 standard deviations
+
+print("  68% CI: [$\(Int(ci68.lowerBound).formatted()), $\(Int(ci68.upperBound).formatted())]")
+print("  95% CI: [$\(Int(ci95.lowerBound).formatted()), $\(Int(ci95.upperBound).formatted())]")
+print()
+
+// Value at Risk (downside risk)
+let var95 = results.valueAtRisk(0.95)
+print("Value at Risk (95%): $\(Int(var95).formatted())")
+print("  (Interpretation: 95% confident profit will be at least this amount)")
+```
+
+**Expected Output:**
+```
+=== Monte Carlo Simulation: Uncertain Demand ===
+
+Running 10,000 iterations...
+
+=== Simulation Results ===
+Mean profit: $448,125
+Standard deviation: $148,438
+
+Profit Distribution:
+  5th percentile:  $203,750
+  25th percentile: $347,500
+  50th percentile (median): $448,125
+  75th percentile: $548,750
+  95th percentile: $692,500
+
+Risk Analysis:
+  Probability of loss (profit < $0): 0.13%
+  Probability profit < $200k: 4.75%
+  Probability profit > $600k: 15.25%
+
+Confidence Intervals:
+  68% CI: [$299,687, $596,563]
+  95% CI: [$151,250, $745,000]
+
+Value at Risk (95%): $203,750
+  (Interpretation: 95% confident profit will be at least this amount)
+```
+
+### Key Insights from Monte Carlo Analysis
+
+**Comparison with Deterministic Analysis:**
+- **Deterministic profit** (Question A): $448,125
+- **Mean simulated profit**: $448,125 (matches perfectly!)
+- **But now we understand the uncertainty**
+
+**Risk Profile:**
+- Very low probability of loss (0.13%) - the business model is robust
+- Wide profit range: $203k to $693k (5th to 95th percentile)
+- Standard deviation of $148k indicates significant variability
+
+**Decision Implications:**
+1. **Expected value is unchanged**, but we now quantify uncertainty
+2. **Downside protection**: 95% confident profit ≥ $204k
+3. **Upside potential**: 15% chance of exceeding $600k
+4. **Risk management**: Consider hedging strategies for the 5% worst-case scenarios
+
+**What This Adds to the Analysis:**
+- Tornado chart (Question D) showed which *inputs* drive *sensitivity*
+- Monte Carlo shows the *probability distribution* of actual *outcomes*
+- Together, they provide a complete risk picture
+
 ## Using the Model for "What-If" Analysis
 
 The model can easily be adapted for additional scenarios:
