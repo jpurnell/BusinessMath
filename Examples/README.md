@@ -350,9 +350,58 @@ let report = trace.formatTrace()
 // Include in PDF/HTML reports
 ```
 
+## Case Studies
+
+### Reid's Raisins Decision Analysis
+
+**File:** `ReidsRaisinsDemo.swift`
+**Tutorial:** See `Sources/BusinessMath/BusinessMath.docc/ReidsRaisinsExample.md`
+
+A complete decision analysis case study demonstrating:
+- Profit modeling with complex cost structures (in-house vs outsourced processing)
+- Base-case scenario analysis with detailed breakdowns
+- Breakeven analysis using Newton-Raphson optimization
+- Sensitivity tables for pricing decisions
+- Tornado charts for parameter impact analysis
+
+**Key Results:**
+- Base-case profit: $448,125 at $2.20 raisin price
+- Breakeven grape price: $0.44 (47% safety margin)
+- Top risk drivers: Raisin price and grape market price (each ±$485k impact)
+
+**To use this example:**
+
+```swift
+import BusinessMath
+
+// Create the profit model
+var model = ReidsRaisinsModel(
+    contractQuantity: 1_000_000,
+    raisinPrice: 2.20,
+    openMarketPrice: 0.30
+)
+
+// Calculate base-case profit
+let profit = model.calculateProfit()
+
+// Run breakeven analysis
+let optimizer = NewtonRaphsonOptimizer<Double>()
+let breakevenPrice = optimizer.optimize(
+    objective: { price in
+        var m = model
+        m.openMarketPrice = price
+        return m.calculateProfit()
+    },
+    initialValue: 0.30
+)
+```
+
+This case study demonstrates the full power of BusinessMath for real-world business decisions.
+
 ## Additional Resources
 
 - See `QuickStart.swift` for runnable examples
+- See `ReidsRaisinsDemo.swift` for a complete case study
 - All examples are tested in `DocumentationExamplesTests.swift`
 - Full API documentation available in source files
 
