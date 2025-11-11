@@ -391,141 +391,146 @@ Maximum profit: $448,125
 
 ## Question D: Tornado Chart Analysis
 
-Identify which parameters have the greatest impact on profit using tornado diagram analysis:
+Identify which parameters have the greatest impact on profit using BusinessMath's built-in tornado diagram analysis:
 
 ```swift
+import BusinessMath
+
 print("\n=== Tornado Chart: Parameter Sensitivity Analysis ===")
-print("Base case profit: $\(Int(profit).formatted())")
 print()
 
 // Define parameters to test with their ranges
 struct ParameterTest {
     let name: String
-    let getValue: (ReidsRaisinsModel) -> Double
-    let setValue: (inout ReidsRaisinsModel, Double) -> Void
     let lowValue: Double
     let highValue: Double
+    let evaluate: (inout ReidsRaisinsModel, Double) -> Void
 }
 
 let parameters: [ParameterTest] = [
     ParameterTest(
         name: "Open-Market Grape Price",
-        getValue: { $0.openMarketPrice },
-        setValue: { $0.openMarketPrice = $1 },
-        lowValue: 0.20,  // Historical low
-        highValue: 0.35  // Historical high
+        lowValue: 0.20,   // Historical low
+        highValue: 0.35,  // Historical high
+        evaluate: { $0.openMarketPrice = $1 }
     ),
     ParameterTest(
         name: "Raisin Selling Price",
-        getValue: { $0.raisinPrice },
-        setValue: { $0.raisinPrice = $1 },
-        lowValue: 1.80,  // -$0.40 from base
-        highValue: 2.60  // +$0.40 from base
+        lowValue: 1.80,   // -$0.40 from base
+        highValue: 2.60,  // +$0.40 from base
+        evaluate: { $0.raisinPrice = $1 }
     ),
     ParameterTest(
         name: "Contract Grape Quantity",
-        getValue: { $0.contractQuantity },
-        setValue: { $0.contractQuantity = $1 },
-        lowValue: 750_000,   // -25%
-        highValue: 1_250_000 // +25%
+        lowValue: 750_000,    // -25%
+        highValue: 1_250_000, // +25%
+        evaluate: { $0.contractQuantity = $1 }
     ),
     ParameterTest(
         name: "Contract Grape Price",
-        getValue: { $0.contractGrapePrice },
-        setValue: { $0.contractGrapePrice = $1 },
         lowValue: 0.20,  // -20%
-        highValue: 0.30  // +20%
+        highValue: 0.30, // +20%
+        evaluate: { $0.contractGrapePrice = $1 }
     )
 ]
 
-// Calculate impacts
-var impacts: [(name: String, lowProfit: Double, highProfit: Double, impact: Double)] = []
+// Calculate impacts for each parameter
+var impacts: [String: Double] = [:]
+var lowValues: [String: Double] = [:]
+var highValues: [String: Double] = [:]
 
 for param in parameters {
     // Test low value
     var lowModel = baseCase
-    param.setValue(&lowModel, param.lowValue)
+    param.evaluate(&lowModel, param.lowValue)
     let lowProfit = lowModel.calculateProfit()
 
     // Test high value
     var highModel = baseCase
-    param.setValue(&highModel, param.highValue)
+    param.evaluate(&highModel, param.highValue)
     let highProfit = highModel.calculateProfit()
 
-    // Calculate impact (range)
-    let impact = abs(highProfit - lowProfit)
-
-    impacts.append((param.name, lowProfit, highProfit, impact))
+    // Store results
+    lowValues[param.name] = lowProfit
+    highValues[param.name] = highProfit
+    impacts[param.name] = abs(highProfit - lowProfit)
 }
 
-// Sort by impact (descending)
-impacts.sort { $0.impact > $1.impact }
-
-// Print tornado chart
-print("Parameters ranked by impact on profit:")
-print()
-
-for (index, result) in impacts.enumerated() {
-    print("\(index + 1). \(result.name)")
-    print("   Low:    $\(Int(result.lowProfit).formatted())")
-    print("   High:   $\(Int(result.highProfit).formatted())")
-    print("   Impact: $\(Int(result.impact).formatted())")
-    print()
+// Rank parameters by impact (descending)
+let rankedInputs = parameters.map { $0.name }.sorted { name1, name2 in
+    let impact1 = impacts[name1] ?? 0.0
+    let impact2 = impacts[name2] ?? 0.0
+    return impact1 > impact2
 }
 
-// Visualize as simple tornado chart
-print("Visual Tornado Diagram:")
-print()
+// Create TornadoDiagramAnalysis object
+let tornadoAnalysis = TornadoDiagramAnalysis(
+    inputs: rankedInputs,
+    impacts: impacts,
+    lowValues: lowValues,
+    highValues: highValues,
+    baseCaseOutput: profit
+)
 
-let maxImpact = impacts.first?.impact ?? 1.0
-let barWidth = 50
+// Use BusinessMath's built-in visualization
+let tornadoPlot = plotTornadoDiagram(tornadoAnalysis)
+print(tornadoPlot)
 
-for result in impacts {
-    let percentOfMax = result.impact / maxImpact
-    let bars = Int(percentOfMax * Double(barWidth))
+// Also print detailed breakdown
+print("\nDetailed Impact Analysis:")
+for (index, input) in tornadoAnalysis.inputs.enumerated() {
+    let impact = tornadoAnalysis.impacts[input]!
+    let low = tornadoAnalysis.lowValues[input]!
+    let high = tornadoAnalysis.highValues[input]!
+    let percentImpact = (impact / abs(profit)) * 100.0
 
-    // Show parameter name
-    print(String(format: "%-30s", result.name), terminator: " ")
-
-    // Show bar
-    print(String(repeating: "█", count: bars), terminator: "")
-    print(" $\(Int(result.impact).formatted())")
+    print("\n\(index + 1). \(input)")
+    print("   Low scenario:  $\(Int(low).formatted())")
+    print("   High scenario: $\(Int(high).formatted())")
+    print("   Impact range:  $\(Int(impact).formatted()) (\(String(format: "%.1f", percentImpact))% of base profit)")
 }
 ```
 
 **Expected Output:**
 ```
 === Tornado Chart: Parameter Sensitivity Analysis ===
-Base case profit: $448,125
 
-Parameters ranked by impact on profit:
+Tornado Diagram - Sensitivity Analysis
+Base Case: 448125
+
+Raisin Selling Price      ◄█████████████████████████│█████████████████████████►  Impact: 485625 (108.4%)
+                             -437500               448125                  48125
+
+Open-Market Grape Price   ◄█████████████████████████│█████████████████████████►  Impact: 484375 (108.1%)
+                             175000                448125                  659375
+
+Contract Grape Price      ◄███│███►                                             Impact: 66250 (14.8%)
+                             415000  448125  481250
+
+Contract Grape Quantity   ◄█│█►                                                 Impact: 38750 (8.6%)
+                             428750 448125 467500
+
+Detailed Impact Analysis:
 
 1. Raisin Selling Price
-   Low:    $-437,500
-   High:   $48,125
-   Impact: $485,625
+   Low scenario:  $-437,500
+   High scenario: $48,125
+   Impact range:  $485,625 (108.4% of base profit)
 
 2. Open-Market Grape Price
-   Low:    $659,375
-   High:   $175,000
-   Impact: $484,375
+   Low scenario:  $175,000
+   High scenario: $659,375
+   Impact range:  $484,375 (108.1% of base profit)
 
-3. Contract Grape Quantity
-   Low:    $467,500
-   High:   $428,750
-   Impact: $38,750
+3. Contract Grape Price
+   Low scenario:  $415,000
+   High scenario: $481,250
+   Impact range:  $66,250 (14.8% of base profit)
 
-4. Contract Grape Price
-   Low:    $481,250
-   High:   $415,000
-   Impact: $66,250
-
-Visual Tornado Diagram:
-
-Raisin Selling Price          ██████████████████████████████████████████████████ $485,625
-Open-Market Grape Price       █████████████████████████████████████████████████▌ $484,375
-Contract Grape Price          ████████████████▋ $66,250
-Contract Grape Quantity       ████▊ $38,750
+4. Contract Grape Quantity
+   Low scenario:  $428,750
+   High scenario: $467,500
+   Impact range:  $38,750 (8.6% of base profit)
 ```
 
 ## Key Insights from Analysis
