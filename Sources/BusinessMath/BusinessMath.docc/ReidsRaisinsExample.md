@@ -440,20 +440,24 @@ var lowValues: [String: Double] = [:]
 var highValues: [String: Double] = [:]
 
 for param in parameters {
-    // Test low value
+    // Test low parameter value
     var lowModel = baseCase
     param.evaluate(&lowModel, param.lowValue)
-    let lowProfit = lowModel.calculateProfit()
+    let profitAtLow = lowModel.calculateProfit()
 
-    // Test high value
+    // Test high parameter value
     var highModel = baseCase
     param.evaluate(&highModel, param.highValue)
-    let highProfit = highModel.calculateProfit()
+    let profitAtHigh = highModel.calculateProfit()
 
-    // Store results
-    lowValues[param.name] = lowProfit
-    highValues[param.name] = highProfit
-    impacts[param.name] = abs(highProfit - lowProfit)
+    // Store results - use min/max of OUTCOMES, not parameter values
+    // This ensures the tornado chart displays correctly
+    let minProfit = min(profitAtLow, profitAtHigh)
+    let maxProfit = max(profitAtLow, profitAtHigh)
+
+    lowValues[param.name] = minProfit
+    highValues[param.name] = maxProfit
+    impacts[param.name] = maxProfit - minProfit
 }
 
 // Rank parameters by impact (descending)
@@ -499,16 +503,16 @@ Tornado Diagram - Sensitivity Analysis
 Base Case: 448125
 
 Raisin Selling Price      ◄█████████████████████████│█████████████████████████►  Impact: 485625 (108.4%)
-                             -437500               448125                  48125
+                             -437500                448125                 485625
 
 Open-Market Grape Price   ◄█████████████████████████│█████████████████████████►  Impact: 484375 (108.1%)
-                             175000                448125                  659375
+                             175000                 448125                 659375
 
-Contract Grape Price      ◄███│███►                                             Impact: 66250 (14.8%)
-                             415000  448125  481250
+Contract Grape Price      ◄████│████►                                            Impact: 100000 (22.3%)
+                             398125  448125  498125
 
-Contract Grape Quantity   ◄█│█►                                                 Impact: 38750 (8.6%)
-                             428750 448125 467500
+Contract Grape Quantity   ◄█│█►                                                  Impact: 38750 (8.6%)
+                             428750  448125  467500
 
 Detailed Impact Analysis:
 
@@ -523,9 +527,9 @@ Detailed Impact Analysis:
    Impact range:  $484,375 (108.1% of base profit)
 
 3. Contract Grape Price
-   Low scenario:  $415,000
-   High scenario: $481,250
-   Impact range:  $66,250 (14.8% of base profit)
+   Low scenario:  $398,125
+   High scenario: $498,125
+   Impact range:  $100,000 (22.3% of base profit)
 
 4. Contract Grape Quantity
    Low scenario:  $428,750

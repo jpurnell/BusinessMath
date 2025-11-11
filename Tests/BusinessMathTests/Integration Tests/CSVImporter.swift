@@ -4,29 +4,13 @@
 //
 //  Created by Xcode on November 6, 2025.
 //
+//  This file contains commented-out legacy code.
+//  The actual CSVImporter implementation is in Sources/BusinessMath/Integration/
 
 import Foundation
 
-/// CSV Import errors
-public enum CSVImportError: Error, LocalizedError {
-	case fileNotFound
-	case invalidFormat(String)
-	case missingColumn(String)
-	case parsingError(row: Int, message: String)
-	
-	public var errorDescription: String? {
-		switch self {
-		case .fileNotFound:
-			return "CSV file not found"
-		case .invalidFormat(let message):
-			return "Invalid CSV format: \(message)"
-		case .missingColumn(let column):
-			return "Missing required column: \(column)"
-		case .parsingError(let row, let message):
-			return "Error parsing row \(row): \(message)"
-		}
-	}
-}
+// Note: CSVImportError is defined in Sources/BusinessMath/Integration/CSVImportError.swift
+// Do not duplicate it here
 
 /// Imports time series data from CSV files
 //public struct CSVImporter {

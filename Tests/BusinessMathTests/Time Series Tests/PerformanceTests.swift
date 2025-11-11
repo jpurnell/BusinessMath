@@ -57,9 +57,18 @@ struct PerformanceTests {
 
 		let duration = measure {
 			// Use monthly periods for performance
-			let periods = (0..<size).map { (Period.month(year: 2000 + $0/12, month: ($0 % 12) + 1), Double($0)) }
-//			let values = (0..<size).map {print ("\(Double($0))"); return $0 }
-			let _ = TimeSeries(periods: periods.map({$0.0}), values: periods.map({Double($0.1)}))
+			// Optimize by creating arrays directly instead of mapping twice
+			var periods: [Period] = []
+			var values: [Double] = []
+			periods.reserveCapacity(size)
+			values.reserveCapacity(size)
+
+			for i in 0..<size {
+				periods.append(Period.month(year: 2000 + i/12, month: (i % 12) + 1))
+				values.append(Double(i))
+			}
+
+			let _ = TimeSeries(periods: periods, values: values)
 		}
 
 		print("  Created 50K period time series in \(String(format: "%.3f", duration))s")
@@ -448,10 +457,21 @@ struct PerformanceTests {
 
 		let duration = measure {
 			var series: [TimeSeries<Double>] = []
+			series.reserveCapacity(10)
 
 			for i in 0..<10 {
-				let periods = (0..<size).map { Period.month(year: 2000 + ($0 + i * size)/12, month: (($0 + i * size) % 12) + 1) }
-				let values = (0..<size).map { Double($0) }
+				// Optimize by creating arrays directly instead of mapping
+				var periods: [Period] = []
+				var values: [Double] = []
+				periods.reserveCapacity(size)
+				values.reserveCapacity(size)
+
+				for j in 0..<size {
+					let offset = j + i * size
+					periods.append(Period.month(year: 2000 + offset/12, month: (offset % 12) + 1))
+					values.append(Double(j))
+				}
+
 				let ts = TimeSeries(periods: periods, values: values)
 				series.append(ts)
 			}
