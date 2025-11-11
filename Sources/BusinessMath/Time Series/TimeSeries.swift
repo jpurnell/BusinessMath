@@ -143,7 +143,10 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 					 "periods and values arrays must have the same count")
 
 		// Build dictionary, handling duplicates by keeping last value
+		// Reserve capacity to avoid reallocation during insertion
 		var valueDict: [Period: T] = [:]
+		valueDict.reserveCapacity(periods.count)
+
 		for (period, value) in Swift.zip(periods, values) {
 			valueDict[period] = value
 		}

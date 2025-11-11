@@ -7,6 +7,15 @@
 
 import Foundation
 
+// MARK: - Calendar Cache
+
+/// A cached Calendar instance to avoid repeated Calendar.current calls.
+///
+/// Creating Calendar instances is expensive. This cached instance significantly
+/// improves performance for operations that require calendar calculations,
+/// such as period creation and date computations.
+private let cachedCalendar = Calendar.current
+
 /// A type-safe representation of a time period in financial models.
 ///
 /// `Period` represents a specific span of time (day, month, quarter, or year)
@@ -113,8 +122,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// print(today.label)  // "2025-01-15"
 	/// ```
 	public static func day(_ date: Date) -> Period {
-		let calendar = Calendar.current
-		let startOfDay = calendar.startOfDay(for: date)
+		let startOfDay = cachedCalendar.startOfDay(for: date)
 		return Period(type: .daily, date: startOfDay)
 	}
 
@@ -142,8 +150,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		components.month = month
 		components.day = 1
 
-		let calendar = Calendar.current
-		guard let date = calendar.date(from: components) else {
+		guard let date = cachedCalendar.date(from: components) else {
 			fatalError("Unable to create date from components: year=\(year), month=\(month)")
 		}
 
@@ -216,7 +223,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// - Quarterly: Last moment of the last day of the third month
 	/// - Annual: December 31 at 23:59:59
 	public var endDate: Date {
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 
 		switch type {
 		case .daily:
@@ -259,7 +266,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	///
 	/// For custom formatting, use ``formatted(using:)``.
 	public var label: String {
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 		let components = calendar.dateComponents([.year, .month, .day], from: startDate)
 
 		switch type {
@@ -330,7 +337,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return [self]
 
 		case .quarterly:
-			let calendar = Calendar.current
+			let calendar = cachedCalendar
 			let startComponents = calendar.dateComponents([.year, .month], from: startDate)
 
 			return (0..<3).map { offset in
@@ -339,7 +346,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			}
 
 		case .annual:
-			let calendar = Calendar.current
+			let calendar = cachedCalendar
 			let year = calendar.component(.year, from: startDate)
 
 			return (1...12).map { month in
@@ -370,7 +377,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return [self]
 
 		case .annual:
-			let calendar = Calendar.current
+			let calendar = cachedCalendar
 			let year = calendar.component(.year, from: startDate)
 
 			return (1...4).map { quarter in
@@ -400,7 +407,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return [self]
 		}
 
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 		var currentDate = startDate
 		let end = endDate
 		var days: [Period] = []
@@ -440,7 +447,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// let q2 = q1.next()  // Period.quarter(year: 2025, quarter: 2)
 	/// ```
 	public func next() -> Period {
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 
 		switch type {
 		case .daily:
@@ -540,7 +547,7 @@ extension Period {
 	/// print(q1.year)  // 2025
 	/// ```
 	public var year: Int {
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 		return calendar.component(.year, from: startDate)
 	}
 
@@ -558,7 +565,7 @@ extension Period {
 	/// print(oct.quarter)  // 4
 	/// ```
 	public var quarter: Int {
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 		let month = calendar.component(.month, from: startDate)
 		return ((month - 1) / 3) + 1
 	}
@@ -571,7 +578,7 @@ extension Period {
 	/// print(jan.month)  // 1
 	/// ```
 	public var month: Int {
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 		return calendar.component(.month, from: startDate)
 	}
 
@@ -583,7 +590,7 @@ extension Period {
 	/// print(today.day)  // Day of month
 	/// ```
 	public var day: Int {
-		let calendar = Calendar.current
+		let calendar = cachedCalendar
 		return calendar.component(.day, from: startDate)
 	}
 }

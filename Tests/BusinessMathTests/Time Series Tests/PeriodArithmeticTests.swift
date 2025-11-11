@@ -254,7 +254,7 @@ struct PeriodArithmeticTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 
-		let distance = jan.distance(to: feb)
+		let distance = try jan.distance(to: feb)
 		#expect(distance == 1)
 	}
 
@@ -263,7 +263,7 @@ struct PeriodArithmeticTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let apr = Period.month(year: 2025, month: 4)
 
-		let distance = jan.distance(to: apr)
+		let distance = try jan.distance(to: apr)
 		#expect(distance == 3)
 	}
 
@@ -272,14 +272,14 @@ struct PeriodArithmeticTests {
 		let apr = Period.month(year: 2025, month: 4)
 		let jan = Period.month(year: 2025, month: 1)
 
-		let distance = apr.distance(to: jan)
+		let distance = try apr.distance(to: jan)
 		#expect(distance == -3)
 	}
 
 	@Test("Distance from same period to itself is 0")
 	func distanceSame() throws {
 		let jan = Period.month(year: 2025, month: 1)
-		let distance = jan.distance(to: jan)
+		let distance = try jan.distance(to: jan)
 		#expect(distance == 0)
 	}
 
@@ -288,7 +288,7 @@ struct PeriodArithmeticTests {
 		let dec2024 = Period.month(year: 2024, month: 12)
 		let mar2025 = Period.month(year: 2025, month: 3)
 
-		let distance = dec2024.distance(to: mar2025)
+		let distance = try dec2024.distance(to: mar2025)
 		#expect(distance == 3)
 	}
 
@@ -297,7 +297,7 @@ struct PeriodArithmeticTests {
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 		let q3 = Period.quarter(year: 2025, quarter: 3)
 
-		let distance = q1.distance(to: q3)
+		let distance = try q1.distance(to: q3)
 		#expect(distance == 2)
 	}
 
@@ -306,7 +306,7 @@ struct PeriodArithmeticTests {
 		let year2020 = Period.year(2020)
 		let year2025 = Period.year(2025)
 
-		let distance = year2020.distance(to: year2025)
+		let distance = try year2020.distance(to: year2025)
 		#expect(distance == 5)
 	}
 
@@ -325,7 +325,7 @@ struct PeriodArithmeticTests {
 		let day1 = Period.day(date1)
 		let day10 = Period.day(date2)
 
-		let distance = day1.distance(to: day10)
+		let distance = try day1.distance(to: day10)
 		#expect(distance == 9)
 	}
 
@@ -336,18 +336,18 @@ struct PeriodArithmeticTests {
 
 		// Verify that attempting to calculate distance throws the correct error
 		#expect(throws: PeriodError.typeMismatch(from: .monthly, to: .quarterly)) {
-			month.distance(to: quarter)
+			try month.distance(to: quarter)
 		}
-		
+
 		// Also verify the reverse direction
 		#expect(throws: PeriodError.typeMismatch(from: .quarterly, to: .monthly)) {
-			quarter.distance(to: month)
+			try quarter.distance(to: month)
 		}
-		
+
 		// Verify different combinations
 		let day = Period.day(Date())
 		#expect(throws: PeriodError.typeMismatch(from: .monthly, to: .daily)) {
-			month.distance(to: day)
+			try month.distance(to: day)
 		}
 	}
 
@@ -551,7 +551,7 @@ struct PeriodArithmeticTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let apr = Period.month(year: 2025, month: 4)
 
-		let distance = jan.distance(to: apr)
+		let distance = try jan.distance(to: apr)
 		let computed = jan + distance
 
 		#expect(computed == apr)
@@ -570,7 +570,7 @@ struct PeriodArithmeticTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let mar = Period.month(year: 2025, month: 3)
 
-		let distance = jan.distance(to: mar)
+		let distance = try jan.distance(to: mar)
 		let rangeCount = Array(jan...mar).count
 
 		#expect(rangeCount == distance + 1)

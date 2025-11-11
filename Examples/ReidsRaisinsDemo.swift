@@ -267,15 +267,19 @@ func runReidsRaisinsDemo() {
     for param in parameters {
         var lowModel = baseCase
         param.evaluate(&lowModel, param.lowValue)
-        let lowProfit = lowModel.calculateProfit()
+        let profitAtLow = lowModel.calculateProfit()
 
         var highModel = baseCase
         param.evaluate(&highModel, param.highValue)
-        let highProfit = highModel.calculateProfit()
+        let profitAtHigh = highModel.calculateProfit()
 
-        lowValues[param.name] = lowProfit
-        highValues[param.name] = highProfit
-        impacts[param.name] = abs(highProfit - lowProfit)
+        // Store results - use min/max of OUTCOMES, not parameter values
+        let minProfit = min(profitAtLow, profitAtHigh)
+        let maxProfit = max(profitAtLow, profitAtHigh)
+
+        lowValues[param.name] = minProfit
+        highValues[param.name] = maxProfit
+        impacts[param.name] = maxProfit - minProfit
     }
 
     // Rank parameters by impact (descending)

@@ -37,13 +37,13 @@ extension PeriodError: LocalizedError {
 /// such as period arithmetic and projections.
 private let cachedCalendar = Calendar.current
 
-// MARK: - Strideable Conformance
+// MARK: - Distance and Arithmetic Operations
 
-/// Extends `Period` to support arithmetic operations and ranges.
+/// Extends `Period` to support arithmetic operations and distance calculations.
 ///
 /// This extension makes periods work with standard Swift arithmetic:
 /// - Add/subtract periods: `period + 3`, `period - 2`
-/// - Calculate distance: `period1.distance(to: period2)`
+/// - Calculate distance: `try period1.distance(to: period2)`
 /// - Create ranges: `period1...period2`
 ///
 /// ## Examples
@@ -51,13 +51,10 @@ private let cachedCalendar = Calendar.current
 /// ```swift
 /// let jan = Period.month(year: 2025, month: 1)
 /// let apr = jan + 3  // April 2025
-/// let distance = jan.distance(to: apr)  // 3
+/// let distance = try jan.distance(to: apr)  // 3
 /// let range = jan...apr  // [Jan, Feb, Mar, Apr]
 /// ```
-extension Period: Strideable {
-
-	/// The type used to represent distances between periods.
-	public typealias Stride = Int
+extension Period {
 
 	/// Returns the distance from this period to another period of the same type.
 	///
@@ -70,23 +67,21 @@ extension Period: Strideable {
 	/// - Parameter other: The target period. Must be the same type as this period.
 	/// - Returns: The number of periods between this period and `other`.
 	///   Positive if `other` is later, negative if earlier.
-	///   Returns 0 if the periods have different types.
-	///
-	/// - Note: If you need to detect type mismatches, use `distanceThrowing(to:)` instead.
+	/// - Throws: `PeriodError.typeMismatch` if the periods have different types.
 	///
 	/// ## Example
 	/// ```swift
 	/// let jan = Period.month(year: 2025, month: 1)
 	/// let apr = Period.month(year: 2025, month: 4)
-	/// let distance = jan.distance(to: apr)  // 3
-	/// print(distance)
-	/// 
+	/// let distance = try jan.distance(to: apr)  // 3
+	///
 	/// let quarter = Period.quarter(year: 2025, quarter: 1)
-	/// let badDistance = jan.distance(to: quarter)  // 0 (different types)
+	/// // This will throw PeriodError.typeMismatch
+	/// let badDistance = try jan.distance(to: quarter)
 	/// ```
-	public func distance(to other: Period) -> Int {
+	public func distance(to other: Period) throws -> Int {
 		guard self.type == other.type else {
-			return 0
+			throw PeriodError.typeMismatch(from: self.type, to: other.type)
 		}
 
 		switch type {
@@ -111,28 +106,6 @@ extension Period: Strideable {
 			let components = cachedCalendar.dateComponents([.year], from: self.startDate, to: other.startDate)
 			return components.year ?? 0
 		}
-	}
-	
-	/// Returns the distance from this period to another period of the same type.
-	///
-	/// This is a throwing variant of `distance(to:)` that explicitly errors on type mismatches.
-	///
-	/// - Parameter other: The target period. Must be the same type as this period.
-	/// - Returns: The number of periods between this period and `other`.
-	/// - Throws: `PeriodError.typeMismatch` if the periods have different types.
-	///
-	/// ## Example
-	/// ```swift
-	/// let jan = Period.month(year: 2025, month: 1)
-	/// let quarter = Period.quarter(year: 2025, quarter: 1)
-	/// // This will throw PeriodError.typeMismatch
-	/// let distance = try jan.distanceThrowing(to: quarter)
-	/// ```
-	public func distanceThrowing(to other: Period) throws -> Int {
-		guard self.type == other.type else {
-			throw PeriodError.typeMismatch(from: self.type, to: other.type)
-		}
-		return distance(to: other)
 	}
 
 	/// Returns a period that is the specified number of periods away from this period.
@@ -173,6 +146,63 @@ extension Period: Strideable {
 
 		// Preserve the period type
 		return Period(type: self.type, date: newDate)
+	}
+
+}
+
+// MARK: - Custom Range Support
+
+/// Since `distance(to:)` throws and we can't conform to Strideable with a throwing method,
+/// we provide a custom sequence for iterating over period ranges.
+public struct PeriodRange: Sequence {
+	private let start: Period
+	private let end: Period
+
+	init(start: Period, end: Period) {
+		precondition(start.type == end.type, "Cannot create range between periods of different types")
+		self.start = start
+		self.end = end
+	}
+
+	public func makeIterator() -> PeriodRangeIterator {
+		return PeriodRangeIterator(start: start, end: end)
+	}
+}
+
+public struct PeriodRangeIterator: IteratorProtocol {
+	private var current: Period
+	private let end: Period
+	private var finished: Bool = false
+
+	init(start: Period, end: Period) {
+		self.current = start
+		self.end = end
+	}
+
+	public mutating func next() -> Period? {
+		guard !finished else { return nil }
+
+		let result = current
+
+		if current == end {
+			finished = true
+		} else {
+			current = current.advanced(by: 1)
+		}
+
+		return result
+	}
+}
+
+extension Period {
+	/// Creates a range from this period to another period.
+	///
+	/// - Parameter end: The ending period (inclusive). Must be the same type as this period.
+	/// - Returns: A sequence of periods from this period to `end`.
+	///
+	/// - Precondition: Both periods must be of the same type.
+	public static func ... (lhs: Period, rhs: Period) -> PeriodRange {
+		return PeriodRange(start: lhs, end: rhs)
 	}
 }
 

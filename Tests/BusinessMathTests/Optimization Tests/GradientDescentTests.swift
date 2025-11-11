@@ -168,20 +168,22 @@ struct GradientDescentTests {
 		let optimizer = GradientDescentOptimizer<Double>(
 			learningRate: 0.1,
 			tolerance: 0.01,
-			maxIterations: 100
+			maxIterations: 100,
+			momentum: 0.0  // No momentum for this test to avoid overshooting
 		)
 
 		// For f(x) = x^3 - 6x^2 + 9x, f'(x) = 3x^2 - 12x + 9
-		// This has minima, so the optimizer can find them
+		// This has a local maximum at x=1 and local minimum at x=3
 		let objective = { (x: Double) -> Double in
 			return x * x * x - 6 * x * x + 9 * x
 		}
 
-		// Start from x = 0, should find minimum at x = 3
+		// Start from x = 4, which is to the right of the local minimum at x=3
+		// This ensures gradient descent will converge toward x=3
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 0.0,
+			initialValue: 4.0,
 			bounds: nil
 		)
 
