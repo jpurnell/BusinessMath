@@ -241,16 +241,11 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 
 	let baseCaseOutput = analysis.baseCaseOutput
 
-	// Find the maximum deviation from base case for scaling
-	var maxDeviation = 0.0
+	// Find the maximum impact for scaling bar lengths
+	var maxImpact = 0.0
 	for input in analysis.inputs {
-		let low = analysis.lowValues[input] ?? baseCaseOutput
-		let high = analysis.highValues[input] ?? baseCaseOutput
-
-		let leftDev = abs(baseCaseOutput - low)
-		let rightDev = abs(high - baseCaseOutput)
-
-		maxDeviation = max(maxDeviation, leftDev, rightDev)
+		let impact = analysis.impacts[input] ?? 0.0
+		maxImpact = max(maxImpact, impact)
 	}
 
 	// Configuration
@@ -258,7 +253,7 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 	let maxInputNameWidth = analysis.inputs.map { $0.count }.max() ?? 15
 
 	// Determine decimal places based on magnitude
-	let maxValue = max(abs(baseCaseOutput), maxDeviation) * 2
+	let maxValue = max(abs(baseCaseOutput), maxImpact)
 	let decimalPlaces: Int
 	if maxValue > 1000 {
 		decimalPlaces = 0
@@ -278,24 +273,29 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		let high = analysis.highValues[input] ?? baseCaseOutput
 		let impact = analysis.impacts[input] ?? 0.0
 
-		// Calculate deviations from base case
-		// Handle cases where base case might not be between low and high
-		// (e.g., when base case is at an optimum)
-		let leftDeviation = baseCaseOutput - low
-		let rightDeviation = high - baseCaseOutput
-
-		// Calculate bar widths (proportional to deviation)
-		// Use absolute values since deviations can be negative
-		let leftWidth: Int
-		let rightWidth: Int
-
-		if maxDeviation > 0 {
-			leftWidth = Int((abs(leftDeviation) / maxDeviation) * Double(maxBarWidth))
-			rightWidth = Int((abs(rightDeviation) / maxDeviation) * Double(maxBarWidth))
+		// Calculate bar widths based on IMPACT, not deviation from base
+		// Total bar width should be proportional to impact
+		let totalBarWidth: Int
+		if maxImpact > 0 {
+			totalBarWidth = Int((impact / maxImpact) * Double(maxBarWidth * 2))
 		} else {
-			leftWidth = 0
-			rightWidth = 0
+			totalBarWidth = 0
 		}
+
+		// Split the bar at the base case position
+		// Determine what fraction of the range is left of base case
+		let range = high - low
+		var fractionLeft: Double
+		if range > 0 {
+			fractionLeft = (baseCaseOutput - low) / range
+			// Clamp to [0, 1] in case base is outside [low, high]
+			fractionLeft = max(0, min(1, fractionLeft))
+		} else {
+			fractionLeft = 0.5
+		}
+
+		let leftWidth = Int(Double(totalBarWidth) * fractionLeft)
+		let rightWidth = totalBarWidth - leftWidth
 
 		// Create bars with direction indicators
 		let leftBar = String(repeating: "█", count: leftWidth)
