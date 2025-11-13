@@ -2189,7 +2189,7 @@ Complete statistical summary for simulation results including central tendency, 
 - Dispersion: `stdDev`, `variance`, `min`, `max`
 - Shape: `skewness` (distribution asymmetry measure)
 - Confidence intervals: `ci90`, `ci95`, `ci99` convenience properties
-- Method: `confidenceInterval(level: Double) -> (lower, upper)` for custom levels
+- Method: `confidenceInterval(level: Double) -> (low, high)` for custom levels
 - **Implementation**:
   - Sample statistics (n-1 denominator for variance)
   - Bias-corrected skewness formula

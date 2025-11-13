@@ -7,6 +7,7 @@
 
 import Foundation
 import Numerics
+import OSLog
 
 /// A structure containing the complete results of a Monte Carlo simulation.
 ///
@@ -48,7 +49,7 @@ import Numerics
 /// print(plot)
 /// ```
 public struct SimulationResults: Sendable {
-
+	let logger = Logger(subsystem: "com.justinpurnell.businessMath.SimulationResults", category: #function)
 	// MARK: - Properties
 
 	/// All simulation output values
@@ -82,7 +83,11 @@ public struct SimulationResults: Sendable {
 	/// ```
 	public init(values: [Double]) {
 		self.values = values
-		self.statistics = SimulationStatistics(values: values)
+//		logger.debug("Set values with \(values.count) values")
+		let simStats = SimulationStatistics(values: values)
+//		logger.debug("simStats set with \(simStats.values.count) values, mean of \(simStats.mean)")
+		self.statistics = simStats
+		
 		self.percentiles = Percentiles(values: values)
 	}
 
@@ -105,13 +110,13 @@ public struct SimulationResults: Sendable {
 	/// print("Probability of profit > $500k: \(probHighProfit * 100)%")
 	/// ```
 	public func probabilityAbove(_ threshold: Double) -> Double {
-		let countAbove = values.filter { $0 > threshold }.count
-		return Double(countAbove) / Double(values.count)
+		return empiricalComplementaryCDF(threshold, data: values)
 	}
 
 	/// Calculates the probability that a randomly sampled outcome is below the threshold.
 	///
 	/// Returns the proportion of simulation values that are strictly less than the threshold.
+	/// Uses the empirical CDF.
 	///
 	/// - Parameter threshold: The value to compare against
 	/// - Returns: Probability (0.0 to 1.0) that outcome < threshold
@@ -126,18 +131,23 @@ public struct SimulationResults: Sendable {
 	/// print("Risk of loss: \(probLoss * 100)%")
 	/// ```
 	public func probabilityBelow(_ threshold: Double) -> Double {
-		let countBelow = values.filter { $0 < threshold }.count
-		return Double(countBelow) / Double(values.count)
+		// Note: We want strictly less than (<), but empiricalCDF uses ≤
+		// So we need to subtract the exact matches
+		let cdfValue = empiricalCDF(threshold, data: values)
+		let exactMatches = values.filter { $0 == threshold }.count
+		let proportionExact = Double(exactMatches) / Double(values.count)
+		return cdfValue - proportionExact
 	}
 
 	/// Calculates the probability that a randomly sampled outcome falls within the range.
 	///
 	/// Returns the proportion of simulation values that are strictly between lower and upper bounds.
 	/// The method handles reversed arguments (e.g., `probabilityBetween(100, 50)` works the same as `probabilityBetween(50, 100)`).
+	/// Uses the empirical probability between function.
 	///
 	/// - Parameters:
-	///   - lower: The lower bound (inclusive)
-	///   - upper: The upper bound (inclusive)
+	///   - lower: The lower bound (exclusive)
+	///   - upper: The upper bound (exclusive)
 	/// - Returns: Probability (0.0 to 1.0) that lower < outcome < upper
 	///
 	/// ## Example
@@ -150,12 +160,7 @@ public struct SimulationResults: Sendable {
 	/// print("Probability of on-time completion: \(probOnTime * 100)%")
 	/// ```
 	public func probabilityBetween(_ lower: Double, _ upper: Double) -> Double {
-		// Ensure lower <= upper
-		let minBound = min(lower, upper)
-		let maxBound = max(lower, upper)
-
-		let countInRange = values.filter { $0 > minBound && $0 < maxBound }.count
-		return Double(countInRange) / Double(values.count)
+		return empiricalProbabilityBetween(lower, upper, data: values)
 	}
 
 	// MARK: - Histogram Generation
@@ -306,7 +311,7 @@ public struct SimulationResults: Sendable {
 	/// print("95% confidence interval: [\(ci95.lower), \(ci95.upper)]")
 	/// print("We expect the true mean to be in this range")
 	/// ```
-	public func confidenceInterval(level: Double) -> (lower: Double, upper: Double) {
+	public func confidenceInterval(level: Double) -> (low: Double, high: Double) {
 		return statistics.confidenceInterval(level: level)
 	}
 }

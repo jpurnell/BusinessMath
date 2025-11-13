@@ -84,27 +84,27 @@ struct SimulationStatisticsTests {
 		let ci90 = stats.confidenceInterval(level: 0.90)
 		let expectedLower90 = stats.mean - 1.645 * stats.stdDev
 		let expectedUpper90 = stats.mean + 1.645 * stats.stdDev
-		#expect(abs(ci90.lower - expectedLower90) < 1.0, "90% CI lower bound")
-		#expect(abs(ci90.upper - expectedUpper90) < 1.0, "90% CI upper bound")
+		#expect(abs(ci90.low - expectedLower90) < 1.0, "90% CI lower bound")
+		#expect(abs(ci90.high - expectedUpper90) < 1.0, "90% CI upper bound")
 
 		// 95% CI: mean ± 1.96 * stdDev
 		let ci95 = stats.confidenceInterval(level: 0.95)
 		let expectedLower95 = stats.mean - 1.96 * stats.stdDev
 		let expectedUpper95 = stats.mean + 1.96 * stats.stdDev
-		#expect(abs(ci95.lower - expectedLower95) < 1.0, "95% CI lower bound")
-		#expect(abs(ci95.upper - expectedUpper95) < 1.0, "95% CI upper bound")
+		#expect(abs(ci95.low - expectedLower95) < 1.0, "95% CI lower bound")
+		#expect(abs(ci95.high - expectedUpper95) < 1.0, "95% CI upper bound")
 
 		// 99% CI: mean ± 2.576 * stdDev
 		let ci99 = stats.confidenceInterval(level: 0.99)
 		let expectedLower99 = stats.mean - 2.576 * stats.stdDev
 		let expectedUpper99 = stats.mean + 2.576 * stats.stdDev
-		#expect(abs(ci99.lower - expectedLower99) < 1.0, "99% CI lower bound")
-		#expect(abs(ci99.upper - expectedUpper99) < 1.0, "99% CI upper bound")
+		#expect(abs(ci99.low - expectedLower99) < 1.0, "99% CI lower bound")
+		#expect(abs(ci99.high - expectedUpper99) < 1.0, "99% CI upper bound")
 
 		// Verify CI ordering: 99% should be widest
-		let width90 = ci90.upper - ci90.lower
-		let width95 = ci95.upper - ci95.lower
-		let width99 = ci99.upper - ci99.lower
+		let width90 = ci90.high - ci90.low
+		let width95 = ci95.high - ci95.low
+		let width99 = ci99.high - ci99.low
 		#expect(width90 < width95, "90% CI should be narrower than 95%")
 		#expect(width95 < width99, "95% CI should be narrower than 99%")
 	}
@@ -120,12 +120,12 @@ struct SimulationStatisticsTests {
 		let stats = SimulationStatistics(values: values)
 
 		// Test convenience properties match the method
-		#expect(stats.ci90.lower == stats.confidenceInterval(level: 0.90).lower)
-		#expect(stats.ci90.upper == stats.confidenceInterval(level: 0.90).upper)
-		#expect(stats.ci95.lower == stats.confidenceInterval(level: 0.95).lower)
-		#expect(stats.ci95.upper == stats.confidenceInterval(level: 0.95).upper)
-		#expect(stats.ci99.lower == stats.confidenceInterval(level: 0.99).lower)
-		#expect(stats.ci99.upper == stats.confidenceInterval(level: 0.99).upper)
+		#expect(stats.ci90.low == stats.confidenceInterval(level: 0.90).low)
+		#expect(stats.ci90.high == stats.confidenceInterval(level: 0.90).high)
+		#expect(stats.ci95.low == stats.confidenceInterval(level: 0.95).low)
+		#expect(stats.ci95.high == stats.confidenceInterval(level: 0.95).high)
+		#expect(stats.ci99.low == stats.confidenceInterval(level: 0.99).low)
+		#expect(stats.ci99.high == stats.confidenceInterval(level: 0.99).high)
 	}
 
 	@Test("SimulationStatistics with single value")
@@ -140,12 +140,12 @@ struct SimulationStatisticsTests {
 		#expect(stats.max == 42.0)
 		#expect(stats.stdDev == 0.0, "StdDev should be 0 for single value")
 		#expect(stats.variance == 0.0, "Variance should be 0 for single value")
-		#expect(stats.skewness == 0.0, "Skewness should be 0 for single value")
+		#expect(stats.skewness.isNaN, "Skewness is undefined (NaN) when variance is 0")
 
 		// CI should collapse to the single value
 		let ci95 = stats.ci95
-		#expect(ci95.lower == 42.0)
-		#expect(ci95.upper == 42.0)
+		#expect(ci95.low == 42.0)
+		#expect(ci95.high == 42.0)
 	}
 
 	@Test("SimulationStatistics with all same values")
@@ -160,7 +160,7 @@ struct SimulationStatisticsTests {
 		#expect(stats.max == 100.0)
 		#expect(stats.stdDev == 0.0, "StdDev should be 0 for constant values")
 		#expect(stats.variance == 0.0, "Variance should be 0 for constant values")
-		#expect(stats.skewness == 0.0, "Skewness should be 0 for constant values")
+		#expect(stats.skewness.isNaN, "Skewness is undefined (NaN) when variance is 0")
 	}
 
 	@Test("SimulationStatistics skewness calculation")

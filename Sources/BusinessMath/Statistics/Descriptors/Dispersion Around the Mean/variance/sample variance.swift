@@ -39,6 +39,9 @@ import Numerics
    - Equivalent of Excel VAR(xx:xx)
  */
 public func varianceS<T: Real>(_ values: [T]) -> T {
+	guard values.count > 1 else {
+		return T(0)
+	}
 	let degreesOfFreedom = values.count - 1
 	return sumOfSquaredAvgDiff(values)/T(degreesOfFreedom)
 }

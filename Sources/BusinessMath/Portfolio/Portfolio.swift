@@ -41,6 +41,12 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 	/// Risk-free rate (e.g., Treasury yield).
 	public let riskFreeRate: T
 
+	/// Cached covariance matrix (computed once at initialization).
+	private let _covarianceMatrix: [[T]]
+
+	/// Cached expected returns (computed once at initialization).
+	private let _expectedReturns: [T]
+
 	// MARK: - Initialization
 
 	/// Creates a portfolio with assets and their historical returns.
@@ -58,32 +64,43 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 		self.assets = assets
 		self.returns = returns
 		self.riskFreeRate = riskFreeRate
+
+		// Compute and cache expected returns
+		self._expectedReturns = returns.map { series in
+			let values = series.valuesArray
+			return values.reduce(T(0), +) / T(values.count)
+		}
+
+		// Compute and cache covariance matrix
+		let n = assets.count
+		var matrix = Array(repeating: Array(repeating: T(0), count: n), count: n)
+		for i in 0..<n {
+			for j in 0..<n {
+				let values1 = returns[i].valuesArray
+				let values2 = returns[j].valuesArray
+				matrix[i][j] = Self.covariance(values1, values2)
+			}
+		}
+		self._covarianceMatrix = matrix
 	}
 
 	// MARK: - Expected Returns
 
-	/// Calculate expected returns for each asset (arithmetic mean).
+	/// Expected returns for each asset (arithmetic mean).
+	///
+	/// Cached at initialization for performance.
 	public var expectedReturns: [T] {
-		returns.map { series in
-			let values = series.valuesArray
-			return values.reduce(T(0), +) / T(values.count)
-		}
+		return _expectedReturns
 	}
 
 	// MARK: - Covariance and Correlation
 
-	/// Calculate covariance matrix between all assets.
+	/// Covariance matrix between all assets.
+	///
+	/// Cached at initialization for performance. The covariance matrix is
+	/// expensive to compute and is used repeatedly in portfolio optimization.
 	public var covarianceMatrix: [[T]] {
-		let n = assets.count
-		var matrix = Array(repeating: Array(repeating: T(0), count: n), count: n)
-
-		for i in 0..<n {
-			for j in 0..<n {
-				matrix[i][j] = covariance(returns[i].valuesArray, returns[j].valuesArray)
-			}
-		}
-
-		return matrix
+		return _covarianceMatrix
 	}
 
 	/// Calculate correlation matrix between all assets.
@@ -303,7 +320,7 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 		return weights.map { $0 / sum }
 	}
 
-	private func covariance(_ x: [T], _ y: [T]) -> T {
+	private static func covariance(_ x: [T], _ y: [T]) -> T {
 		precondition(x.count == y.count)
 		let n = T(x.count)
 		let meanX = x.reduce(T(0), +) / n

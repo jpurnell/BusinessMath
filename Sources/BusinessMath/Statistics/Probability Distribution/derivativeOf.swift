@@ -27,6 +27,6 @@ import Numerics
 ///
 /// Use this function to find the rate at which a function is changing at any given point.
 public func derivativeOf<T: Real>(_ fn: (T) -> T, at x: T) -> T {
-    let h: T = T(Int(1) / Int(1000000))
-    return (fn(x + h) - fn(x) / h)
+    let h: T = T(1) / T(1000000)
+    return (fn(x + h) - fn(x)) / h
 }

@@ -38,7 +38,7 @@ public actor HTTPServerTransport: Transport {
     }
 
     public func connect() async throws {
-        logger.info("Starting HTTP server on port \(self.port)")
+//        logger.info("Starting HTTP server on port \(self.port)")
 
         // Create listener parameters
         let parameters = NWParameters.tcp
@@ -68,13 +68,13 @@ public actor HTTPServerTransport: Transport {
         // Start listening
         listener.start(queue: .main)
 
-        logger.info("HTTP server started successfully on port \(self.port)")
-        logger.info("Server available at http://localhost:\(self.port)")
-        logger.info("Send JSON-RPC requests via POST to http://localhost:\(self.port)/mcp")
+//        logger.info("HTTP server started successfully on port \(self.port)")
+//        logger.info("Server available at http://localhost:\(self.port)")
+//        logger.info("Send JSON-RPC requests via POST to http://localhost:\(self.port)/mcp")
     }
 
     public func disconnect() async {
-        logger.info("Stopping HTTP server...")
+//        logger.info("Stopping HTTP server...")
 
         // Cancel all connections
         for connection in connections {
@@ -89,14 +89,14 @@ public actor HTTPServerTransport: Transport {
         // Finish receive stream
         receiveContinuation.finish()
 
-        logger.info("HTTP server stopped")
+//        logger.info("HTTP server stopped")
     }
 
     public func send(_ data: Data) async throws {
         // For HTTP server, send() is used to send responses back to clients
         // This is handled in the request processing pipeline
         // For now, this is a no-op as responses are sent inline
-        logger.debug("Send called with \(data.count) bytes (handled inline)")
+//        logger.debug("Send called with \(data.count) bytes (handled inline)")
     }
 
     public func receive() -> AsyncThrowingStream<Data, Error> {
@@ -108,19 +108,21 @@ public actor HTTPServerTransport: Transport {
     private func handleListenerStateUpdate(_ state: NWListener.State) {
         switch state {
         case .ready:
-            logger.info("Listener ready on port \(self.port)")
+//            logger.info("Listener ready on port \(self.port)")
+            break
         case .failed(let error):
-            logger.error("Listener failed: \(error.localizedDescription)")
+//            logger.error("Listener failed: \(error.localizedDescription)")
             receiveContinuation.finish(throwing: error)
         case .cancelled:
-            logger.info("Listener cancelled")
+//            logger.info("Listener cancelled")
+            break
         default:
             break
         }
     }
 
     private func handleNewConnection(_ connection: NWConnection) {
-        logger.debug("New connection from \(connection.endpoint)")
+//        logger.debug("New connection from \(connection.endpoint)")
 
         connections.append(connection)
 
@@ -141,12 +143,13 @@ public actor HTTPServerTransport: Transport {
     private func handleConnectionState(_ connection: NWConnection, state: NWConnection.State) {
         switch state {
         case .ready:
-            logger.debug("Connection ready: \(connection.endpoint)")
-        case .failed(let error):
-            logger.error("Connection failed: \(error.localizedDescription)")
+//            logger.debug("Connection ready: \(connection.endpoint)")
+            break
+        case .failed(_):
+//            logger.error("Connection failed: \(error.localizedDescription)")
             removeConnection(connection)
         case .cancelled:
-            logger.debug("Connection cancelled: \(connection.endpoint)")
+//            logger.debug("Connection cancelled: \(connection.endpoint)")
             removeConnection(connection)
         default:
             break
@@ -181,7 +184,7 @@ public actor HTTPServerTransport: Transport {
         if let data = data, !data.isEmpty {
             // Parse HTTP request
             if let httpRequest = parseHTTPRequest(data) {
-                logger.debug("Received HTTP \(httpRequest.method) \(httpRequest.path)")
+//                logger.debug("Received HTTP \(httpRequest.method) \(httpRequest.path)")
 
                 // Handle the request
                 handleHTTPRequest(httpRequest, connection: connection)

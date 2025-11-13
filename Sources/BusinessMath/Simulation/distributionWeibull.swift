@@ -111,7 +111,7 @@ public func distributionWeibull<T: Real>(shape: T, scale: T, seed: Double? = nil
 ///
 /// // Generate time-to-failure samples
 /// let failureTimes = (0..<100).map { _ in reliability.next() }
-/// let averageLife = failureTimes.reduce(0, +) / Double(failureTimes.count)
+/// let averageLife = mean(failureTimes)
 /// print("Average equipment life: \(averageLife) hours")
 ///
 /// // Model constant failure rate (exponential)
