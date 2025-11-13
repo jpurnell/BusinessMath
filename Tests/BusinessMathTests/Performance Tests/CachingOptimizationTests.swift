@@ -131,7 +131,7 @@ final class CachingOptimizationTests: XCTestCase {
         XCTAssertEqual(cachedResult1, cachedResult2)
         XCTAssertEqual(cachedResult1, uncachedResult, accuracy: 0.01)
 
-        print("Cached profit: \(cachedResult1), Uncached profit: \(uncachedResult)")
+//        print("Cached profit: \(cachedResult1), Uncached profit: \(uncachedResult)")
     }
 
     // MARK: - Optimized Export Tests
@@ -157,7 +157,7 @@ final class CachingOptimizationTests: XCTestCase {
         let optimizedTime = Date().timeIntervalSince(optimizedStart)
 
         // Then: Optimized should be at least as fast
-        print("Normal CSV: \(normalTime)s, Optimized CSV: \(optimizedTime)s")
+//        print("Normal CSV: \(normalTime)s, Optimized CSV: \(optimizedTime)s")
         XCTAssertLessThanOrEqual(optimizedTime, normalTime * 1.5, "Optimized should not be significantly slower")
 
         // And: Output should be equivalent
@@ -182,7 +182,7 @@ final class CachingOptimizationTests: XCTestCase {
         let optimizedTime = Date().timeIntervalSince(optimizedStart)
 
         // Then: Both should produce valid output
-        print("Normal TS Export: \(normalTime)s, Optimized TS Export: \(optimizedTime)s")
+//        print("Normal TS Export: \(normalTime)s, Optimized TS Export: \(optimizedTime)s")
         XCTAssertFalse(normalCSV.isEmpty)
         XCTAssertFalse(optimizedCSV.isEmpty)
         XCTAssertEqual(normalCSV.count, optimizedCSV.count, accuracy: 100)

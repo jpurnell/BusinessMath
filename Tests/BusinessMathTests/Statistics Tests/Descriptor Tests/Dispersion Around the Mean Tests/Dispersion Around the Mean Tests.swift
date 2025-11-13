@@ -23,8 +23,27 @@ final class DispersionAroundtheMeanTests: XCTestCase {
 	}
 	
 	func testIndexOfDispersion() {
-		logger.warning("Test not implemented for \(self.name)")
-		XCTAssert(true)
+		// Test index of dispersion (variance-to-mean ratio)
+		// For Poisson distribution, index should be approximately 1
+		let poissonLike: [Double] = [4, 5, 6, 5, 4, 6, 5, 4, 5, 6]
+		let result = try! indexOfDispersion(poissonLike)
+
+		// Should return a positive value
+		XCTAssertGreaterThan(result, 0.0)
+
+		// Test with known values
+		let values: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
+		let dispersionIndex = try! indexOfDispersion(values)
+		let meanVal = mean(values)  // 6.0
+		let varVal = variance(values)  // 10.0
+		let expectedIndex = varVal / meanVal  // 10.0 / 6.0 ≈ 1.667
+
+		XCTAssertEqual(dispersionIndex, expectedIndex, accuracy: 0.001)
+
+		// Test that division by zero throws error
+		XCTAssertThrowsError(try indexOfDispersion([0.0, 0.0, 0.0])) { error in
+			XCTAssertTrue(error is MathError)
+		}
 	}
 
 	func testStdDevP() {
