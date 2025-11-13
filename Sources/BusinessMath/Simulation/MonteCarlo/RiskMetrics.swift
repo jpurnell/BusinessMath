@@ -172,7 +172,7 @@ extension SimulationResults {
 			return varThreshold  // Fallback: if no tail values, return VaR
 		}
 
-		let tailMean = tailValues.reduce(0.0, +) / Double(tailValues.count)
+		let tailMean = mean(tailValues)
 		return tailMean
 	}
 

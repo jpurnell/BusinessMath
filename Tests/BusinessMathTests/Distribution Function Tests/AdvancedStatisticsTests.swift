@@ -72,7 +72,7 @@ final class AdvancedStatisticsTests: XCTestCase {
         
         // Test at x=1 (the mode/peak for standard log-normal)
         let result1 = logNormalPDF(1.0, mean: 0.0, stdDev: 1.0)
-        testLogger.info("LogNormal PDF at x=1: \(result1, privacy: .public)")
+//        testLogger.info("LogNormal PDF at x=1: \(result1, privacy: .public)")
         
         // At x=1, ln(1)=0, so we get peak density
         // Expected: 1/sqrt(2π) ≈ 0.3989
@@ -82,37 +82,37 @@ final class AdvancedStatisticsTests: XCTestCase {
         
         // Test at x=e (≈2.718), where ln(e)=1
         let resultAtE = logNormalPDF(Double.exp(1), mean: 0.0, stdDev: 1.0)
-        testLogger.info("LogNormal PDF at x=e: \(resultAtE, privacy: .public)")
+//        testLogger.info("LogNormal PDF at x=e: \(resultAtE, privacy: .public)")
         XCTAssertFalse(resultAtE.isNaN, "PDF should not be NaN at x=e")
         XCTAssertLessThan(resultAtE, result1, "Should be less than peak")
         XCTAssertGreaterThan(resultAtE, 0.05, "Should still have reasonable density")
         
         // Test specific points with explicit parameters
         let result05 = logNormalPDF(0.5, mean: 0.0, stdDev: 1.0)
-        testLogger.info("LogNormal PDF at x=0.5: \(result05, privacy: .public)")
+//        testLogger.info("LogNormal PDF at x=0.5: \(result05, privacy: .public)")
         XCTAssertFalse(result05.isNaN, "PDF must not be NaN at x=0.5")
         XCTAssertGreaterThan(result05, 0, "PDF must be positive at x=0.5")
         
         let result2 = logNormalPDF(2.0, mean: 0.0, stdDev: 1.0)
-        testLogger.info("LogNormal PDF at x=2.0: \(result2, privacy: .public)")
+//        testLogger.info("LogNormal PDF at x=2.0: \(result2, privacy: .public)")
         XCTAssertFalse(result2.isNaN, "PDF must not be NaN at x=2.0")
         XCTAssertGreaterThan(result2, 0, "PDF must be positive at x=2.0")
         
         let result5 = logNormalPDF(5.0, mean: 0.0, stdDev: 1.0)
-        testLogger.info("LogNormal PDF at x=5.0: \(result5, privacy: .public)")
+//        testLogger.info("LogNormal PDF at x=5.0: \(result5, privacy: .public)")
         XCTAssertFalse(result5.isNaN, "PDF must not be NaN at x=5.0")
         XCTAssertGreaterThan(result5, 0, "PDF must be positive at x=5.0")
         
         // Test with different parameters: LogNormal(μ=1, σ=0.5)
         // Median should be at e^μ = e^1 ≈ 2.718
         let pdfAtMedian = logNormalPDF(Double.exp(1.0), mean: 1.0, stdDev: 0.5)
-        testLogger.info("LogNormal PDF at median (μ=1, σ=0.5): \(pdfAtMedian, privacy: .public)")
+//        testLogger.info("LogNormal PDF at median (μ=1, σ=0.5): \(pdfAtMedian, privacy: .public)")
         XCTAssertFalse(pdfAtMedian.isNaN, "PDF should not be NaN at median")
         XCTAssertGreaterThan(pdfAtMedian, 0.2, "Should have substantial density at median")
         
         // Test edge case: very small x value
         let pdfSmall = logNormalPDF(0.01, mean: 0.0, stdDev: 1.0)
-        testLogger.info("LogNormal PDF at x=0.01: \(pdfSmall, privacy: .public)")
+//        testLogger.info("LogNormal PDF at x=0.01: \(pdfSmall, privacy: .public)")
         XCTAssertFalse(pdfSmall.isNaN, "PDF should handle small x values")
         XCTAssertGreaterThan(pdfSmall, 0, "PDF must be positive even for small x")
     }

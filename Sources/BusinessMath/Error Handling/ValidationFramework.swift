@@ -169,9 +169,7 @@ extension TimeSeries: Validatable where T: Real & Sendable {
         // Check for gaps in periods (for consecutive period types)
         if count > 1 {
             let gaps = detectPeriodGaps()
-			print("Got \(gaps.count) gaps")
             if !gaps.isEmpty {
-				print("Adding warning, gaps: \(gaps)")
                 warnings.append(CalculationWarning(
                     severity: .error,
                     type: .missingData,

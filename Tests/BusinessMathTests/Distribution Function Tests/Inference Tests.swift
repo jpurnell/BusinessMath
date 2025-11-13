@@ -51,7 +51,7 @@ final class InferenceTests: XCTestCase {
         XCTAssertGreaterThan(pValue, 0.05, "P-value should be > 0.05 (not significant)")
         
         // Log the results
-        inferenceTestLogger.info("Z-Test Results: sampleMean=\(sampleMean), zStatistic=\(zStatistic), pValue=\(pValue)")
+//        inferenceTestLogger.info("Z-Test Results: sampleMean=\(sampleMean), zStatistic=\(zStatistic), pValue=\(pValue)")
     }
 
     // MARK: - New Statistical Testing Tool Tests

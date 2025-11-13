@@ -428,9 +428,9 @@ public struct RunMonteCarloTool: MCPToolHandler, Sendable {
         • Skewness: \(formatNumber(results.statistics.skewness, decimals: 3))
 
         Confidence Intervals:
-        • 90% CI: [\(formatNumber(results.statistics.ci90.lower, decimals: 2)), \(formatNumber(results.statistics.ci90.upper, decimals: 2))]
-        • 95% CI: [\(formatNumber(results.statistics.ci95.lower, decimals: 2)), \(formatNumber(results.statistics.ci95.upper, decimals: 2))]
-        • 99% CI: [\(formatNumber(results.statistics.ci99.lower, decimals: 2)), \(formatNumber(results.statistics.ci99.upper, decimals: 2))]
+        • 90% CI: [\(formatNumber(results.statistics.ci90.low, decimals: 2)), \(formatNumber(results.statistics.ci90.high, decimals: 2))]
+        • 95% CI: [\(formatNumber(results.statistics.ci95.low, decimals: 2)), \(formatNumber(results.statistics.ci95.high, decimals: 2))]
+        • 99% CI: [\(formatNumber(results.statistics.ci99.low, decimals: 2)), \(formatNumber(results.statistics.ci99.high, decimals: 2))]
 
         Percentiles:
         • 5th: \(formatNumber(results.percentiles.p5, decimals: 2))
@@ -545,9 +545,9 @@ public struct AnalyzeSimulationResultsTool: MCPToolHandler, Sendable {
         • P99: \(formatNumber(results.percentiles.p99, decimals: 2))
 
         Confidence Intervals:
-        • 90%: [\(formatNumber(results.statistics.ci90.lower, decimals: 2)), \(formatNumber(results.statistics.ci90.upper, decimals: 2))]
-        • 95%: [\(formatNumber(results.statistics.ci95.lower, decimals: 2)), \(formatNumber(results.statistics.ci95.upper, decimals: 2))]
-        • 99%: [\(formatNumber(results.statistics.ci99.lower, decimals: 2)), \(formatNumber(results.statistics.ci99.upper, decimals: 2))]
+        • 90%: [\(formatNumber(results.statistics.ci90.low, decimals: 2)), \(formatNumber(results.statistics.ci90.high, decimals: 2))]
+        • 95%: [\(formatNumber(results.statistics.ci95.low, decimals: 2)), \(formatNumber(results.statistics.ci95.high, decimals: 2))]
+        • 99%: [\(formatNumber(results.statistics.ci99.low, decimals: 2)), \(formatNumber(results.statistics.ci99.high, decimals: 2))]
         \(histogramText)
         """
 

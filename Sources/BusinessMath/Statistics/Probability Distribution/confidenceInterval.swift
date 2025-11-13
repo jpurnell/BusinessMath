@@ -55,13 +55,21 @@ public func confidenceInterval<T: Real>(mean: T, stdDev: T, z: T, popSize: Int) 
 ///
 /// Use this function when you need to estimate a population parameter based on your sample data.
 public func confidenceInterval<T: Real>(ci: T, values: [T]) -> (low: T, high: T) {
+    let m = mean(values)
+    let sd = stdDev(values)
+
+    // Edge case: no variance means no uncertainty - interval collapses to the mean
+    if sd == 0 {
+        return (low: m, high: m)
+    }
+
     // Range in which we can expect the population mean to be found with x% confidence
     let lowProb = (T(1) - ci) / T(2)
     let highProb = T(1) - lowProb
-    
-    let lowValue = inverseNormalCDF(p: lowProb, mean: mean(values), stdDev: stdDev(values))
-    let highValue = inverseNormalCDF(p: highProb, mean: mean(values), stdDev: stdDev(values))
-    
+
+    let lowValue = inverseNormalCDF(p: lowProb, mean: m, stdDev: sd)
+    let highValue = inverseNormalCDF(p: highProb, mean: m, stdDev: sd)
+
     return (lowValue, highValue)
 }
 

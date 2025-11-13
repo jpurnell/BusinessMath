@@ -49,15 +49,15 @@ public struct YahooFinanceProvider: MarketDataProvider {
 
 	// MARK: - Properties
 
-	/// The URL session to use for network requests.
-	private let session: URLSession
+	/// The network session to use for HTTP requests.
+	private let session: NetworkSession
 
 	// MARK: - Initialization
 
 	/// Creates a new Yahoo Finance provider.
 	///
-	/// - Parameter session: The URL session to use. Defaults to `.shared`.
-	public init(session: URLSession = .shared) {
+	/// - Parameter session: The network session to use. Defaults to a standard URL session.
+	public init(session: NetworkSession = URLSessionNetworkSession()) {
 		self.session = session
 	}
 
@@ -105,8 +105,11 @@ public struct YahooFinanceProvider: MarketDataProvider {
 			throw MarketDataError.invalidSymbol(symbol)
 		}
 
+		// Create request
+		let request = URLRequest(url: url)
+
 		// Fetch data
-		let (data, response) = try await session.data(from: url)
+		let (data, response) = try await session.data(for: request)
 
 		// Check HTTP response
 		guard let httpResponse = response as? HTTPURLResponse else {

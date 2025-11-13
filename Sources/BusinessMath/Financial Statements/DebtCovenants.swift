@@ -201,7 +201,7 @@ public struct CovenantMonitor {
                 period: period,
                 principalPayment: principalPayment
             )
-			logger.debug("\(#function) got \(actualValue)")
+//			logger.debug("\(#function) got \(actualValue)")
             return CovenantComplianceResult(
                 covenant: covenant,
                 isCompliant: actualValue >= threshold,
@@ -217,7 +217,7 @@ public struct CovenantMonitor {
                 period: period,
                 principalPayment: principalPayment
             )
-			logger.debug("maximumRatio \(#function) got \(actualValue)")
+//			logger.debug("maximumRatio \(#function) got \(actualValue)")
             return CovenantComplianceResult(
                 covenant: covenant,
                 isCompliant: actualValue <= threshold,
@@ -233,7 +233,7 @@ public struct CovenantMonitor {
                 period: period,
                 principalPayment: nil
             )
-			logger.debug("\(#function) got \(actualValue)")
+//			logger.debug("\(#function) got \(actualValue)")
             return CovenantComplianceResult(
                 covenant: covenant,
                 isCompliant: actualValue >= threshold,
@@ -249,7 +249,7 @@ public struct CovenantMonitor {
                 period: period,
                 principalPayment: nil
             )
-			logger.debug("\(#function) got \(actualValue)")
+//			logger.debug("\(#function) got \(actualValue)")
             return CovenantComplianceResult(
                 covenant: covenant,
                 isCompliant: actualValue <= threshold,
@@ -286,7 +286,7 @@ public struct CovenantMonitor {
         switch metric {
         case .currentRatio:
 				let ratio = toDouble(balanceSheet.currentRatio[period])
-				logger.debug("got current ratio of \(ratio)")
+//				logger.debug("got current ratio of \(ratio)")
             return ratio
 
         case .debtToEquity:
@@ -302,7 +302,7 @@ public struct CovenantMonitor {
         case .debtToEBITDA:
             let totalDebt = toDouble(balanceSheet.totalLiabilities[period])
             let ebitda = toDouble(incomeStatement.operatingIncome[period])
-				logger.debug("\(#function) got (\(totalDebt)/\(ebitda))=\(totalDebt/ebitda)")
+//				logger.debug("\(#function) got (\(totalDebt)/\(ebitda))=\(totalDebt/ebitda)")
             guard abs(ebitda) > 0.001 else { return Double.infinity }
             return totalDebt / ebitda
 

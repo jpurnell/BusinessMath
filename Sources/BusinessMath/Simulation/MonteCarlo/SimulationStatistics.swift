@@ -7,6 +7,16 @@
 
 import Foundation
 import Numerics
+import OSLog
+// Private aliases to global statistics functions to avoid namespace conflicts
+// These are explicitly typed for Double to resolve generic parameters
+// Marked nonisolated(unsafe) since these are pure functions with no mutable state
+private nonisolated(unsafe) let globalMean: ([Double]) -> Double = mean
+private nonisolated(unsafe) let globalMedian: ([Double]) -> Double = median
+private nonisolated(unsafe) let globalVariance: ([Double], Population) -> Double = variance
+private nonisolated(unsafe) let globalStdDev: ([Double], Population) -> Double = stdDev
+private nonisolated(unsafe) let globalSkew: ([Double], Population) -> Double = skew
+private nonisolated(unsafe) let globalConfidenceInterval: (Double, [Double]) -> (low: Double, high: Double) = confidenceInterval(ci:values:)
 
 /// A structure containing comprehensive statistical measures for simulation results.
 ///
@@ -44,6 +54,13 @@ import Numerics
 /// ```
 public struct SimulationStatistics: Sendable {
 
+	// MARK: - Raw Data
+
+	/// The original values used to calculate these statistics
+	///
+	/// Stored for potential additional calculations or analysis
+	public let values: [Double]
+
 	// MARK: - Central Tendency
 
 	/// The arithmetic mean (average) of all values
@@ -78,19 +95,13 @@ public struct SimulationStatistics: Sendable {
 	// MARK: - Convenience Properties
 
 	/// 90% confidence interval (mean ± 1.645 × stdDev)
-	public var ci90: (lower: Double, upper: Double) {
-		return confidenceInterval(level: 0.90)
-	}
+	public var ci90: (low: Double, high: Double) { return globalConfidenceInterval(0.90, values) }
 
 	/// 95% confidence interval (mean ± 1.96 × stdDev)
-	public var ci95: (lower: Double, upper: Double) {
-		return confidenceInterval(level: 0.95)
-	}
+	public var ci95: (low: Double, high: Double) { return globalConfidenceInterval(0.95, values) }
 
 	/// 99% confidence interval (mean ± 2.576 × stdDev)
-	public var ci99: (lower: Double, upper: Double) {
-		return confidenceInterval(level: 0.99)
-	}
+	public var ci99: (low: Double, high: Double) { return globalConfidenceInterval(0.99, values) }
 
 	// MARK: - Initialization
 
@@ -110,6 +121,7 @@ public struct SimulationStatistics: Sendable {
 	public init(values: [Double]) {
 		// Handle empty array
 		guard !values.isEmpty else {
+			self.values = []
 			self.mean = 0.0
 			self.median = 0.0
 			self.stdDev = 0.0
@@ -120,56 +132,61 @@ public struct SimulationStatistics: Sendable {
 			return
 		}
 
+		// Store the original values for future calculations
+		self.values = values
+
+		// Calculate all statistics using helper method to avoid namespace conflicts
+		let stats = Self.calculateStatistics(from: values)
+
+		// Assign all properties
+		self.mean = stats.mean
+		self.median = stats.median
+		self.min = stats.min
+		self.max = stats.max
+		self.variance = stats.variance
+		self.stdDev = stats.stdDev
+		self.skewness = stats.skewness
+	}
+
+	/// Helper method to calculate statistics using library functions
+	/// - Parameter values: Array of Double values
+	/// - Returns: Tuple containing all calculated statistics
+	private static func calculateStatistics(from values: [Double]) -> (mean: Double, median: Double, min: Double, max: Double, variance: Double, stdDev: Double, skewness: Double) {
+		let logger = Logger(subsystem: "com.justinpurnell.businessMath.simulationStatistics", category: #function)
 		// Calculate min and max
 		let minValue = values.min() ?? 0.0
 		let maxValue = values.max() ?? 0.0
 
-		// Calculate mean
-		let sum = values.reduce(0.0, +)
-		let meanValue = sum / Double(values.count)
+		// Calculate mean using library function (via file-level alias)
+		let meanValue = globalMean(values)
 
-		// Calculate median (requires sorted data)
+		// Calculate median using library function (requires sorted data)
 		let sortedValues = values.sorted()
-		let medianValue: Double
-		if sortedValues.count % 2 == 0 {
-			let midIndex1 = sortedValues.count / 2 - 1
-			let midIndex2 = sortedValues.count / 2
-			medianValue = (sortedValues[midIndex1] + sortedValues[midIndex2]) / 2.0
-		} else {
-			let midIndex = sortedValues.count / 2
-			medianValue = sortedValues[midIndex]
-		}
+		let medianValue = globalMedian(sortedValues)
 
-		// Calculate variance and standard deviation
-		let (varianceValue, stdDevValue): (Double, Double)
+		// Calculate variance and standard deviation using library functions
+		let varianceValue: Double
+		let stdDevValue: Double
 		if values.count > 1 {
-			// Sample variance: sum((x - mean)^2) / (n - 1)
-			let squaredDeviations = values.map { pow($0 - meanValue, 2) }
-			varianceValue = squaredDeviations.reduce(0.0, +) / Double(values.count - 1)
-			stdDevValue = sqrt(varianceValue)
+			varianceValue = globalVariance(values, .sample)
+			stdDevValue = globalStdDev(values, .sample)
 		} else {
 			varianceValue = 0.0
 			stdDevValue = 0.0
 		}
 
-		// Calculate skewness
-		let skewnessValue = Self.calculateSkewness(values: values, mean: meanValue, stdDev: stdDevValue)
+		// Calculate skewness using library function
+		let skewnessValue = globalSkew(values, .sample)
 
-		// Assign all properties
-		self.mean = meanValue
-		self.median = medianValue
-		self.min = minValue
-		self.max = maxValue
-		self.variance = varianceValue
-		self.stdDev = stdDevValue
-		self.skewness = skewnessValue
+		return (meanValue, medianValue, minValue, maxValue, varianceValue, stdDevValue, skewnessValue)
 	}
 
 	// MARK: - Confidence Intervals
 
 	/// Calculates a confidence interval at the specified level.
 	///
-	/// Uses the normal approximation: CI = mean ± z × stdDev
+	/// Uses the library's global confidenceInterval function which employs
+	/// inverse normal CDF for more accurate confidence interval calculation.
 	///
 	/// - Parameter level: The confidence level (0.0 to 1.0, e.g., 0.95 for 95%)
 	/// - Returns: A tuple containing the lower and upper bounds of the confidence interval
@@ -186,82 +203,8 @@ public struct SimulationStatistics: Sendable {
 	/// let ci = stats.confidenceInterval(level: 0.95)
 	/// print("95% CI: [\(ci.lower), \(ci.upper)]")
 	/// ```
-	public func confidenceInterval(level: Double) -> (lower: Double, upper: Double) {
-		// Get z-score for confidence level
-		let zScore = Self.zScoreForConfidenceLevel(level)
 
-		// Calculate margin of error
-		let marginOfError = zScore * stdDev
 
-		return (lower: mean - marginOfError, upper: mean + marginOfError)
-	}
+	public func confidenceInterval(level: Double) -> (low: Double, high: Double) { return globalConfidenceInterval(level, values) }
 
-	// MARK: - Internal Calculations
-
-	/// Returns the z-score for a given confidence level.
-	///
-	/// - Parameter level: The confidence level (e.g., 0.95 for 95%)
-	/// - Returns: The corresponding z-score
-	private static func zScoreForConfidenceLevel(_ level: Double) -> Double {
-		// Common z-scores for confidence intervals
-		switch level {
-		case 0.90:
-			return 1.645
-		case 0.95:
-			return 1.96
-		case 0.99:
-			return 2.576
-		case 0.999:
-			return 3.291
-		default:
-			// For other levels, use approximation
-			// This is a simplified approach; could use inverse normal CDF for precision
-			if level >= 0.90 && level < 0.95 {
-				// Linear interpolation between 90% and 95%
-				let fraction = (level - 0.90) / (0.95 - 0.90)
-				return 1.645 + fraction * (1.96 - 1.645)
-			} else if level >= 0.95 && level < 0.99 {
-				// Linear interpolation between 95% and 99%
-				let fraction = (level - 0.95) / (0.99 - 0.95)
-				return 1.96 + fraction * (2.576 - 1.96)
-			} else if level >= 0.99 && level <= 1.0 {
-				// Linear interpolation between 99% and 99.9%
-				let fraction = (level - 0.99) / (0.999 - 0.99)
-				return 2.576 + fraction * (3.291 - 2.576)
-			} else {
-				// Default to 95%
-				return 1.96
-			}
-		}
-	}
-
-	/// Calculates the skewness of a dataset.
-	///
-	/// Skewness measures the asymmetry of the probability distribution.
-	/// Uses the sample skewness formula (adjusted Fisher-Pearson coefficient).
-	///
-	/// Formula: skewness = (n / ((n-1)(n-2))) × Σ((x - mean) / stdDev)³
-	///
-	/// - Parameters:
-	///   - values: The dataset
-	///   - mean: The mean of the dataset
-	///   - stdDev: The standard deviation of the dataset
-	/// - Returns: The skewness value
-	private static func calculateSkewness(values: [Double], mean: Double, stdDev: Double) -> Double {
-		guard values.count > 2 else { return 0.0 }
-		guard stdDev > 0.0 else { return 0.0 }
-
-		let n = Double(values.count)
-
-		// Calculate the sum of cubed standardized deviations
-		let sumCubedDeviations = values.reduce(0.0) { sum, value in
-			let standardizedDeviation = (value - mean) / stdDev
-			return sum + pow(standardizedDeviation, 3)
-		}
-
-		// Apply bias correction factor for sample skewness
-		let biasCorrectionFactor = n / ((n - 1.0) * (n - 2.0))
-
-		return biasCorrectionFactor * sumCubedDeviations
-	}
 }

@@ -219,7 +219,7 @@ struct MonteCarloSimulationTests {
 
 		// Generate histogram
 		let histogram = results.histogram(bins: 20)
-		logger.info("Monte Carlo Simulation - Complex Model Results:\n\n\(plotHistogram(histogram))")
+//		logger.info("Monte Carlo Simulation - Complex Model Results:\n\n\(plotHistogram(histogram))")
 		#expect(histogram.count == 20)
 	}
 
