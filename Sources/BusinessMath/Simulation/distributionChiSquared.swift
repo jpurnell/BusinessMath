@@ -44,7 +44,7 @@ import OSLog
 ///
 /// - Parameters:
 ///   - degreesOfFreedom: The degrees of freedom parameter (df > 0)
-/// - Returns: A random value sampled from the χ²(df) distribution
+/// - Returns: A random value sampled from the χ²(df) distribution, or NaN if df ≤ 0
 ///
 /// ## Example
 ///
@@ -55,17 +55,17 @@ import OSLog
 ///
 /// // Generate variance estimates
 /// let variance: Double = distributionChiSquared(degreesOfFreedom: 20)
+///
+/// // Invalid degrees of freedom returns NaN
+/// let invalid: Double = distributionChiSquared(degreesOfFreedom: 0)
+/// print(invalid.isNaN)  // true
 /// ```
 @available(macOS 11.0, *)
 public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T {
-	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 	guard degreesOfFreedom > 0 else {
-			#if DEBUG
-			logger.error("Invalid degrees of freedom: \(degreesOfFreedom). Using default value of 1.")
-			#endif
-			// Return minimum valid distribution (df=1)
-			return distributionChiSquared(degreesOfFreedom: 1, seeds: seeds)
-		}
+		// Chi-squared distribution is undefined for df ≤ 0
+		return T.nan
+	}
 
 	var seedIndex = 0
 
