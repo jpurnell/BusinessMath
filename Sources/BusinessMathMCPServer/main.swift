@@ -91,18 +91,71 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
-        fputs("✓ Registered 77 tools\n", stderr)
+        // Financial Ratios Tools (9 tools)
+        for handler in getFinancialRatiosTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Bayesian Statistics Tools (1 tool)
+        for handler in getBayesianTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Valuation Calculators Tools (12 tools)
+        for handler in getValuationCalculatorsTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Investment Metrics Tools (4 tools)
+        for handler in getInvestmentMetricsTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Loan Payment Analysis Tools (4 tools)
+        for handler in getLoanPaymentAnalysisTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Growth Analysis Tools (2 tools)
+        for handler in getGrowthAnalysisTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Trend Forecasting Tools (4 tools)
+        for handler in getTrendForecastingTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Seasonality Tools (3 tools)
+        for handler in getSeasonalityTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Advanced Options Tools (2 tools)
+        for handler in getAdvancedOptionsTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        fputs("✓ Registered 118 tools\n", stderr)
 
         // Create and configure the MCP server using official SDK
         let server = Server(
             name: "BusinessMath MCP Server",
-            version: "1.17.0",
+            version: "1.20.0",
             instructions: """
             Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and advanced analytics server.
 
             **Capabilities**:
-            - 77 computational tools across 15 categories
-            - 15 probability distributions (now including Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh)
+            - 118 computational tools across 24 categories
+            - 15 probability distributions (Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh, and more)
+            - 9 essential financial ratios (liquidity, leverage, profitability, efficiency)
+            - 12 valuation calculators (EPS, P/E, P/B, market cap, enterprise value, free cash flow)
+            - 4 investment decision metrics (PI, payback period, discounted payback, MIRR)
+            - 4 loan payment analysis tools (principal, interest, cumulative calculations)
+            - 4 trend forecasting models (linear, exponential, logistic, decomposition)
+            - 3 seasonality tools (calculate indices, adjust data, apply patterns)
+            - 2 advanced options tools (Greeks calculation, binomial tree pricing)
+            - Bayesian inference (posterior probability, likelihood ratios, odds calculations)
             - 10 documentation and example resources
             - 6 prompt templates for common financial analyses
 
@@ -122,6 +175,15 @@ struct BusinessMathMCPServerMain {
             13. Portfolio Optimization: Modern Portfolio Theory, efficient frontier, risk parity
             14. Real Options: Black-Scholes, binomial trees, Greeks, expansion/abandonment valuation
             15. Risk Analytics: Stress testing, VaR/CVaR, risk aggregation, comprehensive risk metrics
+            16. Financial Ratios: Asset turnover, current ratio, quick ratio, D/E, interest coverage, inventory turnover, profit margin, ROE, ROI
+            17. Bayesian Statistics: Bayes' theorem, posterior probabilities, medical/business inference
+            18. Valuation Calculators: EPS, BVPS, P/E, P/B, P/S, market cap, enterprise value, EV/EBITDA, EV/Sales, working capital, debt-to-assets, free cash flow
+            19. Investment Metrics: Profitability index, payback period, discounted payback period, Modified IRR
+            20. Loan Payment Analysis: Principal payment (PPMT), interest payment (IPMT), cumulative interest, cumulative principal
+            21. Growth Analysis: Simple growth rate, compound growth projections with various compounding frequencies
+            22. Trend Forecasting: Linear trend, exponential trend, logistic trend, time series decomposition
+            23. Seasonality: Calculate seasonal indices, seasonally adjust data, apply seasonal patterns
+            24. Advanced Options: Calculate option Greeks (Delta, Gamma, Vega, Theta, Rho), binomial tree option pricing (American & European)
 
             **Resources**: Access comprehensive documentation, examples, and reference data using resources/read
             **Prompts**: Use prompt templates for guided analysis workflows
