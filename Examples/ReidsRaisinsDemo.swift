@@ -1,6 +1,19 @@
 import BusinessMath
 
-/// Reid's Raisin Company profit model
+///REID's RAISIN COMPANY
+//Located in wine country, Reid’s Raisin Company (RRC) is a food-processing firm that purchases surplus grapes from grape growers, dries them into raisins, applies a layer of sugar, and sells the sugar-coated raisins to major cereal and candy companies. At the beginning of the grape-growing season, RRC has two decisions to make. The first involves how many grapes to buy under contract, and the second involves how much to charge for the sugar-coated raisins it sells.
+//
+//In the spring, RRC typically contracts with a grower who will supply a given amount of grapes in the autumn at a fixed cost of $0.25 per pound. The balance between RRC’s grape requirements and those supplied by the grower must be purchased in the autumn, on the open market, at a price that could vary from a historical low of $0.20 per pound to a high of $0.35 per pound. (RRC cannot, however, sell grapes on the open market in the autumn if it has a surplus in inventory, because it has no distribution system for such purposes.)
+//
+//The other major decision facing RRC is the price to charge for sugar-coated raisins. RRC has several customer who buy RRC’s output in price-dependent quantities. RRC negotiates with these processors as a group to arrive at a price for the sugar-coated raisins and the quantity to be bought at that price. The negotiations take place in the spring, long before the open market price of grapes is known.
+//
+//Based on prior years’ experience, Mary Jo Reid, RRC’s general manager, believes that if RRC prices the sugar- coated raisins at $2.20 per pound, the processors’ orders will total 750,000 pounds of sugar-coated raisins. Furthermore, this total will increase by 15,000 pounds for each penny reduction in sugar-coated raisin price below $2.20. The same relationship holds in the other direction: demand will drop by 15,000 for each penny increase. The price of $2.20 is a tentative starting point in the negotiations.
+//
+//Sugar-coated raisins are made by washing and drying grapes into raisins, followed by spraying the raisins with a sugar coating that RRC buys for $0.55 per pound. It takes 2.5 pounds of grapes plus 0.05 pound of coating to make one pound of sugar-coated raisins, the balance being water that evaporates during grape drying. In addition to the raw materials cost for the grapes and the coating, RRC’s proces- sing plant incurs a variable cost of $0.20 to process one pound of grapes into raisins, up to its capacity of 1,500,000 pounds of grapes. For volumes above 1,500,000 pounds of grapes, RRC outsources grape processing to another food processor, which charges RRC $0.45 per pound. This price includes just the processing cost, as RRC supplies both the grapes and the coating required. RRC also incurs fixed (overhead) costs in its grape-processing plant of $200,000 per year.
+//
+//Mary Jo has asked you to analyze the situation in order to guide her in the upcoming negotiations. Her goal is to examine the effect of various ‘‘What-if?’’ scenarios on RRC’s profits. As a basis for the analysis, she suggests using a contract purchase price of $0.25, with a supply quantity of 1 million pounds from the grower, along with a selling price of $2.20 for sugar-coated raisins. She is primarily interested in evaluating annual pretax profit as a function of the selling price and the open-market grape price. She believes that the open-market grape price is most likely to be $0.30.
+	
+	/// Reid's Raisin Company profit model
 /// Complete example from the case study tutorial
 struct ReidsRaisinsModel {
     // MARK: - Input Parameters

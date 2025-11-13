@@ -478,20 +478,24 @@ struct FDistributionTests {
 	
 	@Test("F-distribution invalid parameter handling")
 	func fInvalidParameters() {
-		// Test that invalid parameters are handled gracefully
+		// Test that invalid degrees of freedom return NaN
 		let invalidCases: [(df1: Int, df2: Int, description: String)] = [
 			(0, 5, "df1 = 0"),
-			(5, 1, "df2 < 2"),
 			(-1, 5, "negative df1"),
-			(5, -1, "negative df2")
+			(5, 0, "df2 = 0"),
+			(5, -1, "negative df2"),
+			(-1, -1, "both negative"),
+			(0, 0, "both zero")
 		]
 
 		for testCase in invalidCases {
-			// Implementation should handle this gracefully
 			let sample: Double = distributionF(df1: testCase.df1, df2: testCase.df2, seeds: [0.5])
-			// At minimum, should not crash
-			#expect(sample.isFinite || sample.isNaN,
-				   "Should handle \(testCase.description) without crashing")
+			#expect(sample.isNaN, "Should return NaN for \(testCase.description)")
 		}
+
+		// Test that valid parameters still work
+		let validSample: Double = distributionF(df1: 5, df2: 10, seeds: [0.5, 0.6, 0.7])
+		#expect(validSample.isFinite && !validSample.isNaN, "Valid parameters should produce finite value")
+		#expect(validSample >= 0.0, "F-distribution should be non-negative")
 	}
 }

@@ -54,6 +54,13 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
         • Beta: alpha, beta - for probabilities/proportions (0-1)
         • Gamma: shape, scale - for waiting times
         • Weibull: shape, scale - for reliability/failure analysis
+        • ChiSquared: degreesOfFreedom - for goodness-of-fit tests, variance estimation
+        • F: df1, df2 - for ANOVA, comparing variances
+        • T: degreesOfFreedom - for small-sample inference, confidence intervals
+        • Pareto: scale, shape - for wealth distribution, 80/20 rule modeling
+        • Logistic: mean, stdDev - for growth models, S-curves
+        • Geometric: p - for discrete "time until first success" models
+        • Rayleigh: mean - for magnitude modeling (wind speed, wave height)
 
         Returns distribution parameters and sample values for verification.
 
@@ -64,7 +71,7 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 "type": MCPSchemaProperty(
                     type: "string",
                     description: "Distribution type",
-                    enum: ["normal", "uniform", "triangular", "exponential", "lognormal", "beta", "gamma", "weibull"]
+                    enum: ["normal", "uniform", "triangular", "exponential", "lognormal", "beta", "gamma", "weibull", "chisquared", "f", "t", "pareto", "logistic", "geometric", "rayleigh"]
                 ),
                 "parameters": MCPSchemaProperty(
                     type: "object",
@@ -78,6 +85,13 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                     • beta: {alpha, beta}
                     • gamma: {shape, scale}
                     • weibull: {shape, scale}
+                    • chisquared: {degreesOfFreedom}
+                    • f: {df1, df2}
+                    • t: {degreesOfFreedom}
+                    • pareto: {scale, shape}
+                    • logistic: {mean, stdDev}
+                    • geometric: {p}
+                    • rayleigh: {mean}
                     """
                 ),
                 "sampleSize": MCPSchemaProperty(
@@ -186,6 +200,72 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
             distInfo = "Weibull(k=\(formatNumber(shape, decimals: 2)), λ=\(formatNumber(scale, decimals: 2)))"
             for _ in 0..<sampleSize {
                 samples.append(distributionWeibull(shape: shape, scale: scale))
+            }
+
+        case "chisquared":
+            guard let df = parametersDict["degreesOfFreedom"] as? Double else {
+                throw ToolError.invalidArguments("Chi-Squared distribution requires 'degreesOfFreedom'")
+            }
+            distInfo = "Chi-Squared(df=\(formatNumber(df, decimals: 0)))"
+            for _ in 0..<sampleSize {
+                samples.append(distributionChiSquared(degreesOfFreedom: Int(df)))
+            }
+
+        case "f":
+            guard let df1 = parametersDict["df1"] as? Double,
+                  let df2 = parametersDict["df2"] as? Double else {
+                throw ToolError.invalidArguments("F distribution requires 'df1' and 'df2'")
+            }
+            distInfo = "F(df1=\(formatNumber(df1, decimals: 0)), df2=\(formatNumber(df2, decimals: 0)))"
+            for _ in 0..<sampleSize {
+                samples.append(distributionF(df1: Int(df1), df2: Int(df2)))
+            }
+
+        case "t":
+            guard let df = parametersDict["degreesOfFreedom"] as? Double else {
+                throw ToolError.invalidArguments("T distribution requires 'degreesOfFreedom'")
+            }
+            distInfo = "T(df=\(formatNumber(df, decimals: 0)))"
+            for _ in 0..<sampleSize {
+                samples.append(distributionT(degreesOfFreedom: Int(df)))
+            }
+
+        case "pareto":
+            guard let scale = parametersDict["scale"] as? Double,
+                  let shape = parametersDict["shape"] as? Double else {
+                throw ToolError.invalidArguments("Pareto distribution requires 'scale' and 'shape'")
+            }
+            distInfo = "Pareto(xₘ=\(formatNumber(scale, decimals: 2)), α=\(formatNumber(shape, decimals: 2)))"
+            for _ in 0..<sampleSize {
+                samples.append(distributionPareto(scale: scale, shape: shape))
+            }
+
+        case "logistic":
+            guard let mean = parametersDict["mean"] as? Double,
+                  let stdDev = parametersDict["stdDev"] as? Double else {
+                throw ToolError.invalidArguments("Logistic distribution requires 'mean' and 'stdDev'")
+            }
+            distInfo = "Logistic(μ=\(formatNumber(mean, decimals: 2)), σ=\(formatNumber(stdDev, decimals: 2)))"
+            for _ in 0..<sampleSize {
+                samples.append(distributionLogistic(mean, stdDev))
+            }
+
+        case "geometric":
+            guard let p = parametersDict["p"] as? Double else {
+                throw ToolError.invalidArguments("Geometric distribution requires 'p' (probability)")
+            }
+            distInfo = "Geometric(p=\(formatNumber(p, decimals: 4)))"
+            for _ in 0..<sampleSize {
+                samples.append(distributionGeometric(p))
+            }
+
+        case "rayleigh":
+            guard let mean = parametersDict["mean"] as? Double else {
+                throw ToolError.invalidArguments("Rayleigh distribution requires 'mean'")
+            }
+            distInfo = "Rayleigh(μ=\(formatNumber(mean, decimals: 2)))"
+            for _ in 0..<sampleSize {
+                samples.append(distributionRayleigh(mean: mean))
             }
 
         default:

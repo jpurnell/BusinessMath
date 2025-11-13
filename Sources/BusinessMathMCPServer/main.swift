@@ -96,12 +96,13 @@ struct BusinessMathMCPServerMain {
         // Create and configure the MCP server using official SDK
         let server = Server(
             name: "BusinessMath MCP Server",
-            version: "1.14.1",
+            version: "1.17.0",
             instructions: """
             Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and advanced analytics server.
 
             **Capabilities**:
             - 77 computational tools across 15 categories
+            - 15 probability distributions (now including Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh)
             - 10 documentation and example resources
             - 6 prompt templates for common financial analyses
 
@@ -111,9 +112,9 @@ struct BusinessMathMCPServerMain {
             3. Forecasting: Trend analysis, seasonal adjustment, projections
             4. Debt & Financing: Amortization, WACC, CAPM, coverage ratios
             5. Statistical Analysis: Correlation, regression, confidence intervals
-            6. Monte Carlo Simulation: Risk modeling, distributions, sensitivity analysis
-            7. Hypothesis Testing: T-tests, chi-square, sample size, A/B testing, p-values
-            8. Probability Distributions: Binomial, Poisson, exponential, hypergeometric, log-normal
+            6. Monte Carlo Simulation: Risk modeling, 15 distributions, sensitivity analysis
+            7. Hypothesis Testing: T-tests, chi-square, F-tests, sample size, A/B testing, p-values
+            8. Probability Distributions: Normal, Uniform, Triangular, Exponential, Lognormal, Beta, Gamma, Weibull, Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh
             9. Combinatorics: Combinations, permutations, factorial
             10. Statistical Means: Geometric, harmonic, weighted average
             11. Analysis Tools: Goal seek, data tables
