@@ -10,25 +10,35 @@ A comprehensive Swift library for business mathematics, time series analysis, an
 
 BusinessMath provides production-ready implementations of essential business and financial calculations. Built with modern Swift features including generics, strict concurrency (Swift 6), and comprehensive documentation, it's designed for financial analysts, business planners, data scientists, and software engineers building financial applications.
 
-## 🤖 MCP Server (Enhanced in v1.14.0)
+## 🤖 MCP Server (v1.20.0 - Major Expansion)
 
 BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** that exposes all functionality to AI assistants like Claude Desktop, enabling natural language financial analysis, modeling, and advanced analytics.
 
 ### What's Included
 
-**✨ 77 Computational Tools** across 15 categories:
+**✨ 118 Computational Tools** across 24 categories:
 - **Time Value of Money** (9 tools): NPV, IRR, PV, FV, payments, annuities, XNPV, XIRR
 - **Time Series Analysis** (6 tools): Growth rates, moving averages, CAGR, comparisons
 - **Forecasting** (8 tools): Trend analysis, seasonal adjustment, projections
 - **Debt & Financing** (6 tools): Amortization, WACC, CAPM, coverage ratios
 - **Statistical Analysis** (7 tools): Correlation, regression, confidence intervals, z-scores
-- **Monte Carlo Simulation** (7 tools): Risk modeling, distributions, sensitivity analysis
-- **Hypothesis Testing** (6 tools): T-tests, chi-square, sample size, A/B testing, p-values
-- **Probability Distributions** (13 tools): Binomial, Poisson, exponential, hypergeometric, log-normal, and more
+- **Monte Carlo Simulation** (7 tools): Risk modeling, 15 distributions, sensitivity analysis
+- **Hypothesis Testing** (6 tools): T-tests, chi-square, F-tests, sample size, A/B testing, p-values
+- **Advanced Statistics** (13 tools): Combinatorics, statistical means, goal seek, data tables
+- **Probability Distributions** (15 distributions): Normal, Uniform, Triangular, Exponential, Lognormal, Beta, Gamma, Weibull, Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh
 - **Optimization & Solvers** (3 tools): Newton-Raphson, gradient descent, capital allocation
 - **Portfolio Optimization** (3 tools): Modern Portfolio Theory, efficient frontier, risk parity
 - **Real Options** (5 tools): Black-Scholes, binomial trees, Greeks, expansion/abandonment valuation
 - **Risk Analytics** (4 tools): Stress testing, VaR/CVaR, risk aggregation, comprehensive metrics
+- **Financial Ratios** (9 tools): Asset turnover, current ratio, quick ratio, D/E, interest coverage, inventory turnover, profit margin, ROE, ROI
+- **Bayesian Statistics** (1 tool): Bayes' theorem with posterior probability calculations
+- **Valuation Calculators** (12 tools): EPS, BVPS, P/E, P/B, P/S, market cap, enterprise value, EV/EBITDA, EV/Sales, working capital, debt-to-assets, free cash flow
+- **Investment Metrics** (4 tools): Profitability index, payback period, discounted payback, Modified IRR
+- **Loan Payment Analysis** (4 tools): Principal payment (PPMT), interest payment (IPMT), cumulative interest, cumulative principal
+- **Growth Analysis** (2 tools): Simple growth rate, compound growth projections with various compounding frequencies
+- **Trend Forecasting** (4 tools): Linear trend, exponential trend, logistic trend, time series decomposition
+- **Seasonality** (3 tools): Calculate seasonal indices, seasonally adjust data, apply seasonal patterns
+- **Advanced Options** (2 tools): Option Greeks (Delta, Gamma, Vega, Theta, Rho), binomial tree pricing (American & European)
 
 **📚 14 Resources** providing comprehensive documentation:
 - Time Value of Money formulas and examples
@@ -74,11 +84,18 @@ swift build -c release
 
 3. Restart Claude Desktop and start using natural language:
    - "Calculate the NPV of an investment with initial cost $100,000 and annual returns of $30,000 for 5 years at 10% discount rate"
+   - "What's the profitability index for this investment?"
+   - "Calculate the payback period and discounted payback period"
+   - "Show me the MIRR with 8% financing rate and 6% reinvestment rate"
+   - "Break down the first payment on a $300,000 mortgage at 6% - how much is principal vs interest?"
    - "Run a Monte Carlo simulation with 10,000 iterations for a revenue model with normal distribution (mean: $1M, stddev: $200K)"
-   - "Create a 30-year amortization schedule for a $300,000 loan at 6% interest"
+   - "Forecast my quarterly revenue using exponential trend with historical data: [100, 120, 145, 175]"
+   - "Calculate seasonal indices for my monthly sales data with annual seasonality"
+   - "Calculate the option Greeks for a call option: spot $100, strike $105, 6 months expiry, 20% volatility"
+   - "Price this American put option using binomial tree with 100 steps"
    - "Optimize a portfolio across 3 assets to maximize Sharpe ratio"
    - "Calculate VaR at 95% confidence for my portfolio returns"
-   - "Price a Black-Scholes call option with spot $100, strike $105, 6 months to expiry"
+   - "What's the P/E ratio if EPS is $5.50 and stock price is $82.50?"
    - "Run a stress test on baseline revenue of $10M and costs of $7M using a recession scenario"
 
 **HTTP Mode** (Experimental):
