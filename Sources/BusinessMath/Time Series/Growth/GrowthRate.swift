@@ -31,7 +31,7 @@ public enum CompoundingFrequency: Sendable {
 	case continuous
 
 	/// The number of compounding periods per year.
-	var periodsPerYear: Int {
+	public var periodsPerYear: Int {
 		switch self {
 		case .annual: return 1
 		case .semiannual: return 2

@@ -260,176 +260,176 @@ public struct CalculateGreeksTool: MCPToolHandler, Sendable {
 
 // MARK: - Binomial Tree Option Pricing Tool
 
-public struct BinomialTreeOptionTool: MCPToolHandler, Sendable {
-    public let tool = MCPTool(
-        name: "price_binomial_option",
-        description: """
-        Price American or European options using binomial tree model. American options can be exercised early, making them more valuable than European options.
-
-        Example: Price American put with early exercise
-        - optionType: "put"
-        - americanStyle: true
-        - spotPrice: 100
-        - strikePrice: 110 (in-the-money put)
-        - timeToExpiry: 1.0
-        - riskFreeRate: 0.05
-        - volatility: 0.25
-        - steps: 100
-
-        Returns option price and early exercise premium.
-        """,
-        inputSchema: MCPToolInputSchema(
-            properties: [
-                "optionType": MCPSchemaProperty(
-                    type: "string",
-                    description: "Type of option",
-                    enum: ["call", "put"]
-                ),
-                "americanStyle": MCPSchemaProperty(
-                    type: "boolean",
-                    description: "true for American (early exercise allowed), false for European"
-                ),
-                "spotPrice": MCPSchemaProperty(
-                    type: "number",
-                    description: "Current price of underlying asset"
-                ),
-                "strikePrice": MCPSchemaProperty(
-                    type: "number",
-                    description: "Exercise/strike price"
-                ),
-                "timeToExpiry": MCPSchemaProperty(
-                    type: "number",
-                    description: "Time to expiration in years"
-                ),
-                "riskFreeRate": MCPSchemaProperty(
-                    type: "number",
-                    description: "Annual risk-free rate as decimal"
-                ),
-                "volatility": MCPSchemaProperty(
-                    type: "number",
-                    description: "Annual volatility as decimal"
-                ),
-                "steps": MCPSchemaProperty(
-                    type: "integer",
-                    description: "Number of time steps in the tree (default: 100, more = more accurate)"
-                )
-            ],
-            required: ["optionType", "americanStyle", "spotPrice", "strikePrice", "timeToExpiry", "riskFreeRate", "volatility"]
-        )
-    )
-
-    public init() {}
-
-    public func execute(arguments: [String: AnyCodable]?) async throws -> MCPToolCallResult {
-        guard let args = arguments else {
-            throw ToolError.invalidArguments("Missing arguments")
-        }
-
-        let optionTypeString = try args.getString("optionType")
-        let optionType: OptionType = optionTypeString == "call" ? .call : .put
-        let americanStyle = try args.getBool("americanStyle")
-        let spotPrice = try args.getDouble("spotPrice")
-        let strikePrice = try args.getDouble("strikePrice")
-        let timeToExpiry = try args.getDouble("timeToExpiry")
-        let riskFreeRate = try args.getDouble("riskFreeRate")
-        let volatility = try args.getDouble("volatility")
-        let steps = args.getIntOptional("steps") ?? 100
-
-        // Calculate binomial price
-        let binomialPrice = BinomialTreeModel<Double>.price(
-            optionType: optionType,
-            americanStyle: americanStyle,
-            spotPrice: spotPrice,
-            strikePrice: strikePrice,
-            timeToExpiry: timeToExpiry,
-            riskFreeRate: riskFreeRate,
-            volatility: volatility,
-            steps: steps
-        )
-
-        var result = """
-        Binomial Tree Option Pricing
-
-        Option Details:
-        - Type: \(optionType == .call ? "Call" : "Put")
-        - Style: \(americanStyle ? "American" : "European")
-        - Spot Price: $\(String(format: "%.2f", spotPrice))
-        - Strike Price: $\(String(format: "%.2f", strikePrice))
-        - Time to Expiry: \(String(format: "%.2f", timeToExpiry)) years
-        - Risk-Free Rate: \(String(format: "%.1f%%", riskFreeRate * 100))
-        - Volatility: \(String(format: "%.1f%%", volatility * 100))
-        - Tree Steps: \(steps)
-
-        Option Value: $\(String(format: "%.4f", binomialPrice))
-        """
-
-        if americanStyle {
-            // Also calculate European price for comparison
-            let europeanPrice = BinomialTreeModel<Double>.price(
-                optionType: optionType,
-                americanStyle: false,
-                spotPrice: spotPrice,
-                strikePrice: strikePrice,
-                timeToExpiry: timeToExpiry,
-                riskFreeRate: riskFreeRate,
-                volatility: volatility,
-                steps: steps
-            )
-
-            let earlyExercisePremium = binomialPrice - europeanPrice
-
-            result += """
-
-
-            Early Exercise Value:
-            - European Value: $\(String(format: "%.4f", europeanPrice))
-            - American Value: $\(String(format: "%.4f", binomialPrice))
-            - Early Exercise Premium: $\(String(format: "%.4f", earlyExercisePremium))
-
-            The American option is worth \(String(format: "%.2f%%", (earlyExercisePremium / europeanPrice) * 100)) more
-            due to the flexibility to exercise early.
-            """
-        }
-
-        // Compare to Black-Scholes for European
-        if !americanStyle {
-            let blackScholesPrice = BlackScholesModel<Double>.price(
-                optionType: optionType,
-                spotPrice: spotPrice,
-                strikePrice: strikePrice,
-                timeToExpiry: timeToExpiry,
-                riskFreeRate: riskFreeRate,
-                volatility: volatility
-            )
-
-            let difference = abs(binomialPrice - blackScholesPrice)
-            let percentDiff = (difference / blackScholesPrice) * 100
-
-            result += """
-
-
-            Comparison to Black-Scholes:
-            - Binomial: $\(String(format: "%.4f", binomialPrice))
-            - Black-Scholes: $\(String(format: "%.4f", blackScholesPrice))
-            - Difference: $\(String(format: "%.4f", difference)) (\(String(format: "%.2f%%", percentDiff)))
-
-            Binomial tree converges to Black-Scholes as steps increase.
-            """
-        }
-
-        result += """
-
-
-        Method Notes:
-        - Binomial tree: Discrete-time lattice model
-        - \(steps) steps means \(steps) decision points
-        - More steps = more accurate but slower
-        - American options use backward induction to check early exercise
-        """
-
-        return .success(text: result)
-    }
-}
+//public struct BinomialTreeOptionTool: MCPToolHandler, Sendable {
+//    public let tool = MCPTool(
+//        name: "price_binomial_option",
+//        description: """
+//        Price American or European options using binomial tree model. American options can be exercised early, making them more valuable than European options.
+//
+//        Example: Price American put with early exercise
+//        - optionType: "put"
+//        - americanStyle: true
+//        - spotPrice: 100
+//        - strikePrice: 110 (in-the-money put)
+//        - timeToExpiry: 1.0
+//        - riskFreeRate: 0.05
+//        - volatility: 0.25
+//        - steps: 100
+//
+//        Returns option price and early exercise premium.
+//        """,
+//        inputSchema: MCPToolInputSchema(
+//            properties: [
+//                "optionType": MCPSchemaProperty(
+//                    type: "string",
+//                    description: "Type of option",
+//                    enum: ["call", "put"]
+//                ),
+//                "americanStyle": MCPSchemaProperty(
+//                    type: "boolean",
+//                    description: "true for American (early exercise allowed), false for European"
+//                ),
+//                "spotPrice": MCPSchemaProperty(
+//                    type: "number",
+//                    description: "Current price of underlying asset"
+//                ),
+//                "strikePrice": MCPSchemaProperty(
+//                    type: "number",
+//                    description: "Exercise/strike price"
+//                ),
+//                "timeToExpiry": MCPSchemaProperty(
+//                    type: "number",
+//                    description: "Time to expiration in years"
+//                ),
+//                "riskFreeRate": MCPSchemaProperty(
+//                    type: "number",
+//                    description: "Annual risk-free rate as decimal"
+//                ),
+//                "volatility": MCPSchemaProperty(
+//                    type: "number",
+//                    description: "Annual volatility as decimal"
+//                ),
+//                "steps": MCPSchemaProperty(
+//                    type: "integer",
+//                    description: "Number of time steps in the tree (default: 100, more = more accurate)"
+//                )
+//            ],
+//            required: ["optionType", "americanStyle", "spotPrice", "strikePrice", "timeToExpiry", "riskFreeRate", "volatility"]
+//        )
+//    )
+//
+//    public init() {}
+//
+//    public func execute(arguments: [String: AnyCodable]?) async throws -> MCPToolCallResult {
+//        guard let args = arguments else {
+//            throw ToolError.invalidArguments("Missing arguments")
+//        }
+//
+//        let optionTypeString = try args.getString("optionType")
+//        let optionType: OptionType = optionTypeString == "call" ? .call : .put
+//        let americanStyle = try args.getBool("americanStyle")
+//        let spotPrice = try args.getDouble("spotPrice")
+//        let strikePrice = try args.getDouble("strikePrice")
+//        let timeToExpiry = try args.getDouble("timeToExpiry")
+//        let riskFreeRate = try args.getDouble("riskFreeRate")
+//        let volatility = try args.getDouble("volatility")
+//        let steps = args.getIntOptional("steps") ?? 100
+//
+//        // Calculate binomial price
+//        let binomialPrice = BinomialTreeModel<Double>.price(
+//            optionType: optionType,
+//            americanStyle: americanStyle,
+//            spotPrice: spotPrice,
+//            strikePrice: strikePrice,
+//            timeToExpiry: timeToExpiry,
+//            riskFreeRate: riskFreeRate,
+//            volatility: volatility,
+//            steps: steps
+//        )
+//
+//        var result = """
+//        Binomial Tree Option Pricing
+//
+//        Option Details:
+//        - Type: \(optionType == .call ? "Call" : "Put")
+//        - Style: \(americanStyle ? "American" : "European")
+//        - Spot Price: $\(String(format: "%.2f", spotPrice))
+//        - Strike Price: $\(String(format: "%.2f", strikePrice))
+//        - Time to Expiry: \(String(format: "%.2f", timeToExpiry)) years
+//        - Risk-Free Rate: \(String(format: "%.1f%%", riskFreeRate * 100))
+//        - Volatility: \(String(format: "%.1f%%", volatility * 100))
+//        - Tree Steps: \(steps)
+//
+//        Option Value: $\(String(format: "%.4f", binomialPrice))
+//        """
+//
+//        if americanStyle {
+//            // Also calculate European price for comparison
+//            let europeanPrice = BinomialTreeModel<Double>.price(
+//                optionType: optionType,
+//                americanStyle: false,
+//                spotPrice: spotPrice,
+//                strikePrice: strikePrice,
+//                timeToExpiry: timeToExpiry,
+//                riskFreeRate: riskFreeRate,
+//                volatility: volatility,
+//                steps: steps
+//            )
+//
+//            let earlyExercisePremium = binomialPrice - europeanPrice
+//
+//            result += """
+//
+//
+//            Early Exercise Value:
+//            - European Value: $\(String(format: "%.4f", europeanPrice))
+//            - American Value: $\(String(format: "%.4f", binomialPrice))
+//            - Early Exercise Premium: $\(String(format: "%.4f", earlyExercisePremium))
+//
+//            The American option is worth \(String(format: "%.2f%%", (earlyExercisePremium / europeanPrice) * 100)) more
+//            due to the flexibility to exercise early.
+//            """
+//        }
+//
+//        // Compare to Black-Scholes for European
+//        if !americanStyle {
+//            let blackScholesPrice = BlackScholesModel<Double>.price(
+//                optionType: optionType,
+//                spotPrice: spotPrice,
+//                strikePrice: strikePrice,
+//                timeToExpiry: timeToExpiry,
+//                riskFreeRate: riskFreeRate,
+//                volatility: volatility
+//            )
+//
+//            let difference = abs(binomialPrice - blackScholesPrice)
+//            let percentDiff = (difference / blackScholesPrice) * 100
+//
+//            result += """
+//
+//
+//            Comparison to Black-Scholes:
+//            - Binomial: $\(String(format: "%.4f", binomialPrice))
+//            - Black-Scholes: $\(String(format: "%.4f", blackScholesPrice))
+//            - Difference: $\(String(format: "%.4f", difference)) (\(String(format: "%.2f%%", percentDiff)))
+//
+//            Binomial tree converges to Black-Scholes as steps increase.
+//            """
+//        }
+//
+//        result += """
+//
+//
+//        Method Notes:
+//        - Binomial tree: Discrete-time lattice model
+//        - \(steps) steps means \(steps) decision points
+//        - More steps = more accurate but slower
+//        - American options use backward induction to check early exercise
+//        """
+//
+//        return .success(text: result)
+//    }
+//}
 
 // MARK: - Real Options Expansion Tool
 
