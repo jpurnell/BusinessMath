@@ -444,25 +444,25 @@ struct ChiSquaredDistributionTests {
 	
 	@Test("Chi-squared parameter validation")
 	func chiSquaredParameterValidation() {
-		// Test that invalid parameters are handled gracefully
-		// Note: This depends on your implementation's error handling
-
-		let invalidCases: [(df: Int, seeds: [Double], description: String)] = [
-			(0, [0.5, 0.6], "zero degrees of freedom"),
-			(-1, [0.5, 0.6], "negative degrees of freedom"),
-			(5, [], "empty seeds array"),
-			(5, [1.1, 0.5], "seed out of range (should be clamped)")
+		// Test that invalid degrees of freedom return NaN
+		let invalidDFCases: [(df: Int, description: String)] = [
+			(0, "zero degrees of freedom"),
+			(-1, "negative degrees of freedom"),
+			(-10, "large negative degrees of freedom")
 		]
 
-		for testCase in invalidCases {
-			// The behavior here depends on your implementation
-			// You might expect specific errors, NaN, or clamped values
-			let sample: Double = distributionChiSquared(degreesOfFreedom: testCase.df, seeds: testCase.seeds)
-
-			// At minimum, should not crash and should return some value
-			#expect(sample.isFinite || sample.isNaN,
-				   "Should handle \(testCase.description) without crashing")
+		for testCase in invalidDFCases {
+			let sample: Double = distributionChiSquared(degreesOfFreedom: testCase.df, seeds: [0.5, 0.6])
+			#expect(sample.isNaN, "Should return NaN for \(testCase.description)")
 		}
+
+		// Test that valid df with empty seeds array still works (uses random generation)
+		let sampleWithEmptySeeds: Double = distributionChiSquared(degreesOfFreedom: 5, seeds: [])
+		#expect(sampleWithEmptySeeds.isFinite, "Should handle empty seeds array")
+
+		// Test that seeds out of range are handled (this is clamped in implementation)
+		let sampleWithBadSeeds: Double = distributionChiSquared(degreesOfFreedom: 5, seeds: [1.1, 0.5])
+		#expect(sampleWithBadSeeds.isFinite, "Should handle seeds out of range by clamping")
 	}
 	
 	@Test("Chi-squared consistency across repeated calls")

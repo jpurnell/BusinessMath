@@ -45,7 +45,7 @@ import OSLog
 /// - Parameters:
 ///   - df1: The first degrees of freedom parameter (numerator, df1 > 0)
 ///   - df2: The second degrees of freedom parameter (denominator, df2 > 0)
-/// - Returns: A random value sampled from the F(df1, df2) distribution
+/// - Returns: A random value sampled from the F(df1, df2) distribution, or NaN if df1 ≤ 0 or df2 ≤ 0
 ///
 /// ## Example
 ///
@@ -56,28 +56,17 @@ import OSLog
 ///
 /// // Compare variances of two samples
 /// let varianceRatio: Double = distributionF(df1: 10, df2: 15)
+///
+/// // Invalid degrees of freedom returns NaN
+/// let invalid: Double = distributionF(df1: 0, df2: 10)
+/// print(invalid.isNaN)  // true
 /// ```
 @available(macOS 11.0, *)
 public func distributionF<T: Real>(df1: Int, df2: Int, seeds: [Double]? = nil) -> T {
-	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
-//	precondition(df1 > 0, "First degrees of freedom must be positive")
-//	precondition(df2 > 0, "Second degrees of freedom must be positive")
-
-	guard df1 > 0 else {
-			#if DEBUG
-			logger.error("Invalid first degrees of freedom: \(df1). Using default value of 1.")
-			#endif
-			// Use minimum valid value
-			return distributionF(df1: 1, df2: df2, seeds: seeds)
-		}
-
-		guard df2 > 0 else {
-			#if DEBUG
-			logger.error("Invalid second degrees of freedom: \(df2). Using default value of 1.")
-			#endif
-			// Use minimum valid value
-			return distributionF(df1: df1, df2: 1, seeds: seeds)
-		}
+	// F-distribution is undefined for df1 ≤ 0 or df2 ≤ 0
+	guard df1 > 0, df2 > 0 else {
+		return T.nan
+	}
 	
 	// F(df1, df2) = (χ²(df1)/df1) / (χ²(df2)/df2)
 	// where χ²(df) = Gamma(df/2, 2)

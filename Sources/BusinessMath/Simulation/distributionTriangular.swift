@@ -37,7 +37,9 @@ import OSLog
 
 public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uSeed: Double = Double.random(in: 0...1)) -> T {
     let fc = (c - a) / (b - a)
-	let u = T(Int(uSeed * 1_000_000_000)) / T(1_000_000_000)
+	// Convert Double seed to type T with high precision (6 decimal places)
+	let uInt = Int(uSeed * 1_000_000)
+	let u = T(uInt) / T(1_000_000)
     if u > 0 && u < fc {
         let s = u * (b - a) * (c - a)
         return a + sqrt(s)

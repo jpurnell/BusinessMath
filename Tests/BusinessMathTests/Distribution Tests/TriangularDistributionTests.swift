@@ -257,22 +257,22 @@ struct TriangularDistributionTests {
 		let low = 0.0
 		let high = 100.0
 		let base = 60.0
-		let dist = DistributionTriangular(low: low, high: high, base: base)
 
 		let sampleCount = 2000
+		let seeds = Self.seedsForTriangular(count: sampleCount)
 		var samples: [Double] = []
-		for _ in 0..<sampleCount {
-			let sample = dist.next()
+		for i in 0..<sampleCount {
+			let sample = triangularDistribution(low: low, high: high, base: base, seeds[i])
 			samples.append(sample)
 			#expect(sample >= low)
 			#expect(sample <= high)
 			#expect(sample.isFinite)
 		}
 
-		// Verify statistical properties
+		// Verify statistical properties with deterministic seeded values
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
 		let expectedMean = (low + high + base) / 3.0
-		#expect(abs(empiricalMean - expectedMean) < 1.0, "Mean should be close to expected")
+		#expect(abs(empiricalMean - expectedMean) < 0.5, "Mean should be close to expected")
 	}
 
 	@Test("Triangular distribution project estimation use case")
