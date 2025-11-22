@@ -152,7 +152,6 @@ public struct SimulationStatistics: Sendable {
 	/// - Parameter values: Array of Double values
 	/// - Returns: Tuple containing all calculated statistics
 	private static func calculateStatistics(from values: [Double]) -> (mean: Double, median: Double, min: Double, max: Double, variance: Double, stdDev: Double, skewness: Double) {
-		let logger = Logger(subsystem: "com.justinpurnell.businessMath.simulationStatistics", category: #function)
 		// Calculate min and max
 		let minValue = values.min() ?? 0.0
 		let maxValue = values.max() ?? 0.0
