@@ -32,13 +32,13 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Cache SPM build products
-        uses: actions/cache@v4
-        with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
+     # - name: Cache SPM build products
+     #   uses: actions/cache@v4
+     #   with:
+     #     path: .build
+     #     key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+     #     restore-keys: |
+     #       ${{ runner.os }}-spm-
 
       - name: Build (Debug) + tests (macOS)
         run: |
