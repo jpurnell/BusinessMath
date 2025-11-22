@@ -75,6 +75,19 @@ jobs:
       - name: Build (Debug) + tests (macOS, ${{ matrix.engine }})
         run: |
           set -o pipefail
+
+          LOG_D="build-${{ matrix.engine }}-debug.log"
+          LOG_R="build-${{ matrix.engine }}-release.log"
+
+          if ! swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v 2>&1 | tee "$LOG_D"; then
+            echo "===== tail of $LOG_D ====="; tail -n 200 "$LOG_D"; exit 1; fi
+
+          if ! swift test $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a "$LOG_D"; then
+            echo "===== tail of $LOG_D ====="; tail -n 200 "$LOG_D"; exit 1; fi
+
+          if ! swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee "$LOG_R"; then
+            echo "===== tail of $LOG_R ====="; tail -n 200 "$LOG_R"; exit 1; fi
+            
           swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v 2>&1 | tee build-${{ matrix.engine }}-debug.log
           swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a build-${{ matrix.engine }}-debug.log
           swift test  -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee build-${{ matrix.engine }}-release.log
