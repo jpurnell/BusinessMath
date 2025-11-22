@@ -6,9 +6,9 @@ import PackageDescription
 let package = Package(
     name: "BusinessMath",
     platforms: [
-		.iOS(.v12),
-		.macOS(.v12),
-		.tvOS(.v12),
+		.iOS(.v13),
+		.macOS(.v13),
+		.tvOS(.v13),
 		.watchOS(.v6),
 		.visionOS(.v1)
     ],
