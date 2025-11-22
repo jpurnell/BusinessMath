@@ -219,3 +219,105 @@ struct SchemaMigrationTests {
 		}
 	}
 }
+
+@Suite("Additional MigrationManager Tests")
+struct MigrationManagerAdditionalTests {
+	
+	struct M1to2: SchemaMigration {
+		let fromVersion = 1
+		let toVersion = 2
+		let description = "Add x"
+		func migrate(_ data: inout [String: Any]) throws {
+			data["x"] = 1
+		}
+	}
+	
+	struct M2to3: SchemaMigration {
+		let fromVersion = 2
+		let toVersion = 3
+		let description = "Add y"
+		func migrate(_ data: inout [String: Any]) throws {
+			data["y"] = 2
+		}
+	}
+	
+	struct M3to4: SchemaMigration {
+		let fromVersion = 3
+		let toVersion = 4
+		let description = "Add z"
+		func migrate(_ data: inout [String: Any]) throws {
+			data["z"] = 3
+		}
+	}
+	
+	@Test("Migrations can be registered in any order")
+	func registrationOrderIndependence() throws {
+		let manager = MigrationManager()
+			// Intentionally register out of order
+		manager.register(M3to4())
+		manager.register(M1to2())
+		manager.register(M2to3())
+		
+		let data: [String: Any] = ["name": "Acme"]
+		let migrated = try manager.migrate(data: data, from: 1, to: 4)
+		
+		#expect(migrated["x"] as? Int == 1)
+		#expect(migrated["y"] as? Int == 2)
+		#expect(migrated["z"] as? Int == 3)
+		#expect(migrated["name"] as? String == "Acme")
+	}
+	
+	@Test("Downgrades are rejected")
+	func downgradesRejected() throws {
+		let manager = MigrationManager()
+		manager.register(M1to2())
+		
+		do {
+			_ = try manager.migrate(data: [:], from: 2, to: 1)
+			Issue.record("Expected downgrade to be rejected")
+		} catch let MigrationError.noMigrationPath(from, to) {
+				// Either (from: 2, to: 1) or a first missing hop after 2; accept either
+			#expect(from >= to)
+		} catch {
+			Issue.record("Unexpected error: \(error)")
+		}
+	}
+	
+	@Test("Failing migration in the middle of a chain reports failing version")
+		func midChainFailureReportsVersion() throws {
+			struct Failing2to3: SchemaMigration {
+				let fromVersion = 2
+				let toVersion = 3
+				let description = "Always fails"
+				func migrate(_ data: inout [String: Any]) throws {
+					throw MigrationError.migrationFailed(version: 3, reason: "Forced failure")
+				}
+			}
+
+			let manager = MigrationManager()
+			manager.register(M1to2())
+			manager.register(Failing2to3())
+
+			do {
+				_ = try manager.migrate(data: [:], from: 1, to: 3)
+				Issue.record("Expected migration to fail at v3")
+			} catch MigrationError.migrationFailed(let version, let reason) {
+				#expect(version == 3)
+				#expect(reason.contains("Forced"))
+			} catch {
+				Issue.record("Unexpected error: \(error)")
+			}
+		}
+
+		@Test("Same-version migration is a no-op even when migrations exist")
+		func sameVersionIsNoOp() throws {
+			let manager = MigrationManager()
+			manager.register(M1to2())
+
+			let data: [String: Any] = ["a": 1]
+			let migrated = try manager.migrate(data: data, from: 1, to: 1)
+
+			#expect(migrated["a"] as? Int == 1)
+			#expect(migrated.count == data.count)
+		}
+}

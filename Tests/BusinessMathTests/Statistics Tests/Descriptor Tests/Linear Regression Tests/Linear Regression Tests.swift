@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Testing
 import Numerics
 @testable import BusinessMath
 
@@ -59,4 +60,63 @@ final class LinearRegressionTests: XCTestCase {
         let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
         XCTAssertEqual(result, 0.91983)
     }
+}
+
+@Suite("Linear Regression - Properties")
+struct RegressionProperties {
+
+	@Test("Regression line passes through (meanX, meanY)")
+	func regression_passes_through_means() throws {
+		let x = [10.0, 8, 3, 3, 2, 1]
+		let y = [500.0, 400, 7000, 8500, 11000, 10500]
+		let m = try slope(x, y)
+		let b = try intercept(x, y)
+		let mx = mean(x)
+		let my = mean(y)
+		#expect(close(m * mx + b, my, accuracy: 1e-9))
+	}
+
+	@Test("R^2 equals squared correlation for simple linear regression")
+	func rSquared_equals_corr_squared() {
+		let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+		let y = x.map { 2.0 * $0 + 1.0 } // perfect linear
+		let r2 = rSquared(x, y)
+		let r = correlationCoefficient(x, y, .sample)
+		#expect(close(r2, r * r, accuracy: 1e-12))
+		#expect(close(r2, 1.0, accuracy: 1e-12))
+	}
+
+	@Test("rSquared is within [0, 1]")
+	func rSquared_bounds() {
+		let x = [35.56, 43.44, 73.17, 113.0]
+		let y = [44.783, 53.982, 92.141, 135.986]
+		let r2 = rSquared(x, y)
+		#expect(r2 >= -1e-12 && r2 <= 1.0 + 1e-12)
+	}
+
+	@Test("linearRegression function matches slope/intercept")
+	func linearRegression_function_matches_parameters() throws {
+		let x = [10.0, 8, 3, 3, 2, 1]
+		let y = [500.0, 400, 7000, 8500, 11000, 10500]
+		let f = try linearRegression(x, y)
+		let m = try slope(x, y)
+		let b = try intercept(x, y)
+
+		let testX = 4.0
+		let y1 = f(testX)
+		let y2 = m * testX + b
+		#expect(close(y1, y2, accuracy: 1e-9))
+	}
+
+	@Test("multiplyVectors throws on length mismatch")
+	func multiplyVectors_length_mismatch_throws() {
+		do {
+				_ = try multiplyVectors([1.0, 2.0], [10.0])
+				Issue.record("Expected ArrayError.mismatchedLengths")
+			} catch let error as ArrayError {
+				#expect(error == .mismatchedLengths)
+			} catch {
+				Issue.record("Expected ArrayError.mismatchedLengths, got \(error)")
+			}
+	}
 }

@@ -181,7 +181,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 	public func predictWithConfidence(
 		periods: Int,
 		confidenceLevel: T
-	) -> ForecastWithConfidence<T> {
+	) throws -> ForecastWithConfidence<T> {
 		let forecast = predict(periods: periods)
 
 		// Calculate standard error from residuals
@@ -194,6 +194,10 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 		let level99 = T(99) / T(100)  // 0.99
 		let level95 = T(95) / T(100)  // 0.95
 		let level90 = T(9) / T(10)    // 0.90
+		
+		guard confidenceLevel <= T(1) else {
+			throw ForecastError.invalidConfidenceLevel
+		}
 
 		if confidenceLevel >= level99 {
 			zScore = T(2576) / T(1000)  // 2.576

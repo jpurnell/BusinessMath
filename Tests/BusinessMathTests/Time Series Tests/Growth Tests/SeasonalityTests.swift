@@ -429,4 +429,42 @@ struct SeasonalityTests {
 		#expect(decomposition.seasonal.metadata.name.contains("Seasonal"))
 		#expect(decomposition.residual.metadata.name.contains("Residual"))
 	}
+	
+	@Test("Seasonal indices are scale invariant")
+		func seasonalIndicesScaleInvariant() throws {
+			let values = [100.0, 120.0, 80.0, 100.0,
+						  110.0, 132.0, 88.0, 110.0]
+			func series(mult: Double) -> TimeSeries<Double> {
+				let periods = (0..<values.count).map { Period.quarter(year: 2024 + $0/4, quarter: ($0 % 4) + 1) }
+				return TimeSeries(periods: periods, values: values.map { $0 * mult })
+			}
+			let idx1 = try seasonalIndices(timeSeries: series(mult: 1.0), periodsPerYear: 4)
+			let idx2 = try seasonalIndices(timeSeries: series(mult: 7.3), periodsPerYear: 4)
+			#expect(idx1.count == idx2.count)
+			for (a,b) in zip(idx1, idx2) {
+				#expect(abs(a - b) < 0.01)
+			}
+		}
+
+		@Test("Seasonal indices with partial trailing year are stable")
+		func seasonalIndicesPartialTrailingYear() throws {
+			// 2 full years + 1 quarter of pattern
+			let valsFull3Y = [
+				100.0, 120.0, 80.0, 100.0,
+				110.0, 132.0, 88.0, 110.0,
+				121.0, 145.2, 96.8, 121.0
+			]
+			let vals2YPlusQ1 = Array(valsFull3Y.prefix(9)) // 2 years + Q1
+			func ts(_ vals: [Double]) -> TimeSeries<Double> {
+				let periods = (0..<vals.count).map { Period.quarter(year: 2024 + $0/4, quarter: ($0 % 4) + 1) }
+				return TimeSeries(periods: periods, values: vals)
+			}
+			let idxFull = try seasonalIndices(timeSeries: ts(valsFull3Y), periodsPerYear: 4)
+			let idxPartial = try seasonalIndices(timeSeries: ts(vals2YPlusQ1), periodsPerYear: 4)
+			#expect(idxFull.count == 4 && idxPartial.count == 4)
+			// Indices should be close even with incomplete last year
+			for (a,b) in zip(idxFull, idxPartial) {
+				#expect(abs(a - b) < 0.05)
+			}
+		}
 }

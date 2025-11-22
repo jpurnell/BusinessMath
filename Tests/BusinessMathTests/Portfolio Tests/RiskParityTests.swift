@@ -136,3 +136,51 @@ struct RiskParityTests {
 		#expect(abs(allocation.weights[0] - 1.0) < 0.01)
 	}
 }
+
+@Suite("Risk Parity Deterministic Tests")
+struct RiskParityDeterministicTests {
+
+	// Construct two assets with zero covariance and known volatilities
+	// Asset1 returns: [ +2, -2, +2, -2 ]%
+	// Asset2 returns: [ +1, +1, -1, -1 ]%
+	// Means are ~ 0, covariance = 0 exactly with this pattern.
+	private func zeroCovarianceReturns() -> (assets: [String], rets: [TimeSeries<Double>]) {
+		let periods = (0..<4).map { Period.month(year: 2024, month: $0 + 1) }
+		let a = [0.02, -0.02, 0.02, -0.02]
+		let b = [0.01, 0.01, -0.01, -0.01]
+		return (["HighVol","LowVol"], [
+			TimeSeries(periods: periods, values: a),
+			TimeSeries(periods: periods, values: b)
+		])
+	}
+
+	@Test("x")
+	func inverseVolWeights() throws {
+		let (assets, timeSeries) = zeroCovarianceReturns()
+		let optimizer = RiskParityOptimizer<Double>()
+		let alloc = optimizer.optimize(assets: assets, returns: timeSeries)
+
+		// Expected: w1/w2 = sigma2/sigma1; normalized: w1 = sigma2 / (sigma1 + sigma2)
+		let s1 = stdDev(timeSeries[0].valuesArray)
+		let s2 = stdDev(timeSeries[1].valuesArray)
+		let expectedW1 = s2 / (s1 + s2)
+		let expectedW2 = s1 / (s1 + s2)
+
+		#expect(alloc.weights.count == 2)
+		#expect(abs(alloc.weights[0] - expectedW1) < 0.10,
+				"Weights should roughly match inverse-vol in the diagonal covariance case.")
+		#expect(abs(alloc.weights[1] - expectedW2) < 0.10)
+		#expect(abs(alloc.weights.reduce(0, +) - 1.0) < 0.01)
+	}
+
+	@Test("Higher-vol asset receives less weight than lower-vol asset")
+	func highVolGetsLess() throws {
+		let (assets, rets) = zeroCovarianceReturns()
+		let optimizer = RiskParityOptimizer<Double>()
+		let alloc = optimizer.optimize(assets: assets, returns: rets)
+
+		// Asset 0 has higher volatility than asset 1 with our construction
+		#expect(alloc.weights[0] < alloc.weights[1],
+				"Higher volatility asset should have lower weight in risk parity.")
+	}
+}

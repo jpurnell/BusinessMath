@@ -86,7 +86,7 @@ struct HoltWintersTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predictWithConfidence(periods: 12, confidenceLevel: 0.95)
+		let forecast = try model.predictWithConfidence(periods: 12, confidenceLevel: 0.95)
 
 		#expect(forecast.forecast.periods.count == 12)
 		#expect(forecast.lowerBound.periods.count == 12)
@@ -111,9 +111,9 @@ struct HoltWintersTests {
 
 		try model.train(on: data)
 
-		let forecast90 = model.predictWithConfidence(periods: 6, confidenceLevel: 0.90)
-		let forecast95 = model.predictWithConfidence(periods: 6, confidenceLevel: 0.95)
-		let forecast99 = model.predictWithConfidence(periods: 6, confidenceLevel: 0.99)
+		let forecast90 = try model.predictWithConfidence(periods: 6, confidenceLevel: 0.90)
+		let forecast95 = try model.predictWithConfidence(periods: 6, confidenceLevel: 0.95)
+		let forecast99 = try model.predictWithConfidence(periods: 6, confidenceLevel: 0.99)
 
 		// 99% interval should be wider than 95% which should be wider than 90%
 		for i in 0..<6 {
@@ -196,6 +196,117 @@ struct HoltWintersTests {
 		// Forecast should be close to 100
 		for value in forecast.valuesArray {
 			#expect(abs(value - 100.0) < 10.0)
+		}
+	}
+}
+
+@Suite("Additional Holt-Winters Tests")
+struct AdditionalHoltWintersTests {
+
+	private func makeTrendSeasonalData() -> TimeSeries<Double> {
+		var periods: [Period] = []
+		var values: [Double] = []
+		for year in 2020...2023 {
+			for month in 1...12 {
+				let p = Period.month(year: year, month: month)
+				periods.append(p)
+				let base = Double(100 + (year - 2020) * 12 + month)
+				let seasonal = (10...12).contains(month) ? 20.0 : 0.0
+				values.append(base + seasonal)
+			}
+		}
+		return TimeSeries(periods: periods, values: values)
+	}
+
+	@Test("Forecast periods are contiguous after training series")
+	func forecastPeriodsContiguous() throws {
+		var model = HoltWintersModel<Double>(seasonalPeriods: 12)
+		let data = makeTrendSeasonalData()
+		try model.train(on: data)
+
+		let forecast = model.predict(periods: 3)
+		let expectedPeriods = [Period.month(year: 2024, month: 1),
+							   Period.month(year: 2024, month: 2),
+							   Period.month(year: 2024, month: 3)]
+		#expect(forecast.periods == expectedPeriods)
+	}
+
+	@Test("Seasonality is captured across full non-Q4 months vs Q4")
+	func seasonalityStrength() throws {
+		var model = HoltWintersModel<Double>(seasonalPeriods: 12)
+		let data = makeTrendSeasonalData()
+		try model.train(on: data)
+
+		let forecast = model.predict(periods: 24)
+		// Focus on second forecast year for stability
+		let year2 = Array(forecast.valuesArray[12..<24])
+		let q4 = [year2[9], year2[10], year2[11]]
+		let nonQ4 = Array(year2[0..<9])
+
+		let avgQ4 = mean(q4)
+		let avgNonQ4 = mean(nonQ4)
+		#expect(avgQ4 > avgNonQ4)
+	}
+
+	@Test("Backtest: one-season-ahead accuracy on synthetic data")
+	func backtestOneSeasonAhead() throws {
+		var model = HoltWintersModel<Double>(seasonalPeriods: 12)
+		let full = makeTrendSeasonalData()
+		// Train on first 36 months (2020–2022), test on 2023
+		let train = TimeSeries(
+			periods: Array(full.periods[0..<36]),
+			values: Array(full.valuesArray[0..<36])
+		)
+		let test = TimeSeries(
+			periods: Array(full.periods[36..<48]),
+			values: Array(full.valuesArray[36..<48])
+		)
+
+		try model.train(on: train)
+		let fc = model.predict(periods: 12)
+		#expect(fc.periods == test.periods)
+
+		// MAPE on synthetic data should be reasonably low
+		var apeSum = 0.0
+		for i in 0..<12 {
+			let actual = test.valuesArray[i]
+			let pred = fc.valuesArray[i]
+			// Avoid division by zero; actual is > 0 in our data
+			apeSum += abs(actual - pred) / actual
+		}
+		let mape = apeSum / 12.0
+		#expect(mape < 0.05) // 5% tolerance on clean synthetic data
+	}
+
+	@Test("Confidence interval width non-decreasing with horizon")
+	func ciWidthByHorizon() throws {
+		var model = HoltWintersModel<Double>(seasonalPeriods: 12)
+		let data = makeTrendSeasonalData()
+		try model.train(on: data)
+
+		let fc = try model.predictWithConfidence(periods: 12, confidenceLevel: 0.95)
+		let widths = zip(fc.lowerBound.valuesArray, fc.upperBound.valuesArray).map { $1 - $0 }
+
+		// Width should not shrink sharply with horizon; allow minor noise but enforce non-decreasing in aggregate
+		#expect(widths.first! <= widths.last!)
+	}
+
+	@Test("Invalid confidence level throws")
+	func invalidConfidenceLevel() throws {
+		var model = HoltWintersModel<Double>(seasonalPeriods: 12)
+		let data = makeTrendSeasonalData()
+		let confidenceLevel = 1.5
+		try model.train(on: data)
+
+		do {
+			_ = try model.predictWithConfidence(periods: 6, confidenceLevel: confidenceLevel)
+		} catch let error as ForecastError {
+			switch error {
+				case .invalidConfidenceLevel:
+					#expect(true)
+				default:
+					Issue.record("Should have thrown for invalid confidenceLevel > 1")
+			}
 		}
 	}
 }

@@ -164,4 +164,84 @@ struct CSVExportTests {
 			#expect(abs(imported.valuesArray[i] - original.valuesArray[i]) < 0.01)
 		}
 	}
+	
+	@Test("Export long format - strict header and row order")
+	func exportLongFormat_strict() throws {
+			let periods = [
+					Period.quarter(year: 2024, quarter: 1), // 2024-01-01
+					Period.quarter(year: 2024, quarter: 2), // 2024-04-01
+					Period.quarter(year: 2024, quarter: 3)  // 2024-07-01
+			]
+			let values: [Double] = [100_000, 110_000, 120_000]
+			let ts = TimeSeries(periods: periods, values: values)
+
+			let fileURL = createTempURL()
+			defer { try? FileManager.default.removeItem(at: fileURL) }
+
+			try CSVExporter().exportTimeSeries(ts, to: fileURL, config: .init(layout: .long))
+
+			let content = try readCSV(fileURL)
+			let lines = content.split(whereSeparator: \.isNewline).map(String.init)
+			#expect(lines.count == 4)
+
+			#expect(lines[0] == "Period,Value")
+
+			// Helper to normalize numeric text (strip thousands separators, keep '.' decimal)
+			func parseNumeric(_ s: String) -> Double? {
+					let normalized = s.replacingOccurrences(of: ",", with: "")
+					return Double(normalized)
+			}
+
+			let expected = [
+					("2024-01-01", 100_000.0),
+					("2024-04-01", 110_000.0),
+					("2024-07-01", 120_000.0)
+			]
+
+			for i in 1..<lines.count {
+					let cols = lines[i].split(separator: ",").map(String.init)
+					#expect(cols.count == 2)
+					#expect(cols[0] == expected[i-1].0)
+					let parsed = parseNumeric(cols[1])
+					#expect(parsed != nil && abs(parsed! - expected[i-1].1) < 0.01)
+			}
+	}
+
+	@Test("Export multiple time series - header order alphabetical and aligned rows")
+	func exportMultipleSeries_orderAndAlignment() throws {
+			let periods = [
+					Period.quarter(year: 2024, quarter: 1), // 2024-01-01
+					Period.quarter(year: 2024, quarter: 2)  // 2024-04-01
+			]
+			let revenue = TimeSeries(periods: periods, values: [100_000, 110_000])
+			let costs = TimeSeries(periods: periods, values: [60_000, 65_000])
+
+			let series = ["Revenue": revenue, "Costs": costs]
+
+			let fileURL = createTempURL()
+			defer { try? FileManager.default.removeItem(at: fileURL) }
+
+			try CSVExporter().exportMultipleTimeSeries(series, to: fileURL)
+
+			let content = try readCSV(fileURL)
+			let lines = content.split(whereSeparator: \.isNewline).map(String.init)
+			#expect(lines.count == 3)
+
+			let header = lines[0].split(separator: ",").map(String.init)
+			#expect(header == ["Period", "Costs", "Revenue"], "Expect alphabetical order after Period")
+
+			let row1 = lines[1].split(separator: ",").map(String.init)
+			let row2 = lines[2].split(separator: ",").map(String.init)
+
+			func parse(_ s: String) -> Double? {
+					Double(s.replacingOccurrences(of: ",", with: ""))
+			}
+
+			#expect(row1.count == 3 && row1[0] == "2024-01-01")
+			#expect(parse(row1[1]) == 60_000 && parse(row1[2]) == 100_000)
+
+			#expect(row2.count == 3 && row2[0] == "2024-04-01")
+			#expect(parse(row2[1]) == 65_000 && parse(row2[2]) == 110_000)
+	}
+
 }

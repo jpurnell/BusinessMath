@@ -260,3 +260,52 @@ struct PortfolioTests {
 		#expect(abs(optimal.weights[0] - 1.0) < 0.01)
 	}
 }
+
+@Suite("Deterministic Portfolio Tests")
+struct PortfolioDeterministicTests {
+
+	// Two-asset, constant returns: 10% and 5% annualized (monthly rates)
+	private func twoAssetConstant() -> (assets: [String], returns: [TimeSeries<Double>]) {
+		let periods = (0..<12).map { Period.month(year: 2024, month: $0 + 1) }
+		let a = Array(repeating: 0.10 / 12.0, count: 12)
+		let b = Array(repeating: 0.05 / 12.0, count: 12)
+		return (["A","B"], [TimeSeries(periods: periods, values: a),
+							TimeSeries(periods: periods, values: b)])
+	}
+
+	@Test("Sharpe ratio is finite and non-NaN")
+	func sharpeFinite() throws {
+		let (assets, rets) = twoAssetConstant()
+		let portfolio = Portfolio(assets: assets, returns: rets, riskFreeRate: 0.0)
+		let sharpe = portfolio.sharpeRatio(weights: [0.5, 0.5])
+		#expect(sharpe.isFinite, "Sharpe ratio should be finite for deterministic constant returns.")
+	}
+
+	@Test("Efficient frontier has non-decreasing expected returns (two assets, constant)")
+	func frontierMonotonicReturn() throws {
+		let (assets, rets) = twoAssetConstant()
+		let portfolio = Portfolio(assets: assets, returns: rets)
+
+		let frontier = portfolio.efficientFrontier(points: 10)
+		#expect(frontier.count > 1)
+		// Check monotonic non-decreasing expected return
+		for i in 1..<frontier.count {
+			#expect(frontier[i].expectedReturn + 1e-12 >= frontier[i - 1].expectedReturn,
+					"Expected return should be non-decreasing along the frontier.")
+		}
+	}
+
+	@Test("Optimizer beats equal weights on simple two-asset constant case")
+	func optimizerBeatsEqualWeights() throws {
+		let (assets, rets) = twoAssetConstant()
+		let portfolio = Portfolio(assets: assets, returns: rets, riskFreeRate: 0.0)
+
+		let optimal = portfolio.optimizePortfolio()
+		let equalSharpe = portfolio.sharpeRatio(weights: [0.5, 0.5])
+
+		#expect(optimal.assets.count == assets.count)
+		#expect(optimal.weights.count == assets.count)
+		#expect(optimal.sharpeRatio >= equalSharpe - 1e-6,
+				"Optimal portfolio should have Sharpe at least as high as equal weights in this deterministic case.")
+	}
+}

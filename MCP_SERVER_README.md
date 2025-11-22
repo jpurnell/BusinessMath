@@ -8,7 +8,7 @@ The Model Context Protocol (MCP) is a standard protocol that allows AI assistant
 
 ## Features
 
-The BusinessMath MCP Server provides **43 tools** across six main categories:
+The BusinessMath MCP Server provides **118 tools** across six main categories:
 
 ### Time Value of Money (TVM) Tools (9 tools)
 
@@ -107,7 +107,7 @@ Add the server to your Claude Desktop configuration file:
 1. Restart Claude Desktop
 2. Look for the MCP server icon (🔌) in Claude's interface
 3. The BusinessMath server should appear in the list of available servers
-4. You should see 43 tools available
+4. You should see 118 tools available
 
 ## Usage Examples
 
@@ -406,7 +406,7 @@ For issues or questions:
 
 ---
 
-**Version**: 1.2.0 (43 tools)
+**Version**: 1.2.0 (118 tools)
 **Last Updated**: October 29, 2024
 
 ## Changelog
@@ -414,7 +414,7 @@ For issues or questions:
 ### Version 1.2.0 (October 29, 2024)
 - ✨ Added 7 Statistical Analysis tools (correlation, regression, covariance, confidence intervals, z-scores)
 - ✨ Added 7 Monte Carlo Simulation tools (distributions, simulation, VaR, sensitivity, tornado analysis)
-- 📈 Total tools increased from 29 → 43 tools
+- 📈 Total tools increased from 29 → 118 tools
 - 🎯 Comprehensive risk analysis and probabilistic modeling capabilities
 - 📝 New usage examples for statistical and simulation workflows
 

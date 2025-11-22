@@ -464,4 +464,31 @@ struct AccountTests {
 		#expect(description.contains("Product Revenue"))
 		#expect(description.contains("revenue"))
 	}
+	
+	@Suite("Hashability Semantics Tests")
+	struct HashabilitySemanticsTests {
+
+		@Test("Entities with same ID behave as one in a Set")
+		func entitySetUniqueness() {
+			let e1 = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
+			let e2 = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Corporation")
+			var set: Set<Entity> = []
+			set.insert(e1)
+			set.insert(e2)
+			#expect(set.count == 1, "Equal entities should not duplicate in a Set")
+		}
+
+		@Test("Accounts with same identity behave as one in a Set")
+		func accountSetUniqueness() throws {
+			let entity = Entity(id: "TEST", primaryType: .internal, name: "Test Co")
+			let periods = [Period.quarter(year: 2025, quarter: 1)]
+			let ts = TimeSeries(periods: periods, values: [100.0])
+			let a1 = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: ts)
+			let a2 = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: ts)
+			var set: Set<Account<Double>> = []
+			set.insert(a1)
+			set.insert(a2)
+			#expect(set.count == 1, "Equal accounts should not duplicate in a Set")
+		}
+	}
 }

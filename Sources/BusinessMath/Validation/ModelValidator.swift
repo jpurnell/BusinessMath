@@ -198,8 +198,8 @@ public struct ModelValidator<T> where T: Real & Sendable & Codable & Comparable 
 		} else {
 			emoji = "✅"
 		}
-
-		let summary = "\(emoji) Validation \(isValid ? "PASSED" : "FAILED") - \(allErrors.count) errors, \(allWarnings.count) warnings"
+		let scenarioName = projection.scenario.name
+		let summary = "\(emoji) [\(scenarioName)] Validation \(isValid ? "PASSED" : "FAILED") - \(allErrors.count) errors, \(allWarnings.count) warnings"
 
 		return ValidationReport(
 			isValid: isValid,

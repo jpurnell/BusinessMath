@@ -43,11 +43,8 @@ struct PerformanceTests {
 		let duration = measure {
 			// Use monthly periods (more realistic for business data and faster)
 			let periods = (0..<size).map { (Period.month(year: 2000 + $0/12, month: ($0 % 12) + 1), Double($0)) }
-//			let values = (0..<size).map { print ("\(Double($0))"); return $0 }
 			let _ = TimeSeries(periods: periods.map({$0.0}), values: periods.map({Double($0.1)}))
 		}
-
-		print("  Created 10K period time series in \(String(format: "%.3f", duration))s")
 		#expect(duration < 30.0, "Should create 10K time series in reasonable time")
 	}
 
@@ -71,7 +68,6 @@ struct PerformanceTests {
 			let _ = TimeSeries(periods: periods, values: values)
 		}
 
-		print("  Created 50K period time series in \(String(format: "%.3f", duration))s")
 		#expect(duration < 70.0, "Should create 50K time series in reasonable time")
 	}
 
@@ -90,7 +86,6 @@ struct PerformanceTests {
 			}
 		}
 
-		print("  1000 random accesses in 10K time series: \(String(format: "%.3f", duration))s")
 		#expect(duration < 1.0, "Should be fast (O(1) dictionary lookup)")
 	}
 
@@ -108,7 +103,6 @@ struct PerformanceTests {
 			}
 		}
 
-		print("  Iterated 10K time series in \(String(format: "%.3f", duration))s")
 		#expect(duration < 5.0, "Should iterate reasonably quickly")
 	}
 
@@ -130,7 +124,6 @@ struct PerformanceTests {
 				.filterValues { !$0.isNaN }  // Remove NaN
 		}
 
-		print("  Chained 4 operations on 5K time series: \(String(format: "%.3f", duration))s")
 		#expect(duration < 50.0, "Chained operations should complete in reasonable time")
 	}
 
@@ -145,7 +138,6 @@ struct PerformanceTests {
 			let _ = ts.movingAverage(window: 12)  // 12-month MA
 		}
 
-		print("  12-month MA on 10K series: \(String(format: "%.3f", duration))s")
 		#expect(duration < 60.0, "Moving average should complete in reasonable time")
 	}
 
@@ -160,7 +152,6 @@ struct PerformanceTests {
 			let _ = ts.exponentialMovingAverage(alpha: 0.3)
 		}
 
-		print("  EMA on 10K series: \(String(format: "%.3f", duration))s")
 		#expect(duration < 25.0, "EMA should complete in reasonable time")
 	}
 
@@ -175,8 +166,6 @@ struct PerformanceTests {
 				let _ = npv(discountRate: 0.10, cashFlows: cashFlows)
 			}
 		}
-
-		print("  1000 NPV calculations (100 cash flows each): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "NPV should be very fast")
 	}
 
@@ -189,8 +178,6 @@ struct PerformanceTests {
 				let _ = npv(discountRate: 0.10, cashFlows: cashFlows)
 			}
 		}
-
-		print("  100 NPV calculations (1000 cash flows each): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "NPV should scale well")
 	}
 
@@ -205,8 +192,6 @@ struct PerformanceTests {
 				let _ = try? irr(cashFlows: cashFlows)
 			}
 		}
-
-		print("  100 IRR calculations (10 cash flows each): \(String(format: "%.3f", duration))s")
 		#expect(duration < 1.0, "IRR should converge quickly for simple cases")
 	}
 
@@ -219,8 +204,6 @@ struct PerformanceTests {
 				let _ = try? irr(cashFlows: cashFlows)
 			}
 		}
-
-		print("  50 IRR calculations (50 cash flows each): \(String(format: "%.3f", duration))s")
 		#expect(duration < 2.0, "IRR should handle larger arrays reasonably")
 	}
 
@@ -237,8 +220,6 @@ struct PerformanceTests {
 				let _ = try? xirr(dates: dates, cashFlows: cashFlows)
 			}
 		}
-
-		print("  50 XIRR calculations (20 dates each): \(String(format: "%.3f", duration))s")
 		#expect(duration < 3.0, "XIRR with date calculations should be reasonable")
 	}
 
@@ -253,8 +234,6 @@ struct PerformanceTests {
 				let _ = try? xnpv(rate: 0.12, dates: dates, cashFlows: cashFlows)
 			}
 		}
-
-		print("  100 XNPV calculations (100 dates each): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "XNPV should be fast")
 	}
 
@@ -272,8 +251,6 @@ struct PerformanceTests {
 		let duration = try measure {
 			try model.fit(to: ts)
 		}
-
-		print("  Linear trend fit (1000 points): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "Trend fitting should be fast")
 	}
 
@@ -290,8 +267,6 @@ struct PerformanceTests {
 		let duration = try measure {
 			let _ = try model.project(periods: 1000)
 		}
-
-		print("  Linear trend project 1000 periods: \(String(format: "%.3f", duration))s")
 		#expect(duration < 3.0, "Projection should complete in reasonable time")
 	}
 
@@ -307,8 +282,6 @@ struct PerformanceTests {
 		let duration = try measure {
 			try model.fit(to: ts)
 		}
-
-		print("  Exponential trend fit (500 points): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "Exponential trend should fit quickly")
 	}
 
@@ -325,8 +298,6 @@ struct PerformanceTests {
 		let duration = try measure {
 			try model.fit(to: ts)
 		}
-
-		print("  Logistic trend fit (300 points): \(String(format: "%.3f", duration))s")
 		#expect(duration < 1.0, "Logistic trend should fit reasonably")
 	}
 
@@ -349,8 +320,6 @@ struct PerformanceTests {
 		let duration = try measure {
 			let _ = try seasonalIndices(timeSeries: ts, periodsPerYear: 12)
 		}
-
-		print("  Seasonal indices (120 months): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "Seasonal calculation should be efficient")
 	}
 
@@ -370,8 +339,6 @@ struct PerformanceTests {
 		let duration = try measure {
 			let _ = try seasonallyAdjust(timeSeries: ts, indices: indices)
 		}
-
-		print("  Seasonal adjustment (120 months): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "Adjustment should be reasonably fast")
 	}
 
@@ -389,8 +356,6 @@ struct PerformanceTests {
 		let duration = try measure {
 			let _ = try decomposeTimeSeries(timeSeries: ts, periodsPerYear: 4, method: .multiplicative)
 		}
-
-		print("  Time series decomposition (40 quarters): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "Decomposition should complete quickly")
 	}
 
@@ -425,8 +390,6 @@ struct PerformanceTests {
 			// 5. Reapply seasonality
 			return try applySeasonal(timeSeries: forecast, indices: indices)
 		}
-
-		print("  Complete forecast workflow (36→12 months): \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.5, "End-to-end workflow should be fast")
 	}
 
@@ -443,8 +406,6 @@ struct PerformanceTests {
 			let _ = paybackPeriod(cashFlows: cashFlows)
 			let _ = discountedPaybackPeriod(rate: rate, cashFlows: cashFlows)
 		}
-
-		print("  Complete investment analysis: \(String(format: "%.3f", duration))s")
 		#expect(duration < 0.1, "Investment analysis should be quick")
 	}
 
@@ -480,8 +441,6 @@ struct PerformanceTests {
 			let totalCount = series.reduce(0) { $0 + $1.count }
 			#expect(totalCount == size * 10)
 		}
-
-		print("  Created 10 × 10K time series: \(String(format: "%.3f", duration))s")
 		#expect(duration < 100.0, "Should handle multiple large series")
 	}
 }

@@ -189,3 +189,15 @@ struct BinomialTreeTests {
 		#expect(diff < fewSteps * 0.1)  // Within 10%
 	}
 }
+
+@Suite("Binomial Tree Additional Tests")
+struct BinomialTreeAdditionalTests {
+
+	@Test("Binomial converges to BS within 1% at high steps")
+	func tightConvergence() {
+		let S = 100.0, K = 100.0, T = 1.0, r = 0.05, v = 0.20
+		let bs = BlackScholesModel<Double>.price(optionType: .call, spotPrice: S, strikePrice: K, timeToExpiry: T, riskFreeRate: r, volatility: v)
+		let bin = BinomialTreeModel<Double>.price(optionType: .call, americanStyle: false, spotPrice: S, strikePrice: K, timeToExpiry: T, riskFreeRate: r, volatility: v, steps: 500)
+		#expect(abs(bin - bs) / bs < 0.01)
+	}
+}

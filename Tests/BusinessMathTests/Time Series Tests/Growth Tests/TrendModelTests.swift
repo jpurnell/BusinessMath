@@ -377,4 +377,45 @@ struct TrendModelTests {
 		#expect(lastValue > 70.0)  // Close to capacity
 		#expect(lastValue < 80.0)  // But not exceeding
 	}
+	
+	@Test("LinearTrend is shift invariant (adds constant to projections)")
+		func linearTrendShiftInvariant() throws {
+			let base = [10.0, 12.0, 14.0, 16.0]
+			let shift = 100.0
+			func ts(_ vals: [Double]) -> TimeSeries<Double> {
+				let periods = (0..<vals.count).map { Period.year(2020 + $0) }
+				return TimeSeries(periods: periods, values: vals)
+			}
+			var m1 = LinearTrend<Double>()
+			try m1.fit(to: ts(base))
+			let p1 = try m1.project(periods: 3)
+
+			var m2 = LinearTrend<Double>()
+			try m2.fit(to: ts(base.map { $0 + shift }))
+			let p2 = try m2.project(periods: 3)
+
+			#expect(p1.count == p2.count)
+			for (a,b) in zip(p1.valuesArray, p2.valuesArray) {
+				#expect(abs((a + shift) - b) < 1e-3)
+			}
+		}
+
+		@Test("ExponentialTrend is scale invariant (projections scale)")
+		func exponentialTrendScaleInvariant() throws {
+			let base = [100.0, 120.0, 144.0, 172.8]
+			let scale = 5.0
+			func ts(_ vals: [Double]) -> TimeSeries<Double> {
+				let periods = (0..<vals.count).map { Period.year(2020 + $0) }
+				return TimeSeries(periods: periods, values: vals)
+			}
+			var m1 = ExponentialTrend<Double>()
+			try m1.fit(to: ts(base))
+			let f1 = try m1.project(periods: 1).valuesArray[0]
+
+			var m2 = ExponentialTrend<Double>()
+			try m2.fit(to: ts(base.map { $0 * scale }))
+			let f2 = try m2.project(periods: 1).valuesArray[0]
+
+			#expect(abs((f1 * scale) - f2) / f2 < 1e-3)
+		}
 }

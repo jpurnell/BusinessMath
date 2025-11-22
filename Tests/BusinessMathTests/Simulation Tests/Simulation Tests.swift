@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Testing
 import Numerics
 @testable import BusinessMath
 import OSLog
@@ -141,3 +142,164 @@ final class SimulationTests: XCTestCase {
 	}
 }
 
+// Helpers
+private func mean(_ xs: [Double]) -> Double {
+	guard !xs.isEmpty else { return .nan }
+	return xs.reduce(0, +) / Double(xs.count)
+}
+
+private func stdDev(_ xs: [Double]) -> Double {
+	let m = mean(xs)
+	let v = xs.reduce(0) { $0 + ($1 - m) * ($1 - m) } / Double(xs.count - 1)
+	return sqrt(v)
+}
+
+@Suite("Normal distribution")
+struct NormalDistributionTests_SwiftTesting {
+
+	@Test("Standard normal moments within reasonable tolerance")
+	func standardNormalMoments() {
+		let n = 5_000
+		var xs = [Double]()
+		xs.reserveCapacity(n)
+		for _ in 0..<n {
+			xs.append(distributionNormal(mean: 0, stdDev: 1))
+		}
+		let m = mean(xs)
+		let s = stdDev(xs)
+
+		// For mean: 3σ bound ≈ 3 / sqrt(n)
+		let meanTol = 3.0 / sqrt(Double(n)) // ~0.042
+		#expect(abs(m - 0.0) <= meanTol)
+
+		// For std dev: accept ±10% to avoid flakiness without a seed
+		#expect(abs(s - 1.0) <= 0.10)
+	}
+
+	@Test("Non-standard normal parameters honored")
+	func shiftedScaledNormal() {
+		let n = 5_000
+		let mu = 2.5
+		let sd = 3.0
+		var xs = [Double]()
+		for _ in 0..<n {
+			xs.append(distributionNormal(mean: mu, stdDev: sd))
+		}
+		let m = mean(xs)
+		let s = stdDev(xs)
+
+		let meanTol = 3.0 * sd / sqrt(Double(n)) // 3σ bound on mean
+		#expect(abs(m - mu) <= meanTol)
+
+		// sd estimate tolerance (10%) for unseeded tests
+		#expect(abs(s - sd) <= 0.10 * sd)
+	}
+
+	@Test("Degenerate normal with stdDev = 0 returns the mean")
+	func degenerateNormal() {
+		for mu in [-10.0, 0.0, 1.2345] {
+			let x = distributionNormal(mean: mu, stdDev: 0)
+			#expect(x == mu)
+		}
+	}
+}
+
+@Suite("Uniform distribution")
+struct UniformDistributionTests {
+
+	@Test("Uniform(min==max) returns that bound")
+	func degenerateUniform() {
+		#expect(distributionUniform(min: 0, max: 0) == 0)
+		#expect(distributionUniform(min: 1, max: 1) == 1)
+	}
+
+	@Test("Uniform(min,max) stays within bounds and moments are reasonable")
+	func boundedUniformBasic() {
+		let minVal = 2.0, maxVal = 40.0
+		let n = 10_000
+		var xs = [Double]()
+		xs.reserveCapacity(n)
+
+		for _ in 0..<n {
+			let x = distributionUniform(min: minVal, max: maxVal)
+			#expect(x >= minVal && x <= maxVal)
+			xs.append(x)
+		}
+
+		// Moment checks
+		let expectedMean = (minVal + maxVal) / 2.0
+		let expectedStd = (maxVal - minVal) / sqrt(12.0)
+
+		let m = mean(xs)
+		let s = stdDev(xs)
+
+		// 3σ bound on mean: 3*σ/sqrt(n)
+		let meanTol = 3.0 * expectedStd / sqrt(Double(n))
+		#expect(abs(m - expectedMean) <= meanTol)
+
+		// Accept ±10% on sd without a seed
+		#expect(abs(s - expectedStd) <= 0.10 * expectedStd)
+	}
+
+	@Test("Default uniform() produces values in [0,1]")
+	func defaultUniformRange() {
+		let n = 5_000
+		for _ in 0..<n {
+			let x: Double = distributionUniform()
+			#expect(x >= 0.0 && x <= 1.0)
+		}
+	}
+}
+
+@Suite("Triangular distribution")
+struct TriangularDistributionTests_Additional {
+
+	@Test("Probability of X ≤ c equals (c − a) / (b − a)")
+	func cdfAtModeMatchesTheory() {
+		let a = 0.6, b = 1.0, c = 0.7
+		let n = 20_000
+		var countUnderC = 0
+
+		for _ in 0..<n {
+			let x = triangularDistribution(low: a, high: b, base: c, distributionUniform())
+			if x <= c { countUnderC += 1 }
+		}
+
+		let p = (c - a) / (b - a)
+		let observed = Double(countUnderC) / Double(n)
+
+		// Binomial normal approximation: ±3 sqrt(p(1-p)/n)
+		let tol = 3.0 * sqrt(p * (1 - p) / Double(n))
+		#expect(abs(observed - p) <= tol)
+	}
+
+	@Test("Mean equals (a + b + c) / 3")
+	func meanMatchesTheory() {
+		let a = 0.6, b = 1.0, c = 0.7
+		let n = 20_000
+		var xs = [Double]()
+		xs.reserveCapacity(n)
+		for _ in 0..<n {
+			xs.append(triangularDistribution(low: a, high: b, base: c, distributionUniform()))
+		}
+
+		let expectedMean = (a + b + c) / 3.0
+		let m = mean(xs)
+
+		// Tolerance: rough 1% of range, to avoid flakiness without a seed
+		let tol = 0.01 * (b - a)
+		#expect(abs(m - expectedMean) <= tol)
+	}
+
+	@Test("Edge modes c == a and c == b produce valid samples in [a,b]")
+	func edgeModesProduceValidSamples() {
+		let a = 0.0, b = 1.0
+
+		for c in [a, b] {
+			for _ in 0..<5_000 {
+				let x = triangularDistribution(low: a, high: b, base: c, distributionUniform())
+				#expect(x >= a && x <= b)
+			}
+		}
+	}
+}

@@ -259,3 +259,154 @@ struct RiskAggregationTests {
 		#expect(aggregatedVaR < 200.0)
 	}
 }
+
+@Suite("Risk Aggregation Additional Tests")
+struct RiskAggregationAdditionalTests {
+
+	@Test("Aggregate VaR with perfect negative correlation (equal VaRs)")
+	func perfectNegativeCorrelationZero() throws {
+		let individualVaRs = [100.0, 100.0]
+		let correlations = [
+			[1.0, -1.0],
+			[-1.0, 1.0]
+		]
+
+		let aggregatedVaR = RiskAggregator<Double>.aggregateVaR(
+			individualVaRs: individualVaRs,
+			correlations: correlations
+		)
+
+		// With equal VaRs and ρ = -1, aggregate VaR should be ~0
+		#expect(abs(aggregatedVaR - 0.0) < 1e-6)
+		#expect(aggregatedVaR >= 0.0)
+	}
+
+	@Test("Aggregate VaR correlation monotonicity")
+	func correlationMonotonicity() throws {
+		let v = [100.0, 100.0]
+		let lowCorr = [
+			[1.0, 0.2],
+			[0.2, 1.0]
+		]
+		let highCorr = [
+			[1.0, 0.8],
+			[0.8, 1.0]
+		]
+
+		let low = RiskAggregator<Double>.aggregateVaR(individualVaRs: v, correlations: lowCorr)
+		let high = RiskAggregator<Double>.aggregateVaR(individualVaRs: v, correlations: highCorr)
+
+		#expect(low < high) // Higher correlation should increase total risk
+	}
+
+	@Test("Aggregate VaR scaling invariance")
+	func scalingInvariance() throws {
+		let v = [120.0, 80.0, 50.0]
+		let corr = [
+			[1.0, 0.4, 0.2],
+			[0.4, 1.0, 0.3],
+			[0.2, 0.3, 1.0]
+		]
+
+		let base = RiskAggregator<Double>.aggregateVaR(individualVaRs: v, correlations: corr)
+
+		let scale = 3.0
+		let scaled = RiskAggregator<Double>.aggregateVaR(individualVaRs: v.map { $0 * scale }, correlations: corr)
+
+		#expect(abs(scaled - base * scale) < 1e-9)
+	}
+
+	@Test("Aggregate VaR known numeric cases")
+	func knownNumericChecks() throws {
+		// Zero-correlation triple 100s
+		do {
+			let v = [100.0, 100.0, 100.0]
+			let corr = [[1.0, 0.0, 0.0],
+						[0.0, 1.0, 0.0],
+						[0.0, 0.0, 1.0]]
+			let agg = RiskAggregator<Double>.aggregateVaR(individualVaRs: v, correlations: corr)
+			let expected = sqrt(30000.0) // ~173.20508075688772
+			#expect(abs(agg - expected) < 1e-6)
+		}
+
+		// Two entities, ρ=0.9, both 100
+		do {
+			let v = [100.0, 100.0]
+			let corr = [[1.0, 0.9],
+						[0.9, 1.0]]
+			let agg = RiskAggregator<Double>.aggregateVaR(individualVaRs: v, correlations: corr)
+			let expected = sqrt(10000 + 10000 + 2*0.9*100*100) // ~194.935886
+			#expect(abs(agg - expected) < 1e-6)
+		}
+
+		// Two entities, ρ=-0.5, both 100 -> exactly 100
+		do {
+			let v = [100.0, 100.0]
+			let corr = [[1.0, -0.5],
+						[-0.5, 1.0]]
+			let agg = RiskAggregator<Double>.aggregateVaR(individualVaRs: v, correlations: corr)
+			#expect(abs(agg - 100.0) < 1e-6)
+		}
+	}
+
+	@Test("Euler allocation consistency and component VaR equality")
+	func eulerAllocationConsistency() throws {
+		// Sample portfolio
+		let individualVaRs = [100.0, 150.0, 200.0]
+		let weights = [0.2, 0.3, 0.5]
+		let corr = [
+			[1.0, 0.3, 0.5],
+			[0.3, 1.0, 0.4],
+			[0.5, 0.4, 1.0]
+		]
+
+		// Exposures applied to VaR inputs
+		let weightedVaRs = zip(individualVaRs, weights).map(*)
+
+		// Portfolio VaR
+		let portfolioVaR = RiskAggregator<Double>.aggregateVaR(individualVaRs: weightedVaRs, correlations: corr)
+
+		// Marginal VaRs with respect to weighted VaRs
+		let marginals = (0..<weightedVaRs.count).map {
+			RiskAggregator<Double>.marginalVaR(entity: $0, individualVaRs: weightedVaRs, correlations: corr)
+		}
+
+		// Euler contributions: v_i * ∂VaR/∂v_i
+		let eulerContribs = zip(weightedVaRs, marginals).map(*)
+		let eulerSum = eulerContribs.reduce(0, +)
+
+		// Component VaR from the API
+		let components = RiskAggregator<Double>.componentVaR(individualVaRs: individualVaRs, weights: weights, correlations: corr)
+
+		// Check sums match portfolio VaR
+		#expect(abs(eulerSum - portfolioVaR) < 1e-6)
+		let compSum = components.reduce(0, +)
+		#expect(abs(compSum - portfolioVaR) < 1e-6)
+
+		// Each component should align with Euler contribution
+		for i in 0..<components.count {
+			#expect(abs(components[i] - eulerContribs[i]) < 1e-6)
+		}
+	}
+
+	@Test("Component VaR handles zero weights")
+	func zeroWeights() throws {
+		let individualVaRs = [100.0, 100.0, 100.0]
+		let weights = [1.0, 0.0, 2.0]
+		let corr = [
+			[1.0, 0.0, 0.0],
+			[0.0, 1.0, 0.0],
+			[0.0, 0.0, 1.0]
+		]
+
+		let components = RiskAggregator<Double>.componentVaR(individualVaRs: individualVaRs, weights: weights, correlations: corr)
+		// Middle exposure is zero; its component should be near-zero
+		#expect(abs(components[1]) < 1e-12)
+
+		// Check total matches aggregated VaR of weighted inputs
+		let weightedVaRs = zip(individualVaRs, weights).map(*)
+		let portfolioVaR = RiskAggregator<Double>.aggregateVaR(individualVaRs: weightedVaRs, correlations: corr)
+		let sumComponents = components.reduce(0.0, +)
+		#expect(abs(sumComponents - portfolioVaR) < 1e-9)
+	}
+}

@@ -209,3 +209,54 @@ struct CorrelationMatrixTests {
 		#expect(!isPositiveSemiDefinite(invalid), "Invalid correlation structure should not be positive definite")
 	}
 }
+
+@Suite("Correlation Matrix Validation – Additional")
+struct CorrelationMatrixAdditionalTests {
+
+	@Test("Reject perfect positive correlation (singular matrix)")
+	func perfectPositiveCorrelation() {
+		let matrix = [
+			[1.0, 1.0],
+			[1.0, 1.0]
+		]
+		#expect(!isValidCorrelationMatrix(matrix), "Perfect positive correlation should be rejected if PD required")
+	}
+
+	@Test("Reject matrices with NaN or Inf")
+	func rejectNonFinite() {
+		let withNaN = [
+			[1.0, Double.nan],
+			[0.5, 1.0]
+		]
+		let withInf = [
+			[1.0, .infinity],
+			[0.5, 1.0]
+		]
+
+		#expect(!isValidCorrelationMatrix(withNaN), "NaN in matrix should be rejected")
+		#expect(!isValidCorrelationMatrix(withInf), "Inf in matrix should be rejected")
+	}
+
+	@Test("Reject ragged (jagged) matrices")
+	func rejectRagged() {
+		let ragged = [
+			[1.0, 0.5, 0.1],
+			[0.5, 1.0]  // shorter row
+		]
+		#expect(!isValidCorrelationMatrix(ragged), "Ragged matrix should be rejected")
+	}
+
+	@Test("Reject slightly out-of-bounds correlations")
+	func outOfBoundsByEpsilon() {
+		let tooLarge = [
+			[1.0, 1.0000001],
+			[1.0000001, 1.0]
+		]
+		let tooSmall = [
+			[1.0, -1.0000001],
+			[-1.0000001, 1.0]
+		]
+		#expect(!isValidCorrelationMatrix(tooLarge), "Values > 1 should be rejected even if slightly")
+		#expect(!isValidCorrelationMatrix(tooSmall), "Values < -1 should be rejected even if slightly")
+	}
+}

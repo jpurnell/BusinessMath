@@ -162,3 +162,53 @@ struct StressTestingTests {
 		}
 	}
 }
+
+@Suite("Stress Testing Additional Tests")
+struct StressTestingAdditionalTests {
+
+	@Test("Default scenarios have unique names")
+	func uniqueScenarioNames() throws {
+		let scenarios = [
+			StressScenario<Double>.recession,
+			StressScenario<Double>.crisis,
+			StressScenario<Double>.supplyShock
+		]
+		let names = scenarios.map(\.name)
+		#expect(Set(names).count == names.count)
+	}
+
+	@Test("Default scenarios include common keys")
+	func scenarioShockKeys() throws {
+		let scenarios = [
+			StressScenario<Double>.recession,
+			StressScenario<Double>.crisis,
+			StressScenario<Double>.supplyShock
+		]
+		for s in scenarios {
+			#expect(s.shocks.isEmpty == false)
+			// At least one of Revenue or COGS present (example of coverage)
+			#expect(s.shocks.keys.contains("Revenue") || s.shocks.keys.contains("COGS"))
+		}
+	}
+
+	@Test("Worst and best ScenarioResults identified by impact")
+	func worstBestScenarioResults() throws {
+		let base = StressScenario(name: "Base", description: "No change", shocks: ["":0])
+		let mild = StressScenario(name: "Mild", description: "Light stress", shocks: ["Revenue": -0.05])
+		let severe = StressScenario(name: "Severe", description: "Severe stress", shocks: ["Revenue": -0.30])
+
+		let results = [
+			ScenarioResult(scenario: base, baselineNPV: 1_000_000, scenarioNPV: 990_000, impact: -10_000),
+			ScenarioResult(scenario: mild, baselineNPV: 1_000_000, scenarioNPV: 950_000, impact: -50_000),
+			ScenarioResult(scenario: severe, baselineNPV: 1_000_000, scenarioNPV: 800_000, impact: -200_000)
+		]
+
+		// Identify worst (most negative impact) and best (least negative or positive)
+		let worst = results.min(by: { $0.impact < $1.impact })!
+		let best = results.max(by: { $0.impact < $1.impact })!
+
+		#expect(worst.scenario.name == "Severe")
+		#expect(best.scenario.name == "Base")
+		#expect(worst.impact < best.impact)
+	}
+}

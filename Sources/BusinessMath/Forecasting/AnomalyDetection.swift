@@ -62,6 +62,11 @@ public struct Anomaly<T: Real & Sendable & Codable>: Sendable {
 		self.deviationScore = deviationScore
 		self.severity = severity
 	}
+
+	var description: String {
+		let df = ISO8601DateFormatter()
+		return "\(df.string(from: period.date)): \(value) |\t\(expectedValue) |\tz=\(deviationScore) |\t\(severity.rawValue.capitalized)"
+	}
 }
 
 // MARK: - ZScoreAnomalyDetector
@@ -91,78 +96,118 @@ public struct Anomaly<T: Real & Sendable & Codable>: Sendable {
 /// 3. If |z| > threshold, flag as anomaly
 /// 4. Classify severity based on z-score magnitude
 public struct ZScoreAnomalyDetector<T: Real & Sendable & Codable> {
-
-	// MARK: - Properties
-
-	/// The size of the rolling window for calculating statistics.
+	
+		// MARK: - Properties
+	
+		/// The size of the rolling window for calculating statistics.
 	public let windowSize: Int
-
-	// MARK: - Initialization
-
-	/// Creates a z-score anomaly detector.
-	///
-	/// - Parameter windowSize: Number of periods to include in rolling window.
+	
+		// MARK: - Initialization
+	
+		/// Creates a z-score anomaly detector.
+		///
+		/// - Parameter windowSize: Number of periods to include in rolling window.
 	public init(windowSize: Int) {
 		self.windowSize = windowSize
 	}
+	
+		// MARK: - Detection
+	
+		/// Detects anomalies in a time series.
+		///
+		/// - Parameters:
+		///   - data: The time series to analyze.
+		///   - threshold: The z-score threshold (e.g., 3.0 for ±3 standard deviations).
+		/// - Returns: An array of detected anomalies.
 
-	// MARK: - Detection
-
-	/// Detects anomalies in a time series.
-	///
-	/// - Parameters:
-	///   - data: The time series to analyze.
-	///   - threshold: The z-score threshold (e.g., 3.0 for ±3 standard deviations).
-	/// - Returns: An array of detected anomalies.
 	public func detect(in data: TimeSeries<T>, threshold: T) -> [Anomaly<T>] {
-		guard data.count >= windowSize else {
-			return []
-		}
+			guard data.count >= windowSize else { return [] }
 
-		var anomalies: [Anomaly<T>] = []
-		let values = data.valuesArray
+			var anomalies: [Anomaly<T>] = []
+			let values = data.valuesArray
 
-		// For each point after the initial window
-		for i in windowSize..<values.count {
-			// Get rolling window
-			let windowStart = i - windowSize
-			let window = Array(values[windowStart..<i])
+			// Track indices of previously flagged anomalies to exclude from the baseline window
+			var flaggedIndices = Set<Int>()
 
-			// Calculate statistics
-			let mean = window.reduce(T(0), +) / T(window.count)
-			let squaredDiffs = window.map { ($0 - mean) * ($0 - mean) }
-			let variance = squaredDiffs.reduce(T(0), +) / T(window.count)
-			let stddev = T.sqrt(variance)
+			for i in windowSize..<values.count {
+					let start = i - windowSize
 
-			// Skip if standard deviation is too small (constant data)
-			guard stddev > T(0) else { continue }
+					// Compute mean over the window excluding prior anomalies
+					var sum: T = .zero
+					var n: Int = 0
+					for j in start..<i {
+							if flaggedIndices.contains(j) { continue }
+							sum += values[j]
+							n += 1
+					}
+					if n == 0 { continue } // no usable baseline
+					let countT = T(n)
+					let mean = sum / countT
 
-			// Calculate z-score
-			let value = values[i]
-			let zScore = abs((value - mean) / stddev)
+					// Compute variance over the same filtered window
+					var sumSq: T = .zero
+					for j in start..<i {
+							if flaggedIndices.contains(j) { continue }
+							let d = values[j] - mean
+							sumSq += d * d
+					}
+					let variance = sumSq / countT
+					let stddev = T.sqrt(variance)
 
-			// Check if anomaly
-			if zScore > threshold {
-				let severity: AnomalySeverity
+					let value = values[i]
 
-				if zScore > T(4) {
-					severity = .severe
-				} else if zScore > T(3) {
-					severity = .moderate
-				} else {
-					severity = .mild
-				}
+					var zScore: T = .zero
+					var severity: AnomalySeverity? = nil
 
-				anomalies.append(Anomaly(
-					period: data.periods[i],
-					value: value,
-					expectedValue: mean,
-					deviationScore: zScore,
-					severity: severity
-				))
+					let three: T = 3
+					let four: T = 4
+
+					if stddev == .zero {
+							// Flat baseline: use a finite fallback scale so that z-scores are comparable and monotonic
+							if value != mean {
+									let diff = abs(value - mean)
+									let rel: T = T(1) / T(100)   // 1% of the baseline level
+									let absEps: T = 1   // at least 1 unit to avoid exploding z near zero mean
+									let fallbackScale = max(abs(mean) * rel, absEps)
+									zScore = diff / fallbackScale
+
+									if zScore > threshold {
+											if zScore > four {
+													severity = .severe
+											} else if zScore > three {
+													severity = .moderate
+											} else {
+													severity = .mild
+											}
+									}
+							}
+					} else {
+							let diff = abs(value - mean)
+							zScore = diff / stddev
+
+							if zScore > threshold {
+									if zScore > four {
+											severity = .severe
+									} else if zScore > three {
+											severity = .moderate
+									} else {
+											severity = .mild
+									}
+							}
+					}
+
+					if let sev = severity {
+							anomalies.append(Anomaly(
+									period: data.periods[i],
+									value: value,
+									expectedValue: mean,
+									deviationScore: zScore,
+									severity: sev
+							))
+							flaggedIndices.insert(i) // exclude this point from future baselines
+					}
 			}
-		}
 
-		return anomalies
+			return anomalies
 	}
 }

@@ -572,3 +572,51 @@ struct CapitalStructureTests {
         #expect(utility.wacc < utility.costOfEquity)
     }
 }
+
+@Suite("Capital Structure Edge Cases")
+struct CapitalStructureEdgeCasesTests {
+
+	@Test("CAPM with negative beta")
+	func capmNegativeBeta() throws {
+		let rf = 0.04
+		let rm = 0.09
+		let beta = -0.5
+		let expected = rf + beta * (rm - rf) // 0.04 + (-0.5)*0.05 = 0.015
+		let result = capm(riskFreeRate: rf, beta: beta, marketReturn: rm)
+		#expect(abs(result - expected) < 0.0001)
+	}
+
+	@Test("CAPM when market return below risk-free")
+	func capmBearMarket() throws {
+		let rf = 0.04
+		let rm = 0.03
+		let beta = 1.5
+		let expected = rf + beta * (rm - rf) // 0.04 + 1.5*(-0.01) = 0.025
+		let result = capm(riskFreeRate: rf, beta: beta, marketReturn: rm)
+		#expect(abs(result - expected) < 0.0001)
+	}
+
+	@Test("WACC with 100% debt")
+	func waccAllDebt() throws {
+		let equity = 0.0
+		let debt = 1_000_000.0
+		let rd = 0.06
+		let tax = 0.25
+		let expected = rd * (1 - tax) // 0.045
+		let result = wacc(equityValue: equity, debtValue: debt, costOfEquity: 0.10, costOfDebt: rd, taxRate: tax)
+		#expect(abs(result - expected) < 0.0000001)
+	}
+
+	@Test("Lever/Unlever beta with zero tax")
+	func leverUnleverZeroTax() throws {
+		let unlevered = 1.1
+		let de = 1.0
+		let tax = 0.0
+		let levered = leverBeta(unleveredBeta: unlevered, debtToEquityRatio: de, taxRate: tax)
+		let expectedLevered = unlevered * (1.0 + de) // 2.2
+		#expect(abs(levered - expectedLevered) < 0.0001)
+
+		let back = unleverBeta(leveredBeta: levered, debtToEquityRatio: de, taxRate: tax)
+		#expect(abs(back - unlevered) < 0.0001)
+	}
+}

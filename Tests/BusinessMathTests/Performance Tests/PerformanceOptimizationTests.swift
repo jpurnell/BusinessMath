@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Testing
 import RealModule
 @testable import BusinessMath
 
@@ -381,4 +382,57 @@ final class PerformanceOptimizationTests: XCTestCase {
         let formatted = trace.formatTrace()
         XCTAssertGreaterThan(formatted.count, 100)
     }
+}
+
+@Suite("Exporter Equivalence (Swift Testing)")
+struct ExporterEquivalenceTests {
+
+	private func normalizeCSV(_ s: String) -> String {
+		// Trim whitespace differences to avoid CRLF vs LF or trailing spaces issues
+		s.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
+	}
+
+	@Test("Optimized CSV export is content-equivalent")
+	func csvOptimizedEquivalence() throws {
+		var model = FinancialModel()
+		for i in 1...50 {
+			model.revenueComponents.append(RevenueComponent(name: "R\(i)", amount: Double(i * 1000)))
+		}
+		let exporter = DataExporter(model: model)
+
+		let normal = exporter.exportToCSV()
+		let optimized = exporter.exportToCSVOptimized()
+
+		let n1 = normalizeCSV(normal)
+		let n2 = normalizeCSV(optimized)
+
+		#expect(n1 == n2, "Optimized CSV should be textually equivalent to normal CSV.")
+	}
+
+	@Test("Optimized TimeSeries CSV export is content-equivalent")
+	func tsOptimizedEquivalence() throws {
+		let periods = (0..<100).map { Period.year(2000 + $0) }
+		let values = (0..<100).map { Double($0 * 10) }
+		let series = TimeSeries<Double>(periods: periods, values: values)
+		let exporter = TimeSeriesExporter<Double>(series: series)
+
+		let normal = exporter.exportToCSV()
+		let optimized = exporter.exportToCSVOptimized()
+
+		#expect(normal == optimized, "Optimized TimeSeries CSV should match normal CSV exactly.")
+	}
+
+	@Test("JSON export is valid JSON")
+	func jsonExportIsValid() throws {
+		var model = FinancialModel()
+		for i in 1...10 {
+			model.revenueComponents.append(RevenueComponent(name: "R\(i)", amount: Double(i)))
+		}
+		let exporter = DataExporter(model: model)
+		let json = exporter.exportToJSON()
+
+		let data = Data(json.utf8)
+		let obj = try? JSONSerialization.jsonObject(with: data, options: [])
+		#expect(obj != nil, "JSON export should produce parseable JSON.")
+	}
 }

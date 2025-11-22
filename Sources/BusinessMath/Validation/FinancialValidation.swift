@@ -19,59 +19,88 @@ public enum FinancialValidation {
 	// MARK: - Balance Sheet Balances
 
 	/// Validates that a balance sheet balances (Assets = Liabilities + Equity).
-	public struct BalanceSheetBalances<T>: ValidationRule where T: Real & Sendable & Codable & Comparable {
-		public typealias Value = BalanceSheet<T>
-
-		private let tolerance: T
-
-		/// Creates a balance sheet balance validation rule.
-		///
-		/// - Parameter tolerance: The tolerance for rounding errors. Defaults to 0.01.
-		public init(tolerance: T = 0.01) {
-			self.tolerance = tolerance
-		}
-
-		public func validate(_ value: BalanceSheet<T>?, context: ValidationContext) -> ValidationResult {
-			guard let balanceSheet = value else {
-				return .invalid([ValidationError(
-					field: context.fieldName,
-					value: "nil",
-					rule: "BalanceSheetBalances",
-					message: "Balance sheet cannot be nil"
-				)])
+	public struct BalanceSheetBalances<T>: ValidationRule where T: Real & Sendable & Codable & Comparable & FloatingPoint {
+			public typealias Value = BalanceSheet<T>
+			
+			@inline(__always)
+			private func total(_ accounts: [Account<T>], _ period: Period) -> T {
+				accounts.reduce(T.zero) { sum, account in
+					let v: T = account.timeSeries[period] ?? T.zero
+					return sum + v
+				}
+			}
+			
+			@inline(__always)
+			private func withinTolerance(_ diff: T, tolerance tol: T, scale: T) -> Bool {
+				// Epsilon is at least one ulp at the current scale, or a tiny fraction of tol
+				// Avoid Double literal conversion: compute 1e-12 as 1 / 1_000_000_000_000 in T
+				let rel = tol * (T(1) / T(1_000_000_000_000))
+				// Scale-aware epsilon: at least one ulp at this scale, or a tiny fraction of tolerance
+				let eps = max(T.ulpOfOne * scale, rel)
+				return diff <= tol + eps
 			}
 
-			var errors: [ValidationError] = []
+			public let tolerance: T
 
-			// Check each period
-			for period in balanceSheet.periods {
-				guard let assets = balanceSheet.totalAssets[period],
-					  let liabilities = balanceSheet.totalLiabilities[period],
-					  let equity = balanceSheet.totalEquity[period] else {
-					continue
-				}
+			/// Creates a balance sheet balance validation rule.
+			///
+			/// - Parameter tolerance: The tolerance for rounding errors. Defaults to 0.01.
+			public init(tolerance: T = .zero) {
+				self.tolerance = tolerance
+			}
 
-				let diff = abs(assets - (liabilities + equity))
-
-				if diff > tolerance {
-					errors.append(ValidationError(
-						field: "\(context.fieldName) - \(period.label)",
-						value: [
-							"Assets": assets,
-							"Liabilities": liabilities,
-							"Equity": equity,
-							"Difference": diff
-						],
+			public func validate(_ value: BalanceSheet<T>?, context: ValidationContext) -> ValidationResult {
+				guard let balanceSheet = value else {
+					return .invalid([ValidationError(
+						field: context.fieldName,
+						value: "nil",
 						rule: "BalanceSheetBalances",
-						message: "Assets do not equal Liabilities + Equity (difference: \(diff))",
-						suggestion: "Check if all accounts are properly classified and valued"
-					))
+						message: "Balance sheet cannot be nil"
+					)])
 				}
-			}
 
-			return errors.isEmpty ? .valid : .invalid(errors)
+				var errors: [ValidationError] = []
+
+				// Check each period
+				for period in balanceSheet.periods {
+					guard let assets = balanceSheet.totalAssets[period],
+						  let liabilities = balanceSheet.totalLiabilities[period],
+						  let equity = balanceSheet.totalEquity[period] else {
+						continue
+					}
+					let lhs = assets.isNaN ? 0 : assets
+					let rhs = (liabilities + equity)
+
+					let diff = abs(lhs - rhs)
+					
+					// Scale-aware epsilon to absorb binary FP noise near the threshold.
+					// Build a reasonable "scale" for ulp-based epsilon.
+					let s1 = max(abs(lhs), abs(rhs))
+					let s2 = max(abs(diff), max(tolerance, T(1)))
+					let scale = max(s1, s2)
+					
+					if !withinTolerance(diff, tolerance: tolerance, scale: scale) {
+						let msg = "Assets do not equal Liabilities + Equity (difference: \(diff))."
+						errors.append(ValidationError(
+							field: "\(context.fieldName) - \(period.label)",
+							value: [
+								"Assets": assets,
+								"Liabilities": liabilities,
+								"Equity": equity,
+								"Difference": diff
+							],
+							rule: "BalanceSheetBalances",
+							message: msg,
+							suggestion: "Check if all accounts are properly classified and valued"
+						))
+					}
+				}
+
+				return errors.isEmpty ? .valid : .invalid(errors)
+			}
 		}
-	}
+	
+	
 
 	// MARK: - Positive Revenue
 

@@ -300,3 +300,57 @@ struct RiskMetricsTests {
 		#expect(description.contains("Sortino"))
 	}
 }
+
+@Suite("Comprehensive Risk Metrics Additional Tests")
+struct RiskMetricsAdditionalTests {
+
+	@Test("Skewness near zero for symmetric distribution")
+	func skewnessSymmetric() throws {
+		let returns = [-0.20, -0.10, -0.05, 0.0, 0.05, 0.10, 0.20]
+		let periods = returns.enumerated().map { Period.month(year: 2026 + ($0.offset / 12), month: ($0.offset % 12) + 1) }
+		let ts = TimeSeries(periods: periods, values: returns)
+		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+		#expect(abs(metrics.skewness) < 1e-3)
+	}
+
+	@Test("VaR/CVaR become more conservative when extreme tail loss added")
+	func varCvarTailMonotonicity() throws {
+		var base = Array(stride(from: -0.05, through: 0.05, by: 0.005))
+		let periods1 = base.enumerated().map { Period.month(year: 2026, month: ($0.offset % 12) + 1) }
+		let ts1 = TimeSeries(periods: periods1, values: base)
+		let m1 = ComprehensiveRiskMetrics(returns: ts1, riskFreeRate: 0.0)
+
+		base.append(-0.50) // add extreme negative event
+		let periods2 = base.enumerated().map { Period.month(year: 2026, month: ($0.offset % 12) + 1) }
+		let ts2 = TimeSeries(periods: periods2, values: base)
+		let m2 = ComprehensiveRiskMetrics(returns: ts2, riskFreeRate: 0.0)
+
+		#expect(m2.var95 <= m1.var95)   // more negative or equal
+		#expect(m2.cvar95 <= m1.cvar95) // more negative or equal
+	}
+
+	@Test("Sharpe/Sortino handle constant returns (zero volatility)")
+	func constantReturnsZeroVolatility() throws {
+		let returns = Array(repeating: 0.01, count: 24)
+		let periods = returns.enumerated().map { Period.month(year: 2026 + ($0.offset / 12), month: ($0.offset % 12) + 1) }
+		let ts = TimeSeries(periods: periods, values: returns)
+		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+		// Should not be NaN or infinite even if stdev == 0
+		#expect(metrics.sharpeRatio.isFinite)
+		#expect(metrics.sortinoRatio.isFinite)
+	}
+
+	@Test("Max drawdown exact check (≈ 33.333%)")
+	func maxDrawdownTightTolerance() throws {
+		// 1.0 -> 1.1 -> 1.2 -> 1.0 -> 0.8 -> 0.9 -> 1.1
+		let returns = [0.10, 0.091, -0.167, -0.20, 0.125, 0.222]
+		let periods = returns.enumerated().map { Period.month(year: 2026 + ($0.offset / 12), month: ($0.offset % 12) + 1) }
+		let ts = TimeSeries(periods: periods, values: returns)
+		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+		let expected = (1.2 - 0.8) / 1.2 // 1/3
+		#expect(abs(metrics.maxDrawdown - expected) < 1e-3)
+	}
+}

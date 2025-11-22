@@ -488,3 +488,34 @@ struct ScenarioRunnerTests {
 		#expect(projection.scenario.overrideCount == 1)
 	}
 }
+
+@Suite("Scenario Runner Error Propagation Tests")
+struct ScenarioRunnerErrorPropagationTests {
+
+	private func entity() -> Entity {
+		Entity(id: "TEST", primaryType: .ticker, name: "Test Company")
+	}
+
+	private func periods() -> [Period] {
+		[ .quarter(year: 2025, quarter: 1) ]
+	}
+
+	@Test("Builder errors are propagated by ScenarioRunner")
+	func builderErrorPropagation() {
+		let e = entity()
+		let ps = periods()
+
+		let scenario = FinancialScenario(name: "Base", description: "")
+		let runner = ScenarioRunner()
+
+		let faultyBuilder: ScenarioRunner.StatementBuilder = { _, periods in
+			// Create a mismatched TimeSeries to provoke an error, or throw directly.
+			struct TestError: Error {}
+			throw TestError()
+		}
+
+		#expect(throws: (any Error).self) {
+			_ = try runner.run(scenario: scenario, entity: e, periods: ps, builder: faultyBuilder)
+		}
+	}
+}

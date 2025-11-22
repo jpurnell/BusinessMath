@@ -478,4 +478,17 @@ struct PaymentTests {
 		)
 		#expect(ipmt == 0.0)
 	}
+	
+		// MARK: - Payment bounds
+
+			@Test("Principal/Interest payment beyond final period is zero")
+			func paymentsBeyondTerm() {
+				let rate = 0.05/12.0
+				let pv = 10_000.0
+				let n = 60
+				let ppmt = principalPayment(rate: rate, period: n+1, totalPeriods: n, presentValue: pv)
+				let ipmt = interestPayment(rate: rate, period: n+1, totalPeriods: n, presentValue: pv)
+				#expect(abs(ppmt) < 1e-9)
+				#expect(abs(ipmt) < 1e-9)
+			}
 }

@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Testing
 import RealModule
 @testable import BusinessMath
 
@@ -314,4 +315,102 @@ final class CachingOptimizationTests: XCTestCase {
             }
         }
     }
+}
+
+@Suite("Cache Behavior (Swift Testing)")
+struct CacheBehaviorTests {
+
+//	@Test("Same key computed once across concurrent callers")
+//	func concurrentSameKeyComputeOnce() throws {
+//		let cache = CalculationCache(maxSize: 32, ttl: 60)
+//		let iterations = 50
+//
+//		let group = DispatchGroup()
+//		let q = DispatchQueue.global(qos: .userInitiated)
+//
+//		var computeCount = 0
+//		let lock = NSLock()
+//		var results = [Int]()
+//		results.reserveCapacity(iterations)
+//
+//		for _ in 0..<iterations {
+//			group.enter()
+//			q.async {
+//				let value = cache.getOrCalculate(key: "shared-key") {
+//					lock.lock(); computeCount += 1; lock.unlock()
+//					return 123
+//				}
+//				lock.lock(); results.append(value); lock.unlock()
+//				group.leave()
+//			}
+//		}
+//		group.wait()
+//
+//		#expect(results.count == iterations)
+//		#expect(results.allSatisfy { $0 == 123 })
+//		#expect(computeCount == 1, "The calculation for the same key should run exactly once.")
+//	}
+
+	@Test("LRU eviction evicts least-recently-used key")
+	func lruEvictionOrder() throws {
+		let cache = CalculationCache(maxSize: 3, ttl: 60)
+
+		// Seed initial entries with distinct values
+		_ = cache.getOrCalculate(key: "A") { 1 }
+		_ = cache.getOrCalculate(key: "B") { 2 }
+		_ = cache.getOrCalculate(key: "C") { 3 }
+
+		// Touch A to make it most recently used: LRU order becomes B (oldest), then C, then A (newest)
+		_ = cache.getOrCalculate(key: "A") { -999 }
+
+		// Insert D -> should evict B if LRU is implemented
+		_ = cache.getOrCalculate(key: "D") { 4 }
+
+		// If B was evicted, this should compute a new value (200) rather than return 2
+		let bValueAfterEviction = cache.getOrCalculate(key: "B") { 200 }
+		#expect(bValueAfterEviction == 200, "Key B should have been evicted and recomputed.")
+
+		// Ensure others remain cached
+		let aValue = cache.getOrCalculate(key: "A") { -1 }
+		let cValue = cache.getOrCalculate(key: "C") { -1 }
+		let dValue = cache.getOrCalculate(key: "D") { -1 }
+		#expect(aValue == 1)
+		#expect(cValue == 3)
+		#expect(dValue == 4)
+	}
+
+	@Test("Model cache invalidates on mutation")
+	func modelCacheInvalidationOnMutation() throws {
+		var model = FinancialModel {
+			Revenue {
+				Product("Widget").price(100).quantity(1000) // 100,000
+			}
+			Costs {
+				Fixed("Fixed", 50_000) // profit: 50,000
+			}
+		}
+
+		let p1 = model.calculateProfitCached()
+
+		// Mutate model: add more revenue
+		model.revenueComponents.append(
+			RevenueComponent(name: "Extra", amount: 10_000)
+		)
+
+		let p2 = model.calculateProfitCached()
+		#expect(p2 > p1, "Profit should increase after adding revenue. Cache should invalidate.")
+	}
+
+	@Test("Model cacheKey changes after mutation")
+	func modelCacheKeyChanges() throws {
+		var model = FinancialModel {
+			Revenue { RevenueComponent(name: "Sales", amount: 100_000) }
+		}
+		let k1 = model.cacheKey()
+
+		model.revenueComponents.append(RevenueComponent(name: "New", amount: 1))
+		let k2 = model.cacheKey()
+
+		#expect(k1 != k2, "Cache key should change when model structure/values change.")
+	}
 }

@@ -5,6 +5,7 @@
 //  Created by Justin Purnell on 10/20/25.
 //
 
+import Foundation
 import Testing
 import Numerics
 @testable import BusinessMath
@@ -588,4 +589,104 @@ struct FinancialSimulationTests {
 		let mean = simulation.mean { $0.incomeStatement.netIncome[q1]! }
 		#expect(abs(mean - 1000.0) < 20.0)  // Should be very close to true mean
 	}
+}
+
+struct AdditionalFinancialSimulationTests {
+	
+		// MARK: - Helpers
+	
+	private func entity() -> Entity {
+		Entity(id: "TEST", primaryType: .ticker, name: "Test Company")
+	}
+	
+	private func singlePeriod() -> [Period] {
+		[ .quarter(year: 2025, quarter: 1) ]
+	}
+	
+	private func builder(entity: Entity) -> ScenarioRunner.StatementBuilder {
+		return { drivers, periods in
+				// Use "Revenue" driver; default 1000.0 if missing
+			let value = drivers["Revenue"]?.sample(for: periods[0]) ?? 1000.0
+			let series = TimeSeries<Double>(periods: periods, values: Array(repeating: value, count: periods.count))
+			
+			let revenue = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: series)
+			let income = try IncomeStatement(entity: entity, periods: periods, revenueAccounts: [revenue], expenseAccounts: [])
+			
+			let asset = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: series)
+			let equity = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: series)
+			let bs = try BalanceSheet(entity: entity, periods: periods, assetAccounts: [asset], liabilityAccounts: [], equityAccounts: [equity])
+			
+			let op = try Account(entity: entity, name: "Operating Cash", type: .operating, timeSeries: series)
+			let cfs = try CashFlowStatement(entity: entity, periods: periods, operatingAccounts: [op], investingAccounts: [], financingAccounts: [])
+			
+			return (income, bs, cfs)
+		}
+	}
+	
+	@Test("Percentiles are monotonic (Normal(1000, 100))")
+		func percentileMonotonicity() throws {
+			let e = entity()
+			let ps = singlePeriod()
+
+			var overrides: [String: AnyDriver<Double>] = [:]
+			overrides["Revenue"] = AnyDriver(ProbabilisticDriver(name: "Revenue",
+																 distribution: DistributionNormal(1000.0, 100.0)))
+			let scenario = FinancialScenario(name: "P", description: "", driverOverrides: overrides)
+			let sim = try runFinancialSimulation(scenario: scenario, entity: e, periods: ps, iterations: 2000, builder: builder(entity: e))
+
+			let q = ps[0]
+			let quantiles: [Double] = [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
+			var last: Double? = nil
+			for quantile in quantiles {
+				let value = sim.percentile(quantile) { $0.incomeStatement.netIncome[q]! }
+				if let prev = last {
+					#expect(value >= prev)
+				}
+				last = value
+			}
+		}
+	
+	@Test("Sample mean and stddev reasonable for Normal(1000, 100)")
+		func sampleMomentsNormal() throws {
+			let e = entity()
+			let ps = singlePeriod()
+
+			var overrides: [String: AnyDriver<Double>] = [:]
+			overrides["Revenue"] = AnyDriver(ProbabilisticDriver(name: "Revenue",
+																 distribution: DistributionNormal(1000.0, 100.0)))
+			let scenario = FinancialScenario(name: "P", description: "", driverOverrides: overrides)
+
+			let n = 5000
+			let sim = try runFinancialSimulation(scenario: scenario, entity: e, periods: ps, iterations: n, builder: builder(entity: e))
+			let p = ps[0]
+			let values = sim.projections.map { $0.incomeStatement.netIncome[p]! }
+
+			let sd = stdDev(values)
+
+			// 3-sigma/sqrt(n) bound for mean
+			let se = 100.0 / pow(Double(n), 0.5)
+			#expect(abs(mean(values) - 1000.0) < 3.0 * se)
+			// Stddev within ~15%
+			#expect(abs(sd - 100.0) < 15.0)
+		}
+	
+	@Test("CVaR monotonic across confidence levels")
+		func cvarMonotonicity() throws {
+			let e = entity()
+			let ps = singlePeriod()
+
+			var overrides: [String: AnyDriver<Double>] = [:]
+			overrides["Revenue"] = AnyDriver(ProbabilisticDriver(name: "Revenue",
+																 distribution: DistributionNormal(1000.0, 200.0)))
+			let scenario = FinancialScenario(name: "P", description: "", driverOverrides: overrides)
+
+			let sim = try runFinancialSimulation(scenario: scenario, entity: e, periods: ps, iterations: 4000, builder: builder(entity: e))
+			let p = ps[0]
+
+			let cvar90 = sim.conditionalValueAtRisk(0.90) { $0.incomeStatement.netIncome[p]! }
+			let cvar95 = sim.conditionalValueAtRisk(0.95) { $0.incomeStatement.netIncome[p]! }
+
+			// With lower tail on income, a higher alpha (95%) uses a smaller, more severe tail; CVaR95 <= CVaR90
+			#expect(cvar95 <= cvar90)
+		}
 }

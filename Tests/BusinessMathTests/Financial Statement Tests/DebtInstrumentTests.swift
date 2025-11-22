@@ -568,4 +568,20 @@ struct DebtInstrumentTests {
             previousRatio = ratio
         }
     }
+	
+	@Test("Custom schedule underpays and leaves residual balance")
+	func customUnderpayLeavesBalance() throws {
+		let instrument = DebtInstrument(
+			principal: 100_000.0,
+			interestRate: 0.06,
+			startDate: Date(timeIntervalSince1970: 0),
+			maturityDate: Date(timeIntervalSince1970: 157_680_000), // ~5 years
+			paymentFrequency: .annual,
+			amortizationType: .custom(schedule: [10_000, 10_000, 10_000, 10_000, 10_000]) // too small
+		)
+
+		let schedule = instrument.schedule()
+		let finalBalance = schedule.endingBalance[schedule.periods.last!]!
+		#expect(finalBalance > 0, "Underpaying custom schedule should leave a positive residual balance")
+	}
 }

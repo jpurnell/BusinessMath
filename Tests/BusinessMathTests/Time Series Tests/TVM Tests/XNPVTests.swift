@@ -349,4 +349,22 @@ struct XNPVTests {
 		#expect(!xirr.isNaN)
 		#expect(!xirr.isInfinite)
 	}
+	
+	@Test("XNPV with duplicate dates aggregates correctly")
+		func xnpvDuplicateDates() throws {
+			func d(_ y:Int,_ m:Int,_ day:Int) -> Date {
+				var c = DateComponents()
+				c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)
+				return Calendar(identifier: .gregorian).date(from: c)!
+			}
+			let dates = [d(2025,1,1), d(2025,6,1), d(2025,6,1), d(2026,1,1)]
+			let flows = [-1000.0, 200.0, 300.0, 600.0] // two flows on same day
+			let rate = 0.10
+			let v = try xnpv(rate: rate, dates: dates, cashFlows: flows)
+			// Should equal XNPV of combined flow on that duplicate date (500.0)
+			let dates2 = [d(2025,1,1), d(2025,6,1), d(2026,1,1)]
+			let flows2 = [-1000.0, 500.0, 600.0]
+			let v2 = try xnpv(rate: rate, dates: dates2, cashFlows: flows2)
+			#expect(abs(v - v2) < 1e-8)
+		}
 }

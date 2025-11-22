@@ -35,8 +35,19 @@ import Numerics
 /// print("95% confidence: value will be above \(percentiles.p5)")
 /// print("Interquartile range: \(percentiles.interquartileRange)")
 /// ```
+///
+/// 
 public struct Percentiles: Sendable {
+	public let values: [Double]
+	
+	// MARK: - Min/Max
 
+	/// The minimum value in the dataset
+	public let min: Double
+
+	/// The maximum value in the dataset
+	public let max: Double
+	
 	// MARK: - Standard Percentiles
 
 	/// The 5th percentile - value below which 5% of observations fall
@@ -63,13 +74,7 @@ public struct Percentiles: Sendable {
 	/// The 99th percentile - value below which 99% of observations fall
 	public let p99: Double
 
-	// MARK: - Min/Max
-
-	/// The minimum value in the dataset
-	public let min: Double
-
-	/// The maximum value in the dataset
-	public let max: Double
+	
 
 	// MARK: - Sorted Data
 
@@ -81,8 +86,20 @@ public struct Percentiles: Sendable {
 	/// The interquartile range (IQR) = Q3 - Q1 = p75 - p25
 	///
 	/// IQR measures the spread of the middle 50% of the data and is robust to outliers.
-	public var interquartileRange: Double {
-		return p75 - p25
+	public let interquartileRange: Double
+	
+	// R-7 quantile helper (same method your tests already assume)
+	private static func quantileR7(_ sorted: [Double], _ p: Double) -> Double {
+			let n = sorted.count
+			if n == 1 { return sorted[0] }
+			// Clamp p to [0, 1] to avoid crashing in edge calls; adjust if you prefer throwing
+			let pp = Double.minimum(Double.maximum(p, 0.0), 1.0)
+			let pos = pp * Double(n - 1)
+			let lo = Int(floor(pos))
+			let hi = Int(ceil(pos))
+			if lo == hi { return sorted[lo] }
+			let w = pos - Double(lo)
+			return sorted[lo] + w * (sorted[hi] - sorted[lo])
 	}
 
 	// MARK: - Initialization
@@ -100,24 +117,28 @@ public struct Percentiles: Sendable {
 	/// let percentiles = Percentiles(values: data)
 	/// print("Median: \(percentiles.p50)")  // 30.0
 	/// ```
-	public init(values: [Double]) {
-		// Sort the values for percentile calculation
-		self.sortedValues = values.sorted()
+	public init(values: [Double]) throws {
+					guard !values.isEmpty else { throw PercentilesError.emptyValues }
+					guard values.allSatisfy({ $0.isFinite }) else { throw PercentilesError.nonFiniteValues }
 
-		// Store min and max
-		self.min = sortedValues.first ?? 0.0
-		self.max = sortedValues.last ?? 0.0
+					self.values = values
+					let sorted = values.sorted()
+					self.sortedValues = sorted
+					self.min = sorted.first!
+					self.max = sorted.last!
 
-		// Calculate standard percentiles
-		self.p5 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.05)
-		self.p10 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.10)
-		self.p25 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.25)
-		self.p50 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.50)
-		self.p75 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.75)
-		self.p90 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.90)
-		self.p95 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.95)
-		self.p99 = Self.calculatePercentile(sortedValues: sortedValues, percentile: 0.99)
-	}
+					// Precompute commonly used percentiles
+					self.p5  = Self.quantileR7(sorted, 0.05)
+					self.p10 = Self.quantileR7(sorted, 0.10)
+					self.p25 = Self.quantileR7(sorted, 0.25)
+					self.p50 = Self.quantileR7(sorted, 0.50)
+					self.p75 = Self.quantileR7(sorted, 0.75)
+					self.p90 = Self.quantileR7(sorted, 0.90)
+					self.p95 = Self.quantileR7(sorted, 0.95)
+					self.p99 = Self.quantileR7(sorted, 0.99)
+
+					self.interquartileRange = self.p75 - self.p25
+			}
 
 	// MARK: - Custom Percentile Calculation
 
