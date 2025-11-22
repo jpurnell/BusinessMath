@@ -1,22 +1,132 @@
 # This workflow will build a Swift project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
 
-name: Swift
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-
-    runs-on: macos-latest
-
+  linux:
+    name: Linux (Swift ${{ matrix.swift }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        swift: [ "6.0" ] 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: swift build -v
-    - name: Run tests
-      run: swift test -v
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Swift ${{ matrix.swift }}
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: ${{ matrix.swift }}
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Cache SPM build products
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-${{ matrix.swift }}-
+            ${{ runner.os }}-spm-
+
+      - name: Resolve dependencies
+        run: swift package resolve
+
+      - name: Build (Debug) + tests
+        run: |
+          swift build --build-tests
+          swift test --parallel
+
+      - name: Tests in Release (optimizer on)
+        run: swift test -c release --parallel
+
+      - name: Build library in Release
+        run: swift build -c release
+  
+  macos:
+    name: macOS (SPM + Apple platform compile checks)
+    runs-on: macos-13
+    env:
+      # Set this to your package name (as shown in Package.swift name: "...").
+      PACKAGE_NAME: BusinessMath
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Tooling versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SPM build products
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build (Debug) + tests (macOS)
+        run: |
+          swift build --build-tests
+          swift test --parallel
+
+      - name: Tests in Release (macOS)
+        run: swift test -c release --parallel
+
+      - name: Build library in Release (macOS)
+        run: swift build -c release
+
+      - name: Compile checks for Apple platforms with Xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+          SCHEME="${PACKAGE_NAME}-Package"
+
+          # iOS
+          xcodebuild \
+            -scheme "$SCHEME" \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
+
+          # tvOS
+          xcodebuild \
+            -scheme "$SCHEME" \
+            -destination "generic/platform=tvOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
+
+          # watchOS
+          xcodebuild \
+            -scheme "$SCHEME" \
+            -destination "generic/platform=watchOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
+
+          # visionOS
+          xcodebuild \
+            -scheme "$SCHEME" \
+            -destination "generic/platform=visionOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
