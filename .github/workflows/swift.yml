@@ -43,7 +43,7 @@ jobs:
       - name: Select test engine and scratch path
         run: |
           if [ "${{ matrix.engine }}" = "swift-testing" ]; then
-            echo "SWIFT_TEST_FLAGS=--enable-swift-testing" >> $GITHUB_ENV
+            echo "SWIFT_TEST_FLAGS=--enable-swift-testing -Xswiftc -Xfrontend -Xswiftc -strict-concurrency=minimal" >> $GITHUB_ENV
             echo "SCRATCH=.build-swift-testing" >> $GITHUB_ENV
           else
             echo "SWIFT_TEST_FLAGS=" >> $GITHUB_ENV
