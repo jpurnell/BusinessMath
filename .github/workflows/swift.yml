@@ -44,10 +44,10 @@ jobs:
             echo "SWIFT_TEST_FLAGS=--enable-swift-testing" >> $GITHUB_ENV
             echo "SCRATCH=.build-swift-testing" >> $GITHUB_ENV
           else
-            # XCTest is the default; leave flags empty to avoid conflicts.
             echo "SWIFT_TEST_FLAGS=" >> $GITHUB_ENV
             echo "SCRATCH=.build-xctest" >> $GITHUB_ENV
           fi
+
       - name: Cache SPM build products (per engine)
         uses: actions/cache@v4
         with:
@@ -64,12 +64,10 @@ jobs:
           swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH"
           swift test  -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH"
 
-      # Only need a plain Release build once; do it on the XCTest leg
       - name: Build library in Release (macOS)
         if: matrix.engine == 'xctest'
         run: swift build -c release --scratch-path "$SCRATCH"
 
-      # Only run Xcode Apple-platform compile checks once; do it on the XCTest leg
       - name: Compile checks for Apple platforms with Xcode
         if: matrix.engine == 'xctest'
         shell: bash
@@ -81,7 +79,6 @@ jobs:
           xcodebuild -scheme "$SCHEME" -destination "generic/platform=tvOS"    -configuration Release -skipPackagePluginValidation build
           xcodebuild -scheme "$SCHEME" -destination "generic/platform=watchOS" -configuration Release -skipPackagePluginValidation build
 
-          # Run visionOS only if the SDK is available on the runner
           if xcodebuild -showsdks | grep -q "visionOS"; then
             xcodebuild -scheme "$SCHEME" -destination "generic/platform=visionOS" -configuration Release -skipPackagePluginValidation build
           fi
