@@ -48,12 +48,11 @@ jobs:
             echo "SWIFT_TEST_FLAGS=" >> $GITHUB_ENV
             echo "SCRATCH=.build-xctest" >> $GITHUB_ENV
           fi
-
       - name: Cache SPM build products (per engine)
         uses: actions/cache@v4
         with:
           path: ${{ env.SCRATCH }}
-          key: ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-${{ hashFiles('**/Package.resolved') || hashFiles('**/Package.swift') }}
+          key: ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-${{ hashFiles('**/Package.resolved', '**/Package.swift') || 'nohash' }}
           restore-keys: |
             ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-
             ${{ runner.os }}-spm-${{ env.XCODE_VER }}-
