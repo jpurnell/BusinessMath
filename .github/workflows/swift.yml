@@ -79,7 +79,7 @@ jobs:
           swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a build-${{ matrix.engine }}-debug.log
           swift test  -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee build-${{ matrix.engine }}-release.log
 
-	  - name: Upload build logs
+      - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
 		with:
