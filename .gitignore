@@ -2,6 +2,7 @@
 .claude/
 .DS_Store
 !.swiftpm/xcode/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/jpurnell.userdatad/UserInterfaceState.xcuserstate
 howToResume.md
 overallRules
 codingRules.md~
