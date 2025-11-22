@@ -42,11 +42,12 @@ jobs:
 
       - name: Build (Debug) + tests (macOS)
         run: |
-          swift build -v --enable-swift-testing --enable-xctest --build-tests
-          swift test -v --parallel
+          swift build --enable-swift-testing --build-tests
+          swift test --enable-swift-testing --parallel
+          swift test --enable-swift-testing -c release --parallel
 
       - name: Tests in Release (macOS)
-        run: swift test -c release --parallel
+        run: swift test -c --enable-swift-testing release --parallel
 
       - name: Build library in Release (macOS)
         run: swift build -c release
