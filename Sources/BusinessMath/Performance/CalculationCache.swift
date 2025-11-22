@@ -186,7 +186,7 @@ public final class CalculationCache: @unchecked Sendable {
 		}
 	}
 	
-	public func getOrCalculate<T>(key: String, calculation: () -> T) -> T {
+	public func getOrCalculate<T: Sendable>(key: String, calculation: () -> T) -> T {
 		lock.lock()
 		let now = Date()
 		
@@ -357,7 +357,7 @@ actor CalculationCacheAsync {
 	
 		// MARK: - Public API
 	
-	func getOrCalculate<T>(key: String, calculation: @Sendable () async -> T) async -> T {
+	func getOrCalculate<T: Sendable>(key: String, calculation: @Sendable () async -> T) async -> T {
 		let k = augmentedKey(key, T.self)
 		let now = Date()
 		
@@ -415,7 +415,7 @@ actor CalculationCacheAsync {
 	}
 	
 		// Sync convenience
-	func getOrCalculate<T>(key: String, calculation: @Sendable () -> T) async -> T {
+	func getOrCalculate<T: Sendable>(key: String, calculation: @Sendable () -> T) async -> T {
 		let asyncOverload: (String, @Sendable () async -> T) async -> T = self.getOrCalculate
 		return await asyncOverload(key, { () async -> T in
 			calculation()
@@ -445,7 +445,7 @@ actor CalculationCacheAsync {
 	
 		// MARK: - Internals
 	
-	private func augmentedKey<T>(_ key: String, _ type: T.Type) -> String {
+	private func augmentedKey<T: Sendable>(_ key: String, _ type: T.Type) -> String {
 		key + "|" + String(reflecting: T.self)
 	}
 	
@@ -480,7 +480,7 @@ actor CalculationCacheAsync {
 		}
 	}
 	
-	private func admitIfNeeded<T>(key: String, value: T, now: Date) async {
+	private func admitIfNeeded<T: Sendable>(key: String, value: T, now: Date) async {
 		if cache.count < maxSize {
 			cache[key] = CachedValue(value: value, createdAt: now, lastAccessId: bumpAccessId())
 			recordSeenIfNew(key)
@@ -497,7 +497,7 @@ actor CalculationCacheAsync {
 		recordSeenIfNew(key)
 	}
 	
-	private func leaderCompute<T>(key: String, valueType: T.Type, calc: @Sendable () async -> T) async -> T {
+	private func leaderCompute<T: Sendable>(key: String, valueType: T.Type, calc: @Sendable () async -> T) async -> T {
 			// If there is no leader at this instant, become one
 		if inflight[key] == nil {
 			inflight[key] = InflightEntry()

@@ -84,6 +84,8 @@ final class UnassortedTests: XCTestCase {
     
     func testConfidenceIntervalCI() {
         let result = confidenceInterval(ci: 0, values: [0])
+		XCTAssertEqual(result.low, 0)
+		XCTAssertEqual(result.high, 0)
 //		unassortedTestsLogger.info("Test Confidence Interval CI:\t\(result.low)\t\(result.high)")
     }
     
@@ -93,11 +95,7 @@ final class UnassortedTests: XCTestCase {
         XCTAssertEqual(result, 0.05)
         XCTAssertEqual(resultOne, 0.10)
     }
-    
-    func testConfidenceIntervalProbabilistic() {
-        let result = confidenceIntervalProbabilistic(0.05, observations: 50, ci: 0.95)
-//		unassortedTestsLogger.info("Test Confidence Interval Probabilistic:\t\(result.low)\t\(result.high)")
-    }
+
     
     func testBinomial() {
 		// Test binomial experiment - count successes in n trials with probability p

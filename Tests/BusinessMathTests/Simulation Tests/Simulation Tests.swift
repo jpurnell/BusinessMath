@@ -50,7 +50,7 @@ final class SimulationTests: XCTestCase {
 		let roundedCount = (Double(countUnderC) / 10.0).rounded() * 10.0
 		let roundedLow = Int(roundedCount * 0.975)
 		let roundedHigh = Int(roundedCount * 1.025)
-		let expectedObservations = Int(((c - a) * (2 / (b - a)) * (1 / 2) * 10000).rounded())
+//		let expectedObservations = Int(((c - a) * (2 / (b - a)) * (1 / 2) * 10000).rounded())
 //		logger.info("\t\t\tExpected: \(expectedObservations)\nApprox Count Under C: \(countUnderC)\n\t  Expected Range: \(Int(roundedLow)) - \(Int(roundedHigh)) \(countUnderC >= Int(roundedLow) && countUnderC <= Int(roundedHigh) ? "✅" : "❌")")
 		
 		//TODO: Should be sliced, with the highest count as base

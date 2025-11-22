@@ -174,13 +174,13 @@ final class CachingOptimizationTests: XCTestCase {
         let exporter = TimeSeriesExporter<Double>(series: series)
 
         // When: Comparing export methods
-        let normalStart = Date()
+//        let normalStart = Date()
         let normalCSV = exporter.exportToCSV()
-        let normalTime = Date().timeIntervalSince(normalStart)
+//        let normalTime = Date().timeIntervalSince(normalStart)
 
-        let optimizedStart = Date()
+//        let optimizedStart = Date()
         let optimizedCSV = exporter.exportToCSVOptimized()
-        let optimizedTime = Date().timeIntervalSince(optimizedStart)
+//        let optimizedTime = Date().timeIntervalSince(optimizedStart)
 
         // Then: Both should produce valid output
 //        print("Normal TS Export: \(normalTime)s, Optimized TS Export: \(optimizedTime)s")

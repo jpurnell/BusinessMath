@@ -309,7 +309,7 @@ public struct LogisticTrendForecastTool: MCPToolHandler, Sendable {
 
         // Simple logistic approximation
         // Using capacity and fitting growth rate and inflection point
-        let midpoint = capacity / 2.0
+//        let midpoint = capacity / 2.0
         let n = historicalValues.count
 
         // Estimate growth rate from early growth

@@ -421,16 +421,16 @@ public struct ApplyGrowthTool: MCPToolHandler, Sendable {
             effectiveRate = annualRate
         case .semiannual:
             periodsPerYearCount = 2.0
-            effectiveRate = annualRate / 2.0
+            effectiveRate = annualRate / periodsPerYearCount
         case .quarterly:
             periodsPerYearCount = 4.0
-            effectiveRate = annualRate / 4.0
+            effectiveRate = annualRate / periodsPerYearCount
         case .monthly:
             periodsPerYearCount = 12.0
-            effectiveRate = annualRate / 12.0
+            effectiveRate = annualRate / periodsPerYearCount
         case .daily:
             periodsPerYearCount = 365.0
-            effectiveRate = annualRate / 365.0
+            effectiveRate = annualRate / periodsPerYearCount
         }
 
         // Format projection table (show first few, middle, and last few if long)
