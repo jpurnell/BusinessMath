@@ -40,10 +40,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}
 
-      #- name: Build (Debug) + tests (macOS)
-      #  run: |
-      #    swift build --enable-swift-testing --enable-xctest --build-tests
-      #    swift test --parallel
+      - name: Build (Debug) + tests (macOS)
+       run: |
+         # swift build --enable-swift-testing --enable-xctest --build-tests -v
+         swift test --parallel
 
       - name: Tests in Release (macOS)
         run: swift test -c release --parallel
