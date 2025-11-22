@@ -41,9 +41,9 @@ jobs:
             ${{ runner.os }}
 
       - name: Build (Debug) + tests (macOS)
-       run: |
-         swift build --enable-swift-testing --enable-xctest --build-tests -v
-         swift test --parallel
+        run: |
+          swift build -v --enable-swift-testing --enable-xctest --build-tests
+          swift test -v --parallel
 
       - name: Tests in Release (macOS)
         run: swift test -c release --parallel
