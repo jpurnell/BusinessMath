@@ -76,6 +76,9 @@ jobs:
         run: |
           set -o pipefail
 
+          swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" --jobs 1 -v
+          swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" --jobs 1 -v
+
           LOG_D="build-${{ matrix.engine }}-debug.log"
           LOG_R="build-${{ matrix.engine }}-release.log"
 
