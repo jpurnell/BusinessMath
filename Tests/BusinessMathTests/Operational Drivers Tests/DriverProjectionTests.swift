@@ -273,3 +273,37 @@ struct DriverProjectionTests {
 		#expect(abs(firstPeriodMean - lastPeriodMean) < 100.0, "Periods should have similar means")
 	}
 }
+
+@Suite("Driver Projection Additional Tests")
+struct DriverProjectionAdditionalTests {
+
+	@Test("Expected time series equals statistics.mean")
+	func expectedEqualsMean() {
+		let drv = ProbabilisticDriver<Double>.normal(name: "X", mean: 100.0, stdDev: 15.0)
+		let periods = Period.year(2025).quarters()
+		let proj = DriverProjection(driver: drv, periods: periods)
+
+		let res = proj.projectMonteCarlo(iterations: 5000)
+		let expected = res.expected()
+
+		for p in periods {
+			let m = res.statistics[p]!.mean
+			#expect(abs(expected[p]! - m) < 1e-6)
+		}
+	}
+
+	@Test("Percentiles are within min/max for all periods")
+	func percentilesWithinExtremes() {
+		let drv = ProbabilisticDriver<Double>.normal(name: "N", mean: 0.0, stdDev: 1.0)
+		let periods = Period.year(2025).months()
+		let proj = DriverProjection(driver: drv, periods: periods)
+		let res = proj.projectMonteCarlo(iterations: 2000)
+
+		for p in periods {
+			let s = res.statistics[p]!
+			let q = res.percentiles[p]!
+			#expect(s.min <= q.p5 && q.p5 <= q.p25 && q.p25 <= q.p50 && q.p50 <= q.p75 && q.p75 <= q.p95)
+			#expect(q.p95 <= s.max)
+		}
+	}
+}

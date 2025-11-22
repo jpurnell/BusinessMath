@@ -6,6 +6,8 @@
 //
 
 import XCTest
+import Testing
+import Foundation
 @testable import BusinessMath
 
 final class CommandLineVisualizationTests: XCTestCase {
@@ -220,5 +222,47 @@ final class CommandLineVisualizationTests: XCTestCase {
 		// Then
 		// Should have header + 3 bin lines (at minimum)
 		XCTAssertGreaterThanOrEqual(lines.count, 4, "Should have header and bin lines")
+	}
+}
+
+@Suite("Visualization - Additional Tests (Swift Testing)")
+struct VisualizationAdditionalTests {
+
+	@Test("Histogram deterministic counts and header")
+	func histogramDeterministic() {
+		let histogram: [(range: Range<Double>, count: Int)] = [
+			(0.0..<10.0, 10),
+			(10.0..<20.0, 20),
+			(20.0..<30.0, 20)
+		]
+
+		let output = plotHistogram(histogram)
+		#expect(output.hasPrefix("Histogram"))
+		#expect(output.contains("3 bins"))
+		#expect(output.contains("50 samples"))
+		// The two max bins should be represented similarly in bar length/percentages
+		#expect(output.contains("20.0") || output.contains("40.0%") || output.contains("50.0%"))
+	}
+
+	@Test("Tornado deterministic, shows base and sorted drivers")
+	func tornadoDeterministic() {
+		let tornado = TornadoDiagramAnalysis(
+			inputs: ["Revenue", "Costs", "Marketing"],
+			impacts: ["Revenue": 300.0, "Costs": 200.0, "Marketing": 100.0],
+			lowValues: ["Revenue": 900.0, "Costs": 800.0, "Marketing": 950.0],
+			highValues: ["Revenue": 1100.0, "Costs": 1200.0, "Marketing": 1050.0],
+			baseCaseOutput: 1000.0
+		)
+
+		let output = plotTornadoDiagram(tornado)
+		#expect(output.contains("Base"))
+		#expect(output.contains("1000"))
+		// Ensure higher impact appears before lower impact in textual output
+		let revIndex = output.range(of: "Revenue")?.lowerBound
+		let mktIndex = output.range(of: "Marketing")?.lowerBound
+		#expect(revIndex != nil && mktIndex != nil)
+		if let r = revIndex, let m = mktIndex {
+			#expect(r < m)
+		}
 	}
 }

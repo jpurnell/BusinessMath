@@ -399,3 +399,32 @@ struct SimulationResultsTests {
 		#expect(histogram[0].count == 100, "All values in single bin")
 	}
 }
+
+@Suite("SimulationResults – Additional")
+struct SimulationResultsAdditionalTests {
+
+	@Test("Probability boundary semantics are strict")
+	func probabilityBoundaryStrict() {
+		let values = [42.0, 42.0, 42.0]
+		let results = SimulationResults(values: values)
+
+		// Pin the semantics to avoid ambiguity
+		#expect(results.probabilityAbove(42.0) == 0.0, "Above should be strictly greater")
+		#expect(results.probabilityBelow(42.0) == 0.0, "Below should be strictly less")
+		#expect(results.probabilityBetween(42.0, 42.0) == 0.0, "Strict between equals zero when bounds equal")
+	}
+
+	@Test("Histogram bin coverage at exact bounds")
+	func histogramBoundsCoverage() {
+		let values = [0.0, 1.0, 2.0, 3.0]  // exact integers
+		let results = SimulationResults(values: values)
+		let hist = results.histogram(bins: 4)
+
+		let total = hist.map { $0.count }.reduce(0, +)
+		#expect(total == values.count, "All values should be in bins")
+
+		// The last bin's upper bound should include the max exactly (implementation-dependent)
+		#expect(hist.last!.range.upperBound >= results.statistics.max)
+		#expect(hist.first!.range.lowerBound <= results.statistics.min)
+	}
+}

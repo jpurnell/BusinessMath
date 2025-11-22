@@ -191,3 +191,85 @@ struct MovingAverageTests {
 		}
 	}
 }
+
+@Suite("Additional Moving Average Tests")
+struct AdditionalMovingAverageTests {
+	
+		// Helpers
+		private func dayPeriods(count: Int, start: TimeInterval = 0) -> [Period] {
+			(0..<count).map { Period.day(Date(timeIntervalSince1970: start + Double($0 * 86400))) }
+		}
+
+		private func monthPeriods(yearStart: Int, monthCount: Int) -> [Period] {
+			var periods = [Period]()
+			var y = yearStart
+			var m = 1
+			for _ in 0..<monthCount {
+				periods.append(Period.month(year: y, month: m))
+				m += 1
+				if m == 13 { m = 1; y += 1 }
+			}
+			return periods
+		}
+
+	@Test("Window of 1 is naive last-value forecast")
+	func windowOneIsNaive() throws {
+		var model = MovingAverageModel<Double>(window: 1)
+		let periods = monthPeriods(yearStart: 2024, monthCount: 6)
+		let values: [Double] = [10, 15, 18, 20, 22, 25]
+		let data = TimeSeries(periods: periods, values: values)
+		try model.train(on: data)
+
+		let fc = model.predict(periods: 3)
+		#expect(fc.valuesArray.count == 3)
+		for v in fc.valuesArray {
+			#expect(abs(v - 25.0) < 1e-9)
+		}
+	}
+
+	@Test("Predict zero periods returns empty forecast")
+	func predictZeroPeriods() throws {
+		var model = MovingAverageModel<Double>(window: 3)
+		let periods = monthPeriods(yearStart: 2024, monthCount: 6)
+		let values: [Double] = [10, 12, 14, 16, 18, 20]
+		let data = TimeSeries(periods: periods, values: values)
+		try model.train(on: data)
+
+		let fc = model.predict(periods: 0)
+		#expect(fc.periods.isEmpty)
+		#expect(fc.valuesArray.isEmpty)
+	}
+
+	@Test("Forecast periods are contiguous with monthly training series")
+	func forecastPeriodContinuity() throws {
+		var model = MovingAverageModel<Double>(window: 3)
+		let trainPeriods = monthPeriods(yearStart: 2024, monthCount: 12)
+		let values = (0..<12).map { Double(100 + $0) }
+		let data = TimeSeries(periods: trainPeriods, values: values)
+		try model.train(on: data)
+
+		let fc = model.predict(periods: 3)
+		let expected = [
+			Period.month(year: 2025, month: 1),
+			Period.month(year: 2025, month: 2),
+			Period.month(year: 2025, month: 3)
+		]
+		#expect(fc.periods == expected)
+	}
+
+	@Test("Constant data confidence intervals collapse to a point")
+	func constantDataConfidenceIntervals() throws {
+		var model = MovingAverageModel<Double>(window: 5)
+		let periods = monthPeriods(yearStart: 2024, monthCount: 10)
+		let values = Array(repeating: 100.0, count: 10)
+		let data = TimeSeries(periods: periods, values: values)
+		try model.train(on: data)
+
+		let fc = model.predictWithConfidence(periods: 4, confidenceLevel: 0.95)
+		for i in 0..<4 {
+			#expect(abs(fc.forecast.valuesArray[i] - 100.0) < 1e-9)
+			#expect(abs(fc.lowerBound.valuesArray[i] - 100.0) < 1e-9)
+			#expect(abs(fc.upperBound.valuesArray[i] - 100.0) < 1e-9)
+		}
+	}
+}

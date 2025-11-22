@@ -402,4 +402,21 @@ struct OperationalMetricsTests {
 		#expect(decoded["units_sold"] == original["units_sold"])
 		#expect(decoded["revenue"] == original["revenue"])
 	}
+	
+	@Suite("Operational Metrics Edge Cases")
+	struct OperationalMetricsEdgeTests {
+
+		@Test("Growth rate returns nil for missing metric")
+		func growthRateMissingMetric() throws {
+			let e = Entity(id: "OPS", primaryType: .ticker, name: "Ops Co")
+			let qs = Period.year(2025).quarters()
+			let list = [
+				OperationalMetrics<Double>(entity: e, period: qs[0], metrics: ["units": 100.0]),
+				OperationalMetrics<Double>(entity: e, period: qs[1], metrics: ["units": 110.0])
+			]
+			let series = try OperationalMetricsTimeSeries(metrics: list)
+			let missing = series.growthRate(metric: "not_present")
+			#expect(missing == nil)
+		}
+	}
 }

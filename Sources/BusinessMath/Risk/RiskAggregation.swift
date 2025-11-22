@@ -8,44 +8,15 @@
 import Foundation
 import Numerics
 
-// MARK: - RiskAggregator
-
-/// Aggregate risk across multiple entities or portfolios.
-///
-/// `RiskAggregator` provides methods to aggregate Value at Risk (VaR) across
-/// entities, accounting for correlations. It also calculates marginal and
-/// component VaR to understand individual contributions to portfolio risk.
-///
-/// ## Usage
-///
-/// ```swift
-/// let individualVaRs = [100.0, 150.0, 200.0]
-/// let correlations = [
-///     [1.0, 0.6, 0.4],
-///     [0.6, 1.0, 0.5],
-///     [0.4, 0.5, 1.0]
-/// ]
-///
-/// let aggregatedVaR = RiskAggregator<Double>.aggregateVaR(
-///     individualVaRs: individualVaRs,
-///     correlations: correlations
-/// )
-/// ```
 public struct RiskAggregator<T: Real & Sendable> {
 
 	// MARK: - Aggregate VaR
 
-	/// Aggregate VaR across entities using variance-covariance approach.
+	/// Aggregate VaR across entities using the variance-covariance approach.
 	///
-	/// Uses the formula:
-	/// ```
-	/// σ_portfolio = sqrt(Σ Σ VaR_i * VaR_j * ρ_ij)
-	/// ```
-	///
-	/// - Parameters:
-	///   - individualVaRs: Individual VaR for each entity.
-	///   - correlations: Correlation matrix (n x n).
-	/// - Returns: Aggregated portfolio VaR.
+	/// Interprets `individualVaRs` as the exposure vector v (already in VaR units),
+	/// and computes:
+	/// VaR(v) = sqrt(vᵀ C v)
 	public static func aggregateVaR(
 		individualVaRs: [T],
 		correlations: [[T]]
@@ -54,13 +25,17 @@ public struct RiskAggregator<T: Real & Sendable> {
 		precondition(correlations.count == n, "Correlation matrix must be n x n")
 		precondition(correlations.allSatisfy { $0.count == n }, "Correlation matrix must be square")
 
-		// Variance-covariance approach
 		var totalVariance: T = 0
-
+		// Compute vᵀ C v
 		for i in 0..<n {
 			for j in 0..<n {
-				totalVariance += individualVaRs[i] * individualVaRs[j] * correlations[i][j]
+				totalVariance += individualVaRs[i] * correlations[i][j] * individualVaRs[j]
 			}
+		}
+
+		// Guard against tiny negative due to rounding (valid C should be PSD)
+		if totalVariance < 0 && totalVariance > -T.ulpOfOne {
+			totalVariance = 0
 		}
 
 		return T.sqrt(totalVariance)
@@ -68,21 +43,12 @@ public struct RiskAggregator<T: Real & Sendable> {
 
 	// MARK: - Marginal VaR
 
-	/// Calculate marginal VaR contribution of a specific entity.
+	/// Marginal VaR with respect to the provided exposure vector `individualVaRs`.
 	///
-	/// Marginal VaR measures the change in portfolio VaR if the entity's
-	/// exposure increases by a small amount.
+	/// Given v = `individualVaRs`, VaR = sqrt(vᵀ C v), the marginal contribution is:
+	/// dVaR/dv_i = (C v)_i / VaR
 	///
-	/// Formula:
-	/// ```
-	/// Marginal VaR_i = VaR_i * (Σ_j VaR_j * ρ_ij) / Portfolio VaR
-	/// ```
-	///
-	/// - Parameters:
-	///   - entity: Index of the entity (0-based).
-	///   - individualVaRs: Individual VaR for each entity.
-	///   - correlations: Correlation matrix.
-	/// - Returns: Marginal VaR contribution.
+	/// This is a true marginal (derivative). The Euler component is v_i * marginal_i.
 	public static func marginalVaR(
 		entity: Int,
 		individualVaRs: [T],
@@ -90,34 +56,28 @@ public struct RiskAggregator<T: Real & Sendable> {
 	) -> T {
 		let n = individualVaRs.count
 		precondition(entity >= 0 && entity < n, "Entity index out of bounds")
+		precondition(correlations.count == n && correlations.allSatisfy { $0.count == n }, "Correlation matrix must be n x n")
 
-		let portfolioVaR = aggregateVaR(
-			individualVaRs: individualVaRs,
-			correlations: correlations
-		)
+		let portfolioVaR = aggregateVaR(individualVaRs: individualVaRs, correlations: correlations)
+		// If portfolioVaR is zero, derivative is undefined; return 0 to avoid NaN.
+		if portfolioVaR == 0 { return 0 }
 
-		// Calculate contribution: Σ_j VaR_j * ρ_ij
-		var contribution: T = 0
+		// Compute (C v)_i
+		var Cv_i: T = 0
 		for j in 0..<n {
-			contribution += individualVaRs[j] * correlations[entity][j]
+			Cv_i += correlations[entity][j] * individualVaRs[j]
 		}
 
-		return individualVaRs[entity] * contribution / portfolioVaR
+		return Cv_i / portfolioVaR
 	}
 
 	// MARK: - Component VaR
 
-	/// Calculate component VaR for each entity.
+	/// Component VaR for each entity using Euler allocation.
 	///
-	/// Component VaR = Weight_i * Marginal VaR_i
-	///
-	/// Sum of component VaRs equals portfolio VaR.
-	///
-	/// - Parameters:
-	///   - individualVaRs: Individual VaR for each entity.
-	///   - weights: Portfolio weights for each entity.
-	///   - correlations: Correlation matrix.
-	/// - Returns: Array of component VaRs.
+	/// Forms exposure vector v = weights .* individualVaRs, computes:
+	/// component_i = v_i × (C v)_i / VaR
+	/// and returns the vector of components. Sum of components equals portfolio VaR.
 	public static func componentVaR(
 		individualVaRs: [T],
 		weights: [T],
@@ -125,16 +85,34 @@ public struct RiskAggregator<T: Real & Sendable> {
 	) -> [T] {
 		let n = individualVaRs.count
 		precondition(weights.count == n, "Weights must match number of entities")
+		precondition(correlations.count == n && correlations.allSatisfy { $0.count == n }, "Correlation matrix must be n x n")
 
-		var components = Array(repeating: T(0), count: n)
-
+		// v = weights .* individualVaRs
+		var v = [T](repeating: 0, count: n)
 		for i in 0..<n {
-			let marginal = marginalVaR(
-				entity: i,
-				individualVaRs: individualVaRs,
-				correlations: correlations
-			)
-			components[i] = weights[i] * marginal
+			v[i] = weights[i] * individualVaRs[i]
+		}
+
+		let portfolioVaR = aggregateVaR(individualVaRs: v, correlations: correlations)
+		if portfolioVaR == 0 {
+			// All components are zero if portfolio VaR is zero
+			return [T](repeating: 0, count: n)
+		}
+
+		// Compute C v
+		var Cv = [T](repeating: 0, count: n)
+		for i in 0..<n {
+			var sum: T = 0
+			for j in 0..<n {
+				sum += correlations[i][j] * v[j]
+			}
+			Cv[i] = sum
+		}
+
+		// Euler components: v_i * (C v)_i / VaR
+		var components = [T](repeating: 0, count: n)
+		for i in 0..<n {
+			components[i] = (v[i] * Cv[i]) / portfolioVaR
 		}
 
 		return components

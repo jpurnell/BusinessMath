@@ -236,3 +236,27 @@ struct SimulationStatisticsTests {
 		#expect(stats.skewness > 1.5 && stats.skewness < 2.5, "Skewness should be near 2.0")
 	}
 }
+
+@Suite("SimulationStatistics – Additional")
+struct SimulationStatisticsAdditionalTests {
+
+	@Test("Coverage interval vs CI of the mean – semantics pin")
+	func coverageVsCiOfMean() {
+		// If your API is intended as coverage interval, this test pins it.
+		// If you intend to return a CI of the mean, update implementation and this test accordingly.
+		var values: [Double] = []
+		for _ in 0..<5000 {
+			values.append(distributionNormal(mean: 100.0, stdDev: 15.0))
+		}
+
+		let stats = SimulationStatistics(values: values)
+		let ci95 = stats.confidenceInterval(level: 0.95)
+
+		// Coverage interval (not CI of the mean): mean ± 1.96*σ
+		let expectedLow = stats.mean - 1.96 * stats.stdDev
+		let expectedHigh = stats.mean + 1.96 * stats.stdDev
+
+		#expect(abs(ci95.low - expectedLow) < 1.0)
+		#expect(abs(ci95.high - expectedHigh) < 1.0)
+	}
+}

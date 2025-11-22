@@ -76,19 +76,17 @@ public struct MovingAverageModel<T: Real & Sendable & Codable> {
 	/// - Parameter periods: Number of periods to forecast.
 	/// - Returns: A time series with the forecasted values.
 	public func predict(periods: Int) -> TimeSeries<T> {
-		guard let average = movingAverage,
-			  let lastPeriod = lastPeriod else {
+		guard periods > 0 else {
 			return TimeSeries(periods: [], values: [])
 		}
 
-		var forecastPeriods: [Period] = []
-		var forecastValues: [T] = []
-
-		for h in 1...periods {
-			let nextPeriod = lastPeriod.advanced(by: h)
-			forecastPeriods.append(nextPeriod)
-			forecastValues.append(average)
+		// Require the model to be trained
+		guard let average = movingAverage, let last = lastPeriod else {
+			return TimeSeries(periods: [], values: [])
 		}
+
+		let forecastPeriods = (1...periods).map { last.advanced(by: $0) }
+		let forecastValues = Array(repeating: average, count: periods)
 
 		return TimeSeries(periods: forecastPeriods, values: forecastValues)
 	}

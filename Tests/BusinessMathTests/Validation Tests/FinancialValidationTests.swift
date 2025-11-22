@@ -481,3 +481,234 @@ struct FinancialValidationTests {
 		#expect(result.isValid)
 	}
 }
+
+@Suite("Financial Validation - Additional Tests")
+struct FinancialValidationAdditionalTests {
+	
+	func makeEntity() -> Entity {
+		Entity(id: "TEST", primaryType: .ticker, name: "Test Co")
+	}
+	
+	func make3Periods() -> [Period] {
+		[
+			.quarter(year: 2024, quarter: 1),
+			.quarter(year: 2024, quarter: 2),
+			.quarter(year: 2024, quarter: 3)
+		]
+	}
+	
+	@Test("Balance sheet balances with multiple accounts across periods")
+	func balanceSheetBalancesWithMultipleAccounts() throws {
+		let entity = makeEntity()
+		let periods = make3Periods()
+		
+			// Assets total: [150, 145, 145]
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 105.0, 110.0]),
+			assetType: .cashAndEquivalents
+		)
+		let receivables = try Account(
+			entity: entity,
+			name: "A/R",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [50.0, 40.0, 35.0]),
+			assetType: .accountsReceivable
+		)
+		
+			// Liabilities total: [50, 45, 45]
+		let debt = try Account(
+			entity: entity,
+			name: "Debt",
+			type: .liability,
+			timeSeries: TimeSeries(periods: periods, values: [30.0, 25.0, 20.0]),
+			liabilityType: .longTermDebt
+		)
+		let payables = try Account(
+			entity: entity,
+			name: "A/P",
+			type: .liability,
+			timeSeries: TimeSeries(periods: periods, values: [20.0, 20.0, 25.0]),
+			liabilityType: .accountsPayable
+		)
+		
+			// Equity total: [100, 100, 100]
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 100.0, 100.0]),
+			equityType: .commonStock
+		)
+		
+		let bs = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash, receivables],
+			liabilityAccounts: [debt, payables],
+			equityAccounts: [equity]
+		)
+		
+		let rule = FinancialValidation.BalanceSheetBalances<Double>()
+		let ctx = ValidationContext(fieldName: "Balance Sheet")
+		
+		let result = rule.validate(bs, context: ctx)
+		#expect(result.isValid)
+		#expect(result.errors.isEmpty)
+	}
+	
+	@Test("Balance sheet: difference exactly equals tolerance is valid")
+	func balanceSheetToleranceBoundaryEqual() throws {
+		let entity = makeEntity()
+		let periods = [
+			Period.quarter(year: 2024, quarter: 1),
+			Period.quarter(year: 2024, quarter: 2)
+		]
+		
+			// Assets 100, Liab 40, Equity 59.99 => diff = 0.01
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0]),
+			assetType: .cashAndEquivalents
+		)
+		let debt = try Account(
+			entity: entity,
+			name: "Debt",
+			type: .liability,
+			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0]),
+			liabilityType: .longTermDebt
+		)
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [59.99, 64.99]),
+			equityType: .commonStock
+		)
+		
+		let bs = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash],
+			liabilityAccounts: [debt],
+			equityAccounts: [equity]
+		)
+		
+		let rule = FinancialValidation.BalanceSheetBalances<Double>(tolerance: 0.01)
+		let result = rule.validate(bs, context: .init(fieldName: "BS tol"))
+		#expect(result.isValid)
+	}
+	
+	@Test("Balance sheet: difference slightly above tolerance is invalid")
+	func balanceSheetToleranceBoundaryOver() throws {
+		let entity = makeEntity()
+		let periods = [
+			Period.quarter(year: 2024, quarter: 1),
+			Period.quarter(year: 2024, quarter: 2)
+		]
+		
+			// Assets 100, Liab 40, Equity 59.988 => diff = 0.012 (> 0.01)
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0]),
+			assetType: .cashAndEquivalents
+		)
+		let debt = try Account(
+			entity: entity,
+			name: "Debt",
+			type: .liability,
+			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0]),
+			liabilityType: .longTermDebt
+		)
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [59.988, 64.988]),
+			equityType: .commonStock
+		)
+		
+		let bs = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash],
+			liabilityAccounts: [debt],
+			equityAccounts: [equity]
+		)
+		
+		let rule = FinancialValidation.BalanceSheetBalances<Double>(tolerance: 0.01)
+		let result = rule.validate(bs, context: .init(fieldName: "BS tol"))
+		#expect(!result.isValid)
+		#expect(!result.errors.isEmpty)
+	}
+	
+	@Test("Cash flow reconciliation with multiple accounts")
+	func cashFlowReconcilesWithMultipleAccounts() throws {
+		let entity = makeEntity()
+		let periods = [
+			Period.quarter(year: 2024, quarter: 1),
+			Period.quarter(year: 2024, quarter: 2)
+		]
+
+		// Cash change: +300
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			type: .asset,
+			timeSeries: TimeSeries(periods: periods, values: [1_000.0, 1_300.0]),
+			assetType: .cashAndEquivalents
+		)
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			type: .equity,
+			timeSeries: TimeSeries(periods: periods, values: [1_000.0, 1_300.0]),
+			equityType: .commonStock
+		)
+		let bs = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			assetAccounts: [cash],
+			liabilityAccounts: [],
+			equityAccounts: [equity]
+		)
+
+		// Net CF = +300 (500 - 100 - 100)
+		let op1 = try Account(
+			entity: entity,
+			name: "Op1",
+			type: .operating,
+			timeSeries: TimeSeries(periods: periods, values: [500.0, 500.0])
+		)
+		let inv1 = try Account(
+			entity: entity,
+			name: "Inv1",
+			type: .investing,
+			timeSeries: TimeSeries(periods: periods, values: [-100.0, -100.0])
+		)
+		let fin1 = try Account(
+			entity: entity,
+			name: "Fin1",
+			type: .financing,
+			timeSeries: TimeSeries(periods: periods, values: [-100.0, -100.0])
+		)
+		let cf = try CashFlowStatement(
+			entity: entity,
+			periods: periods,
+			operatingAccounts: [op1],
+			investingAccounts: [inv1],
+			financingAccounts: [fin1]
+		)
+
+		let rule = FinancialValidation.CashFlowReconciliation<Double>()
+		let result = rule.validate((cf, bs), context: .init(fieldName: "CF Recon"))
+		#expect(result.isValid)
+		#expect(result.errors.isEmpty)
+	}
+}

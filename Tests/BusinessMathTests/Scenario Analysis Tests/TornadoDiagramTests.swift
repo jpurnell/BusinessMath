@@ -533,3 +533,76 @@ struct TornadoDiagramTests {
 		}
 	}
 }
+
+@Suite("Tornado Diagram Additional Tests")
+struct TornadoDiagramAdditionalTests {
+
+	private func entity() -> Entity {
+		Entity(id: "TEST", primaryType: .ticker, name: "Test Company")
+	}
+
+	private func periods() -> [Period] {
+		[ .quarter(year: 2025, quarter: 1) ]
+	}
+
+	private func builder(entity: Entity) -> ScenarioRunner.StatementBuilder {
+		return { drivers, periods in
+			let price = drivers["Price"]?.sample(for: periods[0]) ?? 100.0
+			let volume = drivers["Volume"]?.sample(for: periods[0]) ?? 1000.0
+			let cost = drivers["Cost"]?.sample(for: periods[0]) ?? 60.0
+			let tax = drivers["Tax Rate"]?.sample(for: periods[0]) ?? 0.25
+
+			let revenue = price * volume
+			let cogs = cost * volume
+			let opex = 10_000.0
+			// IncomeStatement is pre-tax; tax won’t affect it, but we compute after-tax elsewhere if needed.
+			let revSeries = TimeSeries<Double>(periods: periods, values: Array(repeating: revenue, count: periods.count))
+			let cogsSeries = TimeSeries<Double>(periods: periods, values: Array(repeating: cogs, count: periods.count))
+			let opexSeries = TimeSeries<Double>(periods: periods, values: Array(repeating: opex, count: periods.count))
+
+			let rev = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revSeries)
+			let cogsAcc = try Account(entity: entity, name: "COGS", type: .expense, timeSeries: cogsSeries)
+			let opexAcc = try Account(entity: entity, name: "OpEx", type: .expense, timeSeries: opexSeries)
+			let incomeStmt = try IncomeStatement(entity: entity, periods: periods, revenueAccounts: [rev], expenseAccounts: [cogsAcc, opexAcc])
+
+			// Use after-tax only in BS/CFS to demonstrate the independence of the chosen output metric.
+			let afterTax = (revenue - cogs - opex) * (1 - tax)
+			let netSeries = TimeSeries<Double>(periods: periods, values: Array(repeating: afterTax, count: periods.count))
+			let asset = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: netSeries)
+			let equity = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: netSeries)
+			let bs = try BalanceSheet(entity: entity, periods: periods, assetAccounts: [asset], liabilityAccounts: [], equityAccounts: [equity])
+
+			let op = try Account(entity: entity, name: "Operating", type: .operating, timeSeries: netSeries)
+			let cfs = try CashFlowStatement(entity: entity, periods: periods, operatingAccounts: [op], investingAccounts: [], financingAccounts: [])
+
+			return (incomeStmt, bs, cfs)
+		}
+	}
+
+	@Test("Tax Rate has zero impact when output metric is pre-tax net income")
+	func taxRateNoImpactOnPreTax() throws {
+		let e = entity()
+		let ps = periods()
+		var overrides: [String: AnyDriver<Double>] = [:]
+		overrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 100.0))
+		overrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 1000.0))
+		overrides["Cost"] = AnyDriver(DeterministicDriver(name: "Cost", value: 60.0))
+		overrides["Tax Rate"] = AnyDriver(DeterministicDriver(name: "Tax Rate", value: 0.25))
+
+		let base = FinancialScenario(name: "Base Case", description: "", driverOverrides: overrides)
+		let tornado = try runTornadoAnalysis(
+			baseCase: base,
+			entity: e,
+			periods: ps,
+			inputDrivers: ["Price", "Volume", "Cost", "Tax Rate"],
+			variationPercent: 0.20,
+			steps: 3,
+			builder: builder(entity: e)
+		) { projection in
+			projection.incomeStatement.netIncome[ps[0]]!
+		}
+
+		// Explicitly assert Tax Rate has no impact since output is pre-tax income
+		#expect(abs(tornado.impacts["Tax Rate"] ?? -1) < 1e-12)
+	}
+}

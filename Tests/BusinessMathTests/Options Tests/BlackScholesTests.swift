@@ -297,3 +297,53 @@ struct BlackScholesTests {
 		#expect(highVolPrice > lowVolPrice)
 	}
 }
+
+@Suite("Black-Scholes Additional Tests")
+struct BlackScholesAdditionalTests {
+
+	@Test("ATM call price matches known value")
+	func bsKnownPrice() {
+		// S=100, K=100, T=1, r=5%, sigma=20%; Call ≈ 10.4506
+		let price = BlackScholesModel<Double>.price(
+			optionType: .call,
+			spotPrice: 100.0,
+			strikePrice: 100.0,
+			timeToExpiry: 1.0,
+			riskFreeRate: 0.05,
+			volatility: 0.20
+		)
+		#expect(abs(price - 10.4506) < 0.05)
+	}
+
+	@Test("Finite-difference Greeks roughly match closed-form")
+	func finiteDifferenceGreeks() {
+		let S = 100.0, K = 100.0, T = 1.0, r = 0.05, v = 0.20
+		let hS = 0.01, hV = 0.0001
+
+		let price = { (spot: Double, vol: Double, time: Double) in
+			BlackScholesModel<Double>.price(optionType: .call, spotPrice: spot, strikePrice: K, timeToExpiry: time, riskFreeRate: r, volatility: vol)
+		}
+
+		let greeks = BlackScholesModel<Double>.greeks(
+			optionType: .call,
+			spotPrice: S, strikePrice: K, timeToExpiry: T, riskFreeRate: r, volatility: v
+		)
+
+		// Central difference delta and gamma
+		let cPlus = price(S + hS, v, T)
+		let c0 = price(S, v, T)
+		let cMinus = price(S - hS, v, T)
+
+		let deltaFD = (cPlus - cMinus) / (2 * hS)
+		let gammaFD = (cPlus - 2 * c0 + cMinus) / (hS * hS)
+
+		// Vega by bumping vol
+		let cVolPlus = price(S, v + hV, T)
+		let cVolMinus = price(S, v - hV, T)
+		let vegaFD = (cVolPlus - cVolMinus) / (2 * hV)
+
+		#expect(abs(deltaFD - greeks.delta) < 1e-3)
+		#expect(abs(gammaFD - greeks.gamma) < 5e-3)
+		#expect(abs(vegaFD - greeks.vega) / greeks.vega < 0.02) // within 2%
+	}
+}

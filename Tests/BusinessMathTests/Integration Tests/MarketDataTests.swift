@@ -194,6 +194,24 @@ struct MarketDataTests {
 		#expect(timeSeries.periods.count == 3)
 	}
 
+			@Test("HTTP non-200 status yields error")
+			func httpErrorStatus() async throws {
+					let mockSession = MockNetworkSession { request in
+							let data = Data()
+							let resp = HTTPURLResponse(url: request.url!, statusCode: 429, httpVersion: nil, headerFields: nil)!
+							return (data, resp)
+					}
+
+					let provider = YahooFinanceProvider(session: mockSession)
+					do {
+							_ = try await provider.fetchStockPrice(symbol: "AAPL", from: Date(), to: Date())
+							Issue.record("Expected fetch to throw on 429")
+					} catch {
+							// Expected; if provider distinguishes rate-limited errors, assert that here.
+							// e.g., #expect(error is MarketDataError)
+					}
+			}
+
 	// MARK: - Error Handling
 
 	@Test("Handle network error")

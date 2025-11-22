@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Testing
 import Numerics
 import OSLog
 @testable import BusinessMath
@@ -163,5 +164,42 @@ final class DispersionAroundtheMeanTests: XCTestCase {
 		let df3 = 3
 		let theoreticalVariance3 = Double(df3) / Double(df3 - 2)
 		XCTAssertEqual(theoreticalVariance3, 3.0, accuracy: 0.001, "Theoretical variance for df=3 should be 3.0")
+	}
+}
+
+@Suite("Dispersion - Invariants and Edge Cases")
+struct DispersionProperties {
+
+	@Test("StdDev translation and scale invariance (population)")
+	func stdDev_population_invariance() {
+		let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+		let s = stdDevP(x)
+		let xShift = x.map { $0 + 10.0 }
+		let xScaled = x.map { -3.0 * $0 } // scale by -3
+
+		#expect(close(stdDevP(xShift), s, accuracy: 1e-12))
+		#expect(close(stdDevP(xScaled), 3.0 * s, accuracy: 1e-12))
+	}
+
+	@Test("StdDev translation and scale invariance (sample)")
+	func stdDev_sample_invariance() {
+		let x = [1.0, 4.0, 9.0, 16.0, 25.0]
+		let s = stdDevS(x)
+		let xShift = x.map { $0 - 100.0 }
+		let xScaled = x.map { 2.5 * $0 }
+		#expect(close(stdDevS(xShift), s, accuracy: 1e-12))
+		#expect(close(stdDevS(xScaled), 2.5 * s, accuracy: 1e-12))
+	}
+
+	@Test("Coefficient of variation non-negative and throws at zero mean")
+	func coefficient_of_variation_properties() throws {
+		let x = [1.0, 2.0, 3.0, 4.0]
+		let cv = try coefficientOfVariation(stdDev(x), mean: mean(x))
+		#expect(cv >= 0.0)
+
+		// Throws when mean is zero
+		#expect(throws: MathError.self) {
+			_ = try coefficientOfVariation(stdDev([ -1.0, 0.0, 1.0 ]), mean: 0.0)
+		}
 	}
 }

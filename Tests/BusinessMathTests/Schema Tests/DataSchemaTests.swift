@@ -202,3 +202,100 @@ struct DataSchemaTests {
 		#expect(!result.isValid)
 	}
 }
+
+@Suite("Additional DataSchema Tests")
+struct DataSchemaAdditionalTests {
+	
+	@Test("Validate data - extraneous fields are ignored")
+	func extraneousFieldsAreIgnored() throws {
+		let schema = DataSchema(
+			version: 1,
+			requiredFields: [
+				FieldDefinition(name: "name", type: .string)
+			]
+		)
+		
+		let data: [String: Any] = [
+			"name": "Acme Corp",
+			"unexpected": 123
+		]
+		
+		let result = schema.validate(data)
+		#expect(result.isValid)
+		#expect(result.errors.isEmpty)
+	}
+	
+	@Test("Validate data - aggregates multiple errors")
+	func aggregatesMultipleErrors() throws {
+		let schema = DataSchema(
+			version: 1,
+			requiredFields: [
+				FieldDefinition(name: "name", type: .string),
+				FieldDefinition(name: "revenue", type: .double)
+			]
+		)
+		
+			// Missing "name" and wrong type for "revenue"
+		let data: [String: Any] = [
+			"revenue": "not a number"
+		]
+		
+		let result = schema.validate(data)
+		
+		#expect(!result.isValid)
+		
+			// Order-agnostic assertions
+		let hasMissingName = result.errors.contains { $0.field == "name" && $0.rule == "Required" }
+		let hasRevenueType = result.errors.contains { $0.field == "revenue" && $0.rule == "Type" }
+		#expect(hasMissingName)
+		#expect(hasRevenueType)
+		#expect(result.errors.count >= 2)
+	}
+	
+	@Test("Validate date type - invalid strings rejected")
+	func invalidDateStringRejected() throws {
+		let field = FieldDefinition(name: "date", type: .date)
+		#expect(!field.validateType("not a date"))
+			// ISO 8601 style should be accepted if your implementation supports it:
+		#expect(field.validateType("2024-01-01T12:34:56Z"))
+	}
+	
+	@Test("Validate arrays - element types and nesting")
+	func arrayElementTypingAndNesting() throws {
+		let stringArrayField = FieldDefinition(name: "tags", type: .array(.string))
+		#expect(stringArrayField.validateType(["a", "b", "c"]))
+		#expect(!stringArrayField.validateType(["a", 1, "c"]))
+		
+		let nestedArrayField = FieldDefinition(name: "matrix", type: .array(.array(.int)))
+		#expect(nestedArrayField.validateType([[1, 2], [3]]))
+		#expect(!nestedArrayField.validateType([[1, "2"]]))
+		
+			// Empty array should generally be accepted unless you enforce min count elsewhere
+		#expect(stringArrayField.validateType([]))
+	}
+	
+	@Test("Optional field present as NSNull is invalid")
+		func optionalFieldNSNullInvalid() throws {
+			let schema = DataSchema(
+				version: 1,
+				requiredFields: [
+					FieldDefinition(name: "name", type: .string)
+				],
+				optionalFields: [
+					FieldDefinition(name: "notes", type: .string)
+				]
+			)
+
+			let data: [String: Any] = [
+				"name": "Acme Corp",
+				"notes": NSNull()
+			]
+
+			let result = schema.validate(data)
+
+			#expect(!result.isValid)
+			#expect(result.errors.contains { $0.field == "notes" && $0.rule == "Type" })
+		}
+	
+}
+

@@ -535,4 +535,36 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: [jan], values: [100.0])
 		#expect(!ts.isEmpty)
 	}
+	
+		// MARK: - TimeSeries extras
+
+			@Test("rollingSum window equal to length returns single sum")
+			func rollingSumEqualsTotalWhenWindowIsFull() {
+				let periods = (0..<4).map { Period.month(year: 2025, month: $0+1) }
+				let ts = TimeSeries(periods: periods, values: [1.0, 2.0, 3.0, 4.0])
+				let roll = ts.rollingSum(window: 4)
+				#expect(roll.count == 1)
+				#expect(abs(roll[periods.last!]! - 10.0) < 1e-12)
+			}
+
+			@Test("Range with start > end returns empty")
+			func timeSeriesRangeReversedIsEmpty() {
+				let periods = (1...4).map { Period.month(year: 2025, month: $0) }
+				let ts = TimeSeries(periods: periods, values: [100.0, 200.0, 300.0, 400.0])
+				let subset = ts.range(from: periods[2], to: periods[1]) // Mar to Feb
+				#expect(subset.isEmpty)
+			}
+
+			@Test("fillForward and fillBackward preserve metadata")
+			func fillPreservesMetadata() {
+				let meta = TimeSeriesMetadata(name: "Test", unit: "USD")
+				let jan = Period.month(year: 2025, month: 1)
+				let mar = Period.month(year: 2025, month: 3)
+				let series = TimeSeries(periods: [jan, mar], values: [100.0, 300.0], metadata: meta)
+				let all = [jan, Period.month(year: 2025, month: 2), mar]
+				let ff = series.fillForward(over: all)
+				let fb = series.fillBackward(over: all)
+				#expect(ff.metadata.name == "Test" && ff.metadata.unit == "USD")
+				#expect(fb.metadata.name == "Test" && fb.metadata.unit == "USD")
+			}
 }

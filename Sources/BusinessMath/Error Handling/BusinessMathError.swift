@@ -61,8 +61,14 @@ extension BusinessMathError: LocalizedError {
             }
             return description
 
-        case .calculationFailed(let operation, let reason, _):
-            return "\(operation) calculation failed: \(reason)"
+        case .calculationFailed(let operation, let reason, let suggestions):
+				var description: String = "\(operation) calculation failed: \(reason)"
+				if !suggestions.isEmpty {
+					for suggestion in suggestions {
+						description += "\nSuggestion: \(suggestion)"
+					}
+				}
+				return description
 
         case .divisionByZero(let context):
 				if let operation = context["operation"] {
@@ -70,8 +76,12 @@ extension BusinessMathError: LocalizedError {
             }
             return "Division by zero"
 
-        case .numericalInstability(let message, _):
-            return "Numerical instability: \(message)"
+        case .numericalInstability(let message, let suggestions):
+				var description: String = "Numerical instability: \(message)"
+				if !message.isEmpty {
+					description += ": \(suggestions.joined(separator: ", "))"
+				}
+            return description
 
         case .mismatchedDimensions(let message, let context):
             var description = "Mismatched dimensions: \(message)"
@@ -80,8 +90,14 @@ extension BusinessMathError: LocalizedError {
             }
             return description
 
-        case .dataQuality(let message, _):
-            return "Data quality issue: \(message)"
+        case .dataQuality(let message, let context):
+            var description: String = "Data quality issue: \(message)"
+				if !context.isEmpty {
+					for contextItem in context {
+						description += "; \(contextItem.key): \(contextItem.value)"
+					}
+				}
+				return description
         }
     }
 

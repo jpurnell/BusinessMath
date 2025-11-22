@@ -109,6 +109,27 @@ struct ExponentialDistributionTests {
 			#expect(abs(conditionedMean - expectedMean) < 0.2, "Memoryless property: conditioned mean should be ≈ 1/λ")
 		}
 	}
+	
+	@Test("Exponential distribution memoryless property reiterated")
+	func exponentialMemorylessReiterated() {
+			let λ = 2.0
+			let sampleCount = 10000
+			let seeds = Self.seedsForExponential(count: sampleCount)
+
+			var samples: [Double] = []
+			for i in 0..<sampleCount {
+					samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			}
+
+			let threshold = 2.0
+			let conditionedSamples = samples.filter { $0 > threshold }.map { $0 - threshold }
+
+			// Should observe the mean should still be lambda^-1
+			if !conditionedSamples.isEmpty {
+					let conditionedMean = conditionedSamples.reduce(0, +) / Double(conditionedSamples.count)
+				#expect(abs(conditionedMean) - (1.0 / λ) < 0.2)
+			}
+	}
 
 	@Test("Exponential distribution rate parameter effects")
 	func exponentialRateParameter() {

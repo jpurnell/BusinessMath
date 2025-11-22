@@ -140,4 +140,31 @@ struct DataCacheTests {
 		#expect(retrieved?.periods.count == 1)
 		#expect(retrieved?.valuesArray[0] == 100_000.0)
 	}
+	
+	@Test("Overwriting same key refreshes TTL")
+			func overwriteRefreshesTTL() throws {
+					let cache = MarketDataCache()
+					cache.cache("A", for: "k", ttl: 0.1)
+
+					// Overwrite with longer TTL before first expires
+					Thread.sleep(forTimeInterval: 0.05)
+					cache.cache("B", for: "k", ttl: 1.0)
+
+					// Wait long enough that first TTL would have expired, but second should still be valid
+					Thread.sleep(forTimeInterval: 0.2)
+
+					let v: String? = cache.retrieve(for: "k")
+					#expect(v == "B")
+			}
+
+			@Test("Overwriting with different type replaces value")
+			func overwriteWithDifferentType() throws {
+					let cache = MarketDataCache()
+					cache.cache("str", for: "key")
+					#expect(cache.retrieve(for: "key") as String? == "str")
+
+					cache.cache(123, for: "key")
+					#expect(cache.retrieve(for: "key") as String? == nil)
+					#expect(cache.retrieve(for: "key") as Int? == 123)
+			}
 }

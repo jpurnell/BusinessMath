@@ -330,4 +330,16 @@ struct IRRTests {
 		#expect(!irr.isInfinite)
 		#expect(abs(irr) < 2.0)  // Reasonable bound
 	}
+	
+		// MARK: - IRR robustness
+
+			@Test("NPV changes sign around IRR (local crossing check)")
+			func npvSignAroundIRR() throws {
+				let cf = [-1000.0, 600.0, 600.0]
+				let r = try irr(cashFlows: cf)
+				let delta = 1e-3
+				let npvBelow = npv(discountRate: r - delta, cashFlows: cf)
+				let npvAbove = npv(discountRate: r + delta, cashFlows: cf)
+				#expect(npvBelow * npvAbove < 0.0) // opposite signs
+			}
 }

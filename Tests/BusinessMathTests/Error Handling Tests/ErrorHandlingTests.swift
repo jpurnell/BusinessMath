@@ -9,7 +9,7 @@
 import XCTest
 import RealModule
 @testable import BusinessMath
-
+import Testing
 /// Tests for enhanced error handling in BusinessMath.
 ///
 /// These tests define expected behavior for:
@@ -498,3 +498,308 @@ final class ErrorHandlingTests: XCTestCase {
         )
     }
 }
+
+@Suite("Error Handling – Additional Tests")
+struct ErrorHandlingAdditionalTests {
+
+	// MARK: - Boundary and Non-finite Inputs
+
+	@Test("Discount rate boundary values accepted (0 and 1 inclusive)")
+	func discountRate_BoundaryValuesAccepted() throws {
+		_ = try createInvestmentWithDiscountRate(0.0)
+		_ = try createInvestmentWithDiscountRate(1.0)
+	}
+
+	@Test("Initial cost of zero is invalid and reports value")
+	func initialCost_ZeroIsInvalid() {
+		do {
+			_ = try createInvestmentWithInitialCost(0.0)
+			Issue.record("Expected invalidInput error for zero cost")
+		} catch let error as BusinessMathError {
+			switch error {
+			case .invalidInput(let message, let context):
+				#expect(message.localizedCaseInsensitiveContains("positive"))
+				#expect(context["value"] == "0.0")
+			default:
+				Issue.record("Expected .invalidInput, got \(error)")
+			}
+		} catch {
+			Issue.record("Expected BusinessMathError, got \(type(of: error))")
+		}
+	}
+
+	@Test("Discount rate NaN is invalid and includes expected range")
+	func discountRate_NaNIsInvalid() {
+		let rate = Double.nan
+		do {
+			_ = try createInvestmentWithDiscountRate(rate)
+			Issue.record("Expected throw for NaN discount rate")
+		} catch let error as BusinessMathError {
+			switch error {
+			case .invalidInput(_, let context):
+				#expect(context["value"] == String(rate))
+				#expect(context["expectedRange"] != nil)
+			default:
+				Issue.record("Expected .invalidInput")
+			}
+		} catch {
+			Issue.record("Expected BusinessMathError, got \(type(of: error))")
+		}
+	}
+
+	@Test("Discount rate +infinity is invalid and includes expected range")
+	func discountRate_InfiniteIsInvalid() {
+		let rate = Double.infinity
+		do {
+			_ = try createInvestmentWithDiscountRate(rate)
+			Issue.record("Expected throw for +infinity discount rate")
+		} catch let error as BusinessMathError {
+			switch error {
+			case .invalidInput(_, let context):
+				#expect(context["value"] == String(rate))
+				#expect(context["expectedRange"] != nil)
+			default:
+				Issue.record("Expected .invalidInput")
+			}
+		} catch {
+			Issue.record("Expected BusinessMathError, got \(type(of: error))")
+		}
+	}
+
+	// MARK: - Stronger Context Assertions
+
+	@Test("Empty cash flows exposes count in context")
+	func emptyCashFlows_ContextIncludesCount() {
+		do {
+			_ = try calculateNPVWithEmptyCashFlows()
+			Issue.record("Expected invalidInput error for empty cash flows")
+		} catch let error as BusinessMathError {
+			switch error {
+			case .invalidInput(_, let context):
+				#expect(context["cashFlowCount"] == "0")
+			default:
+				Issue.record("Expected .invalidInput")
+			}
+		} catch {
+			Issue.record("Expected BusinessMathError, got \(type(of: error))")
+		}
+	}
+
+	@Test("Mismatched dimensions context carries numeric expected/actual")
+	func mismatchedDimensions_ContextNumericValues() {
+		do {
+			_ = try combineTimeSeriesWithMismatchedPeriods()
+			Issue.record("Expected mismatchedDimensions error")
+		} catch let error as BusinessMathError {
+			switch error {
+			case .mismatchedDimensions(_, let context):
+				if let e = context["expected"], let a = context["actual"],
+				   let expected = Int(e), let actual = Int(a) {
+					#expect(expected == 12)
+					#expect(actual == 10)
+				} else {
+					Issue.record("Expected numeric 'expected' and 'actual' context")
+				}
+			default:
+				Issue.record("Expected .mismatchedDimensions")
+			}
+		} catch {
+			Issue.record("Expected BusinessMathError, got \(type(of: error))")
+		}
+	}
+
+	@Test("Division by zero includes denominator and operation in context")
+	func divisionByZero_IncludesContext() {
+		do {
+			_ = try calculateMetricWithZeroDenominator()
+			Issue.record("Expected divisionByZero error")
+		} catch let error as BusinessMathError {
+			switch error {
+			case .divisionByZero(let context):
+				#expect(context["denominator"] == "0.0")
+				#expect(context["operation"] != nil)
+				#expect(context["numerator"] != nil)
+			default:
+				Issue.record("Expected .divisionByZero")
+			}
+		} catch {
+			Issue.record("Expected BusinessMathError, got \(type(of: error))")
+		}
+	}
+
+	// MARK: - Localized Descriptions
+
+	@Test("All error cases produce human-readable localizedDescription")
+	func errorCases_LocalizedDescriptions() {
+		let cases: [BusinessMathError] = [
+			.invalidInput(
+				message: "Invalid parameter X",
+				context: ["value": "abc", "expectedRange": "0..1"]
+			),
+			.mismatchedDimensions(
+				message: "Vector sizes differ",
+				context: ["expected": "5", "actual": "3"]
+			),
+			.calculationFailed(
+				operation: "IRR",
+				reason: "Failed to converge",
+				suggestions: ["Use bisection", "Change initial guess"]
+			),
+			.divisionByZero(
+				context: ["operation": "ROI", "numerator": "100.0", "denominator": "0.0"]
+			),
+			.numericalInstability(
+				message: "Catastrophic cancellation",
+				suggestions: ["Use higher precision", "Reformulate"]
+			)
+		]
+
+		for error in cases {
+			let desc = error.localizedDescription
+			#expect(!desc.isEmpty)
+			#expect(!desc.contains("Optional"))
+			switch error {
+			case .invalidInput(let message, let ctx):
+				#expect(desc.contains(message))
+				#expect(desc.contains(ctx["value"] ?? ""))
+			case .mismatchedDimensions(let message, let ctx):
+				#expect(desc.contains(message))
+				#expect(desc.contains(ctx["expected"] ?? ""))
+				#expect(desc.contains(ctx["actual"] ?? ""))
+			case .calculationFailed(let op, let reason, let suggestions):
+				#expect(desc.contains(op))
+				#expect(desc.contains(reason))
+				#expect(suggestions.allSatisfy { desc.contains($0) })
+			case .divisionByZero(let ctx):
+				#expect(desc.localizedCaseInsensitiveContains("zero"))
+				#expect(desc.contains(ctx["operation"] ?? ""))
+			case .numericalInstability(let message, let suggestions):
+				#expect(desc.contains(message))
+				#expect(suggestions.allSatisfy { desc.contains($0) })
+			case .dataQuality(message: let message, context: let context):
+				#expect(desc.contains(message))
+			}
+		}
+	}
+
+	@Test("IRR non-convergence description includes operation and iteration hint")
+	func irrNonConvergence_DescriptionContainsHints() {
+		do {
+			_ = try calculateIRRForNonConvergentCashFlows()
+			Issue.record("Expected calculationFailed error")
+		} catch let error as BusinessMathError {
+			switch error {
+			case .calculationFailed(let op, _, _):
+				let desc = error.localizedDescription
+				#expect(op == "IRR")
+				#expect(desc.contains("IRR"))
+				#expect(desc.localizedCaseInsensitiveContains("converge"))
+				#expect(desc.contains("100")) // iteration count included
+			default:
+				Issue.record("Expected .calculationFailed")
+			}
+		} catch {
+			Issue.record("Expected BusinessMathError, got \(type(of: error))")
+		}
+	}
+
+	// MARK: - Validation tightening
+
+	@Test("Infinite values are treated as errors in validation")
+	func validation_InfiniteValuesSeverityIsError() {
+		let series = createTimeSeriesWithInfinite()
+		let result = series.validate()
+		#expect(!result.isValid)
+		#expect(result.warnings.contains { $0.severity == .error })
+	}
+
+	// MARK: - No-throw sanity checks
+
+	@Test("Valid inputs do not throw")
+	func validInvestment_NoThrow() throws {
+		_ = try createInvestmentWithInitialCost(1_000.0)
+		_ = try createInvestmentWithDiscountRate(0.10)
+	}
+}
+
+	// MARK: - File-private helpers (mirroring your existing XCTest helpers)
+
+	fileprivate func createInvestmentWithDiscountRate(_ rate: Double) throws -> Investment {
+		guard rate >= 0 && rate <= 1 else {
+			if rate < 0 {
+				throw BusinessMathError.invalidInput(
+					message: "Discount rate must not be negative",
+					context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+				)
+			}
+			throw BusinessMathError.invalidInput(
+				message: "Discount rate must be between 0 and 1, got \(rate)",
+				context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+			)
+		}
+
+		return Investment {
+			InitialCost(1000)
+			CashFlows {
+				Year(1) => 100
+				Year(2) => 100
+			}
+			DiscountRate(rate)
+		}
+	}
+
+	fileprivate func createInvestmentWithInitialCost(_ cost: Double) throws -> Investment {
+		guard cost > 0 else {
+			throw BusinessMathError.invalidInput(
+				message: "Initial cost must be positive, got \(cost)",
+				context: ["value": String(cost)]
+			)
+		}
+		return Investment {
+			InitialCost(cost)
+			CashFlows {
+				Year(1) => 100
+				Year(2) => 100
+			}
+			DiscountRate(0.10)
+		}
+	}
+
+	fileprivate func calculateNPVWithEmptyCashFlows() throws -> Double {
+		throw BusinessMathError.invalidInput(
+			message: "Cannot calculate NPV with empty cash flows",
+			context: ["cashFlowCount": "0"]
+		)
+	}
+
+	fileprivate func combineTimeSeriesWithMismatchedPeriods() throws -> TimeSeries<Double> {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "Cannot combine time series with different period counts",
+			context: ["expected": "12", "actual": "10"]
+		)
+	}
+
+	fileprivate func calculateIRRForNonConvergentCashFlows() throws -> Double {
+		throw BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "Failed to converge after 100 iterations",
+			suggestions: [
+				"Try using Newton-Raphson method with a different initial guess",
+				"Consider using bisection method for more stable convergence",
+				"Check if cash flows are realistic for IRR calculation"
+			]
+		)
+	}
+
+	fileprivate func calculateMetricWithZeroDenominator() throws -> Double {
+		throw BusinessMathError.divisionByZero(
+			context: ["operation": "ROI calculation", "numerator": "1000.0", "denominator": "0.0"]
+		)
+	}
+
+	fileprivate func createTimeSeriesWithInfinite() -> TimeSeries<Double> {
+		return TimeSeries<Double>(
+			periods: [.year(2020), .year(2021), .year(2022)],
+			values: [100, .infinity, 120]
+		)
+	}

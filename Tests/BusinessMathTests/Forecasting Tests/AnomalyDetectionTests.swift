@@ -187,3 +187,116 @@ struct AnomalyDetectionTests {
 		#expect(anomalies.isEmpty)
 	}
 }
+
+	// Helpers
+	private func dayPeriods(count: Int, start: TimeInterval = 0) -> [Period] {
+		(0..<count).map { Period.day(Date(timeIntervalSince1970: start + Double($0 * 86400))) }
+	}
+
+	private func monthPeriods(yearStart: Int, monthCount: Int) -> [Period] {
+		var periods = [Period]()
+		var y = yearStart
+		var m = 1
+		for _ in 0..<monthCount {
+			periods.append(Period.month(year: y, month: m))
+			m += 1
+			if m == 13 { m = 1; y += 1 }
+		}
+		return periods
+	}
+
+	@Suite("Additional Anomaly Detection – Deterministic")
+	struct AdditionalAnomalyDetectionTests {
+
+		private func flatWithAnomalies() -> TimeSeries<Double> {
+			let periods = dayPeriods(count: 100)
+			var values = Array(repeating: 100.0, count: 100)
+			values[50] = 150.0
+			values[75] = 50.0
+			print(values.map({"\($0)"}).joined(separator: " | "))
+			return TimeSeries(periods: periods, values: values)
+		}
+
+		@Test("Detect exact anomaly positions deterministically")
+		func detectsExactPositions() throws {
+			let data = flatWithAnomalies()
+			let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
+
+			let anomalies = detector.detect(in: data, threshold: 3.0)
+			print(anomalies.map({$0.description}).joined(separator: "\n"))
+
+			#expect(!anomalies.isEmpty)
+			// Check the two expected positions are flagged
+			let periodsFlagged = anomalies.map({ $0.period })
+			#expect(periodsFlagged.contains(data.periods[50]))
+			#expect(periodsFlagged.contains(data.periods[75]))
+			// Expect exactly those two, given a flat baseline
+			#expect(anomalies.count == 2)
+			// Expected value should be exactly the baseline on a flat window
+			for a in anomalies {
+				#expect(abs(a.expectedValue - 100.0) < 1e-9)
+				#expect(abs(a.value - a.expectedValue) >= 50.0)
+				#expect(a.deviationScore > 3.0)
+			}
+		}
+
+		@Test("Anomalies before warm-up window are ignored")
+		func earlyAnomalyIgnored() throws {
+			let periods = dayPeriods(count: 40)
+			var values = Array(repeating: 100.0, count: 40)
+			values[5] = 160.0 // before window of 30
+			let data = TimeSeries(periods: periods, values: values)
+
+			let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
+			let anomalies = detector.detect(in: data, threshold: 3.0)
+
+			// With no history, early anomaly should not be flagged
+			#expect(anomalies.isEmpty)
+		}
+
+		@Test("Severity and deviation are monotonic in magnitude")
+		func severityOrdering() throws {
+			let periods = dayPeriods(count: 80)
+			var values = Array(repeating: 100.0, count: 80)
+			values[40] = 130.0 // smaller anomaly
+			values[60] = 170.0 // larger anomaly
+			let data = TimeSeries(periods: periods, values: values)
+
+			let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
+			let anomalies = detector.detect(in: data, threshold: 2.0)
+			print(anomalies.map({$0.description}).joined(separator: "\n"))
+
+			let aSmall = anomalies.first { $0.period == periods[40] }!
+			let aLarge = anomalies.first { $0.period == periods[60] }!
+
+			#expect(aLarge.deviationScore > aSmall.deviationScore)
+			// If severities are categorized, larger deviation should not be a lower severity
+			#expect(aLarge.severity.rawValue >= aSmall.severity.rawValue)
+		}
+
+		@Test("Threshold boundary behavior toggles detection")
+		func thresholdBoundary() throws {
+			// Build a window with non-zero stddev
+			let baseline = (0..<30).map { 100.0 + Double(($0 % 5) - 2) } // mean ~100, std > 0
+			let m = mean(baseline)
+			let s = stdDev(baseline)
+			// Put an anomaly a hair over 3-sigma
+			let anomalyValue = m + 3.01 * s
+
+			var values = baseline
+			values.append(anomalyValue)
+			values.append(contentsOf: Array(repeating: 100.0, count: 10))
+			let periods = dayPeriods(count: values.count)
+			let data = TimeSeries(periods: periods, values: values)
+
+			let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
+
+			let anomalies3 = detector.detect(in: data, threshold: 3.0)
+			let flagged3 = anomalies3.contains { $0.period == periods[30] }
+			#expect(flagged3)
+
+			let anomalies31 = detector.detect(in: data, threshold: 3.1)
+			let flagged31 = anomalies31.contains { $0.period == periods[30] }
+			#expect(!flagged31)
+		}
+	}

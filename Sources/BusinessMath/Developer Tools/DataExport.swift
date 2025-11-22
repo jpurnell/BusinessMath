@@ -149,7 +149,7 @@ public struct TimeSeriesExporter<T: Real & Sendable>: Sendable {
         var lines: [String] = []
 
         // Header row
-        lines.append("Period,Value")
+        lines.append("Period,Value\n")
 
         if series.count == 0 {
             lines.append("(empty series)")
@@ -158,11 +158,11 @@ public struct TimeSeriesExporter<T: Real & Sendable>: Sendable {
 
         // Data rows
         for (period, value) in zip(series.periods, series.valuesArray) {
-            let row = "\(period.label),\(value)"
+            let row = "\(period.label),\(value)\n"
             lines.append(row)
         }
 
-        return lines.joined(separator: "\n")
+        return lines.joined(separator: "")
     }
 
     /// Export time series to JSON format

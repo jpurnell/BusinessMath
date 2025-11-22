@@ -271,3 +271,47 @@ struct CorrelatedNormalsTests {
 		#expect(abs(variance - 1.0) < 0.1, "Variance should be close to 1.0")
 	}
 }
+
+@Suite("CorrelatedNormals – Additional")
+struct CorrelatedNormalsAdditionalTests {
+
+	@Test("Single variable case (1D)")
+	func singleVariable() throws {
+		let means = [5.0]
+		let corr = [[1.0]]
+		let correlated = try CorrelatedNormals(means: means, correlationMatrix: corr)
+
+		var samples: [Double] = []
+		for _ in 0..<5000 {
+			samples.append(correlated.sample()[0])
+		}
+		let mean = samples.reduce(0, +) / Double(samples.count)
+		let varSample = samples.map { ($0 - mean) * ($0 - mean) }.reduce(0, +) / Double(samples.count - 1)
+
+		#expect(abs(mean - 5.0) < 0.2, "Mean should be close to 5")
+		#expect(abs(varSample - 1.0) < 0.15, "Unit variance expected when corr matrix is identity")
+	}
+
+	@Test("3×3 correlations: check 1–3 as well")
+	func threeByThreeCheck13() throws {
+		let means = [0.0, 0.0, 0.0]
+		let corr = [
+			[1.0, 0.5, 0.25],
+			[0.5, 1.0, 0.4],
+			[0.25, 0.4, 1.0]
+		]
+		let correlated = try CorrelatedNormals(means: means, correlationMatrix: corr)
+
+		var s1: [Double] = []
+		var s2: [Double] = []
+		var s3: [Double] = []
+
+		for _ in 0..<12000 {
+			let s = correlated.sample()
+			s1.append(s[0]); s2.append(s[1]); s3.append(s[2])
+		}
+
+		let c13 = correlationCoefficient(s1, s3)
+		#expect(abs(c13 - 0.25) < 0.06, "Correlation 1–3 should be close to 0.25")
+	}
+}

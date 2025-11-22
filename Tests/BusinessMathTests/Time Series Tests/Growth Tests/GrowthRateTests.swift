@@ -441,4 +441,35 @@ struct GrowthRateTests {
 
 		#expect(abs(simpleGrowth - compoundGrowth) < tolerance)
 	}
+	
+	let tol: Double = 1e-6
+
+		// MARK: - Growth/CAGR/Compounding
+
+		@Test("CAGR with beginning value = 0 should be undefined (NaN/inf)")
+		func cagrBeginningZero() {
+			let g = cagr(beginningValue: 0.0, endingValue: 100.0, years: 5.0)
+			#expect(g.isInfinite || g.isNaN)
+		}
+
+		@Test("Apply growth with -100% annual rate collapses to zero after first period")
+		func applyGrowthNegativeOneHundredPercent() {
+			let values = applyGrowth(baseValue: 100.0, rate: -1.0, periods: 3, compounding: .annual)
+			#expect(values.count == 4)
+			#expect(abs(values[0] - 100.0) < tol)
+			#expect(abs(values[1] - 0.0) < tol)
+			#expect(abs(values[2] - 0.0) < tol)
+			#expect(abs(values[3] - 0.0) < tol)
+		}
+
+		@Test("Quarterly vs monthly compounding ordering at same nominal APR")
+		func compoundingMonotonicityAPR() {
+			let base = 10_000.0
+			let apr = 0.12
+			let annual = applyGrowth(baseValue: base, rate: apr, periods: 1, compounding: .annual).last!
+			let quarterly = applyGrowth(baseValue: base, rate: apr, periods: 4, compounding: .quarterly).last!
+			let monthly = applyGrowth(baseValue: base, rate: apr, periods: 12, compounding: .monthly).last!
+			#expect(annual < quarterly)
+			#expect(quarterly < monthly)
+		}
 }

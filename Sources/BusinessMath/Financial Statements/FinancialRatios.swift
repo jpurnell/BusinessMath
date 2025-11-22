@@ -1300,7 +1300,7 @@ public func valuationMetrics<T: Real>(
 	let revenue = incomeStatement.totalRevenue
 	let ebitda = incomeStatement.ebitda
 	let equity = balanceSheet.totalEquity
-	let debt = balanceSheet.totalLiabilities
+	let debt = balanceSheet.interestBearingDebt
 
 	// Find cash in balance sheet (if available)
 	let cash: TimeSeries<T>

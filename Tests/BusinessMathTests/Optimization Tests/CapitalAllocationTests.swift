@@ -226,3 +226,20 @@ struct CapitalAllocationTests {
 		#expect(result.totalNPV == 0)
 	}
 }
+
+@Suite("Capital Allocation Additional Tests")
+struct CapitalAllocationAdditionalTests {
+
+	@Test("Prefers lower capital when ROI ties (if specified by design)")
+	func tieBreakOnCapital() {
+		// Only enable if your optimizer specifies this tie-break; otherwise remove/adjust.
+		let optimizer = CapitalAllocationOptimizer<Double>()
+		let projects = [
+			CapitalAllocationOptimizer<Double>.Project(name: "A", npv: 20, capitalRequired: 10), // ROI=2.0
+			CapitalAllocationOptimizer<Double>.Project(name: "B", npv: 40, capitalRequired: 20), // ROI=2.0
+		]
+		let result = optimizer.optimize(projects: projects, budget: 10)
+		#expect(result.projectsSelected.contains("A"))
+		#expect(!result.projectsSelected.contains("B"))
+	}
+}

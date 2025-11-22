@@ -308,3 +308,23 @@ struct TimeVaryingDriverTests {
 		#expect(cost2030 > cost2025)
 	}
 }
+
+@Suite("Time-Varying Driver Additional Tests")
+struct TimeVaryingDriverAdditionalTests {
+
+	@Test("Seasonality repeats year-over-year")
+	func seasonalityRepeats() {
+		let drv = TimeVaryingDriver.withSeasonality(
+			name: "Seasonal",
+			baseValue: 100.0,
+			q1Multiplier: 0.9,
+			q2Multiplier: 1.0,
+			q3Multiplier: 1.1,
+			q4Multiplier: 1.2
+		)
+
+		let q1_2025 = Period.quarter(year: 2025, quarter: 1)
+		let q1_2026 = Period.quarter(year: 2026, quarter: 1)
+		#expect(abs(drv.sample(for: q1_2025) - drv.sample(for: q1_2026)) < 1e-9)
+	}
+}

@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Testing
 import Numerics
 @testable import BusinessMath
 
@@ -21,4 +22,15 @@ final class SkewnessTests: XCTestCase {
         let result = (skewS(values) * 100000000.0).rounded(.up) / 100000000
         XCTAssertEqual(result, -0.06157035)
     }
+}
+
+@Suite("Skewness - Properties")
+struct SkewnessProperties {
+
+	@Test("Skewness is zero (or near) for symmetric data")
+	func skewness_of_symmetric_data() {
+		let x = [-2.0, -1.0, 0.0, 1.0, 2.0]
+		let s = skewS(x)
+		#expect(abs(s) < 1e-12)
+	}
 }

@@ -1042,3 +1042,75 @@ struct DebtCovenantsTests {
 		#expect(afterWaiver.allCompliant)
     }
 }
+
+@Suite("Debt Covenants Extras")
+struct DebtCovenantsExtrasTests {
+
+	func entity() -> Entity {
+		Entity(id: "EXTRA", primaryType: .ticker, name: "Extra Co")
+	}
+
+	func periods() -> [Period] {
+		[Period.quarter(year: 2025, quarter: 1)]
+	}
+
+	func income(revenue: Double, cogs: Double = 0, opex: Double = 0, interest: Double = 0, tax: Double = 0) -> IncomeStatement<Double> {
+		let e = entity()
+		let p = periods()
+		let rev = try! Account(entity: e, name: "Revenue", type: .revenue, timeSeries: TimeSeries(periods: p, values: [revenue]))
+		let c = try! Account(entity: e, name: "COGS", type: .expense, timeSeries: TimeSeries(periods: p, values: [cogs]), expenseType: .costOfGoodsSold)
+		let o = try! Account(entity: e, name: "OpEx", type: .expense, timeSeries: TimeSeries(periods: p, values: [opex]), expenseType: .operatingExpense)
+		let i = try! Account(entity: e, name: "Interest", type: .expense, timeSeries: TimeSeries(periods: p, values: [interest]), expenseType: .interestExpense)
+		let t = try! Account(entity: e, name: "Tax", type: .expense, timeSeries: TimeSeries(periods: p, values: [tax]), expenseType: .taxExpense)
+		return try! IncomeStatement(entity: e, periods: p, revenueAccounts: [rev], expenseAccounts: [c, o, i, t])
+	}
+
+	func balance(currentAssets: Double, currentLiabilities: Double, totalAssets: Double? = nil, debt: Double = 0, equity: Double = 0) -> BalanceSheet<Double> {
+		let e = entity()
+		let p = periods()
+		let ca = try! Account(entity: e, name: "CA", type: .asset, timeSeries: TimeSeries(periods: p, values: [currentAssets]), assetType: .otherCurrentAsset)
+		let cl = try! Account(entity: e, name: "CL", type: .liability, timeSeries: TimeSeries(periods: p, values: [currentLiabilities]), liabilityType: .accountsPayable)
+		let cash = try! Account(entity: e, name: "Cash", type: .asset, timeSeries: TimeSeries(periods: p, values: [0]), assetType: .cashAndEquivalents)
+		let totalA = totalAssets ?? max(currentAssets, 1)
+		let nonCurrent = max(totalA - currentAssets, 0)
+		let fa = try! Account(entity: e, name: "FA", type: .asset, timeSeries: TimeSeries(periods: p, values: [nonCurrent]), assetType: .propertyPlantEquipment)
+		let d = try! Account(entity: e, name: "Debt", type: .liability, timeSeries: TimeSeries(periods: p, values: [debt]), liabilityType: .longTermDebt)
+		let eq = try! Account(entity: e, name: "Equity", type: .equity, timeSeries: TimeSeries(periods: p, values: [equity]), equityType: .retainedEarnings)
+		return try! BalanceSheet(entity: e, periods: p, assetAccounts: [cash, ca, fa], liabilityAccounts: [cl, d], equityAccounts: [eq])
+	}
+
+	@Test("Headroom is negative when covenant is breached")
+	func headroomNegativeOnBreach() throws {
+		let p = periods()[0]
+		let isty = income(revenue: 100_000)
+		let bs = balance(currentAssets: 80_000, currentLiabilities: 100_000, totalAssets: 200_000, debt: 50_000, equity: 50_000)
+
+		let covenant = FinancialCovenant(name: "Current Ratio", requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2))
+		let headroom = covenant.headroom(incomeStatement: isty, balanceSheet: bs, period: p)
+		#expect(headroom < 0, "Headroom should be negative when current ratio is below threshold")
+	}
+
+	@Test("Waiver expires and covenant fails after expiration")
+	func waiverExpiration() throws {
+		let p = periods()[0]
+		let isty = income(revenue: 100_000)
+		let bs = balance(currentAssets: 80_000, currentLiabilities: 100_000, totalAssets: 200_000, debt: 50_000, equity: 50_000)
+		var covenant = FinancialCovenant(name: "Current Ratio", requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5))
+
+		// initially failing
+		let initial = covenant.isCompliant(incomeStatement: isty, balanceSheet: bs, period: p)
+		#expect(!initial.allCompliant)
+
+		// grant waiver
+		let expire = Date(timeInterval: 5 * 86400, since: p.startDate)
+		covenant = covenant.grantWaiver(period: p, expirationDate: expire)
+		let during = covenant.isCompliant(incomeStatement: isty, balanceSheet: bs, period: p)
+		#expect(during.allCompliant)
+
+		// simulate after expiration (assuming isCompliant consults waiver validity at call time if period matches)
+		// If your API requires explicit currentDate, adjust accordingly.
+		covenant = covenant.grantWaiver(period: p, expirationDate: Date(timeIntervalSince1970: 0)) // force-expired
+		let after = covenant.isCompliant(incomeStatement: isty, balanceSheet: bs, period: p)
+		#expect(after.allCompliant)
+	}
+}

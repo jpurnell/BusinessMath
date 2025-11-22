@@ -249,7 +249,7 @@ public struct CovenantMonitor {
                 period: period,
                 principalPayment: nil
             )
-//			logger.debug("\(#function) got \(actualValue)")
+
             return CovenantComplianceResult(
                 covenant: covenant,
                 isCompliant: actualValue <= threshold,

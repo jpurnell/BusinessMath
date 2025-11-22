@@ -353,3 +353,60 @@ struct ConstrainedDriverTests {
 		}
 	}
 }
+
+@Suite("Constrained Driver Additional Tests")
+struct ConstrainedDriverAdditionalTests {
+
+	@Test("Rounded uses away-from-zero for halves")
+	func roundedHalvesBehavior() {
+		let posHalf = DeterministicDriver(name: "Half+", value: 2.5).rounded()
+		let negHalf = DeterministicDriver(name: "Half-", value: -2.5).rounded()
+
+		let p = Period.month(year: 2025, month: 1)
+		#expect(posHalf.sample(for: p) == 3.0)
+		#expect(negHalf.sample(for: p) == -3.0)
+	}
+
+	@Test("Positive clamps deterministic negatives to zero")
+	func positiveClampsDeterministic() {
+		let neg = DeterministicDriver(name: "Neg", value: -42.0).positive()
+		let p = Period.month(year: 2025, month: 1)
+		#expect(neg.sample(for: p) == 0.0)
+	}
+
+	@Test("Clamp does not change values within bounds")
+	func clampPassThrough() {
+		let base = DeterministicDriver(name: "Value", value: 42.0)
+		let clamped = base.clamped(min: 0.0, max: 100.0)
+		let p = Period.month(year: 2025, month: 1)
+		#expect(clamped.sample(for: p) == 42.0)
+	}
+
+	@Test("Floor and ceiling on negatives behave correctly")
+	func floorCeilNegative() {
+		let floorDrv = DeterministicDriver(name: "Neg", value: -3.2).floored()
+		let ceilDrv = DeterministicDriver(name: "Neg", value: -3.2).ceiling()
+
+		let p = Period.month(year: 2025, month: 1)
+		#expect(floorDrv.sample(for: p) == -4.0)
+		#expect(ceilDrv.sample(for: p) == -3.0)
+	}
+
+	@Test("Percentiles consistent with min/max after clamping")
+	func percentilesWithinBounds() {
+		let drv = ProbabilisticDriver<Double>.normal(name: "Util", mean: 0.5, stdDev: 0.4)
+			.clamped(min: 0.0, max: 1.0)
+
+		let periods = [Period.month(year: 2025, month: 1)]
+		let proj = DriverProjection(driver: drv, periods: periods)
+		let results = proj.projectMonteCarlo(iterations: 5000)
+
+		let p = periods[0]
+		let s = results.statistics[p]!
+		let q = results.percentiles[p]!
+		#expect(s.min >= 0.0)
+		#expect(s.max <= 1.0)
+		#expect(q.p5 >= s.min && q.p95 <= s.max)
+		#expect(s.min <= q.p5 && q.p5 <= q.p50 && q.p50 <= q.p95 && q.p95 <= s.max)
+	}
+}

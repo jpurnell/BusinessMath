@@ -251,4 +251,31 @@ struct JSONSerializationTests {
 		#expect(timeSeries.periods.count == 1)
 		#expect(timeSeries.valuesArray[0] == 100_000.0)
 	}
+	
+	@Test("Decode invalid JSON throws")
+			func decodeInvalidJSONThrows() throws {
+					let invalid = "{ not valid json }".data(using: .utf8)!
+					do {
+							_ = try JSONDecoder().decode(TimeSeries<Double>.self, from: invalid)
+							Issue.record("Expected decoding to fail")
+					} catch {
+							// Expected
+					}
+			}
+
+			@Test("Import from invalid JSON file throws")
+			func importInvalidJSONFileThrows() throws {
+					let tempDir = FileManager.default.temporaryDirectory
+					let fileURL = tempDir.appendingPathComponent(UUID().uuidString + ".json")
+					defer { try? FileManager.default.removeItem(at: fileURL) }
+
+					try "{not json}".write(to: fileURL, atomically: true, encoding: .utf8)
+
+					do {
+							_ = try JSONSerializer().importFromJSON(TimeSeries<Double>.self, from: fileURL)
+							Issue.record("Expected import to fail")
+					} catch {
+							// Expected
+					}
+			}
 }

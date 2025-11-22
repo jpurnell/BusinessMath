@@ -633,7 +633,7 @@ public struct DescriptiveStatsExtendedTool: MCPToolHandler, Sendable {
 
         // Use SimulationStatistics for comprehensive stats
         let stats = SimulationStatistics(values: values)
-        let percentiles = Percentiles(values: values)
+        let percentiles = try Percentiles(values: values)
 
         let range = stats.max - stats.min
 

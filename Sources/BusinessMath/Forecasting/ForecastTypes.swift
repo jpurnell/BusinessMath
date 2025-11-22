@@ -20,6 +20,8 @@ public enum ForecastError: Error {
 
 	/// Invalid parameter value.
 	case invalidParameter(String)
+	
+	case invalidConfidenceLevel
 }
 
 // MARK: - ForecastWithConfidence

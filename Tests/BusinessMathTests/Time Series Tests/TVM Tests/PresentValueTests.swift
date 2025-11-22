@@ -239,4 +239,19 @@ struct PresentValueTests {
 		// With negative rate, PV > FV
 		#expect(pv > 1000.0)
 	}
+	
+		// MARK: - PV/FV/NPV pathological rates
+
+		   @Test("presentValue with rate = -1 and odd period should be undefined")
+		   func pvRateNegativeOne() {
+			   let pv = presentValue(futureValue: 1000.0, rate: -1.0, periods: 1)
+			   #expect(pv.isNaN || pv.isInfinite)
+		   }
+
+		   @Test("npv with rate = -1 should be undefined due to zero denominators")
+		   func npvRateNegativeOne() {
+			   let cashFlows = [-1000.0, 500.0, 500.0]
+			   let v = npv(discountRate: -1.0, cashFlows: cashFlows)
+			   #expect(v.isNaN || v.isInfinite)
+		   }
 }
