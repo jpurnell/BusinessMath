@@ -6,11 +6,11 @@ import PackageDescription
 let package = Package(
     name: "BusinessMath",
     platforms: [
-		.iOS(.v16),
-		  .macOS(.v13),
-		  .tvOS(.v16),
-		  .watchOS(.v9),
-		  .visionOS(.v1) // optional
+		.iOS(.v12),
+		.macOS(.v12),
+		.tvOS(.v12),
+		.watchOS(.v6),
+		.visionOS(.v1)
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -46,7 +46,7 @@ let package = Package(
             dependencies: [
                 "BusinessMath",
                 .product(name: "Numerics", package: "swift-numerics"),
-                .product(name: "MCP", package: "swift-sdk")
+				.product(name: "MCP", package: "swift-sdk", condition: .when(platforms: [.macOS]))
             ],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency")
