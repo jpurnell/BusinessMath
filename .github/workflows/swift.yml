@@ -19,7 +19,7 @@ permissions:
 jobs:
   macos:
     name: macOS (SPM + Apple platform compile checks)
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
@@ -29,6 +29,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
+      - name: Select Xcode 16.x (Swift 6)
+		uses: maxim-lobanov/setup-xcode@v1
+		with:
+			xcode-version: '16.4'   # or '16' to take latest 16.x available
 
       - name: Tooling versions
         run: |
