@@ -74,9 +74,19 @@ jobs:
 
       - name: Build (Debug) + tests (macOS, ${{ matrix.engine }})
         run: |
-          swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH"
-          swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH"
-          swift test  -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH"
+          set -o pipefail
+          swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v 2>&1 | tee build-${{ matrix.engine }}-debug.log
+          swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a build-${{ matrix.engine }}-debug.log
+          swift test  -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee build-${{ matrix.engine }}-release.log
+
+	  - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+		with:
+          name: logs-${{ matrix.engine }}
+          path: |
+            build-${{ matrix.engine }}-debug.log
+            build-${{ matrix.engine }}-release.log
 
       - name: Build library in Release (macOS)
         if: matrix.engine == 'xctest'
