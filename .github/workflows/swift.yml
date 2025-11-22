@@ -48,11 +48,23 @@ jobs:
             echo "SCRATCH=.build-xctest" >> $GITHUB_ENV
           fi
 
+      - name: Compute SPM dependency hash
+        id: deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f Package.resolved ]; then
+            H=$(shasum -a 256 Package.resolved | cut -d' ' -f1)
+          else
+            H=$(shasum -a 256 Package.swift | cut -d' ' -f1)
+          fi
+          echo "SPM_DEP_HASH=$H" >> "$GITHUB_ENV"
+
       - name: Cache SPM build products (per engine)
         uses: actions/cache@v4
         with:
           path: ${{ env.SCRATCH }}
-          key: ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-${{ hashFiles('**/Package.resolved', '**/Package.swift') || 'nohash' }}
+          key: ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-${{ env.SPM_DEP_HASH }}
           restore-keys: |
             ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-
             ${{ runner.os }}-spm-${{ env.XCODE_VER }}-
@@ -74,11 +86,9 @@ jobs:
         run: |
           set -euo pipefail
           SCHEME="${PACKAGE_NAME}-Package"
-
           xcodebuild -scheme "$SCHEME" -destination "generic/platform=iOS"     -configuration Release -skipPackagePluginValidation build
           xcodebuild -scheme "$SCHEME" -destination "generic/platform=tvOS"    -configuration Release -skipPackagePluginValidation build
           xcodebuild -scheme "$SCHEME" -destination "generic/platform=watchOS" -configuration Release -skipPackagePluginValidation build
-
           if xcodebuild -showsdks | grep -q "visionOS"; then
             xcodebuild -scheme "$SCHEME" -destination "generic/platform=visionOS" -configuration Release -skipPackagePluginValidation build
           fi
