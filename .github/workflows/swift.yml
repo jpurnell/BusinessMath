@@ -92,10 +92,6 @@ jobs:
 
           if ! swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a "$LOG_R"; then
             echo "===== tail of $LOG_R ====="; tail -n 200 "$LOG_R"; exit 1; fi
-      
-          swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v 2>&1 | tee build-${{ matrix.engine }}-debug.log
-          swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a build-${{ matrix.engine }}-debug.log
-          swift test  -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee build-${{ matrix.engine }}-release.log
 
       - name: Upload build logs
         if: always()
