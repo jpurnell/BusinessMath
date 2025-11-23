@@ -14,8 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  macos:
-    name: macOS (SPM + Apple platform compile checks)
+  tests:
+    name: Tests (${{ matrix.engine }})
     runs-on: macos-15
     strategy:
       fail-fast: false
@@ -30,15 +30,12 @@ jobs:
       - name: Select Xcode 16.x (Swift 6)
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.4'  # or '16' to pick the latest 16.x
+          xcode-version: '16.4'  # or '16' for latest 16.x on the image
 
       - name: Tooling versions
         run: |
           xcodebuild -version
           swift --version
-
-      - name: Capture Xcode version for cache key
-        run: echo "XCODE_VER=$(xcodebuild -version | tr '\n' ' ')" >> $GITHUB_ENV
 
       - name: Select test engine and scratch path
         run: |
@@ -50,65 +47,52 @@ jobs:
             echo "SCRATCH=.build-xctest" >> $GITHUB_ENV
           fi
 
-      - name: Compute SPM dependency hash
-        id: deps
-        shell: bash
+      - name: Build + Test (Debug and Release)
         run: |
           set -euo pipefail
-          if [ -f Package.resolved ]; then
-            H=$(shasum -a 256 Package.resolved | cut -d' ' -f1)
+
+          # If this is the Swift Testing leg, skip cleanly when there are no @Test tests
+          if [ "${{ matrix.engine }}" = "swift-testing" ]; then
+            if ! swift test --enable-swift-testing --list-tests --scratch-path "$SCRATCH" | grep -q .; then
+              echo "No Swift Testing (@Test) tests found; skipping swift-testing leg."
+              exit 0
+            fi
           else
-            H=$(shasum -a 256 Package.swift | cut -d' ' -f1)
+            swift test --list-tests --scratch-path "$SCRATCH" || true
           fi
-          echo "SPM_DEP_HASH=$H" >> "$GITHUB_ENV"
 
-      - name: Cache SPM build products (per engine)
-        uses: actions/cache@v4
+          # Debug build + tests
+          swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
+          swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
+
+          # Release tests (optimizer-on)
+          swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
+
+  build_and_compile:
+    name: Release build + Apple platform compile checks
+    needs: tests
+    if: always()
+    runs-on: macos-15
+    env:
+      PACKAGE_NAME: BusinessMath
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.x (Swift 6)
+        uses: maxim-lobanov/setup-xcode@v1
         with:
-          path: ${{ env.SCRATCH }}
-          key: ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-${{ env.SPM_DEP_HASH }}
-          restore-keys: |
-            ${{ runner.os }}-spm-${{ env.XCODE_VER }}-${{ matrix.engine }}-
-            ${{ runner.os }}-spm-${{ env.XCODE_VER }}-
-            ${{ runner.os }}-spm-
+          xcode-version: '16.4'
 
-      - name: Build (Debug) + tests (macOS, ${{ matrix.engine }})
+      - name: Tooling versions
         run: |
-          set -o pipefail
+          xcodebuild -version
+          swift --version
 
-          LOG_D="build-${{ matrix.engine }}-debug.log"
-          LOG_R="build-${{ matrix.engine }}-release.log"
-          : > "$LOG_D"
-          : > "$LOG_R"
+      - name: Release build (SPM)
+        run: swift build -c release
 
-          # Show discovered tests (helpful if swift-testing leg has none)
-          swift test $SWIFT_TEST_FLAGS --list-tests --scratch-path "$SCRATCH" || true
-
-          if ! swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v 2>&1 | tee -a "$LOG_D"; then
-            echo "===== tail of $LOG_D ====="; tail -n 200 "$LOG_D"; exit 1; fi
-
-          if ! swift test $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a "$LOG_D"; then
-            echo "===== tail of $LOG_D ====="; tail -n 200 "$LOG_D"; exit 1; fi
-
-          if ! swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a "$LOG_R"; then
-            echo "===== tail of $LOG_R ====="; tail -n 200 "$LOG_R"; exit 1; fi
-
-      - name: Upload build logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: logs-${{ matrix.engine }}
-          path: |
-            build-${{ matrix.engine }}-debug.log
-            build-${{ matrix.engine }}-release.log
-          if-no-files-found: warn
-    
-      - name: Build library in Release (macOS)
-        if: always() && matrix.engine == 'xctest'
-        run: swift build -c release --scratch-path "$SCRATCH"
-
-      - name: Compile checks for Apple platforms with Xcode
-        if: matrix.engine == 'xctest'
+      - name: Apple platform compile checks (Xcode)
         shell: bash
         run: |
           set -euo pipefail
