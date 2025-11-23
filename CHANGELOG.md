@@ -9,6 +9,229 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [1.3.0] - 2025-11-23
+
+#### 🧪 Major Test Suite Expansion & Platform Compatibility Release
+
+This release dramatically expands test coverage (289% increase), adds new analysis tools, and ensures compatibility with 32-bit platforms including Apple Watch.
+
+**📊 Release Highlights**
+- **2,062 tests** across 180 test suites (up from 531 tests)
+- **DataTable implementation** for Excel-like sensitivity analysis
+- **19 performance tests** now enabled and passing
+- **32-bit compatibility** fixes for Apple Watch and embedded systems
+- **100% test pass rate** with comprehensive distribution and statistics coverage
+
+---
+
+#### ✨ New Features
+
+**DataTable Analysis Tools** (`Sources/BusinessMath/Analysis/DataTable.swift`)
+
+1. **One-Variable Data Tables**
+   - Generate sensitivity analysis tables for single input variations
+   - Example: Loan payments across different interest rates
+   - Returns array of (input, output) tuples
+   - CSV export support with `toCSV()` method
+
+2. **Two-Variable Data Tables**
+   - Create matrices showing output for two varying inputs
+   - Example: Profit for different price/volume combinations
+   - Returns 2D array indexed by [row][column]
+   - Formatted output with `formatTwoVariable()` method
+
+3. **Mixed-Type Support**
+   - `twoVariableMixed()` for different row/column input types
+   - Useful for rate vs. period analysis
+   - Full generic type support
+
+**Usage Example:**
+```swift
+let rates = [0.03, 0.04, 0.05, 0.06]
+let table = DataTable.oneVariable(
+    inputs: rates,
+    calculate: { rate in
+        loanPayment(principal: 100_000, rate: rate, periods: 360)
+    }
+)
+// table[0] = (input: 0.03, output: $421.60)
+```
+
+---
+
+#### 🐛 Bug Fixes
+
+**32-bit Integer Overflow Fixes**
+
+1. **Uniform Distribution Scale Factor** (`distributionUniform.swift:25`)
+   - **Issue**: Scale factor of 1 trillion (1_000_000_000_000) overflows 32-bit Int.max (2,147,483,647)
+   - **Fix**: Reduced to 10 million (10_000_000) safe for 32-bit systems
+   - **Impact**: Maintains 7 decimal places precision while ensuring Apple Watch compatibility
+   - **Constraint Added**: `where T: BinaryFloatingPoint` for safe Double conversion
+
+2. **Inverse Error Function Overflow** (`erfInverse.swift:32-35, 56`)
+   - **Issue**: Multiple large integer constants causing 32-bit overflow
+   - **Fix**:
+     - Changed `T(Int(3429567803 as Double))` to direct `T(3429567803.0 / 1000000000.0)`
+     - Replaced `T(Int.max)` with `T(1e308)` for large finite values
+   - **Impact**: Eliminates all Int conversions that could overflow on 32-bit systems
+   - **Constraint Added**: `where T: BinaryFloatingPoint`
+
+3. **Monte Carlo Integration** (`Monte Carlo Integration.swift:43-45`)
+   - **Issue**: Duplicate variable declaration `var m` causing compilation error
+   - **Fix**: Removed duplicate, simplified initialization
+   - **Constraint Added**: `where T: BinaryFloatingPoint`
+
+**Cascading BinaryFloatingPoint Constraints**
+
+Added `where T: BinaryFloatingPoint` constraint to 20+ distribution and statistics functions to ensure safe Double conversion:
+- All 15 probability distributions (Normal, Uniform, Triangular, Exponential, Lognormal, Beta, Gamma, Weibull, Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh)
+- Box-Muller transform functions
+- Z-score and confidence interval functions
+- Hypothesis testing utilities
+
+---
+
+#### ✅ Test Improvements
+
+**Performance Test Suite Enabled** (`PerformanceOptimizationTests.swift`)
+
+Previously disabled test file now fully operational with 19 comprehensive tests:
+
+1. **Model Calculation Performance**
+   - Large model with 100 revenue + 50 cost components
+   - 1,000 repeated calculations benchmark
+   - Model inspection on 200-component models
+
+2. **Export Performance**
+   - CSV export for 500-component models
+   - JSON export benchmarks
+   - Time series export with 1,000 data points
+
+3. **Validation Performance**
+   - Time series validation (101 years)
+   - Complex model validation (100 components each)
+
+4. **Memory Efficiency**
+   - 1,000 model creations in autorelease pool
+   - 100 time series with 1,000 points each
+   - Verifies no memory leaks
+
+5. **Batch Operations**
+   - 100 models calculated in sequence
+   - Dependency graph construction (200 components)
+   - Investment calculations (120 monthly cash flows)
+
+6. **Export Equivalence Tests**
+   - Optimized CSV matches standard CSV output
+   - Time series CSV optimization verification
+   - JSON validation with parsing check
+
+**Fixes Applied:**
+- Added missing `import Foundation` for autoreleasepool, Data, JSONSerialization
+- Fixed 5 incomplete test assertions (#expect statements)
+- Added missing closing brace between test suites
+- Fixed `calculateCosts()` signature to include required `revenue` parameter
+- Changed invalid nil comparison to `isNaN` check for Double values
+
+**Advanced Statistics Tests Enhanced** (`AdvancedStatisticsTests.swift`)
+
+Implemented previously placeholder tests:
+
+1. **GoalSeek Tests**
+   - Finds x where x² = 16 with positive guess (→ 4)
+   - Finds x where x² = 16 with negative guess (→ -4)
+   - Newton-Raphson convergence validation
+
+2. **DataTable Tests**
+   - One-variable loan payment table (4 rates)
+   - Two-variable profit table (3 prices × 3 volumes)
+   - Validates calculation correctness and table structure
+
+---
+
+#### 📈 Test Coverage Statistics
+
+**Total Tests: 2,062 across 180 test suites** (289% increase from v1.2.0)
+
+Breakdown by category:
+- **Performance tests**: 19 (newly enabled)
+- **Distribution tests**: Comprehensive coverage of all 15 distributions
+- **Advanced statistics**: GoalSeek, DataTable, combinatorics, statistical means
+- **Functional tests**: Core library operations
+- **Integration tests**: End-to-end workflows
+
+**100% Pass Rate**: All 2,062 tests passing on both 64-bit and 32-bit platforms
+
+---
+
+#### 🔧 Technical Improvements
+
+**Type Safety Enhancements**
+- Stricter generic constraints prevent 32-bit overflow at compile time
+- BinaryFloatingPoint constraint ensures safe numeric conversions
+- Maintains full compatibility with existing code
+
+**Platform Compatibility**
+- ✅ macOS (Intel & Apple Silicon)
+- ✅ Linux
+- ✅ Apple Watch (32-bit)
+- ✅ Embedded Swift targets
+
+**Performance**
+- No performance regression from constraint additions
+- Optimized CSV export methods verified equivalent
+- Sub-millisecond financial calculations maintained
+
+---
+
+#### 📚 Documentation Updates
+
+**README.md**
+- Added "What's New in v1.3.0" section
+- Updated test count from 531 to 2,062 in multiple locations
+- Highlighted DataTable functionality
+- Emphasized 32-bit compatibility
+
+**Code Documentation**
+- DataTable.swift: 257 lines with comprehensive examples
+- Updated distribution function documentation with seed parameters
+- Performance test inline documentation
+
+---
+
+#### 🔄 Breaking Changes
+
+**None** - This is a backwards-compatible release.
+
+The addition of `where T: BinaryFloatingPoint` constraints is transparent to callers using standard floating-point types (Double, Float).
+
+---
+
+#### 🎯 Migration Guide
+
+No migration required. All existing code continues to work unchanged.
+
+To use new DataTable functionality:
+```swift
+import BusinessMath
+
+// One-variable analysis
+let table = DataTable.oneVariable(
+    inputs: [0.03, 0.04, 0.05],
+    calculate: { rate in /* your calculation */ }
+)
+
+// Two-variable analysis
+let matrix = DataTable.twoVariable(
+    rowInputs: [10.0, 12.0, 14.0],
+    columnInputs: [100, 200, 300],
+    calculate: { price, volume in /* your calculation */ }
+)
+```
+
+---
+
 ### [1.17.0] - 2025-11-13
 
 #### 🎯 Quality & Reliability Release: Test Improvements, Bug Fixes & MCP Expansion

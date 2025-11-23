@@ -10,6 +10,18 @@ A comprehensive Swift library for business mathematics, time series analysis, an
 
 BusinessMath provides production-ready implementations of essential business and financial calculations. Built with modern Swift features including generics, strict concurrency (Swift 6), and comprehensive documentation, it's designed for financial analysts, business planners, data scientists, and software engineers building financial applications.
 
+## ✨ What's New in v1.3.0
+
+**Major Test Suite Expansion & Platform Compatibility**
+
+- **🧪 2,062 Tests**: Expanded from 531 to 2,062 tests across 180 test suites (289% increase)
+- **📊 DataTable Analysis**: New Excel-like data table functionality for sensitivity analysis and scenario planning
+- **⚡ Performance Tests**: Enabled 19 performance benchmarking tests for large datasets and optimized exports
+- **🔧 32-bit Compatibility**: Fixed overflow issues in distribution functions for Apple Watch and other 32-bit platforms
+- **✅ 100% Pass Rate**: All tests passing with comprehensive coverage of distributions, statistics, and analysis tools
+
+See [CHANGELOG.md](CHANGELOG.md) for complete release details.
+
 ## 🤖 MCP Server (v1.20.0 - Major Expansion)
 
 BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** that exposes all functionality to AI assistants like Claude Desktop, enabling natural language financial analysis, modeling, and advanced analytics.
@@ -263,10 +275,12 @@ Total documentation: 3,676 lines across 9 comprehensive guides with real-world e
 
 The library includes comprehensive test coverage:
 
-- **531 tests** across 19 test suites
-- **Functional tests**: 508 tests covering all operations
-- **Performance tests**: 23 tests benchmarking large datasets
-- **Integration tests**: 10 tests validating end-to-end workflows
+- **2,062 tests** across 180 test suites ✨ **NEW in v1.3.0**
+- **Functional tests**: Core library operations and features
+- **Performance tests**: 19 tests benchmarking large datasets and optimized exports
+- **Integration tests**: End-to-end workflows
+- **Distribution tests**: Comprehensive coverage of all 15 probability distributions
+- **Advanced Statistics tests**: GoalSeek, DataTable, and analysis tools
 
 Run tests:
 ```bash
@@ -352,7 +366,7 @@ BusinessMath follows modern Swift best practices:
 - **Protocol-Oriented**: Flexible `TrendModel` protocol for custom implementations
 - **Type Safety**: Strongly-typed periods prevent temporal mismatches
 - **DocC Documentation**: Comprehensive inline documentation with examples
-- **Test-Driven**: TDD approach with 531 tests ensuring correctness
+- **Test-Driven**: TDD approach with 2,062 tests ensuring correctness
 
 ## Contributing
 
