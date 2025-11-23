@@ -61,7 +61,7 @@ import OSLog
 /// print(invalid.isNaN)  // true
 /// ```
 @available(macOS 11.0, *)
-public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T {
+public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
 	guard degreesOfFreedom > 0 else {
 		// Chi-squared distribution is undefined for df ≤ 0
 		return T.nan
@@ -78,7 +78,7 @@ public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Doubl
 }
 
 @available(macOS 11.0, *)
-public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) throws -> T {
+public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) throws -> T where T: BinaryFloatingPoint {
 	guard degreesOfFreedom > 0 else {
 		throw DistributionError.invalidDegreesOfFreedom(degreesOfFreedom)
 	}

@@ -62,7 +62,7 @@ import OSLog
 /// print(invalid.isNaN)  // true
 /// ```
 @available(macOS 11.0, *)
-public func distributionF<T: Real>(df1: Int, df2: Int, seeds: [Double]? = nil) -> T {
+public func distributionF<T: Real>(df1: Int, df2: Int, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
 	// F-distribution is undefined for df1 ≤ 0 or df2 ≤ 0
 	guard df1 > 0, df2 > 0 else {
 		return T.nan

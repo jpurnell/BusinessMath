@@ -48,7 +48,7 @@ import Numerics
 /// // Generate symmetric distribution around 0.5
 /// let symmetric: Double = distributionBeta(alpha: 5.0, beta: 5.0)
 /// ```
-public func distributionBeta<T: Real>(alpha: T, beta: T, seeds: [Double]? = nil) -> T {
+public func distributionBeta<T: Real>(alpha: T, beta: T, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
 	// Special case: Beta(1, 1) is Uniform(0, 1)
 	if alpha == T(1) && beta == T(1) {
 		if let seeds = seeds, !seeds.isEmpty {

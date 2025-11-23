@@ -21,9 +21,10 @@ import Numerics
 ///   let randomValue: Double = distributionUniform()
 ///   // randomValue will be a uniform random number between 0.0 and 1.0
 
-public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in: 0...1)) -> T {
-    let value = T(Int(randomSeed * Double(1_000_000_000_000))) / T(1_000_000_000_000)
-    return value
+public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
+	let scale = 10_000_000.0  // Use 10 million to provide sufficient precision while avoiding 32-bit overflow
+	let quantized = (randomSeed * scale).rounded(.down) / scale
+	return T(quantized)
 }
 
 /// Generates a random number from a uniform distribution over a specified interval [l, h).
@@ -45,7 +46,7 @@ public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in
 ///   let randomValue: Double = distributionUniform(min: lowerBound, max: upperBound)
 ///   // randomValue will be a uniform random number between 5.0 and 10.0
 
-public func distributionUniform<T: Real>(min l: T, max h: T, _ randomSeed: Double = Double.random(in: 0...1)) -> T {
+public func distributionUniform<T: Real>(min l: T, max h: T, _ randomSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
     let lower = T.minimum(l, h)
     let upper = T.maximum(l, h)
     return ((upper - lower) * distributionUniform(randomSeed)) + lower

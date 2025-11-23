@@ -58,7 +58,7 @@ import Numerics
 /// // Generate values close to standard normal (high df)
 /// let nearNormal: Double = distributionT(degreesOfFreedom: 30)
 /// ```
-public func distributionT<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T {
+public func distributionT<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
 	precondition(degreesOfFreedom > 0, "Degrees of freedom must be positive")
 
 	var seedIndex = 0

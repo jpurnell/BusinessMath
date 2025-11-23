@@ -38,9 +38,9 @@ import Numerics
    - Ensure that the number of iterations `n` is sufficiently large to obtain a reliable estimation of the integral.
  */
 
-public func integrate<T: Real>(_ f: (T) -> T, iterations n: Int = 10000) -> T {
+public func integrate<T: Real>(_ f: (T) -> T, iterations n: Int = 10000) -> T where T: BinaryFloatingPoint {
 	let randomSeed = Double.random(in: 0...1)
-    var m = T(Int(randomSeed * Double(1_000_000_000_000))) / T(1_000_000_000_000)
+	var m = T(randomSeed)
     for i in 0..<n {
         m += ((f(distributionUniform()) - m)) / T((i + 1))
     }

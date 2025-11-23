@@ -21,7 +21,7 @@ import Numerics
 /// - Note: The function computes the random number using the inverse transform sampling method:
 ///   \[ X = -\frac{1}{\lambda} \
 ///
-public func distributionExponential<T: Real>(λ: T, seed: Double? = nil) -> T {
+public func distributionExponential<T: Real>(λ: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
 	let u: T
 	if let seed = seed {
 		u = distributionUniform(min: T(0), max: T(1), seed)
