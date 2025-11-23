@@ -52,7 +52,7 @@ import Numerics
 /// // Model exponential failure (constant rate)
 /// let constantRate: Double = distributionWeibull(shape: 1.0, scale: 500.0)
 /// ```
-public func distributionWeibull<T: Real>(shape: T, scale: T, seed: Double? = nil) -> T {
+public func distributionWeibull<T: Real>(shape: T, scale: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
 	// Generate U ~ Uniform(0, 1)
 	let u: T
 	if let seed = seed {

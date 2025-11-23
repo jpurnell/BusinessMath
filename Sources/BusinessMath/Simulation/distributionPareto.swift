@@ -59,7 +59,7 @@ import Numerics
 /// let sales: Double = distributionPareto(scale: 1000, shape: 2.0)
 /// print("Customer value: $\(sales)")
 /// ```
-public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil) -> T {
+public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
 	precondition(scale > T(0), "Pareto scale parameter must be positive")
 	precondition(shape > T(0), "Pareto shape parameter must be positive")
 
@@ -73,7 +73,7 @@ public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil)
 	}
 
 	// Avoid division by very small numbers
-	let epsilon: T = T(1) / T(10000000000)  // 1e-10
+	let epsilon: T = T(Int(1e-10))  // 1e-10
 	let adjustedU = u > epsilon ? u : epsilon
 
 	return scale / T.pow(adjustedU, T(1) / shape)

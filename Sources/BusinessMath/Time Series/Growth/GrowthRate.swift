@@ -279,7 +279,7 @@ public func applyGrowth<T: Real>(
 	if compounding == .continuous {
 		// Continuous compounding: A = P * e^(rt)
 		// Use e ≈ 2.718281828459045
-		let e = T(2) + T(718281828459045) / T(1000000000000000)  // Precise approximation of e
+		let e = T.exp(1)  // Precise approximation of e
 
 		for period in 1...periods {
 			let t = T(period)

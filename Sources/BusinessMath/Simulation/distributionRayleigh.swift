@@ -14,7 +14,7 @@ import Numerics
 ///
 /// - Parameter mean: The mean of the Rayleigh distribution.
 /// - Returns: A random value sampled from the Rayleigh distribution.
-public func distributionRayleigh<T: Real>(mean: T, seed: Double? = nil) -> T {
+public func distributionRayleigh<T: Real>(mean: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
 	let u: T
 	if let seed = seed {
 		u = distributionUniform(min: T(0), max: T(1), seed)

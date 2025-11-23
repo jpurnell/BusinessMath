@@ -27,7 +27,7 @@ import Numerics
  - Requires: The use of appropriate `Real` compatible number types for accurate results.
  */
 
-public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: Double? = nil) -> T {
+public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
 	let p: T
 	if let seed = seed {
 		p = distributionUniform(min: T(0), max: T(1), seed)

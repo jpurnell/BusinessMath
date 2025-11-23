@@ -31,7 +31,7 @@ import Numerics
 	 - Important: Ensure that `distributionUniform()` is implemented correctly to provide values within the required range.
 
 	 */
-	public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) {
+	public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint {
 		let u1: T = distributionUniform(u1Seed)
 		let u2: T = distributionUniform(u2Seed)
 		let z1 = T.sqrt(T(-2) * T.log(u1)) * T.sin(2 * T.pi * u2)

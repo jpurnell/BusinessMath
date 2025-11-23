@@ -28,7 +28,7 @@ import Numerics
 ///   let randomValue: Double = distributionGamma(r: shapeParameter, λ: rateParameter)
 ///   // randomValue will be a random number generated from the Gamma distribution with parameters r = 3 and λ = 2.0
 
-public func distributionGamma<T: Real>(r: Int, λ: T, seeds: [Double]? = nil) -> T {
+public func distributionGamma<T: Real>(r: Int, λ: T, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
 	if let seeds = seeds {
 		// Use provided seeds for deterministic generation
 		let requiredSeeds = min(r, seeds.count)
@@ -57,7 +57,7 @@ public func distributionGamma<T: Real>(r: Int, λ: T, seeds: [Double]? = nil) ->
 ///   - seeds: Optional array of seed values for deterministic generation
 ///   - seedIndex: Mutable index tracking position in seed array
 /// - Returns: A random value from Gamma(shape, scale)
-public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, seedIndex: inout Int) -> T {
+public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, seedIndex: inout Int) -> T where T: BinaryFloatingPoint {
 	guard shape > T(0) && scale > T(0) else {
 		fatalError("Gamma shape and scale must be positive")
 	}

@@ -28,7 +28,7 @@ import Numerics
 ///   let probabilityOfSuccess: Double = 0.5
 ///   let randomValue: Double = distributionGeometric(probabilityOfSuccess)
 ///   // randomValue will be a random number generated from the geometric distribution with parameter p = 0.5
-public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T {
+public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
 	var x: T = T(0)
 	var seedIndex = 0
 
