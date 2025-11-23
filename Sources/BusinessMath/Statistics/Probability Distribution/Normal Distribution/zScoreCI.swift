@@ -18,7 +18,7 @@ import Numerics
 /// - Precondition: The `ci` argument must be a valid real number between 0 and 1.
 ///
 ///     let z = zScore(ci: 0.95)
-public func zScore<T: Real>(ci: T) -> T {
+public func zScore<T: Real>(ci: T) -> T where T: BinaryFloatingPoint {
     let lowProb = (T(1) - ci) / T(2)
     let highProb = T(1) - lowProb
     return zScore(percentile: highProb)

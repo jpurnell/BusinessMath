@@ -96,7 +96,7 @@ public func confidenceInterval<T: Real>(ci: T, values: [T]) -> (low: T, high: T)
 ///     print(result)  // Prints "(low: x, high: y)"
 ///
 /// Use this function to estimate the bounds within which the population mean lies with a certain degree of confidence.
-public func confidence<T: Real>(alpha: T, stdev: T, sampleSize: Int) -> (low: T, high: T) {
+public func confidence<T: Real>(alpha: T, stdev: T, sampleSize: Int) -> (low: T, high: T) where T: BinaryFloatingPoint {
     let z = normSInv(probability: (T(1) - (alpha / T(2))))
     return confidenceInterval(mean: 0, stdDev: stdev, z: z, popSize: sampleSize)
 }

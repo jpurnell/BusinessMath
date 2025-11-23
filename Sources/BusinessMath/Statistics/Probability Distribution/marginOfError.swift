@@ -18,7 +18,7 @@ import Numerics
 ///
 /// - Returns: The standard error as a `Real` number.
 
-public func marginOfError<T: Real>(_ prob: T, sampleProportion p: T, sampleSize n: Int, totalPopulation N: Int) -> T {
+public func marginOfError<T: Real>(_ prob: T, sampleProportion p: T, sampleSize n: Int, totalPopulation N: Int) -> T where T: BinaryFloatingPoint {
 	let z = zScore(ci: prob)
 	let num = z * T.sqrt(p * (T(1) - p))
 	let x = ((T(N) - T(1)) * T(n)) / (T(N) - T(n))

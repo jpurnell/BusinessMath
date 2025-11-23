@@ -17,7 +17,7 @@ import Numerics
 ///
 /// - Parameter y: The probability for which to find `x`.
 ///
-/// - Returns: The value `x` that corresponds to the given `y` probability when passed to the error function. If `abs(y)` equals `1`, it returns `y * T(Int.max)`. If `abs(y)` is greater than `1`, it returns `.nan`.
+/// - Returns: The value `x` that corresponds to the given `y` probability when passed to the error function. If `abs(y)` equals `1`, it returns `y * 1e308` (a very large finite value representing practical infinity). If `abs(y)` is greater than `1`, it returns `.nan`.
 ///
 /// - Precondition: `y` should be a value between `-1` and `1` (inclusive).
 /// - Complexity: O(1), since it uses a constant number of operations.
@@ -27,12 +27,12 @@ import Numerics
 ///     print(result)
 ///
 /// Use this function when you need to perform a quantile function or percent-point function operation on your dataset.
-public func erfInv<T: Real>(y: T) -> T {
+public func erfInv<T: Real>(y: T) -> T where T: BinaryFloatingPoint {
     let center = T(7) / T(10)
-	let a:[T] = [ T(Int(0886226899 as Double)) / T(Int(1000000000.0)), T(Int(-1645349621 as Double)) / T(Int(1000000000.0)),  T(Int(0914624893 as Double)) / T(Int(1000000000.0)), T(Int(-0140543331 as Double)) / T(Int(1000000000.0))]
-	let b:[T] = [T(Int(-2118377725 as Double)) / T(Int(1000000000.0)),  T(Int(1442710462 as Double)) / T(Int(1000000000.0)), T(Int(-0329097515 as Double)) / T(Int(1000000000.0)),  T(Int(0012229801 as Double)) / T(Int(1000000000.0))]
-	let c:[T] = [T(Int(-1970840454 as Double)) / T(Int(1000000000.0)), T(Int(-1624906493 as Double)) / T(Int(1000000000.0)),  T(Int(3429567803 as Double)) / T(Int(1000000000.0)),  T(Int(1641345311 as Double)) / T(Int(1000000000.0))]
-	let d:[T] = [ T(Int(3543889200 as Double)) / T(Int(1000000000.0)),  T(Int(1637067800 as Double)) / T(Int(1000000000.0))]
+	let a:[T] = [T(0886226899.0 / 1000000000.0), T(-1645349621.0 / 1000000000.0), T(0914624893.0 / 1000000000.0), T(-0140543331.0 / 1000000000.0)]
+	let b:[T] = [T(-2118377725.0 / 1000000000.0), T(1442710462.0 / 1000000000.0), T(-0329097515.0 / 1000000000.0), T(0012229801.0 / 1000000000.0)]
+	let c:[T] = [T(-1970840454.0 / 1000000000.0), T(-1624906493.0 / 1000000000.0), T(3429567803.0 / 1000000000.0), T(1641345311.0 / 1000000000.0)]
+	let d:[T] = [T(3543889200.0 / 1000000000.0), T(1637067800.0 / 1000000000.0)]
     if abs(y) <= center {
         let z = T.pow(y,2)
         let num = (((a[3]*z + a[2])*z + a[1])*z) + a[0]
@@ -53,7 +53,9 @@ public func erfInv<T: Real>(y: T) -> T {
         x = x - (T.erf(x) - y)/(T(2)/T.sqrt(.pi)*T.exp(-x*x))
         return x
     } else if abs(y) == T(1) {
-        return y * T(Int.max)
+        // Use a large finite value instead of Int.max to avoid 32-bit overflow
+        // This represents infinity in practical terms for the inverse error function
+        return y * T(1e308)
     } else {
         return .nan
     }
