@@ -97,17 +97,25 @@ jobs:
         run: |
           set -euo pipefail
           SCHEME="${PACKAGE_NAME}-Package"
+          PROJ=".swiftpm/xcode/package.xcodeproj"
           # Build only the MCP server (macOS only)
-          xcodebuild -scheme "$SCHEME" -target businessmath-mcp-server -destination "generic/platform=macOS" -configuration Release -skipPackagePluginValidation build
+          xcodebuild -scheme "$SCHEME" -resolvePackageDependencies >/dev/null
+          xcodebuild -project "$PROJ" -target businessmath-mcp-server -destination "generic/platform=macOS" -configuration Release -skipPackagePluginValidation build
 
       - name: Apple platform compile checks (Xcode)
         shell: bash
         run: |
           set -euo pipefail
           SCHEME="${PACKAGE_NAME}-Package"
-          xcodebuild -scheme "$SCHEME" -target BusinessMath -destination "generic/platform=iOS"     -configuration Release -skipPackagePluginValidation build
-          xcodebuild -scheme "$SCHEME" -target BusinessMath -destination "generic/platform=tvOS"    -configuration Release -skipPackagePluginValidation build
-          xcodebuild -scheme "$SCHEME" -target BusinessMath -destination "generic/platform=watchOS" -configuration Release -skipPackagePluginValidation build
+          PROJ=".swiftpm/xcode/package.xcodeproj"
+
+          # Generate the ephemeral Xcode project (no build)
+          xcodebuild -scheme "$SCHEME" -resolvePackageDependencies >/dev/null
+
+          # build only the BusinessMath target for each Apple platform
+          xcodebuild -project "$PROJ" -target BusinessMath -destination "generic/platform=iOS"     -configuration Release -skipPackagePluginValidation build
+          xcodebuild -proejct "$PROJ" -target BusinessMath -destination "generic/platform=tvOS"    -configuration Release -skipPackagePluginValidation build
+          xcodebuild -project "$PROJ" -target BusinessMath -destination "generic/platform=watchOS" -configuration Release -skipPackagePluginValidation build
           if xcodebuild -showsdks | grep -q "visionOS"; then
-            xcodebuild -scheme "$SCHEME" -target BusinessMath -destination "generic/platform=visionOS" -configuration Release -skipPackagePluginValidation build
+            xcodebuild -project "$PROJ" -target BusinessMath -destination "generic/platform=visionOS" -configuration Release -skipPackagePluginValidation build
           fi
