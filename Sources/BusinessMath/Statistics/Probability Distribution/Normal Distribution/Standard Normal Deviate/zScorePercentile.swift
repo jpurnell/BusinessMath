@@ -18,6 +18,6 @@ import Numerics
 /// - Precondition: The `percentile` argument must be a valid real number between 0 and 1.
 ///
 ///     let z = zScore(percentile: 0.84)
-public func zScore<T: Real>(percentile: T) -> T {
+public func zScore<T: Real>(percentile: T) -> T where T: BinaryFloatingPoint {
     return T.sqrt(2) * erfInv(y: ((T(2) * percentile) - T(1)))
 }

@@ -29,7 +29,7 @@ import Numerics
 ///     print(result) // Prints "(low: x, high: y)"
 ///
 /// Use this function when dealing with binary outcomes, such as success and failure, yes and no, or true and false, and you need to estimate a confidence interval for a certain probability within your sample data.
-public func confidenceIntervalProbabilistic<T: Real>(_ prob: T, observations n: Int, ci: T) -> (low: T, high: T) {
+public func confidenceIntervalProbabilistic<T: Real>(_ prob: T, observations n: Int, ci: T) -> (low: T, high: T) where T: BinaryFloatingPoint {
     let lowProb = (T(1) - ci) / T(2)
     let highProb = T(1) - lowProb
     let standardError = standardErrorProbabilistic(prob, observations: n)

@@ -58,7 +58,7 @@ public func requiredSampleSize<T: Real>(z: T, stdDev: T, sampleMean: T, populati
 ///     print(result)
 ///
 /// Use this function when you need to estimate the sample size required to achieve a desired confidence interval for your experiment or survey.
-public func requiredSampleSize<T: Real>(ci: T, stdDev: T, sampleMean: T, populationMean: T) -> T {
+public func requiredSampleSize<T: Real>(ci: T, stdDev: T, sampleMean: T, populationMean: T) -> T where T: BinaryFloatingPoint {
     let z = zScore(ci: ci)
     return requiredSampleSize(z: z, stdDev: stdDev, sampleMean: sampleMean, populationMean: populationMean)
 }
@@ -84,7 +84,7 @@ public func requiredSampleSize<T: Real>(ci: T, stdDev: T, sampleMean: T, populat
 ///     print(result)
 ///
 /// Use this function when planning a survey or experiment where it's important to understand population trends.
-public func requiredSampleSizeProb<T: Real>(ci: T, prob: T, maxError: T, _ populationSize: T?) -> T {
+public func requiredSampleSizeProb<T: Real>(ci: T, prob: T, maxError: T, _ populationSize: T?) -> T where T: BinaryFloatingPoint {
     let z = zScore(ci: ci)
     let sampleSize = (T.pow(z, T(2)) * prob * (T(1) - prob))/(T.pow(maxError, T(2)))
 	guard let population = populationSize else { return sampleSize }

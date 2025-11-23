@@ -18,6 +18,6 @@ import Numerics
 /// - Precondition: The `x` argument must be a valid real number between 0 and 1.
 ///
 ///     let result = normSInv(probability: 0.84)
-public func normSInv<T: Real>(probability x: T) -> T {
+public func normSInv<T: Real>(probability x: T) -> T where T: BinaryFloatingPoint {
     return zScore(percentile: x)
 }

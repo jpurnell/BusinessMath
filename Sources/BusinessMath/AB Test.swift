@@ -45,9 +45,12 @@ public func pValue<T: Real>(obsA: Int, convA: Int, obsB: Int, convB: Int) -> T {
 /// 	- p: The accuracy of the research outputs also varies according to the percentage of the sample that chooses a given response. If 98% of the population select "Yes" and 2% select "No," there is a low chance of error. However, if 35% of the population select "Yes" and 65% select "No", there is a higher chance an error will be made, regardless of the sample size. When selecting the sample size required for a given level of accuracy, researchers should use the worst-case percentage; i.e., 50%.
 /// 	- n: Population Size: The population size is the total number of people in the target population. For example, if you were performing research that was based on the people living in the UK, the full population would be approximately 66 million. Likewise, if you were conducting research on an organization, the total size of the population would be the number of employees who work for that organization.
 /// 	e: Margin of Error: Margin of error is also measured in percentage terms. It indicates the extent to which the outputs of the sample population are reflective of the overall population. The lower the margin of error, the nearer the researcher is to having an accurate response at a given confidence level.
-public func sampleSize<T: Real>(ci: T, proportion p: T, n: T, error: T ) -> T {
+public func sampleSize<T: Real>(ci: T, proportion p: T, n: T, error: T ) -> T where T: BinaryFloatingPoint {
 	let z = zScore(ci: ci)
-	let num = ((T.pow(z, 2) * p * (T(1) - p)) / T.pow(error, 2))
-	let den = (T(1) + (T.pow(z, 2) * p * (T(1) - p)) / (T.pow(error, 2) * n))
+	let z2 = T.pow(z, 2)
+	let error2 = T.pow(error, 2)
+	let pq = p * (T(1) - p)
+	let num = (z2 * pq) / error2
+	let den = T(1) + (z2 * pq) / (error2 * n)
 	return num / den
 }
