@@ -8,8 +8,20 @@
 import Foundation
 
 extension BinaryFloatingPoint {
-	@available(macOS 12.0, *)
 	public func currency(_ currency: String = "usd") -> String {
-		return self.formatted(.currency(code: currency).presentation(.narrow))
+		let code = currency.uppercased()
+		let value = Double(self)
+
+		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+			// Use modern FormatStyle on newer OSes
+			return value.formatted(.currency(code: code).presentation(.narrow))
+		} else {
+			// Fallback for older OSes (iOS 14, macOS 11, etc.)
+			let formatter = NumberFormatter()
+			formatter.numberStyle = .currency
+			formatter.currencyCode = code
+			// NumberFormatter has no direct “narrow” presentation; this is a reasonable approximation.
+			return formatter.string(from: NSNumber(value: value)) ?? String(value)
+		}
 	}
 }
