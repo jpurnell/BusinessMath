@@ -6,7 +6,8 @@
 //  TDD: Tests verify that documentation examples actually work
 //
 
-import XCTest
+import Foundation
+import Testing
 import RealModule
 @testable import BusinessMath
 
@@ -14,11 +15,11 @@ import RealModule
 ///
 /// These tests serve as "executable documentation" - they ensure that every
 /// example shown in the library's documentation actually works as advertised.
-final class DocumentationExamplesTests: XCTestCase {
+@Suite("DocumentationExamplesTests") struct DocumentationExamplesTests {
 
     // MARK: - Quick Start Examples
 
-    func testQuickStart_BasicFinancialModel() {
+    @Test("QuickStart_BasicFinancialModel") func LQuickStart_BasicFinancialModel() {
         // Example from Quick Start Guide
         // This should be the first example users see
 
@@ -40,12 +41,12 @@ final class DocumentationExamplesTests: XCTestCase {
         let costs = model.calculateCosts(revenue: revenue)
         let profit = model.calculateProfit()
 
-        XCTAssertEqual(revenue, 99_000, accuracy: 1.0)
-        XCTAssertEqual(costs, 64_850, accuracy: 1.0)  // 50k + 15% of 99k
-        XCTAssertEqual(profit, 34_150, accuracy: 1.0)
+        #expect(abs(revenue - 99_000) < 1.0)
+        #expect(abs(costs - 64_850) < 1.0)  // 50k + 15% of 99k
+        #expect(abs(profit - 34_150) < 1.0)
     }
 
-    func testQuickStart_TimeSeriesAnalysis() {
+    @Test("QuickStart_TimeSeriesAnalysis") func LQuickStart_TimeSeriesAnalysis() {
         // Example from Quick Start: Time Series
         let sales = TimeSeries<Double>(
             periods: [.year(2021), .year(2022), .year(2023)],
@@ -54,16 +55,16 @@ final class DocumentationExamplesTests: XCTestCase {
 
         // Should validate data quality
         let validation = sales.validate()
-        XCTAssertTrue(validation.isValid, "Data should be valid")
+        #expect(validation.isValid, "Data should be valid")
 
         // Should support export
         let exporter = TimeSeriesExporter(series: sales)
         let csvOutput = exporter.exportToCSV()
-        XCTAssertFalse(csvOutput.isEmpty)
-        XCTAssertTrue(csvOutput.contains("2021"))
+        #expect(!csvOutput.isEmpty)
+        #expect(csvOutput.contains("2021"))
     }
 
-    func testQuickStart_InvestmentAnalysis() {
+    @Test("QuickStart_InvestmentAnalysis") func LQuickStart_InvestmentAnalysis() {
         // Example from Quick Start: Investment
         let investment = Investment {
             InitialCost(50_000)
@@ -78,14 +79,14 @@ final class DocumentationExamplesTests: XCTestCase {
         }
 
         // Verify documented metrics
-        XCTAssertGreaterThan(investment.npv, 0, "Should have positive NPV")
-        XCTAssertNotNil(investment.irr, "Should calculate IRR")
-        XCTAssertNotNil(investment.paybackPeriod, "Should calculate payback period")
+        #expect(investment.npv > 0, "Should have positive NPV")
+        #expect(investment.irr != nil, "Should calculate IRR")
+        #expect(investment.paybackPeriod != nil, "Should calculate payback period")
     }
 
     // MARK: - Feature Examples
 
-    func testExample_ModelInspection() {
+    @Test("Example_ModelInspection") func LExample_ModelInspection() {
         // Example from ModelInspector documentation
         let model = FinancialModel {
             Revenue {
@@ -104,18 +105,18 @@ final class DocumentationExamplesTests: XCTestCase {
 
         // Should list all components
         let revenues = inspector.listRevenueSources()
-        XCTAssertEqual(revenues.count, 2)
+        #expect(revenues.count == 2)
 
         let costs = inspector.listCostDrivers()
-        XCTAssertEqual(costs.count, 3)
+        #expect(costs.count == 3)
 
         // Should generate summary
         let summary = inspector.generateSummary()
-        XCTAssertFalse(summary.isEmpty)
-        XCTAssertTrue(summary.contains("Revenue Components: 2"))
+        #expect(!summary.isEmpty)
+        #expect(summary.contains("Revenue Components: 2"))
     }
 
-    func testExample_CalculationTracing() {
+    @Test("Example_CalculationTracing") func LExample_CalculationTracing() {
         // Example from CalculationTrace documentation
         let model = FinancialModel {
             Revenue {
@@ -132,17 +133,17 @@ final class DocumentationExamplesTests: XCTestCase {
         let profit = trace.calculateProfit()
 
         // Should have traced all steps
-        XCTAssertFalse(trace.steps.isEmpty)
-        XCTAssertGreaterThan(profit, 0)
+        #expect(!trace.steps.isEmpty)
+        #expect(profit > 0)
 
         // Should be able to format trace
         let formattedTrace = trace.formatTrace()
-        XCTAssertTrue(formattedTrace.contains("Revenue"))
-        XCTAssertTrue(formattedTrace.contains("Costs"))
-        XCTAssertTrue(formattedTrace.contains("Profit"))
+        #expect(formattedTrace.contains("Revenue"))
+        #expect(formattedTrace.contains("Costs"))
+        #expect(formattedTrace.contains("Profit"))
     }
 
-    func testExample_DataExport() {
+    @Test("Example_DataExport") func LExample_DataExport() {
         // Example from DataExport documentation
         let model = FinancialModel {
             Revenue {
@@ -158,24 +159,24 @@ final class DocumentationExamplesTests: XCTestCase {
 
         // Should export to CSV
         let csvOutput = exporter.exportToCSV()
-        XCTAssertFalse(csvOutput.isEmpty)
-        XCTAssertTrue(csvOutput.contains("Component"))
-        XCTAssertTrue(csvOutput.contains("Sales"))
+        #expect(!csvOutput.isEmpty)
+        #expect(csvOutput.contains("Component"))
+        #expect(csvOutput.contains("Sales"))
 
         // Should export to JSON
         let jsonOutput = exporter.exportToJSON()
-        XCTAssertFalse(jsonOutput.isEmpty)
+        #expect(!jsonOutput.isEmpty)
 
         // JSON should be valid
         if let jsonData = jsonOutput.data(using: .utf8) {
             let parsed = try? JSONSerialization.jsonObject(with: jsonData)
-            XCTAssertNotNil(parsed, "Should produce valid JSON")
+            #expect(parsed != nil, "Should produce valid JSON")
         }
     }
 
     // MARK: - Integration Examples
 
-    func testExample_CompleteWorkflow() {
+    @Test("Example_CompleteWorkflow") func LExample_CompleteWorkflow() {
         // Example showing complete workflow from model → analysis → export
         // This is a "real world" example users might follow
 
@@ -199,25 +200,25 @@ final class DocumentationExamplesTests: XCTestCase {
         // 2. Analyze the model
         let inspector = ModelInspector(model: model)
         let validation = inspector.validateStructure()
-        XCTAssertTrue(validation.isValid, "Model should be valid")
+        #expect(validation.isValid, "Model should be valid")
 
         let profit = model.calculateProfit()
-        XCTAssertGreaterThan(profit, 0, "Should be profitable")
+        #expect(profit > 0, "Should be profitable")
 
         // 3. Trace calculations for documentation
         let trace = CalculationTrace(model: model)
         _ = trace.calculateProfit()
         let formattedTrace = trace.formatTrace()
-        XCTAssertFalse(formattedTrace.isEmpty)
+        #expect(!formattedTrace.isEmpty)
 
         // 4. Export for reporting
         let exporter = DataExporter(model: model)
         let csvReport = exporter.exportToCSV()
-        XCTAssertTrue(csvReport.contains("Enterprise Plan"))
-        XCTAssertTrue(csvReport.contains("Engineering"))
+        #expect(csvReport.contains("Enterprise Plan"))
+        #expect(csvReport.contains("Engineering"))
     }
 
-    func testExample_TimeSeriesWorkflow() {
+    @Test("Example_TimeSeriesWorkflow") func LExample_TimeSeriesWorkflow() {
         // Example showing time series analysis workflow
         let historicalRevenue = TimeSeries<Double>(
             periods: [
@@ -228,27 +229,27 @@ final class DocumentationExamplesTests: XCTestCase {
 
         // Should validate data quality
         let validation = historicalRevenue.validate(detectOutliers: true)
-        XCTAssertTrue(validation.isValid, "Data should be valid")
-        XCTAssertTrue(validation.errors.isEmpty, "Should have no errors")
+        #expect(validation.isValid, "Data should be valid")
+        #expect(validation.errors.isEmpty, "Should have no errors")
 
         // Should have correct count
-        XCTAssertEqual(historicalRevenue.count, 4)
+        #expect(historicalRevenue.count == 4)
 
         // Should support export to multiple formats
         let exporter = TimeSeriesExporter(series: historicalRevenue)
 
         let csv = exporter.exportToCSV()
-        XCTAssertTrue(csv.contains("2020"))
-        XCTAssertTrue(csv.contains("500000"))
+        #expect(csv.contains("2020"))
+        #expect(csv.contains("500000"))
 
         let json = exporter.exportToJSON()
-        XCTAssertFalse(json.isEmpty)
-        XCTAssertTrue(json.contains("2023"))
+        #expect(!json.isEmpty)
+        #expect(json.contains("2023"))
     }
 
     // MARK: - Error Handling Examples
 
-    func testExample_ValidationAndErrorHandling() {
+    @Test("Example_ValidationAndErrorHandling") func LExample_ValidationAndErrorHandling() {
         // Example showing proper error handling
 
         // 1. Validate time series before analysis
@@ -258,20 +259,20 @@ final class DocumentationExamplesTests: XCTestCase {
         )
 
         let validation = problematicData.validate()
-        XCTAssertFalse(validation.isValid, "Should detect NaN")
-        XCTAssertFalse(validation.errors.isEmpty, "Should have error messages")
+        #expect(!validation.isValid, "Should detect NaN")
+        #expect(!validation.errors.isEmpty, "Should have error messages")
 
         // 2. Validate financial model structure
         let emptyModel = FinancialModel()
         let inspector = ModelInspector(model: emptyModel)
         let modelValidation = inspector.validateStructure()
-        XCTAssertFalse(modelValidation.isValid, "Should detect empty model")
-        XCTAssertFalse(modelValidation.issues.isEmpty)
+        #expect(!modelValidation.isValid, "Should detect empty model")
+        #expect(!modelValidation.issues.isEmpty)
     }
 
     // MARK: - Performance Examples
 
-    func testExample_LargeScaleModeling() {
+    @Test("Example_LargeScaleModeling") func LExample_LargeScaleModeling() {
         // Example showing library handles large datasets
 
         // Build a model with many components
@@ -297,18 +298,18 @@ final class DocumentationExamplesTests: XCTestCase {
         let profit = model.calculateProfit()
         let duration = Date().timeIntervalSince(startTime)
 
-        XCTAssertNotNil(profit)
-        XCTAssertLessThan(duration, 0.1, "Should complete in < 100ms")
+        #expect(profit == profit)
+        #expect(duration < 0.1, "Should complete in < 100ms")
 
         // Should handle inspection efficiently
         let inspector = ModelInspector(model: model)
         let summary = inspector.generateSummary()
-        XCTAssertTrue(summary.contains("Revenue Components: 50"))
+        #expect(summary.contains("Revenue Components: 50"))
     }
 
     // MARK: - Best Practices Examples
 
-    func testExample_BestPractice_ModelValidation() {
+    @Test("Example_BestPractice_ModelValidation") func LExample_BestPractice_ModelValidation() {
         // Example showing recommended validation workflow
 
         let model = FinancialModel {
@@ -329,17 +330,17 @@ final class DocumentationExamplesTests: XCTestCase {
         if validation.isValid {
             // Safe to use model
             let profit = model.calculateProfit()
-            XCTAssertGreaterThan(profit, 0)
+            #expect(profit > 0)
         } else {
             // Handle validation errors
             for issue in validation.issues {
                 print("Model issue: \(issue)")
             }
-            XCTFail("Model should be valid")
+			#expect(validation.issues.contains("Model should be valid"))
         }
     }
 
-    func testExample_BestPractice_TraceForDebugging() {
+    @Test("Example_BestPractice_TraceForDebugging") func LExample_BestPractice_TraceForDebugging() {
         // Example showing how to use tracing for debugging
 
         let model = FinancialModel {
@@ -363,6 +364,6 @@ final class DocumentationExamplesTests: XCTestCase {
             }
         }
 
-        XCTAssertEqual(profit, 2_000, accuracy: 1.0)  // 10k revenue - 8k costs
+        #expect(abs(profit - 2_000) < 1.0)  // 10k revenue - 8k costs
     }
 }

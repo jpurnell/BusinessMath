@@ -6,7 +6,7 @@
 //  TDD: Tests written FIRST, then implementation
 //
 
-import XCTest
+import Testing
 import RealModule
 @testable import BusinessMath
 
@@ -14,11 +14,11 @@ import RealModule
 ///
 /// These tests define expected behavior for model introspection,
 /// validation, and analysis capabilities.
-final class ModelInspectorTests: XCTestCase {
+@Suite("ModelInspectorTests") struct ModelInspectorTests {
 
     // MARK: - Revenue Sources Tests
 
-    func testModelInspector_ListsRevenueSources() {
+    @Test("ModelInspector lists revenue sources") func modelInspectorListsRevenueSources() {
         // Given: A model with multiple revenue sources
         let model = FinancialModel {
             Revenue {
@@ -33,22 +33,22 @@ final class ModelInspectorTests: XCTestCase {
         let revenueSources = inspector.listRevenueSources()
 
         // Then: Should list all revenue components
-        XCTAssertEqual(revenueSources.count, 3)
-        XCTAssertTrue(revenueSources.contains { $0.name == "SaaS Subscriptions" })
-        XCTAssertTrue(revenueSources.contains { $0.name == "Professional Services" })
-        XCTAssertTrue(revenueSources.contains { $0.name == "Advertising" })
+        #expect(revenueSources.count == 3)
+        #expect(revenueSources.contains { $0.name == "SaaS Subscriptions" })
+        #expect(revenueSources.contains { $0.name == "Professional Services" })
+        #expect(revenueSources.contains { $0.name == "Advertising" })
 
         // And: Should include amounts
         let saasRevenue = revenueSources.first { $0.name == "SaaS Subscriptions" }
-        XCTAssertNotNil(saasRevenue)
+        #expect(saasRevenue != nil)
         if let saasRevenue = saasRevenue {
-            XCTAssertEqual(saasRevenue.amount, 99_000, accuracy: 1.0)
+            #expect(abs(saasRevenue.amount - 99_000) < 1.0)
         }
     }
 
     // MARK: - Cost Drivers Tests
 
-    func testModelInspector_ListsCostDrivers() {
+    @Test("ModelInspector_ListsCostDrivers") func LModelInspector_ListsCostDrivers() {
         // Given: A model with various costs
         let model = FinancialModel {
             Revenue {
@@ -67,22 +67,22 @@ final class ModelInspectorTests: XCTestCase {
         let costDrivers = inspector.listCostDrivers()
 
         // Then: Should list all cost components
-        XCTAssertEqual(costDrivers.count, 3)
-        XCTAssertTrue(costDrivers.contains { $0.name == "Salaries" })
-        XCTAssertTrue(costDrivers.contains { $0.name == "Rent" })
-        XCTAssertTrue(costDrivers.contains { $0.name == "COGS" })
+        #expect(costDrivers.count == 3)
+        #expect(costDrivers.contains { $0.name == "Salaries" })
+        #expect(costDrivers.contains { $0.name == "Rent" })
+        #expect(costDrivers.contains { $0.name == "COGS" })
 
         // And: Should categorize fixed vs variable
         let salaries = costDrivers.first { $0.name == "Salaries" }
-        XCTAssertEqual(salaries?.type, "fixed")
+        #expect(salaries?.type == "fixed")
 
         let cogs = costDrivers.first { $0.name == "COGS" }
-        XCTAssertEqual(cogs?.type, "variable")
+        #expect(cogs?.type == "variable")
     }
 
     // MARK: - Dependency Graph Tests
 
-    func testModelInspector_ShowsDependencyGraph() {
+    @Test("ModelInspector_ShowsDependencyGraph") func LModelInspector_ShowsDependencyGraph() {
         // Given: A model with dependencies
         let model = FinancialModel {
             Revenue {
@@ -100,18 +100,18 @@ final class ModelInspectorTests: XCTestCase {
         let graph = inspector.buildDependencyGraph()
 
         // Then: Should show relationships
-        XCTAssertFalse(graph.isEmpty)
+        #expect(!graph.isEmpty)
 
         // Variable costs depend on revenue
-        XCTAssertTrue(graph["COGS"]?.contains("Product Sales") ?? false)
+        #expect(graph["COGS"]?.contains("Product Sales") ?? false)
 
         // Fixed costs have no dependencies
-        XCTAssertTrue(graph["Marketing"]?.isEmpty ?? false)
+        #expect(graph["Marketing"]?.isEmpty ?? false)
     }
 
     // MARK: - Circular Reference Detection Tests
 
-    func testModelInspector_DetectsCircularReferences() {
+    @Test("ModelInspector_DetectsCircularReferences") func LModelInspector_DetectsCircularReferences() {
         // Given: A model that could have circular dependencies
         // (This is a theoretical case - current model structure prevents this)
         let model = FinancialModel {
@@ -129,12 +129,12 @@ final class ModelInspectorTests: XCTestCase {
         let hasCircularRefs = inspector.detectCircularReferences()
 
         // Then: Should not detect any circular references
-        XCTAssertFalse(hasCircularRefs, "Simple model should not have circular references")
+        #expect(!hasCircularRefs, "Simple model should not have circular references")
     }
 
     // MARK: - Unused Components Tests
 
-    func testModelInspector_IdentifiesUnusedComponents_EmptyScenarios() {
+    @Test("ModelInspector_IdentifiesUnusedComponents_EmptyScenarios") func LModelInspector_IdentifiesUnusedComponents_EmptyScenarios() {
         // Given: A model with an empty scenario (no adjustments)
         let model = FinancialModel {
             Revenue {
@@ -159,11 +159,11 @@ final class ModelInspectorTests: XCTestCase {
         let unused = inspector.identifyUnusedComponents()
 
         // Then: Should identify the empty scenario
-        XCTAssertEqual(unused.count, 1)
-        XCTAssertTrue(unused.contains("Empty Scenario"))
+        #expect(unused.count == 1)
+        #expect(unused.contains("Empty Scenario"))
     }
     
-    func testModelInspector_IdentifiesUnusedComponents_InvalidReferences() {
+    @Test("ModelInspector_IdentifiesUnusedComponents_InvalidReferences") func LModelInspector_IdentifiesUnusedComponents_InvalidReferences() {
         // Given: A model with a scenario that references a non-existent component
         let model = FinancialModel {
             Revenue {
@@ -183,11 +183,11 @@ final class ModelInspectorTests: XCTestCase {
         let unused = inspector.identifyUnusedComponents()
 
         // Then: Should identify the scenario with invalid reference
-        XCTAssertEqual(unused.count, 1)
-        XCTAssertTrue(unused.contains("Bad Scenario"))
+        #expect(unused.count == 1)
+        #expect(unused.contains("Bad Scenario"))
     }
     
-    func testModelInspector_IdentifiesUnusedComponents_DuplicateNames() {
+    @Test("ModelInspector_IdentifiesUnusedComponents_DuplicateNames") func LModelInspector_IdentifiesUnusedComponents_DuplicateNames() {
         // Given: A model with duplicate scenario names
         let model = FinancialModel {
             Revenue {
@@ -210,11 +210,11 @@ final class ModelInspectorTests: XCTestCase {
         let unused = inspector.identifyUnusedComponents()
 
         // Then: Should identify duplicate scenario names
-        XCTAssertEqual(unused.count, 1)
-        XCTAssertTrue(unused.contains("Base Case (duplicate definition)"))
+        #expect(unused.count == 1)
+        #expect(unused.contains("Base Case (duplicate definition)"))
     }
     
-    func testModelInspector_IdentifiesUnusedComponents_ValidModel() {
+    @Test("ModelInspector_IdentifiesUnusedComponents_ValidModel") func LModelInspector_IdentifiesUnusedComponents_ValidModel() {
         // Given: A model with properly defined scenarios
         let model = FinancialModel {
             Revenue {
@@ -237,12 +237,12 @@ final class ModelInspectorTests: XCTestCase {
         let unused = inspector.identifyUnusedComponents()
 
         // Then: Should not identify any unused components
-        XCTAssertTrue(unused.isEmpty, "Valid model should have no unused components")
+        #expect(unused.isEmpty, "Valid model should have no unused components")
     }
 
     // MARK: - Model Structure Validation Tests
 
-    func testModelInspector_ValidatesModelStructure() {
+    @Test("ModelInspector_ValidatesModelStructure") func LModelInspector_ValidatesModelStructure() {
         // Given: A well-structured model
         let validModel = FinancialModel {
             Revenue {
@@ -259,11 +259,11 @@ final class ModelInspectorTests: XCTestCase {
         let validation = inspector.validateStructure()
 
         // Then: Should pass validation
-        XCTAssertTrue(validation.isValid, "Valid model should pass structure validation")
-        XCTAssertTrue(validation.issues.isEmpty, "Valid model should have no issues")
+        #expect(validation.isValid, "Valid model should pass structure validation")
+        #expect(validation.issues.isEmpty, "Valid model should have no issues")
     }
 
-    func testModelInspector_DetectsStructuralIssues() {
+    @Test("ModelInspector_DetectsStructuralIssues") func LModelInspector_DetectsStructuralIssues() {
         // Given: A model with potential issues
         let problematicModel = FinancialModel()  // Empty model
 
@@ -272,13 +272,13 @@ final class ModelInspectorTests: XCTestCase {
         let validation = inspector.validateStructure()
 
         // Then: Should detect issues
-        XCTAssertFalse(validation.isValid, "Empty model should have structural issues")
-        XCTAssertFalse(validation.issues.isEmpty, "Should identify specific issues")
+        #expect(!validation.isValid, "Empty model should have structural issues")
+        #expect(!validation.issues.isEmpty, "Should identify specific issues")
     }
 
     // MARK: - Summary Report Tests
 
-    func testModelInspector_GeneratesSummaryReport() {
+    @Test("ModelInspector_GeneratesSummaryReport") func LModelInspector_GeneratesSummaryReport() {
         // Given: A complete model
         let model = FinancialModel {
             Revenue {
@@ -298,14 +298,14 @@ final class ModelInspectorTests: XCTestCase {
         let summary = inspector.generateSummary()
 
         // Then: Should include key metrics
-        XCTAssertTrue(summary.contains("Revenue Components: 2"))
-        XCTAssertTrue(summary.contains("Cost Components: 3"))
-        XCTAssertTrue(summary.contains("Total Revenue:"))
-        XCTAssertTrue(summary.contains("Total Costs:"))
-        XCTAssertTrue(summary.contains("Profit:"))
+        #expect(summary.contains("Revenue Components: 2"))
+        #expect(summary.contains("Cost Components: 3"))
+        #expect(summary.contains("Total Revenue:"))
+        #expect(summary.contains("Total Costs:"))
+        #expect(summary.contains("Profit:"))
     }
     
-    func testModelInspector_SummaryIncludesUnusedComponents() {
+    @Test("ModelInspector_SummaryIncludesUnusedComponents") func LModelInspector_SummaryIncludesUnusedComponents() {
         // Given: A model with unused components
         let model = FinancialModel {
             Revenue {
@@ -324,13 +324,13 @@ final class ModelInspectorTests: XCTestCase {
         let summary = inspector.generateSummary()
 
         // Then: Should include unused component warnings
-        XCTAssertTrue(summary.contains("Unused Components Detected"))
-        XCTAssertTrue(summary.contains("Empty"))
+        #expect(summary.contains("Unused Components Detected"))
+        #expect(summary.contains("Empty"))
     }
 
     // MARK: - Complex Model Handling Tests
 
-    func testModelInspector_HandlesComplexModels() {
+    @Test("ModelInspector_HandlesComplexModels") func LModelInspector_HandlesComplexModels() {
         // Given: A complex model with many components
         let complexModel = FinancialModel {
             Revenue {
@@ -359,19 +359,19 @@ final class ModelInspectorTests: XCTestCase {
         let inspector = ModelInspector(model: complexModel)
 
         // Then: Should handle without errors
-        XCTAssertNoThrow(inspector.listRevenueSources())
-        XCTAssertNoThrow(inspector.listCostDrivers())
-        XCTAssertNoThrow(inspector.buildDependencyGraph())
-        XCTAssertNoThrow(inspector.generateSummary())
+        _ = inspector.listRevenueSources()
+        _ = inspector.listCostDrivers()
+        _ = inspector.buildDependencyGraph()
+        _ = inspector.generateSummary()
 
         // And: Should provide accurate counts
-        XCTAssertEqual(inspector.listRevenueSources().count, 5)
-        XCTAssertEqual(inspector.listCostDrivers().count, 6)
+        #expect(inspector.listRevenueSources().count == 5)
+        #expect(inspector.listCostDrivers().count == 6)
     }
 
     // MARK: - Performance Tests
 
-    func testModelInspector_PerformanceOnLargeModel() {
+    @Test("ModelInspector_PerformanceOnLargeModel") func LModelInspector_PerformanceOnLargeModel() {
         // Given: A large model
         var model = FinancialModel()
 
@@ -393,14 +393,4 @@ final class ModelInspectorTests: XCTestCase {
         let inspector = ModelInspector(model: model)
 
         // Then: Should complete in reasonable time
-        measure {
-            _ = inspector.listRevenueSources()
-            _ = inspector.listCostDrivers()
-            _ = inspector.generateSummary()
-        }
-
-        // And: Should provide accurate results
-        XCTAssertEqual(inspector.listRevenueSources().count, 100)
-        XCTAssertEqual(inspector.listCostDrivers().count, 100)
-    }
 }

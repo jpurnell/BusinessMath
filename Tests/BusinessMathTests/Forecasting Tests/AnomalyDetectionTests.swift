@@ -19,24 +19,55 @@ struct AnomalyDetectionTests {
 
 		return TimeSeries(periods: periods, values: values)
 	}
-
-	func makeDataWithAnomalies() -> TimeSeries<Double> {
-		let periods = (0..<100).map { Period.day( Date(timeIntervalSince1970: Double($0 * 86400))) }
+	
+	private struct Deterministic01 {
+		// seed must be in [0, 1)
+		private var u: Double
+		init(seed: Double) {
+			var s = seed
+			s = s - floor(s)
+			if s == 1.0 { s = 0.0 }
+			self.u = s
+		}
+		mutating func next() -> Double {
+			// Add golden ratio conjugate and wrap to [0,1)
+			let g = 0.6180339887498949
+			var x = u + g
+			x = x - floor(x)
+			u = x
+			return x
+		}
+	}
+	
+	func makeNormalData(seed: Double = 0.42) -> TimeSeries<Double> {
+		let periods = (0..<100).map { Period.day(Date(timeIntervalSince1970: Double($0 * 86400))) }
 		var values: [Double] = []
+		var seq = Deterministic01(seed: seed)
+		let dist = DistributionUniform(-5.0, 5.0)
+
+		for _ in 0..<100 {
+			let jitter = dist.random(seq.next())
+			values.append(100.0 + jitter)
+		}
+		return TimeSeries(periods: periods, values: values)
+	}
+
+	func makeDataWithAnomalies(seed: Double = 0.42) -> TimeSeries<Double> {
+		let periods = (0..<100).map { Period.day(Date(timeIntervalSince1970: Double($0 * 86400))) }
+		var values: [Double] = []
+		var seq = Deterministic01(seed: seed)
+		let dist = DistributionUniform(-5.0, 5.0)
 
 		for i in 0..<100 {
 			if i == 50 {
-				// Anomaly: spike to 150
 				values.append(150.0)
 			} else if i == 75 {
-				// Anomaly: drop to 50
 				values.append(50.0)
 			} else {
-				// Normal value around 100
-				values.append(100.0 + Double.random(in: -5.0...5.0))
+				let jitter = dist.random(seq.next())
+				values.append(100.0 + jitter)
 			}
 		}
-
 		return TimeSeries(periods: periods, values: values)
 	}
 
@@ -145,14 +176,20 @@ struct AnomalyDetectionTests {
 	@Test("Anomaly has expected value")
 	func anomalyExpectedValue() throws {
 		let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
-		let data = makeDataWithAnomalies()
+		let data = makeDataWithAnomalies(seed: 0.42)
 
 		let anomalies = detector.detect(in: data, threshold: 2.5)
 
-		for anomaly in anomalies {
-			// Expected value should be close to 100 (the normal level)
-			#expect(abs(anomaly.expectedValue - 100.0) < 20.0)
+		// Focus checks on the two known injected anomalies
+		let targetPeriods = [data.periods[50], data.periods[75]]
+		let targetAnomalies = anomalies.filter { targetPeriods.contains($0.period) }
 
+		// Ensure both known anomalies are flagged
+		#expect(targetAnomalies.count == 2)
+
+		for anomaly in targetAnomalies {
+			// Expected value should be close to the baseline (~100)
+			#expect(abs(anomaly.expectedValue - 100.0) < 20.0)
 			// Actual value should deviate significantly
 			#expect(abs(anomaly.value - anomaly.expectedValue) > 10.0)
 		}

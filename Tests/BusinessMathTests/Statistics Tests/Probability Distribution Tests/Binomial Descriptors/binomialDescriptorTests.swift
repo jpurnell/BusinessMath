@@ -1,28 +1,31 @@
 //
 //  binomialDescriptorTests.swift
-//  
+//
 //
 //  Created by Justin Purnell on 3/26/22.
 //
 
-import XCTest
 import Testing
 import Numerics
 @testable import BusinessMath
 
-final class BinomialDescriptorTests: XCTestCase {
+@Suite("Binomial Descriptor Tests")
+struct BinomialDescriptorTests {
 
-    public func testMeanBinomial() {
-        XCTAssertEqual(meanBinomial(n: 1000, prob: 0.6) , 600)
-    }
-    
-    public func teststdDevBinomial() {
-        XCTAssertEqual(stdDevBinomial(n: 1000, prob: 0.6), Double.sqrt(1000 * 0.6 * 0.4))
-    }
-    
-    public func testVarianceBinomial() {
-        XCTAssertEqual(varianceBinomial(n: 1000, prob: 0.6), (1000 * (0.4) * (0.6)))
-    }
+	@Test("Mean binomial")
+	func meanBinomial() {
+		#expect(BusinessMath.meanBinomial(n: 1000, prob: 0.6) == 600)
+	}
+
+	@Test("Standard deviation binomial")
+	func stdDevBinomial() {
+		#expect(BusinessMath.stdDevBinomial(n: 1000, prob: 0.6) == Double.sqrt(1000 * 0.6 * 0.4))
+	}
+
+	@Test("Variance binomial")
+	func varianceBinomial() {
+		#expect(BusinessMath.varianceBinomial(n: 1000, prob: 0.6) == (1000 * (0.4) * (0.6)))
+	}
 }
 
 @Suite("Binomial descriptors - Edge cases")

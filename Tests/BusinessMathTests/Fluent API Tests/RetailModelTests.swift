@@ -6,7 +6,7 @@
 //  TDD: Tests written FIRST, then implementation
 //
 
-import XCTest
+import Testing
 import RealModule
 @testable import BusinessMath
 
@@ -14,11 +14,11 @@ import RealModule
 ///
 /// These tests define the expected behavior of a retail financial model,
 /// including inventory management, COGS, gross margin, turnover, and seasonal demand.
-final class RetailModelTests: ModelTestCase {
+@Suite("RetailModelTests") struct RetailModelTests {
 
     // MARK: - Basic Setup Tests
 
-    func testRetailModel_BasicSetup() {
+    @Test("RetailModel_BasicSetup") func LRetailModel_BasicSetup() {
         // Given: A basic retail model with initial parameters
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -28,15 +28,15 @@ final class RetailModelTests: ModelTestCase {
         )
 
         // Then: The model should be initialized correctly
-        XCTAssertEqual(model.initialInventoryValue, 100_000)
-        XCTAssertEqual(model.monthlyRevenue, 50_000)
-        XCTAssertEqual(model.costOfGoodsSoldPercentage, 0.60)
-        XCTAssertEqual(model.operatingExpenses, 15_000)
+        #expect(model.initialInventoryValue == 100_000)
+        #expect(model.monthlyRevenue == 50_000)
+        #expect(model.costOfGoodsSoldPercentage == 0.60)
+        #expect(model.operatingExpenses == 15_000)
     }
 
     // MARK: - COGS and Gross Margin Tests
 
-    func testRetailModel_COGSCalculation() {
+    @Test("RetailModel_COGSCalculation") func LRetailModel_COGSCalculation() {
         // Given: A retail model with 60% COGS
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -50,10 +50,10 @@ final class RetailModelTests: ModelTestCase {
 
         // Then: COGS should be 60% of revenue
         // $50,000 * 0.60 = $30,000
-        XCTAssertEqual(cogs, 30_000, accuracy: 1.0)
+        #expect(abs(cogs - 30_000) < 1.0)
     }
 
-    func testRetailModel_GrossMarginCalculation() {
+    @Test("RetailModel_GrossMarginCalculation") func LRetailModel_GrossMarginCalculation() {
         // Given: A retail model with 60% COGS
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -66,10 +66,10 @@ final class RetailModelTests: ModelTestCase {
         let grossMargin = model.calculateGrossMargin()
 
         // Then: Gross margin should be 40% (1 - 0.60)
-        XCTAssertEqual(grossMargin, 0.40, accuracy: 0.01)
+        #expect(abs(grossMargin - 0.40) < 0.01)
     }
 
-    func testRetailModel_GrossProfitCalculation() {
+    @Test("RetailModel_GrossProfitCalculation") func LRetailModel_GrossProfitCalculation() {
         // Given: A retail model
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -83,12 +83,12 @@ final class RetailModelTests: ModelTestCase {
 
         // Then: Gross profit = Revenue - COGS
         // $50,000 - $30,000 = $20,000
-        XCTAssertEqual(grossProfit, 20_000, accuracy: 1.0)
+        #expect(abs(grossProfit - 20_000) < 1.0)
     }
 
     // MARK: - Inventory Turnover Tests
 
-    func testRetailModel_InventoryTurnoverCalculation() {
+    @Test("RetailModel_InventoryTurnoverCalculation") func LRetailModel_InventoryTurnoverCalculation() {
         // Given: A retail model with known inventory and COGS
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -103,10 +103,10 @@ final class RetailModelTests: ModelTestCase {
         // Then: Turnover = Annual COGS / Average Inventory
         // Annual COGS = $30,000 * 12 = $360,000
         // Turnover = $360,000 / $100,000 = 3.6 times per year
-        XCTAssertEqual(turnover, 3.6, accuracy: 0.1)
+        #expect(abs(turnover - 3.6) < 0.1)
     }
 
-    func testRetailModel_DaysInventoryOutstanding() {
+    @Test("RetailModel_DaysInventoryOutstanding") func LRetailModel_DaysInventoryOutstanding() {
         // Given: A retail model
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -120,12 +120,12 @@ final class RetailModelTests: ModelTestCase {
 
         // Then: DIO = 365 / Inventory Turnover
         // DIO = 365 / 3.6 ≈ 101 days
-        XCTAssertEqual(dio, 101.4, accuracy: 1.0)
+        #expect(abs(dio - 101.4) < 1.0)
     }
 
     // MARK: - Net Profit Tests
 
-    func testRetailModel_NetProfitCalculation() {
+    @Test("RetailModel_NetProfitCalculation") func LRetailModel_NetProfitCalculation() {
         // Given: A retail model
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -139,10 +139,10 @@ final class RetailModelTests: ModelTestCase {
 
         // Then: Net Profit = Gross Profit - Operating Expenses
         // $20,000 - $15,000 = $5,000
-        XCTAssertEqual(netProfit, 5_000, accuracy: 1.0)
+        #expect(abs(netProfit - 5_000) < 1.0)
     }
 
-    func testRetailModel_NetProfitMargin() {
+    @Test("RetailModel_NetProfitMargin") func LRetailModel_NetProfitMargin() {
         // Given: A retail model
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -156,12 +156,12 @@ final class RetailModelTests: ModelTestCase {
 
         // Then: Net Profit Margin = Net Profit / Revenue
         // $5,000 / $50,000 = 0.10 (10%)
-        XCTAssertEqual(netProfitMargin, 0.10, accuracy: 0.01)
+        #expect(abs(netProfitMargin - 0.10) < 0.01)
     }
 
     // MARK: - Seasonal Demand Tests
 
-    func testRetailModel_SeasonalRevenue() {
+    @Test("RetailModel_SeasonalRevenue") func LRetailModel_SeasonalRevenue() {
         // Given: A model with seasonal multipliers
         let seasonalMultipliers: [Int: Double] = [
             11: 1.5,  // November: 50% increase
@@ -182,14 +182,14 @@ final class RetailModelTests: ModelTestCase {
         let decemberRevenue = model.calculateRevenue(forMonth: 12)
 
         // Then: Revenue should be adjusted by seasonal multipliers
-        XCTAssertEqual(normalMonthRevenue, 50_000, accuracy: 1.0)
-        XCTAssertEqual(novemberRevenue, 75_000, accuracy: 1.0)  // $50,000 * 1.5
-        XCTAssertEqual(decemberRevenue, 100_000, accuracy: 1.0)  // $50,000 * 2.0
+        #expect(abs(normalMonthRevenue - 50_000) < 1.0)
+        #expect(abs(novemberRevenue - 75_000) < 1.0)  // $50,000 * 1.5
+        #expect(abs(decemberRevenue - 100_000) < 1.0)  // $50,000 * 2.0
     }
 
     // MARK: - Projection Tests
 
-    func testRetailModel_Projection12Months() {
+    @Test("RetailModel_Projection12Months") func LRetailModel_Projection12Months() {
         // Given: A retail model
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -202,18 +202,18 @@ final class RetailModelTests: ModelTestCase {
         let projection = model.project(months: 12)
 
         // Then: Should return projections for all 12 months
-        XCTAssertEqual(projection.revenue.count, 12)
-        XCTAssertEqual(projection.grossProfit.count, 12)
-        XCTAssertEqual(projection.netProfit.count, 12)
+        #expect(projection.revenue.count == 12)
+        #expect(projection.grossProfit.count == 12)
+        #expect(projection.netProfit.count == 12)
 
         // And: Values should be consistent with inputs
         let firstMonthRevenue = projection.revenue.valuesArray.first ?? 0
-        XCTAssertEqual(firstMonthRevenue, 50_000, accuracy: 1.0)
+        #expect(abs(firstMonthRevenue - 50_000) < 1.0)
     }
 
     // MARK: - Markup Tests
 
-    func testRetailModel_MarkupCalculation() {
+    @Test("RetailModel_MarkupCalculation") func LRetailModel_MarkupCalculation() {
         // Given: A model with cost and selling price
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -228,12 +228,12 @@ final class RetailModelTests: ModelTestCase {
         // Then: Markup = (Selling Price - Cost) / Cost
         // If COGS is 60%, then for $1 selling price, cost is $0.60
         // Markup = ($1.00 - $0.60) / $0.60 = 0.40 / 0.60 ≈ 0.667 (66.7%)
-        XCTAssertEqual(markup, 0.667, accuracy: 0.01)
+        #expect(abs(markup - 0.667) < 0.01)
     }
 
     // MARK: - Break-Even Tests
 
-    func testRetailModel_BreakEvenRevenue() {
+    @Test("RetailModel_BreakEvenRevenue") func LRetailModel_BreakEvenRevenue() {
         // Given: A retail model
         let model = RetailModel(
             initialInventoryValue: 100_000,
@@ -249,6 +249,6 @@ final class RetailModelTests: ModelTestCase {
         // Required Revenue * (1 - COGS%) = Operating Expenses
         // Required Revenue * 0.40 = $15,000
         // Required Revenue = $15,000 / 0.40 = $37,500
-        XCTAssertEqual(breakEvenRevenue, 37_500, accuracy: 1.0)
+        #expect(abs(breakEvenRevenue - 37_500) < 1.0)
     }
 }

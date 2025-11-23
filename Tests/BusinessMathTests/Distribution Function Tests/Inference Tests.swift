@@ -5,17 +5,17 @@
 //  Created by Justin Purnell on 3/26/22.
 //
 
-import XCTest
+import Testing
 import OSLog
 import Numerics
 @testable import BusinessMath
 
-final class InferenceTests: XCTestCase {
+@Suite("InferenceTests") struct InferenceTests {
 	let inferenceTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "Inference Tests")
 
-    func testConfidence() {
+    @Test("Confidence") func LConfidence() {
         let result = (confidence(alpha: 0.05, stdev: 2.5, sampleSize: 50).high * 1000000.0).rounded(.up) / 1000000.0
-        XCTAssertEqual(result, 0.692952)
+        #expect(result == 0.692952)
     }
 
     func testpValueOfZTest() {
@@ -43,12 +43,12 @@ final class InferenceTests: XCTestCase {
         let pValue = 2.0 * 0.5 * erfc(absZ / sqrt(2.0))
         
         // Verify p-value properties
-        XCTAssertGreaterThan(pValue, 0.0, "P-value should be positive")
-        XCTAssertLessThan(pValue, 1.0, "P-value should be less than 1")
+        #expect(pValue > 0.0, "P-value should be positive")
+        #expect(pValue < 1.0, "P-value should be less than 1")
         
         // For this sample (mean ≈ 50.8), the p-value should be relatively high
         // indicating no significant difference from population mean of 50
-        XCTAssertGreaterThan(pValue, 0.05, "P-value should be > 0.05 (not significant)")
+        #expect(pValue > 0.05, "P-value should be > 0.05 (not significant)")
         
         // Log the results
 //        inferenceTestLogger.info("Z-Test Results: sampleMean=\(sampleMean), zStatistic=\(zStatistic), pValue=\(pValue)")
@@ -57,7 +57,7 @@ final class InferenceTests: XCTestCase {
     // MARK: - New Statistical Testing Tool Tests
 
     // Test 1: Two-Sample T-Test
-    func testTwoSampleTTest() {
+    @Test("TwoSampleTTest") func LTwoSampleTTest() {
         // Example: Compare mean sales between two stores
         let group1 = [85.0, 90.0, 88.0, 92.0, 87.0, 89.0, 91.0, 86.0]
         let group2 = [78.0, 82.0, 80.0, 79.0, 81.0, 77.0, 83.0, 80.0]
@@ -66,13 +66,13 @@ final class InferenceTests: XCTestCase {
         let mean2 = group2.reduce(0, +) / Double(group2.count)
 
         // Expect group1 to have significantly higher mean than group2
-        XCTAssertGreaterThan(mean1, mean2)
-        XCTAssertGreaterThan(mean1, 85.0)
-        XCTAssertLessThan(mean2, 82.0)
+        #expect(mean1 > mean2)
+        #expect(mean1 > 85.0)
+        #expect(mean2 < 82.0)
     }
 
     // Test 2: One-Sample T-Test
-    func testOneSampleTTest() {
+    @Test("OneSampleTTest") func LOneSampleTTest() {
         // Example: Test if average sales = 100
         let sample = [95.0, 102.0, 98.0, 104.0, 97.0, 101.0, 99.0, 103.0]
         let populationMean = 100.0
@@ -85,11 +85,11 @@ final class InferenceTests: XCTestCase {
         let tStat = (sampleMean - populationMean) / (stdDev / sqrt(Double(sample.count)))
 
         // T-statistic should be close to 0 (sample mean ≈ population mean)
-        XCTAssertLessThan(abs(tStat), 2.0)
+        #expect(abs(tStat) < 2.0)
     }
 
     // Test 3: AB Test P-Value
-    func testABTestPValue() {
+    @Test("ABTestPValue") func LABTestPValue() {
         // Example: Test conversion rates
         let obsA = 1000
         let convA = 85  // 8.5% conversion
@@ -99,12 +99,12 @@ final class InferenceTests: XCTestCase {
         let result: Double = pValue(obsA: obsA, convA: convA, obsB: obsB, convB: convB)
 
         // B should have significantly higher conversion (p-value should indicate significance)
-        XCTAssertGreaterThan(result, 0.0)
-        XCTAssertLessThan(result, 1.0)
+        #expect(result > 0.0)
+        #expect(result < 1.0)
     }
 
     // Test 4: Sample Size Calculation
-    func testSampleSizeCalculation() {
+    @Test("SampleSizeCalculation") func LSampleSizeCalculation() {
         // Example: Calculate required sample size for 95% confidence, 5% margin of error
         let confidence = 0.95
         let proportion = 0.5  // Worst case: 50%
@@ -114,12 +114,12 @@ final class InferenceTests: XCTestCase {
         let result: Double = sampleSize(ci: confidence, proportion: proportion, n: populationSize, error: marginOfError)
 
         // Should be around 370 for these parameters
-        XCTAssertGreaterThan(result, 300)
-        XCTAssertLessThan(result, 400)
+        #expect(result > 300)
+        #expect(result < 400)
     }
 
     // Test 5: Confidence Interval
-    func testConfidenceInterval() {
+    @Test("ConfidenceInterval") func LConfidenceInterval() {
         // Test confidence interval calculation
         let alpha = 0.05  // 95% confidence
         let stdev = 2.5
@@ -128,13 +128,13 @@ final class InferenceTests: XCTestCase {
         let result = confidence(alpha: alpha, stdev: stdev, sampleSize: sampleSize)
 
         // Check that confidence interval is symmetric and reasonable
-        XCTAssertGreaterThan(result.high, 0)
-        XCTAssertLessThan(result.high, 1.0)
-        XCTAssertEqual(result.low, -result.high, accuracy: 0.0001)
+        #expect(result.high > 0)
+        #expect(result.high < 1.0)
+        #expect(abs(result.low - -result.high) < 0.0001)
     }
 
     // Test 6: Chi-Square Test (categorical data)
-    func testChiSquarePreparation() {
+    @Test("ChiSquarePreparation") func LChiSquarePreparation() {
         // Example: Test if observed frequencies match expected
         let observed = [45.0, 35.0, 20.0]
         let expected = [40.0, 40.0, 20.0]
@@ -146,7 +146,7 @@ final class InferenceTests: XCTestCase {
         }
 
         // Chi-square should be relatively small for similar distributions
-        XCTAssertGreaterThan(chiSquare, 0)
-        XCTAssertLessThan(chiSquare, 5.0)  // Not significantly different
+        #expect(chiSquare > 0)
+        #expect(chiSquare < 5.0)  // Not significantly different
     }
 }

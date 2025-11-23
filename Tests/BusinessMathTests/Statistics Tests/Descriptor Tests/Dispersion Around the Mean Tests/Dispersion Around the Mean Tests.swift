@@ -5,112 +5,113 @@
 //  Created by Justin Purnell on 3/26/22.
 //
 
-import XCTest
+import Testing
 import Testing
 import Numerics
 import OSLog
 @testable import BusinessMath
 
-final class DispersionAroundtheMeanTests: XCTestCase {
+@Suite("DispersionAroundtheMeanTests") struct DispersionAroundtheMeanTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.DispersionAroundtheMeanTests", category: #function)
 	
 
-	func testCoefficientOfVariation() {
+	@Test("CoefficientOfVariation") func LCoefficientOfVariation() {
 		let array: [Double] = [0, 1, 2, 3, 4]
 		let stdDev = stdDev(array)
 		let mean = mean(array)
 		let result = try! coefficientOfVariation(stdDev, mean: mean)
-		XCTAssertEqual(result, (Double.sqrt(2.5) / 2) * 100)
+		#expect(result == (Double.sqrt(2.5) / 2) * 100)
 	}
 	
-	func testIndexOfDispersion() {
-		// Test index of dispersion (variance-to-mean ratio)
-		// For Poisson distribution, index should be approximately 1
+	@Test("IndexOfDispersion")
+	func LIndexOfDispersion() throws {
+		// Positive result
 		let poissonLike: [Double] = [4, 5, 6, 5, 4, 6, 5, 4, 5, 6]
-		let result = try! indexOfDispersion(poissonLike)
+		let r1 = try indexOfDispersion(poissonLike)
+		#expect(r1 > 0.0)
 
-		// Should return a positive value
-		XCTAssertGreaterThan(result, 0.0)
+		// Known values
+		let values: [Double] = [2, 4, 6, 8, 10]
+		let dispersionIndex = try indexOfDispersion(values)
 
-		// Test with known values
-		let values: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
-		let dispersionIndex = try! indexOfDispersion(values)
-		let meanVal = mean(values)  // 6.0
-		let varVal = variance(values)  // 10.0
-		let expectedIndex = varVal / meanVal  // 10.0 / 6.0 ≈ 1.667
+		// Use the same variance flavor your implementation uses:
+		let meanVal = mean(values)
+		let varVal = varianceS(values)        // sample variance = 10
+		let expectedIndex = varVal / meanVal  // 10 / 6 ≈ 1.6667
 
-		XCTAssertEqual(dispersionIndex, expectedIndex, accuracy: 0.001)
+		#expect(abs(dispersionIndex - expectedIndex) < 0.001)
 
-		// Test that division by zero throws error
-		XCTAssertThrowsError(try indexOfDispersion([0.0, 0.0, 0.0])) { error in
-			XCTAssertTrue(error is MathError)
+		// Throws the right error when mean is zero
+		let thrown = #expect(throws: MathError.self) {
+			try indexOfDispersion([0.0, 0.0, 0.0])
 		}
+		#expect(thrown == .divisionByZero)
 	}
 
-	func testStdDevP() {
+	@Test("StdDevP") func LStdDevP() {
 	 let result = stdDevP([0, 1, 2, 3, 4])
-	 XCTAssertEqual(result, Double.sqrt(2))
+	 #expect(result == Double.sqrt(2))
 	 }
 
-	 func testStdDevS() {
+	 @Test("StdDevS") func LStdDevS() {
 		 let result = (stdDevS([96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53]) * 10000.0).rounded(.up) / 10000
-		 XCTAssertEqual(result, 27.7243)
+		 #expect(result == 27.7243)
 	 }
 
-	 func testStdDev() {
+	 @Test("StdDev") func LStdDev() {
 		 let result = stdDev([0, 1, 2, 3, 4])
-		 XCTAssertEqual(result, Double.sqrt(2.5))
+		 #expect(result == Double.sqrt(2.5))
 	 }
 
-    func testSumOfSquaredAvgDiff() {
+    @Test("SumOfSquaredAvgDiff") func LSumOfSquaredAvgDiff() {
         let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
         let result = sumOfSquaredAvgDiff(doubleArray)
-        XCTAssertEqual(result, 10)
+        #expect(result == 10)
     }
 
-	func testTStatistic() {
+	@Test("TStatistic") func LTStatistic() {
 		let result = tStatistic(x: 1)
-		XCTAssertEqual(result, 1)
+		#expect(result == 1)
 	}
 
-    func testVarianceP() {
+    @Test("VarianceP") func LVarianceP() {
         let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
         let result = varianceP(doubleArray)
-        XCTAssertEqual(result, 2)
+        #expect(result == 2)
     }
 
-    func testVarianceS() {
+    @Test("VarianceS") func LVarianceS() {
         let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
         let result = varianceS(doubleArray)
-        XCTAssertEqual(result, 2.5)
+        #expect(result == 2.5)
     }
 	
-	func testVarianceTDist() {
+	@Test("VarianceTDist") func LVarianceTDist() {
 		// Test theoretical variance of Student's t-distribution: Var(T) = df/(df-2) for df > 2
 		
 		// Test 1: df = 10
 		// Expected theoretical variance: 10/(10-2) = 10/8 = 1.25
 		let df10 = 10
 		let theoreticalVariance10 = Double(df10) / Double(df10 - 2)
-		XCTAssertEqual(theoreticalVariance10, 1.25, accuracy: 0.001, "Theoretical variance for df=10 should be 1.25")
+		#expect(abs(theoreticalVariance10 - 1.25) < 0.001, "Theoretical variance for df=10 should be 1.25")
 		
 		// Test 2: df = 30 (approaches standard normal)
 		// Expected theoretical variance: 30/(30-2) = 30/28 ≈ 1.0714
 		let df30 = 30
 		let theoreticalVariance30 = Double(df30) / Double(df30 - 2)
-		XCTAssertEqual(theoreticalVariance30, 1.0714, accuracy: 0.001, "Theoretical variance for df=30 should be ~1.0714")
+		#expect(abs(theoreticalVariance30 - 1.0714) < 0.001, "Theoretical variance for df=30 should be ~1.0714")
 		
 		// Test 3: df = 5 (lower df, higher variance)
 		// Expected theoretical variance: 5/(5-2) = 5/3 ≈ 1.6667
 		let df5 = 5
 		let theoreticalVariance5 = Double(df5) / Double(df5 - 2)
-		XCTAssertEqual(theoreticalVariance5, 1.6667, accuracy: 0.001, "Theoretical variance for df=5 should be ~1.6667")
+		#expect(abs(theoreticalVariance5 - 1.6667) < 0.001, "Theoretical variance for df=5 should be ~1.6667")
 		
 		// Test 4: df = 100 (very close to standard normal variance of 1)
 		// Expected theoretical variance: 100/(100-2) = 100/98 ≈ 1.0204
 		let df100 = 100
 		let theoreticalVariance100 = Double(df100) / Double(df100 - 2)
-		XCTAssertEqual(theoreticalVariance100, 1.0204, accuracy: 0.001, "Theoretical variance for df=100 should be ~1.0204")
+		#expect(abs(theoreticalVariance100 - 1.0204) < 0.001, "Theoretical variance for df=100 should be ~1.0204")
 		
 		// Test 5: Verify empirical variance matches theoretical for df=20
 		let df20 = 20
@@ -148,7 +149,7 @@ final class DispersionAroundtheMeanTests: XCTestCase {
 		
 		// Empirical variance should be close to theoretical variance
 		let tolerance = 0.1
-		XCTAssertEqual(empiricalVariance, theoreticalVariance20, accuracy: tolerance,
+		#expect(abs(empiricalVariance - theoreticalVariance20) < tolerance,
 					   "Empirical variance should match theoretical variance for df=20 (expected: \(theoreticalVariance20), got: \(empiricalVariance))")
 		
 		// Test 6: Verify variance increases as df decreases (for df > 2)
@@ -156,14 +157,14 @@ final class DispersionAroundtheMeanTests: XCTestCase {
 		let variance6 = Double(6) / Double(6 - 2)  // 1.5
 		let variance8 = Double(8) / Double(8 - 2)  // 1.333...
 		
-		XCTAssertTrue(variance4 > variance6, "Lower df should have higher variance")
-		XCTAssertTrue(variance6 > variance8, "Lower df should have higher variance")
+		#expect(variance4 > variance6, "Lower df should have higher variance")
+		#expect(variance6 > variance8, "Lower df should have higher variance")
 		
 		// Test 7: df = 3 (minimum df for finite variance)
 		// Expected theoretical variance: 3/(3-2) = 3
 		let df3 = 3
 		let theoreticalVariance3 = Double(df3) / Double(df3 - 2)
-		XCTAssertEqual(theoreticalVariance3, 3.0, accuracy: 0.001, "Theoretical variance for df=3 should be 3.0")
+		#expect(abs(theoreticalVariance3 - 3.0) < 0.001, "Theoretical variance for df=3 should be 3.0")
 	}
 }
 

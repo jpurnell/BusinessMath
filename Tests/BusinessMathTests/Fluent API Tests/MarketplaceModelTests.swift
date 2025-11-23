@@ -6,7 +6,7 @@
 //  TDD: Tests written FIRST, then implementation
 //
 
-import XCTest
+import Testing
 import RealModule
 @testable import BusinessMath
 
@@ -14,11 +14,11 @@ import RealModule
 ///
 /// These tests define the expected behavior of a marketplace financial model,
 /// including GMV, take rate, transaction metrics, and network effects.
-final class MarketplaceModelTests: ModelTestCase {
+@Suite("MarketplaceModelTests") struct MarketplaceModelTests {
 
     // MARK: - Basic Setup Tests
 
-    func testMarketplaceModel_BasicSetup() {
+    @Test("MarketplaceModel_BasicSetup") func LMarketplaceModel_BasicSetup() {
         // Given: A basic marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -33,16 +33,16 @@ final class MarketplaceModelTests: ModelTestCase {
         )
 
         // Then: The model should be initialized correctly
-        XCTAssertEqual(model.initialBuyers, 10_000)
-        XCTAssertEqual(model.initialSellers, 500)
-        XCTAssertEqual(model.monthlyTransactionsPerBuyer, 2)
-        XCTAssertEqual(model.averageOrderValue, 75)
-        XCTAssertEqual(model.takeRate, 0.15)
+        #expect(model.initialBuyers == 10_000)
+        #expect(model.initialSellers == 500)
+        #expect(model.monthlyTransactionsPerBuyer == 2)
+        #expect(model.averageOrderValue == 75)
+        #expect(model.takeRate == 0.15)
     }
 
     // MARK: - GMV Tests
 
-    func testMarketplaceModel_GMVCalculation() {
+    @Test("MarketplaceModel_GMVCalculation") func LMarketplaceModel_GMVCalculation() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -63,12 +63,12 @@ final class MarketplaceModelTests: ModelTestCase {
         // First, calculate buyers after month 1:
         // 10,000 - (10,000 * 0.05) + 1,000 = 10,500
         // GMV = 10,500 * 2 * $75 = $1,575,000
-        XCTAssertEqual(gmv, 1_575_000, accuracy: 100.0)
+        #expect(abs(gmv - 1_575_000) < 100.0)
     }
 
     // MARK: - Revenue Tests
 
-    func testMarketplaceModel_RevenueCalculation() {
+    @Test("MarketplaceModel_RevenueCalculation") func LMarketplaceModel_RevenueCalculation() {
         // Given: A marketplace model with 15% take rate
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -87,12 +87,12 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Revenue = GMV * Take Rate
         // $1,575,000 * 0.15 = $236,250
-        XCTAssertEqual(revenue, 236_250, accuracy: 100.0)
+        #expect(abs(revenue - 236_250) < 100.0)
     }
 
     // MARK: - User Growth Tests
 
-    func testMarketplaceModel_BuyerGrowth() {
+    @Test("MarketplaceModel_BuyerGrowth") func LMarketplaceModel_BuyerGrowth() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -111,10 +111,10 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Buyers = Initial - Churned + New
         // 10,000 - (10,000 * 0.05) + 1,000 = 10,500
-        XCTAssertEqual(buyers, 10_500, accuracy: 1.0)
+        #expect(abs(buyers - 10_500) < 1.0)
     }
 
-    func testMarketplaceModel_SellerGrowth() {
+    @Test("MarketplaceModel_SellerGrowth") func LMarketplaceModel_SellerGrowth() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -133,12 +133,12 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Sellers = Initial - Churned + New
         // 500 - (500 * 0.03) + 50 = 535
-        XCTAssertEqual(sellers, 535, accuracy: 1.0)
+        #expect(abs(sellers - 535) < 1.0)
     }
 
     // MARK: - Liquidity Tests
 
-    func testMarketplaceModel_Liquidity() {
+    @Test("MarketplaceModel_Liquidity") func LMarketplaceModel_Liquidity() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -157,12 +157,12 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Liquidity = Buyers / Sellers
         // 10,500 / 535 ≈ 19.6
-        XCTAssertEqual(liquidity, 19.6, accuracy: 0.5)
+        #expect(abs(liquidity - 19.6) < 0.5)
     }
 
     // MARK: - Transaction Metrics Tests
 
-    func testMarketplaceModel_TotalTransactions() {
+    @Test("MarketplaceModel_TotalTransactions") func LMarketplaceModel_TotalTransactions() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -181,10 +181,10 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Transactions = Buyers * Transactions per Buyer
         // 10,500 * 2 = 21,000
-        XCTAssertEqual(transactions, 21_000, accuracy: 1.0)
+        #expect(abs(transactions - 21_000) < 1.0)
     }
 
-    func testMarketplaceModel_TransactionsPerSeller() {
+    @Test("MarketplaceModel_TransactionsPerSeller") func LMarketplaceModel_TransactionsPerSeller() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -203,12 +203,12 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Transactions per Seller = Total Transactions / Sellers
         // 21,000 / 535 ≈ 39.3
-        XCTAssertEqual(transactionsPerSeller, 39.3, accuracy: 1.0)
+        #expect(abs(transactionsPerSeller - 39.3) < 1.0)
     }
 
     // MARK: - Seller Economics Tests
 
-    func testMarketplaceModel_AverageSellerRevenue() {
+    @Test("MarketplaceModel_AverageSellerRevenue") func LMarketplaceModel_AverageSellerRevenue() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -227,12 +227,12 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Avg Seller Revenue = GMV / Sellers
         // $1,575,000 / 535 ≈ $2,944
-        XCTAssertEqual(avgRevenue, 2_944, accuracy: 10.0)
+        #expect(abs(avgRevenue - 2_944) < 10.0)
     }
 
     // MARK: - Network Effects Tests
 
-    func testMarketplaceModel_BuyerSellerRatio() {
+    @Test("MarketplaceModel_BuyerSellerRatio") func LMarketplaceModel_BuyerSellerRatio() {
         // Given: A marketplace with healthy buyer-to-seller ratio
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -251,12 +251,12 @@ final class MarketplaceModelTests: ModelTestCase {
 
         // Then: Ratio = Buyers / Sellers
         // 10,500 / 535 ≈ 19.6
-        XCTAssertEqual(ratio, 19.6, accuracy: 0.5)
+        #expect(abs(ratio - 19.6) < 0.5)
     }
 
     // MARK: - Projection Tests
 
-    func testMarketplaceModel_Projection12Months() {
+    @Test("MarketplaceModel_Projection12Months") func LMarketplaceModel_Projection12Months() {
         // Given: A marketplace model
         let model = MarketplaceModel(
             initialBuyers: 10_000,
@@ -274,20 +274,20 @@ final class MarketplaceModelTests: ModelTestCase {
         let projection = model.project(months: 12)
 
         // Then: Should return projections for all 12 months
-        XCTAssertEqual(projection.gmv.count, 12)
-        XCTAssertEqual(projection.revenue.count, 12)
-        XCTAssertEqual(projection.buyers.count, 12)
-        XCTAssertEqual(projection.sellers.count, 12)
+        #expect(projection.gmv.count == 12)
+        #expect(projection.revenue.count == 12)
+        #expect(projection.buyers.count == 12)
+        #expect(projection.sellers.count == 12)
 
         // And: GMV should grow over time (net positive user growth)
         let firstMonthGMV = projection.gmv.valuesArray.first ?? 0
         let lastMonthGMV = projection.gmv.valuesArray.last ?? 0
-        XCTAssertGreaterThan(lastMonthGMV, firstMonthGMV)
+        #expect(lastMonthGMV > firstMonthGMV)
     }
 
     // MARK: - Take Rate Sensitivity Tests
 
-    func testMarketplaceModel_TakeRateImpactOnRevenue() {
+    @Test("MarketplaceModel_TakeRateImpactOnRevenue") func LMarketplaceModel_TakeRateImpactOnRevenue() {
         // Given: Two models with different take rates
         let lowTakeRate = MarketplaceModel(
             initialBuyers: 10_000,
@@ -320,8 +320,8 @@ final class MarketplaceModelTests: ModelTestCase {
         // Then: Higher take rate should produce proportionally more revenue
         // Low: $1,575,000 * 0.10 = $157,500
         // High: $1,575,000 * 0.20 = $315,000
-        XCTAssertEqual(lowRevenue, 157_500, accuracy: 100.0)
-        XCTAssertEqual(highRevenue, 315_000, accuracy: 100.0)
-        XCTAssertEqual(highRevenue / lowRevenue, 2.0, accuracy: 0.1)
+        #expect(abs(lowRevenue - 157_500) < 100.0)
+        #expect(abs(highRevenue - 315_000) < 100.0)
+        #expect(abs(highRevenue / lowRevenue - 2.0) < 0.1)
     }
 }
