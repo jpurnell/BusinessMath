@@ -88,11 +88,9 @@ jobs:
             echo "===== tail of $LOG_D ====="; tail -n 200 "$LOG_D"; exit 1; fi
 
           if ! swift test $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a "$LOG_D"; then
-            grep -E "error:|Undefined symbols|swift-frontend failed|ld: error" "$LOG_D" || true
             echo "===== tail of $LOG_D ====="; tail -n 200 "$LOG_D"; exit 1; fi
 
           if ! swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v 2>&1 | tee -a "$LOG_R"; then
-            grep -E "error:|Undefined symbols|swift-frontend failed|ld: error" "$LOG_R" || true
             echo "===== tail of $LOG_R ====="; tail -n 200 "$LOG_R"; exit 1; fi
 
       - name: Upload build logs
