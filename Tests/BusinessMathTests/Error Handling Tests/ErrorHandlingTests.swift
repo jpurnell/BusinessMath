@@ -721,8 +721,6 @@ struct ErrorHandlingAdditionalTests {
 	}
 }
 
-	// MARK: - File-private helpers (mirroring your existing XCTest helpers)
-
 	fileprivate func createInvestmentWithDiscountRate(_ rate: Double) throws -> Investment {
 		guard rate >= 0 && rate <= 1 else {
 			if rate < 0 {
