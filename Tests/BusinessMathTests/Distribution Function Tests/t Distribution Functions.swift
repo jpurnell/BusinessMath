@@ -5,43 +5,50 @@
 //  Created by Justin Purnell on 3/26/22.
 //
 
-import XCTest
+import Testing
 import Numerics
-import OSLog
 @testable import BusinessMath
 
-final class TDistributionTests: XCTestCase {
-	let tDistributionTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "T Distribution Tests")
-    func testTDistributionFunctions() {
-		// Test tStatistic calculation
-		// t = (x - mean) / stdErr
+@Suite("t Distribution Tests")
+struct TDistributionTests {
+
+	@Test("tStatistic computes (x - mean) / stdErr")
+	func tStatistic_basic() throws {
 		let x = 5.0
 		let mean = 3.0
 		let stdErr = 1.0
 		let tStat = tStatistic(x: x, mean: mean, stdErr: stdErr)
-		XCTAssertEqual(tStat, 2.0)  // (5 - 3) / 1 = 2
+		#expect(tStat == 2.0)
+	}
 
-		// Test with default parameters
+	@Test("tStatistic with default parameters")
+	func tStatistic_default() throws {
 		let tStatDefault = tStatistic(x: 1.0)
-		XCTAssertEqual(tStatDefault, 1.0)  // (1 - 0) / 1 = 1
+		#expect(tStatDefault == 1.0) // (1 - 0) / 1
+	}
 
-		// Test pValueStudent (t-distribution PDF)
+	@Test("pValueStudent is within (0,1)")
+	func pValue_bounds() throws {
 		let tValue = 2.0
 		let dF = 10.0
 		let pVal = pValueStudent(tValue, dFr: dF)
+		#expect(pVal > 0.0)
+		#expect(pVal < 1.0)
+	}
 
-		// P-value should be between 0 and 1
-		XCTAssertGreaterThan(pVal, 0.0)
-		XCTAssertLessThan(pVal, 1.0)
-
-		// Test that p-value at t=0 is higher (center of distribution)
+	@Test("pValueStudent at t=0 is higher than at t=2 (PDF peak at center)")
+	func pValue_center_higher() throws {
+		let dF = 10.0
 		let pValAtZero = pValueStudent(0.0, dFr: dF)
-		XCTAssertGreaterThan(pValAtZero, pVal)
+		let pValAtTwo = pValueStudent(2.0, dFr: dF)
+		#expect(pValAtZero > pValAtTwo)
+	}
 
-		// Test with larger degrees of freedom (should approach normal)
+	@Test("pValueStudent with large df remains within (0,1)")
+	func pValue_large_df() throws {
+		let tValue = 2.0
 		let pValLargeDf = pValueStudent(tValue, dFr: 100.0)
-		XCTAssertGreaterThan(pValLargeDf, 0.0)
-		XCTAssertLessThan(pValLargeDf, 1.0)
-    }
-
+		#expect(pValLargeDf > 0.0)
+		#expect(pValLargeDf < 1.0)
+	}
 }
