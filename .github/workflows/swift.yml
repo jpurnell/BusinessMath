@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        engine: [xctest, swift-testing]
+        engine: [swift-testing]
     env:
       PACKAGE_NAME: BusinessMath
     steps:
