@@ -121,21 +121,20 @@ import RealModule
         // When: Calculating IRR
         // Then: Should throw BusinessMathError.calculationFailed
 
-        do {
-            _ = try calculateIRRForNonConvergentCashFlows()
-            Issue.record("Expected error to be thrown")
-        } catch let error as BusinessMathError {
-            switch error {
-            case .calculationFailed(let operation, let reason, let suggestions):
+        #expect(throws: Error.self) { try calculateIRRForNonConvergentCashFlows( }) { error in
+            guard let mathError = error as? BusinessMathError else {
+                Issue.record("Expected BusinessMathError")
+                return
+            }
+
+            if case .calculationFailed(let operation, let reason, let suggestions) = mathError {
                 #expect(operation == "IRR")
                 #expect(reason.contains("converge") || reason.contains("iteration"))
                 #expect(!suggestions.isEmpty, "Should provide recovery suggestions")
                 #expect(suggestions.contains { $0.contains("Newton") || $0.contains("bisection") })
-            default:
-                Issue.record("Expected .calculationFailed error, got \(error)")
+            } else {
+                Issue.record("Expected .calculationFailed error")
             }
-        } catch {
-            Issue.record("Expected BusinessMathError, got \(type(of: error))")
         }
     }
 
@@ -144,19 +143,18 @@ import RealModule
         // When: Performing calculation
         // Then: Should throw BusinessMathError.divisionByZero
 
-        do {
-            _ = try calculateMetricWithZeroDenominator()
-            Issue.record("Expected error to be thrown")
-        } catch let error as BusinessMathError {
-            switch error {
-            case .divisionByZero(let context):
+        #expect(throws: Error.self) { try calculateMetricWithZeroDenominator( }) { error in
+            guard let mathError = error as? BusinessMathError else {
+                Issue.record("Expected BusinessMathError")
+                return
+            }
+
+            if case .divisionByZero(let context) = mathError {
                 #expect(context["operation"] != nil)
                 #expect(context["numerator"] != nil)
-                        default:
-                Issue.record("Expected .divisionByZero error, got \(error)")
+            } else {
+                Issue.record("Expected .divisionByZero error")
             }
-        } catch {
-            Issue.record("Expected BusinessMathError, got \(type(of: error))")
         }
     }
 
@@ -165,19 +163,18 @@ import RealModule
         // When: Performing calculation
         // Then: Should throw BusinessMathError.numericalInstability
 
-        do {
-            _ = try calculateWithNumericalInstability()
-            Issue.record("Expected error to be thrown")
-        } catch let error as BusinessMathError {
-            switch error {
-            case .numericalInstability(let message, let suggestions):
+        #expect(throws: Error.self) { try calculateWithNumericalInstability( }) { error in
+            guard let mathError = error as? BusinessMathError else {
+                Issue.record("Expected BusinessMathError")
+                return
+            }
+
+            if case .numericalInstability(let message, let suggestions) = mathError {
                 #expect(!message.isEmpty)
                 #expect(!suggestions.isEmpty, "Should suggest alternative methods")
-                        default:
-                Issue.record("Expected .numericalInstability error, got \(error)")
+            } else {
+                Issue.record("Expected .numericalInstability error")
             }
-        } catch {
-            Issue.record("Expected BusinessMathError, got \(type(of: error))")
         }
     }
 
@@ -273,18 +270,14 @@ import RealModule
         // When: Error is thrown
         // Then: Should suggest alternative calculation methods
 
-        do {
-            _ = try calculateIRRForNonConvergentCashFlows()
-            Issue.record("Expected error to be thrown")
-        } catch let error as BusinessMathError {
-            switch error {
-            case .calculationFailed(_, _, let suggestions):
-                #expect(suggestions.contains { $0.contains("alternative") || $0.contains("method") })
-            default:
-                Issue.record("Expected .calculationFailed error, got \(error)")
+        #expect(throws: Error.self) { try calculateIRRForNonConvergentCashFlows( }) { error in
+            guard let mathError = error as? BusinessMathError,
+                  case .calculationFailed(_, _, let suggestions) = mathError else {
+                Issue.record("Expected calculationFailed error")
+                return
             }
-        } catch {
-            Issue.record("Expected BusinessMathError, got \(type(of: error))")
+
+            #expect(suggestions.contains { $0.contains("alternative") || $0.contains("method") })
         }
     }
 
@@ -306,24 +299,39 @@ import RealModule
         #expect(description.count > 20, "Error message should be descriptive")
     }
 
+    @Test("Error_IncludesFailedValue") func errorIncludesFailedValue() {
+        // Given: An error with invalid input
+        // When: Error is created
+        // Then: Should include the failed value in context
+
+        #expect(throws: Error.self) { try createInvestmentWithDiscountRate(1.5 }) { error in
+            guard let mathError = error as? BusinessMathError,
+                  case .invalidInput(_, let context) = mathError else {
+                Issue.record("Expected invalidInput error")
+                return
+            }
+
+            #expect(context["value"] != nil)
+            if let valueString = context["value"], let value = Double(valueString) {
+                #expect(abs(value - 1.5) < 0.01)
+            }
+        }
+    }
+
     @Test("Error_IncludesContext") func errorIncludesContext() {
         // Given: Any error
         // When: Error is thrown
         // Then: Should include relevant context information
 
-        do {
-            _ = try combineTimeSeriesWithMismatchedPeriods()
-            Issue.record("Expected error to be thrown")
-        } catch let error as BusinessMathError {
-            switch error {
-            case .mismatchedDimensions(_, let context):
-#expect(!context.isEmpty, "Error should include context")
-            #expect(context.keys.count >= 2, "Should have multiple context fields")
-                    default:
-                Issue.record("Expected .mismatchedDimensions error, got \(error)")
+        #expect(throws: Error.self) { try combineTimeSeriesWithMismatchedPeriods( }) { error in
+            guard let mathError = error as? BusinessMathError,
+                  case .mismatchedDimensions(_, let context) = mathError else {
+                Issue.record("Expected mismatchedDimensions error")
+                return
             }
-        } catch {
-            Issue.record("Expected BusinessMathError, got \(type(of: error))")
+
+            #expect(!context.isEmpty, "Error should include context")
+            #expect(context.keys.count >= 2, "Should have multiple context fields")
         }
     }
 
@@ -332,18 +340,14 @@ import RealModule
         // When: Error is thrown
         // Then: Should include expected range in context
 
-        do {
-			_ = try createInvestmentWithDiscountRate(-0.1)
-            Issue.record("Expected error to be thrown")
-        } catch let error as BusinessMathError {
-            switch error {
-            case .invalidInput(_, let context):
-					#expect(context["expectedRange"] != nil)
-			default:
-                Issue.record("Expected .invalidInput error, got \(error)")
+        #expect(throws: Error.self) { try createInvestmentWithDiscountRate(-0.1 }) { error in
+            guard let mathError = error as? BusinessMathError,
+                  case .invalidInput(_, let context) = mathError else {
+                Issue.record("Expected invalidInput error")
+                return
             }
-        } catch {
-            Issue.record("Expected BusinessMathError, got \(type(of: error))")
+
+            #expect(context["expectedRange"] != nil)
         }
     }
 
@@ -675,7 +679,7 @@ struct ErrorHandlingAdditionalTests {
 			case .numericalInstability(let message, let suggestions):
 				#expect(desc.contains(message))
 				#expect(suggestions.allSatisfy { desc.contains($0) })
-				case .dataQuality(message: let message, context: _):
+			case .dataQuality(message: let message, context: let context):
 				#expect(desc.contains(message))
 			}
 		}

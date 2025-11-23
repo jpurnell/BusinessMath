@@ -5,39 +5,29 @@
 //  Created by Justin Purnell on 3/26/22.
 //
 
-import XCTest
+import Testing
 import Testing
 import Numerics
 @testable import BusinessMath
 import OSLog
 
-final class SimulationTests: XCTestCase {
+@Suite("SimulationTests") struct SimulationTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.SimulationTests", category: #function)
-
-	func testDistributionLogNormal() {
-		// Shape can be evaluated in Excel via histogram
-		//        var array: [Double] = []
-		//        for _ in 0..<10000 {
-		//            array.append(distributionLogNormal(mean: 0, variance: 1))
-		//        }
-		// print(array)
-		XCTAssert(true)
-	}
 	
-	func testDistributionNormal() {
+	@Test("DistributionNormal") func LDistributionNormal() {
 		var array: [Double] = []
 		for _ in 0..<1000 {
 			array.append(distributionNormal(mean: 0, stdDev: 1))
 		}
 		let mu = (mean(array) * 10).rounded() / 10
 		let sd = (stdDev(array) * 10).rounded() / 10
-		XCTAssertLessThan(mu, 0.125)
-		XCTAssertGreaterThan(mu, -0.125)
-		XCTAssertGreaterThan(sd, 0.975)
-		XCTAssertLessThan(sd, 1.025)
+		#expect(mu < 0.125)
+		#expect(mu > -0.125)
+		#expect(sd > 0.975)
+		#expect(sd < 1.025)
 	}
 
-	func testTriangularZero() {
+	@Test("TriangularZero") func LTriangularZero() {
 		let a = 0.6
 		let b = 1.0
 		let c = 0.7
@@ -55,23 +45,23 @@ final class SimulationTests: XCTestCase {
 		
 		//TODO: Should be sliced, with the highest count as base
 		
-		XCTAssertGreaterThan(countUnderC, roundedLow)
-		XCTAssertLessThan(countUnderC, roundedHigh)
+		#expect(countUnderC > roundedLow)
+		#expect(countUnderC < roundedHigh)
     }
     
-    func testUniformDistribution() {
+    @Test("UniformDistribution") func LUniformDistribution() {
         let resultZero = distributionUniform(min: 0, max: 0)
-        XCTAssertEqual(resultZero, 0)
+        #expect(resultZero == 0)
         let resultOne = distributionUniform(min: 1, max: 1)
-        XCTAssertEqual(resultOne, 1)
+        #expect(resultOne == 1)
         let min = 2.0
         let max = 40.0
         let result = distributionUniform(min: min, max: max)
-        XCTAssertLessThanOrEqual(result, max, "Value must be below \(max)")
-        XCTAssertGreaterThanOrEqual(result, min)
+        #expect(result <= max, "Value must be below \(max)")
+        #expect(result >= min)
     }
 
-	func testDistributionRayleighFunction() {
+	@Test("DistributionRayleighFunction") func LDistributionRayleighFunction() {
 		// Test the function variant
 		// Note: The parameter is the scale parameter σ, not the distribution mean
 		// The actual mean of a Rayleigh(σ) distribution is σ × sqrt(π/2) ≈ 1.253σ
@@ -79,14 +69,14 @@ final class SimulationTests: XCTestCase {
 		let result: Double = distributionRayleigh(mean: sigma)
 
 		// Rayleigh distribution should produce non-negative values
-		XCTAssertGreaterThanOrEqual(result, 0.0, "Rayleigh values must be non-negative")
+		#expect(result >= 0.0, "Rayleigh values must be non-negative")
 
 		// Test multiple samples to ensure reasonable distribution
 		var samples: [Double] = []
 		for _ in 0..<1000 {
 			let sample: Double = distributionRayleigh(mean: sigma)
 			samples.append(sample)
-			XCTAssertGreaterThanOrEqual(sample, 0.0)
+			#expect(sample >= 0.0)
 		}
 
 		// Verify all samples are non-negative and within a reasonable range
@@ -94,22 +84,22 @@ final class SimulationTests: XCTestCase {
 		// For Rayleigh, mean ≈ 1.253σ, so for σ=5, expect mean ≈ 6.265
 		let expectedMean = sigma * 1.253
 		let tolerance = expectedMean * 0.20  // Allow 20% deviation due to sampling variance
-		XCTAssertGreaterThan(empiricalMean, expectedMean - tolerance)
-		XCTAssertLessThan(empiricalMean, expectedMean + tolerance)
+		#expect(empiricalMean > expectedMean - tolerance)
+		#expect(empiricalMean < expectedMean + tolerance)
 	}
 
-	func testDistributionRayleighStruct() {
+	@Test("DistributionRayleighStruct") func LDistributionRayleighStruct() {
 		// Test the struct variant
 		let sigma = 10.0
 		let distribution = DistributionRayleigh(mean: sigma)
 
 		// Test random() method
 		let result1 = distribution.random()
-		XCTAssertGreaterThanOrEqual(result1, 0.0)
+		#expect(result1 >= 0.0)
 
 		// Test next() method
 		let result2 = distribution.next()
-		XCTAssertGreaterThanOrEqual(result2, 0.0)
+		#expect(result2 >= 0.0)
 
 		// Verify multiple samples have reasonable distribution
 		var samples: [Double] = []
@@ -121,11 +111,11 @@ final class SimulationTests: XCTestCase {
 		// For Rayleigh, mean ≈ 1.253σ
 		let expectedMean = sigma * 1.253
 		let tolerance = expectedMean * 0.20
-		XCTAssertGreaterThan(empiricalMean, expectedMean - tolerance)
-		XCTAssertLessThan(empiricalMean, expectedMean + tolerance)
+		#expect(empiricalMean > expectedMean - tolerance)
+		#expect(empiricalMean < expectedMean + tolerance)
 	}
 
-	func testDistributionRayleighSmallMean() {
+	@Test("DistributionRayleighSmallMean") func LDistributionRayleighSmallMean() {
 		// Test with small mean value
 		let mean = 0.5
 		let distribution = DistributionRayleigh(mean: mean)
@@ -134,11 +124,11 @@ final class SimulationTests: XCTestCase {
 		for _ in 0..<500 {
 			let sample = distribution.next()
 			samples.append(sample)
-			XCTAssertGreaterThanOrEqual(sample, 0.0)
+			#expect(sample >= 0.0)
 		}
 
 		// All samples should be non-negative
-		XCTAssertEqual(samples.filter({ $0 >= 0 }).count, 500)
+		#expect(samples.filter({ $0 >= 0 }).count == 500)
 	}
 }
 

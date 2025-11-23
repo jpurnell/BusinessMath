@@ -5,44 +5,44 @@
 //  Created by Justin Purnell on 10/19/22.
 //
 
-import XCTest
+import Testing
 import Testing
 import Numerics
 @testable import BusinessMath
 
 
-final class LinearRegressionTests: XCTestCase {
+@Suite("LinearRegressionTests") struct LinearRegressionTests {
 
 	func testlinearRegression() {
 		let carAge: [Double] = [10, 8, 3, 3, 2, 1]
 		let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
 		let linearRegressionFunction = try! linearRegression(carAge, carPrice)
 		let result = (linearRegressionFunction(4) * 1000).rounded(.up) / 1000
-		XCTAssertEqual(result, 6952.927)
+		#expect(result == 6952.927)
 	}
 	
-    func testMultiplyVectors() {
+    @Test("MultiplyVectors") func LMultiplyVectors() {
         let values: [Double] = [1, 2, 3, 4, 5]
         let multipliers: [Double] = [10, 10, 10, 10, 10]
         let result = try! multiplyVectors(values, multipliers)
-        XCTAssertEqual(result, [10, 20, 30, 40, 50])
+        #expect(result == [10, 20, 30, 40, 50])
     }
 
-    func testSlope() {
+    @Test("Slope") func LSlope() {
         let carAge: [Double] = [10, 8, 3, 3, 2, 1]
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
         let result = (try! slope(carAge, carPrice) * 1000).rounded(.up) / 1000
-        XCTAssertEqual(result, -1272.519)
+        #expect(result == -1272.519)
     }
     
-    func testIntercept() {
+    @Test("Intercept") func LIntercept() {
         let carAge: [Double] = [10, 8, 3, 3, 2, 1]
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
         let result = (try! intercept(carAge, carPrice) * 1000).rounded(.up) / 1000
-        XCTAssertEqual(result, 12043.003)
+        #expect(result == 12043.003)
     }
        
-    func testRSquared() {
+    @Test("RSquared") func LRSquared() {
         // Example from https://www.wallstreetmojo.com/r-squared-formula/
         let x: [Double] = [35.56, 43.44, 73.17, 113.0]
         let y: [Double] = [44.783, 53.982, 92.141, 135.986]
@@ -50,15 +50,15 @@ final class LinearRegressionTests: XCTestCase {
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
         let carResult = (rSquared(carAge, carPrice) * 100000).rounded(.up) / 100000
         let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
-        XCTAssertEqual(result, 0.99865)
-        XCTAssertEqual(carResult, 0.93443)
+        #expect(result == 0.99865)
+        #expect(carResult == 0.93443)
     }
     
-    func testRSquaredAdjusted() {
+    @Test("RSquaredAdjusted") func LRSquaredAdjusted() {
         let x: [Double] = [58, 61, 62, 65, 65, 68, 72, 74, 78, 85, 90, 95]
         let y: [Double] = [1, 1, 2, 2, 1, 2, 2, 3, 3, 4, 4, 5]
         let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
-        XCTAssertEqual(result, 0.91983)
+        #expect(result == 0.91983)
     }
 }
 

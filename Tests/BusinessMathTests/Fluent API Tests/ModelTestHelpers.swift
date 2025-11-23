@@ -5,231 +5,149 @@
 //  Created on October 31, 2025.
 //
 
-import XCTest
+import Foundation
+import Testing
 import RealModule
 @testable import BusinessMath
 
-// MARK: - Model Test Case Base
+// MARK: - Model Test Helpers
 
-/// Base test case class with helper assertions for financial models.
-class ModelTestCase: XCTestCase {
+/// Helper functions for testing financial models with Swift Testing framework.
+enum ModelTestHelpers {
 
     // MARK: - Model Assertions
 
-    /// Assert that a model has the expected revenue.
-    func assertModel(
+    /// Verify that a model has the expected revenue.
+    static func assertModel(
         _ model: FinancialModel,
         hasRevenue expected: Double,
         accuracy: Double = 0.01,
-		file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
         let actual = model.calculateRevenue()
-        XCTAssertEqual(
-            actual,
-            expected,
-            accuracy: accuracy,
-            "Expected revenue \(expected), got \(actual)",
-            file: file,
-            line: line
-        )
+        #expect(abs(actual - expected) < accuracy, "Expected revenue \(expected), got \(actual)", sourceLocation: sourceLocation)
     }
 
     /// Assert that a model has the expected costs.
-    func assertModel(
+    static func assertModel(
         _ model: FinancialModel,
         hasCosts expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
         let revenue = model.calculateRevenue()
         let actual = model.calculateCosts(revenue: revenue)
-        XCTAssertEqual(
-            actual,
-            expected,
-            accuracy: accuracy,
-            "Expected costs \(expected), got \(actual)",
-            file: file,
-            line: line
-        )
+        #expect(abs(actual - expected) < accuracy, "Expected costs \(expected), got \(actual)", sourceLocation: sourceLocation)
     }
 
     /// Assert that a model has the expected profit.
-    func assertModel(
+    static func assertModel(
         _ model: FinancialModel,
         hasProfit expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
         let actual = model.calculateProfit()
-        XCTAssertEqual(
-            actual,
-            expected,
-            accuracy: accuracy,
-            "Expected profit \(expected), got \(actual)",
-            file: file,
-            line: line
-        )
+        #expect(abs(actual - expected) < accuracy, "Expected profit \(expected), got \(actual)", sourceLocation: sourceLocation)
     }
 
     /// Assert that a model has a specific number of revenue components.
-    func assertModel(
+    static func assertModel(
         _ model: FinancialModel,
         hasRevenueComponentCount expected: Int,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
-        XCTAssertEqual(
-            model.revenueComponents.count,
-            expected,
-            "Expected \(expected) revenue components, got \(model.revenueComponents.count)",
-            file: file,
-            line: line
-        )
+        #expect(model.revenueComponents.count == expected, "Expected \(expected) revenue components, got \(model.revenueComponents.count)", sourceLocation: sourceLocation)
     }
 
     /// Assert that a model has a specific number of cost components.
-    func assertModel(
+    static func assertModel(
         _ model: FinancialModel,
         hasCostComponentCount expected: Int,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
-        XCTAssertEqual(
-            model.costComponents.count,
-            expected,
-            "Expected \(expected) cost components, got \(model.costComponents.count)",
-            file: file,
-            line: line
-        )
+        #expect(model.costComponents.count == expected, "Expected \(expected) cost components, got \(model.costComponents.count)", sourceLocation: sourceLocation)
     }
 
     // MARK: - Investment Assertions
 
     /// Assert that an investment has the expected NPV.
-    func assertInvestment(
+    static func assertInvestment(
         _ investment: Investment,
         hasNPV expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
-        XCTAssertEqual(
-            investment.npv,
-            expected,
-            accuracy: accuracy,
-            "Expected NPV \(expected), got \(investment.npv)",
-            file: file,
-            line: line
-        )
+        #expect(abs(investment.npv - expected) < accuracy, "Expected NPV \(expected), got \(investment.npv)", sourceLocation: sourceLocation)
     }
 
     /// Assert that an investment has a positive NPV.
-    func assertInvestmentIsPositive(
+    static func assertInvestmentIsPositive(
         _ investment: Investment,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
-        XCTAssertGreaterThan(
-            investment.npv,
-            0,
-            "Expected positive NPV, got \(investment.npv)",
-            file: file,
-            line: line
-        )
+        #expect(investment.npv > 0, "Expected positive NPV, got \(investment.npv)", sourceLocation: sourceLocation)
     }
 
     /// Assert that an investment has the expected IRR.
-    func assertInvestment(
+    static func assertInvestment(
         _ investment: Investment,
         hasIRR expected: Double,
         accuracy: Double = 0.001,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
         guard let actualIRR = investment.irr else {
-            XCTFail("Expected IRR \(expected), but IRR calculation returned nil", file: file, line: line)
+            Issue.record("Expected IRR \(expected), but IRR calculation returned nil", sourceLocation: sourceLocation)
             return
         }
-        XCTAssertEqual(
-            actualIRR,
-            expected,
-            accuracy: accuracy,
-            "Expected IRR \(expected), got \(actualIRR)",
-            file: file,
-            line: line
-        )
+        #expect(abs(actualIRR - expected) < accuracy, "Expected IRR \(expected), got \(actualIRR)", sourceLocation: sourceLocation)
     }
 
     // MARK: - Time Series Assertions
 
     /// Assert that a time series has the expected number of values.
-    func assertTimeSeries<T: Real>(
+    static func assertTimeSeries<T: Real>(
         _ series: TimeSeries<T>,
         hasCount expected: Int,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
-        XCTAssertEqual(
-            series.count,
-            expected,
-            "Expected time series count \(expected), got \(series.count)",
-            file: file,
-            line: line
-        )
+        #expect(series.count == expected, "Expected time series count \(expected), got \(series.count)", sourceLocation: sourceLocation)
     }
 
     /// Assert that a time series has the expected value at an index.
-    func assertTimeSeries<T: Real & Equatable>(
+    static func assertTimeSeries<T: Real & Equatable>(
         _ series: TimeSeries<T>,
         hasValue expected: T,
         atIndex index: Int,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
         guard index < series.count else {
-            XCTFail("Index \(index) out of bounds for time series of count \(series.count)", file: file, line: line)
+            Issue.record("Index \(index) out of bounds for time series of count \(series.count)", sourceLocation: sourceLocation)
             return
         }
         let actual = series.valuesArray[index]
-        XCTAssertEqual(
-            actual,
-            expected,
-            "Expected value \(expected) at index \(index), got \(actual)",
-            file: file,
-            line: line
-        )
+        #expect(actual == expected, "Expected value \(expected) at index \(index), got \(actual)", sourceLocation: sourceLocation)
     }
 
     // MARK: - Scenario Assertions
 
     /// Assert that a scenario set has the expected number of scenarios.
-    func assertScenarioSet(
+    static func assertScenarioSet(
         _ scenarioSet: ScenarioSet,
         hasCount expected: Int,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
-        XCTAssertEqual(
-            scenarioSet.scenarios.count,
-            expected,
-            "Expected \(expected) scenarios, got \(scenarioSet.scenarios.count)",
-            file: file,
-            line: line
-        )
+        #expect(scenarioSet.scenarios.count == expected, "Expected \(expected) scenarios, got \(scenarioSet.scenarios.count)", sourceLocation: sourceLocation)
     }
 
     /// Assert that a scenario exists by name.
-    func assertScenarioSet(
+    static func assertScenarioSet(
         _ scenarioSet: ScenarioSet,
         hasScenarioNamed name: String,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
         let found = scenarioSet.scenario(named: name) != nil
-        XCTAssertTrue(found, "Expected scenario named '\(name)' to exist", file: file, line: line)
+        #expect(found, "Expected scenario named '\(name)' to exist", sourceLocation: sourceLocation)
     }
 }
 
@@ -370,10 +288,9 @@ public enum TestUtilities {
         _ actual: Double,
         _ expected: Double,
         accuracy: Double = 0.01,
-        file: StaticString = #filePath,
-        line: UInt = #line
+        sourceLocation: SourceLocation = #_sourceLocation
     ) {
-        XCTAssertEqual(actual, expected, accuracy: accuracy, file: file, line: line)
+        #expect(abs(actual - expected) < accuracy, sourceLocation: sourceLocation)
     }
 
     /// Generate a sequence of consecutive periods.

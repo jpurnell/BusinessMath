@@ -6,23 +6,22 @@
 //  TDD: Tests verify caching improves performance
 //
 
-import XCTest
+import Testing
 import Testing
 import RealModule
 @testable import BusinessMath
 
 /// Tests for caching optimizations and performance improvements.
-final class CachingOptimizationTests: XCTestCase {
+@Suite("CachingOptimizationTests") struct CachingOptimizationTests {
 
-    override func tearDown() {
+    func tearDown() {
         // Clean up cache between tests
         FinancialModel.clearCalculationCache()
         super.tearDown()
     }
-
     // MARK: - Basic Caching Tests
 
-    func testCaching_BasicCacheOperations() {
+    @Test("Caching_BasicCacheOperations") func LCaching_BasicCacheOperations() {
         // Given: A calculation cache
         let cache = CalculationCache(maxSize: 10, ttl: 60)
 
@@ -31,18 +30,17 @@ final class CachingOptimizationTests: XCTestCase {
         let value2 = cache.getOrCalculate(key: "test1") { 100 }  // Should return cached value
 
         // Then: Should return cached value on second call
-        XCTAssertEqual(value1, 42)
-        XCTAssertEqual(value2, 42, "Should return cached value")
-        XCTAssertEqual(cache.count, 1)
+        #expect(value1 == 42)
+        #expect(value2 == 42, "Should return cached value")
+        #expect(cache.count == 1)
     }
-
-    func testCaching_CacheExpiration() {
+    @Test("Caching_CacheExpiration") func LCaching_CacheExpiration() {
         // Given: Cache with short TTL
         let cache = CalculationCache(maxSize: 10, ttl: 0.1)  // 100ms TTL
 
         // When: Storing a value and waiting for expiration
         let value1 = cache.getOrCalculate(key: "test") { 42 }
-        XCTAssertEqual(value1, 42)
+        #expect(value1 == 42)
 
         // Wait for TTL to expire
         Thread.sleep(forTimeInterval: 0.2)
@@ -53,12 +51,10 @@ final class CachingOptimizationTests: XCTestCase {
             recalculated = true
             return 100
         }
-
-        XCTAssertEqual(value2, 100, "Should have recalculated")
-        XCTAssertTrue(recalculated, "Should have triggered recalculation")
+        #expect(value2 == 100, "Should have recalculated")
+        #expect(recalculated, "Should have triggered recalculation")
     }
-
-    func testCaching_CacheEviction() {
+    @Test("Caching_CacheEviction") func LCaching_CacheEviction() {
         // Given: Cache with small max size
         let cache = CalculationCache(maxSize: 5, ttl: 60)
 
@@ -66,28 +62,25 @@ final class CachingOptimizationTests: XCTestCase {
         for i in 0..<10 {
             _ = cache.getOrCalculate(key: "key_\(i)") { i }
         }
-
         // Then: Should have evicted oldest entries
-        XCTAssertLessThanOrEqual(cache.count, 5, "Should not exceed max size")
+        #expect(cache.count <= 5, "Should not exceed max size")
     }
-
-    func testCaching_ClearCache() {
+    @Test("Caching_ClearCache") func LCaching_ClearCache() {
         // Given: Cache with values
         let cache = CalculationCache()
         _ = cache.getOrCalculate(key: "test1") { 1 }
         _ = cache.getOrCalculate(key: "test2") { 2 }
-        XCTAssertEqual(cache.count, 2)
+        #expect(cache.count == 2)
 
         // When: Clearing cache
         cache.clear()
 
         // Then: Should be empty
-        XCTAssertEqual(cache.count, 0)
+        #expect(cache.count == 0)
     }
-
     // MARK: - Model Caching Tests
 
-    func testCaching_ModelCalculationCaching() {
+    @Test("Caching_ModelCalculationCaching") func LCaching_ModelCalculationCaching() {
         // Given: A financial model
         let model = FinancialModel {
             Revenue {
@@ -103,11 +96,10 @@ final class CachingOptimizationTests: XCTestCase {
         let profit2 = model.calculateProfitCached()
 
         // Then: Both should return same value
-        XCTAssertEqual(profit1, profit2)
-        XCTAssertEqual(profit1, 50_000, accuracy: 1.0)
+        #expect(profit1 == profit2)
+        #expect(abs(profit1 - 50_000) < 1.0)
     }
-
-    func testCaching_CachedBenefitForRepeatedCalls() {
+    @Test("Caching_CachedBenefitForRepeatedCalls") func LCaching_CachedBenefitForRepeatedCalls() {
         // Given: Complex model
         var model = FinancialModel()
         for i in 1...100 {
@@ -118,7 +110,6 @@ final class CachingOptimizationTests: XCTestCase {
                 CostComponent(name: "Cost \(i)", type: .fixed(Double(i * 500)))
             )
         }
-
         // When/Then: Cached calculations work correctly
         // Note: For such fast calculations (<1ms), caching overhead may exceed benefit
         // The real benefit is avoiding redundant calculations, not raw speed
@@ -129,15 +120,14 @@ final class CachingOptimizationTests: XCTestCase {
         let uncachedResult = model.calculateProfit()
 
         // Verify all produce same result
-        XCTAssertEqual(cachedResult1, cachedResult2)
-        XCTAssertEqual(cachedResult1, uncachedResult, accuracy: 0.01)
+        #expect(cachedResult1 == cachedResult2)
+        #expect(abs(cachedResult1 - uncachedResult) < 0.01)
 
 //        print("Cached profit: \(cachedResult1), Uncached profit: \(uncachedResult)")
     }
-
     // MARK: - Optimized Export Tests
 
-    func testCaching_OptimizedCSVExport() {
+    @Test("Caching_OptimizedCSVExport") func LCaching_OptimizedCSVExport() {
         // Given: Model with many components
         var model = FinancialModel()
         for i in 1...500 {
@@ -145,7 +135,6 @@ final class CachingOptimizationTests: XCTestCase {
                 RevenueComponent(name: "Revenue \(i)", amount: Double(i * 1000))
             )
         }
-
         let exporter = DataExporter(model: model)
 
         // When: Comparing normal vs optimized export
@@ -159,13 +148,12 @@ final class CachingOptimizationTests: XCTestCase {
 
         // Then: Optimized should be at least as fast
 //        print("Normal CSV: \(normalTime)s, Optimized CSV: \(optimizedTime)s")
-        XCTAssertLessThanOrEqual(optimizedTime, normalTime * 1.5, "Optimized should not be significantly slower")
+        #expect(optimizedTime <= normalTime * 1.5, "Optimized should not be significantly slower")
 
         // And: Output should be equivalent
-        XCTAssertEqual(normalCSV.count, optimizedCSV.count, accuracy: 100)
+        #expect(abs(normalCSV.count - optimizedCSV.count) < 100)
     }
-
-    func testCaching_OptimizedTimeSeriesExport() {
+    @Test("Caching_OptimizedTimeSeriesExport") func LCaching_OptimizedTimeSeriesExport() {
         // Given: Large time series
         let periods = (0..<1000).map { Period.year(2000 + $0) }
         let values = (0..<1000).map { Double($0 * 100) }
@@ -184,14 +172,13 @@ final class CachingOptimizationTests: XCTestCase {
 
         // Then: Both should produce valid output
 //        print("Normal TS Export: \(normalTime)s, Optimized TS Export: \(optimizedTime)s")
-        XCTAssertFalse(normalCSV.isEmpty)
-        XCTAssertFalse(optimizedCSV.isEmpty)
-        XCTAssertEqual(normalCSV.count, optimizedCSV.count, accuracy: 100)
+        #expect(!normalCSV.isEmpty)
+        #expect(!optimizedCSV.isEmpty)
+        #expect(abs(normalCSV.count - optimizedCSV.count) < 100)
     }
-
     // MARK: - Cache Key Generation Tests
 
-    func testCaching_ModelCacheKeyGeneration() {
+    @Test("Caching_ModelCacheKeyGeneration") func LCaching_ModelCacheKeyGeneration() {
         // Given: Two identical models
         let model1 = FinancialModel {
             Revenue {
@@ -210,10 +197,9 @@ final class CachingOptimizationTests: XCTestCase {
         let key2 = model2.cacheKey()
 
         // Then: Should generate same key for identical models
-        XCTAssertEqual(key1, key2, "Identical models should have same cache key")
+        #expect(key1 == key2, "Identical models should have same cache key")
     }
-
-    func testCaching_DifferentModelsDifferentKeys() {
+    @Test("Caching_DifferentModelsDifferentKeys") func LCaching_DifferentModelsDifferentKeys() {
         // Given: Two different models
         let model1 = FinancialModel {
             Revenue {
@@ -232,12 +218,11 @@ final class CachingOptimizationTests: XCTestCase {
         let key2 = model2.cacheKey()
 
         // Then: Should generate different keys
-        XCTAssertNotEqual(key1, key2, "Different models should have different cache keys")
+        #expect(key1 != key2, "Different models should have different cache keys")
     }
-
     // MARK: - Thread Safety Tests
 
-    func testCaching_ThreadSafety() {
+    @Test("Caching_ThreadSafety") func LCaching_ThreadSafety() {
         // Given: Shared cache
         let cache = CalculationCache(maxSize: 100, ttl: 60)
 
@@ -257,10 +242,9 @@ final class CachingOptimizationTests: XCTestCase {
 
         // Then: Should handle concurrent access without crashes
         wait(for: [expectation], timeout: 5.0)
-        XCTAssertGreaterThan(cache.count, 0)
+        #expect(cache.count > 0)
     }
-
-    func testCaching_ModelCachingThreadSafety() {
+    @Test("Caching_ModelCachingThreadSafety") func LCaching_ModelCachingThreadSafety() {
         // Given: Model accessed from multiple threads
         let model = FinancialModel {
             Revenue {
@@ -287,12 +271,11 @@ final class CachingOptimizationTests: XCTestCase {
         // Then: Should handle concurrent access safely
         wait(for: [expectation], timeout: 5.0)
         let finalProfit = model.calculateProfitCached()
-        XCTAssertEqual(finalProfit, 50_000, accuracy: 1.0)
+        #expect(abs(finalProfit - 50_000) < 1.0)
     }
-
     // MARK: - Performance Comparison Tests
 
-    func testPerformance_CachedCalculations() {
+    @Test("Performance_CachedCalculations") func LPerformance_CachedCalculations() {
         // Given: Model with cached calculations
         let model = FinancialModel {
             Revenue {
@@ -309,14 +292,6 @@ final class CachingOptimizationTests: XCTestCase {
         _ = model.calculateProfitCached()
 
         // When/Then: Measure cached performance
-        measure {
-            for _ in 0..<1000 {
-                _ = model.calculateProfitCached()
-            }
-        }
-    }
-}
-
 @Suite("Cache Behavior (Swift Testing)")
 struct CacheBehaviorTests {
 
@@ -378,7 +353,6 @@ struct CacheBehaviorTests {
 		#expect(cValue == 3)
 		#expect(dValue == 4)
 	}
-
 	@Test("Model cache invalidates on mutation")
 	func modelCacheInvalidationOnMutation() throws {
 		var model = FinancialModel {
@@ -400,7 +374,6 @@ struct CacheBehaviorTests {
 		let p2 = model.calculateProfitCached()
 		#expect(p2 > p1, "Profit should increase after adding revenue. Cache should invalidate.")
 	}
-
 	@Test("Model cacheKey changes after mutation")
 	func modelCacheKeyChanges() throws {
 		var model = FinancialModel {

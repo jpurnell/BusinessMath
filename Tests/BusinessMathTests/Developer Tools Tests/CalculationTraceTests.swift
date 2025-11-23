@@ -6,7 +6,7 @@
 //  TDD: Tests written FIRST, then implementation
 //
 
-import XCTest
+import Testing
 import RealModule
 @testable import BusinessMath
 
@@ -14,11 +14,11 @@ import RealModule
 ///
 /// These tests define expected behavior for tracking and inspecting
 /// calculation steps in financial models.
-final class CalculationTraceTests: XCTestCase {
+@Suite("CalculationTraceTests") struct CalculationTraceTests {
 
     // MARK: - Revenue Calculation Tracing Tests
 
-    func testCalculationTrace_TracksRevenueCalculation() {
+    @Test("CalculationTrace_TracksRevenueCalculation") func LCalculationTrace_TracksRevenueCalculation() {
         // Given: A model with multiple revenue sources
         let model = FinancialModel {
             Revenue {
@@ -32,21 +32,21 @@ final class CalculationTraceTests: XCTestCase {
         let revenue = trace.calculateRevenue()
 
         // Then: Should capture calculation steps
-        XCTAssertEqual(revenue, 90_000, accuracy: 1.0)
-        XCTAssertFalse(trace.steps.isEmpty, "Should have traced calculation steps")
+        #expect(abs(revenue - 90_000) < 1.0)
+        #expect(!trace.steps.isEmpty, "Should have traced calculation steps")
 
         // And: Should have steps for each revenue component
         let revenueSteps = trace.steps.filter { $0.category == .revenue }
-        XCTAssertGreaterThanOrEqual(revenueSteps.count, 2, "Should trace each revenue component")
+        #expect(revenueSteps.count >= 2, "Should trace each revenue component")
 
         // And: Steps should show component details
-        XCTAssertTrue(revenueSteps.contains { $0.description.contains("Product A") })
-        XCTAssertTrue(revenueSteps.contains { $0.description.contains("Product B") })
+        #expect(revenueSteps.contains { $0.description.contains("Product A") })
+        #expect(revenueSteps.contains { $0.description.contains("Product B") })
     }
 
     // MARK: - Cost Calculation Tracing Tests
 
-    func testCalculationTrace_TracksCostCalculation() {
+    @Test("CalculationTrace_TracksCostCalculation") func LCalculationTrace_TracksCostCalculation() {
         // Given: A model with fixed and variable costs
         let model = FinancialModel {
             Revenue {
@@ -65,24 +65,24 @@ final class CalculationTraceTests: XCTestCase {
         let costs = trace.calculateCosts(revenue: revenue)
 
         // Then: Should capture cost calculation steps
-        XCTAssertEqual(costs, 80_000, accuracy: 1.0)
+        #expect(abs(costs - 80_000) < 1.0)
 
         let costSteps = trace.steps.filter { $0.category == .costs }
-        XCTAssertGreaterThanOrEqual(costSteps.count, 2, "Should trace each cost component")
+        #expect(costSteps.count >= 2, "Should trace each cost component")
 
         // And: Should distinguish fixed vs variable costs
-        XCTAssertTrue(costSteps.contains { $0.description.contains("Fixed") && $0.description.contains("Salaries") })
-        XCTAssertTrue(costSteps.contains { $0.description.contains("Variable") && $0.description.contains("COGS") })
+        #expect(costSteps.contains { $0.description.contains("Fixed") && $0.description.contains("Salaries") })
+        #expect(costSteps.contains { $0.description.contains("Variable") && $0.description.contains("COGS") })
 
         // And: Variable cost step should show calculation
         let variableStep = costSteps.first { $0.description.contains("Variable") }
-        XCTAssertNotNil(variableStep)
-        XCTAssertTrue(variableStep?.description.contains("30,000") ?? false, "Should show calculated variable cost amount")
+        #expect(variableStep != nil)
+        #expect(variableStep?.description.contains("30,000") ?? false, "Should show calculated variable cost amount")
     }
 
     // MARK: - Profit Calculation Tracing Tests
 
-    func testCalculationTrace_TracksProfitCalculation() {
+    @Test("CalculationTrace_TracksProfitCalculation") func LCalculationTrace_TracksProfitCalculation() {
         // Given: A complete financial model
         let model = FinancialModel {
             Revenue {
@@ -100,26 +100,26 @@ final class CalculationTraceTests: XCTestCase {
         let profit = trace.calculateProfit()
 
         // Then: Should have all calculation categories
-        XCTAssertEqual(profit, 27_500, accuracy: 1.0)
+        #expect(abs(profit - 27_500) < 1.0)
 
         let revenueSteps = trace.steps.filter { $0.category == .revenue }
         let costSteps = trace.steps.filter { $0.category == .costs }
         let profitSteps = trace.steps.filter { $0.category == .profit }
 
-        XCTAssertFalse(revenueSteps.isEmpty, "Should trace revenue")
-        XCTAssertFalse(costSteps.isEmpty, "Should trace costs")
-        XCTAssertFalse(profitSteps.isEmpty, "Should trace profit calculation")
+        #expect(!revenueSteps.isEmpty, "Should trace revenue")
+        #expect(!costSteps.isEmpty, "Should trace costs")
+        #expect(!profitSteps.isEmpty, "Should trace profit calculation")
 
         // And: Profit step should reference revenue and costs
         let profitStep = profitSteps.first
-        XCTAssertNotNil(profitStep)
-        XCTAssertTrue(profitStep?.description.contains("50,000") ?? false, "Should show revenue")
-        XCTAssertTrue(profitStep?.description.contains("22,500") ?? false, "Should show costs")
+        #expect(profitStep != nil)
+        #expect(profitStep?.description.contains("50,000") ?? false, "Should show revenue")
+        #expect(profitStep?.description.contains("22,500") ?? false, "Should show costs")
     }
 
     // MARK: - Trace Step Access Tests
 
-    func testCalculationTrace_ProvidesStepAccess() {
+    @Test("CalculationTrace_ProvidesStepAccess") func LCalculationTrace_ProvidesStepAccess() {
         // Given: A model with calculations
         let model = FinancialModel {
             Revenue {
@@ -136,19 +136,19 @@ final class CalculationTraceTests: XCTestCase {
         _ = trace.calculateProfit()
 
         // Then: Should provide access to individual steps
-        XCTAssertFalse(trace.steps.isEmpty)
+        #expect(!trace.steps.isEmpty)
 
         // And: Each step should have required properties
         for step in trace.steps {
-            XCTAssertFalse(step.description.isEmpty, "Step should have description")
-            XCTAssertNotNil(step.category, "Step should have category")
-            XCTAssertNotNil(step.value, "Step should have value")
+            #expect(!step.description.isEmpty, "Step should have description")
+            #expect(step.category == step.category, "Step should have category")
+            #expect(step.value != nil, "Step should have value")
         }
     }
 
     // MARK: - Trace Formatting Tests
 
-    func testCalculationTrace_GeneratesFormattedOutput() {
+    @Test("CalculationTrace_GeneratesFormattedOutput") func LCalculationTrace_GeneratesFormattedOutput() {
         // Given: A model with various components
         let model = FinancialModel {
             Revenue {
@@ -168,21 +168,21 @@ final class CalculationTraceTests: XCTestCase {
         let formattedOutput = trace.formatTrace()
 
         // Then: Should produce readable output
-        XCTAssertFalse(formattedOutput.isEmpty, "Should generate output")
-        XCTAssertTrue(formattedOutput.contains("Revenue"), "Should include revenue section")
-        XCTAssertTrue(formattedOutput.contains("Costs"), "Should include costs section")
-        XCTAssertTrue(formattedOutput.contains("Profit"), "Should include profit section")
+        #expect(!formattedOutput.isEmpty, "Should generate output")
+        #expect(formattedOutput.contains("Revenue"), "Should include revenue section")
+        #expect(formattedOutput.contains("Costs"), "Should include costs section")
+        #expect(formattedOutput.contains("Profit"), "Should include profit section")
 
         // And: Should show component details
-        XCTAssertTrue(formattedOutput.contains("Product 1"))
-        XCTAssertTrue(formattedOutput.contains("Product 2"))
-        XCTAssertTrue(formattedOutput.contains("Rent"))
-        XCTAssertTrue(formattedOutput.contains("Commission"))
+        #expect(formattedOutput.contains("Product 1"))
+        #expect(formattedOutput.contains("Product 2"))
+        #expect(formattedOutput.contains("Rent"))
+        #expect(formattedOutput.contains("Commission"))
     }
 
     // MARK: - Clear Trace Tests
 
-    func testCalculationTrace_CanClearTrace() {
+    @Test("CalculationTrace_CanClearTrace") func LCalculationTrace_CanClearTrace() {
         // Given: A trace with recorded steps
         let model = FinancialModel {
             Revenue {
@@ -192,18 +192,18 @@ final class CalculationTraceTests: XCTestCase {
 
         let trace = CalculationTrace(model: model)
         _ = trace.calculateRevenue()
-        XCTAssertFalse(trace.steps.isEmpty, "Should have steps before clearing")
+        #expect(!trace.steps.isEmpty, "Should have steps before clearing")
 
         // When: Clearing the trace
         trace.clear()
 
         // Then: Steps should be empty
-        XCTAssertTrue(trace.steps.isEmpty, "Should have no steps after clearing")
+        #expect(trace.steps.isEmpty, "Should have no steps after clearing")
     }
 
     // MARK: - Step Ordering Tests
 
-    func testCalculationTrace_MaintainsStepOrder() {
+    @Test("CalculationTrace_MaintainsStepOrder") func LCalculationTrace_MaintainsStepOrder() {
         // Given: A model requiring sequential calculations
         let model = FinancialModel {
             Revenue {
@@ -224,17 +224,17 @@ final class CalculationTraceTests: XCTestCase {
         let afterCostsCount = trace.steps.count
 
         // Then: Steps should be added in order
-        XCTAssertGreaterThan(revenueStepCount, 0, "Should have revenue steps")
-        XCTAssertGreaterThan(afterCostsCount, revenueStepCount, "Cost steps should be added after revenue")
+        #expect(revenueStepCount > 0, "Should have revenue steps")
+        #expect(afterCostsCount > revenueStepCount, "Cost steps should be added after revenue")
 
         // And: Later steps should reference earlier values
         let costStep = trace.steps.last
-        XCTAssertTrue(costStep?.category == .costs, "Last step should be cost calculation")
+        #expect(costStep?.category == .costs, "Last step should be cost calculation")
     }
 
     // MARK: - Complex Model Tracing Tests
 
-    func testCalculationTrace_HandlesComplexModels() {
+    @Test("CalculationTrace_HandlesComplexModels") func LCalculationTrace_HandlesComplexModels() {
         // Given: A complex model with many components
         let model = FinancialModel {
             Revenue {
@@ -256,14 +256,14 @@ final class CalculationTraceTests: XCTestCase {
         let profit = trace.calculateProfit()
 
         // Then: Should handle all components
-        XCTAssertNotNil(profit)
-        XCTAssertGreaterThan(trace.steps.count, 5, "Should trace all components")
+        #expect(profit == profit)
+        #expect(trace.steps.count > 5, "Should trace all components")
 
         // And: Should have correct categories
         let revenueSteps = trace.steps.filter { $0.category == .revenue }
         let costSteps = trace.steps.filter { $0.category == .costs }
 
-        XCTAssertGreaterThanOrEqual(revenueSteps.count, 3, "Should trace all revenue products")
-        XCTAssertGreaterThanOrEqual(costSteps.count, 4, "Should trace all cost components")
+        #expect(revenueSteps.count >= 3, "Should trace all revenue products")
+        #expect(costSteps.count >= 4, "Should trace all cost components")
     }
 }

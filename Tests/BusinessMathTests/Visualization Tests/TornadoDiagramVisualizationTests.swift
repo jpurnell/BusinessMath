@@ -5,14 +5,14 @@
 //  Created by Justin Purnell on 10/22/25.
 //
 
-import XCTest
+import Testing
 @testable import BusinessMath
 
-final class TornadoDiagramVisualizationTests: XCTestCase {
+@Suite("TornadoDiagramVisualizationTests") struct TornadoDiagramVisualizationTests {
 
 	// MARK: - Empty/Single Input Tests
 
-	func testPlotTornadoDiagram_EmptyInputs_ReturnsEmptyMessage() {
+	@Test("PlotTornadoDiagram_EmptyInputs_ReturnsEmptyMessage") func LPlotTornadoDiagram_EmptyInputs_ReturnsEmptyMessage() {
 		// Given
 		let tornado = TornadoDiagramAnalysis(
 			inputs: [],
@@ -26,10 +26,10 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.contains("Empty") || output.contains("No"), "Should indicate empty diagram")
+		#expect(output.contains("Empty") || output.contains("No"), "Should indicate empty diagram")
 	}
 
-	func testPlotTornadoDiagram_SingleInput_DisplaysCorrectly() {
+	@Test("PlotTornadoDiagram_SingleInput_DisplaysCorrectly") func LPlotTornadoDiagram_SingleInput_DisplaysCorrectly() {
 		// Given
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue"],
@@ -43,14 +43,14 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.contains("Revenue"), "Should show input name")
-		XCTAssertTrue(output.contains("Base Case:"), "Should show base case value")
-		XCTAssertTrue(output.contains("1000"), "Should show base case output")
+		#expect(output.contains("Revenue"), "Should show input name")
+		#expect(output.contains("Base Case:"), "Should show base case value")
+		#expect(output.contains("1000"), "Should show base case output")
 	}
 
 	// MARK: - Multiple Inputs Tests
 
-	func testPlotTornadoDiagram_MultipleInputs_ShowsAllInRankedOrder() {
+	@Test("PlotTornadoDiagram_MultipleInputs_ShowsAllInRankedOrder") func LPlotTornadoDiagram_MultipleInputs_ShowsAllInRankedOrder() {
 		// Given - inputs already sorted by impact
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue", "Costs", "Marketing"],
@@ -76,23 +76,23 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.contains("Revenue"), "Should show Revenue")
-		XCTAssertTrue(output.contains("Costs"), "Should show Costs")
-		XCTAssertTrue(output.contains("Marketing"), "Should show Marketing")
+		#expect(output.contains("Revenue"), "Should show Revenue")
+		#expect(output.contains("Costs"), "Should show Costs")
+		#expect(output.contains("Marketing"), "Should show Marketing")
 
 		// Verify order (Revenue should appear before Marketing in output)
 		let revenueIndex = output.range(of: "Revenue")?.lowerBound
 		let marketingIndex = output.range(of: "Marketing")?.lowerBound
-		XCTAssertNotNil(revenueIndex)
-		XCTAssertNotNil(marketingIndex)
+		#expect(revenueIndex != nil)
+		#expect(marketingIndex != nil)
 		if let rev = revenueIndex, let mkt = marketingIndex {
-			XCTAssertLessThan(rev, mkt, "Revenue (higher impact) should appear before Marketing")
+			#expect(rev < mkt, "Revenue (higher impact) should appear before Marketing")
 		}
 	}
 
 	// MARK: - Bar Direction Tests
 
-	func testPlotTornadoDiagram_PositiveImpact_ShowsCorrectDirection() {
+	@Test("PlotTornadoDiagram_PositiveImpact_ShowsCorrectDirection") func LPlotTornadoDiagram_PositiveImpact_ShowsCorrectDirection() {
 		// Given - Revenue increases output (positive relationship)
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue"],
@@ -107,10 +107,10 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 
 		// Then
 		// Should show bars extending from base case in both directions
-		XCTAssertTrue(output.contains("Revenue"), "Should show driver name")
+		#expect(output.contains("Revenue"), "Should show driver name")
 	}
 
-	func testPlotTornadoDiagram_NegativeImpact_ShowsCorrectDirection() {
+	@Test("PlotTornadoDiagram_NegativeImpact_ShowsCorrectDirection") func LPlotTornadoDiagram_NegativeImpact_ShowsCorrectDirection() {
 		// Given - Costs decrease output (negative relationship)
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Costs"],
@@ -124,12 +124,12 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.contains("Costs"), "Should show driver name")
+		#expect(output.contains("Costs"), "Should show driver name")
 	}
 
 	// MARK: - Base Case Display Tests
 
-	func testPlotTornadoDiagram_ShowsBaseCaseValue() {
+	@Test("PlotTornadoDiagram_ShowsBaseCaseValue") func LPlotTornadoDiagram_ShowsBaseCaseValue() {
 		// Given
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue", "Costs"],
@@ -152,13 +152,13 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.contains("1000"), "Should display base case value")
-		XCTAssertTrue(output.contains("Base"), "Should label base case")
+		#expect(output.contains("1000"), "Should display base case value")
+		#expect(output.contains("Base"), "Should label base case")
 	}
 
 	// MARK: - Output Structure Tests
 
-	func testPlotTornadoDiagram_HasHeader() {
+	@Test("PlotTornadoDiagram_HasHeader") func LPlotTornadoDiagram_HasHeader() {
 		// Given
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue"],
@@ -172,10 +172,10 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.hasPrefix("Tornado") || output.contains("Sensitivity"), "Should have descriptive header")
+		#expect(output.hasPrefix("Tornado") || output.contains("Sensitivity"), "Should have descriptive header")
 	}
 
-	func testPlotTornadoDiagram_HasMultipleLines() {
+	@Test("PlotTornadoDiagram_HasMultipleLines") func LPlotTornadoDiagram_HasMultipleLines() {
 		// Given
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue", "Costs", "Marketing"],
@@ -203,12 +203,12 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 
 		// Then
 		// Should have: header, base case line, and one line per input (minimum)
-		XCTAssertGreaterThanOrEqual(lines.count, 4, "Should have header + base + inputs")
+		#expect(lines.count >= 4, "Should have header + base + inputs")
 	}
 
 	// MARK: - Number Formatting Tests
 
-	func testPlotTornadoDiagram_FormatsLargeNumbers() {
+	@Test("PlotTornadoDiagram_FormatsLargeNumbers") func LPlotTornadoDiagram_FormatsLargeNumbers() {
 		// Given
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue"],
@@ -222,13 +222,13 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertFalse(output.isEmpty, "Should format large numbers")
-		XCTAssertTrue(output.contains("Revenue"), "Should show input name")
+		#expect(!output.isEmpty, "Should format large numbers")
+		#expect(output.contains("Revenue"), "Should show input name")
 	}
 
 	// MARK: - Edge Cases
 
-	func testPlotTornadoDiagram_ZeroImpact_DisplaysCorrectly() {
+	@Test("PlotTornadoDiagram_ZeroImpact_DisplaysCorrectly") func LPlotTornadoDiagram_ZeroImpact_DisplaysCorrectly() {
 		// Given - input has no impact
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["FixedValue"],
@@ -242,10 +242,10 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.contains("FixedValue"), "Should show input even with zero impact")
+		#expect(output.contains("FixedValue"), "Should show input even with zero impact")
 	}
 
-	func testPlotTornadoDiagram_NegativeOutputValues_HandlesCorrectly() {
+	@Test("PlotTornadoDiagram_NegativeOutputValues_HandlesCorrectly") func LPlotTornadoDiagram_NegativeOutputValues_HandlesCorrectly() {
 		// Given - outputs can be negative (e.g., net loss)
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue"],
@@ -259,7 +259,7 @@ final class TornadoDiagramVisualizationTests: XCTestCase {
 		let output = plotTornadoDiagram(tornado)
 
 		// Then
-		XCTAssertTrue(output.contains("Revenue"), "Should handle negative values")
-		XCTAssertTrue(output.contains("-") || output.contains("("), "Should show negative values")
+		#expect(output.contains("Revenue"), "Should handle negative values")
+		#expect(output.contains("-") || output.contains("("), "Should show negative values")
 	}
 }
