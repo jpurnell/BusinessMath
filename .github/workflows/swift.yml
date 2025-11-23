@@ -90,50 +90,57 @@ jobs:
       - name: Release build (SPM)
         run: swift build -c release
 
-      - name: Prepare ephemeral Xcode artifacts
+      - name: Prepare ephemeral Xcode workspace
         shell: bash
         run: |
           set -euo pipefail
-          # Force generation of the ephemeral workspace/project for the package
-          xcodebuild -scheme "BusinessMath-Package" -resolvePackageDependencies -quiet || true
-          # Sanity-check they exist
-          ls -la .swiftpm/xcode || true
-          xcodebuild -list -workspace ".swiftpm/xcode/package.xcworkspace" || true
-          xcodebuild -list -project ".swiftpm/xcode/package.xcodeproj" || true
+          PKG_SCHEME="BusinessMath-Package"
+          # Materialize the ephemeral workspace/schemes
+          xcodebuild -scheme "$PKG_SCHEME" -resolvePackageDependencies -quiet || true
+          xcodebuild -scheme "$PKG_SCHEME" -showBuildSettings >/dev/null
+          echo "Schemes in workspace:"
+          xcodebuild -list -workspace .swiftpm/xcode/package.xcworkspace || true
 
-      - name: macOS build for MCP executable (project/target)
+      - name: macOS build for MCP executable (workspace/scheme)
         shell: bash
         run: |
           set -euo pipefail
-          PROJ=".swiftpm/xcode/package.xcodeproj"
-          xcodebuild -project "$PROJ" \
-            -target businessmath-mcp-server \
+          WORKSPACE=".swiftpm/xcode/package.xcworkspace"
+          SCHEME_MCP="businessmath-mcp-server"
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME_MCP" \
             -destination "generic/platform=macOS" \
             -configuration Release \
             -skipPackagePluginValidation \
             build
 
-      - name: Apple platform compile checks (BusinessMath only; project/target)
+      - name: Apple platform compile checks (BusinessMath via archive; no tests)
         shell: bash
         run: |
           set -euo pipefail
-          PROJ=".swiftpm/xcode/package.xcodeproj"
+          WORKSPACE=".swiftpm/xcode/package.xcworkspace"
+          SCHEME_LIB="BusinessMath"
+
           for plat in iOS tvOS watchOS; do
-            echo "Building BusinessMath target for $plat"
-            xcodebuild -project "$PROJ" \
-              -target BusinessMath \
+            echo "Archiving $SCHEME_LIB for $plat"
+            OUTDIR="$(mktemp -d)"
+            xcodebuild -workspace "$WORKSPACE" \
+              -scheme "$SCHEME_LIB" \
               -destination "generic/platform=${plat}" \
               -configuration Release \
               -skipPackagePluginValidation \
-              build
+              -archivePath "$OUTDIR/BM-${plat}.xcarchive" \
+              archive
           done
 
           if xcodebuild -showsdks | grep -q "visionOS"; then
-            echo "Building BusinessMath target for visionOS"
-            xcodebuild -project "$PROJ" \
-              -target BusinessMath \
+            echo "Archiving $SCHEME_LIB for visionOS"
+            OUTDIR="$(mktemp -d)"
+            xcodebuild -workspace "$WORKSPACE" \
+              -scheme "$SCHEME_LIB" \
               -destination "generic/platform=visionOS" \
               -configuration Release \
               -skipPackagePluginValidation \
-              build
+              -archivePath "$OUTDIR/BM-visionOS.xcarchive" \
+              archive
           fi
