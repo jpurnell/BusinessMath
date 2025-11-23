@@ -88,45 +88,61 @@ jobs:
       - name: Release build (SPM)
         run: swift build -c release
 
-      - name: macOS build for MCP executable (manifest)
+      - name: Prepare ephemeral Xcode workspace
         shell: bash
         run: |
           set -euo pipefail
-          xcodebuild -onlyUsePackageManifest \
-            -target businessmath-mcp-server \
+          PKG_SCHEME="BusinessMath-Package"
+          # Force generation of the ephemeral workspace for the package
+          xcodebuild -scheme "$PKG_SCHEME" -resolvePackageDependencies -quiet || true
+          # Belt-and-suspenders: query build settings to ensure workspace is materialized
+          xcodebuild -scheme "$PKG_SCHEME" -showBuildSettings >/dev/null
+          ls -la .swiftpm/xcode || true
+
+      - name: macOS build for MCP executable (workspace)
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKSPACE=".swiftpm/xcode/package.xcworkspace"
+          SCHEME_MCP="businessmath-mcp-server"
+          # Build the MCP executable only on macOS
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME_MCP" \
             -destination "generic/platform=macOS" \
             -configuration Release \
             -skipPackagePluginValidation \
             build
 
-      - name: Apple platform compile checks (BusinessMath only, manifest)
+      - name: Apple platform compile checks (BusinessMath only, workspace)
         shell: bash
         run: |
           set -euo pipefail
-          xcodebuild -onlyUsePackageManifest \
-            -target BusinessMath \
-            -destination "generic/platform=iOS" \
-            -configuration Release \
-            -skipPackagePluginValidation \
-            build
+          WORKSPACE=".swiftpm/xcode/package.xcworkspace"
 
-          xcodebuild -onlyUsePackageManifest \
-            -target BusinessMath \
-            -destination "generic/platform=tvOS" \
-            -configuration Release \
-            -skipPackagePluginValidation \
-            build
+          # Find a library-only scheme for BusinessMath
+          SCHEME_LIB="BusinessMath"
+          if ! xcodebuild -list -workspace "$WORKSPACE" | sed -n '/Schemes:/,/Targets:/p' | grep -qx "    $SCHEME_LIB"; then
+            # Fallback: some setups name the product scheme "<Package>-<Product>"
+            SCHEME_LIB="BusinessMath-BusinessMath"
+          fi
+          echo "Using BusinessMath scheme: $SCHEME_LIB"
+          xcodebuild -list -workspace "$WORKSPACE" || true
 
-          xcodebuild -onlyUsePackageManifest \
-            -target BusinessMath \
-            -destination "generic/platform=watchOS" \
-            -configuration Release \
-            -skipPackagePluginValidation \
-            build
+          # Build BusinessMath for the Apple platforms (no MCP pulled in)
+          for plat in iOS tvOS watchOS; do
+            echo "Building $SCHEME_LIB for $plat"
+            xcodebuild -workspace "$WORKSPACE" \
+              -scheme "$SCHEME_LIB" \
+              -destination "generic/platform=${plat}" \
+              -configuration Release \
+              -skipPackagePluginValidation \
+              build
+          done
 
           if xcodebuild -showsdks | grep -q "visionOS"; then
-            xcodebuild -onlyUsePackageManifest \
-              -target BusinessMath \
+            echo "Building $SCHEME_LIB for visionOS"
+            xcodebuild -workspace "$WORKSPACE" \
+              -scheme "$SCHEME_LIB" \
               -destination "generic/platform=visionOS" \
               -configuration Release \
               -skipPackagePluginValidation \
