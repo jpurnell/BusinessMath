@@ -189,17 +189,73 @@ import Numerics
 
     // MARK: - Analysis Tools Tests
 
-    @Test("GoalSeek") func LGoalSeek() {
+    @Test("GoalSeek") func LGoalSeek() throws {
         // Test: Find x where x^2 = 16 (should be 4 or -4)
         // Using positive guess should converge to 4
-        // We'll test this once goalSeek is public
-        #expect(true) // Placeholder until implementation
+        let result: Double = try goalSeek(
+            function: { x in x * x },
+            target: 16.0,
+            guess: 5.0
+        )
+
+        #expect(abs(result - 4.0) < 0.01, "Should find x=4 for x^2=16 with positive guess")
+
+        // Using negative guess should converge to -4
+        let result2: Double = try goalSeek(
+            function: { x in x * x },
+            target: 16.0,
+            guess: -5.0
+        )
+
+        #expect(abs(result2 - (-4.0)) < 0.01, "Should find x=-4 for x^2=16 with negative guess")
     }
 
     @Test("DataTable") func LDataTable() {
         // Test: 1-variable data table
-        // Calculate multiple outputs for different input values
-        // Example: Loan payment for different interest rates
-        #expect(true) // Placeholder until implementation
+        // Calculate loan payments for different interest rates
+        let rates = [0.03, 0.04, 0.05, 0.06]
+        let principal = 100_000.0
+        let periods = 360
+
+        let table = DataTable<Double, Double>.oneVariable(
+            inputs: rates,
+            calculate: { rate in
+                // Monthly payment formula: P * r * (1+r)^n / ((1+r)^n - 1)
+                let monthlyRate = rate / 12.0
+                let n = Double(periods)
+                return principal * monthlyRate * pow(1 + monthlyRate, n) / (pow(1 + monthlyRate, n) - 1)
+            }
+        )
+
+        #expect(table.count == 4, "Should have 4 entries")
+        #expect(table[0].input == 0.03, "First input should be 0.03")
+        #expect(table[0].output > 0, "Payment should be positive")
+        #expect(table[3].output > table[0].output, "Higher rate should mean higher payment")
+
+        // Test: 2-variable data table
+        // Calculate profit for different price/volume combinations
+        let prices = [10.0, 12.0, 14.0]
+        let volumes = [100.0, 200.0, 300.0]
+        let fixedCosts = 500.0
+        let variableCost = 5.0
+
+        let profitTable = DataTable<Double, Double>.twoVariable(
+            rowInputs: prices,
+            columnInputs: volumes,
+            calculate: { price, volume in
+                let revenue = price * volume
+                let totalCost = fixedCosts + (variableCost * volume)
+                return revenue - totalCost
+            }
+        )
+
+        #expect(profitTable.count == 3, "Should have 3 rows")
+        #expect(profitTable[0].count == 3, "Each row should have 3 columns")
+
+        // At price $10, volume 100: revenue = 1000, cost = 500 + 500 = 1000, profit = 0
+        #expect(abs(profitTable[0][0] - 0.0) < 0.01, "Profit should be close to 0")
+
+        // At price $14, volume 300: revenue = 4200, cost = 500 + 1500 = 2000, profit = 2200
+        #expect(abs(profitTable[2][2] - 2200.0) < 0.01, "Profit should be 2200")
     }
 }
