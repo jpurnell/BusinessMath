@@ -68,7 +68,6 @@ jobs:
           # Release tests (optimizer-on)
           swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
 
-  jobs:
     build_and_compile:
       name: Release build + Apple platform compile checks
       needs: tests
