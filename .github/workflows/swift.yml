@@ -21,8 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         engine: [swift-testing]
-    env:
-      PACKAGE_NAME: BusinessMath
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +28,7 @@ jobs:
       - name: Select Xcode 16.x (Swift 6)
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.4'  # or '16' for latest 16.x on the image
+          xcode-version: '16.4'
 
       - name: Tooling versions
         run: |
@@ -68,46 +66,69 @@ jobs:
           # Release tests (optimizer-on)
           swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
 
-    build_and_compile:
-      name: Release build + Apple platform compile checks
-      needs: tests
-      if: always()
-      runs-on: macos-15
-      env:
-        PACKAGE_NAME: BusinessMath
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v4
+  build_and_compile:
+    name: Release build + Apple platform compile checks
+    needs: tests
+    if: always()
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-        - name: Select Xcode 16.x (Swift 6)
-          uses: maxim-lobanov/setup-xcode@v1
-          with:
-            xcode-version: '16.4'
+      - name: Select Xcode 16.x (Swift 6)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
 
-        - name: Tooling versions
-          run: |
-            xcodebuild -version
-            swift --version
+      - name: Tooling versions
+        run: |
+          xcodebuild -version
+          swift --version
 
-        - name: Release build (SPM)
-          run: swift build -c release
+      - name: Release build (SPM)
+        run: swift build -c release
 
-        # Build only the MCP server for macOS (from manifest)
-        - name: macOS build for MCP executable
-          shell: bash
-          run: |
-            set -euo pipefail
-            xcodebuild -onlyUsePackageManifest  -target businessmath-mcp-server  -destination "generic/platform=macOS"  -configuration Release  -skipPackagePluginValidation  build
+      - name: macOS build for MCP executable (manifest)
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -onlyUsePackageManifest \
+            -target businessmath-mcp-server \
+            -destination "generic/platform=macOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
 
-        # Build only the BusinessMath library target for other Apple platforms (from manifest)
-        - name: Apple platform compile checks (Xcode, from manifest)
-          shell: bash
-          run: |
-            set -euo pipefail
-            xcodebuild -onlyUsePackageManifest  -target BusinessMath  -destination "generic/platform=iOS"  -configuration Release  -skipPackagePluginValidation  build
-            xcodebuild -onlyUsePackageManifest  -target BusinessMath  -destination "generic/platform=tvOS"  -configuration Release  -skipPackagePluginValidation  build
-            xcodebuild -onlyUsePackageManifest  -target BusinessMath  -destination "generic/platform=watchOS"  -configuration Release  -skipPackagePluginValidation  build
+      - name: Apple platform compile checks (BusinessMath only, manifest)
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -onlyUsePackageManifest \
+            -target BusinessMath \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
 
-            if xcodebuild -showsdks | grep -q "visionOS"; then
-              xcodebuild -onlyUsePackageManifest    -target BusinessMath    -destination "generic/platform=visionOS"    -configuration Release    -skipPackagePluginValidation    build
-            fi
+          xcodebuild -onlyUsePackageManifest \
+            -target BusinessMath \
+            -destination "generic/platform=tvOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
+
+          xcodebuild -onlyUsePackageManifest \
+            -target BusinessMath \
+            -destination "generic/platform=watchOS" \
+            -configuration Release \
+            -skipPackagePluginValidation \
+            build
+
+          if xcodebuild -showsdks | grep -q "visionOS"; then
+            xcodebuild -onlyUsePackageManifest \
+              -target BusinessMath \
+              -destination "generic/platform=visionOS" \
+              -configuration Release \
+              -skipPackagePluginValidation \
+              build
+          fi
