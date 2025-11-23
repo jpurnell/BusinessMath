@@ -87,8 +87,10 @@ public struct SimulationResults: Sendable {
 		let simStats = SimulationStatistics(values: values)
 //		logger.debug("simStats set with \(simStats.values.count) values, mean of \(simStats.mean)")
 		self.statistics = simStats
-		
-		self.percentiles = try! Percentiles(values: values)
+		guard let _percentiles = try? Percentiles(values: values) else { self.percentiles = try! Percentiles(values: [0])
+			return
+		}
+		self.percentiles = _percentiles
 	}
 
 	// MARK: - Probability Calculations
