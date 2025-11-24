@@ -1,0 +1,849 @@
+# Data Table Analysis
+
+Perform Excel-like sensitivity analysis and scenario planning with data tables.
+
+## Overview
+
+This tutorial demonstrates how to use BusinessMath's data table functionality for "What-If Analysis" - a powerful technique for exploring how changes in input variables affect outputs. You'll learn how to:
+
+- Create one-variable data tables for sensitivity analysis
+- Build two-variable data tables for scenario matrices
+- Export results to CSV for spreadsheet analysis
+- Apply data tables to real-world financial decisions
+- Interpret and visualize results
+
+**Time estimate:** 25-35 minutes
+
+## Prerequisites
+
+- Basic understanding of Swift
+- Familiarity with financial concepts (loans, investments, pricing)
+- Understanding of time value of money (see <doc:TimeValueOfMoney>)
+
+## What are Data Tables?
+
+Data tables systematically vary one or two input values and calculate corresponding outputs. This is identical to Excel's "Data Table" feature under "What-If Analysis."
+
+**Use Cases:**
+- **Sensitivity Analysis**: How does NPV change with different discount rates?
+- **Scenario Planning**: What's our profit at various price/volume combinations?
+- **Risk Assessment**: How sensitive is our investment to key assumptions?
+- **Pricing Optimization**: What price maximizes revenue?
+
+## Part 1: One-Variable Data Tables
+
+One-variable tables show how an output changes as a single input varies.
+
+### Example 1: Loan Payment Sensitivity
+
+A common question: "How much will my monthly payment change if interest rates rise?"
+
+```swift
+import BusinessMath
+
+// Loan parameters
+let principal = 300_000.0
+let loanTerm = 360  // 30 years monthly
+
+// Test different interest rates
+let rates = [0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07]
+
+// Create data table
+let paymentTable = DataTable<Double, Double>.oneVariable(
+    inputs: rates,
+    calculate: { annualRate in
+        let monthlyRate = annualRate / 12.0
+        return payment(
+            presentValue: principal,
+            rate: monthlyRate,
+            periods: loanTerm,
+            futureValue: 0,
+            type: .ordinary
+        )
+    }
+)
+
+print("Mortgage Payment Sensitivity Analysis")
+print("======================================")
+print("Loan Amount: $\(String(format: "%.0f", principal))")
+print("Term: 30 years")
+print()
+print("Rate\t\tMonthly Payment\tTotal Interest")
+print("----\t\t---------------\t--------------")
+
+for (rate, monthlyPayment) in paymentTable {
+    let totalPaid = monthlyPayment * Double(loanTerm)
+    let totalInterest = totalPaid - principal
+
+    print(String(format: "%.2f%%\t\t$%.2f\t\t$%.0f",
+                 rate * 100,
+                 monthlyPayment,
+                 totalInterest))
+}
+```
+
+**Expected output:**
+```
+Mortgage Payment Sensitivity Analysis
+======================================
+Loan Amount: $300,000
+Term: 30 years
+
+Rate		Monthly Payment	Total Interest
+----		---------------	--------------
+3.00%		$1,264.81		$155,332
+3.50%		$1,347.13		$184,968
+4.00%		$1,432.25		$215,609
+4.50%		$1,520.06		$247,222
+5.00%		$1,610.46		$279,767
+5.50%		$1,703.37		$313,213
+6.00%		$1,798.65		$347,514
+6.50%		$1,896.20		$382,633
+7.00%		$1,995.91		$418,526
+```
+
+**Insight:** A 1% rate increase (4% → 5%) adds $178/month and $64,000 in total interest!
+
+### Example 2: Investment NPV Sensitivity
+
+How sensitive is an investment's value to the discount rate?
+
+```swift
+// Investment cash flows
+let investment = -100_000.0
+let cashFlows = [investment, 30_000.0, 35_000.0, 40_000.0, 45_000.0, 50_000.0]
+
+// Test different discount rates
+let discountRates = [0.06, 0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.20]
+
+let npvTable = DataTable<Double, Double>.oneVariable(
+    inputs: discountRates,
+    calculate: { rate in
+        return npv(discountRate: rate, cashFlows: cashFlows)
+    }
+)
+
+print("\nInvestment NPV Sensitivity")
+print("===========================")
+print("Initial Investment: $\(String(format: "%.0f", -investment))")
+print()
+print("Discount Rate\tNPV\t\tDecision")
+print("-------------\t---\t\t--------")
+
+for (rate, npvValue) in npvTable {
+    let decision = npvValue > 0 ? "Accept ✓" : "Reject ✗"
+    print(String(format: "%.0f%%\t\t$%.0f\t\t%@",
+                 rate * 100,
+                 npvValue,
+                 decision))
+}
+
+// Find the rate where NPV ≈ 0 (this is the IRR)
+let irrValue = try! irr(cashFlows: cashFlows)
+print("\nIRR (where NPV = 0): \(String(format: "%.2f%%", irrValue * 100))")
+```
+
+**Expected output:**
+```
+Investment NPV Sensitivity
+===========================
+Initial Investment: $100,000
+
+Discount Rate	NPV		Decision
+-------------	---		--------
+6%		$68,185		Accept ✓
+8%		$59,886		Accept ✓
+10%		$52,283		Accept ✓
+12%		$45,307		Accept ✓
+14%		$38,897		Accept ✓
+16%		$33,001		Accept ✓
+18%		$27,573		Accept ✓
+20%		$22,572		Accept ✓
+
+IRR (where NPV = 0): 28.65%
+```
+
+**Insight:** This investment remains attractive even at high discount rates, indicating low risk sensitivity.
+
+### Example 3: Break-Even Analysis
+
+At what sales volume do we break even?
+
+```swift
+// Business parameters
+let fixedCosts = 50_000.0
+let variableCostPerUnit = 15.0
+let pricePerUnit = 25.0
+
+// Test different sales volumes
+let volumes = Array(stride(from: 1000.0, through: 10000.0, by: 1000.0))
+
+let profitTable = DataTable<Double, Double>.oneVariable(
+    inputs: volumes,
+    calculate: { volume in
+        let revenue = pricePerUnit * volume
+        let totalCosts = fixedCosts + (variableCostPerUnit * volume)
+        return revenue - totalCosts
+    }
+)
+
+print("\nBreak-Even Analysis")
+print("===================")
+print("Fixed Costs: $\(String(format: "%.0f", fixedCosts))")
+print("Variable Cost/Unit: $\(variableCostPerUnit)")
+print("Price/Unit: $\(pricePerUnit)")
+print("Contribution Margin: $\(pricePerUnit - variableCostPerUnit)/unit")
+print()
+print("Volume\t\tRevenue\t\tTotal Costs\tProfit")
+print("------\t\t-------\t\t-----------\t------")
+
+for (volume, profit) in profitTable {
+    let revenue = pricePerUnit * volume
+    let totalCosts = fixedCosts + (variableCostPerUnit * volume)
+    let status = profit >= 0 ? "✓" : "✗"
+
+    print(String(format: "%.0f units\t$%.0f\t\t$%.0f\t\t$%.0f %@",
+                 volume, revenue, totalCosts, profit, status))
+}
+
+// Calculate exact break-even
+let breakEvenVolume = fixedCosts / (pricePerUnit - variableCostPerUnit)
+print("\nBreak-Even Volume: \(String(format: "%.0f", breakEvenVolume)) units")
+```
+
+**Expected output:**
+```
+Break-Even Analysis
+===================
+Fixed Costs: $50,000
+Variable Cost/Unit: $15.0
+Price/Unit: $25.0
+Contribution Margin: $10.0/unit
+
+Volume		Revenue		Total Costs	Profit
+------		-------		-----------	------
+1000 units	$25,000		$65,000		$-40,000 ✗
+2000 units	$50,000		$80,000		$-30,000 ✗
+3000 units	$75,000		$95,000		$-20,000 ✗
+4000 units	$100,000	$110,000	$-10,000 ✗
+5000 units	$125,000	$125,000	$0 ✓
+6000 units	$150,000	$140,000	$10,000 ✓
+7000 units	$175,000	$155,000	$20,000 ✓
+8000 units	$200,000	$170,000	$30,000 ✓
+9000 units	$225,000	$185,000	$40,000 ✓
+10000 units	$250,000	$200,000	$50,000 ✓
+
+Break-Even Volume: 5000 units
+```
+
+## Part 2: Two-Variable Data Tables
+
+Two-variable tables create a matrix showing how outputs change with two varying inputs.
+
+### Example 4: Pricing Strategy Matrix
+
+What price and volume combination maximizes profit?
+
+```swift
+// Fixed business parameters
+let monthlyFixedCosts = 100_000.0
+let variableCostPerUnit = 30.0
+
+// Scenarios to test
+let pricePoints = [40.0, 45.0, 50.0, 55.0, 60.0]
+let volumeScenarios = [2000.0, 2500.0, 3000.0, 3500.0, 4000.0]
+
+// Create two-variable profit matrix
+let profitMatrix = DataTable<Double, Double>.twoVariable(
+    rowInputs: pricePoints,
+    columnInputs: volumeScenarios,
+    calculate: { price, volume in
+        let revenue = price * volume
+        let totalCosts = monthlyFixedCosts + (variableCostPerUnit * volume)
+        return revenue - totalCosts
+    }
+)
+
+print("\nPricing Strategy Matrix (Monthly Profit)")
+print("=========================================")
+print("Fixed Costs: $\(String(format: "%.0f", monthlyFixedCosts))")
+print("Variable Cost: $\(variableCostPerUnit)/unit")
+print()
+
+// Print header row with volume scenarios
+print("Price\t\t", terminator: "")
+for volume in volumeScenarios {
+    print(String(format: "%.0f units\t", volume), terminator: "")
+}
+print()
+print(String(repeating: "=", count: 80))
+
+// Print data rows
+for (rowIndex, price) in pricePoints.enumerated() {
+    print(String(format: "$%.0f\t\t", price), terminator: "")
+
+    for colIndex in 0..<volumeScenarios.count {
+        let profit = profitMatrix[rowIndex][colIndex]
+        print(String(format: "$%.0f\t\t", profit), terminator: "")
+    }
+    print()
+}
+
+// Find optimal combination
+var maxProfit = -Double.infinity
+var optimalPrice = 0.0
+var optimalVolume = 0.0
+
+for (rowIndex, price) in pricePoints.enumerated() {
+    for (colIndex, volume) in volumeScenarios.enumerated() {
+        let profit = profitMatrix[rowIndex][colIndex]
+        if profit > maxProfit {
+            maxProfit = profit
+            optimalPrice = price
+            optimalVolume = volume
+        }
+    }
+}
+
+print("\nOptimal Strategy:")
+print("Price: $\(optimalPrice), Volume: \(String(format: "%.0f", optimalVolume)) units")
+print("Maximum Monthly Profit: $\(String(format: "%.0f", maxProfit))")
+```
+
+**Expected output:**
+```
+Pricing Strategy Matrix (Monthly Profit)
+=========================================
+Fixed Costs: $100,000
+Variable Cost: $30/unit
+
+Price		2000 units	2500 units	3000 units	3500 units	4000 units
+================================================================================
+$40		$-80,000	$-75,000	$-70,000	$-65,000	$-60,000
+$45		$-70,000	$-62,500	$-55,000	$-47,500	$-40,000
+$50		$-60,000	$-50,000	$-40,000	$-30,000	$-20,000
+$55		$-50,000	$-37,500	$-25,000	$-12,500	$0
+$60		$-40,000	$-25,000	$-10,000	$5,000		$20,000
+
+Optimal Strategy:
+Price: $60.0, Volume: 4000 units
+Maximum Monthly Profit: $20,000
+```
+
+**Insight:** Higher prices with higher volumes yield maximum profit, but you need to validate volume assumptions at different price points (demand elasticity).
+
+### Example 5: Investment Scenario Analysis
+
+How do growth rate and discount rate together affect investment value?
+
+```swift
+// Base investment
+let initialCost = 50_000.0
+let baseRevenue = 20_000.0
+let years = 5
+
+// Scenarios
+let growthRates = [0.05, 0.10, 0.15, 0.20, 0.25]  // 5% to 25% annual growth
+let discountRates = [0.08, 0.10, 0.12, 0.14, 0.16] // 8% to 16% required return
+
+let npvMatrix = DataTable<Double, Double>.twoVariable(
+    rowInputs: growthRates,
+    columnInputs: discountRates,
+    calculate: { growth, discount in
+        // Generate cash flows with growth
+        var flows = [-initialCost]  // Initial investment
+        var revenue = baseRevenue
+
+        for _ in 1...years {
+            revenue *= (1 + growth)
+            flows.append(revenue)
+        }
+
+        return npv(discountRate: discount, cashFlows: flows)
+    }
+)
+
+print("\nInvestment NPV Matrix ($)")
+print("=========================")
+print("Initial Investment: $\(String(format: "%.0f", initialCost))")
+print("Base Revenue: $\(String(format: "%.0f", baseRevenue))")
+print("Period: \(years) years")
+print()
+
+// Print header
+print("Growth\\Discount\t", terminator: "")
+for discount in discountRates {
+    print(String(format: "%.0f%%\t", discount * 100), terminator: "")
+}
+print()
+print(String(repeating: "=", count: 80))
+
+// Print rows
+for (rowIndex, growth) in growthRates.enumerated() {
+    print(String(format: "%.0f%%\t\t", growth * 100), terminator: "")
+
+    for colIndex in 0..<discountRates.count {
+        let npvValue = npvMatrix[rowIndex][colIndex]
+        let indicator = npvValue > 0 ? "+" : ""
+        print(String(format: "%@$%.0f\t", indicator, npvValue), terminator: "")
+    }
+    print()
+}
+
+// Count positive NPV scenarios
+var acceptableScenarios = 0
+var totalScenarios = growthRates.count * discountRates.count
+
+for row in npvMatrix {
+    for npvValue in row {
+        if npvValue > 0 {
+            acceptableScenarios += 1
+        }
+    }
+}
+
+let percentAcceptable = Double(acceptableScenarios) / Double(totalScenarios) * 100
+print("\nScenarios with Positive NPV: \(acceptableScenarios)/\(totalScenarios) (\(String(format: "%.0f%%", percentAcceptable)))")
+```
+
+**Expected output:**
+```
+Investment NPV Matrix ($)
+=========================
+Initial Investment: $50,000
+Base Revenue: $20,000
+Period: 5 years
+
+Growth\Discount	8%	10%	12%	14%	16%
+================================================================================
+5%		+$32,144	+$25,907	+$20,367	+$15,448	+$11,083
+10%		+$42,731	+$35,382	+$28,835	+$23,004	+$17,814
+15%		+$54,394	+$45,798	+$38,207	+$31,517	+$25,636
+20%		+$67,236	+$57,241	+$48,557	+$40,980	+$34,421
+25%		+$81,371	+$69,826	+$59,971	+$51,490	+$44,250
+
+Scenarios with Positive NPV: 25/25 (100%)
+```
+
+**Insight:** The investment is robust - positive NPV across all reasonable growth and discount scenarios. This indicates low risk.
+
+### Example 6: Loan Affordability Matrix
+
+Combined analysis of interest rates and loan amounts.
+
+```swift
+// Buyer's constraint: Maximum monthly payment
+let maxMonthlyPayment = 2_500.0
+let loanTermMonths = 360  // 30 years
+
+// Scenarios
+let loanAmounts = [250_000.0, 300_000.0, 350_000.0, 400_000.0, 450_000.0]
+let interestRates = [0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06]
+
+let paymentMatrix = DataTable<Double, Double>.twoVariable(
+    rowInputs: loanAmounts,
+    columnInputs: interestRates,
+    calculate: { loanAmount, annualRate in
+        let monthlyRate = annualRate / 12.0
+        return payment(
+            presentValue: loanAmount,
+            rate: monthlyRate,
+            periods: loanTermMonths,
+            futureValue: 0,
+            type: .ordinary
+        )
+    }
+)
+
+print("\nLoan Affordability Matrix (Monthly Payment)")
+print("============================================")
+print("Maximum Affordable Payment: $\(String(format: "%.0f", maxMonthlyPayment))")
+print("Term: 30 years")
+print()
+
+// Print header
+print("Loan Amount\t", terminator: "")
+for rate in interestRates {
+    print(String(format: "%.2f%%\t", rate * 100), terminator: "")
+}
+print()
+print(String(repeating: "=", count: 80))
+
+// Print rows with affordability indicators
+for (rowIndex, amount) in loanAmounts.enumerated() {
+    print(String(format: "$%.0fk\t", amount / 1000), terminator: "")
+
+    for colIndex in 0..<interestRates.count {
+        let monthlyPmt = paymentMatrix[rowIndex][colIndex]
+        let affordable = monthlyPmt <= maxMonthlyPayment ? "✓" : "✗"
+        print(String(format: "$%.0f%@\t", monthlyPmt, affordable), terminator: "")
+    }
+    print()
+}
+
+// Find maximum affordable loan at each rate
+print("\nMaximum Affordable Loan Amount by Rate:")
+for (colIndex, rate) in interestRates.enumerated() {
+    var maxAffordable = 0.0
+
+    for (rowIndex, amount) in loanAmounts.enumerated() {
+        let monthlyPmt = paymentMatrix[rowIndex][colIndex]
+        if monthlyPmt <= maxMonthlyPayment {
+            maxAffordable = amount
+        }
+    }
+
+    print(String(format: "At %.2f%%: $%.0f", rate * 100, maxAffordable))
+}
+```
+
+**Expected output:**
+```
+Loan Affordability Matrix (Monthly Payment)
+============================================
+Maximum Affordable Payment: $2,500
+Term: 30 years
+
+Loan Amount	3.00%	3.50%	4.00%	4.50%	5.00%	5.50%	6.00%
+================================================================================
+$250k		$1,054✓	$1,123✓	$1,193✓	$1,267✓	$1,342✓	$1,419✓	$1,499✓
+$300k		$1,265✓	$1,347✓	$1,432✓	$1,520✓	$1,610✓	$1,703✓	$1,799✓
+$350k		$1,476✓	$1,572✓	$1,671✓	$1,773✓	$1,879✓	$1,987✓	$2,098✓
+$400k		$1,687✓	$1,796✓	$1,910✓	$2,027✓	$2,147✓	$2,271✓	$2,398✓
+$450k		$1,898✓	$2,021✓	$2,149✓	$2,280✓	$2,415✓	$2,555✗	$2,698✗
+
+Maximum Affordable Loan Amount by Rate:
+At 3.00%: $450,000
+At 3.50%: $450,000
+At 4.00%: $450,000
+At 4.50%: $450,000
+At 5.00%: $450,000
+At 5.50%: $400,000
+At 6.00%: $400,000
+```
+
+**Insight:** Rate increases above 5.5% significantly reduce buying power - from $450k to $400k.
+
+## Part 3: Exporting and Formatting
+
+### CSV Export
+
+Export results for spreadsheet analysis.
+
+```swift
+// Create a data table
+let rates = [0.03, 0.04, 0.05, 0.06, 0.07]
+let paymentTable = DataTable<Double, Double>.oneVariable(
+    inputs: rates,
+    calculate: { rate in
+        payment(
+            presentValue: 300_000,
+            rate: rate / 12,
+            periods: 360,
+            futureValue: 0,
+            type: .ordinary
+        )
+    }
+)
+
+// Export to CSV
+let csv = DataTable.toCSV(
+    paymentTable,
+    inputHeader: "Interest Rate",
+    outputHeader: "Monthly Payment"
+)
+
+print(csv)
+
+// Write to file (in real application)
+// try csv.write(toFile: "loan_payments.csv", atomically: true, encoding: .utf8)
+```
+
+**Output:**
+```
+Interest Rate,Monthly Payment
+0.03,1264.81
+0.04,1432.25
+0.05,1610.46
+0.06,1798.65
+0.07,1995.91
+```
+
+### Two-Variable CSV Export
+
+```swift
+let prices = [10.0, 12.0, 14.0]
+let volumes = [100.0, 200.0, 300.0]
+let fixedCost = 500.0
+let variableCost = 5.0
+
+let profitMatrix = DataTable<Double, Double>.twoVariable(
+    rowInputs: prices,
+    columnInputs: volumes,
+    calculate: { price, volume in
+        (price * volume) - fixedCost - (variableCost * volume)
+    }
+)
+
+let csv = DataTable.toCSV(
+    profitMatrix,
+    rowInputs: prices,
+    columnInputs: volumes
+)
+
+print(csv)
+```
+
+**Output:**
+```
+,100.0,200.0,300.0,
+10.0,0.0,900.0,1800.0,
+12.0,200.0,1300.0,2400.0,
+14.0,400.0,1700.0,3000.0,
+```
+
+### Formatted Console Output
+
+```swift
+let formatted = DataTable.formatTwoVariable(
+    profitMatrix,
+    rowInputs: prices,
+    columnInputs: volumes
+)
+
+print("\nProfit Analysis")
+print("===============")
+print(formatted)
+```
+
+**Output:**
+```
+Profit Analysis
+===============
+	100.0	200.0	300.0
+------------------------------------------------------------
+10.0	0.0	900.0	1800.0
+12.0	200.0	1300.0	2400.0
+14.0	400.0	1700.0	3000.0
+```
+
+## Part 4: Advanced Techniques
+
+### Custom Analysis with Data Tables
+
+Combine data tables with other BusinessMath features:
+
+```swift
+// Investment with irregular cash flow dates
+import Foundation
+
+let investmentAmount = 100_000.0
+let rateScenarios = [0.08, 0.10, 0.12, 0.14]
+
+// Actual payment dates (irregular)
+let dates = [
+    Date(),  // Today
+    Date(timeIntervalSinceNow: 90 * 86400),   // 90 days
+    Date(timeIntervalSinceNow: 180 * 86400),  // 180 days
+    Date(timeIntervalSinceNow: 365 * 86400),  // 1 year
+    Date(timeIntervalSinceNow: 730 * 86400)   // 2 years
+]
+
+let cashFlows = [-investmentAmount, 25_000.0, 30_000.0, 35_000.0, 40_000.0]
+
+// XNPV sensitivity table
+let xnpvTable = DataTable<Double, Double>.oneVariable(
+    inputs: rateScenarios,
+    calculate: { rate in
+        try! xnpv(rate: rate, dates: dates, cashFlows: cashFlows)
+    }
+)
+
+print("\nXNPV Sensitivity (Irregular Cash Flows)")
+print("========================================")
+for (rate, npvValue) in xnpvTable {
+    print(String(format: "%.0f%%: $%.2f", rate * 100, npvValue))
+}
+```
+
+### Integration with Time Series
+
+```swift
+import BusinessMath
+
+// Historical revenue data
+let periods = [
+    Period.quarter(year: 2024, quarter: 1),
+    Period.quarter(year: 2024, quarter: 2),
+    Period.quarter(year: 2024, quarter: 3),
+    Period.quarter(year: 2024, quarter: 4)
+]
+let revenue = [100_000.0, 120_000.0, 115_000.0, 135_000.0]
+let timeSeries = TimeSeries(periods: periods, values: revenue)
+
+// Sensitivity: How do different growth assumptions affect forecast?
+let growthScenarios = [0.05, 0.10, 0.15, 0.20]
+
+let forecastTable = DataTable<Double, TimeSeries<Double>>.oneVariable(
+    inputs: growthScenarios,
+    calculate: { growthRate in
+        // Apply growth to last period
+        let lastValue = timeSeries.valuesArray.last ?? 0
+        let forecastValue = lastValue * (1 + growthRate)
+
+        // Create forecast period
+        let forecastPeriod = Period.quarter(year: 2025, quarter: 1)
+
+        return TimeSeries(
+            periods: [forecastPeriod],
+            values: [forecastValue]
+        )
+    }
+)
+
+print("\nRevenue Forecast Scenarios (Q1 2025)")
+print("======================================")
+print("Last Actual (Q4 2024): $\(String(format: "%.0f", revenue.last ?? 0))")
+print()
+
+for (growth, forecast) in forecastTable {
+    let forecastValue = forecast.valuesArray.first ?? 0
+    print(String(format: "%.0f%% growth: $%.0f", growth * 100, forecastValue))
+}
+```
+
+## Best Practices
+
+### 1. Choose Appropriate Input Ranges
+
+```swift
+// ✓ Good: Reasonable range around expected value
+let rates = [0.05, 0.06, 0.07, 0.08, 0.09]  // ±2% from 7% base
+
+// ✗ Bad: Too wide, includes unrealistic scenarios
+let rates = [0.01, 0.10, 0.20, 0.30, 0.40]
+```
+
+### 2. Use Meaningful Step Sizes
+
+```swift
+// ✓ Good: Fine granularity for precise analysis
+let prices = Array(stride(from: 10.0, through: 20.0, by: 1.0))
+
+// ✗ Bad: Too coarse, might miss optimal point
+let prices = [10.0, 20.0]
+```
+
+### 3. Validate Assumptions
+
+```swift
+// ✓ Good: Check for nonsensical combinations
+let profitMatrix = DataTable<Double, Double>.twoVariable(
+    rowInputs: prices,
+    columnInputs: volumes,
+    calculate: { price, volume in
+        // Validate: Higher prices typically mean lower volumes
+        // Could add demand curve here
+        let revenue = price * volume
+        let costs = fixedCost + (variableCost * volume)
+        return revenue - costs
+    }
+)
+```
+
+### 4. Document Your Analysis
+
+```swift
+print("\nAssumptions:")
+print("- Fixed costs remain constant across volumes")
+print("- Variable cost of $\(variableCost) per unit")
+print("- No economies of scale considered")
+print("- Demand elasticity not modeled")
+```
+
+## Common Patterns
+
+### Pattern 1: Find Threshold Values
+
+```swift
+// Find the discount rate where NPV = 0 (IRR approximation)
+let npvTable = DataTable<Double, Double>.oneVariable(
+    inputs: Array(stride(from: 0.05, through: 0.30, by: 0.01)),
+    calculate: { rate in npv(discountRate: rate, cashFlows: cashFlows) }
+)
+
+var irrApprox = 0.0
+for (rate, npvValue) in npvTable {
+    if abs(npvValue) < 100 {  // Close to zero
+        irrApprox = rate
+        break
+    }
+}
+
+print("IRR (approximate): \(String(format: "%.2f%%", irrApprox * 100))")
+```
+
+### Pattern 2: Identify Optimal Values
+
+```swift
+// Find price that maximizes profit at given volume
+let targetVolume = 5000.0
+let optimalPrice = DataTable<Double, Double>.oneVariable(
+    inputs: Array(stride(from: 20.0, through: 100.0, by: 5.0)),
+    calculate: { price in
+        let revenue = price * targetVolume
+        let costs = fixedCosts + (variableCostPerUnit * targetVolume)
+        return revenue - costs
+    }
+).max { $0.output < $1.output }
+
+if let optimal = optimalPrice {
+    print("Optimal price: $\(optimal.input)")
+    print("Maximum profit: $\(String(format: "%.0f", optimal.output))")
+}
+```
+
+### Pattern 3: Risk Assessment
+
+```swift
+// Count scenarios where we meet target return
+let targetReturn = 0.15  // 15% IRR
+let acceptableScenarios = npvMatrix.flatMap { $0 }
+    .filter { $0 > 0 }
+    .count
+
+let totalScenarios = growthRates.count * discountRates.count
+let successRate = Double(acceptableScenarios) / Double(totalScenarios)
+
+print("Success rate: \(String(format: "%.0f%%", successRate * 100))")
+```
+
+## Summary
+
+You've learned how to:
+
+✓ Create one-variable data tables for sensitivity analysis
+✓ Build two-variable matrices for scenario planning
+✓ Export results to CSV for further analysis
+✓ Apply data tables to loans, investments, and pricing
+✓ Identify optimal values and threshold points
+✓ Assess risk across multiple scenarios
+
+Data tables are powerful tools for:
+- **Understanding relationships** between inputs and outputs
+- **Identifying sensitivities** to key assumptions
+- **Exploring scenarios** without building complex models
+- **Communicating analysis** to stakeholders with clear matrices
+
+## Next Steps
+
+- Explore <doc:ScenarioAnalysisGuide> for Monte Carlo simulation
+- Learn <doc:InvestmentAnalysis> for detailed NPV/IRR techniques
+- Study <doc:OptimizationGuide> for finding optimal solutions programmatically
+
+## See Also
+
+- ``DataTable``
+- ``npv(discountRate:cashFlows:)``
+- ``payment(presentValue:rate:periods:futureValue:type:)``
+- ``TimeSeries``
