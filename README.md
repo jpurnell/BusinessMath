@@ -261,8 +261,10 @@ Comprehensive documentation is available in the package:
 - **[Building Revenue Model](Sources/BusinessMath/BusinessMath.docc/BuildingRevenueModel.md)** - Step-by-step tutorial
 - **[Loan Amortization](Sources/BusinessMath/BusinessMath.docc/LoanAmortization.md)** - Complete loan analysis
 - **[Investment Analysis](Sources/BusinessMath/BusinessMath.docc/InvestmentAnalysis.md)** - Investment evaluation
+- **[Data Table Analysis](Sources/BusinessMath/BusinessMath.docc/DataTableAnalysis.md)** - Excel-like sensitivity analysis ✨ **NEW**
+- **[Monte Carlo with Time Series](Sources/BusinessMath/BusinessMath.docc/MonteCarloTimeSeriesGuide.md)** - Probabilistic forecasting & confidence intervals ✨ **NEW**
 
-Total documentation: 3,676 lines across 9 comprehensive guides with real-world examples.
+Total documentation: 5,300+ lines across 11 comprehensive guides with real-world examples.
 
 ## Requirements
 

@@ -96,6 +96,41 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
+        // Extended Financial Ratios Tools (12 tools)
+        for handler in getExtendedFinancialRatiosTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Working Capital Tools (4 tools)
+        for handler in getWorkingCapitalTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Advanced Ratio Tools (3 tools)
+        for handler in getAdvancedRatioTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Extended Debt Tools (3 tools)
+        for handler in getExtendedDebtTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Financing Tools (4 tools)
+        for handler in getFinancingTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Lease and Covenant Tools (3 tools)
+        for handler in getLeaseAndCovenantTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Utility Tools (6 tools)
+        for handler in getUtilityTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
         // Bayesian Statistics Tools (1 tool)
         for handler in getBayesianTools() {
             try await toolRegistry.register(handler.toToolDefinition())
@@ -136,7 +171,12 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
-        fputs("✓ Registered 118 tools\n", stderr)
+        // Get the actual count of registered tools
+        let registeredTools = await toolRegistry.listTools()
+        let toolCount = registeredTools.count
+
+        fputs("✓ Registered \(toolCount) tools:\n", stderr)
+		fputs("\t\(registeredTools.map(\.name).sorted().joined(separator: "\n\t"))", stderr)
 
         // Create and configure the MCP server using official SDK
         let server = Server(
@@ -146,7 +186,7 @@ struct BusinessMathMCPServerMain {
             Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and advanced analytics server.
 
             **Capabilities**:
-            - 118 computational tools across 24 categories
+            - \(toolCount) computational tools across 31 categories
             - 15 probability distributions (Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh, and more)
             - 9 essential financial ratios (liquidity, leverage, profitability, efficiency)
             - 12 valuation calculators (EPS, P/E, P/B, market cap, enterprise value, free cash flow)
@@ -240,7 +280,7 @@ struct BusinessMathMCPServerMain {
 
         switch transportMode {
         case .stdio:
-            fputs("✓ Starting server with stdio transport\n", stderr)
+            fputs("\n✓ Starting server with stdio transport\n", stderr)
             try await server.start(transport: StdioTransport())
 
         case .http(let port):
