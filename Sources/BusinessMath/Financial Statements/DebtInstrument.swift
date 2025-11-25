@@ -272,7 +272,7 @@ public struct DebtInstrument {
 }
 
 /// Defines how often payments are made on a debt instrument.
-public enum PaymentFrequency {
+public enum PaymentFrequency: Sendable {
     /// Monthly payments (12 per year)
     case monthly
 
@@ -292,6 +292,16 @@ public enum PaymentFrequency {
         case .quarterly: return 4
         case .semiAnnual: return 2
         case .annual: return 1
+        }
+    }
+
+    /// Number of years per payment period
+    public var yearsPerPeriod: Double {
+        switch self {
+        case .monthly: return 1.0 / 12.0
+        case .quarterly: return 0.25
+        case .semiAnnual: return 0.5
+        case .annual: return 1.0
         }
     }
 }

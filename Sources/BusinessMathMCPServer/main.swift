@@ -141,6 +141,21 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
+        // Equity Valuation Tools (5 tools) - Phase 1
+        for handler in getEquityValuationTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Bond Valuation Tools (7 tools) - Phase 2
+        for handler in getBondValuationTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Credit Derivatives Tools (4 tools) - Phase 3
+        for handler in getCreditDerivativesTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
         // Investment Metrics Tools (4 tools)
         for handler in getInvestmentMetricsTools() {
             try await toolRegistry.register(handler.toToolDefinition())
