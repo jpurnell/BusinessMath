@@ -1,0 +1,818 @@
+# Credit Derivatives & Default Modeling Guide
+
+Price credit default swaps, estimate default probabilities, and build credit term structures using industry-standard models.
+
+## Overview
+
+This tutorial demonstrates how to value credit derivatives and model corporate default risk. You'll learn how to:
+
+- Price Credit Default Swaps (CDS) using the ISDA Standard Model
+- Estimate default probabilities using the Merton structural model
+- Analyze credit risk with hazard rate (intensity) models
+- Bootstrap credit curves from market CDS quotes
+- Calculate survival probabilities and credit spreads
+- Link equity volatility to credit risk
+- Make informed credit investment and hedging decisions
+
+**Time estimate:** 75-90 minutes
+
+## Prerequisites
+
+- Basic understanding of Swift
+- Familiarity with options pricing (Black-Scholes)
+- Understanding of bond valuation (see <doc:BondValuationGuide>)
+- Knowledge of credit analysis fundamentals
+
+## Credit Risk Modeling Approaches
+
+There are three complementary frameworks for modeling credit risk:
+
+### 1. Structural Models (Merton)
+View default as an economic event when asset value falls below debt
+
+### 2. Reduced-Form Models (Hazard Rates)
+Model default as a random event with time-varying intensity
+
+### 3. CDS Pricing
+Market-based approach using credit default swap premiums
+
+## Step 1: Understanding Credit Default Swaps
+
+Let's start with the fundamental credit derivative—the CDS contract.
+
+```swift
+import BusinessMath
+import Foundation
+
+// Scenario: 5-year CDS on a BBB-rated corporate
+// - Reference entity: ABC Manufacturing
+// - Notional: $10 million
+// - CDS Spread: 150 basis points (1.5%)
+// - Recovery assumption: 40%
+
+let cds = CDS(
+    notional: 10_000_000.0,
+    spread: 0.0150,  // 150 bps
+    maturity: 5.0,
+    recoveryRate: 0.40,
+    paymentFrequency: .quarterly
+)
+
+print("CDS Contract Overview")
+print("=====================")
+print("Notional: $10,000,000")
+print("Spread: 150 bps")
+print("Maturity: 5 years")
+print("Recovery: 40%")
+print("Frequency: Quarterly")
+```
+
+**Key Insight:** A CDS is **insurance against default**. The protection buyer pays a periodic premium (the spread) to the seller. If default occurs, the seller pays (1 - Recovery) × Notional to the buyer. The spread compensates for bearing this default risk.
+
+## Step 2: CDS Valuation - Premium Leg
+
+Calculate the present value of premium payments.
+
+```swift
+// Build discount curve (flat 5% risk-free rate for simplicity)
+let riskFreeRate = 0.05
+let numPeriods = Int(5.0 * 4)  // 5 years, quarterly
+
+var periods: [Period] = []
+var discountFactors: [Double] = []
+
+for i in 1...numPeriods {
+    let t = Double(i) / 4.0
+    periods.append(Period.year(2024 + Int(t)))
+    discountFactors.append(exp(-riskFreeRate * t))
+}
+
+let discountCurve = TimeSeries(periods: periods, values: discountFactors)
+
+// Build survival curve (assumes 2% constant hazard rate)
+let hazardRate = 0.02
+var survivalProbs: [Double] = []
+
+for i in 1...numPeriods {
+    let t = Double(i) / 4.0
+    // Survival probability: S(t) = exp(-λt)
+    survivalProbs.append(exp(-hazardRate * t))
+}
+
+let survivalCurve = TimeSeries(periods: periods, values: survivalProbs)
+
+// Calculate premium leg value
+let premiumPV = cds.premiumLegPV(
+    discountCurve: discountCurve,
+    survivalProbabilities: survivalCurve
+)
+
+print("\nPremium Leg Valuation")
+print("=====================")
+print("Hazard Rate: \(String(format: "%.2f", hazardRate * 100))%")
+print("5Y Survival Probability: \(String(format: "%.2f", survivalProbs.last! * 100))%")
+print("Premium Leg PV: $\(String(format: "%.2f", premiumPV))")
+print("Annual Premium: $\(String(format: "%.2f", 10_000_000 * 0.0150))")
+```
+
+**Key Insight:** The premium leg is a **risky annuity**. Payments only occur if the reference entity survives, so we discount by both the risk-free rate AND the survival probability. Higher default risk means lower survival → lower PV of premiums.
+
+## Step 3: CDS Valuation - Protection Leg
+
+Calculate the present value of the protection payoff.
+
+```swift
+// Calculate protection leg value
+let protectionPV = cds.protectionLegPV(
+    discountCurve: discountCurve,
+    survivalProbabilities: survivalCurve
+)
+
+let lossGivenDefault = 1.0 - 0.40  // 60% loss
+
+print("\nProtection Leg Valuation")
+print("========================")
+print("Loss Given Default: \(String(format: "%.0f", lossGivenDefault * 100))%")
+print("Protection Leg PV: $\(String(format: "%.2f", protectionPV))")
+print("Max Payout (if default): $\(String(format: "%.2f", 10_000_000 * lossGivenDefault))")
+```
+
+**Key Insight:** The protection leg pays **LGD × Notional** if default occurs. We integrate the probability of default across all future time periods, weighted by discount factors. Higher hazard rate → higher protection value.
+
+## Step 4: Fair Spread Calculation
+
+Determine the spread where premium PV equals protection PV.
+
+```swift
+// Calculate fair spread
+let fairSpread = cds.fairSpread(
+    discountCurve: discountCurve,
+    hazardRate: hazardRate
+)
+
+let fairSpreadBps = fairSpread * 10000
+
+print("\nFair Spread Calculation")
+print("=======================")
+print("Premium Leg PV: $\(String(format: "%.2f", premiumPV))")
+print("Protection Leg PV: $\(String(format: "%.2f", protectionPV))")
+print("Fair Spread: \(String(format: "%.0f", fairSpreadBps)) bps")
+print("Market Spread: 150 bps")
+
+if fairSpreadBps > 150 {
+    print("Assessment: CDS is CHEAP (protection underpriced)")
+} else {
+    print("Assessment: CDS is RICH (protection overpriced)")
+}
+```
+
+**Key Insight:** At the **fair spread**, the contract has zero value at inception (premium PV = protection PV). If market spread < fair spread, the CDS is **cheap** and protection buyers profit. The fair spread is directly related to hazard rate and recovery.
+
+## Step 5: Mark-to-Market
+
+Value an existing CDS position as market conditions change.
+
+```swift
+// Scenario: Bought protection at 150 bps, market now at 200 bps
+let contractSpread = 0.0150
+let marketSpread = 0.0200
+let marketHazard = 0.025  // Implied from 200 bps
+
+let mtm = cds.mtm(
+    contractSpread: contractSpread,
+    marketSpread: marketSpread,
+    discountCurve: discountCurve,
+    hazardRate: marketHazard
+)
+
+print("\nMark-to-Market")
+print("==============")
+print("Contract Spread: 150 bps")
+print("Market Spread: 200 bps")
+print("MTM Value: $\(String(format: "%.2f", mtm))")
+
+if mtm > 0 {
+    print("Status: IN-THE-MONEY (credit quality deteriorated)")
+} else {
+    print("Status: OUT-OF-THE-MONEY (credit quality improved)")
+}
+```
+
+**Key Insight:** When credit spreads **widen**, protection buyers gain (positive MTM) and sellers lose. When spreads **tighten**, the opposite occurs. CDS positions are marked-to-market daily based on current market spreads.
+
+## Step 6: Merton Model - Equity as Call Option
+
+Estimate default probability using firm asset and equity values.
+
+```swift
+// Scenario: Publicly-traded manufacturing firm
+// - Market cap (equity): $50 million
+// - Book value of debt: $80 million
+// - Asset volatility: 25% (estimated)
+// - Debt maturity: 1 year
+
+let assetValue = 100_000_000.0  // Estimated from equity + debt
+let assetVolatility = 0.25
+let debtFaceValue = 80_000_000.0
+let riskFreeRate = 0.05
+let maturity = 1.0
+
+let mertonModel = MertonModel(
+    assetValue: assetValue,
+    assetVolatility: assetVolatility,
+    debtFaceValue: debtFaceValue,
+    riskFreeRate: riskFreeRate,
+    maturity: maturity
+)
+
+// Calculate metrics
+let equityValue = mertonModel.equityValue()
+let debtValue = mertonModel.debtValue()
+let defaultProb = mertonModel.defaultProbability()
+let distanceToDefault = mertonModel.distanceToDefault()
+let creditSpread = mertonModel.creditSpread()
+
+print("\nMerton Model Analysis")
+print("=====================")
+print("Asset Value: $\(String(format: "%.1f", assetValue / 1_000_000))M")
+print("Asset Volatility: \(String(format: "%.0f", assetVolatility * 100))%")
+print("Debt (Face): $\(String(format: "%.1f", debtFaceValue / 1_000_000))M")
+print("\nResults:")
+print("Equity Value: $\(String(format: "%.1f", equityValue / 1_000_000))M")
+print("Debt Value: $\(String(format: "%.1f", debtValue / 1_000_000))M")
+print("Default Probability: \(String(format: "%.2f", defaultProb * 100))%")
+print("Distance to Default: \(String(format: "%.2f", distanceToDefault)) σ")
+print("Credit Spread: \(String(format: "%.0f", creditSpread * 10000)) bps")
+```
+
+**Key Insight:** The Merton model treats **equity as a call option** on firm assets with strike = debt. Default occurs when assets < debt at maturity. This links observable equity volatility to unobservable default probability, creating a **structural model** based on firm fundamentals.
+
+## Step 7: Distance to Default Interpretation
+
+Understand the standardized risk measure.
+
+```swift
+// Test different leverage scenarios
+let scenarios = [
+    (name: "Low Leverage", assets: 150.0, debt: 80.0),
+    (name: "Moderate Leverage", assets: 100.0, debt: 80.0),
+    (name: "High Leverage", assets: 90.0, debt: 80.0)
+]
+
+print("\nDistance to Default Scenarios")
+print("=============================")
+
+for scenario in scenarios {
+    let model = MertonModel(
+        assetValue: scenario.assets * 1_000_000,
+        assetVolatility: 0.25,
+        debtFaceValue: scenario.debt * 1_000_000,
+        riskFreeRate: 0.05,
+        maturity: 1.0
+    )
+
+    let dd = model.distanceToDefault()
+    let pd = model.defaultProbability()
+
+    let rating = dd > 4 ? "AAA/AA" :
+                 dd > 3 ? "A" :
+                 dd > 2 ? "BBB" :
+                 dd > 1 ? "BB" : "B"
+
+    print("\n\(scenario.name):")
+    print("  Assets: $\(String(format: "%.0f", scenario.assets))M")
+    print("  Leverage: \(String(format: "%.0f", (scenario.debt / scenario.assets) * 100))%")
+    print("  Distance to Default: \(String(format: "%.2f", dd)) σ")
+    print("  Default Probability: \(String(format: "%.2f", pd * 100))%")
+    print("  Implied Rating: \(rating)")
+}
+```
+
+**Key Insight:** **Distance to Default** (DD) measures how many standard deviations the firm is away from default. DD > 3 indicates strong creditworthiness, DD < 1 signals distress. It's a **standardized metric** allowing comparison across firms with different sizes and leverage levels.
+
+## Step 8: Calibrating Merton Model from Equity Data
+
+Estimate unobservable asset value and volatility from observable equity data.
+
+```swift
+// Scenario: Observable market data
+// - Equity market cap: $25 million
+// - Equity volatility: 45% (from stock prices)
+// - Debt face value: $80 million (from balance sheet)
+
+let observedEquity = 25_000_000.0
+let equityVolatility = 0.45
+let observedDebt = 80_000_000.0
+
+do {
+    let calibratedModel = try calibrateMertonModel(
+        equityValue: observedEquity,
+        equityVolatility: equityVolatility,
+        debtFaceValue: observedDebt,
+        riskFreeRate: 0.05,
+        maturity: 1.0
+    )
+
+    print("\nMerton Model Calibration")
+    print("========================")
+    print("Inputs (Observable):")
+    print("  Equity Value: $\(String(format: "%.1f", observedEquity / 1_000_000))M")
+    print("  Equity Volatility: \(String(format: "%.0f", equityVolatility * 100))%")
+    print("  Debt Face Value: $\(String(format: "%.1f", observedDebt / 1_000_000))M")
+    print("\nOutputs (Estimated):")
+    print("  Asset Value: $\(String(format: "%.1f", calibratedModel.assetValue / 1_000_000))M")
+    print("  Asset Volatility: \(String(format: "%.0f", calibratedModel.assetVolatility * 100))%")
+    print("  Default Probability: \(String(format: "%.2f", calibratedModel.defaultProbability() * 100))%")
+
+} catch {
+    print("Calibration failed: \(error)")
+}
+```
+
+**Key Insight:** **Calibration** solves the inverse problem: given observable equity value/volatility, infer unobservable asset value/volatility. This uses the relationship σ_equity × Equity ≈ σ_asset × Asset × N(d₁), where N(d₁) is from Black-Scholes. Equity volatility is **higher** than asset volatility due to leverage.
+
+## Step 9: Hazard Rate Models - Constant Intensity
+
+Model default as an exponential process with constant hazard.
+
+```swift
+// Constant hazard rate model (exponential distribution)
+let constantHazard = ConstantHazardRate(hazardRate: 0.02)  // 2% annual
+
+print("\nConstant Hazard Rate Model")
+print("==========================")
+print("Hazard Rate (λ): 2.0% per year")
+print("\nSurvival & Default Probabilities:")
+
+for year in [1, 3, 5, 10] {
+    let survival = constantHazard.survivalProbability(time: Double(year))
+    let defaultProb = constantHazard.defaultProbability(time: Double(year))
+    let density = constantHazard.defaultDensity(time: Double(year))
+
+    print("\n\(year)-Year Horizon:")
+    print("  Survival: \(String(format: "%.2f", survival * 100))%")
+    print("  Cumulative Default: \(String(format: "%.2f", defaultProb * 100))%")
+    print("  Default Density: \(String(format: "%.4f", density * 100))%")
+}
+
+// Mean time to default
+let meanTimeToDefault = 1.0 / 0.02
+print("\nMean Time to Default: \(String(format: "%.0f", meanTimeToDefault)) years")
+```
+
+**Key Insight:** With constant hazard λ, **survival follows exponential decay**: S(t) = exp(-λt). The model is **memoryless**—conditional survival probability is independent of how long the firm has survived. This simplifies calculations but ignores term structure effects.
+
+## Step 10: Time-Varying Hazard Rates
+
+Model credit deterioration over time with term structure.
+
+```swift
+// Time-varying hazard rate (increasing over time)
+let periods = [
+    Period.year(2024),
+    Period.year(2025),
+    Period.year(2026),
+    Period.year(2027),
+    Period.year(2028)
+]
+
+let hazardRates = TimeSeries(
+    periods: periods,
+    values: [0.01, 0.015, 0.02, 0.025, 0.03]  // 1% → 3%
+)
+
+let timeVarying = TimeVaryingHazardRate(hazardRates: hazardRates)
+
+print("\nTime-Varying Hazard Rate Model")
+print("===============================")
+print("Hazard Rate Term Structure:")
+for (i, period) in periods.enumerated() {
+    print("  Year \(i+1): \(String(format: "%.2f", hazardRates.valuesArray[i] * 100))%")
+}
+
+print("\nSurvival Probabilities:")
+for year in [1, 3, 5] {
+    let survival = timeVarying.survivalProbability(time: Double(year))
+    let defaultProb = timeVarying.defaultProbability(time: Double(year))
+
+    print("  \(year)-Year: S=\(String(format: "%.2f", survival * 100))%, PD=\(String(format: "%.2f", defaultProb * 100))%")
+}
+```
+
+**Key Insight:** **Time-varying hazard rates** capture term structure in credit risk. Upward-sloping hazard curves indicate **deteriorating credit quality** or increasing uncertainty at longer horizons. The model integrates hazard rates: S(t) = exp(-∫₀ᵗ λ(s) ds).
+
+## Step 11: Converting Spreads to Hazard Rates
+
+Extract default intensity from market CDS quotes.
+
+```swift
+// Market observations
+let marketSpread = 0.0150  // 150 bps
+let recoveryRate = 0.40
+
+// Convert spread to hazard rate
+let impliedHazard = hazardRateFromSpread(
+    spread: marketSpread,
+    recoveryRate: recoveryRate
+)
+
+print("\nSpread-to-Hazard Conversion")
+print("============================")
+print("Market CDS Spread: \(String(format: "%.0f", marketSpread * 10000)) bps")
+print("Recovery Rate: \(String(format: "%.0f", recoveryRate * 100))%")
+print("Loss Given Default: \(String(format: "%.0f", (1 - recoveryRate) * 100))%")
+print("Implied Hazard Rate: \(String(format: "%.2f", impliedHazard * 100))%")
+
+// Verify: λ ≈ spread / (1 - R)
+let theoreticalHazard = marketSpread / (1 - recoveryRate)
+print("Theoretical (λ = s/LGD): \(String(format: "%.2f", theoreticalHazard * 100))%")
+print("Difference: \(String(format: "%.4f", abs(impliedHazard - theoreticalHazard) * 100))%")
+```
+
+**Key Insight:** The approximation **λ ≈ Spread / (1 - R)** links market spreads to default intensities. Higher recovery rates imply **higher hazard rates** are needed to justify the same spread. This relationship is exact for flat term structures and continuous-time models.
+
+## Step 12: Bootstrapping Credit Curves
+
+Build a complete term structure from market CDS quotes.
+
+```swift
+// Market CDS quotes at standard maturities
+let cdsTenors = [1.0, 3.0, 5.0, 7.0, 10.0]
+let cdsSpreads = [
+    0.0050,  // 1Y: 50 bps
+    0.0100,  // 3Y: 100 bps
+    0.0150,  // 5Y: 150 bps
+    0.0175,  // 7Y: 175 bps
+    0.0200   // 10Y: 200 bps
+]
+
+let recovery = 0.40
+
+// Bootstrap hazard rate curve
+let creditCurve = bootstrapCreditCurve(
+    tenors: cdsTenors,
+    cdsSpreads: cdsSpreads,
+    recoveryRate: recovery
+)
+
+print("\nCredit Curve Bootstrapping")
+print("==========================")
+print("Market CDS Quotes:")
+for (i, tenor) in cdsTenors.enumerated() {
+    let spreadBps = cdsSpreads[i] * 10000
+    print("  \(Int(tenor))Y: \(String(format: "%.0f", spreadBps)) bps")
+}
+
+print("\nBootstrapped Hazard Rates:")
+for (i, tenor) in cdsTenors.enumerated() {
+    let hazard = creditCurve.hazardRates.valuesArray[i]
+    let survival = creditCurve.survivalProbability(time: tenor)
+    let defaultProb = creditCurve.defaultProbability(time: tenor)
+
+    print("  \(Int(tenor))Y: λ=\(String(format: "%.2f", hazard * 100))%, S=\(String(format: "%.1f", survival * 100))%, PD=\(String(format: "%.1f", defaultProb * 100))%")
+}
+```
+
+**Key Insight:** **Bootstrapping** builds a complete hazard rate curve that exactly reproduces all market CDS quotes. It solves iteratively: for each tenor, find the hazard rate that matches the observed spread, given previously calibrated rates. This creates a **piecewise constant** term structure.
+
+## Step 13: Forward Hazard Rates
+
+Extract forward default intensities between periods.
+
+```swift
+print("\nForward Hazard Rates")
+print("====================")
+
+for i in 1..<cdsTenors.count {
+    let t1 = cdsTenors[i-1]
+    let t2 = cdsTenors[i]
+    let forwardHazard = creditCurve.forwardHazardRate(from: t1, to: t2)
+
+    print("\(Int(t1))Y-\(Int(t2))Y Forward: \(String(format: "%.2f", forwardHazard * 100))%")
+}
+```
+
+**Key Insight:** **Forward hazard rates** show the market's expectation of default intensity in future periods. Rising forwards indicate **credit deterioration expectations**. Like interest rate forwards, they can be used for hedging and forecasting.
+
+## Step 14: Pricing Off-Market CDS from Bootstrapped Curve
+
+Use the credit curve to price CDS at non-standard maturities.
+
+```swift
+// Price a 4-year CDS (not directly quoted)
+let offMarketTenor = 4.0
+let offMarketSpread = creditCurve.cdsSpread(
+    maturity: offMarketTenor,
+    recoveryRate: recovery
+)
+
+print("\nOff-Market CDS Pricing")
+print("======================")
+print("Tenor: \(Int(offMarketTenor)) years")
+print("Interpolated Spread: \(String(format: "%.0f", offMarketSpread * 10000)) bps")
+
+// Compare to surrounding quotes
+let spread3y = cdsSpreads[1] * 10000  // 100 bps
+let spread5y = cdsSpreads[2] * 10000  // 150 bps
+print("3Y Quote: \(String(format: "%.0f", spread3y)) bps")
+print("5Y Quote: \(String(format: "%.0f", spread5y)) bps")
+print("4Y is between 3Y and 5Y: \(offMarketSpread * 10000 > spread3y && offMarketSpread * 10000 < spread5y ? "✓" : "✗")")
+```
+
+**Key Insight:** The bootstrapped curve enables **interpolation** to price CDS at any maturity. This is essential for marking books with non-standard tenors and for creating **custom hedges** matching specific exposure profiles.
+
+## Step 15: Comparing Structural vs. Reduced-Form Models
+
+See how Merton and hazard rate models complement each other.
+
+```swift
+print("\nModel Comparison")
+print("================")
+
+// Same firm analyzed both ways
+let firmAssets = 100_000_000.0
+let firmDebt = 80_000_000.0
+let firmVolatility = 0.25
+
+// Structural model (Merton)
+let structuralModel = MertonModel(
+    assetValue: firmAssets,
+    assetVolatility: firmVolatility,
+    debtFaceValue: firmDebt,
+    riskFreeRate: 0.05,
+    maturity: 5.0
+)
+
+let mertonPD = structuralModel.defaultProbability()
+let mertonSpread = structuralModel.creditSpread()
+
+// Reduced-form model (Hazard Rate from spread)
+let marketCDSSpread = 0.0150
+let impliedHazardRate = hazardRateFromSpread(
+    spread: marketCDSSpread,
+    recoveryRate: 0.40
+)
+let reducedFormModel = ConstantHazardRate(hazardRate: impliedHazardRate)
+let reducedFormPD = reducedFormModel.defaultProbability(time: 5.0)
+
+print("Structural (Merton) Model:")
+print("  5Y Default Probability: \(String(format: "%.2f", mertonPD * 100))%")
+print("  Credit Spread: \(String(format: "%.0f", mertonSpread * 10000)) bps")
+
+print("\nReduced-Form (Hazard) Model:")
+print("  Implied Hazard Rate: \(String(format: "%.2f", impliedHazardRate * 100))%")
+print("  5Y Default Probability: \(String(format: "%.2f", reducedFormPD * 100))%")
+print("  Market CDS Spread: \(String(format: "%.0f", marketCDSSpread * 10000)) bps")
+
+print("\nKey Differences:")
+print("  Structural: Based on firm fundamentals (assets, volatility)")
+print("  Reduced-Form: Based on market prices (CDS spreads)")
+print("  Structural: Explains WHY default occurs")
+print("  Reduced-Form: Focuses on WHEN default occurs")
+```
+
+**Key Insight:** **Structural models** (Merton) provide economic intuition—default happens when assets < debt. **Reduced-form models** (hazard rates) fit market prices better and handle term structure naturally. In practice, use **both**: Merton for fundamental analysis, hazard rates for pricing and hedging.
+
+## Step 16: Stress Testing Credit Portfolios
+
+Analyze how parameter changes affect default risk.
+
+```swift
+print("\nCredit Stress Testing")
+print("=====================")
+
+let baseAssets = 100_000_000.0
+let baseDebt = 80_000_000.0
+let baseVol = 0.25
+
+let stressScenarios = [
+    (name: "Base Case", assets: 100.0, vol: 0.25),
+    (name: "Asset Decline", assets: 90.0, vol: 0.25),
+    (name: "Vol Spike", assets: 100.0, vol: 0.40),
+    (name: "Combined Stress", assets: 90.0, vol: 0.40)
+]
+
+for scenario in stressScenarios {
+    let model = MertonModel(
+        assetValue: scenario.assets * 1_000_000,
+        assetVolatility: scenario.vol,
+        debtFaceValue: baseDebt,
+        riskFreeRate: 0.05,
+        maturity: 1.0
+    )
+
+    let pd = model.defaultProbability()
+    let spread = model.creditSpread()
+    let dd = model.distanceToDefault()
+
+    print("\n\(scenario.name):")
+    print("  Assets: $\(String(format: "%.0f", scenario.assets))M")
+    print("  Volatility: \(String(format: "%.0f", scenario.vol * 100))%")
+    print("  Default Prob: \(String(format: "%.2f", pd * 100))%")
+    print("  Credit Spread: \(String(format: "%.0f", spread * 10000)) bps")
+    print("  Distance to Default: \(String(format: "%.2f", dd)) σ")
+}
+```
+
+**Key Insight:** **Asset declines** and **volatility increases** both elevate default risk, but through different mechanisms. Asset declines reduce the buffer above debt (lower DD). Volatility increases raise the probability of extreme outcomes (wider distribution). Combined stress tests capture **compound effects**.
+
+## Putting It All Together: Complete Credit Analysis
+
+Here's a comprehensive workflow from market data to investment decision:
+
+```swift
+print("\n" + String(repeating: "=", count: 70))
+print("COMPLETE CREDIT DERIVATIVES ANALYSIS")
+print(String(repeating: "=", count: 70))
+
+// Company Profile
+let companyName = "XYZ Industrial Corp"
+let marketCap = 35_000_000.0
+let totalDebt = 75_000_000.0
+let equityVol = 0.42
+
+print("\n1. COMPANY PROFILE")
+print("   \(companyName)")
+print("   Market Cap: $\(String(format: "%.1f", marketCap / 1_000_000))M")
+print("   Total Debt: $\(String(format: "%.1f", totalDebt / 1_000_000))M")
+print("   Equity Vol: \(String(format: "%.0f", equityVol * 100))%")
+
+// Calibrate Merton Model
+print("\n2. STRUCTURAL MODEL (MERTON)")
+do {
+    let model = try calibrateMertonModel(
+        equityValue: marketCap,
+        equityVolatility: equityVol,
+        debtFaceValue: totalDebt,
+        riskFreeRate: 0.05,
+        maturity: 1.0
+    )
+
+    print("   Estimated Asset Value: $\(String(format: "%.1f", model.assetValue / 1_000_000))M")
+    print("   Estimated Asset Vol: \(String(format: "%.0f", model.assetVolatility * 100))%")
+    print("   1Y Default Probability: \(String(format: "%.2f", model.defaultProbability() * 100))%")
+    print("   Distance to Default: \(String(format: "%.2f", model.distanceToDefault())) σ")
+    print("   Implied Credit Spread: \(String(format: "%.0f", model.creditSpread() * 10000)) bps")
+} catch {
+    print("   Calibration failed")
+}
+
+// Market CDS Spreads
+let marketQuotes = [
+    (tenor: 1.0, spread: 0.0075),
+    (tenor: 3.0, spread: 0.0125),
+    (tenor: 5.0, spread: 0.0175)
+]
+
+print("\n3. MARKET CDS SPREADS")
+for quote in marketQuotes {
+    print("   \(Int(quote.tenor))Y: \(String(format: "%.0f", quote.spread * 10000)) bps")
+}
+
+// Bootstrap Credit Curve
+let tenors = marketQuotes.map { $0.tenor }
+let spreads = marketQuotes.map { $0.spread }
+let curve = bootstrapCreditCurve(
+    tenors: tenors,
+    cdsSpreads: spreads,
+    recoveryRate: 0.40
+)
+
+print("\n4. CREDIT CURVE")
+for (i, tenor) in tenors.enumerated() {
+    let hazard = curve.hazardRates.valuesArray[i]
+    let survival = curve.survivalProbability(time: tenor)
+    print("   \(Int(tenor))Y: λ=\(String(format: "%.2f", hazard * 100))%, S=\(String(format: "%.1f", survival * 100))%")
+}
+
+// Hedging Recommendation
+let notionalExposure = 10_000_000.0
+let hedgeSpread = curve.cdsSpread(maturity: 5.0, recoveryRate: 0.40)
+let annualCost = notionalExposure * hedgeSpread
+
+print("\n5. HEDGING ANALYSIS")
+print("   Exposure: $\(String(format: "%.1f", notionalExposure / 1_000_000))M")
+print("   5Y CDS Spread: \(String(format: "%.0f", hedgeSpread * 10000)) bps")
+print("   Annual Hedge Cost: $\(String(format: "%.0f", annualCost))")
+print("   5Y Cumulative Cost: $\(String(format: "%.0f", annualCost * 5))")
+
+print("\n6. RECOMMENDATION")
+let fiveYearPD = curve.defaultProbability(time: 5.0)
+let expectedLoss = fiveYearPD * (1 - 0.40) * notionalExposure
+
+print("   5Y Default Probability: \(String(format: "%.2f", fiveYearPD * 100))%")
+print("   Expected Loss (unhedged): $\(String(format: "%.0f", expectedLoss))")
+print("   Hedge Cost vs. Expected Loss: \(String(format: "%.1f", (annualCost * 5) / expectedLoss))x")
+
+if (annualCost * 5) < expectedLoss {
+    print("   Decision: HEDGE (cost < expected loss)")
+} else {
+    print("   Decision: RETAIN RISK (cost > expected loss)")
+}
+
+print("\n" + String(repeating: "=", count: 70))
+```
+
+## Summary
+
+You've learned how to:
+
+✅ **Price CDS contracts** using the ISDA two-leg model (premium + protection)
+✅ **Estimate default probabilities** with the Merton structural model
+✅ **Analyze credit risk** using constant and time-varying hazard rates
+✅ **Bootstrap credit curves** from market CDS quotes
+✅ **Convert between spreads and hazard rates** using recovery assumptions
+✅ **Calibrate models** from observable equity market data
+✅ **Compare structural and reduced-form** approaches to credit modeling
+✅ **Make informed hedging decisions** based on comprehensive credit analysis
+
+## Next Steps
+
+- Explore **<doc:BondValuationGuide>** for credit spread analysis in corporate bonds
+- See **<doc:RiskAnalyticsGuide>** for portfolio-level credit VaR
+- Review **<doc:RealOptionsGuide>** for valuing corporate flexibility
+- Study **<doc:EquityValuationGuide>** for linking equity and credit analysis
+
+## Additional Resources
+
+### CDS Spread Benchmarks
+
+| Rating | 1Y Spread | 5Y Spread | 10Y Spread |
+|--------|-----------|-----------|------------|
+| AAA/AA | 20-40 bps | 40-70 bps | 60-100 bps |
+| A | 40-70 bps | 70-120 bps | 100-150 bps |
+| BBB | 70-150 bps | 120-200 bps | 150-250 bps |
+| BB | 150-300 bps | 200-400 bps | 300-500 bps |
+| B | 300-600 bps | 400-800 bps | 600-1000 bps |
+
+### Distance to Default Interpretation
+
+| Distance to Default | Credit Quality | Typical Rating | 1Y Default Prob |
+|---------------------|----------------|----------------|-----------------|
+| > 4.0 σ | Very Strong | AAA/AA | < 0.1% |
+| 3.0 - 4.0 σ | Strong | A | 0.1-0.5% |
+| 2.0 - 3.0 σ | Good | BBB | 0.5-2% |
+| 1.0 - 2.0 σ | Moderate | BB | 2-8% |
+| < 1.0 σ | Weak | B or lower | > 8% |
+
+### Recovery Rate Assumptions
+
+| Seniority | Standard Recovery |
+|-----------|-------------------|
+| Senior Secured | 70% |
+| Senior Unsecured | 50% |
+| Subordinated | 30% |
+| Junior | 10% |
+
+### Model Selection Guide
+
+**Use Merton Model When:**
+- Analyzing publicly-traded companies with observable equity
+- Understanding fundamental drivers of credit risk
+- Linking equity volatility to default probability
+- Performing stress tests on asset values
+
+**Use Hazard Rate Models When:**
+- Pricing credit derivatives
+- Building credit curves from market data
+- Modeling term structure of credit risk
+- Hedging with market instruments
+
+**Use Bootstrap Credit Curves When:**
+- Multiple CDS quotes available
+- Pricing off-market maturities
+- Extracting forward default expectations
+- Building marking frameworks
+
+### Formula Quick Reference
+
+**CDS Fair Spread:**
+```
+s = Protection PV / Premium Annuity
+```
+
+**Hazard from Spread:**
+```
+λ ≈ s / (1 - R)
+```
+
+**Survival Probability:**
+```
+S(t) = exp(-λt)  [constant hazard]
+S(t) = exp(-∫₀ᵗ λ(s) ds)  [time-varying]
+```
+
+**Merton Default Probability:**
+```
+PD = N(-d₂)
+where d₂ = [ln(V/D) + (r - σ²/2)T] / (σ√T)
+```
+
+**Distance to Default:**
+```
+DD = [ln(V/D) + (r - σ²/2)T] / (σ√T)
+```
+
+---
+
+*This tutorial demonstrates BusinessMath's comprehensive credit derivatives and default modeling capabilities. All calculations use industry-standard methodologies (ISDA for CDS, Merton for structural models, intensity-based for hazard rates) and are suitable for production use.*
