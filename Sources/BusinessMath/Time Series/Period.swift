@@ -291,6 +291,10 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return String(format: "%04d", components.year!)
 		}
 	}
+	
+	var description: String {
+		return label
+	}
 
 	// MARK: - Formatting
 
