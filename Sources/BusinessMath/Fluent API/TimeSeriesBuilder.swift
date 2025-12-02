@@ -42,8 +42,9 @@ public protocol TimeSeriesEntry<Value>: Sendable {
 @resultBuilder
 public struct TimeSeriesBuilder<T: Real & Sendable> {
     /// Build a block of time series entries.
-    public static func buildBlock(_ entries: TimeSeriesEntryImpl<T>...) -> [TimeSeriesEntryImpl<T>] {
-        entries
+    /// Accepts arrays as variadic parameters to match buildExpression's return type.
+    public static func buildBlock(_ entries: [TimeSeriesEntryImpl<T>]...) -> [TimeSeriesEntryImpl<T>] {
+        entries.flatMap { $0 }
     }
 
     /// Build an array of entries.

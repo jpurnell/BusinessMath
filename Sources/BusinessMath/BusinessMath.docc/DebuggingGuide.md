@@ -1,0 +1,767 @@
+# Debugging Financial Models
+
+Diagnose and fix issues in financial models effectively with comprehensive debugging tools.
+
+## Overview
+
+BusinessMath provides powerful debugging and diagnostic tools to help you trace calculations, validate models, and profile performance. These tools are essential for understanding complex financial models and ensuring accuracy.
+
+This guide shows you how to:
+- Use ``ModelDebugger`` to trace calculations and inspect model state
+- Profile performance with ``ModelProfiler``
+- Configure logging with ``BusinessMathLogger``
+- Validate model integrity
+- Diagnose common issues
+- Optimize model performance
+
+## Why Debugging Tools Matter
+
+Financial models can be complex, with:
+- **Circular dependencies** between accounts
+- **Missing data** that breaks calculations
+- **Performance bottlenecks** in large models
+- **Unexpected results** from formula errors
+
+The right debugging tools help you:
+- Trace calculation flows to understand results
+- Identify performance problems before they impact production
+- Validate model correctness automatically
+- Catch errors early in development
+
+## ModelDebugger: Inspection and Validation
+
+### Basic Usage
+
+The ``ModelDebugger`` provides real-time inspection of financial models:
+
+```swift
+import BusinessMath
+
+// Create a financial model
+let company = Entity(id: "ACME", primaryType: .ticker, name: "Acme Corp")
+let q1 = Period.quarter(year: 2025, quarter: 1)
+let periods = [q1, q1 + 1, q1 + 2, q1 + 3]
+
+let model = buildModel(for: company) {
+    Revenue("Product Sales", periods: periods, values: [100_000, 110_000, 120_000, 130_000])
+    Expense("COGS", periods: periods, values: [60_000, 66_000, 72_000, 78_000], type: .costOfGoodsSold)
+    Expense("OpEx", periods: periods, values: [20_000, 20_000, 20_000, 20_000], type: .operatingExpense)
+}
+
+// Create debugger and inspect model
+let debugger = ModelDebugger()
+let snapshot = await debugger.snapshot(of: model)
+
+print(snapshot.summary)
+// Model: Acme Corp
+// Accounts: 3 (1 revenue, 2 expenses)
+// Periods: 4 quarters
+// Status: Valid
+```
+
+### Detailed Model Inspection
+
+Inspect specific aspects of your model:
+
+```swift
+// Get detailed snapshot
+let debugger = ModelDebugger()
+let snapshot = await debugger.snapshot(of: model)
+
+// Inspect accounts
+print("Revenue Accounts:")
+for account in snapshot.revenueAccounts {
+    print("  \(account.name): $\(account.total)")
+}
+
+print("\nExpense Accounts:")
+for account in snapshot.expenseAccounts {
+    print("  \(account.name): $\(account.total)")
+    if let expenseType = account.expenseType {
+        print("    Type: \(expenseType)")
+    }
+}
+
+// Inspect periods
+print("\nPeriod Analysis:")
+for period in snapshot.periods {
+    let revenue = model.totalRevenue(for: period)
+    let expenses = model.totalExpenses(for: period)
+    let netIncome = revenue - expenses
+
+    print("\(period):")
+    print("  Revenue: $\(Int(revenue))")
+    print("  Expenses: $\(Int(expenses))")
+    print("  Net Income: $\(Int(netIncome))")
+}
+```
+
+### Calculation Tracing
+
+Trace how values are calculated:
+
+```swift
+let debugger = ModelDebugger()
+
+// Enable tracing
+await debugger.enableTracing()
+
+// Perform calculations
+let q1Revenue = model.totalRevenue(for: q1)
+
+// Get calculation trace
+let trace = await debugger.getTrace()
+
+print("Calculation Trace for Q1 Revenue:")
+for step in trace.steps {
+    print("\(step.operation): \(step.input) → \(step.output)")
+}
+
+// Example output:
+// GetAccount(Product Sales): Period(2025-Q1) → 100,000
+// Sum(Revenue Accounts): [100,000] → 100,000
+```
+
+### Validation Reports
+
+Validate model integrity:
+
+```swift
+let debugger = ModelDebugger()
+let validation = await debugger.validate(model)
+
+if validation.isValid {
+    print("✅ Model is valid")
+} else {
+    print("❌ Model has issues:")
+    for issue in validation.issues {
+        print("  [\(issue.severity)] \(issue.description)")
+        if let suggestion = issue.suggestion {
+            print("    Fix: \(suggestion)")
+        }
+    }
+}
+
+// Example issues:
+// [Warning] Missing data for Revenue in period 2025-Q4
+//    Fix: Add data or use fillMissing() to interpolate
+// [Error] Circular dependency: Account A → Account B → Account A
+//    Fix: Reorder calculations or use an iterative solver
+```
+
+### Finding Missing Data
+
+Identify gaps in your model:
+
+```swift
+let debugger = ModelDebugger()
+let missing = await debugger.findMissingData(in: model)
+
+if missing.isEmpty {
+    print("✅ No missing data")
+} else {
+    print("Missing Data:")
+    for (account, periods) in missing {
+        print("\(account):")
+        for period in periods {
+            print("  - \(period)")
+        }
+    }
+}
+```
+
+### Circular Dependency Detection
+
+Detect and diagnose circular dependencies:
+
+```swift
+let debugger = ModelDebugger()
+let cycles = await debugger.detectCircularDependencies(in: model)
+
+if cycles.isEmpty {
+    print("✅ No circular dependencies")
+} else {
+    print("⚠️  Circular Dependencies Detected:")
+    for cycle in cycles {
+        print("\nCycle \(cycle.id):")
+        print("  Path: \(cycle.path.joined(separator: " → "))")
+        print("  Severity: \(cycle.severity)")
+        print("  Suggestion: \(cycle.suggestion)")
+    }
+}
+
+// Example output:
+// Cycle 1:
+//   Path: Revenue → COGS → Gross Profit → Revenue
+//   Severity: Error
+//   Suggestion: Break cycle by using previous period's value for Revenue
+```
+
+## ModelProfiler: Performance Analysis
+
+### Basic Performance Profiling
+
+Measure execution time of operations:
+
+```swift
+import BusinessMath
+
+let profiler = ModelProfiler()
+
+// Measure a calculation
+let npvResult = await profiler.measure(operation: "NPV Calculation") {
+    npv(discountRate: 0.10, cashFlows: cashFlows)
+}
+
+// Get performance report
+let report = await profiler.report()
+print(report.formatted())
+
+// Example output:
+// === Performance Report ===
+// Generated: 2025-12-02 08:30:00
+// Total Operations: 1
+// Total Time: 0.002s
+//
+// Operation                      Count    Total        Avg          Min          Max
+// ----------------------------------------------------------------------------------
+// NPV Calculation                    1    0.002s       0.002s       0.002s       0.002s
+```
+
+### Profiling Multiple Operations
+
+Track performance across many calculations:
+
+```swift
+let profiler = ModelProfiler()
+
+// Profile model building
+_ = await profiler.measure(operation: "Build Model") {
+    buildModel(for: company) {
+        Revenue("Sales", periods: periods, values: revenueValues)
+        Expense("COGS", periods: periods, values: cogsValues, type: .costOfGoodsSold)
+        FixedCost("OpEx", periods: periods, value: 20_000)
+    }
+}
+
+// Profile calculations
+for period in periods {
+    _ = await profiler.measure(operation: "Calculate Net Income") {
+        let revenue = model.totalRevenue(for: period)
+        let expenses = model.totalExpenses(for: period)
+        return revenue - expenses
+    }
+}
+
+// Profile aggregations
+_ = await profiler.measure(operation: "Annual Totals") {
+    periods.map { model.totalRevenue(for: $0) }.reduce(0, +)
+}
+
+// Get comprehensive report
+let report = await profiler.report(sortBy: .totalTime)
+print(report.formatted())
+```
+
+### Detecting Performance Bottlenecks
+
+Identify slow operations automatically:
+
+```swift
+let profiler = ModelProfiler()
+
+// Set warning threshold (operations slower than 100ms)
+await profiler.setWarningThreshold(0.1)
+
+// Run operations
+for i in 1...100 {
+    await profiler.measure(operation: "Iteration \(i)") {
+        // Some calculation
+        expensiveOperation()
+    }
+}
+
+// Get bottlenecks
+let bottlenecks = await profiler.bottlenecks()
+
+if bottlenecks.isEmpty {
+    print("✅ No performance issues")
+} else {
+    print("⚠️  Performance Bottlenecks:")
+    for op in bottlenecks {
+        print("\(op.operation):")
+        print("  Average Time: \(String(format: "%.3f", op.averageTime))s")
+        print("  Executions: \(op.executionCount)")
+        print("  Total Time: \(String(format: "%.3f", op.totalTime))s")
+    }
+}
+```
+
+### Statistical Performance Analysis
+
+Analyze performance distributions:
+
+```swift
+let profiler = ModelProfiler()
+
+// Run multiple iterations
+for _ in 1...100 {
+    await profiler.measure(operation: "Monte Carlo Iteration") {
+        runMonteCarloIteration()
+    }
+}
+
+let report = await profiler.report()
+let stats = report.operations[0]
+
+print("Performance Statistics:")
+print("Executions: \(stats.executionCount)")
+print("Average: \(String(format: "%.3f", stats.averageTime))s")
+print("Min: \(String(format: "%.3f", stats.minTime))s")
+print("Max: \(String(format: "%.3f", stats.maxTime))s")
+print("Median: \(String(format: "%.3f", stats.medianTime))s")
+print("95th percentile: \(String(format: "%.3f", stats.percentile95))s")
+print("99th percentile: \(String(format: "%.3f", stats.percentile99))s")
+
+// Identify outliers
+if stats.maxTime > stats.averageTime * 3 {
+    print("⚠️  Outliers detected - investigate max time operations")
+}
+```
+
+### Memory Profiling
+
+Track memory usage:
+
+```swift
+let profiler = ModelProfiler()
+
+let result = await profiler.measure(operation: "Large Model") {
+    // Create large model
+    let largeModel = buildModel(for: company) {
+        ForEach(1...1000) { i in
+            Revenue("Product \(i)", periods: periods, values: Array(repeating: 100.0, count: periods.count))
+        }
+    }
+    return largeModel
+}
+
+let report = await profiler.report()
+let stats = report.operations[0]
+
+print("Memory Usage:")
+print("Total Memory: \(stats.totalMemory / 1024 / 1024) MB")
+print("Average per Execution: \(stats.averageMemory / 1024 / 1024) MB")
+```
+
+### Exporting Performance Data
+
+Export performance reports for analysis:
+
+```swift
+let profiler = ModelProfiler()
+
+// ... run profiled operations ...
+
+let report = await profiler.report()
+
+// Export as CSV
+let csv = report.asCSV()
+try csv.write(toFile: "performance_report.csv", atomically: true, encoding: .utf8)
+
+// Or get formatted text
+let formatted = report.formatted()
+print(formatted)
+```
+
+## BusinessMathLogger: Configurable Logging
+
+### Setting Up Logging
+
+Configure logging levels and output:
+
+```swift
+import BusinessMath
+
+// Get shared logger instance
+let logger = BusinessMathLogger.shared
+
+// Set log level
+logger.logLevel = .debug  // Options: .debug, .info, .warning, .error, .critical
+
+// Enable/disable logging
+logger.isEnabled = true
+
+// Log a message
+logger.info("Starting financial model calculation")
+logger.debug("Processing period: \(period)")
+logger.warning("Missing data for account: \(accountName)")
+logger.error("Calculation failed: \(error)")
+```
+
+### Log Levels
+
+Choose appropriate log levels:
+
+```swift
+// DEBUG: Detailed diagnostic information
+logger.debug("Account value: \(value), Period: \(period)")
+
+// INFO: General informational messages
+logger.info("Model validation completed successfully")
+
+// WARNING: Potentially problematic situations
+logger.warning("Low data quality detected in time series")
+
+// ERROR: Error events that might still allow continued operation
+logger.error("Failed to calculate IRR: \(error)")
+
+// CRITICAL: Severe errors requiring immediate attention
+logger.critical("Model validation failed with \(errorCount) errors")
+```
+
+### Structured Logging
+
+Log with structured context:
+
+```swift
+logger.log(
+    level: .info,
+    message: "NPV calculated",
+    context: [
+        "discountRate": "0.10",
+        "cashFlowCount": "5",
+        "result": "\(npvValue)"
+    ]
+)
+
+// Output:
+// [INFO] NPV calculated | discountRate=0.10, cashFlowCount=5, result=146.87
+```
+
+### Performance Logging
+
+Log performance metrics:
+
+```swift
+let start = Date()
+
+// ... perform calculation ...
+
+let duration = Date().timeIntervalSince(start)
+logger.performance("NPV Calculation", duration: duration)
+
+// If duration exceeds threshold, logs warning automatically
+// [PERFORMANCE] NPV Calculation: 0.003s
+```
+
+### Execution Timeline
+
+Create execution timelines:
+
+```swift
+logger.timeline("Model Execution") {
+    logger.timelineEvent("Load Data")
+    // Load data...
+
+    logger.timelineEvent("Build Model")
+    // Build model...
+
+    logger.timelineEvent("Validate")
+    // Validate...
+
+    logger.timelineEvent("Calculate")
+    // Calculate...
+}
+
+// Output:
+// [TIMELINE] Model Execution
+//   ├─ Load Data (0.002s)
+//   ├─ Build Model (0.015s)
+//   ├─ Validate (0.003s)
+//   └─ Calculate (0.008s)
+// Total: 0.028s
+```
+
+## Common Issues and Diagnosis
+
+### Issue: Unexpected Calculation Results
+
+**Symptoms:**
+- NPV or IRR values don't match expectations
+- Revenue totals are incorrect
+- Time series calculations produce NaN
+
+**Diagnosis:**
+
+```swift
+let debugger = ModelDebugger()
+
+// 1. Inspect input data
+let snapshot = await debugger.snapshot(of: model)
+for account in snapshot.accounts {
+    print("\(account.name): \(account.values)")
+    // Check for NaN, negative values, or zeros
+}
+
+// 2. Trace calculation
+await debugger.enableTracing()
+let result = calculateNPV(...)
+let trace = await debugger.getTrace()
+print(trace.formatted())
+
+// 3. Validate model
+let validation = await debugger.validate(model)
+print(validation.report)
+```
+
+**Common Causes:**
+- Missing or NaN values in time series
+- Incorrect period alignment
+- Wrong discount rate or parameters
+- Formula errors in calculations
+
+### Issue: Performance Degradation
+
+**Symptoms:**
+- Slow model building
+- Long calculation times
+- UI freezes during operations
+
+**Diagnosis:**
+
+```swift
+let profiler = ModelProfiler()
+
+// 1. Profile operations
+_ = await profiler.measure(operation: "Build Model") {
+    buildModel(for: company) { ... }
+}
+
+// 2. Identify bottlenecks
+let bottlenecks = await profiler.bottlenecks(threshold: 0.05)  // 50ms threshold
+for op in bottlenecks {
+    print("\(op.operation): \(op.averageTime)s")
+}
+
+// 3. Analyze distribution
+let report = await profiler.report()
+for op in report.operations {
+    if op.maxTime > op.averageTime * 5 {
+        print("⚠️  \(op.operation) has outliers")
+    }
+}
+```
+
+**Common Causes:**
+- Too many accounts in model
+- Inefficient loops or recursion
+- Unnecessary recalculations
+- Large time series operations
+
+**Solutions:**
+- Cache calculated values
+- Use batch operations
+- Optimize data structures
+- Parallelize independent calculations
+
+### Issue: Missing Data
+
+**Symptoms:**
+- NaN in results
+- Incomplete time series
+- Validation errors
+
+**Diagnosis:**
+
+```swift
+let debugger = ModelDebugger()
+
+// Find all missing data
+let missing = await debugger.findMissingData(in: model)
+
+for (account, periods) in missing {
+    print("\(account) missing data:")
+    for period in periods {
+        print("  - \(period)")
+    }
+}
+
+// Check data quality
+let validation = await debugger.validate(model)
+let dataIssues = validation.issues.filter { $0.category == .dataQuality }
+
+for issue in dataIssues {
+    print(issue.description)
+    print("Fix: \(issue.suggestion ?? "No suggestion")")
+}
+```
+
+**Solutions:**
+- Use `fillMissing()` to interpolate: `timeSeries.fillMissing()`
+- Use `fillForward()`: `timeSeries.fillForward()`
+- Add default values in model
+- Fix data source
+
+### Issue: Circular Dependencies
+
+**Symptoms:**
+- Stack overflow
+- Infinite recursion
+- Model won't build
+
+**Diagnosis:**
+
+```swift
+let debugger = ModelDebugger()
+let cycles = await debugger.detectCircularDependencies(in: model)
+
+for cycle in cycles {
+    print("Circular dependency: \(cycle.path.joined(separator: " → "))")
+    print("Suggestion: \(cycle.suggestion)")
+}
+```
+
+**Solutions:**
+- Reorder calculations
+- Use previous period values
+- Implement iterative solver
+- Break dependency with intermediate value
+
+### Issue: Memory Leaks
+
+**Symptoms:**
+- Growing memory usage
+- App crashes
+- Slow performance over time
+
+**Diagnosis:**
+
+```swift
+let profiler = ModelProfiler()
+
+// Monitor memory over time
+for iteration in 1...100 {
+    _ = await profiler.measure(operation: "Iteration \(iteration)") {
+        createModel()
+    }
+
+    if iteration % 10 == 0 {
+        let report = await profiler.report(operations: ["Iteration \(iteration)"])
+        let memory = report.operations[0].averageMemory
+        print("Iteration \(iteration): \(memory / 1024 / 1024) MB")
+    }
+}
+
+// If memory grows linearly, investigate for leaks
+```
+
+**Solutions:**
+- Clear caches periodically
+- Use weak references where appropriate
+- Release large objects when done
+- Use Instruments Memory Profiler for detailed analysis
+
+## Best Practices
+
+### 1. Enable Debugging During Development
+
+Always use debugging tools during development:
+
+```swift
+#if DEBUG
+let debugger = ModelDebugger()
+let validation = await debugger.validate(model)
+
+if !validation.isValid {
+    print("⚠️  Model validation failed:")
+    print(validation.report)
+}
+#endif
+```
+
+### 2. Profile Performance Early
+
+Profile performance before problems occur:
+
+```swift
+let profiler = ModelProfiler()
+
+// Profile in test suite
+@Test("Model building performance")
+func testModelPerformance() async {
+    let result = await profiler.measure(operation: "Build Large Model") {
+        buildLargeModel()
+    }
+
+    let report = await profiler.report()
+    #expect(report.operations[0].averageTime < 0.1)  // Should be under 100ms
+}
+```
+
+### 3. Use Appropriate Log Levels
+
+Configure logging based on environment:
+
+```swift
+#if DEBUG
+BusinessMathLogger.shared.logLevel = .debug
+#else
+BusinessMathLogger.shared.logLevel = .warning
+#endif
+```
+
+### 4. Validate Models Before Production
+
+Always validate before using in production:
+
+```swift
+func deployModel(_ model: FinancialModel) async throws {
+    let debugger = ModelDebugger()
+    let validation = await debugger.validate(model)
+
+    guard validation.isValid else {
+        throw ModelError.validationFailed(validation.issues)
+    }
+
+    // Proceed with deployment
+}
+```
+
+### 5. Monitor Performance in Production
+
+Track performance metrics:
+
+```swift
+let profiler = ModelProfiler()
+
+// In production, sample a percentage of requests
+if Double.random(in: 0...1) < 0.01 {  // 1% sampling
+    _ = await profiler.measure(operation: "Production Calculation") {
+        performCalculation()
+    }
+
+    // Log if slow
+    let report = await profiler.report()
+    if let op = report.operations.first, op.averageTime > 0.5 {
+        logger.warning("Slow calculation detected: \(op.averageTime)s")
+    }
+}
+```
+
+## Next Steps
+
+- Learn about <doc:ErrorHandlingGuide> for handling errors gracefully
+- Explore <doc:FluentAPIGuide> for building models that are easier to debug
+- Read <doc:PerformanceOptimizationGuide> for optimization techniques
+- Check <doc:TestingGuide> for testing strategies
+- Review <doc:ScenarioAnalysisGuide> for validation workflows
+
+## See Also
+
+- ``ModelDebugger``
+- ``ModelProfiler``
+- ``BusinessMathLogger``
+- ``ValidationReport``
+- ``PerformanceReport``
+- ``CalculationTrace``
