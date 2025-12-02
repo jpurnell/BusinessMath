@@ -76,7 +76,7 @@ public actor ModelProfiler {
     ///     calculateNPV(flows, rate: 0.08)
     /// }
     /// ```
-    public func measure<T>(
+	public func measure<T: Sendable>(
         operation: String,
         category: String? = nil,
         block: () throws -> T
@@ -126,7 +126,7 @@ public actor ModelProfiler {
     ///   - block: Async operation to measure
     ///
     /// - Returns: Result of the operation
-    public func measureAsync<T>(
+	public func measureAsync<T: Sendable>(
         operation: String,
         category: String? = nil,
         block: () async throws -> T

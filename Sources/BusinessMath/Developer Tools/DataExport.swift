@@ -138,7 +138,7 @@ public struct TimeSeriesExporter<T: Real & Sendable>: Sendable {
     /// The time series to export
     public let series: TimeSeries<T>
 
-    public init(series: TimeSeries<T>) {
+	public init(series: TimeSeries<T>) {
         self.series = series
     }
 

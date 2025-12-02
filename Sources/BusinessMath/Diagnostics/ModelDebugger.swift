@@ -72,7 +72,7 @@ public struct ModelDebugger: Sendable {
     ///     price * quantity
     /// }
     /// ```
-    public func trace<T>(
+	public func trace<T>(
         value: String,
         calculation: () throws -> T
     ) -> DebugTrace<T> where T: Sendable {
@@ -382,7 +382,7 @@ public struct ModelDebugger: Sendable {
 // MARK: - Calculation Trace Types
 
 /// Result of a basic calculation trace
-public struct DebugTrace<T>: Sendable where T: Sendable {
+public struct DebugTrace<T: Sendable> {
     /// Name of the value being calculated
     public let value: String
 
@@ -425,7 +425,7 @@ public struct DebugTrace<T>: Sendable where T: Sendable {
 }
 
 /// Detailed calculation trace with dependencies and formula
-public struct DetailedDebugTrace<T>: Sendable where T: Sendable {
+public struct DetailedDebugTrace<T: Sendable> {
     /// Name of the value being calculated
     public let value: String
 
