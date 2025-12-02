@@ -271,21 +271,21 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 
 		switch type {
 		case .daily:
-			return String(format: "%04d-%02d-%02d",
-						  components.year!,
-						  components.month!,
-						  components.day!)
+			let yearStr = String(year).padding(toLength: 4, withPad: "0", startingAt: 0)
+			let monthStr = String(month).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(day).paddingLeft(toLength: 2, withPad: "0")
+			return "\(yearStr)-\(monthStr)-\(dayStr)"
 
 		case .monthly:
-			return String(format: "%04d-%02d",
-						  components.year!,
-						  components.month!)
+			let yearStr = String(year).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(month).paddingLeft(toLength: 2, withPad: "0")
+			return "\(yearStr)-\(monthStr)"
 
 		case .quarterly:
+			let yearStr = String(year).paddingLeft(toLength: 4, withPad: "0")
 			let quarter = (components.month! - 1) / 3 + 1
-			return String(format: "%04d-Q%d",
-						  components.year!,
-						  quarter)
+			let quarterStr = String(quarter).paddingLeft(toLength: 2, withPad: "Q")
+			return "\(yearStr)-\(quarterStr)"
 
 		case .annual:
 			return String(format: "%04d", components.year!)

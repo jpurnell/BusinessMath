@@ -241,13 +241,13 @@ public struct EfficientFrontierTool: MCPToolHandler, Sendable {
             let maxWeightIndex = allocation.weights.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
             let topAsset = assetNames[maxWeightIndex]
             let topWeight = allocation.weights[maxWeightIndex]
-
-            result += String(format: "\n %6.2f%%  | %7.2f%%  | %6.3f | %s (%.0f%%)",
-                           allocation.risk * 100,
-                           allocation.expectedReturn * 100,
-                           allocation.sharpeRatio,
-                           topAsset,
-                           topWeight * 100)
+			result += "[\n \((allocation.risk * 100).digits(2).paddingLeft(toLength: 6)) | \((allocation.risk * 100).digits(2).paddingLeft(toLength: 7))) | \(allocation.sharpeRatio.digits(2).paddingLeft(toLength: 6)) | \(topAsset) | \(topWeight.digits(1).paddingLeft(toLength: 4))%]"
+//            result += String(format: "\n %6.2f%%  | %7.2f%%  | %6.3f | %s (%.0f%%)",
+//                           allocation.risk * 100,
+//                           allocation.expectedReturn * 100,
+//                           allocation.sharpeRatio,
+//                           topAsset,
+//                           topWeight * 100)
         }
 
         // Find key points

@@ -283,9 +283,9 @@ struct PeriodTests {
 		components.day = 15
 		let calendar = Calendar.current
 		let date = calendar.date(from: components)!
-
+		print(date)
 		let period = Period.day(date)
-
+		print(period)
 		// Compact format: "2025-01-15"
 		#expect(period.label == "2025-01-15")
 	}

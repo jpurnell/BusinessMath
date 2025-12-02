@@ -135,33 +135,7 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 
 		// Format the line based on decimal places
 		let line: String
-		switch decimalPlaces {
-		case 0:
-			line = String(format: "[%8.0f - %8.0f):  %@ %4d (%5.1f%%)\n",
-				bin.range.lowerBound,
-				bin.range.upperBound,
-				paddedBar,
-				bin.count,
-				percentage
-			)
-		case 1:
-			line = String(format: "[%8.1f - %8.1f):  %@ %4d (%5.1f%%)\n",
-				bin.range.lowerBound,
-				bin.range.upperBound,
-				paddedBar,
-				bin.count,
-				percentage
-			)
-		default: // 2 decimal places
-			line = String(format: "[%8.2f - %8.2f):  %@ %4d (%5.1f%%)\n",
-				bin.range.lowerBound,
-				bin.range.upperBound,
-				paddedBar,
-				bin.count,
-				percentage
-			)
-		}
-
+		line = "[\(bin.range.lowerBound.digits(decimalPlaces).paddingLeft(toLength: 8)) - \(bin.range.upperBound.digits(decimalPlaces).paddingLeft(toLength: 8))):  \(paddedBar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.digits(1))%)\n"
 		output += line
 	}
 
@@ -266,6 +240,11 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 	// Build output string
 	var output = "Tornado Diagram - Sensitivity Analysis\n"
 	output += String(format: "Base Case: %.\(decimalPlaces)f\n\n", baseCaseOutput)
+	
+	// Format the bar line
+	func barLine(_ paddedName: String, _ paddedLeftBar: String, _ paddedRightBar: String) -> String {
+		return "\(paddedName) ◄\(paddedLeftBar)|\(paddedRightBar)►"
+	}
 
 	// Render each input (already sorted by impact)
 	for input in analysis.inputs {
@@ -311,18 +290,11 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		let paddedLeftBar = String(repeating: " ", count: maxBarWidth - leftWidth) + leftBar
 		let paddedRightBar = rightBar.padding(toLength: maxBarWidth, withPad: " ", startingAt: 0)
 
-		// Format the bar line
-		let barLine = String(format: "%@ ◄%@│%@►",
-			paddedName,
-			paddedLeftBar,
-			paddedRightBar
-		)
-
 		// Format impact info
 		let impactInfo = String(format: " Impact: %.\(decimalPlaces)f (%.\(decimalPlaces == 0 ? 1 : decimalPlaces)f%%)",
 			impact, percentImpact)
 
-		output += barLine + impactInfo + "\n"
+		output += barLine(paddedName, paddedLeftBar, paddedRightBar) + impactInfo + "\n"
 
 		// Add value labels underneath
 		let valueLabels = String(format: "%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f\n",

@@ -282,18 +282,18 @@ public struct ModelInspector: Sendable {
 
         summary += "Financial Metrics:\n"
         summary += "------------------\n"
-        summary += String(format: "Total Revenue: $%,.2f\n", totalRevenue)
-        summary += String(format: "Total Costs: $%,.2f\n", totalCosts)
-        summary += String(format: "Profit: $%,.2f\n", profit)
+		summary += "\("Total Revenue:".padding(toLength: 15, withPad: " ", startingAt: 0))\(totalRevenue.currency())\n"
+		summary += "\("Total Costs:".padding(toLength: 15, withPad: " ", startingAt: 0))\(totalCosts.currency())\n"
+		summary += "\("Profit:".padding(toLength: 15, withPad: " ", startingAt: 0))\(profit.currency())\n"
 
         let margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0
-        summary += String(format: "Profit Margin: %.2f%%\n\n", margin)
+		summary += "\("Profit Margin:".padding(toLength: 15, withPad: " ", startingAt: 0))\(margin.digits(2))%\n\n"
 
         // List revenue sources
         if !model.revenueComponents.isEmpty {
             summary += "Revenue Sources:\n"
             for revenue in model.revenueComponents {
-                summary += String(format: "  • %@: $%,.2f\n", revenue.name, revenue.amount)
+                summary += "  • \(revenue.name): \(revenue.amount.currency())\n"
             }
             summary += "\n"
         }
@@ -304,11 +304,10 @@ public struct ModelInspector: Sendable {
             for cost in model.costComponents {
                 switch cost.type {
                 case .fixed(let amount):
-                    summary += String(format: "  • %@ (Fixed): $%,.2f\n", cost.name, amount)
+						summary += "  • \(cost.name): \(amount.currency())\n"
                 case .variable(let percentage):
                     let variableAmount = totalRevenue * percentage
-                    summary += String(format: "  • %@ (Variable %.1f%%): $%,.2f\n",
-                                    cost.name, percentage * 100, variableAmount)
+					summary += "  • \(cost.name): \((percentage * 100).digits(1))%: \(variableAmount.currency())\n"
                 }
             }
             summary += "\n"

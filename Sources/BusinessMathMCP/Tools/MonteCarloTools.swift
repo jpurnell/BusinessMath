@@ -580,17 +580,25 @@ public struct AnalyzeSimulationResultsTool: MCPToolHandler, Sendable {
         // Generate histogram
         let histogram = results.histogram(bins: 20)
         let maxCount = histogram.map { $0.count }.max() ?? 1
+		
+		// Determine decimal places based on value magnitude
+		let maxValue = histogram.map { $0.range.upperBound }.max() ?? 1.0
+		let decimalPlaces: Int
+		if maxValue > 1000 {
+			decimalPlaces = 0
+		} else if maxValue > 10 {
+			decimalPlaces = 1
+		} else {
+			decimalPlaces = 2
+		}
 
         var histogramText = "\n\nDistribution Histogram (20 bins):\n"
         for bin in histogram {
             let barLength = Int(Double(bin.count) / Double(maxCount) * 40)
             let bar = String(repeating: "█", count: barLength)
-            histogramText += String(format: "[%8.2f - %8.2f): %s %d (%.1f%%)\n",
-                bin.range.lowerBound,
-                bin.range.upperBound,
-                bar,
-                bin.count,
-                Double(bin.count) / Double(values.count) * 100)
+			let percentage = Double(bin.count) / Double(values.count) * 100
+			
+			histogramText += "[\(bin.range.lowerBound.digits(decimalPlaces).paddingLeft(toLength: 8)) - \(bin.range.upperBound.digits(decimalPlaces).paddingLeft(toLength: 8))):  \(bar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.digits(1))%)\n"
         }
 
         let output = """

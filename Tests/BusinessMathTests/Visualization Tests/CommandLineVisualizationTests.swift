@@ -202,6 +202,7 @@ import Foundation
 
 		// When
 		let output = plotHistogram(histogram)
+		print(output)
 
 		// Then
 		#expect(output.hasPrefix("Histogram"), "Should start with 'Histogram'")
@@ -217,6 +218,7 @@ import Foundation
 
 		// When
 		let output = plotHistogram(histogram)
+		print(output)
 		let lines = output.components(separatedBy: "\n").filter { !$0.isEmpty }
 
 		// Then
