@@ -1,0 +1,848 @@
+# Model Templates Guide
+
+Jump-start financial modeling with industry-specific templates that handle common business patterns.
+
+## Overview
+
+BusinessMath provides pre-built financial model templates for common business types. These templates encapsulate industry best practices, standard metrics, and typical financial structures, allowing you to start with a working model and customize it for your specific needs.
+
+This guide shows you how to:
+- Use built-in templates for SaaS, Retail, Manufacturing, Marketplace, and Subscription businesses
+- Understand key metrics for each business model
+- Customize templates for your specific business
+- Project financials using templates
+- Analyze template outputs
+
+## Why Templates?
+
+Templates save time and reduce errors by providing:
+- **Pre-configured metrics** specific to each industry
+- **Validated calculations** following industry standards
+- **Consistent structure** across similar businesses
+- **Best practices** built in from the start
+- **Faster iteration** on business models
+
+## Available Templates
+
+| Template | Best For | Key Metrics |
+|----------|----------|-------------|
+| ``SaaSModel`` | Software as a Service | MRR, ARR, Churn, LTV, CAC |
+| ``RetailModel`` | Retail businesses | Same-store sales, inventory turns, foot traffic |
+| ``ManufacturingModel`` | Manufacturing | Capacity utilization, unit economics, material costs |
+| ``MarketplaceModel`` | Two-sided marketplaces | GMV, take rate, buyer/seller metrics |
+| ``SubscriptionBoxModel`` | Subscription boxes | Subscriber growth, ARPU, cohort retention |
+
+## SaaS Template
+
+### Overview
+
+The SaaS template models Software as a Service businesses with monthly recurring revenue, customer acquisition, and churn.
+
+**Key Metrics:**
+- Monthly Recurring Revenue (MRR)
+- Annual Recurring Revenue (ARR)
+- Customer churn rate
+- Customer Lifetime Value (LTV)
+- Customer Acquisition Cost (CAC)
+- LTV:CAC ratio
+- Rule of 40 (Growth Rate + Profit Margin)
+
+### Basic Usage
+
+```swift
+import BusinessMath
+
+// Create a SaaS model
+let model = SaaSModel(
+    initialMRR: 10_000,                    // Starting at $10k MRR
+    churnRate: 0.05,                       // 5% monthly churn
+    newCustomersPerMonth: 100,             // Acquiring 100 customers/month
+    averageRevenuePerUser: 100,            // $100 ARPU
+    grossMargin: 0.85,                     // 85% gross margin
+    customerAcquisitionCost: 300          // $300 CAC
+)
+
+// Project MRR for 36 months
+let mrrProjection = model.projectMRR(months: 36)
+
+// Calculate key metrics
+let ltv = model.calculateLTV()             // Customer Lifetime Value
+let ltvToCAC = model.calculateLTVtoCAC()  // LTV:CAC ratio (should be > 3.0)
+let arr = model.calculateARR(forMonth: 12) // Annual Recurring Revenue
+
+print("Year 1 ARR: $\(arr)")
+print("LTV: $\(ltv)")
+print("LTV:CAC: \(ltvToCAC)x")
+
+// Rule of 40 check
+let growthRate = model.calculateGrowthRate(from: 1, to: 12)
+let profitMargin = 0.20  // 20% profit margin
+let ruleOf40 = growthRate + profitMargin
+
+if ruleOf40 >= 0.40 {
+    print("✅ Meets Rule of 40: \(ruleOf40 * 100)%")
+} else {
+    print("⚠️  Below Rule of 40: \(ruleOf40 * 100)%")
+}
+```
+
+### Advanced SaaS Modeling
+
+```swift
+// Model with price increases
+let model = SaaSModel(
+    initialMRR: 50_000,
+    churnRate: 0.03,                       // Lower churn for established SaaS
+    newCustomersPerMonth: 200,
+    averageRevenuePerUser: 250,
+    grossMargin: 0.88,
+    customerAcquisitionCost: 750,
+    priceIncreases: [
+        (month: 12, percentage: 0.10),     // 10% increase after year 1
+        (month: 24, percentage: 0.08)      // 8% increase after year 2
+    ]
+)
+
+// Project with price increases factored in
+let projection = model.projectMRR(months: 36)
+
+// Analyze customer count trends
+for month in [1, 12, 24, 36] {
+    let customers = model.calculateCustomerCount(forMonth: month)
+    let mrr = model.calculateMRR(forMonth: month)
+    let arpu = mrr / customers
+
+    print("Month \(month): \(Int(customers)) customers, $\(Int(mrr)) MRR, $\(Int(arpu)) ARPU")
+}
+
+// Cohort analysis
+let cohortRetention = (1...12).map { month in
+    1.0 - (model.churnRate * Double(month))
+}
+
+print("12-month cohort retention: \(cohortRetention.last! * 100)%")
+```
+
+### SaaS Scenario Planning
+
+```swift
+// Base case
+let baseCase = SaaSModel(
+    initialMRR: 100_000,
+    churnRate: 0.04,
+    newCustomersPerMonth: 400,
+    averageRevenuePerUser: 250,
+    customerAcquisitionCost: 750
+)
+
+// Best case: Lower churn, more customers
+let bestCase = SaaSModel(
+    initialMRR: 100_000,
+    churnRate: 0.02,                       // 50% better retention
+    newCustomersPerMonth: 600,             // 50% more acquisition
+    averageRevenuePerUser: 250,
+    customerAcquisitionCost: 600           // 20% lower CAC
+)
+
+// Worst case: Higher churn, fewer customers
+let worstCase = SaaSModel(
+    initialMRR: 100_000,
+    churnRate: 0.06,                       // 50% worse retention
+    newCustomersPerMonth: 250,             // 37% less acquisition
+    averageRevenuePerUser: 250,
+    customerAcquisitionCost: 900           // 20% higher CAC
+)
+
+// Compare scenarios
+let scenarios = [("Base", baseCase), ("Best", bestCase), ("Worst", worstCase)]
+
+print("12-Month Projections:")
+for (name, model) in scenarios {
+    let mrr = model.calculateMRR(forMonth: 12)
+    let ltv = model.calculateLTV()
+    let ltvToCAC = model.calculateLTVtoCAC()
+
+    print("\(name) Case:")
+    print("  MRR: $\(Int(mrr))")
+    print("  LTV: $\(Int(ltv))")
+    print("  LTV:CAC: \(String(format: "%.1f", ltvToCAC))x")
+    print()
+}
+```
+
+## Retail Template
+
+### Overview
+
+The Retail template models physical or online retail businesses with inventory, foot traffic, and same-store sales analysis.
+
+**Key Metrics:**
+- Same-store sales growth
+- Inventory turnover
+- Foot traffic (customers per period)
+- Conversion rate
+- Average transaction value
+- Revenue per square foot
+- Gross margin
+
+### Basic Usage
+
+```swift
+import BusinessMath
+
+// Create a retail model
+let model = RetailModel(
+    numberOfStores: 10,
+    averageStoreRevenue: 50_000,           // $50k per store per month
+    sameStoreSalesGrowth: 0.05,            // 5% comp store growth
+    footTraffic: 2_000,                    // 2,000 customers per store per month
+    conversionRate: 0.25,                  // 25% of visitors buy
+    averageTransaction: 100,               // $100 average sale
+    costOfGoodsSold: 0.60,                 // 60% COGS
+    operatingExpensesPerStore: 15_000      // $15k OpEx per store
+)
+
+// Calculate key metrics
+let totalRevenue = model.calculateTotalRevenue()
+let inventoryTurns = model.calculateInventoryTurns()
+let grossMargin = 1.0 - model.costOfGoodsSold
+
+print("Monthly Revenue: $\(totalRevenue)")
+print("Inventory Turns: \(inventoryTurns)x per year")
+print("Gross Margin: \(grossMargin * 100)%")
+
+// Store performance metrics
+let revenuePerSqFt = model.calculateRevenuePerSquareFoot(squareFootage: 2_000)
+print("Revenue/SqFt: $\(revenuePerSqFt)")
+```
+
+### Multi-Store Analysis
+
+```swift
+// Model with varying store performance
+let stores = [
+    ("Store A", 60_000),  // High performer
+    ("Store B", 50_000),  // Average
+    ("Store C", 45_000),  // Below average
+    ("Store D", 55_000),  // Above average
+    ("Store E", 40_000)   // Underperformer
+]
+
+var totalRevenue = 0.0
+var performanceData: [(String, Double, String)] = []
+
+for (name, revenue) in stores {
+    let performance: String
+    if revenue >= 55_000 {
+        performance = "Excellent"
+    } else if revenue >= 48_000 {
+        performance = "Good"
+    } else {
+        performance = "Needs Improvement"
+    }
+
+    totalRevenue += revenue
+    performanceData.append((name, revenue, performance))
+}
+
+print("Store Performance Analysis:")
+for (name, revenue, performance) in performanceData.sorted(by: { $0.1 > $1.1 }) {
+    print("\(name): $\(Int(revenue)) - \(performance)")
+}
+
+print("\nTotal Revenue: $\(Int(totalRevenue))")
+print("Average per Store: $\(Int(totalRevenue / Double(stores.count)))")
+```
+
+### Inventory Management
+
+```swift
+let model = RetailModel(
+    numberOfStores: 5,
+    averageStoreRevenue: 75_000,
+    sameStoreSalesGrowth: 0.08,
+    footTraffic: 3_000,
+    conversionRate: 0.30,
+    averageTransaction: 125,
+    costOfGoodsSold: 0.55,
+    operatingExpensesPerStore: 20_000
+)
+
+// Calculate optimal inventory levels
+let monthlyRevenue = model.calculateTotalRevenue()
+let monthlyCOGS = monthlyRevenue * model.costOfGoodsSold
+let targetTurns = 6.0  // Target 6 turns per year
+
+let optimalInventory = (monthlyCOGS * 12) / targetTurns
+
+print("Monthly COGS: $\(Int(monthlyCOGS))")
+print("Optimal Inventory: $\(Int(optimalInventory))")
+print("Inventory per Store: $\(Int(optimalInventory / Double(model.numberOfStores)))")
+```
+
+## Manufacturing Template
+
+### Overview
+
+The Manufacturing template models production-based businesses with capacity utilization, material costs, and labor efficiency.
+
+**Key Metrics:**
+- Capacity utilization
+- Unit production cost
+- Material cost per unit
+- Labor cost per unit
+- Overhead allocation
+- Production volume
+- Contribution margin
+
+### Basic Usage
+
+```swift
+import BusinessMath
+
+// Create a manufacturing model
+let model = ManufacturingModel(
+    productionCapacity: 10_000,            // 10,000 units per month capacity
+    actualProduction: 8_500,               // Currently producing 8,500 units
+    materialCostPerUnit: 15.0,             // $15 materials per unit
+    laborCostPerUnit: 10.0,                // $10 labor per unit
+    overheadCosts: 50_000,                 // $50k monthly overhead
+    sellingPricePerUnit: 50.0             // $50 selling price
+)
+
+// Calculate metrics
+let utilization = model.calculateCapacityUtilization()
+let unitCost = model.calculateUnitCost()
+let contributionMargin = model.calculateContributionMargin()
+
+print("Capacity Utilization: \(utilization * 100)%")
+print("Unit Cost: $\(unitCost)")
+print("Contribution Margin: $\(contributionMargin) per unit")
+
+// Financial projections
+let revenue = Double(model.actualProduction) * model.sellingPricePerUnit
+let totalCost = Double(model.actualProduction) * unitCost
+let profit = revenue - totalCost
+
+print("\nMonthly Financials:")
+print("Revenue: $\(Int(revenue))")
+print("Total Cost: $\(Int(totalCost))")
+print("Profit: $\(Int(profit))")
+```
+
+### Capacity Planning
+
+```swift
+// Scenario: Increase production to full capacity
+let currentModel = ManufacturingModel(
+    productionCapacity: 10_000,
+    actualProduction: 7_000,
+    materialCostPerUnit: 12.0,
+    laborCostPerUnit: 8.0,
+    overheadCosts: 40_000,
+    sellingPricePerUnit: 45.0
+)
+
+let fullCapacityModel = ManufacturingModel(
+    productionCapacity: 10_000,
+    actualProduction: 10_000,              // At full capacity
+    materialCostPerUnit: 11.5,             // Bulk discount on materials
+    laborCostPerUnit: 8.0,
+    overheadCosts: 42_000,                 // Slightly higher overhead
+    sellingPricePerUnit: 45.0
+)
+
+// Compare scenarios
+let scenarios = [("Current", currentModel), ("Full Capacity", fullCapacityModel)]
+
+print("Capacity Analysis:")
+for (name, model) in scenarios {
+    let units = model.actualProduction
+    let utilization = model.calculateCapacityUtilization()
+    let unitCost = model.calculateUnitCost()
+    let revenue = Double(units) * model.sellingPricePerUnit
+    let totalCost = Double(units) * unitCost
+    let profit = revenue - totalCost
+
+    print("\(name):")
+    print("  Production: \(units) units (\(Int(utilization * 100))% capacity)")
+    print("  Unit Cost: $\(String(format: "%.2f", unitCost))")
+    print("  Profit: $\(Int(profit))")
+    print()
+}
+```
+
+### Break-Even Analysis
+
+```swift
+let model = ManufacturingModel(
+    productionCapacity: 15_000,
+    actualProduction: 12_000,
+    materialCostPerUnit: 18.0,
+    laborCostPerUnit: 12.0,
+    overheadCosts: 75_000,
+    sellingPricePerUnit: 60.0
+)
+
+// Calculate break-even point
+let variableCost = model.materialCostPerUnit + model.laborCostPerUnit
+let contributionMargin = model.sellingPricePerUnit - variableCost
+let breakEvenUnits = Int(model.overheadCosts / contributionMargin)
+
+print("Variable Cost per Unit: $\(variableCost)")
+print("Contribution Margin: $\(contributionMargin)")
+print("Break-Even Units: \(breakEvenUnits)")
+print("Break-Even Utilization: \(Double(breakEvenUnits) / Double(model.productionCapacity) * 100)%")
+
+// Safety margin
+let currentUnits = model.actualProduction
+let safetyMargin = (Double(currentUnits) - Double(breakEvenUnits)) / Double(currentUnits)
+print("Safety Margin: \(safetyMargin * 100)%")
+```
+
+## Marketplace Template
+
+### Overview
+
+The Marketplace template models two-sided platforms connecting buyers and sellers, tracking GMV and take rates.
+
+**Key Metrics:**
+- Gross Merchandise Volume (GMV)
+- Take rate (marketplace commission)
+- Number of buyers
+- Number of sellers
+- Transactions per period
+- Average order value
+- Buyer/Seller ratio
+
+### Basic Usage
+
+```swift
+import BusinessMath
+
+// Create a marketplace model
+let model = MarketplaceModel(
+    numberOfBuyers: 10_000,
+    numberOfSellers: 1_000,
+    transactionsPerMonth: 5_000,
+    averageOrderValue: 150,
+    takeRate: 0.15,                        // 15% commission
+    buyerAcquisitionCost: 25,
+    sellerAcquisitionCost: 100
+)
+
+// Calculate marketplace metrics
+let gmv = model.calculateGMV()
+let revenue = model.calculateRevenue()
+let buyerSellerRatio = model.calculateBuyerSellerRatio()
+
+print("GMV: $\(Int(gmv))")
+print("Revenue (15% take): $\(Int(revenue))")
+print("Buyer:Seller Ratio: \(String(format: "%.1f", buyerSellerRatio)):1")
+
+// Network effects analysis
+let transactionsPerBuyer = Double(model.transactionsPerMonth) / Double(model.numberOfBuyers)
+let transactionsPerSeller = Double(model.transactionsPerMonth) / Double(model.numberOfSellers)
+
+print("\nEngagement:")
+print("Transactions/Buyer: \(String(format: "%.2f", transactionsPerBuyer))")
+print("Transactions/Seller: \(String(format: "%.1f", transactionsPerSeller))")
+```
+
+### Growth Scenarios
+
+```swift
+// Model marketplace growth
+let startModel = MarketplaceModel(
+    numberOfBuyers: 5_000,
+    numberOfSellers: 500,
+    transactionsPerMonth: 2_000,
+    averageOrderValue: 120,
+    takeRate: 0.15,
+    buyerAcquisitionCost: 30,
+    sellerAcquisitionCost: 150
+)
+
+// After 1 year of growth
+let year1Model = MarketplaceModel(
+    numberOfBuyers: 20_000,                // 4x growth
+    numberOfSellers: 1_500,                // 3x growth
+    transactionsPerMonth: 12_000,          // 6x growth (network effects)
+    averageOrderValue: 135,                // Higher AOV as platform matures
+    takeRate: 0.15,
+    buyerAcquisitionCost: 20,              // Improving CAC with scale
+    sellerAcquisitionCost: 100
+)
+
+print("Marketplace Growth Analysis:")
+print("\nStarting State:")
+print("GMV: $\(Int(startModel.calculateGMV()))")
+print("Revenue: $\(Int(startModel.calculateRevenue()))")
+
+print("\nAfter 1 Year:")
+print("GMV: $\(Int(year1Model.calculateGMV()))")
+print("Revenue: $\(Int(year1Model.calculateRevenue()))")
+
+let gmvGrowth = (year1Model.calculateGMV() / startModel.calculateGMV() - 1.0) * 100
+print("\nGMV Growth: \(Int(gmvGrowth))%")
+```
+
+### Liquidity Analysis
+
+```swift
+// Analyze marketplace liquidity
+let model = MarketplaceModel(
+    numberOfBuyers: 15_000,
+    numberOfSellers: 1_200,
+    transactionsPerMonth: 8_000,
+    averageOrderValue: 175,
+    takeRate: 0.12,
+    buyerAcquisitionCost: 22,
+    sellerAcquisitionCost: 120
+)
+
+// Liquidity metrics
+let buyersPerSeller = Double(model.numberOfBuyers) / Double(model.numberOfSellers)
+let transactionRate = Double(model.transactionsPerMonth) / Double(model.numberOfBuyers)
+let sellerUtilization = Double(model.transactionsPerMonth) / Double(model.numberOfSellers)
+
+print("Liquidity Metrics:")
+print("Buyers per Seller: \(String(format: "%.1f", buyersPerSeller))")
+print("Buyer Transaction Rate: \(String(format: "%.1f%%", transactionRate * 100))")
+print("Transactions per Seller: \(String(format: "%.1f", sellerUtilization))")
+
+// Health indicators
+let healthyBuyerRatio = buyersPerSeller >= 5.0 && buyersPerSeller <= 20.0
+let healthyTransactionRate = transactionRate >= 0.3  // 30% monthly transaction rate
+let healthySellerUtil = sellerUtilization >= 5.0     // 5+ transactions per seller
+
+print("\nMarketplace Health:")
+print("Buyer Ratio: \(healthyBuyerRatio ? "✅ Healthy" : "⚠️  Attention Needed")")
+print("Transaction Rate: \(healthyTransactionRate ? "✅ Healthy" : "⚠️  Attention Needed")")
+print("Seller Utilization: \(healthySellerUtil ? "✅ Healthy" : "⚠️  Attention Needed")")
+```
+
+## Subscription Box Template
+
+### Overview
+
+The Subscription Box template models recurring subscription businesses with subscriber growth, retention curves, and cohort analysis.
+
+**Key Metrics:**
+- Active subscribers
+- Subscriber growth rate
+- Churn/retention rate
+- Average Revenue Per User (ARPU)
+- Cohort retention curves
+- Lifetime value
+- Customer acquisition cost payback
+
+### Basic Usage
+
+```swift
+import BusinessMath
+
+// Create a subscription box model
+let model = SubscriptionBoxModel(
+    initialSubscribers: 1_000,
+    newSubscribersPerMonth: 200,
+    churnRate: 0.08,                       // 8% monthly churn
+    subscriptionPrice: 29.99,
+    productCost: 18.00,                    // $18 COGS per box
+    shippingCost: 4.50,
+    customerAcquisitionCost: 45
+)
+
+// Project growth
+let projection = model.projectSubscribers(months: 24)
+
+// Calculate metrics
+let month12Subscribers = model.calculateSubscribers(forMonth: 12)
+let month12Revenue = model.calculateRevenue(forMonth: 12)
+let ltv = model.calculateLTV()
+let ltvToCAC = model.calculateLTVtoCAC()
+
+print("Month 12 Projections:")
+print("Subscribers: \(Int(month12Subscribers))")
+print("Monthly Revenue: $\(Int(month12Revenue))")
+print("LTV: $\(Int(ltv))")
+print("LTV:CAC: \(String(format: "%.1f", ltvToCAC))x")
+```
+
+### Cohort Retention Analysis
+
+```swift
+let model = SubscriptionBoxModel(
+    initialSubscribers: 500,
+    newSubscribersPerMonth: 150,
+    churnRate: 0.06,
+    subscriptionPrice: 39.99,
+    productCost: 22.00,
+    shippingCost: 5.50,
+    customerAcquisitionCost: 60
+)
+
+// Calculate retention curve
+print("Cohort Retention Curve:")
+for month in 1...12 {
+    let retention = pow(1.0 - model.churnRate, Double(month))
+    let subscribers = 150.0 * retention  // Starting cohort of 150
+
+    print("Month \(month): \(String(format: "%.0f", subscribers)) subs (\(String(format: "%.1f%%", retention * 100)) retained)")
+}
+
+// Cohort value
+let cohortValue = (1...12).reduce(0.0) { total, month in
+    let retention = pow(1.0 - model.churnRate, Double(month))
+    let revenue = retention * model.subscriptionPrice
+    return total + revenue
+}
+
+print("\n12-Month Cohort Value: $\(String(format: "%.2f", cohortValue))")
+```
+
+### Pricing Experiments
+
+```swift
+// Compare pricing tiers
+let standard = SubscriptionBoxModel(
+    initialSubscribers: 2_000,
+    newSubscribersPerMonth: 300,
+    churnRate: 0.07,
+    subscriptionPrice: 29.99,
+    productCost: 18.00,
+    shippingCost: 4.50,
+    customerAcquisitionCost: 40
+)
+
+let premium = SubscriptionBoxModel(
+    initialSubscribers: 500,
+    newSubscribersPerMonth: 100,
+    churnRate: 0.05,                       // Lower churn for premium
+    subscriptionPrice: 49.99,
+    productCost: 28.00,                    // Higher quality products
+    shippingCost: 5.50,
+    customerAcquisitionCost: 65
+)
+
+let tiers = [("Standard", standard), ("Premium", premium)]
+
+print("Pricing Tier Analysis (Month 12):")
+for (name, model) in tiers {
+    let subs = model.calculateSubscribers(forMonth: 12)
+    let revenue = model.calculateRevenue(forMonth: 12)
+    let grossMargin = (model.subscriptionPrice - model.productCost - model.shippingCost) / model.subscriptionPrice
+
+    print("\n\(name) Tier:")
+    print("  Subscribers: \(Int(subs))")
+    print("  Revenue: $\(Int(revenue))")
+    print("  Gross Margin: \(String(format: "%.1f%%", grossMargin * 100))")
+    print("  LTV: $\(Int(model.calculateLTV()))")
+}
+```
+
+## Customizing Templates
+
+### Overriding Default Values
+
+Templates are value types (structs), making them easy to customize:
+
+```swift
+// Start with a base SaaS model
+var baseModel = SaaSModel(
+    initialMRR: 50_000,
+    churnRate: 0.04,
+    newCustomersPerMonth: 200,
+    averageRevenuePerUser: 250
+)
+
+// Create variations with different assumptions
+var highGrowth = baseModel
+highGrowth.newCustomersPerMonth = 400  // Cannot mutate - it's immutable
+
+// Instead, create new instances
+let highGrowth = SaaSModel(
+    initialMRR: baseModel.initialMRR,
+    churnRate: baseModel.churnRate,
+    newCustomersPerMonth: 400,             // Override
+    averageRevenuePerUser: baseModel.averageRevenuePerUser,
+    grossMargin: 0.90,                     // Add optional parameter
+    customerAcquisitionCost: 500
+)
+```
+
+### Extending Templates
+
+Add custom calculations:
+
+```swift
+extension SaaSModel {
+    /// Calculate the months until reaching a target MRR
+    func monthsToTarget(targetMRR: Double) -> Int? {
+        for month in 1...120 {  // Search up to 10 years
+            let mrr = calculateMRR(forMonth: month)
+            if mrr >= targetMRR {
+                return month
+            }
+        }
+        return nil  // Target not reached in 10 years
+    }
+
+    /// Calculate burn multiple (burn rate / net new ARR)
+    func calculateBurnMultiple(monthlyBurn: Double) -> Double? {
+        let startMRR = initialMRR
+        let endMRR = calculateMRR(forMonth: 12)
+        let netNewARR = (endMRR - startMRR) * 12
+
+        guard netNewARR > 0 else { return nil }
+        return (monthlyBurn * 12) / netNewARR
+    }
+}
+
+// Use custom extensions
+let model = SaaSModel(
+    initialMRR: 10_000,
+    churnRate: 0.03,
+    newCustomersPerMonth: 100,
+    averageRevenuePerUser: 100
+)
+
+if let months = model.monthsToTarget(targetMRR: 100_000) {
+    print("Reach $100k MRR in \(months) months")
+}
+
+if let burnMultiple = model.calculateBurnMultiple(monthlyBurn: 50_000) {
+    print("Burn Multiple: \(String(format: "%.2f", burnMultiple))x")
+    if burnMultiple <= 1.5 {
+        print("✅ Efficient growth")
+    } else {
+        print("⚠️  High burn relative to growth")
+    }
+}
+```
+
+## Best Practices
+
+### Choosing the Right Template
+
+1. **Match your business model**: Choose the template that most closely matches your revenue structure
+2. **Start simple**: Begin with default parameters, then customize
+3. **Validate assumptions**: Compare template outputs with historical data
+4. **Iterate**: Refine parameters based on actual performance
+
+### Template Limitations
+
+Templates provide guidance but have limitations:
+
+- **Simplified models**: Real businesses are more complex
+- **Static assumptions**: Parameters don't change over time (unless modeled explicitly)
+- **Industry averages**: Your business may differ from norms
+- **Linear projections**: Real growth is often non-linear
+
+**Recommendation**: Use templates for initial modeling, then build custom models for production financial planning.
+
+### Combining Templates
+
+For businesses with multiple revenue streams:
+
+```swift
+// E-commerce company with subscription and retail components
+let subscriptionRevenue = SubscriptionBoxModel(
+    initialSubscribers: 2_000,
+    newSubscribersPerMonth: 200,
+    churnRate: 0.05,
+    subscriptionPrice: 29.99,
+    productCost: 15.00,
+    shippingCost: 4.50,
+    customerAcquisitionCost: 40
+)
+
+let retailRevenue = RetailModel(
+    numberOfStores: 1,  // Online store
+    averageStoreRevenue: 100_000,
+    sameStoreSalesGrowth: 0.10,
+    footTraffic: 10_000,
+    conversionRate: 0.05,
+    averageTransaction: 200,
+    costOfGoodsSold: 0.65,
+    operatingExpensesPerStore: 30_000
+)
+
+// Combine revenue streams
+let subscriptionMRR = subscriptionRevenue.calculateRevenue(forMonth: 12)
+let retailMRR = retailRevenue.calculateTotalRevenue()
+let totalRevenue = subscriptionMRR + retailMRR
+
+print("Revenue Breakdown:")
+print("Subscription: $\(Int(subscriptionMRR)) (\(Int(subscriptionMRR / totalRevenue * 100))%)")
+print("Retail: $\(Int(retailMRR)) (\(Int(retailMRR / totalRevenue * 100))%)")
+print("Total: $\(Int(totalRevenue))")
+```
+
+## Common Workflows
+
+### Template-Based Financial Projections
+
+```swift
+// Create 3-year projection using SaaS template
+let model = SaaSModel(
+    initialMRR: 25_000,
+    churnRate: 0.04,
+    newCustomersPerMonth: 150,
+    averageRevenuePerUser: 167,
+    grossMargin: 0.85,
+    customerAcquisitionCost: 500
+)
+
+print("3-Year Financial Projection:")
+print("Year | MRR | ARR | Customers | LTV:CAC")
+print("-" * 50)
+
+for year in 1...3 {
+    let month = year * 12
+    let mrr = model.calculateMRR(forMonth: month)
+    let arr = model.calculateARR(forMonth: month)
+    let customers = model.calculateCustomerCount(forMonth: month)
+    let ltvToCAC = model.calculateLTVtoCAC()
+
+    print("\(year) | $\(Int(mrr)) | $\(Int(arr)) | \(Int(customers)) | \(String(format: "%.1f", ltvToCAC))x")
+}
+```
+
+### Sensitivity Analysis with Templates
+
+```swift
+// Analyze sensitivity to churn rate
+let churnRates = [0.02, 0.03, 0.04, 0.05, 0.06]
+
+print("Churn Rate Sensitivity Analysis (24-month MRR):")
+for churn in churnRates {
+    let model = SaaSModel(
+        initialMRR: 50_000,
+        churnRate: churn,
+        newCustomersPerMonth: 200,
+        averageRevenuePerUser: 250
+    )
+
+    let month24MRR = model.calculateMRR(forMonth: 24)
+    print("Churn \(Int(churn * 100))%: $\(Int(month24MRR)) MRR")
+}
+```
+
+## Next Steps
+
+- Explore <doc:FluentAPIGuide> for building custom models
+- Read <doc:ScenarioAnalysisGuide> for advanced scenario planning
+- Learn <doc:BuildingRevenueModel> for detailed modeling workflows
+- Review <doc:FinancialRatiosGuide> for metric calculations
+- Check <doc:InvestmentAnalysis> for valuation techniques
+
+## See Also
+
+- ``SaaSModel``
+- ``RetailModel``
+- ``ManufacturingModel``
+- ``MarketplaceModel``
+- ``SubscriptionBoxModel``
+- ``ModelBuilder``
+- ``FinancialModel``

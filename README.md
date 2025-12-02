@@ -3,22 +3,23 @@
 A comprehensive Swift library for business mathematics, time series analysis, and financial modeling.
 
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
-[![Platform](https://img.shields.io/badge/Platform-macOS%20|%20Linux-lightgrey.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20|%20macOS%20|%20tvOS%20|%20watchOS%20|%20visionOS%20|%20Linux-lightgrey.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Overview
 
 BusinessMath provides production-ready implementations of essential business and financial calculations. Built with modern Swift features including generics, strict concurrency (Swift 6), and comprehensive documentation, it's designed for financial analysts, business planners, data scientists, and software engineers building financial applications.
 
-## ✨ What's New in v1.3.0
+## ✨ What's New in v1.4.0
 
-**Major Test Suite Expansion & Platform Compatibility**
+**Complete Securities Valuation Suite**
 
-- **🧪 2,062 Tests**: Expanded from 531 to 2,062 tests across 180 test suites (289% increase)
-- **📊 DataTable Analysis**: New Excel-like data table functionality for sensitivity analysis and scenario planning
-- **⚡ Performance Tests**: Enabled 19 performance benchmarking tests for large datasets and optimized exports
-- **🔧 32-bit Compatibility**: Fixed overflow issues in distribution functions for Apple Watch and other 32-bit platforms
-- **✅ 100% Pass Rate**: All tests passing with comprehensive coverage of distributions, statistics, and analysis tools
+- **📈 Equity Valuation** (5 tools, 27 tests): DDM (constant/two-stage/H-model), FCFE, Residual Income, Enterprise Value Bridge
+- **📊 Bond Valuation** (7 tools, 42 tests): Pricing, duration, convexity, callable bonds, credit spreads, OAS
+- **🔒 Credit Derivatives** (4 tools, 56 tests): CDS pricing (ISDA Standard Model), Merton structural model, hazard rates, term structure bootstrapping
+- **📚 3 Comprehensive Tutorials**: 2,300+ lines of step-by-step DocC guides for equity, bonds, and credit derivatives
+- **🎯 Industry Standard**: ISDA, Black-Scholes, DCF methodologies suitable for production use
+- **✅ 125+ New Tests**: All passing with full generic programming support (Float/Double)
 
 See [CHANGELOG.md](CHANGELOG.md) for complete release details.
 
@@ -28,7 +29,7 @@ BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** th
 
 ### What's Included
 
-**✨ 118 Computational Tools** across 24 categories:
+**✨ 134 Computational Tools** across 27 categories:
 - **Time Value of Money** (9 tools): NPV, IRR, PV, FV, payments, annuities, XNPV, XIRR
 - **Time Series Analysis** (6 tools): Growth rates, moving averages, CAGR, comparisons
 - **Forecasting** (8 tools): Trend analysis, seasonal adjustment, projections
@@ -51,6 +52,9 @@ BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** th
 - **Trend Forecasting** (4 tools): Linear trend, exponential trend, logistic trend, time series decomposition
 - **Seasonality** (3 tools): Calculate seasonal indices, seasonally adjust data, apply seasonal patterns
 - **Advanced Options** (2 tools): Option Greeks (Delta, Gamma, Vega, Theta, Rho), binomial tree pricing (American & European)
+- **Equity Valuation** (5 tools): FCFE model, Gordon Growth/DDM, Two-Stage DDM, H-Model, Enterprise Value Bridge, Residual Income Model
+- **Bond Valuation** (7 tools): Bond pricing, yield calculation, duration & convexity, Macaulay/Modified duration, callable bond pricing, OAS calculation, credit spread analysis
+- **Credit Derivatives** (4 tools): CDS pricing & spread, Merton structural model, hazard rate modeling, credit term structure bootstrapping
 
 **📚 14 Resources** providing comprehensive documentation:
 - Time Value of Money formulas and examples
@@ -173,7 +177,7 @@ Add BusinessMath to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "1.0.0")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "1.4.0")
 ]
 ```
 
@@ -261,15 +265,19 @@ Comprehensive documentation is available in the package:
 - **[Building Revenue Model](Sources/BusinessMath/BusinessMath.docc/BuildingRevenueModel.md)** - Step-by-step tutorial
 - **[Loan Amortization](Sources/BusinessMath/BusinessMath.docc/LoanAmortization.md)** - Complete loan analysis
 - **[Investment Analysis](Sources/BusinessMath/BusinessMath.docc/InvestmentAnalysis.md)** - Investment evaluation
-- **[Data Table Analysis](Sources/BusinessMath/BusinessMath.docc/DataTableAnalysis.md)** - Excel-like sensitivity analysis ✨ **NEW**
-- **[Monte Carlo with Time Series](Sources/BusinessMath/BusinessMath.docc/MonteCarloTimeSeriesGuide.md)** - Probabilistic forecasting & confidence intervals ✨ **NEW**
+- **[Data Table Analysis](Sources/BusinessMath/BusinessMath.docc/DataTableAnalysis.md)** - Excel-like sensitivity analysis
+- **[Monte Carlo with Time Series](Sources/BusinessMath/BusinessMath.docc/MonteCarloTimeSeriesGuide.md)** - Probabilistic forecasting & confidence intervals
+- **[Equity Valuation Guide](Sources/BusinessMath/BusinessMath.docc/EquityValuationGuide.md)** - DDM, FCFE, Residual Income models ✨ **NEW**
+- **[Bond Valuation Guide](Sources/BusinessMath/BusinessMath.docc/BondValuationGuide.md)** - Pricing, duration, callable bonds, credit spreads ✨ **NEW**
+- **[Credit Derivatives Guide](Sources/BusinessMath/BusinessMath.docc/CreditDerivativesGuide.md)** - CDS, Merton model, hazard rates, bootstrapping ✨ **NEW**
 
-Total documentation: 5,300+ lines across 11 comprehensive guides with real-world examples.
+Total documentation: 8,500+ lines across 14 comprehensive guides with real-world examples.
 
 ## Requirements
 
 - Swift 6.0 or later
-- macOS 10.15+ / Linux
+- iOS 14+ / macOS 13+ / tvOS 14+ / watchOS 7+ / visionOS 1+ / Linux
+- MCP Server requires macOS 13.0+
 - Dependencies:
   - [Swift Numerics](https://github.com/apple/swift-numerics) (for `Real` protocol)
 
@@ -350,13 +358,45 @@ let indices = try seasonalIndices(timeSeries: ts, periodsPerYear: 4)
 // Q1: 16% below average, Q4: 22% above average (holiday spike)
 ```
 
+### Securities Valuation
+
+```swift
+// Value a stock using Gordon Growth Model (constant DDM)
+let stockValue = try gordonGrowthModel(
+    currentDividend: 2.50,
+    growthRate: 0.05,      // 5% perpetual growth
+    requiredReturn: 0.12   // 12% required return
+)
+// Result: ~$37.50 per share
+
+// Price a 5-year corporate bond
+let bondPrice = try priceCouponBond(
+    faceValue: 1000,
+    couponRate: 0.05,      // 5% annual coupon
+    yield: 0.06,           // 6% market yield
+    years: 5,
+    frequency: .semiannual
+)
+// Result: ~$957.35 (trades at discount since yield > coupon)
+
+// Calculate CDS fair spread
+let cdsSpread = try cdsFairSpread(
+    notional: 10_000_000,
+    defaultProbability: 0.02,  // 2% default probability
+    recoveryRate: 0.40,         // 40% recovery
+    tenor: 5
+)
+// Result: ~120 basis points
+```
+
 ## Real-World Applications
 
 - **Financial Modeling**: Revenue forecasting, budget planning, scenario analysis
 - **Investment Analysis**: Portfolio valuation, IRR calculations, payback periods
+- **Securities Valuation**: Equity valuation (DDM, FCFE), bond pricing, credit derivatives (CDS pricing)
 - **Loan Management**: Amortization schedules, payment breakdowns, refinancing analysis
 - **Business Intelligence**: Trend analysis, seasonal patterns, growth metrics
-- **Risk Management**: Sensitivity analysis, Monte Carlo simulation setup
+- **Risk Management**: Sensitivity analysis, Monte Carlo simulation setup, credit risk modeling
 - **Reporting**: Financial dashboards, executive summaries, KPI tracking
 
 ## Architecture

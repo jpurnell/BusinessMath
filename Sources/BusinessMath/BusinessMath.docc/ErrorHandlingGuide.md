@@ -1,0 +1,810 @@
+# Error Handling Best Practices
+
+Handle errors gracefully with comprehensive error types and actionable recovery suggestions.
+
+## Overview
+
+BusinessMath provides rich error handling with detailed error messages, recovery suggestions, error codes for tracking, and help links to documentation. When errors occur, you get not just a description of what went wrong, but specific guidance on how to fix it.
+
+This guide shows you how to:
+- Understand BusinessMath error types and codes
+- Handle errors with appropriate recovery strategies
+- Aggregate multiple validation errors
+- Create user-friendly error messages
+- Debug errors effectively
+- Choose when to throw vs. return optionals
+
+## Why Enhanced Error Handling?
+
+Traditional error messages are often cryptic:
+```swift
+// Traditional error
+throw Error("Invalid input")  // What's invalid? How do I fix it?
+```
+
+Enhanced errors provide context and guidance:
+```swift
+// Enhanced error
+throw EnhancedBusinessMathError.invalidInput(
+    message: "Discount rate must be between 0 and 1",
+    value: "-0.5",
+    expectedRange: "0.0 to 1.0"
+)
+
+// Provides:
+// - Clear description: "Invalid input: Discount rate must be between 0 and 1 (provided: -0.5) (expected: 0.0 to 1.0)"
+// - Recovery suggestion: "Please provide a value within the range: 0.0 to 1.0"
+// - Error code: E001
+// - Help link: businessmath.com/errors/E001
+```
+
+## Error Type Categories
+
+BusinessMath organizes errors into four categories:
+
+| Category | Code Range | Examples |
+|----------|------------|----------|
+| **Calculation Errors** | E001-E099 | Invalid input, calculation failures, numerical instability |
+| **Data Errors** | E100-E199 | Mismatched dimensions, data quality, missing data |
+| **Model Errors** | E200-E299 | Invalid drivers, circular dependencies, inconsistent data |
+| **Validation Errors** | E300-E399 | Validation failures, negative values, out of range |
+
+## Calculation Errors (E001-E099)
+
+### Invalid Input (E001)
+
+Thrown when parameters are outside acceptable ranges:
+
+```swift
+do {
+    let npv = try npv(discountRate: -0.5, cashFlows: cashFlows)
+} catch let error as EnhancedBusinessMathError {
+    print(error.errorDescription!)
+    // "Invalid input: Discount rate must be non-negative (provided: -0.5) (expected: ≥ 0.0)"
+
+    print(error.recoverySuggestion!)
+    // "Please provide a value within the range: ≥ 0.0"
+
+    print("Error Code: \(error.code)")
+    // "Error Code: E001"
+}
+```
+
+**Common Causes:**
+- Negative values where positive required
+- Values outside acceptable ranges
+- Empty arrays where data required
+- Invalid enum values
+
+**Recovery Strategy:**
+```swift
+func calculateNPV(rate: Double, flows: [Double]) throws -> Double {
+    // Validate before calculation
+    guard rate >= 0 else {
+        throw EnhancedBusinessMathError.invalidInput(
+            message: "Discount rate must be non-negative",
+            value: String(rate),
+            expectedRange: "≥ 0.0"
+        )
+    }
+
+    guard !flows.isEmpty else {
+        throw EnhancedBusinessMathError.invalidInput(
+            message: "Cash flows cannot be empty"
+        )
+    }
+
+    return try npv(discountRate: rate, cashFlows: flows)
+}
+```
+
+### Calculation Failed (E002)
+
+Thrown when calculations don't converge or fail:
+
+```swift
+do {
+    let irr = try irr(cashFlows: [100, 100, 100])  // All positive - no IRR
+} catch let error as EnhancedBusinessMathError {
+    if case .calculationFailed(let operation, let reason, let suggestions) = error {
+        print("\(operation) failed: \(reason)")
+        // "IRR calculation failed: No valid IRR exists for all-positive cash flows"
+
+        print("Suggestions:")
+        for suggestion in suggestions {
+            print("  • \(suggestion)")
+        }
+        // • Ensure cash flows include both negative (investments) and positive (returns)
+        // • Check that initial investment is negative
+        // • Verify cash flow signs are correct
+    }
+}
+```
+
+**Recovery Strategies:**
+```swift
+// Try with different initial guess
+do {
+    return try irr(cashFlows: flows, guess: 0.1)
+} catch {
+    // Try different guess
+    return try? irr(cashFlows: flows, guess: 0.5)
+}
+
+// Or adjust convergence parameters
+return try irr(
+    cashFlows: flows,
+    guess: 0.1,
+    tolerance: 0.0001,
+    maxIterations: 200
+)
+```
+
+### Division by Zero (E003)
+
+Thrown when division by zero is attempted:
+
+```swift
+do {
+    let growth = try calculateGrowthRate(from: 0, to: 100)  // From zero!
+} catch let error as EnhancedBusinessMathError {
+    if case .divisionByZero(let context) = error {
+        print(error.errorDescription!)
+        // "Division by zero in growth rate calculation"
+
+        print(error.recoverySuggestion!)
+        // Division by zero detected.
+        // Check for:
+        // • Zero revenue or zero base values
+        // • Percentage calculations with zero denominators
+        // • Missing data being treated as zero
+    }
+}
+```
+
+**Prevention:**
+```swift
+func calculateGrowthRate(from: Double, to: Double) throws -> Double {
+    guard from != 0 else {
+        throw EnhancedBusinessMathError.divisionByZero(
+            context: "growth rate calculation"
+        )
+    }
+
+    return (to - from) / from
+}
+```
+
+### Numerical Instability (E004)
+
+Thrown when numerical precision issues occur:
+
+```swift
+do {
+    let result = try calculateCompoundGrowth(
+        base: 1e200,  // Very large number
+        rate: 0.99,
+        periods: 1000
+    )
+} catch let error as EnhancedBusinessMathError {
+    if case .numericalInstability(let message, let suggestions) = error {
+        print(message)
+        // "Value overflow detected in compound growth calculation"
+
+        for suggestion in suggestions {
+            print("• \(suggestion)")
+        }
+        // • Use logarithmic transformation for large numbers
+        // • Scale inputs to a smaller range
+        // • Consider using higher precision types
+    }
+}
+```
+
+## Data Errors (E100-E199)
+
+### Mismatched Dimensions (E100)
+
+Thrown when array sizes don't match:
+
+```swift
+do {
+    let ts = TimeSeries(
+        periods: [jan, feb, mar],  // 3 periods
+        values: [100, 110]          // 2 values - mismatch!
+    )
+} catch let error as EnhancedBusinessMathError {
+    if case .mismatchedDimensions(let message, let expected, let actual) = error {
+        print(error.errorDescription!)
+        // "Mismatched dimensions: Periods and values must have same length (expected: 3, got: 2)"
+
+        print(error.recoverySuggestion!)
+        // "Ensure all time series have matching periods before combining them"
+    }
+}
+```
+
+**Prevention:**
+```swift
+// Validate before construction
+func createTimeSeries(periods: [Period], values: [Double]) throws -> TimeSeries<Double> {
+    guard periods.count == values.count else {
+        throw EnhancedBusinessMathError.mismatchedDimensions(
+            message: "Periods and values must have same length",
+            expected: String(periods.count),
+            actual: String(values.count)
+        )
+    }
+
+    return TimeSeries(periods: periods, values: values)
+}
+```
+
+### Data Quality (E101)
+
+Thrown when data quality issues are detected:
+
+```swift
+do {
+    let validated = try validateTimeSeries(timeSeries)
+} catch let error as EnhancedBusinessMathError {
+    if case .dataQuality(let message, let context) = error {
+        print(message)
+        // "Missing or invalid values detected in time series"
+
+        for (key, value) in context {
+            print("\(key): \(value)")
+        }
+        // missingCount: 5
+        // nanCount: 2
+        // infiniteCount: 1
+    }
+}
+```
+
+### Missing Data (E102)
+
+Thrown when required data is missing:
+
+```swift
+do {
+    let revenue = try model.getValue(account: "Revenue", period: "2025-Q1")
+} catch let error as EnhancedBusinessMathError {
+    if case .missingData(let account, let period) = error {
+        print(error.errorDescription!)
+        // "Missing data for 'Revenue' in period 2025-Q1"
+
+        print(error.recoverySuggestion!)
+        // Provide data for 'Revenue' by:
+        // • Adding a driver for this account
+        // • Setting a default value
+        // • Using fillMissing() or interpolate() on the time series
+    }
+}
+```
+
+**Recovery Strategies:**
+```swift
+// Option 1: Fill missing values
+let filled = timeSeries.fillMissing()
+
+// Option 2: Fill forward
+let forward = timeSeries.fillForward()
+
+// Option 3: Provide default
+let value = try? model.getValue(account: account, period: period) ?? 0.0
+
+// Option 4: Interpolate
+let interpolated = try timeSeries.interpolate()
+```
+
+### Insufficient Data (E103)
+
+Thrown when not enough data points exist:
+
+```swift
+do {
+    let regression = try linearRegression(values)  // Only 2 points
+} catch let error as EnhancedBusinessMathError {
+    if case .insufficientData(let required, let actual, let context) = error {
+        print(error.errorDescription!)
+        // "Insufficient data for Linear Regression: need 3, got 2"
+
+        print(error.recoverySuggestion!)
+        // Linear Regression requires at least 3 data points.
+        // Consider:
+        // • Providing more historical data
+        // • Using a shorter analysis period
+        // • Using a simpler model that requires less data
+    }
+}
+```
+
+## Model Errors (E200-E299)
+
+### Invalid Driver (E200)
+
+Thrown when driver configuration is invalid:
+
+```swift
+do {
+    let driver = try createDriver(name: "Revenue Growth", value: -0.5)
+} catch let error as EnhancedBusinessMathError {
+    if case .invalidDriver(let name, let reason) = error {
+        print(error.errorDescription!)
+        // "Invalid driver 'Revenue Growth': Growth rate cannot be negative"
+
+        print(error.recoverySuggestion!)
+        // "Ensure all driver values are positive. Check input data for errors."
+    }
+}
+```
+
+### Circular Dependency (E201)
+
+Thrown when circular references are detected:
+
+```swift
+do {
+    let model = try buildModel(for: company) {
+        // A depends on B, B depends on C, C depends on A - circular!
+        Account("A", formula: "= B * 1.2")
+        Account("B", formula: "= C * 0.8")
+        Account("C", formula: "= A * 0.5")
+    }
+} catch let error as EnhancedBusinessMathError {
+    if case .circularDependency(let path) = error {
+        print(error.errorDescription!)
+        // "Circular dependency detected: A → B → C → A"
+
+        print(error.recoverySuggestion!)
+        // Break the circular dependency by:
+        // • Reordering calculations
+        // • Using an iterative solver
+        // • Introducing an intermediate value
+        //
+        // Dependency path: A → B → C → A
+    }
+}
+```
+
+**Solutions:**
+```swift
+// Solution 1: Break cycle with previous period
+Account("A", formula: "= B[t-1] * 1.2")  // Use previous period's B
+
+// Solution 2: Use intermediate value
+Account("A", formula: "= BaseValue * Factor")
+Account("B", formula: "= C * 0.8")
+Account("C", formula: "= BaseValue * 0.5")
+
+// Solution 3: Iterative solver (for complex models)
+let solver = IterativeSolver(maxIterations: 100)
+let solution = try solver.solve(model)
+```
+
+### Inconsistent Data (E202)
+
+Thrown when data doesn't match logical constraints:
+
+```swift
+do {
+    try validateBalanceSheet(balanceSheet)
+} catch let error as EnhancedBusinessMathError {
+    if case .inconsistentData(let description) = error {
+        print(error.errorDescription!)
+        // "Data inconsistency: Total Assets ($1,000,000) ≠ Liabilities + Equity ($950,000)"
+
+        print(error.recoverySuggestion!)
+        // "Review your data for logical consistency and correct any discrepancies"
+    }
+}
+```
+
+## Validation Errors (E300-E399)
+
+### Validation Failed (E300)
+
+Thrown when multiple validation errors occur:
+
+```swift
+do {
+    try validateModel(model)
+} catch let error as EnhancedBusinessMathError {
+    if case .validationFailed(let errors) = error {
+        print("Validation failed with \(errors.count) error(s):")
+        for error in errors {
+            print("  • \(error)")
+        }
+        // • Revenue must be positive
+        // • Discount rate must be between 0 and 1
+        // • Cash flows array cannot be empty
+        // • Period count must match value count
+    }
+}
+```
+
+### Negative Value (E301)
+
+Thrown when negative values appear where positive required:
+
+```swift
+do {
+    let price = try validatePrice(-50.0)
+} catch let error as EnhancedBusinessMathError {
+    if case .negativeValue(let name, let value, let context) = error {
+        print(error.errorDescription!)
+        // "Negative value for 'Price' (-50.0) in Product pricing calculation"
+
+        print(error.recoverySuggestion!)
+        // 'Price' should not be negative.
+        // Verify:
+        // • Input data is correct
+        // • Calculations are not producing unintended negative results
+        // • Use absolute value if negative is mathematically possible but semantically invalid
+    }
+}
+```
+
+### Out of Range (E302)
+
+Thrown when values fall outside acceptable ranges:
+
+```swift
+do {
+    let discountRate = try validateDiscountRate(1.5)
+} catch let error as EnhancedBusinessMathError {
+    if case .outOfRange(let value, let min, let max, let context) = error {
+        print(error.errorDescription!)
+        // "Value 1.5 out of range [0.0, 1.0] in Discount rate validation"
+
+        print(error.recoverySuggestion!)
+        // "Adjust the value to fall within the valid range [0.0, 1.0]"
+    }
+}
+```
+
+## Error Aggregation
+
+### Collecting Multiple Errors
+
+Use ``ErrorAggregator`` to collect validation errors:
+
+```swift
+var aggregator = ErrorAggregator()
+
+// Validate revenue
+if revenue < 0 {
+    aggregator.add(EnhancedBusinessMathError.negativeValue(
+        name: "Revenue",
+        value: revenue,
+        context: "Income Statement"
+    ))
+}
+
+// Validate discount rate
+if discountRate < 0 || discountRate > 1 {
+    aggregator.add(EnhancedBusinessMathError.outOfRange(
+        value: discountRate,
+        min: 0.0,
+        max: 1.0,
+        context: "DCF Valuation"
+    ))
+}
+
+// Validate cash flows
+if cashFlows.isEmpty {
+    aggregator.add(EnhancedBusinessMathError.invalidInput(
+        message: "Cash flows cannot be empty"
+    ))
+}
+
+// Throw if any errors
+try aggregator.throwIfNeeded()
+```
+
+### Comprehensive Model Validation
+
+```swift
+func validateFinancialModel(_ model: FinancialModel) throws {
+    var aggregator = ErrorAggregator()
+
+    // Validate accounts
+    for account in model.accounts {
+        if account.values.contains(where: { $0.isNaN }) {
+            aggregator.add(EnhancedBusinessMathError.dataQuality(
+                message: "NaN values in \(account.name)"
+            ))
+        }
+
+        if account.values.isEmpty {
+            aggregator.add(EnhancedBusinessMathError.missingData(
+                account: account.name,
+                period: "all"
+            ))
+        }
+    }
+
+    // Validate periods
+    let periodCounts = Set(model.accounts.map { $0.periods.count })
+    if periodCounts.count > 1 {
+        aggregator.add(EnhancedBusinessMathError.mismatchedDimensions(
+            message: "All accounts must have the same number of periods"
+        ))
+    }
+
+    // Validate balance sheet equation
+    if model.hasBalanceSheet {
+        let assets = model.totalAssets
+        let liabilitiesAndEquity = model.totalLiabilities + model.totalEquity
+
+        if abs(assets - liabilitiesAndEquity) > 0.01 {
+            aggregator.add(EnhancedBusinessMathError.inconsistentData(
+                description: "Balance sheet equation not satisfied: Assets (\(assets)) ≠ Liabilities + Equity (\(liabilitiesAndEquity))"
+            ))
+        }
+    }
+
+    // Throw if any issues found
+    try aggregator.throwIfNeeded()
+}
+```
+
+## User-Facing Error Messages
+
+### Creating Friendly Error Messages
+
+```swift
+func handleError(_ error: Error) -> String {
+    guard let mathError = error as? EnhancedBusinessMathError else {
+        return "An unexpected error occurred"
+    }
+
+    var message = mathError.errorDescription ?? "Unknown error"
+
+    // Add user-friendly context
+    switch mathError {
+    case .invalidInput:
+        message = "⚠️ Invalid Input\n\n\(message)"
+
+    case .calculationFailed:
+        message = "❌ Calculation Failed\n\n\(message)"
+
+    case .divisionByZero:
+        message = "⚠️ Division by Zero\n\n\(message)"
+
+    case .missingData:
+        message = "📊 Missing Data\n\n\(message)"
+
+    case .circularDependency:
+        message = "🔄 Circular Dependency\n\n\(message)"
+
+    case .validationFailed:
+        message = "✗ Validation Failed\n\n\(message)"
+
+    default:
+        message = "Error\n\n\(message)"
+    }
+
+    // Add recovery suggestion
+    if let recovery = mathError.recoverySuggestion {
+        message += "\n\n💡 How to Fix:\n\(recovery)"
+    }
+
+    // Add error code for support
+    message += "\n\nError Code: \(mathError.code)"
+
+    return message
+}
+
+// Usage
+do {
+    let result = try performCalculation()
+} catch {
+    let userMessage = handleError(error)
+    showAlert(title: "Error", message: userMessage)
+}
+```
+
+### Logging Errors with Context
+
+```swift
+func logError(_ error: Error, context: [String: String] = [:]) {
+    let logger = BusinessMathLogger.shared
+
+    if let mathError = error as? EnhancedBusinessMathError {
+        logger.error(
+            mathError.errorDescription ?? "Unknown error",
+            context: [
+                "errorCode": mathError.code,
+                "recovery": mathError.recoverySuggestion ?? "None",
+                "helpAnchor": mathError.helpAnchor ?? ""
+            ].merging(context) { $1 }
+        )
+    } else {
+        logger.error(error.localizedDescription, context: context)
+    }
+}
+
+// Usage
+do {
+    let result = try calculateNPV(rate: rate, flows: flows)
+} catch {
+    logError(error, context: [
+        "function": "calculateNPV",
+        "rate": String(rate),
+        "flowCount": String(flows.count)
+    ])
+    throw error
+}
+```
+
+## Best Practices
+
+### 1. Throw Early, Validate Thoroughly
+
+```swift
+// GOOD: Validate at entry point
+func calculateIRR(cashFlows: [Double]) throws -> Double {
+    // Validate immediately
+    guard !cashFlows.isEmpty else {
+        throw EnhancedBusinessMathError.invalidInput(
+            message: "Cash flows cannot be empty"
+        )
+    }
+
+    guard cashFlows.contains(where: { $0 < 0 }) && cashFlows.contains(where: { $0 > 0 }) else {
+        throw EnhancedBusinessMathError.calculationFailed(
+            operation: "IRR",
+            reason: "Cash flows must contain both positive and negative values",
+            suggestions: [
+                "Ensure initial investment is negative",
+                "Verify cash flow signs are correct"
+            ]
+        )
+    }
+
+    return try irr(cashFlows: cashFlows)
+}
+
+// BAD: Defer validation, get cryptic errors later
+func calculateIRR(cashFlows: [Double]) throws -> Double {
+    return try irr(cashFlows: cashFlows)  // May throw unclear error
+}
+```
+
+### 2. Provide Actionable Recovery Suggestions
+
+```swift
+// GOOD: Specific, actionable suggestions
+throw EnhancedBusinessMathError.calculationFailed(
+    operation: "NPV",
+    reason: "Discount rate too high causing numerical overflow",
+    suggestions: [
+        "Use a discount rate below 1.0 (100%)",
+        "Check if discount rate is in decimal form (0.10 for 10%)",
+        "Scale cash flows to smaller values"
+    ]
+)
+
+// BAD: Vague, unhelpful suggestions
+throw EnhancedBusinessMathError.calculationFailed(
+    operation: "NPV",
+    reason: "Calculation error",
+    suggestions: ["Try different values"]
+)
+```
+
+### 3. Choose Throwing vs. Optional Appropriately
+
+**Use `throws` when:**
+- The error is unexpected and needs handling
+- Callers should know something went wrong
+- Recovery is possible with different inputs
+
+```swift
+func calculateIRR(cashFlows: [Double]) throws -> Double {
+    // Throws because caller needs to handle invalid input
+}
+```
+
+**Use `Optional` when:**
+- The absence of a value is normal
+- No error condition exists
+- Caller can handle nil naturally
+
+```swift
+func findAccount(named: String) -> Account? {
+    // Returns nil if not found - this is normal, not an error
+}
+```
+
+### 4. Document Error Conditions
+
+```swift
+/// Calculate Internal Rate of Return
+///
+/// - Parameter cashFlows: Array of cash flows
+/// - Returns: IRR as a decimal (0.15 = 15%)
+/// - Throws:
+///   - ``EnhancedBusinessMathError/invalidInput`` if cash flows are empty
+///   - ``EnhancedBusinessMathError/calculationFailed`` if IRR doesn't converge
+///   - ``EnhancedBusinessMathError/numericalInstability`` if overflow occurs
+///
+/// ## Example
+/// ```swift
+/// do {
+///     let irr = try calculateIRR(cashFlows: [-1000, 300, 400, 500])
+///     print("IRR: \(irr * 100)%")
+/// } catch let error as EnhancedBusinessMathError {
+///     print("Error: \(error.errorDescription!)")
+///     print("How to fix: \(error.recoverySuggestion!)")
+/// }
+/// ```
+public func calculateIRR(cashFlows: [Double]) throws -> Double {
+    // ...
+}
+```
+
+### 5. Test Error Paths
+
+```swift
+@Test("IRR throws for invalid input")
+func testIRRInvalidInput() {
+    #expect(throws: EnhancedBusinessMathError.self) {
+        try calculateIRR(cashFlows: [])
+    }
+
+    #expect(throws: EnhancedBusinessMathError.self) {
+        try calculateIRR(cashFlows: [100, 200, 300])  // All positive
+    }
+}
+
+@Test("Error contains helpful recovery suggestion")
+func testErrorRecoverySuggestion() throws {
+    do {
+        _ = try calculateIRR(cashFlows: [])
+        Issue.record("Should have thrown")
+    } catch let error as EnhancedBusinessMathError {
+        #expect(error.recoverySuggestion != nil)
+        #expect(error.code == "E001")
+    }
+}
+```
+
+## Error Code Reference
+
+Quick reference for all error codes:
+
+| Code | Error | Category |
+|------|-------|----------|
+| E001 | Invalid Input | Calculation |
+| E002 | Calculation Failed | Calculation |
+| E003 | Division by Zero | Calculation |
+| E004 | Numerical Instability | Calculation |
+| E100 | Mismatched Dimensions | Data |
+| E101 | Data Quality | Data |
+| E102 | Missing Data | Data |
+| E103 | Insufficient Data | Data |
+| E200 | Invalid Driver | Model |
+| E201 | Circular Dependency | Model |
+| E202 | Inconsistent Data | Model |
+| E300 | Validation Failed | Validation |
+| E301 | Negative Value | Validation |
+| E302 | Out of Range | Validation |
+
+## Next Steps
+
+- Learn about <doc:DebuggingGuide> for diagnosing issues
+- Explore <doc:FluentAPIGuide> for error-resistant APIs
+- Read <doc:TestingGuide> for testing error paths
+- Check <doc:ValidationGuide> for validation strategies
+- Review API documentation for specific error types
+
+## See Also
+
+- ``EnhancedBusinessMathError``
+- ``ErrorAggregator``
+- ``ValidationReport``
+- ``ModelDebugger``
+- ``BusinessMathLogger``

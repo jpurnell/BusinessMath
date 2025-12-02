@@ -44,6 +44,32 @@ public enum BusinessMathError: Error, Sendable {
 
     /// Data quality issue (handled through validation framework, but can be thrown directly)
     case dataQuality(message: String, context: [String: String])
+
+    // MARK: - Phase 3 Enhanced Errors
+
+    /// Invalid driver configuration in financial model
+    case invalidDriver(name: String, reason: String)
+
+    /// Circular dependency detected in model calculations
+    case circularDependency(path: [String])
+
+    /// Missing required data for calculation
+    case missingData(account: String, period: String)
+
+    /// Validation failed with multiple errors
+    case validationFailed(errors: [String])
+
+    /// Inconsistent data detected
+    case inconsistentData(description: String)
+
+    /// Insufficient data points for calculation
+    case insufficientData(required: Int, actual: Int, context: String)
+
+    /// Negative value where positive required
+    case negativeValue(name: String, value: Double, context: String)
+
+    /// Value outside acceptable range
+    case outOfRange(value: Double, min: Double, max: Double, context: String)
 }
 
 // MARK: - LocalizedError Conformance
@@ -98,6 +124,30 @@ extension BusinessMathError: LocalizedError {
 					}
 				}
 				return description
+
+        case .invalidDriver(let name, let reason):
+            return "Invalid driver '\(name)': \(reason)"
+
+        case .circularDependency(let path):
+            return "Circular dependency detected: \(path.joined(separator: " → "))"
+
+        case .missingData(let account, let period):
+            return "Missing data for '\(account)' in period \(period)"
+
+        case .validationFailed(let errors):
+            return "Validation failed with \(errors.count) error(s):\n" + errors.map { "• \($0)" }.joined(separator: "\n")
+
+        case .inconsistentData(let description):
+            return "Data inconsistency: \(description)"
+
+        case .insufficientData(let required, let actual, let context):
+            return "Insufficient data for \(context): need \(required), got \(actual)"
+
+        case .negativeValue(let name, let value, let context):
+            return "Negative value for '\(name)' (\(value)) in \(context)"
+
+        case .outOfRange(let value, let min, let max, let context):
+            return "Value \(value) out of range [\(min), \(max)] in \(context)"
         }
     }
 
@@ -122,6 +172,57 @@ extension BusinessMathError: LocalizedError {
 
         case .dataQuality:
             return "Clean or interpolate your data before performing calculations"
+
+        case .invalidDriver(_, let reason):
+            if reason.contains("negative") {
+                return "Ensure all driver values are positive. Check input data for errors."
+            }
+            return "Review driver configuration and ensure all parameters are valid."
+
+        case .circularDependency(let path):
+            return """
+            Break the circular dependency by:
+            • Reordering calculations
+            • Using an iterative solver
+            • Introducing an intermediate value
+
+            Dependency path: \(path.joined(separator: " → "))
+            """
+
+        case .missingData(let account, _):
+            return """
+            Provide data for '\(account)' by:
+            • Adding a driver for this account
+            • Setting a default value
+            • Using fillMissing() or interpolate() on the time series
+            """
+
+        case .validationFailed:
+            return "Fix the validation errors listed above to proceed"
+
+        case .inconsistentData:
+            return "Review your data for logical consistency and correct any discrepancies"
+
+        case .insufficientData(let required, _, let context):
+            return """
+            \(context) requires at least \(required) data points.
+            Consider:
+            • Providing more historical data
+            • Using a shorter analysis period
+            • Using a simpler model that requires less data
+            """
+
+        case .negativeValue(let name, _, _):
+            return """
+            '\(name)' should not be negative.
+            Verify:
+            • Input data is correct
+            • Calculations are not producing unintended negative results
+            • Use absolute value if negative is mathematically possible but semantically invalid
+            """
+
+        case .outOfRange(_, let min, let max, _):
+            return "Adjust the value to fall within the valid range [\(min), \(max)]"
         }
     }
 }

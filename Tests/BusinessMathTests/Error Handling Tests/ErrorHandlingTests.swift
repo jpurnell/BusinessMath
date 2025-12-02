@@ -675,8 +675,11 @@ struct ErrorHandlingAdditionalTests {
 			case .numericalInstability(let message, let suggestions):
 				#expect(desc.contains(message))
 				#expect(suggestions.allSatisfy { desc.contains($0) })
-				case .dataQuality(message: let message, context: _):
+			case .dataQuality(message: let message, context: _):
 				#expect(desc.contains(message))
+			default:
+				// New Phase 3 errors - just verify they have descriptions
+				#expect(!desc.isEmpty)
 			}
 		}
 	}
