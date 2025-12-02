@@ -100,7 +100,7 @@ public enum FinancialRatioError: Error, CustomStringConvertible {
 ///   - incomeStatement: Income statement containing net income
 ///   - balanceSheet: Balance sheet containing total assets
 /// - Returns: Time series of ROA ratios (as decimals, e.g., 0.10 = 10%)
-public func returnOnAssets<T: Real>(
+public func returnOnAssets<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) -> TimeSeries<T> {
@@ -154,7 +154,7 @@ public func returnOnAssets<T: Real>(
 ///   - incomeStatement: Income statement containing net income
 ///   - balanceSheet: Balance sheet containing shareholders' equity
 /// - Returns: Time series of ROE ratios (as decimals, e.g., 0.15 = 15%)
-public func returnOnEquity<T: Real>(
+public func returnOnEquity<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) -> TimeSeries<T> {
@@ -219,7 +219,7 @@ public func returnOnEquity<T: Real>(
 ///   - balanceSheet: Balance sheet containing assets and current liabilities
 ///   - taxRate: Corporate tax rate (as decimal, e.g., 0.21 for 21%)
 /// - Returns: Time series of ROIC ratios (as decimals, e.g., 0.10 = 10%)
-public func returnOnInvestedCapital<T: Real>(
+public func returnOnInvestedCapital<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
 	taxRate: T
@@ -283,7 +283,7 @@ public func returnOnInvestedCapital<T: Real>(
 ///   - incomeStatement: Income statement containing revenue
 ///   - balanceSheet: Balance sheet containing total assets
 /// - Returns: Time series of asset turnover ratios
-public func assetTurnover<T: Real>(
+public func assetTurnover<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) -> TimeSeries<T> {
@@ -337,7 +337,7 @@ public func assetTurnover<T: Real>(
 /// - Returns: Time series of inventory turnover ratios
 /// - Throws: ``FinancialRatioError/missingAccount(_:)`` if inventory account not found
 /// - Throws: ``FinancialRatioError/missingExpense(_:)`` if COGS not found
-public func inventoryTurnover<T: Real>(
+public func inventoryTurnover<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) throws -> TimeSeries<T> {
@@ -414,7 +414,7 @@ public func inventoryTurnover<T: Real>(
 ///   - balanceSheet: Balance sheet containing inventory account
 /// - Returns: Time series of days inventory outstanding
 /// - Throws: ``FinancialRatioError`` if required accounts not found
-public func daysInventoryOutstanding<T: Real>(
+public func daysInventoryOutstanding<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) throws -> TimeSeries<T> {
@@ -467,7 +467,7 @@ public func daysInventoryOutstanding<T: Real>(
 ///   - balanceSheet: Balance sheet containing receivables account
 /// - Returns: Time series of receivables turnover ratios
 /// - Throws: ``FinancialRatioError/missingAccount(_:)`` if receivables account not found
-public func receivablesTurnover<T: Real>(
+public func receivablesTurnover<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) throws -> TimeSeries<T> {
@@ -535,7 +535,7 @@ public func receivablesTurnover<T: Real>(
 ///   - balanceSheet: Balance sheet containing receivables account
 /// - Returns: Time series of days sales outstanding
 /// - Throws: ``FinancialRatioError`` if required accounts not found
-public func daysSalesOutstanding<T: Real>(
+public func daysSalesOutstanding<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) throws -> TimeSeries<T> {
@@ -597,7 +597,7 @@ public func daysSalesOutstanding<T: Real>(
 ///   - balanceSheet: Balance sheet containing accounts payable
 /// - Returns: Time series of days payable outstanding
 /// - Throws: ``FinancialRatioError`` if required accounts not found
-public func daysPayableOutstanding<T: Real>(
+public func daysPayableOutstanding<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) throws -> TimeSeries<T> {
@@ -666,7 +666,7 @@ public func daysPayableOutstanding<T: Real>(
 /// - Parameter incomeStatement: Income statement containing operating income and interest expense
 /// - Returns: Time series of interest coverage ratios
 /// - Throws: ``FinancialRatioError/missingExpense(_:)`` if interest expense not found
-public func interestCoverage<T: Real>(
+public func interestCoverage<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>
 ) throws -> TimeSeries<T> {
 	// Find interest expense in income statement
@@ -731,7 +731,7 @@ public func interestCoverage<T: Real>(
 ///   - principalPayments: Time series of principal payments on debt
 ///   - interestPayments: Time series of interest payments on debt
 /// - Returns: Time series of debt service coverage ratios
-public func debtServiceCoverage<T: Real>(
+public func debtServiceCoverage<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	principalPayments: TimeSeries<T>,
 	interestPayments: TimeSeries<T>
@@ -830,7 +830,7 @@ public struct ProfitabilityRatios<T: Real & Sendable>: Sendable where T: Codable
 ///   - incomeStatement: Income statement containing revenue and expenses
 ///   - balanceSheet: Balance sheet containing assets and equity
 /// - Returns: Structure containing all profitability ratios
-public func profitabilityRatios<T: Real>(
+public func profitabilityRatios<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) -> ProfitabilityRatios<T> where T: ExpressibleByFloatLiteral {
@@ -868,7 +868,7 @@ public func profitabilityRatios<T: Real>(
 ///   - balanceSheet: Balance sheet containing assets and equity
 ///   - taxRate: Corporate tax rate for ROIC calculation
 /// - Returns: Structure containing all profitability ratios
-public func profitabilityRatios<T: Real>(
+public func profitabilityRatios<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
 	taxRate: T
@@ -988,7 +988,7 @@ public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 ///   - incomeStatement: Income statement containing revenue and optionally COGS
 ///   - balanceSheet: Balance sheet containing assets and optionally working capital accounts
 /// - Returns: Structure containing all efficiency ratios (some may be nil)
-public func efficiencyRatios<T: Real>(
+public func efficiencyRatios<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
 ) -> EfficiencyRatios<T> {
@@ -1073,7 +1073,7 @@ public struct LiquidityRatios<T: Real & Sendable>: Sendable where T: Codable {
 ///
 /// - Parameter balanceSheet: Balance sheet containing assets and liabilities
 /// - Returns: Structure containing all liquidity ratios
-public func liquidityRatios<T: Real>(
+public func liquidityRatios<T: Real & Sendable>(
 	balanceSheet: BalanceSheet<T>
 ) -> LiquidityRatios<T> {
 	return LiquidityRatios(
@@ -1176,7 +1176,7 @@ public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 ///   - principalPayments: Optional time series of principal payments
 ///   - interestPayments: Optional time series of interest payments
 /// - Returns: Structure containing all solvency ratios (some may be nil)
-public func solvencyRatios<T: Real>(
+public func solvencyRatios<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
 	principalPayments: TimeSeries<T>? = nil,
@@ -1290,7 +1290,7 @@ public struct ValuationMetrics<T: Real & Sendable>: Sendable where T: Codable {
 ///   - sharesOutstanding: Number of shares outstanding (can vary by period)
 ///   - marketPrice: Market price per share (can vary by period)
 /// - Returns: Structure containing all valuation metrics
-public func valuationMetrics<T: Real>(
+public func valuationMetrics<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
 	sharesOutstanding: T,
