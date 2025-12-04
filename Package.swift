@@ -23,6 +23,9 @@ let package = Package(
         .executable(
             name: "businessmath-mcp-server",
             targets: ["BusinessMathMCPServer"]),
+        .executable(
+            name: "performance-profiling",
+            targets: ["PerformanceProfilingBaseline"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -58,6 +61,12 @@ let package = Package(
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency")
             ]
+        ),
+        .executableTarget(
+            name: "PerformanceProfilingBaseline",
+            dependencies: ["BusinessMath"],
+            path: "Examples",
+            sources: ["PerformanceProfilingBaseline.swift"]
         ),
         .testTarget(
             name: "BusinessMathTests",
