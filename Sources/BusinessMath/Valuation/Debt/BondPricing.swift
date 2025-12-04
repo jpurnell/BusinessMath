@@ -1015,4 +1015,7 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
 public enum OptimizationError: Error {
     case failedToConverge(message: String)
     case invalidInput(message: String)
+    case nonFiniteValue(message: String)
+    case singularMatrix(message: String)
+    case maxIterationsReached
 }
