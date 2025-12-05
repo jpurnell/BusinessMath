@@ -1,0 +1,428 @@
+//
+//  ConstraintTests.swift
+//  BusinessMath
+//
+//  Created by Claude Code on 12/04/25.
+//
+
+import Foundation
+import Testing
+import Numerics
+@testable import BusinessMath
+
+@Suite("Constraint Tests")
+struct ConstraintTests {
+
+	// MARK: - Basic Constraint Tests
+
+	@Test("Equality constraint creation and evaluation")
+	func equalityConstraintCreation() {
+		// Create a simple equality constraint: x + y = 0
+		let constraint: MultivariateConstraint<VectorN<Double>> = .equality { v in
+			v[0] + v[1]
+		}
+
+		// Test evaluation
+		let point1 = VectorN([1.0, -1.0])
+		#expect(abs(constraint.evaluate(at: point1)) < 1e-10, "Should evaluate to 0")
+
+		let point2 = VectorN([2.0, 3.0])
+		#expect(abs(constraint.evaluate(at: point2) - 5.0) < 1e-10, "Should evaluate to 5")
+
+		// Test satisfaction
+		#expect(constraint.isSatisfied(at: point1), "Should be satisfied when h(x) = 0")
+		#expect(!constraint.isSatisfied(at: point2), "Should not be satisfied when h(x) ≠ 0")
+	}
+
+	@Test("Inequality constraint creation and evaluation")
+	func inequalityConstraintCreation() {
+		// Create a simple inequality constraint: x ≤ 5  →  x - 5 ≤ 0
+		let constraint: MultivariateConstraint<VectorN<Double>> = .inequality { v in
+			v[0] - 5.0
+		}
+
+		// Test evaluation
+		let point1 = VectorN([3.0])
+		#expect(abs(constraint.evaluate(at: point1) - (-2.0)) < 1e-10, "Should evaluate to -2")
+
+		let point2 = VectorN([7.0])
+		#expect(abs(constraint.evaluate(at: point2) - 2.0) < 1e-10, "Should evaluate to 2")
+
+		// Test satisfaction
+		#expect(constraint.isSatisfied(at: point1), "Should be satisfied when g(x) < 0")
+		#expect(!constraint.isSatisfied(at: point2), "Should not be satisfied when g(x) > 0")
+	}
+
+	@Test("Constraint type checking")
+	func constraintTypeChecking() {
+		let eqConstraint: MultivariateConstraint<VectorN<Double>> = .equality { v in v.sum() }
+		let ineqConstraint: MultivariateConstraint<VectorN<Double>> = .inequality { v in v[0] }
+
+		#expect(eqConstraint.isEquality, "Should be equality constraint")
+		#expect(!eqConstraint.isInequality, "Should not be inequality constraint")
+
+		#expect(ineqConstraint.isInequality, "Should be inequality constraint")
+		#expect(!ineqConstraint.isEquality, "Should not be equality constraint")
+	}
+
+	// MARK: - Gradient Tests
+
+	@Test("Explicit gradient for equality constraint")
+	func explicitGradientEquality() throws {
+		// Budget constraint: sum(w) - 1 = 0
+		// Gradient is [1, 1, 1]
+		let constraint: MultivariateConstraint<VectorN<Double>> = .equality(
+			function: { weights in weights.sum() - 1.0 },
+			gradient: { weights in VectorN<Double>(repeating: 1.0, count: weights.dimension) }
+		)
+
+		let point = VectorN([0.2, 0.3, 0.5])
+		let grad = try constraint.gradient(at: point)
+
+		#expect(abs(grad[0] - 1.0) < 1e-10, "Gradient should be 1")
+		#expect(abs(grad[1] - 1.0) < 1e-10, "Gradient should be 1")
+		#expect(abs(grad[2] - 1.0) < 1e-10, "Gradient should be 1")
+	}
+
+	@Test("Numerical gradient for constraint without explicit gradient")
+	func numericalGradientConstraint() throws {
+		// Quadratic constraint: x² + y² - 1 = 0
+		// Gradient is [2x, 2y]
+		let constraint: MultivariateConstraint<VectorN<Double>> = .equality { v in
+			v[0]*v[0] + v[1]*v[1] - 1.0
+		}
+
+		let point = VectorN([3.0, 4.0])
+		let grad = try constraint.gradient(at: point)
+
+		// Expected: [2*3, 2*4] = [6, 8]
+		let tolerance = 1e-6
+		#expect(abs(grad[0] - 6.0) < tolerance, "Gradient x-component should be 6")
+		#expect(abs(grad[1] - 8.0) < tolerance, "Gradient y-component should be 8")
+	}
+
+	@Test("Explicit gradient for inequality constraint")
+	func explicitGradientInequality() throws {
+		// Non-negativity: -w[0] ≤ 0
+		// Gradient is [-1, 0, 0]
+		let constraint: MultivariateConstraint<VectorN<Double>> = .inequality(
+			function: { weights in -weights[0] },
+			gradient: { weights in
+				var grad = [Double](repeating: 0, count: weights.dimension)
+				grad[0] = -1.0
+				return VectorN<Double>(grad)
+			}
+		)
+
+		let point = VectorN([0.5, 0.3, 0.2])
+		let grad = try constraint.gradient(at: point)
+
+		#expect(abs(grad[0] - (-1.0)) < 1e-10, "Gradient should be -1")
+		#expect(abs(grad[1]) < 1e-10, "Gradient should be 0")
+		#expect(abs(grad[2]) < 1e-10, "Gradient should be 0")
+	}
+
+	// MARK: - Budget Constraint Tests
+
+	@Test("Budget constraint satisfaction")
+	func budgetConstraintSatisfaction() {
+		let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
+
+		// Satisfied: weights sum to 1
+		let validWeights = VectorN([0.3, 0.4, 0.3])
+		#expect(constraint.isSatisfied(at: validWeights), "Should be satisfied when sum = 1")
+
+		// Not satisfied: weights don't sum to 1
+		let invalidWeights = VectorN([0.5, 0.5, 0.5])
+		#expect(!constraint.isSatisfied(at: invalidWeights), "Should not be satisfied when sum ≠ 1")
+	}
+
+	@Test("Budget constraint gradient")
+	func budgetConstraintGradient() throws {
+		let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
+
+		let point = VectorN([0.2, 0.3, 0.5])
+		let grad = try constraint.gradient(at: point)
+
+		// Gradient should be [1, 1, 1]
+		#expect(abs(grad[0] - 1.0) < 1e-10, "All gradient components should be 1")
+		#expect(abs(grad[1] - 1.0) < 1e-10, "All gradient components should be 1")
+		#expect(abs(grad[2] - 1.0) < 1e-10, "All gradient components should be 1")
+	}
+
+	// MARK: - Non-Negativity Constraint Tests
+
+	@Test("Non-negativity constraints creation")
+	func nonNegativityConstraintsCreation() {
+		let constraints = MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)
+
+		#expect(constraints.count == 3, "Should create one constraint per dimension")
+		#expect(constraints.allSatisfy { $0.isInequality }, "All should be inequality constraints")
+	}
+
+	@Test("Non-negativity constraints satisfaction")
+	func nonNegativityConstraintsSatisfaction() {
+		let constraints = MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)
+
+		// All positive weights
+		let validWeights = VectorN([0.3, 0.4, 0.3])
+		#expect(constraints.allSatisfy { $0.isSatisfied(at: validWeights) },
+			   "Should be satisfied with all positive weights")
+
+		// One negative weight
+		let invalidWeights = VectorN([0.5, -0.1, 0.6])
+		#expect(!constraints[1].isSatisfied(at: invalidWeights),
+			   "Second constraint should not be satisfied with negative weight")
+		#expect(constraints[0].isSatisfied(at: invalidWeights),
+			   "First constraint should still be satisfied")
+	}
+
+	@Test("Non-negativity constraints gradients")
+	func nonNegativityConstraintsGradients() throws {
+		let constraints = MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)
+		let point = VectorN([0.3, 0.4, 0.3])
+
+		// First constraint: -w[0] ≤ 0, gradient = [-1, 0, 0]
+		let grad0 = try constraints[0].gradient(at: point)
+		#expect(abs(grad0[0] - (-1.0)) < 1e-10, "First component should be -1")
+		#expect(abs(grad0[1]) < 1e-10, "Second component should be 0")
+		#expect(abs(grad0[2]) < 1e-10, "Third component should be 0")
+
+		// Second constraint: -w[1] ≤ 0, gradient = [0, -1, 0]
+		let grad1 = try constraints[1].gradient(at: point)
+		#expect(abs(grad1[0]) < 1e-10, "First component should be 0")
+		#expect(abs(grad1[1] - (-1.0)) < 1e-10, "Second component should be -1")
+		#expect(abs(grad1[2]) < 1e-10, "Third component should be 0")
+	}
+
+	// MARK: - Position Limit Constraint Tests
+
+	@Test("Position limit constraints satisfaction")
+	func positionLimitConstraintsSatisfaction() {
+		let constraints = MultivariateConstraint<VectorN<Double>>.positionLimit(0.5, dimension: 3)
+
+		// All weights within limit
+		let validWeights = VectorN([0.3, 0.4, 0.3])
+		#expect(constraints.allSatisfy { $0.isSatisfied(at: validWeights) },
+			   "Should be satisfied when all weights ≤ 0.5")
+
+		// One weight exceeds limit
+		let invalidWeights = VectorN([0.3, 0.6, 0.1])
+		#expect(!constraints[1].isSatisfied(at: invalidWeights),
+			   "Second constraint should not be satisfied")
+		#expect(constraints[0].isSatisfied(at: invalidWeights),
+			   "First constraint should still be satisfied")
+	}
+
+	@Test("Position minimum constraints satisfaction")
+	func positionMinimumConstraintsSatisfaction() {
+		let constraints = MultivariateConstraint<VectorN<Double>>.positionMinimum(0.1, dimension: 3)
+
+		// All weights above minimum
+		let validWeights = VectorN([0.3, 0.4, 0.3])
+		#expect(constraints.allSatisfy { $0.isSatisfied(at: validWeights) },
+			   "Should be satisfied when all weights ≥ 0.1")
+
+		// One weight below minimum
+		let invalidWeights = VectorN([0.3, 0.05, 0.65])
+		#expect(!constraints[1].isSatisfied(at: invalidWeights),
+			   "Second constraint should not be satisfied")
+		#expect(constraints[0].isSatisfied(at: invalidWeights),
+			   "First constraint should still be satisfied")
+	}
+
+	@Test("Box constraints satisfaction")
+	func boxConstraintsSatisfaction() {
+		let constraints = MultivariateConstraint<VectorN<Double>>.boxConstraints(min: 0.1, max: 0.5, dimension: 3)
+
+		// Should have 6 constraints (3 min + 3 max)
+		#expect(constraints.count == 6, "Should create 2 constraints per dimension")
+
+		// All weights within box
+		let validWeights = VectorN([0.2, 0.3, 0.4])
+		#expect(constraints.allSatisfy { $0.isSatisfied(at: validWeights) },
+			   "Should be satisfied when all weights in [0.1, 0.5]")
+
+		// One weight below minimum
+		let tooLow = VectorN([0.05, 0.3, 0.4])
+		#expect(!constraints.allSatisfied(at: tooLow),
+			   "Should not be satisfied with weight below minimum")
+
+		// One weight above maximum
+		let tooHigh = VectorN([0.2, 0.3, 0.6])
+		#expect(!constraints.allSatisfied(at: tooHigh),
+			   "Should not be satisfied with weight above maximum")
+	}
+
+	// MARK: - Target Return Constraint Tests
+
+	@Test("Target return constraint satisfaction")
+	func targetReturnConstraintSatisfaction() {
+		let expectedReturns = VectorN([0.08, 0.10, 0.12])
+		let targetReturn = 0.10
+		let constraint = MultivariateConstraint<VectorN<Double>>.targetReturn(expectedReturns, target: targetReturn)
+
+		// Weights that achieve target return
+		let validWeights = VectorN([0.0, 1.0, 0.0])  // 100% in asset with 10% return
+		#expect(constraint.isSatisfied(at: validWeights, tolerance: 1e-6),
+			   "Should be satisfied when portfolio return = target")
+
+		// Weights that don't achieve target return
+		let invalidWeights = VectorN([1.0, 0.0, 0.0])  // 100% in asset with 8% return
+		#expect(!constraint.isSatisfied(at: invalidWeights, tolerance: 1e-6),
+			   "Should not be satisfied when portfolio return ≠ target")
+	}
+
+	@Test("Target return constraint gradient")
+	func targetReturnConstraintGradient() throws {
+		let expectedReturns = VectorN([0.08, 0.10, 0.12])
+		let targetReturn = 0.10
+		let constraint = MultivariateConstraint<VectorN<Double>>.targetReturn(expectedReturns, target: targetReturn)
+
+		let point = VectorN([0.3, 0.4, 0.3])
+		let grad = try constraint.gradient(at: point)
+
+		// Gradient should be the expected returns vector
+		#expect(abs(grad[0] - 0.08) < 1e-10, "Gradient should equal expected returns")
+		#expect(abs(grad[1] - 0.10) < 1e-10, "Gradient should equal expected returns")
+		#expect(abs(grad[2] - 0.12) < 1e-10, "Gradient should equal expected returns")
+	}
+
+	// MARK: - Leverage Constraint Tests
+
+	@Test("Leverage constraint satisfaction")
+	func leverageConstraintSatisfaction() {
+		let constraint = MultivariateConstraint<VectorN<Double>>.leverageLimit(1.5, dimension: 3)
+
+		// Long-only portfolio (leverage = sum of weights)
+		let longOnly = VectorN([0.3, 0.4, 0.3])
+		#expect(constraint.isSatisfied(at: longOnly), "Should be satisfied with leverage = 1.0")
+
+		// Long-short portfolio within limit
+		let longShort = VectorN([0.8, -0.3, 0.5])  // Total leverage = |0.8| + |-0.3| + |0.5| = 1.6
+		#expect(!constraint.isSatisfied(at: longShort), "Should not be satisfied with leverage = 1.6")
+
+		// Long-short portfolio within limit
+		let validLongShort = VectorN([0.6, -0.2, 0.6])  // Total leverage = 1.4
+		#expect(constraint.isSatisfied(at: validLongShort), "Should be satisfied with leverage = 1.4")
+	}
+
+	// MARK: - Combined Constraint Tests
+
+	@Test("Combined long-only portfolio constraints")
+	func combinedLongOnlyConstraints() {
+		let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+			.budgetConstraint
+		] + .nonNegativity(dimension: 3)
+
+		// Valid long-only portfolio
+		let validWeights = VectorN([0.3, 0.4, 0.3])
+		#expect(constraints.allSatisfied(at: validWeights),
+			   "Should be satisfied with valid long-only weights")
+
+		// Budget violated
+		let wrongSum = VectorN([0.3, 0.3, 0.3])
+		#expect(!constraints.allSatisfied(at: wrongSum),
+			   "Should not be satisfied when sum ≠ 1")
+
+		// Non-negativity violated
+		let hasNegative = VectorN([0.5, -0.1, 0.6])
+		#expect(!constraints.allSatisfied(at: hasNegative),
+			   "Should not be satisfied with negative weight")
+	}
+
+	// MARK: - Violation Utility Tests
+
+	@Test("Constraint violations computation")
+	func constraintViolations() {
+		let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+			.budgetConstraint,
+			.inequality { v in -v[0] },  // w[0] ≥ 0
+			.inequality { v in -v[1] },  // w[1] ≥ 0
+		]
+
+		// Violates budget and has one negative weight
+		let point = VectorN([0.6, -0.1, 0.3])
+		let violations = constraints.violations(at: point)
+
+		#expect(violations.count == 3, "Should have 3 violation values")
+
+		// Budget constraint: |0.6 - 0.1 + 0.3 - 1| = |0.8 - 1| = 0.2
+		#expect(abs(violations[0] - 0.2) < 1e-10, "Budget violation should be 0.2")
+
+		// First non-negativity: max(0, -0.6) = 0 (satisfied)
+		#expect(abs(violations[1]) < 1e-10, "First weight is positive, no violation")
+
+		// Second non-negativity: max(0, -(-0.1)) = max(0, 0.1) = 0.1
+		#expect(abs(violations[2] - 0.1) < 1e-10, "Second weight violation should be 0.1")
+	}
+
+	@Test("Maximum violation computation")
+	func maxViolation() {
+		let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+			.budgetConstraint,
+			.inequality { v in -v[0] },
+			.inequality { v in -v[1] },
+		]
+
+		// All satisfied
+		let validPoint = VectorN([0.4, 0.6, 0.0])
+		#expect(abs(constraints.maxViolation(at: validPoint)) < 1e-6,
+			   "Max violation should be ~0 when all satisfied")
+
+		// Some violations
+		let invalidPoint = VectorN([0.6, -0.2, 0.3])
+		let maxViol = constraints.maxViolation(at: invalidPoint)
+		#expect(maxViol > 0.15, "Max violation should be significant")
+	}
+
+	// MARK: - Edge Cases
+
+	@Test("Empty vector constraint")
+	func emptyVectorConstraint() {
+		let constraint: MultivariateConstraint<VectorN<Double>> = .equality { v in
+			v.sum()
+		}
+
+		let emptyVector = VectorN<Double>([])
+		let value = constraint.evaluate(at: emptyVector)
+		#expect(abs(value) < 1e-10, "Sum of empty vector should be 0")
+	}
+
+	@Test("Single element vector constraint")
+	func singleElementConstraint() {
+		let constraints = MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 1)
+		#expect(constraints.count == 1, "Should create one constraint")
+
+		let validPoint = VectorN([0.5])
+		#expect(constraints[0].isSatisfied(at: validPoint), "Should be satisfied with positive value")
+
+		let invalidPoint = VectorN([-0.5])
+		#expect(!constraints[0].isSatisfied(at: invalidPoint), "Should not be satisfied with negative value")
+	}
+
+	@Test("High-dimensional constraints")
+	func highDimensionalConstraints() {
+		let dimension = 100
+		let constraints = MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: dimension)
+
+		#expect(constraints.count == dimension, "Should create one constraint per dimension")
+
+		// All positive weights
+		let validWeights = VectorN<Double>(repeating: 0.01, count: dimension)
+		#expect(constraints.allSatisfy { $0.isSatisfied(at: validWeights) },
+			   "Should handle high-dimensional constraints")
+	}
+
+	@Test("Constraint with tolerance edge case")
+	func constraintToleranceEdgeCase() {
+		let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
+
+		// Exactly at tolerance boundary
+		let almostValid = VectorN([0.3, 0.4, 0.3000005])  // Sum ≈ 1.0000005
+		#expect(constraint.isSatisfied(at: almostValid, tolerance: 1e-5),
+			   "Should be satisfied within tolerance")
+		#expect(!constraint.isSatisfied(at: almostValid, tolerance: 1e-7),
+			   "Should not be satisfied with stricter tolerance")
+	}
+}
