@@ -76,6 +76,16 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
+        // Adaptive Optimization Tools (2 tools) - Phase 7
+        for handler in getAdaptiveOptimizationTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Performance Benchmark Tools (3 tools) - Phase 7
+        for handler in getPerformanceBenchmarkTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
         // Portfolio Optimization Tools (3 tools)
         for handler in getPortfolioTools() {
             try await toolRegistry.register(handler.toToolDefinition())

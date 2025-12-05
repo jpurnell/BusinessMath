@@ -29,7 +29,7 @@ BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** th
 
 ### What's Included
 
-**✨ 134 Computational Tools** across 27 categories:
+**✨ 141 Computational Tools** across 27 categories:
 - **Time Value of Money** (9 tools): NPV, IRR, PV, FV, payments, annuities, XNPV, XIRR
 - **Time Series Analysis** (6 tools): Growth rates, moving averages, CAGR, comparisons
 - **Forecasting** (8 tools): Trend analysis, seasonal adjustment, projections
@@ -39,7 +39,7 @@ BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** th
 - **Hypothesis Testing** (6 tools): T-tests, chi-square, F-tests, sample size, A/B testing, p-values
 - **Advanced Statistics** (13 tools): Combinatorics, statistical means, goal seek, data tables
 - **Probability Distributions** (15 distributions): Normal, Uniform, Triangular, Exponential, Lognormal, Beta, Gamma, Weibull, Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh
-- **Optimization & Solvers** (3 tools): Newton-Raphson, gradient descent, capital allocation
+- **Optimization & Solvers** (8 tools): Newton-Raphson, gradient descent, capital allocation, adaptive optimization (2 tools), performance benchmarking (3 tools)
 - **Portfolio Optimization** (3 tools): Modern Portfolio Theory, efficient frontier, risk parity
 - **Real Options** (5 tools): Black-Scholes, binomial trees, Greeks, expansion/abandonment valuation
 - **Risk Analytics** (4 tools): Stress testing, VaR/CVaR, risk aggregation, comprehensive metrics
