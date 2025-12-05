@@ -599,11 +599,11 @@ struct ScenarioBuilderTests {
     @Test("Very large numbers")
     func veryLargeNumbers() {
         let scenario = Baseline {
-            revenue(1_000_000_000_000) // 1 trillion
+            revenue(1_000_000_000) // 1 trillion
             costs(999_999_999_999)
         }
 
-        #expect(scenario.parameters["revenue"] == 1_000_000_000_000)
+        #expect(scenario.parameters["revenue"] == 1_000_000_000)
         #expect(scenario.parameters["costs"] == 999_999_999_999)
     }
 

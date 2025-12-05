@@ -236,7 +236,7 @@ public func solveLinearSystem<T: Real>(
 		}
 
 		// Check for singular matrix
-		if maxVal < T(1) / T(1_000_000_000_000) {  // Essentially zero
+		if maxVal < T(1) / T(1_000_000_000) {  // Essentially zero
 			throw OptimizationError.singularMatrix(message: "Matrix is singular or nearly singular")
 		}
 

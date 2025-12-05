@@ -33,7 +33,7 @@ public enum FinancialValidation {
 			@inline(__always)
 			private func withinTolerance(_ diff: T, tolerance tol: T, scale: T) -> Bool {
 				// Epsilon is at least one ulp at the current scale, or a tiny fraction of tol
-				// Avoid Double literal conversion: compute 1e-12 as 1 / 1_000_000_000_000 in T
+				// Avoid Double literal conversion: compute 1e-12 as 1 / 1_000_000_000 in T
 				let rel = tol * (T(Int(1e-12)))
 				// Scale-aware epsilon: at least one ulp at this scale, or a tiny fraction of tolerance
 				let eps = max(T.ulpOfOne * scale, rel)
