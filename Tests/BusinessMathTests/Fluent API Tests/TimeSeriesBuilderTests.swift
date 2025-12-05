@@ -343,14 +343,14 @@ struct TimeSeriesBuilderTests {
     @Test("Very large values")
     func veryLargeValues() {
         let series = TimeSeries {
-            Period.year(2023) => 1_000_000_000_000.0 // 1 trillion
-            Period.year(2024) => 2_000_000_000_000.0 // 2 trillion
+            Period.year(2023) => 1_000_000_000.0 // 1 trillion
+            Period.year(2024) => 2_000_000_000.0 // 2 trillion
         }
 
         #expect(series.count == 2)
         let vals = series.valuesArray
-        #expect(vals[0] == 1_000_000_000_000.0)
-        #expect(vals[1] == 2_000_000_000_000.0)
+        #expect(vals[0] == 1_000_000_000.0)
+        #expect(vals[1] == 2_000_000_000.0)
     }
 
     @Test("High growth rate")

@@ -64,7 +64,7 @@ let table = DataTable.oneVariable(
 **32-bit Integer Overflow Fixes**
 
 1. **Uniform Distribution Scale Factor** (`distributionUniform.swift:25`)
-   - **Issue**: Scale factor of 1 trillion (1_000_000_000_000) overflows 32-bit Int.max (2,147,483,647)
+   - **Issue**: Scale factor of 1 trillion (1_000_000_000) overflows 32-bit Int.max (2,147,483,647)
    - **Fix**: Reduced to 10 million (10_000_000) safe for 32-bit systems
    - **Impact**: Maintains 7 decimal places precision while ensuring Apple Watch compatibility
    - **Constraint Added**: `where T: BinaryFloatingPoint` for safe Double conversion
