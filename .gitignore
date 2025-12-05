@@ -1,6 +1,10 @@
+.gitignore
 .build/
 .claude/
 .DS_Store
+.github/workflows/*
+.swiftpm/xcode/
+.vscode
 !.swiftpm/xcode/
 .swiftpm/xcode/package.xcworkspace/xcuserdata/jpurnell.userdatad/UserInterfaceState.xcuserstate
 howToResume.md
@@ -10,3 +14,6 @@ Instruction Set/
 Sources/BusinessMath/zzz In Process/
 #TODO.md#
 Package.resolved
+HTTP_MODE_README.md
+MCP_SERVER_README.md
+missing_MCP.md

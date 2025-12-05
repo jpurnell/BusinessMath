@@ -35,31 +35,48 @@ The library is designed for:
 ### Essentials
 
 - <doc:GettingStarted>
+- <doc:DebuggingGuide>
+- <doc:ErrorHandlingGuide>
+
 - <doc:TimeSeries>
-- <doc:TimeValueOfMoney>
-- <doc:GrowthModeling>
+- <doc:FluentAPIGuide>
+- <doc:TemplateGuide>
 
 ### Tutorials
-
-- <doc:BuildingRevenueModel>
-- <doc:FinancialStatementsGuide>
-- <doc:BuildingFinancialReports>
-- <doc:ScenarioAnalysisGuide>
-- <doc:FinancialRatiosGuide>
-- <doc:VisualizationGuide>
-- <doc:DebtAndFinancingGuide>
-- <doc:EquityFinancingGuide>
-- <doc:LeaseAccountingGuide>
-- <doc:LoanAmortization>
-- <doc:InvestmentAnalysis>
-- <doc:OptimizationGuide>
+- <doc:TimeSeries>
+- <doc:TimeValueOfMoney>
 - <doc:ForecastingGuide>
-- <doc:PortfolioOptimizationGuide>
-- <doc:RealOptionsGuide>
+- <doc:GrowthModeling>
+
+- <doc:BuildingFinancialReports>
+- <doc:BuildingRevenueModel>
+
+- <doc:FinancialStatementsGuide>
+- <doc:LeaseAccountingGuide>
+- <doc:FinancialRatiosGuide>
 - <doc:RiskAnalyticsGuide>
 
-### Case Studies
+- <doc:EquityFinancingGuide>
+- <doc:DebtAndFinancingGuide>
 
+- <doc:DataTableAnalysis>
+
+- <doc:BondValuationGuide>
+- <doc:EquityValuationGuide>
+- <doc:CreditDerivativesGuide>
+
+- <doc:InvestmentAnalysis>
+- <doc:LoanAmortization>
+- <doc:RealOptionsGuide>
+
+- <doc:MonteCarloTimeSeriesGuide>
+- <doc:ScenarioAnalysisGuide>
+- <doc:OptimizationGuide>
+- <doc:PortfolioOptimizationGuide>
+
+- <doc:VisualizationGuide>
+
+### Case Studies
 - <doc:ReidsRaisinsExample>
 
 <!--
@@ -102,5 +119,5 @@ or use: swift build && xcrun docc preview ...
 
 ## See Also
 
-- [GitHub Repository](https://github.com/yourusername/BusinessMath)
-- [API Reference](https://yourusername.github.io/BusinessMath/documentation/businessmath/)
+- [GitHub Repository](https://github.com/jpurnell/BusinessMath)
+<!--- [API Reference](https://jpurnell.github.io/BusinessMath/documentation/businessmath/)-->

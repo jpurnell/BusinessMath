@@ -8,6 +8,68 @@
 import Foundation
 import Numerics
 
+// MARK: - Constraint Sets
+
+/// Predefined constraint sets for portfolio optimization.
+///
+/// Common combinations of constraints for different investment strategies.
+public enum PortfolioConstraintSet {
+	/// No constraints (allows any weights, including short-selling and leverage)
+	case unconstrained
+
+	/// Long-only: weights must be non-negative and sum to 1
+	/// Σw = 1, w ≥ 0
+	case longOnly
+
+	/// Long-short with leverage limit
+	/// Σw = 1, Σ|w| ≤ leverage
+	case longShort(maxLeverage: Double)
+
+	/// Box constraints: weights between min and max
+	/// Σw = 1, min ≤ w ≤ max
+	case boxConstrained(min: Double, max: Double)
+
+	/// Custom constraints
+	case custom([MultivariateConstraint<VectorN<Double>>])
+
+	/// Convert to array of constraints for the given dimension
+	public func constraints(dimension: Int) -> [MultivariateConstraint<VectorN<Double>>] {
+		switch self {
+		case .unconstrained:
+			// Only budget constraint
+			return [.budgetConstraint]
+
+		case .longOnly:
+			// Budget + non-negativity
+			return [.budgetConstraint] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: dimension)
+
+		case .longShort(let maxLeverage):
+			// Budget + leverage limit
+			return [
+				.budgetConstraint,
+				.leverageLimit(maxLeverage, dimension: dimension)
+			]
+
+		case .boxConstrained(let min, let max):
+			// Budget + box constraints
+			return [.budgetConstraint] + MultivariateConstraint<VectorN<Double>>.boxConstraints(min: min, max: max, dimension: dimension)
+
+		case .custom(let constraints):
+			return constraints
+		}
+	}
+
+	/// Whether this constraint set includes inequality constraints
+	public var hasInequalityConstraints: Bool {
+		switch self {
+		case .unconstrained:
+			return false
+		case .longOnly, .longShort, .boxConstrained, .custom:
+			return true
+		}
+	}
+}
+
 // MARK: - Portfolio Optimization Results
 
 /// Results from portfolio optimization
@@ -97,7 +159,7 @@ public struct PortfolioOptimizer {
 	/// Finds the portfolio with minimum variance.
 	///
 	/// Minimizes: σ² = w'Σw
-	/// Subject to: Σw = 1 (weights sum to 1)
+	/// Subject to: Σw = 1 (and optionally w ≥ 0 if no short-selling)
 	///
 	/// - Parameters:
 	///   - expectedReturns: Expected return for each asset
@@ -109,6 +171,9 @@ public struct PortfolioOptimizer {
 		covariance: [[Double]],
 		allowShortSelling: Bool = false
 	) throws -> OptimalPortfolio {
+		let n = expectedReturns.count
+		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
+
 		// Portfolio variance: σ² = w'Σw
 		let varianceFunction: (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
@@ -121,38 +186,47 @@ public struct PortfolioOptimizer {
 			return variance
 		}
 
-		// Use Newton-Raphson for fast convergence on quadratic objective
-		let optimizer = MultivariateNewtonRaphson<VectorN<Double>>(
-			maxIterations: 100,
-			tolerance: 1e-8
-		)
+		let finalWeights: VectorN<Double>
+		let converged: Bool
+		let iterations: Int
 
-		// Start with equal weights
-		let n = expectedReturns.count
-		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
-
-		let result = try optimizer.minimize(
-			function: varianceFunction,
-			gradient: { try numericalGradient(varianceFunction, at: $0) },
-			hessian: { try numericalHessian(varianceFunction, at: $0) },
-			initialGuess: initialWeights
-		)
-
-		// Normalize weights to sum to 1
-		let normalizedWeights = normalizeWeights(result.solution)
+		if allowShortSelling {
+			// Unconstrained (only budget constraint) - use equality-constrained optimizer
+			let optimizer = ConstrainedOptimizer<VectorN<Double>>(maxIterations: 100)
+			let result = try optimizer.minimize(
+				varianceFunction,
+				from: initialWeights,
+				subjectTo: [.budgetConstraint]
+			)
+			finalWeights = result.solution
+			converged = result.converged
+			iterations = result.iterations
+		} else {
+			// Long-only (budget + non-negativity) - use inequality-constrained optimizer
+			let constraints = PortfolioConstraintSet.longOnly.constraints(dimension: n)
+			let optimizer = InequalityOptimizer<VectorN<Double>>(maxIterations: 100)
+			let result = try optimizer.minimize(
+				varianceFunction,
+				from: initialWeights,
+				subjectTo: constraints
+			)
+			finalWeights = result.solution
+			converged = result.converged
+			iterations = result.iterations
+		}
 
 		// Calculate portfolio metrics
-		let portfolioReturn = expectedReturns.dot(normalizedWeights)
-		let portfolioVariance = varianceFunction(normalizedWeights)
+		let portfolioReturn = expectedReturns.dot(finalWeights)
+		let portfolioVariance = varianceFunction(finalWeights)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
 
 		return OptimalPortfolio(
-			weights: normalizedWeights,
+			weights: finalWeights,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
 			sharpeRatio: portfolioReturn / portfolioVolatility,
-			converged: result.converged,
-			iterations: result.iterations
+			converged: converged,
+			iterations: iterations
 		)
 	}
 
@@ -170,8 +244,12 @@ public struct PortfolioOptimizer {
 	public func maximumSharpePortfolio(
 		expectedReturns: VectorN<Double>,
 		covariance: [[Double]],
-		riskFreeRate: Double = 0.02
+		riskFreeRate: Double = 0.02,
+		constraintSet: PortfolioConstraintSet = .longOnly
 	) throws -> OptimalPortfolio {
+		let n = expectedReturns.count
+		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
+
 		// Negative Sharpe ratio (minimize negative = maximize positive)
 		let negativeSharpeFunction: (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
@@ -199,38 +277,55 @@ public struct PortfolioOptimizer {
 			return -sharpeRatio
 		}
 
-		// Use BFGS for robustness on this non-quadratic objective
-		let optimizer = MultivariateNewtonRaphson<VectorN<Double>>(
-			maxIterations: 500,
-			tolerance: 1e-6
-		)
+		let finalWeights: VectorN<Double>
+		let converged: Bool
+		let iterations: Int
 
-		// Start with equal weights
-		let n = expectedReturns.count
-		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
+		let constraints = constraintSet.constraints(dimension: n)
 
-		let result = try optimizer.minimizeBFGS(
-			function: negativeSharpeFunction,
-			gradient: { try numericalGradient(negativeSharpeFunction, at: $0) },
-			initialGuess: initialWeights
-		)
-
-		// Normalize weights to sum to 1
-		let normalizedWeights = normalizeWeights(result.solution)
+		if constraintSet.hasInequalityConstraints {
+			// Use inequality optimizer for constrained portfolios
+			let optimizer = InequalityOptimizer<VectorN<Double>>(
+				maxIterations: 100,
+				maxInnerIterations: 500
+			)
+			let result = try optimizer.minimize(
+				negativeSharpeFunction,
+				from: initialWeights,
+				subjectTo: constraints
+			)
+			finalWeights = result.solution
+			converged = result.converged
+			iterations = result.iterations
+		} else {
+			// Use equality-only optimizer for unconstrained
+			let optimizer = ConstrainedOptimizer<VectorN<Double>>(
+				maxIterations: 100,
+				maxInnerIterations: 500
+			)
+			let result = try optimizer.minimize(
+				negativeSharpeFunction,
+				from: initialWeights,
+				subjectTo: constraints
+			)
+			finalWeights = result.solution
+			converged = result.converged
+			iterations = result.iterations
+		}
 
 		// Calculate portfolio metrics
-		let portfolioReturn = expectedReturns.dot(normalizedWeights)
-		let portfolioVariance = calculateVariance(weights: normalizedWeights, covariance: covariance)
+		let portfolioReturn = expectedReturns.dot(finalWeights)
+		let portfolioVariance = calculateVariance(weights: finalWeights, covariance: covariance)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
 		let sharpeRatio = (portfolioReturn - riskFreeRate) / portfolioVolatility
 
 		return OptimalPortfolio(
-			weights: normalizedWeights,
+			weights: finalWeights,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
 			sharpeRatio: sharpeRatio,
-			converged: result.converged,
-			iterations: result.iterations
+			converged: converged,
+			iterations: iterations
 		)
 	}
 
@@ -291,9 +386,11 @@ public struct PortfolioOptimizer {
 	/// - Returns: Risk parity portfolio
 	public func riskParityPortfolio(
 		expectedReturns: VectorN<Double>,
-		covariance: [[Double]]
+		covariance: [[Double]],
+		constraintSet: PortfolioConstraintSet = .longOnly
 	) throws -> OptimalPortfolio {
 		let n = expectedReturns.count
+		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		// Objective: minimize sum of squared differences in risk contributions
 		let riskParityObjective: (VectorN<Double>) -> Double = { weights in
@@ -339,36 +436,54 @@ public struct PortfolioOptimizer {
 			return error
 		}
 
-		// Use BFGS for this non-quadratic objective
-		let optimizer = MultivariateNewtonRaphson<VectorN<Double>>(
-			maxIterations: 500,
-			tolerance: 1e-6
-		)
+		let finalWeights: VectorN<Double>
+		let converged: Bool
+		let iterations: Int
 
-		// Start with equal weights
-		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
+		let constraints = constraintSet.constraints(dimension: n)
 
-		let result = try optimizer.minimizeBFGS(
-			function: riskParityObjective,
-			gradient: { try numericalGradient(riskParityObjective, at: $0) },
-			initialGuess: initialWeights
-		)
-
-		// Normalize weights
-		let normalizedWeights = normalizeWeights(result.solution)
+		if constraintSet.hasInequalityConstraints {
+			// Use inequality optimizer for constrained portfolios
+			let optimizer = InequalityOptimizer<VectorN<Double>>(
+				maxIterations: 100,
+				maxInnerIterations: 500
+			)
+			let result = try optimizer.minimize(
+				riskParityObjective,
+				from: initialWeights,
+				subjectTo: constraints
+			)
+			finalWeights = result.solution
+			converged = result.converged
+			iterations = result.iterations
+		} else {
+			// Use equality-only optimizer for unconstrained
+			let optimizer = ConstrainedOptimizer<VectorN<Double>>(
+				maxIterations: 100,
+				maxInnerIterations: 500
+			)
+			let result = try optimizer.minimize(
+				riskParityObjective,
+				from: initialWeights,
+				subjectTo: constraints
+			)
+			finalWeights = result.solution
+			converged = result.converged
+			iterations = result.iterations
+		}
 
 		// Calculate portfolio metrics
-		let portfolioReturn = expectedReturns.dot(normalizedWeights)
-		let portfolioVariance = calculateVariance(weights: normalizedWeights, covariance: covariance)
+		let portfolioReturn = expectedReturns.dot(finalWeights)
+		let portfolioVariance = calculateVariance(weights: finalWeights, covariance: covariance)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
 
 		return OptimalPortfolio(
-			weights: normalizedWeights,
+			weights: finalWeights,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
 			sharpeRatio: portfolioReturn / portfolioVolatility,
-			converged: result.converged,
-			iterations: result.iterations
+			converged: converged,
+			iterations: iterations
 		)
 	}
 
@@ -380,8 +495,11 @@ public struct PortfolioOptimizer {
 		covariance: [[Double]],
 		riskFreeRate: Double
 	) throws -> OptimalPortfolio {
-		// Minimize variance subject to target return
-		// This is a simplified version - full implementation would use Lagrange multipliers
+		// Minimize variance subject to budget constraint and target return
+		// Now properly implemented with Lagrange multipliers
+
+		let n = expectedReturns.count
+		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		let varianceFunction: (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
@@ -391,36 +509,36 @@ public struct PortfolioOptimizer {
 					variance += w[i] * covariance[i][j] * w[j]
 				}
 			}
-
-			// Add penalty for deviating from target return
-			let actualReturn = expectedReturns.dot(weights)
-			let returnPenalty = 1000.0 * (actualReturn - targetReturn) * (actualReturn - targetReturn)
-
-			return variance + returnPenalty
+			return variance
 		}
 
-		let optimizer = MultivariateNewtonRaphson<VectorN<Double>>(
+		// Two equality constraints:
+		// 1. Budget: Σw = 1
+		// 2. Target return: μ'w = targetReturn
+		let constraints = [
+			MultivariateConstraint<VectorN<Double>>.budgetConstraint,
+			MultivariateConstraint<VectorN<Double>>.targetReturn(expectedReturns, target: targetReturn)
+		]
+
+		let optimizer = ConstrainedOptimizer<VectorN<Double>>(
 			maxIterations: 100,
-			tolerance: 1e-6
+			maxInnerIterations: 500
 		)
 
-		let n = expectedReturns.count
-		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
-
-		let result = try optimizer.minimizeBFGS(
-			function: varianceFunction,
-			gradient: { try numericalGradient(varianceFunction, at: $0) },
-			initialGuess: initialWeights
+		let result = try optimizer.minimize(
+			varianceFunction,
+			from: initialWeights,
+			subjectTo: constraints
 		)
 
-		let normalizedWeights = normalizeWeights(result.solution)
-		let portfolioReturn = expectedReturns.dot(normalizedWeights)
-		let portfolioVariance = calculateVariance(weights: normalizedWeights, covariance: covariance)
+		let finalWeights = result.solution
+		let portfolioReturn = expectedReturns.dot(finalWeights)
+		let portfolioVariance = calculateVariance(weights: finalWeights, covariance: covariance)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
 		let sharpeRatio = (portfolioReturn - riskFreeRate) / portfolioVolatility
 
 		return OptimalPortfolio(
-			weights: normalizedWeights,
+			weights: finalWeights,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
 			sharpeRatio: sharpeRatio,

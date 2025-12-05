@@ -1,78 +1,114 @@
 # Portfolio Optimization
 
-Build optimal investment portfolios using Modern Portfolio Theory and risk parity strategies.
+Build optimal investment portfolios using Modern Portfolio Theory, risk parity strategies, and efficient frontier analysis.
 
 ## Overview
 
-Portfolio optimization helps you build investment portfolios that maximize returns for a given level of risk, or minimize risk for a target return. BusinessMath implements Modern Portfolio Theory (Markowitz optimization) and Risk Parity allocation strategies.
+Portfolio optimization helps you build investment portfolios that maximize returns for a given level of risk, or minimize risk for a target return. BusinessMath implements Modern Portfolio Theory (Markowitz optimization), risk parity strategies, and efficient frontier generation as part of **Phase 3: Multivariate Optimization**.
 
 This guide covers:
-- Building portfolios from historical returns
-- Calculating the efficient frontier
-- Optimizing for maximum Sharpe ratio
+- Modern Portfolio Theory (mean-variance optimization)
+- Efficient frontier generation
+- Maximum Sharpe ratio portfolios
+- Minimum variance portfolios
+- Target return portfolios
 - Risk parity allocation
-- Practical portfolio construction
+- Constrained portfolios (long-only, leverage limits)
+
+## Quick Start
+
+```swift
+import BusinessMath
+
+// Define 4 assets with expected returns and covariance
+let optimizer = PortfolioOptimizer()
+
+let expectedReturns = VectorN([0.12, 0.15, 0.18, 0.05])
+let covariance = [
+    [0.04, 0.01, 0.02, 0.00],
+    [0.01, 0.09, 0.03, 0.01],
+    [0.02, 0.03, 0.16, 0.02],
+    [0.00, 0.01, 0.02, 0.01]
+]
+
+// Maximum Sharpe ratio (best risk-adjusted return)
+let portfolio = try optimizer.maximumSharpePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.02,
+    constraintSet: .longOnly
+)
+
+print("Sharpe Ratio: \(portfolio.sharpeRatio)")
+print("Expected Return: \(portfolio.expectedReturn * 100)%")
+print("Volatility: \(portfolio.volatility * 100)%")
+print("Weights: \(portfolio.weights)")
+```
 
 ## Modern Portfolio Theory
 
 Modern Portfolio Theory, developed by Harry Markowitz, shows how to combine assets to achieve optimal risk-return tradeoffs.
 
-### Creating a Portfolio
+### Minimum Variance Portfolio
+
+Find the portfolio with the lowest risk:
 
 ```swift
-import BusinessMath
-
-// Historical returns for 3 assets (monthly data for 1 year)
-let periods = (1...12).map { Period.month(year: 2024, month: $0) }
-
-let stockAReturns = [0.08, 0.05, -0.02, 0.10, 0.03, 0.07, 0.04, 0.06, -0.01, 0.09, 0.05, 0.08]
-let stockBReturns = [0.06, 0.04, 0.02, 0.08, 0.05, 0.06, 0.03, 0.05, 0.04, 0.07, 0.06, 0.07]
-let bondReturns = [0.02, 0.03, 0.02, 0.03, 0.02, 0.03, 0.02, 0.03, 0.02, 0.03, 0.02, 0.03]
-
-let stockA = TimeSeries(periods: periods, values: stockAReturns)
-let stockB = TimeSeries(periods: periods, values: stockBReturns)
-let bonds = TimeSeries(periods: periods, values: bondReturns)
-
-let portfolio = Portfolio(
-    assets: ["Stock A", "Stock B", "Bonds"],
-    returns: [stockA, stockB, bonds],
-    riskFreeRate: 0.02 / 12  // 2% annual = 0.167% monthly
+// Minimum variance (lowest risk possible)
+let minVar = try optimizer.minimumVariancePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    allowShortSelling: false  // long-only
 )
+
+print("Minimum Variance Portfolio:")
+print("  Expected Return: \(minVar.expectedReturn * 100)%")
+print("  Volatility (Std Dev): \(minVar.volatility * 100)%")
+print("  Weights: \(minVar.weights)")
 ```
 
-### Optimizing for Maximum Sharpe Ratio
+### Maximum Sharpe Ratio
 
-The Sharpe ratio measures return per unit of risk. Higher is better.
+Find the portfolio with the best risk-adjusted return:
 
 ```swift
-// Find optimal weights that maximize risk-adjusted returns
-let optimalAllocation = portfolio.optimizePortfolio()
+// Maximum Sharpe ratio (optimal portfolio)
+let maxSharpe = try optimizer.maximumSharpePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.02,
+    constraintSet: .longOnly
+)
 
-print("Optimal Portfolio:")
-print("  Expected Return: \(optimalAllocation.expectedReturn * 12 * 100)% annually")
-print("  Risk (Volatility): \(optimalAllocation.risk * sqrt(12) * 100)% annually")
-print("  Sharpe Ratio: \(optimalAllocation.sharpeRatio)")
-
-print("\nOptimal Weights:")
-for (asset, weight) in zip(portfolio.assets, optimalAllocation.weights) {
-    print("  \(asset): \(weight * 100)%")
-}
+print("Maximum Sharpe Portfolio:")
+print("  Sharpe Ratio: \(maxSharpe.sharpeRatio)")
+print("  Expected Return: \(maxSharpe.expectedReturn * 100)%")
+print("  Volatility: \(maxSharpe.volatility * 100)%")
 ```
 
-### Calculating Portfolio Metrics
+### Target Return Portfolio
+
+Find the minimum risk portfolio that achieves a specific return. This requires Phase 4's constrained optimization (see Custom Constraints section below), or you can use the efficient frontier to find portfolios at specific return levels:
 
 ```swift
-// For any allocation, calculate risk and return
-let customWeights = [0.40, 0.30, 0.30]  // 40% Stock A, 30% Stock B, 30% Bonds
+// Generate efficient frontier and find portfolio closest to target return
+let frontier = try optimizer.efficientFrontier(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.02,
+    numberOfPoints: 50
+)
 
-let customReturn = portfolio.portfolioReturn(weights: customWeights)
-let customRisk = portfolio.portfolioRisk(weights: customWeights)
-let customSharpe = portfolio.sharpeRatio(weights: customWeights)
+// Find portfolio closest to 12% target return
+let targetReturn = 0.12
+let targetPortfolio = frontier.portfolios.min(by: { portfolio in
+    abs(portfolio.expectedReturn - targetReturn) < abs($1.expectedReturn - targetReturn)
+})!
 
-print("\nCustom Allocation (40/30/30):")
-print("  Expected Return: \(customReturn * 12 * 100)% annually")
-print("  Risk: \(customRisk * sqrt(12) * 100)% annually")
-print("  Sharpe Ratio: \(customSharpe)")
+print("Target Return Portfolio (≈12%):")
+print("  Expected Return: \(targetPortfolio.expectedReturn * 100)%")
+print("  Volatility: \(targetPortfolio.volatility * 100)%")
+print("  Weights: \(targetPortfolio.weights)")
 ```
 
 ## Efficient Frontier
@@ -82,90 +118,279 @@ The efficient frontier shows all optimal portfolios - those with maximum return 
 ### Generating the Frontier
 
 ```swift
-let efficientFrontier = portfolio.efficientFrontier(points: 20)
+let frontier = try optimizer.efficientFrontier(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.02,
+    numberOfPoints: 20
+)
 
 print("Efficient Frontier:")
-print("Risk (σ) | Return (μ) | Sharpe")
-print("---------|------------|-------")
+print("Volatility | Return   | Sharpe")
+print("-----------|----------|-------")
 
-for allocation in efficientFrontier {
-    let annualReturn = allocation.expectedReturn * 12 * 100
-    let annualRisk = allocation.risk * sqrt(12) * 100
+for portfolio in frontier.portfolios {
+    let vol = portfolio.volatility * 100
+    let ret = portfolio.expectedReturn * 100
+    let sharpe = portfolio.sharpeRatio
 
-    print(String(format: "%6.2f%% | %8.2f%% | %6.3f",
-                 annualRisk, annualReturn, allocation.sharpeRatio))
+    print(String(format: "%8.2f%% | %6.2f%% | %6.2f", vol, ret, sharpe))
 }
 ```
 
 ### Finding Specific Points
 
 ```swift
-// Minimum risk portfolio
-let minRiskAllocation = efficientFrontier.min(by: { $0.risk < $1.risk })!
-print("\nMinimum Risk Portfolio:")
-print("  Risk: \(minRiskAllocation.risk * sqrt(12) * 100)%")
-print("  Return: \(minRiskAllocation.expectedReturn * 12 * 100)%")
+// Minimum volatility portfolio on frontier
+let minVol = frontier.minimumVariancePortfolio
+print("\nMinimum Volatility:")
+print("  Volatility: \(minVol.volatility * 100)%")
+print("  Return: \(minVol.expectedReturn * 100)%")
 
-// Maximum Sharpe ratio (optimal)
-let maxSharpeAllocation = efficientFrontier.max(by: { $0.sharpeRatio < $1.sharpeRatio })!
-print("\nMaximum Sharpe Portfolio:")
-print("  Sharpe Ratio: \(maxSharpeAllocation.sharpeRatio)")
-print("  Risk: \(maxSharpeAllocation.risk * sqrt(12) * 100)%")
-print("  Return: \(maxSharpeAllocation.expectedReturn * 12 * 100)%")
+// Maximum Sharpe ratio portfolio on frontier
+let maxSharpe = frontier.maximumSharpePortfolio
+print("\nMaximum Sharpe:")
+print("  Sharpe Ratio: \(maxSharpe.sharpeRatio)")
+print("  Volatility: \(maxSharpe.volatility * 100)%")
+print("  Return: \(maxSharpe.expectedReturn * 100)%")
 ```
 
-## Risk Parity Allocation
+## Risk Parity
 
-Risk parity allocates capital so each asset contributes equally to portfolio risk, rather than focusing on returns.
+Risk parity allocates capital so each asset contributes equally to portfolio risk.
 
 ### Equal Risk Contribution
 
 ```swift
-let riskParityOptimizer = RiskParityOptimizer<Double>()
-
-let riskParityAllocation = riskParityOptimizer.optimize(
-    assets: portfolio.assets,
-    returns: [stockA, stockB, bonds]
+// Each asset contributes equally to total risk
+let riskParity = try optimizer.riskParityPortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    constraintSet: .longOnly
 )
 
-print("\nRisk Parity Allocation:")
-for (asset, weight) in zip(riskParityAllocation.assets, riskParityAllocation.weights) {
-    print("  \(asset): \(weight * 100)%")
+print("Risk Parity Portfolio:")
+print("Weights:")
+for (i, weight) in riskParity.weights.toArray().enumerated() {
+    print("  Asset \(i): \(weight * 100)%")
 }
 
-// Verify equal risk contributions
-let riskContributions = riskParityOptimizer.calculateRiskContributions(
-    allocation: riskParityAllocation
-)
-
-print("\nRisk Contributions:")
-for (asset, contribution) in zip(riskParityAllocation.assets, riskContributions) {
-    print("  \(asset): \(contribution * 100)% of total risk")
-}
+print("\nExpected Return: \(riskParity.expectedReturn * 100)%")
+print("Volatility: \(riskParity.volatility * 100)%")
+print("Sharpe Ratio: \(riskParity.sharpeRatio)")
 ```
 
 ### When to Use Risk Parity
 
-Risk parity is appropriate when:
-- You believe risk, not return, is the key driver of portfolio performance
-- You want diversification across all positions
+**Use risk parity when:**
+- You believe risk, not return, drives portfolio performance
+- You want equal diversification across all positions
 - You're skeptical of return forecasts but confident in risk estimates
 
-Traditional Markowitz is better when:
+**Use mean-variance optimization when:**
 - You have strong return forecasts
 - You want to maximize risk-adjusted returns
 - Some assets clearly dominate others
 
-## Practical Portfolio Construction
+## Constrained Portfolios
 
-### Rebalancing
+Real-world portfolios often have constraints on allocations.
+
+### Long-Only (No Short-Selling)
 
 ```swift
-// Check how far current allocation drifts from target
+// No short-selling: all weights ≥ 0
+let longOnly = try optimizer.maximumSharpePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.02,
+    constraintSet: .longOnly
+)
+
+print("Long-Only Portfolio:")
+print("  Sharpe: \(longOnly.sharpeRatio)")
+print("  Weights: \(longOnly.weights)")
+```
+
+### Long-Short with Leverage Limit
+
+```swift
+// 130/30 strategy: 130% long, 30% short
+let longShort = try optimizer.maximumSharpePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.02,
+    constraintSet: .longShort(maxLeverage: 1.3)
+)
+
+print("130/30 Portfolio:")
+print("  Sharpe: \(longShort.sharpeRatio)")
+print("  Weights: \(longShort.weights)")
+```
+
+### Box Constraints
+
+```swift
+// Minimum 5%, maximum 40% per position
+let boxConstrained = try optimizer.maximumSharpePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.02,
+    constraintSet: .boxConstrained(min: 0.05, max: 0.40)
+)
+
+print("Box Constrained Portfolio:")
+print("  Weights: \(boxConstrained.weights)")
+```
+
+### Custom Constraints
+
+For complex constraints, use Phase 4's constrained optimization:
+
+```swift
+import BusinessMath
+
+let constrainedOptimizer = InequalityOptimizer<VectorN<Double>>()
+
+// Portfolio variance function
+func portfolioVariance(_ weights: VectorN<Double>) -> Double {
+    var variance = 0.0
+    for i in 0..<weights.dimension {
+        for j in 0..<weights.dimension {
+            variance += weights[i] * weights[j] * covarianceMatrix[i][j]
+        }
+    }
+    return variance
+}
+
+let result = try constrainedOptimizer.minimize(
+    portfolioVariance,
+    from: VectorN([0.25, 0.25, 0.25, 0.25]),
+    subjectTo: [
+        // Fully invested
+        .equality { w in w.sum() - 1.0 },
+        // Target return ≥ 12%
+        .inequality { w in
+            let ret = w.dot(VectorN(expectedReturns))
+            return 0.12 - ret  // ≤ 0 means ret ≥ 12%
+        },
+        // Long-only
+        .inequality { w in -w[0] },
+        .inequality { w in -w[1] },
+        .inequality { w in -w[2] },
+        .inequality { w in -w[3] }
+    ]
+)
+
+print("Custom Constrained Portfolio: \(result.solution.toArray())")
+```
+
+## Real-World Example
+
+### Complete Portfolio Construction
+
+```swift
+import BusinessMath
+
+// $1M portfolio with 5 asset classes
+let assets = [
+    "US Large Cap",
+    "US Small Cap",
+    "International",
+    "Bonds",
+    "Real Estate"
+]
+
+let expectedReturns = VectorN([0.10, 0.12, 0.11, 0.04, 0.09])
+
+let covariance = [
+    [0.0225, 0.0180, 0.0150, 0.0020, 0.0100],
+    [0.0180, 0.0400, 0.0200, 0.0010, 0.0150],
+    [0.0150, 0.0200, 0.0400, 0.0030, 0.0120],
+    [0.0020, 0.0010, 0.0030, 0.0016, 0.0010],
+    [0.0100, 0.0150, 0.0120, 0.0010, 0.0256]
+]
+
+let optimizer = PortfolioOptimizer()
+
+// Conservative investor (minimum variance)
+let conservative = try optimizer.minimumVariancePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    allowShortSelling: false
+)
+
+print("Conservative Portfolio ($1M):")
+for (i, asset) in assets.enumerated() {
+    let weight = conservative.weights.toArray()[i]
+    if weight > 0.01 {
+        let allocation = 1_000_000 * weight
+        print("  \(asset): $\(String(format: "%.0f", allocation)) (\(String(format: "%.1f%%", weight * 100)))")
+    }
+}
+print("  Expected Return: \(String(format: "%.2f%%", conservative.expectedReturn * 100))")
+print("  Volatility: \(String(format: "%.2f%%", conservative.volatility * 100))")
+
+// Moderate investor (max Sharpe)
+let moderate = try optimizer.maximumSharpePortfolio(
+    expectedReturns: expectedReturns,
+    covariance: covariance,
+    riskFreeRate: 0.03,
+    constraintSet: .longOnly
+)
+
+print("\nModerate Portfolio ($1M):")
+for (i, asset) in assets.enumerated() {
+    let weight = moderate.weights.toArray()[i]
+    if weight > 0.01 {
+        let allocation = 1_000_000 * weight
+        print("  \(asset): $\(String(format: "%.0f", allocation)) (\(String(format: "%.1f%%", weight * 100)))")
+    }
+}
+print("  Sharpe Ratio: \(String(format: "%.2f", moderate.sharpeRatio))")
+print("  Expected Return: \(String(format: "%.2f%%", moderate.expectedReturn * 100))")
+print("  Volatility: \(String(format: "%.2f%%", moderate.volatility * 100))")
+```
+
+## Understanding Portfolio Metrics
+
+### Expected Return
+
+Weighted average of asset returns:
+```
+E[R_p] = Σ w_i × E[R_i]
+```
+
+### Portfolio Risk (Volatility)
+
+Standard deviation of portfolio returns:
+```
+σ_p = √(w^T Σ w)
+```
+
+Where Σ is the covariance matrix.
+
+### Sharpe Ratio
+
+Risk-adjusted return:
+```
+Sharpe = (E[R_p] - R_f) / σ_p
+```
+
+Higher is better. Typical values:
+- < 1.0: Poor risk-adjusted return
+- 1.0-2.0: Good
+- 2.0-3.0: Very good
+- \> 3.0: Exceptional
+
+## Rebalancing
+
+```swift
+// Check if rebalancing is needed
 func needsRebalancing(
     current: [Double],
     target: [Double],
-    threshold: Double = 0.05  // 5% threshold
+    threshold: Double = 0.05
 ) -> Bool {
     for (curr, targ) in zip(current, target) {
         if abs(curr - targ) > threshold {
@@ -175,100 +400,102 @@ func needsRebalancing(
     return false
 }
 
-let currentWeights = [0.45, 0.28, 0.27]  // After market moves
-let targetWeights = [0.40, 0.30, 0.30]
+let currentWeights = [0.28, 0.32, 0.25, 0.15]  // After market moves
+let targetWeights = [0.25, 0.30, 0.25, 0.20]   // Original allocation
 
 if needsRebalancing(current: currentWeights, target: targetWeights) {
     print("Rebalancing needed:")
     for i in 0..<currentWeights.count {
-        let diff = (currentWeights[i] - targetWeights[i]) * 100
-        print("  \(portfolio.assets[i]): \(diff > 0 ? "+" : "")\(diff)%")
+        let diff = currentWeights[i] - targetWeights[i]
+        let diffPercent = diff * 100
+        let action = diff > 0 ? "Sell" : "Buy"
+        print("  \(assets[i]): \(action) \(String(format: "%.1f%%", abs(diffPercent)))")
     }
 }
 ```
 
-### Constraints
+## Complete Documentation
 
+### Phase 3: Portfolio Optimization
+
+The portfolio optimization features are part of Phase 3: Multivariate Optimization.
+
+**Comprehensive documentation:**
+- **Tutorial**: `Instruction Set/PHASE_3_TUTORIAL.md`
+  - Modern Portfolio Theory overview
+  - Efficient frontier theory
+  - Risk parity allocation
+  - Algorithm selection guide
+
+- **Examples**: `Examples/PortfolioOptimizationExample.swift`
+  - Basic portfolio optimization (min variance, max Sharpe, target return)
+  - Efficient frontier generation (20 portfolios)
+  - Risk parity portfolio (equal risk contribution)
+  - Constrained portfolios (long-only, 130/30, box constraints)
+  - Real-world portfolio ($1M across 5 asset classes)
+
+**Related optimization topics:**
+- **Phase 1**: Goal-seeking for IRR and breakeven analysis
+- **Phase 4**: Advanced constraints for complex portfolio rules
+- **Phase 5**: Resource allocation for project selection
+
+## Practical Tips
+
+### Data Requirements
+
+Minimum data for reliable optimization:
+- At least 36-60 months of return data
+- Daily, weekly, or monthly returns (monthly most common)
+- Handle outliers and data quality issues
+- Consider regime changes
+
+### Estimation Error
+
+Optimization is sensitive to inputs:
 ```swift
-// Real-world portfolios have constraints
-struct PortfolioConstraints {
-    let minWeight: Double  // Minimum per asset
-    let maxWeight: Double  // Maximum per asset
-    let minBonds: Double   // Minimum in "safe" assets
-}
-
-let constraints = PortfolioConstraints(
-    minWeight: 0.05,   // At least 5% in each
-    maxWeight: 0.50,   // At most 50% in each
-    minBonds: 0.20     // At least 20% in bonds
-)
-
-// Custom optimization with constraints
-func optimizeWithConstraints(
-    portfolio: Portfolio<Double>,
-    constraints: PortfolioConstraints
-) -> PortfolioAllocation<Double> {
-    // Start with feasible allocation
-    var weights = [0.40, 0.40, 0.20]
-
-    // Iteratively improve while respecting constraints
-    // (Simplified - real implementation uses Lagrange multipliers)
-
-    return PortfolioAllocation(
-        assets: portfolio.assets,
-        weights: weights,
-        expectedReturn: portfolio.portfolioReturn(weights: weights),
-        risk: portfolio.portfolioRisk(weights: weights),
-        sharpeRatio: portfolio.sharpeRatio(weights: weights)
-    )
-}
+// Black-Litterman views can improve estimation
+// Robust optimization handles uncertainty
+// Resampled efficient frontier reduces sensitivity
 ```
 
-## Understanding Correlations
+### Transaction Costs
 
-Correlation drives diversification benefits.
-
-### Calculating Correlations
-
+Account for trading costs:
 ```swift
-let correlationMatrix = portfolio.correlationMatrix()
-
-print("Correlation Matrix:")
-print("        Stock A  Stock B  Bonds")
-for (i, asset) in portfolio.assets.enumerated() {
-    print(asset, terminator: "")
-    for j in 0..<portfolio.assets.count {
-        print(String(format: " %7.3f", correlationMatrix[i][j]), terminator: "")
-    }
-    print()
-}
+// Implement minimum trade sizes
+// Add turnover constraints
+// Consider tax implications
 ```
 
-### Diversification Benefits
+### Monitoring
 
+Regular portfolio review:
 ```swift
-// Compare diversified portfolio to individual assets
-let equalWeights = [1.0/3.0, 1.0/3.0, 1.0/3.0]
-let portfolioRisk = portfolio.portfolioRisk(weights: equalWeights)
-
-let avgIndividualRisk = mean(portfolio.expectedReturns.map { stdDev($0.valuesArray) })
-
-let diversificationBenefit = (avgIndividualRisk - portfolioRisk) / avgIndividualRisk
-
-print("Diversification reduces risk by \(diversificationBenefit * 100)%")
+// Monthly: Check if rebalancing needed (>5% drift)
+// Quarterly: Review assumptions and forecasts
+// Annually: Full optimization with updated data
 ```
 
 ## Next Steps
 
-- Explore <doc:RealOptionsGuide> for valuing strategic flexibility in investments
-- Learn <doc:RiskAnalyticsGuide> for comprehensive portfolio risk analysis
+- Explore <doc:OptimizationGuide> for the complete optimization framework
+- Learn <doc:RiskAnalyticsGuide> for comprehensive risk analysis
 - See <doc:ScenarioAnalysisGuide> for stress testing portfolios
 
 ## See Also
 
-- ``Portfolio``
+### Portfolio Optimization
+- ``PortfolioOptimizer``
 - ``PortfolioAllocation``
-- ``RiskParityOptimizer``
-- ``expectedReturns``
-- ``covarianceMatrix()``
-- ``correlationMatrix()``
+- ``EfficientFrontier``
+- ``PortfolioConstraints``
+
+### Related Optimization
+- ``MultivariateGradientDescent``
+- ``MultivariateNewtonRaphson``
+- ``ConstrainedOptimizer``
+- ``InequalityOptimizer``
+
+### Vector Operations (Phase 2)
+- ``VectorN``
+- ``VectorSpace``

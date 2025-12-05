@@ -14,7 +14,7 @@ Add BusinessMath to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/BusinessMath.git", from: "1.0.0")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "1.0.0")
 ]
 ```
 
