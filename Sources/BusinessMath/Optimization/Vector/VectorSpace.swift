@@ -660,7 +660,7 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		/// - Parameter tolerance: Numerical tolerance for dot product comparison
 		/// - Returns: True if dot product is approximately zero.
 	public func isOrthogonal(to other: VectorN<T>, tolerance: T? = nil) -> Bool {
-		let tol = tolerance ?? (T(1) / T(10_000_000_000))
+		let tol = tolerance ?? (T(1) / T(10_000_000))
 		return abs(self.dot(other)) < tol
 	}
 	
@@ -669,7 +669,7 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		/// - Parameter tolerance: Numerical tolerance for cross product magnitude comparison
 		/// - Returns: True if vectors are scalar multiples (for 2D/3D) or if cosine similarity is ±1.
 	public func isParallel(to other: VectorN<T>, tolerance: T? = nil) -> Bool {
-		let tol = tolerance ?? (T(1) / T(10_000_000_000))
+		let tol = tolerance ?? (T(1) / T(10_000_000))
 		let cosSim = self.cosineSimilarity(with: other)
 		return abs(abs(cosSim) - T(1)) < tol
 	}
