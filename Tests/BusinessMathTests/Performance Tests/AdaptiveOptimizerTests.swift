@@ -5,15 +5,15 @@
 //  Created by Claude Code on 12/04/25.
 //
 
-import XCTest
+import Testing
 @testable import BusinessMath
 
-final class AdaptiveOptimizerTests: XCTestCase {
+@Suite struct AdaptiveOptimizerTests {
 
 	// MARK: - Algorithm Selection Tests
 
 	/// Test that inequality constraints select InequalityOptimizer
-	func testInequalityConstraintSelection() throws {
+	@Test func inequalityConstraintSelection() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		let result = try optimizer.optimize(
@@ -25,13 +25,13 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			]
 		)
 
-		XCTAssertEqual(result.algorithmUsed, "Inequality Optimizer")
-		XCTAssertTrue(result.selectionReason.contains("inequality"))
-		XCTAssertTrue(result.converged)
+		#expect(result.algorithmUsed == "Inequality Optimizer")
+		#expect(result.selectionReason.contains("inequality"))
+		#expect(result.converged)
 	}
 
 	/// Test that equality constraints select ConstrainedOptimizer
-	func testEqualityConstraintSelection() throws {
+	@Test func equalityConstraintSelection() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		let result = try optimizer.optimize(
@@ -42,13 +42,13 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			]
 		)
 
-		XCTAssertEqual(result.algorithmUsed, "Constrained Optimizer")
-		XCTAssertTrue(result.selectionReason.contains("equality"))
-		XCTAssertTrue(result.converged)
+		#expect(result.algorithmUsed == "Constrained Optimizer")
+		#expect(result.selectionReason.contains("equality"))
+		#expect(result.converged)
 	}
 
 	/// Test that large unconstrained problems select Gradient Descent
-	func testLargeProblemSelection() throws {
+	@Test func largeProblemSelection() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		// 150-dimensional problem
@@ -64,13 +64,13 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			constraints: []
 		)
 
-		XCTAssertEqual(result.algorithmUsed, "Gradient Descent")
-		XCTAssertTrue(result.selectionReason.contains("Large problem"))
-		XCTAssertTrue(result.converged)
+		#expect(result.algorithmUsed == "Gradient Descent")
+		#expect(result.selectionReason.contains("Large problem"))
+		#expect(result.converged)
 	}
 
 	/// Test that small unconstrained problems select Newton-Raphson by default
-	func testSmallUnconstrainedSelection() throws {
+	@Test func smallUnconstrainedSelection() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		let result = try optimizer.optimize(
@@ -78,17 +78,17 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			initialGuess: VectorN([0.0, 0.0])
 		)
 
-		XCTAssertEqual(result.algorithmUsed, "Newton-Raphson")
-		XCTAssertTrue(result.selectionReason.contains("Small problem"))
-		XCTAssertTrue(result.converged)
+		#expect(result.algorithmUsed == "Newton-Raphson")
+		#expect(result.selectionReason.contains("Small problem"))
+		#expect(result.converged)
 
 		// Verify solution
-		XCTAssertEqual(result.solution[0], 1.0, accuracy: 0.1)
-		XCTAssertEqual(result.solution[1], 2.0, accuracy: 0.1)
+		#expect(abs(result.solution[0] - 1.0) < 0.1)
+		#expect(abs(result.solution[1] - 2.0) < 0.1)
 	}
 
 	/// Test preference for speed still uses gradient descent (fastest available)
-	func testSpeedPreference() throws {
+	@Test func speedPreference() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>(preferSpeed: true)
 
 		let result = try optimizer.optimize(
@@ -98,12 +98,12 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			constraints: []
 		)
 
-		XCTAssertEqual(result.algorithmUsed, "Gradient Descent")
-		XCTAssertTrue(result.converged)
+		#expect(result.algorithmUsed == "Gradient Descent")
+		#expect(result.converged)
 	}
 
 	/// Test preference for accuracy
-	func testAccuracyPreference() throws {
+	@Test func accuracyPreference() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>(preferAccuracy: true)
 
 		let result = try optimizer.optimize(
@@ -112,14 +112,14 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			constraints: []
 		)
 
-		XCTAssertEqual(result.algorithmUsed, "Newton-Raphson")
-		XCTAssertTrue(result.selectionReason.contains("Accuracy preference"))
+		#expect(result.algorithmUsed == "Newton-Raphson")
+		#expect(result.selectionReason.contains("Accuracy preference"))
 	}
 
 	// MARK: - Problem Analysis Tests
 
 	/// Test problem analysis without running optimization
-	func testProblemAnalysis() throws {
+	@Test func problemAnalysis() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		let analysis = optimizer.analyzeProblem(
@@ -130,17 +130,17 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			hasGradient: true
 		)
 
-		XCTAssertEqual(analysis.size, 2)
-		XCTAssertTrue(analysis.hasConstraints)
-		XCTAssertTrue(analysis.hasInequalities)
-		XCTAssertTrue(analysis.hasGradient)
-		XCTAssertEqual(analysis.recommendedAlgorithm, "Inequality Optimizer")
+		#expect(analysis.size == 2)
+		#expect(analysis.hasConstraints)
+		#expect(analysis.hasInequalities)
+		#expect(analysis.hasGradient)
+		#expect(analysis.recommendedAlgorithm == "Inequality Optimizer")
 	}
 
 	// MARK: - Real-World Problems
 
 	/// Test adaptive optimization on Rosenbrock function
-	func testRosenbrockOptimization() throws {
+	@Test func rosenbrockOptimization() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		let rosenbrock: (VectorN<Double>) -> Double = { v in
@@ -153,14 +153,14 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			initialGuess: VectorN([0.0, 0.0])
 		)
 
-		XCTAssertTrue(result.converged)
-		XCTAssertEqual(result.solution[0], 1.0, accuracy: 0.1)
-		XCTAssertEqual(result.solution[1], 1.0, accuracy: 0.1)
-		XCTAssertLessThan(result.objectiveValue, 0.1)
+		#expect(result.converged)
+		#expect(abs(result.solution[0] - 1.0) < 0.1)
+		#expect(abs(result.solution[1] - 1.0) < 0.1)
+		#expect(result.objectiveValue < 0.1)
 	}
 
 	/// Test adaptive optimization on constrained portfolio
-	func testConstrainedPortfolio() throws {
+	@Test func constrainedPortfolio() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		// Minimize variance: x'Σx
@@ -190,23 +190,23 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			]
 		)
 
-		XCTAssertEqual(result.algorithmUsed, "Inequality Optimizer")
-		XCTAssertTrue(result.converged)
+		#expect(result.algorithmUsed == "Inequality Optimizer")
+		#expect(result.converged)
 
 		// Check budget constraint
 		let sum = result.solution.toArray().reduce(0, +)
-		XCTAssertEqual(sum, 1.0, accuracy: 0.01)
+		#expect(abs(sum - 1.0) < 0.01)
 
 		// Check non-negativity
 		for weight in result.solution.toArray() {
-			XCTAssertGreaterThanOrEqual(weight, 0.0)
+			#expect(weight >= 0.0)
 		}
 	}
 
 	// MARK: - Convergence Tests
 
 	/// Test that adaptive optimizer converges on easy problems
-	func testConvergenceOnQuadratic() throws {
+	@Test func convergenceOnQuadratic() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
 		// Simple quadratic: (x-3)^2 + (y-4)^2
@@ -217,14 +217,14 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			initialGuess: VectorN([0.0, 0.0])
 		)
 
-		XCTAssertTrue(result.converged)
-		XCTAssertEqual(result.solution[0], 3.0, accuracy: 0.01)
-		XCTAssertEqual(result.solution[1], 4.0, accuracy: 0.01)
-		XCTAssertLessThan(Double(result.objectiveValue), 0.01)
+		#expect(result.converged)
+		#expect(abs(result.solution[0] - 3.0) < 0.01)
+		#expect(abs(result.solution[1] - 4.0) < 0.01)
+		#expect(Double(result.objectiveValue) < 0.01)
 	}
 
 	/// Test custom tolerance
-	func testCustomTolerance() throws {
+	@Test func customTolerance() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>(tolerance: 1e-8)
 
 		let result = try optimizer.optimize(
@@ -232,12 +232,12 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			initialGuess: VectorN([1.0, 1.0])
 		)
 
-		XCTAssertTrue(result.converged)
-		XCTAssertLessThan(Double(result.objectiveValue), 1e-6)
+		#expect(result.converged)
+		#expect(Double(result.objectiveValue) < 1e-6)
 	}
 
 	/// Test max iterations limit
-	func testMaxIterations() throws {
+	@Test func maxIterations() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>(maxIterations: 5)  // Very low limit
 
 		// Rosenbrock is hard to optimize
@@ -251,6 +251,6 @@ final class AdaptiveOptimizerTests: XCTestCase {
 			initialGuess: VectorN([0.0, 0.0])
 		)
 
-		XCTAssertLessThanOrEqual(result.iterations, 5)
+		#expect(result.iterations <= 5)
 	}
 }
