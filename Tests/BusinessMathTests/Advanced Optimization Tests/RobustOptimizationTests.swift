@@ -5,47 +5,47 @@
 //  Created by Claude Code on 12/04/25.
 //
 
-import XCTest
+import Testing
 @testable import BusinessMath
 
 /// Tests for robust optimization with uncertainty sets.
-final class RobustOptimizationTests: XCTestCase {
+@Suite struct RobustOptimizationTests {
 
 	// MARK: - Uncertainty Set Tests
 
 	/// Test box uncertainty set generation and containment.
-	func testBoxUncertaintySet() {
+	@Test func boxUncertaintySet() {
 		let box = BoxUncertaintySet(
 			nominal: [0.10, 0.12, 0.08],
 			deviations: [0.02, 0.03, 0.01]
 		)
 
-		XCTAssertEqual(box.dimension, 3)
+		#expect(box.dimension == 3)
 
 		// Test containment
-		XCTAssertTrue(box.contains([0.10, 0.12, 0.08]))  // Nominal
-		XCTAssertTrue(box.contains([0.12, 0.15, 0.09]))  // Upper corner
-		XCTAssertTrue(box.contains([0.08, 0.09, 0.07]))  // Lower corner
-		XCTAssertFalse(box.contains([0.15, 0.12, 0.08]))  // Outside
+		#expect(box.contains([0.10, 0.12, 0.08]))  // Nominal
+		#expect(box.contains([0.12, 0.15, 0.09]))  // Upper corner
+		#expect(box.contains([0.08, 0.09, 0.07]))  // Lower corner
+		#expect(!box.contains([0.15, 0.12, 0.08]))  // Outside
 
 		// Test sampling
 		let samples = box.samplePoints(numberOfSamples: 100)
-		XCTAssertGreaterThanOrEqual(samples.count, 8)  // At least 2^3 corners
+		#expect(samples.count >= 8)  // At least 2^3 corners
 		for sample in samples {
-			XCTAssertTrue(box.contains(sample), "Sampled point should be in the set")
+			#expect(box.contains(sample), "Sampled point should be in the set")
 		}
 
 		// Test bounds (with tolerance for floating point)
-		XCTAssertEqual(box.lowerBounds[0], 0.08, accuracy: 1e-10)
-		XCTAssertEqual(box.lowerBounds[1], 0.09, accuracy: 1e-10)
-		XCTAssertEqual(box.lowerBounds[2], 0.07, accuracy: 1e-10)
-		XCTAssertEqual(box.upperBounds[0], 0.12, accuracy: 1e-10)
-		XCTAssertEqual(box.upperBounds[1], 0.15, accuracy: 1e-10)
-		XCTAssertEqual(box.upperBounds[2], 0.09, accuracy: 1e-10)
+		#expect(abs(box.lowerBounds[0] - 0.08) < 1e-10)
+		#expect(abs(box.lowerBounds[1] - 0.09) < 1e-10)
+		#expect(abs(box.lowerBounds[2] - 0.07) < 1e-10)
+		#expect(abs(box.upperBounds[0] - 0.12) < 1e-10)
+		#expect(abs(box.upperBounds[1] - 0.15) < 1e-10)
+		#expect(abs(box.upperBounds[2] - 0.09) < 1e-10)
 	}
 
 	/// Test ellipsoidal uncertainty set.
-	func testEllipsoidalUncertaintySet() {
+	@Test func ellipsoidalUncertaintySet() {
 		let covariance = [
 			[0.04, 0.00, 0.00],
 			[0.00, 0.09, 0.00],
@@ -58,18 +58,18 @@ final class RobustOptimizationTests: XCTestCase {
 			radius: 1.0
 		)
 
-		XCTAssertEqual(ellipsoid.dimension, 3)
+		#expect(ellipsoid.dimension == 3)
 
 		// Test containment (nominal should be in)
-		XCTAssertTrue(ellipsoid.contains([0.10, 0.12, 0.08]))
+		#expect(ellipsoid.contains([0.10, 0.12, 0.08]))
 
 		// Test sampling
 		let samples = ellipsoid.samplePoints(numberOfSamples: 100)
-		XCTAssertEqual(samples.count, 100)
+		#expect(samples.count == 100)
 	}
 
 	/// Test discrete uncertainty set.
-	func testDiscreteUncertaintySet() {
+	@Test func discreteUncertaintySet() {
 		let points = [
 			[0.05, 0.08, 0.03],  // Low returns
 			[0.10, 0.12, 0.08],  // Nominal
@@ -78,18 +78,18 @@ final class RobustOptimizationTests: XCTestCase {
 
 		let discrete = DiscreteUncertaintySet(points: points)
 
-		XCTAssertEqual(discrete.dimension, 3)
-		XCTAssertTrue(discrete.contains([0.10, 0.12, 0.08]))
-		XCTAssertFalse(discrete.contains([0.11, 0.12, 0.08]))
+		#expect(discrete.dimension == 3)
+		#expect(discrete.contains([0.10, 0.12, 0.08]))
+		#expect(!discrete.contains([0.11, 0.12, 0.08]))
 
 		let samples = discrete.samplePoints(numberOfSamples: 10)
-		XCTAssertEqual(samples.count, 3)  // Returns all points
+		#expect(samples.count == 3)  // Returns all points
 	}
 
 	// MARK: - Robust Portfolio Optimization
 
 	/// Test worst-case portfolio optimization with box uncertainty.
-	func testWorstCasePortfolioWithBoxUncertainty() throws {
+	@Test func worstCasePortfolioWithBoxUncertainty() throws {
 		// Nominal returns and their uncertainty
 		let nominalReturns = [0.10, 0.12, 0.08]
 		let deviations = [0.02, 0.03, 0.01]  // ±2%, ±3%, ±1%
@@ -121,33 +121,33 @@ final class RobustOptimizationTests: XCTestCase {
 			minimize: true  // Minimize the negative = maximize worst-case return
 		)
 
-		XCTAssertTrue(result.converged, "Optimization should converge")
+		#expect(result.converged, "Optimization should converge")
 
 		// Verify budget constraint
 		let weights = result.solution.toArray()
-		XCTAssertEqual(weights.reduce(0.0, +), 1.0, accuracy: 1e-3)
+		#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 
 		// Verify non-negativity
 		for weight in weights {
-			XCTAssertGreaterThanOrEqual(weight, 0.0)
+			#expect(weight >= 0.0)
 		}
 
 		// Since we minimize negative return, worst-case objective is the most negative
 		// (We want to maximize the worst-case return, so minimize its negative)
 		// Worst-case should be more negative than or equal to nominal
-		XCTAssertGreaterThanOrEqual(result.worstCaseObjective, result.nominalObjective - 1e-6,
+		#expect(result.worstCaseObjective >= result.nominalObjective - 1e-6,
 									"Worst-case (most negative) should be >= nominal (less negative)")
 
 		// Worst-case parameters should be in uncertainty set
 		let worstInSet = uncertaintySet.contains(result.worstCaseParameters)
 		// Note: Due to sampling, worst-case may be approximate
 		// Just verify it's reasonable
-		XCTAssertTrue(worstInSet || result.worstCaseParameters.count == nominalReturns.count,
+		#expect(worstInSet || result.worstCaseParameters.count == nominalReturns.count,
 					 "Worst-case parameters should be in set or have correct dimension")
 	}
 
 	/// Test robust vs non-robust portfolio comparison.
-	func testRobustVsNonRobustComparison() throws {
+	@Test func robustVsNonRobustComparison() throws {
 		let nominalReturns = [0.10, 0.12, 0.08]
 		let deviations = [0.03, 0.04, 0.02]
 
@@ -189,9 +189,8 @@ final class RobustOptimizationTests: XCTestCase {
 		let worstCaseReturns = zip(nominalReturns, deviations).map { $0 - $1 }
 		let nominalWorstCase = -nominalWeights.dot(VectorN(worstCaseReturns))
 
-		XCTAssertLessThanOrEqual(
-			robustResult.worstCaseObjective,
-			nominalWorstCase + 1e-3,
+		#expect(
+			robustResult.worstCaseObjective <= nominalWorstCase + 1e-3,
 			"Robust solution should have better or equal worst-case"
 		)
 	}
@@ -199,7 +198,7 @@ final class RobustOptimizationTests: XCTestCase {
 	// MARK: - Discrete Uncertainty
 
 	/// Test robust optimization with discrete uncertainty set.
-	func testRobustWithDiscreteUncertainty() throws {
+	@Test func robustWithDiscreteUncertainty() throws {
 		// Three scenarios: bull, base, bear
 		let scenarios = [
 			[0.15, 0.18, 0.12],  // Bull
@@ -223,7 +222,7 @@ final class RobustOptimizationTests: XCTestCase {
 			tolerance: 1e-4
 		)
 
-		XCTAssertTrue(result.converged)
+		#expect(result.converged)
 
 		// Worst-case should be bear scenario (lowest returns)
 		// Since we minimize negative return, worst-case objective is the most negative value
@@ -232,13 +231,13 @@ final class RobustOptimizationTests: XCTestCase {
 		let bearObjective = -result.solution.dot(VectorN(bearReturns))
 
 		// The worst-case objective should correspond to bear market
-		XCTAssertEqual(result.worstCaseObjective, bearObjective, accuracy: 1e-3)
+		#expect(abs(result.worstCaseObjective - bearObjective) < 1e-3)
 	}
 
 	// MARK: - Robust Production Planning
 
 	/// Test robust production planning with uncertain demand.
-	func testRobustProductionPlanning() throws {
+	@Test func robustProductionPlanning() throws {
 		// Production cost, selling price, shortage penalty
 		let productionCost = 10.0
 		let sellingPrice = 25.0
@@ -273,20 +272,20 @@ final class RobustOptimizationTests: XCTestCase {
 			tolerance: 1e-4
 		)
 
-		XCTAssertTrue(result.converged)
+		#expect(result.converged)
 
 		let optimalProduction = result.solution.toArray()[0]
-		XCTAssertGreaterThan(optimalProduction, 80.0)
-		XCTAssertLessThan(optimalProduction, 150.0)
+		#expect(optimalProduction > 80.0)
+		#expect(optimalProduction < 150.0)
 
 		// Worst-case should have reasonable profit
-		XCTAssertGreaterThan(-result.worstCaseObjective, 0.0, "Worst-case profit should be positive")
+		#expect(-result.worstCaseObjective > 0.0, "Worst-case profit should be positive")
 	}
 
 	// MARK: - Constraint Satisfaction
 
 	/// Test that constraints are satisfied in all scenarios.
-	func testConstraintSatisfactionInAllScenarios() throws {
+	@Test func constraintSatisfactionInAllScenarios() throws {
 		let nominalReturns = [0.10, 0.12, 0.08, 0.04]
 		let deviations = [0.02, 0.03, 0.01, 0.01]
 
@@ -319,11 +318,11 @@ final class RobustOptimizationTests: XCTestCase {
 		let weights = result.solution.toArray()
 
 		// Budget constraint
-		XCTAssertEqual(weights.reduce(0.0, +), 1.0, accuracy: 1e-3)
+		#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 
 		// Non-negativity
 		for weight in weights {
-			XCTAssertGreaterThanOrEqual(weight, 0.0)
+			#expect(weight >= 0.0)
 		}
 
 		// Test constraints hold for sampled uncertainty points
@@ -331,9 +330,9 @@ final class RobustOptimizationTests: XCTestCase {
 		for sample in samples {
 			// At minimum, budget and non-negativity must hold
 			// (These are scenario-independent)
-			XCTAssertEqual(weights.reduce(0.0, +), 1.0, accuracy: 1e-3)
+			#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 			for weight in weights {
-				XCTAssertGreaterThanOrEqual(weight, -1e-6)
+				#expect(weight >= -1e-6)
 			}
 		}
 	}
@@ -341,7 +340,7 @@ final class RobustOptimizationTests: XCTestCase {
 	// MARK: - Conservative Allocation
 
 	/// Test that robust optimization is more conservative.
-	func testConservativeAllocation() throws {
+	@Test func conservativeAllocation() throws {
 		let nominalReturns = [0.08, 0.15, 0.10]  // Second asset has high return but high uncertainty
 		let deviations = [0.01, 0.08, 0.02]      // Second asset is very uncertain
 
@@ -362,19 +361,19 @@ final class RobustOptimizationTests: XCTestCase {
 			tolerance: 1e-4
 		)
 
-		XCTAssertTrue(result.converged)
+		#expect(result.converged)
 
 		let weights = result.solution.toArray()
 
 		// Robust optimization should allocate less to the high-variance asset (asset 1)
 		// This is a characteristic of worst-case optimization
-		XCTAssertEqual(weights.reduce(0.0, +), 1.0, accuracy: 1e-3)
+		#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 	}
 
 	// MARK: - Edge Cases
 
 	/// Test with zero uncertainty (should equal nominal).
-	func testZeroUncertainty() throws {
+	@Test func zeroUncertainty() throws {
 		let nominalReturns = [0.10, 0.12, 0.08]
 		let zeroDeviations = [0.0, 0.0, 0.0]
 
@@ -396,15 +395,15 @@ final class RobustOptimizationTests: XCTestCase {
 		)
 
 		// With zero uncertainty, worst-case should equal nominal
-		XCTAssertEqual(result.worstCaseObjective, result.nominalObjective, accuracy: 1e-3)
+		#expect(abs(result.worstCaseObjective - result.nominalObjective) < 1e-3)
 
 		// Should allocate entirely to highest-return asset (asset 1 with 12%)
 		let weights = result.solution.toArray()
-		XCTAssertGreaterThan(weights[1], 0.9, "Should allocate mostly to highest-return asset")
+		#expect(weights[1] > 0.9, "Should allocate mostly to highest-return asset")
 	}
 
 	/// Test single-asset portfolio (trivial case).
-	func testSingleAssetPortfolio() throws {
+	@Test func singleAssetPortfolio() throws {
 		let nominalReturns = [0.10]
 		let deviations = [0.02]
 
@@ -421,21 +420,21 @@ final class RobustOptimizationTests: XCTestCase {
 			maxIterations: 100
 		)
 
-		XCTAssertTrue(result.converged)
+		#expect(result.converged)
 
 		// With one asset, weight must be 1.0
 		let weight = result.solution.toArray()[0]
-		XCTAssertEqual(weight, 1.0, accuracy: 1e-3)
+		#expect(abs(weight - 1.0) < 1e-3)
 
 		// Worst-case return should be nominal - deviation
 		let worstReturn = -result.worstCaseObjective
-		XCTAssertEqual(worstReturn, 0.08, accuracy: 1e-3)
+		#expect(abs(worstReturn - 0.08) < 1e-3)
 	}
 
 	// MARK: - Convergence
 
 	/// Test convergence with different sample sizes.
-	func testConvergenceWithSampleSizes() throws {
+	@Test func convergenceWithSampleSizes() throws {
 		let nominalReturns = [0.10, 0.12, 0.08]
 		let deviations = [0.02, 0.03, 0.01]
 
@@ -457,16 +456,16 @@ final class RobustOptimizationTests: XCTestCase {
 				tolerance: 1e-4
 			)
 
-			XCTAssertTrue(result.converged, "Should converge with \(samples) samples")
+			#expect(result.converged, "Should converge with \(samples) samples")
 			let weights = result.solution.toArray()
-			XCTAssertEqual(weights.reduce(0.0, +), 1.0, accuracy: 1e-3)
+			#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 		}
 	}
 
 	// MARK: - Performance Comparison
 
 	/// Compare stochastic vs robust optimization.
-	func testStochasticVsRobustComparison() throws {
+	@Test func stochasticVsRobustComparison() throws {
 		let nominalReturns = [0.10, 0.12, 0.08]
 		let deviations = [0.02, 0.03, 0.01]
 
@@ -513,13 +512,13 @@ final class RobustOptimizationTests: XCTestCase {
 		)
 
 		// Both should converge
-		XCTAssertTrue(stochasticResult.converged)
-		XCTAssertTrue(robustResult.converged)
+		#expect(stochasticResult.converged)
+		#expect(robustResult.converged)
 
 		// Stochastic optimizes expected value (should have higher expected return)
 		// Robust optimizes worst-case (should have better worst-case)
 		// Both are valid but different objectives
-		XCTAssertGreaterThan(stochasticResult.expectedObjective, -0.15)
-		XCTAssertGreaterThan(-robustResult.worstCaseObjective, 0.05)
+		#expect(stochasticResult.expectedObjective > -0.15)
+		#expect(-robustResult.worstCaseObjective > 0.05)
 	}
 }

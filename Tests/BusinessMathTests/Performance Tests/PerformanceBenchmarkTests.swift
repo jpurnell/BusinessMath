@@ -5,15 +5,15 @@
 //  Created by Claude Code on 12/04/25.
 //
 
-import XCTest
+import Testing
 @testable import BusinessMath
 
-final class PerformanceBenchmarkTests: XCTestCase {
+@Suite struct PerformanceBenchmarkTests {
 
 	// MARK: - Basic Profiling Tests
 
 	/// Test profiling a single optimizer run
-	func testProfileSingleRun() throws {
+	@Test func profileSingleRun() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
@@ -25,19 +25,19 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Verify result structure
-		XCTAssertNotNil(result.algorithmName)
-		XCTAssertTrue(result.converged)
-		XCTAssertGreaterThan(result.executionTime, 0.0)
-		XCTAssertGreaterThan(result.iterations, 0)
+		#expect(result.algorithmName != nil)
+		#expect(result.converged)
+		#expect(result.executionTime > 0.0)
+		#expect(result.iterations > 0)
 
 		// Verify solution quality
-		XCTAssertEqual(result.solution[0], 1.0, accuracy: 0.1)
-		XCTAssertEqual(result.solution[1], 2.0, accuracy: 0.1)
-		XCTAssertLessThan(result.objectiveValue, 0.1)
+		#expect(abs(result.solution[0] - 1.0) < 0.1)
+		#expect(abs(result.solution[1] - 2.0) < 0.1)
+		#expect(result.objectiveValue < 0.1)
 	}
 
 	/// Test that execution time is measured accurately
-	func testExecutionTimeMeasurement() throws {
+	@Test func executionTimeMeasurement() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
@@ -57,16 +57,16 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Both should have reasonable execution times
-		XCTAssertGreaterThan(result1.executionTime, 0.0)
-		XCTAssertGreaterThan(result2.executionTime, 0.0)
-		XCTAssertLessThan(result1.executionTime, 1.0)  // Should be fast
-		XCTAssertLessThan(result2.executionTime, 1.0)
+		#expect(result1.executionTime > 0.0)
+		#expect(result2.executionTime > 0.0)
+		#expect(result1.executionTime < 1.0)  // Should be fast
+		#expect(result2.executionTime < 1.0)
 	}
 
 	// MARK: - Comparison Tests
 
 	/// Test comparing multiple optimizers
-	func testCompareOptimizers() throws {
+	@Test func compareOptimizers() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let optimizers: [(String, AdaptiveOptimizer<VectorN<Double>>)] = [
@@ -83,24 +83,24 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Verify report structure
-		XCTAssertEqual(report.results.count, 3)
-		XCTAssertNotNil(report.winner)
+		#expect(report.results.count == 3)
+		#expect(report.winner != nil)
 
 		// Verify each optimizer result
 		for result in report.results {
-			XCTAssertGreaterThan(result.avgTime, 0.0)
-			XCTAssertGreaterThanOrEqual(result.successRate, 0.0)
-			XCTAssertLessThanOrEqual(result.successRate, 1.0)
-			XCTAssertEqual(result.runs.count, 5)
-			XCTAssertGreaterThan(result.avgIterations, 0.0)
+			#expect(result.avgTime > 0.0)
+			#expect(result.successRate >= 0.0)
+			#expect(result.successRate <= 1.0)
+			#expect(result.runs.count == 5)
+			#expect(result.avgIterations > 0.0)
 		}
 
 		// Winner should have good success rate
-		XCTAssertGreaterThan(report.winner.successRate, 0.5)
+		#expect(report.winner.successRate > 0.5)
 	}
 
 	/// Test that winner is selected correctly (fastest with >50% success)
-	func testWinnerSelection() throws {
+	@Test func winnerSelection() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let report = try benchmark.compareOptimizers(
@@ -114,14 +114,14 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Winner should be one of the tested optimizers
-		XCTAssertTrue(report.results.contains { $0.name == report.winner.name })
+		#expect(report.results.contains { $0.name == report.winner.name })
 
 		// Winner should have good success rate
-		XCTAssertGreaterThan(report.winner.successRate, 0.5)
+		#expect(report.winner.successRate > 0.5)
 	}
 
 	/// Test quick compare convenience method
-	func testQuickCompare() throws {
+	@Test func quickCompare() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let report = try benchmark.quickCompare(
@@ -131,18 +131,18 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Should compare 3 standard configurations
-		XCTAssertEqual(report.results.count, 3)
+		#expect(report.results.count == 3)
 
 		let names = report.results.map(\.name)
-		XCTAssertTrue(names.contains("Default"))
-		XCTAssertTrue(names.contains("Speed-Focused"))
-		XCTAssertTrue(names.contains("Accuracy-Focused"))
+		#expect(names.contains("Default"))
+		#expect(names.contains("Speed-Focused"))
+		#expect(names.contains("Accuracy-Focused"))
 	}
 
 	// MARK: - Report Generation Tests
 
 	/// Test summary report generation
-	func testSummaryReport() throws {
+	@Test func summaryReport() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let report = try benchmark.compareOptimizers(
@@ -158,16 +158,16 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		let summary = report.summary()
 
 		// Verify summary contains key information
-		XCTAssertTrue(summary.contains("Performance Comparison"))
-		XCTAssertTrue(summary.contains("Optimizer A"))
-		XCTAssertTrue(summary.contains("Optimizer B"))
-		XCTAssertTrue(summary.contains("Winner"))
-		XCTAssertTrue(summary.contains("Avg Time"))
-		XCTAssertTrue(summary.contains("Success Rate"))
+		#expect(summary.contains("Performance Comparison"))
+		#expect(summary.contains("Optimizer A"))
+		#expect(summary.contains("Optimizer B"))
+		#expect(summary.contains("Winner"))
+		#expect(summary.contains("Avg Time"))
+		#expect(summary.contains("Success Rate"))
 	}
 
 	/// Test detailed report generation
-	func testDetailedReport() throws {
+	@Test func detailedReport() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let report = try benchmark.compareOptimizers(
@@ -182,16 +182,16 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		let detailed = report.detailedReport()
 
 		// Verify detailed report contains more information
-		XCTAssertTrue(detailed.contains("Detailed Results"))
-		XCTAssertTrue(detailed.contains("Average time"))
-		XCTAssertTrue(detailed.contains("Average iterations"))
-		XCTAssertTrue(detailed.contains("Runs:"))
+		#expect(detailed.contains("Detailed Results"))
+		#expect(detailed.contains("Average time"))
+		#expect(detailed.contains("Average iterations"))
+		#expect(detailed.contains("Runs:"))
 	}
 
 	// MARK: - Statistical Tests
 
 	/// Test that statistics are calculated correctly
-	func testStatisticalMeasures() throws {
+	@Test func statisticalMeasures() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let report = try benchmark.compareOptimizers(
@@ -206,18 +206,18 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		let result = report.results[0]
 
 		// Verify statistical measures
-		XCTAssertGreaterThan(result.avgTime, 0.0)
-		XCTAssertGreaterThanOrEqual(result.stdTime, 0.0)  // Std dev should be non-negative
-		XCTAssertGreaterThan(result.avgIterations, 0.0)
+		#expect(result.avgTime > 0.0)
+		#expect(result.stdTime >= 0.0)  // Std dev should be non-negative
+		#expect(result.avgIterations > 0.0)
 
 		// Best objective should be <= average objective (it's the minimum)
 		if result.successRate > 0 {
-			XCTAssertLessThanOrEqual(result.bestObjectiveValue, result.avgObjectiveValue)
+			#expect(result.bestObjectiveValue <= result.avgObjectiveValue)
 		}
 	}
 
 	/// Test success rate calculation
-	func testSuccessRateCalculation() throws {
+	@Test func successRateCalculation() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		// Easy problem that should always converge
@@ -233,14 +233,14 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		let result = report.results[0]
 
 		// Should have 100% success rate on this easy problem
-		XCTAssertEqual(result.successRate, 1.0, accuracy: 0.01)
-		XCTAssertEqual(result.runs.filter(\.converged).count, 5)
+		#expect(abs(result.successRate - 1.0) < 0.01)
+		#expect(result.runs.filter(\.converged).count == 5)
 	}
 
 	// MARK: - Constrained Problem Tests
 
 	/// Test benchmarking with constraints
-	func testBenchmarkWithConstraints() throws {
+	@Test func benchmarkWithConstraints() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let constraints: [MultivariateConstraint<VectorN<Double>>] = [
@@ -259,14 +259,14 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Should handle constraints and produce results
-		XCTAssertEqual(report.results.count, 1)
-		XCTAssertGreaterThan(report.results[0].successRate, 0.0)
+		#expect(report.results.count == 1)
+		#expect(report.results[0].successRate > 0.0)
 	}
 
 	// MARK: - Performance Comparison Tests
 
 	/// Test that different optimizers show measurable differences
-	func testPerformanceDifferences() throws {
+	@Test func performanceDifferences() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		// Use a problem where algorithm choice matters
@@ -287,18 +287,18 @@ final class PerformanceBenchmarkTests: XCTestCase {
 
 		// Both should produce valid results
 		for result in report.results {
-			XCTAssertGreaterThan(result.avgTime, 0.0)
-			XCTAssertGreaterThan(result.avgIterations, 0.0)
+			#expect(result.avgTime > 0.0)
+			#expect(result.avgIterations > 0.0)
 		}
 
 		// Should be able to identify a winner
-		XCTAssertNotNil(report.winner)
+		#expect(report.winner != nil)
 	}
 
 	// MARK: - Edge Case Tests
 
 	/// Test with single trial
-	func testSingleTrial() throws {
+	@Test func singleTrial() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		let report = try benchmark.compareOptimizers(
@@ -311,12 +311,12 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Should handle single trial correctly
-		XCTAssertEqual(report.results[0].runs.count, 1)
-		XCTAssertGreaterThan(report.results[0].avgTime, 0.0)
+		#expect(report.results[0].runs.count == 1)
+		#expect(report.results[0].avgTime > 0.0)
 	}
 
 	/// Test with very quick optimization
-	func testQuickOptimization() throws {
+	@Test func quickOptimization() throws {
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		// Start at optimal solution
@@ -328,7 +328,7 @@ final class PerformanceBenchmarkTests: XCTestCase {
 		)
 
 		// Should still measure time accurately
-		XCTAssertGreaterThan(result.executionTime, 0.0)
-		XCTAssertTrue(result.converged)
+		#expect(result.executionTime > 0.0)
+		#expect(result.converged)
 	}
 }
