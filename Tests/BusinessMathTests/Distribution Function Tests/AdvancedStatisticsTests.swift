@@ -11,7 +11,7 @@ import Numerics
 @testable import BusinessMath
 
 @Suite("AdvancedStatisticsTests") struct AdvancedStatisticsTests {
-    let testLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "Advanced Statistics Tests")
+    let testLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "Advanced Statistics Tests: \(#function)")
 
     // MARK: - Probability Distribution Tests
 

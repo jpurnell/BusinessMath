@@ -43,7 +43,6 @@ struct PeriodTests {
 	@Test("Create monthly period")
 	func createMonthlyPeriod() {
 		let period = Period.month(year: 2025, month: 1)
-
 		#expect(period.type == .monthly)
 	}
 
@@ -74,7 +73,6 @@ struct PeriodTests {
 	@Test("Create quarterly period Q1")
 	func createQuarterlyQ1() {
 		let period = Period.quarter(year: 2025, quarter: 1)
-
 		#expect(period.type == .quarterly)
 	}
 
@@ -283,9 +281,9 @@ struct PeriodTests {
 		components.day = 15
 		let calendar = Calendar.current
 		let date = calendar.date(from: components)!
-		print(date)
+//		print(date)
 		let period = Period.day(date)
-		print(period)
+//		print(period)
 		// Compact format: "2025-01-15"
 		#expect(period.label == "2025-01-15")
 	}

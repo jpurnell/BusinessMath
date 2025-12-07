@@ -150,7 +150,6 @@ import Testing
 
 		// When
 		let output = plotTornadoDiagram(tornado)
-		print(output)
 		// Then
 		#expect(output.contains("1000"), "Should display base case value")
 		#expect(output.contains("Base"), "Should label base case")

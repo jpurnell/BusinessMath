@@ -47,10 +47,10 @@ import Testing
 			#expect(xₜ.toArray().count == 3)
 		}
 
-		print("Test result trajectory:")
+//		print("Test result trajectory:")
 		for (t, xₜ) in result.trajectory.enumerated() {
 			let weights = xₜ.toArray()
-			print("  Period \(t): \(weights.map { String(format: "%.4f", $0) }.joined(separator: ", "))")
+//			print("  Period \(t): \(weights.map { String(format: "%.4f", $0) }.joined(separator: ", "))")
 		}
 
 		// Without turnover constraints, should allocate 100% to highest return asset (index 1)
@@ -103,7 +103,7 @@ import Testing
 		let turnover = zip(w0, w1).map { abs($1 - $0) }.reduce(0.0, +)
 		#expect(turnover <= 0.31, "Turnover should respect 30% limit")
 
-		print("Turnover: \(String(format: "%.2f%%", turnover * 100))")
+//		print("Turnover: \(String(format: "%.2f%%", turnover * 100))")
 	}
 
 	/// Test 3: Multi-period with discount rate
@@ -182,7 +182,7 @@ import Testing
 		let finalWeights = result.terminalState.toArray()
 		#expect(finalWeights[0] >= 0.39, "Terminal weight should be ≥ 40%")
 
-		print("Final weights: \(finalWeights.map { String(format: "%.2f", $0) })")
+//		print("Final weights: \(finalWeights.map { String(format: "%.2f", $0) })")
 	}
 
 	// MARK: - Constraint Tests
@@ -321,7 +321,7 @@ import Testing
 		let average = allocationsToAsset0.reduce(0.0, +) / Double(allocationsToAsset0.count)
 
 		#expect(average >= 0.29, "Average should be ≥ 30%")
-		print("Average allocation to asset 0: \(String(format: "%.2f%%", average * 100))")
+//		print("Average allocation to asset 0: \(String(format: "%.2f%%", average * 100))")
 	}
 
 	// MARK: - Real-World Scenarios
@@ -360,8 +360,8 @@ import Testing
 			#expect(turnover <= 0.16, "Turnover in period \(t) should be ≤ 15%")
 		}
 
-		print("Portfolio rebalancing successful over 3 periods")
-		print("Final allocation: \(result.terminalState.toArray().map { String(format: "%.2f", $0) })")
+//		print("Portfolio rebalancing successful over 3 periods")
+//		print("Final allocation: \(result.terminalState.toArray().map { String(format: "%.2f", $0) })")
 	}
 
 	/// Test 9: Production planning over time
@@ -410,7 +410,7 @@ import Testing
 			let d = decision.toArray()
 			let totalProduction = d[0] + d[1]
 			#expect(totalProduction <= 121.0, "Period \(t) production should be ≤ 120")
-			print("Q\(t+1) production: Product1=\(String(format: "%.0f", d[0])), Product2=\(String(format: "%.0f", d[1]))")
+//			print("Q\(t+1) production: Product1=\(String(format: "%.0f", d[0])), Product2=\(String(format: "%.0f", d[1]))")
 		}
 	}
 
@@ -453,8 +453,8 @@ import Testing
 		let totalInvestment = result.trajectory.map { $0.toArray()[0] }.reduce(0.0, +)
 		#expect(totalInvestment <= 101.0, "Total investment should be ≤ $100k")
 
-		print("Total investment: $\(String(format: "%.0f", totalInvestment))k over 5 periods")
-		print("Investments: \(result.trajectory.map { String(format: "%.0f", $0.toArray()[0]) })")
+//		print("Total investment: $\(String(format: "%.0f", totalInvestment))k over 5 periods")
+//		print("Investments: \(result.trajectory.map { String(format: "%.0f", $0.toArray()[0]) })")
 	}
 
 	// MARK: - Edge Cases
