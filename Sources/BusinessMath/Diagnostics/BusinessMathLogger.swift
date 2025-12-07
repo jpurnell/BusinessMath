@@ -58,7 +58,7 @@ public extension Logger {
     /// ```
     static let modelExecution = Logger(
         subsystem: "com.justinpurnell.BusinessMath",
-        category: "model-execution"
+		category: "model-execution"
     )
 
     /// Logger for mathematical calculations and formulas
@@ -71,7 +71,7 @@ public extension Logger {
     /// ```
     static let calculations = Logger(
         subsystem: "com.justinpurnell.BusinessMath",
-        category: "calculations"
+		category: "calculations"
     )
 
     /// Logger for performance metrics and profiling

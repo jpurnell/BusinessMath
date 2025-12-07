@@ -212,9 +212,9 @@ struct PercentilesAdditionalTests {
 	@Test("Percentile argument outside [0, 1] is rejected or clamped")
 	func percentileOutOfRange() throws {
 		let values = (1...10).map { Double($0) }
-		print(values)
+//		print(values)
 		let p = try Percentiles(values: values)
-		print(p)
+//		print(p)
 
 		// Prefer throwing; if you clamp in implementation, adjust expectations accordingly
 		#expect(p.percentile(0.1) == 1.0 + 0.9) // placeholder for R-7; adjust/remove if you throw

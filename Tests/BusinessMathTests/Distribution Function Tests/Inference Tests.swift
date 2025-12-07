@@ -11,7 +11,7 @@ import Numerics
 @testable import BusinessMath
 
 @Suite("InferenceTests") struct InferenceTests {
-	let inferenceTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "Inference Tests")
+	let inferenceTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "Inference Tests: \(#function)")
 
     @Test("Confidence") func LConfidence() {
         let result = (confidence(alpha: 0.05, stdev: 2.5, sampleSize: 50).high * 1000000.0).rounded(.up) / 1000000.0

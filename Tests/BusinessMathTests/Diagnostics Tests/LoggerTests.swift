@@ -130,7 +130,7 @@ struct LoggerTests {
     func performanceWarningLogging() {
         let logger = Logger.performance
 
-        logger.performanceWarning("Slow Operation", duration: 5.2, threshold: 1.0)
+        logger.performanceWarning("Performance Logging Test – Slow Operation", duration: 5.2, threshold: 1.0)
 
         // Test passes if no crashes occur
         #expect(true)

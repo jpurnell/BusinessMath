@@ -52,8 +52,8 @@ public func linearRegression<T: Real>(_ xValues: [T], _ yValues: [T]) throws -> 
 	guard !xValues.isEmpty || !yValues.isEmpty else { throw ArrayError.emptyArray }
 	
 	let slope = try slope(xValues, yValues)
-    print("Slope:\t\(slope)")
     let intercept = try! intercept(xValues, yValues)
-    print("Intercept:\t\(intercept)")
+		//    print("Slope:\t\(slope)")
+		//    print("Intercept:\t\(intercept)")
     return { x in intercept + slope * x}
 }

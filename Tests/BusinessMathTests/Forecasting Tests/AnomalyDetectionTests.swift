@@ -250,7 +250,7 @@ struct AnomalyDetectionTests {
 			var values = Array(repeating: 100.0, count: 100)
 			values[50] = 150.0
 			values[75] = 50.0
-			print(values.map({"\($0)"}).joined(separator: " | "))
+//			print(values.map({"\($0)"}).joined(separator: " | "))
 			return TimeSeries(periods: periods, values: values)
 		}
 
@@ -260,7 +260,7 @@ struct AnomalyDetectionTests {
 			let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
 
 			let anomalies = detector.detect(in: data, threshold: 3.0)
-			print(anomalies.map({$0.description}).joined(separator: "\n"))
+//			print(anomalies.map({$0.description}).joined(separator: "\n"))
 
 			#expect(!anomalies.isEmpty)
 			// Check the two expected positions are flagged
@@ -301,7 +301,7 @@ struct AnomalyDetectionTests {
 
 			let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
 			let anomalies = detector.detect(in: data, threshold: 2.0)
-			print(anomalies.map({$0.description}).joined(separator: "\n"))
+//			print(anomalies.map({$0.description}).joined(separator: "\n"))
 
 			let aSmall = anomalies.first { $0.period == periods[40] }!
 			let aLarge = anomalies.first { $0.period == periods[60] }!

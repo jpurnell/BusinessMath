@@ -304,7 +304,6 @@ import RealModule
         // Should handle inspection efficiently
         let inspector = ModelInspector(model: model)
         let summary = inspector.generateSummary()
-		print(summary)
         #expect(summary.contains("Revenue Components: 50"))
     }
 

@@ -145,7 +145,7 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 	) {
 		// Check momentum bounds
 		guard momentum >= 0 && momentum <= T(797734375) / T(1000000000) else {
-			print("Momentum must be in the range [0, 0.797734375). Setting to maximum value.")
+//			print("Momentum must be in the range [0, 0.797734375). Setting to maximum value.")
 			self.learningRate = learningRate
 			self.tolerance = tolerance
 			self.maxIterations = maxIterations
