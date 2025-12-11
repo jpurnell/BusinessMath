@@ -8,7 +8,7 @@ The Model Context Protocol (MCP) is a standard protocol that allows AI assistant
 
 ## Features
 
-The BusinessMath MCP Server provides **118 tools** across six main categories:
+The BusinessMath MCP Server provides **167 tools** across 32 categories:
 
 ### Time Value of Money (TVM) Tools (9 tools)
 
@@ -71,6 +71,36 @@ The BusinessMath MCP Server provides **118 tools** across six main categories:
 6. **sensitivity_analysis** - Single-variable sensitivity analysis
 7. **tornado_analysis** - Multi-variable sensitivity ranking (tornado diagram)
 
+### Optimization Tools (4 tools)
+
+1. **solve_linear_program** - Solve linear programming problems using the Simplex method (maximize/minimize linear objectives subject to linear constraints)
+2. **optimize_capital_allocation** - Allocate limited capital across projects to maximize NPV using greedy or optimal (integer programming) methods
+3. **newton_raphson_optimize** - Find values where a function equals a target (goal seek, root-finding)
+4. **gradient_descent_optimize** - Find maximum or minimum of multi-variable functions
+
+### Adaptive Optimization Tools (2 tools) - Phase 7
+
+1. **adaptive_optimize** - Automatically select and run the best optimization algorithm for your problem based on characteristics (size, constraints, preferences)
+2. **analyze_optimization_problem** - Analyze optimization problem characteristics and get algorithm recommendations before solving
+
+### Performance Benchmark Tools (3 tools) - Phase 7
+
+1. **profile_optimizer** - Profile performance of a single optimization algorithm with statistical analysis (timing, success rate, consistency)
+2. **compare_optimizers** - Compare performance of multiple optimization algorithms side-by-side with rankings and recommendations
+3. **benchmark_guide** - Comprehensive guidance on performance benchmarking best practices, interpretation, and troubleshooting
+
+### Advanced Optimization Tools (4 tools) - Phase 6.3
+
+1. **optimize_multiperiod** - Optimize decisions across multiple time periods with discount factors and inter-temporal constraints (capital budgeting, portfolio rebalancing, production planning over time)
+2. **optimize_stochastic** - Optimize under uncertainty using Monte Carlo Sample Average Approximation (portfolio with uncertain returns, production with demand uncertainty)
+3. **optimize_robust** - Min-max optimization for worst-case protection (conservative planning, risk management, guaranteed performance)
+4. **optimize_scenarios** - Optimize across discrete future scenarios with probabilities (strategic planning, decision trees, contingency planning)
+
+### Integer Programming Tools (2 tools) - Phase 6.2
+
+1. **solve_integer_program** - Solve integer and mixed-integer programming problems using branch-and-bound (project selection, resource allocation with discrete units, capital budgeting with integer constraints, facility location decisions)
+2. **solve_with_cutting_planes** - Solve integer programs using branch-and-cut (branch-and-bound enhanced with cutting planes: Gomory cuts, mixed-integer rounding cuts, cover cuts for knapsack constraints - often 10-100x faster than pure branch-and-bound)
+
 ## Installation & Setup
 
 ### Building the Server
@@ -107,7 +137,7 @@ Add the server to your Claude Desktop configuration file:
 1. Restart Claude Desktop
 2. Look for the MCP server icon (🔌) in Claude's interface
 3. The BusinessMath server should appear in the list of available servers
-4. You should see 118 tools available
+4. You should see 167 tools available
 
 ## Usage Examples
 
@@ -406,10 +436,39 @@ For issues or questions:
 
 ---
 
-**Version**: 1.2.0 (118 tools)
-**Last Updated**: October 29, 2024
+**Version**: 1.6.0 (167 tools)
+**Last Updated**: December 11, 2025
 
 ## Changelog
+
+### Version 1.6.0 (December 11, 2025) - Phase 6.2: Integer Programming
+- 🔢 Added Integer Programming tools: branch-and-bound, branch-and-cut with cutting planes
+- ✂️ Cutting plane generation: Gomory fractional cuts, mixed-integer rounding cuts, cover cuts
+- 🌳 Branch-and-cut solver: combines branch-and-bound with cutting planes for 10-100x speedups
+- 📊 Educational tools: comprehensive Swift implementation guides, problem-specific patterns
+- 📈 Total tools increased from 165 → 167 tools (2 new Phase 6.2 tools)
+- 🎯 Complete integer and mixed-integer programming capabilities for discrete optimization
+
+### Version 1.5.0 (December 11, 2025) - Phase 6.3: Advanced Optimization
+- 📅 Added Multi-Period Optimization: time-varying decisions with discount factors and inter-temporal constraints
+- 🎲 Added Stochastic Optimization: optimize under uncertainty using Sample Average Approximation (SAA)
+- 🛡️ Added Robust Optimization: min-max optimization for worst-case protection and guaranteed performance
+- 🌲 Added Scenario-Based Optimization: optimize across discrete future scenarios with probabilities
+- 📈 Total tools increased from 124 → 128 tools (4 new Phase 6.3 tools)
+- 🎯 Complete "intelligence layer" for real-world planning under time and uncertainty
+
+### Version 1.4.0 (December 11, 2025) - Phase 7: Performance & Scale
+- 🤖 Added Adaptive Optimization (2 tools): automatic algorithm selection, problem analysis
+- 📊 Added Performance Benchmarking (3 tools): optimizer profiling, comparison, comprehensive guides
+- 📈 Total tools increased from 119 → 124 tools
+- 🎯 Intelligent optimization with automatic algorithm selection based on problem characteristics
+- 📉 Statistical performance analysis and optimizer comparison framework
+
+### Version 1.3.0 (December 11, 2025)
+- ✨ Added Linear Programming solver (solve_linear_program) using Simplex method
+- 🔧 Enhanced optimize_capital_allocation to use integer programming for guaranteed optimal solutions
+- 📈 Total tools increased from 118 → 119 tools
+- 🎯 Full optimization capabilities including LP, Integer Programming (via CapitalAllocationOptimizer)
 
 ### Version 1.2.0 (October 29, 2024)
 - ✨ Added 7 Statistical Analysis tools (correlation, regression, covariance, confidence intervals, z-scores)

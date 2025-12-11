@@ -23,13 +23,13 @@ BusinessMath provides production-ready implementations of essential business and
 
 See [CHANGELOG.md](CHANGELOG.md) for complete release details.
 
-## 🤖 MCP Server (v1.20.0 - Major Expansion)
+## 🤖 MCP Server (v1.6.0 - Integer Programming)
 
 BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** that exposes all functionality to AI assistants like Claude Desktop, enabling natural language financial analysis, modeling, and advanced analytics.
 
 ### What's Included
 
-**✨ 141 Computational Tools** across 27 categories:
+**✨ 167 Computational Tools** across 32 categories:
 - **Time Value of Money** (9 tools): NPV, IRR, PV, FV, payments, annuities, XNPV, XIRR
 - **Time Series Analysis** (6 tools): Growth rates, moving averages, CAGR, comparisons
 - **Forecasting** (8 tools): Trend analysis, seasonal adjustment, projections
@@ -40,6 +40,7 @@ BusinessMath includes a comprehensive **Model Context Protocol (MCP) server** th
 - **Advanced Statistics** (13 tools): Combinatorics, statistical means, goal seek, data tables
 - **Probability Distributions** (15 distributions): Normal, Uniform, Triangular, Exponential, Lognormal, Beta, Gamma, Weibull, Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh
 - **Optimization & Solvers** (8 tools): Newton-Raphson, gradient descent, capital allocation, adaptive optimization (2 tools), performance benchmarking (3 tools)
+- **Integer Programming** (2 tools): Branch-and-bound, branch-and-cut with cutting planes (Gomory, MIR, cover cuts)
 - **Portfolio Optimization** (3 tools): Modern Portfolio Theory, efficient frontier, risk parity
 - **Real Options** (5 tools): Black-Scholes, binomial trees, Greeks, expansion/abandonment valuation
 - **Risk Analytics** (4 tools): Stress testing, VaR/CVaR, risk aggregation, comprehensive metrics
@@ -113,6 +114,8 @@ swift build -c release
    - "Calculate VaR at 95% confidence for my portfolio returns"
    - "What's the P/E ratio if EPS is $5.50 and stock price is $82.50?"
    - "Run a stress test on baseline revenue of $10M and costs of $7M using a recession scenario"
+   - "Solve a knapsack problem with 5 items using branch-and-bound"
+   - "Use branch-and-cut with cutting planes to solve a project selection problem with 10 projects"
 
 **HTTP Mode** (Experimental):
 ```bash

@@ -58,7 +58,7 @@ import Numerics
 /// - If you don't provide a gradient, it will be computed numerically using finite differences
 /// - Providing analytical gradients improves performance and accuracy
 /// - Numerical gradients are computed lazily when needed
-public enum MultivariateConstraint<V: VectorSpace> where V.Scalar: Real {
+public enum MultivariateConstraint<V: VectorSpace>: @unchecked Sendable where V.Scalar: Real {
 	/// Equality constraint: h(x) = 0
 	///
 	/// The constraint is satisfied when h(x) returns exactly 0.
