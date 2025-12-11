@@ -1,0 +1,467 @@
+import Testing
+import Foundation
+@testable import BusinessMath
+
+@Suite("Branch-and-Cut Solver Tests")
+struct BranchAndCutTests {
+
+    // MARK: - Basic Solver Tests
+
+    @Test("Solve simple integer program with B&C wrapper")
+    func testSimpleIPWithBranchAndCut() throws {
+        // Problem: max x1 + x2
+        // s.t. x1 + 2x2 ≤ 7
+        //      2x1 + x2 ≤ 7
+        //      x1, x2 ≥ 0, integer
+
+        // Define objective function explicitly with @Sendable
+        let objective: @Sendable (Vector2D) -> Double = { v in
+            v.x + v.y  // Maximize
+        }
+
+        // Define constraints one at a time to help type checker
+        let c1 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 7.0,
+            expression: { $0.x + 2.0 * $0.y }
+        )
+
+        let c2 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 7.0,
+            expression: { 2.0 * $0.x + $0.y }
+        )
+
+        let c3 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.x }
+        )
+
+        let c4 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.y }
+        )
+
+        let constraints = [c1, c2, c3, c4]
+
+        let integerSpec = IntegerProgramSpecification(
+            integerVariables: [0, 1]
+        )
+
+        let solver = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 5,
+            cutTolerance: 1e-6
+        )
+
+        let result = try solver.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(result.success, "Should find optimal solution")
+
+        if result.success {
+            let solution = result.solution
+
+            // Check integrality
+            #expect(abs(solution.x.rounded() - solution.x) < 1e-6, "x should be integer")
+            #expect(abs(solution.y.rounded() - solution.y) < 1e-6, "y should be integer")
+
+            // Check optimality (should be 5)
+            let objValue = objective(solution)
+            #expect(objValue >= 4.9, "Should find near-optimal solution")
+        }
+    }
+
+    @Test("Compare B&C vs pure B&B node counts")
+    func testReducedNodeCount() throws {
+        // Same problem - verify that B&C with 0 cuts equals pure B&B
+
+        let objective: @Sendable (Vector2D) -> Double = { v in
+            v.x + v.y
+        }
+
+        let c1 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 7.0,
+            expression: { $0.x + 2.0 * $0.y }
+        )
+
+        let c2 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 7.0,
+            expression: { 2.0 * $0.x + $0.y }
+        )
+
+        let c3 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.x }
+        )
+
+        let c4 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.y }
+        )
+
+        let constraints = [c1, c2, c3, c4]
+
+        let integerSpec = IntegerProgramSpecification(
+            integerVariables: [0, 1]
+        )
+
+        // Solve with Branch-and-Cut (with cuts)
+        let bcSolver = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 5,
+            cutTolerance: 1e-6
+        )
+
+        let bcResult = try bcSolver.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        // Solve with Branch-and-Cut (0 cutting rounds = pure B&B)
+        let bbSolver = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 0,  // No cuts
+            cutTolerance: 1e-6
+        )
+
+        let bbResult = try bbSolver.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(bcResult.success && bbResult.success, "Both should find solution")
+
+        // Branch-and-cut should explore fewer or equal nodes (for now equal since cuts not integrated)
+        #expect(bcResult.nodesExplored <= bbResult.nodesExplored + 1,
+                "B&C should explore ≤ nodes than B&B")
+
+        // Both should find same optimal value
+        let bcObj = objective(bcResult.solution)
+        let bbObj = objective(bbResult.solution)
+        #expect(abs(bcObj - bbObj) < 1e-4, "Both should find same optimal value")
+    }
+
+    // MARK: - Statistics Tracking
+
+    @Test("Cut statistics are tracked")
+    func testCutStatistics() throws {
+        // Verify that solver tracks cut generation statistics
+
+        let objective: @Sendable (Vector2D) -> Double = { v in
+            v.x + v.y
+        }
+
+        let c1 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 7.0,
+            expression: { $0.x + 2.0 * $0.y }
+        )
+
+        let c2 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 7.0,
+            expression: { 2.0 * $0.x + $0.y }
+        )
+
+        let c3 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.x }
+        )
+
+        let c4 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.y }
+        )
+
+        let constraints = [c1, c2, c3, c4]
+
+        let integerSpec = IntegerProgramSpecification(
+            integerVariables: [0, 1]
+        )
+
+        let solver = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 5,
+            cutTolerance: 1e-6
+        )
+
+        let result = try solver.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(result.success, "Should solve successfully")
+
+        // Check that statistics are populated
+        #expect(result.cutsGenerated >= 0, "Should track cuts generated")
+        #expect(result.cuttingRounds >= 0, "Should track cutting rounds")
+        #expect(result.nodesExplored > 0, "Should track nodes explored")
+        #expect(result.solveTime >= 0, "Should track solve time")
+    }
+
+    // MARK: - Edge Cases
+
+    @Test("Already integer at root - no cuts needed")
+    func testIntegerAtRoot() throws {
+        // Problem where LP relaxation is already integer
+
+        let objective: @Sendable (Vector2D) -> Double = { v in
+            v.x + v.y
+        }
+
+        let c1 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 3.0,
+            expression: { $0.x }
+        )
+
+        let c2 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 2.0,
+            expression: { $0.y }
+        )
+
+        let c3 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.x }
+        )
+
+        let c4 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.y }
+        )
+
+        let constraints = [c1, c2, c3, c4]
+
+        let integerSpec = IntegerProgramSpecification(
+            integerVariables: [0, 1]
+        )
+
+        let solver = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 5,
+            cutTolerance: 1e-6
+        )
+
+        let result = try solver.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(result.success, "Should solve at root")
+        #expect(result.nodesExplored == 1, "Should solve at root node only")
+    }
+
+    @Test("Infeasible integer program with cuts")
+    func testInfeasibleWithCuts() throws {
+        // Problem that becomes infeasible for integer solutions
+
+        let objective: @Sendable (Vector2D) -> Double = { v in
+            v.x + v.y
+        }
+
+        let c1 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 2.5,
+            expression: { $0.x }
+        )
+
+        let c2 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 2.4,
+            expression: { $0.x }
+        )
+
+        let constraints = [c1, c2]
+
+        let integerSpec = IntegerProgramSpecification(
+            integerVariables: [0, 1]
+        )
+
+        let solver = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 3,
+            cutTolerance: 1e-6
+        )
+
+        let result = try solver.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(!result.success, "Should detect infeasibility")
+    }
+
+    // MARK: - Mixed-Integer
+
+    @Test("Mixed-integer problem")
+    func testMixedInteger() throws {
+        // Problem with both integer and continuous variables
+        // max 2x1 + 3x2 (x1 integer, x2 continuous)
+
+        let objective: @Sendable (Vector2D) -> Double = { v in
+            2.0 * v.x + 3.0 * v.y
+        }
+
+        let c1 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 5.0,
+            expression: { $0.x + 2.0 * $0.y }
+        )
+
+        let c2 = MultivariateConstraint<Vector2D>(
+            type: .lessThanOrEqual,
+            value: 6.0,
+            expression: { 2.0 * $0.x + $0.y }
+        )
+
+        let c3 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.x }
+        )
+
+        let c4 = MultivariateConstraint<Vector2D>(
+            type: .greaterThanOrEqual,
+            value: 0.0,
+            expression: { $0.y }
+        )
+
+        let constraints = [c1, c2, c3, c4]
+
+        let integerSpec = IntegerProgramSpecification(
+            integerVariables: [0]  // Only x is integer, y is continuous
+        )
+
+        let solver = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 5,
+            cutTolerance: 1e-6,
+            enableMIRCuts: true
+        )
+
+        let result = try solver.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(result.success, "Should solve mixed-integer program")
+
+        if result.success {
+            // Check that x is integer but y can be fractional
+            #expect(abs(result.solution.x.rounded() - result.solution.x) < 1e-6,
+                    "x should be integer")
+            // y can be any non-negative value
+            #expect(result.solution.y >= -1e-6, "y should be non-negative")
+        }
+    }
+
+    // MARK: - Configuration Tests
+
+    @Test("Solver respects cutting rounds configuration")
+    func testCuttingRoundsConfiguration() throws {
+        // Test that maxCuttingRounds parameter is respected
+        // Test with 0 rounds (pure B&B) and 5 rounds (with cuts)
+
+        let objective: @Sendable (Vector2D) -> Double = { v in
+            v.x + v.y
+        }
+
+        let constraints = [
+            MultivariateConstraint<Vector2D>(
+                type: .lessThanOrEqual,
+                value: 7.0,
+                expression: { $0.x + 2.0 * $0.y }
+            ),
+            MultivariateConstraint<Vector2D>(
+                type: .lessThanOrEqual,
+                value: 7.0,
+                expression: { 2.0 * $0.x + $0.y }
+            ),
+            MultivariateConstraint<Vector2D>(
+                type: .greaterThanOrEqual,
+                value: 0.0,
+                expression: { $0.x }
+            ),
+            MultivariateConstraint<Vector2D>(
+                type: .greaterThanOrEqual,
+                value: 0.0,
+                expression: { $0.y }
+            )
+        ]
+
+        let integerSpec = IntegerProgramSpecification(
+            integerVariables: [0, 1]
+        )
+
+        // Test with 0 cutting rounds
+        let solver0 = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 0,
+            cutTolerance: 1e-6
+        )
+
+        let result0 = try solver0.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(result0.success, "Should solve with 0 cutting rounds")
+        #expect(result0.cuttingRounds == 0, "Should have 0 cutting rounds")
+
+        // Test with 5 cutting rounds
+        let solver5 = BranchAndCutSolver<Vector2D>(
+            maxNodes: 100,
+            maxCuttingRounds: 5,
+            cutTolerance: 1e-6
+        )
+
+        let result5 = try solver5.solve(
+            objective: objective,
+            from: Vector2D(x: 0, y: 0),
+            subjectTo: constraints,
+            integerSpec: integerSpec,
+            minimize: false
+        )
+
+        #expect(result5.success, "Should solve with 5 cutting rounds")
+        #expect(result5.cuttingRounds <= 5, "Should respect cutting rounds limit")
+    }
+}

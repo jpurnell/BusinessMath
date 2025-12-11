@@ -11,7 +11,7 @@ import Numerics
 // MARK: - Multivariate Optimization Result
 
 /// Result from a multivariate optimization
-public struct MultivariateOptimizationResult<V: VectorSpace> where V.Scalar: Real {
+public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.Scalar: Real, V: Sendable, V.Scalar: Sendable {
 	/// The optimal solution point
 	public let solution: V
 

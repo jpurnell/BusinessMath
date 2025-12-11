@@ -178,7 +178,7 @@ public struct CapitalAllocationTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "optimize_capital_allocation",
         description: """
-        Allocate limited capital across investment opportunities to maximize total NPV. Uses greedy algorithm (highest profitability index first) or optimal integer programming.
+        Allocate limited capital across investment opportunities to maximize total NPV. Uses greedy algorithm (highest profitability index first) or optimal integer programming (0-1 knapsack via dynamic programming).
 
         Example: Choose projects within $300,000 budget
         - projects: [
@@ -187,7 +187,7 @@ public struct CapitalAllocationTool: MCPToolHandler, Sendable {
             {"name": "Marketing", "cost": 30000, "npv": 45000}
           ]
         - budget: 300000
-        - method: "greedy"
+        - method: "optimal"
 
         Returns selected projects, total NPV, and capital used.
         """,
@@ -204,7 +204,7 @@ public struct CapitalAllocationTool: MCPToolHandler, Sendable {
                 ),
                 "method": MCPSchemaProperty(
                     type: "string",
-                    description: "Allocation method: 'greedy' (fast, good) or 'optimal' (exact but slower)",
+                    description: "Allocation method: 'greedy' (fast, good approximation) or 'optimal' (exact solution using integer programming)",
                     enum: ["greedy", "optimal"]
                 )
             ],
@@ -227,8 +227,8 @@ public struct CapitalAllocationTool: MCPToolHandler, Sendable {
             throw ToolError.invalidArguments("projects must be an array")
         }
 
-        // Parse projects
-        var projects: [(name: String, cost: Double, npv: Double, pi: Double)] = []
+        // Parse projects into CapitalAllocationOptimizer.Project objects
+        var capitalProjects: [CapitalAllocationOptimizer<Double>.Project] = []
         for (index, projectValue) in projectsArray.enumerated() {
             guard let projectDict = projectValue.value as? [String: AnyCodable],
                   let nameValue = projectDict["name"],
@@ -240,29 +240,28 @@ public struct CapitalAllocationTool: MCPToolHandler, Sendable {
 
             let cost = (costValue.value as? Double) ?? Double(costValue.value as? Int ?? 0)
             let npv = (npvValue.value as? Double) ?? Double(npvValue.value as? Int ?? 0)
-            let pi = npv / cost  // Profitability Index
 
-            projects.append((name, cost, npv, pi))
+            capitalProjects.append(
+                CapitalAllocationOptimizer<Double>.Project(
+                    name: name,
+                    npv: npv,
+                    capitalRequired: cost,
+                    risk: 0.0
+                )
+            )
         }
 
-        // Sort by profitability index (descending)
-        projects.sort { $0.pi > $1.pi }
+        // Use CapitalAllocationOptimizer
+        let optimizer = CapitalAllocationOptimizer<Double>()
+        let allocationResult: CapitalAllocationOptimizer<Double>.AllocationResult
 
-        // Greedy allocation
-        var selectedProjects: [(name: String, cost: Double, npv: Double)] = []
-        var remainingBudget = budget
-        var totalNPV = 0.0
-        var totalCost = 0.0
-
-        for project in projects {
-            if project.cost <= remainingBudget {
-                selectedProjects.append((project.name, project.cost, project.npv))
-                remainingBudget -= project.cost
-                totalNPV += project.npv
-                totalCost += project.cost
-            }
+        if method == "optimal" {
+            allocationResult = optimizer.optimizeIntegerProjects(projects: capitalProjects, budget: budget)
+        } else {
+            allocationResult = optimizer.optimize(projects: capitalProjects, budget: budget)
         }
 
+        // Format result
         var result = """
         Capital Allocation (\(method.uppercased()) Method)
 
@@ -271,37 +270,204 @@ public struct CapitalAllocationTool: MCPToolHandler, Sendable {
         Selected Projects:
         """
 
-        for (i, project) in selectedProjects.enumerated() {
-            let pi = project.npv / project.cost
-            result += """
+        for (i, projectName) in allocationResult.projectsSelected.enumerated() {
+            if let project = capitalProjects.first(where: { $0.name == projectName }),
+               let allocation = allocationResult.allocations[projectName] {
+                let pi = project.npv / project.capitalRequired
+                result += """
 
-            \(i+1). \(project.name)
-               Cost: $\(String(format: "%.0f", project.cost))
-               NPV: $\(String(format: "%.0f", project.npv))
-               Profitability Index: \(String(format: "%.2f", pi))
-            """
+                \(i+1). \(project.name)
+                   Cost: $\(String(format: "%.0f", allocation))
+                   NPV: $\(String(format: "%.0f", project.npv))
+                   Profitability Index: \(String(format: "%.2f", pi))
+                """
+            }
         }
 
         result += """
 
 
         Summary:
-        - Total NPV: $\(String(format: "%.0f", totalNPV))
-        - Capital Used: $\(String(format: "%.0f", totalCost))
-        - Capital Remaining: $\(String(format: "%.0f", remainingBudget))
-        - Projects Selected: \(selectedProjects.count) of \(projects.count)
+        - Total NPV: $\(String(format: "%.0f", allocationResult.totalNPV))
+        - Capital Used: $\(String(format: "%.0f", allocationResult.capitalUsed))
+        - Capital Remaining: $\(String(format: "%.0f", budget - allocationResult.capitalUsed))
+        - Projects Selected: \(allocationResult.projectsSelected.count) of \(capitalProjects.count)
         """
 
         if method == "optimal" {
             result += """
 
 
-            Note: Optimal method would use integer programming for exact solution.
-            This greedy approach provides a good approximation in O(n log n) time.
+            ✓ Optimal solution found using integer programming (0-1 knapsack via dynamic programming).
+            This guarantees the maximum possible NPV for the given budget.
+            """
+        } else {
+            result += """
+
+
+            Note: Greedy algorithm provides a fast approximation in O(n log n) time.
+            For guaranteed optimal solution, use method='optimal'.
             """
         }
 
         return .success(text: result)
+    }
+}
+
+// MARK: - Linear Programming Tool
+
+public struct LinearProgramTool: MCPToolHandler, Sendable {
+    public let tool = MCPTool(
+        name: "solve_linear_program",
+        description: """
+        Solve a linear programming problem using the Simplex method. Minimize or maximize a linear objective function subject to linear inequality and equality constraints.
+
+        Example: Maximize profit from product mix
+        - objective: [profit_per_unit_A, profit_per_unit_B]
+        - constraints: [
+            {"coefficients": [hours_A, hours_B], "relation": "<=", "rhs": max_hours},
+            {"coefficients": [material_A, material_B], "relation": "<=", "rhs": max_material}
+          ]
+        - sense: "maximize"
+
+        Returns optimal variable values, objective value, and solution status.
+        """,
+        inputSchema: MCPToolInputSchema(
+            properties: [
+                "objective": MCPSchemaProperty(
+                    type: "array",
+                    description: "Coefficients of the objective function to optimize",
+                    items: MCPSchemaItems(type: "number")
+                ),
+                "constraints": MCPSchemaProperty(
+                    type: "array",
+                    description: "Array of linear constraints, each with coefficients, relation (<=, >=, =), and rhs",
+                    items: MCPSchemaItems(type: "object")
+                ),
+                "sense": MCPSchemaProperty(
+                    type: "string",
+                    description: "Optimization sense: 'minimize' or 'maximize'",
+                    enum: ["minimize", "maximize"]
+                )
+            ],
+            required: ["objective", "constraints", "sense"]
+        )
+    )
+
+    public init() {}
+
+    public func execute(arguments: [String: AnyCodable]?) async throws -> MCPToolCallResult {
+        guard let args = arguments else {
+            throw ToolError.invalidArguments("Missing arguments")
+        }
+
+        let sense = try args.getString("sense")
+
+        guard let objectiveValue = args["objective"],
+              let objectiveArray = objectiveValue.value as? [AnyCodable] else {
+            throw ToolError.invalidArguments("objective must be an array of numbers")
+        }
+
+        let objectiveCoeffs = try objectiveArray.map { value -> Double in
+            if let d = value.value as? Double {
+                return d
+            } else if let i = value.value as? Int {
+                return Double(i)
+            }
+            throw ToolError.invalidArguments("objective must contain only numbers")
+        }
+
+        guard let constraintsValue = args["constraints"],
+              let constraintsArray = constraintsValue.value as? [AnyCodable] else {
+            throw ToolError.invalidArguments("constraints must be an array")
+        }
+
+        // Parse constraints
+        var simplexConstraints: [SimplexConstraint] = []
+        for (index, constraintValue) in constraintsArray.enumerated() {
+            guard let constraintDict = constraintValue.value as? [String: AnyCodable],
+                  let coeffsValue = constraintDict["coefficients"],
+                  let coeffsArray = coeffsValue.value as? [AnyCodable],
+                  let relationValue = constraintDict["relation"],
+                  let relation = relationValue.value as? String,
+                  let rhsValue = constraintDict["rhs"] else {
+                throw ToolError.invalidArguments("Constraint \(index) must have coefficients, relation, and rhs")
+            }
+
+            let coeffs = try coeffsArray.map { value -> Double in
+                if let d = value.value as? Double {
+                    return d
+                } else if let i = value.value as? Int {
+                    return Double(i)
+                }
+                throw ToolError.invalidArguments("coefficients must contain only numbers")
+            }
+
+            let rhs = (rhsValue.value as? Double) ?? Double(rhsValue.value as? Int ?? 0)
+
+            let constraintRelation: ConstraintRelation
+            switch relation {
+            case "<=", "lessOrEqual":
+                constraintRelation = .lessOrEqual
+            case ">=", "greaterOrEqual":
+                constraintRelation = .greaterOrEqual
+            case "=", "equal":
+                constraintRelation = .equal
+            default:
+                throw ToolError.invalidArguments("Invalid relation '\(relation)'. Use <=, >=, or =")
+            }
+
+            simplexConstraints.append(
+                SimplexConstraint(
+                    coefficients: coeffs,
+                    relation: constraintRelation,
+                    rhs: rhs
+                )
+            )
+        }
+
+        // Create solver and solve
+        let solver = SimplexSolver()
+
+        // Convert objective coefficients if maximizing
+        let finalObjective = sense == "maximize" ? objectiveCoeffs.map { -$0 } : objectiveCoeffs
+
+        let result = try solver.minimize(objective: finalObjective, subjectTo: simplexConstraints)
+
+        // Format result
+        var output = """
+        Linear Programming Solution
+
+        Problem:
+        - \(sense.capitalized) objective with \(objectiveCoeffs.count) variables
+        - \(simplexConstraints.count) constraints
+
+        Status: \(result.status)
+        """
+
+        if result.status == .optimal {
+            let actualValue = sense == "maximize" ? -result.objectiveValue : result.objectiveValue
+            output += """
+
+
+            Optimal Solution:
+            - Objective Value: \(String(format: "%.6f", actualValue))
+            - Variable Values:
+            """
+
+            for (i, value) in result.solution.enumerated() {
+                output += "\n  x[\(i)] = \(String(format: "%.6f", value))"
+            }
+        } else {
+            output += "\n\nNo optimal solution found."
+            if result.status == .infeasible {
+                output += " The problem is infeasible (constraints cannot be satisfied simultaneously)."
+            } else if result.status == .unbounded {
+                output += " The problem is unbounded (objective can be improved indefinitely)."
+            }
+        }
+
+        return .success(text: output)
     }
 }
 
@@ -311,6 +477,7 @@ public func getOptimizationTools() -> [MCPToolHandler] {
     return [
         NewtonRaphsonOptimizeTool(),
         GradientDescentOptimizeTool(),
-        CapitalAllocationTool()
+        CapitalAllocationTool(),
+        LinearProgramTool()
     ]
 }

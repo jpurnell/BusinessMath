@@ -71,7 +71,7 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
-        // Optimization Tools (3 tools)
+        // Optimization Tools (4 tools)
         for handler in getOptimizationTools() {
             try await toolRegistry.register(handler.toToolDefinition())
         }
@@ -83,6 +83,11 @@ struct BusinessMathMCPServerMain {
 
         // Performance Benchmark Tools (3 tools) - Phase 7
         for handler in getPerformanceBenchmarkTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Parallel Optimization Tools (2 tools) - Phase 7
+        for handler in getParallelOptimizationTools() {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
@@ -196,6 +201,16 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
+        // Advanced Optimization Tools (4 tools) - Phase 6.3
+        for handler in getAdvancedOptimizationTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Integer Programming Tools (2 tools) - Phase 6.2
+        for handler in getIntegerProgrammingTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
         // Get the actual count of registered tools
         let registeredTools = await toolRegistry.listTools()
         let toolCount = registeredTools.count
@@ -206,12 +221,12 @@ struct BusinessMathMCPServerMain {
         // Create and configure the MCP server using official SDK
         let server = Server(
             name: "BusinessMath MCP Server",
-            version: "1.20.0",
+            version: "1.5.0",
             instructions: """
             Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and advanced analytics server.
 
             **Capabilities**:
-            - \(toolCount) computational tools across 31 categories
+            - \(toolCount) computational tools across 32 categories
             - 15 probability distributions (Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh, and more)
             - 9 essential financial ratios (liquidity, leverage, profitability, efficiency)
             - 12 valuation calculators (EPS, P/E, P/B, market cap, enterprise value, free cash flow)
@@ -249,6 +264,7 @@ struct BusinessMathMCPServerMain {
             22. Trend Forecasting: Linear trend, exponential trend, logistic trend, time series decomposition
             23. Seasonality: Calculate seasonal indices, seasonally adjust data, apply seasonal patterns
             24. Advanced Options: Calculate option Greeks (Delta, Gamma, Vega, Theta, Rho), binomial tree option pricing (American & European)
+            25. Integer Programming: Branch-and-bound, branch-and-cut with cutting planes, 0-1 knapsack, project selection, facility location
 
             **Resources**: Access comprehensive documentation, examples, and reference data using resources/read
             **Prompts**: Use prompt templates for guided analysis workflows

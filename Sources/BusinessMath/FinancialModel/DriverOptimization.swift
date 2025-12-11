@@ -21,7 +21,7 @@ import Numerics
 ///     changeConstraint: .percentageChange(max: 0.20)  // Max 20% change
 /// )
 /// ```
-public struct OptimizableDriver {
+public struct OptimizableDriver: Sendable {
 	/// Driver name (e.g., "conversion_rate", "churn_rate")
 	public let name: String
 
@@ -51,7 +51,7 @@ public struct OptimizableDriver {
 // MARK: - Driver Change Constraint
 
 /// Constraint on how much a driver can change from its current value.
-public enum DriverChangeConstraint {
+public enum DriverChangeConstraint: Sendable {
 	/// Absolute change limit: |new - current| ≤ max
 	case absoluteChange(max: Double)
 
