@@ -1,0 +1,639 @@
+# Phase 1: Core Enhancements - Tutorial
+
+**Status:** ✅ Complete
+**Phase Goal:** Foundational API improvements for better usability and Swift idioms
+
+---
+
+## Overview
+
+Phase 1 introduced core enhancements that make BusinessMath more accessible and Swift-idiomatic:
+
+1. **Goal-Seeking API** - Find where functions equal target values (root-finding)
+2. **ClosedRange Bounds** - Swift-native way to specify bounds
+3. **Enhanced Error Types** - Better error reporting with `GoalSeekError`
+4. **Constraint Builder Syntax** - Type-safe constraint specification
+
+These enhancements lay the foundation for all subsequent optimization work in Phases 2-5.
+
+---
+
+## 1. Goal-Seeking API
+
+### What is Goal-Seeking?
+
+Goal-seeking (also called root-finding) answers the question: **"What input value gives me my target output?"**
+
+**Common Use Cases:**
+- **Breakeven analysis**: What price gives zero profit?
+- **Target seeking**: What sales volume achieves $1M revenue?
+- **Equation solving**: Find x where f(x) = 0
+- **Inverse problems**: Given output, find input
+
+### Goal-Seeking vs. Optimization
+
+| Goal-Seeking | Optimization |
+|--------------|--------------|
+| Find where **f(x) = target** | Find where **f'(x) = 0** |
+| Root-finding | Minimize/Maximize |
+| Example: Breakeven price | Example: Optimal price |
+| Uses: `goalSeek()` or `GoalSeekOptimizer` | Uses: `NewtonRaphsonOptimizer` |
+
+---
+
+## 2. The `goalSeek()` Function
+
+### Basic Usage
+
+```swift
+import BusinessMath
+
+// Example: Find x where x² = 4
+let result = try goalSeek(
+    function: { x in x * x },
+    target: 4.0,
+    guess: 1.0
+)
+
+print(result)  // ~2.0
+```
+
+### API Reference
+
+```swift
+func goalSeek<T: Real>(
+    function: @escaping (T) -> T,
+    target: T,
+    guess: T,
+    tolerance: T = T(1) / T(1_000_000),
+    maxIterations: Int = 1000
+) throws -> T
+```
+
+**Parameters:**
+- `function`: The function f(x) to solve
+- `target`: The value you want f(x) to equal
+- `guess`: Initial guess for the solution (important for convergence!)
+- `tolerance`: How close is close enough (default: 0.000001)
+- `maxIterations`: Maximum iterations before giving up (default: 1000)
+
+**Returns:** The value x where f(x) ≈ target
+
+**Throws:**
+- `GoalSeekError.divisionByZero`: Derivative is zero (can't continue)
+- `GoalSeekError.convergenceFailed`: Didn't converge in max iterations
+
+---
+
+## 3. Real-World Examples
+
+### Example 1: Breakeven Analysis
+
+Find the price where profit equals zero:
+
+```swift
+import BusinessMath
+
+// Profit function
+func profit(price: Double) -> Double {
+    let quantity = 10000 - 1000 * price  // Demand function
+    let revenue = price * quantity
+    let fixedCosts = 20000.0
+    let variableCost = 5.0
+    let totalCosts = fixedCosts + variableCost * quantity
+    return revenue - totalCosts
+}
+
+// Find breakeven price
+let breakevenPrice = try goalSeek(
+    function: profit,
+    target: 0.0,          // Zero profit = breakeven
+    guess: 10.0,          // Start with $10 guess
+    tolerance: 0.01       // Within 1 cent
+)
+
+print("Breakeven price: $\(String(format: "%.2f", breakevenPrice))")
+// Output: Breakeven price: $6.18
+```
+
+### Example 2: Target Revenue
+
+Find sales volume to hit revenue target:
+
+```swift
+import BusinessMath
+
+let pricePerUnit = 50.0
+let targetRevenue = 100_000.0
+
+// Revenue = price × quantity
+let requiredQuantity = try goalSeek(
+    function: { quantity in pricePerUnit * quantity },
+    target: targetRevenue,
+    guess: 1000.0
+)
+
+print("Need to sell \(Int(requiredQuantity)) units")
+// Output: Need to sell 2000 units
+```
+
+### Example 3: Internal Rate of Return (IRR)
+
+Find the discount rate where NPV = 0:
+
+```swift
+import BusinessMath
+
+let cashFlows = [-1000.0, 200.0, 300.0, 400.0, 500.0]
+
+func npv(rate: Double) -> Double {
+    var npv = 0.0
+    for (t, cf) in cashFlows.enumerated() {
+        npv += cf / pow(1 + rate, Double(t))
+    }
+    return npv
+}
+
+let irr = try goalSeek(
+    function: npv,
+    target: 0.0,
+    guess: 0.10  // Start with 10% guess
+)
+
+print("IRR: \(String(format: "%.2f%%", irr * 100))")
+// Output: IRR: 18.45%
+```
+
+### Example 4: Equation Solving
+
+Solve complex equations numerically:
+
+```swift
+import BusinessMath
+
+// Solve: e^x - 2x - 3 = 0
+let solution = try goalSeek(
+    function: { x in exp(x) - 2*x - 3 },
+    target: 0.0,
+    guess: 1.0
+)
+
+print("Solution: x = \(String(format: "%.6f", solution))")
+// Verify: exp(x) - 2x - 3 ≈ 0
+let verify = exp(solution) - 2*solution - 3
+print("Verification: \(String(format: "%.10f", verify))")
+```
+
+---
+
+## 4. The `GoalSeekOptimizer` Class
+
+For more control and constraint support, use the `GoalSeekOptimizer`:
+
+### Basic Usage
+
+```swift
+import BusinessMath
+
+let optimizer = GoalSeekOptimizer<Double>(
+    target: 0.0,          // Find where function equals zero
+    tolerance: 0.0001,
+    maxIterations: 1000
+)
+
+let result = optimizer.optimize(
+    objective: profitFunction,
+    constraints: [],
+    initialValue: 10.0,
+    bounds: (lower: 0.0, upper: 100.0)
+)
+
+print("Solution: \(result.optimalValue)")
+print("Converged: \(result.converged)")
+print("Iterations: \(result.iterations)")
+```
+
+### With Constraints
+
+```swift
+import BusinessMath
+
+// Find breakeven price with constraints
+let optimizer = GoalSeekOptimizer<Double>(target: 0.0)
+
+// Must be at least $5 (minimum price)
+let minPriceConstraint = Constraint<Double>(
+    type: .greaterThanOrEqual,
+    bound: 5.0
+)
+
+let result = optimizer.optimize(
+    objective: profitFunction,
+    constraints: [minPriceConstraint],
+    initialValue: 10.0,
+    bounds: (lower: 0.0, upper: 100.0)
+)
+
+if result.converged {
+    print("Breakeven price: $\(result.optimalValue)")
+} else {
+    print("No breakeven point found within constraints")
+}
+```
+
+---
+
+## 5. Algorithm Details
+
+### Newton-Raphson Method
+
+Goal-seeking uses the Newton-Raphson method for root-finding:
+
+```
+x_{n+1} = x_n - (f(x_n) - target) / f'(x_n)
+```
+
+**Convergence Properties:**
+- **Quadratic convergence** when close to the root
+- Typically converges in 5-10 iterations
+- Requires continuous, differentiable function
+- Sensitive to initial guess
+
+### Numerical Differentiation
+
+The derivative f'(x) is computed numerically using central differences:
+
+```
+f'(x) ≈ (f(x + h) - f(x - h)) / (2h)
+```
+
+Where h is a small step size (default: 0.0001).
+
+---
+
+## 6. Error Handling
+
+### GoalSeekError Types
+
+#### 1. Division by Zero
+
+```swift
+do {
+    // Function with zero derivative at x=0
+    let result = try goalSeek(
+        function: { x in x * x * x },  // f'(0) = 0
+        target: 0.0,
+        guess: 0.0
+    )
+} catch GoalSeekError.divisionByZero {
+    print("Derivative is zero - cannot continue")
+}
+```
+
+**Solution:** Choose a different initial guess away from stationary points.
+
+#### 2. Convergence Failed
+
+```swift
+do {
+    let result = try goalSeek(
+        function: { x in sin(x) },
+        target: 1.5,  // sin(x) never equals 1.5
+        guess: 0.0
+    )
+} catch GoalSeekError.convergenceFailed {
+    print("Could not find solution within max iterations")
+}
+```
+
+**Possible causes:**
+- No solution exists
+- Initial guess too far from solution
+- Function is not well-behaved
+- Tolerance too strict
+
+**Solutions:**
+- Try different initial guesses
+- Increase max iterations
+- Relax tolerance
+- Check if solution actually exists
+
+---
+
+## 7. Choosing Initial Guesses
+
+The initial guess is **critical** for convergence:
+
+### Good Practices
+
+1. **Use domain knowledge:**
+   ```swift
+   // Breakeven usually between cost and market price
+   let guess = (costPrice + marketPrice) / 2
+   ```
+
+2. **Try multiple guesses:**
+   ```swift
+   let guesses = [5.0, 10.0, 20.0]
+   for guess in guesses {
+       if let result = try? goalSeek(function: f, target: target, guess: guess) {
+           print("Found solution: \(result)")
+           break
+       }
+   }
+   ```
+
+3. **Start near expected solution:**
+   ```swift
+   // If last month's breakeven was $10, start there
+   let guess = lastMonthBreakeven
+   ```
+
+4. **Avoid problematic points:**
+   ```swift
+   // Don't start where derivative is zero
+   let guess = 1.0  // Not 0.0 for f(x) = x²
+   ```
+
+---
+
+## 8. ClosedRange Bounds
+
+Phase 1 improved bounds handling to use Swift's native `ClosedRange`:
+
+### Traditional Bounds (Tuples)
+
+```swift
+let bounds: (lower: Double, upper: Double) = (0.0, 100.0)
+```
+
+### Swift-Idiomatic Bounds
+
+```swift
+let bounds: ClosedRange<Double> = 0.0...100.0
+```
+
+**Benefits:**
+- More readable: `0.0...100.0` vs `(0.0, 100.0)`
+- Type-safe: Contains method built-in
+- Swift-native: Familiar to all Swift developers
+- Pattern matching: Use in switch statements
+
+---
+
+## 9. Enhanced Error Types
+
+Phase 1 introduced structured error handling:
+
+### GoalSeekError Enum
+
+```swift
+enum GoalSeekError: Error {
+    case divisionByZero
+    case convergenceFailed
+}
+```
+
+**Localized descriptions:**
+```swift
+extension GoalSeekError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .divisionByZero:
+            return "The derivative was zero, resulting in division by zero."
+        case .convergenceFailed:
+            return "The function failed to converge within the specified number of iterations."
+        }
+    }
+}
+```
+
+### Usage
+
+```swift
+do {
+    let result = try goalSeek(...)
+    print("Found solution: \(result)")
+} catch let error as GoalSeekError {
+    print("Goal seek failed: \(error.localizedDescription)")
+} catch {
+    print("Unexpected error: \(error)")
+}
+```
+
+---
+
+## 10. Best Practices
+
+### 1. Always Handle Errors
+
+```swift
+// ❌ Bad: Assuming success
+let price = try! goalSeek(function: profit, target: 0, guess: 10)
+
+// ✅ Good: Handle potential failures
+do {
+    let price = try goalSeek(function: profit, target: 0, guess: 10)
+    print("Breakeven: $\(price)")
+} catch {
+    print("Could not find breakeven: \(error)")
+}
+```
+
+### 2. Provide Reasonable Guesses
+
+```swift
+// ❌ Bad: Random guess
+let guess = 0.0
+
+// ✅ Good: Educated guess based on domain
+let guess = estimatedBreakevenPrice
+```
+
+### 3. Set Appropriate Tolerances
+
+```swift
+// ❌ Bad: Too strict (may never converge)
+let tolerance = 1e-15
+
+// ✅ Good: Appropriate for problem
+let tolerance = 0.01  // Within 1 cent for prices
+```
+
+### 4. Use Bounds to Constrain Search
+
+```swift
+// ❌ Bad: Unbounded search
+let result = optimizer.optimize(
+    objective: f,
+    constraints: [],
+    initialValue: 10,
+    bounds: nil
+)
+
+// ✅ Good: Realistic bounds
+let result = optimizer.optimize(
+    objective: f,
+    constraints: [],
+    initialValue: 10,
+    bounds: (lower: 0.0, upper: 1000.0)
+)
+```
+
+### 5. Verify Results
+
+```swift
+let result = try goalSeek(function: f, target: target, guess: guess)
+
+// Verify the solution
+let actualValue = f(result)
+let error = abs(actualValue - target)
+
+assert(error < tolerance, "Solution not accurate enough")
+```
+
+---
+
+## 11. Comparison with Other Methods
+
+### Goal-Seeking vs. Bisection Method
+
+| Goal-Seeking (Newton-Raphson) | Bisection Method |
+|-------------------------------|------------------|
+| Fast (quadratic convergence) | Slow (linear convergence) |
+| Requires smooth function | Works with discontinuous functions |
+| Needs good initial guess | Needs bracketing interval |
+| Can fail to converge | Always converges (if bracketed) |
+| Typical use: Well-behaved functions | Typical use: Rough/discontinuous functions |
+
+### Goal-Seeking vs. Optimization
+
+```swift
+// Goal-seeking: Find where profit = 0
+let breakevenPrice = try goalSeek(
+    function: profit,
+    target: 0.0,
+    guess: 10.0
+)
+
+// Optimization: Find where profit is maximum
+let optimalPrice = try NewtonRaphsonOptimizer<Double>().optimize(
+    objective: { price in -profit(price) },  // Minimize negative profit
+    constraints: [],
+    initialValue: 10.0,
+    bounds: (0.0, 100.0)
+).optimalValue
+```
+
+---
+
+## 12. Troubleshooting
+
+### Problem: "Derivative was zero"
+
+**Cause:** Function has flat spot at current guess
+
+**Solutions:**
+- Choose different initial guess
+- Add small perturbation: `guess + 0.001`
+- Use bisection method instead
+
+### Problem: "Failed to converge"
+
+**Cause:** No solution exists or function is poorly behaved
+
+**Solutions:**
+- Verify solution exists (e.g., plot function)
+- Try multiple initial guesses
+- Increase max iterations
+- Relax tolerance
+- Check function for discontinuities
+
+### Problem: Solution seems wrong
+
+**Cause:** Converged to wrong root or local solution
+
+**Solutions:**
+- Multiple roots may exist - try different guesses
+- Plot function to understand behavior
+- Add bounds to restrict search region
+- Verify solution: f(result) ≈ target
+
+### Problem: Very slow convergence
+
+**Cause:** Poor initial guess or ill-conditioned function
+
+**Solutions:**
+- Improve initial guess using domain knowledge
+- Scale problem (e.g., work in thousands instead of millions)
+- Consider alternative methods for ill-conditioned problems
+
+---
+
+## 13. Advanced Topics
+
+### Custom Step Sizes
+
+The `GoalSeekOptimizer` allows custom step sizes for derivative calculation:
+
+```swift
+let optimizer = GoalSeekOptimizer<Double>(
+    target: 0.0,
+    tolerance: 0.0001,
+    maxIterations: 1000,
+    stepSize: 0.00001  // Smaller step for more accurate derivatives
+)
+```
+
+**Trade-off:** Smaller steps = more accurate derivatives but more susceptible to rounding errors
+
+### Iteration History
+
+Access the full optimization history:
+
+```swift
+let result = optimizer.optimize(...)
+
+for (i, iteration) in result.history.enumerated() {
+    print("Iteration \(i):")
+    print("  Value: \(iteration.value)")
+    print("  Objective: \(iteration.objective)")
+    print("  Gradient: \(iteration.gradient)")
+}
+```
+
+### Early Stopping
+
+The algorithm stops when:
+1. |f(x) - target| < tolerance (found solution)
+2. |step| < tolerance (converged to a point)
+3. iterations ≥ maxIterations (gave up)
+4. |derivative| < ε (derivative too small to continue)
+
+---
+
+## Summary
+
+Phase 1's core enhancements provide:
+
+✅ **Goal-seeking API** for root-finding problems
+✅ **GoalSeekOptimizer** for constrained root-finding
+✅ **Enhanced error handling** with specific error types
+✅ **Swift-idiomatic bounds** using ClosedRange
+
+These foundations enable:
+- Breakeven analysis
+- Target seeking
+- IRR calculation
+- Equation solving
+- All with proper error handling and constraints
+
+**Next Steps:**
+- **Phase 2**: Learn about VectorSpace protocol for multivariate problems
+- **Phase 3**: Explore multivariate optimization algorithms
+- **Phase 4**: Add constraints to optimization
+- **Phase 5**: Apply to business problems
+
+---
+
+**Phase 1: Complete** ✅

@@ -211,6 +211,8 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
+        // Note: Sparse Matrix Tools (Phase 8.1) - programmatic API available, MCP tools deferred for future enhancement
+
         // Get the actual count of registered tools
         let registeredTools = await toolRegistry.listTools()
         let toolCount = registeredTools.count
