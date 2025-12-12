@@ -46,6 +46,42 @@ struct InequalityOptimizerTests {
 		#expect(result.constraintViolation < 1e-4, "Constraints should be satisfied")
 	}
 
+	@Test("Tutorial example: minimize distance from (1,1) with linear constraint")
+	func tutorialExample() throws {
+		// From inequality.md tutorial
+		// Minimize f(x, y) = (x-1)² + (y-1)²
+		// Subject to: x ≥ 0, y ≥ 0, x+y ≤ 2
+		//
+		// Unconstrained minimum: (1, 1)
+		// Constrained minimum: (1, 1) (feasible, so same)
+
+		let objective: (VectorN<Double>) -> Double = { v in
+			let x = v[0] - 1
+			let y = v[1] - 1
+			return x*x + y*y
+		}
+
+		let constraints = [
+			MultivariateConstraint<VectorN<Double>>.inequality { v in -v[0] },        // x ≥ 0
+			MultivariateConstraint<VectorN<Double>>.inequality { v in -v[1] },        // y ≥ 0
+			MultivariateConstraint<VectorN<Double>>.inequality { v in v[0] + v[1] - 2 }  // x+y ≤ 2
+		]
+
+		let optimizer = InequalityOptimizer<VectorN<Double>>()
+
+		let result = try optimizer.minimize(
+			objective,
+			from: VectorN([0.5, 0.5]),
+			subjectTo: constraints
+		)
+
+		#expect(result.converged, "Should converge")
+		#expect(abs(result.solution[0] - 1.0) < 0.01, "x should be ~1")
+		#expect(abs(result.solution[1] - 1.0) < 0.01, "y should be ~1")
+		#expect(result.objectiveValue < 0.01, "Objective should be ~0")
+		#expect(result.constraintViolation < 1e-4, "Constraints should be satisfied")
+	}
+
 	@Test("Minimize with active inequality constraint")
 	func minimizeWithActiveConstraint() throws {
 		// Minimize f(x, y) = (x-2)² + (y-2)²
@@ -99,8 +135,7 @@ struct InequalityOptimizerTests {
 		] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: n)  // w ≥ 0
 
 		let optimizer = InequalityOptimizer<VectorN<Double>>(
-			maxIterations: 100,
-			initialBarrier: 0.1
+			maxIterations: 100
 		)
 
 		let result = try optimizer.minimize(
@@ -293,8 +328,7 @@ struct InequalityOptimizerTests {
 		] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)
 
 		let optimizer = InequalityOptimizer<VectorN<Double>>(
-			maxIterations: 100,
-			initialBarrier: 0.1
+			maxIterations: 100
 		)
 
 		let result = try optimizer.minimize(

@@ -73,6 +73,7 @@ The library is designed for:
 - <doc:ScenarioAnalysisGuide>
 - <doc:OptimizationGuide>
 - <doc:PortfolioOptimizationGuide>
+- <doc:PHASE_4_TUTORIAL>
 
 - <doc:VisualizationGuide>
 
