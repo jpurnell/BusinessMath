@@ -233,22 +233,23 @@ let channels = [
         id: "google_ads",
         name: "Google Ads",
         expectedValue: 150_000,  // Expected revenue
-        resourceRequirements: ["spend": 50_000]
+        resourceRequirements: ["budget": 50_000]
     ),
     AllocationOption(
         id: "facebook_ads",
         name: "Facebook Ads",
         expectedValue: 120_000,
-        resourceRequirements: ["spend": 40_000]
+        resourceRequirements: ["budget": 40_000]
     ),
     AllocationOption(
         id: "content_marketing",
         name: "Content Marketing",
         expectedValue: 80_000,
-        resourceRequirements: ["spend": 30_000]
+        resourceRequirements: ["budget": 30_000]
     )
 ]
 
+let optimizer = ResourceAllocationOptimizer()
 let result = try optimizer.optimize(
     options: channels,
     objective: .maximizeValuePerDollar,  // Maximize ROI
@@ -772,6 +773,9 @@ let result = try optimizer.optimize(
         return ["revenue": revenue, "orders": orders]
     }
 )
+
+print("Orders:\t\t\(result.achievedMetrics["orders"]!.rounded(.down))")
+print("Revenue:\t\(result.achievedMetrics["revenue"]!.currency())")
 ```
 
 #### 2. Cost-Weighted Optimization
@@ -827,6 +831,11 @@ let allocation = try allocationOptimizer.optimize(
     objective: .maximizeValue,
     constraints: [.totalBudget(400_000)]
 )
+
+let amountsAllocated = zip(allocation.selectedOptions, allocation.allocations).map({"\($0.0.name):\t\(($0.0.resourceRequirements["budget"]! * $0.1.value).currency())"
+}).joined(separator: "\n")
+
+print(amountsAllocated)
 
 // Step 2: Production Planning for selected products
 let selectedProducts = allocation.selectedOptions.map { option -> ManufacturedProduct in
@@ -884,20 +893,12 @@ print("  Output Target Achieved: \(driverResult.feasible)")
 
 ### Integration with Financial Model
 
+The `FinancialModel` type uses a declarative result builder pattern for defining revenue and costs. You can use the driver optimizer to find operational parameters that hit your financial targets, then incorporate those into your model.
+
 ```swift
 import BusinessMath
 
-// Create a financial model
-let model = FinancialModel(name: "SaaS Business")
-
-// Add operational drivers
-model.addDriver(OperationalDriver(
-    name: "mrr",
-    initialValue: 50_000,
-    growth: .fixed(0.10)  // 10% monthly growth
-))
-
-// Use driver optimizer to find path to $100K MRR
+// Step 1: Use driver optimizer to find optimal pricing and churn
 let drivers = [
     OptimizableDriver(name: "price", currentValue: 50, range: 40...70),
     OptimizableDriver(name: "churn", currentValue: 0.05, range: 0.02...0.08)
@@ -914,7 +915,7 @@ let result = try optimizer.optimize(
     model: { values in
         let price = values["price"]!
         let churn = values["churn"]!
-        let newCustomers = 150.0  // Fixed
+        let newCustomers = 150.0  // Fixed acquisition rate
 
         let steadyStateCustomers = newCustomers / churn
         let mrr = steadyStateCustomers * price
@@ -923,10 +924,30 @@ let result = try optimizer.optimize(
     }
 )
 
-// Update model with optimized drivers
+// Step 2: Build a financial model using the optimized parameters
 if result.feasible {
-    model.setValue(result.optimizedDrivers["price"]!, forKey: "price")
-    model.setValue(result.optimizedDrivers["churn"]!, forKey: "churn_rate")
+    let optimizedPrice = result.optimizedDrivers["price"]!
+    let optimizedChurn = result.optimizedDrivers["churn"]!
+    let customers = 150.0 / optimizedChurn  // Steady-state customers
+
+    let model = FinancialModel {
+        Revenue {
+            Product("SaaS Subscriptions")
+                .price(optimizedPrice)
+                .customers(customers)
+        }
+
+        Costs {
+            Fixed("Salaries", 50_000)
+            Fixed("Infrastructure", 10_000)
+            Variable("Customer Support", 0.15)  // 15% of revenue
+        }
+    }
+
+    print("Optimized Model:")
+    print("  Revenue: $\(Int(model.calculateRevenue()))")
+    print("  Costs: $\(Int(model.calculateCosts(revenue: model.calculateRevenue())))")
+    print("  Profit: $\(Int(model.calculateProfit()))")
 }
 ```
 

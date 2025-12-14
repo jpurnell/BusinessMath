@@ -764,4 +764,118 @@ struct BranchAndBoundTests {
             #expect(value <= 1e-6)  // Should satisfy g(x) ≤ 0
         }
     }
+
+    @Test("Production scheduling with setup costs and demand constraints")
+    func testProductionSchedulingWithDemandConstraints() throws {
+        // From PHASE_6.2_INTEGER_PROGRAMMING_TUTORIAL.md Example 4
+        let productionCosts = [25.0, 30.0, 20.0, 28.0]   // Per unit
+        let setupCosts = [500.0, 600.0, 450.0, 550.0]    // Fixed
+        let demands = [100.0, 150.0, 80.0, 120.0]        // Must meet
+        let capacities = [200.0, 250.0, 150.0, 200.0]    // Max production
+
+        // Decision variables:
+        // x[0..3]: Integer - production quantity
+        // y[4..7]: Binary - whether to produce (incur setup)
+        let dimension = 8
+        let spec = IntegerProgramSpecification(
+            integerVariables: Set([0, 1, 2, 3]),  // Production quantities
+            binaryVariables: Set([4, 5, 6, 7])     // Setup decisions
+        )
+
+        // Objective: minimize total cost (variable + fixed)
+        let objective: @Sendable (VectorN<Double>) -> Double = { x in
+            let vars = x.toArray()
+            var variableCost = 0.0
+            for i in 0..<4 {
+                variableCost += productionCosts[i] * vars[i]
+            }
+            var fixedCost = 0.0
+            for i in 0..<4 {
+                fixedCost += setupCosts[i] * vars[4 + i]
+            }
+            return variableCost + fixedCost
+        }
+
+        var constraints: [MultivariateConstraint<VectorN<Double>>] = []
+
+        // Demand constraints: must produce at least demand
+        // xᵢ ≥ demandᵢ  ⟺  demandᵢ - xᵢ ≤ 0
+        for i in 0..<4 {
+            constraints.append(.inequality { x in
+                demands[i] - x.toArray()[i]
+            })
+        }
+
+        // Linking constraints: can only produce if setup
+        // xᵢ ≤ capacityᵢ·yᵢ  ⟺  xᵢ - capacityᵢ·yᵢ ≤ 0
+        for i in 0..<4 {
+            constraints.append(.inequality { x in
+                let vars = x.toArray()
+                return vars[i] - capacities[i] * vars[4 + i]
+            })
+        }
+
+        // Capacity constraints: xᵢ ≤ capacityᵢ
+        for i in 0..<4 {
+            constraints.append(.inequality { x in
+                x.toArray()[i] - capacities[i]
+            })
+        }
+
+        // Non-negativity and binary bounds
+        for i in 0..<dimension {
+            constraints.append(.inequality { x in -x.toArray()[i] })
+            if i >= 4 {
+                constraints.append(.inequality { x in x.toArray()[i] - 1.0 })
+            }
+        }
+
+        let solver = BranchAndBoundSolver<VectorN<Double>>(
+            maxNodes: 3000,
+            timeLimit: 30.0,
+            nodeSelection: .bestBound
+        )
+
+        let result = try solver.solve(
+            objective: objective,
+            from: VectorN(Array(repeating: 0.0, count: dimension)),
+            subjectTo: constraints,
+            integerSpec: spec,
+            minimize: true
+        )
+
+        let vars = result.solution.toArray()
+
+        print("Production Scheduling Test Results:")
+        for i in 0..<4 {
+            let production = vars[i]
+            let productionRounded = Int(round(vars[i]))  // Properly round for display
+            let demand = demands[i]
+            print("  Product \(i): Production=\(productionRounded) (\(production)), Demand=\(demand)")
+
+            // CRITICAL TEST: Production must meet or exceed demand within tolerance
+            #expect(production >= demand - 1e-6,
+                "Product \(i): Production (\(production)) is less than demand (\(demand))")
+
+            // When properly rounded, should equal demand
+            #expect(productionRounded == Int(demand),
+                "Product \(i): Rounded production (\(productionRounded)) doesn't match demand (\(Int(demand)))")
+        }
+
+        // Verify all constraints are satisfied
+        for (idx, constraint) in constraints.enumerated() {
+            let value = constraint.evaluate(at: result.solution)
+            #expect(value <= 1e-6,
+                "Constraint \(idx) violated: g(x) = \(value) > 0")
+        }
+
+        // Verify integer feasibility
+        #expect(spec.isIntegerFeasible(result.solution, tolerance: 1e-6))
+
+        // Expected: produce exactly at demand (no benefit to producing more)
+        for i in 0..<4 {
+            #expect(abs(vars[i] - demands[i]) < 0.5,
+                "Expected production at demand for cost minimization")
+        }
+    }
 }
