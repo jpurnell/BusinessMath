@@ -1,25 +1,50 @@
-```swift
+//: [Previous](@previous)
+
+import Foundation
 import BusinessMath
 
-// Minimize (x-1)² + (y-1)² subject to x≥0, y≥0, x+y≤2
-let objective: (VectorN<Double>) -> Double = { v in
-    let x = v[0] - 1
-    let y = v[1] - 1
-    return x*x + y*y
+// Simple Example: Minimize portfolio variance with no short-selling
+// Problem: Minimize w'Cw subject to Σw = 1, w ≥ 0
+
+let covariance = [
+	[0.04, 0.01, 0.02],
+	[0.01, 0.09, 0.03],
+	[0.02, 0.03, 0.16]
+]
+
+// Objective: Minimize portfolio variance
+let portfolioVariance: (VectorN<Double>) -> Double = { weights in
+	var variance = 0.0
+	for i in 0..<3 {
+		for j in 0..<3 {
+			variance += weights[i] * covariance[i][j] * weights[j]
+		}
+	}
+	return variance
 }
 
+// Constraints:
+// 1. Budget: Σw = 1 (equality)
+// 2. No short-selling: w ≥ 0 (inequalities)
 let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-    .inequality { v in -v[0] },        // x ≥ 0 → -x ≤ 0
-    .inequality { v in -v[1] },        // y ≥ 0 → -y ≤ 0
-    .inequality { v in v[0] + v[1] - 2 }  // x+y ≤ 2
-]
+	.budgetConstraint  // Σw = 1
+] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)  // w ≥ 0
+
+// Initial guess: equal weights
+let initial = VectorN([1.0/3, 1.0/3, 1.0/3])
 
 let optimizer = InequalityOptimizer<VectorN<Double>>()
 let result = try optimizer.minimize(
-    objective,
-    from: VectorN([0.5, 0.5]),
-    subjectTo: constraints
+	portfolioVariance,
+	from: initial,
+	subjectTo: constraints
 )
 
-print("Solution: \(result.solution)")  // [1, 1]
-```
+print("Optimal portfolio:")
+for (i, w) in result.solution.toArray().enumerated() {
+	print("  Asset \(i+1): \(String(format: "%.1f", w * 100))%")
+}
+print("Portfolio variance: \(String(format: "%.6f", result.objectiveValue))")
+print("Portfolio volatility: \(String(format: "%.2f", sqrt(result.objectiveValue) * 100))%")
+print("Converged: \(result.converged)")
+//: [Next](@next)

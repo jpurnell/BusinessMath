@@ -245,8 +245,8 @@ let varIdx = spec.mostFractionalVariable(solution)
 import BusinessMath
 
 // Project data
-let npvs = [100_000.0, 150_000.0, 120_000.0, 180_000.0, 90_000.0]
-let costs = [250_000.0, 300_000.0, 200_000.0, 350_000.0, 180_000.0]
+let npvs = [180_000.0, 150_000.0, 130_000.0, 170_000.0, 90_000.0]
+let costs = [220_000.0, 300_000.0, 200_000.0, 340_000.0, 180_000.0]
 let budget = 600_000.0
 
 // Specification: all binary (select or don't select)
@@ -304,7 +304,7 @@ print("Solve time: \(String(format: "%.2f", result.solveTime))s")
 **Expected Output:**
 ```
 Status: optimal
-Projects selected: [✓, ✗, ✓, ✓, ✗]
+Projects selected: [✓, ✗, ✓, ✗, ✓]
 Total NPV: $400,000
 Total cost: $600,000
 Nodes explored: 23
@@ -327,7 +327,7 @@ Solve time: 0.15s
 
 let npvs = [80_000.0, 120_000.0, 100_000.0, 90_000.0, 200_000.0]
 let costs = [200_000.0, 250_000.0, 220_000.0, 180_000.0, 300_000.0]
-let budget = 800_000.0
+let budget = 970_000.0
 
 let spec = IntegerProgramSpecification.allBinary(dimension: 5)
 
@@ -533,15 +533,16 @@ print("\nTotal cost: $\(String(format: "%.0f", result.objectiveValue))")
 Warehouses to open:
   Warehouse 0: OPEN (cost: $50,000)
     → Customer 0: 100 units
+	→ Customer 1: 10  units
     → Customer 3: 180 units
-    Total: 280/300 capacity
+    Total: 290/300 capacity
   Warehouse 2: OPEN (cost: $55,000)
-    → Customer 1: 150 units
+    → Customer 1: 140 units
     → Customer 2: 120 units
     → Customer 4: 140 units
-    Total: 410/400 capacity (slightly over)
+    Total: 400/400 capacity
 
-Total cost: $119,450
+Total cost: $112,590
 ```
 
 ---
@@ -645,7 +646,7 @@ let vars = result.solution.toArray()
 print("Production Plan:")
 var totalCost = 0.0
 for i in 0..<4 {
-    let quantity = Int(vars[i])
+    let quantity = Int(round(vars[i]))  // Round to handle floating-point precision
     let setup = vars[4 + i] > 0.5
 
     if quantity > 0 {

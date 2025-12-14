@@ -314,8 +314,9 @@ print(result.algorithmUsed)  // "Newton-Raphson"
 
 ```swift
 let optimizer = AdaptiveOptimizer<VectorN<Double>>(
-    tolerance: 1e-8,      // Very tight (default: 1e-6)
-    maxIterations: 5000   // More iterations (default: 1000)
+    maxIterations: 5000,   // More iterations (default: 1000
+	tolerance: 1e-8      // Very tight (default: 1e-6)
+   )
 )
 
 let result = try optimizer.optimize(
@@ -411,16 +412,16 @@ let product2 = result.solution[1]
 let profit = -result.objectiveValue
 
 print("Algorithm: \(result.algorithmUsed)")  // "Inequality Optimizer"
-print("Product 1: \(product1) units")
-print("Product 2: \(product2) units")
-print("Maximum profit: $\(profit)")
+print("Product 1: \(round(product1)) units")
+print("Product 2: \(round(product2)) units")
+print("Maximum profit: \(profit.currency())")
 ```
 
 ### Example 3: Parameter Estimation (Small Problem)
 
 ```swift
 // Calibrate model parameters to fit observed data
-let observedData = [2.1, 4.3, 6.2, 8.5, 10.1]
+let observedData = [3.7, 4.6, 5.9, 7.6, 10.0]
 let timePoints = [1.0, 2.0, 3.0, 4.0, 5.0]
 
 func model(params: VectorN<Double>, t: Double) -> Double {

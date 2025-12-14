@@ -430,61 +430,49 @@ The optimizer uses **quadratic penalties** for inequality constraints:
 ### Detailed Example
 
 ```swift
-// Portfolio optimization: max return subject to risk limit and no short-selling
-let returns = [0.10, 0.12, 0.15]
+// Portfolio optimization: minimize variance with no short-selling
+// Problem: minimize w'Cw subject to Σw = 1, w ≥ 0
+
 let covariance = [
     [0.04, 0.01, 0.02],
     [0.01, 0.09, 0.03],
     [0.02, 0.03, 0.16]
 ]
 
-// Objective: Maximize expected return (minimize negative return)
-let negativeReturn: (VectorN<Double>) -> Double = { w in
-    let ret = (0..<3).map { i in w[i] * returns[i] }.reduce(0, +)
-    return -ret  // Negative because we're minimizing
+// Objective: Minimize portfolio variance
+let portfolioVariance: (VectorN<Double>) -> Double = { w in
+    var variance = 0.0
+    for i in 0..<3 {
+        for j in 0..<3 {
+            variance += w[i] * covariance[i][j] * w[j]
+        }
+    }
+    return variance
 }
 
 // Constraints:
 // 1. Budget: Σw = 1 (equality)
 // 2. No short-selling: w ≥ 0 (inequalities)
-// 3. Risk limit: risk ≤ 0.15 (15% vol max)
-let maxRisk = 0.15
 let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-    .equality { w in
-        w.components.reduce(0, +) - 1  // Σw = 1
-    }
-] + [
-    .inequality { w in -w[0] },  // w₀ ≥ 0
-    .inequality { w in -w[1] },  // w₁ ≥ 0
-    .inequality { w in -w[2] }   // w₂ ≥ 0
-] + [
-    .inequality { w in
-        // Risk constraint: sqrt(w'Cw) ≤ maxRisk
-        var variance = 0.0
-        for i in 0..<3 {
-            for j in 0..<3 {
-                variance += w[i] * covariance[i][j] * w[j]
-            }
-        }
-        return sqrt(variance) - maxRisk
-    }
-]
+    .budgetConstraint  // Σw = 1
+] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)  // w ≥ 0
 
-// Initial guess: equal weights (strictly feasible)
+// Initial guess: equal weights
 let initial = VectorN([1.0/3, 1.0/3, 1.0/3])
 
 let optimizer = InequalityOptimizer<VectorN<Double>>()
 let result = try optimizer.minimize(
-    negativeReturn,
+    portfolioVariance,
     from: initial,
     subjectTo: constraints
 )
 
 print("Optimal portfolio:")
-for (i, w) in result.solution.components.enumerated() {
-    print("  Asset \(i+1): \(Int(w * 100))%")
+for (i, w) in result.solution.toArray().enumerated() {
+    print("  Asset \(i+1): \(String(format: "%.1f", w * 100))%")
 }
-print("Expected return: \(-result.value * 100)%")
+print("Portfolio variance: \(String(format: "%.6f", result.objectiveValue))")
+print("Portfolio volatility: \(String(format: "%.2f", sqrt(result.objectiveValue) * 100))%")
 ```
 
 ---
