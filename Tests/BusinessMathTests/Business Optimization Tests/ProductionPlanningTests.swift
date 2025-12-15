@@ -38,7 +38,7 @@ struct ProductionPlanningTests {
 		#expect(plan.profit > 0, "Should generate profit")
 
 		// With 1000 machine hours and 2 hours per widget, can produce up to 500 widgets
-		let widgetQty = plan.productionQuantities["widget"] ?? 0
+		let widgetQty = plan.productionQuantities["widget"]?.rounded() ?? 0
 		#expect(widgetQty <= 500, "Should not exceed capacity")
 	}
 

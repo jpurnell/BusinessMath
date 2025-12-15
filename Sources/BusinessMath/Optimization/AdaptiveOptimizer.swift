@@ -69,6 +69,9 @@ public struct AdaptiveOptimizer<V: VectorSpace> where V.Scalar == Double {
 
 		/// Constraint violations (if applicable)
 		public let constraintViolation: V.Scalar?
+
+		/// Formatter used for displaying results (mutable for customization)
+		public var formatter: FloatingPointFormatter = .optimization
 	}
 
 	// MARK: - Algorithm Choice
@@ -356,5 +359,39 @@ extension AdaptiveOptimizer {
 			recommendedAlgorithm: choice.algorithm.name,
 			reason: choice.reason
 		)
+	}
+}
+
+// MARK: - Formatting Extensions (Double only)
+
+extension AdaptiveOptimizer.Result where V.Scalar == Double {
+	/// Formatted solution with clean floating-point display
+	public var formattedSolution: String {
+		if let vectorN = solution as? VectorN<Double> {
+			return vectorN.formattedDescription(with: formatter)
+		}
+		// Fallback for other VectorSpace types with Double scalar
+		let array = solution.toArray()
+		return "[" + formatter.format(array).map(\.formatted).joined(separator: ", ") + "]"
+	}
+
+	/// Formatted objective value with clean floating-point display
+	public var formattedObjectiveValue: String {
+		formatter.format(objectiveValue).formatted
+	}
+
+	/// Formatted description showing clean results
+	public var formattedDescription: String {
+		var desc = "Adaptive Optimization Result:\n"
+		desc += "  Algorithm: \(algorithmUsed)\n"
+		desc += "  Reason: \(selectionReason)\n"
+		desc += "  Solution: \(formattedSolution)\n"
+		desc += "  Objective Value: \(formattedObjectiveValue)\n"
+		desc += "  Iterations: \(iterations)\n"
+		desc += "  Converged: \(converged)"
+		if let violation = constraintViolation {
+			desc += "\n  Constraint Violation: \(formatter.format(violation).formatted)"
+		}
+		return desc
 	}
 }

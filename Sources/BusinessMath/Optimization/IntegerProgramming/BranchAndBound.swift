@@ -586,6 +586,39 @@ public struct IntegerOptimizationResult<V: VectorSpace>: Sendable where V.Scalar
 
     /// Integer specification used
     public let integerSpec: IntegerProgramSpecification
+
+    /// Formatter used for displaying results (mutable for customization)
+    public var formatter: FloatingPointFormatter = .optimization
+
+    /// Integer solution with proper rounding (fixes production scheduling bug)
+    ///
+    /// CRITICAL: Uses round() instead of truncation to handle floating-point precision.
+    /// For example, 99.99999999999999 rounds to 100, not 99.
+    public var integerSolution: [Int] {
+        solution.toArray().map { Int(round($0)) }
+    }
+
+    /// Formatted solution showing clean integer values
+    public var formattedSolution: String {
+        "[" + integerSolution.map { String($0) }.joined(separator: ", ") + "]"
+    }
+
+    /// Formatted objective value with clean floating-point display
+    public var formattedObjectiveValue: String {
+        formatter.format(objectiveValue).formatted
+    }
+
+    /// Formatted description showing clean results
+    public var formattedDescription: String {
+        var desc = "Integer Optimization Result:\n"
+        desc += "  Solution: \(formattedSolution)\n"
+        desc += "  Objective Value: \(formattedObjectiveValue)\n"
+        desc += "  Status: \(status)\n"
+        desc += "  Relative Gap: \(formatter.format(relativeGap).formatted)\n"
+        desc += "  Nodes Explored: \(nodesExplored)\n"
+        desc += "  Solve Time: \(formatter.format(solveTime).formatted)s"
+        return desc
+    }
 }
 
 /// Status of integer programming solution

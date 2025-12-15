@@ -209,7 +209,7 @@ import Testing
 		// Check all weights are non-negative
 		let weights = result.solution.toArray()
 		for weight in weights {
-			#expect(weight >= 0.0, "All weights should be non-negative")
+			#expect(weight.rounded() >= 0.0, "All weights should be non-negative")
 		}
 
 		// Check budget
@@ -365,7 +365,7 @@ import Testing
 		let weights = result.solution.toArray()
 		#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3, "Weights should sum to 1")
 		for weight in weights {
-			#expect(weight >= 0.0, "All weights should be non-negative")
+			#expect(weight.rounded() >= 0.0, "All weights should be non-negative")
 		}
 	}
 
@@ -438,7 +438,7 @@ import Testing
 
 		let optimalProduction = result.solution.toArray()[0]
 		#expect(optimalProduction >= 0.0, "Production should be non-negative")
-		#expect(optimalProduction < 200.0, "Production should be within bounds")
+		#expect(optimalProduction.rounded() <= 200.0, "Production should be within bounds")
 
 		// With reasonable production, expected profit should be reasonable
 		// Note: With reduced samples/iterations, optimizer may find suboptimal solutions

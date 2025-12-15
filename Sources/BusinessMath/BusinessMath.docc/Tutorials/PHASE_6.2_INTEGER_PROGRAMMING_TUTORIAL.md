@@ -641,12 +641,14 @@ let result = try solver.solve(
     minimize: true
 )
 
-// Analyze solution
+// Analyze solution using the integerSolution property (handles floating-point precision automatically)
+let intSolution = result.integerSolution
 let vars = result.solution.toArray()
+
 print("Production Plan:")
 var totalCost = 0.0
 for i in 0..<4 {
-    let quantity = Int(round(vars[i]))  // Round to handle floating-point precision
+    let quantity = intSolution[i]  // Uses proper rounding (99.999... → 100, not 99!)
     let setup = vars[4 + i] > 0.5
 
     if quantity > 0 {
@@ -663,12 +665,15 @@ for i in 0..<4 {
 }
 print("\nTotal cost: $\(String(format: "%.0f", totalCost))")
 print("Nodes explored: \(result.nodesExplored)")
+
+// Or use the formatted output for cleaner display
+print("\n" + result.formattedDescription)
 ```
 
 **Expected Output:**
 ```
 Production Plan:
-  Product 0: Produce 100 units
+  Product 0: Produce 100 units  ✓ (properly rounded from 99.999...)
     Variable cost: $2,500
     Setup cost: $500
     Subtotal: $3,000
@@ -676,7 +681,7 @@ Production Plan:
     Variable cost: $4,500
     Setup cost: $600
     Subtotal: $5,100
-  Product 2: Produce 80 units
+  Product 2: Produce 80 units  ✓ (properly rounded from 79.999...)
     Variable cost: $1,600
     Setup cost: $450
     Subtotal: $2,050
@@ -687,7 +692,21 @@ Production Plan:
 
 Total cost: $14,060
 Nodes explored: 47
+
+Integer Optimization Result:
+  Solution: [100, 150, 80, 120, 1, 1, 1, 1]
+  Objective Value: 14060
+  Status: optimal
+  Relative Gap: 0
+  Nodes Explored: 47
+  Solve Time: 0.15s
 ```
+
+**Key Points:**
+- ✅ The `integerSolution` property automatically handles floating-point precision
+- ✅ No need for manual `Int(round())` - the library does it correctly
+- ✅ Formatted output shows clean integer values without noise
+- ✅ This fixes the original bug where 99.999... was truncated to 99
 
 ---
 

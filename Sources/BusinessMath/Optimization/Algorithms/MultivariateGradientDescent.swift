@@ -29,6 +29,39 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 
 	/// Optional history of iteration points and values
 	public let history: [(iteration: Int, point: V, value: V.Scalar, gradientNorm: V.Scalar)]?
+
+	/// Formatter used for displaying results (mutable for customization)
+	public var formatter: FloatingPointFormatter = .optimization
+}
+
+// MARK: - Formatting Extensions (Double only)
+
+extension MultivariateOptimizationResult where V.Scalar == Double {
+	/// Formatted solution with clean floating-point display
+	public var formattedSolution: String {
+		if let vectorN = solution as? VectorN<Double> {
+			return vectorN.formattedDescription(with: formatter)
+		}
+		// Fallback for other VectorSpace types with Double scalar
+		let array = solution.toArray()
+		return "[" + formatter.format(array).map(\.formatted).joined(separator: ", ") + "]"
+	}
+
+	/// Formatted objective value with clean floating-point display
+	public var formattedObjectiveValue: String {
+		formatter.format(value).formatted
+	}
+
+	/// Formatted description showing clean results
+	public var formattedDescription: String {
+		var desc = "Optimization Result:\n"
+		desc += "  Solution: \(formattedSolution)\n"
+		desc += "  Objective Value: \(formattedObjectiveValue)\n"
+		desc += "  Iterations: \(iterations)\n"
+		desc += "  Converged: \(converged)\n"
+		desc += "  Gradient Norm: \(formatter.format(gradientNorm).formatted)"
+		return desc
+	}
 }
 
 // MARK: - Multivariate Gradient Descent

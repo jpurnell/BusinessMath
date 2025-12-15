@@ -316,4 +316,68 @@ public struct SimulationResults: Sendable {
 	public func confidenceInterval(level: Double) -> (low: Double, high: Double) {
 		return statistics.confidenceInterval(level: level)
 	}
+
+	// MARK: - Formatting
+
+	/// Formatter used for displaying results (mutable for customization)
+	public var formatter: FloatingPointFormatter = .optimization
+
+	/// Formatted statistics summary with clean floating-point display
+	public var formattedStatistics: String {
+		var stats = statistics
+		stats.formatter = formatter
+		return stats.formattedDescription
+	}
+
+	/// Formatted percentiles summary with clean floating-point display
+	public var formattedPercentiles: String {
+		var desc = "Percentiles:\n"
+		desc += "  P5:  \(formatter.format(percentiles.p5).formatted)\n"
+		desc += "  P10: \(formatter.format(percentiles.p10).formatted)\n"
+		desc += "  P25: \(formatter.format(percentiles.p25).formatted)\n"
+		desc += "  P50: \(formatter.format(percentiles.p50).formatted) (Median)\n"
+		desc += "  P75: \(formatter.format(percentiles.p75).formatted)\n"
+		desc += "  P90: \(formatter.format(percentiles.p90).formatted)\n"
+		desc += "  P95: \(formatter.format(percentiles.p95).formatted)\n"
+		desc += "  P99: \(formatter.format(percentiles.p99).formatted)"
+		return desc
+	}
+
+	/// Formatted probability above threshold with clean floating-point display
+	///
+	/// - Parameter threshold: The value to compare against
+	/// - Returns: Formatted probability string
+	public func formattedProbabilityAbove(_ threshold: Double) -> String {
+		let prob = probabilityAbove(threshold)
+		return formatter.format(prob).formatted
+	}
+
+	/// Formatted probability below threshold with clean floating-point display
+	///
+	/// - Parameter threshold: The value to compare against
+	/// - Returns: Formatted probability string
+	public func formattedProbabilityBelow(_ threshold: Double) -> String {
+		let prob = probabilityBelow(threshold)
+		return formatter.format(prob).formatted
+	}
+
+	/// Formatted probability between thresholds with clean floating-point display
+	///
+	/// - Parameters:
+	///   - lower: The lower bound
+	///   - upper: The upper bound
+	/// - Returns: Formatted probability string
+	public func formattedProbabilityBetween(_ lower: Double, _ upper: Double) -> String {
+		let prob = probabilityBetween(lower, upper)
+		return formatter.format(prob).formatted
+	}
+
+	/// Formatted description showing complete simulation results
+	public var formattedDescription: String {
+		var desc = "Simulation Results (\(values.count) samples):\n\n"
+		desc += formattedStatistics
+		desc += "\n\n"
+		desc += formattedPercentiles
+		return desc
+	}
 }
