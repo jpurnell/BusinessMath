@@ -259,22 +259,23 @@ let forecast = try applySeasonal(timeSeries: trendForecast, indices: seasonalInd
 
 ## Documentation
 
-Comprehensive documentation is available in the package:
+Comprehensive documentation is now organized like a book with five main parts:
 
-- **[Getting Started Guide](Sources/BusinessMath/BusinessMath.docc/GettingStarted.md)** - Quick introduction with examples
-- **[Time Series Guide](Sources/BusinessMath/BusinessMath.docc/TimeSeries.md)** - Temporal data and operations
-- **[Time Value of Money](Sources/BusinessMath/BusinessMath.docc/TimeValueOfMoney.md)** - Financial calculations reference
-- **[Growth Modeling](Sources/BusinessMath/BusinessMath.docc/GrowthModeling.md)** - Forecasting and trends
-- **[Building Revenue Model](Sources/BusinessMath/BusinessMath.docc/BuildingRevenueModel.md)** - Step-by-step tutorial
-- **[Loan Amortization](Sources/BusinessMath/BusinessMath.docc/LoanAmortization.md)** - Complete loan analysis
-- **[Investment Analysis](Sources/BusinessMath/BusinessMath.docc/InvestmentAnalysis.md)** - Investment evaluation
-- **[Data Table Analysis](Sources/BusinessMath/BusinessMath.docc/DataTableAnalysis.md)** - Excel-like sensitivity analysis
-- **[Monte Carlo with Time Series](Sources/BusinessMath/BusinessMath.docc/MonteCarloTimeSeriesGuide.md)** - Probabilistic forecasting & confidence intervals
-- **[Equity Valuation Guide](Sources/BusinessMath/BusinessMath.docc/EquityValuationGuide.md)** - DDM, FCFE, Residual Income models ✨ **NEW**
-- **[Bond Valuation Guide](Sources/BusinessMath/BusinessMath.docc/BondValuationGuide.md)** - Pricing, duration, callable bonds, credit spreads ✨ **NEW**
-- **[Credit Derivatives Guide](Sources/BusinessMath/BusinessMath.docc/CreditDerivativesGuide.md)** - CDS, Merton model, hazard rates, bootstrapping ✨ **NEW**
+### Getting Started
+- **[Documentation Home](Sources/BusinessMath/BusinessMath.docc/BusinessMath.md)** - Main index with complete structure
+- **[Learning Path Guide](Sources/BusinessMath/BusinessMath.docc/LearningPath.md)** - Four specialized tracks (Financial Analyst, Risk Manager, Quant Developer, General Business)
+- **[Getting Started](Sources/BusinessMath/BusinessMath.docc/1.1-GettingStarted.md)** - Quick introduction with examples
 
-Total documentation: 8,500+ lines across 14 comprehensive guides with real-world examples.
+### Core Guides by Part
+- **Part I - Basics**: [Time Series](Sources/BusinessMath/BusinessMath.docc/1.2-TimeSeries.md), [Time Value of Money](Sources/BusinessMath/BusinessMath.docc/1.3-TimeValueOfMoney.md)
+- **Part II - Analysis**: [Data Table Analysis](Sources/BusinessMath/BusinessMath.docc/2.1-DataTableAnalysis.md)
+- **Part III - Modeling**: [Growth Modeling](Sources/BusinessMath/BusinessMath.docc/3.1-GrowthModeling.md), [Building Revenue Model](Sources/BusinessMath/BusinessMath.docc/3.3-BuildingRevenueModel.md), [Investment Analysis](Sources/BusinessMath/BusinessMath.docc/3.8-InvestmentAnalysis.md), [Equity Valuation](Sources/BusinessMath/BusinessMath.docc/3.9-EquityValuationGuide.md) ✨, [Bond Valuation](Sources/BusinessMath/BusinessMath.docc/3.10-BondValuationGuide.md) ✨, [Credit Derivatives](Sources/BusinessMath/BusinessMath.docc/3.11-CreditDerivativesGuide.md) ✨
+- **Part IV - Simulation**: [Monte Carlo Time Series](Sources/BusinessMath/BusinessMath.docc/4.1-MonteCarloTimeSeriesGuide.md)
+- **Part V - Optimization**: [Optimization Guide](Sources/BusinessMath/BusinessMath.docc/5.1-OptimizationGuide.md), [Portfolio Optimization](Sources/BusinessMath/BusinessMath.docc/5.2-PortfolioOptimizationGuide.md)
+
+See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for mapping of old documentation names to new numbered structure.
+
+Total documentation: 44 comprehensive guides (8,500+ lines) plus 6 part introductions and learning paths.
 
 ## Requirements
 
