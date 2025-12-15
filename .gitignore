@@ -5,8 +5,7 @@
 .github/workflows/*
 .swiftpm/xcode/
 .vscode
-!.swiftpm/xcode/
-.swiftpm/xcode/package.xcworkspace/xcuserdata/jpurnell.userdatad/UserInterfaceState.xcuserstate
+xcuserdata/
 howToResume.md
 overallRules
 codingRules.md~
