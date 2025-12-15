@@ -1,0 +1,256 @@
+# Part V: Optimization
+
+Find optimal solutions using mathematical optimization and operations research.
+
+## Overview
+
+Part V introduces mathematical optimization—the systematic search for the best solution among many alternatives. While earlier parts taught you to model, analyze, and simulate, Part V teaches you to *optimize*: maximize returns, minimize costs, allocate resources efficiently, and find the best decisions subject to constraints.
+
+Optimization is where BusinessMath becomes truly powerful. Instead of manually trying different scenarios to find good solutions, you can mathematically guarantee finding optimal solutions. Whether you're allocating capital across investments, scheduling resources, or constructing efficient portfolios, optimization provides rigorous, defensible answers.
+
+This part takes you from simple goal-seeking (find the growth rate that achieves target revenue) through portfolio optimization (find the efficient frontier) to advanced techniques like integer programming and robust optimization. The journey progresses from fundamental concepts through increasingly sophisticated applications.
+
+## What You'll Learn
+
+- **Goal Seeking & Root Finding**: Solve for unknown inputs that achieve target outputs
+- **Unconstrained Optimization**: Find maxima and minima using gradient descent and Newton methods
+- **Constrained Optimization**: Optimize subject to equality and inequality constraints
+- **Portfolio Optimization**: Modern Portfolio Theory, efficient frontier, and risk parity
+- **Integer Programming**: Optimization with discrete decision variables
+- **Advanced Techniques**: Parallel multi-start, adaptive algorithm selection, robust optimization
+
+## Chapters in This Part
+
+### Fundamentals
+- <doc:5.1-OptimizationGuide> - Comprehensive guide from goal-seeking through business optimization
+- <doc:5.2-PortfolioOptimizationGuide> - Modern Portfolio Theory and efficient portfolios
+
+### Deep Dive: Optimization Phases
+This progressive tutorial series builds optimization capabilities from first principles:
+
+**Phase 1-2: Foundations**
+- <doc:5.3-Phase1-CoreEnhancements> - Goal-seeking API, root-finding, and constraint builders
+- <doc:5.4-Phase2-VectorOperations> - Vector mathematics for multivariate problems
+
+**Phase 3-5: Core Algorithms**
+- <doc:5.5-Phase3-MultivariateOptimization> - Gradient descent and Newton-Raphson methods
+- <doc:5.6-Phase4-ConstrainedOptimization> - Equality and inequality constraints
+- <doc:5.7-Phase5-BusinessOptimization> - Resource allocation, production planning, financial model drivers
+
+**Phase 6-7: Advanced Techniques**
+- <doc:5.8-Phase6-IntegerProgramming> - Branch-and-bound, branch-and-cut with cutting planes
+- <doc:5.9-Phase7-AdaptiveSelection> - Automatic algorithm selection based on problem characteristics
+- <doc:5.10-Phase7-ParallelOptimization> - Parallel multi-start for global optimum finding
+- <doc:5.11-Phase7-PerformanceBenchmarking> - Performance testing and optimization
+
+**Phase 8: Specialized Applications**
+- <doc:5.12-Phase8-SparseMatrix> - Efficient sparse matrix operations for large-scale problems
+- <doc:5.13-Phase8-MultiPeriod> - Stochastic multi-period optimization
+- <doc:5.14-Phase8-RobustOptimization> - Optimization under uncertainty
+
+### Specialized Topics
+- <doc:5.15-InequalityConstraints> - Detailed treatment of inequality constraint handling
+
+## Prerequisites
+
+Optimization builds on everything you've learned:
+
+- **Essential**: Time series (<doc:1.2-TimeSeries>), financial calculations (<doc:1.3-TimeValueOfMoney>)
+- **Important**: Financial modeling (<doc:Part3-Modeling>) - You need models to optimize
+- **Helpful**: Risk analytics (<doc:2.3-RiskAnalyticsGuide>) - For risk-aware optimization
+- **For Advanced Topics**: Simulation (<doc:Part4-Simulation>) - For robust optimization
+
+Basic calculus (derivatives) helps for understanding gradient-based methods, but isn't strictly required—the library handles the mathematics.
+
+## Suggested Reading Order
+
+### For Business Users (FP&A, Finance):
+1. <doc:5.1-OptimizationGuide> - Start with business optimization section (Phase 5)
+2. <doc:5.2-PortfolioOptimizationGuide> - Portfolio applications
+3. <doc:5.3-Phase1-CoreEnhancements> - Goal-seeking for financial models
+4. Stop here unless you need advanced techniques
+
+### For Quantitative Analysts:
+1. <doc:5.1-OptimizationGuide> - Complete overview
+2. <doc:5.3-Phase1-CoreEnhancements> through <doc:5.7-Phase5-BusinessOptimization> - Core sequence
+3. <doc:5.2-PortfolioOptimizationGuide> - Portfolio applications
+4. Advanced phases as needed
+
+### For Optimization Specialists:
+- Read the Phase tutorials sequentially from 5.3 through 5.14
+- Each phase builds on previous phases
+- Complete all phases for comprehensive understanding
+
+### For Portfolio Managers:
+1. <doc:5.2-PortfolioOptimizationGuide> - Start here
+2. <doc:5.1-OptimizationGuide> - Understand the optimization framework
+3. <doc:5.14-Phase8-RobustOptimization> - Robustness under uncertainty
+4. <doc:2.3-RiskAnalyticsGuide> - Risk measurement
+
+## Key Concepts
+
+### Goal Seeking
+
+Find input values that achieve target outputs:
+
+```swift
+let targetRevenue = 1_000_000.0
+let requiredGrowthRate = model.goalSeek(
+    target: targetRevenue,
+    varyingParameter: \.growthRate,
+    initialGuess: 0.10
+)
+// What growth rate do we need to hit $1M revenue?
+```
+
+### Constrained Optimization
+
+Optimize subject to real-world constraints:
+
+```swift
+let optimizer = Optimizer()
+    .objective { capital in
+        portfolio(capital).expectedReturn()
+    }
+    .constraint { capital in
+        capital.sum() == totalBudget  // Equality: use all budget
+    }
+    .constraint { capital in
+        portfolio(capital).risk() <= maxRisk  // Inequality: risk limit
+    }
+    .maximize()
+
+let optimalAllocation = optimizer.solve()
+```
+
+### Portfolio Optimization
+
+Construct efficient portfolios using Modern Portfolio Theory:
+
+```swift
+let optimizer = PortfolioOptimizer(returns: returns, covariance: covMatrix)
+
+// Minimum variance portfolio
+let minVar = optimizer.minimizeVariance()
+
+// Maximum Sharpe ratio
+let maxSharpe = optimizer.maximizeSharpeRatio(riskFreeRate: 0.02)
+
+// Efficient frontier
+let frontier = optimizer.efficientFrontier(points: 50)
+```
+
+### Integer Programming
+
+Optimize with discrete decisions (yes/no, count, selection):
+
+```swift
+let optimizer = IntegerOptimizer()
+    .variables(projects.count, type: .binary)  // Select or reject
+    .objective { selected in
+        projects.filtered(selected).totalNPV()
+    }
+    .constraint { selected in
+        projects.filtered(selected).totalCost() <= budget
+    }
+    .maximize()
+
+let selectedProjects = optimizer.solve()
+```
+
+## Real-World Applications
+
+### Capital Allocation
+Allocate limited capital across projects to maximize NPV subject to budget constraints and strategic requirements.
+
+### Portfolio Construction
+Build efficient portfolios that maximize return for given risk or minimize risk for target return. Implement Modern Portfolio Theory in practice.
+
+### Resource Planning
+Optimize production schedules, staffing levels, or inventory policies subject to capacity, demand, and cost constraints.
+
+### Financial Model Calibration
+Find parameter values that best fit historical data or achieve target outputs. Calibrate models to market prices.
+
+### Risk-Aware Optimization
+Optimize considering both expected returns and risk. Build robust solutions that perform well across scenarios.
+
+## Optimization Algorithms
+
+BusinessMath implements multiple algorithms, automatically selecting the best for your problem:
+
+- **Simplex Method**: Linear programming
+- **Gradient Descent**: Smooth unconstrained problems
+- **Newton-Raphson**: Fast convergence for well-behaved problems
+- **Quadratic Penalty**: Interior point solutions for inequality constraints
+- **Branch-and-Bound**: Integer programming
+- **Branch-and-Cut**: Enhanced integer programming with cutting planes
+
+The adaptive selection system (<doc:5.9-Phase7-AdaptiveSelection>) chooses algorithms based on problem characteristics.
+
+## Performance Considerations
+
+**Problem Size**: Optimization scales differently by problem type:
+- Small problems (<10 variables): All methods work well
+- Medium problems (10-100 variables): Gradient methods excel
+- Large problems (>100 variables): Use sparse matrices (<doc:5.12-Phase8-SparseMatrix>)
+
+**Global vs. Local**:
+- Local optimization finds nearby optima (fast)
+- Global optimization finds best overall solution (slower)
+- Use parallel multi-start (<doc:5.10-Phase7-ParallelOptimization>) for global optimization
+
+**Convergence**:
+- Set appropriate tolerance for your application
+- Financial models typically need 0.01% tolerance
+- Engineering applications may need higher precision
+
+## Common Pitfalls
+
+**Non-Convex Problems**: May have multiple local optima. Use multi-start optimization or try different initial guesses.
+
+**Infeasible Constraints**: If no solution satisfies all constraints, optimization fails. Review constraints for conflicts.
+
+**Poor Scaling**: Variables with very different magnitudes (e.g., 0.01 vs. 1,000,000) can cause numerical issues. Normalize or rescale.
+
+**Overconstraining**: Too many constraints may have no feasible solution. Start with essential constraints only.
+
+## Next Steps
+
+After mastering optimization:
+
+- **Apply to Real Problems**: Use optimization in your financial models and business decisions
+- **Combine with Simulation** (<doc:Part4-Simulation>) - Robust optimization under uncertainty
+- **Build Applications** - Create decision support tools using optimization
+- **Explore Case Studies** (<doc:Appendix-A-ReidsRaisinsExample>) - Real-world examples
+
+## Common Questions
+
+**When should I use optimization vs. just trying different scenarios?**
+
+Use optimization when:
+- The problem has many variables or constraints
+- You need provably optimal solutions
+- Manual search would be time-consuming
+- The problem will be solved repeatedly
+
+Manual scenarios work fine for simple problems or one-off analysis.
+
+**How do I know if my optimization found the global optimum?**
+
+For convex problems (linear, quadratic with constraints forming a convex set), any local optimum is global. For non-convex problems, use multi-start optimization or try from multiple initial points.
+
+**What if my problem has no solution?**
+
+Check your constraints for conflicts. Start with just the objective and add constraints one at a time. The conflict will reveal itself.
+
+**Can I optimize discrete choices (select projects, choose locations)?**
+
+Yes! Use integer programming (<doc:5.8-Phase6-IntegerProgramming>) with binary variables (0 or 1) to model yes/no decisions.
+
+## Related Topics
+
+- <doc:Part3-Modeling> - Models to optimize
+- <doc:Part4-Simulation> - Combine with robust optimization
+- <doc:2.3-RiskAnalyticsGuide> - Risk metrics for risk-aware optimization
+- <doc:2.1-DataTableAnalysis> - Sensitivity analysis complements optimization
