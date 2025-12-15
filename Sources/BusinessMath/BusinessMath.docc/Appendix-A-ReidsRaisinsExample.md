@@ -767,9 +767,9 @@ Now that you understand the complete decision analysis framework, you can:
 
 ## Related Topics
 
-- <doc:OptimizationGuide> - Learn more about optimization methods and solvers
-- <doc:ScenarioAnalysisGuide> - Explore advanced scenario modeling and Monte Carlo simulation
-- <doc:VisualizationGuide> - Create publication-quality charts from your analysis
+- <doc:5.1-OptimizationGuide> - Learn more about optimization methods and solvers
+- <doc:4.2-ScenarioAnalysisGuide> - Explore advanced scenario modeling and Monte Carlo simulation
+- <doc:2.4-VisualizationGuide> - Create publication-quality charts from your analysis
 - ``GoalSeekOptimizer`` - API reference for root-finding and breakeven analysis
 - ``NewtonRaphsonOptimizer`` - For finding optimal values (min/max)
 - ``GradientDescentOptimizer`` - Multi-variable optimization for complex problems
