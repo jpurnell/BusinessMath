@@ -41,7 +41,7 @@ import Testing
 
 		// When
 		let output = plotTornadoDiagram(tornado)
-
+		
 		// Then
 		#expect(output.contains("Revenue"), "Should show input name")
 		#expect(output.contains("Base Case:"), "Should show base case value")
@@ -150,6 +150,7 @@ import Testing
 
 		// When
 		let output = plotTornadoDiagram(tornado)
+
 		// Then
 		#expect(output.contains("1000"), "Should display base case value")
 		#expect(output.contains("Base"), "Should label base case")
@@ -198,6 +199,7 @@ import Testing
 
 		// When
 		let output = plotTornadoDiagram(tornado)
+		
 		let lines = output.components(separatedBy: "\n").filter { !$0.isEmpty }
 
 		// Then

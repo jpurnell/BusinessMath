@@ -10,7 +10,7 @@ import Foundation
 import Numerics
 @testable import BusinessMath
 
-@Suite("DDM Performance Tests")
+@Suite("DDM Performance Tests", .serialized)
 struct DDMPerformanceTests {
 
     // MARK: - Single Calculation Performance
@@ -278,7 +278,7 @@ struct DDMPerformanceTests {
 
     // MARK: - Memory Efficiency
 
-    @Test("Memory efficiency - create 10000 models")
+	@Test("Memory efficiency - create 10000 models")
     func memoryEfficiencyTest() {
         // Create a large number of models to test memory efficiency
         let start = Date()

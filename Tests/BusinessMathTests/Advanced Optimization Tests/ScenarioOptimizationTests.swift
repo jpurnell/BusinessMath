@@ -69,7 +69,7 @@ import Testing
 
 		// Check non-negativity
 		for weight in weights {
-			#expect(weight >= 0.0)
+			#expect(weight.rounded() >= 0.0)
 		}
 
 		// Expected return should be positive

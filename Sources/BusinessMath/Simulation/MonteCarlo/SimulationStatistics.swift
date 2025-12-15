@@ -103,6 +103,59 @@ public struct SimulationStatistics: Sendable {
 	/// 99% confidence interval (mean ± 2.576 × stdDev)
 	public var ci99: (low: Double, high: Double) { return globalConfidenceInterval(0.99, values) }
 
+	// MARK: - Formatting
+
+	/// Formatter used for displaying results (mutable for customization)
+	public var formatter: FloatingPointFormatter = .optimization
+
+	/// Formatted mean value with clean floating-point display
+	public var formattedMean: String {
+		formatter.format(mean).formatted
+	}
+
+	/// Formatted median value with clean floating-point display
+	public var formattedMedian: String {
+		formatter.format(median).formatted
+	}
+
+	/// Formatted standard deviation with clean floating-point display
+	public var formattedStdDev: String {
+		formatter.format(stdDev).formatted
+	}
+
+	/// Formatted variance with clean floating-point display
+	public var formattedVariance: String {
+		formatter.format(variance).formatted
+	}
+
+	/// Formatted minimum value with clean floating-point display
+	public var formattedMin: String {
+		formatter.format(min).formatted
+	}
+
+	/// Formatted maximum value with clean floating-point display
+	public var formattedMax: String {
+		formatter.format(max).formatted
+	}
+
+	/// Formatted skewness with clean floating-point display
+	public var formattedSkewness: String {
+		formatter.format(skewness).formatted
+	}
+
+	/// Formatted description showing clean statistical summary
+	public var formattedDescription: String {
+		var desc = "Simulation Statistics:\n"
+		desc += "  Mean: \(formattedMean)\n"
+		desc += "  Median: \(formattedMedian)\n"
+		desc += "  Std Dev: \(formattedStdDev)\n"
+		desc += "  Min: \(formattedMin)\n"
+		desc += "  Max: \(formattedMax)\n"
+		desc += "  Skewness: \(formattedSkewness)\n"
+		desc += "  Sample Size: \(values.count)"
+		return desc
+	}
+
 	// MARK: - Initialization
 
 	/// Creates a SimulationStatistics struct from an array of values.

@@ -675,6 +675,39 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 	}
 }
 
+// MARK: - Formatting Extensions (Double only)
+
+extension VectorN where T == Double {
+		/// Formatted description with clean floating-point display
+		///
+		/// Uses the default optimization formatter (context-aware).
+		///
+		/// ## Example
+		/// ```swift
+		/// let v = VectorN([2.9999999999999964, 0.7500000000000002, 1e-15])
+		/// print(v.formattedDescription())  // "[3, 0.75, 0]"
+		/// ```
+	public func formattedDescription() -> String {
+		formattedDescription(with: .optimization)
+	}
+
+		/// Formatted description with custom formatter
+		///
+		/// ## Example
+		/// ```swift
+		/// let v = VectorN([123.456, 789.012])
+		/// let formatter = FloatingPointFormatter(strategy: .significantFigures(count: 2))
+		/// print(v.formattedDescription(with: formatter))  // "[120, 790]"
+		/// ```
+		///
+		/// - Parameter formatter: Custom formatter to use
+		/// - Returns: Formatted string representation
+	public func formattedDescription(with formatter: FloatingPointFormatter) -> String {
+		let formatted = formatter.format(components)
+		return "[" + formatted.map(\.formatted).joined(separator: ", ") + "]"
+	}
+}
+
 // MARK: - Conformance to AdditiveArithmetic
 
 extension VectorN: AdditiveArithmetic {

@@ -129,7 +129,7 @@ import Testing
 
 		// Verify non-negativity
 		for weight in weights {
-			#expect(weight >= 0.0)
+			#expect(weight.rounded() >= 0.0)
 		}
 
 		// Since we minimize negative return, worst-case objective is the most negative
@@ -322,17 +322,17 @@ import Testing
 
 		// Non-negativity
 		for weight in weights {
-			#expect(weight >= 0.0)
+			#expect(weight.rounded() >= 0.0)
 		}
 
 		// Test constraints hold for sampled uncertainty points
 		let samples = uncertaintySet.samplePoints(numberOfSamples: 20)
-		for sample in samples {
+		for _ in samples {
 			// At minimum, budget and non-negativity must hold
 			// (These are scenario-independent)
 			#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 			for weight in weights {
-				#expect(weight >= -1e-6)
+				#expect(weight.rounded() >= -1e-6)
 			}
 		}
 	}

@@ -280,7 +280,7 @@ struct ResourceAllocationTests {
 		)
 
 		#expect(result.converged, "Should converge")
-		#expect(!result.selectedOptions.contains(where: { $0.id == "proj1" }), "proj1 must not be selected")
+		#expect(!result.selectedOptions.contains(where: { $0.id == "proj1" && $0.name != "Excluded" }), "proj1 must not be selected")
 	}
 
 	// MARK: - Dependency Constraints

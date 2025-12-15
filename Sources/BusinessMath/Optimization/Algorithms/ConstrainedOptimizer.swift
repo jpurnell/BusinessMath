@@ -73,6 +73,9 @@ public struct ConstrainedOptimizationResult<V: VectorSpace> where V.Scalar: Real
 		self.constraintViolation = constraintViolation
 	}
 
+	/// Formatter used for displaying results (mutable for customization)
+	public var formatter: FloatingPointFormatter = .optimization
+
 	/// Negate the objective value (for converting minimize to maximize results)
 	func negated() -> ConstrainedOptimizationResult<V> {
 		ConstrainedOptimizationResult(
@@ -86,6 +89,47 @@ public struct ConstrainedOptimizationResult<V: VectorSpace> where V.Scalar: Real
 			},
 			constraintViolation: constraintViolation
 		)
+	}
+}
+
+// MARK: - Formatting Extensions (Double only)
+
+extension ConstrainedOptimizationResult where V.Scalar == Double {
+	/// Formatted solution with clean floating-point display
+	public var formattedSolution: String {
+		if let vectorN = solution as? VectorN<Double> {
+			return vectorN.formattedDescription(with: formatter)
+		}
+		// Fallback for other VectorSpace types with Double scalar
+		let array = solution.toArray()
+		return "[" + formatter.format(array).map(\.formatted).joined(separator: ", ") + "]"
+	}
+
+	/// Formatted objective value with clean floating-point display
+	public var formattedObjectiveValue: String {
+		formatter.format(objectiveValue).formatted
+	}
+
+	/// Formatted Lagrange multipliers with clean floating-point display
+	public var formattedLagrangeMultipliers: String {
+		"[" + formatter.format(lagrangeMultipliers).map(\.formatted).joined(separator: ", ") + "]"
+	}
+
+	/// Formatted constraint violation with clean floating-point display
+	public var formattedConstraintViolation: String {
+		formatter.format(constraintViolation).formatted
+	}
+
+	/// Formatted description showing clean results
+	public var formattedDescription: String {
+		var desc = "Constrained Optimization Result:\n"
+		desc += "  Solution: \(formattedSolution)\n"
+		desc += "  Objective Value: \(formattedObjectiveValue)\n"
+		desc += "  Lagrange Multipliers: \(formattedLagrangeMultipliers)\n"
+		desc += "  Constraint Violation: \(formattedConstraintViolation)\n"
+		desc += "  Iterations: \(iterations)\n"
+		desc += "  Converged: \(converged)"
+		return desc
 	}
 }
 
