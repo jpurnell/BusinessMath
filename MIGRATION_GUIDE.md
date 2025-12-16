@@ -268,5 +268,5 @@ If you can't find something after the reorganization:
 
 ---
 
-**Last Updated**: [Date]
-**Applies to**: BusinessMath v[X.X.X] and later
+**Last Updated**: [December 15, 2025]
+**Applies to**: BusinessMath v[1.4.0] and later
