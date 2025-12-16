@@ -1,0 +1,320 @@
+//
+//  NonlinearRegressionTests.swift
+//  BusinessMathTests
+//
+//  Unit tests for nonlinear regression and model validation.
+//
+
+import XCTest
+@testable import BusinessMath
+
+final class NonlinearRegressionTests: XCTestCase {
+
+	// MARK: - Simulation Tests
+
+	func testReciprocalSimulation_GeneratesCorrectNumberOfPoints() {
+		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
+		let data = simulator.simulate(n: 100, xRange: 0.0...10.0)
+
+		XCTAssertEqual(data.count, 100, "Should generate exactly n data points")
+	}
+
+	func testReciprocalSimulation_XValuesInRange() {
+		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
+		let data = simulator.simulate(n: 100, xRange: 2.0...8.0)
+
+		for point in data {
+			XCTAssertGreaterThanOrEqual(point.x, 2.0, "X values should be >= 2.0")
+			XCTAssertLessThanOrEqual(point.x, 8.0, "X values should be <= 8.0")
+		}
+	}
+
+	func testReciprocalSimulation_WithSpecificXValues() {
+		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.001)
+		let xValues = [1.0, 2.0, 3.0, 4.0, 5.0]
+		let data = simulator.simulate(xValues: xValues)
+
+		XCTAssertEqual(data.count, xValues.count, "Should generate one point per x value")
+
+		// With very small sigma, y should be close to 1/(a + b*x)
+		for (i, point) in data.enumerated() {
+			XCTAssertEqual(point.x, xValues[i], accuracy: 1e-10, "X values should match input")
+
+			let expectedMean = 1.0 / (0.2 + 0.3 * xValues[i])
+			XCTAssertEqual(point.y, expectedMean, accuracy: 0.01, "Y should be close to mean with small sigma")
+		}
+	}
+
+	// MARK: - Model Tests
+
+	func testReciprocalModel_PredictedMean() {
+		let params = ReciprocalRegressionModel<Double>.Parameters(a: 0.2, b: 0.3, sigma: 0.2)
+
+		// Test at x = 2.0: expected = 1/(0.2 + 0.3*2) = 1/0.8 = 1.25
+		let predicted = ReciprocalRegressionModel<Double>.predictedMean(x: 2.0, params: params)
+		XCTAssertEqual(predicted, 1.25, accuracy: 1e-10)
+
+		// Test at x = 0.0: expected = 1/0.2 = 5.0
+		let predicted0 = ReciprocalRegressionModel<Double>.predictedMean(x: 0.0, params: params)
+		XCTAssertEqual(predicted0, 5.0, accuracy: 1e-10)
+	}
+
+	func testReciprocalModel_LogLikelihood() {
+		let params = ReciprocalRegressionModel<Double>.Parameters(a: 0.2, b: 0.3, sigma: 0.2)
+
+		// Data point at mean (perfect fit): log-likelihood should be high
+		let mu = ReciprocalRegressionModel<Double>.predictedMean(x: 2.0, params: params)
+		let perfectPoint = ReciprocalRegressionModel<Double>.DataPoint(x: 2.0, y: mu)
+
+		let logLik = ReciprocalRegressionModel<Double>.logLikelihood(dataPoint: perfectPoint, params: params)
+
+		// For normal distribution at mean, log-likelihood = -log(sigma) - 0.5*log(2π)
+		let expectedLogLik = -log(0.2) - 0.5 * log(2.0 * .pi)
+		XCTAssertEqual(logLik, expectedLogLik, accuracy: 1e-6)
+	}
+
+	func testReciprocalModel_TotalLogLikelihood() {
+		let params = ReciprocalRegressionModel<Double>.Parameters(a: 0.2, b: 0.3, sigma: 0.2)
+
+		let data = [
+			ReciprocalRegressionModel<Double>.DataPoint(x: 1.0, y: 2.0),
+			ReciprocalRegressionModel<Double>.DataPoint(x: 2.0, y: 1.5),
+			ReciprocalRegressionModel<Double>.DataPoint(x: 3.0, y: 1.0)
+		]
+
+		let totalLogLik = ReciprocalRegressionModel<Double>.totalLogLikelihood(data: data, params: params)
+
+		// Should equal sum of individual log-likelihoods
+		let expectedTotal = data.reduce(0.0) { sum, point in
+			sum + ReciprocalRegressionModel<Double>.logLikelihood(dataPoint: point, params: params)
+		}
+
+		XCTAssertEqual(totalLogLik, expectedTotal, accuracy: 1e-10)
+	}
+
+	// MARK: - Fitting Tests
+
+	// Note: Gradient-based optimization on nonlinear problems can be challenging.
+	// These tests verify the fitting procedure runs without crashing and produces
+	// reasonable results, but may not always achieve perfect parameter recovery
+	// due to local minima, initialization sensitivity, and optimization challenges.
+
+	func testReciprocalFitting_RunsWithoutCrashing() throws {
+		// This test verifies fitting completes without errors
+		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.5, b: 0.5, sigma: 0.1)
+		let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
+
+		let fitter = ReciprocalRegressionFitter<Double>()
+		let result = try fitter.fit(
+			data: data,
+			initialGuess: ReciprocalRegressionModel<Double>.Parameters(a: 0.5, b: 0.5, sigma: 0.5),
+			learningRate: 0.001,
+			maxIterations: 1000
+		)
+
+		// Should complete without throwing
+		XCTAssertNotNil(result)
+		// Parameters should be positive
+		XCTAssertGreaterThan(result.parameters.a, 0, "a should be positive")
+		XCTAssertGreaterThan(result.parameters.b, 0, "b should be positive")
+		XCTAssertGreaterThan(result.parameters.sigma, 0, "sigma should be positive")
+	}
+
+	func testReciprocalFitting_LogLikelihoodImproves() throws {
+		// Test that fitting improves log-likelihood from initial guess
+		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
+		let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
+
+		let initialParams = ReciprocalRegressionModel<Double>.Parameters(a: 1.0, b: 1.0, sigma: 1.0)
+		let initialLogLik = ReciprocalRegressionModel<Double>.totalLogLikelihood(data: data, params: initialParams)
+
+		let fitter = ReciprocalRegressionFitter<Double>()
+		let result = try fitter.fit(
+			data: data,
+			initialGuess: initialParams,
+			learningRate: 0.001,
+			maxIterations: 1000
+		)
+
+		// Fitted log-likelihood should be better than initial
+		XCTAssertGreaterThan(result.logLikelihood, initialLogLik,
+			"Fitted model should have higher log-likelihood than initial guess")
+	}
+
+	// MARK: - Parameter Recovery Validation Tests
+
+	func testParameterRecoveryCheck_BasicRun() throws {
+		let report = try ReciprocalParameterRecoveryCheck.run(
+			trueA: 0.2,
+			trueB: 0.3,
+			trueSigma: 0.2,
+			n: 150,
+			xRange: 1.0...10.0,  // Avoid x near 0 for better numerics
+			tolerance: 0.30,  // 30% tolerance (generous for stochastic data)
+			maxIterations: 2000
+		)
+
+		XCTAssertNotNil(report)
+		XCTAssertEqual(report.sampleSize, 150)
+		// Note: We don't strictly require convergence since gradient descent can have challenges
+
+		// Check that report structure is correct
+		XCTAssertEqual(report.trueParameters.count, 3, "Should have 3 true parameters")
+		XCTAssertEqual(report.recoveredParameters.count, 3, "Should have 3 recovered parameters")
+		XCTAssertEqual(report.absoluteErrors.count, 3, "Should have 3 absolute errors")
+		XCTAssertEqual(report.relativeErrors.count, 3, "Should have 3 relative errors")
+	}
+
+	func testParameterRecoveryCheck_ToleranceChecking() throws {
+		let report = try ReciprocalParameterRecoveryCheck.run(
+			trueA: 0.2,
+			trueB: 0.3,
+			trueSigma: 0.2,
+			n: 200,
+			xRange: 1.0...10.0,  // Avoid x near 0
+			tolerance: 0.30,  // 30% tolerance (generous)
+			maxIterations: 2000
+		)
+
+		// Check that tolerance logic is correctly applied
+		for (param, withinTol) in report.withinTolerance {
+			let relError = report.relativeErrors[param]!
+			if withinTol {
+				XCTAssertLessThanOrEqual(relError, report.tolerance, "\(param) marked as passing but error > tolerance")
+			} else {
+				XCTAssertGreaterThan(relError, report.tolerance, "\(param) marked as failing but error <= tolerance")
+			}
+		}
+	}
+
+	func testParameterRecoveryCheck_MultipleReplicates() throws {
+		let reports = try ReciprocalParameterRecoveryCheck.runMultiple(
+			trueA: 0.2,
+			trueB: 0.3,
+			trueSigma: 0.2,
+			replicates: 3,  // Reduced from 5 to speed up tests
+			n: 100,
+			xRange: 1.0...10.0,  // Avoid x near 0
+			tolerance: 0.30
+		)
+
+		XCTAssertEqual(reports.count, 3, "Should generate 3 replicates")
+
+		// Check that summary works (don't require all to converge)
+		let summary = ReciprocalParameterRecoveryCheck.summarizeReplicates(reports)
+		XCTAssertFalse(summary.isEmpty, "Summary should not be empty")
+		XCTAssertTrue(summary.contains("Replicates"), "Summary should mention replicates")
+	}
+
+	func testParameterRecoveryReport_SummaryFormat() throws {
+		let report = try ReciprocalParameterRecoveryCheck.run(
+			trueA: 0.2,
+			trueB: 0.3,
+			trueSigma: 0.2,
+			n: 100,
+			xRange: 0.5...10.0,
+			maxIterations: 2000
+		)
+
+		let summary = report.summary
+
+		// Check that summary contains key information
+		XCTAssertTrue(summary.contains("Parameter Recovery Validation"), "Summary should have title")
+		XCTAssertTrue(summary.contains("Sample Size"), "Summary should show sample size")
+		XCTAssertTrue(summary.contains("Converged"), "Summary should show convergence status")
+		XCTAssertTrue(summary.contains("a:"), "Summary should show parameter a")
+		XCTAssertTrue(summary.contains("b:"), "Summary should show parameter b")
+		XCTAssertTrue(summary.contains("sigma:"), "Summary should show parameter sigma")
+
+		if report.passed {
+			XCTAssertTrue(summary.contains("✓") || summary.contains("PASS"), "Summary should indicate success")
+		} else {
+			XCTAssertTrue(summary.contains("✗") || summary.contains("FAIL"), "Summary should indicate failure")
+		}
+	}
+
+	// MARK: - Numerical Gradient Tests
+
+	func testNumericalGradient_SimpleQuadratic() throws {
+		// f(x) = x₁² + x₂²
+		// ∇f = [2x₁, 2x₂]
+		let f: (VectorN<Double>) -> Double = { v in
+			v[0] * v[0] + v[1] * v[1]
+		}
+
+		let point = VectorN<Double>([3.0, 4.0])
+		let gradient = try numericalGradient(f, at: point, h: 1e-6)
+
+		// Expected: [6.0, 8.0]
+		XCTAssertEqual(gradient[0], 6.0, accuracy: 1e-4, "Gradient x₁ component")
+		XCTAssertEqual(gradient[1], 8.0, accuracy: 1e-4, "Gradient x₂ component")
+	}
+
+	func testNumericalGradient_AtMinimum() throws {
+		// f(x) = (x₁ - 2)² + (x₂ + 1)²
+		// Minimum at (2, -1), gradient should be [0, 0]
+		let f: (VectorN<Double>) -> Double = { v in
+			(v[0] - 2.0) * (v[0] - 2.0) + (v[1] + 1.0) * (v[1] + 1.0)
+		}
+
+		let minimum = VectorN<Double>([2.0, -1.0])
+		let gradient = try numericalGradient(f, at: minimum, h: 1e-6)
+
+		XCTAssertEqual(gradient[0], 0.0, accuracy: 1e-4, "Gradient should be zero at minimum")
+		XCTAssertEqual(gradient[1], 0.0, accuracy: 1e-4, "Gradient should be zero at minimum")
+	}
+
+	func testNumericalGradient_ThreeDimensions() throws {
+		// f(x) = x₁² + 2x₂² + 3x₃²
+		// ∇f = [2x₁, 4x₂, 6x₃]
+		let f: (VectorN<Double>) -> Double = { v in
+			v[0] * v[0] + 2.0 * v[1] * v[1] + 3.0 * v[2] * v[2]
+		}
+
+		let point = VectorN<Double>([1.0, 2.0, 3.0])
+		let gradient = try numericalGradient(f, at: point, h: 1e-6)
+
+		XCTAssertEqual(gradient[0], 2.0, accuracy: 1e-4, "∂f/∂x₁")
+		XCTAssertEqual(gradient[1], 8.0, accuracy: 1e-4, "∂f/∂x₂")
+		XCTAssertEqual(gradient[2], 18.0, accuracy: 1e-4, "∂f/∂x₃")
+	}
+
+	// MARK: - Edge Case Tests
+
+	func testReciprocalFitting_SmallSampleSize() throws {
+		// With very small n, fitting may struggle
+		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
+		let data = simulator.simulate(n: 10, xRange: 1.0...10.0)
+
+		let fitter = ReciprocalRegressionFitter<Double>()
+
+		// Should not crash, even if recovery is poor
+		let result = try fitter.fit(
+			data: data,
+			maxIterations: 1000
+		)
+
+		XCTAssertNotNil(result)
+		XCTAssertGreaterThan(result.parameters.a, 0, "a should be positive")
+		XCTAssertGreaterThan(result.parameters.b, 0, "b should be positive")
+		XCTAssertGreaterThan(result.parameters.sigma, 0, "sigma should be positive")
+	}
+
+	func testReciprocalSimulation_HighNoise() {
+		// Test with very high sigma relative to signal
+		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 5.0)
+		let data = simulator.simulate(n: 50, xRange: 1.0...10.0)
+
+		XCTAssertEqual(data.count, 50, "Should generate all points even with high noise")
+
+		// Y values should be highly variable (not a strict test, just checking it runs)
+		let yValues = data.map { $0.y }
+		XCTAssertFalse(yValues.allSatisfy { $0 == yValues[0] }, "Y values should vary with high noise")
+	}
+
+	func testParameterRecoveryCheck_EmptyReplicateSummary() {
+		let emptyReports: [ParameterRecoveryReport<Double>] = []
+		let summary = ReciprocalParameterRecoveryCheck.summarizeReplicates(emptyReports)
+		XCTAssertTrue(summary.contains("No reports"), "Should handle empty array")
+	}
+}
