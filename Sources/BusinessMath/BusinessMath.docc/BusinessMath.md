@@ -110,6 +110,9 @@ Find optimal solutions using mathematical optimization and operations research.
 #### Communication
 - <doc:2.4-VisualizationGuide> - Charts, diagrams, and visual analytics
 
+#### Model Validation
+- <doc:2.5-ModelValidationGuide> - Fake-data simulation and parameter recovery checking
+
 ### Part III: Modeling
 
 **<doc:Part3-Modeling>** - Overview of financial modeling

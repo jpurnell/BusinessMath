@@ -16,6 +16,7 @@ This section bridges the gap between calculation and insight. Whether you're eva
 - **Financial Ratios**: Industry-standard metrics for evaluating business performance and health
 - **Risk Analytics**: Quantifying uncertainty with VaR, CVaR, stress testing, and risk aggregation
 - **Visualization**: Creating publication-quality charts and diagrams for your analyses
+- **Model Validation**: Verifying that statistical models work correctly using fake-data simulation
 
 ## Chapters in This Part
 
@@ -30,6 +31,9 @@ This section bridges the gap between calculation and insight. Whether you're eva
 
 ### Communication
 - <doc:2.4-VisualizationGuide> - Creating charts, diagrams, and visual analytics
+
+### Model Validation
+- <doc:2.5-ModelValidationGuide> - Fake-data simulation and parameter recovery validation
 
 ## Prerequisites
 
@@ -58,10 +62,11 @@ The chapters in this part can be read in any order based on your needs:
 4. <doc:2.4-VisualizationGuide> - Risk dashboards
 
 **For Quantitative Developers:**
-1. <doc:2.1-DataTableAnalysis> - Systematic sensitivity analysis
-2. <doc:2.3-RiskAnalyticsGuide> - Statistical risk measures
-3. <doc:2.4-VisualizationGuide> - Programmatic visualization
-4. <doc:2.2-FinancialRatiosGuide> - Metrics for validation
+1. <doc:2.5-ModelValidationGuide> - Essential for verifying implementations
+2. <doc:2.1-DataTableAnalysis> - Systematic sensitivity analysis
+3. <doc:2.3-RiskAnalyticsGuide> - Statistical risk measures
+4. <doc:2.4-VisualizationGuide> - Programmatic visualization
+5. <doc:2.2-FinancialRatiosGuide> - Metrics for validation
 
 ## Key Concepts
 
@@ -116,6 +121,28 @@ let chart = revenue.chart()
     .type(.line)
     .showTrend(true)
     .export(to: "revenue_chart.png")
+```
+
+### Model Validation
+
+Before using any statistical model on real data, verify it works correctly by simulating fake data and checking parameter recovery:
+
+```swift
+// Simulate data with known parameters
+let report = try ReciprocalParameterRecoveryCheck.run(
+    trueA: 0.2,
+    trueB: 0.3,
+    trueSigma: 0.2,
+    n: 100,
+    xRange: 1.0...10.0
+)
+
+// Did we recover the true parameters?
+if report.passed {
+    print("✓ Model fitting works correctly!")
+} else {
+    print("✗ Problem detected - investigate before using real data")
+}
 ```
 
 ## Real-World Applications
