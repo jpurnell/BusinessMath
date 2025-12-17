@@ -267,4 +267,9 @@ struct PerformanceProfilingBaseline {
 	}
 }
 
-let _ = try await PerformanceProfilingBaseline.main()
+@main
+enum PerformanceProfilingBaselineRunner {
+	static func main() async throws {
+		try await PerformanceProfilingBaseline.main()
+	}
+}
