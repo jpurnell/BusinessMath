@@ -425,4 +425,62 @@ struct MultivariateGradientDescentTests {
 		)
 		#expect(result3.converged, "Line search should converge")
 	}
+
+	// MARK: - Automatic Gradient Tests
+
+	@Test("Minimize with automatic gradient computation")
+	func minimizeWithAutoGradient() throws {
+		// Test the new convenience API that doesn't require explicit gradient
+		let quadratic: (VectorN<Double>) -> Double = { v in
+			v[0] * v[0] + v[1] * v[1]
+		}
+
+		let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 0.1,
+			maxIterations: 1000,
+			tolerance: 1e-6
+		)
+
+		let initialGuess = VectorN([5.0, 5.0])
+
+		// No gradient parameter needed!
+		let result = try optimizer.minimize(
+			function: quadratic,
+			initialGuess: initialGuess
+		)
+
+		// Should converge to origin
+		#expect(result.converged, "Should converge with auto gradient")
+		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
+		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
+		#expect(abs(result.value) < 0.01, "Function value should be near 0")
+	}
+
+	@Test("Adam with automatic gradient computation")
+	func adamWithAutoGradient() throws {
+		// Test the Adam optimizer convenience API
+		let rosenbrock: (VectorN<Double>) -> Double = { v in
+			let x = v[0], y = v[1]
+			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
+		}
+
+		let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 0.01,
+			maxIterations: 5000,
+			tolerance: 1e-4
+		)
+
+		let initialGuess = VectorN([0.0, 0.0])
+
+		// No gradient parameter needed!
+		let result = try optimizer.minimizeAdam(
+			function: rosenbrock,
+			initialGuess: initialGuess
+		)
+
+		// Adam should handle Rosenbrock reasonably well
+		#expect(abs(result.solution[0] - 1.0) < 0.2, "x should be near 1")
+		#expect(abs(result.solution[1] - 1.0) < 0.2, "y should be near 1")
+		#expect(result.value < 1.0, "Function value should be small")
+	}
 }

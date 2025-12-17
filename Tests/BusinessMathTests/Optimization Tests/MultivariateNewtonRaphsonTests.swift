@@ -381,4 +381,108 @@ struct MultivariateNewtonRaphsonTests {
 			#expect(history.count < 5, "Should converge in very few iterations")
 		}
 	}
+
+	// MARK: - Automatic Gradient Tests
+
+	@Test("BFGS with automatic gradient computation")
+	func bfgsAutomaticGradient() throws {
+		// f(x, y) = x² + y² - 2x - 2y
+		// Minimum at (1, 1) with value -2
+		let objective: (VectorN<Double>) -> Double = { v in
+			let x = v[0], y = v[1]
+			return x*x + y*y - 2*x - 2*y
+		}
+
+		let optimizer = MultivariateNewtonRaphson<VectorN<Double>>()
+
+		// Use the convenient API that computes gradient automatically
+		let result = try optimizer.minimizeBFGS(
+			function: objective,
+			initialGuess: VectorN([0.0, 0.0])
+		)
+
+		// Check convergence
+		#expect(result.converged, "Should converge to minimum")
+
+		// Check solution accuracy (should be near [1, 1])
+		#expect(abs(result.solution[0] - 1.0) < 0.001, "x should be near 1.0")
+		#expect(abs(result.solution[1] - 1.0) < 0.001, "y should be near 1.0")
+
+		// Check objective value (should be near -2)
+		#expect(abs(result.value - (-2.0)) < 0.01, "Objective value should be near -2")
+	}
+
+	@Test("BFGS automatic gradient vs explicit gradient")
+	func bfgsCompareGradientMethods() throws {
+		// Compare automatic vs explicit gradient to ensure they give same results
+		let objective: (VectorN<Double>) -> Double = { v in
+			let x = v[0], y = v[1]
+			return x*x + y*y - 2*x - 2*y
+		}
+
+		let explicitGradient: (VectorN<Double>) throws -> VectorN<Double> = { v in
+			let x = v[0], y = v[1]
+			return VectorN([2*x - 2, 2*y - 2])
+		}
+
+		let optimizer = MultivariateNewtonRaphson<VectorN<Double>>()
+		let initialGuess = VectorN([0.0, 0.0])
+
+		// Test with automatic gradient
+		let autoResult = try optimizer.minimizeBFGS(
+			function: objective,
+			initialGuess: initialGuess
+		)
+
+		// Test with explicit gradient
+		let explicitResult = try optimizer.minimizeBFGS(
+			function: objective,
+			gradient: explicitGradient,
+			initialGuess: initialGuess
+		)
+
+		// Both should converge
+		#expect(autoResult.converged, "Automatic gradient should converge")
+		#expect(explicitResult.converged, "Explicit gradient should converge")
+
+		// Solutions should be very close (within numerical precision)
+		#expect(abs(autoResult.solution[0] - explicitResult.solution[0]) < 0.01,
+				"x solutions should match")
+		#expect(abs(autoResult.solution[1] - explicitResult.solution[1]) < 0.01,
+				"y solutions should match")
+
+		// Objective values should be very close
+		#expect(abs(autoResult.value - explicitResult.value) < 0.01,
+				"Objective values should match")
+	}
+
+	@Test("BFGS automatic gradient on Rosenbrock function")
+	func bfgsAutomaticGradientRosenbrock() throws {
+		// Rosenbrock: f(x, y) = (1 - x)² + 100(y - x²)²
+		// Minimum at (1, 1) with value 0
+		let rosenbrock: (VectorN<Double>) -> Double = { v in
+			let x = v[0], y = v[1]
+			let a = 1 - x
+			let b = y - x*x
+			return a*a + 100*b*b
+		}
+
+		let optimizer = MultivariateNewtonRaphson<VectorN<Double>>(
+			maxIterations: 200,  // Rosenbrock needs more iterations
+			tolerance: 1e-4
+		)
+
+		// Use automatic gradient
+		let result = try optimizer.minimizeBFGS(
+			function: rosenbrock,
+			initialGuess: VectorN([0.0, 0.0])
+		)
+
+		// Check solution (should be near [1, 1])
+		#expect(abs(result.solution[0] - 1.0) < 0.1, "x should be near 1.0")
+		#expect(abs(result.solution[1] - 1.0) < 0.1, "y should be near 1.0")
+
+		// Check objective value (should be near 0)
+		#expect(result.value < 1.0, "Should find good minimum")
+	}
 }

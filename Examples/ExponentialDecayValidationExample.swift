@@ -119,9 +119,9 @@ struct ExponentialDecayModel {
 // MARK: - Example 1: Basic Exponential Decay Recovery
 
 func example1_BasicExponentialDecay() {
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 1: Exponential Decay Parameter Recovery")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	// Step 1: Specify true parameters
@@ -175,9 +175,7 @@ func example1_BasicExponentialDecay() {
 		let absError = abs(recoveredVal - trueVal)
 		let relError = absError / abs(trueVal)
 		let status = relError <= 0.15 ? "✓ PASS" : "✗ FAIL"
-
-		print(String(format: "  %-11s | %6.2f | %9.2f | %9.3f | %8.1f%% | %@",
-			name, trueVal, recoveredVal, absError, relError * 100, status))
+		print("  \(name.padding(toLength: 11, withPad: " ", startingAt: 0)) | \(trueVal.formatted().padding(toLength: 6, withPad: " ", startingAt: 0)) | \(recoveredVal.formatted().padding(toLength: 9, withPad: " ", startingAt: 0)) | \(absError.formatted().padding(toLength: 9, withPad: " ", startingAt: 0)) | \((relError * 100).formatted().padding(toLength: 8, withPad: " ", startingAt: 0))% | \(status)")
 	}
 	print()
 
@@ -189,28 +187,28 @@ func example1_BasicExponentialDecay() {
 
 func example2_CustomerRetentionModel() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 2: Customer Retention Validation")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("Business Context:")
 	print("  You're modeling customer retention over time.")
 	print("  Model: retention(t) = 100% * exp(-churn_rate * months)")
 	print()
-
-	// True retention model
+	
+		// True retention model
 	let initialRetention = 1.0      // 100%
 	let monthlyChurnRate = 0.05     // 5% monthly churn means ~60% retention after 1 year
 	let noiseSigma = 0.03           // ±3% measurement noise
-
+	
 	print("True Model:")
-	print(String(format: "  Initial retention:  %.0f%%", initialRetention * 100))
-	print(String(format: "  Monthly churn rate: %.1f%%", monthlyChurnRate * 100))
-	print(String(format: "  12-month retention: %.1f%%", initialRetention * exp(-monthlyChurnRate * 12) * 100))
+	print("  Initial retention:  \((initialRetention * 100).formatted())%")
+	print("  Monthly churn rate: \((monthlyChurnRate * 100).formatted())%")
+	print("  12-month retention: \((initialRetention * exp(-monthlyChurnRate * 12) * 100).formatted())%")
 	print()
-
-	// Simulate 24 months of data
+	
+		// Simulate 24 months of data
 	print("Simulating 24 months of retention data...")
 	var data: [(x: Double, y: Double)] = []
 	for month in 1...24 {
@@ -221,8 +219,8 @@ func example2_CustomerRetentionModel() {
 	}
 	print("  ✓ Generated \(data.count) monthly observations")
 	print()
-
-	// Fit model
+	
+		// Fit model
 	print("Fitting retention model...")
 	guard let (a, b, sigma) = ExponentialDecayModel.fit(data: data) else {
 		print("  ✗ Fitting failed!")
@@ -230,58 +228,58 @@ func example2_CustomerRetentionModel() {
 	}
 	print("  ✓ Fitting completed")
 	print()
-
+	
 	print("Recovered Model:")
-	print(String(format: "  Initial retention:  %.1f%%", a * 100))
-	print(String(format: "  Monthly churn rate: %.2f%%", b * 100))
-	print(String(format: "  12-month retention: %.1f%%", a * exp(-b * 12) * 100))
+	print("  Initial retention:  \((a * 100).formatted())")
+	print("  Monthly churn rate: \((b * 100).formatted())%")
+	print("  12-month retention: \((a * exp(-b * 12) * 100).formatted())%")
 	print()
-
-	// Validation
+	
+		// Validation
 	let churnError = abs(b - monthlyChurnRate) / monthlyChurnRate
 	if churnError <= 0.10 {
 		print("✓ VALIDATION PASSED: Churn rate recovered within 10%")
 		print("  → Safe to use this model for retention forecasting")
 	} else {
-		print("✗ VALIDATION FAILED: Churn rate error = \(String(format: "%.1f%%", churnError * 100))")
+		print("✗ VALIDATION FAILED: Churn rate error = \((churnError * 100).formatted())%")
 		print("  → Need more data or different model")
 	}
 }
 
-// MARK: - Example 3: Why X-Range Matters
+	// MARK: - Example 3: Why X-Range Matters
 
 func example3_DataRangeImpact() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 3: Impact of Data Range on Recovery")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
-
+	
 	let trueA = 10.0
 	let trueB = 0.5
 	let trueSigma = 0.3
-
+	
 	print("Testing parameter recovery with different x ranges:")
 	print()
-
+	
 	struct RangeTest {
 		let name: String
 		let xRange: ClosedRange<Double>
 		let n: Int
 	}
-
+	
 	let tests = [
 		RangeTest(name: "Short range", xRange: 0.0...1.0, n: 50),
 		RangeTest(name: "Medium range", xRange: 0.0...3.0, n: 50),
 		RangeTest(name: "Long range", xRange: 0.0...10.0, n: 50),
 		RangeTest(name: "Very long range", xRange: 0.0...20.0, n: 50)
 	]
-
+	
 	print("  Range         | N  | Decay (b) Recovered | Rel Error | Status")
 	print("  " + String(repeating: "-", count: 66))
-
+	
 	for test in tests {
-		// Simulate data
+			// Simulate data
 		var data: [(x: Double, y: Double)] = []
 		for _ in 0..<test.n {
 			let x = Double.random(in: test.xRange)
@@ -289,21 +287,18 @@ func example3_DataRangeImpact() {
 			let y = distributionNormal(mean: mu, stdDev: trueSigma)
 			data.append((x, y))
 		}
-
-		// Fit
+		
+			// Fit
 		guard let (_, recoveredB, _) = ExponentialDecayModel.fit(data: data) else {
-			print(String(format: "  %-13s | %2d | %-19s | %9s | %@",
-				test.name, test.n, "FAILED", "N/A", "✗ FAIL"))
+			print("  \(test.name.padding(toLength: 13, withPad: " ", startingAt: 0)) | \(test.n.formatted()) | \("FAILED".padding(toLength: 19, withPad: " ", startingAt: 0)) | \("N/A".padding(toLength: 9, withPad: " ", startingAt: 0)) | \("✗ FAIL")")
 			continue
 		}
-
+		
 		let relError = abs(recoveredB - trueB) / trueB
 		let status = relError <= 0.20 ? "✓ PASS" : "✗ FAIL"
-
-		print(String(format: "  %-13s | %2d | %19.3f | %8.1f%% | %@",
-			test.name, test.n, recoveredB, relError * 100, status))
+		print("  \(test.name.padding(toLength: 13, withPad: " ", startingAt: 0)) | \(test.n.formatted()) | \(recoveredB.formatted().padding(toLength: 19, withPad: " ", startingAt: 0)) | \((relError * 100).formatted().padding(toLength: 9, withPad: " ", startingAt: 0)) | \(status)")
 	}
-
+	
 	print()
 	print("Key Insight:")
 	print("  For exponential decay, x-range matters! With short range,")
@@ -311,21 +306,21 @@ func example3_DataRangeImpact() {
 	print("  Need x-range spanning several decay constants (1/b ≈ 2 in this case).")
 }
 
-// MARK: - Example 4: Comparing to BusinessMath Nonlinear Fitting
+	// MARK: - Example 4: Comparing to BusinessMath Nonlinear Fitting
 
 func example4_ComparisonToReciprocalModel() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 4: Exponential vs Reciprocal Model Recovery")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
-
+	
 	print("Comparing parameter recovery for two nonlinear models:")
 	print("  1. Exponential: y = a * exp(-b*x) + ε")
 	print("  2. Reciprocal:  y = 1/(a + b*x) + ε")
 	print()
-
-	// Exponential recovery
+	
+		// Exponential recovery
 	print("Exponential Decay Recovery:")
 	var expData: [(x: Double, y: Double)] = []
 	for _ in 0..<100 {
@@ -333,18 +328,18 @@ func example4_ComparisonToReciprocalModel() {
 		let y = 10.0 * exp(-0.5 * x) + distributionNormal(mean: 0, stdDev: 0.3)
 		expData.append((x, y))
 	}
-
+	
 	if let (aEst, bEst, _) = ExponentialDecayModel.fit(data: expData) {
 		let aError = abs(aEst - 10.0) / 10.0
 		let bError = abs(bEst - 0.5) / 0.5
-		print(String(format: "  Parameter a: %.1f%% error", aError * 100))
-		print(String(format: "  Parameter b: %.1f%% error", bError * 100))
+		print("  Parameter a: \((aError * 100).formatted())% error")
+		print("  Parameter b: \((bError * 100).formatted())% error")
 	} else {
 		print("  Fitting failed")
 	}
 	print()
-
-	// Reciprocal recovery (using BusinessMath)
+	
+		// Reciprocal recovery (using BusinessMath)
 	print("Reciprocal Regression Recovery:")
 	do {
 		let report = try ReciprocalParameterRecoveryCheck.run(
@@ -356,45 +351,45 @@ func example4_ComparisonToReciprocalModel() {
 			tolerance: 0.30,
 			maxIterations: 2000
 		)
-
+		
 		if let aError = report.relativeErrors["a"],
 		   let bError = report.relativeErrors["b"] {
-			print(String(format: "  Parameter a: %.1f%% error", aError * 100))
-			print(String(format: "  Parameter b: %.1f%% error", bError * 100))
+			print("  Parameter a: \((aError * 100).formatted())% error")
+			print("  Parameter b: \((bError * 100).formatted())% error")
 		}
-
+		
 	} catch {
 		print("  Error: \(error)")
 	}
 	print()
-
+	
 	print("Key Insight:")
 	print("  Different nonlinear forms have different identifiability.")
 	print("  Exponential decay with good x-range coverage tends to be")
 	print("  more numerically stable than reciprocal models.")
 }
 
-// MARK: - Example 5: When Exponential Fitting Fails
+	// MARK: - Example 5: When Exponential Fitting Fails
 
 func example5_WhenExponentialFittingFails() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 5: Failure Modes for Exponential Decay")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
-
+	
 	print("Exponential decay fitting can fail in several ways:")
 	print()
-
-	// Failure 1: Negative y values
+	
+		// Failure 1: Negative y values
 	print("Failure Mode 1: Data contains negative values")
 	let badData1 = [(x: 1.0, y: -0.5), (x: 2.0, y: 1.0), (x: 3.0, y: 0.8)]
 	if ExponentialDecayModel.fit(data: badData1) == nil {
 		print("  ✓ Correctly rejected: Cannot use log-transform with y ≤ 0")
 	}
 	print()
-
-	// Failure 2: Increasing trend (should be decreasing)
+	
+		// Failure 2: Increasing trend (should be decreasing)
 	print("Failure Mode 2: Data shows increasing trend (not decay)")
 	var increasingData: [(x: Double, y: Double)] = []
 	for i in 0..<20 {
@@ -402,9 +397,9 @@ func example5_WhenExponentialFittingFails() {
 		let y = 2.0 + 0.5 * x + distributionNormal(mean: 0, stdDev: 0.1)
 		increasingData.append((x, y))
 	}
-
+	
 	if let (_, b, _) = ExponentialDecayModel.fit(data: increasingData) {
-		print(String(format: "  Estimated decay rate: %.3f", b))
+		print("  Estimated decay rate: \(b.formatted(maxDecimals: 3))")
 		if b < 0 {
 			print("  ✗ Negative decay rate indicates wrong model!")
 			print("  → Should use growth model, not decay model")
@@ -414,8 +409,8 @@ func example5_WhenExponentialFittingFails() {
 		}
 	}
 	print()
-
-	// Failure 3: Too much noise
+	
+		// Failure 3: Too much noise
 	print("Failure Mode 3: Signal-to-noise ratio too low")
 	var noisyData: [(x: Double, y: Double)] = []
 	for _ in 0..<50 {
@@ -424,45 +419,45 @@ func example5_WhenExponentialFittingFails() {
 		let y = signal + distributionNormal(mean: 0, stdDev: 5.0)  // Noise same magnitude as signal!
 		noisyData.append((x, max(y, 0.001)))  // Clip to positive
 	}
-
+	
 	if let (aTrue, bTrue, _) = ExponentialDecayModel.fit(data: noisyData) {
-		// True parameters: a=5.0, b=0.3
+			// True parameters: a=5.0, b=0.3
 		let relErrorA = abs(aTrue - 5.0) / 5.0
 		let relErrorB = abs(bTrue - 0.3) / 0.3
-
-		print(String(format: "  Parameter a error: %.1f%%", relErrorA * 100))
-		print(String(format: "  Parameter b error: %.1f%%", relErrorB * 100))
-
+		
+		print("  Parameter a error: \((relErrorA * 100).formatted())%")
+		print("  Parameter b error: \((relErrorB * 100).formatted())%")
+		
 		if relErrorA > 0.50 || relErrorB > 0.50 {
 			print("  ✗ Poor recovery with high noise")
 			print("  → Need more data or better measurement precision")
 		}
 	}
 	print()
-
+	
 	print("Conclusion: Fake-data simulation reveals these failure modes")
 	print("before you waste time on real data that won't work!")
 }
 
-// MARK: - Main
+	// MARK: - Main
 
 func runAllExponentialDecayExamples() {
 	print("\n")
 	print("╔" + String(repeating: "═", count: 58) + "╗")
-	print("║  Exponential Decay Model Validation                       ║")
-	print("║  Fake-Data Simulation for Business Applications           ║")
+	print("║  Exponential Decay Model Validation                      ║")
+	print("║  Fake-Data Simulation for Business Applications          ║")
 	print("╚" + String(repeating: "═", count: 58) + "╝")
 	print()
-
+	
 	example1_BasicExponentialDecay()
 	example2_CustomerRetentionModel()
 	example3_DataRangeImpact()
 	example4_ComparisonToReciprocalModel()
 	example5_WhenExponentialFittingFails()
-
+	
 	print("\n")
 	print("╔" + String(repeating: "═", count: 58) + "╗")
-	print("║  Key Takeaways                                             ║")
+	print("║  Key Takeaways                                           ║")
 	print("╚" + String(repeating: "═", count: 58) + "╝")
 	print()
 	print("1. Exponential decay models are common in business (retention, decay)")
@@ -473,12 +468,12 @@ func runAllExponentialDecayExamples() {
 	print()
 }
 
-// Uncomment to run:
-// runAllExponentialDecayExamples()
+	// Uncomment to run:
+runAllExponentialDecayExamples()
 
-// Or run individual examples:
-// example1_BasicExponentialDecay()
-// example2_CustomerRetentionModel()
-// example3_DataRangeImpact()
-// example4_ComparisonToReciprocalModel()
-// example5_WhenExponentialFittingFails()
+	// Or run individual examples:
+	// example1_BasicExponentialDecay()
+	// example2_CustomerRetentionModel()
+	// example3_DataRangeImpact()
+	// example4_ComparisonToReciprocalModel()
+	// example5_WhenExponentialFittingFails()

@@ -166,9 +166,9 @@ struct PolynomialRegression {
 // MARK: - Example 1: Quadratic Model Recovery
 
 func example1_QuadraticRecovery() {
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 1: Quadratic Polynomial Recovery")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	// True model: y = 2 + 3x - 0.5x² + ε
@@ -205,7 +205,7 @@ func example1_QuadraticRecovery() {
 	// Check recovery
 	print("Parameter Recovery:")
 	print()
-	print("  Parameter | True   | Recovered | Abs Error | Rel Error | Status")
+	print("  Parameter      | True   | Recovered | Abs Error | Rel Error | Status")
 	print("  " + String(repeating: "-", count: 68))
 
 	let params = [
@@ -224,9 +224,7 @@ func example1_QuadraticRecovery() {
 		if relError > 0.15 {
 			allPassed = false
 		}
-
-		print(String(format: "  %-14s | %6.2f | %9.3f | %9.3f | %8.1f%% | %@",
-			name, trueVal, recoveredVal, absError, relError * 100, status))
+		print("  \(name.padding(toLength: 14, withPad: " ", startingAt: 0)) | \(trueVal.formatted().paddingLeft(toLength: 6)) | \(recoveredVal.formatted().paddingLeft(toLength: 9)) | \(absError.formatted().paddingLeft(toLength: 9)) | \((relError * 100).formatted().paddingLeft(toLength: 8))% | \(status)")
 	}
 	print()
 
@@ -243,9 +241,9 @@ func example1_QuadraticRecovery() {
 
 func example2_ModelSelection() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 2: Model Selection Using Validation")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("True model is quadratic: y = 5 + 2x - x² + ε")
@@ -265,11 +263,11 @@ func example2_ModelSelection() {
 	}
 
 	print("  Degree | Residual σ | AIC      | BIC      | Notes")
-	print("  " + String(repeating: "-", count: 60))
+	print("  " + String(repeating: "-", count: 76))
 
 	for degree in 1...5 {
 		guard let (beta, sigma) = PolynomialRegression.fit(data: data, degree: degree) else {
-			print(String(format: "  %6d | %-10s | %-8s | %-8s | Failed", degree, "N/A", "N/A", "N/A"))
+			print("  \("Failed".paddingLeft(toLength: 6)) | \("degree".paddingLeft(toLength: 10)) | \("N/A".paddingLeft(toLength: 8)) | \("N/A".paddingLeft(toLength: 8)) | \("N/A")")
 			continue
 		}
 
@@ -290,9 +288,7 @@ func example2_ModelSelection() {
 		} else if degree > 2 {
 			note = "Overfit (unnecessary complexity)"
 		}
-
-		print(String(format: "  %6d | %10.4f | %8.1f | %8.1f | %@",
-			degree, sigma, aic, bic, note))
+		print("  \(degree.formatted().paddingLeft(toLength: 6)) | \(sigma.formatted().paddingLeft(toLength: 10)) | \(aic.formatted().paddingLeft(toLength: 8)) | \(bic.formatted().paddingLeft(toLength: 8)) | \(note)")
 	}
 
 	print()
@@ -308,9 +304,9 @@ func example2_ModelSelection() {
 
 func example3_OverfittingDetection() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 3: Detecting Overfitting with Fake Data")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("Demonstrating how fake-data simulation reveals overfitting...")
@@ -338,20 +334,20 @@ func example3_OverfittingDetection() {
 
 	if let (beta1, sigma1) = PolynomialRegression.fit(data: smallData, degree: 1) {
 		let slopeError = abs(beta1[1] - trueSlope) / trueSlope
-		print(String(format: "  Recovered slope: %.2f (%.1f%% error)", beta1[1], slopeError * 100))
-		print(String(format: "  Residual σ: %.2f", sigma1))
+		print("  Recovered slope: \(beta1[1].formatted()) (\((slopeError * 100).formatted())% error)")
+		print(String(format: "  Residual σ: \(sigma1.formatted())", sigma1))
 	}
 	print()
 
 	print("Test 2: Fitting with overly complex model (degree 5)...")
 	if let (beta5, sigma5) = PolynomialRegression.fit(data: smallData, degree: 5) {
-		print(String(format: "  Residual σ: %.2f (artificially low!)", sigma5))
+		print(String(format: "  Residual σ: \(sigma5.formatted()) (artificially low!)", sigma5))
 		print("  Coefficients:")
 		for (i, coef) in beta5.enumerated() {
 			if i <= 1 {
-				print(String(format: "    β%d: %8.3f (structural parameter)", i, coef))
+				print("    β\(i): \(coef.formatted().paddingLeft(toLength: 8)) (structural parameter)")
 			} else {
-				print(String(format: "    β%d: %8.3f (fitting noise, should be ~0)", i, coef))
+				print("    β\(i): \(coef.formatted().paddingLeft(toLength: 8)) (fitting noise, should be ~0)")
 			}
 		}
 	}
@@ -385,8 +381,8 @@ func example3_OverfittingDetection() {
 		mse1 /= Double(testData.count)
 		mse5 /= Double(testData.count)
 
-		print(String(format: "  Degree 1 test MSE: %.3f", mse1))
-		print(String(format: "  Degree 5 test MSE: %.3f", mse5))
+		print("  Degree 1 test MSE: \(mse1.formatted())")
+		print("  Degree 5 test MSE: \(mse5.formatted())")
 
 		if mse5 > mse1 {
 			print()
@@ -404,9 +400,9 @@ func example3_OverfittingDetection() {
 
 func example4_PricingCurveValidation() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 4: Revenue vs Price Curve Validation")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("Business Context:")
@@ -454,12 +450,13 @@ func example4_PricingCurveValidation() {
 	let maxRevenue = PolynomialRegression.predict(x: optimalPrice, coefficients: beta)
 
 	print("Fitted Model:")
+	print("  revenue = \(beta[0].formatted()) + \(beta[1].formatted())*price + \(beta[2].formatted())*price²")
 	print(String(format: "  revenue = %.1f + %.1f*price + %.1f*price²", beta[0], beta[1], beta[2]))
 	print()
 
 	print("Optimal Pricing:")
-	print(String(format: "  Fitted optimal price: $%.2f (true: $5.00)", optimalPrice))
-	print(String(format: "  Fitted max revenue:   $%.0f (true: $2,250)", maxRevenue))
+	print("  Fitted optimal price: \(optimalPrice.currency()) (true: $5.00)")
+	print("  Fitted max revenue:   \(maxRevenue.currency()) (true: $2,250)")
 	print()
 
 	// Validation
@@ -471,7 +468,7 @@ func example4_PricingCurveValidation() {
 		print("  → Safe to use this model for pricing decisions")
 	} else {
 		print("✗ VALIDATION FAILED")
-		print(String(format: "  Price error: %.1f%%, Revenue error: %.1f%%", priceError * 100, revenueError * 100))
+		print("  Price error: \((priceError * 100).formatted())%, Revenue error: \((revenueError * 100))%")
 		print("  → Need more data or different model")
 	}
 }
@@ -480,9 +477,9 @@ func example4_PricingCurveValidation() {
 
 func example5_ComparingModelTypes() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 5: Recovery Across Different Model Types")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("Comparing parameter recovery for different regression models:")
@@ -558,7 +555,7 @@ func example5_ComparingModelTypes() {
 	for test in tests {
 		let avgError = test.run()
 		let status = avgError <= 0.15 ? "✓ PASS" : "✗ FAIL"
-		print(String(format: "  %-11s | %12.1f%% | %@", test.name, avgError * 100, status))
+		print("  \(test.name.paddingLeft(toLength: 11)) | \((avgError * 100).formatted().paddingLeft(toLength: 12))% | \(status)")
 	}
 
 	print()
@@ -575,8 +572,8 @@ func example5_ComparingModelTypes() {
 func runAllPolynomialRegressionExamples() {
 	print("\n")
 	print("╔" + String(repeating: "═", count: 58) + "╗")
-	print("║  Polynomial Regression Fake-Data Validation               ║")
-	print("║  Model Selection and Overfitting Detection                ║")
+	print("║  Polynomial Regression Fake-Data Validation              ║")
+	print("║  Model Selection and Overfitting Detection               ║")
 	print("╚" + String(repeating: "═", count: 58) + "╝")
 	print()
 
@@ -588,7 +585,7 @@ func runAllPolynomialRegressionExamples() {
 
 	print("\n")
 	print("╔" + String(repeating: "═", count: 58) + "╗")
-	print("║  Key Takeaways                                             ║")
+	print("║  Key Takeaways                                           ║")
 	print("╚" + String(repeating: "═", count: 58) + "╝")
 	print()
 	print("1. Polynomial regression has closed-form solution (very reliable)")
@@ -600,7 +597,7 @@ func runAllPolynomialRegressionExamples() {
 }
 
 // Uncomment to run:
-// runAllPolynomialRegressionExamples()
+ runAllPolynomialRegressionExamples()
 
 // Or run individual examples:
 // example1_QuadraticRecovery()

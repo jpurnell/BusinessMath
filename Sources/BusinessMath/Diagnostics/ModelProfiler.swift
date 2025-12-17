@@ -373,7 +373,7 @@ public struct PerformanceReport: Sendable {
         var output = "=== Performance Report ===\n"
         output += "Generated: \(timestamp)\n"
         output += "Total Operations: \(totalOperations)\n"
-        output += String(format: "Total Time: %.3fs\n\n", totalTime)
+		output += "Total Time: \(totalTime.formatted())s\n\n"
 
         if operations.isEmpty {
             output += "No operations recorded.\n"
@@ -381,7 +381,7 @@ public struct PerformanceReport: Sendable {
         }
 
         // Header row with proper padding
-        let opHeader = "Operation".padding(toLength: 30, withPad: " ", startingAt: 0)
+        let opHeader = "Operation".padding(toLength: 45, withPad: " ", startingAt: 0)
         let countHeader = "Count".padding(toLength: 8, withPad: " ", startingAt: 0)
         let totalHeader = "Total".padding(toLength: 12, withPad: " ", startingAt: 0)
         let avgHeader = "Avg".padding(toLength: 12, withPad: " ", startingAt: 0)
@@ -389,17 +389,17 @@ public struct PerformanceReport: Sendable {
         let maxHeader = "Max".padding(toLength: 12, withPad: " ", startingAt: 0)
 
         output += "\(opHeader) \(countHeader) \(totalHeader) \(avgHeader) \(minHeader) \(maxHeader)\n"
-        output += String(repeating: "-", count: 86) + "\n"
+        output += String(repeating: "-", count: 100) + "\n"
 
         for op in operations {
-            let opName = String(op.operation.prefix(30)).padding(toLength: 30, withPad: " ", startingAt: 0)
-            let count = String(op.executionCount).padding(toLength: 8, withPad: " ", startingAt: 0)
-            let total = String(format: "%.3fs", op.totalTime).padding(toLength: 12, withPad: " ", startingAt: 0)
-            let avg = String(format: "%.3fs", op.averageTime).padding(toLength: 12, withPad: " ", startingAt: 0)
-            let min = String(format: "%.3fs", op.minTime).padding(toLength: 12, withPad: " ", startingAt: 0)
-            let max = String(format: "%.3fs", op.maxTime).padding(toLength: 12, withPad: " ", startingAt: 0)
+			let opName = "\(op.operation.padding(toLength: 45, withPad: " ", startingAt: 0))"
+			let count = "\(op.executionCount.formatted().padding(toLength: 8, withPad: " ", startingAt: 0))"
+			let total = "\(op.totalTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
+			let avg = "\(op.averageTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
+			let min = "\(op.minTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
+			let max = "\(op.maxTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
 
-            output += "\(opName) \(count) \(total) \(avg) \(min) \(max)\n"
+			output += "\(opName) \(count) \(total) \(avg) \(min) \(max)\n"
         }
 
         return output

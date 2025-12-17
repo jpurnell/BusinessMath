@@ -129,8 +129,8 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 		result += "Sample Size: \(sampleSize)\n"
 		result += "Converged: \(converged ? "Yes" : "No")\n"
 		result += "Iterations: \(iterations)\n"
-		result += "Log-Likelihood: \(String(format: "%.4f", Double(logLikelihood)))\n"
-		result += "Tolerance: \(String(format: "%.6f", Double(tolerance)))\n\n"
+		result += "Log-Likelihood: \(logLikelihood.formatted())\n"
+		result += "Tolerance: \(tolerance.formatted())\n\n"
 
 		result += "Parameter Recovery:\n"
 		result += "-------------------\n"
@@ -145,10 +145,10 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 
 			let status = within ? "✓ PASS" : "✗ FAIL"
 			result += "\n\(name):\n"
-			result += "  True:      \(String(format: "%.6f", Double(trueValue)))\n"
-			result += "  Recovered: \(String(format: "%.6f", Double(recoveredValue)))\n"
-			result += "  Abs Error: \(String(format: "%.6f", Double(absError)))\n"
-			result += "  Rel Error: \(String(format: "%.2f%%", Double(relError) * 100))\n"
+			result += "  True:      \(trueValue.formatted())\n"
+			result += "  Recovered: \(recoveredValue.formatted())\n"
+			result += "  Abs Error: \(absError.formatted())\n"
+			result += "  Rel Error: \(Double(relError * 100).formatted())%\n"
 			result += "  Status:    \(status)\n"
 		}
 

@@ -86,11 +86,19 @@ extension MultivariateOptimizationResult where V.Scalar == Double {
 /// )
 ///
 /// let initialGuess = VectorN([0.0, 0.0])
+///
+/// // Simple API: gradient computed automatically
 /// let result = try optimizer.minimize(
 ///     function: rosenbrock,
-///     gradient: { try numericalGradient(rosenbrock, at: $0) },
 ///     initialGuess: initialGuess
 /// )
+///
+/// // Or provide explicit gradient for better performance:
+/// // let result = try optimizer.minimize(
+/// //     function: rosenbrock,
+/// //     gradient: { try numericalGradient(rosenbrock, at: $0) },
+/// //     initialGuess: initialGuess
+/// // )
 ///
 /// print("Solution: \(result.solution)")  // Near [1.0, 1.0]
 /// print("Iterations: \(result.iterations)")
@@ -224,6 +232,61 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 		)
 	}
 
+	// MARK: - Convenience Overload with Automatic Gradient
+
+	/// Minimizes a function using gradient descent with automatic numerical gradient computation.
+	///
+	/// This is a convenience overload that automatically computes the gradient using
+	/// finite differences (central differences). If you have an analytical gradient,
+	/// use the explicit gradient overload for better performance and accuracy.
+	///
+	/// Uses central difference formula: ∇f(x) ≈ [f(x+εeᵢ) - f(x-εeᵢ)] / (2ε)
+	///
+	/// ## Example
+	/// ```swift
+	/// // Minimize f(x, y) = x² + y² - 2x - 2y
+	/// let objective: (VectorN<Double>) -> Double = { v in
+	///     let x = v[0], y = v[1]
+	///     return x*x + y*y - 2*x - 2*y
+	/// }
+	///
+	/// let optimizer = MultivariateGradientDescent<VectorN<Double>>(learningRate: 0.1)
+	/// let result = try optimizer.minimize(
+	///     function: objective,
+	///     initialGuess: VectorN([0.0, 0.0])
+	/// )
+	///
+	/// // Solution: (1, 1) with value -2
+	/// ```
+	///
+	/// - Parameters:
+	///   - function: The objective function f: V → ℝ to minimize
+	///   - initialGuess: Starting point for optimization
+	///   - epsilon: Step size for numerical differentiation (default: 1e-6)
+	/// - Returns: Optimization result
+	/// - Throws: `OptimizationError` if optimization fails
+	///
+	/// - Note: Automatic gradient computation costs approximately 2n function
+	///         evaluations per iteration, where n is the dimension.
+	///         For high-dimensional problems, consider providing analytical gradients.
+	public func minimize(
+		function: @escaping (V) -> V.Scalar,
+		initialGuess: V,
+		epsilon: V.Scalar = V.Scalar(1) / V.Scalar(1_000_000)
+	) throws -> MultivariateOptimizationResult<V> {
+		// Create gradient function using numerical differentiation
+		let gradientFunction: (V) throws -> V = { point in
+			try numericalGradient(function, at: point, epsilon: epsilon)
+		}
+
+		// Call the main minimize with computed gradient
+		return try minimize(
+			function: function,
+			gradient: gradientFunction,
+			initialGuess: initialGuess
+		)
+	}
+
 	// MARK: - Adam Optimizer
 
 	/// Minimizes a function using the Adam optimizer.
@@ -333,6 +396,65 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 			converged: false,
 			gradientNorm: finalGrad.norm,
 			history: history
+		)
+	}
+
+	/// Minimizes a function using the Adam optimizer with automatic numerical gradient computation.
+	///
+	/// This is a convenience overload that automatically computes the gradient using
+	/// finite differences. Adam often converges faster than basic gradient descent,
+	/// especially on problems with ill-conditioned Hessians or noisy gradients.
+	///
+	/// ## Example
+	/// ```swift
+	/// // Minimize Rosenbrock: f(x,y) = (1-x)² + 100(y-x²)²
+	/// let rosenbrock: (VectorN<Double>) -> Double = { v in
+	///     let x = v[0], y = v[1]
+	///     return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
+	/// }
+	///
+	/// let optimizer = MultivariateGradientDescent<VectorN<Double>>(learningRate: 0.001)
+	/// let result = try optimizer.minimizeAdam(
+	///     function: rosenbrock,
+	///     initialGuess: VectorN([0.0, 0.0])
+	/// )
+	///
+	/// // Solution: (1, 1) with value 0
+	/// ```
+	///
+	/// - Parameters:
+	///   - function: The objective function f: V → ℝ to minimize
+	///   - initialGuess: Starting point for optimization
+	///   - epsilon: Step size for numerical differentiation (default: 1e-6)
+	///   - beta1: Exponential decay rate for first moment (default: 0.9)
+	///   - beta2: Exponential decay rate for second moment (default: 0.999)
+	///   - adamEpsilon: Small constant for numerical stability in Adam (default: 1e-8)
+	/// - Returns: Optimization result
+	/// - Throws: `OptimizationError` if optimization fails
+	///
+	/// - Note: Automatic gradient computation costs approximately 2n function
+	///         evaluations per iteration, where n is the dimension.
+	public func minimizeAdam(
+		function: @escaping (V) -> V.Scalar,
+		initialGuess: V,
+		epsilon: V.Scalar = V.Scalar(1) / V.Scalar(1_000_000),
+		beta1: V.Scalar = V.Scalar(9) / V.Scalar(10),
+		beta2: V.Scalar = V.Scalar(999) / V.Scalar(1000),
+		adamEpsilon: V.Scalar = V.Scalar(1) / V.Scalar(100_000_000)
+	) throws -> MultivariateOptimizationResult<V> {
+		// Create gradient function using numerical differentiation
+		let gradientFunction: (V) throws -> V = { point in
+			try numericalGradient(function, at: point, epsilon: epsilon)
+		}
+
+		// Call the main minimizeAdam with computed gradient
+		return try minimizeAdam(
+			function: function,
+			gradient: gradientFunction,
+			initialGuess: initialGuess,
+			beta1: beta1,
+			beta2: beta2,
+			epsilon: adamEpsilon
 		)
 	}
 
