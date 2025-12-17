@@ -122,6 +122,7 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 	}
 
 	/// Human-readable summary of validation results
+	@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 	public var summary: String {
 		var result = "Parameter Recovery Validation\n"
 		result += "==============================\n\n"
