@@ -10,489 +10,487 @@ import Foundation
 
 /// Example: Vector2D operations
 func vector2DExample() {
-    print("=== Vector2D Operations ===\n")
+	print("=== Vector2D Operations ===\n")
 
-    // Create 2D vectors
-    let v = Vector2D<Double>(x: 3.0, y: 4.0)
-    let w = Vector2D<Double>(x: 1.0, y: 2.0)
+	// Create 2D vectors
+	let v = Vector2D<Double>(x: 3.0, y: 4.0)
+	let w = Vector2D<Double>(x: 1.0, y: 2.0)
 
-    print("Vectors:")
-    print("  v = (\(v.x), \(v.y))")
-    print("  w = (\(w.x), \(w.y))")
-    print()
+	print("Vectors:")
+	print("  v = (\(v.x.formatted()), \(v.y.formatted()))")
+	print("  w = (\(w.x.formatted()), \(w.y.formatted()))")
+	print()
 
-    // Basic operations
-    print("Basic Operations:")
-    let sum = v + w
-    print(String(format: "  v + w = (%.1f, %.1f)", sum.x, sum.y))
+	// Basic operations
+	print("Basic Operations:")
+	let sum = v + w
+	print("  v + w = (\(sum.x.formatted()), \(sum.y.formatted()))")
 
-    let diff = v - w
-    print(String(format: "  v - w = (%.1f, %.1f)", diff.x, diff.y))
+	let diff = v - w
+	print("  v - w = (\(diff.x.formatted()), \(diff.y.formatted()))")
 
-    let scaled = 2.0 * v
-    print(String(format: "  2v = (%.1f, %.1f)", scaled.x, scaled.y))
+	let scaled = 2.0 * v
+	print("  2v = (\(scaled.x.formatted()), \(scaled.y.formatted()))")
 
-    let negated = -v
-    print(String(format: "  -v = (%.1f, %.1f)", negated.x, negated.y))
+	let negated = -v
+	print("  -v = (\(negated.x.formatted()), \(negated.y.formatted()))")
 
-    print()
+	print()
 
-    // Norms and distances
-    print("Norms and Distances:")
-    print(String(format: "  ‖v‖ = %.3f (√(3² + 4²) = √25 = 5)", v.norm))
-    print(String(format: "  ‖w‖ = %.3f", w.norm))
-    print(String(format: "  ‖v - w‖ = %.3f", v.distance(to: w)))
+	// Norms and distances
+	print("Norms and Distances:")
+	print("  ‖v‖ = \(v.norm.formatted()) (√(3² + 4²) = √25 = 5)")
+	print("  ‖w‖ = \(w.norm.formatted())")
+	print("  ‖v - w‖ = \(v.distance(to: w).formatted())")
 
-    print()
+	print()
 
-    // Dot product
-    print("Dot Product:")
-    let dot = v.dot(w)
-    print(String(format: "  v · w = %.1f (3×1 + 4×2 = 11)", dot))
+	// Dot product
+	print("Dot Product:")
+	let dot = v.dot(w)
+	print("  v · w = \(dot) (3×1 + 4×2 = 11)")
 
-    print()
+	print()
 
-    // 2D-specific: cross product (returns scalar)
-    print("2D Cross Product (signed area):")
-    let cross = v.cross(w)
-    print(String(format: "  v × w = %.1f (3×2 - 4×1 = 2)", cross))
+	// 2D-specific: cross product (returns scalar)
+	print("2D Cross Product (signed area):")
+	let cross = v.cross(w)
+	print("  v × w = \(cross) (3×2 - 4×1 = 2)")
 
-    print()
+	print()
 
-    // Rotation
-    print("Rotation:")
-    let rotated90 = v.rotated(by: .pi / 2)
-    print(String(format: "  v rotated 90°: (%.1f, %.1f)", rotated90.x, rotated90.y))
+	// Rotation
+	print("Rotation:")
+	let rotated90 = v.rotated(by: .pi / 2)
+	print("  v rotated 90°: (\(rotated90.x.formatted()), \(rotated90.y.formatted()))")
 
-    let angle = v.angle
-    print(String(format: "  Angle from x-axis: %.3f radians (%.1f°)",
-                  angle, angle * 180 / .pi))
+	let angle = v.angle
+	print("  Angle from x-axis: \(angle.formatted()) radians (\((angle * 180 / .pi).formatted())°)")
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: Vector3D operations
 func vector3DExample() {
-    print("=== Vector3D Operations ===\n")
+	print("=== Vector3D Operations ===\n")
 
-    let v = Vector3D<Double>(x: 1.0, y: 2.0, z: 3.0)
-    let w = Vector3D<Double>(x: 4.0, y: 5.0, z: 6.0)
+	let v = Vector3D<Double>(x: 1.0, y: 2.0, z: 3.0)
+	let w = Vector3D<Double>(x: 4.0, y: 5.0, z: 6.0)
 
-    print("Vectors:")
-    print("  v = (\(v.x), \(v.y), \(v.z))")
-    print("  w = (\(w.x), \(w.y), \(w.z))")
-    print()
+	print("Vectors:")
+	print("  v = (\(v.x.formatted()), \(v.y.formatted()), \(v.z.formatted()))")
+	print("  w = (\(w.x.formatted()), \(w.y.formatted()), \(w.z.formatted()))")
+	print()
 
-    // Basic operations
-    print("Basic Operations:")
-    print("  v + w = \((v + w).toArray())")
-    print("  v - w = \((v - w).toArray())")
-    print("  2v = \((2.0 * v).toArray())")
+	// Basic operations
+	print("Basic Operations:")
+	print("  v + w = \((v + w).toArray())")
+	print("  v - w = \((v - w).toArray())")
+	print("  2v = \((2.0 * v).toArray())")
 
-    print()
+	print()
 
-    // Norms
-    print("Norms:")
-    print(String(format: "  ‖v‖ = %.3f (√(1² + 2² + 3²) = √14)", v.norm))
-    print(String(format: "  ‖w‖ = %.3f", w.norm))
+	// Norms
+	print("Norms:")
+	print("  ‖v‖ = \(v.norm.formatted()) (√(1² + 2² + 3²) = √14)")
+	print("  ‖w‖ = \(w.norm.formatted())")
 
-    print()
+	print()
 
-    // Dot product
-    print("Dot Product:")
-    let dot = v.dot(w)
-    print(String(format: "  v · w = %.1f (1×4 + 2×5 + 3×6 = 32)", dot))
+	// Dot product
+	print("Dot Product:")
+	let dot = v.dot(w)
+	print("  v · w = \(dot.formatted()) (1×4 + 2×5 + 3×6 = 32)")
 
-    print()
+	print()
 
-    // 3D cross product (returns vector)
-    print("3D Cross Product:")
-    let cross = v.cross(w)
-    print("  v × w = \(cross.toArray())")
-    print("  (perpendicular to both v and w)")
+	// 3D cross product (returns vector)
+	print("3D Cross Product:")
+	let cross = v.cross(w)
+	print("  v × w = \(cross.toArray())")
+	print("  (perpendicular to both v and w)")
 
-    // Verify perpendicularity
-    let dotCrossV = cross.dot(v)
-    let dotCrossW = cross.dot(w)
-    print(String(format: "  Verification: (v×w)·v = %.10f (should be ~0)", dotCrossV))
-    print(String(format: "                (v×w)·w = %.10f (should be ~0)", dotCrossW))
+	// Verify perpendicularity
+	let dotCrossV = cross.dot(v)
+	let dotCrossW = cross.dot(w)
+	print("  Verification: (v×w)·v = \(dotCrossV.formatted()) (should be ~0)")
+	print("                (v×w)·w = \(dotCrossW.formatted()) (should be ~0)")
 
-    print()
+	print()
 
-    // Triple products
-    print("Triple Products:")
-    let u = Vector3D<Double>(x: 1.0, y: 0.0, z: 0.0)
-    let tripleScalar = u.tripleProduct(v, w)
-    print(String(format: "  Scalar triple product: %.1f (signed volume)", tripleScalar))
+	// Triple products
+	print("Triple Products:")
+	let u = Vector3D<Double>(x: 1.0, y: 0.0, z: 0.0)
+	let tripleScalar = u.tripleProduct(v, w)
+	print("  Scalar triple product: \(tripleScalar.formatted()) (signed volume)")
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: VectorN operations
 func vectorNExample() {
-    print("=== VectorN Operations ===\n")
+	print("=== VectorN Operations ===\n")
 
-    let v = VectorN<Double>([1.0, 2.0, 3.0, 4.0, 5.0])
-    let w = VectorN<Double>([5.0, 4.0, 3.0, 2.0, 1.0])
+	let v = VectorN<Double>([1.0, 2.0, 3.0, 4.0, 5.0])
+	let w = VectorN<Double>([5.0, 4.0, 3.0, 2.0, 1.0])
 
-    print("Vectors:")
-    print("  v = \(v.toArray())")
-    print("  w = \(w.toArray())")
-    print()
+	print("Vectors:")
+	print("  v = \(v.toArray())")
+	print("  w = \(w.toArray())")
+	print()
 
-    // Basic operations
-    print("Basic Operations:")
-    print("  v + w = \((v + w).toArray())")
-    print("  v - w = \((v - w).toArray())")
-    print("  2v = \((2.0 * v).toArray())")
-    print("  v / 2 = \((v / 2.0).toArray())")
+	// Basic operations
+	print("Basic Operations:")
+	print("  v + w = \((v + w).toArray())")
+	print("  v - w = \((v - w).toArray())")
+	print("  2v = \((2.0 * v).toArray())")
+	print("  v / 2 = \((v / 2.0).toArray())")
 
-    print()
+	print()
 
-    // Element access
-    print("Element Access:")
-    print("  v[0] = \(v[0])")
-    print("  v[2] = \(v[2])")
-    print("  v[4] = \(v[4])")
+	// Element access
+	print("Element Access:")
+	print("  v[0] = \(v[0])")
+	print("  v[2] = \(v[2])")
+	print("  v[4] = \(v[4])")
 
-    print()
+	print()
 
-    // Statistical operations
-    print("Statistical Operations:")
-    print(String(format: "  sum(v) = %.1f", v.sum))
-    print(String(format: "  mean(v) = %.1f", v.mean))
-    print(String(format: "  std(v) = %.3f", v.standardDeviation()))
-    print("  min(v) = \(v.min!)")
-    print("  max(v) = \(v.max!)")
-    if let range = v.range {
-        print(String(format: "  range(v) = [%.1f, %.1f]", range.min, range.max))
-    }
+	// Statistical operations
+	print("Statistical Operations:")
+	print("  sum(v) = \(v.sum.formatted())")
+	print("  mean(v) = \(v.mean.formatted())")
+	print("  std(v) = \(v.standardDeviation().formatted())")
+	print("  min(v) = \(v.min!)")
+	print("  max(v) = \(v.max!)")
+	if let range = v.range {
+		print("  range(v) = [\(range.min.formatted()), \(range.max.formatted())]")
+	}
 
-    print()
+	print()
 
-    // Element-wise operations
-    print("Element-Wise Operations:")
-    let hadamard = v.hadamardProduct(with: w)
-    print("  v ⊙ w = \(hadamard.toArray()) (element-wise product)")
+	// Element-wise operations
+	print("Element-Wise Operations:")
+	let hadamard = v.hadamardProduct(with: w)
+	print("  v ⊙ w = \(hadamard.toArray()) (element-wise product)")
 
-    let quotient = v.elementwiseDivide(by: w)
-    print("  v ⊘ w = \(quotient.toArray().map { String(format: "%.1f", $0) })")
+	let quotient = v.elementwiseDivide(by: w)
+	print("  v ⊘ w = \(quotient.toArray().map { $0.formatted() })")
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: Distance metrics
 func distanceMetricsExample() {
-    print("=== Distance Metrics ===\n")
+	print("=== Distance Metrics ===\n")
 
-    let p1 = VectorN([0.0, 0.0])
-    let p2 = VectorN([3.0, 4.0])
+	let p1 = VectorN([0.0, 0.0])
+	let p2 = VectorN([3.0, 4.0])
 
-    print("Points:")
-    print("  p1 = \(p1.toArray())")
-    print("  p2 = \(p2.toArray())")
-    print()
+	print("Points:")
+	print("  p1 = \(p1.toArray())")
+	print("  p2 = \(p2.toArray())")
+	print()
 
-    // Euclidean distance (L2 norm)
-    let euclidean = p1.distance(to: p2)
-    print(String(format: "Euclidean distance (L2): %.3f", euclidean))
-    print("  √((3-0)² + (4-0)²) = √25 = 5")
+	// Euclidean distance (L2 norm)
+	let euclidean = p1.distance(to: p2)
+	print("Euclidean distance (L2): \(euclidean.formatted())")
+	print("  √((3-0)² + (4-0)²) = √25 = 5")
 
-    print()
+	print()
 
-    // Manhattan distance (L1 norm)
-    let manhattan = p1.manhattanDistance(to: p2)
-    print(String(format: "Manhattan distance (L1): %.1f", manhattan))
-    print("  |3-0| + |4-0| = 7 (city blocks)")
+	// Manhattan distance (L1 norm)
+	let manhattan = p1.manhattanDistance(to: p2)
+	print("Manhattan distance (L1): \(manhattan.formatted())")
+	print("  |3-0| + |4-0| = 7 (city blocks)")
 
-    print()
+	print()
 
-    // Chebyshev distance (L∞ norm)
-    let chebyshev = p1.chebyshevDistance(to: p2)
-    print(String(format: "Chebyshev distance (L∞): %.1f", chebyshev))
-    print("  max(|3-0|, |4-0|) = 4 (chess king moves)")
+	// Chebyshev distance (L∞ norm)
+	let chebyshev = p1.chebyshevDistance(to: p2)
+	print("Chebyshev distance (L∞): \(chebyshev.formatted())")
+	print("  max(|3-0|, |4-0|) = 4 (chess king moves)")
 
-    print()
+	print()
 
-    // Cosine similarity
-    let v1 = VectorN([1.0, 2.0, 3.0])
-    let v2 = VectorN([2.0, 4.0, 6.0])
-    let similarity = v1.cosineSimilarity(with: v2)
-    print("Cosine Similarity:")
-    print("  v1 = \(v1.toArray())")
-    print("  v2 = \(v2.toArray())")
-    print(String(format: "  similarity = %.3f (1.0 means same direction)", similarity))
+	// Cosine similarity
+	let v1 = VectorN([1.0, 2.0, 3.0])
+	let v2 = VectorN([2.0, 4.0, 6.0])
+	let similarity = v1.cosineSimilarity(with: v2)
+	print("Cosine Similarity:")
+	print("  v1 = \(v1.toArray())")
+	print("  v2 = \(v2.toArray())")
+	print("  similarity = \(similarity.formatted()) (1.0 means same direction)")
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: Projections and orthogonality
 func projectionsExample() {
-    print("=== Projections and Orthogonality ===\n")
+	print("=== Projections and Orthogonality ===\n")
 
-    let v = VectorN([3.0, 4.0])
-    let w = VectorN([1.0, 0.0])
+	let v = VectorN([3.0, 4.0])
+	let w = VectorN([1.0, 0.0])
 
-    print("Vectors:")
-    print("  v = \(v.toArray())")
-    print("  w = \(w.toArray()) (unit vector along x-axis)")
-    print()
+	print("Vectors:")
+	print("  v = \(v.toArray())")
+	print("  w = \(w.toArray()) (unit vector along x-axis)")
+	print()
 
-    // Project v onto w
-    let projection = v.projection(onto: w)
-    print("Projection of v onto w:")
-    print("  proj_w(v) = \(projection.toArray())")
-    print("  (component of v in direction of w)")
+	// Project v onto w
+	let projection = v.projection(onto: w)
+	print("Projection of v onto w:")
+	print("  proj_w(v) = \(projection.toArray())")
+	print("  (component of v in direction of w)")
 
-    print()
+	print()
 
-    // Rejection (perpendicular component)
-    let rejection = v.rejection(from: w)
-    print("Rejection of v from w:")
-    print("  rej_w(v) = \(rejection.toArray())")
-    print("  (component of v perpendicular to w)")
+	// Rejection (perpendicular component)
+	let rejection = v.rejection(from: w)
+	print("Rejection of v from w:")
+	print("  rej_w(v) = \(rejection.toArray())")
+	print("  (component of v perpendicular to w)")
 
-    print()
+	print()
 
-    // Verify decomposition
-    let reconstructed = projection + rejection
-    print("Verify decomposition:")
-    print("  proj + rej = \(reconstructed.toArray())")
-    print("  original v = \(v.toArray())")
+	// Verify decomposition
+	let reconstructed = projection + rejection
+	print("Verify decomposition:")
+	print("  proj + rej = \(reconstructed.toArray())")
+	print("  original v = \(v.toArray())")
 
-    print()
+	print()
 
-    // Check orthogonality
-    print("Orthogonality:")
-    let x = VectorN([1.0, 0.0, 0.0])
-    let y = VectorN([0.0, 1.0, 0.0])
-    let z = VectorN([1.0, 1.0, 0.0])
+	// Check orthogonality
+	print("Orthogonality:")
+	let x = VectorN([1.0, 0.0, 0.0])
+	let y = VectorN([0.0, 1.0, 0.0])
+	let z = VectorN([1.0, 1.0, 0.0])
 
-    print("  x = \(x.toArray())")
-    print("  y = \(y.toArray())")
-    print("  z = \(z.toArray())")
-    print("  x ⊥ y? \(x.isOrthogonal(to: y)) (dot product = 0)")
-    print("  x ⊥ z? \(x.isOrthogonal(to: z)) (dot product ≠ 0)")
-    print("  y ⊥ z? \(y.isOrthogonal(to: z))")
+	print("  x = \(x.toArray())")
+	print("  y = \(y.toArray())")
+	print("  z = \(z.toArray())")
+	print("  x ⊥ y? \(x.isOrthogonal(to: y)) (dot product = 0)")
+	print("  x ⊥ z? \(x.isOrthogonal(to: z)) (dot product ≠ 0)")
+	print("  y ⊥ z? \(y.isOrthogonal(to: z))")
 
-    print()
+	print()
 
-    // Check parallelism
-    print("Parallelism:")
-    let a = VectorN([2.0, 4.0])
-    let b = VectorN([1.0, 2.0])
-    let c = VectorN([1.0, 0.0])
+	// Check parallelism
+	print("Parallelism:")
+	let a = VectorN([2.0, 4.0])
+	let b = VectorN([1.0, 2.0])
+	let c = VectorN([1.0, 0.0])
 
-    print("  a = \(a.toArray())")
-    print("  b = \(b.toArray())")
-    print("  c = \(c.toArray())")
-    print("  a ∥ b? \(a.isParallel(to: b)) (same direction)")
-    print("  a ∥ c? \(a.isParallel(to: c)) (different directions)")
+	print("  a = \(a.toArray())")
+	print("  b = \(b.toArray())")
+	print("  c = \(c.toArray())")
+	print("  a ∥ b? \(a.isParallel(to: b)) (same direction)")
+	print("  a ∥ c? \(a.isParallel(to: c)) (different directions)")
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: Vector construction and manipulation
 func constructionExample() {
-    print("=== Vector Construction ===\n")
+	print("=== Vector Construction ===\n")
 
-    // Standard construction
-    print("Standard Construction:")
-    let v1 = VectorN([1.0, 2.0, 3.0])
-    print("  From array: \(v1.toArray())")
+	// Standard construction
+	print("Standard Construction:")
+	let v1 = VectorN([1.0, 2.0, 3.0])
+	print("  From array: \(v1.toArray())")
 
-    let v2 = VectorN(repeating: 5.0, count: 4)
-    print("  Repeating value: \(v2.toArray())")
+	let v2 = VectorN(repeating: 5.0, count: 4)
+	print("  Repeating value: \(v2.toArray())")
 
-    let v3 = VectorN<Double>.zero
-    print("  Zero vector: \(v3.toArray())")
+	let v3 = VectorN<Double>.zero
+	print("  Zero vector: \(v3.toArray())")
 
-    print()
+	print()
 
-    // Factory methods
-    print("Factory Methods:")
+	// Factory methods
+	print("Factory Methods:")
 
-    let ones = VectorN<Double>.ones(dimension: 5)
-    print("  Ones: \(ones.toArray())")
+	let ones = VectorN<Double>.ones(dimension: 5)
+	print("  Ones: \(ones.toArray())")
 
-    let basis = VectorN<Double>.basisVector(dimension: 5, index: 2)
-    print("  Basis vector e₂: \(basis.toArray())")
+	let basis = VectorN<Double>.basisVector(dimension: 5, index: 2)
+	print("  Basis vector e₂: \(basis.toArray())")
 
-    let linspace = VectorN<Double>.linearSpace(from: 0.0, to: 10.0, count: 6)
-    print("  Linear space [0, 10]: \(linspace.toArray().map { String(format: "%.1f", $0) })")
+	let linspace = VectorN<Double>.linearSpace(from: 0.0, to: 10.0, count: 6)
+	print("  Linear space [0, 10]: \(linspace.toArray().map { $0.formatted() })")
 
-    let logspace = VectorN<Double>.logSpace(from: 1.0, to: 100.0, count: 3)
-    print("  Log space [1, 100]: \(logspace.toArray().map { String(format: "%.1f", $0) })")
+	let logspace = VectorN<Double>.logSpace(from: 1.0, to: 100.0, count: 3)
+	print("  Log space [1, 100]: \(logspace.toArray().map { $0.formatted() })")
 
-    print()
+	print()
 
-    // Manipulation
-    print("Manipulation:")
-    var v = VectorN([1.0, 2.0, 3.0])
-    print("  Original: \(v.toArray())")
+	// Manipulation
+	print("Manipulation:")
+	var v = VectorN([1.0, 2.0, 3.0])
+	print("  Original: \(v.toArray())")
 
-    let appended = v.appending(4.0)
-    print("  Appended: \(appended.toArray())")
+	let appended = v.appending(4.0)
+	print("  Appended: \(appended.toArray())")
 
-    if let removed = appended.removingLast() {
-        print("  Removed last: \(removed.toArray())")
-    }
+	if let removed = appended.removingLast() {
+		print("  Removed last: \(removed.toArray())")
+	}
 
-    let w = VectorN([5.0, 6.0])
-    let concatenated = v.concatenated(with: w)
-    print("  Concatenated: \(concatenated.toArray())")
+	let w = VectorN([5.0, 6.0])
+	let concatenated = v.concatenated(with: w)
+	print("  Concatenated: \(concatenated.toArray())")
 
-    if let sliced = concatenated.slice(1..<4) {
-        print("  Sliced [1:4]: \(sliced.toArray())")
-    }
+	if let sliced = concatenated.slice(1..<4) {
+		print("  Sliced [1:4]: \(sliced.toArray())")
+	}
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: Functional operations
 func functionalOperationsExample() {
-    print("=== Functional Operations ===\n")
+	print("=== Functional Operations ===\n")
 
-    let v = VectorN([1.0, 2.0, 3.0, 4.0, 5.0])
-    print("Original vector: \(v.toArray())")
-    print()
+	let v = VectorN([1.0, 2.0, 3.0, 4.0, 5.0])
+	print("Original vector: \(v.toArray())")
+	print()
 
-    // Map
-    print("Map Operations:")
-    let squared = v.map { $0 * $0 }
-    print("  Squared: \(squared.toArray())")
+	// Map
+	print("Map Operations:")
+	let squared = v.map { $0 * $0 }
+	print("  Squared: \(squared.toArray())")
 
-    let doubled = v.map { $0 * 2 }
-    print("  Doubled: \(doubled.toArray())")
+	let doubled = v.map { $0 * 2 }
+	print("  Doubled: \(doubled.toArray())")
 
-    print()
+	print()
 
-    // Filter
-    print("Filter Operations:")
-    let evens = v.filter { $0.truncatingRemainder(dividingBy: 2) == 0 }
-    print("  Even values: \(evens.toArray())")
+	// Filter
+	print("Filter Operations:")
+	let evens = v.filter { $0.truncatingRemainder(dividingBy: 2) == 0 }
+	print("  Even values: \(evens.toArray())")
 
-    let large = v.filter { $0 > 3 }
-    print("  Values > 3: \(large.toArray())")
+	let large = v.filter { $0 > 3 }
+	print("  Values > 3: \(large.toArray())")
 
-    print()
+	print()
 
-    // Reduce
-    print("Reduce Operations:")
-    let sum = v.reduce(0.0, +)
-    print(String(format: "  Sum: %.1f", sum))
+	// Reduce
+	print("Reduce Operations:")
+	let sum = v.reduce(0.0, +)
+	print("  Sum: \(sum.formatted())")
 
-    let product = v.reduce(1.0, *)
-    print(String(format: "  Product: %.1f", product))
+	let product = v.reduce(1.0, *)
+	print("  Product: \(product.formatted())")
 
-    print()
+	print()
 
-    // ZipWith
-    print("ZipWith Operations:")
-    let w = VectorN([5.0, 4.0, 3.0, 2.0, 1.0])
-    print("  w = \(w.toArray())")
+	// ZipWith
+	print("ZipWith Operations:")
+	let w = VectorN([5.0, 4.0, 3.0, 2.0, 1.0])
+	print("  w = \(w.toArray())")
 
-    let summed = v.zipWith(w, +)
-    print("  v + w (zipWith): \(summed.toArray())")
+	let summed = v.zipWith(w, +)
+	print("  v + w (zipWith): \(summed.toArray())")
 
-    let multiplied = v.zipWith(w, *)
-    print("  v * w (zipWith): \(multiplied.toArray())")
+	let multiplied = v.zipWith(w, *)
+	print("  v * w (zipWith): \(multiplied.toArray())")
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: Portfolio weights (practical application)
 func portfolioWeightsExample() {
-    print("=== Portfolio Weights Application ===\n")
+	print("=== Portfolio Weights Application ===\n")
 
-    let assets = ["AAPL", "GOOGL", "MSFT", "AMZN"]
-    var weights = VectorN([0.25, 0.30, 0.25, 0.20])
+	let assets = ["AAPL", "GOOGL", "MSFT", "AMZN"]
+	var weights = VectorN([0.25, 0.30, 0.25, 0.20])
 
-    print("Portfolio:")
-    for (i, asset) in assets.enumerated() {
-        print(String(format: "  %@: %.0f%%", asset, weights[i] * 100))
-    }
-    print()
+	print("Portfolio:")
+	for (i, asset) in assets.enumerated() {
+		print("  \(asset.paddingLeft(toLength: 5)): \((weights[i] * 100).formatted())%")
+	}
+	print()
 
-    // Check if weights sum to 1
-    print(String(format: "Sum of weights: %.3f", weights.sum))
-    if abs(weights.sum - 1.0) > 0.001 {
-        print("  ⚠️ Weights don't sum to 1 - normalizing...")
-        weights = weights / weights.sum
-        print(String(format: "  After normalization: %.3f", weights.sum))
-    } else {
-        print("  ✓ Weights sum to 1")
-    }
+	// Check if weights sum to 1
+	print("Sum of weights: \(weights.sum)")
+	if abs(weights.sum - 1.0) > 0.001 {
+		print("  ⚠️ Weights don't sum to 1 - normalizing...")
+		weights = weights / weights.sum
+		print("  After normalization: \(weights.sum.formatted())")
+	} else {
+		print("  ✓ Weights sum to 1")
+	}
 
-    print()
+	print()
 
-    // Expected returns
-    let returns = VectorN([0.12, 0.15, 0.10, 0.18])
-    print("Expected Returns:")
-    for (i, asset) in assets.enumerated() {
-        print(String(format: "  %@: %.0f%%", asset, returns[i] * 100))
-    }
+	// Expected returns
+	let returns = VectorN([0.12, 0.15, 0.10, 0.18])
+	print("Expected Returns:")
+	for (i, asset) in assets.enumerated() {
+		print("  \(asset.paddingLeft(toLength: 5)): \((returns[i] * 100).formatted())%")
+	}
 
-    print()
+	print()
 
-    // Portfolio return (weighted average)
-    let portfolioReturn = weights.dot(returns)
-    print(String(format: "Portfolio Return: %.2f%%", portfolioReturn * 100))
+	// Portfolio return (weighted average)
+	let portfolioReturn = weights.dot(returns)
+	print("Portfolio Return: \((portfolioReturn * 100).formatted())%")
 
-    print()
+	print()
 
-    // Risk contribution
-    print("Weight × Return (contribution to portfolio):")
-    let contributions = weights.hadamardProduct(with: returns)
-    for (i, asset) in assets.enumerated() {
-        print(String(format: "  %@: %.2f%% × %.0f%% = %.2f%%",
-                      asset, weights[i] * 100, returns[i] * 100, contributions[i] * 100))
-    }
+	// Risk contribution
+	print("Weight × Return (contribution to portfolio):")
+	let contributions = weights.hadamardProduct(with: returns)
+	for (i, asset) in assets.enumerated() {
+		print("  \(asset.paddingLeft(toLength: 5)): \((weights[i] * 100).formatted())% × \((returns[i] * 100).formatted())% = \((contributions[i] * 100).formatted())%")
+	}
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 /// Example: Normalization and unit vectors
 func normalizationExample() {
-    print("=== Normalization ===\n")
+	print("=== Normalization ===\n")
 
-    let v = VectorN([3.0, 4.0])
-    print("Original vector: \(v.toArray())")
-    print(String(format: "Norm: %.3f", v.norm))
-    print()
+	let v = VectorN([3.0, 4.0])
+	print("Original vector: \(v.toArray())")
+	print("Norm: \(v.norm)")
+	print()
 
-    // Normalize to unit length
-    let unit = v.normalized()
-    print("Normalized (unit vector): \(unit.toArray().map { String(format: "%.3f", $0) })")
-    print(String(format: "Norm: %.10f (should be 1.0)", unit.norm))
+	// Normalize to unit length
+	let unit = v.normalized()
+	print("Normalized (unit vector): \(unit.toArray().map { $0.formatted() })")
+	print("Norm: \(unit.norm.formatted()) (should be 1.0)")
 
-    print()
+	print()
 
-    // Verify direction preserved
-    let similarity = v.cosineSimilarity(with: unit)
-    print(String(format: "Cosine similarity with original: %.10f (should be 1.0)", similarity))
+	// Verify direction preserved
+	let similarity = v.cosineSimilarity(with: unit)
+	print("Cosine similarity with original: \(similarity.formatted()) (should be 1.0)")
 
-    print()
+	print()
 
-    // Feature normalization example
-    print("Feature Normalization Example:")
-    let features = VectorN([100.0, 200.0, 150.0, 300.0])
-    print("  Raw features: \(features.toArray())")
+	// Feature normalization example
+	print("Feature Normalization Example:")
+	let features = VectorN([100.0, 200.0, 150.0, 300.0])
+	print("  Raw features: \(features.toArray())")
 
-    // Min-max normalization to [0, 1]
-    if let min = features.min, let max = features.max {
-        let range = max - min
-        let normalized = features.map { ($0 - min) / range }
-        print("  Min-max normalized: \(normalized.toArray().map { String(format: "%.3f", $0) })")
-    }
+	// Min-max normalization to [0, 1]
+	if let min = features.min, let max = features.max {
+		let range = max - min
+		let normalized = features.map { ($0 - min) / range }
+		print("  Min-max normalized: \(normalized.toArray().map { $0 })")
+	}
 
-    // Z-score normalization
-    let mean = features.mean
-    let std = features.standardDeviation()
-    let zScores = features.map { ($0 - mean) / std }
-    print("  Z-scores: \(zScores.toArray().map { String(format: "%.3f", $0) })")
+	// Z-score normalization
+	let mean = features.mean
+	let std = features.standardDeviation()
+	let zScores = features.map { ($0 - mean) / std }
+	print("  Z-scores: \(zScores.toArray().map { $0.formatted() })")
 
-    print("\n" + String(repeating: "=", count: 50) + "\n")
+	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
 
 // Run examples

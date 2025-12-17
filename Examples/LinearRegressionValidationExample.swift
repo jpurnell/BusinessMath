@@ -63,9 +63,9 @@ struct SimpleLinearRegression {
 // MARK: - Example 1: Perfect Linear Regression Recovery
 
 func example1_PerfectLinearRegression() {
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 1: Linear Regression Parameter Recovery")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	// Step 1: Specify true parameters
@@ -115,8 +115,7 @@ func example1_PerfectLinearRegression() {
 		let relError = absError / abs(trueVal)
 		let status = relError <= 0.10 ? "✓ PASS" : "✗ FAIL"
 
-		print(String(format: "  %-10s | %6.3f | %9.3f | %9.3f | %8.1f%% | %@",
-			name, trueVal, recoveredVal, absError, relError * 100, status))
+		print("  \(name.padding(toLength: 10, withPad: " ", startingAt: 0)) | \(trueVal.formatted().paddingLeft(toLength: 6)) | \(recoveredVal.formatted().paddingLeft(toLength: 9)) | \(absError.formatted().paddingLeft(toLength: 9)) | \((relError * 100).formatted().paddingLeft(toLength: 8))% | \(status)")
 	}
 	print()
 
@@ -128,9 +127,9 @@ func example1_PerfectLinearRegression() {
 
 func example2_WhyItMatters() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 2: Why Validate Even Simple Models?")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("You might think: 'Linear regression is so simple, why bother?'")
@@ -169,8 +168,8 @@ func example2_WhyItMatters() {
 	let (int1, slope1, _) = SimpleLinearRegression.fit(data: goodData.dropLast())
 	let (int2, slope2, _) = SimpleLinearRegression.fit(data: goodData)
 
-	print("  Without outlier: y = \(String(format: "%.2f", int1)) + \(String(format: "%.2f", slope1))x")
-	print("  With outlier:    y = \(String(format: "%.2f", int2)) + \(String(format: "%.2f", slope2))x")
+	print("  Without outlier: y = \(int1.formatted()) + \(slope1.formatted())x")
+	print("  With outlier:    y = \(int2.formatted()) + \(slope2.formatted())x")
 	print("  ✓ Dramatic change! Fake-data helps test robustness.")
 	print()
 
@@ -181,9 +180,9 @@ func example2_WhyItMatters() {
 
 func example3_ComparingModels() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 3: Linear vs Nonlinear Regression Recovery")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("Let's compare parameter recovery for two models:")
@@ -204,8 +203,8 @@ func example3_ComparingModels() {
 	let intError = abs(intEst - 2.0) / 2.0
 	let slopeError = abs(slopeEst - 0.5) / 0.5
 
-	print(String(format: "  Intercept: %.1f%% error", intError * 100))
-	print(String(format: "  Slope:     %.1f%% error", slopeError * 100))
+	print("  Intercept: \((intError * 100).formatted())% error")
+	print("  Slope:     \((slopeError * 100).formatted())% error")
 	print()
 
 	// Reciprocal regression (using BusinessMath implementation)
@@ -223,8 +222,8 @@ func example3_ComparingModels() {
 
 		if let aError = report.relativeErrors["a"],
 		   let bError = report.relativeErrors["b"] {
-			print(String(format: "  Parameter a: %.1f%% error", aError * 100))
-			print(String(format: "  Parameter b: %.1f%% error", bError * 100))
+			print("  Parameter a: \((aError * 100).formatted())% error")
+			print("  Parameter b: \((bError * 100).formatted())% error")
 		}
 
 	} catch {
@@ -243,9 +242,9 @@ func example3_ComparingModels() {
 
 func example4_SystematicValidation() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 4: Building a Validation Test Suite")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("For any model, create a systematic validation suite:")
@@ -299,7 +298,7 @@ func example4_SystematicValidation() {
 	for test in tests {
 		let (passed, avgError) = test.run()
 		let status = passed ? "✓ PASS" : "✗ FAIL"
-		print(String(format: "  %-16s | %-7s | %5.1f%%", test.name, status, avgError * 100))
+		print("  \(test.name.padding(toLength: 16, withPad: " ", startingAt: 0)) | \(status.paddingLeft(toLength: 7)) | \((avgError * 100).formatted())%")
 	}
 
 	print()
@@ -314,8 +313,8 @@ func example4_SystematicValidation() {
 func runAllLinearRegressionExamples() {
 	print("\n")
 	print("╔" + String(repeating: "═", count: 58) + "╗")
-	print("║  Linear Regression Fake-Data Validation                   ║")
-	print("║  Showing How the Gelman Framework Applies to All Models   ║")
+	print("║  Linear Regression Fake-Data Validation                  ║")
+	print("║  Showing How the Gelman Framework Applies to All Models  ║")
 	print("╚" + String(repeating: "═", count: 58) + "╝")
 	print()
 
@@ -326,7 +325,7 @@ func runAllLinearRegressionExamples() {
 
 	print("\n")
 	print("╔" + String(repeating: "═", count: 58) + "╗")
-	print("║  Key Takeaways                                             ║")
+	print("║  Key Takeaways                                           ║")
 	print("╚" + String(repeating: "═", count: 58) + "╝")
 	print()
 	print("1. Fake-data validation applies to ALL models, not just complex ones")
@@ -338,10 +337,11 @@ func runAllLinearRegressionExamples() {
 }
 
 // Uncomment to run:
-// runAllLinearRegressionExamples()
+ runAllLinearRegressionExamples()
 
 // Or run individual examples:
 // example1_PerfectLinearRegression()
 // example2_WhyItMatters()
 // example3_ComparingModels()
 // example4_SystematicValidation()
+

@@ -487,13 +487,24 @@ public struct PortfolioOptimizer {
 		)
 	}
 
-	// MARK: - Helper Functions
+	// MARK: - Target Return Portfolio
 
-	private func portfolioForTargetReturn(
+	/// Finds the portfolio with minimum variance for a given target return.
+	///
+	/// Minimizes: σ² = w'Σw
+	/// Subject to: Σw = 1, μ'w = targetReturn
+	///
+	/// - Parameters:
+	///   - targetReturn: Desired portfolio return
+	///   - expectedReturns: Expected return for each asset
+	///   - covariance: Covariance matrix (n×n)
+	///   - riskFreeRate: Risk-free rate for Sharpe calculation (default: 0.02)
+	/// - Returns: Optimal portfolio achieving target return with minimum variance
+	public func portfolioForTargetReturn(
 		targetReturn: Double,
 		expectedReturns: VectorN<Double>,
 		covariance: [[Double]],
-		riskFreeRate: Double
+		riskFreeRate: Double = 0.02
 	) throws -> OptimalPortfolio {
 		// Minimize variance subject to budget constraint and target return
 		// Now properly implemented with Lagrange multipliers
@@ -546,6 +557,8 @@ public struct PortfolioOptimizer {
 			iterations: result.iterations
 		)
 	}
+
+	// MARK: - Helper Functions
 
 	private func normalizeWeights(_ weights: VectorN<Double>) -> VectorN<Double> {
 		let sum = weights.toArray().reduce(0.0, +)

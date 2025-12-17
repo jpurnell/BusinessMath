@@ -19,9 +19,9 @@ import BusinessMath
 /// 3. Fit the model to recover parameters
 /// 4. Check if recovery was successful
 func example1_BasicParameterRecovery() {
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 1: Basic Parameter Recovery Check")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	// Step 1: Define true parameters (same as Stan example)
@@ -59,9 +59,9 @@ func example1_BasicParameterRecovery() {
 /// (e.g., flat priors that lead to non-identification)
 func example2_WhatCanGoWrong() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 2: What Happens with Poor Specification")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("Gelman mentions: 'try the above example with flat priors")
@@ -93,9 +93,9 @@ func example2_WhatCanGoWrong() {
 		print("Fitting with poor initialization:")
 		print("  Converged: \(result.converged ? "Yes" : "No")")
 		print("  Iterations: \(result.iterations)")
-		print("  Recovered a: \(String(format: "%.4f", result.parameters.a))")
-		print("  Recovered b: \(String(format: "%.4f", result.parameters.b))")
-		print("  Recovered sigma: \(String(format: "%.4f", result.parameters.sigma))")
+		print("  Recovered a: \(result.parameters.a.formatted())")
+		print("  Recovered b: \(result.parameters.b.formatted())")
+		print("  Recovered sigma: \(result.parameters.sigma.formatted())")
 		print()
 
 		if !result.converged {
@@ -114,9 +114,9 @@ func example2_WhatCanGoWrong() {
 /// (closer to full simulation-based calibration)
 func example3_MultipleReplicates() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 3: Multiple Replicates")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	print("Running 10 independent simulations to check")
@@ -155,9 +155,9 @@ func example3_MultipleReplicates() {
 /// Shows each step of the workflow explicitly for educational purposes
 func example4_StepByStepWorkflow() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 4: Step-by-Step Workflow")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	// Step 1: Specify true parameters
@@ -184,7 +184,7 @@ func example4_StepByStepWorkflow() {
 	print("  ✓ Generated \(data.count) observations")
 	print("  Sample points (first 5):")
 	for (i, point) in data.prefix(5).enumerated() {
-		print("    [\(i)]: x = \(String(format: "%.3f", point.x)), y = \(String(format: "%.3f", point.y))")
+		print("    [\(i)]: x = \(point.x.formatted()), y = \(point.y.formatted())")
 	}
 	print()
 
@@ -207,7 +207,7 @@ func example4_StepByStepWorkflow() {
 		print("  ✓ Fitting completed")
 		print("  Converged: \(result.converged)")
 		print("  Iterations: \(result.iterations)")
-		print("  Log-likelihood: \(String(format: "%.4f", result.logLikelihood))")
+		print("  Log-likelihood: \(result.logLikelihood.formatted())")
 		print()
 
 		// Step 6: Compare true vs recovered
@@ -226,9 +226,7 @@ func example4_StepByStepWorkflow() {
 			let absError = abs(recoveredVal - trueVal)
 			let relError = absError / abs(trueVal)
 			let status = relError <= 0.10 ? "✓" : "✗"
-
-			print(String(format: "  %-9s | %.5f | %.5f   | %.5f   | %5.1f%% %@",
-				name, trueVal, recoveredVal, absError, relError * 100, status))
+			print("  \(name.padding(toLength: 9, withPad: " ", startingAt: 0)) | \(trueVal.formatted(maxDecimals: 5).padding(toLength: 7, withPad: " ", startingAt: 0)) | \(recoveredVal.formatted(maxDecimals: 5).padding(toLength: 9, withPad: " ", startingAt: 0)) | \(absError.formatted(maxDecimals: 5).padding(toLength: 9, withPad: " ", startingAt: 0)) | \((relError * 100).formatted(maxDecimals: 5).padding(toLength: 10, withPad: " ", startingAt: 0))  \(status)")
 		}
 		print()
 
@@ -242,9 +240,9 @@ func example4_StepByStepWorkflow() {
 /// Investigate how sample size affects parameter recovery
 func example5_SampleSizeEffect() {
 	print("\n")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print("Example 5: Effect of Sample Size on Recovery")
-	print("=" * 60)
+	print(String(repeating: "*", count: 60))
 	print()
 
 	let sampleSizes = [20, 50, 100, 200, 500]
@@ -272,14 +270,7 @@ func example5_SampleSizeEffect() {
 			) / 3.0
 
 			let status = report.passed ? "✓" : "✗"
-
-			print(String(format: "  %-3d | %-7s | %.1f%%, %.1f%%, %.1f%%",
-				n,
-				status,
-				report.relativeErrors["a"]! * 100,
-				report.relativeErrors["b"]! * 100,
-				report.relativeErrors["sigma"]! * 100
-			))
+			print("  \("n".padding(toLength: 3, withPad: " ", startingAt: 0)) | \(status.padding(toLength: 7, withPad: " ", startingAt: 0)) | \((report.relativeErrors["a"]! * 100).formatted())%, \((report.relativeErrors["b"]! * 100).formatted())%, \((report.relativeErrors["sigma"]! * 100).formatted())%")
 
 		} catch {
 			print("  \(n) | ✗       | Error: \(error)")
