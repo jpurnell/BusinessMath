@@ -206,7 +206,7 @@ func runReidsRaisinsDemo() throws {
 	print(String(repeating: "*", count: 60))
 
 	let minPrice = 1.80
-	let maxPrice = 2.80
+	let maxPrice = 3.60
 	let step = 0.10
 	let prices = stride(from: minPrice, through: maxPrice, by: step)
 
@@ -220,11 +220,11 @@ func runReidsRaisinsDemo() throws {
 		results.append((price, demand, profit))
 	}
 
-	print("\("Price".padding(toLength: 8, withPad: " ", startingAt: 0))  \("Demand (lbs)".padding(toLength: 12, withPad: " ", startingAt: 0)) \("Profit ($))".padding(toLength: 15, withPad: " ", startingAt: 0))")
+	print("\("Price".padding(toLength: 8, withPad: " ", startingAt: 0))  \("Demand (lbs)".paddingLeft(toLength: 12, withPad: " ")) \("Profit ($)".paddingLeft(toLength: 15, withPad: " "))")
 	print(String(repeating: "-", count: 40))
 
 	for result in results {
-		print("\(result.price.currency())  \(result.demand.formatted().paddingLeft(toLength: 12))  \(result.profit.formatted().paddingLeft(toLength: 15))")
+		print("\(result.price.currency())  \(result.demand.formatted(.number.precision(.fractionLength(0))).paddingLeft(toLength: 15))  \(result.profit.currency().paddingLeft(toLength: 14))")
 	}
 
 	if let optimalResult = results.max(by: { $0.profit < $1.profit }) {
