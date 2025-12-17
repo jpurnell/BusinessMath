@@ -369,6 +369,7 @@ public struct PerformanceReport: Sendable {
     public let timestamp: Date
 
     /// Format as human-readable text
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public func formatted() -> String {
         var output = "=== Performance Report ===\n"
         output += "Generated: \(timestamp)\n"
