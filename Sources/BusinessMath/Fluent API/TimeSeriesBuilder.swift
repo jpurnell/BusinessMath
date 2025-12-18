@@ -300,6 +300,164 @@ extension TimeSeries where T: Real & Sendable {
     }
 }
 
+// MARK: - Sequential Entry (No Explicit Period)
+
+/// A simple entry with a value but no explicit period (for auto-sequencing).
+///
+/// Used with `buildTimeSeries(startingAt:)` to create time series where periods
+/// are automatically sequenced from a starting point.
+public struct SimpleEntry<T: Real & Sendable>: Sendable {
+    public let value: T
+    public let label: String?
+
+    public init(value: T, label: String? = nil) {
+        self.value = value
+        self.label = label
+    }
+}
+
+// MARK: - Sequential Time Series Builder
+
+/// Result builder for constructing time series with auto-sequenced periods.
+@resultBuilder
+public struct SequentialTimeSeriesBuilder<T: Real & Sendable> {
+    public static func buildBlock(_ entries: [SimpleEntry<T>]...) -> [SimpleEntry<T>] {
+        entries.flatMap { $0 }
+    }
+
+    public static func buildArray(_ entries: [[SimpleEntry<T>]]) -> [SimpleEntry<T>] {
+        entries.flatMap { $0 }
+    }
+
+    public static func buildOptional(_ entries: [SimpleEntry<T>]?) -> [SimpleEntry<T>] {
+        entries ?? []
+    }
+
+    public static func buildEither(first entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
+        entries
+    }
+
+    public static func buildEither(second entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
+        entries
+    }
+
+    public static func buildExpression(_ entry: SimpleEntry<T>) -> [SimpleEntry<T>] {
+        [entry]
+    }
+
+    public static func buildExpression(_ entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
+        entries
+    }
+
+    public static func buildLimitedAvailability(_ entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
+        entries
+    }
+}
+
+// MARK: - Sequential Time Series Constructor
+
+/// Build a time series with auto-sequenced periods starting from a given period.
+///
+/// Periods are automatically incremented using the period's `.next()` method.
+///
+/// Example:
+/// ```swift
+/// let jan = Period.month(year: 2025, month: 1)
+///
+/// let revenue = buildTimeSeries(startingAt: jan) {
+///     Entry(100)              // January
+///     Entry(105, label: "February")
+///     Entry(110, label: "March")
+///     Entry(108)              // April
+/// }
+/// ```
+public func buildTimeSeries<T: Real & Sendable>(
+    startingAt startPeriod: Period,
+    @SequentialTimeSeriesBuilder<T> builder: () -> [SimpleEntry<T>]
+) -> TimeSeries<T> {
+    let entries = builder()
+
+    // Generate periods by incrementing from start
+    var periods: [Period] = []
+    var currentPeriod = startPeriod
+    for _ in entries {
+        periods.append(currentPeriod)
+        currentPeriod = currentPeriod.next()
+    }
+
+    let values = entries.map { $0.value }
+    let labels = entries.compactMap { $0.label }
+    let labelsArray = labels.isEmpty ? nil : entries.map { $0.label ?? "" }
+
+    return TimeSeries(periods: periods, values: values, labels: labelsArray)
+}
+
+// MARK: - Entry Constructors
+
+/// Create a sequential entry with a value (matches documented API).
+///
+/// Example:
+/// ```swift
+/// buildTimeSeries(startingAt: jan) {
+///     Entry(100)
+///     Entry(105)
+///     Entry(110)
+/// }
+/// ```
+public func Entry<T: Real & Sendable>(_ value: T) -> SimpleEntry<T> {
+    SimpleEntry(value: value, label: nil)
+}
+
+/// Create a sequential entry with a value and label (matches documented API).
+///
+/// Example:
+/// ```swift
+/// buildTimeSeries(startingAt: jan) {
+///     Entry(100, label: "January")
+///     Entry(105, label: "February")
+///     Entry(110, label: "March")
+/// }
+/// ```
+public func Entry<T: Real & Sendable>(_ value: T, label: String) -> SimpleEntry<T> {
+    SimpleEntry(value: value, label: label)
+}
+
+// MARK: - Growth Component
+
+/// Generate multiple entries with compound growth (matches documented API).
+///
+/// **Note**: This function is currently not fully implemented in the result builder.
+/// Use `GrowthFrom(startValue:rate:periods:)` instead.
+///
+/// Example (use GrowthFrom instead):
+/// ```swift
+/// buildTimeSeries(startingAt: jan) {
+///     GrowthFrom(startValue: 100, rate: 0.05, periods: 12)
+/// }
+/// // Results in 12 entries: [100, 105, 110.25, 115.76, ...]
+/// ```
+public func Growth<T: Real & Sendable>(rate: T, periods: Int) -> [SimpleEntry<T>] {
+    // TODO: Implement growth-from-previous-entry pattern
+    // For now, return empty array and recommend GrowthFrom()
+    preconditionFailure("Growth() is not yet implemented. Use GrowthFrom(startValue:rate:periods:) instead.")
+}
+
+/// Generate multiple entries with compound growth starting from a specific value.
+///
+/// Example:
+/// ```swift
+/// buildTimeSeries(startingAt: jan) {
+///     GrowthFrom(startValue: 100, rate: 0.05, periods: 12)
+/// }
+/// // Results in [100, 105, 110.25, 115.76, ...]
+/// ```
+public func GrowthFrom<T: Real & Sendable>(startValue: T, rate: T, periods: Int) -> [SimpleEntry<T>] {
+    (0..<periods).map { i in
+        let value = startValue * T.pow(1 + rate, T(i))
+        return SimpleEntry(value: value, label: nil)
+    }
+}
+
 // MARK: - Convenience Month and Quarter Enums
 
 /// Convenience enum for creating monthly periods.

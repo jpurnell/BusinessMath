@@ -50,6 +50,12 @@ public struct Investment: Sendable {
     /// Optional investment description
     public let investmentDescription: String?
 
+    /// Optional investment category
+    public let category: String?
+
+    /// Optional categorized cash flows
+    public let cashFlowCategories: [String: [CashFlow]]
+
     // MARK: - Initialization
 
     /// Create an investment using the builder DSL.
@@ -61,27 +67,36 @@ public struct Investment: Sendable {
         var discountRate: Double = 0.10 // Default 10%
         var name: String?
         var description: String?
+        var category: String?
+        var cashFlowCategories: [String: [CashFlow]] = [:]
 
         for component in components {
             switch component {
             case .initialCost(let cost):
                 initialCost = cost
             case .cashFlows(let flows):
-                cashFlows = flows
+                cashFlows.append(contentsOf: flows)
             case .discountRate(let rate):
                 discountRate = rate
             case .name(let n):
                 name = n
             case .description(let d):
                 description = d
+            case .category(let c):
+                category = c
+            case .cashFlowCategory(let categoryName, let flows):
+                cashFlowCategories[categoryName] = flows
+                cashFlows.append(contentsOf: flows)
             }
         }
 
         self.initialCost = initialCost
-        self.cashFlows = cashFlows
+        self.cashFlows = cashFlows.sorted { $0.period < $1.period }
         self.discountRate = discountRate
         self.name = name
         self.investmentDescription = description
+        self.category = category
+        self.cashFlowCategories = cashFlowCategories
     }
 
     // MARK: - Calculated Metrics
@@ -171,6 +186,29 @@ public struct Investment: Sendable {
     public var totalROI: Double {
         (totalCashInflows - initialCost) / initialCost
     }
+
+    /// Return on investment (alias for totalROI) - matches documented API
+    public var roi: Double {
+        totalROI
+    }
+}
+
+// MARK: - Category Methods
+
+extension Investment {
+    /// Get NPV for a specific cash flow category
+    public func npv(for categoryName: String) -> Double? {
+        guard let categoryFlows = cashFlowCategories[categoryName] else {
+            return nil
+        }
+
+        var presentValue = 0.0
+        for cashFlow in categoryFlows {
+            let period = Double(cashFlow.period)
+            presentValue += cashFlow.amount / pow(1 + discountRate, period)
+        }
+        return presentValue
+    }
 }
 
 // MARK: - Cash Flow
@@ -195,6 +233,8 @@ public enum InvestmentComponent: Sendable {
     case discountRate(Double)
     case name(String)
     case description(String)
+    case category(String)
+    case cashFlowCategory(String, [CashFlow])
 }
 
 // MARK: - Investment Builder
@@ -261,10 +301,32 @@ public struct CashFlowBuilder {
     }
 }
 
+// MARK: - Top-Level Wrapper
+
+/// Build an investment using the fluent API (matches documented API).
+///
+/// Example:
+/// ```swift
+/// let investment = buildInvestment {
+///     InitialInvestment(100_000)
+///     CashFlow(year: 1, amount: 30_000)
+///     CashFlow(year: 2, amount: 35_000)
+///     DiscountRate(0.10)
+/// }
+/// ```
+public func buildInvestment(@InvestmentBuilder builder: () -> [InvestmentComponent]) -> Investment {
+    Investment(builder: builder)
+}
+
 // MARK: - Component Constructors
 
 /// Set the initial investment cost.
 public func InitialCost(_ amount: Double) -> InvestmentComponent {
+    .initialCost(amount)
+}
+
+/// Set the initial investment cost (alias for InitialCost, matches documented API).
+public func InitialInvestment(_ amount: Double) -> InvestmentComponent {
     .initialCost(amount)
 }
 
@@ -288,9 +350,60 @@ public func Description(_ description: String) -> InvestmentComponent {
     .description(description)
 }
 
+/// Set the investment category.
+public func Category(_ category: String) -> InvestmentComponent {
+    .category(category)
+}
+
+/// Define a categorized group of cash flows.
+///
+/// Example:
+/// ```swift
+/// let investment = buildInvestment {
+///     InitialInvestment(250_000)
+///
+///     CashFlowCategory("Cost Savings") {
+///         CashFlow(year: 1, amount: 50_000)
+///         CashFlow(year: 2, amount: 60_000)
+///     }
+///
+///     CashFlowCategory("Revenue Growth") {
+///         CashFlow(year: 1, amount: 30_000)
+///         CashFlow(year: 2, amount: 40_000)
+///     }
+///
+///     DiscountRate(0.12)
+/// }
+/// ```
+public func CashFlowCategory(_ categoryName: String, @CashFlowBuilder builder: () -> [CashFlow]) -> InvestmentComponent {
+    .cashFlowCategory(categoryName, builder())
+}
+
 // MARK: - Cash Flow Constructors
 
-/// Create a cash flow for a specific year.
+/// Create a cash flow directly (convenience function matching documented API).
+///
+/// Note: Also works with the CashFlowBuilder for nested usage.
+///
+/// Example:
+/// ```swift
+/// buildInvestment {
+///     InitialInvestment(100_000)
+///
+///     CashFlows {
+///         Year(1) => 30_000  // Arrow syntax
+///         Year(2) => 35_000
+///     }
+/// }
+/// ```
+extension CashFlowBuilder {
+    /// Build expression for direct year/amount pairs (matches documented API).
+    public static func buildExpression(year: Int, amount: Double) -> [CashFlow] {
+        [CashFlow(period: year, amount: amount)]
+    }
+}
+
+/// Create a cash flow for a specific year (arrow syntax).
 public func Year(_ year: Int) -> CashFlowPeriod {
     CashFlowPeriod(period: year)
 }
@@ -302,6 +415,48 @@ public struct CashFlowPeriod {
     /// Create a cash flow using arrow syntax: `Year(1) => 30_000`
     public static func => (period: CashFlowPeriod, amount: Double) -> CashFlow {
         CashFlow(period: period.period, amount: amount)
+    }
+}
+
+// MARK: - Date-Based Cash Flows
+
+/// Date-based cash flow for XNPV/XIRR calculations.
+///
+/// Example:
+/// ```swift
+/// let today = Date()
+/// let oneYear = Calendar.current.date(byAdding: .year, value: 1, to: today)!
+///
+/// let dateFlow = DateBasedCashFlow(date: oneYear, amount: 30_000)
+/// ```
+public struct DateBasedCashFlow: Sendable {
+    public let date: Date
+    public let amount: Double
+
+    public init(date: Date, amount: Double) {
+        self.date = date
+        self.amount = amount
+    }
+}
+
+/// Convenience initializer for year-based cash flows (matches documented API).
+///
+/// Example:
+/// ```swift
+/// buildInvestment {
+///     InitialInvestment(100_000)
+///     CashFlows {
+///         // All these syntaxes work:
+///         Year(1) => 30_000
+///         Year(2) => 35_000
+///     }
+///     DiscountRate(0.10)
+/// }
+/// ```
+extension CashFlow {
+    /// Create a cash flow for a specific year (convenience initializer).
+    public init(year: Int, amount: Double) {
+        self.init(period: year, amount: amount)
     }
 }
 

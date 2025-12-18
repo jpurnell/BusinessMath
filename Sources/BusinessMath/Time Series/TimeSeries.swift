@@ -115,6 +115,9 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// Metadata describing this time series.
 	public let metadata: TimeSeriesMetadata
 
+	/// Optional labels for each period (for display/debugging purposes).
+	public let labels: [Period: String]?
+
 	// MARK: - Initialization
 
 	/// Creates a time series from parallel arrays of periods and values.
@@ -138,23 +141,38 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// let values: [Double] = [100.0, 200.0]
 	/// let ts = TimeSeries(periods: periods, values: values)
 	/// ```
-	public init(periods: [Period], values: [T], metadata: TimeSeriesMetadata = TimeSeriesMetadata()) {
+	public init(periods: [Period], values: [T], metadata: TimeSeriesMetadata = TimeSeriesMetadata(), labels: [String]? = nil) {
 		precondition(periods.count == values.count,
 					 "periods and values arrays must have the same count")
+
+		if let labels = labels {
+			precondition(labels.count == periods.count,
+						 "labels array must have the same count as periods and values")
+		}
 
 		// Build dictionary, handling duplicates by keeping last value
 		// Reserve capacity to avoid reallocation during insertion
 		var valueDict: [Period: T] = [:]
 		valueDict.reserveCapacity(periods.count)
 
-		for (period, value) in Swift.zip(periods, values) {
+		var labelDict: [Period: String]?
+		if let labels = labels {
+			labelDict = [:]
+			labelDict?.reserveCapacity(periods.count)
+		}
+
+		for (index, (period, value)) in Swift.zip(periods, values).enumerated() {
 			valueDict[period] = value
+			if let labels = labels {
+				labelDict?[period] = labels[index]
+			}
 		}
 
 		// Sort periods chronologically
 		self.periods = valueDict.keys.sorted()
 		self.values = valueDict
 		self.metadata = metadata
+		self.labels = labelDict
 	}
 
 	/// Creates a time series from a dictionary of period-value pairs.
@@ -173,10 +191,11 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// ]
 	/// let ts = TimeSeries(data: data)
 	/// ```
-	public init(data: [Period: T], metadata: TimeSeriesMetadata = TimeSeriesMetadata()) {
+	public init(data: [Period: T], metadata: TimeSeriesMetadata = TimeSeriesMetadata(), labels: [Period: String]? = nil) {
 		self.periods = data.keys.sorted()
 		self.values = data
 		self.metadata = metadata
+		self.labels = labels
 	}
 
 	// MARK: - Subscript Access
@@ -211,6 +230,21 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// ```
 	public subscript(period: Period, default defaultValue: T) -> T {
 		return values[period] ?? defaultValue
+	}
+
+	/// Returns the label for the specified period, if one exists.
+	///
+	/// - Parameter period: The period to look up.
+	/// - Returns: The label for the period, or nil if not found.
+	///
+	/// ## Example
+	/// ```swift
+	/// if let label = ts.label(for: jan) {
+	///     print("Label: \(label)")
+	/// }
+	/// ```
+	public func label(for period: Period) -> String? {
+		return labels?[period]
 	}
 
 	// MARK: - Computed Properties

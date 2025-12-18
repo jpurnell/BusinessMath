@@ -175,18 +175,18 @@ extension DataTable where Output: CustomStringConvertible {
         var lines: [String] = []
 
         // Header row with column labels
-        var headerRow = "\t"
+		var headerRow = " ".padding(toLength: 16, withPad: " ", startingAt: 0)
         for colInput in columnInputs {
-            headerRow += "\(colInput)\t"
+			headerRow += "\(colInput)".paddingLeft(toLength: 12)
         }
         lines.append(headerRow)
-        lines.append(String(repeating: "-", count: 60))
+		lines.append(String(repeating: "=", count: columnInputs.count * 12 + 16))
 
         // Data rows with row labels
         for (rowIndex, rowInput) in rowInputs.enumerated() {
-            var row = "\(rowInput)\t"
+			var row = "\(rowInput)".padding(toLength: 16, withPad: " ", startingAt: 0)
             for colIndex in 0..<columnInputs.count {
-                row += "\(table[rowIndex][colIndex])\t"
+				row += "\(table[rowIndex][colIndex])".paddingLeft(toLength: 12)
             }
             lines.append(row)
         }

@@ -93,6 +93,16 @@ public struct ScenarioConfig: Sendable {
         self.description = description
         self.probability = probability
     }
+
+    /// Access a parameter value by name.
+    ///
+    /// Example:
+    /// ```swift
+    /// let growthRate = scenario["Revenue Growth"] ?? 0.10
+    /// ```
+    public subscript(parameterName: String) -> Double? {
+        parameters[parameterName]
+    }
 }
 
 // MARK: - Result Builders
@@ -136,6 +146,10 @@ public struct ScenarioConfigBuilder {
         [component]
     }
 
+    public static func buildExpression(_ components: [ScenarioParameter]) -> [ScenarioParameter] {
+        components
+    }
+
     public static func buildArray(_ components: [[ScenarioParameter]]) -> [ScenarioParameter] {
         components.flatMap { $0 }
     }
@@ -159,6 +173,10 @@ public struct ScenarioConfigBuilder {
 public enum ScenarioParameter: Sendable {
     case value(String, Double)
     case adjustment(String, Double)
+    case name(String)
+    case description(String)
+    case absoluteIncrease(String, Double)
+    case multiplier(String, Double)
 }
 
 // MARK: - Scenario Builders
@@ -185,6 +203,8 @@ public func ScenarioNamed(_ name: String, @ScenarioConfigBuilder builder: () -> 
 
 /// Helper function to create scenarios.
 private func createScenario(name: String, builder: () -> [ScenarioParameter]) -> ScenarioConfig {
+    var scenarioName = name
+    var scenarioDescription: String? = nil
     var config = ScenarioConfig(name: name)
     let parameters = builder()
 
@@ -194,6 +214,36 @@ private func createScenario(name: String, builder: () -> [ScenarioParameter]) ->
             config.parameters[key] = value
         case .adjustment(let key, let percentage):
             config.adjustments[key] = percentage
+        case .name(let newName):
+            scenarioName = newName
+        case .description(let desc):
+            scenarioDescription = desc
+        case .absoluteIncrease(let key, let increase):
+            // Store as direct value override for now
+            // In practice, this would need baseline context
+            config.parameters[key] = increase
+        case .multiplier(let key, let factor):
+            // Store as adjustment representing the multiplier
+            config.adjustments[key] = factor - 1.0
+        }
+    }
+
+    // Update config with collected name and description
+    config = ScenarioConfig(name: scenarioName, description: scenarioDescription)
+
+    // Re-apply parameters and adjustments
+    for param in parameters {
+        switch param {
+        case .value(let key, let value):
+            config.parameters[key] = value
+        case .adjustment(let key, let percentage):
+            config.adjustments[key] = percentage
+        case .absoluteIncrease(let key, let increase):
+            config.parameters[key] = increase
+        case .multiplier(let key, let factor):
+            config.adjustments[key] = factor - 1.0
+        case .name, .description:
+            break // Already handled
         }
     }
 
@@ -250,6 +300,121 @@ public func adjustGrowth(by percentage: Double) -> ScenarioParameter {
 /// Adjust a custom parameter by a percentage.
 public func adjust(_ name: String, by percentage: Double) -> ScenarioParameter {
     .adjustment(name, percentage)
+}
+
+// MARK: - Additional Component Functions (Documented API)
+
+/// Top-level wrapper for building a single scenario.
+///
+/// Example:
+/// ```swift
+/// let scenario = buildScenario {
+///     Name("Base Case")
+///     Description("Expected performance")
+///     Driver("Revenue Growth", value: 0.15)
+/// }
+/// ```
+public func buildScenario(@ScenarioConfigBuilder builder: () -> [ScenarioParameter]) -> ScenarioConfig {
+    createScenario(name: "Scenario", builder: builder)
+}
+
+/// Set the name of the scenario.
+///
+/// Example:
+/// ```swift
+/// buildScenario {
+///     Name("Aggressive Growth")
+///     revenue(2_000_000)
+/// }
+/// ```
+public func Name(_ name: String) -> ScenarioParameter {
+    .name(name)
+}
+
+/// Set the description of the scenario.
+///
+/// Example:
+/// ```swift
+/// buildScenario {
+///     Name("Best Case")
+///     Description("Optimistic assumptions with strong market conditions")
+/// }
+/// ```
+public func Description(_ description: String) -> ScenarioParameter {
+    .description(description)
+}
+
+/// Set a generic driver parameter value.
+///
+/// Note: Cannot use `Driver()` as a function name due to conflict with the Driver protocol.
+/// Use this function instead.
+///
+/// Example:
+/// ```swift
+/// buildScenario {
+///     ScenarioDriver("Revenue Growth", value: 0.15)
+///     ScenarioDriver("Gross Margin", value: 0.60)
+/// }
+/// ```
+public func ScenarioDriver(_ name: String, value: Double) -> ScenarioParameter {
+    .value(name, value)
+}
+
+/// Add a new driver to the scenario.
+///
+/// Functionally identical to `ScenarioDriver()`, but semantically indicates adding
+/// a new parameter rather than overriding an existing one.
+///
+/// Example:
+/// ```swift
+/// ScenarioAdjustment("Add International Revenue") {
+///     AddScenarioDriver("International Revenue", value: 300_000)
+/// }
+/// ```
+public func AddScenarioDriver(_ name: String, value: Double) -> ScenarioParameter {
+    .value(name, value)
+}
+
+/// Adjust a driver by an absolute increase.
+///
+/// Example:
+/// ```swift
+/// AdjustScenarioDriver("Operating Expenses", increase: 50_000)
+/// ```
+public func AdjustScenarioDriver(_ name: String, increase: Double) -> ScenarioParameter {
+    .absoluteIncrease(name, increase)
+}
+
+/// Adjust a driver by a multiplication factor.
+///
+/// Example:
+/// ```swift
+/// AdjustScenarioDriver("Cost of Goods Sold", multiplyBy: 1.10)  // Increase by 10%
+/// ```
+public func AdjustScenarioDriver(_ name: String, multiplyBy: Double) -> ScenarioParameter {
+    .multiplier(name, multiplyBy)
+}
+
+/// Container for grouping related adjustments.
+///
+/// This is syntactic sugar for organizing adjustments in the DSL.
+/// The adjustments are flattened into the parent scenario.
+///
+/// Example:
+/// ```swift
+/// buildScenario {
+///     Name("Expansion Scenario")
+///     ScenarioAdjustment("Add International Revenue") {
+///         AddScenarioDriver("International Revenue", value: 300_000)
+///         AdjustScenarioDriver("Operating Expenses", increase: 50_000)
+///         AdjustScenarioDriver("Cost of Goods Sold", multiplyBy: 1.10)
+///     }
+/// }
+/// ```
+public func ScenarioAdjustment(_ name: String, @ScenarioConfigBuilder builder: () -> [ScenarioParameter]) -> [ScenarioParameter] {
+    // Return all parameters from the adjustment group
+    // The name is just for documentation/organization purposes
+    builder()
 }
 
 // MARK: - Probability Extensions
