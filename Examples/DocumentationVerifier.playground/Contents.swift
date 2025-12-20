@@ -1,133 +1,207 @@
+import Foundation
 import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-let simulator = ReciprocalRegressionSimulator<Double>(
-	a: 0.2,
-	b: 0.3,
-	sigma: 0.2
-)
+	// Revenue grew from $100k to $120k
+	let growth = try growthRate(from: 100_000, to: 120_000)
+	print(growth)
+	// Result: 0.20 (20% growth)
 
-// Generate 100 observations with x uniform on [0, 10]
-let data = simulator.simulate(n: 100, xRange: 0.0...10.0)
+	// Negative growth (decline)
+	let decline = try growthRate(from: 120_000, to: 100_000)
+	print(decline)
+	// Result: -0.1667 (-16.67% decline)
 
-// Each data point contains (x, y)
-for point in data.prefix(5) {
-	print("x = \(point.x), y = \(point.y)")
-}
+	// Revenue trajectory: $100k → $110k → $125k → $150k over 3 years
+	let compoundGrowth = cagr(
+		beginningValue: 100_000,
+		endingValue: 150_000,
+		years: 3
+	)
+	// Result: ~0.1447 (14.47% per year)
 
-	// For each x, generate y according to:
-	// y = 1/(a + b*x) + noise, where noise ~ Normal(0, sigma)
+	// Verify: does 14.47% compound for 3 years give $150k?
+	let verification = 100_000 * pow(1 + compoundGrowth, 3)
+	print(verification)
+	// Result: ~150,000 ✓
 
-	// With a=0.2, b=0.3, this creates specific y patterns:
-	let x1 = 1.0
-	let mu1 = 1.0 / (0.2 + 0.3 * x1)  // = 1/0.5 = 2.0
+	// Project $100k base with 15% annual growth for 5 years
+	let projection = applyGrowth(
+		baseValue: 100_000,
+		rate: 0.15,
+		periods: 5,
+		compounding: .annual
+	)
+	// Result: [100k, 115k, 132.25k, 152.09k, 174.90k, 201.14k]
+	print(projection.map({"\($0.number(2))"}).joined(separator: ", "))
 
-	let x5 = 5.0
-	let mu5 = 1.0 / (0.2 + 0.3 * x5)  // = 1/1.7 ≈ 0.588
+let base = 100_000.0
+let rate = 0.12  // 12% annual rate
+let years = 5
 
-	let x10 = 10.0
-	let mu10 = 1.0 / (0.2 + 0.3 * x10)  // = 1/3.2 ≈ 0.313
+// Annual compounding
+let annual = applyGrowth(baseValue: base, rate: rate, periods: years, compounding: .annual)
+print(annual.last!.number(0))
+// Final: ~176,234
 
-	// The pattern of y values across different x values encodes a, b, sigma!
-	// Maximum likelihood finds the a, b, sigma that best explain this pattern
+// Quarterly compounding (12%/4 = 3% per quarter, 20 quarters)
+let quarterly = applyGrowth(baseValue: base, rate: rate, periods: years * 4, compounding: .quarterly)
+print(quarterly.last!.number(0))
+// Final: ~180,611 (higher due to more frequent compounding)
 
-let fitter = ReciprocalRegressionFitter<Double>()
+// Monthly compounding (12%/12 = 1% per month, 60 months)
+let monthly = applyGrowth(baseValue: base, rate: rate, periods: years * 12, compounding: .monthly)
+print(monthly.last!.number(0))
+// Final: ~181,670
 
-let result = try fitter.fit(
-	data: data,
-	initialGuess: ReciprocalRegressionModel<Double>.Parameters(
-		a: 0.5, b: 0.5, sigma: 0.5
-	),
-	learningRate: 0.001,
-	maxIterations: 1000
-)
+// Daily compounding
+let daily = applyGrowth(baseValue: base, rate: rate, periods: years * 365, compounding: .daily)
+print(daily.last!.number(0))
+// Final: ~182,194
 
-print("Fitted parameters:")
-print("  a = \(result.parameters.a)")
-print("  b = \(result.parameters.b)")
-print("  sigma = \(result.parameters.sigma)")
-print("  Converged: \(result.converged)")
+// Continuous compounding (e^(rt))
+let continuous = applyGrowth(baseValue: base, rate: rate, periods: years, compounding: .continuous)
+print(continuous.last!.number(0))
+// Final: ~182,212 (theoretical maximum)
 
-let trueParams = ["a": 0.2, "b": 0.3, "sigma": 0.2]
-let recoveredParams = [
-	"a": result.parameters.a,
-	"b": result.parameters.b,
-	"sigma": result.parameters.sigma
-]
+	// Q1 2024: $500k, Q1 2025: $650k
+	let quarterlyGrowth = try growthRate(from: 500_000, to: 650_000)
+	// Result: 30% year-over-year growth
 
-for (name, trueValue) in trueParams {
-	let recovered = recoveredParams[name]!
-	let relError = abs(recovered - trueValue) / abs(trueValue)
-	let status = relError <= 0.10 ? "✓ PASS" : "✗ FAIL"
-
-	print("\(name): true = \(trueValue), recovered = \(recovered) \(status)")
-}
-
-let report = try ReciprocalParameterRecoveryCheck.run(
-	trueA: 0.2,
-	trueB: 0.3,
-	trueSigma: 0.2,
-	n: 100,
-	xRange: 0.0...10.0,
-	tolerance: 0.10  // 10% relative error
-)
-
-print(report.summary)
-
-let reports = try ReciprocalParameterRecoveryCheck.runMultiple(
-	trueA: 0.2,
-	trueB: 0.3,
-	trueSigma: 0.2,
-	replicates: 10,
-	n: 100
-)
-
-print(ReciprocalParameterRecoveryCheck.summarizeReplicates(reports))
-
-let sampleSizes = [20, 50, 100, 200, 500]
-
-for n in sampleSizes {
-	let report = try ReciprocalParameterRecoveryCheck.run(
-		trueA: 0.2, trueB: 0.3, trueSigma: 0.2,
-		n: n
+	// Project next 4 quarters at this rate
+	let forecast = applyGrowth(
+		baseValue: 650_000,
+		rate: 0.30 / 4,  // Quarterly rate
+		periods: 4,
+		compounding: .quarterly
 	)
 
-	print("N = \(n): \(report.passed ? "✓" : "✗")")
-}
+	// City grew from 100k to 125k residents over 5 years
+	let populationCAGR = cagr(beginningValue: 100_000, endingValue: 125_000, years: 5)
+	// Result: ~4.56% per year
 
-	// 1. High noise
-	let largeSigmaReport = try ReciprocalParameterRecoveryCheck.run(
-		trueA: 0.2, trueB: 0.3, trueSigma: 1.0  // Large sigma
-	)
-	print("Large Parameters:\n\n\(largeSigmaReport.summary)")
+	// Project 10 years forward
+	let population2035 = 125_000 * pow(1 + populationCAGR, 10)
+	print(population2035.number(0))
+	// Result: ~195,312 residents
 
-	// 2. Extreme parameter values
-	let extraParameterReport = try ReciprocalParameterRecoveryCheck.run(
-		trueA: 0.001, trueB: 10.0, trueSigma: 0.1
-	)
-	print("Extra Parameters:\n\n\(extraParameterReport.summary)")
+	// Portfolio: $50k → $87k over 8 years
+	let investmentReturn = cagr(beginningValue: 50_000, endingValue: 86_000, years: 8)
+	print(investmentReturn)
+	// Result: ~7.0% per year (good long-term return)
+	
+	// Historical revenue shows steady ~$5k/month increase
+//	let periods = (1...12).map { Period.month(year: 2024, month: $0) }
+//	let revenue: [Double] = [100, 105, 110, 108, 115, 120, 118, 125, 130, 128, 135, 140]
+//
+//	let historical = TimeSeries(periods: periods, values: revenue)
+//
+//	// Fit linear trend
+//	var trend = LinearTrend<Double>()
+//	try trend.fit(to: historical)
+//
+//	// Project 6 months forward
+//	let linearForecast = try trend.project(periods: 6)
+//	print(linearForecast.valuesArray.map({"\($0.number(0))"}).joined(separator: ", "))
+//	// Result: [142, 145, 148, 152, 155, 159] (approximately)
+//
+//
+//	// Revenue doubling every few years
+//	let periods = (0..<10).map { Period.year(2015 + $0) }
+//	let revenue: [Double] = [100, 115, 130, 155, 175, 200, 235, 265, 310, 350]
+//
+//	let historical = TimeSeries(periods: periods, values: revenue)
+//
+//	// Fit exponential trend
+//	var trend = ExponentialTrend<Double>()
+//	try trend.fit(to: historical)
+//
+//	// Project 5 years forward
+//	let exponentialForecast = try trend.project(periods: 5)
+//	print(exponentialForecast.valuesArray.map({"\($0.number(0))"}).joined(separator: ", "))
+//	// Result: Continues exponential growth pattern
 
-	// 3. Poor initialization
-//	let fitter = ReciprocalRegressionFitter<Double>()
-	let poor = try fitter.fit(
-		data: data,
-		initialGuess: ReciprocalRegressionModel<Double>.Parameters(a: 10.0, b: 10.0, sigma: 5.0),  // Way off
-		maxIterations: 100
-	)
-print("Poor initialization:\n\n\(poor)")
+//	// User adoption starts slow, accelerates, then plateaus
+//	let periods = (0..<24).map { Period.month(year: 2023 + $0/12, month: ($0 % 12) + 1) }
+//	let users: [Double] = [100, 150, 250, 400, 700, 1200, 2000, 3500, 5500, 8000,
+//							11000, 14000, 17000, 19500, 21500, 23000, 24000, 24500,
+//							24800, 24900, 24950, 24970, 24985, 24990]
+//
+//	let historical = TimeSeries(periods: periods, values: users)
+//
+//	// Fit logistic trend with capacity of 25,000 users
+//	var trend = LogisticTrend<Double>(capacity: 25_000)
+//	try trend.fit(to: historical)
+//
+//	// Project 12 months forward
+//	let logisticForecast = try trend.project(periods: 12)
+//	print(logisticForecast.valuesArray.map({"\($0.number(0))"}).joined(separator: ", "))
+//	// Result: Approaches but never exceeds 25,000
 
-let reportSample = try ReciprocalParameterRecoveryCheck.run(trueA: 0.2, trueB: 0.3, trueSigma: 0.2)
+//	// Custom quadratic trend: y = 0.5x² + 10x + 100
+//	// For playgrounds, define the closure separately with explicit type
+//	let quadraticFunction: @Sendable (Double) -> Double = { x in
+//		return 0.5 * x * x + 10.0 * x + 100.0
+//	}
+//
+//	var trend = CustomTrend<Double>(trendFunction: quadraticFunction)
+//
+//	// Fit to historical data to set metadata
+//	let historical = TimeSeries(
+//		periods: [Period.month(year: 2025, month: 1)],
+//		values: [100.0]
+//	)
+//	try trend.fit(to: historical)
+//
+//	// Project future values using the custom function
+//	let customForecast = try trend.project(periods: 12)
+//print(customForecast.valuesArray.map({"\($0.number(0))"}).joined(separator: ", "))
 
-if reportSample.passed {
-	print("✓ Model validation passed!")
-	print("  All parameters recovered within \(reportSample.tolerance.percent()) tolerance")
-} else {
-	print("✗ Model validation failed!")
-	print("  Check which parameters failed:")
-	for (name, passed) in reportSample.withinTolerance {
-		if !passed {
-			print("  - \(name): \(reportSample.relativeErrors[name]!.percent()) error")
-		}
-	}
-}
+	// Quarterly revenue with Q4 holiday spike
+	let periods = (0..<12).map { Period.quarter(year: 2022 + $0/4, quarter: ($0 % 4) + 1) }
+	let revenue: [Double] = [100, 120, 110, 150,  // 2022
+							 105, 125, 115, 160,  // 2023
+							 110, 130, 120, 170]  // 2024
+
+	let ts = TimeSeries(periods: periods, values: revenue)
+
+	// Calculate seasonal indices (4 quarters per year)
+	let indices = try seasonalIndices(timeSeries: ts, periodsPerYear: 4)
+	// Result: [~0.85, ~1.00, ~0.91, ~1.24]
+	// Q1: 16% below average
+	// Q2: 1% above average
+	// Q3: 7% below average
+	// Q4: 22% above average (holiday season!)
+	print(indices.map({"\($0.number(2))"}).joined(separator: ", "))
+
+	// Remove seasonal effects
+	let deseasonalized = try seasonallyAdjust(timeSeries: ts, indices: indices)
+	print(deseasonalized.map({"\($0.number(0))"}).joined(separator: ", "))
+	// Original: [100, 120, 110, 150, ...]
+	// Deseasonalized: [~119, ~119, ~118, ~123, ...]
+	// Now you can see the true trend without seasonal noise
+
+var trend = LinearTrend<Double>()
+try trend.fit(to: deseasonalized)
+let trendForecast = try trend.project(periods: 4)
+
+// Reapply seasonal pattern
+let seasonalForecast = try applySeasonal(timeSeries: trendForecast, indices: indices)
+print(seasonalForecast.map({"\($0.number(0))"}).joined(separator: ", "))
+// Result: Trend forecast × seasonal indices = realistic forecast
+
+let decomposition = try decomposeTimeSeries(
+	timeSeries: ts,
+	periodsPerYear: 4,
+	method: .multiplicative
+)
+
+print("Trend:", decomposition.trend.valuesArray)
+// Long-term direction (increasing, decreasing, flat)
+
+print("Seasonal:", decomposition.seasonal.valuesArray)
+// Recurring patterns (same each cycle)
+
+print("Residual:", decomposition.residual.valuesArray)
+// Random noise (what's left after removing trend and seasonal)

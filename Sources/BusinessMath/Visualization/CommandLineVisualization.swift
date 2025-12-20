@@ -131,11 +131,11 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 		let paddedBar = bar.padding(toLength: maxBarWidth, withPad: " ", startingAt: 0)
 
 		// Calculate percentage
-		let percentage = totalCount > 0 ? (Double(bin.count) / Double(totalCount) * 100.0) : 0.0
+		let percentage = totalCount > 0 ? (Double(bin.count) / Double(totalCount)) : 0.0
 
 		// Format the line based on decimal places
 		let line: String
-		line = "[\(bin.range.lowerBound.digits(decimalPlaces).paddingLeft(toLength: 8)) - \(bin.range.upperBound.digits(decimalPlaces).paddingLeft(toLength: 8))):  \(paddedBar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.digits(1))%)\n"
+		line = "[\(bin.range.lowerBound.number(decimalPlaces).paddingLeft(toLength: 8)) - \(bin.range.upperBound.number(decimalPlaces).paddingLeft(toLength: 8))):  \(paddedBar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.percent(1)))\n"
 		output += line
 	}
 
