@@ -80,7 +80,11 @@ public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Doubl
 @available(macOS 11.0, *)
 public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) throws -> T where T: BinaryFloatingPoint {
 	guard degreesOfFreedom > 0 else {
-		throw DistributionError.invalidDegreesOfFreedom(degreesOfFreedom)
+		throw BusinessMathError.invalidInput(
+			message: "Degrees of freedom must be positive",
+			value: "\(degreesOfFreedom)",
+			expectedRange: "> 0"
+		)
 	}
 	return distributionChiSquared(degreesOfFreedom: degreesOfFreedom, seeds: seeds)
 }

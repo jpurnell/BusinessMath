@@ -42,10 +42,10 @@ public struct PresentValueTool: MCPToolHandler, Sendable {
 
         let result = """
         Present Value Calculation:
-        • Future Value: \(futureValue.formatCurrency())
-        • Interest Rate: \(rate.formatPercentage())
+        • Future Value: \(futureValue.currency())
+        • Interest Rate: \(rate.percent())
         • Periods: \(periods)
-        • Present Value: \(pv.formatCurrency())
+        • Present Value: \(pv.currency())
         """
 
         return .success(text: result)
@@ -92,10 +92,10 @@ public struct FutureValueTool: MCPToolHandler, Sendable {
 
         let result = """
         Future Value Calculation:
-        • Present Value: \(presentValue.formatCurrency())
-        • Interest Rate: \(rate.formatPercentage())
+        • Present Value: \(presentValue.currency())
+        • Interest Rate: \(rate.percent())
         • Periods: \(periods)
-        • Future Value: \(fv.formatCurrency())
+        • Future Value: \(fv.currency())
         """
 
         return .success(text: result)
@@ -142,18 +142,18 @@ public struct NPVTool: MCPToolHandler, Sendable {
 
         var cashFlowDetails = ""
         for (index, cf) in cashFlows.enumerated() {
-            cashFlowDetails += "\n  Period \(index): \(cf.formatCurrency())"
+            cashFlowDetails += "\n  Period \(index): \(cf.currency())"
         }
 
         let decision = npvValue > 0 ? "✓ Accept (positive NPV)" : "✗ Reject (negative NPV)"
 
         let result = """
         Net Present Value (NPV) Analysis:
-        • Discount Rate: \(rate.formatPercentage())
+        • Discount Rate: \(rate.percent())
         • Number of Periods: \(cashFlows.count)
         • Cash Flows:\(cashFlowDetails)
 
-        • Net Present Value: \(npvValue.formatCurrency())
+        • Net Present Value: \(npvValue.currency())
         • Decision: \(decision)
         """
 
@@ -202,7 +202,7 @@ public struct IRRTool: MCPToolHandler, Sendable {
 
             var cashFlowDetails = ""
             for (index, cf) in cashFlows.enumerated() {
-                cashFlowDetails += "\n  Period \(index): \(cf.formatCurrency())"
+                cashFlowDetails += "\n  Period \(index): \(cf.currency())"
             }
 
             let result = """
@@ -210,7 +210,7 @@ public struct IRRTool: MCPToolHandler, Sendable {
             • Number of Periods: \(cashFlows.count)
             • Cash Flows:\(cashFlowDetails)
 
-            • Internal Rate of Return: \(irrValue.formatPercentage())
+            • Internal Rate of Return: \(irrValue.percent())
             • Annual Return: \((irrValue * 100).formatDecimal())%
             """
 
@@ -283,14 +283,14 @@ public struct PaymentTool: MCPToolHandler, Sendable {
 
         let result = """
         Loan/Annuity Payment Calculation:
-        • Loan Amount: \(pv.formatCurrency())
-        • Interest Rate: \(rate.formatPercentage()) per period
+        • Loan Amount: \(pv.currency())
+        • Interest Rate: \(rate.percent()) per period
         • Number of Periods: \(periods)
         • Payment Type: \(typeString.capitalized)
 
-        • Periodic Payment: \(pmt.formatCurrency())
-        • Total Payments: \(totalPayments.formatCurrency())
-        • Total Interest: \(totalInterest.formatCurrency())
+        • Periodic Payment: \(pmt.currency())
+        • Total Payments: \(totalPayments.currency())
+        • Total Interest: \(totalInterest.currency())
         """
 
         return .success(text: result)
@@ -352,13 +352,13 @@ public struct AnnuityPresentValueTool: MCPToolHandler, Sendable {
 
         let result = """
         Annuity Present Value:
-        • Payment per Period: \(payment.formatCurrency())
-        • Interest Rate: \(rate.formatPercentage()) per period
+        • Payment per Period: \(payment.currency())
+        • Interest Rate: \(rate.percent()) per period
         • Number of Periods: \(periods)
         • Payment Type: \(typeString.capitalized)
 
-        • Present Value: \(pv.formatCurrency())
-        • Total Payments: \(totalPayments.formatCurrency())
+        • Present Value: \(pv.currency())
+        • Total Payments: \(totalPayments.currency())
         """
 
         return .success(text: result)
@@ -421,14 +421,14 @@ public struct AnnuityFutureValueTool: MCPToolHandler, Sendable {
 
         let result = """
         Annuity Future Value:
-        • Payment per Period: \(payment.formatCurrency())
-        • Interest Rate: \(rate.formatPercentage()) per period
+        • Payment per Period: \(payment.currency())
+        • Interest Rate: \(rate.percent()) per period
         • Number of Periods: \(periods)
         • Payment Type: \(typeString.capitalized)
 
-        • Future Value: \(fv.formatCurrency())
-        • Total Payments: \(totalPayments.formatCurrency())
-        • Total Interest Earned: \(totalInterest.formatCurrency())
+        • Future Value: \(fv.currency())
+        • Total Payments: \(totalPayments.currency())
+        • Total Interest Earned: \(totalInterest.currency())
         """
 
         return .success(text: result)
@@ -536,18 +536,18 @@ public struct XNPVTool: MCPToolHandler, Sendable {
             var cashFlowDetails = ""
             for (index, (date, amount)) in zip(dates, amounts).enumerated() {
                 let dateStr = dateFormatter.string(from: date)
-                cashFlowDetails += "\n  \(index): \(dateStr) - \(amount.formatCurrency())"
+                cashFlowDetails += "\n  \(index): \(dateStr) - \(amount.currency())"
             }
 
             let decision = xnpvValue > 0 ? "✓ Accept (positive NPV)" : "✗ Reject (negative NPV)"
 
             let result = """
             XNPV (Irregular Cash Flows) Analysis:
-            • Annual Discount Rate: \(rate.formatPercentage())
+            • Annual Discount Rate: \(rate.percent())
             • Number of Cash Flows: \(dates.count)
             • Cash Flows:\(cashFlowDetails)
 
-            • Net Present Value: \(xnpvValue.formatCurrency())
+            • Net Present Value: \(xnpvValue.currency())
             • Decision: \(decision)
             """
 
@@ -661,7 +661,7 @@ public struct XIRRTool: MCPToolHandler, Sendable {
             var cashFlowDetails = ""
             for (index, (date, amount)) in zip(dates, amounts).enumerated() {
                 let dateStr = dateFormatter.string(from: date)
-                cashFlowDetails += "\n  \(index): \(dateStr) - \(amount.formatCurrency())"
+                cashFlowDetails += "\n  \(index): \(dateStr) - \(amount.currency())"
             }
 
             let result = """
@@ -669,7 +669,7 @@ public struct XIRRTool: MCPToolHandler, Sendable {
             • Number of Cash Flows: \(dates.count)
             • Cash Flows:\(cashFlowDetails)
 
-            • Internal Rate of Return (Annual): \(xirrValue.formatPercentage())
+            • Internal Rate of Return (Annual): \(xirrValue.percent())
             • Annual Return: \((xirrValue * 100).formatDecimal())%
             """
 

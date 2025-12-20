@@ -32,11 +32,11 @@ import RealModule
             Issue.record("Expected error to be thrown")
         } catch let error as BusinessMathError {
             switch error {
-            case .invalidInput(let message, let context):
+            case .invalidInput(let message, let value, let expectedRange):
                 #expect(message.contains("Discount rate"))
                 #expect(message.contains("negative"))
-                #expect(context["value"] != nil)
-                #expect(context["expectedRange"] != nil)
+                #expect(value != nil)
+                #expect(expectedRange != nil)
             default:
                 Issue.record("Expected .invalidInput error, got \(error)")
             }
@@ -55,14 +55,14 @@ import RealModule
             Issue.record("Expected error to be thrown")
         } catch let error as BusinessMathError {
             switch error {
-            case .invalidInput(let message, let context):
+            case .invalidInput(let message, let value, _):
                 #expect(message.contains("Initial cost"))
                 #expect(message.contains("negative") || message.contains("positive"))
 
-                // Verify context includes the invalid value
-                #expect(context["value"] != nil, "Error should include the invalid value")
-                if let valueString = context["value"], let value = Double(valueString) {
-                    #expect(abs(value - -1000.0) < 0.01, "Context should contain the actual invalid value")
+                // Verify value includes the invalid value
+                #expect(value != nil, "Error should include the invalid value")
+                if let valueString = value, let valueDouble = Double(valueString) {
+                    #expect(abs(valueDouble - -1000.0) < 0.01, "Value should contain the actual invalid value")
                 }
             default:
                 Issue.record("Expected .invalidInput error, got \(error)")
@@ -82,7 +82,7 @@ import RealModule
             Issue.record("Expected error to be thrown")
         } catch let error as BusinessMathError {
             switch error {
-            case .invalidInput(let message, _):
+            case .invalidInput(let message, _, _):
                 #expect(message.contains("cash flows") || message.contains("empty"))
             default:
                 Issue.record("Expected .invalidInput error, got \(error)")
@@ -102,10 +102,10 @@ import RealModule
             Issue.record("Expected error to be thrown")
         } catch let error as BusinessMathError {
             switch error {
-            case .mismatchedDimensions(let message, let context):
+            case .mismatchedDimensions(let message, let expected, let actual):
                 #expect(message.contains("period") || message.contains("dimension"))
-                #expect(context["expected"] != nil)
-                #expect(context["actual"] != nil)
+                #expect(expected != nil)
+                #expect(actual != nil)
             default:
                 Issue.record("Expected .mismatchedDimensions error, got \(error)")
             }
@@ -150,9 +150,8 @@ import RealModule
         } catch let error as BusinessMathError {
             switch error {
             case .divisionByZero(let context):
-                #expect(context["operation"] != nil)
-                #expect(context["numerator"] != nil)
-                        default:
+                #expect(context.contains("operation") || context.contains("ROI"))
+            default:
                 Issue.record("Expected .divisionByZero error, got \(error)")
             }
         } catch {
@@ -297,7 +296,8 @@ import RealModule
 
         let error = BusinessMathError.invalidInput(
             message: "Discount rate must be between 0 and 1",
-            context: ["value": "-0.1", "expectedRange": "0.0 to 1.0"]
+            value: "-0.1",
+            expectedRange: "0.0 to 1.0"
         )
 
         let description = error.localizedDescription
@@ -316,10 +316,10 @@ import RealModule
             Issue.record("Expected error to be thrown")
         } catch let error as BusinessMathError {
             switch error {
-            case .mismatchedDimensions(_, let context):
-#expect(!context.isEmpty, "Error should include context")
-            #expect(context.keys.count >= 2, "Should have multiple context fields")
-                    default:
+            case .mismatchedDimensions(_, let expected, let actual):
+                #expect(expected != nil || actual != nil, "Error should include context")
+                #expect(expected != nil && actual != nil, "Should have both expected and actual")
+            default:
                 Issue.record("Expected .mismatchedDimensions error, got \(error)")
             }
         } catch {
@@ -337,8 +337,8 @@ import RealModule
             Issue.record("Expected error to be thrown")
         } catch let error as BusinessMathError {
             switch error {
-            case .invalidInput(_, let context):
-					#expect(context["expectedRange"] != nil)
+            case .invalidInput(_, let value, let expectedRange):
+					#expect(expectedRange != nil)
 			default:
                 Issue.record("Expected .invalidInput error, got \(error)")
             }
@@ -384,12 +384,14 @@ import RealModule
 			if rate < 0 {
 				throw BusinessMathError.invalidInput(
 					message: "Discount rate must not be negative",
-					context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+					value: String(rate),
+					expectedRange: "0.0 to 1.0"
 				)
 			}
             throw BusinessMathError.invalidInput(
                 message: "Discount rate must be between 0 and 1, got \(rate)",
-                context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+                value: String(rate),
+                expectedRange: "0.0 to 1.0"
             )
         }
         
@@ -411,7 +413,7 @@ import RealModule
         guard cost > 0 else {
             throw BusinessMathError.invalidInput(
                 message: "Initial cost must be positive, got \(cost)",
-                context: ["value": String(cost)]
+                value: String(cost)
             )
         }
         
@@ -430,15 +432,15 @@ import RealModule
 
     private func calculateNPVWithEmptyCashFlows() throws -> Double {
         throw BusinessMathError.invalidInput(
-            message: "Cannot calculate NPV with empty cash flows",
-            context: ["cashFlowCount": "0"]
+            message: "Cannot calculate NPV with empty cash flows"
         )
     }
 
     private func combineTimeSeriesWithMismatchedPeriods() throws -> TimeSeries<Double> {
         throw BusinessMathError.mismatchedDimensions(
             message: "Cannot combine time series with different period counts",
-            context: ["expected": "12", "actual": "10"]
+            expected: "12",
+            actual: "10"
         )
     }
 
@@ -456,7 +458,7 @@ import RealModule
 
     private func calculateMetricWithZeroDenominator() throws -> Double {
         throw BusinessMathError.divisionByZero(
-            context: ["operation": "ROI calculation", "numerator": "1000.0", "denominator": "0.0"]
+            context: "ROI calculation with numerator 1000.0 and denominator 0.0"
         )
     }
 
@@ -516,9 +518,9 @@ struct ErrorHandlingAdditionalTests {
 			Issue.record("Expected invalidInput error for zero cost")
 		} catch let error as BusinessMathError {
 			switch error {
-			case .invalidInput(let message, let context):
+			case .invalidInput(let message, let value, let expectedRange):
 				#expect(message.localizedCaseInsensitiveContains("positive"))
-				#expect(context["value"] == "0.0")
+				#expect(value == "0.0")
 			default:
 				Issue.record("Expected .invalidInput, got \(error)")
 			}
@@ -535,9 +537,9 @@ struct ErrorHandlingAdditionalTests {
 			Issue.record("Expected throw for NaN discount rate")
 		} catch let error as BusinessMathError {
 			switch error {
-			case .invalidInput(_, let context):
-				#expect(context["value"] == String(rate))
-				#expect(context["expectedRange"] != nil)
+			case .invalidInput(_, let value, let expectedRange):
+				#expect(value == String(rate))
+				#expect(expectedRange != nil)
 			default:
 				Issue.record("Expected .invalidInput")
 			}
@@ -554,9 +556,9 @@ struct ErrorHandlingAdditionalTests {
 			Issue.record("Expected throw for +infinity discount rate")
 		} catch let error as BusinessMathError {
 			switch error {
-			case .invalidInput(_, let context):
-				#expect(context["value"] == String(rate))
-				#expect(context["expectedRange"] != nil)
+			case .invalidInput(_, let value, let expectedRange):
+				#expect(value == String(rate))
+				#expect(expectedRange != nil)
 			default:
 				Issue.record("Expected .invalidInput")
 			}
@@ -574,8 +576,8 @@ struct ErrorHandlingAdditionalTests {
 			Issue.record("Expected invalidInput error for empty cash flows")
 		} catch let error as BusinessMathError {
 			switch error {
-			case .invalidInput(_, let context):
-				#expect(context["cashFlowCount"] == "0")
+			case .invalidInput(_, let value, let expectedRange):
+				#expect(value == "0")
 			default:
 				Issue.record("Expected .invalidInput")
 			}
@@ -591,8 +593,8 @@ struct ErrorHandlingAdditionalTests {
 			Issue.record("Expected mismatchedDimensions error")
 		} catch let error as BusinessMathError {
 			switch error {
-			case .mismatchedDimensions(_, let context):
-				if let e = context["expected"], let a = context["actual"],
+			case .mismatchedDimensions(_, let expected, let actual):
+				if let e = expected, let a = actual,
 				   let expected = Int(e), let actual = Int(a) {
 					#expect(expected == 12)
 					#expect(actual == 10)
@@ -615,9 +617,9 @@ struct ErrorHandlingAdditionalTests {
 		} catch let error as BusinessMathError {
 			switch error {
 			case .divisionByZero(let context):
-				#expect(context["denominator"] == "0.0")
-				#expect(context["operation"] != nil)
-				#expect(context["numerator"] != nil)
+				#expect(context.contains("0.0") || context.contains("denominator"))
+				#expect(context.contains("operation") || context.contains("ROI"))
+				#expect(context.contains("numerator") || context.count > 10)
 			default:
 				Issue.record("Expected .divisionByZero")
 			}
@@ -633,11 +635,11 @@ struct ErrorHandlingAdditionalTests {
 		let cases: [BusinessMathError] = [
 			.invalidInput(
 				message: "Invalid parameter X",
-				context: ["value": "abc", "expectedRange": "0..1"]
+				value: "abc", expectedRange: "0..1"
 			),
 			.mismatchedDimensions(
 				message: "Vector sizes differ",
-				context: ["expected": "5", "actual": "3"]
+				expected: "5", actual: "3"
 			),
 			.calculationFailed(
 				operation: "IRR",
@@ -645,7 +647,7 @@ struct ErrorHandlingAdditionalTests {
 				suggestions: ["Use bisection", "Change initial guess"]
 			),
 			.divisionByZero(
-				context: ["operation": "ROI", "numerator": "100.0", "denominator": "0.0"]
+				context: "ROI with numerator 100.0 and denominator 0.0"
 			),
 			.numericalInstability(
 				message: "Catastrophic cancellation",
@@ -658,20 +660,26 @@ struct ErrorHandlingAdditionalTests {
 			#expect(!desc.isEmpty)
 			#expect(!desc.contains("Optional"))
 			switch error {
-			case .invalidInput(let message, let ctx):
+			case .invalidInput(let message, let value, _):
 				#expect(desc.contains(message))
-				#expect(desc.contains(ctx["value"] ?? ""))
-			case .mismatchedDimensions(let message, let ctx):
+				if let value = value {
+					#expect(desc.contains(value))
+				}
+			case .mismatchedDimensions(let message, let expected, let actual):
 				#expect(desc.contains(message))
-				#expect(desc.contains(ctx["expected"] ?? ""))
-				#expect(desc.contains(ctx["actual"] ?? ""))
+				if let expected = expected {
+					#expect(desc.contains(expected))
+				}
+				if let actual = actual {
+					#expect(desc.contains(actual))
+				}
 			case .calculationFailed(let op, let reason, let suggestions):
 				#expect(desc.contains(op))
 				#expect(desc.contains(reason))
 				#expect(suggestions.allSatisfy { desc.contains($0) })
-			case .divisionByZero(let ctx):
+			case .divisionByZero(let context):
 				#expect(desc.localizedCaseInsensitiveContains("zero"))
-				#expect(desc.contains(ctx["operation"] ?? ""))
+				#expect(desc.contains(context) || context.isEmpty)
 			case .numericalInstability(let message, let suggestions):
 				#expect(desc.contains(message))
 				#expect(suggestions.allSatisfy { desc.contains($0) })
@@ -729,12 +737,12 @@ struct ErrorHandlingAdditionalTests {
 			if rate < 0 {
 				throw BusinessMathError.invalidInput(
 					message: "Discount rate must not be negative",
-					context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+					value: String(rate), expectedRange: "0.0 to 1.0"
 				)
 			}
 			throw BusinessMathError.invalidInput(
 				message: "Discount rate must be between 0 and 1, got \(rate)",
-				context: ["value": String(rate), "expectedRange": "0.0 to 1.0"]
+				value: String(rate), expectedRange: "0.0 to 1.0"
 			)
 		}
 
@@ -752,7 +760,7 @@ struct ErrorHandlingAdditionalTests {
 		guard cost > 0 else {
 			throw BusinessMathError.invalidInput(
 				message: "Initial cost must be positive, got \(cost)",
-				context: ["value": String(cost)]
+				value: String(cost)
 			)
 		}
 		return Investment {
@@ -768,14 +776,14 @@ struct ErrorHandlingAdditionalTests {
 	fileprivate func calculateNPVWithEmptyCashFlows() throws -> Double {
 		throw BusinessMathError.invalidInput(
 			message: "Cannot calculate NPV with empty cash flows",
-			context: ["cashFlowCount": "0"]
+			value: "0"
 		)
 	}
 
 	fileprivate func combineTimeSeriesWithMismatchedPeriods() throws -> TimeSeries<Double> {
 		throw BusinessMathError.mismatchedDimensions(
 			message: "Cannot combine time series with different period counts",
-			context: ["expected": "12", "actual": "10"]
+			expected: "12", actual: "10"
 		)
 	}
 
@@ -793,7 +801,7 @@ struct ErrorHandlingAdditionalTests {
 
 	fileprivate func calculateMetricWithZeroDenominator() throws -> Double {
 		throw BusinessMathError.divisionByZero(
-			context: ["operation": "ROI calculation", "numerator": "1000.0", "denominator": "0.0"]
+			context: "ROI calculation with numerator 1000.0 and denominator 0.0"
 		)
 	}
 

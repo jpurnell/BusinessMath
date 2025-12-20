@@ -196,7 +196,7 @@ struct PercentilesAdditionalTests {
 
 	@Test("Empty dataset should throw")
 	func emptyDatasetThrows() {
-		#expect(throws: PercentilesError.emptyValues) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try Percentiles(values: [])
 		}
 	}
@@ -225,7 +225,7 @@ struct PercentilesAdditionalTests {
 	
 	@Test("Non-finite values should throw")
 	func nonFiniteValuesThrow() {
-		#expect(throws: PercentilesError.nonFiniteValues) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try Percentiles(values: [1.0, .infinity, 3.0])
 		}
 	}

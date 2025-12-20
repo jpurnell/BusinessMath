@@ -53,10 +53,10 @@ struct ModelDebuggerTests {
     }
 
 	@Test(.disabled("Trace timing is captured"))
-    func traceTimingCaptured() async {
+    func traceTimingCaptured() {
         let debugger = ModelDebugger()
 
-        let trace = await debugger.trace(value: "Slow Operation") {
+        let trace = debugger.trace(value: "Slow Operation") {
             Thread.sleep(forTimeInterval: 0.01) // 10ms
             return 42.0
         }
@@ -68,10 +68,10 @@ struct ModelDebuggerTests {
     // MARK: - Detailed Calculation Tracing
 
     @Test("Detailed trace captures dependencies")
-    func detailedTraceDependencies() async throws {
+    func detailedTraceDependencies() throws {
         let debugger = ModelDebugger()
 
-        let trace = try await debugger.trace(
+        let trace = try debugger.trace(
             value: "NPV",
             dependencies: ["rate": "0.08", "periods": "10"],
             formula: "PV / (1 + rate)^periods"
@@ -88,10 +88,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Detailed trace with no dependencies")
-    func detailedTraceNoDependencies() async throws {
+    func detailedTraceNoDependencies() throws {
         let debugger = ModelDebugger()
 
-        let trace = try await debugger.trace(
+        let trace = try debugger.trace(
             value: "Constant",
             dependencies: [:],
             formula: "100"
@@ -104,14 +104,14 @@ struct ModelDebuggerTests {
     }
 
     @Test("Detailed trace captures complex calculations")
-    func detailedTraceComplex() async throws {
+    func detailedTraceComplex() throws {
         let debugger = ModelDebugger()
 
         let principal = 100_000.0
         let rate = 0.08
         let periods = 5
 
-        let trace = try await debugger.trace(
+        let trace = try debugger.trace(
             value: "Future Value",
             dependencies: [
                 "principal": String(principal),
@@ -131,10 +131,10 @@ struct ModelDebuggerTests {
     // MARK: - Diagnostic Reports
 
     @Test("Diagnose exact match")
-    func diagnoseExactMatch() async {
+    func diagnoseExactMatch() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: 100.0,
             expected: 100.0,
             tolerance: 0.01
@@ -145,10 +145,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Diagnose within tolerance")
-    func diagnoseWithinTolerance() async {
+    func diagnoseWithinTolerance() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: 100.5,
             expected: 100.0,
             tolerance: 0.01 // 1% tolerance
@@ -158,10 +158,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Diagnose outside tolerance")
-    func diagnoseOutsideTolerance() async {
+    func diagnoseOutsideTolerance() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: 120.0,
             expected: 100.0,
             tolerance: 0.01
@@ -173,10 +173,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Diagnose with context")
-    func diagnoseWithContext() async {
+    func diagnoseWithContext() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: 90.0,
             expected: 100.0,
             tolerance: 0.05,
@@ -187,10 +187,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Diagnose includes suggestions")
-    func diagnoseIncludesSuggestions() async {
+    func diagnoseIncludesSuggestions() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: 80.0,
             expected: 100.0,
             tolerance: 0.01
@@ -202,10 +202,10 @@ struct ModelDebuggerTests {
     // MARK: - Validation Constraints
 
     @Test("Validate positive constraint passes")
-    func validatePositivePasses() async {
+    func validatePositivePasses() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.validate(
+        let report = debugger.validate(
             value: 100.0,
             name: "revenue",
             constraints: [.positive]
@@ -216,10 +216,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Validate positive constraint fails")
-    func validatePositiveFails() async {
+    func validatePositiveFails() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.validate(
+        let report = debugger.validate(
             value: -50.0,
             name: "revenue",
             constraints: [.positive]
@@ -231,11 +231,11 @@ struct ModelDebuggerTests {
     }
 
     @Test("Validate range constraint")
-    func validateRangeConstraint() async {
+    func validateRangeConstraint() {
         let debugger = ModelDebugger()
 
         // Within range
-        let validReport = await debugger.validate(
+        let validReport = debugger.validate(
             value: 0.05,
             name: "discountRate",
             constraints: [.range(0.0, 1.0)]
@@ -243,7 +243,7 @@ struct ModelDebuggerTests {
         #expect(validReport.isValid)
 
         // Outside range
-        let invalidReport = await debugger.validate(
+        let invalidReport = debugger.validate(
             value: 1.5,
             name: "discountRate",
             constraints: [.range(0.0, 1.0)]
@@ -252,29 +252,29 @@ struct ModelDebuggerTests {
     }
 
     @Test("Validate non-negative constraint")
-    func validateNonNegative() async {
+    func validateNonNegative() {
         let debugger = ModelDebugger()
 
-        #expect(await debugger.validate(value: 0.0, name: "value", constraints: [.nonNegative]).isValid)
-        #expect(await debugger.validate(value: 10.0, name: "value", constraints: [.nonNegative]).isValid)
-        #expect(!(await debugger.validate(value: -0.1, name: "value", constraints: [.nonNegative]).isValid))
+        #expect(debugger.validate(value: 0.0, name: "value", constraints: [.nonNegative]).isValid)
+        #expect(debugger.validate(value: 10.0, name: "value", constraints: [.nonNegative]).isValid)
+        #expect(!debugger.validate(value: -0.1, name: "value", constraints: [.nonNegative]).isValid)
     }
 
     @Test("Validate finite constraint")
-    func validateFinite() async {
+    func validateFinite() {
         let debugger = ModelDebugger()
 
-        #expect(await debugger.validate(value: 100.0, name: "value", constraints: [.finite]).isValid)
-        #expect(!(await debugger.validate(value: .infinity, name: "value", constraints: [.finite]).isValid))
-        #expect(!(await debugger.validate(value: -.infinity, name: "value", constraints: [.finite]).isValid))
-        #expect(!(await debugger.validate(value: .nan, name: "value", constraints: [.finite]).isValid))
+        #expect(debugger.validate(value: 100.0, name: "value", constraints: [.finite]).isValid)
+        #expect(!debugger.validate(value: .infinity, name: "value", constraints: [.finite]).isValid)
+        #expect(!debugger.validate(value: -.infinity, name: "value", constraints: [.finite]).isValid)
+        #expect(!debugger.validate(value: .nan, name: "value", constraints: [.finite]).isValid)
     }
 
     @Test("Validate multiple constraints")
-    func validateMultipleConstraints() async {
+    func validateMultipleConstraints() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.validate(
+        let report = debugger.validate(
             value: 0.08,
             name: "interestRate",
             constraints: [.positive, .range(0.0, 1.0), .finite]
@@ -285,10 +285,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Validate multiple constraints with failures")
-    func validateMultipleConstraintsFailures() async {
+    func validateMultipleConstraintsFailures() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.validate(
+        let report = debugger.validate(
             value: -0.5,
             name: "rate",
             constraints: [.positive, .range(0.0, 1.0)]
@@ -300,30 +300,30 @@ struct ModelDebuggerTests {
     }
 
     @Test("Validate max value constraint")
-    func validateMaxValue() async {
+    func validateMaxValue() {
         let debugger = ModelDebugger()
 
-        #expect(await debugger.validate(value: 50.0, name: "value", constraints: [.maxValue(100.0)]).isValid)
-        #expect(await debugger.validate(value: 100.0, name: "value", constraints: [.maxValue(100.0)]).isValid)
-        #expect(!(await debugger.validate(value: 150.0, name: "value", constraints: [.maxValue(100.0)]).isValid))
+        #expect(debugger.validate(value: 50.0, name: "value", constraints: [.maxValue(100.0)]).isValid)
+        #expect(debugger.validate(value: 100.0, name: "value", constraints: [.maxValue(100.0)]).isValid)
+        #expect(!debugger.validate(value: 150.0, name: "value", constraints: [.maxValue(100.0)]).isValid)
     }
 
     @Test("Validate min value constraint")
-    func validateMinValue() async {
+    func validateMinValue() {
         let debugger = ModelDebugger()
 
-        #expect(await debugger.validate(value: 100.0, name: "value", constraints: [.minValue(50.0)]).isValid)
-        #expect(await debugger.validate(value: 50.0, name: "value", constraints: [.minValue(50.0)]).isValid)
-        #expect(!(await debugger.validate(value: 25.0, name: "value", constraints: [.minValue(50.0)]).isValid))
+        #expect(debugger.validate(value: 100.0, name: "value", constraints: [.minValue(50.0)]).isValid)
+        #expect(debugger.validate(value: 50.0, name: "value", constraints: [.minValue(50.0)]).isValid)
+        #expect(!debugger.validate(value: 25.0, name: "value", constraints: [.minValue(50.0)]).isValid)
     }
 
     // MARK: - Explanations
 
     @Test("Explain difference provides reasons")
-    func explainDifferenceReasons() async {
+    func explainDifferenceReasons() {
         let debugger = ModelDebugger()
 
-        let explanation = await debugger.explain(
+        let explanation = debugger.explain(
             actual: 90.0,
             expected: 100.0,
             context: "Revenue"
@@ -336,10 +336,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Explain percentage difference")
-    func explainPercentageDifference() async {
+    func explainPercentageDifference() {
         let debugger = ModelDebugger()
 
-        let explanation = await debugger.explain(
+        let explanation = debugger.explain(
             actual: 80.0,
             expected: 100.0,
             context: "Sales"
@@ -349,10 +349,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Explain zero expected value")
-    func explainZeroExpected() async {
+    func explainZeroExpected() {
         let debugger = ModelDebugger()
 
-        let explanation = await debugger.explain(
+        let explanation = debugger.explain(
             actual: 50.0,
             expected: 0.0,
             context: "Test"
@@ -365,10 +365,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Explain exact match")
-    func explainExactMatch() async {
+    func explainExactMatch() {
         let debugger = ModelDebugger()
 
-        let explanation = await debugger.explain(
+        let explanation = debugger.explain(
             actual: 100.0,
             expected: 100.0,
             context: "Match"
@@ -381,10 +381,10 @@ struct ModelDebuggerTests {
     // MARK: - Edge Cases
 
     @Test("Trace with NaN result")
-    func traceNaNResult() async {
+    func traceNaNResult() {
         let debugger = ModelDebugger()
 
-        let trace = await debugger.trace(value: "Invalid") {
+        let trace = debugger.trace(value: "Invalid") {
             Double.nan
         }
 
@@ -392,10 +392,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Trace with infinity result")
-    func traceInfinityResult() async {
+    func traceInfinityResult() {
         let debugger = ModelDebugger()
 
-        let trace = await debugger.trace(value: "Infinite") {
+        let trace = debugger.trace(value: "Infinite") {
             Double.infinity
         }
 
@@ -403,10 +403,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Diagnose NaN values")
-    func diagnoseNaNValues() async {
+    func diagnoseNaNValues() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: .nan,
             expected: 100.0,
             tolerance: 0.01
@@ -416,10 +416,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Diagnose infinity values")
-    func diagnoseInfinityValues() async {
+    func diagnoseInfinityValues() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: .infinity,
             expected: 100.0,
             tolerance: 0.01
@@ -429,10 +429,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Validate with NaN")
-    func validateNaN() async {
+    func validateNaN() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.validate(
+        let report = debugger.validate(
             value: .nan,
             name: "value",
             constraints: [.finite, .positive]
@@ -444,10 +444,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Very small tolerance")
-    func verySmallTolerance() async {
+    func verySmallTolerance() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: 100.001,
             expected: 100.0,
             tolerance: 0.00001 // 0.001%
@@ -457,10 +457,10 @@ struct ModelDebuggerTests {
     }
 
     @Test("Very large tolerance")
-    func veryLargeTolerance() async {
+    func veryLargeTolerance() {
         let debugger = ModelDebugger()
 
-        let report = await debugger.diagnose(
+        let report = debugger.diagnose(
             value: 150.0,
             expected: 100.0,
             tolerance: 1.0 // 100% tolerance
@@ -472,11 +472,11 @@ struct ModelDebuggerTests {
     // MARK: - Integration Tests
 
     @Test("Complete diagnostic workflow")
-    func completeDiagnosticWorkflow() async throws {
+    func completeDiagnosticWorkflow() throws {
         let debugger = ModelDebugger()
 
         // Step 1: Trace calculation
-        let trace = try await debugger.trace(
+        let trace = try debugger.trace(
             value: "Monthly Payment",
             dependencies: [
                 "principal": "200000.0",
@@ -494,7 +494,7 @@ struct ModelDebuggerTests {
         #expect(trace.result != 0)
 
         // Step 2: Validate result
-        let validation = await debugger.validate(
+        let validation = debugger.validate(
             value: trace.result,
             name: "Monthly Payment",
             constraints: [.positive, .finite, .maxValue(10_000.0)]
@@ -504,7 +504,7 @@ struct ModelDebuggerTests {
 
         // Step 3: Compare to expected
         let expectedPayment = 1073.64
-        let diagnostic = await debugger.diagnose(
+        let diagnostic = debugger.diagnose(
             value: trace.result,
             expected: expectedPayment,
             tolerance: 0.01,
@@ -516,90 +516,35 @@ struct ModelDebuggerTests {
     }
 
     @Test("Concurrent debugging operations")
-    func concurrentDebugging() async {
+    func concurrentDebugging() {
         let debugger = ModelDebugger()
 
-        // Run multiple debug operations concurrently using TaskGroup
-        await withTaskGroup(of: Void.self) { group in
-            for index in 0..<100 {
-                group.addTask {
-                    let trace = await debugger.trace(value: "Calc \(index)") {
-                        Double(index) * 2.0
-                    }
-                    #expect(trace.result == Double(index) * 2.0)
-
-                    let validation = await debugger.validate(
-                        value: Double(index),
-                        name: "value",
-                        constraints: [.nonNegative]
-                    )
-                    #expect(validation.isValid)
-                }
+        // Run multiple debug operations concurrently
+        DispatchQueue.concurrentPerform(iterations: 100) { index in
+            let trace = debugger.trace(value: "Calc \(index)") {
+                Double(index) * 2.0
             }
+            #expect(trace.result == Double(index) * 2.0)
+
+            let validation = debugger.validate(
+                value: Double(index),
+                name: "value",
+                constraints: [.nonNegative]
+            )
+            #expect(validation.isValid)
         }
     }
 
     @Test("Debugger is sendable and thread-safe")
-    func debuggerSendable() async {
+    func debuggerSendable() {
         let debugger = ModelDebugger()
 
         // This should compile because ModelDebugger conforms to Sendable
         Task {
-            let trace = await debugger.trace(value: "Async") {
+            let trace = debugger.trace(value: "Async") {
                 42.0
             }
             #expect(trace.result == 42.0)
         }
-    }
-
-    @Test("Real-time tracing captures model calculations")
-    func realTimeTracingIntegration() async {
-        // Create a financial model
-        let q1 = Period.quarter(year: 2025, quarter: 1)
-        let periods = [q1, q1 + 1, q1 + 2, q1 + 3]
-
-        let model = FinancialModel {
-            Revenue("Product Sales", periods: periods, values: [100_000, 110_000, 120_000, 130_000])
-            Revenue("Service Revenue", periods: periods, values: [20_000, 22_000, 24_000, 26_000])
-            Fixed("Rent", 10_000)
-        }
-
-        // Create debugger and enable tracing
-        let debugger = ModelDebugger()
-        await debugger.enableTracing()
-
-        // Perform calculation
-        let q1Revenue = model.totalRevenue(for: q1)
-
-        // Get trace
-        let trace = await debugger.getTrace()
-
-        // Verify the calculation result
-        #expect(q1Revenue == 120_000) // 100,000 + 20,000
-
-        // Verify steps were captured
-        #expect(!trace.steps.isEmpty)
-
-        // Should have captured:
-        // - GetAccount(Product Sales)
-        // - GetAccount(Service Revenue)
-        // - Sum(Revenue Accounts)
-        #expect(trace.steps.count >= 3)
-
-        // Verify step contents
-        let hasProductSales = trace.steps.contains { $0.operation.contains("Product Sales") }
-        let hasServiceRevenue = trace.steps.contains { $0.operation.contains("Service Revenue") }
-        let hasSum = trace.steps.contains { $0.operation.contains("Sum") }
-
-        #expect(hasProductSales)
-        #expect(hasServiceRevenue)
-        #expect(hasSum)
-
-        // Verify the trace can be formatted
-        let formatted = trace.formatted()
-        #expect(!formatted.isEmpty)
-        #expect(formatted.contains("Calculation Trace"))
-
-        await debugger.disableTracing()
     }
 }

@@ -40,9 +40,6 @@ private func formatRatio(_ value: Double, decimals: Int = 2) -> String {
 }
 
 /// Format a percentage
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - 1. Asset Turnover
 
@@ -386,7 +383,7 @@ public struct DebtToEquityTool: MCPToolHandler, Sendable {
 
         Result:
         • Debt to Equity Ratio: \(formatRatio(ratio))
-        • Capital Structure: \(formatPercent(debtPercent)) debt, \(formatPercent(equityPercent)) equity
+        • Capital Structure: \(debtPercent.percent()) debt, \(equityPercent.percent()) equity
         • Interpretation: \(interpretation)
 
         The company has $\(formatNumber(ratio)) in liabilities for every $1 of equity.
@@ -644,7 +641,7 @@ public struct ProfitMarginTool: MCPToolHandler, Sendable {
         • Net Income: $\(formatNumber(netIncome, decimals: 0))
 
         Result:
-        • Profit Margin: \(formatPercent(margin))
+        • Profit Margin: \(margin.percent())
         • Interpretation: \(interpretation)
 
         The company earns $\(formatNumber(margin)) in profit for every $1 of revenue,
@@ -732,7 +729,7 @@ public struct ROETool: MCPToolHandler, Sendable {
         • Shareholder Equity: $\(formatNumber(shareholderEquity, decimals: 0))
 
         Result:
-        • ROE: \(formatPercent(roeValue))
+        • ROE: \(roeValue.percent())
         • Interpretation: \(interpretation)
 
         The company generates $\(formatNumber(roeValue)) in profit for every $1 of shareholder equity,
@@ -826,7 +823,7 @@ public struct ROITool: MCPToolHandler, Sendable {
         • Net Return: $\(formatNumber(netReturn, decimals: 0))
 
         Result:
-        • ROI: \(formatRatio(roiValue)) or \(formatPercent(percentReturn))
+        • ROI: \(formatRatio(roiValue)) or \(percentReturn.percent())
         • Interpretation: \(interpretation)
 
         The investment generated $\(formatNumber(roiValue)) for every $1 invested,

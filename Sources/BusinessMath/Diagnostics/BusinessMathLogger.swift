@@ -43,7 +43,7 @@ public extension Logger {
     /// Main BusinessMath logger for general purpose logging
     ///
     /// Use this for general library operations, initialization, and high-level events.
-    static let businessMath = Logger(
+    static let shared = Logger(
         subsystem: "com.justinpurnell.BusinessMath",
         category: "general"
     )
@@ -382,7 +382,7 @@ public struct Logger: Sendable {
     }
 
     // Category loggers
-    public static let businessMath = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "general")
+    public static let shared = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "general")
     public static let modelExecution = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "model-execution")
     public static let calculations = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "calculations")
     public static let performance = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "performance")

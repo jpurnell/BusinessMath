@@ -103,13 +103,13 @@ public struct SaaSTemplate: TemplateProtocol {
 
     public func validate(parameters: [String: Any]) throws {
         guard let initialMRR = parameters["initialMRR"] as? Double else {
-            throw EnhancedBusinessMathError.missingData(
+            throw BusinessMathError.missingData(
                 account: "initialMRR",
                 period: "template parameters"
             )
         }
         guard initialMRR > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "initialMRR must be positive",
                 value: "\(initialMRR)",
                 expectedRange: "> 0"
@@ -117,13 +117,13 @@ public struct SaaSTemplate: TemplateProtocol {
         }
 
         guard let churnRate = parameters["churnRate"] as? Double else {
-            throw EnhancedBusinessMathError.missingData(
+            throw BusinessMathError.missingData(
                 account: "churnRate",
                 period: "template parameters"
             )
         }
         guard churnRate >= 0 && churnRate <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "churnRate must be between 0.0 and 1.0",
                 value: "\(churnRate)",
                 expectedRange: "0.0 to 1.0"
@@ -131,13 +131,13 @@ public struct SaaSTemplate: TemplateProtocol {
         }
 
         guard let newCustomersPerMonth = parameters["newCustomersPerMonth"] as? Double else {
-            throw EnhancedBusinessMathError.missingData(
+            throw BusinessMathError.missingData(
                 account: "newCustomersPerMonth",
                 period: "template parameters"
             )
         }
         guard newCustomersPerMonth > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "newCustomersPerMonth must be positive",
                 value: "\(newCustomersPerMonth)",
                 expectedRange: "> 0"
@@ -145,13 +145,13 @@ public struct SaaSTemplate: TemplateProtocol {
         }
 
         guard let arpu = parameters["averageRevenuePerUser"] as? Double else {
-            throw EnhancedBusinessMathError.missingData(
+            throw BusinessMathError.missingData(
                 account: "averageRevenuePerUser",
                 period: "template parameters"
             )
         }
         guard arpu > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "averageRevenuePerUser must be positive",
                 value: "\(arpu)",
                 expectedRange: "> 0"
@@ -160,7 +160,7 @@ public struct SaaSTemplate: TemplateProtocol {
 
         if let grossMargin = parameters["grossMargin"] as? Double {
             guard grossMargin >= 0 && grossMargin <= 1 else {
-                throw EnhancedBusinessMathError.invalidInput(
+                throw BusinessMathError.invalidInput(
                     message: "grossMargin must be between 0.0 and 1.0",
                     value: "\(grossMargin)",
                     expectedRange: "0.0 to 1.0"
@@ -170,7 +170,7 @@ public struct SaaSTemplate: TemplateProtocol {
 
         if let cac = parameters["customerAcquisitionCost"] as? Double {
             guard cac > 0 else {
-                throw EnhancedBusinessMathError.invalidInput(
+                throw BusinessMathError.invalidInput(
                     message: "customerAcquisitionCost must be positive",
                     value: "\(cac)",
                     expectedRange: "> 0"
@@ -241,14 +241,14 @@ public struct RetailTemplate: TemplateProtocol {
 
     public func validate(parameters: [String: Any]) throws {
         guard let inventory = parameters["initialInventoryValue"] as? Double, inventory > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "initialInventoryValue must be positive",
                 value: "\(parameters["initialInventoryValue"] ?? "nil")"
             )
         }
 
         guard let revenue = parameters["monthlyRevenue"] as? Double, revenue > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "monthlyRevenue must be positive",
                 value: "\(parameters["monthlyRevenue"] ?? "nil")"
             )
@@ -256,14 +256,14 @@ public struct RetailTemplate: TemplateProtocol {
 
         guard let cogs = parameters["costOfGoodsSoldPercentage"] as? Double,
               cogs >= 0, cogs <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "costOfGoodsSoldPercentage must be between 0.0 and 1.0",
                 value: "\(parameters["costOfGoodsSoldPercentage"] ?? "nil")"
             )
         }
 
         guard let opex = parameters["operatingExpenses"] as? Double, opex > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "operatingExpenses must be positive",
                 value: "\(parameters["operatingExpenses"] ?? "nil")"
             )
@@ -329,35 +329,35 @@ public struct ManufacturingTemplate: TemplateProtocol {
 
     public func validate(parameters: [String: Any]) throws {
         guard let capacity = parameters["productionCapacity"] as? Double, capacity > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "productionCapacity must be positive",
                 value: "\(parameters["productionCapacity"] ?? "nil")"
             )
         }
 
         guard let price = parameters["sellingPricePerUnit"] as? Double, price > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "sellingPricePerUnit must be positive",
                 value: "\(parameters["sellingPricePerUnit"] ?? "nil")"
             )
         }
 
         guard let materialCost = parameters["directMaterialCostPerUnit"] as? Double, materialCost > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "directMaterialCostPerUnit must be positive",
                 value: "\(parameters["directMaterialCostPerUnit"] ?? "nil")"
             )
         }
 
         guard let laborCost = parameters["directLaborCostPerUnit"] as? Double, laborCost > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "directLaborCostPerUnit must be positive",
                 value: "\(parameters["directLaborCostPerUnit"] ?? "nil")"
             )
         }
 
         guard let overhead = parameters["monthlyOverhead"] as? Double, overhead > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "monthlyOverhead must be positive",
                 value: "\(parameters["monthlyOverhead"] ?? "nil")"
             )
@@ -448,28 +448,28 @@ public struct MarketplaceTemplate: TemplateProtocol {
 
     public func validate(parameters: [String: Any]) throws {
         guard let buyers = parameters["initialBuyers"] as? Double, buyers > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "initialBuyers must be positive",
                 value: "\(parameters["initialBuyers"] ?? "nil")"
             )
         }
 
         guard let sellers = parameters["initialSellers"] as? Double, sellers > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "initialSellers must be positive",
                 value: "\(parameters["initialSellers"] ?? "nil")"
             )
         }
 
         guard let txPerBuyer = parameters["monthlyTransactionsPerBuyer"] as? Double, txPerBuyer > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "monthlyTransactionsPerBuyer must be positive",
                 value: "\(parameters["monthlyTransactionsPerBuyer"] ?? "nil")"
             )
         }
 
         guard let aov = parameters["averageOrderValue"] as? Double, aov > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "averageOrderValue must be positive",
                 value: "\(parameters["averageOrderValue"] ?? "nil")"
             )
@@ -477,21 +477,21 @@ public struct MarketplaceTemplate: TemplateProtocol {
 
         guard let takeRate = parameters["takeRate"] as? Double,
               takeRate >= 0, takeRate <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "takeRate must be between 0.0 and 1.0",
                 value: "\(parameters["takeRate"] ?? "nil")"
             )
         }
 
         guard let newBuyers = parameters["newBuyersPerMonth"] as? Double, newBuyers >= 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "newBuyersPerMonth must be non-negative",
                 value: "\(parameters["newBuyersPerMonth"] ?? "nil")"
             )
         }
 
         guard let newSellers = parameters["newSellersPerMonth"] as? Double, newSellers >= 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "newSellersPerMonth must be non-negative",
                 value: "\(parameters["newSellersPerMonth"] ?? "nil")"
             )
@@ -499,7 +499,7 @@ public struct MarketplaceTemplate: TemplateProtocol {
 
         guard let buyerChurn = parameters["buyerChurnRate"] as? Double,
               buyerChurn >= 0, buyerChurn <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "buyerChurnRate must be between 0.0 and 1.0",
                 value: "\(parameters["buyerChurnRate"] ?? "nil")"
             )
@@ -507,7 +507,7 @@ public struct MarketplaceTemplate: TemplateProtocol {
 
         guard let sellerChurn = parameters["sellerChurnRate"] as? Double,
               sellerChurn >= 0, sellerChurn <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "sellerChurnRate must be between 0.0 and 1.0",
                 value: "\(parameters["sellerChurnRate"] ?? "nil")"
             )
@@ -590,28 +590,28 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
 
     public func validate(parameters: [String: Any]) throws {
         guard let subscribers = parameters["initialSubscribers"] as? Double, subscribers > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "initialSubscribers must be positive",
                 value: "\(parameters["initialSubscribers"] ?? "nil")"
             )
         }
 
         guard let price = parameters["monthlyBoxPrice"] as? Double, price > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "monthlyBoxPrice must be positive",
                 value: "\(parameters["monthlyBoxPrice"] ?? "nil")"
             )
         }
 
         guard let cogs = parameters["costOfGoodsPerBox"] as? Double, cogs > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "costOfGoodsPerBox must be positive",
                 value: "\(parameters["costOfGoodsPerBox"] ?? "nil")"
             )
         }
 
         guard let shipping = parameters["shippingCostPerBox"] as? Double, shipping > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "shippingCostPerBox must be positive",
                 value: "\(parameters["shippingCostPerBox"] ?? "nil")"
             )
@@ -619,21 +619,21 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
 
         guard let churn = parameters["monthlyChurnRate"] as? Double,
               churn >= 0, churn <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "monthlyChurnRate must be between 0.0 and 1.0",
                 value: "\(parameters["monthlyChurnRate"] ?? "nil")"
             )
         }
 
         guard let newSubs = parameters["newSubscribersPerMonth"] as? Double, newSubs > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "newSubscribersPerMonth must be positive",
                 value: "\(parameters["newSubscribersPerMonth"] ?? "nil")"
             )
         }
 
         guard let cac = parameters["customerAcquisitionCost"] as? Double, cac > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "customerAcquisitionCost must be positive",
                 value: "\(parameters["customerAcquisitionCost"] ?? "nil")"
             )
@@ -765,7 +765,7 @@ public struct RealEstateTemplate: TemplateProtocol {
 
     public func validate(parameters: [String: Any]) throws {
         guard let purchasePrice = parameters["purchasePrice"] as? Double, purchasePrice > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "purchasePrice must be positive",
                 value: "\(parameters["purchasePrice"] ?? "nil")"
             )
@@ -773,7 +773,7 @@ public struct RealEstateTemplate: TemplateProtocol {
 
         guard let downPayment = parameters["downPaymentPercentage"] as? Double,
               downPayment >= 0, downPayment <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "downPaymentPercentage must be between 0.0 and 1.0",
                 value: "\(parameters["downPaymentPercentage"] ?? "nil")"
             )
@@ -781,21 +781,21 @@ public struct RealEstateTemplate: TemplateProtocol {
 
         guard let interestRate = parameters["interestRate"] as? Double,
               interestRate >= 0, interestRate <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "interestRate must be between 0.0 and 1.0",
                 value: "\(parameters["interestRate"] ?? "nil")"
             )
         }
 
         guard let loanTerm = parameters["loanTermYears"] as? Double, loanTerm > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "loanTermYears must be positive",
                 value: "\(parameters["loanTermYears"] ?? "nil")"
             )
         }
 
         guard let rent = parameters["annualRent"] as? Double, rent > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "annualRent must be positive",
                 value: "\(parameters["annualRent"] ?? "nil")"
             )
@@ -803,7 +803,7 @@ public struct RealEstateTemplate: TemplateProtocol {
 
         if let vacancy = parameters["vacancyRate"] as? Double {
             guard vacancy >= 0, vacancy <= 1 else {
-                throw EnhancedBusinessMathError.invalidInput(
+                throw BusinessMathError.invalidInput(
                     message: "vacancyRate must be between 0.0 and 1.0",
                     value: "\(vacancy)"
                 )
@@ -811,7 +811,7 @@ public struct RealEstateTemplate: TemplateProtocol {
         }
 
         guard let opex = parameters["annualOperatingExpenses"] as? Double, opex > 0 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "annualOperatingExpenses must be positive",
                 value: "\(parameters["annualOperatingExpenses"] ?? "nil")"
             )
@@ -819,7 +819,7 @@ public struct RealEstateTemplate: TemplateProtocol {
 
         guard let appreciation = parameters["annualAppreciationRate"] as? Double,
               appreciation >= -1, appreciation <= 1 else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "annualAppreciationRate must be between -1.0 and 1.0",
                 value: "\(parameters["annualAppreciationRate"] ?? "nil")"
             )
@@ -827,7 +827,7 @@ public struct RealEstateTemplate: TemplateProtocol {
 
         if let closingCosts = parameters["closingCostsPercentage"] as? Double {
             guard closingCosts >= 0, closingCosts <= 1 else {
-                throw EnhancedBusinessMathError.invalidInput(
+                throw BusinessMathError.invalidInput(
                     message: "closingCostsPercentage must be between 0.0 and 1.0",
                     value: "\(closingCosts)"
                 )
@@ -836,7 +836,7 @@ public struct RealEstateTemplate: TemplateProtocol {
 
         if let rentGrowth = parameters["rentGrowthRate"] as? Double {
             guard rentGrowth >= -1, rentGrowth <= 1 else {
-                throw EnhancedBusinessMathError.invalidInput(
+                throw BusinessMathError.invalidInput(
                     message: "rentGrowthRate must be between -1.0 and 1.0",
                     value: "\(rentGrowth)"
                 )
@@ -845,7 +845,7 @@ public struct RealEstateTemplate: TemplateProtocol {
 
         if let taxRate = parameters["taxRate"] as? Double {
             guard taxRate >= 0, taxRate <= 1 else {
-                throw EnhancedBusinessMathError.invalidInput(
+                throw BusinessMathError.invalidInput(
                     message: "taxRate must be between 0.0 and 1.0",
                     value: "\(taxRate)"
                 )

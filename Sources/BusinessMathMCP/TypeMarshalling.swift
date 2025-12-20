@@ -332,23 +332,10 @@ extension Dictionary where Key == String, Value == MCP.Value {
 // MARK: - Formatting Helpers
 
 extension Double {
-    /// Format as currency
-    public func formatCurrency(decimals: Int = 2) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = decimals
-        formatter.minimumFractionDigits = decimals
-        return formatter.string(from: NSNumber(value: self)) ?? "$\(self)"
-    }
-
     /// Format as percentage
+    @available(*, deprecated, message: "Use .percent() from BusinessMath extension instead")
     public func formatPercentage(decimals: Int = 2) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = decimals
-        formatter.minimumFractionDigits = decimals
-        return formatter.string(from: NSNumber(value: self)) ?? "\(self * 100)%"
+        return self.percent(decimals)
     }
 
     /// Format as decimal

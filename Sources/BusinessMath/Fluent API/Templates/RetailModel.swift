@@ -50,6 +50,14 @@ public struct RetailModel: Sendable {
     /// Seasonal multipliers by month (1-12)
     public let seasonalMultipliers: [Int: Double]
 
+    // Store-level properties (optional, for multi-store models)
+    public let numberOfStores: Int?
+    public let averageStoreRevenue: Double?
+    public let sameStoreSalesGrowth: Double?
+    public let footTraffic: Double?
+    public let conversionRate: Double?
+    public let averageTransaction: Double?
+
     // MARK: - Initialization
 
     public init(
@@ -64,9 +72,76 @@ public struct RetailModel: Sendable {
         self.costOfGoodsSoldPercentage = costOfGoodsSoldPercentage
         self.operatingExpenses = operatingExpenses
         self.seasonalMultipliers = seasonalMultipliers
+
+        // Store-level properties not used in this initializer
+        self.numberOfStores = nil
+        self.averageStoreRevenue = nil
+        self.sameStoreSalesGrowth = nil
+        self.footTraffic = nil
+        self.conversionRate = nil
+        self.averageTransaction = nil
+    }
+
+    /// Store-focused initializer for multi-location retail businesses.
+    ///
+    /// This initializer calculates aggregate values from store-level metrics.
+    ///
+    /// - Parameters:
+    ///   - numberOfStores: Number of retail locations
+    ///   - averageStoreRevenue: Average monthly revenue per store
+    ///   - sameStoreSalesGrowth: Same-store sales growth rate (comp store growth)
+    ///   - footTraffic: Average monthly customer visits per store
+    ///   - conversionRate: Percentage of visitors who make a purchase
+    ///   - averageTransaction: Average transaction value
+    ///   - costOfGoodsSold: COGS as percentage of revenue
+    ///   - operatingExpensesPerStore: Monthly operating expenses per store
+    public init(
+        numberOfStores: Int,
+        averageStoreRevenue: Double,
+        sameStoreSalesGrowth: Double,
+        footTraffic: Double,
+        conversionRate: Double,
+        averageTransaction: Double,
+        costOfGoodsSold: Double,
+        operatingExpensesPerStore: Double
+    ) {
+        self.numberOfStores = numberOfStores
+        self.averageStoreRevenue = averageStoreRevenue
+        self.sameStoreSalesGrowth = sameStoreSalesGrowth
+        self.footTraffic = footTraffic
+        self.conversionRate = conversionRate
+        self.averageTransaction = averageTransaction
+
+        // Calculate aggregate values
+        self.monthlyRevenue = averageStoreRevenue * Double(numberOfStores)
+        self.costOfGoodsSoldPercentage = costOfGoodsSold
+        self.operatingExpenses = operatingExpensesPerStore * Double(numberOfStores)
+
+        // Estimate initial inventory (rough rule: ~2 months of COGS)
+        let monthlyCOGS = self.monthlyRevenue * costOfGoodsSold
+        self.initialInventoryValue = monthlyCOGS * 2.0
+
+        self.seasonalMultipliers = [:]
+    }
+
+    // MARK: - Computed Properties
+
+    /// Access COGS percentage (alias for costOfGoodsSoldPercentage).
+    public var costOfGoodsSold: Double {
+        costOfGoodsSoldPercentage
     }
 
     // MARK: - Revenue Calculations
+
+    /// Calculate total monthly revenue.
+    ///
+    /// For store-based models, this is numberOfStores × averageStoreRevenue.
+    /// For simple models, this is the baseline monthlyRevenue.
+    ///
+    /// - Returns: Total monthly revenue
+    public func calculateTotalRevenue() -> Double {
+        return monthlyRevenue
+    }
 
     /// Calculate revenue for a specific month, accounting for seasonal adjustments.
     ///
@@ -133,6 +208,13 @@ public struct RetailModel: Sendable {
     public func calculateInventoryTurnover() -> Double {
         let annualCOGS = calculateCOGS() * 12
         return annualCOGS / initialInventoryValue
+    }
+
+    /// Calculate annual inventory turns (alias for calculateInventoryTurnover).
+    ///
+    /// - Returns: Number of times inventory turns over per year
+    public func calculateInventoryTurns() -> Double {
+        return calculateInventoryTurnover()
     }
 
     /// Calculate days inventory outstanding (DIO).
@@ -211,6 +293,33 @@ public struct RetailModel: Sendable {
     /// - Returns: Monthly revenue needed to break even
     public func calculateBreakEvenRevenue() -> Double {
         return operatingExpenses / calculateGrossMargin()
+    }
+
+    // MARK: - Store Performance Metrics
+
+    /// Calculate revenue per square foot.
+    ///
+    /// This is a key retail performance metric. Divides total monthly revenue
+    /// by the total square footage to measure sales productivity per unit area.
+    ///
+    /// - Parameter squareFootage: Total square footage (for all stores if multi-location)
+    /// - Returns: Monthly revenue per square foot
+    public func calculateRevenuePerSquareFoot(squareFootage: Double) -> Double {
+        return monthlyRevenue / squareFootage
+    }
+
+    /// Calculate revenue per square foot for a specific store.
+    ///
+    /// - Parameters:
+    ///   - squareFootage: Square footage for one store
+    ///   - storeIndex: Store index (for multi-location models)
+    /// - Returns: Monthly revenue per square foot for the store
+    public func calculateRevenuePerSquareFoot(squareFootage: Double, forStore storeIndex: Int) -> Double {
+        guard let avgRevenue = averageStoreRevenue else {
+            // Single-store model: use total revenue
+            return monthlyRevenue / squareFootage
+        }
+        return avgRevenue / squareFootage
     }
 
     // MARK: - Comprehensive Projections

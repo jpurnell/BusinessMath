@@ -37,6 +37,6 @@ import Numerics
 
 public func indexOfDispersion<T: Real>(_ values: [T]) throws -> T {
 	let mean = mean(values)
-	guard mean != 0 else { throw MathError.divisionByZero }
+	guard mean != 0 else { throw BusinessMathError.divisionByZero(context: "Index of Dispersion") }
 	return variance(values) / mean
 }

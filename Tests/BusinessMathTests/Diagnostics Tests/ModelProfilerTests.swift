@@ -474,10 +474,3 @@ struct ModelProfilerTests {
     }
 }
 
-// MARK: - Helper Extension
-
-extension ModelProfiler {
-    fileprivate func setWarningThreshold(_ threshold: TimeInterval) async {
-        self.warningThreshold = threshold
-    }
-}

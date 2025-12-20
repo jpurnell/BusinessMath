@@ -121,7 +121,7 @@ import Testing
 			("Low Demand", 0.20, { x in x.toArray()[0] * 50.0 })
 		]
 
-		var constraints: [MultivariateConstraint<VectorN<Double>>] = [
+		let constraints: [MultivariateConstraint<VectorN<Double>>] = [
 			.inequality(function: { x in -x.toArray()[0] }, gradient: nil),  // x >= 0
 			.inequality(function: { x in x.toArray()[0] - 200.0 }, gradient: nil)  // x <= 200
 		]

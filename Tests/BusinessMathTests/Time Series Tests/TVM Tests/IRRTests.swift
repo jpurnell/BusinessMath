@@ -136,7 +136,7 @@ struct IRRTests {
 	func irrAllPositive() {
 		let cashFlows = [100.0, 200.0, 300.0]
 
-		#expect(throws: IRRError.self) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -145,7 +145,7 @@ struct IRRTests {
 	func irrAllNegative() {
 		let cashFlows = [-100.0, -200.0, -300.0]
 
-		#expect(throws: IRRError.self) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -154,7 +154,7 @@ struct IRRTests {
 	func irrEmpty() {
 		let cashFlows: [Double] = []
 
-		#expect(throws: IRRError.self) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -163,7 +163,7 @@ struct IRRTests {
 	func irrSingle() {
 		let cashFlows = [-1000.0]
 
-		#expect(throws: IRRError.self) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -172,7 +172,7 @@ struct IRRTests {
 	func irrConvergenceFailure() {
 		let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
 
-		#expect(throws: IRRError.convergenceFailed) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try irr(cashFlows: cashFlows, maxIterations: 1)
 		}
 	}

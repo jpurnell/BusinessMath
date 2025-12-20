@@ -36,17 +36,10 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
 }
 
-private func formatCurrency(_ value: Double, decimals: Int = 0) -> String {
-    return "$" + formatNumber(value, decimals: decimals)
-}
-
 private func formatRatio(_ value: Double, decimals: Int = 2) -> String {
     return formatNumber(value, decimals: decimals) + "x"
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - Per-Share Metrics
 
@@ -109,13 +102,13 @@ public struct EarningsPerShareTool: MCPToolHandler, Sendable {
         Earnings Per Share (EPS):
 
         Inputs:
-        • Net Income: \(formatCurrency(netIncome))
+        • Net Income: \(netIncome.currency())
         • Shares Outstanding: \(formatNumber(shares, decimals: 0))
 
         Result:
-        • EPS: \(formatCurrency(eps, decimals: 2))
+        • EPS: \(eps.currency())
 
-        Each share generated \(formatCurrency(eps, decimals: 2)) in profit.
+        Each share generated \(eps.currency()) in profit.
         """
 
         return .success(text: output)
@@ -181,13 +174,13 @@ public struct BookValuePerShareTool: MCPToolHandler, Sendable {
         Book Value Per Share (BVPS):
 
         Inputs:
-        • Total Equity: \(formatCurrency(equity))
+        • Total Equity: \(equity.currency())
         • Shares Outstanding: \(formatNumber(shares, decimals: 0))
 
         Result:
-        • BVPS: \(formatCurrency(bvps, decimals: 2))
+        • BVPS: \(bvps.currency())
 
-        Each share is backed by \(formatCurrency(bvps, decimals: 2)) in net assets.
+        Each share is backed by \(bvps.currency()) in net assets.
         """
 
         return .success(text: output)
@@ -252,7 +245,7 @@ public struct PriceToEarningsTool: MCPToolHandler, Sendable {
         }
 
         guard eps > 0 else {
-            return .success(text: "P/E Ratio: Negative (company is unprofitable with EPS of \(formatCurrency(eps, decimals: 2)))")
+            return .success(text: "P/E Ratio: Negative (company is unprofitable with EPS of \(eps.currency()))")
         }
 
         let pe = price / eps
@@ -272,14 +265,14 @@ public struct PriceToEarningsTool: MCPToolHandler, Sendable {
         Price-to-Earnings (P/E) Ratio:
 
         Inputs:
-        • Market Price: \(formatCurrency(price, decimals: 2))
-        • Earnings Per Share: \(formatCurrency(eps, decimals: 2))
+        • Market Price: \(price.currency())
+        • Earnings Per Share: \(eps.currency())
 
         Result:
         • P/E Ratio: \(formatRatio(pe))
         • Interpretation: \(interpretation)
 
-        Investors pay \(formatCurrency(pe, decimals: 2)) for every $1 of annual earnings.
+        Investors pay \(pe.currency()) for every $1 of annual earnings.
         """
 
         return .success(text: output)
@@ -356,8 +349,8 @@ public struct PriceToBookTool: MCPToolHandler, Sendable {
         Price-to-Book (P/B) Ratio:
 
         Inputs:
-        • Market Price: \(formatCurrency(price, decimals: 2))
-        • Book Value Per Share: \(formatCurrency(bvps, decimals: 2))
+        • Market Price: \(price.currency())
+        • Book Value Per Share: \(bvps.currency())
 
         Result:
         • P/B Ratio: \(formatRatio(pb))
@@ -440,8 +433,8 @@ public struct PriceToSalesTool: MCPToolHandler, Sendable {
         Price-to-Sales (P/S) Ratio:
 
         Inputs:
-        • Market Capitalization: \(formatCurrency(marketCap))
-        • Total Revenue: \(formatCurrency(revenue))
+        • Market Capitalization: \(marketCap.currency())
+        • Total Revenue: \(revenue.currency())
 
         Result:
         • P/S Ratio: \(formatRatio(ps))
@@ -528,11 +521,11 @@ public struct MarketCapTool: MCPToolHandler, Sendable {
         Market Capitalization:
 
         Inputs:
-        • Share Price: \(formatCurrency(price, decimals: 2))
+        • Share Price: \(price.currency())
         • Shares Outstanding: \(formatNumber(shares, decimals: 0))
 
         Result:
-        • Market Cap: \(formatCurrency(marketCap))
+        • Market Cap: \(marketCap.currency())
         • Classification: \(classification)
         """
 
@@ -598,16 +591,16 @@ public struct EnterpriseValueTool: MCPToolHandler, Sendable {
         Enterprise Value (EV):
 
         Inputs:
-        • Market Capitalization: \(formatCurrency(marketCap))
-        • Total Debt: \(formatCurrency(debt))
-        • Cash & Equivalents: \(formatCurrency(cash))
+        • Market Capitalization: \(marketCap.currency())
+        • Total Debt: \(debt.currency())
+        • Cash & Equivalents: \(cash.currency())
 
         Calculation:
         • EV = Market Cap + Debt - Cash
-        • EV = \(formatCurrency(marketCap)) + \(formatCurrency(debt)) - \(formatCurrency(cash))
+        • EV = \(marketCap.currency()) + \(debt.currency()) - \(cash.currency())
 
         Result:
-        • Enterprise Value: \(formatCurrency(ev))
+        • Enterprise Value: \(ev.currency())
 
         This represents the total cost to acquire the company including debt obligations.
         """
@@ -671,7 +664,7 @@ public struct EVToEBITDATool: MCPToolHandler, Sendable {
         }
 
         guard ebitda > 0 else {
-            return .success(text: "EV/EBITDA: Negative (company has negative EBITDA of \(formatCurrency(ebitda)))")
+            return .success(text: "EV/EBITDA: Negative (company has negative EBITDA of \(ebitda.currency()))")
         }
 
         let ratio = ev / ebitda
@@ -691,8 +684,8 @@ public struct EVToEBITDATool: MCPToolHandler, Sendable {
         EV/EBITDA Ratio:
 
         Inputs:
-        • Enterprise Value: \(formatCurrency(ev))
-        • EBITDA: \(formatCurrency(ebitda))
+        • Enterprise Value: \(ev.currency())
+        • EBITDA: \(ebitda.currency())
 
         Result:
         • EV/EBITDA: \(formatRatio(ratio))
@@ -776,8 +769,8 @@ public struct EVToSalesTool: MCPToolHandler, Sendable {
         EV/Sales Ratio:
 
         Inputs:
-        • Enterprise Value: \(formatCurrency(ev))
-        • Total Revenue: \(formatCurrency(revenue))
+        • Enterprise Value: \(ev.currency())
+        • Total Revenue: \(revenue.currency())
 
         Result:
         • EV/Sales: \(formatRatio(ratio))
@@ -857,15 +850,15 @@ public struct WorkingCapitalTool: MCPToolHandler, Sendable {
         Working Capital:
 
         Inputs:
-        • Current Assets: \(formatCurrency(assets))
-        • Current Liabilities: \(formatCurrency(liabilities))
+        • Current Assets: \(assets.currency())
+        • Current Liabilities: \(liabilities.currency())
 
         Result:
-        • Working Capital: \(formatCurrency(workingCapital))
+        • Working Capital: \(workingCapital.currency())
         • Current Ratio: \(formatRatio(currentRatio))
         • Interpretation: \(interpretation)
 
-        The company has \(formatCurrency(abs(workingCapital))) \(workingCapital >= 0 ? "excess" : "shortage in") short-term liquidity.
+        The company has \((abs(workingCapital)).currency()) \(workingCapital >= 0 ? "excess" : "shortage in") short-term liquidity.
         """
 
         return .success(text: output)
@@ -942,14 +935,14 @@ public struct DebtToAssetsTool: MCPToolHandler, Sendable {
         Debt-to-Assets Ratio:
 
         Inputs:
-        • Total Debt: \(formatCurrency(debt))
-        • Total Assets: \(formatCurrency(assets))
+        • Total Debt: \(debt.currency())
+        • Total Assets: \(assets.currency())
 
         Result:
-        • Debt/Assets: \(formatPercent(ratio))
+        • Debt/Assets: \(ratio.percent())
         • Interpretation: \(interpretation)
 
-        \(formatPercent(ratio)) of assets are financed by debt.
+        \(ratio.percent()) of assets are financed by debt.
         """
 
         return .success(text: output)
@@ -1019,18 +1012,18 @@ public struct FreeCashFlowTool: MCPToolHandler, Sendable {
         Free Cash Flow (FCF):
 
         Inputs:
-        • Operating Cash Flow: \(formatCurrency(ocf))
-        • Capital Expenditures: \(formatCurrency(capex))
+        • Operating Cash Flow: \(ocf.currency())
+        • Capital Expenditures: \(capex.currency())
 
         Calculation:
         • FCF = Operating CF - Capex
-        • FCF = \(formatCurrency(ocf)) - \(formatCurrency(capex))
+        • FCF = \(ocf.currency()) - \(capex.currency())
 
         Result:
-        • Free Cash Flow: \(formatCurrency(fcf))
+        • Free Cash Flow: \(fcf.currency())
         • Interpretation: \(interpretation)
 
-        The company generated \(formatCurrency(fcf)) in free cash available for shareholders.
+        The company generated \(fcf.currency()) in free cash available for shareholders.
         """
 
         return .success(text: output)

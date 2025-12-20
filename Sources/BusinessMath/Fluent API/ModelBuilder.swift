@@ -117,9 +117,30 @@ public struct FinancialModel: Sendable {
     /// let revenue2024 = model.totalRevenue(for: .year(2024))
     /// ```
     public func totalRevenue(for period: Period) -> Double {
-        revenueComponents.reduce(0.0) { sum, component in
-            sum + component.value(for: period)
+        var accountValues: [Double] = []
+
+        let total = revenueComponents.reduce(0.0) { sum, component in
+            let value = component.value(for: period)
+            accountValues.append(value)
+
+            // Record individual account access
+            DebugContext.shared.recordStep(
+                operation: "GetAccount(\(component.name))",
+                input: "Period(\(period.label))",
+                output: String(format: "%.0f", value)
+            )
+
+            return sum + value
         }
+
+        // Record sum operation
+        DebugContext.shared.recordStep(
+            operation: "Sum(Revenue Accounts)",
+            input: "[\(accountValues.map { String(format: "%.0f", $0) }.joined(separator: ", "))]",
+            output: String(format: "%.0f", total)
+        )
+
+        return total
     }
 
     /// Calculate total expenses for a specific period.
@@ -130,9 +151,30 @@ public struct FinancialModel: Sendable {
     /// ```
     public func totalExpenses(for period: Period) -> Double {
         let revenue = totalRevenue(for: period)
-        return costComponents.reduce(0.0) { sum, component in
-            sum + component.value(for: period, revenue: revenue)
+        var expenseValues: [Double] = []
+
+        let total = costComponents.reduce(0.0) { sum, component in
+            let value = component.value(for: period, revenue: revenue)
+            expenseValues.append(value)
+
+            // Record individual expense access
+            DebugContext.shared.recordStep(
+                operation: "GetExpense(\(component.name))",
+                input: "Period(\(period.label)), Revenue(\(String(format: "%.0f", revenue)))",
+                output: String(format: "%.0f", value)
+            )
+
+            return sum + value
         }
+
+        // Record sum operation
+        DebugContext.shared.recordStep(
+            operation: "Sum(Expense Accounts)",
+            input: "[\(expenseValues.map { String(format: "%.0f", $0) }.joined(separator: ", "))]",
+            output: String(format: "%.0f", total)
+        )
+
+        return total
     }
 
     /// Calculate profit for a specific period.
@@ -437,12 +479,14 @@ public struct CostComponent: Sendable {
     public let name: String
     public let type: CostType
     public let timeSeries: TimeSeries<Double>?  // Optional multi-period time series
+    public let expenseType: ExpenseType?  // Optional classification for inter-company comparisons
 
     /// Create a cost component with a single value (backward compatible).
     public init(name: String, type: CostType) {
         self.name = name
         self.type = type
         self.timeSeries = nil
+        self.expenseType = nil
     }
 
     /// Create a cost component with a time series of fixed values.
@@ -453,10 +497,11 @@ public struct CostComponent: Sendable {
     /// let values = [50_000.0, 55_000.0]
     /// let cost = CostComponent(name: "Salaries", periods: periods, values: values)
     /// ```
-    public init(name: String, periods: [Period], values: [Double]) {
+    public init(name: String, periods: [Period], values: [Double], expenseType: ExpenseType? = nil) {
         self.name = name
         self.type = .fixed(0)  // Not used when time series is present
         self.timeSeries = TimeSeries(periods: periods, values: values)
+        self.expenseType = expenseType
     }
 
     /// Calculate cost for a given revenue amount.
@@ -573,6 +618,32 @@ public func FixedCost(_ name: String, periods: [Period], value: Double) -> CostC
 /// ```
 public func VariableCost(_ name: String, rate: Double) -> CostComponent {
     Variable(name, rate)
+}
+
+/// Create an expense with time series data and expense type classification.
+///
+/// This function creates a cost component with explicit expense type classification,
+/// which is useful for inter-company comparisons where colloquial names may differ
+/// but the underlying expense category is the same.
+///
+/// Example:
+/// ```swift
+/// let model = buildModel(for: company) {
+///     Revenue("Sales", periods: quarters, values: [100_000, 110_000, 120_000, 130_000])
+///     Expense("COGS", periods: quarters, values: [60_000, 66_000, 72_000, 78_000], type: .costOfGoodsSold)
+///     Expense("OpEx", periods: quarters, values: [20_000, 20_000, 20_000, 20_000], type: .operatingExpense)
+/// }
+/// ```
+///
+/// - Parameters:
+///   - name: The name of the expense (can be company-specific)
+///   - periods: Time periods for the expense values
+///   - values: Expense amounts for each period
+///   - type: The standardized expense type for classification
+///
+/// - Returns: A cost component with expense type classification
+public func Expense(_ name: String, periods: [Period], values: [Double], type: ExpenseType) -> CostComponent {
+    CostComponent(name: name, periods: periods, values: values, expenseType: type)
 }
 
 // MARK: - CostComponent ModelComponent Conformance

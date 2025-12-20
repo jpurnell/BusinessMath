@@ -168,7 +168,7 @@ public struct CalculateGrowthRateTool: MCPToolHandler, Sendable {
         let oldValue = try args.getDouble("oldValue")
         let newValue = try args.getDouble("newValue")
 
-        let growth = growthRate(from: oldValue, to: newValue)
+        let growth = try growthRate(from: oldValue, to: newValue)
         let change = newValue - oldValue
 
         let result = """
@@ -176,7 +176,7 @@ public struct CalculateGrowthRateTool: MCPToolHandler, Sendable {
         • Starting Value: \(oldValue.formatDecimal())
         • Ending Value: \(newValue.formatDecimal())
         • Absolute Change: \(change.formatDecimal())
-        • Growth Rate: \(growth.formatPercentage())
+        • Growth Rate: \((growth).percent())
         """
 
         return .success(text: result)
@@ -225,15 +225,15 @@ public struct CalculateCAGRTool: MCPToolHandler, Sendable {
             years: Double(periods)
         )
 
-        let totalGrowth = growthRate(from: beginningValue, to: endingValue)
+		let totalGrowth = try? growthRate(from: beginningValue, to: endingValue)
 
         let result = """
         Compound Annual Growth Rate (CAGR):
         • Beginning Value: \(beginningValue.formatDecimal())
         • Ending Value: \(endingValue.formatDecimal())
         • Number of Periods: \(periods)
-        • Total Growth: \(totalGrowth.formatPercentage())
-        • CAGR: \(cagrValue.formatPercentage())
+        • Total Growth: \((totalGrowth!).percent())
+        • CAGR: \(cagrValue.percent())
         """
 
         return .success(text: result)

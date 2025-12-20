@@ -101,48 +101,24 @@ public struct Investment: Sendable {
 
     // MARK: - Calculated Metrics
 
-    /// Net Present Value (NPV) - automatically calculated.
+    /// Net Present Value (NPV) - automatically calculated using BusinessMath npv() function.
     public var npv: Double {
         let allCashFlows = [-initialCost] + cashFlows.map { $0.amount }
-        // Use the global npv function
-        var presentValue = 0.0
-        for (index, cashFlow) in allCashFlows.enumerated() {
-            presentValue += cashFlow / pow(1 + discountRate, Double(index))
-        }
-        return presentValue
+        return BusinessMath.npv(discountRate: discountRate, cashFlows: allCashFlows)
     }
 
-    /// Internal Rate of Return (IRR) - automatically calculated.
+    /// Internal Rate of Return (IRR) - automatically calculated using BusinessMath irr() function.
+    ///
+    /// Returns `nil` if IRR calculation fails (e.g., all cash flows are positive or negative).
     public var irr: Double? {
         let allCashFlows = [-initialCost] + cashFlows.map { $0.amount }
-        // Simple IRR calculation using Newton-Raphson
-        var rate = 0.1 // Initial guess
-        for _ in 0..<100 {
-            var npvAtRate = 0.0
-            var derivative = 0.0
-            for (index, cashFlow) in allCashFlows.enumerated() {
-                let period = Double(index)
-                npvAtRate += cashFlow / pow(1 + rate, period)
-                if index > 0 {
-                    derivative -= period * cashFlow / pow(1 + rate, period + 1)
-                }
-            }
-            if abs(npvAtRate) < 0.0001 {
-                return rate
-            }
-            rate = rate - npvAtRate / derivative
-        }
-        return nil // Did not converge
+        return try? BusinessMath.irr(cashFlows: allCashFlows)
     }
 
-    /// Profitability Index - automatically calculated.
+    /// Profitability Index - automatically calculated using BusinessMath profitabilityIndex() function.
     public var profitabilityIndex: Double {
-        let pvOfCashFlows = cashFlows.enumerated().reduce(0.0) { sum, element in
-            let (index, cashFlow) = element
-            let period = Double(index + 1)
-            return sum + cashFlow.amount / pow(1 + discountRate, period)
-        }
-        return pvOfCashFlows / initialCost
+        let allCashFlows = [-initialCost] + cashFlows.map { $0.amount }
+        return BusinessMath.profitabilityIndex(rate: discountRate, cashFlows: allCashFlows)
     }
 
     /// Payback period in years - automatically calculated.
@@ -198,16 +174,13 @@ public struct Investment: Sendable {
 extension Investment {
     /// Get NPV for a specific cash flow category
     public func npv(for categoryName: String) -> Double? {
-        guard let categoryFlows = cashFlowCategories[categoryName] else {
+        guard let categoryCashFlows = cashFlowCategories[categoryName] else {
             return nil
         }
 
-        var presentValue = 0.0
-        for cashFlow in categoryFlows {
-            let period = Double(cashFlow.period)
-            presentValue += cashFlow.amount / pow(1 + discountRate, period)
-        }
-        return presentValue
+        // Calculate NPV for just this category's cash flows using the global npv function
+        let categoryFlows = categoryCashFlows.map { $0.amount }
+        return BusinessMath.npv(discountRate: discountRate, cashFlows: categoryFlows)
     }
 }
 
@@ -632,22 +605,22 @@ extension Investment: CustomStringConvertible {
             result += " '\(name)'"
         }
         result += ":\n"
-        result += "  Initial Cost: $\(String(format: "%.2f", initialCost))\n"
-        result += "  Discount Rate: \(String(format: "%.2f%%", discountRate * 100))\n"
-        result += "  NPV: $\(String(format: "%.2f", npv))\n"
+		result += "  Initial Cost: \(initialCost.currency())\n"
+		result += "  Discount Rate: \(discountRate.percent())\n"
+		result += "  NPV: \(npv.currency())\n"
 
         if let irr = irr {
             result += "  IRR: \(String(format: "%.2f%%", irr * 100))\n"
         }
 
-        result += "  Profitability Index: \(String(format: "%.2f", profitabilityIndex))\n"
+		result += "  Profitability Index: \(profitabilityIndex.formatted())\n"
 
         if let payback = paybackPeriod {
-            result += "  Payback Period: \(String(format: "%.2f", payback)) years\n"
+			result += "  Payback Period: \(payback.formatted()) years\n"
         }
 
         if let discountedPayback = discountedPaybackPeriod {
-            result += "  Discounted Payback: \(String(format: "%.2f", discountedPayback)) years\n"
+			result += "  Discounted Payback: \(discountedPayback.formatted()) years\n"
         }
 
         return result

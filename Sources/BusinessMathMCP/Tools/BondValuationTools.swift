@@ -121,19 +121,19 @@ public struct BondPriceTool: MCPToolHandler, Sendable {
         ====================
 
         Bond Specifications:
-          Face Value: \(formatCurrency(faceValue))
-          Coupon Rate: \(formatPercent(couponRate))
-          Annual Coupon: \(formatCurrency(annualCoupon))
+          Face Value: \(faceValue.currency())
+          Coupon Rate: \(couponRate.percent())
+          Annual Coupon: \(annualCoupon.currency())
           Years to Maturity: \(formatNumber(yearsToMaturity, decimals: 1))
           Payment Frequency: \(freqString)
 
         Market Conditions:
-          Yield to Maturity: \(formatPercent(ytm))
+          Yield to Maturity: \(ytm.percent())
 
         Valuation:
-          Bond Price: \(formatCurrency(price, decimals: 2))
+          Bond Price: \(price.currency())
           Status: \(priceStatus)
-          Current Yield: \(formatPercent(currentYield))
+          Current Yield: \(currentYield.percent())
 
         Interpretation:
         • Price represents present value of all future cash flows
@@ -233,21 +233,21 @@ public struct BondYieldToMaturityTool: MCPToolHandler, Sendable {
         ===========================
 
         Bond Details:
-          Face Value: \(formatCurrency(faceValue))
-          Coupon Rate: \(formatPercent(couponRate))
+          Face Value: \(faceValue.currency())
+          Coupon Rate: \(couponRate.percent())
           Years to Maturity: \(formatNumber(yearsToMaturity, decimals: 1))
-          Market Price: \(formatCurrency(marketPrice, decimals: 2))
+          Market Price: \(marketPrice.currency())
 
         Yield Metrics:
-          Yield to Maturity (YTM): \(formatPercent(ytm))
-          Current Yield: \(formatPercent(currentYield))
-          Coupon Rate: \(formatPercent(couponRate))
+          Yield to Maturity (YTM): \(ytm.percent())
+          Current Yield: \(currentYield.percent())
+          Coupon Rate: \(couponRate.percent())
 
         Interpretation:
-        • YTM = \(formatPercent(ytm)) is your total return if held to maturity
+        • YTM = \(ytm.percent()) is your total return if held to maturity
         • \(ytm > couponRate ? "YTM > Coupon: Bond at discount, includes capital gain" : ytm < couponRate ? "YTM < Coupon: Bond at premium, includes capital loss" : "YTM = Coupon: Bond at par, return is all coupon")
         • Current yield only reflects coupon income, not capital gain/loss
-        • YTM assumes all coupons reinvested at \(formatPercent(ytm))
+        • YTM assumes all coupons reinvested at \(ytm.percent())
         """
 
         return .success(text: result)
@@ -352,11 +352,11 @@ public struct BondDurationTool: MCPToolHandler, Sendable {
         ===================================
 
         Bond Specifications:
-          Face Value: \(formatCurrency(faceValue))
-          Coupon Rate: \(formatPercent(couponRate))
+          Face Value: \(faceValue.currency())
+          Coupon Rate: \(couponRate.percent())
           Years to Maturity: \(formatNumber(yearsToMaturity, decimals: 1))
-          Current Yield: \(formatPercent(ytm))
-          Current Price: \(formatCurrency(price, decimals: 2))
+          Current Yield: \(ytm.percent())
+          Current Price: \(price.currency())
 
         Risk Metrics:
           Macaulay Duration: \(formatNumber(macaulayDuration, decimals: 2)) years
@@ -471,24 +471,24 @@ public struct CreditSpreadAnalysisTool: MCPToolHandler, Sendable {
         Company Credit Profile:
           Altman Z-Score: \(formatNumber(zScore, decimals: 2))
           Credit Zone: \(creditZone)
-          Default Probability: \(formatPercent(defaultProbability))
+          Default Probability: \(defaultProbability.percent())
 
         Bond Characteristics:
           Maturity: \(formatNumber(maturityYears, decimals: 1)) years
           Seniority: \(seniorityString)
-          Expected Recovery: \(formatPercent(recoveryRate))
+          Expected Recovery: \(recoveryRate.percent())
 
         Spread Analysis:
-          Risk-Free Rate: \(formatPercent(riskFreeRate))
+          Risk-Free Rate: \(riskFreeRate.percent())
           Credit Spread: \(formatNumber(creditSpread * 10000, decimals: 0)) bps
-          Corporate Yield: \(formatPercent(corporateYield))
+          Corporate Yield: \(corporateYield.percent())
 
         Interpretation:
         • Z-Score of \(formatNumber(zScore, decimals: 2)) indicates \(creditZone.lowercased())
-        • \(formatPercent(defaultProbability)) chance of default over \(formatNumber(maturityYears, decimals: 0)) years
-        • \(seniorityString) debt expects \(formatPercent(recoveryRate)) recovery
+        • \(defaultProbability.percent()) chance of default over \(formatNumber(maturityYears, decimals: 0)) years
+        • \(seniorityString) debt expects \(recoveryRate.percent()) recovery
         • Spread of \(formatNumber(creditSpread * 10000, decimals: 0)) bps compensates for credit risk
-        • Total yield: \(formatPercent(riskFreeRate)) + \(formatNumber(creditSpread * 10000, decimals: 0)) bps = \(formatPercent(corporateYield))
+        • Total yield: \(riskFreeRate.percent()) + \(formatNumber(creditSpread * 10000, decimals: 0)) bps = \(corporateYield.percent())
         """
 
         return .success(text: result)
@@ -625,24 +625,24 @@ public struct CallableBondPriceTool: MCPToolHandler, Sendable {
         ======================
 
         Bond Specifications:
-          Face Value: \(formatCurrency(faceValue))
-          Coupon Rate: \(formatPercent(couponRate))
+          Face Value: \(faceValue.currency())
+          Coupon Rate: \(couponRate.percent())
           Maturity: \(formatNumber(yearsToMaturity, decimals: 0)) years
 
         Call Provision:
           Callable After: \(formatNumber(callYears, decimals: 0)) years
-          Call Price: \(formatCurrency(callPrice, decimals: 2))
+          Call Price: \(callPrice.currency())
           Call Premium: \(formatNumber(callPremium, decimals: 1))%
 
         Market Conditions:
-          Risk-Free Rate: \(formatPercent(riskFreeRate))
+          Risk-Free Rate: \(riskFreeRate.percent())
           Credit Spread: \(formatNumber(creditSpread * 10000, decimals: 0)) bps
-          Rate Volatility: \(formatPercent(volatility))
+          Rate Volatility: \(volatility.percent())
 
         Valuation:
-          Non-Callable Price: \(formatCurrency(straightPrice, decimals: 2))
-          Callable Price: \(formatCurrency(callablePrice, decimals: 2))
-          Call Option Value: \(formatCurrency(callOptionValue, decimals: 2))
+          Non-Callable Price: \(straightPrice.currency())
+          Callable Price: \(callablePrice.currency())
+          Call Option Value: \(callOptionValue.currency())
 
         Risk Metrics:
           Non-Callable Duration: \(formatNumber(straightDuration, decimals: 2)) years
@@ -650,8 +650,8 @@ public struct CallableBondPriceTool: MCPToolHandler, Sendable {
           Duration Reduction: \(formatNumber(((1 - effectiveDuration / straightDuration) * 100), decimals: 1))%
 
         Interpretation:
-        • Callable bond trades \(formatCurrency(straightPrice - callablePrice, decimals: 2)) below non-callable
-        • Call option worth \(formatCurrency(callOptionValue, decimals: 2)) to issuer
+        • Callable bond trades \((straightPrice - callablePrice).currency()) below non-callable
+        • Call option worth \(callOptionValue.currency()) to issuer
         • Effective duration \(formatNumber(effectiveDuration, decimals: 2)) < \(formatNumber(straightDuration, decimals: 2)) due to call risk
         • Higher volatility increases call option value (lowers bond price)
         """
@@ -774,16 +774,16 @@ public struct OptionAdjustedSpreadTool: MCPToolHandler, Sendable {
         ================================
 
         Bond Details:
-          Face Value: \(formatCurrency(faceValue))
-          Coupon Rate: \(formatPercent(couponRate))
+          Face Value: \(faceValue.currency())
+          Coupon Rate: \(couponRate.percent())
           Maturity: \(formatNumber(yearsToMaturity, decimals: 0)) years
           Callable After: \(formatNumber(callYears, decimals: 0)) years
-          Call Price: \(formatCurrency(callPrice, decimals: 2))
+          Call Price: \(callPrice.currency())
 
         Market Data:
-          Market Price: \(formatCurrency(marketPrice, decimals: 2))
-          Risk-Free Rate: \(formatPercent(riskFreeRate))
-          Rate Volatility: \(formatPercent(volatility))
+          Market Price: \(marketPrice.currency())
+          Risk-Free Rate: \(riskFreeRate.percent())
+          Rate Volatility: \(volatility.percent())
 
         Spread Decomposition:
           Nominal Spread: \(formatNumber(nominalSpread * 10000, decimals: 0)) bps
@@ -888,22 +888,22 @@ public struct ExpectedLossTool: MCPToolHandler, Sendable {
         ======================
 
         Portfolio Position:
-          Exposure: \(formatCurrency(exposure))
+          Exposure: \(exposure.currency())
           Seniority: \(seniorityString)
 
         Credit Risk Parameters:
-          Default Probability: \(formatPercent(defaultProbability))
-          Recovery Rate: \(formatPercent(recoveryRate))
-          Loss Given Default: \(formatPercent(lgd))
+          Default Probability: \(defaultProbability.percent())
+          Recovery Rate: \(recoveryRate.percent())
+          Loss Given Default: \(lgd.percent())
 
         Expected Loss Calculation:
           EL = PD × LGD × Exposure
-          EL = \(formatPercent(defaultProbability)) × \(formatPercent(lgd)) × \(formatCurrency(exposure))
-          Expected Loss: \(formatCurrency(expectedLoss))
+          EL = \(defaultProbability.percent()) × \(lgd.percent()) × \(exposure.currency())
+          Expected Loss: \(expectedLoss.currency())
           Loss Rate: \(formatNumber(lossRate, decimals: 2))%
 
         Interpretation:
-        • Expected loss = \(formatCurrency(expectedLoss)) on average
+        • Expected loss = \(expectedLoss.currency()) on average
         • Loss rate = \(formatNumber(lossRate, decimals: 2))% of exposure
         • Actual loss is binary: either 0 or LGD × Exposure
         • Use for loan loss reserves and credit risk capital
@@ -920,21 +920,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
 }
 
-private func formatCurrency(_ value: Double, decimals: Int = 0) -> String {
-    if abs(value) >= 1_000_000_000 {
-        return "$" + formatNumber(value / 1_000_000_000, decimals: 2) + "B"
-    } else if abs(value) >= 1_000_000 {
-        return "$" + formatNumber(value / 1_000_000, decimals: 2) + "M"
-    } else if abs(value) >= 1_000 {
-        return "$" + formatNumber(value / 1_000, decimals: 1) + "K"
-    } else {
-        return "$" + formatNumber(value, decimals: decimals)
-    }
-}
-
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 private func parsePaymentFrequency(_ string: String) -> PaymentFrequency {
     switch string.lowercased() {

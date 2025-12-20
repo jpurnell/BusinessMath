@@ -29,9 +29,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
 }
 
 /// Format percentage
-private func formatPercentage(_ value: Double, decimals: Int = 1) -> String {
-    return ((value - 1.0) * 100).formatDecimal(decimals: decimals) + "%"
-}
 
 // MARK: - Calculate Seasonal Indices
 
@@ -123,14 +120,14 @@ private func formatPercentage(_ value: Double, decimals: Int = 1) -> String {
 //
 //        Seasonal Indices (one complete cycle):
 //        \(indices.enumerated().map { i, idx in
-//            let pct = formatPercentage(idx)
+//            let pct = idx.percent()
 //            let label = idx > 1.05 ? "⬆ Above avg" : idx < 0.95 ? "⬇ Below avg" : "≈ Average"
 //            return "  Season \(i + 1): \(formatNumber(idx, decimals: 3)) (\(pct)) \(label)"
 //        }.joined(separator: "\n"))
 //
 //        Key Insights:
-//        • Strongest Season: Season \(maxSeason + 1) with index \(formatNumber(maxIndex, decimals: 3)) (\(formatPercentage(maxIndex)))
-//        • Weakest Season: Season \(minSeason + 1) with index \(formatNumber(minIndex, decimals: 3)) (\(formatPercentage(minIndex)))
+//        • Strongest Season: Season \(maxSeason + 1) with index \(formatNumber(maxIndex, decimals: 3)) (\(maxIndex.percent()))
+//        • Weakest Season: Season \(minSeason + 1) with index \(formatNumber(minIndex, decimals: 3)) (\(minIndex.percent()))
 //        • Seasonal Range: \(formatNumber((maxIndex - minIndex) * 100))% variation
 //
 //        Interpretation:

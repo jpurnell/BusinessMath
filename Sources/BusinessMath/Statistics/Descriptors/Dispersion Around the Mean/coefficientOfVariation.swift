@@ -38,7 +38,7 @@ import Numerics
  */
 
 public func coefficientOfVariation<T: Real>(_ stdDev: T, mean: T) throws -> T {
-	guard mean != 0 else { throw MathError.divisionByZero }
+	guard mean != 0 else { throw BusinessMathError.divisionByZero(context: "Coefficient of Variation") }
     return (stdDev / mean) * T(100)
 }
 

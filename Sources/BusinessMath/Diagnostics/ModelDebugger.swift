@@ -11,6 +11,56 @@ import Foundation
 import OSLog
 #endif
 
+// MARK: - Global Debug Context
+
+/// Thread-safe global debugging context for capturing calculation steps
+final class DebugContext: @unchecked Sendable {
+    private let lock = NSLock()
+    private var steps: [CalculationStep] = []
+    private var isEnabled = false
+
+    static let shared = DebugContext()
+
+    private init() {}
+
+    func enable() {
+        lock.lock()
+        defer { lock.unlock() }
+        isEnabled = true
+        steps.removeAll()
+    }
+
+    func disable() {
+        lock.lock()
+        defer { lock.unlock() }
+        isEnabled = false
+    }
+
+    func recordStep(operation: String, input: String, output: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard isEnabled else { return }
+        steps.append(CalculationStep(
+            operation: operation,
+            input: input,
+            output: output,
+            timestamp: Date()
+        ))
+    }
+
+    func getSteps() -> [CalculationStep] {
+        lock.lock()
+        defer { lock.unlock() }
+        return steps
+    }
+
+    func clearSteps() {
+        lock.lock()
+        defer { lock.unlock() }
+        steps.removeAll()
+    }
+}
+
 // MARK: - Model Debugger
 
 /// Debugging and diagnostic tools for financial models
@@ -43,7 +93,7 @@ import OSLog
 ///     print(report.formatted())
 /// }
 /// ```
-public struct ModelDebugger: Sendable {
+public actor ModelDebugger {
 
     /// Logger for debug operations
     #if canImport(OSLog)
@@ -377,12 +427,266 @@ public struct ModelDebugger: Sendable {
             context: context
         )
     }
+
+    // MARK: - Real-Time Tracing
+
+    /// Enable calculation tracing.
+    ///
+    /// When enabled, the debugger will capture all calculation steps
+    /// for later inspection.
+    ///
+    /// Example:
+    /// ```swift
+    /// await debugger.enableTracing()
+    /// let result = model.totalRevenue(for: period)
+    /// let trace = await debugger.getTrace()
+    /// ```
+    public func enableTracing() {
+        DebugContext.shared.enable()
+    }
+
+    /// Disable calculation tracing.
+    public func disableTracing() {
+        DebugContext.shared.disable()
+    }
+
+    /// Get the captured calculation trace.
+    ///
+    /// Returns all calculation steps captured since tracing was enabled.
+    ///
+    /// - Returns: Calculation trace with all captured steps
+    ///
+    /// Example:
+    /// ```swift
+    /// await debugger.enableTracing()
+    /// // ... perform calculations ...
+    /// let trace = await debugger.getTrace()
+    /// for step in trace.steps {
+    ///     print("\(step.operation): \(step.input) → \(step.output)")
+    /// }
+    /// ```
+    public func getTrace() -> DebuggerTrace {
+        return DebuggerTrace(steps: DebugContext.shared.getSteps())
+    }
+
+    // MARK: - Model Validation
+
+    /// Validate a financial model.
+    ///
+    /// Performs comprehensive validation including:
+    /// - Missing data detection
+    /// - Circular dependency detection
+    /// - Data quality checks
+    /// - Period alignment verification
+    ///
+    /// - Parameter model: The model to validate
+    /// - Returns: Validation report with issues and suggestions
+    ///
+    /// Example:
+    /// ```swift
+    /// let validation = await debugger.validate(model)
+    /// if !validation.isValid {
+    ///     for issue in validation.issues {
+    ///         print("[\(issue.severity)] \(issue.description)")
+    ///     }
+    /// }
+    /// ```
+    public func validate(_ model: FinancialModel) -> ValidationReport {
+        var errors: [ValidationError] = []
+        var warnings: [ValidationError] = []
+
+        // Check for empty model
+        if model.revenueComponents.isEmpty && model.costComponents.isEmpty {
+            warnings.append(ValidationError(
+                field: "model",
+                value: 0,
+                rule: "model-not-empty",
+                message: "Model is empty - no revenue or cost components",
+                suggestion: "Add at least one revenue component"
+            ))
+        }
+
+        // Check for missing revenue
+        if model.revenueComponents.isEmpty && !model.costComponents.isEmpty {
+            warnings.append(ValidationError(
+                field: "revenueComponents",
+                value: 0,
+                rule: "has-revenue",
+                message: "Model has expenses but no revenue",
+                suggestion: "Add revenue components to calculate net income"
+            ))
+        }
+
+        // Check for NaN values in time series
+        for component in model.revenueComponents {
+            if let timeSeries = component.timeSeries {
+                for (period, value) in zip(timeSeries.periods, timeSeries.valuesArray) {
+                    if value.isNaN {
+                        errors.append(ValidationError(
+                            field: component.name,
+                            value: value,
+                            rule: "no-nan-values",
+                            message: "NaN value in revenue '\(component.name)' for period \(period)",
+                            suggestion: "Replace NaN with valid number or use fillMissing()"
+                        ))
+                    }
+                }
+            }
+        }
+
+        let isValid = errors.isEmpty
+        let summary = isValid ? "✅ Model is valid" : "❌ Model has \(errors.count) error(s)"
+
+        return ValidationReport(
+            isValid: isValid,
+            errors: errors,
+            warnings: warnings,
+            summary: summary,
+            timestamp: Date()
+        )
+    }
+
+    /// Find missing data in a financial model.
+    ///
+    /// Identifies periods where accounts have missing or NaN values.
+    ///
+    /// - Parameter model: The model to analyze
+    /// - Returns: Dictionary mapping account names to arrays of missing periods
+    ///
+    /// Example:
+    /// ```swift
+    /// let missing = await debugger.findMissingData(in: model)
+    /// for (account, periods) in missing {
+    ///     print("\(account): missing \(periods.count) periods")
+    /// }
+    /// ```
+    public func findMissingData(in model: FinancialModel) -> [String: [Period]] {
+        var missing: [String: [Period]] = [:]
+
+        // Check revenue components
+        for component in model.revenueComponents {
+            if let timeSeries = component.timeSeries {
+                var missingPeriods: [Period] = []
+                for (period, value) in zip(timeSeries.periods, timeSeries.valuesArray) {
+                    if value.isNaN || value.isInfinite {
+                        missingPeriods.append(period)
+                    }
+                }
+                if !missingPeriods.isEmpty {
+                    missing[component.name] = missingPeriods
+                }
+            }
+        }
+
+        return missing
+    }
+
+    /// Detect circular dependencies in a financial model.
+    ///
+    /// Note: Current implementation is basic and focuses on simple cases.
+    /// More complex dependency analysis would require formula parsing.
+    ///
+    /// - Parameter model: The model to analyze
+    /// - Returns: Array of detected circular dependencies
+    ///
+    /// Example:
+    /// ```swift
+    /// let cycles = await debugger.detectCircularDependencies(in: model)
+    /// for cycle in cycles {
+    ///     print("Cycle: \(cycle.path.joined(separator: " → "))")
+    /// }
+    /// ```
+    public func detectCircularDependencies(in model: FinancialModel) -> [CircularDependency] {
+        // Basic implementation - would need formula parsing for full detection
+        // For now, return empty array as most models built with ModelBuilder
+        // don't have explicit circular dependencies
+        return []
+    }
+
+    // MARK: - Model Snapshot
+
+    /// Create a snapshot of a financial model for inspection.
+    ///
+    /// Captures the current state of a financial model including accounts,
+    /// periods, and validation status for debugging and documentation.
+    ///
+    /// - Parameter model: The financial model to snapshot
+    /// - Returns: A model snapshot with summary information
+    ///
+    /// Example:
+    /// ```swift
+    /// let debugger = ModelDebugger()
+    /// let snapshot = await debugger.snapshot(of: model)
+    /// print(snapshot.summary)
+    /// ```
+    public func snapshot(of model: FinancialModel) async -> ModelSnapshot {
+        // Collect all periods from time series data
+        var allPeriods: Set<Period> = []
+        for component in model.revenueComponents {
+            if let timeSeries = component.timeSeries {
+                allPeriods.formUnion(timeSeries.periods)
+            }
+        }
+        for component in model.costComponents {
+            if let timeSeries = component.timeSeries {
+                allPeriods.formUnion(timeSeries.periods)
+            }
+        }
+
+        // Create revenue account snapshots
+        let revenueSnapshots = model.revenueComponents.map { component in
+            AccountSnapshot(revenue: component, periods: allPeriods)
+        }
+
+        // Calculate revenue by period for expense calculations
+        var revenueByPeriod: [Period: Double] = [:]
+        for period in allPeriods {
+            var periodRevenue = 0.0
+            for component in model.revenueComponents {
+                if let timeSeries = component.timeSeries {
+                    periodRevenue += timeSeries[period] ?? 0
+                } else {
+                    periodRevenue += component.amount
+                }
+            }
+            revenueByPeriod[period] = periodRevenue
+        }
+
+        // Create expense account snapshots
+        let expenseSnapshots = model.costComponents.map { component in
+            AccountSnapshot(cost: component, periods: allPeriods, revenueByPeriod: revenueByPeriod)
+        }
+
+        // Sort periods chronologically
+        let sortedPeriods = allPeriods.sorted()
+
+        // Determine status
+        let status: String
+        if revenueSnapshots.isEmpty && expenseSnapshots.isEmpty {
+            status = "Empty"
+        } else if revenueSnapshots.isEmpty {
+            status = "Missing Revenue"
+        } else {
+            status = "Valid"
+        }
+
+        let entityName = model.entity?.name ?? "Financial Model"
+
+        return ModelSnapshot(
+            timestamp: Date(),
+            modelName: entityName,
+            revenueAccounts: revenueSnapshots,
+            expenseAccounts: expenseSnapshots,
+            periods: sortedPeriods,
+            status: status
+        )
+    }
 }
 
 // MARK: - Calculation Trace Types
 
 /// Result of a basic calculation trace
-public struct DebugTrace<T: Sendable> {
+public struct DebugTrace<T: Sendable>: Sendable {
     /// Name of the value being calculated
     public let value: String
 
@@ -425,7 +729,7 @@ public struct DebugTrace<T: Sendable> {
 }
 
 /// Detailed calculation trace with dependencies and formula
-public struct DetailedDebugTrace<T: Sendable> {
+public struct DetailedDebugTrace<T: Sendable>: Sendable {
     /// Name of the value being calculated
     public let value: String
 
@@ -795,4 +1099,190 @@ public struct Explanation: Sendable {
 
         return output
     }
+}
+
+// MARK: - Model Snapshot Types
+
+/// Snapshot of a single account's data.
+///
+/// Represents a revenue or expense account with all its values across periods.
+public struct AccountSnapshot: Sendable {
+    /// Account name
+    public let name: String
+
+    /// Total value across all periods
+    public let total: Double
+
+    /// Values by period
+    public let values: [Period: Double]
+
+    /// Expense type (for expense accounts)
+    public let expenseType: ExpenseType?
+
+    /// Create a revenue account snapshot
+    init(revenue: RevenueComponent, periods: Set<Period>) {
+        self.name = revenue.name
+        self.expenseType = nil
+
+        var valueDict: [Period: Double] = [:]
+        var totalValue = 0.0
+
+        if let timeSeries = revenue.timeSeries {
+            for period in periods {
+                if let value = timeSeries[period] {
+                    valueDict[period] = value
+                    totalValue += value
+                }
+            }
+        } else {
+            // Single-value revenue - apply to all periods
+            for period in periods {
+                valueDict[period] = revenue.amount
+                totalValue += revenue.amount
+            }
+        }
+
+        self.values = valueDict
+        self.total = totalValue
+    }
+
+    /// Create an expense account snapshot
+    init(cost: CostComponent, periods: Set<Period>, revenueByPeriod: [Period: Double]) {
+        self.name = cost.name
+        self.expenseType = cost.expenseType
+
+        var valueDict: [Period: Double] = [:]
+        var totalValue = 0.0
+
+        if let timeSeries = cost.timeSeries {
+            for period in periods {
+                if let value = timeSeries[period] {
+                    valueDict[period] = value
+                    totalValue += value
+                }
+            }
+        } else {
+            // Single-value cost - calculate for each period
+            for period in periods {
+                let revenue = revenueByPeriod[period] ?? 0
+                let value = cost.calculate(revenue: revenue, for: period)
+                valueDict[period] = value
+                totalValue += value
+            }
+        }
+
+        self.values = valueDict
+        self.total = totalValue
+    }
+}
+
+/// A snapshot of a financial model's state.
+///
+/// Captures key metrics and metadata about a financial model
+/// for debugging, documentation, and validation purposes.
+public struct ModelSnapshot: Sendable {
+    /// When the snapshot was taken
+    public let timestamp: Date
+
+    /// Name of the model or entity
+    public let modelName: String
+
+    /// Revenue account snapshots
+    public let revenueAccounts: [AccountSnapshot]
+
+    /// Expense account snapshots
+    public let expenseAccounts: [AccountSnapshot]
+
+    /// All accounts (revenue + expenses)
+    public var accounts: [AccountSnapshot] {
+        revenueAccounts + expenseAccounts
+    }
+
+    /// Total number of accounts
+    public var totalAccounts: Int {
+        revenueAccounts.count + expenseAccounts.count
+    }
+
+    /// Periods covered by the model
+    public let periods: [Period]
+
+    /// Model validation status
+    public let status: String
+
+    /// Summary description of the model
+    public var summary: String {
+        let periodType = periods.first?.description.contains("Q") == true ? "quarters" : "periods"
+        return """
+        Model: \(modelName)
+        Accounts: \(totalAccounts) (\(revenueAccounts.count) revenue, \(expenseAccounts.count) expenses)
+        Periods: \(periods.count) \(periodType)
+        Status: \(status)
+        """
+    }
+
+    /// Formatted snapshot for display
+    public func formatted() -> String {
+        let periodType = periods.first?.description.contains("Q") == true ? "quarters" : "periods"
+        var output = "=== Model Snapshot ===\n"
+        output += "Timestamp: \(timestamp)\n"
+        output += "Model: \(modelName)\n\n"
+        output += "Accounts:\n"
+        output += "  Revenue: \(revenueAccounts.count)\n"
+        output += "  Expenses: \(expenseAccounts.count)\n"
+        output += "  Total: \(totalAccounts)\n\n"
+        output += "Time Coverage:\n"
+        output += "  Periods: \(periods.count) \(periodType)\n\n"
+        output += "Status: \(status)\n"
+        return output
+    }
+}
+
+// MARK: - Tracing Types
+
+/// A single step in a calculation trace for ModelDebugger.
+public struct CalculationStep: Sendable {
+    /// The operation performed
+    public let operation: String
+
+    /// Input to the operation
+    public let input: String
+
+    /// Output from the operation
+    public let output: String
+
+    /// When the step was recorded
+    public let timestamp: Date
+}
+
+/// Simplified trace for ModelDebugger real-time tracing.
+public struct DebuggerTrace: Sendable {
+    /// All captured calculation steps
+    public let steps: [CalculationStep]
+
+    /// Formatted trace output
+    public func formatted() -> String {
+        var output = "=== Calculation Trace ===\n"
+        output += "Steps: \(steps.count)\n\n"
+        for (index, step) in steps.enumerated() {
+            output += "\(index + 1). \(step.operation): \(step.input) → \(step.output)\n"
+        }
+        return output
+    }
+}
+
+// MARK: - Dependency Detection
+
+/// A circular dependency in a model.
+public struct CircularDependency: Sendable {
+    /// Unique identifier for this cycle
+    public let id: Int
+
+    /// Path of account names forming the cycle
+    public let path: [String]
+
+    /// Severity of the issue
+    public let severity: String
+
+    /// Suggested fix
+    public let suggestion: String
 }

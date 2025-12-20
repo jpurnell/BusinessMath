@@ -2,50 +2,67 @@
 //  BusinessMathError.swift
 //  BusinessMath
 //
-//  Created on November 1, 2025.
+//  Created on December 2, 2025.
+//  Phase 3: Enhanced Error Handling
 //
 
 import Foundation
 
-/// Comprehensive error type for BusinessMath library.
+/// Comprehensive enhanced error types for BusinessMath with actionable recovery suggestions
 ///
-/// This error type provides rich error messages with context, recovery suggestions,
-/// and human-readable descriptions for all BusinessMath operations.
+/// Phase 3 enhancements include:
+/// - Error codes for tracking and documentation
+/// - Detailed recovery suggestions
+/// - Help anchors linking to documentation
+/// - Context-aware error messages
 ///
 /// Example:
 /// ```swift
 /// do {
-///     let result = try calculateIRR(cashFlows: flows)
+///     let model = try buildFinancialModel(...)
 /// } catch let error as BusinessMathError {
 ///     print(error.localizedDescription)
-///     // "IRR calculation failed: Failed to converge after 100 iterations"
+///     print("Error Code: \(error.code)")
 ///
-///     if case .calculationFailed(_, _, let suggestions) = error {
-///         print("Suggestions:")
-///         suggestions.forEach { print("- \($0)") }
+///     if let recovery = error.recoverySuggestion {
+///         print("How to fix:\n\(recovery)")
+///     }
+///
+///     if let helpURL = error.helpAnchor {
+///         print("Learn more: \(helpURL)")
 ///     }
 /// }
 /// ```
-public enum BusinessMathError: Error, Sendable {
-    /// Invalid input parameter (e.g., negative discount rate, empty cash flows)
-    case invalidInput(message: String, context: [String: String])
+public enum BusinessMathError: LocalizedError, Sendable {
+    // MARK: - Calculation Errors (E001-E099)
 
-    /// Calculation failed to complete (e.g., IRR non-convergence)
-    case calculationFailed(operation: String, reason: String, suggestions: [String])
+    /// Invalid input parameter
+    case invalidInput(message: String, value: String? = nil, expectedRange: String? = nil)
+
+    /// Calculation failed to complete
+    case calculationFailed(operation: String, reason: String, suggestions: [String] = [])
 
     /// Division by zero attempted
-    case divisionByZero(context: [String: String])
+    case divisionByZero(context: String)
 
     /// Numerical instability detected
-    case numericalInstability(message: String, suggestions: [String])
+    case numericalInstability(message: String, suggestions: [String] = [])
 
-    /// Dimensions or sizes don't match (e.g., mismatched time series periods)
-    case mismatchedDimensions(message: String, context: [String: String])
+    // MARK: - Data Errors (E100-E199)
 
-    /// Data quality issue (handled through validation framework, but can be thrown directly)
-    case dataQuality(message: String, context: [String: String])
+    /// Dimensions or sizes don't match
+    case mismatchedDimensions(message: String, expected: String? = nil, actual: String? = nil)
 
-    // MARK: - Phase 3 Enhanced Errors
+    /// Data quality issue
+    case dataQuality(message: String, context: [String: String] = [:])
+
+    /// Missing required data for calculation
+    case missingData(account: String, period: String)
+
+    /// Insufficient data points for calculation
+    case insufficientData(required: Int, actual: Int, context: String)
+
+    // MARK: - Model Errors (E200-E299)
 
     /// Invalid driver configuration in financial model
     case invalidDriver(name: String, reason: String)
@@ -53,77 +70,75 @@ public enum BusinessMathError: Error, Sendable {
     /// Circular dependency detected in model calculations
     case circularDependency(path: [String])
 
-    /// Missing required data for calculation
-    case missingData(account: String, period: String)
-
-    /// Validation failed with multiple errors
-    case validationFailed(errors: [String])
-
     /// Inconsistent data detected
     case inconsistentData(description: String)
 
-    /// Insufficient data points for calculation
-    case insufficientData(required: Int, actual: Int, context: String)
+    // MARK: - Validation Errors (E300-E399)
+
+    /// Validation failed with multiple errors
+    case validationFailed(errors: [String])
 
     /// Negative value where positive required
     case negativeValue(name: String, value: Double, context: String)
 
     /// Value outside acceptable range
     case outOfRange(value: Double, min: Double, max: Double, context: String)
-}
 
-// MARK: - LocalizedError Conformance
+    // MARK: - LocalizedError Conformance
 
-extension BusinessMathError: LocalizedError {
     public var errorDescription: String? {
         switch self {
-        case .invalidInput(let message, let context):
+        case .invalidInput(let message, let value, let expectedRange):
             var description = "Invalid input: \(message)"
-            if let value = context["value"] {
+            if let value = value {
                 description += " (provided: \(value))"
             }
-				if let expectedRange = context["expectedRange"] {
+            if let expectedRange = expectedRange {
                 description += " (expected: \(expectedRange))"
             }
             return description
 
         case .calculationFailed(let operation, let reason, let suggestions):
-				var description: String = "\(operation) calculation failed: \(reason)"
-				if !suggestions.isEmpty {
-					for suggestion in suggestions {
-						description += "\nSuggestion: \(suggestion)"
-					}
-				}
-				return description
-
-        case .divisionByZero(let context):
-				if let operation = context["operation"] {
-                return "Division by zero in \(operation)"
+            var description = "\(operation) calculation failed: \(reason)"
+            if !suggestions.isEmpty {
+                description += "\nSuggestions:"
+                for suggestion in suggestions {
+                    description += "\n• \(suggestion)"
+                }
             }
-            return "Division by zero"
-
-        case .numericalInstability(let message, let suggestions):
-				var description: String = "Numerical instability: \(message)"
-				if !message.isEmpty {
-					description += ": \(suggestions.joined(separator: ", "))"
-				}
             return description
 
-        case .mismatchedDimensions(let message, let context):
+        case .divisionByZero(let context):
+            return "Division by zero in \(context)"
+
+        case .numericalInstability(let message, let suggestions):
+            var description = "Numerical instability: \(message)"
+            if !suggestions.isEmpty {
+                description += "\nSuggestions: \(suggestions.joined(separator: ", "))"
+            }
+            return description
+
+        case .mismatchedDimensions(let message, let expected, let actual):
             var description = "Mismatched dimensions: \(message)"
-            if let expected = context["expected"], let actual = context["actual"] {
+            if let expected = expected, let actual = actual {
                 description += " (expected: \(expected), got: \(actual))"
             }
             return description
 
         case .dataQuality(let message, let context):
-            var description: String = "Data quality issue: \(message)"
-				if !context.isEmpty {
-					for contextItem in context {
-						description += "; \(contextItem.key): \(contextItem.value)"
-					}
-				}
-				return description
+            var description = "Data quality issue: \(message)"
+            if !context.isEmpty {
+                for (key, value) in context.sorted(by: { $0.key < $1.key }) {
+                    description += "; \(key): \(value)"
+                }
+            }
+            return description
+
+        case .missingData(let account, let period):
+            return "Missing data for '\(account)' in period \(period)"
+
+        case .insufficientData(let required, let actual, let context):
+            return "Insufficient data for \(context): need \(required), got \(actual)"
 
         case .invalidDriver(let name, let reason):
             return "Invalid driver '\(name)': \(reason)"
@@ -131,17 +146,11 @@ extension BusinessMathError: LocalizedError {
         case .circularDependency(let path):
             return "Circular dependency detected: \(path.joined(separator: " → "))"
 
-        case .missingData(let account, let period):
-            return "Missing data for '\(account)' in period \(period)"
-
-        case .validationFailed(let errors):
-            return "Validation failed with \(errors.count) error(s):\n" + errors.map { "• \($0)" }.joined(separator: "\n")
-
         case .inconsistentData(let description):
             return "Data inconsistency: \(description)"
 
-        case .insufficientData(let required, let actual, let context):
-            return "Insufficient data for \(context): need \(required), got \(actual)"
+        case .validationFailed(let errors):
+            return "Validation failed with \(errors.count) error(s):\n" + errors.map { "• \($0)" }.joined(separator: "\n")
 
         case .negativeValue(let name, let value, let context):
             return "Negative value for '\(name)' (\(value)) in \(context)"
@@ -153,25 +162,55 @@ extension BusinessMathError: LocalizedError {
 
     public var recoverySuggestion: String? {
         switch self {
-        case .calculationFailed(_, _, let suggestions),
-             .numericalInstability(_, let suggestions):
-            guard !suggestions.isEmpty else { return nil }
-            return "Possible solutions:\n" + suggestions.map { "• \($0)" }.joined(separator: "\n")
-
-        case .invalidInput(_, let context):
-            if let expectedRange = context["expectedRange"] {
+        case .invalidInput(_, _, let expectedRange):
+            if let expectedRange = expectedRange {
                 return "Please provide a value within the range: \(expectedRange)"
             }
             return "Please check your input values and try again"
 
+        case .calculationFailed(_, _, let suggestions):
+            guard !suggestions.isEmpty else {
+                return "Try adjusting your input parameters or using a different calculation method"
+            }
+            return "Possible solutions:\n" + suggestions.map { "• \($0)" }.joined(separator: "\n")
+
         case .divisionByZero:
-            return "Ensure the denominator is non-zero before performing this calculation"
+            return """
+            Division by zero detected.
+            Check for:
+            • Zero revenue or zero base values
+            • Percentage calculations with zero denominators
+            • Missing data being treated as zero
+            """
+
+        case .numericalInstability(_, let suggestions):
+            guard !suggestions.isEmpty else {
+                return "Try using more precise input values or a more stable calculation method"
+            }
+            return "Possible solutions:\n" + suggestions.map { "• \($0)" }.joined(separator: "\n")
 
         case .mismatchedDimensions:
             return "Ensure all time series have matching periods before combining them"
 
         case .dataQuality:
             return "Clean or interpolate your data before performing calculations"
+
+        case .missingData(let account, _):
+            return """
+            Provide data for '\(account)' by:
+            • Adding a driver for this account
+            • Setting a default value
+            • Using fillMissing() or interpolate() on the time series
+            """
+
+        case .insufficientData(let required, _, let context):
+            return """
+            \(context) requires at least \(required) data points.
+            Consider:
+            • Providing more historical data
+            • Using a shorter analysis period
+            • Using a simpler model that requires less data
+            """
 
         case .invalidDriver(_, let reason):
             if reason.contains("negative") {
@@ -189,28 +228,11 @@ extension BusinessMathError: LocalizedError {
             Dependency path: \(path.joined(separator: " → "))
             """
 
-        case .missingData(let account, _):
-            return """
-            Provide data for '\(account)' by:
-            • Adding a driver for this account
-            • Setting a default value
-            • Using fillMissing() or interpolate() on the time series
-            """
-
-        case .validationFailed:
-            return "Fix the validation errors listed above to proceed"
-
         case .inconsistentData:
             return "Review your data for logical consistency and correct any discrepancies"
 
-        case .insufficientData(let required, _, let context):
-            return """
-            \(context) requires at least \(required) data points.
-            Consider:
-            • Providing more historical data
-            • Using a shorter analysis period
-            • Using a simpler model that requires less data
-            """
+        case .validationFailed:
+            return "Fix the validation errors listed above to proceed"
 
         case .negativeValue(let name, _, _):
             return """
@@ -225,20 +247,89 @@ extension BusinessMathError: LocalizedError {
             return "Adjust the value to fall within the valid range [\(min), \(max)]"
         }
     }
+
+    public var failureReason: String? {
+        // Could provide technical details for debugging
+        return nil
+    }
+
+    public var helpAnchor: String? {
+        // Link to documentation
+        return "https://businessmath.com/errors/\(self.code)"
+    }
+
+    // MARK: - Error Codes
+
+    /// Unique error code for tracking and documentation
+    public var code: String {
+        switch self {
+        // Calculation Errors (E001-E099)
+        case .invalidInput: return "E001"
+        case .calculationFailed: return "E002"
+        case .divisionByZero: return "E003"
+        case .numericalInstability: return "E004"
+
+        // Data Errors (E100-E199)
+        case .mismatchedDimensions: return "E100"
+        case .dataQuality: return "E101"
+        case .missingData: return "E102"
+        case .insufficientData: return "E103"
+
+        // Model Errors (E200-E299)
+        case .invalidDriver: return "E200"
+        case .circularDependency: return "E201"
+        case .inconsistentData: return "E202"
+
+        // Validation Errors (E300-E399)
+        case .validationFailed: return "E300"
+        case .negativeValue: return "E301"
+        case .outOfRange: return "E302"
+        }
+    }
 }
 
-// MARK: - Convenience Constructors
+// MARK: - Error Aggregator
 
-extension BusinessMathError {
-    /// Create invalidInput error with convenience parameters
-    public static func invalidInput(message: String, value: String? = nil, expectedRange: String? = nil) -> BusinessMathError {
-        var context: [String: String] = [:]
-        if let value = value {
-            context["value"] = value
+/// Utility for collecting and throwing multiple errors
+public struct ErrorAggregator: Sendable {
+    private var errors: [Error] = []
+
+    public init() {}
+
+    /// Add an error to the collection
+    public mutating func add(_ error: Error) {
+        errors.append(error)
+    }
+
+    /// Add multiple errors to the collection
+    public mutating func addMany(_ errors: [Error]) {
+        self.errors.append(contentsOf: errors)
+    }
+
+    /// Throw if any errors were collected
+    public func throwIfNeeded() throws {
+        guard !errors.isEmpty else { return }
+
+        if errors.count == 1 {
+            throw errors[0]
+        } else {
+            let errorMessages = errors.map { ($0 as? LocalizedError)?.errorDescription ?? $0.localizedDescription }
+            throw BusinessMathError.validationFailed(errors: errorMessages)
         }
-        if let range = expectedRange {
-            context["expectedRange"] = range
-        }
-        return .invalidInput(message: message, context: context)
+    }
+
+    /// Check if any errors were collected
+    public var hasErrors: Bool {
+        !errors.isEmpty
+    }
+
+    /// Count of collected errors
+    public var count: Int {
+        errors.count
+    }
+
+    /// Get all collected errors
+    public var allErrors: [Error] {
+        errors
     }
 }

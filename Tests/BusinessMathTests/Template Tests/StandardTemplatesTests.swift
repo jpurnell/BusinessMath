@@ -67,7 +67,7 @@ struct StandardTemplatesTests {
         } catch {
             caughtError = error
         }
-        #expect(caughtError is EnhancedBusinessMathError)
+        #expect(caughtError is BusinessMathError)
 
         // Valid parameters
         let validParams: [String: Any] = [
@@ -154,7 +154,7 @@ struct StandardTemplatesTests {
         } catch {
             caughtError = error
         }
-        #expect(caughtError is EnhancedBusinessMathError)
+        #expect(caughtError is BusinessMathError)
     }
 
     // MARK: - Manufacturing Template Tests

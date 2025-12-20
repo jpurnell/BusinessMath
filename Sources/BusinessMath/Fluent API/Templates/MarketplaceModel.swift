@@ -67,6 +67,13 @@ public struct MarketplaceModel: Sendable {
     /// Monthly seller churn rate
     public let sellerChurnRate: Double
 
+    // Snapshot model properties (for simplified usage)
+    public let numberOfBuyers: Double?
+    public let numberOfSellers: Double?
+    public let transactionsPerMonth: Double?
+    public let buyerAcquisitionCost: Double?
+    public let sellerAcquisitionCost: Double?
+
     // MARK: - Initialization
 
     public init(
@@ -89,9 +96,80 @@ public struct MarketplaceModel: Sendable {
         self.newSellersPerMonth = newSellersPerMonth
         self.buyerChurnRate = buyerChurnRate
         self.sellerChurnRate = sellerChurnRate
+
+        // Snapshot properties not used in this initializer
+        self.numberOfBuyers = nil
+        self.numberOfSellers = nil
+        self.transactionsPerMonth = nil
+        self.buyerAcquisitionCost = nil
+        self.sellerAcquisitionCost = nil
+    }
+
+    /// Simplified snapshot initializer for marketplace models.
+    ///
+    /// Use this when you have a static snapshot of marketplace state
+    /// rather than tracking growth over time.
+    ///
+    /// Example:
+    /// ```swift
+    /// let model = MarketplaceModel(
+    ///     numberOfBuyers: 10_000,
+    ///     numberOfSellers: 1_000,
+    ///     transactionsPerMonth: 5_000,
+    ///     averageOrderValue: 150,
+    ///     takeRate: 0.15,
+    ///     buyerAcquisitionCost: 25,
+    ///     sellerAcquisitionCost: 100
+    /// )
+    /// ```
+    public init(
+        numberOfBuyers: Double,
+        numberOfSellers: Double,
+        transactionsPerMonth: Double,
+        averageOrderValue: Double,
+        takeRate: Double,
+        buyerAcquisitionCost: Double,
+        sellerAcquisitionCost: Double
+    ) {
+        self.numberOfBuyers = numberOfBuyers
+        self.numberOfSellers = numberOfSellers
+        self.transactionsPerMonth = transactionsPerMonth
+        self.averageOrderValue = averageOrderValue
+        self.takeRate = takeRate
+        self.buyerAcquisitionCost = buyerAcquisitionCost
+        self.sellerAcquisitionCost = sellerAcquisitionCost
+
+        // Calculate derived values for growth model properties
+        self.initialBuyers = numberOfBuyers
+        self.initialSellers = numberOfSellers
+        self.monthlyTransactionsPerBuyer = transactionsPerMonth / numberOfBuyers
+        self.newBuyersPerMonth = 0
+        self.newSellersPerMonth = 0
+        self.buyerChurnRate = 0
+        self.sellerChurnRate = 0
     }
 
     // MARK: - User Calculations
+
+    /// Get current buyer count.
+    ///
+    /// For snapshot models, returns numberOfBuyers.
+    /// For growth models, returns initialBuyers.
+    ///
+    /// - Returns: Current buyer count
+    public var currentBuyers: Double {
+        return numberOfBuyers ?? initialBuyers
+    }
+
+    /// Get current seller count.
+    ///
+    /// For snapshot models, returns numberOfSellers.
+    /// For growth models, returns initialSellers.
+    ///
+    /// - Returns: Current seller count
+    public var currentSellers: Double {
+        return numberOfSellers ?? initialSellers
+    }
 
     /// Calculate buyer count for a specific month.
     ///
@@ -125,6 +203,16 @@ public struct MarketplaceModel: Sendable {
 
     // MARK: - GMV Calculations
 
+    /// Calculate Gross Merchandise Value using snapshot data.
+    ///
+    /// GMV = Transactions per Month × Average Order Value
+    ///
+    /// - Returns: GMV for current state, or 0 if using growth model
+    public func calculateGMV() -> Double {
+        guard let transactions = transactionsPerMonth else { return 0 }
+        return transactions * averageOrderValue
+    }
+
     /// Calculate Gross Merchandise Value for a specific month.
     ///
     /// GMV = Buyers × Transactions per Buyer × Average Order Value
@@ -138,6 +226,16 @@ public struct MarketplaceModel: Sendable {
     }
 
     // MARK: - Revenue Calculations
+
+    /// Calculate platform revenue using snapshot data.
+    ///
+    /// Revenue = GMV × Take Rate
+    ///
+    /// - Returns: Platform revenue for current state
+    public func calculateRevenue() -> Double {
+        let gmv = calculateGMV()
+        return gmv * takeRate
+    }
 
     /// Calculate platform revenue for a specific month.
     ///
@@ -197,6 +295,14 @@ public struct MarketplaceModel: Sendable {
     public func calculateLiquidity(forMonth month: Int) -> Double {
         let buyers = calculateBuyers(forMonth: month)
         let sellers = calculateSellers(forMonth: month)
+        return buyers / sellers
+    }
+
+    /// Calculate buyer-seller ratio using snapshot data.
+    ///
+    /// - Returns: Buyer-seller ratio, or 0 if using growth model
+    public func calculateBuyerSellerRatio() -> Double {
+        guard let buyers = numberOfBuyers, let sellers = numberOfSellers else { return 0 }
         return buyers / sellers
     }
 

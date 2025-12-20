@@ -38,22 +38,22 @@ public struct SaaSModel: Sendable {
     public let initialMRR: Double
 
     /// Monthly churn rate (percentage of customers lost per month)
-    public let churnRate: Double
+    public var churnRate: Double
 
     /// Number of new customers acquired per month
-    public let newCustomersPerMonth: Double
+    public var newCustomersPerMonth: Double
 
     /// Average revenue per user (ARPU)
-    public let averageRevenuePerUser: Double
+    public var averageRevenuePerUser: Double
 
     /// Gross margin percentage (optional, defaults to 1.0 for 100%)
-    public let grossMargin: Double?
+    public var grossMargin: Double?
 
     /// Customer Acquisition Cost (optional)
-    public let customerAcquisitionCost: Double?
+    public var customerAcquisitionCost: Double?
 
     /// Price increases at specific months
-    public let priceIncreases: [(month: Int, percentage: Double)]
+    public var priceIncreases: [(month: Int, percentage: Double)]
 
     // MARK: - Initialization
 
@@ -128,7 +128,7 @@ public struct SaaSModel: Sendable {
     ///
     /// - Parameter month: The month to calculate (1-indexed)
     /// - Returns: Number of customers at the end of the month
-    private func calculateCustomerCount(forMonth month: Int) -> Double {
+    public func calculateCustomerCount(forMonth month: Int) -> Double {
         var customers = initialCustomerCount
 
         for _ in 1...month {
@@ -211,6 +211,24 @@ public struct SaaSModel: Sendable {
     public func calculateLTVtoCAC() -> Double {
         guard let cac = customerAcquisitionCost else { return 0 }
         return calculateLTV() / cac
+    }
+
+    // MARK: - Growth Rate Calculations
+
+    /// Calculate the growth rate between two months.
+    ///
+    /// Growth rate is calculated as: (MRR_end - MRR_start) / MRR_start
+    ///
+    /// - Parameters:
+    ///   - startMonth: The starting month (1-indexed)
+    ///   - endMonth: The ending month (1-indexed)
+    /// - Returns: Growth rate as a decimal (e.g., 0.15 for 15% growth)
+    public func calculateGrowthRate(from startMonth: Int, to endMonth: Int) -> Double {
+        let startMRR = calculateMRR(forMonth: startMonth)
+        let endMRR = calculateMRR(forMonth: endMonth)
+
+        guard startMRR > 0 else { return 0 }
+        return (endMRR - startMRR) / startMRR
     }
 
     // MARK: - Comprehensive Projections

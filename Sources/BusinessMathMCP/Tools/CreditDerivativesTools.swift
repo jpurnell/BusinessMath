@@ -150,15 +150,15 @@ public struct CDSPricingTool: MCPToolHandler, Sendable {
 
         **Contract Specifications:**
         - Notional: $\(formatNumber(notional))
-        - Spread: \(formatNumber(spreadBps)) bps (\(formatPercent(spread)))
+        - Spread: \(formatNumber(spreadBps)) bps (\(spread.percent()))
         - Maturity: \(formatNumber(maturity)) years
-        - Recovery Rate: \(formatPercent(recoveryRate))
+        - Recovery Rate: \(recoveryRate.percent())
         - Payment Frequency: Quarterly
 
         **Market Parameters:**
-        - Hazard Rate: \(formatPercent(hazardRate))
-        - Risk-Free Rate: \(formatPercent(riskFreeRate))
-        - Implied Default Probability: \(formatPercent(1 - exp(-hazardRate * maturity)))
+        - Hazard Rate: \(hazardRate.percent())
+        - Risk-Free Rate: \(riskFreeRate.percent())
+        - Implied Default Probability: \((1 - exp(-hazardRate * maturity)).percent())
 
         **Valuation:**
         - Premium Leg PV: $\(formatNumber(premiumPV))
@@ -170,7 +170,7 @@ public struct CDSPricingTool: MCPToolHandler, Sendable {
         \(mtm > 0 ? "• CDS is **in-the-money** for protection buyer (credit quality deteriorated)" : "• CDS is **out-of-the-money** for protection buyer (credit quality improved)")
         \(fairSpreadBps > spreadBps ? "• Market spread is **below fair value** (CDS is cheap)" : "• Market spread is **above fair value** (CDS is expensive)")
         • Annual premium cost: $\(formatNumber(notional * spread))
-        • Break-even default probability: \(formatPercent(spread / (1 - recoveryRate)))
+        • Break-even default probability: \((spread / (1 - recoveryRate)).percent())
         """
 
         return .success(text: result)
@@ -267,9 +267,9 @@ public struct MertonModelTool: MCPToolHandler, Sendable {
 
         **Firm Parameters:**
         - Asset Value: $\(formatNumber(assetValue))
-        - Asset Volatility: \(formatPercent(assetVolatility))
+        - Asset Volatility: \(assetVolatility.percent())
         - Debt Face Value: $\(formatNumber(debtFaceValue))
-        - Leverage: \(formatPercent(leverage))
+        - Leverage: \(leverage.percent())
         - Time Horizon: \(formatNumber(maturity)) years
 
         **Valuation:**
@@ -278,13 +278,13 @@ public struct MertonModelTool: MCPToolHandler, Sendable {
         - Credit Spread: \(formatNumber(creditSpreadBps)) bps
 
         **Credit Metrics:**
-        - Default Probability: \(formatPercent(defaultProb))
+        - Default Probability: \(defaultProb.percent())
         - Distance to Default: \(formatNumber(distanceToDefault)) σ
         - Implied Rating: **\(rating)**
 
         **Interpretation:**
         \(distanceToDefault > 3 ? "• **Very Strong** credit quality" : distanceToDefault > 2 ? "• **Good** credit quality" : distanceToDefault > 1 ? "• **Moderate** credit risk" : "• **High** credit risk")
-        • Equity represents \(formatPercent(equityValue / assetValue)) of asset value
+        • Equity represents \((equityValue / assetValue).percent()) of asset value
         • Risk-free debt value: $\(formatNumber(debtFaceValue * exp(-riskFreeRate * maturity)))
         """
 
@@ -364,7 +364,7 @@ public struct HazardRateAnalysisTool: MCPToolHandler, Sendable {
             let survival = model.survivalProbability(time: t)
             let defaultProb = model.defaultProbability(time: t)
             let density = model.defaultDensity(time: t)
-            survivalTable += "| \(Int(t))Y | \(formatPercent(survival)) | \(formatPercent(defaultProb)) | \(formatNumber(density * 100, decimals: 3))% |\n"
+            survivalTable += "| \(Int(t))Y | \(survival.percent()) | \(defaultProb.percent()) | \(formatNumber(density * 100, decimals: 3))% |\n"
         }
 
         // Calculate implied spread if requested
@@ -376,8 +376,8 @@ public struct HazardRateAnalysisTool: MCPToolHandler, Sendable {
 
             **Spread Analysis:**
             - Market Spread: \(formatNumber(spreadBps)) bps
-            - Implied Hazard Rate: \(formatPercent(impliedHazard))
-            - Difference from Input: \(formatPercent(abs(impliedHazard - hazardRate)))
+            - Implied Hazard Rate: \(impliedHazard.percent())
+            - Difference from Input: \(abs(impliedHazard - hazardRate))
             \(abs(impliedHazard - hazardRate) / hazardRate < 0.10 ? "• Spread and hazard are **consistent**" : "• Spread and hazard show **significant difference**")
             """
         }
@@ -386,22 +386,22 @@ public struct HazardRateAnalysisTool: MCPToolHandler, Sendable {
         ## Hazard Rate Credit Analysis
 
         **Model Parameters:**
-        - Hazard Rate: \(formatPercent(hazardRate)) (λ)
-        - Recovery Rate: \(formatPercent(recoveryRate))
-        - Loss Given Default: \(formatPercent(1 - recoveryRate))
+        - Hazard Rate: \(hazardRate.percent()) (λ)
+        - Recovery Rate: \(recoveryRate.percent())
+        - Loss Given Default: \((1 - recoveryRate).percent())
         - Time Horizon: \(formatNumber(timeHorizon)) years
 
         **Default Probabilities:**
         \(survivalTable)
 
         **Key Metrics:**
-        - \(Int(timeHorizon))Y Survival: \(formatPercent(model.survivalProbability(time: timeHorizon)))
-        - \(Int(timeHorizon))Y Default: \(formatPercent(model.defaultProbability(time: timeHorizon)))
-        - Expected Loss (\(Int(timeHorizon))Y): \(formatPercent(model.defaultProbability(time: timeHorizon) * (1 - recoveryRate)))
+        - \(Int(timeHorizon))Y Survival: \((model.survivalProbability(time: timeHorizon)).percent())
+        - \(Int(timeHorizon))Y Default: \((model.defaultProbability(time: timeHorizon)).percent())
+        - Expected Loss (\(Int(timeHorizon))Y): \((model.defaultProbability(time: timeHorizon) * (1 - recoveryRate)).percent())
         \(spreadAnalysis)
 
         **Interpretation:**
-        • Annual default intensity: \(formatPercent(hazardRate))
+        • Annual default intensity: \(hazardRate.percent())
         • Expected defaults per 100 entities: \(formatNumber(hazardRate * 100))
         • Half-life (50% survival): \(formatNumber(-log(0.5) / hazardRate, decimals: 2)) years
         • Mean time to default: \(formatNumber(1 / hazardRate, decimals: 2)) years
@@ -487,7 +487,7 @@ public struct BootstrapCreditCurveTool: MCPToolHandler, Sendable {
             let survival = curve.survivalProbability(time: tenor)
             let defaultProb = curve.defaultProbability(time: tenor)
 
-            curveTable += "| \(formatNumber(tenor, decimals: 1))Y | \(formatNumber(spreadBps, decimals: 0)) bps | \(formatPercent(hazard)) | \(formatPercent(survival)) | \(formatPercent(defaultProb)) |\n"
+            curveTable += "| \(formatNumber(tenor, decimals: 1))Y | \(formatNumber(spreadBps, decimals: 0)) bps | \(hazard.percent()) | \(survival.percent()) | \(defaultProb.percent()) |\n"
         }
 
         // Calculate forward hazard rates
@@ -501,7 +501,7 @@ public struct BootstrapCreditCurveTool: MCPToolHandler, Sendable {
                 let t1 = tenors[i-1]
                 let t2 = tenors[i]
                 let forward = curve.forwardHazardRate(from: t1, to: t2)
-                forwardTable += "| \(formatNumber(t1, decimals: 1))Y-\(formatNumber(t2, decimals: 1))Y | \(formatPercent(forward)) |\n"
+                forwardTable += "| \(formatNumber(t1, decimals: 1))Y-\(formatNumber(t2, decimals: 1))Y | \(forward.percent()) |\n"
             }
         }
 
@@ -510,7 +510,7 @@ public struct BootstrapCreditCurveTool: MCPToolHandler, Sendable {
 
         **Market Inputs:**
         - Number of CDS Quotes: \(tenors.count)
-        - Recovery Rate: \(formatPercent(recoveryRate))
+        - Recovery Rate: \(recoveryRate.percent())
         - Tenor Range: \(formatNumber(tenors.min() ?? 0, decimals: 1))Y - \(formatNumber(tenors.max() ?? 0, decimals: 1))Y
 
         **Bootstrapped Curve:**
@@ -519,8 +519,8 @@ public struct BootstrapCreditCurveTool: MCPToolHandler, Sendable {
 
         **Interpretation:**
         \(curve.hazardRates.valuesArray.last ?? 0 > curve.hazardRates.valuesArray.first ?? 0 ? "• **Upward sloping** hazard curve (deteriorating credit quality over time)" : "• **Flat or inverted** hazard curve")
-        • \(Int(tenors.max() ?? 5))Y cumulative default probability: \(formatPercent(curve.defaultProbability(time: tenors.max() ?? 5)))
-        • Average hazard rate: \(formatPercent(curve.hazardRates.valuesArray.reduce(0, +) / Double(curve.hazardRates.valuesArray.count)))
+        • \(Int(tenors.max() ?? 5))Y cumulative default probability: \((curve.defaultProbability(time: tenors.max() ?? 5)).percent())
+        • Average hazard rate: \((curve.hazardRates.valuesArray.reduce(0, +) / Double(curve.hazardRates.valuesArray.count)).percent())
         • Spread range: \(formatNumber((spreads.min() ?? 0) * 10000)) - \(formatNumber((spreads.max() ?? 0) * 10000)) bps
         """
 
@@ -538,13 +538,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .percent
-    formatter.minimumFractionDigits = decimals
-    formatter.maximumFractionDigits = decimals
-    return formatter.string(from: NSNumber(value: value)) ?? "\(value * 100)%"
-}
 
 private func ratingFromDistance(_ dd: Double) -> String {
     if dd > 4.0 { return "AAA/AA" }

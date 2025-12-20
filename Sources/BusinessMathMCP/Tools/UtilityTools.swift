@@ -16,9 +16,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - Rolling Window Calculations
 
@@ -350,7 +347,7 @@ public struct PercentChangeTool: MCPToolHandler, Sendable {
             } else {
                 let change = (newValue - oldValue) / oldValue
                 let sign = change >= 0 ? "+" : ""
-                percentChanges.append("Period \(i) to \(i + 1): \(sign)\(formatPercent(change))")
+                percentChanges.append("Period \(i) to \(i + 1): \(sign)\(change.percent())")
             }
         }
 
@@ -375,7 +372,7 @@ public struct PercentChangeTool: MCPToolHandler, Sendable {
         \(results)
 
         Summary:
-        • Average Change: \(formatPercent(avgChange))
+        • Average Change: \(avgChange.percent())
         • Number of Increases: \(validChanges.filter { $0 > 0 }.count)
         • Number of Decreases: \(validChanges.filter { $0 < 0 }.count)
         """
@@ -460,7 +457,7 @@ public struct TTMMetricsTool: MCPToolHandler, Sendable {
             Year-over-Year Comparison:
             • Prior TTM: $\(formatNumber(prior, decimals: 0))
             • Current TTM: $\(formatNumber(ttmValue, decimals: 0))
-            • YoY Growth: \(formatPercent(yoyGrowth))
+            • YoY Growth: \(yoyGrowth.percent())
             """
         }
 
@@ -579,7 +576,7 @@ public struct BudgetVsActualTool: MCPToolHandler, Sendable {
         • Budgeted: $\(formatNumber(budgeted, decimals: 0))
         • Actual: $\(formatNumber(actual, decimals: 0))
         • Variance: \(sign)$\(formatNumber(abs(variance), decimals: 0))
-        • Variance %: \(sign)\(formatPercent(abs(variancePercent)))
+        • Variance %: \(sign)\(abs(variancePercent).percent())
 
         Assessment:
         • Status: \(status)

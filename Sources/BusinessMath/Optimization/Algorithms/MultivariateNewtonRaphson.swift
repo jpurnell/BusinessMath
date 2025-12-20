@@ -397,7 +397,7 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 		}
 
 		// leftTerm * B_inv
-		var temp = matrixMultiply(leftTerm, B_inv)
+		let temp = matrixMultiply(leftTerm, B_inv)
 
 		// temp * rightTerm
 		var result = matrixMultiply(temp, rightTerm)

@@ -83,7 +83,6 @@ import Numerics
 /// - Consistent with finance textbooks and IRR calculations
 public func npv<T: Real>(discountRate r: T, cashFlows c: [T]) -> T {
 	var presentValue = T.zero
-
 	for (period, flow) in c.enumerated() {
 		let discountFactor = T.pow(T(1) + r, T(period))
 		presentValue = presentValue + flow / discountFactor

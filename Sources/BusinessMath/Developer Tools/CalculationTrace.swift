@@ -97,14 +97,14 @@ public final class CalculationTrace: Sendable {
 
             _steps.append(TraceStep(
                 category: .revenue,
-                description: "Revenue: \(component.name) = $\(formatCurrency(amount))",
+                description: "Revenue: \(component.name) = $\(amount.currency())",
                 value: amount
             ))
         }
 
         _steps.append(TraceStep(
             category: .revenue,
-            description: "Total Revenue = $\(formatCurrency(total))",
+            description: "Total Revenue = $\(total.currency())",
             value: total
         ))
 
@@ -124,19 +124,19 @@ public final class CalculationTrace: Sendable {
             case .fixed:
                 typeDescription = "Fixed"
             case .variable(let percentage):
-                typeDescription = "Variable (\(formatPercentage(percentage)) of revenue)"
+                typeDescription = "Variable (\(percentage.percent()) of revenue)"
             }
 
             _steps.append(TraceStep(
                 category: .costs,
-                description: "Cost (\(typeDescription)): \(component.name) = $\(formatCurrency(amount))",
+                description: "Cost (\(typeDescription)): \(component.name) = $\(amount.currency())",
                 value: amount
             ))
         }
 
         _steps.append(TraceStep(
             category: .costs,
-            description: "Total Costs = $\(formatCurrency(total))",
+            description: "Total Costs = $\(total.currency())",
             value: total
         ))
 
@@ -151,7 +151,7 @@ public final class CalculationTrace: Sendable {
 
         _steps.append(TraceStep(
             category: .profit,
-            description: "Profit = Revenue ($\(formatCurrency(revenue))) - Costs ($\(formatCurrency(costs))) = $\(formatCurrency(profit))",
+            description: "Profit = Revenue (\(revenue.currency())) - Costs (\(costs.currency())) = \(profit.currency())",
             value: profit
         ))
 
@@ -204,20 +204,6 @@ public final class CalculationTrace: Sendable {
         return output
     }
 
-    // MARK: - Formatting Helpers
-
-    private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
-    }
-
-    private func formatPercentage(_ value: Double) -> String {
-        let percentage = value * 100
-        return String(format: "%.1f%%", percentage)
-    }
 }
 
 // MARK: - Thread-Safe Array

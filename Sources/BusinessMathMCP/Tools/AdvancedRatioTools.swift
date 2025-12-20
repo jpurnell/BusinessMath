@@ -20,9 +20,6 @@ private func formatRatio(_ value: Double, decimals: Int = 2) -> String {
     return formatNumber(value, decimals: decimals) + "x"
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - DuPont 3-Way Analysis
 
@@ -102,7 +99,7 @@ public struct DuPont3WayTool: MCPToolHandler, Sendable {
         DuPont 3-Way ROE Analysis:
 
         ROE Components:
-        • Net Profit Margin: \(formatPercent(profitMargin))
+        • Net Profit Margin: \(profitMargin.percent())
           → Profitability: How much profit per dollar of sales
 
         • Asset Turnover: \(formatRatio(assetTurnover))
@@ -112,9 +109,9 @@ public struct DuPont3WayTool: MCPToolHandler, Sendable {
           → Leverage: Financial leverage employed
 
         ROE Calculation:
-        \(formatPercent(profitMargin)) × \(formatNumber(assetTurnover, decimals: 2)) × \(formatNumber(equityMultiplier, decimals: 2)) = \(formatPercent(roeValue))
+        \(profitMargin.percent()) × \(formatNumber(assetTurnover, decimals: 2)) × \(formatNumber(equityMultiplier, decimals: 2)) = \(roeValue.percent())
 
-        Direct ROE (verification): \(formatPercent(roeDirect))
+        Direct ROE (verification): \(roeDirect.percent())
 
         Key Insights:
         • Improving any component increases ROE
@@ -228,12 +225,12 @@ public struct DuPont5WayTool: MCPToolHandler, Sendable {
 
         ROE Components:
         1. Tax Burden: \(formatNumber(taxBurden, decimals: 3))
-           → Tax Efficiency: \(formatPercent(taxRate)) effective tax rate
+           → Tax Efficiency: \(taxRate.percent()) effective tax rate
 
         2. Interest Burden: \(formatNumber(interestBurden, decimals: 3))
            → Debt Cost: Impact of interest expense on profitability
 
-        3. EBIT Margin: \(formatPercent(ebitMargin))
+        3. EBIT Margin: \(ebitMargin.percent())
            → Operating Profitability: Profit from operations
 
         4. Asset Turnover: \(formatRatio(assetTurnover))
@@ -243,9 +240,9 @@ public struct DuPont5WayTool: MCPToolHandler, Sendable {
            → Financial Leverage: Degree of leverage employed
 
         ROE Calculation:
-        \(formatNumber(taxBurden, decimals: 2)) × \(formatNumber(interestBurden, decimals: 2)) × \(formatNumber(ebitMargin, decimals: 2)) × \(formatNumber(assetTurnover, decimals: 2)) × \(formatNumber(equityMultiplier, decimals: 2)) = \(formatPercent(roeValue))
+        \(formatNumber(taxBurden, decimals: 2)) × \(formatNumber(interestBurden, decimals: 2)) × \(formatNumber(ebitMargin, decimals: 2)) × \(formatNumber(assetTurnover, decimals: 2)) × \(formatNumber(equityMultiplier, decimals: 2)) = \(roeValue.percent())
 
-        Direct ROE (verification): \(formatPercent(roeDirect))
+        Direct ROE (verification): \(roeDirect.percent())
 
         Key Insights:
         • Tax burden < 1.0 shows tax impact (lower = higher taxes)

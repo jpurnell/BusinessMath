@@ -24,12 +24,6 @@ public func getTrendForecastingTools() -> [any MCPToolHandler] {
 
 // MARK: - Helper Functions
 
-/// Format currency
-private func formatCurrency(_ value: Double, decimals: Int = 2) -> String {
-    let formatted = abs(value).formatDecimal(decimals: decimals)
-    return value >= 0 ? "$\(formatted)" : "-$\(formatted)"
-}
-
 /// Format a number with specified decimal places
 private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)

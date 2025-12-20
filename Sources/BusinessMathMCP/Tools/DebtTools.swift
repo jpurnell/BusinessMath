@@ -95,7 +95,7 @@ public struct CreateAmortizationScheduleTool: MCPToolHandler, Sendable {
                 let int = schedule.interest[period] ?? 0
                 let bal = schedule.endingBalance[period] ?? 0
 
-                scheduleDetails += "\n  \(index + 1). \(period.label): Payment: \(pmt.formatCurrency()), Principal: \(prin.formatCurrency()), Interest: \(int.formatCurrency()), Balance: \(bal.formatCurrency())"
+                scheduleDetails += "\n  \(index + 1). \(period.label): Payment: \(pmt.currency()), Principal: \(prin.currency()), Interest: \(int.currency()), Balance: \(bal.currency())"
             }
         } else {
             // Show first 3 and last 3 payments
@@ -108,7 +108,7 @@ public struct CreateAmortizationScheduleTool: MCPToolHandler, Sendable {
                 let int = schedule.interest[period] ?? 0
                 let bal = schedule.endingBalance[period] ?? 0
 
-                scheduleDetails += "\n    \(index + 1). Payment: \(pmt.formatCurrency()), Principal: \(prin.formatCurrency()), Interest: \(int.formatCurrency()), Balance: \(bal.formatCurrency())"
+                scheduleDetails += "\n    \(index + 1). Payment: \(pmt.currency()), Principal: \(prin.currency()), Interest: \(int.currency()), Balance: \(bal.currency())"
             }
 
             if periodsArray.count > 6 {
@@ -124,24 +124,24 @@ public struct CreateAmortizationScheduleTool: MCPToolHandler, Sendable {
                     let bal = schedule.endingBalance[period] ?? 0
 
                     let actualIndex = periodsArray.count - showCount + index
-                    scheduleDetails += "\n    \(actualIndex + 1). Payment: \(pmt.formatCurrency()), Principal: \(prin.formatCurrency()), Interest: \(int.formatCurrency()), Balance: \(bal.formatCurrency())"
+                    scheduleDetails += "\n    \(actualIndex + 1). Payment: \(pmt.currency()), Principal: \(prin.currency()), Interest: \(int.currency()), Balance: \(bal.currency())"
                 }
             }
         }
 
         let result = """
         Amortization Schedule:
-        • Loan Amount: \(principal.formatCurrency())
-        • Annual Interest Rate: \(annualRate.formatPercentage())
+        • Loan Amount: \(principal.currency())
+        • Annual Interest Rate: \(annualRate.percent())
         • Term: \(years) years
         • Payment Frequency: \(frequencyString.capitalized)
         • Number of Payments: \(periodsArray.count)
 
         Summary:
-        • Periodic Payment: \(periodicPayment.formatCurrency())
-        • Total of All Payments: \(totalPayments.formatCurrency())
-        • Total Interest: \(schedule.totalInterest.formatCurrency())
-        • Total Principal: \(schedule.totalPrincipal.formatCurrency())
+        • Periodic Payment: \(periodicPayment.currency())
+        • Total of All Payments: \(totalPayments.currency())
+        • Total Interest: \(schedule.totalInterest.currency())
+        • Total Principal: \(schedule.totalPrincipal.currency())
 
         Payment Schedule:\(scheduleDetails)
         """
@@ -213,19 +213,19 @@ public struct CalculateWACCTool: MCPToolHandler, Sendable {
         Weighted Average Cost of Capital (WACC):
 
         Capital Structure:
-        • Equity Value: \(equityValue.formatCurrency())
-        • Debt Value: \(debtValue.formatCurrency())
-        • Total Value: \(totalValue.formatCurrency())
-        • Equity Weight: \(equityWeight.formatPercentage())
-        • Debt Weight: \(debtWeight.formatPercentage())
+        • Equity Value: \(equityValue.currency())
+        • Debt Value: \(debtValue.currency())
+        • Total Value: \(totalValue.currency())
+        • Equity Weight: \(equityWeight.percent())
+        • Debt Weight: \(debtWeight.percent())
 
         Cost Components:
-        • Cost of Equity: \(costOfEquity.formatPercentage())
-        • Cost of Debt (before tax): \(costOfDebt.formatPercentage())
-        • Tax Rate: \(taxRate.formatPercentage())
-        • After-Tax Cost of Debt: \(afterTaxCostOfDebt.formatPercentage())
+        • Cost of Equity: \(costOfEquity.percent())
+        • Cost of Debt (before tax): \(costOfDebt.percent())
+        • Tax Rate: \(taxRate.percent())
+        • After-Tax Cost of Debt: \(afterTaxCostOfDebt.percent())
 
-        WACC: \(waccValue.formatPercentage())
+        WACC: \(waccValue.percent())
 
         Formula: WACC = (E/V × Re) + (D/V × Rd × (1 - Tc))
         Where E = Equity, D = Debt, V = Total Value, Re = Cost of Equity,
@@ -297,15 +297,15 @@ public struct CalculateCAPMTool: MCPToolHandler, Sendable {
         Capital Asset Pricing Model (CAPM):
 
         Inputs:
-        • Risk-Free Rate: \(riskFreeRate.formatPercentage())
+        • Risk-Free Rate: \(riskFreeRate.percent())
         • Beta (β): \(beta.formatDecimal(decimals: 2))
-        • Expected Market Return: \(marketReturn.formatPercentage())
+        • Expected Market Return: \(marketReturn.percent())
 
         Calculations:
-        • Market Risk Premium: \(marketRiskPremium.formatPercentage())
-        • Equity Risk Premium: \(riskPremium.formatPercentage())
+        • Market Risk Premium: \(marketRiskPremium.percent())
+        • Equity Risk Premium: \(riskPremium.percent())
 
-        Expected Return on Equity: \(expectedReturn.formatPercentage())
+        Expected Return on Equity: \(expectedReturn.percent())
         Risk Profile: \(riskProfile)
 
         Formula: E(R) = Rf + β × (Rm - Rf)
@@ -382,15 +382,15 @@ public struct DebtServiceCoverageRatioTool: MCPToolHandler, Sendable {
         Debt Service Coverage Ratio (DSCR):
 
         Inputs:
-        • Net Operating Income: \(noi.formatCurrency())
-        • Total Debt Service: \(debtService.formatCurrency())
+        • Net Operating Income: \(noi.currency())
+        • Total Debt Service: \(debtService.currency())
 
         DSCR: \(dscr.formatDecimal(decimals: 2))x
         Assessment: \(assessment)
         Credit Risk: \(creditRating)
 
         Analysis:
-        • Income Available After Debt Service: \(cushion.formatCurrency())
+        • Income Available After Debt Service: \(cushion.currency())
         • Debt Service as % of Income: \((debtService / noi * 100).formatDecimal(decimals: 1))%
 
         Typical Lender Requirements:
@@ -657,11 +657,11 @@ public struct CompareFinancingOptionsTool: MCPToolHandler, Sendable {
             comparison += """
             \n
             \(rank) - \(option.name):
-            • Annual Rate: \(option.rate.formatPercentage())
+            • Annual Rate: \(option.rate.percent())
             • Term: \(option.years) years
-            • Monthly Payment: \(option.monthlyPayment.formatCurrency())
-            • Total Payments: \(option.totalPayments.formatCurrency())
-            • Total Interest: \(option.totalInterest.formatCurrency())
+            • Monthly Payment: \(option.monthlyPayment.currency())
+            • Total Payments: \(option.totalPayments.currency())
+            • Total Interest: \(option.totalInterest.currency())
             """
         }
 
@@ -670,11 +670,11 @@ public struct CompareFinancingOptionsTool: MCPToolHandler, Sendable {
 
         let result = """
         Financing Options Comparison:
-        • Amount to Finance: \(amount.formatCurrency())
+        • Amount to Finance: \(amount.currency())
         \(comparison)
 
         Recommendation:
-        Choose '\(bestOption.name)' to save \(savings.formatCurrency()) in total interest compared to the most expensive option.
+        Choose '\(bestOption.name)' to save \(savings.currency()) in total interest compared to the most expensive option.
 
         Considerations:
         • Lower monthly payment may be better for cash flow despite higher total cost

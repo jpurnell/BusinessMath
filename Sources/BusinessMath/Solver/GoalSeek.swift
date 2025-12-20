@@ -17,8 +17,8 @@ import Numerics
 ///    - tolerance: The tolerance within which the result is acceptable. Defaults to `1/1,000,000`.
 ///    - maxIterations: The maximum number of iterations to attempt. Defaults to 1000.
 ///
-/// - Throws: `GoalSeekError.divisionByZero` if the function's derivative is zero, leading to a division by zero.
-/// 		  `GoalSeekError.convergenceFailed` if the method fails to converge within the maximum iterations.
+/// - Throws: `BusinessMathError.divisionByZero` if the function's derivative is zero.
+/// 		  `BusinessMathError.calculationFailed` if the method fails to converge within the maximum iterations.
 ///
 /// - Returns: The value of `x` such that `function(x)` is approximately equal to the `target` within the provided tolerance
 ///
@@ -43,15 +43,27 @@ public func goalSeek<T: Real>(function: @escaping (T) -> T, target: T, guess: T,
 		}
 		
 		let dfx0 = derivative(of: function, at: x0)
-		
+
 		if dfx0 == 0 {
-			throw GoalSeekError.divisionByZero
+			throw BusinessMathError.divisionByZero(
+				context: "Goal Seek at iteration \(iteration): derivative is zero at x=\(x0)"
+			)
 		}
-		
+
 		x0 = x0 - (f0 - target) / dfx0
 		iteration += 1
 	}
-	throw GoalSeekError.convergenceFailed
+	throw BusinessMathError.calculationFailed(
+		operation: "Goal Seek",
+		reason: "Failed to converge to target \(target) within \(maxIterations) iterations",
+		suggestions: [
+			"Try a different initial guess (current: \(guess))",
+			"Increase maxIterations (current: \(maxIterations))",
+			"Relax the tolerance (current: \(tolerance))",
+			"Check if the function actually has a solution for the target value",
+			"Verify the function is continuous near the solution"
+		]
+	)
 }
 
 
