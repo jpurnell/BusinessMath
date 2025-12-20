@@ -287,21 +287,26 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		maxIterations: Int = 1000,
 		tolerance: T = T(1e-6)
 	) throws -> FitResult {
-		// Define objective function: negative log-likelihood as function of parameter vector
-		let objective: (VectorN<T>) -> T = { params in
-			// params[0] = a, params[1] = b, params[2] = sigma
-			// Apply constraints: all parameters must be positive
-			let a = max(params[0], T(0.001))  // Bounded away from 0
-			let b = max(params[1], T(0.001))
-			let sigma = max(params[2], T(0.001))
+		// IMPORTANT: Optimize in log-space to enforce positivity naturally
+		// This avoids max() discontinuities that break numerical gradients
+		//
+		// We optimize: logParams = [log(a), log(b), log(sigma)]
+		// Then transform back: a = exp(logParams[0]), etc.
+
+		let objective: (VectorN<T>) -> T = { logParams in
+			// Transform from log-space to natural parameters
+			// exp() naturally enforces positivity with smooth gradients
+			let a = T.exp(logParams[0])
+			let b = T.exp(logParams[1])
+			let sigma = T.exp(logParams[2])
 
 			let modelParams = Parameters(a: a, b: b, sigma: sigma)
 			return ReciprocalRegressionModel.negativeLogLikelihood(data: data, params: modelParams)
 		}
 
-		// Numerical gradient
-		let gradient: (VectorN<T>) throws -> VectorN<T> = { params in
-			try numericalGradient(objective, at: params, h: T(1e-6))
+		// Numerical gradient (now computed in log-space where objective is smooth)
+		let gradient: (VectorN<T>) throws -> VectorN<T> = { logParams in
+			try numericalGradient(objective, at: logParams, h: T(1e-6))
 		}
 
 		// Create optimizer
@@ -311,20 +316,24 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 			tolerance: tolerance
 		)
 
-		// Convert initial guess to vector
-		let initialVector = VectorN([initialGuess.a, initialGuess.b, initialGuess.sigma])
+		// Convert initial guess to log-space
+		let initialLogVector = VectorN([
+			T.log(initialGuess.a),
+			T.log(initialGuess.b),
+			T.log(initialGuess.sigma)
+		])
 
-		// Optimize
+		// Optimize in log-space
 		let result = try optimizer.minimize(
 			function: objective,
 			gradient: gradient,
-			initialGuess: initialVector
+			initialGuess: initialLogVector
 		)
 
-		// Extract parameters (with positivity constraints)
-		let fittedA = max(result.solution[0], T(0.001))
-		let fittedB = max(result.solution[1], T(0.001))
-		let fittedSigma = max(result.solution[2], T(0.001))
+		// Transform solution back from log-space to natural parameters
+		let fittedA = T.exp(result.solution[0])
+		let fittedB = T.exp(result.solution[1])
+		let fittedSigma = T.exp(result.solution[2])
 
 		let fittedParams = Parameters(a: fittedA, b: fittedB, sigma: fittedSigma)
 

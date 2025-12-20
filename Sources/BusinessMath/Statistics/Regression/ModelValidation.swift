@@ -149,7 +149,7 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 			result += "  True:      \(trueValue.number())\n"
 			result += "  Recovered: \(recoveredValue.number())\n"
 			result += "  Abs Error: \(absError.magnitude)\n"
-			result += "  Rel Error: \(Double(relError * 100).number())%\n"
+			result += "  Rel Error: \(relError.percent())\n"
 			result += "  Status:    \(status)\n"
 		}
 
