@@ -241,13 +241,7 @@ public struct EfficientFrontierTool: MCPToolHandler, Sendable {
             let maxWeightIndex = allocation.weights.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
             let topAsset = assetNames[maxWeightIndex]
             let topWeight = allocation.weights[maxWeightIndex]
-			result += "[\n \((allocation.risk * 100).digits(2).paddingLeft(toLength: 6)) | \((allocation.risk * 100).digits(2).paddingLeft(toLength: 7))) | \(allocation.sharpeRatio.digits(2).paddingLeft(toLength: 6)) | \(topAsset) | \(topWeight.digits(1).paddingLeft(toLength: 4))%]"
-//            result += String(format: "\n %6.2f%%  | %7.2f%%  | %6.3f | %s (%.0f%%)",
-//                           allocation.risk * 100,
-//                           allocation.expectedReturn * 100,
-//                           allocation.sharpeRatio,
-//                           topAsset,
-//                           topWeight * 100)
+			result += "[\n \((allocation.risk).number(2).paddingLeft(toLength: 6)) | \((allocation.risk).number(2).paddingLeft(toLength: 7))) | \(allocation.sharpeRatio.number(2).paddingLeft(toLength: 6)) | \(topAsset) | \(topWeight.percent(1).paddingLeft(toLength: 4))]"
         }
 
         // Find key points
@@ -258,8 +252,8 @@ public struct EfficientFrontierTool: MCPToolHandler, Sendable {
 
 
         Key Points:
-        • Minimum Risk Portfolio: \(String(format: "%.2f%%", minRisk.risk * 100)) risk, \(String(format: "%.2f%%", minRisk.expectedReturn * 100)) return
-        • Maximum Sharpe Portfolio: \(String(format: "%.3f", maxSharpe.sharpeRatio)) Sharpe, \(String(format: "%.2f%%", maxSharpe.expectedReturn * 100)) return
+        • Minimum Risk Portfolio: \(minRisk.risk.percent()) risk, \(minRisk.expectedReturn.percent())) return
+        • Maximum Sharpe Portfolio: \(maxSharpe.sharpeRatio.number(3)) Sharpe, \(maxSharpe.expectedReturn.percent()) return
 
         Usage:
         - Portfolios on the frontier are optimal (no portfolio with same risk has higher return)

@@ -593,9 +593,9 @@ public struct AnalyzeSimulationResultsTool: MCPToolHandler, Sendable {
         for bin in histogram {
             let barLength = Int(Double(bin.count) / Double(maxCount) * 40)
             let bar = String(repeating: "█", count: barLength)
-			let percentage = Double(bin.count) / Double(values.count) * 100
+			let percentage = Double(bin.count) / Double(values.count)
 			
-			histogramText += "[\(bin.range.lowerBound.digits(decimalPlaces).paddingLeft(toLength: 8)) - \(bin.range.upperBound.digits(decimalPlaces).paddingLeft(toLength: 8))):  \(bar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.digits(1))%)\n"
+			histogramText += "[\(bin.range.lowerBound.number(decimalPlaces).paddingLeft(toLength: 8)) - \(bin.range.upperBound.number(decimalPlaces).paddingLeft(toLength: 8))):  \(bar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.percent(1)))\n"
         }
 
         let output = """

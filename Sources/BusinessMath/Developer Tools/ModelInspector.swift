@@ -286,8 +286,8 @@ public struct ModelInspector: Sendable {
 		summary += "\("Total Costs:".padding(toLength: 15, withPad: " ", startingAt: 0))\(totalCosts.currency())\n"
 		summary += "\("Profit:".padding(toLength: 15, withPad: " ", startingAt: 0))\(profit.currency())\n"
 
-        let margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0
-		summary += "\("Profit Margin:".padding(toLength: 15, withPad: " ", startingAt: 0))\(margin.digits(2))%\n\n"
+        let margin = totalRevenue > 0 ? (profit / totalRevenue) : 0
+		summary += "\("Profit Margin:".padding(toLength: 15, withPad: " ", startingAt: 0))\(margin.percent())\n\n"
 
         // List revenue sources
         if !model.revenueComponents.isEmpty {
@@ -307,7 +307,7 @@ public struct ModelInspector: Sendable {
 						summary += "  • \(cost.name): \(amount.currency())\n"
                 case .variable(let percentage):
                     let variableAmount = totalRevenue * percentage
-					summary += "  • \(cost.name): \((percentage * 100).digits(1))%: \(variableAmount.currency())\n"
+						summary += "  • \(cost.name): \(percentage.percent()): \(variableAmount.currency())\n"
                 }
             }
             summary += "\n"
