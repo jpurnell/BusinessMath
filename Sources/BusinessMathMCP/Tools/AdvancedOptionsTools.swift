@@ -22,12 +22,6 @@ public func getAdvancedOptionsTools() -> [any MCPToolHandler] {
 
 // MARK: - Helper Functions
 
-/// Format currency
-private func formatCurrency(_ value: Double, decimals: Int = 2) -> String {
-    let formatted = abs(value).formatDecimal(decimals: decimals)
-    return value >= 0 ? "$\(formatted)" : "-$\(formatted)"
-}
-
 /// Format a number with specified decimal places
 private func formatNumber(_ value: Double, decimals: Int = 4) -> String {
     return value.formatDecimal(decimals: decimals)
@@ -176,14 +170,14 @@ public struct OptionGreeksTool: MCPToolHandler, Sendable {
 
         Option Parameters:
         • Type: \(optionTypeStr.capitalized)
-        • Spot Price: \(formatCurrency(spotPrice))
-        • Strike Price: \(formatCurrency(strikePrice))
+        • Spot Price: \(spotPrice.currency())
+        • Strike Price: \(strikePrice.currency())
         • Time to Expiry: \(formatNumber(timeToExpiry, decimals: 2)) years (\(formatNumber(daysToExpiry, decimals: 0)) days)
         • Risk-Free Rate: \(formatRate(riskFreeRate))
         • Volatility: \(formatRate(volatility))
 
         Option Value:
-        • Black-Scholes Price: \(formatCurrency(optionPrice))
+        • Black-Scholes Price: \(optionPrice.currency())
         • Moneyness: \(moneynessDesc) (Spot/Strike = \(formatNumber(moneyness, decimals: 2)))
 
         Greeks (Sensitivities):
@@ -210,14 +204,14 @@ public struct OptionGreeksTool: MCPToolHandler, Sendable {
         Vega (ν): \(formatNumber(greeks.vega, decimals: 4))
         • Option price changes $\(formatNumber(greeks.vega, decimals: 2)) per 1% change in volatility
         • If volatility increases from \(formatRate(volatility)) to \(formatRate(volatility + 0.01)):
-          New price ≈ \(formatCurrency(optionPrice + greeks.vega))
+          New price ≈ \((optionPrice + greeks.vega).currency())
         • \(greeks.vega > 0.15 ? "High Vega - very sensitive to volatility changes (good for vol trading)" :
              "Moderate Vega - some volatility sensitivity")
 
         Theta (Θ): \(formatNumber(greeks.theta, decimals: 4)) per year, \(formatNumber(thetaPerDay, decimals: 4)) per day
         • Option loses approximately $\(formatNumber(abs(thetaPerDay), decimals: 2)) per day to time decay
-        • Over next week: ~\(formatCurrency(thetaPerDay * 7))
-        • Over next month: ~\(formatCurrency(thetaPerDay * 30))
+        • Over next week: ~\((thetaPerDay * 7).currency())
+        • Over next month: ~\((thetaPerDay * 30).currency())
         • \(abs(thetaPerDay) > 0.05 ? "⚠ High time decay - option losing value quickly" :
              abs(thetaPerDay) > 0.02 ? "Moderate time decay" :
              "Low time decay")
@@ -413,8 +407,8 @@ public struct BinomialTreeOptionTool: MCPToolHandler, Sendable {
         Option Parameters:
         • Type: \(optionTypeStr.capitalized)
         • Style: \(americanStyle ? "American (early exercise allowed)" : "European (expiration only)")
-        • Spot Price: \(formatCurrency(spotPrice))
-        • Strike Price: \(formatCurrency(strikePrice))
+        • Spot Price: \(spotPrice.currency())
+        • Strike Price: \(strikePrice.currency())
         • Time to Expiry: \(formatNumber(timeToExpiry, decimals: 2)) years (\(formatNumber(timeToExpiry * 365, decimals: 0)) days)
         • Risk-Free Rate: \(formatRate(riskFreeRate))
         • Volatility: \(formatRate(volatility))
@@ -422,22 +416,22 @@ public struct BinomialTreeOptionTool: MCPToolHandler, Sendable {
 
         Pricing Results:
 
-        Binomial Tree Price: \(formatCurrency(binomialPrice))
+        Binomial Tree Price: \(binomialPrice.currency())
         • This is the fair value of the \(americanStyle ? "American" : "European") \(optionTypeStr)
 
         Value Components:
-        • Intrinsic Value: \(formatCurrency(intrinsicValue))
-          \(intrinsicValue > 0 ? "→ \(moneynessDesc) by \(formatCurrency(abs(spotPrice - strikePrice)))" : "→ Currently worthless if exercised")
-        • Time Value: \(formatCurrency(timeValue))
+        • Intrinsic Value: \(intrinsicValue.currency())
+          \(intrinsicValue > 0 ? "→ \(moneynessDesc) by \((abs(spotPrice - strikePrice)).currency())" : "→ Currently worthless if exercised")
+        • Time Value: \(timeValue.currency())
           \(timeValue > 0 ? "→ Premium for uncertainty and time remaining" : "→ No time value remaining")
         • Moneyness: \(moneynessDesc) (S/K = \(formatNumber(moneyness, decimals: 2)))
 
         Comparison with Black-Scholes:
-        • Black-Scholes (European): \(formatCurrency(blackScholesPrice))
-        • Binomial Tree (\(americanStyle ? "American" : "European")): \(formatCurrency(binomialPrice))
-        • Difference: \(formatCurrency(abs(binomialPrice - blackScholesPrice)))
+        • Black-Scholes (European): \(blackScholesPrice.currency())
+        • Binomial Tree (\(americanStyle ? "American" : "European")): \(binomialPrice.currency())
+        • Difference: \((abs(binomialPrice - blackScholesPrice)).currency())
         \(americanStyle ? """
-        • Early Exercise Premium: \(formatCurrency(earlyExercisePremium))
+        • Early Exercise Premium: \(earlyExercisePremium.currency())
         \(earlyExercisePremium > 0.10 ?
           "  → Significant value from early exercise right (\(formatRate(earlyExercisePremium / binomialPrice)) of total)" :
           earlyExercisePremium > 0.01 ?
@@ -451,7 +445,7 @@ public struct BinomialTreeOptionTool: MCPToolHandler, Sendable {
         Analysis:
 
         Option Characteristics:
-        • \(intrinsicValue > 0 ? "Has \(formatCurrency(intrinsicValue)) intrinsic value" : "No intrinsic value (out-of-the-money)")
+        • \(intrinsicValue > 0 ? "Has \(intrinsicValue.currency()) intrinsic value" : "No intrinsic value (out-of-the-money)")
         • Time value represents \(formatRate(timeValue / binomialPrice)) of total price
         • \(timeToExpiry > 1.0 ? "Long-dated option - high time value" :
              timeToExpiry > 0.25 ? "Medium-term option" :
@@ -473,10 +467,10 @@ public struct BinomialTreeOptionTool: MCPToolHandler, Sendable {
         """ : "")
 
         Trading Implications:
-        • Fair Value: \(formatCurrency(binomialPrice))
+        • Fair Value: \(binomialPrice.currency())
         • \(binomialPrice > intrinsicValue + 0.50 ? "Premium option - high time value component" :
              "Mostly intrinsic value - behaves more like underlying")
-        • Risk/Reward: Max loss = \(formatCurrency(binomialPrice)), Max gain = \(optionType == .call ? "Unlimited" : formatCurrency(strikePrice))
+        • Risk/Reward: Max loss = \(binomialPrice.currency()), Max gain = \(optionType == .call ? "Unlimited" : strikePrice.currency())
 
         Model Accuracy:
         • \(steps) steps used (more steps = more accurate)

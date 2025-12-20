@@ -29,7 +29,7 @@ struct TemplateRegistryTests {
 
         func create(parameters: [String: Any]) throws -> Any {
             guard let value = parameters["testValue"] as? Double else {
-                throw EnhancedBusinessMathError.missingData(
+                throw BusinessMathError.missingData(
                     account: "testValue",
                     period: "parameters"
                 )
@@ -63,7 +63,7 @@ struct TemplateRegistryTests {
 
         func validate(parameters: [String: Any]) throws {
             guard parameters["testValue"] != nil else {
-                throw EnhancedBusinessMathError.missingData(
+                throw BusinessMathError.missingData(
                     account: "testValue",
                     period: "parameters"
                 )
@@ -146,7 +146,7 @@ struct TemplateRegistryTests {
             caughtError = error
         }
 
-        #expect(caughtError is EnhancedBusinessMathError)
+        #expect(caughtError is BusinessMathError)
     }
 
     @Test("Cannot register template with empty version")
@@ -170,7 +170,7 @@ struct TemplateRegistryTests {
             caughtError = error
         }
 
-        #expect(caughtError is EnhancedBusinessMathError)
+        #expect(caughtError is BusinessMathError)
     }
 
     // MARK: - Discovery Tests
@@ -456,7 +456,7 @@ struct TemplateRegistryTests {
             caughtError = error
         }
 
-        #expect(caughtError is EnhancedBusinessMathError)
+        #expect(caughtError is BusinessMathError)
     }
 
     @Test("Export non-existent template throws error")
@@ -470,7 +470,7 @@ struct TemplateRegistryTests {
             caughtError = error
         }
 
-        #expect(caughtError is EnhancedBusinessMathError)
+        #expect(caughtError is BusinessMathError)
     }
 
     // MARK: - Validation Tests

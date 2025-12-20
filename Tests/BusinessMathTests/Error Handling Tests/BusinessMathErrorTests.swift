@@ -1,5 +1,5 @@
 //
-//  EnhancedBusinessMathErrorTests.swift
+//  BusinessMathErrorTests.swift
 //  BusinessMath
 //
 //  Created on December 2, 2025.
@@ -10,7 +10,7 @@ import Testing
 import Foundation
 @testable import BusinessMath
 
-/// Comprehensive tests for EnhancedBusinessMathError
+/// Comprehensive tests for BusinessMathError
 ///
 /// Verifies that:
 /// - Error messages are clear and informative
@@ -19,14 +19,14 @@ import Foundation
 /// - Context information is properly included
 /// - Error aggregation works correctly
 /// - Multiple error reporting is formatted properly
-@Suite("EnhancedBusinessMathError Tests")
-struct EnhancedBusinessMathErrorTests {
+@Suite("BusinessMathError Tests")
+struct BusinessMathErrorTests {
 
     // MARK: - Calculation Errors (E001-E099)
 
     @Test("Invalid input error - basic message")
     func invalidInputBasic() {
-        let error = EnhancedBusinessMathError.invalidInput(message: "Discount rate cannot be negative")
+        let error = BusinessMathError.invalidInput(message: "Discount rate cannot be negative")
 
         #expect(error.code == "E001")
         #expect(error.errorDescription?.contains("Invalid input") == true)
@@ -36,7 +36,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Invalid input error - with value and range")
     func invalidInputWithContext() {
-        let error = EnhancedBusinessMathError.invalidInput(
+        let error = BusinessMathError.invalidInput(
             message: "Discount rate out of range",
             value: "-0.5",
             expectedRange: "0.0 to 1.0"
@@ -49,7 +49,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Calculation failed error - basic")
     func calculationFailedBasic() {
-        let error = EnhancedBusinessMathError.calculationFailed(
+        let error = BusinessMathError.calculationFailed(
             operation: "IRR",
             reason: "Failed to converge after 100 iterations"
         )
@@ -61,7 +61,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Calculation failed error - with suggestions")
     func calculationFailedWithSuggestions() {
-        let error = EnhancedBusinessMathError.calculationFailed(
+        let error = BusinessMathError.calculationFailed(
             operation: "NPV",
             reason: "Negative discount rate",
             suggestions: [
@@ -78,7 +78,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Division by zero error")
     func divisionByZero() {
-        let error = EnhancedBusinessMathError.divisionByZero(context: "revenue growth calculation")
+        let error = BusinessMathError.divisionByZero(context: "revenue growth calculation")
 
         #expect(error.code == "E003")
         #expect(error.errorDescription?.contains("Division by zero") == true)
@@ -89,7 +89,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Numerical instability error")
     func numericalInstability() {
-        let error = EnhancedBusinessMathError.numericalInstability(
+        let error = BusinessMathError.numericalInstability(
             message: "Values too large for calculation",
             suggestions: ["Scale inputs to smaller range", "Use logarithmic transformation"]
         )
@@ -103,7 +103,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Mismatched dimensions error - basic")
     func mismatchedDimensionsBasic() {
-        let error = EnhancedBusinessMathError.mismatchedDimensions(
+        let error = BusinessMathError.mismatchedDimensions(
             message: "Time series have different lengths"
         )
 
@@ -114,7 +114,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Mismatched dimensions error - with expected/actual")
     func mismatchedDimensionsWithContext() {
-        let error = EnhancedBusinessMathError.mismatchedDimensions(
+        let error = BusinessMathError.mismatchedDimensions(
             message: "Array size mismatch",
             expected: "12 periods",
             actual: "10 periods"
@@ -126,7 +126,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Data quality error")
     func dataQuality() {
-        let error = EnhancedBusinessMathError.dataQuality(
+        let error = BusinessMathError.dataQuality(
             message: "Missing or invalid values detected",
             context: ["count": "5", "percentage": "10%"]
         )
@@ -140,7 +140,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Missing data error")
     func missingData() {
-        let error = EnhancedBusinessMathError.missingData(
+        let error = BusinessMathError.missingData(
             account: "Revenue",
             period: "2024-Q1"
         )
@@ -154,7 +154,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Insufficient data error")
     func insufficientData() {
-        let error = EnhancedBusinessMathError.insufficientData(
+        let error = BusinessMathError.insufficientData(
             required: 10,
             actual: 5,
             context: "Regression analysis"
@@ -171,7 +171,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Invalid driver error")
     func invalidDriver() {
-        let error = EnhancedBusinessMathError.invalidDriver(
+        let error = BusinessMathError.invalidDriver(
             name: "RevenueGrowth",
             reason: "Growth rate cannot be negative"
         )
@@ -184,7 +184,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Circular dependency error")
     func circularDependency() {
-        let error = EnhancedBusinessMathError.circularDependency(
+        let error = BusinessMathError.circularDependency(
             path: ["Revenue", "COGS", "GrossProfit", "Revenue"]
         )
 
@@ -198,7 +198,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Inconsistent data error")
     func inconsistentData() {
-        let error = EnhancedBusinessMathError.inconsistentData(
+        let error = BusinessMathError.inconsistentData(
             description: "Total revenue does not equal sum of segments"
         )
 
@@ -212,7 +212,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Validation failed error - single error")
     func validationFailedSingle() {
-        let error = EnhancedBusinessMathError.validationFailed(
+        let error = BusinessMathError.validationFailed(
             errors: ["Revenue must be positive"]
         )
 
@@ -223,7 +223,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Validation failed error - multiple errors")
     func validationFailedMultiple() {
-        let error = EnhancedBusinessMathError.validationFailed(
+        let error = BusinessMathError.validationFailed(
             errors: [
                 "Revenue must be positive",
                 "Discount rate must be between 0 and 1",
@@ -240,7 +240,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Negative value error")
     func negativeValue() {
-        let error = EnhancedBusinessMathError.negativeValue(
+        let error = BusinessMathError.negativeValue(
             name: "Price",
             value: -50.0,
             context: "Product pricing calculation"
@@ -256,7 +256,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("Out of range error")
     func outOfRange() {
-        let error = EnhancedBusinessMathError.outOfRange(
+        let error = BusinessMathError.outOfRange(
             value: 1.5,
             min: 0.0,
             max: 1.0,
@@ -274,7 +274,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("All error codes are unique")
     func errorCodesUnique() {
-        let allErrors: [EnhancedBusinessMathError] = [
+        let allErrors: [BusinessMathError] = [
             .invalidInput(message: "test"),
             .calculationFailed(operation: "test", reason: "test"),
             .divisionByZero(context: "test"),
@@ -301,27 +301,27 @@ struct EnhancedBusinessMathErrorTests {
     @Test("Error codes follow categorization scheme")
     func errorCodeCategorization() {
         // Calculation errors: E001-E099
-        #expect(EnhancedBusinessMathError.invalidInput(message: "").code.hasPrefix("E0"))
-        #expect(EnhancedBusinessMathError.calculationFailed(operation: "", reason: "").code.hasPrefix("E0"))
+        #expect(BusinessMathError.invalidInput(message: "").code.hasPrefix("E0"))
+        #expect(BusinessMathError.calculationFailed(operation: "", reason: "").code.hasPrefix("E0"))
 
         // Data errors: E100-E199
-        #expect(EnhancedBusinessMathError.mismatchedDimensions(message: "").code.hasPrefix("E1"))
-        #expect(EnhancedBusinessMathError.dataQuality(message: "").code.hasPrefix("E1"))
+        #expect(BusinessMathError.mismatchedDimensions(message: "").code.hasPrefix("E1"))
+        #expect(BusinessMathError.dataQuality(message: "").code.hasPrefix("E1"))
 
         // Model errors: E200-E299
-        #expect(EnhancedBusinessMathError.invalidDriver(name: "", reason: "").code.hasPrefix("E2"))
-        #expect(EnhancedBusinessMathError.circularDependency(path: []).code.hasPrefix("E2"))
+        #expect(BusinessMathError.invalidDriver(name: "", reason: "").code.hasPrefix("E2"))
+        #expect(BusinessMathError.circularDependency(path: []).code.hasPrefix("E2"))
 
         // Validation errors: E300-E399
-        #expect(EnhancedBusinessMathError.validationFailed(errors: []).code.hasPrefix("E3"))
-        #expect(EnhancedBusinessMathError.negativeValue(name: "", value: 0, context: "").code.hasPrefix("E3"))
+        #expect(BusinessMathError.validationFailed(errors: []).code.hasPrefix("E3"))
+        #expect(BusinessMathError.negativeValue(name: "", value: 0, context: "").code.hasPrefix("E3"))
     }
 
     // MARK: - Help Anchor
 
     @Test("Help anchor URLs are generated")
     func helpAnchorGeneration() {
-        let error = EnhancedBusinessMathError.invalidInput(message: "test")
+        let error = BusinessMathError.invalidInput(message: "test")
 
         #expect(error.helpAnchor?.contains("businessmath.com/errors/E001") == true)
     }
@@ -344,7 +344,7 @@ struct EnhancedBusinessMathErrorTests {
     func errorAggregatorSingle() throws {
         var aggregator = ErrorAggregator()
 
-        let error = EnhancedBusinessMathError.invalidInput(message: "Test error")
+        let error = BusinessMathError.invalidInput(message: "Test error")
         aggregator.add(error)
 
         #expect(aggregator.hasErrors == true)
@@ -353,7 +353,7 @@ struct EnhancedBusinessMathErrorTests {
         do {
             try aggregator.throwIfNeeded()
             Issue.record("Should have thrown")
-        } catch let thrownError as EnhancedBusinessMathError {
+        } catch let thrownError as BusinessMathError {
             #expect(thrownError.errorDescription?.contains("Test error") == true)
         }
     }
@@ -362,9 +362,9 @@ struct EnhancedBusinessMathErrorTests {
     func errorAggregatorMultiple() throws {
         var aggregator = ErrorAggregator()
 
-        aggregator.add(EnhancedBusinessMathError.invalidInput(message: "Error 1"))
-        aggregator.add(EnhancedBusinessMathError.divisionByZero(context: "Error 2"))
-        aggregator.add(EnhancedBusinessMathError.missingData(account: "Revenue", period: "Q1"))
+        aggregator.add(BusinessMathError.invalidInput(message: "Error 1"))
+        aggregator.add(BusinessMathError.divisionByZero(context: "Error 2"))
+        aggregator.add(BusinessMathError.missingData(account: "Revenue", period: "Q1"))
 
         #expect(aggregator.hasErrors == true)
         #expect(aggregator.count == 3)
@@ -372,7 +372,7 @@ struct EnhancedBusinessMathErrorTests {
         do {
             try aggregator.throwIfNeeded()
             Issue.record("Should have thrown")
-        } catch let thrownError as EnhancedBusinessMathError {
+        } catch let thrownError as BusinessMathError {
             // Should throw validationFailed with all errors
             if case .validationFailed(let errors) = thrownError {
                 #expect(errors.count == 3)
@@ -388,8 +388,8 @@ struct EnhancedBusinessMathErrorTests {
         var aggregator = ErrorAggregator()
 
         let errors: [Error] = [
-            EnhancedBusinessMathError.invalidInput(message: "Error 1"),
-            EnhancedBusinessMathError.invalidInput(message: "Error 2")
+            BusinessMathError.invalidInput(message: "Error 1"),
+            BusinessMathError.invalidInput(message: "Error 2")
         ]
 
         aggregator.addMany(errors)
@@ -402,8 +402,8 @@ struct EnhancedBusinessMathErrorTests {
     func errorAggregatorAllErrors() {
         var aggregator = ErrorAggregator()
 
-        let error1 = EnhancedBusinessMathError.invalidInput(message: "First")
-        let error2 = EnhancedBusinessMathError.divisionByZero(context: "Second")
+        let error1 = BusinessMathError.invalidInput(message: "First")
+        let error2 = BusinessMathError.divisionByZero(context: "Second")
 
         aggregator.add(error1)
         aggregator.add(error2)
@@ -416,7 +416,7 @@ struct EnhancedBusinessMathErrorTests {
 
     @Test("LocalizedError conformance")
     func localizedErrorConformance() {
-        let error = EnhancedBusinessMathError.calculationFailed(
+        let error = BusinessMathError.calculationFailed(
             operation: "IRR",
             reason: "Non-convergent"
         )
@@ -438,7 +438,7 @@ struct EnhancedBusinessMathErrorTests {
         // Simulate multiple validation errors in a financial model
         let revenue = -100.0
         if revenue < 0 {
-            aggregator.add(EnhancedBusinessMathError.negativeValue(
+            aggregator.add(BusinessMathError.negativeValue(
                 name: "Revenue",
                 value: revenue,
                 context: "Income Statement"
@@ -447,7 +447,7 @@ struct EnhancedBusinessMathErrorTests {
 
         let discountRate = 1.5
         if discountRate < 0 || discountRate > 1 {
-            aggregator.add(EnhancedBusinessMathError.outOfRange(
+            aggregator.add(BusinessMathError.outOfRange(
                 value: discountRate,
                 min: 0.0,
                 max: 1.0,
@@ -460,7 +460,7 @@ struct EnhancedBusinessMathErrorTests {
         do {
             try aggregator.throwIfNeeded()
             Issue.record("Should have thrown validation error")
-        } catch let error as EnhancedBusinessMathError {
+        } catch let error as BusinessMathError {
             if case .validationFailed(let errors) = error {
                 #expect(errors.count == 2)
             } else {
@@ -472,7 +472,7 @@ struct EnhancedBusinessMathErrorTests {
     @Test("Circular dependency detection scenario")
     func circularDependencyScenario() {
         let dependencyChain = ["Revenue", "Cost", "Margin", "Revenue"]
-        let error = EnhancedBusinessMathError.circularDependency(path: dependencyChain)
+        let error = BusinessMathError.circularDependency(path: dependencyChain)
 
         let description = error.errorDescription ?? ""
         let recovery = error.recoverySuggestion ?? ""

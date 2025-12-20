@@ -153,7 +153,7 @@ func runReidsRaisinsDemo() throws {
 
 	// Question A: Base-Case Analysis
 	print("QUESTION A: Base-Case Profit Analysis")
-	print(String(repeating: "*", count: 60))
+	print(String(repeating: "=", count: 60))
 
 	let (revenue, costs, profit) = baseCase.profitBreakdown()
 	let demand = baseCase.calculateDemand(price: baseCase.raisinPrice)
@@ -167,14 +167,14 @@ func runReidsRaisinsDemo() throws {
 	print("Results:")
 	print("  Demand: \(Int(demand).formatted()) lbs of raisins")
 	print("  Grapes needed: \(Int(grapesNeeded).formatted()) lbs")
-	print("  Revenue: \(revenue.currency())")
-	print("  Total Costs: \(costs.values.reduce(0, +).currency())")
-	print("  Annual Profit: \(profit.currency())")
+	print("  Revenue: \(revenue.currency(0))")
+	print("  Total Costs: \(costs.values.reduce(0, +).currency(0))")
+	print("  Annual Profit: \(profit.currency(0))")
 	print()
 
 	// Question B: Breakeven Analysis
 	print("\nQUESTION B: Breakeven Open-Market Grape Price")
-	print(String(repeating: "*", count: 60))
+	print(String(repeating: "=", count: 60))
 
 	func profitFunction(openMarketPrice: Double) -> Double {
 		var model = baseCase
@@ -182,10 +182,13 @@ func runReidsRaisinsDemo() throws {
 		return model.calculateProfit()
 	}
 
-	let optimizer = NewtonRaphsonOptimizer<Double>(
+	let optimizer = GoalSeekOptimizer(
+		target: 0.0,
 		tolerance: 0.0001,
-		maxIterations: 100
+		maxIterations: 1000,
+		stepSize: 0.001
 	)
+	
 	let breakevenResult = optimizer.optimize(
 		objective: profitFunction,
 		constraints: [],
@@ -198,12 +201,12 @@ func runReidsRaisinsDemo() throws {
 	var breakevenModel = baseCase
 	breakevenModel.openMarketPrice = breakevenResult.optimalValue
 	let breakevenProfit = breakevenModel.calculateProfit()
-	print("Profit at breakeven: \(breakevenProfit.currency())")
+	print("Profit at breakeven: \(breakevenProfit.currency(0))")
 	print()
 
 	// Question C: Sensitivity Table
 	print("\nQUESTION C: Profit vs Raisin Price Sensitivity")
-	print(String(repeating: "*", count: 60))
+	print(String(repeating: "=", count: 60))
 
 	let minPrice = 1.80
 	let maxPrice = 3.60
@@ -224,20 +227,20 @@ func runReidsRaisinsDemo() throws {
 	print(String(repeating: "-", count: 40))
 
 	for result in results {
-		print("\(result.price.currency())  \(result.demand.formatted(.number.precision(.fractionLength(0))).paddingLeft(toLength: 15))  \(result.profit.currency().paddingLeft(toLength: 14))")
+		print("\(result.price.currency())  \(result.demand.formatted(.number.precision(.fractionLength(0))).paddingLeft(toLength: 15))  \(result.profit.currency(0).paddingLeft(toLength: 14))")
 	}
 
 	if let optimalResult = results.max(by: { $0.profit < $1.profit }) {
 		print()
 		print("Optimal raisin price: \(optimalResult.price.currency())")
-		print("Maximum profit: \(optimalResult.profit.currency())")
+		print("Maximum profit: \(optimalResult.profit.currency(0))")
 	}
 	print()
 
 	// Question D: Tornado Chart
 	print("\nQUESTION D: Tornado Chart Analysis")
 	print("Using ±10% variation for all parameters")
-	print(String(repeating: "*", count: 60))
+	print(String(repeating: "=", count: 60))
 
 	struct ParameterTest {
 		let name: String
@@ -324,12 +327,12 @@ func runReidsRaisinsDemo() throws {
 		let impact = tornadoAnalysis.impacts[input]!
 		let low = tornadoAnalysis.lowValues[input]!
 		let high = tornadoAnalysis.highValues[input]!
-		let percentImpact = (impact / abs(profit)) * 100.0
+		let percentImpact = (impact / abs(profit))
 
 		print("\n\(index + 1). \(input)")
-		print("   Low scenario:  \(low.currency())")
-		print("   High scenario: \(high.currency())")
-		print("   Impact range:  \(impact.currency()) (\((percentImpact * 100).formatted())% of base profit)")
+		print("   Low scenario:  \(low.currency(0))")
+		print("   High scenario: \(high.currency(0))")
+		print("   Impact range:  \(impact.currency(0)) (\(percentImpact.percent())% of base profit)")
 	}
 
 	// Question E: Monte Carlo Simulation
@@ -378,15 +381,7 @@ func runReidsRaisinsDemo() throws {
 	print()
 
 	print("Risk Analysis:")
-	let probLoss = monteCarloResults.probabilityBelow(0)
-	print("  Probability of loss: \((probLoss * 100).formatted())%")
-
-	let probBelow200k = monteCarloResults.probabilityBelow(200_000)
-	print("  Probability profit < $200k: \((probBelow200k * 100).formatted())%")
-
-	let probAbove600k = monteCarloResults.probabilityAbove(600_000)
-	print("  Probability profit > $600k: \((probAbove600k * 100).formatted())%")
-	print()
+	print(monteCarloResults.riskAnalysis([0, 200_000, 600_000]))
 
 	print("Confidence Intervals:")
 	let ci68 = monteCarloResults.confidenceInterval(level: 0.68)

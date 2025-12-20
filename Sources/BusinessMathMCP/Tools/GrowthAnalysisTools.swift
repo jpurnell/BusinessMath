@@ -27,12 +27,6 @@ private func formatRate(_ value: Double, decimals: Int = 2) -> String {
     return (value * 100).formatDecimal(decimals: decimals) + "%"
 }
 
-/// Format currency
-private func formatCurrency(_ value: Double, decimals: Int = 2) -> String {
-    let formatted = abs(value).formatDecimal(decimals: decimals)
-    return value >= 0 ? "$\(formatted)" : "-$\(formatted)"
-}
-
 /// Format a number with specified decimal places
 private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
@@ -126,15 +120,15 @@ public struct GrowthRateTool: MCPToolHandler, Sendable {
         let metricName = args.getStringOptional("metricName") ?? "Value"
 
         // Calculate growth rate
-        let growth = growthRate(from: fromValue, to: toValue)
+        let growth = try growthRate(from: fromValue, to: toValue)
 
         // Handle edge cases
         if fromValue == 0 {
             let output = """
             Growth Rate Analysis: \(metricName)
 
-            Initial Value: \(formatCurrency(fromValue))
-            Final Value: \(formatCurrency(toValue))
+            Initial Value: \(fromValue.currency())
+            Final Value: \(toValue.currency())
 
             Result: Cannot calculate growth rate
 
@@ -143,7 +137,7 @@ public struct GrowthRateTool: MCPToolHandler, Sendable {
             a percentage change from a base of zero.
 
             Alternative Analysis:
-            • Absolute change: \(formatCurrency(toValue - fromValue))
+            • Absolute change: \((toValue - fromValue).currency())
             • If starting from zero, consider:
               - Using absolute values instead of percentages
               - Different baseline for comparison
@@ -156,8 +150,8 @@ public struct GrowthRateTool: MCPToolHandler, Sendable {
             let output = """
             Growth Rate Analysis: \(metricName)
 
-            Initial Value: \(formatCurrency(fromValue))
-            Final Value: \(formatCurrency(toValue))
+            Initial Value: \(fromValue.currency())
+            Final Value: \(toValue.currency())
 
             Result: Infinite growth rate
 
@@ -220,9 +214,9 @@ public struct GrowthRateTool: MCPToolHandler, Sendable {
         Growth Rate Analysis: \(metricName)
 
         Values:
-        • Initial (From): \(formatCurrency(fromValue))
-        • Final (To): \(formatCurrency(toValue))
-        • Absolute Change: \(formatCurrency(absoluteChange))
+        • Initial (From): \(fromValue.currency())
+        • Final (To): \(toValue.currency())
+        • Absolute Change: \(absoluteChange.currency())
 
         Result:
         • Growth Rate: \(formatRate(growth))
@@ -244,8 +238,8 @@ public struct GrowthRateTool: MCPToolHandler, Sendable {
         """)
 
         Benchmark Targets:
-        • 10% growth would require: \(formatCurrency(tenPercentTarget)) (gap: \(formatCurrency(tenPercentTarget - toValue)))
-        • 20% growth would require: \(formatCurrency(twentyPercentTarget)) (gap: \(formatCurrency(twentyPercentTarget - toValue)))
+        • 10% growth would require: \(tenPercentTarget.currency()) (gap: \((tenPercentTarget - toValue).currency()))
+        • 20% growth would require: \(twentyPercentTarget.currency()) (gap: \((twentyPercentTarget - toValue).currency()))
 
         Recommendation:
         \(recommendation)
@@ -438,18 +432,18 @@ public struct ApplyGrowthTool: MCPToolHandler, Sendable {
         if projection.count <= 12 {
             projectionTable = projection.enumerated().map { period, value in
                 let growth = period == 0 ? 0.0 : (value - projection[period - 1]) / projection[period - 1]
-                return "  Period \(period): \(formatCurrency(value))\(period > 0 ? " (+\(formatRate(growth)))" : "")"
+                return "  Period \(period): \(value.currency())\(period > 0 ? " (+\(formatRate(growth)))" : "")"
             }.joined(separator: "\n")
         } else {
             let first5 = projection.prefix(6).enumerated().map { period, value in
                 let growth = period == 0 ? 0.0 : (value - projection[period - 1]) / projection[period - 1]
-                return "  Period \(period): \(formatCurrency(value))\(period > 0 ? " (+\(formatRate(growth)))" : "")"
+                return "  Period \(period): \(value.currency())\(period > 0 ? " (+\(formatRate(growth)))" : "")"
             }.joined(separator: "\n")
 
             let last5 = projection.suffix(5).enumerated().map { idx, value in
                 let period = projection.count - 5 + idx
                 let growth = (value - projection[period - 1]) / projection[period - 1]
-                return "  Period \(period): \(formatCurrency(value)) (+\(formatRate(growth)))"
+                return "  Period \(period): \(value.currency()) (+\(formatRate(growth)))"
             }.joined(separator: "\n")
 
             projectionTable = first5 + "\n  ...\n" + last5
@@ -485,7 +479,7 @@ public struct ApplyGrowthTool: MCPToolHandler, Sendable {
         Growth Projection: \(metricName)
 
         Input Parameters:
-        • Base Value: \(formatCurrency(baseValue))
+        • Base Value: \(baseValue.currency())
         • Annual Growth Rate: \(formatRate(annualRate))
         • Projection Periods: \(periods) (\(timeInterpretation))
         • Compounding: \(compoundingStr.capitalized) (\(compounding == .continuous ? "∞" : "\(compounding.periodsPerYear)") periods/year)
@@ -495,36 +489,36 @@ public struct ApplyGrowthTool: MCPToolHandler, Sendable {
         \(projectionTable)
 
         Summary:
-        • Starting Value: \(formatCurrency(baseValue))
-        • Final Value: \(formatCurrency(finalValue))
-        • Total Growth: \(formatRate(totalGrowth)) (\(formatCurrency(finalValue - baseValue)))
-        • Average Value: \(formatCurrency(averageValue))
+        • Starting Value: \(baseValue.currency())
+        • Final Value: \(finalValue.currency())
+        • Total Growth: \(formatRate(totalGrowth)) (\((finalValue - baseValue).currency()))
+        • Average Value: \(averageValue.currency())
         • Growth Multiple: \(formatNumber(finalValue / baseValue, decimals: 2))x
 
         Compounding Frequency Comparison (Final Values):
-        • Annual: \(formatCurrency(comparisonValues["Annual"]!))
-        • Quarterly: \(formatCurrency(comparisonValues["Quarterly"]!))
-        • Monthly: \(formatCurrency(comparisonValues["Monthly"]!))
-        • Daily: \(formatCurrency(comparisonValues["Daily"]!))
-        • Continuous: \(formatCurrency(comparisonValues["Continuous"]!))
-        • Difference (Monthly vs Annual): \(formatCurrency(comparisonValues["Monthly"]! - comparisonValues["Annual"]!))
+        • Annual: \(comparisonValues["Annual"]!.currency())
+        • Quarterly: \(comparisonValues["Quarterly"]!.currency())
+        • Monthly: \(comparisonValues["Monthly"]!.currency())
+        • Daily: \(comparisonValues["Daily"]!.currency())
+        • Continuous: \(comparisonValues["Continuous"]!.currency())
+        • Difference (Monthly vs Annual): \((comparisonValues["Monthly"]! - comparisonValues["Annual"]!).currency())
 
         Interpretation:
         \(annualRate > 0 ? """
         At \(formatRate(annualRate)) annual growth with \(compoundingStr) compounding:
-        • \(metricName) grows from \(formatCurrency(baseValue)) to \(formatCurrency(finalValue))
+        • \(metricName) grows from \(baseValue.currency()) to \(finalValue.currency())
         • This represents \(formatNumber((finalValue / baseValue), decimals: 2))x multiplication
         • Each period adds approximately \(formatRate(effectiveRate)) (adjusted for compounding)
         • More frequent compounding increases final value
         """ : annualRate < 0 ? """
         At \(formatRate(annualRate)) annual decline with \(compoundingStr) compounding:
-        • \(metricName) decreases from \(formatCurrency(baseValue)) to \(formatCurrency(finalValue))
+        • \(metricName) decreases from \(baseValue.currency()) to \(finalValue.currency())
         • This represents \(formatRate(totalGrowth)) total decline
         • Compounding accelerates the decline
         • Final value is \(formatNumber((finalValue / baseValue) * 100, decimals: 1))% of original
         """ : """
         Zero growth rate:
-        • \(metricName) remains constant at \(formatCurrency(baseValue))
+        • \(metricName) remains constant at \(baseValue.currency())
         • No change over time
         • Compounding has no effect at 0% growth
         """)

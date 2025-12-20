@@ -8,20 +8,6 @@
 import Foundation
 import Numerics
 
-// MARK: - IRR Error
-
-/// Errors that can occur during IRR calculation.
-public enum IRRError: Error, Sendable {
-	/// All cash flows have the same sign (all positive or all negative).
-	case invalidCashFlows
-
-	/// The Newton-Raphson method failed to converge within the maximum iterations.
-	case convergenceFailed
-
-	/// Not enough cash flows provided (need at least 2).
-	case insufficientData
-}
-
 // MARK: - IRR Functions
 
 /// Calculates the Internal Rate of Return (IRR) for a series of cash flows.
@@ -48,7 +34,7 @@ public enum IRRError: Error, Sendable {
 ///   - tolerance: Convergence tolerance (default: 0.0001 or 0.01%).
 ///   - maxIterations: Maximum number of iterations (default: 100).
 /// - Returns: The IRR as a decimal (e.g., 0.15 for 15%).
-/// - Throws: `IRRError` if calculation fails.
+/// - Throws: `BusinessMathError` if calculation fails.
 ///
 /// ## Examples
 ///
@@ -92,9 +78,9 @@ public enum IRRError: Error, Sendable {
 /// - **NPV Relationship:** At IRR, NPV = 0. Projects with IRR > cost of capital are considered acceptable.
 ///
 /// ## Error Cases
-/// - Throws `.invalidCashFlows` if all cash flows are positive or all negative.
 /// - Throws `.insufficientData` if fewer than 2 cash flows provided.
-/// - Throws `.convergenceFailed` if Newton-Raphson doesn't converge within max iterations.
+/// - Throws `.calculationFailed` if all cash flows are positive or all negative.
+/// - Throws `.calculationFailed` if Newton-Raphson doesn't converge within max iterations.
 public func irr<T: Real>(
 	cashFlows: [T],
 	guess: T? = nil,
@@ -105,7 +91,11 @@ public func irr<T: Real>(
 	let actualTolerance: T = tolerance ?? (T(1) / T(10000))
 	// Validate input
 	guard cashFlows.count >= 2 else {
-		throw IRRError.insufficientData
+		throw BusinessMathError.insufficientData(
+			required: 2,
+			actual: cashFlows.count,
+			context: "IRR calculation requires at least 2 cash flows"
+		)
 	}
 
 	// Check for sign changes (need both positive and negative)
@@ -113,7 +103,15 @@ public func irr<T: Real>(
 	let hasNegative = cashFlows.contains { $0 < T.zero }
 
 	guard hasPositive && hasNegative else {
-		throw IRRError.invalidCashFlows
+		throw BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "Cash flows must contain both positive and negative values (all cash flows have the same sign)",
+			suggestions: [
+				"Ensure you have at least one negative cash flow (typically the initial investment)",
+				"Verify that you have at least one positive cash flow (returns or receipts)",
+				"Check that cash flows are correctly signed (negative for outflows, positive for inflows)"
+			]
+		)
 	}
 
 	// Newton-Raphson iteration
@@ -134,7 +132,15 @@ public func irr<T: Real>(
 		// Avoid division by zero
 		let minDerivative = T(1) / T(1000000)  // 0.000001
 		guard abs(derivative) > minDerivative else {
-			throw IRRError.convergenceFailed
+			throw BusinessMathError.calculationFailed(
+				operation: "IRR",
+				reason: "Derivative too small - numerical instability detected",
+				suggestions: [
+					"Try a different initial guess (current: \(actualGuess))",
+					"Check if cash flows have unusual patterns that might cause instability",
+					"Consider using MIRR (Modified IRR) for complex cash flow patterns"
+				]
+			)
 		}
 
 		// Newton-Raphson update: rate_new = rate_old - f(rate) / f'(rate)
@@ -142,7 +148,16 @@ public func irr<T: Real>(
 	}
 
 	// If we get here, didn't converge
-	throw IRRError.convergenceFailed
+	throw BusinessMathError.calculationFailed(
+		operation: "IRR",
+		reason: "Failed to converge within \(maxIterations) iterations",
+		suggestions: [
+			"Increase maxIterations (current: \(maxIterations))",
+			"Try a different initial guess (current: \(actualGuess))",
+			"Relax the tolerance (current: \(actualTolerance))",
+			"Verify that cash flows represent a realistic investment pattern"
+		]
+	)
 }
 
 /// Calculates the Modified Internal Rate of Return (MIRR).
@@ -167,7 +182,7 @@ public func irr<T: Real>(
 ///   - financeRate: The rate at which negative cash flows are financed.
 ///   - reinvestmentRate: The rate at which positive cash flows are reinvested.
 /// - Returns: The MIRR as a decimal.
-/// - Throws: `IRRError` if calculation fails.
+/// - Throws: `BusinessMathError` if calculation fails.
 ///
 /// ## Example
 ///
@@ -202,7 +217,11 @@ public func mirr<T: Real>(
 ) throws -> T {
 	// Validate input
 	guard cashFlows.count >= 2 else {
-		throw IRRError.insufficientData
+		throw BusinessMathError.insufficientData(
+			required: 2,
+			actual: cashFlows.count,
+			context: "MIRR calculation requires at least 2 cash flows"
+		)
 	}
 
 	let n = cashFlows.count - 1  // Number of periods (excluding t=0)
@@ -227,7 +246,15 @@ public func mirr<T: Real>(
 	// Calculate MIRR
 	// MIRR = (FV_positive / -PV_negative)^(1/n) - 1
 	guard pvNegative < T.zero && fvPositive > T.zero else {
-		throw IRRError.invalidCashFlows
+		throw BusinessMathError.calculationFailed(
+			operation: "MIRR",
+			reason: "Cash flows must contain both positive and negative values",
+			suggestions: [
+				"Ensure you have at least one negative cash flow (outflows/investments)",
+				"Ensure you have at least one positive cash flow (inflows/returns)",
+				"Verify cash flow signs are correct (negative for costs, positive for receipts)"
+			]
+		)
 	}
 
 	let ratio = fvPositive / (-pvNegative)

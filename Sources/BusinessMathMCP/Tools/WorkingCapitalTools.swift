@@ -20,9 +20,6 @@ private func formatRatio(_ value: Double, decimals: Int = 2) -> String {
     return formatNumber(value, decimals: decimals) + "x"
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - Days Inventory Outstanding (DIO)
 

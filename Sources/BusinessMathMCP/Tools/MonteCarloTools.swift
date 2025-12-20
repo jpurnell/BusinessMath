@@ -33,9 +33,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
 }
 
 /// Format a percentage (input is already in percentage form, e.g., 95.5 for 95.5%)
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return value.formatDecimal(decimals: decimals) + "%"
-}
 
 // MARK: - 1. Create Distribution
 
@@ -718,17 +715,17 @@ public struct CalculateValueAtRiskTool: MCPToolHandler, Sendable {
         let output = """
         Value at Risk (VaR) Analysis:
 
-        VaR at \(formatPercent(confidenceLevel * 100))% Confidence:
+        VaR at \(confidenceLevel.percent())% Confidence:
         • VaR: \(formatNumber(varValue, decimals: 2))
-        • Interpretation: With \(formatPercent(confidenceLevel * 100))% confidence, losses will not exceed \(formatNumber(abs(varValue), decimals: 2))
-        • Or: There is a \(formatPercent((1 - confidenceLevel) * 100))% chance of losses exceeding \(formatNumber(abs(varValue), decimals: 2))
+        • Interpretation: With \(confidenceLevel.percent())% confidence, losses will not exceed \(formatNumber(abs(varValue), decimals: 2))
+        • Or: There is a \((1 - confidenceLevel).percent())% chance of losses exceeding \(formatNumber(abs(varValue), decimals: 2))
 
         Conditional VaR (CVaR / Expected Shortfall):
         • CVaR: \(formatNumber(cvar, decimals: 2))
-        • Average loss in worst \(formatPercent((1 - confidenceLevel) * 100))% of cases
+        • Average loss in worst \((1 - confidenceLevel).percent())% of cases
 
         Risk Metrics:
-        • Probability of Loss (< 0): \(formatPercent(probLoss * 100))%
+        • Probability of Loss (< 0): \(probLoss.percent())%
         • Mean Outcome: \(formatNumber(results.statistics.mean, decimals: 2))
         • Worst Case: \(formatNumber(results.statistics.min, decimals: 2))
         • Best Case: \(formatNumber(results.statistics.max, decimals: 2))
@@ -846,7 +843,7 @@ public struct CalculateProbabilityTool: MCPToolHandler, Sendable {
         Query: \(description)
 
         Result:
-        • Probability: \(formatNumber(probability, decimals: 4)) (\(formatPercent(probability * 100))%)
+        • Probability: \(formatNumber(probability, decimals: 4)) (\(probability.percent())%)
         • Interpretation: \(interpretation)
         • Sample Size: \(formatNumber(Double(values.count), decimals: 0)) iterations
 
@@ -857,7 +854,7 @@ public struct CalculateProbabilityTool: MCPToolHandler, Sendable {
 
         Confidence:
         With \(values.count) simulations, the probability estimate has:
-        • Standard error: ±\(formatPercent(sqrt(probability * (1 - probability) / Double(values.count)) * 100))%
+        • Standard error: ±\(sqrt(probability * (1 - probability) / Double(values.count)).percent())%
         """
 
         return .success(text: output)
@@ -1180,7 +1177,7 @@ public struct TornadoAnalysisTool: MCPToolHandler, Sendable {
         \(rank + 1). \(impact.name)
            Low:  \(formatNumber(impact.lowOutput, decimals: 2))  \(bar)
            High: \(formatNumber(impact.highOutput, decimals: 2))
-           Range: \(formatNumber(impact.range, decimals: 2)) (\(formatPercent((impact.range / baseOutput) * 100))% of base)
+           Range: \(formatNumber(impact.range, decimals: 2)) (\((impact.range / baseOutput).percent())% of base)
         """
         }
 

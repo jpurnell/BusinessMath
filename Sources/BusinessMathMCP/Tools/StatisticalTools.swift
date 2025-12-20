@@ -33,9 +33,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
 }
 
 /// Format a percentage (input is already in percentage form, e.g., 95.5 for 95.5%)
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return value.formatDecimal(decimals: decimals) + "%"
-}
 
 // MARK: - 1. Calculate Correlation (Pearson)
 
@@ -113,7 +110,7 @@ public struct CalculateCorrelationTool: MCPToolHandler, Sendable {
 
         Interpretation:
         • Strength: \(strength) \(direction) correlation
-        • R²: \(formatNumber(correlation * correlation, decimals: 4)) (\(formatPercent(correlation * correlation * 100))% of variance explained)
+        • R²: \(formatNumber(correlation * correlation, decimals: 4)) (\((correlation * correlation).percent())% of variance explained)
 
         \(correlation > 0 ? "✓ Positive relationship: as X increases, Y tends to increase" : "✗ Negative relationship: as X increases, Y tends to decrease")
         """
@@ -193,13 +190,13 @@ public struct LinearRegressionTool: MCPToolHandler, Sendable {
         Parameters:
         • Slope (m): \(formatNumber(slope, decimals: 4))
         • Intercept (b): \(formatNumber(intercept, decimals: 4))
-        • R² (goodness of fit): \(formatNumber(rSquared, decimals: 4)) (\(formatPercent(rSquared * 100))%)
+        • R² (goodness of fit): \(formatNumber(rSquared, decimals: 4)) (\(rSquared.percent())%)
         • N: \(x.count) data points
 
         Interpretation:
         • For each 1-unit increase in X, Y changes by \(formatNumber(slope, decimals: 4)) units
         • When X = 0, Y = \(formatNumber(intercept, decimals: 4))
-        • The model explains \(formatPercent(rSquared * 100))% of the variance in Y
+        • The model explains \(rSquared.percent())% of the variance in Y
         """
 
         // Generate predictions if requested
@@ -392,7 +389,7 @@ public struct CalculateConfidenceIntervalTool: MCPToolHandler, Sendable {
         let output = """
         Confidence Interval:
 
-        \(formatPercent(confidenceLevel * 100))% Confidence Interval: [\(formatNumber(ci.low, decimals: 4)), \(formatNumber(ci.high, decimals: 4))]
+        \(confidenceLevel.percent())% Confidence Interval: [\(formatNumber(ci.low, decimals: 4)), \(formatNumber(ci.high, decimals: 4))]
 
         Sample Statistics:
         • Mean: \(formatNumber(meanValue, decimals: 4))
@@ -403,7 +400,7 @@ public struct CalculateConfidenceIntervalTool: MCPToolHandler, Sendable {
         • ± \(formatNumber(marginOfError, decimals: 4))
 
         Interpretation:
-        We are \(formatPercent(confidenceLevel * 100))% confident that the true population
+        We are \(confidenceLevel.percent())% confident that the true population
         parameter falls within the interval [\(formatNumber(ci.low, decimals: 2)), \(formatNumber(ci.high, decimals: 2))].
         """
 

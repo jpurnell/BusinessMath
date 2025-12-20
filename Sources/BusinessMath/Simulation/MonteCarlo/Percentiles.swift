@@ -118,8 +118,19 @@ public struct Percentiles: Sendable {
 	/// print("Median: \(percentiles.p50)")  // 30.0
 	/// ```
 	public init(values: [Double]) throws {
-					guard !values.isEmpty else { throw PercentilesError.emptyValues }
-					guard values.allSatisfy({ $0.isFinite }) else { throw PercentilesError.nonFiniteValues }
+					guard !values.isEmpty else {
+						throw BusinessMathError.insufficientData(
+							required: 1,
+							actual: 0,
+							context: "Percentiles calculation requires at least one value"
+						)
+					}
+					guard values.allSatisfy({ $0.isFinite }) else {
+						throw BusinessMathError.dataQuality(
+							message: "All values must be finite (not NaN or infinite)",
+							context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"]
+						)
+					}
 
 					self.values = values
 					let sorted = values.sorted()

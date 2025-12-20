@@ -16,9 +16,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - Post-Money Valuation
 
@@ -82,8 +79,8 @@ public struct PostMoneyValuationTool: MCPToolHandler, Sendable {
         • Post-Money Valuation: $\(formatNumber(postMoney, decimals: 0))
 
         Ownership Structure:
-        • New Investor Ownership: \(formatPercent(newInvestorOwnership))
-        • Existing Shareholders: \(formatPercent(existingOwnership))
+        • New Investor Ownership: \(newInvestorOwnership.percent())
+        • Existing Shareholders: \(existingOwnership.percent())
 
         Price Per Share:
         Calculate as Post-Money Valuation / Total Shares Outstanding (post-investment)
@@ -157,13 +154,13 @@ public struct DilutionCalculationTool: MCPToolHandler, Sendable {
         • Total Shares After: \(formatNumber(totalSharesAfter, decimals: 0))
 
         Dilution Impact:
-        • Dilution Percentage: \(formatPercent(dilutionPercent))
-        • Existing Shareholders' New Ownership: \(formatPercent(ownershipAfter))
-        • New Investors' Ownership: \(formatPercent(dilutionPercent))
+        • Dilution Percentage: \(dilutionPercent.percent())
+        • Existing Shareholders' New Ownership: \(ownershipAfter.percent())
+        • New Investors' Ownership: \(dilutionPercent.percent())
 
         Example:
         If a founder owned 100% before (\(formatNumber(existingShares, decimals: 0)) shares),
-        they now own \(formatPercent(ownershipAfter)) after the new issuance.
+        they now own \(ownershipAfter.percent()) after the new issuance.
         """
 
         return .success(text: output)
@@ -257,7 +254,7 @@ public struct SAFEConversionTool: MCPToolHandler, Sendable {
         SAFE Terms:
         • Investment Amount: $\(formatNumber(safeAmount, decimals: 0))
         • Valuation Cap: $\(formatNumber(cap, decimals: 0))
-        • Discount Rate: \(formatPercent(discount))
+        • Discount Rate: \(discount.percent())
 
         Priced Round Terms:
         • Post-Money Valuation: $\(formatNumber(pricedValuation, decimals: 0))
@@ -272,7 +269,7 @@ public struct SAFEConversionTool: MCPToolHandler, Sendable {
         Result:
         • Shares Received: \(formatNumber(sharesReceived, decimals: 0))
         • Effective Price Per Share: $\(formatNumber(conversionPrice, decimals: 2))
-        • Discount to Priced Round: \(formatPercent((pricedPrice - conversionPrice) / pricedPrice))
+        • Discount to Priced Round: \(((pricedPrice - conversionPrice) / pricedPrice).percent())
 
         Note: \(safeOwnership)
         """
@@ -399,12 +396,12 @@ public struct LiquidationWaterfallTool: MCPToolHandler, Sendable {
         • Type: \(participationType)
 
         Ownership:
-        • Preferred Ownership: \(formatPercent(preferredOwn))
-        • Common Ownership: \(formatPercent(commonOwn))
+        • Preferred Ownership: \(preferredOwn.percent())
+        • Common Ownership: \(commonOwn.percent())
 
         Distribution:
-        • To Preferred Shareholders: $\(formatNumber(preferredPayout, decimals: 0)) (\(formatPercent(preferredPayout / proceeds)))
-        • To Common Shareholders: $\(formatNumber(commonPayout, decimals: 0)) (\(formatPercent(commonPayout / proceeds)))
+        • To Preferred Shareholders: $\(formatNumber(preferredPayout, decimals: 0)) (\((preferredPayout / proceeds).percent()))
+        • To Common Shareholders: $\(formatNumber(commonPayout, decimals: 0)) (\((commonPayout / proceeds).percent()))
 
         Return Analysis:
         • Preferred Multiple on Invested Capital: \(formatNumber(preferredReturn, decimals: 2))x

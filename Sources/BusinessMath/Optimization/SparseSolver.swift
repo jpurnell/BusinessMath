@@ -136,7 +136,7 @@ public struct SparseSolver {
 
         var rsold = dotProduct(r, r)
 
-        for iteration in 0..<maxIterations {
+        for _ in 0..<maxIterations {
             // Check convergence: ||r|| < tolerance
             if sqrt(rsold) < tolerance {
                 return x

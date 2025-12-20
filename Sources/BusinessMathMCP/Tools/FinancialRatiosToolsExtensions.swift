@@ -20,9 +20,6 @@ private func formatRatio(_ value: Double, decimals: Int = 2) -> String {
     return formatNumber(value, decimals: decimals) + "x"
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - 10. Return on Assets (ROA)
 
@@ -103,7 +100,7 @@ public struct ROATool: MCPToolHandler, Sendable {
         • Total Assets: $\(formatNumber(totalAssets, decimals: 0))
 
         Result:
-        • ROA: \(formatPercent(roaValue))
+        • ROA: \(roaValue.percent())
         • Interpretation: \(interpretation)
 
         The company generates $\(formatNumber(roaValue)) in profit for every $1 of assets,
@@ -195,7 +192,7 @@ public struct ROICTool: MCPToolHandler, Sendable {
         • Invested Capital: $\(formatNumber(investedCapital, decimals: 0))
 
         Result:
-        • ROIC: \(formatPercent(roicValue))
+        • ROIC: \(roicValue.percent())
         • Interpretation: \(interpretation)
 
         The company generates $\(formatNumber(roicValue)) in after-tax operating profit
@@ -471,8 +468,8 @@ public struct DebtRatioTool: MCPToolHandler, Sendable {
         • Total Assets: $\(formatNumber(totalAssets, decimals: 0))
 
         Result:
-        • Debt Ratio: \(formatPercent(ratio))
-        • Equity Ratio: \(formatPercent(equityRatio))
+        • Debt Ratio: \(ratio.percent())
+        • Equity Ratio: \(equityRatio.percent())
         • Interpretation: \(interpretation)
 
         \(formatNumber(ratio * 100, decimals: 1))% of the company's assets are financed by debt,

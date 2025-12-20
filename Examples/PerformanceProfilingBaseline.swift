@@ -36,19 +36,19 @@ struct PerformanceProfilingBaseline {
 		// Small dataset (10 periods)
 		let smallCashFlows = Array(repeating: 10_000.0, count: 10)
 		_ = await profiler.measure(operation: "NPV - 10 periods", category: "NPV") { @Sendable in
-			npv(discountRate: 0.08, cashFlows: smallCashFlows)
+			try! npv(discountRate: 0.08, cashFlows: smallCashFlows)
 		}
 
 		// Medium dataset (100 periods)
 		let mediumCashFlows = Array(repeating: 10_000.0, count: 100)
 		_ = await profiler.measure(operation: "NPV - 100 periods", category: "NPV") { @Sendable in
-			npv(discountRate: 0.08, cashFlows: mediumCashFlows)
+			try! npv(discountRate: 0.08, cashFlows: mediumCashFlows)
 		}
 
 		// Large dataset (1000 periods)
 		let largeCashFlows = Array(repeating: 10_000.0, count: 1000)
 		_ = await profiler.measure(operation: "NPV - 1000 periods", category: "NPV") { @Sendable in
-			npv(discountRate: 0.08, cashFlows: largeCashFlows)
+			try! npv(discountRate: 0.08, cashFlows: largeCashFlows)
 		}
 
 		print("  ✓ NPV profiling complete\n")

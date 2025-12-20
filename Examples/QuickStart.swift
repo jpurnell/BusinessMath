@@ -218,14 +218,6 @@ func example7_CompleteWorkflow() {
 
 // MARK: - Helper Functions
 
-private func formatCurrency(_ value: Double) -> String {
-	let formatter = NumberFormatter()
-	formatter.numberStyle = .decimal
-	formatter.minimumFractionDigits = 2
-	formatter.maximumFractionDigits = 2
-	return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
-}
-
 private func formatPercent(_ value: Double) -> String {
 	return String(format: "%.2f%%", value * 100)
 }

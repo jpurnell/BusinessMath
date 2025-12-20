@@ -39,6 +39,9 @@ public struct ManufacturingModel: Sendable {
     /// Production capacity (units per month)
     public let productionCapacity: Double
 
+    /// Actual production level (units per month)
+    public let actualProduction: Double?
+
     /// Selling price per unit
     public let sellingPricePerUnit: Double
 
@@ -65,11 +68,42 @@ public struct ManufacturingModel: Sendable {
         targetProduction: Double? = nil
     ) {
         self.productionCapacity = productionCapacity
+        self.actualProduction = nil
         self.sellingPricePerUnit = sellingPricePerUnit
         self.directMaterialCostPerUnit = directMaterialCostPerUnit
         self.directLaborCostPerUnit = directLaborCostPerUnit
         self.monthlyOverhead = monthlyOverhead
         self.targetProduction = targetProduction
+    }
+
+    /// Convenience initializer with simplified parameter names and actual production.
+    ///
+    /// Example:
+    /// ```swift
+    /// let model = ManufacturingModel(
+    ///     productionCapacity: 10_000,
+    ///     actualProduction: 8_500,
+    ///     materialCostPerUnit: 15.0,
+    ///     laborCostPerUnit: 10.0,
+    ///     overheadCosts: 50_000,
+    ///     sellingPricePerUnit: 50.0
+    /// )
+    /// ```
+    public init(
+        productionCapacity: Double,
+        actualProduction: Double,
+        materialCostPerUnit: Double,
+        laborCostPerUnit: Double,
+        overheadCosts: Double,
+        sellingPricePerUnit: Double
+    ) {
+        self.productionCapacity = productionCapacity
+        self.actualProduction = actualProduction
+        self.sellingPricePerUnit = sellingPricePerUnit
+        self.directMaterialCostPerUnit = materialCostPerUnit
+        self.directLaborCostPerUnit = laborCostPerUnit
+        self.monthlyOverhead = overheadCosts
+        self.targetProduction = nil
     }
 
     // MARK: - Computed Properties
@@ -80,6 +114,17 @@ public struct ManufacturingModel: Sendable {
     }
 
     // MARK: - Unit Cost Calculations
+
+    /// Calculate total unit cost using stored actual production.
+    ///
+    /// Unit Cost = Direct Materials + Direct Labor + (Overhead / Units Produced)
+    ///
+    /// - Returns: Total cost per unit based on actualProduction, or 0 if not set
+    public func calculateUnitCost() -> Double {
+        guard let production = actualProduction, production > 0 else { return 0 }
+        let overheadPerUnit = monthlyOverhead / production
+        return variableCostPerUnit + overheadPerUnit
+    }
 
     /// Calculate total unit cost at a given capacity utilization.
     ///
@@ -108,8 +153,17 @@ public struct ManufacturingModel: Sendable {
     /// Contribution Margin = Selling Price - Variable Costs
     ///
     /// - Returns: Contribution margin per unit
-    public func calculateContributionMarginPerUnit() -> Double {
+    public func calculateContributionMargin() -> Double {
         return sellingPricePerUnit - variableCostPerUnit
+    }
+
+    /// Calculate contribution margin per unit (alias for calculateContributionMargin).
+    ///
+    /// Contribution Margin = Selling Price - Variable Costs
+    ///
+    /// - Returns: Contribution margin per unit
+    public func calculateContributionMarginPerUnit() -> Double {
+        return calculateContributionMargin()
     }
 
     /// Calculate contribution margin ratio.
@@ -142,6 +196,16 @@ public struct ManufacturingModel: Sendable {
     }
 
     // MARK: - Capacity Utilization
+
+    /// Calculate capacity utilization using stored actual production.
+    ///
+    /// Capacity Utilization = Actual Production / Production Capacity
+    ///
+    /// - Returns: Capacity utilization ratio (0.0 to 1.0+), or 0 if actualProduction is not set
+    public func calculateCapacityUtilization() -> Double {
+        guard let production = actualProduction else { return 0 }
+        return production / productionCapacity
+    }
 
     /// Calculate capacity utilization.
     ///

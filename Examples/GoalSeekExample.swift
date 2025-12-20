@@ -103,15 +103,6 @@ func irrCalculationExample() throws {
 	}
 	print()
 
-	// NPV function
-	func npv(rate: Double) -> Double {
-		var npv = 0.0
-		for (t, cf) in cashFlows.enumerated() {
-			npv += cf / pow(1 + rate, Double(t))
-		}
-		return npv
-	}
-
 	// Find IRR (rate where NPV = 0)
 	print("Finding IRR (rate where NPV = 0)...")
 	let irr = try goalSeek(
@@ -322,9 +313,11 @@ func errorHandlingExample() {
 			guess: 0.0  // Bad guess - derivative is zero here
 		)
 		print("Solution: \(result)")
-	} catch GoalSeekError.divisionByZero {
-		print("✗ Error: Derivative was zero")
-		print("  Solution: Choose a different initial guess")
+	} catch let error as BusinessMathError {
+		print("✗ Error: \(error.errorDescription ?? "Goal seek failed")")
+		if let suggestion = error.recoverySuggestion {
+			print("  Suggestion: \(suggestion)")
+		}
 	} catch {
 		print("Unexpected error: \(error)")
 	}
@@ -341,8 +334,8 @@ func errorHandlingExample() {
 			guess: 0.0
 		)
 		print("Solution: \(result.formatted())")
-	} catch GoalSeekError.convergenceFailed {
-		print("✗ Error: Failed to converge")
+	} catch let error as BusinessMathError {
+		print("✗ Error: \(error.errorDescription ?? "Goal seek failed")")
 		print("  Reason: No solution exists (sin(x) cannot equal 2)")
 	} catch {
 		print("Unexpected error: \(error)")
@@ -368,11 +361,8 @@ func errorHandlingExample() {
 				guess: 10.0,
 				tolerance: 0.01
 			)
-		} catch GoalSeekError.divisionByZero {
-			print("  Warning: Zero derivative encountered")
-			return nil
-		} catch GoalSeekError.convergenceFailed {
-			print("  Warning: No breakeven point found")
+		} catch let error as BusinessMathError {
+			print("  Warning: \(error.errorDescription ?? "Goal seek failed")")
 			return nil
 		} catch {
 			print("  Error: \(error)")

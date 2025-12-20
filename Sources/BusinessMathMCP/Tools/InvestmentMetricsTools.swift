@@ -34,12 +34,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
 }
 
-/// Format currency
-private func formatCurrency(_ value: Double, decimals: Int = 2) -> String {
-    let formatted = abs(value).formatDecimal(decimals: decimals)
-    return value >= 0 ? "$\(formatted)" : "-$\(formatted)"
-}
-
 // MARK: - Profitability Index
 
 public struct ProfitabilityIndexTool: MCPToolHandler, Sendable {
@@ -122,7 +116,8 @@ public struct ProfitabilityIndexTool: MCPToolHandler, Sendable {
         let pi = profitabilityIndex(rate: rate, cashFlows: cashFlows)
 
         // Calculate NPV for context
-        let npvValue = npv(discountRate: rate, cashFlows: cashFlows)
+		let npValue = try? npv(discountRate: rate, cashFlows: cashFlows)
+		let npvValue = (npValue ?? 0.0)
 
         // Calculate PV components
         var pvPositive = 0.0
@@ -159,19 +154,19 @@ public struct ProfitabilityIndexTool: MCPToolHandler, Sendable {
         Profitability Index (PI) Analysis
 
         Cash Flows:
-        \(cashFlows.enumerated().map { "  Period \($0): \(formatCurrency($1))" }.joined(separator: "\n"))
+        \(cashFlows.enumerated().map { "  Period \($0): \($1.currency())" }.joined(separator: "\n"))
 
         Discount Rate: \(formatRate(rate))
 
         Calculation:
-        • PV of Positive Cash Flows: \(formatCurrency(pvPositive))
-        • PV of Negative Cash Flows: \(formatCurrency(pvNegative))
-        • Absolute PV of Investments: \(formatCurrency(-pvNegative))
+        • PV of Positive Cash Flows: \(pvPositive.currency())
+        • PV of Negative Cash Flows: \(pvNegative.currency())
+        • Absolute PV of Investments: \((-pvNegative).currency())
 
         Result:
         • Profitability Index: \(formatNumber(pi, decimals: 3))
-        • NPV: \(formatCurrency(npvValue))
-        • Value per Dollar Invested: \(formatCurrency(pi))
+        • NPV: \(npvValue.currency())
+        • Value per Dollar Invested: \(pi.currency())
 
         Decision: \(decision)
 
@@ -180,10 +175,10 @@ public struct ProfitabilityIndexTool: MCPToolHandler, Sendable {
 
         \(pi > 1.0 ? """
         • For every $1.00 invested, you receive $\(formatNumber(pi, decimals: 2)) in present value
-        • Total value created: \(formatCurrency(npvValue))
+        • Total value created: \(npvValue.currency())
         """ : """
         • For every $1.00 invested, you only receive $\(formatNumber(pi, decimals: 2)) in present value
-        • Total value destroyed: \(formatCurrency(npvValue))
+        • Total value destroyed: \(npvValue.currency())
         """)
 
         Capital Rationing Note:
@@ -306,7 +301,7 @@ public struct PaybackPeriodTool: MCPToolHandler, Sendable {
             \(cashFlows.enumerated().map { period, flow in
                 let cumFlow = cumulativeFlows[period]
                 let status = cumFlow >= 0 ? "✓ Recovered" : "⧗ Recovering"
-                return "  Period \(period): \(formatCurrency(flow)) → Cumulative: \(formatCurrency(cumFlow)) \(status)"
+                return "  Period \(period): \(flow.currency()) → Cumulative: \(cumFlow.currency()) \(status)"
             }.joined(separator: "\n"))
 
             Result:
@@ -331,13 +326,13 @@ public struct PaybackPeriodTool: MCPToolHandler, Sendable {
             Cash Flows & Cumulative Recovery:
             \(cashFlows.enumerated().map { period, flow in
                 let cumFlow = cumulativeFlows[period]
-                return "  Period \(period): \(formatCurrency(flow)) → Cumulative: \(formatCurrency(cumFlow))"
+                return "  Period \(period): \(flow.currency()) → Cumulative: \(cumFlow.currency())"
             }.joined(separator: "\n"))
 
             Result:
             • Payback Period: NEVER
             • Investment is never fully recovered
-            • Final cumulative cash flow: \(formatCurrency(cumulativeFlows.last ?? 0))
+            • Final cumulative cash flow: \((cumulativeFlows.last ?? 0).currency())
 
             Risk Assessment: High Risk - No Payback
 
@@ -498,9 +493,9 @@ public struct DiscountedPaybackPeriodTool: MCPToolHandler, Sendable {
                 let cumPV = cumulativePVs[period]
                 let status = cumPV >= 0 ? "✓ Recovered (PV)" : "⧗ Recovering"
                 return """
-                  Period \(period): \(formatCurrency(flow))
-                    → PV: \(formatCurrency(pv))
-                    → Cumulative PV: \(formatCurrency(cumPV)) \(status)
+                  Period \(period): \(flow.currency())
+                    → PV: \(pv.currency())
+                    → Cumulative PV: \(cumPV.currency()) \(status)
                 """
             }.joined(separator: "\n"))
 
@@ -540,16 +535,16 @@ public struct DiscountedPaybackPeriodTool: MCPToolHandler, Sendable {
                 let pv = presentValues[period]
                 let cumPV = cumulativePVs[period]
                 return """
-                  Period \(period): \(formatCurrency(flow))
-                    → PV: \(formatCurrency(pv))
-                    → Cumulative PV: \(formatCurrency(cumPV))
+                  Period \(period): \(flow.currency())
+                    → PV: \(pv.currency())
+                    → Cumulative PV: \(cumPV.currency())
                 """
             }.joined(separator: "\n"))
 
             Result:
             • Discounted Payback Period: NEVER
             • Investment is never recovered in present value terms
-            • Final cumulative PV: \(formatCurrency(cumulativePVs.last ?? 0))\(comparison)
+            • Final cumulative PV: \((cumulativePVs.last ?? 0).currency())\(comparison)
 
             Risk Assessment: High Risk - No Discounted Payback
 
@@ -750,15 +745,15 @@ public struct MIRRTool: MCPToolHandler, Sendable {
         Modified Internal Rate of Return (MIRR) Analysis
 
         Cash Flows:
-        \(cashFlows.enumerated().map { "  Period \($0): \(formatCurrency($1))" }.joined(separator: "\n"))
+        \(cashFlows.enumerated().map { "  Period \($0): \($1.currency())" }.joined(separator: "\n"))
 
         Assumptions:
         • Finance Rate: \(formatRate(financeRate)) (cost of capital for investments)
         • Reinvestment Rate: \(formatRate(reinvestmentRate)) (return on positive cash flows)
 
         Calculation Components:
-        • PV of Investments (at finance rate): \(formatCurrency(pvNegative))
-        • FV of Returns (at reinvestment rate): \(formatCurrency(fvPositive))
+        • PV of Investments (at finance rate): \(pvNegative.currency())
+        • FV of Returns (at reinvestment rate): \(fvPositive.currency())
         • Number of Periods: \(n)
 
         Result:

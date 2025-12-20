@@ -47,12 +47,13 @@ public actor ModelProfiler {
     private var metrics: [String: [PerformanceMetric]] = [:]
 
     /// Logger for performance tracking
-    #if canImport(OSLog)
+    /// Disabled in DEBUG builds (including playgrounds) to avoid OSLog linking issues
+    #if canImport(OSLog) && !DEBUG
     private let logger = Logger.performance
     #endif
 
     /// Performance threshold for warnings (in seconds)
-    public var warningThreshold: TimeInterval = 1.0
+    private var warningThreshold: TimeInterval = 1.0
 
     /// Initialize a new profiler
     public init() {}
@@ -79,7 +80,7 @@ public actor ModelProfiler {
 	public func measure<T: Sendable>(
         operation: String,
         category: String? = nil,
-        block: () throws -> T
+        block: @Sendable () throws -> T
     ) rethrows -> T {
         let start = Date()
         let startMemory = currentMemoryUsage()
@@ -106,11 +107,11 @@ public actor ModelProfiler {
 
         // Log warning if slow
         if duration > warningThreshold {
-            #if canImport(OSLog)
+            #if canImport(OSLog) && !DEBUG
             logger.performanceWarning(operation, duration: duration, threshold: warningThreshold)
             #endif
         } else {
-            #if canImport(OSLog)
+            #if canImport(OSLog) && !DEBUG
             logger.performance(operation, duration: duration)
             #endif
         }
@@ -129,7 +130,7 @@ public actor ModelProfiler {
 	public func measureAsync<T: Sendable>(
         operation: String,
         category: String? = nil,
-        block: () async throws -> T
+        block: @Sendable () async throws -> T
     ) async rethrows -> T {
         let start = Date()
         let startMemory = currentMemoryUsage()
@@ -154,7 +155,7 @@ public actor ModelProfiler {
         metrics[operation]?.append(metric)
 
         if duration > warningThreshold {
-            #if canImport(OSLog)
+            #if canImport(OSLog) && !DEBUG
             logger.performanceWarning(operation, duration: duration, threshold: warningThreshold)
             #endif
         }
@@ -186,18 +187,20 @@ public actor ModelProfiler {
 
             let durations = measurements.map { $0.duration }
             let memoryUsages = measurements.map { $0.memoryUsed }
+			let percentiles = try? Percentiles(values: durations)
 
             let stats = OperationStatistics(
                 operation: operation,
                 category: measurements.first?.category,
                 executionCount: measurements.count,
                 totalTime: durations.reduce(0, +),
-                averageTime: durations.reduce(0, +) / Double(durations.count),
+                averageTime: average(durations),
+				stdDevTime: stdDev(durations),
                 minTime: durations.min() ?? 0,
                 maxTime: durations.max() ?? 0,
                 medianTime: median(durations),
-                percentile95: percentile(durations, 0.95),
-                percentile99: percentile(durations, 0.99),
+                percentile95: percentiles?.p95 ?? 0,
+				percentile99: percentiles?.p99 ?? 0,
                 totalMemory: memoryUsages.reduce(0, +),
                 averageMemory: memoryUsages.reduce(0, +) / Int64(memoryUsages.count)
             )
@@ -247,31 +250,32 @@ public actor ModelProfiler {
     public func reset(operation: String) {
         metrics.removeValue(forKey: operation)
     }
+	
+	public func setWarningThreshold(_ threshold: TimeInterval) async {
+		self.warningThreshold = threshold
+	}
 
     // MARK: - Statistics Helpers
 
-    private func median(_ values: [TimeInterval]) -> TimeInterval {
+    private func average(_ values: [TimeInterval]) -> TimeInterval {
         guard !values.isEmpty else { return 0 }
-        let sorted = values.sorted()
-        let count = sorted.count
-
-        if count % 2 == 0 {
-            return (sorted[count / 2 - 1] + sorted[count / 2]) / 2
-        } else {
-            return sorted[count / 2]
-        }
+        return values.reduce(0, +) / Double(values.count)
     }
 
-    private func percentile(_ values: [TimeInterval], _ p: Double) -> TimeInterval {
-        guard !values.isEmpty else { return 0 }
-        let sorted = values.sorted()
-        let index = Int(Double(sorted.count) * p)
-        let clampedIndex = min(max(0, index), sorted.count - 1)
-        return sorted[clampedIndex]
+    private func stdDev(_ values: [TimeInterval]) -> TimeInterval {
+        guard values.count > 1 else { return 0 }
+        let avg = average(values)
+        let variance = values.reduce(0) { $0 + pow($1 - avg, 2) } / Double(values.count - 1)
+        return sqrt(variance)
     }
 
     private func currentMemoryUsage() -> Int64 {
-        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+        // Memory tracking using Mach APIs can crash in Swift Playgrounds
+        // Disable it to ensure stability in playground environments
+        #if DEBUG
+        // In debug/playground mode, skip memory tracking to avoid crashes
+        return 0
+        #elseif os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
@@ -284,7 +288,11 @@ public actor ModelProfiler {
             }
         }
 
-        return result == KERN_SUCCESS ? Int64(info.resident_size) : 0
+        guard result == KERN_SUCCESS else {
+            return 0
+        }
+
+        return Int64(info.resident_size)
         #else
         return 0  // Memory tracking not available on Linux
         #endif
@@ -329,7 +337,9 @@ public struct OperationStatistics: Sendable {
 
     /// Average execution time
     public let averageTime: TimeInterval
-
+	
+	/// Std Deviation execution Time
+	public let stdDevTime: TimeInterval
     /// Fastest execution
     public let minTime: TimeInterval
 
@@ -382,7 +392,7 @@ public struct PerformanceReport: Sendable {
         }
 
         // Header row with proper padding
-        let opHeader = "Operation".padding(toLength: 45, withPad: " ", startingAt: 0)
+        let opHeader = "Operation".padding(toLength: 40, withPad: " ", startingAt: 0)
         let countHeader = "Count".padding(toLength: 8, withPad: " ", startingAt: 0)
         let totalHeader = "Total".padding(toLength: 12, withPad: " ", startingAt: 0)
         let avgHeader = "Avg".padding(toLength: 12, withPad: " ", startingAt: 0)
@@ -390,10 +400,10 @@ public struct PerformanceReport: Sendable {
         let maxHeader = "Max".padding(toLength: 12, withPad: " ", startingAt: 0)
 
         output += "\(opHeader) \(countHeader) \(totalHeader) \(avgHeader) \(minHeader) \(maxHeader)\n"
-        output += String(repeating: "-", count: 100) + "\n"
+        output += String(repeating: "-", count: 97) + "\n"
 
         for op in operations {
-			let opName = "\(op.operation.padding(toLength: 45, withPad: " ", startingAt: 0))"
+			let opName = "\(op.operation.padding(toLength: 40, withPad: " ", startingAt: 0))"
 			let count = "\(op.executionCount.formatted().padding(toLength: 8, withPad: " ", startingAt: 0))"
 			let total = "\(op.totalTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
 			let avg = "\(op.averageTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
@@ -408,7 +418,7 @@ public struct PerformanceReport: Sendable {
 
     /// Format as CSV for export
     public func asCSV() -> String {
-        var csv = "Operation,Category,Count,TotalTime,AvgTime,MinTime,MaxTime,MedianTime,P95,P99,TotalMemory,AvgMemory\n"
+        var csv = "Operation,Category,Count,TotalTime,AvgTime,StdDevTime,MinTime,MaxTime,MedianTime,P95,P99,TotalMemory,AvgMemory\n"
 
         for op in operations {
             csv += "\(op.operation),"
@@ -416,6 +426,7 @@ public struct PerformanceReport: Sendable {
             csv += "\(op.executionCount),"
             csv += "\(op.totalTime),"
             csv += "\(op.averageTime),"
+			csv += "\(op.stdDevTime),"
             csv += "\(op.minTime),"
             csv += "\(op.maxTime),"
             csv += "\(op.medianTime),"

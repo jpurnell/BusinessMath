@@ -140,6 +140,25 @@ public struct SimulationResults: Sendable {
 		let proportionExact = Double(exactMatches) / Double(values.count)
 		return cdfValue - proportionExact
 	}
+	
+	public func riskAnalysis(_ thresholds: [Double] = []) -> String {
+		var returnString = ""
+		var comparisonThresholds: [Double] = []
+		if thresholds.isEmpty {
+			comparisonThresholds = [0, self.percentiles.p5, self.percentiles.p25, self.percentiles.p50, self.percentiles.p75, self.percentiles.p95]
+		} else {
+			comparisonThresholds = thresholds
+		}
+		for (_, threshold) in comparisonThresholds.enumerated() {
+			let desc: String
+			switch threshold {
+				case 0: desc = "Probability of loss"
+				default: desc = "Probability profit \(threshold >= self.percentiles.p50 ? ">=" : "<") \((threshold / 1000).currency(0))k"
+			}
+			returnString += "  \(desc) \(threshold > self.percentiles.p50 ? (self.probabilityAbove(threshold)).percent() : (self.probabilityBelow(threshold)).percent())\n"
+		}
+		return returnString
+	}
 
 	/// Calculates the probability that a randomly sampled outcome falls within the range.
 	///

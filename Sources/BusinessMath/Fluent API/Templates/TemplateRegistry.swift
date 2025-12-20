@@ -43,7 +43,7 @@ public protocol TemplateProtocol: Sendable {
     ///
     /// - Parameter parameters: Dictionary of parameter names to values
     /// - Returns: Configured financial model
-    /// - Throws: ``EnhancedBusinessMathError`` if parameters are invalid
+    /// - Throws: ``BusinessMathError`` if parameters are invalid
     func create(parameters: [String: Any]) throws -> Any
 
     /// Get the template's parameter schema
@@ -54,7 +54,7 @@ public protocol TemplateProtocol: Sendable {
     /// Validate parameters before creating a model
     ///
     /// - Parameter parameters: Dictionary of parameter names to values
-    /// - Throws: ``EnhancedBusinessMathError`` if validation fails
+    /// - Throws: ``BusinessMathError`` if validation fails
     func validate(parameters: [String: Any]) throws
 }
 
@@ -365,20 +365,20 @@ public actor TemplateRegistry {
     /// - Parameters:
     ///   - template: Template conforming to TemplateProtocol
     ///   - metadata: Template metadata
-    /// - Throws: ``EnhancedBusinessMathError`` if validation fails
+    /// - Throws: ``BusinessMathError`` if validation fails
     public func register(
         _ template: any TemplateProtocol,
         metadata: TemplateMetadata
     ) throws {
         // Validate metadata
         guard !metadata.name.isEmpty else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "Template name cannot be empty"
             )
         }
 
         guard !metadata.version.isEmpty else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "Template version cannot be empty"
             )
         }
@@ -386,7 +386,7 @@ public actor TemplateRegistry {
         // Validate schema
         let schema = template.schema()
         guard !schema.parameters.isEmpty else {
-            throw EnhancedBusinessMathError.invalidInput(
+            throw BusinessMathError.invalidInput(
                 message: "Template must define at least one parameter"
             )
         }
@@ -462,10 +462,10 @@ public actor TemplateRegistry {
     ///
     /// - Parameter templateName: Name of template to export
     /// - Returns: Template package ready for encoding
-    /// - Throws: ``EnhancedBusinessMathError`` if template not found
+    /// - Throws: ``BusinessMathError`` if template not found
     public func export(_ templateName: String) throws -> TemplatePackage {
         guard let (template, metadata, _) = templates[templateName] else {
-            throw EnhancedBusinessMathError.missingData(
+            throw BusinessMathError.missingData(
                 account: "Template",
                 period: templateName
             )
@@ -478,7 +478,7 @@ public actor TemplateRegistry {
 
         let schemaData = try encoder.encode(schema)
         guard let templateJSON = String(data: schemaData, encoding: .utf8) else {
-            throw EnhancedBusinessMathError.calculationFailed(
+            throw BusinessMathError.calculationFailed(
                 operation: "Export Template",
                 reason: "Failed to encode template schema",
                 suggestions: ["Check template schema is valid"]
@@ -502,11 +502,11 @@ public actor TemplateRegistry {
     ///
     /// - Parameter package: Template package to import
     /// - Returns: Registered template information
-    /// - Throws: ``EnhancedBusinessMathError`` if validation fails
+    /// - Throws: ``BusinessMathError`` if validation fails
     public func `import`(_ package: TemplatePackage) throws -> RegisteredTemplate {
         // Verify integrity
         guard package.verifyIntegrity() else {
-            throw EnhancedBusinessMathError.dataQuality(
+            throw BusinessMathError.dataQuality(
                 message: "Template package checksum mismatch",
                 context: [
                     "expected": package.checksum,
@@ -518,7 +518,7 @@ public actor TemplateRegistry {
         // Decode schema
         let decoder = JSONDecoder()
         guard let schemaData = package.templateJSON.data(using: .utf8) else {
-            throw EnhancedBusinessMathError.dataQuality(
+            throw BusinessMathError.dataQuality(
                 message: "Invalid template JSON encoding"
             )
         }
@@ -549,10 +549,10 @@ public actor TemplateRegistry {
     ///
     /// - Parameter templateName: Name of template to validate
     /// - Returns: Validation report
-    /// - Throws: ``EnhancedBusinessMathError`` if template not found
+    /// - Throws: ``BusinessMathError`` if template not found
     public func validate(_ templateName: String) throws -> TemplateValidationReport {
         guard let (template, metadata, _) = templates[templateName] else {
-            throw EnhancedBusinessMathError.missingData(
+            throw BusinessMathError.missingData(
                 account: "Template",
                 period: templateName
             )
@@ -690,7 +690,7 @@ private struct ImportedTemplate: TemplateProtocol {
     func create(parameters: [String: Any]) throws -> Any {
         // Imported templates store schema only, not creation logic
         // They serve as metadata containers for discovery
-        throw EnhancedBusinessMathError.calculationFailed(
+        throw BusinessMathError.calculationFailed(
             operation: "Create Model",
             reason: "Imported templates are metadata-only. Use a native template implementation.",
             suggestions: [
@@ -706,7 +706,7 @@ private struct ImportedTemplate: TemplateProtocol {
 
         for param in requiredParams {
             guard parameters[param.name] != nil else {
-                throw EnhancedBusinessMathError.missingData(
+                throw BusinessMathError.missingData(
                     account: param.name,
                     period: "template parameters"
                 )

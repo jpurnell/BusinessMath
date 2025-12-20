@@ -88,9 +88,9 @@ public enum CompoundingFrequency: Sendable {
 /// ## Important Notes
 /// - Returns infinity if `from` is zero
 /// - Use `cagr()` for multi-period annualized growth rates
-public func growthRate<T: Real>(from: T, to: T) -> T {
+public func growthRate<T: Real>(from: T, to: T) throws -> T {
 	guard from != T.zero else {
-		return T.infinity
+		throw BusinessMathError.divisionByZero(context: "Growth Rate Calculation")
 	}
 
 	return (to - from) / from

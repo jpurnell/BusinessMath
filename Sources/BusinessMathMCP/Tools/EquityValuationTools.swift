@@ -117,14 +117,14 @@ public struct FCFEModelTool: MCPToolHandler, Sendable {
         ======================
 
         Inputs:
-          Current FCFE: \(formatCurrency(currentFCFE))
-          High Growth Rate: \(formatPercent(highGrowthRate))
+          Current FCFE: \(currentFCFE.currency())
+          High Growth Rate: \(highGrowthRate.percent())
           High Growth Period: \(highGrowthPeriods) years
-          Terminal Growth Rate: \(formatPercent(terminalGrowthRate))
-          Cost of Equity: \(formatPercent(costOfEquity))
+          Terminal Growth Rate: \(terminalGrowthRate.percent())
+          Cost of Equity: \(costOfEquity.percent())
 
         Valuation:
-          Total Equity Value: \(formatCurrency(equityValue))
+          Total Equity Value: \(equityValue.currency())
         """
 
         if let shares = sharesOutstanding {
@@ -132,7 +132,7 @@ public struct FCFEModelTool: MCPToolHandler, Sendable {
             result += """
 
               Shares Outstanding: \(formatNumber(shares, decimals: 0))
-              Value Per Share: \(formatCurrency(valuePerShare, decimals: 2))
+              Value Per Share: \(valuePerShare.currency())
             """
         }
 
@@ -212,7 +212,7 @@ public struct GordonGrowthModelTool: MCPToolHandler, Sendable {
         // Validate: growth rate must be less than required return
         guard growthRate < requiredReturn else {
             throw ToolError.invalidArguments(
-                "Growth rate (\(formatPercent(growthRate))) must be less than required return (\(formatPercent(requiredReturn)))"
+                "Growth rate (\(growthRate.percent())) must be less than required return (\(requiredReturn.percent()))"
             )
         }
 
@@ -231,17 +231,17 @@ public struct GordonGrowthModelTool: MCPToolHandler, Sendable {
         ============================
 
         Inputs:
-          Current Dividend: \(formatCurrency(dividend, decimals: 2))/share
-          Growth Rate: \(formatPercent(growthRate))
-          Required Return: \(formatPercent(requiredReturn))
+          Current Dividend: \(dividend.currency()))/share
+          Growth Rate: \(growthRate.percent())
+          Required Return: \(requiredReturn.percent())
 
         Valuation:
-          Next Year Dividend (D₁): \(formatCurrency(nextDividend, decimals: 2))
-          Intrinsic Value: \(formatCurrency(valuePerShare, decimals: 2))/share
-          Current Dividend Yield: \(formatPercent(dividendYield))
+          Next Year Dividend (D₁): \(nextDividend.currency())
+          Intrinsic Value: \(valuePerShare.currency())/share
+          Current Dividend Yield: \(dividendYield.percent())
 
         Interpretation:
-        • Value = D₁ / (r - g) = \(formatCurrency(nextDividend, decimals: 2)) / (\(formatPercent(requiredReturn)) - \(formatPercent(growthRate)))
+        • Value = D₁ / (r - g) = \(nextDividend.currency()) / (\(requiredReturn.percent()) - \(growthRate.percent()))
         • Model assumes perpetual constant growth
         • Best for mature, stable dividend payers
         • Compare to market price to assess value
@@ -332,18 +332,18 @@ public struct TwoStageDDMTool: MCPToolHandler, Sendable {
         =====================
 
         Inputs:
-          Current Dividend: \(formatCurrency(currentDividend, decimals: 2))/share
-          High Growth Rate: \(formatPercent(highGrowthRate))
+          Current Dividend: \(currentDividend.currency())/share
+          High Growth Rate: \(highGrowthRate.percent())
           High Growth Period: \(highGrowthPeriods) years
-          Stable Growth Rate: \(formatPercent(stableGrowthRate))
-          Required Return: \(formatPercent(requiredReturn))
+          Stable Growth Rate: \(stableGrowthRate.percent())
+          Required Return: \(requiredReturn.percent())
 
         Valuation:
-          Intrinsic Value: \(formatCurrency(valuePerShare, decimals: 2))/share
+          Intrinsic Value: \(valuePerShare.currency())/share
 
         Interpretation:
-        • Phase 1: \(highGrowthPeriods) years of \(formatPercent(highGrowthRate)) growth
-        • Phase 2: Perpetual \(formatPercent(stableGrowthRate)) growth
+        • Phase 1: \(highGrowthPeriods) years of \(highGrowthRate.percent()) growth
+        • Phase 2: Perpetual \(stableGrowthRate.percent()) growth
         • Model captures transition from growth to maturity
         • Suitable for companies with predictable lifecycle
         """
@@ -441,22 +441,22 @@ public struct EnterpriseValueBridgeTool: MCPToolHandler, Sendable {
         Enterprise Value Bridge
         =======================
 
-        Enterprise Value          \(formatCurrency(enterpriseValue))
-        Less: Total Debt          (\(formatCurrency(totalDebt)))
-        Add: Cash                 \(formatCurrency(cash))
+        Enterprise Value          \(enterpriseValue.currency())
+        Less: Total Debt          (\(totalDebt.currency())
+        Add: Cash                 \(cash.currency())
         """
 
         if nonOperatingAssets > 0 {
-            result += "\nAdd: Non-Operating Assets \(formatCurrency(nonOperatingAssets))"
+            result += "\nAdd: Non-Operating Assets \(nonOperatingAssets.currency())"
         }
         if minorityInterest > 0 {
-            result += "\nLess: Minority Interest   (\(formatCurrency(minorityInterest)))"
+            result += "\nLess: Minority Interest   (\(minorityInterest.currency()))"
         }
 
         result += """
 
                                   ─────────────────
-        Equity Value              \(formatCurrency(equityValue))
+        Equity Value              \(equityValue.currency())
         """
 
         if let shares = try? args.getDouble("sharesOutstanding") {
@@ -466,7 +466,7 @@ public struct EnterpriseValueBridgeTool: MCPToolHandler, Sendable {
 
             Per Share Value:
               Shares Outstanding: \(formatNumber(shares, decimals: 0))
-              Value Per Share: \(formatCurrency(valuePerShare, decimals: 2))
+              Value Per Share: \(valuePerShare.currency())
             """
         }
 
@@ -474,10 +474,10 @@ public struct EnterpriseValueBridgeTool: MCPToolHandler, Sendable {
 
 
         Breakdown:
-          Net Debt: \(formatCurrency(breakdown.netDebt))
-          Non-Operating Assets: \(formatCurrency(breakdown.nonOperatingAssets))
-          Minority Interest: \(formatCurrency(breakdown.minorityInterest))
-          Preferred Stock: \(formatCurrency(breakdown.preferredStock))
+          Net Debt: \(breakdown.netDebt.currency())
+          Non-Operating Assets: \(breakdown.nonOperatingAssets.currency())
+          Minority Interest: \(breakdown.minorityInterest.currency())
+          Preferred Stock: \(breakdown.preferredStock.currency())
 
         Interpretation:
         • EV represents value to all investors (debt + equity)
@@ -586,22 +586,22 @@ public struct ResidualIncomeModelTool: MCPToolHandler, Sendable {
         ==============================
 
         Inputs:
-          Current Book Value: \(formatCurrency(currentBookValue))
-          Net Income: \(formatCurrency(netIncomeValue))
-          Future Book Value: \(formatCurrency(futureBookValue))
-          Cost of Equity: \(formatPercent(costOfEquity))
-          Terminal Growth Rate: \(formatPercent(terminalGrowthRate))
+          Current Book Value: \(currentBookValue.currency())
+          Net Income: \(netIncomeValue.currency())
+          Future Book Value: \(futureBookValue.currency())
+          Cost of Equity: \(costOfEquity.percent())
+          Terminal Growth Rate: \(terminalGrowthRate.percent())
 
         Calculation:
-          Normal Return: \(formatCurrency(currentBookValue * costOfEquity))
-          Net Income: \(formatCurrency(netIncomeValue))
-          Residual Income: \(formatCurrency(residualIncomeValue))
+          Normal Return: \((currentBookValue * costOfEquity).currency())
+          Net Income: \(netIncomeValue.currency())
+          Residual Income: \(residualIncomeValue.currency())
 
         Valuation:
-          Current Book Value: \(formatCurrency(currentBookValue))
-          PV(Residual Income): \(formatCurrency(pvRI))
+          Current Book Value: \(currentBookValue.currency())
+          PV(Residual Income): \(pvRI.currency())
                               ─────────────────
-          Equity Value: \(formatCurrency(equityValue))
+          Equity Value: \(equityValue.currency())
         """
 
         if let shares = try? args.getDouble("sharesOutstanding") {
@@ -611,20 +611,18 @@ public struct ResidualIncomeModelTool: MCPToolHandler, Sendable {
 
             result += """
 
-
             Per Share Analysis:
-              Shares Outstanding: \(formatNumber(shares, decimals: 0))
-              Book Value/Share: \(formatCurrency(bookValuePerShare, decimals: 2))
-              Intrinsic Value/Share: \(formatCurrency(valuePerShare, decimals: 2))
-              Implied P/B Ratio: \(formatRatio(priceToBook))
+            Shares Outstanding: \(formatNumber(shares, decimals: 0))
+            Book Value/Share: \(bookValuePerShare.currency())
+            Intrinsic Value/Share: \(valuePerShare.currency())
+            Implied P/B Ratio: \(formatRatio(priceToBook))
             """
         }
 
         result += """
 
-
         Interpretation:
-        • RI = \(formatCurrency(netIncomeValue)) - (\(formatCurrency(currentBookValue)) × \(formatPercent(costOfEquity)))
+        • RI = \(netIncomeValue.currency()) - (\(currentBookValue.currency()) × \(costOfEquity.percent()))
         • Positive RI means returns exceed cost of capital
         • Model values excess returns above normal return
         • Best for asset-heavy or financial companies
@@ -640,22 +638,7 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
 }
 
-private func formatCurrency(_ value: Double, decimals: Int = 0) -> String {
-    if abs(value) >= 1_000_000_000 {
-        return "$" + formatNumber(value / 1_000_000_000, decimals: 2) + "B"
-    } else if abs(value) >= 1_000_000 {
-        return "$" + formatNumber(value / 1_000_000, decimals: 2) + "M"
-    } else if abs(value) >= 1_000 {
-        return "$" + formatNumber(value / 1_000, decimals: 1) + "K"
-    } else {
-        return "$" + formatNumber(value, decimals: decimals)
-    }
-}
-
 private func formatRatio(_ value: Double, decimals: Int = 2) -> String {
     return formatNumber(value, decimals: decimals) + "x"
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}

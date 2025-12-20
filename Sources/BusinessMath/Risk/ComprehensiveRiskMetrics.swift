@@ -32,7 +32,7 @@ import Numerics
 /// print(metrics.var95)
 /// print(metrics.sharpeRatio)
 /// ```
-public struct ComprehensiveRiskMetrics<T: Real & Sendable>: Sendable {
+public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>: Sendable {
 
 	/// Value at Risk (95% confidence level).
 	public let var95: T
@@ -188,22 +188,17 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable>: Sendable {
 	// MARK: - Description
 
 	public var description: String {
-		let var95Pct = var95 * T(100)
-		let var99Pct = var99 * T(100)
-		let cvar95Pct = cvar95 * T(100)
-		let maxDDPct = maxDrawdown * T(100)
-
 		return """
 		Comprehensive Risk Metrics:
-		  VaR (95%): \(var95Pct)%
-		  VaR (99%): \(var99Pct)%
-		  CVaR (95%): \(cvar95Pct)%
-		  Max Drawdown: \(maxDDPct)%
-		  Sharpe Ratio: \(sharpeRatio)
-		  Sortino Ratio: \(sortinoRatio)
-		  Tail Risk: \(tailRisk)
-		  Skewness: \(skewness)
-		  Kurtosis: \(kurtosis)
+		  VaR (95%): \(var95.percent())
+		  VaR (99%): \(var99.percent())
+		  CVaR (95%): \(cvar95.percent())
+		  Max Drawdown: \(maxDrawdown.percent())
+		  Sharpe Ratio: \(sharpeRatio.formatted())
+		  Sortino Ratio: \(sortinoRatio.formatted())
+		  Tail Risk: \(tailRisk.formatted())
+		  Skewness: \(skewness.formatted())
+		  Kurtosis: \(kurtosis.formatted())
 		"""
 	}
 }

@@ -71,7 +71,7 @@ struct IntegrationTests {
 		// Calculate growth rate
 		let firstForecast = forecast.valuesArray.first!
 		let lastForecast = forecast.valuesArray.last!
-		let forecastGrowth = growthRate(from: firstForecast, to: lastForecast)
+		let forecastGrowth = try growthRate(from: firstForecast, to: lastForecast)
 
 		// Should project continued growth
 		#expect(forecastGrowth > 0)
@@ -166,8 +166,8 @@ struct IntegrationTests {
 		#expect(abs(quarterlyValues[3] - 60_000.0) < tolerance)
 
 		// Calculate quarter-over-quarter growth
-		let q1ToQ2Growth = growthRate(from: quarterlyValues[0], to: quarterlyValues[1])
-		let q2ToQ3Growth = growthRate(from: quarterlyValues[1], to: quarterlyValues[2])
+		let q1ToQ2Growth = try growthRate(from: quarterlyValues[0], to: quarterlyValues[1])
+		let q2ToQ3Growth = try growthRate(from: quarterlyValues[1], to: quarterlyValues[2])
 
 		// Should show consistent growth
 		#expect(q1ToQ2Growth > 0.20)  // ~27% growth

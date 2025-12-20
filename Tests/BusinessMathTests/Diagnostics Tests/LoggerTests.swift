@@ -30,7 +30,7 @@ struct LoggerTests {
     func loggerCategoriesConfigured() {
         // Verify all category loggers exist and have correct subsystem
         let loggers = [
-            Logger.businessMath,
+            Logger.shared,
             Logger.modelExecution,
             Logger.calculations,
             Logger.performance,

@@ -20,9 +20,6 @@ private func formatRatio(_ value: Double, decimals: Int = 2) -> String {
     return formatNumber(value, decimals: decimals) + "x"
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - Beta Levering
 
@@ -92,7 +89,7 @@ public struct BetaLeveringTool: MCPToolHandler, Sendable {
         Inputs:
         • Unlevered Beta: \(formatNumber(unleveredBeta, decimals: 3))
         • Debt-to-Equity Ratio: \(formatNumber(debtToEquity, decimals: 2))
-        • Tax Rate: \(formatPercent(taxRate))
+        • Tax Rate: \(taxRate.percent())
 
         Result:
         • Levered Beta: \(formatNumber(leveredBeta, decimals: 3))
@@ -183,7 +180,7 @@ public struct BetaUnleveringTool: MCPToolHandler, Sendable {
         Inputs:
         • Levered Beta: \(formatNumber(leveredBeta, decimals: 3))
         • Debt-to-Equity Ratio: \(formatNumber(debtToEquity, decimals: 2))
-        • Tax Rate: \(formatPercent(taxRate))
+        • Tax Rate: \(taxRate.percent())
 
         Result:
         • Unlevered Beta: \(formatNumber(unleveredBeta, decimals: 3))
@@ -322,19 +319,19 @@ public struct OptimalCapitalStructureTool: MCPToolHandler, Sendable {
 
         Optimal Structure:
         • Debt-to-Equity Ratio: \(formatNumber(optimalDE, decimals: 2))
-        • Debt Weight: \(formatPercent(results.debtWeight))
-        • Equity Weight: \(formatPercent(results.equityWeight))
+        • Debt Weight: \(results.debtWeight.percent())
+        • Equity Weight: \(results.equityWeight.percent())
 
         For Firm Value of $\(formatNumber(firmValue, decimals: 0)):
         • Optimal Debt: $\(formatNumber(optimalDebt, decimals: 0))
         • Optimal Equity: $\(formatNumber(optimalEquity, decimals: 0))
 
         Cost Components:
-        • Cost of Equity: \(formatPercent(results.costOfEquity))
-        • Cost of Debt (before tax): \(formatPercent(results.costOfDebt))
-        • After-Tax Cost of Debt: \(formatPercent(results.costOfDebt * (1 - taxRate)))
+        • Cost of Equity: \(results.costOfEquity.percent())
+        • Cost of Debt (before tax): \(results.costOfDebt.percent())
+        • After-Tax Cost of Debt: \((results.costOfDebt * (1 - taxRate)).percent())
 
-        Minimum WACC: \(formatPercent(minWACC))
+        Minimum WACC: \(minWACC.percent())
 
         Interpretation:
         This capital structure minimizes the weighted average cost of capital,

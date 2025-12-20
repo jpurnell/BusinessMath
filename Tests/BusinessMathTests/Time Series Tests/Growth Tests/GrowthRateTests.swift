@@ -21,10 +21,10 @@ struct GrowthRateTests {
 		let from = 100.0
 		let to = 110.0
 
-		let growth = growthRate(from: from, to: to)
+		let growth = try? growthRate(from: from, to: to)
 
 		// 10% growth: (110 - 100) / 100 = 0.10
-		#expect(abs(growth - 0.10) < tolerance)
+		#expect(abs(growth ?? 1.0 - 0.10) < tolerance)
 	}
 
 	@Test("Growth rate from 100 to 80 (negative)")
@@ -32,10 +32,10 @@ struct GrowthRateTests {
 		let from = 100.0
 		let to = 80.0
 
-		let growth = growthRate(from: from, to: to)
+		let growth = try? growthRate(from: from, to: to)
 
 		// -20% growth: (80 - 100) / 100 = -0.20
-		#expect(abs(growth - (-0.20)) < tolerance)
+		#expect(abs((growth ?? 1.0) - (-0.20)) < tolerance)
 	}
 
 	@Test("Growth rate with equal values is zero")
@@ -43,9 +43,9 @@ struct GrowthRateTests {
 		let from = 100.0
 		let to = 100.0
 
-		let growth = growthRate(from: from, to: to)
+		let growth = try? growthRate(from: from, to: to)
 
-		#expect(abs(growth) < tolerance)
+		#expect(abs((growth ?? 1.0)) < tolerance)
 	}
 
 	@Test("Growth rate doubling")
@@ -53,10 +53,10 @@ struct GrowthRateTests {
 		let from = 50.0
 		let to = 100.0
 
-		let growth = growthRate(from: from, to: to)
+		let growth = try? growthRate(from: from, to: to)
 
 		// 100% growth: (100 - 50) / 50 = 1.0
-		#expect(abs(growth - 1.0) < tolerance)
+		#expect(abs((growth ?? 1.0) - 1.0) < tolerance)
 	}
 
 	@Test("Growth rate with decimal values")
@@ -64,10 +64,10 @@ struct GrowthRateTests {
 		let from = 123.45
 		let to = 145.67
 
-		let growth = growthRate(from: from, to: to)
+		let growth = try? growthRate(from: from, to: to)
 
 		// (145.67 - 123.45) / 123.45 ≈ 0.1799
-		#expect(abs(growth - 0.1799) < 0.001)
+		#expect(abs((growth ?? 1.0) - 0.1799) < 0.001)
 	}
 
 	// MARK: - CAGR (Compound Annual Growth Rate) Tests
@@ -345,10 +345,10 @@ struct GrowthRateTests {
 		let from = 0.0
 		let to = 100.0
 
-		let growth = growthRate(from: from, to: to)
+		let growth = try? growthRate(from: from, to: to)
 
 		// Technically infinite, but should return a large value or infinity
-		#expect(growth.isInfinite || growth > 1000.0)
+		#expect(growth!.isInfinite || (growth ?? 1.0) > 1000.0)
 	}
 
 	@Test("CAGR with zero years should handle gracefully")
@@ -436,10 +436,10 @@ struct GrowthRateTests {
 		let from = 100.0
 		let to = 115.0
 
-		let simpleGrowth = growthRate(from: from, to: to)
+		let simpleGrowth = try? growthRate(from: from, to: to)
 		let compoundGrowth = cagr(beginningValue: from, endingValue: to, years: 1.0)
 
-		#expect(abs(simpleGrowth - compoundGrowth) < tolerance)
+		#expect(abs((simpleGrowth ?? 1.0) - compoundGrowth) < tolerance)
 	}
 	
 	let tol: Double = 1e-6

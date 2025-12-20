@@ -16,9 +16,6 @@ private func formatNumber(_ value: Double, decimals: Int = 2) -> String {
     return value.formatDecimal(decimals: decimals)
 }
 
-private func formatPercent(_ value: Double, decimals: Int = 2) -> String {
-    return formatNumber(value * 100, decimals: decimals) + "%"
-}
 
 // MARK: - Lease Liability Analysis
 
@@ -106,7 +103,7 @@ public struct LeaseLiabilityTool: MCPToolHandler, Sendable {
         Lease Terms:
         • Monthly Payment: $\(formatNumber(monthlyPmt, decimals: 0))
         • Lease Term: \(term) months (\(formatNumber(Double(term) / 12.0, decimals: 1)) years)
-        • Discount Rate: \(formatPercent(annualRate)) annual
+        • Discount Rate: \(annualRate.percent()) annual
 
         Initial Recognition:
         • Lease Liability (PV of payments): $\(formatNumber(leaseLiability, decimals: 0))
@@ -387,7 +384,7 @@ public struct CustomPaymentScheduleTool: MCPToolHandler, Sendable {
 
         Loan Terms:
         • Principal: $\(formatNumber(principal, decimals: 0))
-        • Annual Interest Rate: \(formatPercent(annualRate))
+        • Annual Interest Rate: \(annualRate.percent())
         • Term: \(years) years (\(periods) months)
         • Payment Structure: \(paymentType.capitalized)
 
@@ -399,7 +396,7 @@ public struct CustomPaymentScheduleTool: MCPToolHandler, Sendable {
         Summary:
         • Total Payments: $\(formatNumber(totalPayments, decimals: 0))
         • Total Interest: $\(formatNumber(totalInterest, decimals: 0))
-        • Effective Interest Cost: \(formatPercent(totalInterest / principal))
+        • Effective Interest Cost: \((totalInterest / principal).percent())
 
         Cash Flow Impact:
         Lower monthly payments preserve cash flow but result in

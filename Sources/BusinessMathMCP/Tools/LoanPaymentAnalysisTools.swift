@@ -29,16 +29,7 @@ private func formatRate(_ value: Double, decimals: Int = 2) -> String {
     return (value * 100).formatDecimal(decimals: decimals) + "%"
 }
 
-/// Format currency
-private func formatCurrency(_ value: Double, decimals: Int = 2) -> String {
-    let formatted = abs(value).formatDecimal(decimals: decimals)
-    return value >= 0 ? "$\(formatted)" : "-$\(formatted)"
-}
-
 /// Format percentage
-private func formatPercentage(_ value: Double, decimals: Int = 1) -> String {
-    return (value * 100).formatDecimal(decimals: decimals) + "%"
-}
 
 // MARK: - Principal Payment (PPMT)
 
@@ -189,44 +180,44 @@ public struct PrincipalPaymentTool: MCPToolHandler, Sendable {
         Principal Payment Analysis (Period \(period) of \(totalPeriods))
 
         Loan Details:
-        • Loan Amount: \(formatCurrency(loanAmount))
+        • Loan Amount: \(loanAmount.currency())
         • Interest Rate: \(formatRate(rate)) per period
         • Total Periods: \(totalPeriods)
         • Payment Timing: \(timingStr.capitalized) annuity
-        \(balloonPayment > 0 ? "• Balloon Payment: \(formatCurrency(balloonPayment))" : "")
+        \(balloonPayment > 0 ? "• Balloon Payment: \(balloonPayment.currency())" : "")
 
         Period \(period) Payment Breakdown:
-        • Total Payment: \(formatCurrency(totalPayment))
-        • Principal Portion: \(formatCurrency(principalPmt)) (\(formatPercentage(principalPct)))
-        • Interest Portion: \(formatCurrency(interestPmt)) (\(formatPercentage(interestPct)))
+        • Total Payment: \(totalPayment.currency())
+        • Principal Portion: \(principalPmt.currency()) (\(principalPct.percent()))
+        • Interest Portion: \(interestPmt.currency()) (\(interestPct.percent()))
 
         Loan Balance:
-        • Balance Before Payment: \(formatCurrency(remainingBefore))
-        • Principal Reduction: \(formatCurrency(principalPmt))
-        • Balance After Payment: \(formatCurrency(remainingAfter))
-        • Equity Built: \(formatCurrency(loanAmount - remainingAfter))
+        • Balance Before Payment: \(remainingBefore.currency())
+        • Principal Reduction: \(principalPmt.currency())
+        • Balance After Payment: \(remainingAfter.currency())
+        • Equity Built: \((loanAmount - remainingAfter).currency())
 
         Progress:
-        • Loan Progress: \(formatPercentage(progressPct)) complete
-        • Principal Percentage: \(formatPercentage(principalPct)) of payment
+        • Loan Progress: \(progressPct.percent()) complete
+        • Principal Percentage: \(principalPct.percent()) of payment
 
         Lifetime Context:
-        • Total Payments: \(formatCurrency(lifetimePayments))
-        • Total Interest: \(formatCurrency(totalInterest))
-        • Interest as % of Loan: \(formatPercentage(totalInterest / loanAmount))
+        • Total Payments: \(lifetimePayments.currency())
+        • Total Interest: \(totalInterest.currency())
+        • Interest as % of Loan: \((totalInterest / loanAmount).percent())
 
         Interpretation:
         \(period <= totalPeriods / 4 ? """
-        Early in loan life: Only \(formatPercentage(principalPct)) goes to principal.
+        Early in loan life: Only \(principalPct.percent()) goes to principal.
         Most of your payment is interest. Consider extra principal payments to save interest.
         """ : period <= totalPeriods / 2 ? """
-        Mid-loan: \(formatPercentage(principalPct)) goes to principal, building equity faster.
+        Mid-loan: \(principalPct.percent()) goes to principal, building equity faster.
         This is often a good time to evaluate refinancing opportunities.
         """ : period <= 3 * totalPeriods / 4 ? """
-        Later stage: \(formatPercentage(principalPct)) goes to principal.
+        Later stage: \(principalPct.percent()) goes to principal.
         You're building significant equity. Refinancing may not save much at this point.
         """ : """
-        Final stages: \(formatPercentage(principalPct)) goes to principal!
+        Final stages: \(principalPct.percent()) goes to principal!
         Almost all payment reduces the balance. Nearly debt-free.
         """)
 
@@ -408,25 +399,25 @@ public struct InterestPaymentTool: MCPToolHandler, Sendable {
         Interest Payment Analysis (Period \(period) of \(totalPeriods))
 
         Loan Details:
-        • Loan Amount: \(formatCurrency(loanAmount))
+        • Loan Amount: \(loanAmount.currency())
         • Interest Rate: \(formatRate(rate)) per period
-        • Remaining Balance (start of period): \(formatCurrency(remainingBalance))
+        • Remaining Balance (start of period): \(remainingBalance.currency())
 
         Period \(period) Payment Breakdown:
-        • Total Payment: \(formatCurrency(totalPayment))
-        • Interest Portion: \(formatCurrency(interestPmt)) (\(formatPercentage(interestPct)))
-        • Principal Portion: \(formatCurrency(principalPmt)) (\(formatPercentage(principalPct)))
+        • Total Payment: \(totalPayment.currency())
+        • Interest Portion: \(interestPmt.currency()) (\(interestPct.percent()))
+        • Principal Portion: \(principalPmt.currency()) (\(principalPct.percent()))
 
         Interest Calculation:
         • Formula: Balance × Rate = Interest
-        • \(formatCurrency(remainingBalance)) × \(formatRate(rate)) = \(formatCurrency(interestPmt))
+        • \(remainingBalance.currency()) × \(formatRate(rate)) = \(interestPmt.currency())
 
         Lifetime Interest Cost:
-        • Total Interest Over Life: \(formatCurrency(totalInterestPaid))
-        • Interest as % of Loan: \(formatPercentage(totalInterestPaid / loanAmount))
-        • Interest in Period \(period): \(formatCurrency(interestPmt))
-        • Interest Paid So Far: \(formatCurrency((totalPayment * Double(period)) - (loanAmount - remainingBalance)))
-        \(firstYearEnd == 12 ? "\n• First Year Interest: \(formatCurrency(firstYearInterest)) (may be tax relevant)" : "")
+        • Total Interest Over Life: \(totalInterestPaid.currency())
+        • Interest as % of Loan: \((totalInterestPaid / loanAmount).percent())
+        • Interest in Period \(period): \(interestPmt.currency())
+        • Interest Paid So Far: \(((totalPayment * Double(period)) - (loanAmount - remainingBalance)).currency())
+        \(firstYearEnd == 12 ? "\n• First Year Interest: \(firstYearInterest.currency()) (may be tax relevant)" : "")
 
         Tax Considerations:
         \(period <= 12 ? """
@@ -447,11 +438,11 @@ public struct InterestPaymentTool: MCPToolHandler, Sendable {
         • Refinancing if better rates available
         • Accelerated payment schedule
         """ : interestPct > 0.30 ? """
-        ℹ Interest represents \(formatPercentage(interestPct)) of payment.
+        ℹ Interest represents \(interestPct.percent()) of payment.
         • Balance between interest and principal
         • Evaluate extra payments vs other investments
         """ : """
-        ✓ Only \(formatPercentage(interestPct)) is interest - mostly principal now.
+        ✓ Only \(interestPct.percent()) is interest - mostly principal now.
         • Building significant equity
         • May not be worth prepaying at this stage
         """)
@@ -617,10 +608,10 @@ public struct CumulativeInterestTool: MCPToolHandler, Sendable {
         Cumulative Interest Analysis (Periods \(startPeriod) to \(endPeriod))
 
         Loan Details:
-        • Loan Amount: \(formatCurrency(loanAmount))
+        • Loan Amount: \(loanAmount.currency())
         • Interest Rate: \(formatRate(rate)) per period
         • Total Periods: \(totalPeriods)
-        • Payment per Period: \(formatCurrency(totalPayment))
+        • Payment per Period: \(totalPayment.currency())
 
         Period Range Analysis:
         • Start Period: \(startPeriod)
@@ -628,35 +619,35 @@ public struct CumulativeInterestTool: MCPToolHandler, Sendable {
         • Number of Periods: \(periodCount)
 
         Cumulative Totals (Periods \(startPeriod)-\(endPeriod)):
-        • Total Interest Paid: \(formatCurrency(cumInterest))
-        • Total Principal Paid: \(formatCurrency(cumPrincipal))
-        • Total Payments Made: \(formatCurrency(totalPaid))
-        • Average Interest per Period: \(formatCurrency(cumInterest / Double(periodCount)))
+        • Total Interest Paid: \(cumInterest.currency())
+        • Total Principal Paid: \(cumPrincipal.currency())
+        • Total Payments Made: \(totalPaid.currency())
+        • Average Interest per Period: \((cumInterest / Double(periodCount)).currency())
 
         Interest Breakdown:
-        • Interest as % of Payments: \(formatPercentage(interestPct))
-        • Principal as % of Payments: \(formatPercentage(cumPrincipal / totalPaid))
+        • Interest as % of Payments: \(interestPct.percent())
+        • Principal as % of Payments: \((cumPrincipal / totalPaid).percent())
 
         Lifetime Context:
-        • Total Lifetime Interest: \(formatCurrency(lifetimeInterest))
-        • Interest in This Range: \(formatCurrency(cumInterest))
-        • % of Lifetime Interest: \(formatPercentage(cumInterest / lifetimeInterest))
+        • Total Lifetime Interest: \(lifetimeInterest.currency())
+        • Interest in This Range: \(cumInterest.currency())
+        • % of Lifetime Interest: \((cumInterest / lifetimeInterest).percent())
 
         \(periodCount == 12 ? """
 
         Annual Tax Reporting:
         • This represents one year of interest payments
         • May be deductible (consult tax advisor)
-        • Tax benefit at 24% bracket: ~\(formatCurrency(cumInterest * 0.24))
+        • Tax benefit at 24% bracket: ~\((cumInterest * 0.24).currency())
         • Effective rate after tax: ~\(formatRate(rate * 0.76))
         """ : "")
 
         \(startPeriod == 1 && endPeriod == totalPeriods ? """
 
         Full Loan Analysis:
-        • You will pay \(formatCurrency(cumInterest)) in interest
-        • This is \(formatPercentage(cumInterest / loanAmount)) of the loan amount
-        • True cost of \(formatCurrency(loanAmount)) loan is \(formatCurrency(loanAmount + cumInterest))
+        • You will pay \(cumInterest.currency()) in interest
+        • This is \((cumInterest / loanAmount).percent()) of the loan amount
+        • True cost of \(loanAmount.currency()) loan is \((loanAmount + cumInterest).currency())
         """ : "")
 
         Strategic Insight:
@@ -866,10 +857,10 @@ public struct CumulativePrincipalTool: MCPToolHandler, Sendable {
         Cumulative Principal Analysis (Periods \(startPeriod) to \(endPeriod))
 
         Loan Details:
-        • Loan Amount: \(formatCurrency(loanAmount))
+        • Loan Amount: \(loanAmount.currency())
         • Interest Rate: \(formatRate(rate)) per period
         • Total Periods: \(totalPeriods)
-        • Payment per Period: \(formatCurrency(totalPayment))
+        • Payment per Period: \(totalPayment.currency())
 
         Period Range Analysis:
         • Start Period: \(startPeriod)
@@ -877,67 +868,67 @@ public struct CumulativePrincipalTool: MCPToolHandler, Sendable {
         • Number of Periods: \(periodCount)
 
         Cumulative Totals (Periods \(startPeriod)-\(endPeriod)):
-        • Total Principal Paid: \(formatCurrency(cumPrincipal))
-        • Total Interest Paid: \(formatCurrency(cumInterest))
-        • Total Payments Made: \(formatCurrency(totalPaid))
-        • Average Principal per Period: \(formatCurrency(cumPrincipal / Double(periodCount)))
+        • Total Principal Paid: \(cumPrincipal.currency())
+        • Total Interest Paid: \(cumInterest.currency())
+        • Total Payments Made: \(totalPaid.currency())
+        • Average Principal per Period: \((cumPrincipal / Double(periodCount)).currency())
 
         Principal Breakdown:
-        • Principal as % of Payments: \(formatPercentage(principalPct))
-        • Interest as % of Payments: \(formatPercentage(cumInterest / totalPaid))
+        • Principal as % of Payments: \(principalPct.percent())
+        • Interest as % of Payments: \((cumInterest / totalPaid).percent())
 
         Loan Balance Status:
-        • Balance at Start (Period \(startPeriod)): \(formatCurrency(balanceAfterStart))
-        • Principal Reduction: \(formatCurrency(cumPrincipal))
-        • Balance at End (Period \(endPeriod)): \(formatCurrency(balanceAfterEnd))
+        • Balance at Start (Period \(startPeriod)): \(balanceAfterStart.currency())
+        • Principal Reduction: \(cumPrincipal.currency())
+        • Balance at End (Period \(endPeriod)): \(balanceAfterEnd.currency())
 
         Equity Position:
-        • Loan Paid Off: \(formatPercentage(paidOffPct))
-        • Remaining Balance: \(formatPercentage(remainingPct))
-        • Equity from Payments: \(formatCurrency(loanAmount - balanceAfterEnd))
+        • Loan Paid Off: \(paidOffPct.percent())
+        • Remaining Balance: \(remainingPct.percent())
+        • Equity from Payments: \((loanAmount - balanceAfterEnd).currency())
 
         \(startPeriod == 1 && endPeriod == totalPeriods ? """
 
         Complete Loan Summary:
-        • Total Principal: \(formatCurrency(cumPrincipal)) ← Loan amount repaid
-        • Total Interest: \(formatCurrency(cumInterest)) ← Cost of borrowing
-        • Total Paid: \(formatCurrency(totalPaid + balloonPayment))
-        • Interest as % of Principal: \(formatPercentage(cumInterest / cumPrincipal))
+        • Total Principal: \(cumPrincipal.currency()) ← Loan amount repaid
+        • Total Interest: \(cumInterest.currency()) ← Cost of borrowing
+        • Total Paid: \((totalPaid + balloonPayment).currency())
+        • Interest as % of Principal: \((cumInterest / cumPrincipal).percent())
         """ : "")
 
         \(periodCount == 12 ? """
 
         Annual Summary:
-        • This year you paid down \(formatCurrency(cumPrincipal)) of principal
+        • This year you paid down \(cumPrincipal.currency()) of principal
         • This builds equity (ownership) in the asset
-        • Current equity from payments: \(formatCurrency(loanAmount - balanceAfterEnd))
+        • Current equity from payments: \((loanAmount - balanceAfterEnd).currency())
         """ : "")
 
         Strategic Insight:
         \(paidOffPct < 0.25 ? """
-        Early stage: Only \(formatPercentage(paidOffPct)) paid off.
+        Early stage: Only \(paidOffPct.percent()) paid off.
         • Most payment goes to interest
         • Extra principal payments have maximum impact
         • Consider refinancing if rates have dropped significantly
         """ : paidOffPct < 0.50 ? """
-        Building momentum: \(formatPercentage(paidOffPct)) paid off.
+        Building momentum: \(paidOffPct.percent()) paid off.
         • Principal payments accelerating
         • Good equity position for refinancing
         • Balance between extra payments and investing
         """ : paidOffPct < 0.75 ? """
-        Well along: \(formatPercentage(paidOffPct)) paid off!
+        Well along: \(paidOffPct.percent()) paid off!
         • Significant equity built
         • Most payment goes to principal now
         • Refinancing may not be worth costs
         """ : """
-        Nearly complete: \(formatPercentage(paidOffPct)) paid off!
+        Nearly complete: \(paidOffPct.percent()) paid off!
         • Excellent equity position
         • Very close to full ownership
         • Extra payments save little interest now
         """)
 
         Remaining Obligation:
-        • Balance to pay: \(formatCurrency(balanceAfterEnd))
+        • Balance to pay: \(balanceAfterEnd.currency())
         • Remaining payments: \(totalPeriods - endPeriod)
         • Will be debt-free after period \(totalPeriods)
         """
