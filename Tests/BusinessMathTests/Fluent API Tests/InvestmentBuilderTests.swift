@@ -614,7 +614,7 @@ struct InvestmentBuilderTests {
         let description = investment.description
 
         #expect(description.contains("Test Investment"))
-        #expect(description.contains("100000")) // Number formatting without commas
+        #expect(description.contains("$100,000.00")) // Number formatting without commas
         #expect(description.contains("NPV"))
         #expect(description.contains("IRR"))
     }

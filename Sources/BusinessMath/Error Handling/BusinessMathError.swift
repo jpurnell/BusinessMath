@@ -33,7 +33,7 @@ import Foundation
 ///     }
 /// }
 /// ```
-public enum BusinessMathError: LocalizedError, Sendable {
+public enum BusinessMathError: LocalizedError, Sendable, Equatable {
     // MARK: - Calculation Errors (E001-E099)
 
     /// Invalid input parameter

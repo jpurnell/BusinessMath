@@ -730,7 +730,6 @@ struct ErrorHandlingAdditionalTests {
 		_ = try createInvestmentWithInitialCost(1_000.0)
 		_ = try createInvestmentWithDiscountRate(0.10)
 	}
-}
 
 	fileprivate func createInvestmentWithDiscountRate(_ rate: Double) throws -> Investment {
 		guard rate >= 0 && rate <= 1 else {
@@ -811,3 +810,139 @@ struct ErrorHandlingAdditionalTests {
 			values: [100, .infinity, 120]
 		)
 	}
+
+	// MARK: - Equatable Conformance Tests
+
+	@Test("BusinessMathError_Equatable_InvalidInput_SameErrors") func equatableInvalidInputSame() {
+		// Given: Two identical invalidInput errors
+		let error1 = BusinessMathError.invalidInput(message: "Invalid value", value: "42", expectedRange: "0-100")
+		let error2 = BusinessMathError.invalidInput(message: "Invalid value", value: "42", expectedRange: "0-100")
+
+		// Then: They should be equal
+		#expect(error1 == error2)
+	}
+
+	@Test("BusinessMathError_Equatable_InvalidInput_DifferentMessages") func equatableInvalidInputDifferent() {
+		// Given: Two invalidInput errors with different messages
+		let error1 = BusinessMathError.invalidInput(message: "Invalid value", value: "42", expectedRange: "0-100")
+		let error2 = BusinessMathError.invalidInput(message: "Different message", value: "42", expectedRange: "0-100")
+
+		// Then: They should not be equal
+		#expect(error1 != error2)
+	}
+
+	@Test("BusinessMathError_Equatable_DivisionByZero_SameContext") func equatableDivisionByZeroSame() {
+		// Given: Two identical divisionByZero errors
+		let error1 = BusinessMathError.divisionByZero(context: "NPV calculation")
+		let error2 = BusinessMathError.divisionByZero(context: "NPV calculation")
+
+		// Then: They should be equal
+		#expect(error1 == error2)
+	}
+
+	@Test("BusinessMathError_Equatable_DivisionByZero_DifferentContext") func equatableDivisionByZeroDifferent() {
+		// Given: Two divisionByZero errors with different contexts
+		let error1 = BusinessMathError.divisionByZero(context: "NPV calculation")
+		let error2 = BusinessMathError.divisionByZero(context: "IRR calculation")
+
+		// Then: They should not be equal
+		#expect(error1 != error2)
+	}
+
+	@Test("BusinessMathError_Equatable_CalculationFailed_SameErrors") func equatableCalculationFailedSame() {
+		// Given: Two identical calculationFailed errors
+		let error1 = BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "No convergence",
+			suggestions: ["Try different guess", "Increase iterations"]
+		)
+		let error2 = BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "No convergence",
+			suggestions: ["Try different guess", "Increase iterations"]
+		)
+
+		// Then: They should be equal
+		#expect(error1 == error2)
+	}
+
+	@Test("BusinessMathError_Equatable_CalculationFailed_DifferentSuggestions") func equatableCalculationFailedDifferentSuggestions() {
+		// Given: Two calculationFailed errors with different suggestions
+		let error1 = BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "No convergence",
+			suggestions: ["Try different guess"]
+		)
+		let error2 = BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "No convergence",
+			suggestions: ["Increase iterations"]
+		)
+
+		// Then: They should not be equal
+		#expect(error1 != error2)
+	}
+
+	@Test("BusinessMathError_Equatable_DifferentCases") func equatableDifferentCases() {
+		// Given: Two errors of different types
+		let error1 = BusinessMathError.divisionByZero(context: "NPV calculation")
+		let error2 = BusinessMathError.invalidInput(message: "Invalid value", value: nil, expectedRange: nil)
+
+		// Then: They should not be equal
+		#expect(error1 != error2)
+	}
+
+	@Test("BusinessMathError_Equatable_NegativeValue_SameErrors") func equatableNegativeValueSame() {
+		// Given: Two identical negativeValue errors
+		let error1 = BusinessMathError.negativeValue(name: "discount_rate", value: -0.1, context: "Investment analysis")
+		let error2 = BusinessMathError.negativeValue(name: "discount_rate", value: -0.1, context: "Investment analysis")
+
+		// Then: They should be equal
+		#expect(error1 == error2)
+	}
+
+	@Test("BusinessMathError_Equatable_NegativeValue_DifferentValues") func equatableNegativeValueDifferentValues() {
+		// Given: Two negativeValue errors with different values
+		let error1 = BusinessMathError.negativeValue(name: "discount_rate", value: -0.1, context: "Investment analysis")
+		let error2 = BusinessMathError.negativeValue(name: "discount_rate", value: -0.2, context: "Investment analysis")
+
+		// Then: They should not be equal
+		#expect(error1 != error2)
+	}
+
+	@Test("BusinessMathError_Equatable_ValidationFailed_SameErrors") func equatableValidationFailedSame() {
+		// Given: Two identical validationFailed errors
+		let error1 = BusinessMathError.validationFailed(errors: ["Error 1", "Error 2"])
+		let error2 = BusinessMathError.validationFailed(errors: ["Error 1", "Error 2"])
+
+		// Then: They should be equal
+		#expect(error1 == error2)
+	}
+
+	@Test("BusinessMathError_Equatable_ValidationFailed_DifferentErrors") func equatableValidationFailedDifferent() {
+		// Given: Two validationFailed errors with different error lists
+		let error1 = BusinessMathError.validationFailed(errors: ["Error 1", "Error 2"])
+		let error2 = BusinessMathError.validationFailed(errors: ["Error 1", "Error 3"])
+
+		// Then: They should not be equal
+		#expect(error1 != error2)
+	}
+
+	@Test("BusinessMathError_Equatable_CircularDependency_SamePath") func equatableCircularDependencySame() {
+		// Given: Two identical circularDependency errors
+		let error1 = BusinessMathError.circularDependency(path: ["A", "B", "C", "A"])
+		let error2 = BusinessMathError.circularDependency(path: ["A", "B", "C", "A"])
+
+		// Then: They should be equal
+		#expect(error1 == error2)
+	}
+
+	@Test("BusinessMathError_Equatable_CircularDependency_DifferentPath") func equatableCircularDependencyDifferent() {
+		// Given: Two circularDependency errors with different paths
+		let error1 = BusinessMathError.circularDependency(path: ["A", "B", "C", "A"])
+		let error2 = BusinessMathError.circularDependency(path: ["X", "Y", "Z", "X"])
+
+		// Then: They should not be equal
+		#expect(error1 != error2)
+	}
+}
