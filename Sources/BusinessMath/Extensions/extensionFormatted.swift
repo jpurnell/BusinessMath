@@ -7,13 +7,33 @@
 
 import Foundation
 
+public enum BMNumberSignDisplay {
+	case automatic
+	case never
+	case always(includingZero: Bool)
+}
+
+public enum BMNumberGrouping {
+	case automatic
+	case never
+}
+
+public enum BMNumberNotation {
+	case automatic
+	case scientific
+	case compactName
+}
+
+
 extension BinaryFloatingPoint {
+
 	public func currency(_ decimals: Int = 2, _ currency: String = "usd") -> String {
 		let code = currency.uppercased()
 		let value = Double(self)
 		
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 				// Use modern FormatStyle on newer OSes
+			
 			return value.formatted(
 				.currency(code: code)
 				.precision(.fractionLength(decimals))
@@ -34,20 +54,55 @@ extension BinaryFloatingPoint {
 		}
 	}
 	
-	public func percent(_ decimals: Int = 2, _ significantDigitsRange: ClosedRange<Int> = (1...3), _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ signStrategy: NumberFormatStyleConfiguration.SignDisplayStrategy = .always(includingZero: false), _ grouping: NumberFormatStyleConfiguration.Grouping = .automatic, _ notation: NumberFormatStyleConfiguration.Notation = .automatic) -> String {
+	public func percent(_ decimals: Int = 2, _ significantDigitsRange: ClosedRange<Int> = (1...3), _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ signStrategy: BMNumberSignDisplay = .always(includingZero: false), _ grouping: BMNumberGrouping = .automatic, _ notation: BMNumberNotation = .automatic) -> String {
 		let value = Double(self)
 		
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-			return value.formatted(
-				.percent
-					.precision(decimals != 2 ? .fractionLength(decimals) : .significantDigits(significantDigitsRange))
-					.rounded(rule: roundingRule)
-					.locale(locale)
-					.sign(strategy: .always(includingZero: false))
-					.grouping(grouping)
-					.notation(notation)
+			var style = FloatingPointFormatStyle<Double>.Percent.percent
+
+						style = style
+							.precision(decimals != 2
+									   ? .fractionLength(decimals)
+									   : .significantDigits(significantDigitsRange))
+							.rounded(rule: roundingRule)
+							.locale(locale)
+			
+			switch signStrategy {
+						case .automatic:
+							break
+						case .never:
+							style = style.sign(strategy: .never)
+						case .always(let includingZero):
+							style = style.sign(strategy: .always(includingZero: includingZero))
+						}
+
+						switch grouping {
+						case .automatic:
+							style = style.grouping(.automatic)
+						case .never:
+							style = style.grouping(.never)
+						}
+
+						switch notation {
+						case .automatic:
+							style = style.notation(.automatic)
+						case .scientific:
+							style = style.notation(.scientific)
+						case .compactName:
+							style = style.notation(.compactName)
+						}
+
+						return value.formatted(style)
+//			return value.formatted(
+//				.percent
+//					.precision(decimals != 2 ? .fractionLength(decimals) : .significantDigits(significantDigitsRange))
+//					.rounded(rule: roundingRule)
+//					.locale(locale)
+//					.sign(strategy: .always(includingZero: false))
+//					.grouping(grouping)
+//					.notation(notation)
 					
-			)
+//			)
 				
 		} else {
 				// Fallback for older OSes (iOS 14, macOS 11, etc.)
@@ -60,18 +115,54 @@ extension BinaryFloatingPoint {
 		}
 	}
 	
-	public func number(_ decimals: Int = 2, _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ grouping: NumberFormatStyleConfiguration.Grouping = .automatic, _ notation: NumberFormatStyleConfiguration.Notation = .automatic) -> String {
+	public func number(_ decimals: Int = 2, _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ signStrategy: BMNumberSignDisplay = .always(includingZero: false), _ grouping: BMNumberGrouping = .automatic, _ notation: BMNumberNotation = .automatic) -> String {
 		let value = Double(self)
 		
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-			return value.formatted(
-				.number
-					.precision(.fractionLength(decimals))
-					.rounded(rule: roundingRule)
-					.locale(locale)
-					.grouping(grouping)
-					.notation(notation)
-			)
+			var style = FloatingPointFormatStyle<Double>.Percent.percent
+
+						style = style
+							.precision(decimals != 2
+									   ? .fractionLength(decimals)
+									   : .significantDigits(1...3))
+							.rounded(rule: roundingRule)
+							.locale(locale)
+			
+			switch signStrategy {
+						case .automatic:
+							break
+						case .never:
+							style = style.sign(strategy: .never)
+						case .always(let includingZero):
+							style = style.sign(strategy: .always(includingZero: includingZero))
+						}
+
+						switch grouping {
+						case .automatic:
+							style = style.grouping(.automatic)
+						case .never:
+							style = style.grouping(.never)
+						}
+
+						switch notation {
+						case .automatic:
+							style = style.notation(.automatic)
+						case .scientific:
+							style = style.notation(.scientific)
+						case .compactName:
+							style = style.notation(.compactName)
+						}
+
+						return value.formatted(style)
+//			return value.formatted(
+//				.number
+//					.precision(.fractionLength(decimals))
+//					.rounded(rule: roundingRule)
+//					.locale(locale)
+//					.sign(strategy: <#T##Decimal.FormatStyle.Configuration.SignDisplayStrategy#>)
+//					.grouping(grouping)
+//					.notation(notation)
+//			)
 		} else {
 			let formatter = NumberFormatter()
 			formatter.numberStyle = .decimal

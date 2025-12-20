@@ -228,4 +228,43 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 			confidenceLevel: confidenceLevel
 		)
 	}
+
+	// MARK: - Convenience Methods
+
+	/// Trains on historical data and immediately generates a forecast.
+	///
+	/// This is a convenience method that combines `train(on:)` and `predict(periods:)`
+	/// into a single call for quick forecasting tasks.
+	///
+	/// - Parameters:
+	///   - timeSeries: The historical time series data to train on.
+	///   - periods: Number of periods to forecast.
+	/// - Returns: A time series with the forecasted values.
+	/// - Throws: `ForecastError.insufficientData` if not enough training data.
+	public func forecast(timeSeries: TimeSeries<T>, periods: Int) throws -> TimeSeries<T> {
+		var mutableModel = self
+		try mutableModel.train(on: timeSeries)
+		return mutableModel.predict(periods: periods)
+	}
+
+	/// Trains on historical data and generates a forecast with confidence intervals.
+	///
+	/// This is a convenience method that combines `train(on:)` and
+	/// `predictWithConfidence(periods:confidenceLevel:)` into a single call.
+	///
+	/// - Parameters:
+	///   - timeSeries: The historical time series data to train on.
+	///   - periods: Number of periods to forecast.
+	///   - confidenceLevel: Confidence level (e.g., 0.95 for 95%).
+	/// - Returns: Forecast with confidence intervals.
+	/// - Throws: `ForecastError.insufficientData` or `ForecastError.invalidConfidenceLevel`.
+	public func forecastWithConfidence(
+		timeSeries: TimeSeries<T>,
+		periods: Int,
+		confidenceLevel: T
+	) throws -> ForecastWithConfidence<T> {
+		var mutableModel = self
+		try mutableModel.train(on: timeSeries)
+		return try mutableModel.predictWithConfidence(periods: periods, confidenceLevel: confidenceLevel)
+	}
 }
