@@ -225,19 +225,19 @@ print()
 
 // Calculate demand
 let demand = baseCase.calculateDemand(price: baseCase.raisinPrice)
-print("Demand: \(Int(demand).formatted()) lbs of raisins")
-print("Grapes needed: \(Int(baseCase.grapesNeeded(demand: demand)).formatted()) lbs")
+print("Demand: \(Int(demand).number()) lbs of raisins")
+print("Grapes needed: \(Int(baseCase.grapesNeeded(demand: demand)).number()) lbs")
 print()
 
-print("Revenue: $\(Int(revenue).formatted())")
+print("Revenue: $\(Int(revenue).number())")
 print()
 print("Costs:")
 for (category, amount) in costs.sorted(by: { $0.key < $1.key }) {
-    print("  \(category): $\(Int(amount).formatted())")
+    print("  \(category): $\(Int(amount).number())")
 }
-print("  Total Costs: $\(Int(costs.values.reduce(0, +)).formatted())")
+print("  Total Costs: $\(Int(costs.values.reduce(0, +)).number())")
 print()
-print("Annual Profit: $\(Int(profit).formatted())")
+print("Annual Profit: $\(Int(profit).number())")
 ```
 
 **Expected Output:**
@@ -294,7 +294,7 @@ let breakevenResult = optimizer.optimize(
 print("\n=== Breakeven Analysis ===")
 if breakevenResult.converged {
     print("Breakeven open-market grape price: $\(String(format: "%.4f", breakevenResult.optimalValue))")
-    print("Profit at breakeven: $\(Int(breakevenResult.objectiveValue).formatted()) (should be ≈$0)")
+    print("Profit at breakeven: $\(Int(breakevenResult.objectiveValue).number()) (should be ≈$0)")
     print("Converged in \(breakevenResult.iterations) iterations")
 
     // Show context
@@ -354,15 +354,15 @@ print(String(repeating: "-", count: 40))
 for result in results {
     print(String(format: "$%6.2f  %12s  %15s",
                  result.price,
-                 Int(result.demand).formatted(),
-                 Int(result.profit).formatted()))
+                 Int(result.demand).number(),
+                 Int(result.profit).number()))
 }
 
 // Find optimal price
 if let optimalResult = results.max(by: { $0.profit < $1.profit }) {
     print()
     print("Optimal raisin price: $\(String(format: "%.2f", optimalResult.price))")
-    print("Maximum profit: $\(Int(optimalResult.profit).formatted())")
+    print("Maximum profit: $\(Int(optimalResult.profit).number())")
 }
 ```
 
@@ -489,9 +489,9 @@ for (index, input) in tornadoAnalysis.inputs.enumerated() {
     let percentImpact = (impact / abs(profit)) * 100.0
 
     print("\n\(index + 1). \(input)")
-    print("   Low scenario:  $\(Int(low).formatted())")
-    print("   High scenario: $\(Int(high).formatted())")
-    print("   Impact range:  $\(Int(impact).formatted()) (\(String(format: "%.1f", percentImpact))% of base profit)")
+    print("   Low scenario:  $\(Int(low).number())")
+    print("   High scenario: $\(Int(high).number())")
+    print("   Impact range:  $\(Int(impact).number()) (\(String(format: "%.1f", percentImpact))% of base profit)")
 }
 ```
 
@@ -632,17 +632,17 @@ let results = try simulation.run()
 
 // Analyze results
 print("\n=== Simulation Results ===")
-print("Mean profit: $\(Int(results.statistics.mean).formatted())")
-print("Standard deviation: $\(Int(results.statistics.standardDeviation).formatted())")
+print("Mean profit: $\(Int(results.statistics.mean).number())")
+print("Standard deviation: $\(Int(results.statistics.standardDeviation).number())")
 print()
 
 // Percentile analysis
 print("Profit Distribution:")
-print("  5th percentile:  $\(Int(results.percentiles.p5).formatted())")
-print("  25th percentile: $\(Int(results.percentiles.p25).formatted())")
-print("  50th percentile (median): $\(Int(results.percentiles.p50).formatted())")
-print("  75th percentile: $\(Int(results.percentiles.p75).formatted())")
-print("  95th percentile: $\(Int(results.percentiles.p95).formatted())")
+print("  5th percentile:  $\(Int(results.percentiles.p5).number())")
+print("  25th percentile: $\(Int(results.percentiles.p25).number())")
+print("  50th percentile (median): $\(Int(results.percentiles.p50).number())")
+print("  75th percentile: $\(Int(results.percentiles.p75).number())")
+print("  95th percentile: $\(Int(results.percentiles.p95).number())")
 print()
 
 // Risk metrics
@@ -662,13 +662,13 @@ print("Confidence Intervals:")
 let ci68 = results.confidenceInterval(0.68)  // ±1 standard deviation
 let ci95 = results.confidenceInterval(0.95)  // ±2 standard deviations
 
-print("  68% CI: [$\(Int(ci68.lowerBound).formatted()), $\(Int(ci68.upperBound).formatted())]")
-print("  95% CI: [$\(Int(ci95.lowerBound).formatted()), $\(Int(ci95.upperBound).formatted())]")
+print("  68% CI: [$\(Int(ci68.lowerBound).number()), $\(Int(ci68.upperBound).number())]")
+print("  95% CI: [$\(Int(ci95.lowerBound).number()), $\(Int(ci95.upperBound).number())]")
 print()
 
 // Value at Risk (downside risk)
 let var95 = results.valueAtRisk(0.95)
-print("Value at Risk (95%): $\(Int(var95).formatted())")
+print("Value at Risk (95%): $\(Int(var95).number())")
 print("  (Interpretation: 95% confident profit will be at least this amount)")
 ```
 
@@ -734,26 +734,26 @@ The model can easily be adapted for additional scenarios:
 var conservativeStrategy = baseCase
 conservativeStrategy.contractQuantity = 1_500_000
 print("Conservative strategy (more contracts):")
-print("  Profit: $\(Int(conservativeStrategy.calculateProfit()).formatted())")
+print("  Profit: $\(Int(conservativeStrategy.calculateProfit()).number())")
 
 // Scenario: What if we price more aggressively?
 var aggressiveStrategy = baseCase
 aggressiveStrategy.raisinPrice = 2.40
 print("Aggressive pricing strategy:")
-print("  Profit: $\(Int(aggressiveStrategy.calculateProfit()).formatted())")
+print("  Profit: $\(Int(aggressiveStrategy.calculateProfit()).number())")
 
 // Scenario: Best and worst case combined
 var bestCase = baseCase
 bestCase.raisinPrice = 2.30
 bestCase.openMarketPrice = 0.20
 print("Best case (high price, cheap grapes):")
-print("  Profit: $\(Int(bestCase.calculateProfit()).formatted())")
+print("  Profit: $\(Int(bestCase.calculateProfit()).number())")
 
 var worstCase = baseCase
 worstCase.raisinPrice = 2.10
 worstCase.openMarketPrice = 0.35
 print("Worst case (low price, expensive grapes):")
-print("  Profit: $\(Int(worstCase.calculateProfit()).formatted())")
+print("  Profit: $\(Int(worstCase.calculateProfit()).number())")
 ```
 
 ## Next Steps

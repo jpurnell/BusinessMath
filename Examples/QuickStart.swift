@@ -157,11 +157,11 @@ func example6_InvestmentAnalysis() {
 	print("NPV: \(investment.npv.currency())")
 
 	if let irr = investment.irr {
-		print("IRR: \((irr * 100).formatted())%")
+		print("IRR: \((irr * 100).number())%")
 	}
 
 	if let payback = investment.paybackPeriod {
-		print("Payback Period: \(payback.formatted()) periods")
+		print("Payback Period: \(payback.number()) periods")
 	}
 	print()
 }

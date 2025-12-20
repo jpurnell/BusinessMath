@@ -130,8 +130,8 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 		result += "Sample Size: \(sampleSize)\n"
 		result += "Converged: \(converged ? "Yes" : "No")\n"
 		result += "Iterations: \(iterations)\n"
-		result += "Log-Likelihood: \(logLikelihood.formatted())\n"
-		result += "Tolerance: \(tolerance.formatted())\n\n"
+		result += "Log-Likelihood: \(logLikelihood.number())\n"
+		result += "Tolerance: \(tolerance.number())\n\n"
 
 		result += "Parameter Recovery:\n"
 		result += "-------------------\n"
@@ -146,10 +146,10 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 
 			let status = within ? "✓ PASS" : "✗ FAIL"
 			result += "\n\(name):\n"
-			result += "  True:      \(trueValue.formatted())\n"
-			result += "  Recovered: \(recoveredValue.formatted())\n"
+			result += "  True:      \(trueValue.number())\n"
+			result += "  Recovered: \(recoveredValue.number())\n"
 			result += "  Abs Error: \(absError.magnitude)\n"
-			result += "  Rel Error: \(Double(relError * 100).formatted())%\n"
+			result += "  Rel Error: \(Double(relError * 100).number())%\n"
 			result += "  Status:    \(status)\n"
 		}
 

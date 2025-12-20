@@ -83,7 +83,7 @@ func capitalBudgetingExample() throws {
 		let funding = allocation * (option.resourceRequirements["budget"] ?? 0)
 
 		print("  ✓ \(option.name)")
-		print("    Allocation: \((allocation * 100).formatted())%")
+		print("    Allocation: \((allocation * 100).number())%")
 		print("    Funding: \(funding.currency())")
 		print("    Expected Value: \(option.expectedValue.currency())")
 		print("    Strategic Value: \(option.strategicValue ?? 0)/10")
@@ -168,17 +168,17 @@ func marketingAllocationExample() throws {
 		let roi = expectedRevenue / spend
 
 		print("  \(option.name):")
-		print("    Allocation: \((allocation * 100).formatted())%")
+		print("    Allocation: \((allocation * 100).number())%")
 		print("    Spend: \(spend.currency())")
 		print("    Expected Revenue: \(expectedRevenue.currency())")
-		print("    ROI: \(roi.formatted())x")
+		print("    ROI: \(roi.number())x")
 		print()
 	}
 
 	print("Total Expected Revenue: \(result.totalValue.currency())")
 	print("Total Spend: \(result.totalResourcesUsed["spend"]?.currency() ?? "$0.00")")
 	let overallROI = result.totalValue / (result.totalResourcesUsed["spend"] ?? 1)
-	print("Overall ROI: \(overallROI.formatted())x")
+	print("Overall ROI: \(overallROI.number())x")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }

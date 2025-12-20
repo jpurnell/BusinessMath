@@ -85,12 +85,12 @@ final class DebugContext: @unchecked Sendable {
 /// let trace = debugger.trace(value: "NPV") {
 ///     calculateNPV(cashFlows: flows, discountRate: 0.08)
 /// }
-/// print(trace.formatted())
+/// print(trace.number())
 ///
 /// // Diagnose issues
 /// let report = debugger.diagnose(value: npv, expected: 50_000, tolerance: 0.01)
 /// if report.hasIssues {
-///     print(report.formatted())
+///     print(report.number())
 /// }
 /// ```
 public actor ModelDebugger {

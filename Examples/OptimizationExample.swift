@@ -31,7 +31,7 @@ func gradientDescentComparisonExample() throws {
 		maxIterations: 10000
 	)
 	let basicResult = try basicGD.minimize(function: rosenbrock, initialGuess: initial)
-	print("   Solution: \(basicResult.solution.toArray().map { $0.formatted() })")
+	print("   Solution: \(basicResult.solution.toArray().map { $0.number() })")
 	print("   Iterations: \(basicResult.iterations)")
 	print("   Converged: \(basicResult.converged)")
 	print()
@@ -44,7 +44,7 @@ func gradientDescentComparisonExample() throws {
 		momentum: 0.9
 	)
 	let momentumResult = try momentumGD.minimize(function: rosenbrock, initialGuess: initial)
-	print("   Solution: \(momentumResult.solution.toArray().map { $0.formatted() })")
+	print("   Solution: \(momentumResult.solution.toArray().map { $0.number() })")
 	print("   Iterations: \(momentumResult.iterations)")
 	print("   Converged: \(momentumResult.converged)")
 	print()
@@ -56,7 +56,7 @@ func gradientDescentComparisonExample() throws {
 		maxIterations: 10000
 	)
 	let adamResult = try adam.minimizeAdam(function: rosenbrock, initialGuess: initial)
-	print("   Solution: \(adamResult.solution.toArray().map { $0.formatted() })")
+	print("   Solution: \(adamResult.solution.toArray().map { $0.number() })")
 	print("   Iterations: \(adamResult.iterations)")
 	print("   Converged: \(adamResult.converged)")
 	print()
@@ -80,7 +80,7 @@ func newtonRaphsonExample() throws {
 	}
 
 	let initial = VectorN([5.0, 5.0, 5.0])
-	print("Minimizing quadratic function from \(initial.toArray().map { $0.formatted() })")
+	print("Minimizing quadratic function from \(initial.toArray().map { $0.number() })")
 	print()
 
 	// Full Newton Method
@@ -94,8 +94,8 @@ func newtonRaphsonExample() throws {
 		hessian: { try numericalHessian(quadratic, at: $0) },
 		initialGuess: initial
 	)
-	print("   Solution: \(newtonResult.solution.toArray().map { $0.formatted() })")
-	print("   Value: \(newtonResult.value.formatted())")
+	print("   Solution: \(newtonResult.solution.toArray().map { $0.number() })")
+	print("   Value: \(newtonResult.value.number())")
 	print("   Iterations: \(newtonResult.iterations)")
 	print("   Converged: \(newtonResult.converged)")
 	print()
@@ -109,8 +109,8 @@ func newtonRaphsonExample() throws {
 		function: quadratic,
 		initialGuess: initial
 	)
-	print("   Solution: \(bfgsResult.solution.toArray().map { $0.formatted() })")
-	print("   Value: \(bfgsResult.value.formatted())")
+	print("   Solution: \(bfgsResult.solution.toArray().map { $0.number() })")
+	print("   Value: \(bfgsResult.value.number())")
 	print("   Iterations: \(bfgsResult.iterations)")
 	print("   Converged: \(bfgsResult.converged)")
 	print()
@@ -165,7 +165,7 @@ func parameterFittingExample() throws {
 	print(String(format: "  b = %.4f (true: %.1f)", fitted[1], trueParams.b))
 	print(String(format: "  c = %.4f (true: %.1f)", fitted[2], trueParams.c))
 	print()
-	print("Sum of squared errors: \(result.value.formatted())")
+	print("Sum of squared errors: \(result.value.number())")
 	print("Converged in \(result.iterations) iterations")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -198,13 +198,13 @@ func multiDimensionalExample() throws {
 	let result = try optimizer.minimizeAdam(function: sphere, initialGuess: initial)
 
 	print("Results:")
-	print("  Final value: \(result.value.formatted())")
+	print("  Final value: \(result.value.number())")
 	print("  Iterations: \(result.iterations)")
 	print("  Converged: \(result.converged)")
 	print()
 	print("Solution (should be near zero):")
 	for (i, value) in result.solution.toArray().enumerated() {
-		print("  x\(i+1) = \(value.formatted())")
+		print("  x\(i+1) = \(value.number())")
 	}
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")

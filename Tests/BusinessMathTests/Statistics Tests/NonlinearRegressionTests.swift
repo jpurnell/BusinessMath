@@ -121,25 +121,26 @@ final class NonlinearRegressionTests: XCTestCase {
 	}
 
 	func testReciprocalFitting_LogLikelihoodImproves() throws {
-		// Test that fitting improves log-likelihood from initial guess
-		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
-		let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
+			// Test that fitting improves log-likelihood from initial guess
+			let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
+			let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
 
-		let initialParams = ReciprocalRegressionModel<Double>.Parameters(a: 1.0, b: 1.0, sigma: 1.0)
-		let initialLogLik = ReciprocalRegressionModel<Double>.totalLogLikelihood(data: data, params: initialParams)
+			let initialParams = ReciprocalRegressionModel<Double>.Parameters(a: 1.0, b: 1.0, sigma: 1.0)
+			let initialLogLik = ReciprocalRegressionModel<Double>.totalLogLikelihood(data: data, params: initialParams)
 
-		let fitter = ReciprocalRegressionFitter<Double>()
-		let result = try fitter.fit(
-			data: data,
-			initialGuess: initialParams,
-			learningRate: 0.001,
-			maxIterations: 1000
-		)
+			let fitter = ReciprocalRegressionFitter<Double>()
+			let result = try fitter.fit(
+				data: data,
+				initialGuess: initialParams,
+				learningRate: 0.001,
+				maxIterations: 1000
+			)
 
-		// Fitted log-likelihood should be better than initial
-		XCTAssertGreaterThan(result.logLikelihood, initialLogLik,
-			"Fitted model should have higher log-likelihood than initial guess")
-	}
+			// Fitted log-likelihood should be better than initial
+			XCTAssertGreaterThan(result.logLikelihood, initialLogLik,
+				"Fitted model should have higher log-likelihood than initial guess")
+		}
+
 
 	// MARK: - Parameter Recovery Validation Tests
 

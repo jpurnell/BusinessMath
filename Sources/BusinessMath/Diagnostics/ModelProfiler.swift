@@ -39,7 +39,7 @@ import OSLog
 ///
 /// // Get performance report
 /// let report = profiler.report()
-/// print(report.formatted())
+/// print(report.number())
 /// ```
 public actor ModelProfiler {
 
@@ -384,7 +384,7 @@ public struct PerformanceReport: Sendable {
         var output = "=== Performance Report ===\n"
         output += "Generated: \(timestamp)\n"
         output += "Total Operations: \(totalOperations)\n"
-		output += "Total Time: \(totalTime.formatted())s\n\n"
+		output += "Total Time: \(totalTime.number())s\n\n"
 
         if operations.isEmpty {
             output += "No operations recorded.\n"
@@ -404,11 +404,11 @@ public struct PerformanceReport: Sendable {
 
         for op in operations {
 			let opName = "\(op.operation.padding(toLength: 40, withPad: " ", startingAt: 0))"
-			let count = "\(op.executionCount.formatted().padding(toLength: 8, withPad: " ", startingAt: 0))"
-			let total = "\(op.totalTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
-			let avg = "\(op.averageTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
-			let min = "\(op.minTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
-			let max = "\(op.maxTime.formatted().padding(toLength: 12, withPad: " ", startingAt: 0))"
+			let count = "\(Double(op.executionCount).number(0).padding(toLength: 8, withPad: " ", startingAt: 0))"
+			let total = "\(op.totalTime.number().padding(toLength: 12, withPad: " ", startingAt: 0))"
+			let avg = "\(op.averageTime.number().padding(toLength: 12, withPad: " ", startingAt: 0))"
+			let min = "\(op.minTime.number().padding(toLength: 12, withPad: " ", startingAt: 0))"
+			let max = "\(op.maxTime.number().padding(toLength: 12, withPad: " ", startingAt: 0))"
 
 			output += "\(opName) \(count) \(total) \(avg) \(min) \(max)\n"
         }

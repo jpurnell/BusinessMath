@@ -175,7 +175,7 @@ func example1_BasicExponentialDecay() {
 		let absError = abs(recoveredVal - trueVal)
 		let relError = absError / abs(trueVal)
 		let status = relError <= 0.15 ? "✓ PASS" : "✗ FAIL"
-		print("  \(name.padding(toLength: 11, withPad: " ", startingAt: 0)) | \(trueVal.formatted().padding(toLength: 6, withPad: " ", startingAt: 0)) | \(recoveredVal.formatted().padding(toLength: 9, withPad: " ", startingAt: 0)) | \(absError.formatted().padding(toLength: 9, withPad: " ", startingAt: 0)) | \((relError * 100).formatted().padding(toLength: 8, withPad: " ", startingAt: 0))% | \(status)")
+		print("  \(name.padding(toLength: 11, withPad: " ", startingAt: 0)) | \(trueVal.number().padding(toLength: 6, withPad: " ", startingAt: 0)) | \(recoveredVal.number().padding(toLength: 9, withPad: " ", startingAt: 0)) | \(absError.number().padding(toLength: 9, withPad: " ", startingAt: 0)) | \((relError * 100).number().padding(toLength: 8, withPad: " ", startingAt: 0))% | \(status)")
 	}
 	print()
 
@@ -203,9 +203,9 @@ func example2_CustomerRetentionModel() {
 	let noiseSigma = 0.03           // ±3% measurement noise
 	
 	print("True Model:")
-	print("  Initial retention:  \((initialRetention * 100).formatted())%")
-	print("  Monthly churn rate: \((monthlyChurnRate * 100).formatted())%")
-	print("  12-month retention: \((initialRetention * exp(-monthlyChurnRate * 12) * 100).formatted())%")
+	print("  Initial retention:  \((initialRetention * 100).number())%")
+	print("  Monthly churn rate: \((monthlyChurnRate * 100).number())%")
+	print("  12-month retention: \((initialRetention * exp(-monthlyChurnRate * 12) * 100).number())%")
 	print()
 	
 		// Simulate 24 months of data
@@ -230,9 +230,9 @@ func example2_CustomerRetentionModel() {
 	print()
 	
 	print("Recovered Model:")
-	print("  Initial retention:  \((a * 100).formatted())")
-	print("  Monthly churn rate: \((b * 100).formatted())%")
-	print("  12-month retention: \((a * exp(-b * 12) * 100).formatted())%")
+	print("  Initial retention:  \((a * 100).number())")
+	print("  Monthly churn rate: \((b * 100).number())%")
+	print("  12-month retention: \((a * exp(-b * 12) * 100).number())%")
 	print()
 	
 		// Validation
@@ -241,7 +241,7 @@ func example2_CustomerRetentionModel() {
 		print("✓ VALIDATION PASSED: Churn rate recovered within 10%")
 		print("  → Safe to use this model for retention forecasting")
 	} else {
-		print("✗ VALIDATION FAILED: Churn rate error = \((churnError * 100).formatted())%")
+		print("✗ VALIDATION FAILED: Churn rate error = \((churnError * 100).number())%")
 		print("  → Need more data or different model")
 	}
 }
@@ -290,13 +290,13 @@ func example3_DataRangeImpact() {
 		
 			// Fit
 		guard let (_, recoveredB, _) = ExponentialDecayModel.fit(data: data) else {
-			print("  \(test.name.padding(toLength: 13, withPad: " ", startingAt: 0)) | \(test.n.formatted()) | \("FAILED".padding(toLength: 19, withPad: " ", startingAt: 0)) | \("N/A".padding(toLength: 9, withPad: " ", startingAt: 0)) | \("✗ FAIL")")
+			print("  \(test.name.padding(toLength: 13, withPad: " ", startingAt: 0)) | \(test.n.number()) | \("FAILED".padding(toLength: 19, withPad: " ", startingAt: 0)) | \("N/A".padding(toLength: 9, withPad: " ", startingAt: 0)) | \("✗ FAIL")")
 			continue
 		}
 		
 		let relError = abs(recoveredB - trueB) / trueB
 		let status = relError <= 0.20 ? "✓ PASS" : "✗ FAIL"
-		print("  \(test.name.padding(toLength: 13, withPad: " ", startingAt: 0)) | \(test.n.formatted()) | \(recoveredB.formatted().padding(toLength: 19, withPad: " ", startingAt: 0)) | \((relError * 100).formatted().padding(toLength: 9, withPad: " ", startingAt: 0)) | \(status)")
+		print("  \(test.name.padding(toLength: 13, withPad: " ", startingAt: 0)) | \(test.n.number()) | \(recoveredB.number().padding(toLength: 19, withPad: " ", startingAt: 0)) | \((relError * 100).number().padding(toLength: 9, withPad: " ", startingAt: 0)) | \(status)")
 	}
 	
 	print()
@@ -332,8 +332,8 @@ func example4_ComparisonToReciprocalModel() {
 	if let (aEst, bEst, _) = ExponentialDecayModel.fit(data: expData) {
 		let aError = abs(aEst - 10.0) / 10.0
 		let bError = abs(bEst - 0.5) / 0.5
-		print("  Parameter a: \((aError * 100).formatted())% error")
-		print("  Parameter b: \((bError * 100).formatted())% error")
+		print("  Parameter a: \((aError * 100).number())% error")
+		print("  Parameter b: \((bError * 100).number())% error")
 	} else {
 		print("  Fitting failed")
 	}
@@ -354,8 +354,8 @@ func example4_ComparisonToReciprocalModel() {
 		
 		if let aError = report.relativeErrors["a"],
 		   let bError = report.relativeErrors["b"] {
-			print("  Parameter a: \((aError * 100).formatted())% error")
-			print("  Parameter b: \((bError * 100).formatted())% error")
+			print("  Parameter a: \((aError * 100).number())% error")
+			print("  Parameter b: \((bError * 100).number())% error")
 		}
 		
 	} catch {
@@ -399,7 +399,7 @@ func example5_WhenExponentialFittingFails() {
 	}
 	
 	if let (_, b, _) = ExponentialDecayModel.fit(data: increasingData) {
-		print("  Estimated decay rate: \(b.formatted(maxDecimals: 3))")
+		print("  Estimated decay rate: \(b.number(3))")
 		if b < 0 {
 			print("  ✗ Negative decay rate indicates wrong model!")
 			print("  → Should use growth model, not decay model")
@@ -425,8 +425,8 @@ func example5_WhenExponentialFittingFails() {
 		let relErrorA = abs(aTrue - 5.0) / 5.0
 		let relErrorB = abs(bTrue - 0.3) / 0.3
 		
-		print("  Parameter a error: \((relErrorA * 100).formatted())%")
-		print("  Parameter b error: \((relErrorB * 100).formatted())%")
+		print("  Parameter a error: \((relErrorA * 100).number())%")
+		print("  Parameter b error: \((relErrorB * 100).number())%")
 		
 		if relErrorA > 0.50 || relErrorB > 0.50 {
 			print("  ✗ Poor recovery with high noise")

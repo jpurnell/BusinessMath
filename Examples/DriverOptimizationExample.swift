@@ -110,7 +110,7 @@ func saasTargetSeekingExample() throws {
 		let percentChange = (change / current) * 100
 		
 		let displayName = driver.name.replacingOccurrences(of: "_", with: " ").capitalized
-		print("  \(displayName.padding(toLength: 30, withPad: " ", startingAt: 0)) \(current.formatted()) → \(optimized.formatted()) (\(percentChange.formatted(maxDecimals: 2))%)")
+		print("  \(displayName.padding(toLength: 30, withPad: " ", startingAt: 0)) \(current.number()) → \(optimized.number()) (\(percentChange.percent())")
 	}
 	print(String(repeating: "-", count: 70))
 	print()
@@ -125,13 +125,13 @@ func saasTargetSeekingExample() throws {
 		
 		switch target.target {
 			case .minimum(let min):
-				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.formatted().paddingLeft(toLength: 12)) (target: ≥ \(min.formatted()))")
+				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.number().paddingLeft(toLength: 12)) (target: ≥ \(min.number()))")
 			case .maximum(let max):
-				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.formatted().paddingLeft(toLength: 12)) (target: ≥ \(max.formatted()))")
+				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.number().paddingLeft(toLength: 12)) (target: ≥ \(max.number()))")
 			case .exact(let value):
-				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.formatted().paddingLeft(toLength: 12)) (target: ≥ \(value.formatted()))")
+				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.number().paddingLeft(toLength: 12)) (target: ≥ \(value.number()))")
 			case .range(let min, let max):
-				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.formatted().paddingLeft(toLength: 12)) (target: \(min.formatted()) - \(max.formatted()))")
+				print("  \(symbol) \(displayName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(achieved.number().paddingLeft(toLength: 12)) (target: \(min.number()) - \(max.number()))")
 		}
 	}
 	print()
@@ -144,18 +144,18 @@ func saasTargetSeekingExample() throws {
 	
 	if abs(priceChange) > 2 {
 		let direction = priceChange > 0 ? "increase" : "decrease"
-		print("  1. \(direction.capitalized) pricing by \(abs(priceChange).formatted())%")
+		print("  1. \(direction.capitalized) pricing by \(abs(priceChange).number())%")
 	}
 	
 	if abs(churnChange) > 0.005 {
 		if churnChange < 0 {
-			print("  2. Implement churn reduction initiatives (target: \(abs(churnChange * 100).formatted())% improvement)")
+			print("  2. Implement churn reduction initiatives (target: \(abs(churnChange * 100).number())% improvement)")
 		}
 	}
 	
 	if abs(newCustomersChange) > 5 {
 		let direction = newCustomersChange > 0 ? "increase" : "decrease"
-		print("  3. \(direction.capitalized) customer acquisition to ~\(result.optimizedDrivers["new_customers_monthly"]!.formatted()) per month")
+		print("  3. \(direction.capitalized) customer acquisition to ~\(result.optimizedDrivers["new_customers_monthly"]!.number()) per month")
 	}
 	
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -259,7 +259,7 @@ func ecommerceConversionExample() throws {
 		
 		let displayName = driver.name.replacingOccurrences(of: "_", with: " ").capitalized
 		let arrow = change > 0 ? "↑" : (change < 0 ? "↓" : "→")
-		print("  \(displayName.padding(toLength: 25, withPad: " ", startingAt: 0)) \(arrow) \(optimized.formatted()) (\(percentChange.formatted())% change)")
+		print("  \(displayName.padding(toLength: 25, withPad: " ", startingAt: 0)) \(arrow) \(optimized.number()) (\(percentChange.number())% change)")
 	}
 	print()
 	
@@ -269,7 +269,7 @@ func ecommerceConversionExample() throws {
 	let aov = result.achievedMetrics["aov"]!
 	
 	print("  Monthly Revenue: \(revenue.currency())")
-	print("  Monthly Orders: \(orders.formatted())")
+	print("  Monthly Orders: \(orders.number())")
 	print("  Average Order Value: \(aov.currency())")
 	
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -352,7 +352,7 @@ func multiObjectiveExample() throws {
 		let percentChange = (change / current) * 100
 		
 		let displayName = name.replacingOccurrences(of: "_", with: " ").capitalized
-		print("\(displayName.padding(toLength: 25, withPad: " ", startingAt: 0)) \(value.formatted()) (\(percentChange.formatted(maxDecimals: 2))%)")
+		print("\(displayName.padding(toLength: 25, withPad: " ", startingAt: 0)) \(value.number()) (\(percentChange.percent())")
 	}
 	print()
 	
@@ -367,7 +367,7 @@ func multiObjectiveExample() throws {
 		let displayName = target.metric.replacingOccurrences(of: "_", with: " ").uppercased()
 		
 		if case .minimum(let min) = target.target {
-			print("  \(symbol) \(displayName.padding(toLength: 25, withPad: " ", startingAt: 0)) \(achieved.formatted()) (target: ≥ \(min.formatted()))")
+			print("  \(symbol) \(displayName.padding(toLength: 25, withPad: " ", startingAt: 0)) \(achieved.number()) (target: ≥ \(min.number()))")
 		}
 	}
 	print()

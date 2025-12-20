@@ -17,31 +17,31 @@ func vector2DExample() {
 	let w = Vector2D<Double>(x: 1.0, y: 2.0)
 
 	print("Vectors:")
-	print("  v = (\(v.x.formatted()), \(v.y.formatted()))")
-	print("  w = (\(w.x.formatted()), \(w.y.formatted()))")
+	print("  v = (\(v.x.number()), \(v.y.number()))")
+	print("  w = (\(w.x.number()), \(w.y.number()))")
 	print()
 
 	// Basic operations
 	print("Basic Operations:")
 	let sum = v + w
-	print("  v + w = (\(sum.x.formatted()), \(sum.y.formatted()))")
+	print("  v + w = (\(sum.x.number()), \(sum.y.number()))")
 
 	let diff = v - w
-	print("  v - w = (\(diff.x.formatted()), \(diff.y.formatted()))")
+	print("  v - w = (\(diff.x.number()), \(diff.y.number()))")
 
 	let scaled = 2.0 * v
-	print("  2v = (\(scaled.x.formatted()), \(scaled.y.formatted()))")
+	print("  2v = (\(scaled.x.number()), \(scaled.y.number()))")
 
 	let negated = -v
-	print("  -v = (\(negated.x.formatted()), \(negated.y.formatted()))")
+	print("  -v = (\(negated.x.number()), \(negated.y.number()))")
 
 	print()
 
 	// Norms and distances
 	print("Norms and Distances:")
-	print("  ‖v‖ = \(v.norm.formatted()) (√(3² + 4²) = √25 = 5)")
-	print("  ‖w‖ = \(w.norm.formatted())")
-	print("  ‖v - w‖ = \(v.distance(to: w).formatted())")
+	print("  ‖v‖ = \(v.norm.number()) (√(3² + 4²) = √25 = 5)")
+	print("  ‖w‖ = \(w.norm.number())")
+	print("  ‖v - w‖ = \(v.distance(to: w).number())")
 
 	print()
 
@@ -62,10 +62,10 @@ func vector2DExample() {
 	// Rotation
 	print("Rotation:")
 	let rotated90 = v.rotated(by: .pi / 2)
-	print("  v rotated 90°: (\(rotated90.x.formatted()), \(rotated90.y.formatted()))")
+	print("  v rotated 90°: (\(rotated90.x.number()), \(rotated90.y.number()))")
 
 	let angle = v.angle
-	print("  Angle from x-axis: \(angle.formatted()) radians (\((angle * 180 / .pi).formatted())°)")
+	print("  Angle from x-axis: \(angle.number()) radians (\((angle * 180 / .pi).number())°)")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -78,8 +78,8 @@ func vector3DExample() {
 	let w = Vector3D<Double>(x: 4.0, y: 5.0, z: 6.0)
 
 	print("Vectors:")
-	print("  v = (\(v.x.formatted()), \(v.y.formatted()), \(v.z.formatted()))")
-	print("  w = (\(w.x.formatted()), \(w.y.formatted()), \(w.z.formatted()))")
+	print("  v = (\(v.x.number()), \(v.y.number()), \(v.z.number()))")
+	print("  w = (\(w.x.number()), \(w.y.number()), \(w.z.number()))")
 	print()
 
 	// Basic operations
@@ -92,15 +92,15 @@ func vector3DExample() {
 
 	// Norms
 	print("Norms:")
-	print("  ‖v‖ = \(v.norm.formatted()) (√(1² + 2² + 3²) = √14)")
-	print("  ‖w‖ = \(w.norm.formatted())")
+	print("  ‖v‖ = \(v.norm.number()) (√(1² + 2² + 3²) = √14)")
+	print("  ‖w‖ = \(w.norm.number())")
 
 	print()
 
 	// Dot product
 	print("Dot Product:")
 	let dot = v.dot(w)
-	print("  v · w = \(dot.formatted()) (1×4 + 2×5 + 3×6 = 32)")
+	print("  v · w = \(dot.number()) (1×4 + 2×5 + 3×6 = 32)")
 
 	print()
 
@@ -113,8 +113,8 @@ func vector3DExample() {
 	// Verify perpendicularity
 	let dotCrossV = cross.dot(v)
 	let dotCrossW = cross.dot(w)
-	print("  Verification: (v×w)·v = \(dotCrossV.formatted()) (should be ~0)")
-	print("                (v×w)·w = \(dotCrossW.formatted()) (should be ~0)")
+	print("  Verification: (v×w)·v = \(dotCrossV.number()) (should be ~0)")
+	print("                (v×w)·w = \(dotCrossW.number()) (should be ~0)")
 
 	print()
 
@@ -122,7 +122,7 @@ func vector3DExample() {
 	print("Triple Products:")
 	let u = Vector3D<Double>(x: 1.0, y: 0.0, z: 0.0)
 	let tripleScalar = u.tripleProduct(v, w)
-	print("  Scalar triple product: \(tripleScalar.formatted()) (signed volume)")
+	print("  Scalar triple product: \(tripleScalar.number()) (signed volume)")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -158,13 +158,13 @@ func vectorNExample() {
 
 	// Statistical operations
 	print("Statistical Operations:")
-	print("  sum(v) = \(v.sum.formatted())")
-	print("  mean(v) = \(v.mean.formatted())")
-	print("  std(v) = \(v.standardDeviation().formatted())")
+	print("  sum(v) = \(v.sum.number())")
+	print("  mean(v) = \(v.mean.number())")
+	print("  std(v) = \(v.standardDeviation().number())")
 	print("  min(v) = \(v.min!)")
 	print("  max(v) = \(v.max!)")
 	if let range = v.range {
-		print("  range(v) = [\(range.min.formatted()), \(range.max.formatted())]")
+		print("  range(v) = [\(range.min.number()), \(range.max.number())]")
 	}
 
 	print()
@@ -175,7 +175,7 @@ func vectorNExample() {
 	print("  v ⊙ w = \(hadamard.toArray()) (element-wise product)")
 
 	let quotient = v.elementwiseDivide(by: w)
-	print("  v ⊘ w = \(quotient.toArray().map { $0.formatted() })")
+	print("  v ⊘ w = \(quotient.toArray().map { $0.number() })")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -194,21 +194,21 @@ func distanceMetricsExample() {
 
 	// Euclidean distance (L2 norm)
 	let euclidean = p1.distance(to: p2)
-	print("Euclidean distance (L2): \(euclidean.formatted())")
+	print("Euclidean distance (L2): \(euclidean.number())")
 	print("  √((3-0)² + (4-0)²) = √25 = 5")
 
 	print()
 
 	// Manhattan distance (L1 norm)
 	let manhattan = p1.manhattanDistance(to: p2)
-	print("Manhattan distance (L1): \(manhattan.formatted())")
+	print("Manhattan distance (L1): \(manhattan.number())")
 	print("  |3-0| + |4-0| = 7 (city blocks)")
 
 	print()
 
 	// Chebyshev distance (L∞ norm)
 	let chebyshev = p1.chebyshevDistance(to: p2)
-	print("Chebyshev distance (L∞): \(chebyshev.formatted())")
+	print("Chebyshev distance (L∞): \(chebyshev.number())")
 	print("  max(|3-0|, |4-0|) = 4 (chess king moves)")
 
 	print()
@@ -220,7 +220,7 @@ func distanceMetricsExample() {
 	print("Cosine Similarity:")
 	print("  v1 = \(v1.toArray())")
 	print("  v2 = \(v2.toArray())")
-	print("  similarity = \(similarity.formatted()) (1.0 means same direction)")
+	print("  similarity = \(similarity.number()) (1.0 means same direction)")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -318,10 +318,10 @@ func constructionExample() {
 	print("  Basis vector e₂: \(basis.toArray())")
 
 	let linspace = VectorN<Double>.linearSpace(from: 0.0, to: 10.0, count: 6)
-	print("  Linear space [0, 10]: \(linspace.toArray().map { $0.formatted() })")
+	print("  Linear space [0, 10]: \(linspace.toArray().map { $0.number() })")
 
 	let logspace = VectorN<Double>.logSpace(from: 1.0, to: 100.0, count: 3)
-	print("  Log space [1, 100]: \(logspace.toArray().map { $0.formatted() })")
+	print("  Log space [1, 100]: \(logspace.toArray().map { $0.number() })")
 
 	print()
 
@@ -379,10 +379,10 @@ func functionalOperationsExample() {
 	// Reduce
 	print("Reduce Operations:")
 	let sum = v.reduce(0.0, +)
-	print("  Sum: \(sum.formatted())")
+	print("  Sum: \(sum.number())")
 
 	let product = v.reduce(1.0, *)
-	print("  Product: \(product.formatted())")
+	print("  Product: \(product.number())")
 
 	print()
 
@@ -409,7 +409,7 @@ func portfolioWeightsExample() {
 
 	print("Portfolio:")
 	for (i, asset) in assets.enumerated() {
-		print("  \(asset.paddingLeft(toLength: 5)): \((weights[i] * 100).formatted())%")
+		print("  \(asset.paddingLeft(toLength: 5)): \((weights[i] * 100).number())%")
 	}
 	print()
 
@@ -418,7 +418,7 @@ func portfolioWeightsExample() {
 	if abs(weights.sum - 1.0) > 0.001 {
 		print("  ⚠️ Weights don't sum to 1 - normalizing...")
 		weights = weights / weights.sum
-		print("  After normalization: \(weights.sum.formatted())")
+		print("  After normalization: \(weights.sum.number())")
 	} else {
 		print("  ✓ Weights sum to 1")
 	}
@@ -429,14 +429,14 @@ func portfolioWeightsExample() {
 	let returns = VectorN([0.12, 0.15, 0.10, 0.18])
 	print("Expected Returns:")
 	for (i, asset) in assets.enumerated() {
-		print("  \(asset.paddingLeft(toLength: 5)): \((returns[i] * 100).formatted())%")
+		print("  \(asset.paddingLeft(toLength: 5)): \((returns[i] * 100).number())%")
 	}
 
 	print()
 
 	// Portfolio return (weighted average)
 	let portfolioReturn = weights.dot(returns)
-	print("Portfolio Return: \((portfolioReturn * 100).formatted())%")
+	print("Portfolio Return: \((portfolioReturn * 100).number())%")
 
 	print()
 
@@ -444,7 +444,7 @@ func portfolioWeightsExample() {
 	print("Weight × Return (contribution to portfolio):")
 	let contributions = weights.hadamardProduct(with: returns)
 	for (i, asset) in assets.enumerated() {
-		print("  \(asset.paddingLeft(toLength: 5)): \((weights[i] * 100).formatted())% × \((returns[i] * 100).formatted())% = \((contributions[i] * 100).formatted())%")
+		print("  \(asset.paddingLeft(toLength: 5)): \((weights[i] * 100).number())% × \((returns[i] * 100).number())% = \((contributions[i] * 100).number())%")
 	}
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -461,14 +461,14 @@ func normalizationExample() {
 
 	// Normalize to unit length
 	let unit = v.normalized()
-	print("Normalized (unit vector): \(unit.toArray().map { $0.formatted() })")
-	print("Norm: \(unit.norm.formatted()) (should be 1.0)")
+	print("Normalized (unit vector): \(unit.toArray().map { $0.number() })")
+	print("Norm: \(unit.norm.number()) (should be 1.0)")
 
 	print()
 
 	// Verify direction preserved
 	let similarity = v.cosineSimilarity(with: unit)
-	print("Cosine similarity with original: \(similarity.formatted()) (should be 1.0)")
+	print("Cosine similarity with original: \(similarity.number()) (should be 1.0)")
 
 	print()
 
@@ -488,7 +488,7 @@ func normalizationExample() {
 	let mean = features.mean
 	let std = features.standardDeviation()
 	let zScores = features.map { ($0 - mean) / std }
-	print("  Z-scores: \(zScores.toArray().map { $0.formatted() })")
+	print("  Z-scores: \(zScores.toArray().map { $0.number() })")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }

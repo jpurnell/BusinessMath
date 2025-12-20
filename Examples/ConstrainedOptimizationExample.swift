@@ -32,19 +32,19 @@ func equalityConstrainedExample() throws {
 	)
 
 	print("Solution:")
-	print("  x = \(result.solution[0].formatted())")
-	print("  y = \(result.solution[1].formatted())")
+	print("  x = \(result.solution[0].number())")
+	print("  y = \(result.solution[1].number())")
 	print("  Objective value: \(result.formattedObjectiveValue)")
 	print()
 
 	print("Verification:")
-	print("  Constraint (x + y - 1): \((result.solution[0] + result.solution[1] - 1.0).formatted()) (should be ~0)",
+	print("  Constraint (x + y - 1): \((result.solution[0] + result.solution[1] - 1.0).number()) (should be ~0)",
 				  )
 	print("  Analytical solution: x = y = 0.5")
 	print()
 
 	if let lambda = result.lagrangeMultipliers.first {
-		print("Lagrange Multiplier λ = \(lambda.formatted())")
+		print("Lagrange Multiplier λ = \(lambda.number())")
 		print("(Shadow price: how much objective improves if we relax constraint)")
 	}
 
@@ -80,16 +80,16 @@ func inequalityConstrainedExample() throws {
 	)
 
 	print("Solution:")
-	print("  x = \(result.solution[0].formatted())")
-	print("  y = \(result.solution[1].formatted())")
-	print("  Distance to (2,2): \(sqrt(result.objectiveValue).formatted())")
+	print("  x = \(result.solution[0].number())")
+	print("  y = \(result.solution[1].number())")
+	print("  Distance to (2,2): \(sqrt(result.objectiveValue).number())")
 	print()
 
 	print("Constraint status:")
 	let x = result.solution[0], y = result.solution[1]
-	print("  x + y = \((x + y).formatted()) (limit: 2.0) \(abs(x + y - 2.0) < 1e-4 ? "ACTIVE" : "")")
-	print("  x = \(x.formatted()) (≥ 0) \(x < 1e-4 ? "ACTIVE" : "")")
-	print("  y = \(y.formatted()) (≥ 0) \(y < 1e-4 ? "ACTIVE" : "")")
+	print("  x + y = \((x + y).number()) (limit: 2.0) \(abs(x + y - 2.0) < 1e-4 ? "ACTIVE" : "")")
+	print("  x = \(x.number()) (≥ 0) \(x < 1e-4 ? "ACTIVE" : "")")
+	print("  y = \(y.number()) (≥ 0) \(y < 1e-4 ? "ACTIVE" : "")")
 	print()
 
 	print("Analytical solution: x = y = 1.0 (constraint x + y ≤ 2 is active)")
@@ -127,8 +127,8 @@ func boxConstrainedExample() throws {
 	)
 
 	print("Solution:")
-	print("  x = \(result.solution[0].formatted())")
-	print("  y = \(result.solution[1].formatted())")
+	print("  x = \(result.solution[0].number())")
+	print("  y = \(result.solution[1].number())")
 	print("  Objective value: \(result.formattedObjectiveValue)")
 	print()
 
@@ -180,14 +180,14 @@ func constrainedLeastSquaresExample() throws {
 	let b = result.solution[1]
 
 	print("Fitted model:")
-	print("  y = \(a.formatted()) + \(b.formatted())x")
+	print("  y = \(a.number()) + \(b.number())x")
 	print("  Sum of squared errors: \(result.formattedObjectiveValue)")
 	print()
 
 	print("Predictions:")
 	for point in dataPoints {
 		let predicted = a + b * point.x
-		print("  x=\(point.x.formatted()): actual= \(point.y.formatted()), predicted= \(predicted.formatted()), error= \((point.y - predicted).formatted())")
+		print("  x=\(point.x.number()): actual= \(point.y.number()), predicted= \(predicted.number()), error= \((point.y - predicted).number())")
 	}
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -227,20 +227,20 @@ func resourceAllocationExample() throws {
 	let z = result.solution[2]
 
 	print("Optimal allocation:")
-	print("  x = \(x.formatted()) units \(x.currency())")
-	print("  y = \(y.formatted()) units \((2*y).currency())")
-	print("  z = \(z.formatted()) units \((3*z).currency())")
+	print("  x = \(x.number()) units \(x.currency())")
+	print("  y = \(y.number()) units \((2*y).currency())")
+	print("  z = \(z.number()) units \((3*z).currency())")
 	print("  Total cost: \((x + 2*y + 3*z).currency())")
 	print()
 
 	let utility = sqrt(x) + sqrt(y) + sqrt(z)
-	print("Total utility: \(utility.formatted(maxDecimals: 4))")
+	print("Total utility: \(utility.number(4))")
 	print()
 
 	if let lambda = result.lagrangeMultipliers.first {
-		print("Lagrange multiplier (λ = \(lambda.formatted()))")
+		print("Lagrange multiplier (λ = \(lambda.number()))")
 		print("Interpretation: Marginal utility per dollar of budget")
-		print("  If we had $1 more, utility would increase by ~\(abs(lambda).formatted())")
+		print("  If we had $1 more, utility would increase by ~\(abs(lambda).number())")
 	}
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -313,7 +313,7 @@ func portfolioWithLeverageExample() throws {
 	print("Optimal portfolio:")
 	for (i, name) in assets.enumerated() {
 		let weight = result.solution[i]
-		print("  \(name): \((weight * 100).formatted(maxDecimals: 2))%")
+		print("  \(name): \((weight.percent())")
 	}
 	print()
 
@@ -323,9 +323,9 @@ func portfolioWithLeverageExample() throws {
 					 weights[2] * expectedReturns[2]
 	let portVol = sqrt(result.objectiveValue)
 
-	print("Portfolio return: \((portReturn * 100).formatted())%")
-	print("Portfolio risk: \((portVol * 100).formatted())%")
-	print("Sharpe ratio (rf=2%%): \(((portReturn - 0.02) / portVol).formatted())")
+	print("Portfolio return: \((portReturn * 100).number())%")
+	print("Portfolio risk: \((portVol * 100).number())%")
+	print("Sharpe ratio (rf=2%%): \(((portReturn - 0.02) / portVol).number())")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -351,7 +351,7 @@ func comparisonExample() throws {
 		// Gradient computed automatically using numerical differentiation!
 	)
 
-	print("   Solution: (\(unconstrainedResult.solution[0].formatted()),\(unconstrainedResult.solution[1].formatted()))")
+	print("   Solution: (\(unconstrainedResult.solution[0].number()),\(unconstrainedResult.solution[1].number()))")
 	print("   Value: \(unconstrainedResult.formattedObjectiveValue)")
 	print(String(format: "   Analytical solution: (1, 1)"))
 	print()
@@ -367,9 +367,9 @@ func comparisonExample() throws {
 		]
 	)
 
-	print("   Solution: (\(constrainedResult.solution[0].formatted()), \(constrainedResult.solution[1].formatted()))")
+	print("   Solution: (\(constrainedResult.solution[0].number()), \(constrainedResult.solution[1].number()))")
 	print("   Value: \(constrainedResult.formattedObjectiveValue)")
-	print("   Constraint: x + y = \((constrainedResult.solution[0] + constrainedResult.solution[1]).formatted())")
+	print("   Constraint: x + y = \((constrainedResult.solution[0] + constrainedResult.solution[1]).number())")
 	print()
 
 	// 3. With constraint x, y ≥ 0
@@ -384,7 +384,7 @@ func comparisonExample() throws {
 		]
 	)
 
-	print("   Solution: (\(inequalityResult.solution[0].formatted()),\(inequalityResult.solution[1].formatted()))")
+	print("   Solution: (\(inequalityResult.solution[0].number()),\(inequalityResult.solution[1].number()))")
 	print("   Value: \(inequalityResult.formattedObjectiveValue)")
 	print()
 

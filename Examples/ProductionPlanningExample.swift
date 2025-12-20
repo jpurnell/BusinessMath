@@ -89,11 +89,11 @@ func electronicsManufacturingExample() throws {
 		let profit = revenue - cost
 		let margin = revenue > 0 ? (profit / revenue) * 100 : 0
 
-		print("\(product.name.padding(toLength: 16, withPad: " ", startingAt: 0)) \(quantity.formatted().paddingLeft(toLength: 10)) \(revenue.currency().paddingLeft(toLength: 13)) \(cost.currency().paddingLeft(toLength: 13)) \(profit.currency().paddingLeft(toLength: 14)) \(margin.formatted(maxDecimals: 2).paddingLeft(toLength: 10))%")
+		print("\(product.name.padding(toLength: 16, withPad: " ", startingAt: 0)) \(quantity.number().paddingLeft(toLength: 10)) \(revenue.currency().paddingLeft(toLength: 13)) \(cost.currency().paddingLeft(toLength: 13)) \(profit.currency().paddingLeft(toLength: 14)) \(margin.percent().paddingLeft(toLength: 10))")
 	}
 
 	print(String(repeating: "-", count: 96))
-	print("\("TOTAL".padding(toLength: 18, withPad: " ", startingAt: 0))            \(plan.revenue.currency()) \(plan.costs.currency().paddingLeft(toLength: 13)) \(plan.profit.currency().paddingLeft(toLength: 14)) \(((plan.profit / plan.revenue) * 100).formatted().paddingLeft(toLength: 10))%")
+	print("\("TOTAL".padding(toLength: 18, withPad: " ", startingAt: 0))            \(plan.revenue.currency()) \(plan.costs.currency().paddingLeft(toLength: 13)) \(plan.profit.currency().paddingLeft(toLength: 14)) \(((plan.profit / plan.revenue) * 100).number().paddingLeft(toLength: 10))%")
 	print(String(repeating: "-", count: 96))
 	print()
 
@@ -104,7 +104,7 @@ func electronicsManufacturingExample() throws {
 		let used = utilization * capacity
 		let bar = String(repeating: "█", count: min(50, percentage / 2))
 
-		print("  \(resource.padding(toLength: 20, withPad: " ", startingAt: 0)) \(used.formatted().paddingLeft(toLength: 5)) / \(capacity.formatted().paddingLeft(toLength: 5)) (\((utilization * 100).formatted())%) \(bar)")
+		print("  \(resource.padding(toLength: 20, withPad: " ", startingAt: 0)) \(used.number().paddingLeft(toLength: 5)) / \(capacity.number().paddingLeft(toLength: 5)) (\((utilization * 100).number())%) \(bar)")
 	}
 
 	// Show contribution margin analysis
@@ -119,7 +119,7 @@ func electronicsManufacturingExample() throws {
 		let marginPerHour = margin / assemblyHours
 
 		print("  \(product.name):")
-		print("    Margin: \(margin.currency()) (\(marginPercent.formatted())%)")
+		print("    Margin: \(margin.currency()) (\(marginPercent.number())%)")
 		print("    Margin per assembly hour: \(marginPerHour.currency())")
 	}
 
@@ -178,7 +178,7 @@ func objectiveComparisonExample() throws {
 		case .maximizeMargin: objectiveName = "Maximize Margin"
 		default: objectiveName = "Other"
 		}
-		print("\(objectiveName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(qtyA.formatted().paddingLeft(toLength: 15)) \(qtyB.formatted().paddingLeft(toLength: 15)) \(plan.revenue.currency().paddingLeft(toLength: 15)) \(plan.profit.currency().paddingLeft(toLength: 15))")
+		print("\(objectiveName.padding(toLength: 20, withPad: " ", startingAt: 0)) \(qtyA.number().paddingLeft(toLength: 15)) \(qtyB.number().paddingLeft(toLength: 15)) \(plan.revenue.currency().paddingLeft(toLength: 15)) \(plan.profit.currency().paddingLeft(toLength: 15))")
 	}
 
 	print(String(repeating: "-", count: 96))
@@ -253,7 +253,7 @@ func resourceConstrainedExample() throws {
 		let percentage = Int(utilization * 100)
 		let isBottleneck = utilization > 0.95
 		let marker = isBottleneck ? " ⚠️ BOTTLENECK" : ""
-		print("  \(resource.padding(toLength: 20, withPad: " ", startingAt: 0)) \(percentage.formatted())%\(marker)")
+		print("  \(resource.padding(toLength: 20, withPad: " ", startingAt: 0)) \(percentage.number())%\(marker)")
 	}
 	print()
 

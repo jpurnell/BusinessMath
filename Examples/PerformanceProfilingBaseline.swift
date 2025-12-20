@@ -211,8 +211,8 @@ struct PerformanceProfilingBaseline {
 			print("Operations exceeding 10ms threshold:")
 			for bottleneck in bottlenecks {
 				print("  ⚠️  \(bottleneck.operation)")
-				print("      Average: \((bottleneck.averageTime * 1000).formatted()))ms")
-				print("      Max: \((bottleneck.maxTime * 1000).formatted())ms")
+				print("      Average: \((bottleneck.averageTime * 1000).number()))ms")
+				print("      Max: \((bottleneck.maxTime * 1000).number())ms")
 				print("      Executions: \(bottleneck.executionCount)\n")
 			}
 		}
@@ -234,16 +234,16 @@ struct PerformanceProfilingBaseline {
 		print("Current Performance Summary:")
 		if !npvOperations.isEmpty {
 			let avgNPV = npvOperations.map { $0.averageTime }.reduce(0, +) / Double(npvOperations.count)
-			print("  NPV: \((avgNPV * 1000).formatted())ms avg \(avgNPV < 0.010 ? "✓" : "⚠️")")
+			print("  NPV: \((avgNPV * 1000).number())ms avg \(avgNPV < 0.010 ? "✓" : "⚠️")")
 		}
 		if !irrOperations.isEmpty {
 			let avgIRR = irrOperations.map { $0.averageTime }.reduce(0, +) / Double(irrOperations.count)
-			print("  IRR: \((avgIRR * 1000).formatted())ms avg \(avgIRR < 0.050 ? "✓" : "⚠️")")
+			print("  IRR: \((avgIRR * 1000).number())ms avg \(avgIRR < 0.050 ? "✓" : "⚠️")")
 		}
 		if !mcOperations.isEmpty {
 			let mc10k = mcOperations.first { $0.operation.contains("10,000") }
 			if let mc = mc10k {
-				print("  Monte Carlo (10k): \((mc.averageTime * 1000).formatted())ms \(mc.averageTime < 0.500 ? "✓" : "⚠️")")
+				print("  Monte Carlo (10k): \((mc.averageTime * 1000).number())ms \(mc.averageTime < 0.500 ? "✓" : "⚠️")")
 			}
 		}
 

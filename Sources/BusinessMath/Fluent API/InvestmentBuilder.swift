@@ -613,14 +613,14 @@ extension Investment: CustomStringConvertible {
             result += "  IRR: \(String(format: "%.2f%%", irr * 100))\n"
         }
 
-		result += "  Profitability Index: \(profitabilityIndex.formatted())\n"
+		result += "  Profitability Index: \(profitabilityIndex.number())\n"
 
         if let payback = paybackPeriod {
-			result += "  Payback Period: \(payback.formatted()) years\n"
+			result += "  Payback Period: \(payback.number()) years\n"
         }
 
         if let discountedPayback = discountedPaybackPeriod {
-			result += "  Discounted Payback: \(discountedPayback.formatted()) years\n"
+			result += "  Discounted Payback: \(discountedPayback.number()) years\n"
         }
 
         return result
