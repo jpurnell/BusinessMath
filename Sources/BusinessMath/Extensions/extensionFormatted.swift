@@ -63,4 +63,25 @@ extension BinaryFloatingPoint {
 	func digits(_ digitCount: Int) -> String {
 		String(format: "%.\(digitCount)f", Double(self))
 	}
+	
+	public func number(_ decimals: Int = 2) -> String {
+		let value = Double(self)
+		
+		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+			return value.formatted(
+				.number
+					.precision(.fractionLength(decimals))
+					.rounded(rule: .toNearestOrAwayFromZero)
+					.locale(.autoupdatingCurrent)
+					.grouping(.automatic)
+					.notation(.automatic)
+			)
+		} else {
+			let formatter = NumberFormatter()
+			formatter.numberStyle = .decimal
+			formatter.maximumFractionDigits = decimals
+			formatter.minimumFractionDigits = decimals
+			return formatter.string(from: NSNumber(value: value)) ?? String(value)
+		}
+	}
 }

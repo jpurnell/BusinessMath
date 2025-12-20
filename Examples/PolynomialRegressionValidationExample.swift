@@ -224,7 +224,7 @@ func example1_QuadraticRecovery() {
 		if relError > 0.15 {
 			allPassed = false
 		}
-		print("  \(name.padding(toLength: 14, withPad: " ", startingAt: 0)) | \(trueVal.formatted().paddingLeft(toLength: 6)) | \(recoveredVal.formatted().paddingLeft(toLength: 9)) | \(absError.formatted().paddingLeft(toLength: 9)) | \((relError * 100).formatted().paddingLeft(toLength: 8))% | \(status)")
+		print("  \(name.padding(toLength: 14, withPad: " ", startingAt: 0)) | \(trueVal.number().paddingLeft(toLength: 6)) | \(recoveredVal.number().paddingLeft(toLength: 9)) | \(absError.number().paddingLeft(toLength: 9)) | \((relError * 100).number().paddingLeft(toLength: 8))% | \(status)")
 	}
 	print()
 
@@ -288,7 +288,7 @@ func example2_ModelSelection() {
 		} else if degree > 2 {
 			note = "Overfit (unnecessary complexity)"
 		}
-		print("  \(degree.formatted().paddingLeft(toLength: 6)) | \(sigma.formatted().paddingLeft(toLength: 10)) | \(aic.formatted().paddingLeft(toLength: 8)) | \(bic.formatted().paddingLeft(toLength: 8)) | \(note)")
+		print("  \(degree.number().paddingLeft(toLength: 6)) | \(sigma.number().paddingLeft(toLength: 10)) | \(aic.number().paddingLeft(toLength: 8)) | \(bic.number().paddingLeft(toLength: 8)) | \(note)")
 	}
 
 	print()
@@ -334,20 +334,20 @@ func example3_OverfittingDetection() {
 
 	if let (beta1, sigma1) = PolynomialRegression.fit(data: smallData, degree: 1) {
 		let slopeError = abs(beta1[1] - trueSlope) / trueSlope
-		print("  Recovered slope: \(beta1[1].formatted()) (\((slopeError * 100).formatted())% error)")
-		print(String(format: "  Residual σ: \(sigma1.formatted())", sigma1))
+		print("  Recovered slope: \(beta1[1].number()) (\((slopeError * 100).number())% error)")
+		print(String(format: "  Residual σ: \(sigma1.number())", sigma1))
 	}
 	print()
 
 	print("Test 2: Fitting with overly complex model (degree 5)...")
 	if let (beta5, sigma5) = PolynomialRegression.fit(data: smallData, degree: 5) {
-		print(String(format: "  Residual σ: \(sigma5.formatted()) (artificially low!)", sigma5))
+		print(String(format: "  Residual σ: \(sigma5.number()) (artificially low!)", sigma5))
 		print("  Coefficients:")
 		for (i, coef) in beta5.enumerated() {
 			if i <= 1 {
-				print("    β\(i): \(coef.formatted().paddingLeft(toLength: 8)) (structural parameter)")
+				print("    β\(i): \(coef.number().paddingLeft(toLength: 8)) (structural parameter)")
 			} else {
-				print("    β\(i): \(coef.formatted().paddingLeft(toLength: 8)) (fitting noise, should be ~0)")
+				print("    β\(i): \(coef.number().paddingLeft(toLength: 8)) (fitting noise, should be ~0)")
 			}
 		}
 	}
@@ -381,8 +381,8 @@ func example3_OverfittingDetection() {
 		mse1 /= Double(testData.count)
 		mse5 /= Double(testData.count)
 
-		print("  Degree 1 test MSE: \(mse1.formatted())")
-		print("  Degree 5 test MSE: \(mse5.formatted())")
+		print("  Degree 1 test MSE: \(mse1.number())")
+		print("  Degree 5 test MSE: \(mse5.number())")
 
 		if mse5 > mse1 {
 			print()
@@ -450,7 +450,7 @@ func example4_PricingCurveValidation() {
 	let maxRevenue = PolynomialRegression.predict(x: optimalPrice, coefficients: beta)
 
 	print("Fitted Model:")
-	print("  revenue = \(beta[0].formatted()) + \(beta[1].formatted())*price + \(beta[2].formatted())*price²")
+	print("  revenue = \(beta[0].number()) + \(beta[1].number())*price + \(beta[2].number())*price²")
 	print(String(format: "  revenue = %.1f + %.1f*price + %.1f*price²", beta[0], beta[1], beta[2]))
 	print()
 
@@ -468,7 +468,7 @@ func example4_PricingCurveValidation() {
 		print("  → Safe to use this model for pricing decisions")
 	} else {
 		print("✗ VALIDATION FAILED")
-		print("  Price error: \((priceError * 100).formatted())%, Revenue error: \((revenueError * 100))%")
+		print("  Price error: \((priceError * 100).number())%, Revenue error: \((revenueError * 100))%")
 		print("  → Need more data or different model")
 	}
 }
@@ -555,7 +555,7 @@ func example5_ComparingModelTypes() {
 	for test in tests {
 		let avgError = test.run()
 		let status = avgError <= 0.15 ? "✓ PASS" : "✗ FAIL"
-		print("  \(test.name.paddingLeft(toLength: 11)) | \((avgError * 100).formatted().paddingLeft(toLength: 12))% | \(status)")
+		print("  \(test.name.paddingLeft(toLength: 11)) | \((avgError * 100).number().paddingLeft(toLength: 12))% | \(status)")
 	}
 
 	print()

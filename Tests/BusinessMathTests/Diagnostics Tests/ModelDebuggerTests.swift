@@ -596,7 +596,7 @@ struct ModelDebuggerTests {
         #expect(hasSum)
 
         // Verify the trace can be formatted
-        let formatted = trace.formatted()
+		let formatted = trace.formatted()
         #expect(!formatted.isEmpty)
         #expect(formatted.contains("Calculation Trace"))
 

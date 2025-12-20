@@ -28,7 +28,7 @@ func basicPortfolioExample() throws {
 	for (i, name) in assets.enumerated() {
 		let ret = expectedReturns[i] * 100
 		let vol = sqrt(covariance[i][i]) * 100
-		print("  \(name): \(ret.formatted())% return, \(vol.formatted())% volatility")
+		print("  \(name): \(ret.number())% return, \(vol.number())% volatility")
 	}
 	print()
 
@@ -42,12 +42,12 @@ func basicPortfolioExample() throws {
 		covariance: covariance,
 		allowShortSelling: false
 	)
-	print("   Expected Return: \((minVar.expectedReturn * 100).formatted())%")
-	print("   Risk (Std Dev): \((minVar.volatility * 100).formatted())%")
+	print("   Expected Return: \((minVar.expectedReturn * 100).number())%")
+	print("   Risk (Std Dev): \((minVar.volatility * 100).number())%")
 	print("   Weights:")
 	for (i, weight) in minVar.weights.toArray().enumerated() {
 		if weight > 0.01 {
-			print("\(assets[i].paddingLeft(toLength: 12)): \((weight * 100).formatted())%")
+			print("\(assets[i].paddingLeft(toLength: 12)): \((weight * 100).number())%")
 		}
 	}
 	print()
@@ -61,13 +61,13 @@ func basicPortfolioExample() throws {
 		riskFreeRate: riskFreeRate,
 		constraintSet: .longOnly
 	)
-	print("   Sharpe Ratio: \(maxSharpe.sharpeRatio.formatted())")
-	print("   Expected Return: \((maxSharpe.expectedReturn * 100).formatted())%")
-	print("   Risk (Std Dev): \((maxSharpe.volatility * 100).formatted())%")
+	print("   Sharpe Ratio: \(maxSharpe.sharpeRatio.number())")
+	print("   Expected Return: \((maxSharpe.expectedReturn * 100).number())%")
+	print("   Risk (Std Dev): \((maxSharpe.volatility * 100).number())%")
 	print("   Weights:")
 	for (i, weight) in maxSharpe.weights.toArray().enumerated() {
 		if weight > 0.01 {
-			print("\(assets[i].paddingLeft(toLength: 12)): \((weight * 100).formatted())%")
+			print("\(assets[i].paddingLeft(toLength: 12)): \((weight * 100).number())%")
 		}
 	}
 	print()
@@ -80,12 +80,12 @@ func basicPortfolioExample() throws {
 		covariance: covariance,
 		riskFreeRate: riskFreeRate
 	)
-	print("   Expected Return: \((targetRet.expectedReturn * 100).formatted())% (target: 12.0%%)")
-	print("   Risk (Std Dev): \((targetRet.volatility * 100).formatted())%")
+	print("   Expected Return: \((targetRet.expectedReturn * 100).number())% (target: 12.0%%)")
+	print("   Risk (Std Dev): \((targetRet.volatility * 100).number())%")
 	print("   Weights:")
 	for (i, weight) in targetRet.weights.toArray().enumerated() {
 		if weight > 0.01 {
-			print("\(assets[i].paddingLeft(toLength: 12)): \((weight * 100).formatted())%")
+			print("\(assets[i].paddingLeft(toLength: 12)): \((weight * 100).number())%")
 		}
 	}
 
@@ -125,18 +125,18 @@ func efficientFrontierExample() throws {
 		let ret = portfolio.expectedReturn * 100
 		let sharpe = portfolio.sharpeRatio
 
-		print("\(risk.formatted().paddingLeft(toLength: 11))% | \(ret.formatted().paddingLeft(toLength: 11))% | \(sharpe.formatted().paddingLeft(toLength: 14))")
+		print("\(risk.number().paddingLeft(toLength: 11))% | \(ret.number().paddingLeft(toLength: 11))% | \(sharpe.number().paddingLeft(toLength: 14))")
 	}
 	print(String(repeating: "-", count: 50))
 	print()
 
 	let minRisk = frontier.minimumVariancePortfolio
 	print("Minimum Risk Portfolio:")
-	print("  Risk: \((minRisk.volatility * 100).formatted())%, Return: \((minRisk.expectedReturn * 100).formatted())%")
+	print("  Risk: \((minRisk.volatility * 100).number())%, Return: \((minRisk.expectedReturn * 100).number())%")
 
 	let maxSharpe = frontier.maximumSharpePortfolio
 	print("Maximum Sharpe Portfolio:")
-	print("  Risk: \((maxSharpe.volatility * 100).formatted())%, Return: \((maxSharpe.expectedReturn * 100).formatted())%, Sharpe: \(maxSharpe.sharpeRatio.formatted())")
+	print("  Risk: \((maxSharpe.volatility * 100).number())%, Return: \((maxSharpe.expectedReturn * 100).number())%, Sharpe: \(maxSharpe.sharpeRatio.number())")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -157,7 +157,7 @@ func riskParityExample() throws {
 	print("Assets:")
 	for (i, name) in assets.enumerated() {
 		let vol = sqrt(covariance[i][i]) * 100
-		print("  \(name): \(vol.formatted())% volatility")
+		print("  \(name): \(vol.number())% volatility")
 	}
 	print()
 
@@ -176,12 +176,12 @@ func riskParityExample() throws {
 	print()
 	print("Weights:")
 	for (i, weight) in riskParity.weights.toArray().enumerated() {
-		print("  \(assets[i]): \((weight * 100).formatted())%")
+		print("  \(assets[i]): \((weight * 100).number())%")
 	}
 
 	print()
-	print("Portfolio Risk: \((riskParity.volatility * 100).formatted())%")
-	print("Portfolio Return: \((riskParity.expectedReturn * 100).formatted())%")
+	print("Portfolio Risk: \((riskParity.volatility * 100).number())%")
+	print("Portfolio Return: \((riskParity.expectedReturn * 100).number())%")
 	print()
 	print("Note: Risk contributions can be calculated from the weights and covariance matrix")
 
@@ -213,8 +213,8 @@ func constrainedPortfolioExample() throws {
 		riskFreeRate: 0.02,
 		constraintSet: .longOnly
 	)
-	print("   Sharpe: \(longOnly.sharpeRatio.formatted()), Return: \((longOnly.expectedReturn * 100).formatted())%, Risk: \((longOnly.volatility * 100).formatted())%")
-	print("   Weights: \(longOnly.weights.toArray().map{ "\(($0 * 100).formatted())%" })")
+	print("   Sharpe: \(longOnly.sharpeRatio.number()), Return: \((longOnly.expectedReturn * 100).number())%, Risk: \((longOnly.volatility * 100).number())%")
+	print("   Weights: \(longOnly.weights.toArray().map{ "\(($0 * 100).number())%" })")
 	print()
 
 	// 2. Long-short with leverage limit
@@ -225,8 +225,8 @@ func constrainedPortfolioExample() throws {
 		riskFreeRate: 0.02,
 		constraintSet: .longShort(maxLeverage: 1.3)
 	)
-	print("   Sharpe: \(longShort.sharpeRatio.formatted()), Return: \((longShort.expectedReturn * 100).formatted())%, Risk: \((longShort.volatility * 100).formatted())%")
-	print("   Weights: \(longShort.weights.toArray().map{ "\(($0 * 100).formatted())%" })")
+	print("   Sharpe: \(longShort.sharpeRatio.number()), Return: \((longShort.expectedReturn * 100).number())%, Risk: \((longShort.volatility * 100).number())%")
+	print("   Weights: \(longShort.weights.toArray().map{ "\(($0 * 100).number())%" })")
 	print()
 
 	// 3. Box constraints (position limits)
@@ -237,8 +237,8 @@ func constrainedPortfolioExample() throws {
 		riskFreeRate: 0.02,
 		constraintSet: .boxConstrained(min: 0.05, max: 0.40)
 	)
-	print("   Sharpe: \(boxConstrained.sharpeRatio.formatted()), Return: \((boxConstrained.expectedReturn * 100).formatted())%, Risk: \((boxConstrained.volatility * 100).formatted())%")
-	print("   Weights: \(boxConstrained.weights.toArray().map{ "\(($0 * 100).formatted())%" })")
+	print("   Sharpe: \(boxConstrained.sharpeRatio.number()), Return: \((boxConstrained.expectedReturn * 100).number())%, Risk: \((boxConstrained.volatility * 100).number())%")
+	print("   Weights: \(boxConstrained.weights.toArray().map{ "\(($0 * 100).number())%" })")
 	print()
 
 	print("Note: More flexibility (long-short, wider limits) typically improves Sharpe ratio")
@@ -275,7 +275,7 @@ func realWorldPortfolioExample() throws {
 	for (i, name) in assets.enumerated() {
 		let ret = expectedReturns[i] * 100
 		let vol = sqrt(covariance[i][i]) * 100
-		print("  \(name.paddingLeft(toLength: 14)): \(ret.formatted())% return, \(vol.formatted())% vol")
+		print("  \(name.paddingLeft(toLength: 14)): \(ret.number())% return, \(vol.number())% vol")
 	}
 	print()
 
@@ -289,13 +289,13 @@ func realWorldPortfolioExample() throws {
 		covariance: covariance,
 		allowShortSelling: false
 	)
-	print("  Expected Return: \((conservative.expectedReturn * 100).formatted())%")
-	print("  Risk: \((conservative.volatility * 100).formatted())%")
+	print("  Expected Return: \((conservative.expectedReturn * 100).number())%")
+	print("  Risk: \((conservative.volatility * 100).number())%")
 	print("  Allocation:")
 	for (i, weight) in conservative.weights.toArray().enumerated() {
 		if weight > 0.01 {
 			let allocation = 1_000_000 * weight
-			print("    \(assets[i].paddingLeft(toLength: 14)): \(allocation.currency()) (\((weight * 100).formatted())%)")
+			print("    \(assets[i].paddingLeft(toLength: 14)): \(allocation.currency()) (\((weight * 100).number())%)")
 		}
 	}
 	print()
@@ -308,14 +308,14 @@ func realWorldPortfolioExample() throws {
 		riskFreeRate: 0.03,
 		constraintSet: .longOnly
 	)
-	print("  Sharpe Ratio: \(moderate.sharpeRatio.formatted())")
-	print("  Expected Return: \((moderate.expectedReturn * 100).formatted())%")
-	print("  Risk: \((moderate.volatility * 100).formatted())%")
+	print("  Sharpe Ratio: \(moderate.sharpeRatio.number())")
+	print("  Expected Return: \((moderate.expectedReturn * 100).number())%")
+	print("  Risk: \((moderate.volatility * 100).number())%")
 	print("  Allocation:")
 	for (i, weight) in moderate.weights.toArray().enumerated() {
 		if weight > 0.01 {
 			let allocation = 1_000_000 * weight
-			print("    \(assets[i].paddingLeft(toLength: 14)): \(allocation.currency()) (\((weight * 100).formatted())%)")
+			print("    \(assets[i].paddingLeft(toLength: 14)): \(allocation.currency()) (\((weight * 100).number())%)")
 		}
 	}
 	print()
@@ -328,13 +328,13 @@ func realWorldPortfolioExample() throws {
 		covariance: covariance,
 		riskFreeRate: 0.03
 	)
-	print("  Expected Return: \((aggressive.expectedReturn * 100).formatted())%")
-	print("  Risk: \((aggressive.volatility * 100).formatted())%")
+	print("  Expected Return: \((aggressive.expectedReturn * 100).number())%")
+	print("  Risk: \((aggressive.volatility * 100).number())%")
 	print("  Allocation:")
 	for (i, weight) in aggressive.weights.toArray().enumerated() {
 		if weight > 0.01 {
 			let allocation = 1_000_000 * weight
-			print("    \(assets[i].paddingLeft(toLength: 14)): \(allocation.currency()) (\((weight * 100).formatted())%)")
+			print("    \(assets[i].paddingLeft(toLength: 14)): \(allocation.currency()) (\((weight * 100).number())%)")
 		}
 	}
 

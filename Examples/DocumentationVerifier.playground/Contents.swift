@@ -33,7 +33,7 @@ let returns: [Double] = (0..<250).map({_ in distributionNormal(mean: spReturnMea
 
 	print("\nConditional VaR (Expected Shortfall):")
 	print("  CVaR (95%): \(riskMetrics.cvar95.percent())")
-	print("  Tail Risk Ratio: \(riskMetrics.tailRisk.formatted())")
+	print("  Tail Risk Ratio: \(riskMetrics.tailRisk.number())")
 
 	// CVaR is the expected loss if we're in the worst 5%
 	let cvarLoss = abs(riskMetrics.cvar95) * portfolioValue
@@ -56,10 +56,10 @@ if drawdown < 0.10 {
 }
 
 print("\nRisk-Adjusted Returns:")
-print("  Sharpe Ratio: \(riskMetrics.sharpeRatio.formatted(maxDecimals: 3))")
+print("  Sharpe Ratio: \(riskMetrics.sharpeRatio.number(3))")
 print("    (return per unit of total volatility)")
 
-print("  Sortino Ratio: \(riskMetrics.sortinoRatio.formatted(maxDecimals: 3))")
+print("  Sortino Ratio: \(riskMetrics.sortinoRatio.number(3))")
 print("    (return per unit of downside volatility)")
 
 // Sortino > Sharpe indicates asymmetric returns (positive skew)
@@ -68,7 +68,7 @@ if riskMetrics.sortinoRatio > riskMetrics.sharpeRatio {
 }
 
 print("\nTail Statistics:")
-print("  Skewness: \(riskMetrics.skewness.formatted(maxDecimals: 3))")
+print("  Skewness: \(riskMetrics.skewness.number(3))")
 
 if riskMetrics.skewness < -0.5 {
 	print("    Negative skew: More frequent small gains, rare large losses")
@@ -80,7 +80,7 @@ if riskMetrics.skewness < -0.5 {
 	print("    Roughly symmetric distribution")
 }
 
-print("  Excess Kurtosis: \(riskMetrics.kurtosis.formatted(maxDecimals: 3))")
+print("  Excess Kurtosis: \(riskMetrics.kurtosis.number(3))")
 
 if riskMetrics.kurtosis > 1.0 {
 	print("    Fat tails: More extreme events than normal distribution")
@@ -111,7 +111,7 @@ func checkRiskLimits(metrics: ComprehensiveRiskMetrics<Double>, limits: RiskLimi
 	}
 
 	if metrics.sharpeRatio < limits.minSharpeRatio {
-		breaches.append("Sharpe below minimum: \(metrics.sharpeRatio.formatted(maxDecimals: 3)) < \(limits.minSharpeRatio.formatted(maxDecimals: 3))")
+		breaches.append("Sharpe below minimum: \(metrics.sharpeRatio.number(3)) < \(limits.minSharpeRatio.number(3))")
 	}
 
 	return breaches

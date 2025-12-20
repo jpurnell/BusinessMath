@@ -23,8 +23,8 @@ func basicGoalSeekExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Solution: x = \(result.formatted())")
-	print("Verification: x² = \((result * result).formatted())")
+	print("Solution: x = \(result.number())")
+	print("Verification: x² = \((result * result).number())")
 	print()
 
 	print("Note: Two solutions exist (±2), but Newton-Raphson finds one based on initial guess")
@@ -37,7 +37,7 @@ func basicGoalSeekExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Starting from negative guess: x = \(negativeResult.formatted())")
+	print("Starting from negative guess: x = \(negativeResult.number())")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -71,11 +71,11 @@ func breakevenAnalysisExample() throws {
 		tolerance: 0.01
 	)
 
-	print("Breakeven price: \(breakevenPrice.formatted())")
+	print("Breakeven price: \(breakevenPrice.number())")
 
 	// Calculate breakeven quantity
 	let breakevenQuantity = 10000 - 1000 * breakevenPrice
-	print("Breakeven quantity: \(breakevenQuantity.formatted()) units")
+	print("Breakeven quantity: \(breakevenQuantity.number()) units")
 
 	// Verify
 	let verifyProfit = profit(price: breakevenPrice)
@@ -112,7 +112,7 @@ func irrCalculationExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("IRR: \((irr * 100).formatted())%")
+	print("IRR: \((irr * 100).number())%")
 
 	// Verify
 	let verifyNPV = npv(rate: irr)
@@ -125,7 +125,7 @@ func irrCalculationExample() throws {
 	for rate in stride(from: 0.0, through: 0.30, by: 0.05) {
 		let npvValue = npv(rate: rate)
 		let marker = abs(rate - irr) < 0.01 ? " ← IRR" : ""
-		print("  \((rate * 100).formatted().paddingLeft(toLength: 5))%: \(npvValue.currency())\(marker)")
+		print("  \((rate * 100).number().paddingLeft(toLength: 5))%: \(npvValue.currency())\(marker)")
 	}
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -151,8 +151,8 @@ func targetSeekingExample() throws {
 		guess: 1000.0
 	)
 
-	print("Required customers: \(requiredCustomers.formatted())")
-	print("Verification: $50 × \(requiredCustomers.formatted()) = \((pricePerSeat * requiredCustomers).currency())")
+	print("Required customers: \(requiredCustomers.number())")
+	print("Verification: $50 × \(requiredCustomers.number()) = \((pricePerSeat * requiredCustomers).currency())")
 
 	print()
 
@@ -175,7 +175,7 @@ func targetSeekingExample() throws {
 	)
 
 	print("Steady-state customers: \(steadyStateCustomers)")
-	print("Verification: 5%% × \(steadyStateCustomers.formatted()) = \((monthlyChurn * steadyStateCustomers).formatted()) new signups needed")
+	print("Verification: 5%% × \(steadyStateCustomers.number()) = \((monthlyChurn * steadyStateCustomers).number()) new signups needed")
 
 	let steadyStateMRR = pricePerSeat * steadyStateCustomers
 	print("Steady-state MRR: \(steadyStateMRR.currency())")
@@ -197,11 +197,11 @@ func equationSolvingExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Solution: x = \(solution1.formatted())")
+	print("Solution: x = \(solution1.number())")
 
 	// Verify
 	let verify1 = exp(solution1) - 2*solution1 - 3
-	print("Verification: e^\(solution1.formatted()) - 2(\(solution1.formatted())) - 3 = \(verify1.formatted())")
+	print("Verification: e^\(solution1.number()) - 2(\(solution1.number())) - 3 = \(verify1.number())")
 
 	print()
 
@@ -216,8 +216,8 @@ func equationSolvingExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Solution: x = \(solution2.formatted())")
-	print("Verification: cos(\(solution2.formatted())) = \(cos(solution2).formatted()) ≈ \(solution2.formatted())")
+	print("Solution: x = \(solution2.number())")
+	print("Verification: cos(\(solution2.number())) = \(cos(solution2).number()) ≈ \(solution2.number())")
 
 	print()
 
@@ -234,10 +234,10 @@ func equationSolvingExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Solution: x = \(solution3.formatted())")
+	print("Solution: x = \(solution3.number())")
 
 	let verify3 = solution3*solution3*solution3 - 2*solution3 - 5
-	print("Verification: (\(solution3.formatted()))³ - 2(\(solution3.formatted())) - 5 = \(verify3.formatted())")
+	print("Verification: (\(solution3.number()))³ - 2(\(solution3.number())) - 5 = \(verify3.number())")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -283,7 +283,7 @@ func constrainedGoalSeekExample() throws {
 	if result.converged {
 		print(String(format: "Breakeven price: \(result.optimalValue.currency())", result.optimalValue))
 		print(String(format: "Profit at breakeven: \(result.objectiveValue.currency())", result.objectiveValue))
-		print(String(format: "Iterations: \(result.iterations.formatted())", result.iterations))
+		print(String(format: "Iterations: \(result.iterations.number())", result.iterations))
 		print()
 
 		// Check constraint
@@ -333,7 +333,7 @@ func errorHandlingExample() {
 			target: 2.0,  // Impossible - sin(x) ∈ [-1, 1]
 			guess: 0.0
 		)
-		print("Solution: \(result.formatted())")
+		print("Solution: \(result.number())")
 	} catch let error as BusinessMathError {
 		print("✗ Error: \(error.errorDescription ?? "Goal seek failed")")
 		print("  Reason: No solution exists (sin(x) cannot equal 2)")
@@ -399,8 +399,8 @@ func multipleRootsExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Root 1 (guess=0): x = \(root1.formatted())")
-	print("  Verification: f(\(root1.formatted())) = \(polynomial(x: root1).formatted())")
+	print("Root 1 (guess=0): x = \(root1.number())")
+	print("  Verification: f(\(root1.number())) = \(polynomial(x: root1).number())")
 
 	print()
 
@@ -412,8 +412,8 @@ func multipleRootsExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Root 2 (guess=0): x = \(root2.formatted())")
-	print("  Verification: f(\(root2.formatted())) = \(polynomial(x: root2).formatted())")
+	print("Root 2 (guess=0): x = \(root2.number())")
+	print("  Verification: f(\(root2.number())) = \(polynomial(x: root2).number())")
 
 	print()
 	print("Key insight: Initial guess determines which root is found")

@@ -93,9 +93,9 @@ func example2_WhatCanGoWrong() {
 		print("Fitting with poor initialization:")
 		print("  Converged: \(result.converged ? "Yes" : "No")")
 		print("  Iterations: \(result.iterations)")
-		print("  Recovered a: \(result.parameters.a.formatted())")
-		print("  Recovered b: \(result.parameters.b.formatted())")
-		print("  Recovered sigma: \(result.parameters.sigma.formatted())")
+		print("  Recovered a: \(result.parameters.a.number())")
+		print("  Recovered b: \(result.parameters.b.number())")
+		print("  Recovered sigma: \(result.parameters.sigma.number())")
 		print()
 
 		if !result.converged {
@@ -184,7 +184,7 @@ func example4_StepByStepWorkflow() {
 	print("  ✓ Generated \(data.count) observations")
 	print("  Sample points (first 5):")
 	for (i, point) in data.prefix(5).enumerated() {
-		print("    [\(i)]: x = \(point.x.formatted()), y = \(point.y.formatted())")
+		print("    [\(i)]: x = \(point.x.number()), y = \(point.y.number())")
 	}
 	print()
 
@@ -207,7 +207,7 @@ func example4_StepByStepWorkflow() {
 		print("  ✓ Fitting completed")
 		print("  Converged: \(result.converged)")
 		print("  Iterations: \(result.iterations)")
-		print("  Log-likelihood: \(result.logLikelihood.formatted())")
+		print("  Log-likelihood: \(result.logLikelihood.number())")
 		print()
 
 		// Step 6: Compare true vs recovered
@@ -226,7 +226,7 @@ func example4_StepByStepWorkflow() {
 			let absError = abs(recoveredVal - trueVal)
 			let relError = absError / abs(trueVal)
 			let status = relError <= 0.10 ? "✓" : "✗"
-			print("  \(name.padding(toLength: 9, withPad: " ", startingAt: 0)) | \(trueVal.formatted(maxDecimals: 5).padding(toLength: 7, withPad: " ", startingAt: 0)) | \(recoveredVal.formatted(maxDecimals: 5).padding(toLength: 9, withPad: " ", startingAt: 0)) | \(absError.formatted(maxDecimals: 5).padding(toLength: 9, withPad: " ", startingAt: 0)) | \((relError * 100).formatted(maxDecimals: 5).padding(toLength: 10, withPad: " ", startingAt: 0))  \(status)")
+			print("  \(name.padding(toLength: 9, withPad: " ", startingAt: 0)) | \(trueVal.number(5).padding(toLength: 7, withPad: " ", startingAt: 0)) | \(recoveredVal.number(5).padding(toLength: 9, withPad: " ", startingAt: 0)) | \(absError.number(5).padding(toLength: 9, withPad: " ", startingAt: 0)) | \((relError * 100).number(5).padding(toLength: 10, withPad: " ", startingAt: 0))  \(status)")
 		}
 		print()
 
@@ -270,7 +270,7 @@ func example5_SampleSizeEffect() {
 			) / 3.0
 
 			let status = report.passed ? "✓" : "✗"
-			print("  \("n".padding(toLength: 3, withPad: " ", startingAt: 0)) | \(status.padding(toLength: 7, withPad: " ", startingAt: 0)) | \((report.relativeErrors["a"]! * 100).formatted())%, \((report.relativeErrors["b"]! * 100).formatted())%, \((report.relativeErrors["sigma"]! * 100).formatted())%")
+			print("  \("n".padding(toLength: 3, withPad: " ", startingAt: 0)) | \(status.padding(toLength: 7, withPad: " ", startingAt: 0)) | \((report.relativeErrors["a"]! * 100).number())%, \((report.relativeErrors["b"]! * 100).number())%, \((report.relativeErrors["sigma"]! * 100).number())%")
 
 		} catch {
 			print("  \(n) | ✗       | Error: \(error)")

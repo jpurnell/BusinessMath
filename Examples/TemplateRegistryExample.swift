@@ -80,7 +80,7 @@ import BusinessMath
 			print("SaaS Model Metrics:")
 			print("  Initial MRR: \(saasModel.initialMRR.currency())")
 			print("  Customer LTV: $\(ltv.currency())")
-			print("  LTV:CAC Ratio: \(ltvToCAC.formatted())")
+			print("  LTV:CAC Ratio: \(ltvToCAC.number())")
 			print("  MRR after 12 months: \(projection.revenue.valuesArray[11].currency())\n")
 
 			// MARK: - Step 3: Export Template to Package
@@ -153,7 +153,7 @@ import BusinessMath
 
 			let validation = try await registry.validate("SaaS Business Model")
 			print("Validation result: \(validation.isValid ? "✓ Valid" : "✗ Invalid")")
-			print(validation.formatted())
+			print(validation.number())
 
 			print("\n=== Example Complete ===")
 		}

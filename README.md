@@ -77,7 +77,7 @@ let var95 = results.valueAtRisk(confidenceLevel: 0.95)
 print("\nRisk Analysis:")
 print("Expected NPV: \(results.statistics.mean.currency())")
 print("95% VaR: \(abs(var95).currency()) (worst case with 95% confidence)")
-print("Probability of loss: \((results.probabilityBelow(0) * 100).formatted())%")
+print("Probability of loss: \((results.probabilityBelow(0) * 100).number())%")
 
 // → Decision: Approve investment ✓
 //    Strong positive NPV, profitable across rate scenarios, low probability of loss

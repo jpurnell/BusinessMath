@@ -194,11 +194,11 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 		  VaR (99%): \(var99.percent())
 		  CVaR (95%): \(cvar95.percent())
 		  Max Drawdown: \(maxDrawdown.percent())
-		  Sharpe Ratio: \(sharpeRatio.formatted())
-		  Sortino Ratio: \(sortinoRatio.formatted())
-		  Tail Risk: \(tailRisk.formatted())
-		  Skewness: \(skewness.formatted())
-		  Kurtosis: \(kurtosis.formatted())
+		  Sharpe Ratio: \(sharpeRatio.number())
+		  Sortino Ratio: \(sortinoRatio.number())
+		  Tail Risk: \(tailRisk.number())
+		  Skewness: \(skewness.number())
+		  Kurtosis: \(kurtosis.number())
 		"""
 	}
 }

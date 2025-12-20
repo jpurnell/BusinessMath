@@ -163,8 +163,8 @@ func runReidsRaisinsDemo() throws {
 	print("  Open-market grape price: \(baseCase.openMarketPrice.currency())")
 	print()
 	print("Results:")
-	print("  Demand: \(Int(demand).formatted()) lbs of raisins")
-	print("  Grapes needed: \(Int(grapesNeeded).formatted()) lbs")
+	print("  Demand: \(Int(demand).number()) lbs of raisins")
+	print("  Grapes needed: \(Int(grapesNeeded).number()) lbs")
 	print("  Revenue: \(revenue.currency())")
 	print("  Total Costs: \(costs.values.reduce(0, +).currency())")
 	print("  Annual Profit: \(profit.currency())")
@@ -327,7 +327,7 @@ func runReidsRaisinsDemo() throws {
 		print("\n\(index + 1). \(input)")
 		print("   Low scenario:  \(low.currency())")
 		print("   High scenario: \(high.currency())")
-		print("   Impact range:  \(impact.currency()) (\((percentImpact * 100).formatted())% of base profit)")
+		print("   Impact range:  \(impact.currency()) (\((percentImpact * 100).number())% of base profit)")
 	}
 
 	// Question E: Monte Carlo Simulation
@@ -377,13 +377,13 @@ func runReidsRaisinsDemo() throws {
 
 	print("Risk Analysis:")
 	let probLoss = monteCarloResults.probabilityBelow(0)
-	print("  Probability of loss: \((probLoss * 100).formatted())%")
+	print("  Probability of loss: \((probLoss * 100).number())%")
 
 	let probBelow200k = monteCarloResults.probabilityBelow(200_000)
-	print("  Probability profit < $200k: \((probBelow200k * 100).formatted())%")
+	print("  Probability profit < $200k: \((probBelow200k * 100).number())%")
 
 	let probAbove600k = monteCarloResults.probabilityAbove(600_000)
-	print("  Probability profit > $600k: \((probAbove600k * 100).formatted())%")
+	print("  Probability profit > $600k: \((probAbove600k * 100).number())%")
 	print()
 
 	print("Confidence Intervals:")

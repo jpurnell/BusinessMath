@@ -115,7 +115,7 @@ func example1_PerfectLinearRegression() {
 		let relError = absError / abs(trueVal)
 		let status = relError <= 0.10 ? "✓ PASS" : "✗ FAIL"
 
-		print("  \(name.padding(toLength: 10, withPad: " ", startingAt: 0)) | \(trueVal.formatted().paddingLeft(toLength: 6)) | \(recoveredVal.formatted().paddingLeft(toLength: 9)) | \(absError.formatted().paddingLeft(toLength: 9)) | \((relError * 100).formatted().paddingLeft(toLength: 8))% | \(status)")
+		print("  \(name.padding(toLength: 10, withPad: " ", startingAt: 0)) | \(trueVal.number().paddingLeft(toLength: 6)) | \(recoveredVal.number().paddingLeft(toLength: 9)) | \(absError.number().paddingLeft(toLength: 9)) | \((relError * 100).number().paddingLeft(toLength: 8))% | \(status)")
 	}
 	print()
 
@@ -168,8 +168,8 @@ func example2_WhyItMatters() {
 	let (int1, slope1, _) = SimpleLinearRegression.fit(data: goodData.dropLast())
 	let (int2, slope2, _) = SimpleLinearRegression.fit(data: goodData)
 
-	print("  Without outlier: y = \(int1.formatted()) + \(slope1.formatted())x")
-	print("  With outlier:    y = \(int2.formatted()) + \(slope2.formatted())x")
+	print("  Without outlier: y = \(int1.number()) + \(slope1.number())x")
+	print("  With outlier:    y = \(int2.number()) + \(slope2.number())x")
 	print("  ✓ Dramatic change! Fake-data helps test robustness.")
 	print()
 
@@ -203,8 +203,8 @@ func example3_ComparingModels() {
 	let intError = abs(intEst - 2.0) / 2.0
 	let slopeError = abs(slopeEst - 0.5) / 0.5
 
-	print("  Intercept: \((intError * 100).formatted())% error")
-	print("  Slope:     \((slopeError * 100).formatted())% error")
+	print("  Intercept: \((intError * 100).number())% error")
+	print("  Slope:     \((slopeError * 100).number())% error")
 	print()
 
 	// Reciprocal regression (using BusinessMath implementation)
@@ -222,8 +222,8 @@ func example3_ComparingModels() {
 
 		if let aError = report.relativeErrors["a"],
 		   let bError = report.relativeErrors["b"] {
-			print("  Parameter a: \((aError * 100).formatted())% error")
-			print("  Parameter b: \((bError * 100).formatted())% error")
+			print("  Parameter a: \((aError * 100).number())% error")
+			print("  Parameter b: \((bError * 100).number())% error")
 		}
 
 	} catch {
@@ -298,7 +298,7 @@ func example4_SystematicValidation() {
 	for test in tests {
 		let (passed, avgError) = test.run()
 		let status = passed ? "✓ PASS" : "✗ FAIL"
-		print("  \(test.name.padding(toLength: 16, withPad: " ", startingAt: 0)) | \(status.paddingLeft(toLength: 7)) | \((avgError * 100).formatted())%")
+		print("  \(test.name.padding(toLength: 16, withPad: " ", startingAt: 0)) | \(status.paddingLeft(toLength: 7)) | \((avgError * 100).number())%")
 	}
 
 	print()
