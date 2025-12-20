@@ -41,10 +41,15 @@ import OSLog
 		#expect(abs(dispersionIndex - expectedIndex) < 0.001)
 
 		// Throws the right error when mean is zero
-		let thrown = #expect(throws: MathError.self) {
+		let thrown = #expect(throws: BusinessMathError.self) {
 			try indexOfDispersion([0.0, 0.0, 0.0])
 		}
-		#expect(thrown == .divisionByZero)
+		// Verify it's a divisionByZero error
+		if case .divisionByZero = thrown {
+			// Test passes
+		} else {
+			Issue.record("Expected divisionByZero error, got \(thrown)")
+		}
 	}
 
 	@Test("StdDevP") func LStdDevP() {
@@ -198,7 +203,7 @@ struct DispersionProperties {
 		#expect(cv >= 0.0)
 
 		// Throws when mean is zero
-		#expect(throws: MathError.self) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try coefficientOfVariation(stdDev([ -1.0, 0.0, 1.0 ]), mean: 0.0)
 		}
 	}
