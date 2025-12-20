@@ -350,15 +350,16 @@ public struct SimulationResults: Sendable {
 
 	/// Formatted percentiles summary with clean floating-point display
 	public var formattedPercentiles: String {
+		let length = Int(max(log10(percentiles.p5), log10(percentiles.p99)).rounded(.up)) + 7
 		var desc = "Percentiles:\n"
-		desc += "  P5:  \(formatter.format(percentiles.p5).formatted)\n"
-		desc += "  P10: \(formatter.format(percentiles.p10).formatted)\n"
-		desc += "  P25: \(formatter.format(percentiles.p25).formatted)\n"
-		desc += "  P50: \(formatter.format(percentiles.p50).formatted) (Median)\n"
-		desc += "  P75: \(formatter.format(percentiles.p75).formatted)\n"
-		desc += "  P90: \(formatter.format(percentiles.p90).formatted)\n"
-		desc += "  P95: \(formatter.format(percentiles.p95).formatted)\n"
-		desc += "  P99: \(formatter.format(percentiles.p99).formatted)"
+		desc += "   P5: \(percentiles.p5.number(1).paddingLeft(toLength: length))\n"
+		desc += "  P10: \(percentiles.p10.number(1).paddingLeft(toLength: length))\n"
+		desc += "  P25: \(percentiles.p25.number(1).paddingLeft(toLength: length))\n"
+		desc += "  P50: \(percentiles.p50.number(1).paddingLeft(toLength: length)) – (Median)\n"
+		desc += "  P75: \(percentiles.p75.number(1).paddingLeft(toLength: length))\n"
+		desc += "  P90: \(percentiles.p90.number(1).paddingLeft(toLength: length))\n"
+		desc += "  P95: \(percentiles.p95.number(1).paddingLeft(toLength: length))\n"
+		desc += "  P99: \(percentiles.p99.number(1).paddingLeft(toLength: length))"
 		return desc
 	}
 
