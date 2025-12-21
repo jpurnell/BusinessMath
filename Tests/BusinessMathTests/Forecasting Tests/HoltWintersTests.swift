@@ -310,3 +310,118 @@ struct AdditionalHoltWintersTests {
 		}
 	}
 }
+
+// MARK: - Convenience Method Tests
+
+@Suite("Convenience Methods (forecast and forecastWithConfidence)")
+struct ConvenienceForecastTests {
+
+	@Test("forecast(timeSeries:periods:) combines train and predict")
+	func convenienceForecastMethod() throws {
+		// Create sample data
+		let months = (1...24).map { Period.month(year: 2023 + ($0 - 1) / 12, month: (($0 - 1) % 12) + 1) }
+		let sales: [Double] = [
+			100, 110, 95, 105, 115, 125, 140, 135, 120, 110, 130, 150,
+			105, 115, 100, 110, 120, 130, 145, 140, 125, 115, 135, 155
+		]
+
+		let timeSeries = TimeSeries(periods: months, values: sales)
+
+		// Use convenience method
+		let model = HoltWintersModel<Double>(
+			alpha: 0.2,
+			beta: 0.1,
+			gamma: 0.1,
+			seasonalPeriods: 12
+		)
+
+		let forecast = try model.forecast(timeSeries: timeSeries, periods: 6)
+
+		// Verify results
+		#expect(forecast.count == 6, "Should forecast 6 periods")
+		#expect(forecast.valuesArray.allSatisfy { $0 > 0 }, "All forecasts should be positive")
+
+		// Compare with manual train+predict
+		var manualModel = model
+		try manualModel.train(on: timeSeries)
+		let manualForecast = manualModel.predict(periods: 6)
+
+		// Should produce identical results
+		for i in 0..<6 {
+			#expect(abs(forecast.valuesArray[i] - manualForecast.valuesArray[i]) < 0.0001,
+					"Convenience method should match train+predict")
+		}
+	}
+
+	@Test("forecastWithConfidence(timeSeries:periods:confidenceLevel:) combines train and predictWithConfidence")
+	func convenienceForecastWithConfidenceMethod() throws {
+		// Create sample data
+		let months = (1...24).map { Period.month(year: 2023 + ($0 - 1) / 12, month: (($0 - 1) % 12) + 1) }
+		let revenue: [Double] = [
+			30000, 33000, 28500, 31500, 34500, 37500, 42000, 40500, 36000, 33000, 39000, 45000,
+			31500, 34500, 30000, 33000, 36000, 39000, 43500, 42000, 37500, 34500, 40500, 46500
+		]
+
+		let timeSeries = TimeSeries(periods: months, values: revenue)
+
+		// Use convenience method
+		let model = HoltWintersModel<Double>(
+			alpha: 0.2,
+			beta: 0.1,
+			gamma: 0.1,
+			seasonalPeriods: 12
+		)
+
+		let forecast = try model.forecastWithConfidence(
+			timeSeries: timeSeries,
+			periods: 12,
+			confidenceLevel: 0.95
+		)
+
+		// Verify results
+		#expect(forecast.forecast.count == 12, "Should forecast 12 periods")
+		#expect(forecast.lowerBound.count == 12, "Should have 12 lower bounds")
+		#expect(forecast.upperBound.count == 12, "Should have 12 upper bounds")
+		#expect(forecast.confidenceLevel == 0.95, "Should preserve confidence level")
+
+		// Verify bounds are reasonable
+		for i in 0..<12 {
+			let f = forecast.forecast.valuesArray[i]
+			let lower = forecast.lowerBound.valuesArray[i]
+			let upper = forecast.upperBound.valuesArray[i]
+
+			#expect(lower < f, "Lower bound should be below forecast")
+			#expect(f < upper, "Forecast should be below upper bound")
+		}
+
+		// Compare with manual train+predictWithConfidence
+		var manualModel = model
+		try manualModel.train(on: timeSeries)
+		let manualForecast = try manualModel.predictWithConfidence(periods: 12, confidenceLevel: 0.95)
+
+		// Should produce identical results
+		for i in 0..<12 {
+			#expect(abs(forecast.forecast.valuesArray[i] - manualForecast.forecast.valuesArray[i]) < 0.0001,
+					"Convenience method should match train+predictWithConfidence")
+		}
+	}
+
+	@Test("Convenience methods propagate errors correctly")
+	func convenienceMethodsThrowOnInsufficientData() {
+		// Create insufficient data (less than 2 * seasonalPeriods)
+		let months = (1...10).map { Period.month(year: 2023, month: $0) }
+		let sales = Array(repeating: 100.0, count: 10)
+		let timeSeries = TimeSeries(periods: months, values: sales)
+
+		let model = HoltWintersModel<Double>(seasonalPeriods: 12)
+
+		// Should throw insufficientData error
+		#expect(throws: ForecastError.self) {
+			_ = try model.forecast(timeSeries: timeSeries, periods: 6)
+		}
+
+		#expect(throws: ForecastError.self) {
+			_ = try model.forecastWithConfidence(timeSeries: timeSeries, periods: 6, confidenceLevel: 0.95)
+		}
+	}
+}
