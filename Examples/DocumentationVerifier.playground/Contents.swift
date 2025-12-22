@@ -3,253 +3,378 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-	// Price a call option
-	let callPrice = BlackScholesModel<Double>.price(
-		optionType: .call,
-		spotPrice: 100.0,       // Current stock price
-		strikePrice: 105.0,     // Exercise price
-		timeToExpiry: 0.5,      // 6 months
-		riskFreeRate: 0.05,     // 5% annual rate
-		volatility: 0.30        // 30% annual volatility
+	// Create founders as shareholders
+	let alice = CapTable.Shareholder(
+		name: "Alice",
+		shares: 7_000_000,
+		investmentDate: Date(),
+		pricePerShare: 0.001
 	)
 
-print("Call option value: \(callPrice.currency())")
-
-	// Price a put option
-	let putPrice = BlackScholesModel<Double>.price(
-		optionType: .put,
-		spotPrice: 100.0,
-		strikePrice: 105.0,
-		timeToExpiry: 0.5,
-		riskFreeRate: 0.05,
-		volatility: 0.30
+	let bob = CapTable.Shareholder(
+		name: "Bob",
+		shares: 3_000_000,
+		investmentDate: Date(),
+		pricePerShare: 0.001
 	)
 
-print("Put option value: \(putPrice.currency())")
+	// Create cap table with founders
+	var capTable = CapTable(
+		shareholders: [alice, bob],
+		optionPool: 0
+	)
+
+	// Check ownership
+	let ownership = capTable.ownership()
+	let aliceOwnership = ownership["Alice"]!
+print("Alice owns: \(aliceOwnership.percent(0))")  // 70%
 
 
-	// Put-Call Parity: C - P = S - K*e^(-rT)
-	let S = 100.0
-	let K = 105.0
-	let T = 0.5
-	let r = 0.05
+	// Calculate what a 10% post-money option pool means for dilution
+	let poolPercent = 0.10
+	let currentShares = capTable.totalShares
+	
+	// Pool will be 10% of total after creation
+	let poolShares = (poolPercent / (1.0 - poolPercent)) * currentShares
+	
+	// Create updated cap table with option pool
+	let dilutedCapTable = CapTable(
+		shareholders: capTable.shareholders,
+		optionPool: poolShares
+	)
 
-	let leftSide = callPrice - putPrice
-	let rightSide = S - K * exp(-r * T)
-
-	print("Put-Call Parity check:")
-	print("  C - P = \(leftSide)")
-	print("  S - Ke^(-rT) = \(rightSide)")
-	print("  Difference: \(abs(leftSide - rightSide))")  // Should be near zero
+	// Option pool dilutes everyone proportionally
+	let newOwnership = dilutedCapTable.ownership()
+	let aliceNewOwnership = newOwnership["Alice"]!
+print("Alice after option pool: \(aliceNewOwnership.percent(1))")  // ~63.0%
 
 
-let greeks = BlackScholesModel<Double>.greeks(
-	optionType: .call,
-	spotPrice: 100.0,
-	strikePrice: 105.0,
-	timeToExpiry: 0.5,
-	riskFreeRate: 0.05,
-	volatility: 0.30
+	// Series A: $2M at $8M pre-money valuation
+	let seriesA = capTable.modelRound(
+		newInvestment: 2_000_000,
+		preMoneyValuation: 8_000_000,
+		optionPoolIncrease: 0.15,  // Add 15% option pool
+		investorName: "VC Fund I",
+		poolTiming: .postRound
+	)
+
+	// Check post-round ownership
+	let postRoundOwnership = seriesA.ownership()
+	let alicePostRound = postRoundOwnership["Alice"]!
+print("Alice after Series A: \(alicePostRound.percent())")
+
+	// VC owns 20% ($2M / $10M post-money)
+	let vcOwnership = postRoundOwnership["VC Fund I"]!
+print("VC owns: \(vcOwnership.percent())")
+
+
+	// Company issues $500K SAFE at $10M post-money cap
+	let safe = SAFE(
+		investment: 500_000,
+		postMoneyCap: 10_000_000,
+		type: .postMoney
+	)
+
+	// Convert at Series A valuation
+	let conversion = safe.convert(seriesAValuation: 8_000_000)
+
+print("SAFE converts to \(conversion.shares.number(0)) shares")
+print("Price per share: \(conversion.pricePerShare.currency())")
+print("Ownership: \(conversion.ownershipPercent.percent())")  // 5%
+
+
+let safeInvestor = CapTable.Shareholder(
+	name: "Angel Investor",
+	shares: conversion.shares,
+	investmentDate: Date(),
+	pricePerShare: conversion.pricePerShare
 )
 
-print("Option Greeks:")
-print("  Delta: \(greeks.delta)")      // Price sensitivity to stock price
-print("  Gamma: \(greeks.gamma)")      // Delta sensitivity to stock price
-print("  Vega: \(greeks.vega)")        // Price sensitivity to volatility
-print("  Theta: \(greeks.theta)")      // Price decay with time
-print("  Rho: \(greeks.rho)")          // Sensitivity to interest rates
+let capTableWithSafe = CapTable(
+	shareholders: capTable.shareholders + [safeInvestor],
+	optionPool: capTable.optionPool
+)
 
 
-	// Delta: if stock goes up $1, option goes up $delta
-	let stockIncrease = 1.0
-	let optionIncrease = greeks.delta * stockIncrease
-print("If stock rises \(stockIncrease.currency()), call rises \(optionIncrease.currency())")
-
-	// Theta: daily time decay
-	let dailyDecay = greeks.theta / 365
-print("Option loses \(abs(dailyDecay).currency()) per day from time decay")
-
-	// Vega: if volatility increases 1%, option price changes by vega/100
-	let volIncrease = 0.01  // 1% volatility increase
-	let priceIncrease = greeks.vega * volIncrease
-print("If volatility rises 1%, option rises \(priceIncrease.currency())")
-
-
-	// American put: can exercise early if stock drops
-	let americanPut = BinomialTreeModel<Double>.price(
-		optionType: .put,
-		americanStyle: true,
-		spotPrice: 100.0,
-		strikePrice: 110.0,  // In-the-money put
-		timeToExpiry: 1.0,
-		riskFreeRate: 0.05,
-		volatility: 0.25,
-		steps: 100  // More steps = more accurate
+	// $250K note at 20% discount, 6% annual interest, $5M cap
+	let note = ConvertibleNote(
+		principal: 250_000,
+		valuationCap: 5_000_000,
+		discount: 0.20,
+		interestRate: 0.06
 	)
 
-print("American put value: \(americanPut.currency())")
+	// Series A price per share
+	let seriesAPricePerShare = 1.00
 
-	// Compare to European (no early exercise)
-	let europeanPut = BinomialTreeModel<Double>.price(
-		optionType: .put,
-		americanStyle: false,
-		spotPrice: 100.0,
-		strikePrice: 110.0,
-		timeToExpiry: 1.0,
-		riskFreeRate: 0.05,
-		volatility: 0.25,
-		steps: 100
+	// Convert at Series A pricing (after 1 year)
+	let noteConversion = convertNote(
+		principal: note.principal,
+		valuationCap: note.valuationCap,
+		discount: note.discount,
+		seriesAPricePerShare: seriesAPricePerShare,
+		interestRate: note.interestRate,
+		timeHeld: 1.0  // 1 year
 	)
 
-print("European put value: \(europeanPut.currency())")
-print("Early exercise premium: \((americanPut - europeanPut).currency())")
+print("Note converts to \(noteConversion.shares.number(0)) shares")
+print("At price: \(noteConversion.pricePerShare.currency())")
+	print("Applied \(noteConversion.appliedTerm)")  // .cap or .seriesAPrice
 
 
-	// Binomial tree converges to Black-Scholes with more steps
-	let bsPrice = BlackScholesModel<Double>.price(
-		optionType: .call,
-		spotPrice: 100.0,
-		strikePrice: 100.0,
-		timeToExpiry: 1.0,
-		riskFreeRate: 0.05,
-		volatility: 0.20
+	// Grant 100K options to an employee
+	let optionGrant = OptionGrant(
+		recipient: "Employee",
+		shares: 100_000,
+		strikePrice: 0.50,  // FMV at grant
+		grantDate: Date(),
+		vestingYears: 4.0,
+		vestingSchedule: .standard  // 4 year, 1 year cliff
 	)
 
-	for steps in [10, 50, 100, 200] {
-		let binomialPrice = BinomialTreeModel<Double>.price(
-			optionType: .call,
-			americanStyle: false,
-			spotPrice: 100.0,
-			strikePrice: 100.0,
-			timeToExpiry: 1.0,
-			riskFreeRate: 0.05,
-			volatility: 0.20,
-			steps: steps
-		)
+	// Check vested shares after 18 months
+	let grantDate = optionGrant.grantDate
+	let checkDate = Calendar.current.date(byAdding: .month, value: 18, to: grantDate)!
+	let vestedShares = optionGrant.vestedShares(at: checkDate)
+print("Vested after 18 months: \(vestedShares.number(0))")  // ~37,463 shares
 
-		let error = abs(binomialPrice - bsPrice) / bsPrice * 100
-		print("\(steps) steps: \(binomialPrice.currency()) (error: \(error.percent(2)))")
+
+	// Series B at lower valuation than Series A
+	// Down from $10M post-Series A to $6M pre-money
+	let downRound = capTable.modelDownRound(
+		newInvestment: 3_000_000,
+		preMoneyValuation: 6_000_000,
+		payToPlayParticipants: ["VC Fund I"]  // Investors participating in down round
+	)
+
+	// Creates new investor at lower valuation
+	// Pay-to-play: participating investors avoid additional dilution
+
+
+	// Full ratchet: adjust Series A shares based on new price
+	let originalShares = 2_000_000.0
+	let originalPrice = 1.00
+	let newPrice = 0.67  // Series B price
+
+	let adjustedShares = applyAntiDilution(
+		originalShares: originalShares,
+		originalPrice: originalPrice,
+		newPrice: newPrice,
+		type: .fullRatchet
+	)
+
+print("Series A shares after full ratchet: \(adjustedShares.number(0))")
+
+	// Weighted average (more founder-friendly)
+	let waShares = applyWeightedAverageAntiDilution(
+		originalShares: originalShares,
+		originalPrice: originalPrice,
+		newPrice: newPrice,
+		newShares: 3_000_000,
+		fullyDilutedBefore: capTable.fullyDilutedShares()
+	)
+
+print("Series A shares after weighted average: \(waShares.number(0))")
+
+
+	// Create shareholders with liquidation preferences
+	let vcFundA = CapTable.Shareholder(
+		name: "VC Fund I",
+		shares: 2_000_000,
+		investmentDate: Date(),
+		pricePerShare: 1.00,
+		antiDilution: nil,
+		liquidationPreference: 1.0,
+		participating: false  // Takes preference OR pro-rata, whichever is higher
+	)
+
+	let vcFundB = CapTable.Shareholder(
+		name: "VC Fund II",
+		shares: 1_500_000,
+		investmentDate: Date(),
+		pricePerShare: 2.00,
+		antiDilution: nil,
+		liquidationPreference: 2.0,
+		participating: true  // Gets preference PLUS pro-rata
+	)
+
+	// Build cap table with preference stack
+	let preferenceCapTable = CapTable(
+		shareholders: [alice, bob, vcFundA, vcFundB],
+		optionPool: 1_000_000
+	)
+
+	// Low exit: $5M (below total invested capital)
+	let lowExit = preferenceCapTable.liquidationWaterfall(exitValue: 5_000_000)
+	print("\n---------Low Exit----------")
+	for (shareholder, payout) in lowExit {
+		print("\(shareholder.paddingLeft(toLength: 14)): \(payout.currency(0))")
+	}
+	// Series B gets 2x preference first, then Series A gets remainder
+
+	// High exit: $50M
+	let highExit = preferenceCapTable.liquidationWaterfall(exitValue: 50_000_000)
+	print("\n---------High Exit----------")
+	for (shareholder, payout) in highExit {
+		print("\(shareholder.paddingLeft(toLength: 14)): \(payout.currency(0))")
+	}
+	// Non-participating preferred converts to common
+	// Participating preferred gets preference + upside
+
+
+	// Formation - Create founders
+	let founder1 = CapTable.Shareholder(
+		name: "Founder 1",
+		shares: 6_000_000,
+		investmentDate: Date(),
+		pricePerShare: 0.001
+	)
+
+	let founder2 = CapTable.Shareholder(
+		name: "Founder 2",
+		shares: 4_000_000,
+		investmentDate: Date(),
+		pricePerShare: 0.001
+	)
+
+	var fullFinancingCapTable = CapTable(
+		shareholders: [founder1, founder2],
+		optionPool: 0
+	)
+
+	// Pre-seed SAFE: $500K at $5M post-money
+	let fullFinancingSafe = SAFE(
+		investment: 500_000,
+		postMoneyCap: 5_000_000,
+		type: .postMoney
+	)
+
+	let safeConversion = safe.convert(seriesAValuation: 5_000_000)
+
+	let preSeedFund = CapTable.Shareholder(
+		name: "Pre-seed Fund",
+		shares: safeConversion.shares,
+		investmentDate: Date(),
+		pricePerShare: safeConversion.pricePerShare
+	)
+
+fullFinancingCapTable = CapTable(
+		shareholders: fullFinancingCapTable.shareholders + [preSeedFund],
+		optionPool: fullFinancingCapTable.optionPool
+	)
+
+	// Seed: $2M at $8M pre-money
+	let seedRound = fullFinancingCapTable.modelRound(
+		newInvestment: 2_000_000,
+		preMoneyValuation: 8_000_000,
+		optionPoolIncrease: 0.0,  // No pool yet
+		investorName: "Seed Fund",
+		poolTiming: .postRound
+	)
+
+	// Add 15% option pool post-Seed
+	let fullFinancingPoolShares = (0.15 / (1.0 - 0.15)) * seedRound.totalShares
+	let withPool = CapTable(
+		shareholders: seedRound.shareholders,
+		optionPool: fullFinancingPoolShares
+	)
+
+	// Series A: $10M at $40M pre-money
+	let fullFinancingSeriesA = withPool.modelRound(
+		newInvestment: 10_000_000,
+		preMoneyValuation: 40_000_000,
+		optionPoolIncrease: 0.0,  // Pool already exists
+		investorName: "Series A Lead",
+		poolTiming: .postRound
+	)
+
+	// Final cap table summary
+	print("=== Cap Table Post-Series A ===")
+	let fullFinancingOwnership = fullFinancingSeriesA.ownership()
+	for shareholder in fullFinancingSeriesA.shareholders {
+		let ownershipPct = fullFinancingOwnership[shareholder.name]!
+		print("\(shareholder.name.paddingLeft(toLength: 14)): \(ownershipPct.percent())")
+	}
+
+	// Outstanding vs fully diluted
+	let outstanding = fullFinancingSeriesA.outstandingShares()
+	let fullyDiluted = fullFinancingSeriesA.fullyDilutedShares()
+print("\nOutstanding: \(outstanding.number(0))")
+print("Fully Diluted: \(fullyDiluted.number(0))")
+
+	// Exit scenario: $100M acquisition
+	print("\n======= Exit: $100M =======")
+	let exitProceeds = fullFinancingSeriesA.liquidationWaterfall(exitValue: 100_000_000)
+	for (shareholder, payout) in exitProceeds.sorted(by: { $0.value > $1.value }) {
+		print("\(shareholder.paddingLeft(toLength: 14)): \(payout.currency(0))")
 	}
 
 
-	// Software company: option to expand into new market
-	let baseNPV = 10_000_000.0         // Current business NPV
-	let expansionCost = 5_000_000.0    // Cost to enter new market
-	let expansionNPV = 8_000_000.0     // NPV of new market opportunity
-	let volatility = 0.35              // Market uncertainty (high)
-	let timeToDecision = 2.0           // Must decide in 2 years
-	let riskFreeRate = 0.05
+	// Track founder ownership through each round
+	let founderName = "Founder 1"
 
-	let projectValue = RealOptionsAnalysis<Double>.expansionOption(
-		baseNPV: baseNPV,
-		expansionCost: expansionCost,
-		expansionNPV: expansionNPV,
-		volatility: volatility,
-		timeToDecision: timeToDecision,
-		riskFreeRate: riskFreeRate
+	let formation = fullFinancingCapTable.ownership()[founderName]!
+	let postSeed = seedRound.ownership()[founderName]!
+	let postPool = withPool.ownership()[founderName]!
+	let postSeriesA = fullFinancingSeriesA.ownership()[founderName]!
+
+	print("\nOwnership trajectory:")
+print("Formation: \(formation.percent())")
+print("Post-Seed: \(postSeed.percent())")
+print("Post-Pool: \(postPool.percent())")
+print("Post-Series A: \(postSeriesA.percent())")
+
+	// Pre-money: Pool dilutes existing shareholders before new investment
+	let preMoneyRound = fullFinancingCapTable.modelRound(
+		newInvestment: 2_000_000,
+		preMoneyValuation: 8_000_000,
+		optionPoolIncrease: 0.15,
+		investorName: "Investor",
+		poolTiming: .preRound
 	)
 
-	let optionValue = projectValue - baseNPV
-
-	print("Expansion Option Analysis:")
-print("  Base business NPV: \(baseNPV.currency())")
-print("  Expansion option value: \(optionValue.currency())")
-print("  Total project value: \(projectValue.currency())")
-
-	// Traditional NPV misses this option value
-	let traditionalNPV = baseNPV + max(0, expansionNPV - expansionCost)
-	let valueMissed = projectValue - traditionalNPV
-print("  Value missed by traditional NPV: \(valueMissed.currency())")
-
-
-	// Manufacturing project with abandonment option
-	let projectNPV = 5_000_000.0       // NPV if continued
-	let salvageValue = 3_000_000.0     // Equipment resale value
-	let projectVolatility = 0.40        // Project uncertainty
-	let timeToAbandonDecision = 1.0    // Decide after 1 year
-
-	let valueWithAbandonOption = RealOptionsAnalysis<Double>.abandonmentOption(
-		projectNPV: projectNPV,
-		salvageValue: salvageValue,
-		volatility: projectVolatility,
-		timeToDecision: timeToAbandonDecision,
-		riskFreeRate: riskFreeRate
+	// Post-money: Pool dilutes everyone including new investor
+	let postMoneyRound = fullFinancingCapTable.modelRound(
+		newInvestment: 2_000_000,
+		preMoneyValuation: 8_000_000,
+		optionPoolIncrease: 0.15,
+		investorName: "Investor",
+		poolTiming: .postRound
 	)
 
-	let abandonmentOptionValue = valueWithAbandonOption - projectNPV
-
-	print("\nAbandonment Option Analysis:")
-print("  Project NPV (no option): \(projectNPV.currency())")
-print("  Abandonment option value: \(abandonmentOptionValue.currency())")
-print("  Total value with option: \(valueWithAbandonOption.currency())")
+	// Pre-round is more founder-friendly (investor bears pool dilution)
 
 
-
-	// Launch new product: succeed or fail?
-	let successOutcome = DecisionNode<Double>(type: .terminal, value: 5_000_000)
-	let failureOutcome = DecisionNode<Double>(type: .terminal, value: -1_000_000)
-
-	let marketOutcome = DecisionNode<Double>(
-		type: .chance,
-		branches: [
-			Branch(probability: 0.6, node: successOutcome),  // 60% chance success
-			Branch(probability: 0.4, node: failureOutcome)   // 40% chance failure
-		]
+	// Early SAFE: $100K at $5M cap
+	let earlySafe = SAFE(
+		investment: 100_000,
+		postMoneyCap: 5_000_000,
+		type: .postMoney
 	)
 
-	let launchValue = RealOptionsAnalysis<Double>.decisionTree(root: marketOutcome)
-print("\nExpected value of launch: \(launchValue.currency())")
-	// = 0.6 × $5M + 0.4 × (-$1M) = $2.6M
+	let earlySafeConversion = earlySafe.convert(seriesAValuation: 10_000_000)
 
-
-	// Stage 1: Invest in R&D ($2M)
-	// Stage 2: If R&D succeeds (70%), decide to launch or not
-	// Stage 3: If launch, market determines success
-
-	let marketSuccess = DecisionNode<Double>(type: .terminal, value: 10_000_000)
-	let marketFailure = DecisionNode<Double>(type: .terminal, value: -500_000)
-
-	let launchOutcome = DecisionNode<Double>(
-		type: .chance,
-		branches: [
-			Branch(probability: 0.5, node: marketSuccess),
-			Branch(probability: 0.5, node: marketFailure)
-		]
+	// Later SAFE: $500K at $8M cap
+	let laterSafe = SAFE(
+		investment: 500_000,
+		postMoneyCap: 8_000_000,
+		type: .postMoney
 	)
 
-	let doNotLaunch = DecisionNode<Double>(type: .terminal, value: 0)
+	let laterSafeConversion = laterSafe.convert(seriesAValuation: 10_000_000)
 
-	// After R&D success, choose best option
-	let launchDecision = DecisionNode<Double>(
-		type: .decision,
-		branches: [
-			Branch(probability: 1.0, node: launchOutcome),
-			Branch(probability: 1.0, node: doNotLaunch)
-		]
+	// Early SAFE gets better terms (lower cap = more ownership)
+print("Early SAFE ownership: \(earlySafeConversion.ownershipPercent.percent())")
+print("Later SAFE ownership: \(laterSafeConversion.ownershipPercent.percent())")
+
+
+	// Calculate FMV for common stock options
+	let preferredPrice = 2.00  // Series A price
+	let discountFactor = 0.40  // Typical 40% discount
+
+	let commonFMV = calculate409APrice(
+		preferredPrice: preferredPrice,
+		discount: discountFactor
 	)
 
-	let rdFailure = DecisionNode<Double>(type: .terminal, value: 0)
-
-	// R&D outcome
-	let rdOutcome = DecisionNode<Double>(
-		type: .chance,
-		branches: [
-			Branch(probability: 0.7, node: launchDecision),  // 70% R&D success
-			Branch(probability: 0.3, node: rdFailure)        // 30% R&D failure
-		]
-	)
-
-	let projectValueMultiStage = RealOptionsAnalysis<Double>.decisionTree(root: rdOutcome)
-	let rdCost = 2_000_000.0
-	let netValue = projectValue - rdCost
-
-	print("\nMulti-Stage Project:")
-print("  Expected value (before R&D cost): \(projectValueMultiStage.currency(0))")
-print("  R&D cost: \(rdCost.currency(0))")
-print("  Net project value: \(netValue.currency(0))")
-
-	if netValue > 0 {
-		print("  Decision: Proceed with R&D")
-	} else {
-		print("  Decision: Do not invest")
-	}
+print("Strike price for options: \(commonFMV.currency())")  // $1.20 (60% of preferred)
