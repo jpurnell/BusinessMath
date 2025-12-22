@@ -3,339 +3,120 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-	// Set up the reporting period
-	let q1 = Period.quarter(year: 2025, quarter: 1)
+	// Helper function to calculate arbitrary confidence intervals
+	func confidenceInterval(
+		results: ProjectionResults<Double>,
+		period: Period,
+		confidence: Double  // e.g., 0.90 for 90%, 0.95 for 95%
+	) -> (lower: Double, upper: Double) {
+		let alpha = (1.0 - confidence) / 2.0  // Split the rest equally
 
-	// Create the company entity
-	let entity = Entity(
-		id: "TECH001",
-		primaryType: .ticker,
-		name: "TechCorp Inc",
-		identifiers: [.ticker: "TECH"],
-		currency: "USD"
-	)
+		let lowerPercentile = alpha
+		let upperPercentile = 1.0 - alpha
 
-	// Create income statement accounts
-	let revenueAccount = try! Account(
-		entity: entity,
+		let pctiles = results.percentiles[period]!
+
+		// Map to closest available percentiles
+		let lower: Double
+		if lowerPercentile <= 0.05 {
+			lower = pctiles.p5
+		} else if lowerPercentile <= 0.25 {
+			// Interpolate between p5 and p25
+			let t = (lowerPercentile - 0.05) / 0.20
+			lower = pctiles.p5 * (1 - t) + pctiles.p25 * t
+		} else {
+			lower = pctiles.p25
+		}
+
+		let upper: Double
+		if upperPercentile >= 0.95 {
+			upper = pctiles.p95
+		} else if upperPercentile >= 0.75 {
+			// Interpolate between p75 and p95
+			let t = (upperPercentile - 0.75) / 0.20
+			upper = pctiles.p75 * (1 - t) + pctiles.p95 * t
+		} else {
+			upper = pctiles.p75
+		}
+
+		return (lower, upper)
+	}
+
+	// Example usage
+	let revenueDriver = ProbabilisticDriver<Double>.normal(
 		name: "Revenue",
-		type: .revenue,
-		timeSeries: TimeSeries(periods: [q1], values: [10_000_000.0])
+		mean: 1_000_000.0,
+		stdDev: 100_000.0
 	)
 
-	let cogsAccount = try! Account(
-		entity: entity,
-		name: "Cost of Goods Sold",
-		type: .expense,
-		timeSeries: TimeSeries(periods: [q1], values: [4_000_000.0]),
-		expenseType: .costOfGoodsSold
-	)
+	let quarters = (1...8).map { Period.quarter(year: 2025 + ($0 - 1) / 4, quarter: (($0 - 1) % 4) + 1) }
+	let projection = DriverProjection(driver: revenueDriver, periods: quarters)
+	let results = projection.projectMonteCarlo(iterations: 10_000)
 
-	let opexAccount = try! Account(
-		entity: entity,
-		name: "Operating Expenses",
-		type: .expense,
-		timeSeries: TimeSeries(periods: [q1], values: [3_000_000.0]),
-		expenseType: .operatingExpense
-	)
+	print("\nConfidence Intervals for Revenue Forecast")
+	print("==========================================")
 
-	let interestAccount = try! Account(
-		entity: entity,
-		name: "Interest Expense",
-		type: .expense,
-		timeSeries: TimeSeries(periods: [q1], values: [500_000.0]),
-		expenseType: .interestExpense
-	)
+	for quarter in quarters {
+		let stats = results.statistics[quarter]!
 
-	let taxAccount = try! Account(
-		entity: entity,
-		name: "Tax Expense",
-		type: .expense,
-		timeSeries: TimeSeries(periods: [q1], values: [625_000.0]),
-		expenseType: .taxExpense
-	)
+		let ci90 = confidenceInterval(results: results, period: quarter, confidence: 0.90)
+		let ci95 = confidenceInterval(results: results, period: quarter, confidence: 0.95)
+		let ci99 = confidenceInterval(results: results, period: quarter, confidence: 0.99)
 
-	let incomeStatement = try! IncomeStatement<Double>(
-		entity: entity,
-		periods: [q1],
-		revenueAccounts: [revenueAccount],
-		expenseAccounts: [cogsAccount, opexAccount, interestAccount, taxAccount]
-	)
+		print("\n\(quarter.label)")
+		print("  Mean: \(stats.mean.currency(0))")
+		print("  90% CI: [\(ci90.lower.currency(0)), \(ci90.upper.currency(0))]")
+		print("  95% CI: [\(ci95.lower.currency(0)), \(ci95.upper.currency(0))]")
+		print("  99% CI: [\(ci99.lower.currency(0)), \(ci99.upper.currency(0))]")
+	}
 
-	// Create balance sheet accounts
-	let cashAccount = try! Account<Double>(
-		entity: entity,
-		name: "Cash",
-		type: .asset,
-		timeSeries: TimeSeries(periods: [q1], values: [2_000_000.0]),
-		assetType: .cashAndEquivalents
-	)
+	// Calculate downside risk and upside potential
+	for quarter in quarters {
+		let stats = results.statistics[quarter]!
+		let pctiles = results.percentiles[quarter]!
 
-	let arAccount = try! Account<Double>(
-		entity: entity,
-		name: "Accounts Receivable",
-		type: .asset,
-		timeSeries: TimeSeries(periods: [q1], values: [3_500_000.0]),
-		assetType: .accountsReceivable
-	)
+		let downsideRisk = stats.mean - pctiles.p5
+		let upsidePotential = pctiles.p95 - stats.mean
+		let asymmetry = upsidePotential / downsideRisk
 
-	let inventoryAccount = try! Account<Double>(
-		entity: entity,
-		name: "Inventory",
-		type: .asset,
-		timeSeries: TimeSeries(periods: [q1], values: [2_500_000.0]),
-		assetType: .inventory
-	)
+		print("\n\(quarter.label)")
+		print("  Expected: \(stats.mean.currency(0))")
+		print("  Downside Risk (P5): \(downsideRisk.currency(0))")
+		print("  Upside Potential (P95): \(upsidePotential.currency(0))")
+		print("  Risk/Reward Ratio: \(asymmetry.number(2))")
 
-	let ppeAccount = try! Account<Double>(
-		entity: entity,
-		name: "Property & Equipment",
-		type: .asset,
-		timeSeries: TimeSeries(periods: [q1], values: [15_000_000.0]),
-		assetType: .propertyPlantEquipment
-	)
+		if asymmetry > 1.0 {
+			print("  → Favorable risk/reward profile")
+		} else if asymmetry < 1.0 {
+			print("  → Unfavorable risk/reward profile")
+		} else {
+			print("  → Balanced risk/reward")
+		}
+	}
 
-	let apAccount = try! Account<Double>(
-		entity: entity,
-		name: "Accounts Payable",
-		type: .liability,
-		timeSeries: TimeSeries(periods: [q1], values: [1_500_000.0]),
-		liabilityType: .accountsPayable
-	)
 
-	let shortTermDebtAccount = try! Account<Double>(
-		entity: entity,
-		name: "Short-term Debt",
-		type: .liability,
-		timeSeries: TimeSeries(periods: [q1], values: [1_000_000.0]),
-		liabilityType: .shortTermDebt
-	)
+	// Test different uncertainty levels
+	let stdDevScenarios = [50_000.0, 100_000.0, 150_000.0, 200_000.0]
 
-	let longTermDebtAccount = try! Account<Double>(
-		entity: entity,
-		name: "Long-term Debt",
-		type: .liability,
-		timeSeries: TimeSeries(periods: [q1], values: [10_000_000.0]),
-		liabilityType: .longTermDebt
-	)
+	print("\nSensitivity to Uncertainty Level")
+	print("==================================")
+	print("Std Dev\t\t90% CI Width\tCoefficient of Variation")
+	print(String(repeating: "-", count: 60))
 
-	let equityAccount = try! Account<Double>(
-		entity: entity,
-		name: "Shareholders' Equity",
-		type: .equity,
-		timeSeries: TimeSeries(periods: [q1], values: [10_500_000.0]),
-		equityType: .commonStock
-	)
-
-	let balanceSheet = try! BalanceSheet<Double>(
-		entity: entity,
-		periods: [q1],
-		assetAccounts: [cashAccount, arAccount, inventoryAccount, ppeAccount],
-		liabilityAccounts: [apAccount, shortTermDebtAccount, longTermDebtAccount],
-		equityAccounts: [equityAccount]
-	)
-
-	// Define loan covenants
-	let covenants = [
-		FinancialCovenant(
-			name: "Minimum Current Ratio",
-			requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5)
-		),
-		FinancialCovenant(
-			name: "Maximum Debt-to-Equity",
-			requirement: .maximumRatio(metric: .debtToEquity, threshold: 2.0)
-		),
-		FinancialCovenant(
-			name: "Minimum Interest Coverage",
-			requirement: .minimumRatio(metric: .interestCoverage, threshold: 3.0)
+	for stdDev in stdDevScenarios {
+		let driver = ProbabilisticDriver<Double>.normal(
+			name: "Revenue",
+			mean: 1_000_000.0,
+			stdDev: stdDev
 		)
-	]
 
-	// Check covenant compliance
-	let monitor = CovenantMonitor(covenants: covenants)
-	let results = monitor.checkCompliance(
-		incomeStatement: incomeStatement,
-		balanceSheet: balanceSheet,
-		period: q1
-	)
+		let proj = DriverProjection(driver: driver, periods: [quarters[0]])
+		let res = proj.projectMonteCarlo(iterations: 10_000)
 
-	// Display results
-	for result in results {
-		let status = result.isCompliant ? "✓ PASS" : "✗ FAIL"
-		print("\(status) \(result.covenant.name)")
-		print("  Actual: \(result.actualValue.number(2))")
-		print("  Required: \(result.requiredValue.number(2))")
-	}
+		let pctiles = res.percentiles[quarters[0]]!
+		let stats = res.statistics[quarters[0]]!
+		let ciWidth = pctiles.p95 - pctiles.p5
+		let cov = stats.stdDev / stats.mean
 
-
-// Calculate interest coverage ratio
-let coverage = calculateInterestCoverage(
-	incomeStatement: incomeStatement,
-	balanceSheet: balanceSheet,
-	period: q1
-)
-
-print("Interest Coverage: \(coverage.number(1))x")
-
-if coverage < 2.0 {
-	print("Warning: Low interest coverage - difficulty servicing debt")
-} else if coverage > 5.0 {
-	print("Strong: Company can easily cover interest payments")
-} else {
-	print("Adequate: Company can cover interest but monitor closely")
-}
-
-// Calculate EBIT and interest expense for context
-let ebit = incomeStatement.operatingIncome[q1]!
-let interestExpense = interestAccount.timeSeries[q1]!
-print("\nOperating Income (EBIT): \(ebit.currency(0))")
-print("Interest Expense: \(interestExpense.currency(0))")
-print("Coverage Ratio: \((ebit / interestExpense).number(1))x")
-
-
-	// Leasing: $2,000/month for 5 years
-	let leasePV = leasePaymentsPV(
-		periodicPayment: 2_000,
-		periods: 60,
-		discountRate: 0.06 / 12
-	)
-
-	// Buying: $100,000 purchase, $500 annual maintenance, $20,000 salvage
-	let buyPV = buyAssetPV(
-		purchasePrice: 100_000,
-		salvageValue: 20_000,
-		holdingPeriod: 5,
-		discountRate: 0.06,
-		maintenanceCost: 500
-	)
-
-	let analysis = LeaseVsBuyAnalysis(leasePV: leasePV, buyPV: buyPV)
-
-	print("Net Advantage to Leasing: \(analysis.netAdvantageToLeasing.currency())")
-	print("Should lease? \(analysis.shouldLease)")
-	print("Savings: \(analysis.savingsPercentage.percent())")
-
-
-let payments = Array(repeating: 5_000.0, count: 60)  // $5,000/month for 5 years
-
-let lease = Lease(
-	payments: payments,
-	discountRate: 0.05 / 12,  // Monthly discount rate
-	residualValue: 0
-)
-
-print("Lease Liability: \(lease.presentValue().currency())")
-print("Right-of-Use Asset: \(lease.rightOfUseAsset().currency())")
-
-// Generate amortization schedule
-let schedule = lease.detailedSchedule()
-for (index, entry) in schedule.prefix(12).enumerated() {
-	print("Month \(index + 1):")
-	print("  Payment: \(entry.payment.currency())")
-	print("  Interest: \(entry.interest.currency())")
-	print("  Principal: \(entry.principal.currency())")
-	print("  Balance: \(entry.balance.currency())")
-}
-
-let transaction = SaleAndLeaseback(
-	salePrice: 5_000_000,
-	bookValue: 4_000_000,
-	leaseTerm: 20,
-	annualLeasePayment: 400_000,
-	discountRate: 0.06
-)
-
-print("Gain on Sale: \(transaction.gainOnSale.currency())")
-print("PV of Lease Obligations: \(transaction.leaseObligationPV.currency())")
-print("Net Cash Benefit: \(transaction.netCashBenefit.currency())")
-print("Economically Beneficial? \(transaction.isEconomicallyBeneficial)")
-
-
-let classification = classifyLease(
-	leaseTerm: 8,
-	assetUsefulLife: 10,
-	presentValue: 90_000,
-	assetFairValue: 100_000,
-	ownershipTransfer: false,
-	purchaseOption: false
-)
-
-switch classification {
-case .finance:
-	print("Finance Lease - capitalize on balance sheet")
-case .operating:
-	print("Operating Lease - expense as incurred")
-}
-
-
-	// Existing debt: $500M term loan
-	let termLoan = DebtInstrument(
-		principal: 500_000_000,
-		interestRate: 0.055,
-		startDate: Date(),
-		maturityDate: Calendar.current.date(byAdding: .year, value: 7, to: Date())!,
-		paymentFrequency: .quarterly,
-		amortizationType: .levelPayment
-	)
-
-	let termLoanSchedule = termLoan.schedule()
-
-	// Current capital structure
-	let termLoanStructure = CapitalStructure(
-		debtValue: 500_000_000,
-		equityValue: 1_000_000_000,
-		costOfDebt: 0.055,
-		costOfEquity: 0.11,
-		taxRate: 0.25
-	)
-
-	print("=== Debt Analysis ===")
-	print("Quarterly Payment: \(termLoanSchedule.payment[termLoanSchedule.periods.first!]!.currency())")
-	print("Annual Debt Service: \((termLoanSchedule.payment[termLoanSchedule.periods.first!]! * 4).currency())")
-	print("Total Interest (Life of Loan): \(termLoanSchedule.totalInterest.currency())")
-	print()
-	print("=== Capital Structure ===")
-print("WACC: \(termLoanStructure.wacc.percent())")
-print("Debt Ratio: \(termLoanStructure.debtRatio.percent())")
-	print("Annual Tax Shield: \(termLoanStructure.annualTaxShield.currency())")
-print("After-tax Cost of Debt: \(termLoanStructure.afterTaxCostOfDebt.percent())")
-
-
-	// Founders start with 10M shares
-	let founder1 = CapTable.Shareholder(name: "Founder 1", shares: 6_000_000, investmentDate: Date(), pricePerShare: 0.001)
-	let founder2 = CapTable.Shareholder(name: "Founder 2", shares: 4_000_000, investmentDate: Date(), pricePerShare: 0.001)
-
-	var initialCapTable = CapTable(shareholders: [founder1, founder2], optionPool: 0)
-
-	print("=== At Founding ===")
-	var initialOwnership = initialCapTable.ownership()
-print("Founder 1: \(initialOwnership["Founder 1"]!.percent())")
-print("Founder 2: \(initialOwnership["Founder 2"]!.percent())")
-
-	// Seed: $2M at $8M pre
-	initialCapTable = initialCapTable.modelRound(
-		newInvestment: 2_000_000,
-		preMoneyValuation: 8_000_000,
-		optionPoolIncrease: 0.0,
-		investorName: "Seed Investors",
-		poolTiming: .postRound
-	)
-
-	print("\n=== After Seed ($2M at $8M pre) ===")
-	initialOwnership = initialCapTable.ownership()
-	for (name, pct) in initialOwnership.sorted(by: { $0.value > $1.value }) {
-		print("\(name): \(pct.percent())")
-	}
-
-	// Series A: $10M at $40M pre
-	initialCapTable = initialCapTable.modelRound(
-		newInvestment: 10_000_000,
-		preMoneyValuation: 40_000_000,
-		optionPoolIncrease: 0.0,
-		investorName: "Series A Lead"
-	)
-	print("\n=== After Series A ($10M at $40M pre) ===")
-	initialOwnership = initialCapTable.ownership()
-	for (name, pct) in initialOwnership.sorted(by: { $0.value > $1.value }) {
-		print("\(name): \(pct.percent())")
+		print("\(stdDev.currency(0).padding(toLength: 10, withPad: " ", startingAt: 0))\t\t\(ciWidth.currency(0))\t\t\(cov.percent(1))")
 	}
