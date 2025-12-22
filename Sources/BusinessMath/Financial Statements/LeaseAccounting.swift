@@ -140,9 +140,9 @@ public struct Lease {
         return presentValue() + initialDirectCosts + prepaidAmount
     }
 
-    /// Internal detailed schedule
+    /// Detailed amortization schedule for the lease
     /// Returns balance field as beginning balance (before payment)
-    private func detailedSchedule() -> [(period: Period?, payment: Double, interest: Double, principal: Double, balance: Double)] {
+    public func detailedSchedule() -> [(period: Period?, payment: Double, interest: Double, principal: Double, balance: Double)] {
         // Determine periodic discount rate
         let periodicRate: Double
         if let periods = periods, let firstPeriod = periods.first {
