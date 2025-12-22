@@ -3,378 +3,339 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-	// Create founders as shareholders
-	let alice = CapTable.Shareholder(
-		name: "Alice",
-		shares: 7_000_000,
-		investmentDate: Date(),
-		pricePerShare: 0.001
+	// Set up the reporting period
+	let q1 = Period.quarter(year: 2025, quarter: 1)
+
+	// Create the company entity
+	let entity = Entity(
+		id: "TECH001",
+		primaryType: .ticker,
+		name: "TechCorp Inc",
+		identifiers: [.ticker: "TECH"],
+		currency: "USD"
 	)
 
-	let bob = CapTable.Shareholder(
-		name: "Bob",
-		shares: 3_000_000,
-		investmentDate: Date(),
-		pricePerShare: 0.001
+	// Create income statement accounts
+	let revenueAccount = try! Account(
+		entity: entity,
+		name: "Revenue",
+		type: .revenue,
+		timeSeries: TimeSeries(periods: [q1], values: [10_000_000.0])
 	)
 
-	// Create cap table with founders
-	var capTable = CapTable(
-		shareholders: [alice, bob],
-		optionPool: 0
+	let cogsAccount = try! Account(
+		entity: entity,
+		name: "Cost of Goods Sold",
+		type: .expense,
+		timeSeries: TimeSeries(periods: [q1], values: [4_000_000.0]),
+		expenseType: .costOfGoodsSold
 	)
 
-	// Check ownership
-	let ownership = capTable.ownership()
-	let aliceOwnership = ownership["Alice"]!
-print("Alice owns: \(aliceOwnership.percent(0))")  // 70%
-
-
-	// Calculate what a 10% post-money option pool means for dilution
-	let poolPercent = 0.10
-	let currentShares = capTable.totalShares
-	
-	// Pool will be 10% of total after creation
-	let poolShares = (poolPercent / (1.0 - poolPercent)) * currentShares
-	
-	// Create updated cap table with option pool
-	let dilutedCapTable = CapTable(
-		shareholders: capTable.shareholders,
-		optionPool: poolShares
+	let opexAccount = try! Account(
+		entity: entity,
+		name: "Operating Expenses",
+		type: .expense,
+		timeSeries: TimeSeries(periods: [q1], values: [3_000_000.0]),
+		expenseType: .operatingExpense
 	)
 
-	// Option pool dilutes everyone proportionally
-	let newOwnership = dilutedCapTable.ownership()
-	let aliceNewOwnership = newOwnership["Alice"]!
-print("Alice after option pool: \(aliceNewOwnership.percent(1))")  // ~63.0%
+	let interestAccount = try! Account(
+		entity: entity,
+		name: "Interest Expense",
+		type: .expense,
+		timeSeries: TimeSeries(periods: [q1], values: [500_000.0]),
+		expenseType: .interestExpense
+	)
+
+	let taxAccount = try! Account(
+		entity: entity,
+		name: "Tax Expense",
+		type: .expense,
+		timeSeries: TimeSeries(periods: [q1], values: [625_000.0]),
+		expenseType: .taxExpense
+	)
+
+	let incomeStatement = try! IncomeStatement<Double>(
+		entity: entity,
+		periods: [q1],
+		revenueAccounts: [revenueAccount],
+		expenseAccounts: [cogsAccount, opexAccount, interestAccount, taxAccount]
+	)
+
+	// Create balance sheet accounts
+	let cashAccount = try! Account<Double>(
+		entity: entity,
+		name: "Cash",
+		type: .asset,
+		timeSeries: TimeSeries(periods: [q1], values: [2_000_000.0]),
+		assetType: .cashAndEquivalents
+	)
+
+	let arAccount = try! Account<Double>(
+		entity: entity,
+		name: "Accounts Receivable",
+		type: .asset,
+		timeSeries: TimeSeries(periods: [q1], values: [3_500_000.0]),
+		assetType: .accountsReceivable
+	)
+
+	let inventoryAccount = try! Account<Double>(
+		entity: entity,
+		name: "Inventory",
+		type: .asset,
+		timeSeries: TimeSeries(periods: [q1], values: [2_500_000.0]),
+		assetType: .inventory
+	)
+
+	let ppeAccount = try! Account<Double>(
+		entity: entity,
+		name: "Property & Equipment",
+		type: .asset,
+		timeSeries: TimeSeries(periods: [q1], values: [15_000_000.0]),
+		assetType: .propertyPlantEquipment
+	)
+
+	let apAccount = try! Account<Double>(
+		entity: entity,
+		name: "Accounts Payable",
+		type: .liability,
+		timeSeries: TimeSeries(periods: [q1], values: [1_500_000.0]),
+		liabilityType: .accountsPayable
+	)
+
+	let shortTermDebtAccount = try! Account<Double>(
+		entity: entity,
+		name: "Short-term Debt",
+		type: .liability,
+		timeSeries: TimeSeries(periods: [q1], values: [1_000_000.0]),
+		liabilityType: .shortTermDebt
+	)
+
+	let longTermDebtAccount = try! Account<Double>(
+		entity: entity,
+		name: "Long-term Debt",
+		type: .liability,
+		timeSeries: TimeSeries(periods: [q1], values: [10_000_000.0]),
+		liabilityType: .longTermDebt
+	)
+
+	let equityAccount = try! Account<Double>(
+		entity: entity,
+		name: "Shareholders' Equity",
+		type: .equity,
+		timeSeries: TimeSeries(periods: [q1], values: [10_500_000.0]),
+		equityType: .commonStock
+	)
+
+	let balanceSheet = try! BalanceSheet<Double>(
+		entity: entity,
+		periods: [q1],
+		assetAccounts: [cashAccount, arAccount, inventoryAccount, ppeAccount],
+		liabilityAccounts: [apAccount, shortTermDebtAccount, longTermDebtAccount],
+		equityAccounts: [equityAccount]
+	)
+
+	// Define loan covenants
+	let covenants = [
+		FinancialCovenant(
+			name: "Minimum Current Ratio",
+			requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5)
+		),
+		FinancialCovenant(
+			name: "Maximum Debt-to-Equity",
+			requirement: .maximumRatio(metric: .debtToEquity, threshold: 2.0)
+		),
+		FinancialCovenant(
+			name: "Minimum Interest Coverage",
+			requirement: .minimumRatio(metric: .interestCoverage, threshold: 3.0)
+		)
+	]
+
+	// Check covenant compliance
+	let monitor = CovenantMonitor(covenants: covenants)
+	let results = monitor.checkCompliance(
+		incomeStatement: incomeStatement,
+		balanceSheet: balanceSheet,
+		period: q1
+	)
+
+	// Display results
+	for result in results {
+		let status = result.isCompliant ? "✓ PASS" : "✗ FAIL"
+		print("\(status) \(result.covenant.name)")
+		print("  Actual: \(result.actualValue.number(2))")
+		print("  Required: \(result.requiredValue.number(2))")
+	}
 
 
-	// Series A: $2M at $8M pre-money valuation
-	let seriesA = capTable.modelRound(
+// Calculate interest coverage ratio
+let coverage = calculateInterestCoverage(
+	incomeStatement: incomeStatement,
+	balanceSheet: balanceSheet,
+	period: q1
+)
+
+print("Interest Coverage: \(coverage.number(1))x")
+
+if coverage < 2.0 {
+	print("Warning: Low interest coverage - difficulty servicing debt")
+} else if coverage > 5.0 {
+	print("Strong: Company can easily cover interest payments")
+} else {
+	print("Adequate: Company can cover interest but monitor closely")
+}
+
+// Calculate EBIT and interest expense for context
+let ebit = incomeStatement.operatingIncome[q1]!
+let interestExpense = interestAccount.timeSeries[q1]!
+print("\nOperating Income (EBIT): \(ebit.currency(0))")
+print("Interest Expense: \(interestExpense.currency(0))")
+print("Coverage Ratio: \((ebit / interestExpense).number(1))x")
+
+
+	// Leasing: $2,000/month for 5 years
+	let leasePV = leasePaymentsPV(
+		periodicPayment: 2_000,
+		periods: 60,
+		discountRate: 0.06 / 12
+	)
+
+	// Buying: $100,000 purchase, $500 annual maintenance, $20,000 salvage
+	let buyPV = buyAssetPV(
+		purchasePrice: 100_000,
+		salvageValue: 20_000,
+		holdingPeriod: 5,
+		discountRate: 0.06,
+		maintenanceCost: 500
+	)
+
+	let analysis = LeaseVsBuyAnalysis(leasePV: leasePV, buyPV: buyPV)
+
+	print("Net Advantage to Leasing: \(analysis.netAdvantageToLeasing.currency())")
+	print("Should lease? \(analysis.shouldLease)")
+	print("Savings: \(analysis.savingsPercentage.percent())")
+
+
+let payments = Array(repeating: 5_000.0, count: 60)  // $5,000/month for 5 years
+
+let lease = Lease(
+	payments: payments,
+	discountRate: 0.05 / 12,  // Monthly discount rate
+	residualValue: 0
+)
+
+print("Lease Liability: \(lease.presentValue().currency())")
+print("Right-of-Use Asset: \(lease.rightOfUseAsset().currency())")
+
+// Generate amortization schedule
+let schedule = lease.detailedSchedule()
+for (index, entry) in schedule.prefix(12).enumerated() {
+	print("Month \(index + 1):")
+	print("  Payment: \(entry.payment.currency())")
+	print("  Interest: \(entry.interest.currency())")
+	print("  Principal: \(entry.principal.currency())")
+	print("  Balance: \(entry.balance.currency())")
+}
+
+let transaction = SaleAndLeaseback(
+	salePrice: 5_000_000,
+	bookValue: 4_000_000,
+	leaseTerm: 20,
+	annualLeasePayment: 400_000,
+	discountRate: 0.06
+)
+
+print("Gain on Sale: \(transaction.gainOnSale.currency())")
+print("PV of Lease Obligations: \(transaction.leaseObligationPV.currency())")
+print("Net Cash Benefit: \(transaction.netCashBenefit.currency())")
+print("Economically Beneficial? \(transaction.isEconomicallyBeneficial)")
+
+
+let classification = classifyLease(
+	leaseTerm: 8,
+	assetUsefulLife: 10,
+	presentValue: 90_000,
+	assetFairValue: 100_000,
+	ownershipTransfer: false,
+	purchaseOption: false
+)
+
+switch classification {
+case .finance:
+	print("Finance Lease - capitalize on balance sheet")
+case .operating:
+	print("Operating Lease - expense as incurred")
+}
+
+
+	// Existing debt: $500M term loan
+	let termLoan = DebtInstrument(
+		principal: 500_000_000,
+		interestRate: 0.055,
+		startDate: Date(),
+		maturityDate: Calendar.current.date(byAdding: .year, value: 7, to: Date())!,
+		paymentFrequency: .quarterly,
+		amortizationType: .levelPayment
+	)
+
+	let termLoanSchedule = termLoan.schedule()
+
+	// Current capital structure
+	let termLoanStructure = CapitalStructure(
+		debtValue: 500_000_000,
+		equityValue: 1_000_000_000,
+		costOfDebt: 0.055,
+		costOfEquity: 0.11,
+		taxRate: 0.25
+	)
+
+	print("=== Debt Analysis ===")
+	print("Quarterly Payment: \(termLoanSchedule.payment[termLoanSchedule.periods.first!]!.currency())")
+	print("Annual Debt Service: \((termLoanSchedule.payment[termLoanSchedule.periods.first!]! * 4).currency())")
+	print("Total Interest (Life of Loan): \(termLoanSchedule.totalInterest.currency())")
+	print()
+	print("=== Capital Structure ===")
+print("WACC: \(termLoanStructure.wacc.percent())")
+print("Debt Ratio: \(termLoanStructure.debtRatio.percent())")
+	print("Annual Tax Shield: \(termLoanStructure.annualTaxShield.currency())")
+print("After-tax Cost of Debt: \(termLoanStructure.afterTaxCostOfDebt.percent())")
+
+
+	// Founders start with 10M shares
+	let founder1 = CapTable.Shareholder(name: "Founder 1", shares: 6_000_000, investmentDate: Date(), pricePerShare: 0.001)
+	let founder2 = CapTable.Shareholder(name: "Founder 2", shares: 4_000_000, investmentDate: Date(), pricePerShare: 0.001)
+
+	var initialCapTable = CapTable(shareholders: [founder1, founder2], optionPool: 0)
+
+	print("=== At Founding ===")
+	var initialOwnership = initialCapTable.ownership()
+print("Founder 1: \(initialOwnership["Founder 1"]!.percent())")
+print("Founder 2: \(initialOwnership["Founder 2"]!.percent())")
+
+	// Seed: $2M at $8M pre
+	initialCapTable = initialCapTable.modelRound(
 		newInvestment: 2_000_000,
 		preMoneyValuation: 8_000_000,
-		optionPoolIncrease: 0.15,  // Add 15% option pool
-		investorName: "VC Fund I",
+		optionPoolIncrease: 0.0,
+		investorName: "Seed Investors",
 		poolTiming: .postRound
 	)
 
-	// Check post-round ownership
-	let postRoundOwnership = seriesA.ownership()
-	let alicePostRound = postRoundOwnership["Alice"]!
-print("Alice after Series A: \(alicePostRound.percent())")
-
-	// VC owns 20% ($2M / $10M post-money)
-	let vcOwnership = postRoundOwnership["VC Fund I"]!
-print("VC owns: \(vcOwnership.percent())")
-
-
-	// Company issues $500K SAFE at $10M post-money cap
-	let safe = SAFE(
-		investment: 500_000,
-		postMoneyCap: 10_000_000,
-		type: .postMoney
-	)
-
-	// Convert at Series A valuation
-	let conversion = safe.convert(seriesAValuation: 8_000_000)
-
-print("SAFE converts to \(conversion.shares.number(0)) shares")
-print("Price per share: \(conversion.pricePerShare.currency())")
-print("Ownership: \(conversion.ownershipPercent.percent())")  // 5%
-
-
-let safeInvestor = CapTable.Shareholder(
-	name: "Angel Investor",
-	shares: conversion.shares,
-	investmentDate: Date(),
-	pricePerShare: conversion.pricePerShare
-)
-
-let capTableWithSafe = CapTable(
-	shareholders: capTable.shareholders + [safeInvestor],
-	optionPool: capTable.optionPool
-)
-
-
-	// $250K note at 20% discount, 6% annual interest, $5M cap
-	let note = ConvertibleNote(
-		principal: 250_000,
-		valuationCap: 5_000_000,
-		discount: 0.20,
-		interestRate: 0.06
-	)
-
-	// Series A price per share
-	let seriesAPricePerShare = 1.00
-
-	// Convert at Series A pricing (after 1 year)
-	let noteConversion = convertNote(
-		principal: note.principal,
-		valuationCap: note.valuationCap,
-		discount: note.discount,
-		seriesAPricePerShare: seriesAPricePerShare,
-		interestRate: note.interestRate,
-		timeHeld: 1.0  // 1 year
-	)
-
-print("Note converts to \(noteConversion.shares.number(0)) shares")
-print("At price: \(noteConversion.pricePerShare.currency())")
-	print("Applied \(noteConversion.appliedTerm)")  // .cap or .seriesAPrice
-
-
-	// Grant 100K options to an employee
-	let optionGrant = OptionGrant(
-		recipient: "Employee",
-		shares: 100_000,
-		strikePrice: 0.50,  // FMV at grant
-		grantDate: Date(),
-		vestingYears: 4.0,
-		vestingSchedule: .standard  // 4 year, 1 year cliff
-	)
-
-	// Check vested shares after 18 months
-	let grantDate = optionGrant.grantDate
-	let checkDate = Calendar.current.date(byAdding: .month, value: 18, to: grantDate)!
-	let vestedShares = optionGrant.vestedShares(at: checkDate)
-print("Vested after 18 months: \(vestedShares.number(0))")  // ~37,463 shares
-
-
-	// Series B at lower valuation than Series A
-	// Down from $10M post-Series A to $6M pre-money
-	let downRound = capTable.modelDownRound(
-		newInvestment: 3_000_000,
-		preMoneyValuation: 6_000_000,
-		payToPlayParticipants: ["VC Fund I"]  // Investors participating in down round
-	)
-
-	// Creates new investor at lower valuation
-	// Pay-to-play: participating investors avoid additional dilution
-
-
-	// Full ratchet: adjust Series A shares based on new price
-	let originalShares = 2_000_000.0
-	let originalPrice = 1.00
-	let newPrice = 0.67  // Series B price
-
-	let adjustedShares = applyAntiDilution(
-		originalShares: originalShares,
-		originalPrice: originalPrice,
-		newPrice: newPrice,
-		type: .fullRatchet
-	)
-
-print("Series A shares after full ratchet: \(adjustedShares.number(0))")
-
-	// Weighted average (more founder-friendly)
-	let waShares = applyWeightedAverageAntiDilution(
-		originalShares: originalShares,
-		originalPrice: originalPrice,
-		newPrice: newPrice,
-		newShares: 3_000_000,
-		fullyDilutedBefore: capTable.fullyDilutedShares()
-	)
-
-print("Series A shares after weighted average: \(waShares.number(0))")
-
-
-	// Create shareholders with liquidation preferences
-	let vcFundA = CapTable.Shareholder(
-		name: "VC Fund I",
-		shares: 2_000_000,
-		investmentDate: Date(),
-		pricePerShare: 1.00,
-		antiDilution: nil,
-		liquidationPreference: 1.0,
-		participating: false  // Takes preference OR pro-rata, whichever is higher
-	)
-
-	let vcFundB = CapTable.Shareholder(
-		name: "VC Fund II",
-		shares: 1_500_000,
-		investmentDate: Date(),
-		pricePerShare: 2.00,
-		antiDilution: nil,
-		liquidationPreference: 2.0,
-		participating: true  // Gets preference PLUS pro-rata
-	)
-
-	// Build cap table with preference stack
-	let preferenceCapTable = CapTable(
-		shareholders: [alice, bob, vcFundA, vcFundB],
-		optionPool: 1_000_000
-	)
-
-	// Low exit: $5M (below total invested capital)
-	let lowExit = preferenceCapTable.liquidationWaterfall(exitValue: 5_000_000)
-	print("\n---------Low Exit----------")
-	for (shareholder, payout) in lowExit {
-		print("\(shareholder.paddingLeft(toLength: 14)): \(payout.currency(0))")
+	print("\n=== After Seed ($2M at $8M pre) ===")
+	initialOwnership = initialCapTable.ownership()
+	for (name, pct) in initialOwnership.sorted(by: { $0.value > $1.value }) {
+		print("\(name): \(pct.percent())")
 	}
-	// Series B gets 2x preference first, then Series A gets remainder
 
-	// High exit: $50M
-	let highExit = preferenceCapTable.liquidationWaterfall(exitValue: 50_000_000)
-	print("\n---------High Exit----------")
-	for (shareholder, payout) in highExit {
-		print("\(shareholder.paddingLeft(toLength: 14)): \(payout.currency(0))")
-	}
-	// Non-participating preferred converts to common
-	// Participating preferred gets preference + upside
-
-
-	// Formation - Create founders
-	let founder1 = CapTable.Shareholder(
-		name: "Founder 1",
-		shares: 6_000_000,
-		investmentDate: Date(),
-		pricePerShare: 0.001
-	)
-
-	let founder2 = CapTable.Shareholder(
-		name: "Founder 2",
-		shares: 4_000_000,
-		investmentDate: Date(),
-		pricePerShare: 0.001
-	)
-
-	var fullFinancingCapTable = CapTable(
-		shareholders: [founder1, founder2],
-		optionPool: 0
-	)
-
-	// Pre-seed SAFE: $500K at $5M post-money
-	let fullFinancingSafe = SAFE(
-		investment: 500_000,
-		postMoneyCap: 5_000_000,
-		type: .postMoney
-	)
-
-	let safeConversion = safe.convert(seriesAValuation: 5_000_000)
-
-	let preSeedFund = CapTable.Shareholder(
-		name: "Pre-seed Fund",
-		shares: safeConversion.shares,
-		investmentDate: Date(),
-		pricePerShare: safeConversion.pricePerShare
-	)
-
-fullFinancingCapTable = CapTable(
-		shareholders: fullFinancingCapTable.shareholders + [preSeedFund],
-		optionPool: fullFinancingCapTable.optionPool
-	)
-
-	// Seed: $2M at $8M pre-money
-	let seedRound = fullFinancingCapTable.modelRound(
-		newInvestment: 2_000_000,
-		preMoneyValuation: 8_000_000,
-		optionPoolIncrease: 0.0,  // No pool yet
-		investorName: "Seed Fund",
-		poolTiming: .postRound
-	)
-
-	// Add 15% option pool post-Seed
-	let fullFinancingPoolShares = (0.15 / (1.0 - 0.15)) * seedRound.totalShares
-	let withPool = CapTable(
-		shareholders: seedRound.shareholders,
-		optionPool: fullFinancingPoolShares
-	)
-
-	// Series A: $10M at $40M pre-money
-	let fullFinancingSeriesA = withPool.modelRound(
+	// Series A: $10M at $40M pre
+	initialCapTable = initialCapTable.modelRound(
 		newInvestment: 10_000_000,
 		preMoneyValuation: 40_000_000,
-		optionPoolIncrease: 0.0,  // Pool already exists
-		investorName: "Series A Lead",
-		poolTiming: .postRound
+		optionPoolIncrease: 0.0,
+		investorName: "Series A Lead"
 	)
-
-	// Final cap table summary
-	print("=== Cap Table Post-Series A ===")
-	let fullFinancingOwnership = fullFinancingSeriesA.ownership()
-	for shareholder in fullFinancingSeriesA.shareholders {
-		let ownershipPct = fullFinancingOwnership[shareholder.name]!
-		print("\(shareholder.name.paddingLeft(toLength: 14)): \(ownershipPct.percent())")
+	print("\n=== After Series A ($10M at $40M pre) ===")
+	initialOwnership = initialCapTable.ownership()
+	for (name, pct) in initialOwnership.sorted(by: { $0.value > $1.value }) {
+		print("\(name): \(pct.percent())")
 	}
-
-	// Outstanding vs fully diluted
-	let outstanding = fullFinancingSeriesA.outstandingShares()
-	let fullyDiluted = fullFinancingSeriesA.fullyDilutedShares()
-print("\nOutstanding: \(outstanding.number(0))")
-print("Fully Diluted: \(fullyDiluted.number(0))")
-
-	// Exit scenario: $100M acquisition
-	print("\n======= Exit: $100M =======")
-	let exitProceeds = fullFinancingSeriesA.liquidationWaterfall(exitValue: 100_000_000)
-	for (shareholder, payout) in exitProceeds.sorted(by: { $0.value > $1.value }) {
-		print("\(shareholder.paddingLeft(toLength: 14)): \(payout.currency(0))")
-	}
-
-
-	// Track founder ownership through each round
-	let founderName = "Founder 1"
-
-	let formation = fullFinancingCapTable.ownership()[founderName]!
-	let postSeed = seedRound.ownership()[founderName]!
-	let postPool = withPool.ownership()[founderName]!
-	let postSeriesA = fullFinancingSeriesA.ownership()[founderName]!
-
-	print("\nOwnership trajectory:")
-print("Formation: \(formation.percent())")
-print("Post-Seed: \(postSeed.percent())")
-print("Post-Pool: \(postPool.percent())")
-print("Post-Series A: \(postSeriesA.percent())")
-
-	// Pre-money: Pool dilutes existing shareholders before new investment
-	let preMoneyRound = fullFinancingCapTable.modelRound(
-		newInvestment: 2_000_000,
-		preMoneyValuation: 8_000_000,
-		optionPoolIncrease: 0.15,
-		investorName: "Investor",
-		poolTiming: .preRound
-	)
-
-	// Post-money: Pool dilutes everyone including new investor
-	let postMoneyRound = fullFinancingCapTable.modelRound(
-		newInvestment: 2_000_000,
-		preMoneyValuation: 8_000_000,
-		optionPoolIncrease: 0.15,
-		investorName: "Investor",
-		poolTiming: .postRound
-	)
-
-	// Pre-round is more founder-friendly (investor bears pool dilution)
-
-
-	// Early SAFE: $100K at $5M cap
-	let earlySafe = SAFE(
-		investment: 100_000,
-		postMoneyCap: 5_000_000,
-		type: .postMoney
-	)
-
-	let earlySafeConversion = earlySafe.convert(seriesAValuation: 10_000_000)
-
-	// Later SAFE: $500K at $8M cap
-	let laterSafe = SAFE(
-		investment: 500_000,
-		postMoneyCap: 8_000_000,
-		type: .postMoney
-	)
-
-	let laterSafeConversion = laterSafe.convert(seriesAValuation: 10_000_000)
-
-	// Early SAFE gets better terms (lower cap = more ownership)
-print("Early SAFE ownership: \(earlySafeConversion.ownershipPercent.percent())")
-print("Later SAFE ownership: \(laterSafeConversion.ownershipPercent.percent())")
-
-
-	// Calculate FMV for common stock options
-	let preferredPrice = 2.00  // Series A price
-	let discountFactor = 0.40  // Typical 40% discount
-
-	let commonFMV = calculate409APrice(
-		preferredPrice: preferredPrice,
-		discount: discountFactor
-	)
-
-print("Strike price for options: \(commonFMV.currency())")  // $1.20 (60% of preferred)
