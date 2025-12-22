@@ -157,7 +157,7 @@ extension BinaryFloatingPoint {
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 			var style = FloatingPointFormatStyle<Double>.number
 			style = style
-				.precision(decimals != 2 ? .fractionLength(decimals) : .significantDigits(1...3))
+				.precision(.fractionLength(decimals))
 				.rounded(rule: roundingRule)
 				.locale(locale)
 			
