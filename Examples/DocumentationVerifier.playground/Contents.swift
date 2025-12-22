@@ -3,74 +3,88 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-	// Define SaaS business assumptions (fixed parameters)
-	let currentCustomers = 3000.0
-	let customerAcquisitionCost = 500.0  // CAC per customer
-	let grossMarginPercent = 0.75        // 75% gross margin
-
-	let drivers = [
-		OptimizableDriver(
-			name: "price_per_seat",
-			currentValue: 50,
-			range: 40...70,
-			changeConstraint: .percentageChange(max: 0.20)
-		),
-		OptimizableDriver(
-			name: "monthly_churn_rate",
-			currentValue: 0.05,
-			range: 0.02...0.08
-		)
+	// $1M portfolio with 5 asset classes
+	let assets = [
+		"US Large Cap",
+		"US Small Cap",
+		"International",
+		"Bonds",
+		"Real Estate"
 	]
 
-	let targets = [
-		FinancialTarget(metric: "mrr", target: .minimum(150_000), weight: 2.0),
-		FinancialTarget(metric: "ltv_cac_ratio", target: .minimum(3.0), weight: 1.5)
+	let expectedReturns = VectorN([0.10, 0.12, 0.11, 0.04, 0.09])
+
+	let covariance = [
+		[0.0225, 0.0180, 0.0150, 0.0020, 0.0100],
+		[0.0180, 0.0400, 0.0200, 0.0010, 0.0150],
+		[0.0150, 0.0200, 0.0400, 0.0030, 0.0120],
+		[0.0020, 0.0010, 0.0030, 0.0016, 0.0010],
+		[0.0100, 0.0150, 0.0120, 0.0010, 0.0256]
 	]
 
-	let optimizer = DriverOptimizer()
+	let optimizer = PortfolioOptimizer()
 
-	let result = try optimizer.optimize(
-		drivers: drivers,
-		targets: targets,
-		model: { driverValues in
-			// Extract driver values
-			let price = driverValues["price_per_seat"]!
-			let monthlyChurn = driverValues["monthly_churn_rate"]!
-
-			// Calculate MRR (Monthly Recurring Revenue)
-			let mrr = currentCustomers * price
-
-			// Calculate Customer Lifetime Value (LTV)
-			// LTV = ARPU × (1 / monthly_churn) × gross_margin
-			let averageLifetimeMonths = 1.0 / monthlyChurn
-			let lifetimeRevenue = price * averageLifetimeMonths
-			let ltv = lifetimeRevenue * grossMarginPercent
-
-			// Calculate LTV/CAC ratio
-			let ltvCacRatio = ltv / customerAcquisitionCost
-
-			return [
-				"mrr": mrr,
-				"ltv_cac_ratio": ltvCacRatio
-			]
-		}
+	// Conservative investor (minimum variance)
+	let conservative = try optimizer.minimumVariancePortfolio(
+		expectedReturns: expectedReturns,
+		covariance: covariance,
+		allowShortSelling: false
 	)
 
-	print("\n=== Driver Optimization Results ===")
-	print("Optimized drivers:")
-	for (name, value) in result.optimizedDrivers {
-		print("  \(name): \(value.number(2))")
+	print("Conservative Portfolio ($1M):")
+	for (i, asset) in assets.enumerated() {
+		let weight = conservative.weights.toArray()[i]
+		if weight > 0.01 {
+			let allocation = 1_000_000 * weight
+			print("  \(asset): \(allocation.currency()) (\(weight.percent(1)))")
+		}
+	}
+print("  Expected Return: \(conservative.expectedReturn.percent(1)))")
+print("  Volatility: \(conservative.volatility.percent(1))")
+
+	// Moderate investor (max Sharpe)
+	let moderate = try optimizer.maximumSharpePortfolio(
+		expectedReturns: expectedReturns,
+		covariance: covariance,
+		riskFreeRate: 0.03,
+		constraintSet: .longOnly
+	)
+
+	print("\nModerate Portfolio ($1M):")
+	for (i, asset) in assets.enumerated() {
+		let weight = moderate.weights.toArray()[i]
+		if weight > 0.01 {
+			let allocation = 1_000_000 * weight
+			print("  \(asset): \(allocation.currency(0)) (\(weight.percent(1)))")
+		}
+	}
+print("  Sharpe Ratio: \(moderate.sharpeRatio.number(2))")
+print("  Expected Return: \(moderate.expectedReturn.percent(2))")
+print("  Volatility: \(moderate.volatility.percent(2))")
+
+	// Check if rebalancing is needed
+	func needsRebalancing(
+		current: [Double],
+		target: [Double],
+		threshold: Double = 0.05
+	) -> Bool {
+		for (curr, targ) in zip(current, target) {
+			if abs(curr - targ) > threshold {
+				return true
+			}
+		}
+		return false
 	}
 
-	print("\nTarget achievement:")
-	print("  All targets met: \(result.feasible)")
+	let currentWeights = [0.28, 0.32, 0.25, 0.15]  // After market moves
+	let targetWeights = [0.25, 0.30, 0.25, 0.20]   // Original allocation
 
-	// Show the achieved metrics
-	let optimizedMetrics = result.achievedMetrics
-	print("\nAchieved metrics:")
-	if let mrr = optimizedMetrics["mrr"] {
-		print("  MRR: \(mrr.currency(0))")
-	}
-	if let ratio = optimizedMetrics["ltv_cac_ratio"] {
-		print("  LTV/CAC Ratio: \(ratio.number(2))x")
+	if needsRebalancing(current: currentWeights, target: targetWeights) {
+		print("Rebalancing needed:")
+		for i in 0..<currentWeights.count {
+			let diff = currentWeights[i] - targetWeights[i]
+			let diffPercent = diff
+			let action = diff > 0 ? "Sell" : "Buy"
+			print("  \(assets[i]): \(action) \(abs(diffPercent).percent(1))")
+		}
 	}
