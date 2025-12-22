@@ -73,18 +73,18 @@ This document tracks the OLD_NAME → NEW_NAME mapping for all files in the docu
 ### Phase Tutorials (from Tutorials/ directory)
 | Old Name | New Name | Status |
 |----------|----------|--------|
-| Tutorials/PHASE_1_TUTORIAL.md | 5.3-Phase1-CoreEnhancements.md | Pending |
-| Tutorials/PHASE_2_TUTORIAL.md | 5.4-Phase2-VectorOperations.md | Pending |
-| Tutorials/PHASE_3_TUTORIAL.md | 5.5-Phase3-MultivariateOptimization.md | Pending |
-| PHASE_4_TUTORIAL.md | 5.6-Phase4-ConstrainedOptimization.md | Pending |
-| Tutorials/PHASE_5_TUTORIAL.md | 5.7-Phase5-BusinessOptimization.md | Pending |
-| Tutorials/PHASE_6.2_INTEGER_PROGRAMMING_TUTORIAL.md | 5.8-Phase6-IntegerProgramming.md | Pending |
-| Tutorials/PHASE_7_ADAPTIVE_SELECTION_TUTORIAL.md | 5.9-Phase7-AdaptiveSelection.md | Pending |
-| Tutorials/PHASE_7_PARALLEL_OPTIMIZATION_TUTORIAL.md | 5.10-Phase7-ParallelOptimization.md | Pending |
-| Tutorials/PHASE_7_PERFORMANCE_BENCHMARK_TUTORIAL.md | 5.11-Phase7-PerformanceBenchmarking.md | Pending |
-| Tutorials/PHASE_8.1_SPARSE_MATRIX_TUTORIAL.md | 5.12-Phase8-SparseMatrix.md | Pending |
-| Tutorials/PHASE_8.3_MULTI_PERIOD_TUTORIAL.md | 5.13-Phase8-MultiPeriod.md | Pending |
-| Tutorials/PHASE_8.4_ROBUST_OPTIMIZATION_TUTORIAL.md | 5.14-Phase8-RobustOptimization.md | Pending |
+| Tutorials/PHASE_1_TUTORIAL.md | 5.3-CoreOptimization.md | Pending |
+| Tutorials/PHASE_2_TUTORIAL.md | 5.4-VectorOperations.md | Pending |
+| Tutorials/PHASE_3_TUTORIAL.md | 5.5-MultivariateOptimization.md | Pending |
+| PHASE_4_TUTORIAL.md | 5.6-ConstrainedOptimization.md | Pending |
+| Tutorials/PHASE_5_TUTORIAL.md | 5.6-BusinessOptimization.md | Pending |
+| Tutorials/PHASE_6.2_INTEGER_PROGRAMMING_TUTORIAL.md | 5.8-IntegerProgramming.md | Pending |
+| Tutorials/PHASE_7_ADAPTIVE_SELECTION_TUTORIAL.md | 5.9-AdaptiveSelection.md | Pending |
+| Tutorials/PHASE_7_PARALLEL_OPTIMIZATION_TUTORIAL.md | 5.10-ParallelOptimization.md | Pending |
+| Tutorials/PHASE_7_PERFORMANCE_BENCHMARK_TUTORIAL.md | 5.11-PerformanceBenchmarking.md | Pending |
+| Tutorials/PHASE_8.1_SPARSE_MATRIX_TUTORIAL.md | 5.12-SparseMatrix.md | Pending |
+| Tutorials/PHASE_8.3_MULTI_PERIOD_TUTORIAL.md | 5.13-MultiPeriod.md | Pending |
+| Tutorials/PHASE_8.4_ROBUST_OPTIMIZATION_TUTORIAL.md | 5.14-RobustOptimization.md | Pending |
 
 ### Specialized
 | Old Name | New Name | Status |
@@ -113,7 +113,7 @@ When updating cross-references, use the NEW NAME with full prefix:
 - Old: `<doc:GettingStarted>`
 - New: `<doc:1.1-GettingStarted>`
 - Old: `<doc:PHASE_1_TUTORIAL>`
-- New: `<doc:5.3-Phase1-CoreEnhancements>`
+- New: `<doc:5.3-CoreOptimization>`
 
 ## Progress Tracking
 

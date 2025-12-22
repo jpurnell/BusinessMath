@@ -83,7 +83,7 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
 
     /// Value outside acceptable range
     case outOfRange(value: Double, min: Double, max: Double, context: String)
-
+	
     // MARK: - LocalizedError Conformance
 
     public var errorDescription: String? {

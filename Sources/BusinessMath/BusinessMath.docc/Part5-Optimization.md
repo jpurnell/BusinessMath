@@ -29,24 +29,24 @@ This part takes you from simple goal-seeking (find the growth rate that achieves
 This progressive tutorial series builds optimization capabilities from first principles:
 
 **Phase 1-2: Foundations**
-- <doc:5.3-Phase1-CoreEnhancements> - Goal-seeking API, root-finding, and constraint builders
-- <doc:5.4-Phase2-VectorOperations> - Vector mathematics for multivariate problems
+- <doc:5.3-CoreOptimization> - Goal-seeking API, root-finding, and constraint builders
+- <doc:5.4-VectorOperations> - Vector mathematics for multivariate problems
 
 **Phase 3-5: Core Algorithms**
-- <doc:5.5-Phase3-MultivariateOptimization> - Gradient descent and Newton-Raphson methods
-- <doc:5.6-Phase4-ConstrainedOptimization> - Equality and inequality constraints
-- <doc:5.7-Phase5-BusinessOptimization> - Resource allocation, production planning, financial model drivers
+- <doc:5.5-MultivariateOptimization> - Gradient descent and Newton-Raphson methods
+- <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints
+- <doc:5.6-BusinessOptimization> - Resource allocation, production planning, financial model drivers
 
 **Phase 6-7: Advanced Techniques**
-- <doc:5.8-Phase6-IntegerProgramming> - Branch-and-bound, branch-and-cut with cutting planes
-- <doc:5.9-Phase7-AdaptiveSelection> - Automatic algorithm selection based on problem characteristics
-- <doc:5.10-Phase7-ParallelOptimization> - Parallel multi-start for global optimum finding
-- <doc:5.11-Phase7-PerformanceBenchmarking> - Performance testing and optimization
+- <doc:5.8-IntegerProgramming> - Branch-and-bound, branch-and-cut with cutting planes
+- <doc:5.9-AdaptiveSelection> - Automatic algorithm selection based on problem characteristics
+- <doc:5.10-ParallelOptimization> - Parallel multi-start for global optimum finding
+- <doc:5.11-PerformanceBenchmarking> - Performance testing and optimization
 
 **Phase 8: Specialized Applications**
-- <doc:5.12-Phase8-SparseMatrix> - Efficient sparse matrix operations for large-scale problems
-- <doc:5.13-Phase8-MultiPeriod> - Stochastic multi-period optimization
-- <doc:5.14-Phase8-RobustOptimization> - Optimization under uncertainty
+- <doc:5.12-SparseMatrix> - Efficient sparse matrix operations for large-scale problems
+- <doc:5.13-MultiPeriod> - Stochastic multi-period optimization
+- <doc:5.14-RobustOptimization> - Optimization under uncertainty
 
 ### Specialized Topics
 - <doc:5.15-InequalityConstraints> - Detailed treatment of inequality constraint handling
@@ -67,12 +67,12 @@ Basic calculus (derivatives) helps for understanding gradient-based methods, but
 ### For Business Users (FP&A, Finance):
 1. <doc:5.1-OptimizationGuide> - Start with business optimization section (Phase 5)
 2. <doc:5.2-PortfolioOptimizationGuide> - Portfolio applications
-3. <doc:5.3-Phase1-CoreEnhancements> - Goal-seeking for financial models
+3. <doc:5.3-CoreOptimization> - Goal-seeking for financial models
 4. Stop here unless you need advanced techniques
 
 ### For Quantitative Analysts:
 1. <doc:5.1-OptimizationGuide> - Complete overview
-2. <doc:5.3-Phase1-CoreEnhancements> through <doc:5.7-Phase5-BusinessOptimization> - Core sequence
+2. <doc:5.3-CoreOptimization> through <doc:5.6-BusinessOptimization> - Core sequence
 3. <doc:5.2-PortfolioOptimizationGuide> - Portfolio applications
 4. Advanced phases as needed
 
@@ -84,7 +84,7 @@ Basic calculus (derivatives) helps for understanding gradient-based methods, but
 ### For Portfolio Managers:
 1. <doc:5.2-PortfolioOptimizationGuide> - Start here
 2. <doc:5.1-OptimizationGuide> - Understand the optimization framework
-3. <doc:5.14-Phase8-RobustOptimization> - Robustness under uncertainty
+3. <doc:5.14-RobustOptimization> - Robustness under uncertainty
 4. <doc:2.3-RiskAnalyticsGuide> - Risk measurement
 
 ## Key Concepts
@@ -186,19 +186,19 @@ BusinessMath implements multiple algorithms, automatically selecting the best fo
 - **Branch-and-Bound**: Integer programming
 - **Branch-and-Cut**: Enhanced integer programming with cutting planes
 
-The adaptive selection system (<doc:5.9-Phase7-AdaptiveSelection>) chooses algorithms based on problem characteristics.
+The adaptive selection system (<doc:5.9-AdaptiveSelection>) chooses algorithms based on problem characteristics.
 
 ## Performance Considerations
 
 **Problem Size**: Optimization scales differently by problem type:
 - Small problems (<10 variables): All methods work well
 - Medium problems (10-100 variables): Gradient methods excel
-- Large problems (>100 variables): Use sparse matrices (<doc:5.12-Phase8-SparseMatrix>)
+- Large problems (>100 variables): Use sparse matrices (<doc:5.12-SparseMatrix>)
 
 **Global vs. Local**:
 - Local optimization finds nearby optima (fast)
 - Global optimization finds best overall solution (slower)
-- Use parallel multi-start (<doc:5.10-Phase7-ParallelOptimization>) for global optimization
+- Use parallel multi-start (<doc:5.10-ParallelOptimization>) for global optimization
 
 **Convergence**:
 - Set appropriate tolerance for your application
@@ -246,7 +246,7 @@ Check your constraints for conflicts. Start with just the objective and add cons
 
 **Can I optimize discrete choices (select projects, choose locations)?**
 
-Yes! Use integer programming (<doc:5.8-Phase6-IntegerProgramming>) with binary variables (0 or 1) to model yes/no decisions.
+Yes! Use integer programming (<doc:5.8-IntegerProgramming>) with binary variables (0 or 1) to model yes/no decisions.
 
 ## Related Topics
 

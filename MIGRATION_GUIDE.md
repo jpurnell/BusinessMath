@@ -101,18 +101,18 @@ The new structure organizes documentation like a book with five parts:
 
 | Old Name | New Name | DocC Link |
 |----------|----------|-----------|
-| `PHASE_1_TUTORIAL` | `5.3-Phase1-CoreEnhancements` | `<doc:5.3-Phase1-CoreEnhancements>` |
-| `PHASE_2_TUTORIAL` | `5.4-Phase2-VectorOperations` | `<doc:5.4-Phase2-VectorOperations>` |
-| `PHASE_3_TUTORIAL` | `5.5-Phase3-MultivariateOptimization` | `<doc:5.5-Phase3-MultivariateOptimization>` |
-| `PHASE_4_TUTORIAL` | `5.6-Phase4-ConstrainedOptimization` | `<doc:5.6-Phase4-ConstrainedOptimization>` |
-| `PHASE_5_TUTORIAL` | `5.7-Phase5-BusinessOptimization` | `<doc:5.7-Phase5-BusinessOptimization>` |
-| `PHASE_6.2_INTEGER_PROGRAMMING_TUTORIAL` | `5.8-Phase6-IntegerProgramming` | `<doc:5.8-Phase6-IntegerProgramming>` |
-| `PHASE_7_ADAPTIVE_SELECTION_TUTORIAL` | `5.9-Phase7-AdaptiveSelection` | `<doc:5.9-Phase7-AdaptiveSelection>` |
-| `PHASE_7_PARALLEL_OPTIMIZATION_TUTORIAL` | `5.10-Phase7-ParallelOptimization` | `<doc:5.10-Phase7-ParallelOptimization>` |
-| `PHASE_7_PERFORMANCE_BENCHMARK_TUTORIAL` | `5.11-Phase7-PerformanceBenchmarking` | `<doc:5.11-Phase7-PerformanceBenchmarking>` |
-| `PHASE_8.1_SPARSE_MATRIX_TUTORIAL` | `5.12-Phase8-SparseMatrix` | `<doc:5.12-Phase8-SparseMatrix>` |
-| `PHASE_8.3_MULTI_PERIOD_TUTORIAL` | `5.13-Phase8-MultiPeriod` | `<doc:5.13-Phase8-MultiPeriod>` |
-| `PHASE_8.4_ROBUST_OPTIMIZATION_TUTORIAL` | `5.14-Phase8-RobustOptimization` | `<doc:5.14-Phase8-RobustOptimization>` |
+| `PHASE_1_TUTORIAL` | `5.3-CoreOptimization` | `<doc:5.3-CoreOptimization>` |
+| `PHASE_2_TUTORIAL` | `5.4-VectorOperations` | `<doc:5.4-VectorOperations>` |
+| `PHASE_3_TUTORIAL` | `5.5-MultivariateOptimization` | `<doc:5.5-MultivariateOptimization>` |
+| `PHASE_4_TUTORIAL` | `5.6-ConstrainedOptimization` | `<doc:5.6-ConstrainedOptimization>` |
+| `PHASE_5_TUTORIAL` | `5.6-BusinessOptimization` | `<doc:5.6-BusinessOptimization>` |
+| `PHASE_6.2_INTEGER_PROGRAMMING_TUTORIAL` | `5.8-IntegerProgramming` | `<doc:5.8-IntegerProgramming>` |
+| `PHASE_7_ADAPTIVE_SELECTION_TUTORIAL` | `5.9-AdaptiveSelection` | `<doc:5.9-AdaptiveSelection>` |
+| `PHASE_7_PARALLEL_OPTIMIZATION_TUTORIAL` | `5.10-ParallelOptimization` | `<doc:5.10-ParallelOptimization>` |
+| `PHASE_7_PERFORMANCE_BENCHMARK_TUTORIAL` | `5.11-PerformanceBenchmarking` | `<doc:5.11-PerformanceBenchmarking>` |
+| `PHASE_8.1_SPARSE_MATRIX_TUTORIAL` | `5.12-SparseMatrix` | `<doc:5.12-SparseMatrix>` |
+| `PHASE_8.3_MULTI_PERIOD_TUTORIAL` | `5.13-MultiPeriod` | `<doc:5.13-MultiPeriod>` |
+| `PHASE_8.4_ROBUST_OPTIMIZATION_TUTORIAL` | `5.14-RobustOptimization` | `<doc:5.14-RobustOptimization>` |
 
 #### Specialized Topics
 
@@ -173,7 +173,7 @@ The old links will break. Update them using the mapping table above.
 All Phase tutorials previously in `Tutorials/` subdirectory are now in the root `.docc` directory with new names:
 
 **Old**: `Sources/BusinessMath/BusinessMath.docc/Tutorials/PHASE_1_TUTORIAL.md`
-**New**: `Sources/BusinessMath/BusinessMath.docc/5.3-Phase1-CoreEnhancements.md`
+**New**: `Sources/BusinessMath/BusinessMath.docc/5.3-CoreOptimization.md`
 
 ### Cross-References in Code Comments
 
