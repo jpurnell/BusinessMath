@@ -4,376 +4,359 @@ import OSLog
 import PlaygroundSupport
 
 
-	// Define the company
- let acme = Entity(
-	 id: "ACME001",
-	 primaryType: .ticker,
-	 name: "Acme Corporation",
-	 identifiers: [.ticker: "ACME"],
-	 currency: "USD",
-	 metadata: ["description": "Leading provider of widgets"]
- )
-	// Define the periods we're modeling
+	// Quarterly lease payments for office space
 	let q1 = Period.quarter(year: 2025, quarter: 1)
-	let q2 = Period.quarter(year: 2025, quarter: 2)
-	let q3 = Period.quarter(year: 2025, quarter: 3)
-	let q4 = Period.quarter(year: 2025, quarter: 4)
-	let periods = [q1, q2, q3, q4]
+	let periods = [q1, q1 + 1, q1 + 2, q1 + 3]  // 4 quarters = 1 year
 
-	// Revenue
-	let revenue = try Account(
-		entity: acme,
-		name: "Product Revenue",
-		type: .revenue,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [1_000_000, 1_100_000, 1_200_000, 1_300_000]
-		),
-	)
-
-	// Cost of Goods Sold
-	let cogs = try Account(
-		entity: acme,
-		name: "Cost of Goods Sold",
-		type: .expense,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [400_000, 440_000, 480_000, 520_000]
-		),
-		expenseType: .costOfGoodsSold,
-		metadata: AccountMetadata(category: "COGS")
-	)
-
-	// Operating Expenses
-	let salary = try Account(
-		entity: acme,
-		name: "Salaries",
-		type: .expense,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [200_000, 200_000, 200_000, 200_000]
-		),
-		expenseType: .operatingExpense,
-		metadata: AccountMetadata(category: "Operating", subCategory: "Salary")
-	)
-
-	let marketing = try Account(
-		entity: acme,
-		name: "Marketing",
-		type: .expense,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [50_000, 60_000, 70_000, 80_000]
-		),
-		expenseType: .operatingExpense,
-		metadata: AccountMetadata(category: "Operating", subCategory: "Marketing")
-	)
-
-	let interestExpense = try Account(
-		entity: acme,
-		name: "Interest Expense",
-		type: .expense,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [10_000, 10_000, 10_000, 10_000]
-		),
-		expenseType: .interestExpense,
-		metadata: AccountMetadata(category: "Financing", subCategory: "Interest")
-	)
-
-	let incomeTax = try Account(
-		entity: acme,
-		name: "Income Tax",
-		type: .expense,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [60_000, 69_000, 78_000, 87_000]
-		),
-		expenseType: .taxExpense,
-		metadata: AccountMetadata(category: "Tax")
-	)
-
-	// Create the Income Statement
-	let incomeStatement = try IncomeStatement(
-		entity: acme,
+	let payments = TimeSeries(
 		periods: periods,
-		revenueAccounts: [revenue],
-		expenseAccounts: [cogs, salary, marketing, interestExpense, incomeTax]
+		values: [25_000.0, 25_000.0, 25_000.0, 25_000.0]
 	)
 
-	// Access computed values
-	print("\nQ1 Revenue:\t\t\t\(incomeStatement.totalRevenue[q1]!.currency())")
-	print("Q1 Gross Profit:\t\(incomeStatement.grossProfit[q1]!.currency())")
-	print("Q1 Operating Income:\(incomeStatement.operatingIncome[q1]!.currency())")
-	print("Q1 Net Income:\t\t\(incomeStatement.netIncome[q1]!.currency())")
-
-	// Calculate margins
-print("Q1 Gross Margin:\t\(incomeStatement.grossMargin[q1]!.percent(1))")
-print("Q1 Net Margin:\t\t\(incomeStatement.netMargin[q1]!.percent(1))")
-
-	// Assets
-	let cash = try Account(
-		entity: acme,
-		name: "Cash and Equivalents",
-		type: .asset,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [500_000, 600_000, 750_000, 900_000]
-		),
-		assetType: .cashAndEquivalents,
-		metadata: AccountMetadata(category: "Current Assets", subCategory: "Cash")
+	// Create lease with 6% annual discount rate
+	let lease = Lease(
+		payments: payments,
+		discountRate: 0.06  // Incremental borrowing rate
 	)
 
-	let receivables = try Account(
-		entity: acme,
-		name: "Accounts Receivable",
-		type: .asset,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [300_000, 330_000, 360_000, 390_000]
-		),
-		assetType: .accountsReceivable,
-		metadata: AccountMetadata(category: "Current Assets")
+	// Calculate present value (lease liability)
+	let liability = lease.presentValue()
+print("Initial lease liability: \(liability.currency())")  // ~$96,454
+
+	// Calculate right-of-use asset
+	let rouAsset = lease.rightOfUseAsset()
+print("ROU asset: \(rouAsset.currency())")  // Same as liability initially
+
+let schedule = lease.liabilitySchedule()
+
+// Display schedule
+for (period, balance) in schedule.sorted(by: { $0.key < $1.key }) {
+	print("\(period.label): Balance \(balance.currency(0))")
+}
+
+// First period shows initial liability
+// Subsequent periods show ending balance after payment
+
+
+// Interest expense for first quarter
+let interest1 = lease.interestExpense(period: q1)
+print("Q1 Interest: \(interest1.currency())")  // Liability × (6% / 4)
+
+// Principal reduction
+let principal1 = lease.principalReduction(period: q1)
+print("Q1 Principal: \(principal1.currency())")  // Payment - Interest
+
+// Payment breakdown
+let payment = 25_000.0
+let totalExpense = interest1 + principal1
+print("Total payment: \(payment.currency())")
+
+	// Depreciation per period (straight-line)
+	let depreciation = lease.depreciation(period: q1)
+print("Q1 Depreciation: \(depreciation.currency())")  // ROU asset ÷ lease term
+
+	// Carrying value after each period
+	let carryingValue1 = lease.carryingValue(period: q1)
+	let carryingValue2 = lease.carryingValue(period: q1 + 1)
+print("Q1 carrying value: \(carryingValue1.currency())")
+print("Q2 carrying value: \(carryingValue2.currency())")  // Lower
+
+	// Interest expense (financing cost)
+	let interest = lease.interestExpense(period: q1)
+
+	// Depreciation expense (operating expense)
+//	let depreciation = lease.depreciation(period: q1)
+
+	// Total P&L impact
+	let interestAndDepreciation = interest + depreciation
+print("Q1 Total Expense: \(interestAndDepreciation.currency(0))")
+
+	// Note: Expense is front-loaded (higher interest early)
+	// Compare to straight-line rent expense under old standard
+
+	// Calculate IBR
+	let ibr = calculateIncrementalBorrowingRate(
+		riskFreeRate: 0.03,        // Treasury rate
+		creditSpread: 0.02,        // Company's credit spread
+		assetRiskPremium: 0.005    // Asset-specific risk
+	)
+print("IBR: \(ibr.percent())")  // 5.5%
+
+	let lease2 = Lease(
+		payments: payments,
+		discountRate: ibr,
+		discountRateType: .incrementalBorrowingRate
 	)
 
-	let ppe = try Account(
-		entity: acme,
-		name: "Property, Plant & Equipment",
-		type: .asset,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [1_000_000, 980_000, 960_000, 940_000]
-		),
-		assetType: .propertyPlantEquipment,
-		metadata: AccountMetadata(category: "Fixed Assets")
-	)
+let lowRate = Lease(payments: payments, discountRate: 0.04)
+let highRate = Lease(payments: payments, discountRate: 0.10)
 
-	// Liabilities
-	let payables = try Account(
-		entity: acme,
-		name: "Accounts Payable",
-		type: .liability,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [150_000, 165_000, 180_000, 195_000]
-		),
-		liabilityType: .accountsPayable,
-		metadata: AccountMetadata(category: "Current Liabilities")
-	)
+print("PV at \(lowRate.discountRate.percent()): \(lowRate.presentValue().currency())")   // Higher PV
+print("PV at \(highRate.discountRate.percent()): \(highRate.presentValue().currency())")  // Lower PV
 
-	let longTermDebt = try Account(
-		entity: acme,
-		name: "Long-term Debt",
-		type: .liability,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [500_000, 500_000, 500_000, 500_000]
-		),
-		liabilityType: .longTermDebt,
-		metadata: AccountMetadata(category: "Long-term Liabilities")
-	)
+let shortTermLease = Lease(
+	payments: payments,
+	discountRate: 0.06,
+	leaseTerm: .months(12)  // Explicitly specify term
+)
 
-	// Equity
-	let commonStock = try Account(
-		entity: acme,
-		name: "Common Stock",
-		type: .equity,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [1_000_000, 1_000_000, 1_000_000, 1_000_000]
-		),
-		equityType: .commonStock,
-		metadata: AccountMetadata(category: "Equity")
-	)
+if shortTermLease.isShortTerm {
+	print("Qualifies for short-term exemption")
+	// Can expense payments as incurred
+	// No ROU asset or liability
+}
 
-	let retainedEarnings = try Account(
-		entity: acme,
-		name: "Retained Earnings",
-		type: .equity,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [150_000, 245_000, 390_000, 535_000]
-		),
-		equityType: .retainedEarnings,
-		metadata: AccountMetadata(category: "Equity")
-	)
+// When exemption applied:
+let rouAssetExemption = shortTermLease.rightOfUseAsset()  // Returns 0
+let scheduleExemption = shortTermLease.liabilitySchedule()  // Returns zeros
 
-	// Create the Balance Sheet
-	let balanceSheet = try BalanceSheet(
-		entity: acme,
+
+let lowValueLease = Lease(
+	payments: payments,
+	discountRate: 0.06,
+	underlyingAssetValue: 4_500.0  // Below $5K threshold
+)
+
+if lowValueLease.isLowValue {
+	print("Qualifies for low-value exemption")
+	// Can expense payments as incurred
+}
+
+
+	// Fixed minimum payments
+	let fixedPayments = TimeSeries(
 		periods: periods,
-		assetAccounts: [cash, receivables, ppe],
-		liabilityAccounts: [payables, longTermDebt],
-		equityAccounts: [commonStock, retainedEarnings]
+		values: [20_000.0, 20_000.0, 20_000.0, 20_000.0]
 	)
 
-	// Access computed values
-print("Q1 Total Assets: \(balanceSheet.totalAssets[q1]!.currency())")
-print("Q1 Total Liabilities: \(balanceSheet.totalLiabilities[q1]!.currency())")
-print("Q1 Total Equity: \(balanceSheet.totalEquity[q1]!.currency())")
-
-	// Verify balance sheet equation: Assets = Liabilities + Equity
-	let assets = balanceSheet.totalAssets[q1]!
-	let liabilities = balanceSheet.totalLiabilities[q1]!
-	let equity = balanceSheet.totalEquity[q1]!
-	print("Balance Check: \(assets == liabilities + equity)")
-
-	// Calculate ratios
-print("Q1 Current Ratio: \(balanceSheet.currentRatio[q1]!.number())")
-print("Q1 Debt-to-Equity: \(balanceSheet.debtToEquity[q1]!.number())")
-
-	// Operating Activities
-	let cashFromOperations = try Account(
-		entity: acme,
-		name: "Cash from Operations",
-		type: .operating,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [280_000, 345_000, 420_000, 480_000]
-		),
-		metadata: AccountMetadata(category: "Operating Activities")
-	)
-
-	// Investing Activities
-	let capex = try Account(
-		entity: acme,
-		name: "Capital Expenditures",
-		type: .investing,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [-50_000, -30_000, -40_000, -60_000]
-		),
-		metadata: AccountMetadata(category: "Investing Activities")
-	)
-
-	// Financing Activities
-	let debtProceeds = try Account(
-		entity: acme,
-		name: "Debt Proceeds",
-		type: .financing,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [0, 0, 0, 0]
-		),
-		metadata: AccountMetadata(category: "Financing Activities")
-	)
-
-	let dividends = try Account(
-		entity: acme,
-		name: "Dividends Paid",
-		type: .financing,
-		timeSeries: TimeSeries(
-			periods: periods,
-			values: [-30_000, -35_000, -40_000, -45_000]
-		),
-		metadata: AccountMetadata(category: "Financing Activities")
-	)
-
-	// Create the Cash Flow Statement
-	let cashFlowStatement = try CashFlowStatement(
-		entity: acme,
+	// Variable payments (e.g., based on sales)
+	let variablePayments = TimeSeries(
 		periods: periods,
-		operatingAccounts: [cashFromOperations],
-		investingAccounts: [capex],
-		financingAccounts: [debtProceeds, dividends]
-		
+		values: [3_000.0, 5_000.0, 4_500.0, 6_000.0]
 	)
 
-	// Access computed values
-	print("Q1 Operating Cash Flow: \(cashFlowStatement.operatingCashFlow[q1]!.currency())")
-print("Q1 Investing Cash Flow: \(cashFlowStatement.investingCashFlow[q1]!.currency(0, signStrategy: .accounting))")
-	print("Q1 Financing Cash Flow: \(cashFlowStatement.financingCashFlow[q1]!.currency(0, signStrategy: .accounting))")
-	print("Q1 Net Cash Flow: \(cashFlowStatement.netCashFlow[q1]!.currency(0, signStrategy: .accounting))")
-
-	// Free Cash Flow (Operating - CapEx)
-	print("Q1 Free Cash Flow: \(cashFlowStatement.freeCashFlow[q1]!.currency(0, signStrategy: .accounting))")
-
-
-	// 1. Build all three statements (as shown above)
-
-	// 2. Create a Financial Projection that ties them together
-	struct CompanyProjection {
-		let entity: Entity
-		let periods: [Period]
-		let incomeStatement: IncomeStatement<Double>
-		let balanceSheet: BalanceSheet<Double>
-		let cashFlowStatement: CashFlowStatement<Double>
-
-		// Validation: Check that statements are consistent
-		func validate() -> Bool {
-			for period in periods {
-				// Balance sheet must balance
-				let assets = balanceSheet.totalAssets[period]!
-				let liabilities = balanceSheet.totalLiabilities[period]!
-				let equity = balanceSheet.totalEquity[period]!
-
-				if abs(assets - (liabilities + equity)) > 0.01 {
-					return false
-				}
-			}
-			return true
-		}
-
-		// Summary report
-		func printSummary(for period: Period) {
-			print("=== \(entity.name) - \(period.label) ===")
-			print("\nIncome Statement:")
-			print("  Revenue: \(incomeStatement.totalRevenue[period]!.currency(0, signStrategy: .accounting))")
-			print("  Net Income: \(incomeStatement.netIncome[period]!.currency(0, signStrategy: .accounting))")
-			print("  Net Margin: \(incomeStatement.netMargin[period]!.percent(1))")
-
-			print("\nBalance Sheet:")
-			print("  Total Assets: \(balanceSheet.totalAssets[period]!.currency(0, signStrategy: .accounting))")
-			print("  Total Equity: \(balanceSheet.totalEquity[period]!.currency(0, signStrategy: .accounting))")
-			print("  Debt-to-Equity: \(balanceSheet.debtToEquity[period]!.number(1))x")
-
-			print("\nCash Flow:")
-			print("  Operating CF: \(cashFlowStatement.operatingCashFlow[period]!.currency(0, signStrategy: .accounting))")
-			print("  Free Cash Flow: \(cashFlowStatement.freeCashFlow[period]!.currency(0, signStrategy: .accounting))")
-		}
-	}
-
-	let projection = CompanyProjection(
-		entity: acme,
-		periods: periods,
-		incomeStatement: incomeStatement,
-		balanceSheet: balanceSheet,
-		cashFlowStatement: cashFlowStatement
+	let leaseFixedPayments = Lease(
+		payments: fixedPayments,
+		discountRate: 0.07,
+		variablePayments: variablePayments
 	)
 
-	// Validate and print
-	if projection.validate() {
-		print("✓ Financial statements are balanced")
-		projection.printSummary(for: q1)
+	// Only fixed payments in liability
+	let liabilityFixedPayments = leaseFixedPayments.presentValue()  // PV of fixed portion only
+
+	// Total cash payment includes variable component
+	let totalCash = leaseFixedPayments.totalCashPayment(period: periods[0])
+print("Total Q1 payment: \(totalCash.currency())")  // Fixed + variable
+
+
+let originalLease = Lease(
+	payments: payments,
+	discountRate: 0.06
+)
+
+// Extend by 2 more quarters
+let extensionPayments = TimeSeries(
+	periods: [q1 + 4, q1 + 5],
+	values: [26_000.0, 26_000.0]
+)
+
+let extendedLease = originalLease.extend(
+	additionalPayments: extensionPayments
+)
+
+let originalROU = originalLease.rightOfUseAsset()
+let newROU = extendedLease.rightOfUseAsset()
+print("ROU increase: \((newROU - originalROU).currency())")
+
+
+	// Lease option
+	let leasePV = leasePaymentsPV(
+		periodicPayment: 5_000.0,
+		periods: 60,  // 5 years monthly
+		discountRate: 0.006  // Monthly rate
+	)
+
+	// Buy option
+	let buyPV = buyAssetPV(
+		purchasePrice: 250_000.0,
+		salvageValue: 50_000.0,
+		holdingPeriod: 5,
+		discountRate: 0.075,
+		maintenanceCost: 2_000.0  // Annual
+	)
+
+	let analysis = LeaseVsBuyAnalysis(leasePV: leasePV, buyPV: buyPV)
+
+	if analysis.shouldLease {
+		print("Recommendation: \(analysis.recommendation)")
+		print("Savings: \(analysis.savingsPercentage.percent())")
 	} else {
-		print("✗ Financial statements do not balance")
+		print("Buying is more economical")
 	}
 
-	// Find all current assets
-	let currentAssets = balanceSheet.assetAccounts.filter {
-		$0.metadata?.category == "Current Assets"
+let assetCarryingValue = 500_000.0
+let salePrice = 600_000.0
+
+let leasebackPayments = TimeSeries(
+	periods: periods,
+	values: [40_000.0, 40_000.0, 40_000.0, 40_000.0]
+)
+
+let transaction = SaleAndLeaseback(
+	carryingValue: assetCarryingValue,
+	salePrice: salePrice,
+	leasebackPayments: leasebackPayments,
+	discountRate: 0.06,
+	startDate: q1.startDate
+)
+
+// Gain recognition
+let gainRecognized = transaction.recognizedGain()
+let deferredGain = transaction.deferredGain()
+
+print("Recognized gain: \(gainRecognized.currency())")
+print("Deferred gain: \(deferredGain.currency())")
+
+// Cash benefit
+let cashBenefit = transaction.netCashBenefit
+print("Net cash from transaction: \(cashBenefit.currency())")
+
+// Economic analysis
+if transaction.isEconomicallyBeneficial {
+	print("Transaction creates value")
+}
+
+
+let classification = classifyLease(
+	leaseTerm: 48,           // months
+	assetUsefulLife: 60,     // months
+	presentValue: 90_000.0,
+	assetFairValue: 100_000.0,
+	ownershipTransfer: false,
+	purchaseOption: false
+)
+
+switch classification {
+case .finance:
+	print("Finance lease")
+	// Depreciation + interest expense
+case .operating:
+	print("Operating lease")
+	// Single lease expense (straight-line)
+}
+
+
+	// Office lease: 5 years, quarterly payments
+	let startDate = Period.quarter(year: 2025, quarter: 1)
+	let periodsOffice = (0..<20).map { startDate + $0 }  // 20 quarters
+
+	// Fixed rent with 3% annual escalation
+	var paymentsOffice: [Double] = []
+	let baseRent = 30_000.0
+	for i in 0..<20 {
+		let yearIndex = i / 4
+		let escalatedRent = baseRent * pow(1.03, Double(yearIndex))
+		paymentsOffice.append(escalatedRent)
 	}
 
-	// Calculate current assets total
-	let currentAssetsTotal = currentAssets.reduce(TimeSeries<Double>(periods: periods, values: Array(repeating: 0.0, count: periods.count))) { result, account in
-		result + account.timeSeries
+	let paymentSeries = TimeSeries(periods: periodsOffice, values: paymentsOffice)
+
+	// Create lease with costs
+	let leaseOffice = Lease(
+		payments: paymentSeries,
+		discountRate: 0.068,  // 6.8% IBR
+		initialDirectCosts: 15_000.0,  // Broker commission
+		prepaidAmount: 30_000.0,       // First quarter rent
+		depreciationMethod: .straightLine,
+		leaseTerm: .years(5),
+		underlyingAssetValue: 2_000_000.0  // Office space value
+	)
+
+	// Initial recognition
+	let liabilityOffice = leaseOffice.presentValue()
+	let rouAssetOffice = leaseOffice.rightOfUseAsset()
+
+	print("=== Initial Recognition ===")
+	print("Lease liability: \(liabilityOffice.currency(2))")
+	print("ROU asset: \(rouAssetOffice.currency(2))")
+
+	// First year expense breakdown
+	print("\n=== Year 1 Expenses ===")
+	for i in 0..<4 {
+		let period = periodsOffice[i]
+		let interest = leaseOffice.interestExpense(period: period)
+		let depreciation = leaseOffice.depreciation(period: period)
+		let total = interest + depreciation
+
+		print("\(period.label): Interest \(interest.currency()), " +
+			  "Depreciation \(depreciation.currency()), " +
+			 "Total \(total.currency())")
 	}
 
-	// Find all operating expenses
-	let opex = incomeStatement.expenseAccounts.filter {
-		$0.type == .expense
+	// Maturity analysis for disclosure
+	print("\n=== Payment Maturity Analysis ===")
+	let maturityOffice = leaseOffice.maturityAnalysis()
+	for (year, amount) in maturityOffice.sorted(by: { $0.key < $1.key }) {
+		print("\(year): \(amount.currency())")
 	}
 
-	// Group expenses by category
-	let expensesByCategory = Dictionary(grouping: incomeStatement.expenseAccounts) {
-		$0.metadata?.category ?? "Uncategorized"
-	}
+	// Total commitment disclosure
+	let totalPayments = lease.totalFuturePayments()
+	print("\nTotal future lease payments: $\(String(format: "%.0f", totalPayments))")
+	print("Present value: $\(String(format: "%.0f", liability))")
+	print("Implicit interest: $\(String(format: "%.0f", totalPayments - liability))")
 
-let categoryMax = (expensesByCategory.keys.map({$0.description.lengthOfBytes(using: .utf8)}).max() ?? 0)
 
-	for (category, accounts) in expensesByCategory {
-		let total = accounts.reduce(0.0) { sum, account in
-			sum + (account.timeSeries[q1] ?? 0.0)
-		}
-		print("\(category.paddingLeft(toLength: categoryMax)): \(total.currency())")
-	}
+	// Total commitments
+	let totalCommitments = lease.totalFuturePayments()
+
+	// Weighted average discount rate
+	let effectiveRate = lease.effectiveRate
+
+	// Weighted average remaining term
+	// (calculate from payment schedule)
+
+	// Maturity analysis
+	let maturity = lease.maturityAnalysis()
+
+	// Expense breakdown
+	let currentPeriod = Period.quarter(year: 2025, quarter: 1)
+	let interestDisclosure = lease.interestExpense(period: currentPeriod)
+	let depreciationDisclosure = lease.depreciation(period: currentPeriod)
+print("\(currentPeriod.label): \(interestDisclosure.currency()) Interest; \(depreciationDisclosure.currency()) Depreciation")
+
+
+	// Annual payments but monthly periods for reporting
+	let year2025 = Period.year(2025)
+	let annualPayment = 120_000.0
+
+	// Convert to monthly equivalent
+	let months = year2025.months()
+	let monthlyPayment = annualPayment / 12.0
+
+	let monthlyPayments = TimeSeries(
+		periods: months,
+		values: Array(repeating: monthlyPayment, count: 12)
+	)
+
+	let leasePitfall = Lease(
+		payments: monthlyPayments,
+		discountRate: 0.06  // Will be converted to monthly rate automatically
+	)
+
+let leaseResidualValue = Lease(
+	payments: payments,
+	discountRate: 0.07,
+	residualValue: 20_000.0  // Guaranteed residual at end
+)
+
+// Residual value increases lease liability
+let liabilityWithResidual = leaseResidualValue.presentValue()
+print(leaseResidualValue.presentValue().currency())
+
+	// ROU asset + leasehold improvements
+	let rouAssetLeasehold = lease.rightOfUseAsset()
+	let improvements = 50_000.0
+	let totalAsset = rouAsset + improvements
+
+	// Depreciate over shorter of lease term or improvement life

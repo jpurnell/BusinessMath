@@ -48,7 +48,7 @@ extension BinaryFloatingPoint {
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 			var style = FloatingPointFormatStyle<Double>.Currency.currency(code: currency)
 			style = style
-				.precision(decimals != 2 ? .fractionLength(decimals) : .significantDigits(significantDigitsRange))
+				.precision(.fractionLength(decimals))
 				.rounded(rule: roundingRule)
 				.locale(locale)
 			

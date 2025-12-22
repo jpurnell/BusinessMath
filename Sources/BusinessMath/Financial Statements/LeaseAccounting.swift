@@ -461,9 +461,9 @@ public struct LeaseVsBuyAnalysis {
     /// Recommendation text based on the analysis
     public var recommendation: String {
         if shouldLease {
-            return "Lease (NAL: \(String(format: "%.2f", netAdvantageToLeasing)))"
+			return "Lease (NAL: \(netAdvantageToLeasing.currency()))"
         } else {
-            return "Buy (NAL: \(String(format: "%.2f", netAdvantageToLeasing)))"
+			return "Buy (NAL: \(netAdvantageToLeasing.currency()))"
         }
     }
 }
