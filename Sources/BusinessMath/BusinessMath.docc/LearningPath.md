@@ -99,7 +99,7 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 **Checkpoint**: Build an efficient portfolio with risk constraints
 
 ### Phase 4: Advanced Risk Techniques (2-3 hours)
-11. <doc:5.14-Phase8-RobustOptimization> - Optimization under uncertainty (1 hour)
+11. <doc:5.14-RobustOptimization> - Optimization under uncertainty (1 hour)
 12. <doc:3.12-RealOptionsGuide> - Optionality and downside protection (1 hour)
 13. <doc:2.4-VisualizationGuide> - Risk dashboards (30 min)
 
@@ -126,21 +126,21 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 
 ### Phase 2: Optimization Fundamentals (6-8 hours)
 6. <doc:5.1-OptimizationGuide> - Optimization overview (1.5 hours)
-7. <doc:5.3-Phase1-CoreEnhancements> - Goal-seeking and constraints (1 hour)
-8. <doc:5.4-Phase2-VectorOperations> - Vector mathematics (1 hour)
-9. <doc:5.5-Phase3-MultivariateOptimization> - Gradient descent, Newton (1.5 hours)
-10. <doc:5.6-Phase4-ConstrainedOptimization> - Equality and inequality constraints (1.5 hours)
-11. <doc:5.7-Phase5-BusinessOptimization> - Business applications (1.5 hours)
+7. <doc:5.3-CoreOptimization> - Goal-seeking and constraints (1 hour)
+8. <doc:5.4-VectorOperations> - Vector mathematics (1 hour)
+9. <doc:5.5-MultivariateOptimization> - Gradient descent, Newton (1.5 hours)
+10. <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints (1.5 hours)
+11. <doc:5.6-BusinessOptimization> - Business applications (1.5 hours)
 
 **Checkpoint**: Implement constrained optimization for a business problem
 
 ### Phase 3: Advanced Optimization (6-8 hours)
-12. <doc:5.8-Phase6-IntegerProgramming> - Branch-and-bound (1.5 hours)
-13. <doc:5.9-Phase7-AdaptiveSelection> - Algorithm selection (1 hour)
-14. <doc:5.10-Phase7-ParallelOptimization> - Parallel multi-start (1.5 hours)
-15. <doc:5.11-Phase7-PerformanceBenchmarking> - Performance optimization (1 hour)
-16. <doc:5.12-Phase8-SparseMatrix> - Large-scale problems (1.5 hours)
-17. <doc:5.13-Phase8-MultiPeriod> - Stochastic optimization (1.5 hours)
+12. <doc:5.8-IntegerProgramming> - Branch-and-bound (1.5 hours)
+13. <doc:5.9-AdaptiveSelection> - Algorithm selection (1 hour)
+14. <doc:5.10-ParallelOptimization> - Parallel multi-start (1.5 hours)
+15. <doc:5.11-PerformanceBenchmarking> - Performance optimization (1 hour)
+16. <doc:5.12-SparseMatrix> - Large-scale problems (1.5 hours)
+17. <doc:5.13-MultiPeriod> - Stochastic optimization (1.5 hours)
 
 **Checkpoint**: Build a high-performance optimization system
 
@@ -152,7 +152,7 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 **Checkpoint**: Implement a complete portfolio optimization system
 
 ### Optional Advanced Topics
-- <doc:5.14-Phase8-RobustOptimization> - Robust optimization
+- <doc:5.14-RobustOptimization> - Robust optimization
 - <doc:5.15-InequalityConstraints> - Deep dive on constraints
 - <doc:3.11-CreditDerivativesGuide> - Credit derivatives mathematics
 

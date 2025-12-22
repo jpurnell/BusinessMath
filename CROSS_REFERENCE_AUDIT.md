@@ -294,5 +294,5 @@ Files with few cross-references
 | `<doc:MonteCarloTimeSeriesGuide>` | `<doc:4.1-MonteCarloTimeSeriesGuide>` |
 | `<doc:ScenarioAnalysisGuide>` | `<doc:4.2-ScenarioAnalysisGuide>` |
 | `<doc:OptimizationGuide>` | `<doc:5.1-OptimizationGuide>` |
-| `<doc:PHASE_4_TUTORIAL>` | `<doc:5.6-Phase4-ConstrainedOptimization>` |
+| `<doc:PHASE_4_TUTORIAL>` | `<doc:5.6-ConstrainedOptimization>` |
 | `<doc:ReidsRaisinsExample>` | `<doc:Appendix-A-ReidsRaisinsExample>` |

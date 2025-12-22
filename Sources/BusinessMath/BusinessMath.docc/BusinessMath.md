@@ -161,24 +161,24 @@ Find optimal solutions using mathematical optimization and operations research.
 A comprehensive 12-phase tutorial taking you from basic goal-seeking to advanced optimization:
 
 **Phases 1-2: Foundations**
-- <doc:5.3-Phase1-CoreEnhancements> - Goal-seeking API and constraint builders
-- <doc:5.4-Phase2-VectorOperations> - Vector mathematics for multivariate problems
+- <doc:5.3-CoreOptimization> - Goal-seeking API and constraint builders
+- <doc:5.4-VectorOperations> - Vector mathematics for multivariate problems
 
 **Phases 3-5: Core Algorithms**
-- <doc:5.5-Phase3-MultivariateOptimization> - Gradient descent, Newton-Raphson
-- <doc:5.6-Phase4-ConstrainedOptimization> - Equality and inequality constraints
-- <doc:5.7-Phase5-BusinessOptimization> - Resource allocation, production planning
+- <doc:5.5-MultivariateOptimization> - Gradient descent, Newton-Raphson
+- <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints
+- <doc:5.6-BusinessOptimization> - Resource allocation, production planning
 
 **Phases 6-7: Advanced Techniques**
-- <doc:5.8-Phase6-IntegerProgramming> - Branch-and-bound, cutting planes
-- <doc:5.9-Phase7-AdaptiveSelection> - Automatic algorithm selection
-- <doc:5.10-Phase7-ParallelOptimization> - Parallel multi-start for global optimum
-- <doc:5.11-Phase7-PerformanceBenchmarking> - Performance testing
+- <doc:5.8-IntegerProgramming> - Branch-and-bound, cutting planes
+- <doc:5.9-AdaptiveSelection> - Automatic algorithm selection
+- <doc:5.10-ParallelOptimization> - Parallel multi-start for global optimum
+- <doc:5.11-PerformanceBenchmarking> - Performance testing
 
 **Phase 8: Specialized Applications**
-- <doc:5.12-Phase8-SparseMatrix> - Large-scale sparse matrix operations
-- <doc:5.13-Phase8-MultiPeriod> - Stochastic multi-period optimization
-- <doc:5.14-Phase8-RobustOptimization> - Optimization under uncertainty
+- <doc:5.12-SparseMatrix> - Large-scale sparse matrix operations
+- <doc:5.13-MultiPeriod> - Stochastic multi-period optimization
+- <doc:5.14-RobustOptimization> - Optimization under uncertainty
 
 #### Specialized Topics
 - <doc:5.15-InequalityConstraints> - Deep dive on inequality constraint handling
@@ -220,7 +220,7 @@ Each track provides a curated sequence of chapters with checkpoints to validate 
 → <doc:4.1-MonteCarloTimeSeriesGuide>
 
 **Optimize resource allocation**
-→ <doc:5.1-OptimizationGuide> (Phase 5), <doc:5.7-Phase5-BusinessOptimization>
+→ <doc:5.1-OptimizationGuide> , <doc:5.7-BusinessOptimization>
 
 **Analyze sensitivity**
 → <doc:2.1-DataTableAnalysis>, <doc:4.2-ScenarioAnalysisGuide>
@@ -245,8 +245,8 @@ Each track provides a curated sequence of chapters with checkpoints to validate 
 
 **Advanced Optimization (v1.3.0)**:
 - Portfolio optimization: Efficient frontier, Sharpe ratio maximization (<doc:5.2-PortfolioOptimizationGuide>)
-- Integer programming: Branch-and-bound with cutting planes (<doc:5.8-Phase6-IntegerProgramming>)
-- Robust optimization: Uncertainty-aware optimization (<doc:5.14-Phase8-RobustOptimization>)
+- Integer programming: Branch-and-bound with cutting planes (<doc:5.8-IntegerProgramming>)
+- Robust optimization: Uncertainty-aware optimization (<doc:5.14-RobustOptimization>)
 
 **Risk Analytics (v1.2.0)**:
 - Monte Carlo simulation for time series (<doc:4.1-MonteCarloTimeSeriesGuide>)

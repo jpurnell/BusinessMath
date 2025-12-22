@@ -3,88 +3,73 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-	// $1M portfolio with 5 asset classes
-	let assets = [
-		"US Large Cap",
-		"US Small Cap",
-		"International",
-		"Bonds",
-		"Real Estate"
-	]
+func profit(price: Double) -> Double {
+	let quantity = 10000 - 1000 * price  // Demand function
+	let revenue = price * quantity
+	let fixedCosts = 5000.0
+	let variableCost = 4.0
+	let totalCosts = fixedCosts + variableCost * quantity
+	return revenue - totalCosts
+}
 
-	let expectedReturns = VectorN([0.10, 0.12, 0.11, 0.04, 0.09])
 
-	let covariance = [
-		[0.0225, 0.0180, 0.0150, 0.0020, 0.0100],
-		[0.0180, 0.0400, 0.0200, 0.0010, 0.0150],
-		[0.0150, 0.0200, 0.0400, 0.0030, 0.0120],
-		[0.0020, 0.0010, 0.0030, 0.0016, 0.0010],
-		[0.0100, 0.0150, 0.0120, 0.0010, 0.0256]
-	]
+	// Find breakeven price with constraints
+	let optimizer = GoalSeekOptimizer<Double>(target: 0.0)
 
-	let optimizer = PortfolioOptimizer()
-
-	// Conservative investor (minimum variance)
-	let conservative = try optimizer.minimumVariancePortfolio(
-		expectedReturns: expectedReturns,
-		covariance: covariance,
-		allowShortSelling: false
+	// Must be less than $8 (maximum price)
+	let maxPriceConstraint = Constraint<Double>(
+		type: .greaterThanOrEqual,
+		bound: 8.0
 	)
 
-	print("Conservative Portfolio ($1M):")
-	for (i, asset) in assets.enumerated() {
-		let weight = conservative.weights.toArray()[i]
-		if weight > 0.01 {
-			let allocation = 1_000_000 * weight
-			print("  \(asset): \(allocation.currency()) (\(weight.percent(1)))")
-		}
-	}
-print("  Expected Return: \(conservative.expectedReturn.percent(1)))")
-print("  Volatility: \(conservative.volatility.percent(1))")
-
-	// Moderate investor (max Sharpe)
-	let moderate = try optimizer.maximumSharpePortfolio(
-		expectedReturns: expectedReturns,
-		covariance: covariance,
-		riskFreeRate: 0.03,
-		constraintSet: .longOnly
+	let result = optimizer.optimize(
+		objective: profit,
+		constraints: [maxPriceConstraint],
+		initialValue: 1.0,
+		bounds: (lower: 0.0, upper: 100.0)
 	)
 
-	print("\nModerate Portfolio ($1M):")
-	for (i, asset) in assets.enumerated() {
-		let weight = moderate.weights.toArray()[i]
-		if weight > 0.01 {
-			let allocation = 1_000_000 * weight
-			print("  \(asset): \(allocation.currency(0)) (\(weight.percent(1)))")
-		}
-	}
-print("  Sharpe Ratio: \(moderate.sharpeRatio.number(2))")
-print("  Expected Return: \(moderate.expectedReturn.percent(2))")
-print("  Volatility: \(moderate.volatility.percent(2))")
-
-	// Check if rebalancing is needed
-	func needsRebalancing(
-		current: [Double],
-		target: [Double],
-		threshold: Double = 0.05
-	) -> Bool {
-		for (curr, targ) in zip(current, target) {
-			if abs(curr - targ) > threshold {
-				return true
-			}
-		}
-		return false
+	if result.converged {
+		print("Breakeven price: \(result.optimalValue.currency())")
+	} else {
+		print("No breakeven point found within constraints")
 	}
 
-	let currentWeights = [0.28, 0.32, 0.25, 0.15]  // After market moves
-	let targetWeights = [0.25, 0.30, 0.25, 0.20]   // Original allocation
-
-	if needsRebalancing(current: currentWeights, target: targetWeights) {
-		print("Rebalancing needed:")
-		for i in 0..<currentWeights.count {
-			let diff = currentWeights[i] - targetWeights[i]
-			let diffPercent = diff
-			let action = diff > 0 ? "Sell" : "Buy"
-			print("  \(assets[i]): \(action) \(abs(diffPercent).percent(1))")
-		}
+do {
+	// Function with zero derivative at x=0
+	let result = try goalSeek(
+		function: { x in x * x * x },  // f'(0) = 0
+		target: 0.0,
+		guess: 0.0
+	)
+} catch let error as BusinessMathError {
+	print(error.localizedDescription)
+	print("Error Code: \(error.code)")
+	
+	if let recovery = error.recoverySuggestion {
+		print("How to fix:\n\(recovery)")
 	}
+	
+	if let helpURL = error.helpAnchor {
+		print("Learn more: \(helpURL)")
+	}
+}
+
+do {
+	let result = try goalSeek(
+		function: { x in sin(x) },
+		target: 1.5,  // sin(x) never equals 1.5
+		guess: 0.0
+	)
+} catch let error as BusinessMathError {
+	print(error.localizedDescription)
+	print("Error Code: \(error.code)")
+  
+	if let recovery = error.recoverySuggestion {
+		print("How to fix:\n\(recovery)")
+	}
+	
+	if let helpURL = error.helpAnchor {
+		print("Learn more: \(helpURL)")
+	}
+}
