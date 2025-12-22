@@ -3,271 +3,377 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-//// Define periods (8 quarters: 2023-2024)
-//let periods = [
-//	Period.quarter(year: 2023, quarter: 1),
-//	Period.quarter(year: 2023, quarter: 2),
-//	Period.quarter(year: 2023, quarter: 3),
-//	Period.quarter(year: 2023, quarter: 4),
-//	Period.quarter(year: 2024, quarter: 1),
-//	Period.quarter(year: 2024, quarter: 2),
-//	Period.quarter(year: 2024, quarter: 3),
-//	Period.quarter(year: 2024, quarter: 4)
-//]
-//
-//// Historical revenue (showing both growth and Q4 spike)
-//let revenue: [Double] = [
-//	800_000,    // Q1 2023
-//	850_000,    // Q2 2023
-//	820_000,    // Q3 2023
-//	1_100_000,  // Q4 2023 (holiday spike)
-//	900_000,    // Q1 2024
-//	950_000,    // Q2 2024
-//	920_000,    // Q3 2024
-//	1_250_000   // Q4 2024 (holiday spike + growth)
-//]
-//
-//// Create time series with metadata
-//let metadata = TimeSeriesMetadata(
-//	name: "Quarterly Revenue",
-//	description: "Historical quarterly revenue for 2023-2024",
-//	unit: "USD"
-//)
-//
-//let historical = TimeSeries(periods: periods, values: revenue, metadata: metadata)
-//
-//print("Loaded \(historical.count) quarters of historical data")
-//print("Total historical revenue:\t\(historical.reduce(0, +).currency())")
-//
-//	// Calculate quarter-over-quarter growth
-//	let qoqGrowth = historical.growthRate(lag: 1)
-//
-//	print("\nQuarter-over-Quarter Growth:")
-//	for (i, growth) in qoqGrowth.enumerated() {
-//		let period = periods[i + 1]
-//		print("Q\((period.label)):\t\(growth.percent(1, .always(includingZero: false)))")
-//	}
-//
-//	// Calculate year-over-year growth (if comparing same quarter)
-//	if historical.count >= 5 {
-//		let yoyGrowth = historical.growthRate(lag: 4)  // 4 quarters = 1 year
-//
-//		print("\nYear-over-Year Growth:")
-//		for (i, growth) in yoyGrowth.valuesArray.enumerated() {
-//			let period = periods[i + 4]
-//			print("\t\(period.label):\t\(growth.percent(1))")
-//		}
-//	}
-//
-//	// Calculate overall CAGR
-//	let totalYears = 2.0
-//	let cagrValue = cagr(
-//		beginningValue: revenue[0],
-//		endingValue: revenue[revenue.count - 1],
-//		years: totalYears
-//	)
-//print("\nOverall CAGR:\t\(cagrValue.percent(1))")
-//
-//	// Calculate seasonal indices (4 quarters per year)
-//	let seasonalInds = try seasonalIndices(timeSeries: historical, periodsPerYear: 4)
-//
-//	print("\nSeasonal Indices:")
-//	let quarters = ["Q1", "Q2", "Q3", "Q4"]
-//	for (i, index) in seasonalInds.enumerated() {
-//		let pct = (index - 1.0)
-//		let direction = pct > 0 ? "above" : "below"
-//		print("\t\(quarters[i]): \(index.number()) (\(abs(pct).percent(1)) \(direction) average)")
-//	}
-//
-//	// Verify indices average to 1.0
-//	let avgIndex = seasonalInds.reduce(0.0, +) / Double(seasonalInds.count)
-//	print("\tAverage index:\t\(avgIndex.number(3)) (should be ~1.0)")
-//
-//	// Remove seasonality
-//	let deseasonalized = try seasonallyAdjust(timeSeries: historical, indices: seasonalInds)
-//
-//	print("\nDeseasonalized Revenue:")
-//	print("Original → Deseasonalized")
-//	for i in 0..<historical.count {
-//		let original = historical.valuesArray[i]
-//		let adjusted = deseasonalized.valuesArray[i]
-//		let period = periods[i]
-//		print("\t\(period.label):\t\(original.currency()) → \(adjusted.currency())")
-//	}
-//
-//	// Calculate growth on deseasonalized data (clearer trend)
-//	let deseasonalizedGrowth = deseasonalized.growthRate(lag: 1)
-//	let avgGrowth = deseasonalizedGrowth.reduce(0.0, +) / Double(deseasonalizedGrowth.count)
-//	print("\nAverage quarterly growth (deseasonalized):\t\(avgGrowth.percent(1))")
-//
-//	// Try linear trend first
-//	var linearModel = LinearTrend<Double>()
-//	try linearModel.fit(to: deseasonalized)
-//
-//	print("\nLinear Trend Model Fitted")
-//	print("\tModel: y = mx + b")
-//	print("\tIndicates steady absolute growth per quarter")
-//
-//	// Alternative: Try exponential trend for percentage growth
-//	var exponentialModel = ExponentialTrend<Double>()
-//	try exponentialModel.fit(to: deseasonalized)
-//
-//	print("\nExponential Trend Model Fitted")
-//	print("\tModel: y = a × e^(bx)")
-//	print("\tIndicates steady percentage growth per quarter")
-//
-//	// For this tutorial, we'll use linear trend
-//	// In practice, compare models using holdout validation
-//	let forecastPeriods = 4  // Forecast next 4 quarters (2025)
-//
-//	// Step 6a: Project trend forward
-//	let trendForecast = try linearModel.project(periods: forecastPeriods)
-//
-//	print("\nTrend Forecast (deseasonalized):")
-//	for (period, value) in zip(trendForecast.periods, trendForecast.valuesArray) {
-//		print("\t\(period.label):\t\(value.currency())")
-//	}
-//
-//	// Step 6b: Reapply seasonal pattern
-//	let finalForecast = try applySeasonal(timeSeries: trendForecast, indices: seasonalInds)
-//
-//	print("\nFinal Forecast (with seasonality):")
-//	var forecastTotal = 0.0
-//	for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
-//		forecastTotal += value
-//		print("\t\(period.label):\t\(value.currency())")
-//	}
-//
-//	print("\nForecast Summary:")
-//	print("\tTotal 2025 revenue: \(forecastTotal.currency())")
-//	print("\tAverage quarterly revenue: \((forecastTotal / 4).currency())")
-//
-//	// Compare to 2024
-//	let revenue2024 = revenue[4...7].reduce(0.0, +)
-//	let forecastGrowth = (forecastTotal - revenue2024) / revenue2024
-//	print("\tGrowth vs 2024: \(forecastGrowth.percent(1))")
-//
-//	// Calculate forecast errors on historical data
-//	var historicalErrors: [Double] = []
-//
-//	// Refit model on first 6 quarters, predict last 2
-//	let trainPeriods = Array(periods[0...5])
-//	let trainRevenue = Array(revenue[0...5])
-//	let trainData = TimeSeries(periods: trainPeriods, values: trainRevenue)
-//
-//	// Deseasonalize training data
-//	let trainDeseasonalized = try seasonallyAdjust(timeSeries: trainData, indices: seasonalInds)
-//
-//	// Fit model
-//	var testModel = LinearTrend<Double>()
-//	try testModel.fit(to: trainDeseasonalized)
-//
-//	// Predict next 2 quarters
-//	let testForecast = try testModel.project(periods: 2)
-//	let testSeasonalForecast = try applySeasonal(timeSeries: testForecast, indices: seasonalInds)
-//
-//	// Calculate errors
-//	for i in 0..<2 {
-//		let actual = revenue[6 + i]
-//		let predicted = testSeasonalForecast.valuesArray[i]
-//		let error = actual - predicted
-//		historicalErrors.append(error)
-//	}
-//
-//	// Calculate standard error
-//	let stdError = standardError(historicalErrors)
-//
-//	// 95% confidence interval (±1.96 standard errors)
-//	let confidenceLevel = zScore(ci: 0.95)
-//
-//	print("\nForecast with 95% Confidence Intervals:")
-//	for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
-//		let lower = value - (confidenceLevel * stdError)
-//		let upper = value + (confidenceLevel * stdError)
-//
-//		print("\(period.label):")
-//		print("\tPoint forecast: \(value.currency())")
-//		print("\t95% CI: [\(lower.currency()) - \(upper.currency())]")
-//	}
-//
-//	// Conservative scenario (50% of trend growth)
-//	var conservativeModel = LinearTrend<Double>()
-//	try conservativeModel.fit(to: deseasonalized)
-//	let conservativeForecast = try conservativeModel.project(periods: forecastPeriods)
-//	let conservativeSeasonalForecast = try applySeasonal(
-//		timeSeries: conservativeForecast,
-//		indices: seasonalInds.map { 1.0 + ($0 - 1.0) * 0.5 }  // Dampen seasonality
-//	)
-//
-//	// Optimistic scenario (200% of trend growth)
-//	var optimisticModel = LinearTrend<Double>()
-//	try optimisticModel.fit(to: deseasonalized)
-//	let optimisticForecast = try optimisticModel.project(periods: forecastPeriods)
-//	let optimisticSeasonalForecast = try applySeasonal(
-//		timeSeries: optimisticForecast,
-//		indices: seasonalInds.map { 1.0 + ($0 - 1.0) * 2.0 }  // Amplify seasonality
-//	)
-//
-//	print("\nScenario Analysis for 2025:")
-//	print("\tConservative: \(conservativeSeasonalForecast.reduce(0, +).currency())")
-//	print("\tBase Case: \(forecastTotal.currency())")
-//	print("\tOptimistic: \(optimisticSeasonalForecast.reduce(0, +).currency())")
-//
-//print("\nForecast Assumptions:")
-//print("\t1. Historical data: 8 quarters (2023-2024)")
-//print("\t2. Seasonal pattern: Q4 spike of ~25% above average")
-//print("\t3. Trend model: Linear trend on deseasonalized data")
-//print("\t. Implicit assumptions:")
-//print("\t\t- No major market disruptions")
-//print("\t\t- Historical patterns continue")
-//print("\t\t- No new products or pricing changes")
-//print("\t\t- Competitive landscape remains stable")
-//print("\t5. Confidence level: 95% (±\((confidenceLevel * stdError).number(2)))")
-//print("\t6. Update frequency: Recommended quarterly with actual results")
 
+	// Define the company
+ let acme = Entity(
+	 id: "ACME001",
+	 primaryType: .ticker,
+	 name: "Acme Corporation",
+	 identifiers: [.ticker: "ACME"],
+	 currency: "USD",
+	 metadata: ["description": "Leading provider of widgets"]
+ )
+	// Define the periods we're modeling
+	let q1 = Period.quarter(year: 2025, quarter: 1)
+	let q2 = Period.quarter(year: 2025, quarter: 2)
+	let q3 = Period.quarter(year: 2025, quarter: 3)
+	let q4 = Period.quarter(year: 2025, quarter: 4)
+	let periods = [q1, q2, q3, q4]
 
-func buildRevenueModel() throws {
-	// 1. Prepare historical data
-	let periods = (1...8).map { i in
-		let year = 2023 + (i - 1) / 4
-		let quarter = ((i - 1) % 4) + 1
-		return Period.quarter(year: year, quarter: quarter)
-	}
-
-	let revenue: [Double] = [
-		800_000, 850_000, 820_000, 1_100_000,
-		900_000, 950_000, 920_000, 1_250_000
-	]
-
-	let historical = TimeSeries(
-		periods: periods,
-		values: revenue,
-		metadata: TimeSeriesMetadata(name: "Quarterly Revenue", unit: "USD")
+	// Revenue
+	let revenue = try Account(
+		entity: acme,
+		name: "Product Revenue",
+		type: .revenue,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [1_000_000, 1_100_000, 1_200_000, 1_300_000]
+		),
 	)
 
-	// 2. Extract seasonal pattern
-	let seasonalIndices = try seasonalIndices(timeSeries: historical, periodsPerYear: 4)
+	// Cost of Goods Sold
+	let cogs = try Account(
+		entity: acme,
+		name: "Cost of Goods Sold",
+		type: .expense,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [400_000, 440_000, 480_000, 520_000]
+		),
+		expenseType: .costOfGoodsSold,
+		metadata: AccountMetadata(category: "COGS")
+	)
 
-	// 3. Deseasonalize
-	let deseasonalized = try seasonallyAdjust(timeSeries: historical, indices: seasonalIndices)
+	// Operating Expenses
+	let salary = try Account(
+		entity: acme,
+		name: "Salaries",
+		type: .expense,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [200_000, 200_000, 200_000, 200_000]
+		),
+		expenseType: .operatingExpense,
+		metadata: AccountMetadata(category: "Operating", subCategory: "Salary")
+	)
 
-	// 4. Fit trend model
-	var model = LinearTrend<Double>()
-	try model.fit(to: deseasonalized)
+	let marketing = try Account(
+		entity: acme,
+		name: "Marketing",
+		type: .expense,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [50_000, 60_000, 70_000, 80_000]
+		),
+		expenseType: .operatingExpense,
+		metadata: AccountMetadata(category: "Operating", subCategory: "Marketing")
+	)
 
-	// 5. Generate forecast
-	let forecastPeriods = 4
-	let trendForecast = try model.project(periods: forecastPeriods)
-	let finalForecast = try applySeasonal(timeSeries: trendForecast, indices: seasonalIndices)
+	let interestExpense = try Account(
+		entity: acme,
+		name: "Interest Expense",
+		type: .expense,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [10_000, 10_000, 10_000, 10_000]
+		),
+		expenseType: .interestExpense,
+		metadata: AccountMetadata(category: "Financing", subCategory: "Interest")
+	)
 
-	// 6. Present results
-	print("Revenue Forecast:")
-	for (period, value) in zip(finalForecast.periods, finalForecast.valuesArray) {
-		print("\t\(period.label): \(value.currency())")
+	let incomeTax = try Account(
+		entity: acme,
+		name: "Income Tax",
+		type: .expense,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [60_000, 69_000, 78_000, 87_000]
+		),
+		expenseType: .taxExpense,
+		metadata: AccountMetadata(category: "Tax")
+	)
+
+	// Create the Income Statement
+	let incomeStatement = try IncomeStatement(
+		entity: acme,
+		periods: periods,
+		revenueAccounts: [revenue],
+		expenseAccounts: [cogs, salary, marketing, interestExpense, incomeTax]
+	)
+
+	// Access computed values
+	print("\nQ1 Revenue:\t\t\t\(incomeStatement.totalRevenue[q1]!.currency())")
+	print("Q1 Gross Profit:\t\(incomeStatement.grossProfit[q1]!.currency())")
+	print("Q1 Operating Income:\(incomeStatement.operatingIncome[q1]!.currency())")
+	print("Q1 Net Income:\t\t\(incomeStatement.netIncome[q1]!.currency())")
+
+	// Calculate margins
+print("Q1 Gross Margin:\t\(incomeStatement.grossMargin[q1]!.percent(1))")
+print("Q1 Net Margin:\t\t\(incomeStatement.netMargin[q1]!.percent(1))")
+
+	// Assets
+	let cash = try Account(
+		entity: acme,
+		name: "Cash and Equivalents",
+		type: .asset,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [500_000, 600_000, 750_000, 900_000]
+		),
+		assetType: .cashAndEquivalents,
+		metadata: AccountMetadata(category: "Current Assets", subCategory: "Cash")
+	)
+
+	let receivables = try Account(
+		entity: acme,
+		name: "Accounts Receivable",
+		type: .asset,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [300_000, 330_000, 360_000, 390_000]
+		),
+		assetType: .accountsReceivable,
+		metadata: AccountMetadata(category: "Current Assets")
+	)
+
+	let ppe = try Account(
+		entity: acme,
+		name: "Property, Plant & Equipment",
+		type: .asset,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [1_000_000, 980_000, 960_000, 940_000]
+		),
+		assetType: .propertyPlantEquipment,
+		metadata: AccountMetadata(category: "Fixed Assets")
+	)
+
+	// Liabilities
+	let payables = try Account(
+		entity: acme,
+		name: "Accounts Payable",
+		type: .liability,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [150_000, 165_000, 180_000, 195_000]
+		),
+		liabilityType: .accountsPayable,
+		metadata: AccountMetadata(category: "Current Liabilities")
+	)
+
+	let longTermDebt = try Account(
+		entity: acme,
+		name: "Long-term Debt",
+		type: .liability,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [500_000, 500_000, 500_000, 500_000]
+		),
+		liabilityType: .longTermDebt,
+		metadata: AccountMetadata(category: "Long-term Liabilities")
+	)
+
+	// Equity
+	let commonStock = try Account(
+		entity: acme,
+		name: "Common Stock",
+		type: .equity,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [1_000_000, 1_000_000, 1_000_000, 1_000_000]
+		),
+		equityType: .commonStock,
+		metadata: AccountMetadata(category: "Equity")
+	)
+
+	let retainedEarnings = try Account(
+		entity: acme,
+		name: "Retained Earnings",
+		type: .equity,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [150_000, 245_000, 390_000, 535_000]
+		),
+		equityType: .retainedEarnings,
+		metadata: AccountMetadata(category: "Equity")
+	)
+
+	// Create the Balance Sheet
+	let balanceSheet = try BalanceSheet(
+		entity: acme,
+		periods: periods,
+		assetAccounts: [cash, receivables, ppe],
+		liabilityAccounts: [payables, longTermDebt],
+		equityAccounts: [commonStock, retainedEarnings]
+	)
+
+	// Access computed values
+print("Q1 Total Assets: \(balanceSheet.totalAssets[q1]!.currency())")
+print("Q1 Total Liabilities: \(balanceSheet.totalLiabilities[q1]!.currency())")
+print("Q1 Total Equity: \(balanceSheet.totalEquity[q1]!.currency())")
+
+	// Verify balance sheet equation: Assets = Liabilities + Equity
+	let assets = balanceSheet.totalAssets[q1]!
+	let liabilities = balanceSheet.totalLiabilities[q1]!
+	let equity = balanceSheet.totalEquity[q1]!
+	print("Balance Check: \(assets == liabilities + equity)")
+
+	// Calculate ratios
+print("Q1 Current Ratio: \(balanceSheet.currentRatio[q1]!.number())")
+print("Q1 Debt-to-Equity: \(balanceSheet.debtToEquity[q1]!.number())")
+
+	// Operating Activities
+	let cashFromOperations = try Account(
+		entity: acme,
+		name: "Cash from Operations",
+		type: .operating,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [280_000, 345_000, 420_000, 480_000]
+		),
+		metadata: AccountMetadata(category: "Operating Activities")
+	)
+
+	// Investing Activities
+	let capex = try Account(
+		entity: acme,
+		name: "Capital Expenditures",
+		type: .investing,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [-50_000, -30_000, -40_000, -60_000]
+		),
+		metadata: AccountMetadata(category: "Investing Activities")
+	)
+
+	// Financing Activities
+	let debtProceeds = try Account(
+		entity: acme,
+		name: "Debt Proceeds",
+		type: .financing,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [0, 0, 0, 0]
+		),
+		metadata: AccountMetadata(category: "Financing Activities")
+	)
+
+	let dividends = try Account(
+		entity: acme,
+		name: "Dividends Paid",
+		type: .financing,
+		timeSeries: TimeSeries(
+			periods: periods,
+			values: [-30_000, -35_000, -40_000, -45_000]
+		),
+		metadata: AccountMetadata(category: "Financing Activities")
+	)
+
+	// Create the Cash Flow Statement
+	let cashFlowStatement = try CashFlowStatement(
+		entity: acme,
+		periods: periods,
+		operatingAccounts: [cashFromOperations],
+		investingAccounts: [capex],
+		financingAccounts: [debtProceeds, dividends]
+		
+	)
+
+	// Access computed values
+	print("Q1 Operating Cash Flow: \(cashFlowStatement.operatingCashFlow[q1]!.currency())")
+print("Q1 Investing Cash Flow: \(cashFlowStatement.investingCashFlow[q1]!.currency(0, signStrategy: .accounting))")
+	print("Q1 Financing Cash Flow: \(cashFlowStatement.financingCashFlow[q1]!.currency(0, signStrategy: .accounting))")
+	print("Q1 Net Cash Flow: \(cashFlowStatement.netCashFlow[q1]!.currency(0, signStrategy: .accounting))")
+
+	// Free Cash Flow (Operating - CapEx)
+	print("Q1 Free Cash Flow: \(cashFlowStatement.freeCashFlow[q1]!.currency(0, signStrategy: .accounting))")
+
+
+	// 1. Build all three statements (as shown above)
+
+	// 2. Create a Financial Projection that ties them together
+	struct CompanyProjection {
+		let entity: Entity
+		let periods: [Period]
+		let incomeStatement: IncomeStatement<Double>
+		let balanceSheet: BalanceSheet<Double>
+		let cashFlowStatement: CashFlowStatement<Double>
+
+		// Validation: Check that statements are consistent
+		func validate() -> Bool {
+			for period in periods {
+				// Balance sheet must balance
+				let assets = balanceSheet.totalAssets[period]!
+				let liabilities = balanceSheet.totalLiabilities[period]!
+				let equity = balanceSheet.totalEquity[period]!
+
+				if abs(assets - (liabilities + equity)) > 0.01 {
+					return false
+				}
+			}
+			return true
+		}
+
+		// Summary report
+		func printSummary(for period: Period) {
+			print("=== \(entity.name) - \(period.label) ===")
+			print("\nIncome Statement:")
+			print("  Revenue: \(incomeStatement.totalRevenue[period]!.currency(0, signStrategy: .accounting))")
+			print("  Net Income: \(incomeStatement.netIncome[period]!.currency(0, signStrategy: .accounting))")
+			print("  Net Margin: \(incomeStatement.netMargin[period]!.percent(1))")
+
+			print("\nBalance Sheet:")
+			print("  Total Assets: \(balanceSheet.totalAssets[period]!.currency(0, signStrategy: .accounting))")
+			print("  Total Equity: \(balanceSheet.totalEquity[period]!.currency(0, signStrategy: .accounting))")
+			print("  Debt-to-Equity: \(balanceSheet.debtToEquity[period]!.number(1))x")
+
+			print("\nCash Flow:")
+			print("  Operating CF: \(cashFlowStatement.operatingCashFlow[period]!.currency(0, signStrategy: .accounting))")
+			print("  Free Cash Flow: \(cashFlowStatement.freeCashFlow[period]!.currency(0, signStrategy: .accounting))")
+		}
 	}
 
-	let total = finalForecast.reduce(0, +)
-	print("Total 2025 forecast: \(total.currency())")
-}
+	let projection = CompanyProjection(
+		entity: acme,
+		periods: periods,
+		incomeStatement: incomeStatement,
+		balanceSheet: balanceSheet,
+		cashFlowStatement: cashFlowStatement
+	)
 
-try buildRevenueModel()
+	// Validate and print
+	if projection.validate() {
+		print("✓ Financial statements are balanced")
+		projection.printSummary(for: q1)
+	} else {
+		print("✗ Financial statements do not balance")
+	}
+
+	// Find all current assets
+	let currentAssets = balanceSheet.assetAccounts.filter {
+		$0.metadata?.category == "Current Assets"
+	}
+
+	// Calculate current assets total
+	let currentAssetsTotal = currentAssets.reduce(TimeSeries<Double>(periods: periods, values: Array(repeating: 0.0, count: periods.count))) { result, account in
+		result + account.timeSeries
+	}
+
+	// Find all operating expenses
+	let opex = incomeStatement.expenseAccounts.filter {
+		$0.type == .expense
+	}
+
+	// Group expenses by category
+	let expensesByCategory = Dictionary(grouping: incomeStatement.expenseAccounts) {
+		$0.metadata?.category ?? "Uncategorized"
+	}
+
+let categoryMax = (expensesByCategory.keys.map({$0.description.lengthOfBytes(using: .utf8)}).max() ?? 0)
+
+	for (category, accounts) in expensesByCategory {
+		let total = accounts.reduce(0.0) { sum, account in
+			sum + (account.timeSeries[q1] ?? 0.0)
+		}
+		print("\(category.paddingLeft(toLength: categoryMax)): \(total.currency())")
+	}
