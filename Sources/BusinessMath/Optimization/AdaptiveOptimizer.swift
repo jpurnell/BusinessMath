@@ -72,6 +72,25 @@ public struct AdaptiveOptimizer<V: VectorSpace> where V.Scalar == Double {
 
 		/// Formatter used for displaying results (mutable for customization)
 		public var formatter: FloatingPointFormatter = .optimization
+
+		/// Description of why optimization stopped (for protocol compatibility)
+		public var convergenceReason: String {
+			var reason = "\(algorithmUsed): "
+			if converged {
+				if let violation = constraintViolation {
+					if violation < V.Scalar(1) / V.Scalar(1_000_000) {
+						reason += "Converged successfully"
+					} else {
+						reason += "Converged with constraint violation = \(violation)"
+					}
+				} else {
+					reason += "Converged successfully"
+				}
+			} else {
+				reason += "Maximum iterations reached"
+			}
+			return reason
+		}
 	}
 
 	// MARK: - Algorithm Choice
@@ -393,5 +412,53 @@ extension AdaptiveOptimizer.Result where V.Scalar == Double {
 			desc += "\n  Constraint Violation: \(formatter.format(violation).formatted)"
 		}
 		return desc
+	}
+}
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension AdaptiveOptimizer: MultivariateOptimizer {
+	/// Minimize an objective function with automatic algorithm selection (protocol method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by delegating to the
+	/// specialized ``optimize(objective:gradient:initialGuess:constraints:)`` method and
+	/// converting the result type.
+	///
+	/// The adaptive optimizer automatically analyzes the problem characteristics and selects
+	/// the most appropriate algorithm from: Gradient Descent, Newton-Raphson, Constrained
+	/// Optimizer, or Inequality Optimizer.
+	///
+	/// - Parameters:
+	///   - objective: Function to minimize f: V → ℝ
+	///   - initialGuess: Starting point for optimization
+	///   - constraints: Array of constraints (both equality and inequality supported)
+	/// - Returns: Optimization result (base protocol type)
+	/// - Throws: ``OptimizationError`` if optimization fails
+	///
+	/// - Note: For access to algorithm selection information, use the specialized
+	///   ``optimize(objective:gradient:initialGuess:constraints:)`` method which returns
+	///   ``AdaptiveOptimizer/Result`` with `algorithmUsed` and `selectionReason` properties.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// Delegate to specialized optimize method
+		let result = try optimize(
+			objective: objective,
+			gradient: nil,
+			initialGuess: initialGuess,
+			constraints: constraints
+		)
+
+		// Convert to protocol result type
+		return MultivariateOptimizationResult(
+			solution: result.solution,
+			value: result.objectiveValue,
+			iterations: result.iterations,
+			converged: result.converged,
+			gradientNorm: 0.0,  // Not tracked by AdaptiveOptimizer
+			history: nil  // AdaptiveOptimizer doesn't track history
+		)
 	}
 }

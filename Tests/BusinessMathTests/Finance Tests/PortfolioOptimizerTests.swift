@@ -354,4 +354,86 @@ struct PortfolioOptimizerTests {
 		#expect(portfolio.converged || portfolio.iterations < 20,
 			   "Should converge or make rapid progress")
 	}
+
+	// MARK: - Constraint Set Tests
+
+	@Test("Box constraints - minimum variance with position limits")
+	func boxConstraintsMinimumVariance() throws {
+		let returns = VectorN([0.08, 0.12, 0.15, 0.18])
+		let covariance = [
+			[0.04, 0.01, 0.02, 0.01],
+			[0.01, 0.09, 0.03, 0.02],
+			[0.02, 0.03, 0.16, 0.05],
+			[0.01, 0.02, 0.05, 0.25]
+		]
+
+		let optimizer = PortfolioOptimizer()
+		let portfolio = try optimizer.minimumVariancePortfolio(
+			expectedReturns: returns,
+			covariance: covariance,
+			constraintSet: .boxConstrained(min: 0.05, max: 0.35)
+		)
+
+		// Verify all weights are within box constraints
+		for weight in portfolio.weights.toArray() {
+			#expect(weight >= 0.05 - 0.01, "Weight should be >= 5%")
+			#expect(weight <= 0.35 + 0.01, "Weight should be <= 35%")
+		}
+
+		// Weights should sum to 1
+		let weightSum = portfolio.weights.toArray().reduce(0, +)
+		#expect(abs(weightSum - 1.0) < 0.05, "Weights should sum to 1")
+
+		#expect(portfolio.volatility > 0.0, "Volatility should be positive")
+		#expect(portfolio.converged, "Optimization should converge")
+	}
+
+	@Test("Long-only constraint set")
+	func longOnlyConstraintSet() throws {
+		let returns = VectorN([0.08, 0.12, 0.15])
+		let covariance = [
+			[0.04, 0.01, 0.02],
+			[0.01, 0.09, 0.03],
+			[0.02, 0.03, 0.16]
+		]
+
+		let optimizer = PortfolioOptimizer()
+		let portfolio = try optimizer.minimumVariancePortfolio(
+			expectedReturns: returns,
+			covariance: covariance,
+			constraintSet: .longOnly
+		)
+
+		// All weights should be non-negative
+		for weight in portfolio.weights.toArray() {
+			#expect(weight >= -0.01, "Weight should be non-negative (long-only)")
+		}
+
+		// Weights should sum to 1
+		let weightSum = portfolio.weights.toArray().reduce(0, +)
+		#expect(abs(weightSum - 1.0) < 0.01, "Weights should sum to 1")
+	}
+
+	@Test("Unconstrained allows any weights")
+	func unconstrainedAllowsAnyWeights() throws {
+		let returns = VectorN([0.08, 0.12])
+		let covariance = [
+			[0.04, 0.01],
+			[0.01, 0.09]
+		]
+
+		let optimizer = PortfolioOptimizer()
+		let portfolio = try optimizer.minimumVariancePortfolio(
+			expectedReturns: returns,
+			covariance: covariance,
+			constraintSet: .unconstrained
+		)
+
+		// Weights should sum to 1 (only constraint)
+		let weightSum = portfolio.weights.toArray().reduce(0, +)
+		#expect(abs(weightSum - 1.0) < 0.01, "Weights should sum to 1")
+
+		// No restrictions on individual weights (could be negative)
+		#expect(portfolio.volatility > 0.0, "Volatility should be positive")
+	}
 }

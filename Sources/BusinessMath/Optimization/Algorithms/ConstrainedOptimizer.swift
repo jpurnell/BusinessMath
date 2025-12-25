@@ -76,6 +76,21 @@ public struct ConstrainedOptimizationResult<V: VectorSpace> where V.Scalar: Real
 	/// Formatter used for displaying results (mutable for customization)
 	public var formatter: FloatingPointFormatter = .optimization
 
+	// MARK: - Protocol Compatibility
+
+	/// Description of why optimization stopped (for protocol compatibility)
+	public var convergenceReason: String {
+		if converged {
+			if constraintViolation < V.Scalar(1) / V.Scalar(1_000_000) {
+				return "Converged: constraints satisfied within tolerance"
+			} else {
+				return "Converged: but constraint violation = \(constraintViolation)"
+			}
+		} else {
+			return "Maximum iterations reached"
+		}
+	}
+
 	/// Negate the objective value (for converting minimize to maximize results)
 	func negated() -> ConstrainedOptimizationResult<V> {
 		ConstrainedOptimizationResult(
@@ -363,6 +378,53 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 			converged: false,
 			history: history,
 			constraintViolation: finalViolation
+		)
+	}
+}
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension ConstrainedOptimizer: MultivariateOptimizer {
+	/// Minimize an objective function subject to constraints (protocol method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by delegating to the
+	/// specialized ``minimize(_:from:subjectTo:)`` method and converting the result type.
+	///
+	/// - Parameters:
+	///   - objective: Function to minimize f: V → ℝ
+	///   - initialGuess: Starting point for optimization
+	///   - constraints: Array of constraints. Must be equality constraints only.
+	/// - Returns: Optimization result (base protocol type)
+	/// - Throws: ``OptimizationError`` if constraints contain inequality constraints or optimization fails
+	///
+	/// - Note: For access to Lagrange multipliers, use the specialized
+	///   ``minimize(_:from:subjectTo:)`` method which returns ``ConstrainedOptimizationResult``.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// Validate: only equality constraints supported
+		let inequalityConstraints = constraints.filter { $0.isInequality }
+		guard inequalityConstraints.isEmpty else {
+			throw OptimizationError.unsupportedConstraints(
+				"ConstrainedOptimizer only supports equality constraints. " +
+				"Found \(inequalityConstraints.count) inequality constraint(s). " +
+				"Use InequalityOptimizer for mixed equality/inequality constraints."
+			)
+		}
+
+		// Delegate to specialized method
+		let result = try minimize(objective, from: initialGuess, subjectTo: constraints)
+
+		// Convert to protocol result type (discards Lagrange multipliers)
+		return MultivariateOptimizationResult(
+			solution: result.solution,
+			value: result.objectiveValue,
+			iterations: result.iterations,
+			converged: result.converged,
+			gradientNorm: V.Scalar(0),  // Not tracked for constrained optimizers
+			history: nil  // History format incompatible (constraint violation vs gradient norm)
 		)
 	}
 }

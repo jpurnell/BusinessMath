@@ -1018,4 +1018,5 @@ public enum OptimizationError: Error {
     case nonFiniteValue(message: String)
     case singularMatrix(message: String)
     case maxIterationsReached
+    case unsupportedConstraints(String)
 }

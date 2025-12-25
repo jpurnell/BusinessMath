@@ -29,6 +29,20 @@ public struct RobustResult<V: VectorSpace> where V.Scalar == Double {
 
 	/// Number of iterations
 	public let iterations: Int
+
+	// MARK: - Protocol Compatibility
+
+	/// Objective value (alias for worstCaseObjective)
+	public var objectiveValue: Double { worstCaseObjective }
+
+	/// Description of optimization outcome
+	public var convergenceReason: String {
+		if converged {
+			return "Robust optimization converged: worst-case objective = \(worstCaseObjective), nominal objective = \(nominalObjective)"
+		} else {
+			return "Maximum iterations reached: worst-case objective = \(worstCaseObjective), nominal objective = \(nominalObjective)"
+		}
+	}
 }
 
 // MARK: - Robust Optimizer
@@ -299,5 +313,99 @@ extension RobustOptimizer {
 			constraints: constraints,
 			minimize: minimize
 		)
+	}
+}
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension RobustOptimizer: MultivariateOptimizer {
+	/// Minimize a deterministic objective function (protocol method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by treating the
+	/// objective as deterministic (no parameter uncertainty). This is a simplified version
+	/// that doesn't leverage robust optimization.
+	///
+	/// - Important: For true robust optimization with parameter uncertainty, use the
+	///   specialized ``optimize(objective:nominalParameters:initialSolution:constraints:minimize:)``
+	///   method which handles worst-case optimization over uncertain parameters. The protocol
+	///   method treats the objective as deterministic.
+	///
+	/// - Parameters:
+	///   - objective: Deterministic function to minimize f: V → ℝ (no uncertain parameters)
+	///   - initialGuess: Starting point for optimization
+	///   - constraints: Array of constraints
+	/// - Returns: Optimization result (base protocol type)
+	/// - Throws: ``OptimizationError`` if optimization fails
+	///
+	/// - Note: The returned result is based on the deterministic objective, not worst-case
+	///   analysis. Use the specialized ``optimize()`` method for robust results with
+	///   worst-case and nominal objective values.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// For protocol conformance, treat objective as deterministic
+		// Choose optimizer based on constraints
+		let hasConstraints = !constraints.isEmpty
+		let hasInequality = constraints.contains { !$0.isEquality }
+
+		if hasConstraints {
+			// Use constrained optimization
+			let result: ConstrainedOptimizationResult<V>
+
+			if hasInequality {
+				let optimizer = InequalityOptimizer<V>(
+					constraintTolerance: V.Scalar(tolerance),
+					gradientTolerance: V.Scalar(tolerance),
+					maxIterations: maxIterations
+				)
+				result = try optimizer.minimize(
+					objective,
+					from: initialGuess,
+					subjectTo: constraints
+				)
+			} else {
+				let optimizer = ConstrainedOptimizer<V>(
+					constraintTolerance: V.Scalar(tolerance),
+					gradientTolerance: V.Scalar(tolerance),
+					maxIterations: maxIterations
+				)
+				result = try optimizer.minimize(
+					objective,
+					from: initialGuess,
+					subjectTo: constraints
+				)
+			}
+
+			// Convert to protocol result type
+			return MultivariateOptimizationResult(
+				solution: result.solution,
+				value: result.objectiveValue,
+				iterations: result.iterations,
+				converged: result.converged,
+				gradientNorm: 0.0,  // Not tracked for robust optimizer
+				history: nil
+			)
+		} else {
+			// Use unconstrained optimization
+			let optimizer = MultivariateNewtonRaphson<V>(
+				maxIterations: maxIterations,
+				tolerance: V.Scalar(tolerance)
+			)
+			let gradient: (V) throws -> V = { point in
+				try numericalGradient(objective, at: point)
+			}
+			let hessian: (V) throws -> [[V.Scalar]] = { point in
+				try numericalHessian(objective, at: point)
+			}
+
+			return try optimizer.minimize(
+				function: objective,
+				gradient: gradient,
+				hessian: hessian,
+				initialGuess: initialGuess
+			)
+		}
 	}
 }

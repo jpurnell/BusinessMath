@@ -32,6 +32,22 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 
 	/// Formatter used for displaying results (mutable for customization)
 	public var formatter: FloatingPointFormatter = .optimization
+
+	// MARK: - Protocol Compatibility
+
+	/// Convenience property for protocol compatibility (alias for `value`)
+	public var objectiveValue: V.Scalar {
+		value
+	}
+
+	/// Description of why optimization stopped (for protocol compatibility)
+	public var convergenceReason: String {
+		if converged {
+			return "Converged: gradient norm below tolerance"
+		} else {
+			return "Maximum iterations reached"
+		}
+	}
 }
 
 // MARK: - Formatting Extensions (Double only)
@@ -531,5 +547,59 @@ extension MultivariateGradientDescent {
 			learningRate: learningRate,
 			useLineSearch: true
 		)
+	}
+}
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension MultivariateGradientDescent: MultivariateOptimizer {
+	/// Minimize an objective function (protocol conformance method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by delegating
+	/// to the existing `minimize(function:initialGuess:)` method.
+	///
+	/// - Parameters:
+	///   - objective: Function to minimize: f(v) → scalar
+	///   - initialGuess: Starting point for optimization
+	///   - constraints: Optimization constraints. **Note**: `MultivariateGradientDescent`
+	///     is an unconstrained optimizer and will throw an error if constraints are provided.
+	///
+	/// - Returns: Optimization result containing solution, objective value, iterations, and convergence info
+	///
+	/// - Throws:
+	///   - ``OptimizationError/unsupportedConstraints(_:)`` if constraints are provided (unconstrained optimizer)
+	///   - ``OptimizationError/convergenceFailed`` if optimization fails to converge
+	///   - ``OptimizationError/nonFiniteValue(message:)`` if non-finite values encountered
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// // Use as protocol type for algorithm flexibility
+	/// let optimizer: any MultivariateOptimizer = MultivariateGradientDescent<VectorN<Double>>(
+	///     learningRate: 0.01,
+	///     maxIterations: 1000
+	/// )
+	///
+	/// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+	/// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
+	/// ```
+	///
+	/// - Note: For algorithm-specific methods like `minimizeAdam()` or `minimizeMomentum()`,
+	///         use the concrete type `MultivariateGradientDescent<V>` instead of the protocol.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// Unconstrained optimizer - reject any constraints
+		guard constraints.isEmpty else {
+			throw OptimizationError.unsupportedConstraints(
+				"MultivariateGradientDescent only supports unconstrained optimization. " +
+				"For constrained optimization, use ConstrainedOptimizer or InequalityOptimizer."
+			)
+		}
+
+		// Delegate to existing implementation (with automatic gradient computation)
+		return try minimize(function: objective, initialGuess: initialGuess)
 	}
 }
