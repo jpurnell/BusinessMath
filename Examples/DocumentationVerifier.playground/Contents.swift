@@ -3,40 +3,54 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-	// Allocate budget across projects to maximize value
-	let projectValues = [100.0, 150.0, 200.0]  // Value of each project
-	let projectCosts = [50.0, 75.0, 100.0]     // Cost of each project
-	let totalBudget = 200.0
+	// Step 1: Use driver optimizer to find optimal pricing and churn
+	let drivers = [
+		OptimizableDriver(name: "price", currentValue: 50, range: 40...70),
+		OptimizableDriver(name: "churn", currentValue: 0.05, range: 0.02...0.08)
+	]
 
-	// Objective: Maximize total value
-	let value: (VectorN<Double>) -> Double = { allocation in
-		var total = 0.0
-		for i in 0..<3 {
-			total += allocation[i] * projectValues[i]
+	let targets = [
+		FinancialTarget(metric: "mrr", target: .exact(100_000), weight: 1.0)
+	]
+
+	let optimizer = DriverOptimizer()
+	let result = try optimizer.optimize(
+		drivers: drivers,
+		targets: targets,
+		model: { values in
+			let price = values["price"]!
+			let churn = values["churn"]!
+			let newCustomers = 150.0  // Fixed acquisition rate
+
+			let steadyStateCustomers = newCustomers / churn
+			let mrr = steadyStateCustomers * price
+
+			return ["mrr": mrr]
 		}
-		return -total  // Negative for minimization
-	}
-
-	// Constraints: Budget limit, non-negative allocations (0-100% per project)
-	let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-		.inequality { allocation in
-			let totalCost = (0..<3).map { i in
-				allocation[i] * projectCosts[i]
-			}.reduce(0, +)
-			return totalCost - totalBudget  // ≤ budget
-		}
-	] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)
-	  + MultivariateConstraint<VectorN<Double>>.positionLimit(1.0, dimension: 3)
-
-	let optimizer = InequalityOptimizer<VectorN<Double>>()
-	let result = try optimizer.minimize(
-		value,
-		from: VectorN([0.5, 0.5, 0.5]),
-		subjectTo: constraints
 	)
 
-	print("Optimal allocations:")
-	for (i, alloc) in result.solution.toArray().enumerated() {
-		let funding = alloc * projectCosts[i]
-		print("  Project \(i+1): \(alloc.percent()) → \(funding.currency())")
+	// Step 2: Build a financial model using the optimized parameters
+	if result.feasible {
+		let optimizedPrice = result.optimizedDrivers["price"]!
+		let optimizedChurn = result.optimizedDrivers["churn"]!
+		let customers = 150.0 / optimizedChurn  // Steady-state customers
+
+		let model = FinancialModel {
+			Revenue {
+				Product("SaaS Subscriptions")
+					.price(optimizedPrice)
+					.customers(customers)
+			}
+
+			Costs {
+				Fixed("Salaries", 50_000)
+				Fixed("Infrastructure", 10_000)
+				Variable("Customer Support", 0.15)  // 15% of revenue
+			}
+		}
+
+		print("Optimized Model:")
+		print("  Revenue: \(model.calculateRevenue().currency())")
+		print("    Costs:  \(model.calculateCosts(revenue: model.calculateRevenue()).currency())")
+		print("   Profit:  \(model.calculateProfit().currency())")
 	}
