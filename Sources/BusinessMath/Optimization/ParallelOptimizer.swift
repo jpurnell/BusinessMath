@@ -39,7 +39,7 @@ import Numerics
 /// print("Success rate: \(result.successRate)")
 /// print("Nodes explored: \(result.allResults.count)")
 /// ```
-public struct ParallelOptimizer<V: VectorSpace> where V.Scalar == Double, V: Sendable {
+public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Double, V: Sendable {
 
 	// MARK: - Algorithm Selection
 
@@ -344,9 +344,9 @@ public struct ParallelOptimizationResult<V: VectorSpace>: Sendable where V.Scala
 	public var convergenceReason: String {
 		let convergedCount = allResults.filter(\.converged).count
 		if success {
-			return "Multi-start optimization converged: \(convergedCount)/\(allResults.count) attempts succeeded (success rate: \(String(format: "%.1f", successRate * 100))%)"
+			return "Multi-start optimization converged: \(convergedCount)/\(allResults.count) attempts succeeded (success rate: \(successRate.percent()))"
 		} else {
-			return "Multi-start optimization failed: \(convergedCount)/\(allResults.count) attempts succeeded (success rate: \(String(format: "%.1f", successRate * 100))%)"
+			return "Multi-start optimization failed: \(convergedCount)/\(allResults.count) attempts succeeded (success rate: \(successRate.percent()))"
 		}
 	}
 }
