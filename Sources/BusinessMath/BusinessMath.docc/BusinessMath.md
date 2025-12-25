@@ -77,116 +77,196 @@ Find optimal solutions using mathematical optimization and operations research.
 
 ### Part I: Basics & Foundations
 
-**<doc:Part1-Basics>** - Overview of foundational concepts
+Overview of foundational concepts including time series, time value of money, and API patterns.
 
 #### Getting Started
-- <doc:1.1-GettingStarted> - Quick introduction with common workflows
+
+Quick introduction with common workflows.
+
+- <doc:1.1-GettingStarted>
 
 #### Core Data Structures
-- <doc:1.2-TimeSeries> - The foundation of temporal data in BusinessMath
-- <doc:1.3-TimeValueOfMoney> - Present value, future value, NPV, IRR, annuities
+
+The foundation of temporal data in BusinessMath, plus time value of money calculations (present value, future value, NPV, IRR, annuities).
+
+- <doc:1.2-TimeSeries>
+- <doc:1.3-TimeValueOfMoney>
 
 #### API Patterns & Developer Tools
-- <doc:1.4-FluentAPIGuide> - SwiftUI-style declarative APIs for readable models
-- <doc:1.5-TemplateGuide> - Pre-built patterns for common scenarios
+
+SwiftUI-style declarative APIs for readable models and pre-built patterns for common scenarios.
+
+- <doc:1.4-FluentAPIGuide>
+- <doc:1.5-TemplateGuide>
 
 #### Troubleshooting
-- <doc:1.6-DebuggingGuide> - Diagnosing and fixing issues
-- <doc:1.7-ErrorHandlingGuide> - Handling errors gracefully
+
+Diagnosing and fixing issues, handling errors gracefully.
+
+- <doc:1.6-DebuggingGuide>
+- <doc:1.7-ErrorHandlingGuide>
+
+#### Part Overview
+
+- <doc:Part1-Basics>
 
 ### Part II: Analysis & Statistics
 
-**<doc:Part2-Analysis>** - Overview of analytical techniques
+Overview of analytical techniques including sensitivity analysis, financial ratios, risk metrics, and visualization.
 
 #### Analytical Methods
-- <doc:2.1-DataTableAnalysis> - Excel-style sensitivity and scenario analysis
+
+Excel-style sensitivity and scenario analysis.
+
+- <doc:2.1-DataTableAnalysis>
 
 #### Financial Metrics
-- <doc:2.2-FinancialRatiosGuide> - Profitability, leverage, efficiency ratios
+
+Profitability, leverage, and efficiency ratios.
+
+- <doc:2.2-FinancialRatiosGuide>
 
 #### Risk Measurement
-- <doc:2.3-RiskAnalyticsGuide> - VaR, CVaR, stress testing, risk aggregation
+
+VaR, CVaR, stress testing, and risk aggregation.
+
+- <doc:2.3-RiskAnalyticsGuide>
 
 #### Communication
-- <doc:2.4-VisualizationGuide> - Charts, diagrams, and visual analytics
+
+Charts, diagrams, and visual analytics.
+
+- <doc:2.4-VisualizationGuide>
 
 #### Model Validation
-- <doc:2.5-ModelValidationGuide> - Fake-data simulation and parameter recovery checking
+
+Fake-data simulation and parameter recovery checking.
+
+- <doc:2.5-ModelValidationGuide>
+
+#### Part Overview
+
+- <doc:Part2-Analysis>
 
 ### Part III: Modeling
 
-**<doc:Part3-Modeling>** - Overview of financial modeling
+Overview of financial modeling from revenue forecasts to complex valuations.
 
 #### General Modeling
-- <doc:3.1-GrowthModeling> - CAGR, trend fitting (linear, exponential, logistic)
-- <doc:3.2-ForecastingGuide> - Complete forecasting workflows
+
+CAGR and trend fitting (linear, exponential, logistic), plus complete forecasting workflows.
+
+- <doc:3.1-GrowthModeling>
+- <doc:3.2-ForecastingGuide>
 
 #### Financial Modeling & Reporting
-- <doc:3.3-BuildingRevenueModel> - Step-by-step revenue model construction
-- <doc:3.4-BuildingFinancialReports> - Income statement, balance sheet, cash flow
-- <doc:3.5-FinancialStatementsGuide> - Integrated financial statement framework
-- <doc:3.6-LeaseAccountingGuide> - IFRS 16 / ASC 842 lease accounting
-- <doc:3.7-LoanAmortization> - Loan schedules and analysis
+
+Step-by-step revenue model construction, financial statements (income statement, balance sheet, cash flow), integrated framework, lease accounting (IFRS 16 / ASC 842), and loan schedules.
+
+- <doc:3.3-BuildingRevenueModel>
+- <doc:3.4-BuildingFinancialReports>
+- <doc:3.5-FinancialStatementsGuide>
+- <doc:3.6-LeaseAccountingGuide>
+- <doc:3.7-LoanAmortization>
 
 #### Valuation & Investment Analysis
-- <doc:3.8-InvestmentAnalysis> - NPV, IRR, payback, profitability metrics
-- <doc:3.9-EquityValuationGuide> - DCF, DDM, FCFE, residual income
-- <doc:3.10-BondValuationGuide> - Bond pricing, duration, convexity, credit spreads
-- <doc:3.11-CreditDerivativesGuide> - CDS pricing (ISDA model), Merton structural model
-- <doc:3.12-RealOptionsGuide> - Real options valuation and flexibility analysis
+
+NPV, IRR, payback, and profitability metrics. Equity valuation (DCF, DDM, FCFE, residual income). Bond pricing, duration, convexity, and credit spreads. CDS pricing (ISDA model) and Merton structural model. Real options valuation and flexibility analysis.
+
+- <doc:3.8-InvestmentAnalysis>
+- <doc:3.9-EquityValuationGuide>
+- <doc:3.10-BondValuationGuide>
+- <doc:3.11-CreditDerivativesGuide>
+- <doc:3.12-RealOptionsGuide>
 
 #### Capital Structure
-- <doc:3.13-EquityFinancingGuide> - Stock-based financing and equity dilution
-- <doc:3.14-DebtAndFinancingGuide> - Debt analysis, WACC calculations
+
+Stock-based financing, equity dilution, debt analysis, and WACC calculations.
+
+- <doc:3.13-EquityFinancingGuide>
+- <doc:3.14-DebtAndFinancingGuide>
+
+#### Part Overview
+
+- <doc:Part3-Modeling>
 
 ### Part IV: Simulation & Uncertainty
 
-**<doc:Part4-Simulation>** - Overview of simulation techniques
+Overview of simulation techniques for modeling risk and uncertainty.
 
 #### Probabilistic Methods
-- <doc:4.1-MonteCarloTimeSeriesGuide> - Monte Carlo simulation for forecasting and risk
+
+Monte Carlo simulation for forecasting and risk analysis.
+
+- <doc:4.1-MonteCarloTimeSeriesGuide>
 
 #### Structured Scenarios
-- <doc:4.2-ScenarioAnalysisGuide> - Scenario modeling and stress testing
+
+Scenario modeling and stress testing.
+
+- <doc:4.2-ScenarioAnalysisGuide>
+
+#### Part Overview
+
+- <doc:Part4-Simulation>
 
 ### Part V: Optimization
 
-**<doc:Part5-Optimization>** - Overview of optimization methods
+Overview of optimization methods from goal-seeking to business optimization.
 
 #### Fundamentals
-- <doc:5.1-OptimizationGuide> - Complete guide from goal-seeking to business optimization
-- <doc:5.2-PortfolioOptimizationGuide> - Modern Portfolio Theory, efficient frontier
+
+Complete guide from goal-seeking to business optimization. Modern Portfolio Theory and efficient frontier.
+
+- <doc:5.1-OptimizationGuide>
+- <doc:5.1.5-MultivariateOptimizerGuide>
+- <doc:5.2-PortfolioOptimizationGuide>
 
 #### Optimization Deep Dive: Progressive Tutorial Series
-A comprehensive 12-phase tutorial taking you from basic goal-seeking to advanced optimization:
 
-**Phases 1-2: Foundations**
-- <doc:5.3-CoreOptimization> - Goal-seeking API and constraint builders
-- <doc:5.4-VectorOperations> - Vector mathematics for multivariate problems
+A comprehensive 12-phase tutorial taking you from basic goal-seeking to advanced optimization.
 
-**Phases 3-5: Core Algorithms**
-- <doc:5.5-MultivariateOptimization> - Gradient descent, Newton-Raphson
-- <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints
-- <doc:5.6-BusinessOptimization> - Resource allocation, production planning
+**Phases 1-2: Foundations** - Goal-seeking API, constraint builders, and vector mathematics for multivariate problems.
 
-**Phases 6-7: Advanced Techniques**
-- <doc:5.8-IntegerProgramming> - Branch-and-bound, cutting planes
-- <doc:5.9-AdaptiveSelection> - Automatic algorithm selection
-- <doc:5.10-ParallelOptimization> - Parallel multi-start for global optimum
-- <doc:5.11-PerformanceBenchmarking> - Performance testing
+- <doc:5.3-CoreOptimization>
+- <doc:5.4-VectorOperations>
 
-**Phase 8: Specialized Applications**
-- <doc:5.12-SparseMatrix> - Large-scale sparse matrix operations
-- <doc:5.13-MultiPeriod> - Stochastic multi-period optimization
-- <doc:5.14-RobustOptimization> - Optimization under uncertainty
+**Phases 3-5: Core Algorithms** - Gradient descent, Newton-Raphson, equality and inequality constraints, resource allocation, and production planning.
+
+- <doc:5.5-MultivariateOptimization>
+- <doc:5.6-ConstrainedOptimization>
+- <doc:5.7-BusinessOptimization>
+
+**Phases 6-7: Advanced Techniques** - Branch-and-bound, cutting planes, automatic algorithm selection, parallel multi-start for global optimum, and performance testing.
+
+- <doc:5.8-IntegerProgramming>
+- <doc:5.9-AdaptiveSelection>
+- <doc:5.10-ParallelOptimization>
+- <doc:5.11-PerformanceBenchmarking>
+
+**Phase 8: Specialized Applications** - Large-scale sparse matrix operations, stochastic multi-period optimization, and optimization under uncertainty.
+
+- <doc:5.12-SparseMatrix>
+- <doc:5.13-MultiPeriod>
+- <doc:5.14-RobustOptimization>
 
 #### Specialized Topics
-- <doc:5.15-InequalityConstraints> - Deep dive on inequality constraint handling
+
+Deep dive on inequality constraint handling.
+
+- <doc:5.15-InequalityConstraints>
+
+#### Part Overview
+
+- <doc:Part5-Optimization>
 
 ### Appendices
 
 #### Case Studies
-- <doc:Appendix-A-ReidsRaisinsExample> - Comprehensive real-world example integrating multiple concepts
+
+Comprehensive real-world example integrating multiple concepts.
+
+- <doc:Appendix-A-ReidsRaisinsExample>
 
 ## Learning Paths
 
@@ -204,35 +284,25 @@ Each track provides a curated sequence of chapters with checkpoints to validate 
 
 ### I want to...
 
-**Build a revenue forecast**
-→ <doc:3.1-GrowthModeling>, <doc:3.2-ForecastingGuide>, <doc:3.3-BuildingRevenueModel>
+**Build a revenue forecast**: See <doc:3.1-GrowthModeling>, <doc:3.2-ForecastingGuide>, and <doc:3.3-BuildingRevenueModel>
 
-**Value a company**
-→ <doc:3.9-EquityValuationGuide>, <doc:3.8-InvestmentAnalysis>
+**Value a company**: See <doc:3.9-EquityValuationGuide> and <doc:3.8-InvestmentAnalysis>
 
-**Create financial statements**
-→ <doc:3.4-BuildingFinancialReports>, <doc:3.5-FinancialStatementsGuide>
+**Create financial statements**: See <doc:3.4-BuildingFinancialReports> and <doc:3.5-FinancialStatementsGuide>
 
-**Measure portfolio risk**
-→ <doc:2.3-RiskAnalyticsGuide>, <doc:5.2-PortfolioOptimizationGuide>
+**Measure portfolio risk**: See <doc:2.3-RiskAnalyticsGuide> and <doc:5.2-PortfolioOptimizationGuide>
 
-**Run Monte Carlo simulation**
-→ <doc:4.1-MonteCarloTimeSeriesGuide>
+**Run Monte Carlo simulation**: See <doc:4.1-MonteCarloTimeSeriesGuide>
 
-**Optimize resource allocation**
-→ <doc:5.1-OptimizationGuide> , <doc:5.7-BusinessOptimization>
+**Optimize resource allocation**: See <doc:5.1-OptimizationGuide> and <doc:5.7-BusinessOptimization>
 
-**Analyze sensitivity**
-→ <doc:2.1-DataTableAnalysis>, <doc:4.2-ScenarioAnalysisGuide>
+**Analyze sensitivity**: See <doc:2.1-DataTableAnalysis> and <doc:4.2-ScenarioAnalysisGuide>
 
-**Price bonds or calculate duration**
-→ <doc:3.10-BondValuationGuide>
+**Price bonds or calculate duration**: See <doc:3.10-BondValuationGuide>
 
-**Model credit risk**
-→ <doc:3.11-CreditDerivativesGuide>, <doc:2.3-RiskAnalyticsGuide>
+**Model credit risk**: See <doc:3.11-CreditDerivativesGuide> and <doc:2.3-RiskAnalyticsGuide>
 
-**Build efficient portfolios**
-→ <doc:5.2-PortfolioOptimizationGuide>
+**Build efficient portfolios**: See <doc:5.2-PortfolioOptimizationGuide>
 
 ## What's New
 

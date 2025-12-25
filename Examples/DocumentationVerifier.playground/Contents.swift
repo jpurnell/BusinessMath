@@ -3,73 +3,40 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-func profit(price: Double) -> Double {
-	let quantity = 10000 - 1000 * price  // Demand function
-	let revenue = price * quantity
-	let fixedCosts = 5000.0
-	let variableCost = 4.0
-	let totalCosts = fixedCosts + variableCost * quantity
-	return revenue - totalCosts
-}
+	// Allocate budget across projects to maximize value
+	let projectValues = [100.0, 150.0, 200.0]  // Value of each project
+	let projectCosts = [50.0, 75.0, 100.0]     // Cost of each project
+	let totalBudget = 200.0
 
+	// Objective: Maximize total value
+	let value: (VectorN<Double>) -> Double = { allocation in
+		var total = 0.0
+		for i in 0..<3 {
+			total += allocation[i] * projectValues[i]
+		}
+		return -total  // Negative for minimization
+	}
 
-	// Find breakeven price with constraints
-	let optimizer = GoalSeekOptimizer<Double>(target: 0.0)
+	// Constraints: Budget limit, non-negative allocations (0-100% per project)
+	let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+		.inequality { allocation in
+			let totalCost = (0..<3).map { i in
+				allocation[i] * projectCosts[i]
+			}.reduce(0, +)
+			return totalCost - totalBudget  // ≤ budget
+		}
+	] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)
+	  + MultivariateConstraint<VectorN<Double>>.positionLimit(1.0, dimension: 3)
 
-	// Must be less than $8 (maximum price)
-	let maxPriceConstraint = Constraint<Double>(
-		type: .greaterThanOrEqual,
-		bound: 8.0
+	let optimizer = InequalityOptimizer<VectorN<Double>>()
+	let result = try optimizer.minimize(
+		value,
+		from: VectorN([0.5, 0.5, 0.5]),
+		subjectTo: constraints
 	)
 
-	let result = optimizer.optimize(
-		objective: profit,
-		constraints: [maxPriceConstraint],
-		initialValue: 1.0,
-		bounds: (lower: 0.0, upper: 100.0)
-	)
-
-	if result.converged {
-		print("Breakeven price: \(result.optimalValue.currency())")
-	} else {
-		print("No breakeven point found within constraints")
+	print("Optimal allocations:")
+	for (i, alloc) in result.solution.toArray().enumerated() {
+		let funding = alloc * projectCosts[i]
+		print("  Project \(i+1): \(alloc.percent()) → \(funding.currency())")
 	}
-
-do {
-	// Function with zero derivative at x=0
-	let result = try goalSeek(
-		function: { x in x * x * x },  // f'(0) = 0
-		target: 0.0,
-		guess: 0.0
-	)
-} catch let error as BusinessMathError {
-	print(error.localizedDescription)
-	print("Error Code: \(error.code)")
-	
-	if let recovery = error.recoverySuggestion {
-		print("How to fix:\n\(recovery)")
-	}
-	
-	if let helpURL = error.helpAnchor {
-		print("Learn more: \(helpURL)")
-	}
-}
-
-do {
-	let result = try goalSeek(
-		function: { x in sin(x) },
-		target: 1.5,  // sin(x) never equals 1.5
-		guess: 0.0
-	)
-} catch let error as BusinessMathError {
-	print(error.localizedDescription)
-	print("Error Code: \(error.code)")
-  
-	if let recovery = error.recoverySuggestion {
-		print("How to fix:\n\(recovery)")
-	}
-	
-	if let helpURL = error.helpAnchor {
-		print("Learn more: \(helpURL)")
-	}
-}

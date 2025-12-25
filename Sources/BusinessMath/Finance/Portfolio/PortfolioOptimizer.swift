@@ -112,6 +112,26 @@ public struct EfficientFrontier {
 	}
 }
 
+// MARK: - Optimization Strategy
+
+/// Strategy for selecting optimization algorithm.
+///
+/// Allows runtime selection of optimization algorithm via the ``MultivariateOptimizer`` protocol.
+/// Different strategies may perform better depending on problem size, constraint types, and desired speed/accuracy trade-offs.
+public enum OptimizationStrategy {
+	/// Automatically select algorithm based on problem characteristics (default)
+	case automatic
+
+	/// Use constrained optimizer (augmented Lagrangian method)
+	case constrained
+
+	/// Use inequality optimizer (penalty-barrier method)
+	case inequality
+
+	/// Use adaptive optimizer (selects algorithm dynamically)
+	case adaptive
+}
+
 // MARK: - Portfolio Optimizer
 
 /// Optimizer for portfolio allocation problems using modern portfolio theory.
@@ -119,7 +139,7 @@ public struct EfficientFrontier {
 /// Implements Markowitz mean-variance optimization, efficient frontier calculation,
 /// Sharpe ratio maximization, and risk parity allocation.
 ///
-/// ## Example
+/// ## Basic Usage
 /// ```swift
 /// let returns = VectorN([0.08, 0.12, 0.15])  // Expected returns
 /// let covariance = [
@@ -150,9 +170,77 @@ public struct EfficientFrontier {
 ///     numberOfPoints: 20
 /// )
 /// ```
+///
+/// ## Algorithm Selection
+/// ```swift
+/// // Use adaptive algorithm selection
+/// let adaptiveOptimizer = PortfolioOptimizer(strategy: .adaptive)
+/// let portfolio = try adaptiveOptimizer.minimumVariancePortfolio(
+///     expectedReturns: returns,
+///     covariance: covariance
+/// )
+/// ```
 public struct PortfolioOptimizer {
 
-	public init() {}
+	/// Optimization strategy (defaults to automatic selection)
+	public let strategy: OptimizationStrategy
+
+	/// Creates a portfolio optimizer with specified strategy.
+	///
+	/// - Parameter strategy: Algorithm selection strategy (default: .automatic)
+	public init(strategy: OptimizationStrategy = .automatic) {
+		self.strategy = strategy
+	}
+
+	// MARK: - Algorithm Factory
+
+	/// Creates an optimizer instance based on strategy and constraints.
+	///
+	/// This factory method demonstrates the ``MultivariateOptimizer`` protocol in action,
+	/// enabling runtime algorithm selection and swapping.
+	///
+	/// - Parameters:
+	///   - hasInequalityConstraints: Whether the problem includes inequality constraints
+	///   - maxIterations: Maximum iterations for optimization
+	/// - Returns: Optimizer conforming to ``MultivariateOptimizer`` protocol
+	private func createOptimizer(
+		hasInequalityConstraints: Bool,
+		maxIterations: Int = 100
+	) -> any MultivariateOptimizer<VectorN<Double>> {
+		switch strategy {
+		case .automatic:
+			// Automatic selection based on constraint type
+			if hasInequalityConstraints {
+				return InequalityOptimizer<VectorN<Double>>(
+					maxIterations: maxIterations,
+					maxInnerIterations: 500
+				)
+			} else {
+				return ConstrainedOptimizer<VectorN<Double>>(
+					maxIterations: maxIterations,
+					maxInnerIterations: 500
+				)
+			}
+
+		case .constrained:
+			return ConstrainedOptimizer<VectorN<Double>>(
+				maxIterations: maxIterations,
+				maxInnerIterations: 500
+			)
+
+		case .inequality:
+			return InequalityOptimizer<VectorN<Double>>(
+				maxIterations: maxIterations,
+				maxInnerIterations: 500
+			)
+
+		case .adaptive:
+			return AdaptiveOptimizer<VectorN<Double>>(
+				maxIterations: maxIterations,
+				tolerance: 1e-6
+			)
+		}
+	}
 
 	// MARK: - Minimum Variance Portfolio
 
@@ -161,15 +249,21 @@ public struct PortfolioOptimizer {
 	/// Minimizes: σ² = w'Σw
 	/// Subject to: Σw = 1 (and optionally w ≥ 0 if no short-selling)
 	///
+	/// This method demonstrates the ``MultivariateOptimizer`` protocol by using the factory
+	/// method to create an optimizer instance. The algorithm is selected based on the
+	/// ``OptimizationStrategy`` specified during initialization.
+	///
 	/// - Parameters:
 	///   - expectedReturns: Expected return for each asset
 	///   - covariance: Covariance matrix (n×n)
-	///   - allowShortSelling: Whether to allow negative weights (default: false)
+	///   - allowShortSelling: Whether to allow negative weights (default: false, ignored if constraintSet is provided)
+	///   - constraintSet: Constraint set to use (default: nil, uses allowShortSelling to determine)
 	/// - Returns: Optimal portfolio with minimum variance
 	public func minimumVariancePortfolio(
 		expectedReturns: VectorN<Double>,
 		covariance: [[Double]],
-		allowShortSelling: Bool = false
+		allowShortSelling: Bool = false,
+		constraintSet: PortfolioConstraintSet? = nil
 	) throws -> OptimalPortfolio {
 		let n = expectedReturns.count
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
@@ -186,47 +280,35 @@ public struct PortfolioOptimizer {
 			return variance
 		}
 
-		let finalWeights: VectorN<Double>
-		let converged: Bool
-		let iterations: Int
+		// Determine constraints based on constraintSet parameter or allowShortSelling
+		let finalConstraintSet: PortfolioConstraintSet = constraintSet ?? (allowShortSelling ? .unconstrained : .longOnly)
+		let constraints = finalConstraintSet.constraints(dimension: n)
 
-		if allowShortSelling {
-			// Unconstrained (only budget constraint) - use equality-constrained optimizer
-			let optimizer = ConstrainedOptimizer<VectorN<Double>>(maxIterations: 100)
-			let result = try optimizer.minimize(
-				varianceFunction,
-				from: initialWeights,
-				subjectTo: [.budgetConstraint]
-			)
-			finalWeights = result.solution
-			converged = result.converged
-			iterations = result.iterations
-		} else {
-			// Long-only (budget + non-negativity) - use inequality-constrained optimizer
-			let constraints = PortfolioConstraintSet.longOnly.constraints(dimension: n)
-			let optimizer = InequalityOptimizer<VectorN<Double>>(maxIterations: 100)
-			let result = try optimizer.minimize(
-				varianceFunction,
-				from: initialWeights,
-				subjectTo: constraints
-			)
-			finalWeights = result.solution
-			converged = result.converged
-			iterations = result.iterations
-		}
+		// Create optimizer via factory (demonstrates protocol usage)
+		let optimizer = createOptimizer(
+			hasInequalityConstraints: finalConstraintSet.hasInequalityConstraints,
+			maxIterations: 100
+		)
+
+		// Optimize using protocol method
+		let result = try optimizer.minimize(
+			varianceFunction,
+			from: initialWeights,
+			constraints: constraints
+		)
 
 		// Calculate portfolio metrics
-		let portfolioReturn = expectedReturns.dot(finalWeights)
-		let portfolioVariance = varianceFunction(finalWeights)
+		let portfolioReturn = expectedReturns.dot(result.solution)
+		let portfolioVariance = varianceFunction(result.solution)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
 
 		return OptimalPortfolio(
-			weights: finalWeights,
+			weights: result.solution,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
 			sharpeRatio: portfolioReturn / portfolioVolatility,
-			converged: converged,
-			iterations: iterations
+			converged: result.converged,
+			iterations: result.iterations
 		)
 	}
 

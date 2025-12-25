@@ -228,3 +228,43 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		)
 	}
 }
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension InequalityOptimizer: MultivariateOptimizer {
+	/// Minimize an objective function subject to constraints (protocol method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by delegating to the
+	/// specialized ``minimize(_:from:subjectTo:)`` method and converting the result type.
+	///
+	/// - Parameters:
+	///   - objective: Function to minimize f: V → ℝ
+	///   - initialGuess: Starting point for optimization
+	///   - constraints: Array of constraints. Accepts both equality and inequality constraints.
+	/// - Returns: Optimization result (base protocol type)
+	/// - Throws: ``OptimizationError`` if no constraints provided or optimization fails
+	///
+	/// - Note: For access to Lagrange multipliers, use the specialized
+	///   ``minimize(_:from:subjectTo:)`` method which returns ``ConstrainedOptimizationResult``.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// InequalityOptimizer accepts both equality and inequality constraints
+		// No constraint type validation needed
+
+		// Delegate to specialized method
+		let result = try minimize(objective, from: initialGuess, subjectTo: constraints)
+
+		// Convert to protocol result type (discards Lagrange multipliers)
+		return MultivariateOptimizationResult(
+			solution: result.solution,
+			value: result.objectiveValue,
+			iterations: result.iterations,
+			converged: result.converged,
+			gradientNorm: V.Scalar(0),  // Not tracked for inequality optimizers
+			history: nil  // History format incompatible (constraint violation vs gradient norm)
+		)
+	}
+}

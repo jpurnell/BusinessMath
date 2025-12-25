@@ -501,3 +501,78 @@ extension MultivariateNewtonRaphson {
 		)
 	}
 }
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension MultivariateNewtonRaphson: MultivariateOptimizer {
+	/// Minimize an objective function (protocol conformance method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by delegating
+	/// to the existing `minimize(function:gradient:hessian:initialGuess:)` method
+	/// with automatic numerical gradient and Hessian computation.
+	///
+	/// - Parameters:
+	///   - objective: Function to minimize: f(v) → scalar
+	///   - initialGuess: Starting point for optimization
+	///   - constraints: Optimization constraints. **Note**: `MultivariateNewtonRaphson`
+	///     is an unconstrained optimizer and will throw an error if constraints are provided.
+	///
+	/// - Returns: Optimization result containing solution, objective value, iterations, and convergence info
+	///
+	/// - Throws:
+	///   - ``OptimizationError/unsupportedConstraints(_:)`` if constraints are provided (unconstrained optimizer)
+	///   - ``OptimizationError/singularMatrix(message:)`` if Hessian is singular
+	///   - ``OptimizationError/nonFiniteValue(message:)`` if non-finite values encountered
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// // Use as protocol type for algorithm flexibility
+	/// let optimizer: any MultivariateOptimizer<VectorN<Double>> = MultivariateNewtonRaphson<VectorN<Double>>(
+	///     maxIterations: 100,
+	///     tolerance: 0.0001
+	/// )
+	///
+	/// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+	/// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
+	/// ```
+	///
+	/// - Note: For algorithm-specific methods like `minimizeBFGS()`, use the concrete
+	///         type `MultivariateNewtonRaphson<V>` instead of the protocol.
+	///
+	/// - Important: This method uses numerical differentiation to compute gradients and Hessians.
+	///              For better performance, use `minimize(function:gradient:hessian:initialGuess:)`
+	///              with analytical derivatives when available.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// Unconstrained optimizer - reject any constraints
+		guard constraints.isEmpty else {
+			throw OptimizationError.unsupportedConstraints(
+				"MultivariateNewtonRaphson only supports unconstrained optimization. " +
+				"For constrained optimization, use ConstrainedOptimizer or InequalityOptimizer."
+			)
+		}
+
+		// Create gradient function using numerical differentiation
+		let epsilon = V.Scalar(1) / V.Scalar(1_000_000)  // 1e-6
+		let gradientFunction: (V) throws -> V = { point in
+			try numericalGradient(objective, at: point, epsilon: epsilon)
+		}
+
+		// Create Hessian function using numerical differentiation
+		let hessianFunction: (V) throws -> [[V.Scalar]] = { point in
+			try numericalHessian(objective, at: point, epsilon: epsilon)
+		}
+
+		// Delegate to existing implementation
+		return try minimize(
+			function: objective,
+			gradient: gradientFunction,
+			hessian: hessianFunction,
+			initialGuess: initialGuess
+		)
+	}
+}

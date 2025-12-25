@@ -32,6 +32,20 @@ public struct StochasticResult<V: VectorSpace> where V.Scalar == Double {
 
 	/// Number of scenarios used
 	public var numberOfScenarios: Int { scenarioObjectives.count }
+
+	// MARK: - Protocol Compatibility
+
+	/// Objective value (alias for expectedObjective)
+	public var objectiveValue: Double { expectedObjective }
+
+	/// Description of optimization outcome
+	public var convergenceReason: String {
+		if converged {
+			return "Stochastic optimization converged: expected objective = \(expectedObjective), std dev = \(objectiveStdDev) (across \(numberOfScenarios) scenarios)"
+		} else {
+			return "Maximum iterations reached: expected objective = \(expectedObjective), std dev = \(objectiveStdDev) (across \(numberOfScenarios) scenarios)"
+		}
+	}
 }
 
 // MARK: - Stochastic Optimizer
@@ -273,5 +287,99 @@ extension StochasticOptimizer {
 			converged: result.converged,
 			iterations: result.iterations
 		)
+	}
+}
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension StochasticOptimizer: MultivariateOptimizer {
+	/// Minimize a deterministic objective function (protocol method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by treating the
+	/// objective as deterministic (no random scenarios). This is a simplified version
+	/// that doesn't leverage stochastic optimization.
+	///
+	/// - Important: For true stochastic optimization with uncertain parameters, use the
+	///   specialized ``optimize(objective:scenarioGenerator:initialSolution:constraints:minimize:)``
+	///   method which handles scenario-dependent objectives. The protocol method treats
+	///   the objective as deterministic.
+	///
+	/// - Parameters:
+	///   - objective: Deterministic function to minimize f: V → ℝ (no scenarios)
+	///   - initialGuess: Starting point for optimization
+	///   - constraints: Array of constraints
+	/// - Returns: Optimization result (base protocol type)
+	/// - Throws: ``OptimizationError`` if optimization fails
+	///
+	/// - Note: The returned result is based on the deterministic objective, not scenario
+	///   analysis. Use the specialized ``optimize()`` methods for stochastic results with
+	///   expected value and standard deviation across scenarios.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// For protocol conformance, treat objective as deterministic
+		// Choose optimizer based on constraints
+		let hasConstraints = !constraints.isEmpty
+		let hasInequality = constraints.contains { !$0.isEquality }
+
+		if hasConstraints {
+			// Use constrained optimization
+			let result: ConstrainedOptimizationResult<V>
+
+			if hasInequality {
+				let optimizer = InequalityOptimizer<V>(
+					constraintTolerance: V.Scalar(tolerance),
+					gradientTolerance: V.Scalar(tolerance),
+					maxIterations: maxIterations
+				)
+				result = try optimizer.minimize(
+					objective,
+					from: initialGuess,
+					subjectTo: constraints
+				)
+			} else {
+				let optimizer = ConstrainedOptimizer<V>(
+					constraintTolerance: V.Scalar(tolerance),
+					gradientTolerance: V.Scalar(tolerance),
+					maxIterations: maxIterations
+				)
+				result = try optimizer.minimize(
+					objective,
+					from: initialGuess,
+					subjectTo: constraints
+				)
+			}
+
+			// Convert to protocol result type
+			return MultivariateOptimizationResult(
+				solution: result.solution,
+				value: result.objectiveValue,
+				iterations: result.iterations,
+				converged: result.converged,
+				gradientNorm: 0.0,  // Not tracked for stochastic optimizer
+				history: nil
+			)
+		} else {
+			// Use unconstrained optimization
+			let optimizer = MultivariateNewtonRaphson<V>(
+				maxIterations: maxIterations,
+				tolerance: V.Scalar(tolerance)
+			)
+			let gradient: (V) throws -> V = { point in
+				try numericalGradient(objective, at: point)
+			}
+			let hessian: (V) throws -> [[V.Scalar]] = { point in
+				try numericalHessian(objective, at: point)
+			}
+
+			return try optimizer.minimize(
+				function: objective,
+				gradient: gradient,
+				hessian: hessian,
+				initialGuess: initialGuess
+			)
+		}
 	}
 }

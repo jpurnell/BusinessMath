@@ -329,4 +329,103 @@ public struct ParallelOptimizationResult<V: VectorSpace>: Sendable where V.Scala
 		self.successRate = successRate
 		self.bestStartingPoint = bestStartingPoint
 	}
+
+	// MARK: - Protocol Compatibility
+
+	/// Number of iterations taken (sum across all attempts)
+	public var iterations: Int {
+		allResults.map(\.iterations).reduce(0, +)
+	}
+
+	/// Whether optimization converged (best result converged)
+	public var converged: Bool { success }
+
+	/// Description of optimization outcome
+	public var convergenceReason: String {
+		let convergedCount = allResults.filter(\.converged).count
+		if success {
+			return "Multi-start optimization converged: \(convergedCount)/\(allResults.count) attempts succeeded (success rate: \(String(format: "%.1f", successRate * 100))%)"
+		} else {
+			return "Multi-start optimization failed: \(convergedCount)/\(allResults.count) attempts succeeded (success rate: \(String(format: "%.1f", successRate * 100))%)"
+		}
+	}
+}
+
+// MARK: - MultivariateOptimizer Protocol Conformance
+
+extension ParallelOptimizer: MultivariateOptimizer {
+	/// Minimize an objective function with multi-start optimization (protocol method).
+	///
+	/// This method implements the ``MultivariateOptimizer`` protocol by running multiple
+	/// optimization attempts from random starting points. Since this is a synchronous method,
+	/// it runs the attempts **sequentially** rather than in parallel.
+	///
+	/// - Important: For parallel execution with better performance, use the async
+	///   ``optimize(objective:searchRegion:constraints:)`` method instead. The protocol
+	///   method runs sequentially and loses the concurrency benefits.
+	///
+	/// - Parameters:
+	///   - objective: Function to minimize f: V → ℝ
+	///   - initialGuess: Center point for generating random starting points
+	///   - constraints: Array of constraints
+	/// - Returns: Optimization result from best attempt
+	/// - Throws: ``OptimizationError`` if optimization fails
+	///
+	/// - Note: This method automatically generates a search region around the initial guess
+	///   (±5 units in each dimension). For custom search regions, use the async
+	///   ``optimize(objective:searchRegion:constraints:)`` method.
+	public func minimize(
+		_ objective: @escaping (V) -> V.Scalar,
+		from initialGuess: V,
+		constraints: [MultivariateConstraint<V>] = []
+	) throws -> MultivariateOptimizationResult<V> {
+		// Generate search region around initial guess (±5 units per dimension)
+		let initialArray = initialGuess.toArray()
+		let lowerArray = initialArray.map { $0 - 5.0 }
+		let upperArray = initialArray.map { $0 + 5.0 }
+
+		guard let lower = V.fromArray(lowerArray),
+		      let upper = V.fromArray(upperArray) else {
+			throw OptimizationError.invalidInput(
+				message: "Failed to create search region from initial guess"
+			)
+		}
+
+		let searchRegion = (lower: lower, upper: upper)
+
+		// Generate random starting points
+		let startingPoints = generateStartingPoints(
+			count: numberOfStarts,
+			region: searchRegion
+		)
+
+		// Run optimizations sequentially (not in parallel, since this is a sync method)
+		var allResults: [MultivariateOptimizationResult<V>] = []
+		var bestResult: MultivariateOptimizationResult<V>? = nil
+		var bestObjective = Double.infinity
+
+		for start in startingPoints {
+			let result = try ParallelOptimizer.runSingleOptimization(
+				algorithm: algorithm,
+				maxIterations: maxIterations,
+				tolerance: tolerance,
+				objective: objective,
+				initialGuess: start,
+				constraints: constraints
+			)
+			allResults.append(result)
+
+			if result.value < bestObjective {
+				bestObjective = result.value
+				bestResult = result
+			}
+		}
+
+		guard let best = bestResult else {
+			throw OptimizationError.failedToConverge(message: "No valid solution found")
+		}
+
+		// Return best result (protocol type)
+		return best
+	}
 }
