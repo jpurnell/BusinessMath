@@ -21,7 +21,8 @@ public func getMonteCarloTools() -> [any MCPToolHandler] {
         CalculateValueAtRiskTool(),
         CalculateProbabilityTool(),
         SensitivityAnalysisTool(),
-        TornadoAnalysisTool()
+        TornadoAnalysisTool(),
+        RunScenarioAnalysisTool()
     ]
 }
 
@@ -124,8 +125,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Normal distribution requires 'mean' and 'stdDev'")
             }
             distInfo = "Normal(μ=\(formatNumber(mean, decimals: 2)), σ=\(formatNumber(stdDev, decimals: 2)))"
+            let dist = DistributionNormal(mean, stdDev)
             for _ in 0..<sampleSize {
-                samples.append(distributionNormal(mean: mean, stdDev: stdDev))
+                samples.append(dist.next())
             }
 
         case "uniform":
@@ -134,8 +136,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Uniform distribution requires 'min' and 'max'")
             }
             distInfo = "Uniform(min=\(formatNumber(min, decimals: 2)), max=\(formatNumber(max, decimals: 2)))"
+            let dist = DistributionUniform(min, max)
             for _ in 0..<sampleSize {
-                samples.append(distributionUniform(min: min, max: max))
+                samples.append(dist.next())
             }
 
         case "triangular":
@@ -145,8 +148,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Triangular distribution requires 'min', 'max', and 'mode'")
             }
             distInfo = "Triangular(min=\(formatNumber(min, decimals: 2)), mode=\(formatNumber(mode, decimals: 2)), max=\(formatNumber(max, decimals: 2)))"
+            let dist = DistributionTriangular(low: min, high: max, base: mode)
             for _ in 0..<sampleSize {
-                samples.append(triangularDistribution(low: min, high: max, base: mode))
+                samples.append(dist.next())
             }
 
         case "exponential":
@@ -154,8 +158,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Exponential distribution requires 'rate'")
             }
             distInfo = "Exponential(λ=\(formatNumber(rate, decimals: 4)))"
+            let dist = DistributionExponential(rate)
             for _ in 0..<sampleSize {
-                samples.append(distributionExponential(λ: rate))
+                samples.append(dist.next())
             }
 
         case "lognormal":
@@ -164,8 +169,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("LogNormal distribution requires 'mean' and 'stdDev'")
             }
             distInfo = "LogNormal(μ=\(formatNumber(mean, decimals: 2)), σ=\(formatNumber(stdDev, decimals: 2)))"
+            let dist = DistributionLogNormal(mean, stdDev)
             for _ in 0..<sampleSize {
-                samples.append(distributionLogNormal(mean: mean, stdDev: stdDev))
+                samples.append(dist.next())
             }
 
         case "beta":
@@ -174,8 +180,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Beta distribution requires 'alpha' and 'beta'")
             }
             distInfo = "Beta(α=\(formatNumber(alpha, decimals: 2)), β=\(formatNumber(beta, decimals: 2)))"
+            let dist = DistributionBeta(alpha: alpha, beta: beta)
             for _ in 0..<sampleSize {
-                samples.append(distributionBeta(alpha: alpha, beta: beta))
+                samples.append(dist.next())
             }
 
         case "gamma":
@@ -184,9 +191,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Gamma distribution requires 'shape' and 'scale'")
             }
             distInfo = "Gamma(k=\(formatNumber(shape, decimals: 2)), θ=\(formatNumber(scale, decimals: 2)))"
+            let dist = DistributionGamma(r: Int(shape), λ: 1.0 / scale)
             for _ in 0..<sampleSize {
-                // Gamma uses r (shape as Int) and λ (rate = 1/scale)
-                samples.append(distributionGamma(r: Int(shape), λ: 1.0 / scale))
+                samples.append(dist.next())
             }
 
         case "weibull":
@@ -195,8 +202,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Weibull distribution requires 'shape' and 'scale'")
             }
             distInfo = "Weibull(k=\(formatNumber(shape, decimals: 2)), λ=\(formatNumber(scale, decimals: 2)))"
+            let dist = DistributionWeibull(shape: shape, scale: scale)
             for _ in 0..<sampleSize {
-                samples.append(distributionWeibull(shape: shape, scale: scale))
+                samples.append(dist.next())
             }
 
         case "chisquared":
@@ -204,8 +212,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Chi-Squared distribution requires 'degreesOfFreedom'")
             }
             distInfo = "Chi-Squared(df=\(formatNumber(df, decimals: 0)))"
+            let dist = DistributionChiSquared(degreesOfFreedom: Int(df))
             for _ in 0..<sampleSize {
-                samples.append(distributionChiSquared(degreesOfFreedom: Int(df)))
+                samples.append(dist.next())
             }
 
         case "f":
@@ -214,8 +223,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("F distribution requires 'df1' and 'df2'")
             }
             distInfo = "F(df1=\(formatNumber(df1, decimals: 0)), df2=\(formatNumber(df2, decimals: 0)))"
+            let dist = DistributionF(df1: Int(df1), df2: Int(df2))
             for _ in 0..<sampleSize {
-                samples.append(distributionF(df1: Int(df1), df2: Int(df2)))
+                samples.append(dist.next())
             }
 
         case "t":
@@ -223,8 +233,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("T distribution requires 'degreesOfFreedom'")
             }
             distInfo = "T(df=\(formatNumber(df, decimals: 0)))"
+            let dist = DistributionT(degreesOfFreedom: Int(df))
             for _ in 0..<sampleSize {
-                samples.append(distributionT(degreesOfFreedom: Int(df)))
+                samples.append(dist.next())
             }
 
         case "pareto":
@@ -233,8 +244,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Pareto distribution requires 'scale' and 'shape'")
             }
             distInfo = "Pareto(xₘ=\(formatNumber(scale, decimals: 2)), α=\(formatNumber(shape, decimals: 2)))"
+            let dist = DistributionPareto(scale: scale, shape: shape)
             for _ in 0..<sampleSize {
-                samples.append(distributionPareto(scale: scale, shape: shape))
+                samples.append(dist.next())
             }
 
         case "logistic":
@@ -243,8 +255,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Logistic distribution requires 'mean' and 'stdDev'")
             }
             distInfo = "Logistic(μ=\(formatNumber(mean, decimals: 2)), σ=\(formatNumber(stdDev, decimals: 2)))"
+            let dist = DistributionLogistic(mean, stdDev)
             for _ in 0..<sampleSize {
-                samples.append(distributionLogistic(mean, stdDev))
+                samples.append(dist.next())
             }
 
         case "geometric":
@@ -252,8 +265,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Geometric distribution requires 'p' (probability)")
             }
             distInfo = "Geometric(p=\(formatNumber(p, decimals: 4)))"
+            let dist = DistributionGeometric(p)
             for _ in 0..<sampleSize {
-                samples.append(distributionGeometric(p))
+                samples.append(Double(dist.next()))
             }
 
         case "rayleigh":
@@ -261,8 +275,9 @@ public struct CreateDistributionTool: MCPToolHandler, Sendable {
                 throw ToolError.invalidArguments("Rayleigh distribution requires 'mean'")
             }
             distInfo = "Rayleigh(μ=\(formatNumber(mean, decimals: 2)))"
+            let dist = DistributionRayleigh(mean: mean)
             for _ in 0..<sampleSize {
-                samples.append(distributionRayleigh(mean: mean))
+                samples.append(dist.next())
             }
 
         default:
@@ -1241,4 +1256,261 @@ private func evaluateCalculation(_ calculation: String, with inputs: [Double]) -
 
     // Fallback: return 0 if evaluation fails
     return 0.0
+}
+
+// MARK: - 8. Scenario Analysis
+
+public struct RunScenarioAnalysisTool: MCPToolHandler, Sendable {
+    public let tool = MCPTool(
+        name: "run_scenario_analysis",
+        description: """
+        Run discrete scenario analysis to compare multiple "what-if" cases.
+
+        Scenario analysis evaluates outcomes under different assumptions:
+        • Base Case: Expected/most likely assumptions
+        • Best Case: Optimistic assumptions
+        • Worst Case: Pessimistic assumptions
+        • Custom Cases: Any specific assumption sets
+
+        Each scenario defines fixed values for all inputs, and the model
+        calculates outcomes. Results are compared side-by-side.
+
+        REQUIRED STRUCTURE:
+        {
+          "inputNames": ["Revenue", "Costs"],
+          "calculation": "{0} - {1}",
+          "scenarios": [
+            {"name": "Base Case", "values": [1000000, 700000]},
+            {"name": "Best Case", "values": [1200000, 600000]},
+            {"name": "Worst Case", "values": [800000, 800000]}
+          ],
+          "iterations": 1000
+        }
+
+        Common Applications:
+        • Revenue Planning: Compare conservative/aggressive growth scenarios
+        • Project Evaluation: Best/worst/most likely outcomes
+        • Strategic Planning: Evaluate different market conditions
+        • Risk Assessment: Understand range of possible outcomes
+        • Sensitivity Testing: How do key assumptions affect results?
+
+        Examples:
+
+        1. Profit Scenario Analysis:
+        {
+          "inputNames": ["Revenue", "Variable Costs", "Fixed Costs"],
+          "calculation": "{0} - {1} - {2}",
+          "scenarios": [
+            {"name": "Base Case", "values": [1000000, 400000, 200000]},
+            {"name": "High Growth", "values": [1500000, 600000, 200000]},
+            {"name": "Recession", "values": [700000, 280000, 200000]}
+          ],
+          "iterations": 1000
+        }
+
+        2. NPV Scenario Analysis:
+        {
+          "inputNames": ["Initial Investment", "Annual Cash Flow", "Years"],
+          "calculation": "{1} * {2} - {0}",
+          "scenarios": [
+            {"name": "Conservative", "values": [500000, 120000, 5]},
+            {"name": "Moderate", "values": [500000, 150000, 7]},
+            {"name": "Aggressive", "values": [500000, 180000, 10]}
+          ],
+          "iterations": 1000
+        }
+
+        Returns side-by-side comparison with statistics for each scenario.
+        """,
+        inputSchema: MCPToolInputSchema(
+            properties: [
+                "inputNames": MCPSchemaProperty(
+                    type: "array",
+                    description: "Names of input variables (in order, matching calculation placeholders)",
+                    items: MCPSchemaItems(type: "string")
+                ),
+                "calculation": MCPSchemaProperty(
+                    type: "string",
+                    description: """
+                    Formula using {0}, {1}, {2}, etc. for inputs.
+                    Examples:
+                    • "{0} - {1}" - Revenue minus Costs
+                    • "{0} * (1 - {1})" - Revenue × (1 - Cost Ratio)
+                    • "({0} - {1}) / {0}" - Profit Margin
+                    """
+                ),
+                "scenarios": MCPSchemaProperty(
+                    type: "array",
+                    description: """
+                    Array of scenarios. Each object must have:
+                    • name (string): Scenario name (e.g., "Base Case", "Best Case")
+                    • values (array of numbers): Values for each input (must match order of inputNames)
+
+                    Example:
+                    [
+                      {"name": "Base Case", "values": [1000000, 700000]},
+                      {"name": "Best Case", "values": [1200000, 600000]}
+                    ]
+                    """,
+                    items: MCPSchemaItems(type: "object")
+                ),
+                "iterations": MCPSchemaProperty(
+                    type: "number",
+                    description: "Monte Carlo iterations per scenario (default: 1000). Use 1 for pure deterministic analysis."
+                )
+            ],
+            required: ["inputNames", "calculation", "scenarios"]
+        )
+    )
+
+    public init() {}
+
+    public func execute(arguments: [String: AnyCodable]?) async throws -> MCPToolCallResult {
+        guard let args = arguments else {
+            throw ToolError.invalidArguments("Missing arguments")
+        }
+
+        let inputNames = try args.getStringArray("inputNames")
+        let calculation = try args.getString("calculation")
+        let iterations = args.getIntOptional("iterations") ?? 1000
+
+        guard let scenariosArray = args["scenarios"]?.value as? [[String: AnyCodable]] else {
+            throw ToolError.invalidArguments("scenarios must be an array of objects")
+        }
+
+        guard !scenariosArray.isEmpty else {
+            throw ToolError.invalidArguments("Must provide at least one scenario")
+        }
+
+        // Parse scenarios
+        struct ScenarioConfig {
+            let name: String
+            let values: [Double]
+        }
+
+        var scenarioConfigs: [ScenarioConfig] = []
+        for scenarioDict in scenariosArray {
+            guard let name = scenarioDict["name"]?.value as? String else {
+                throw ToolError.invalidArguments("Each scenario must have a 'name'")
+            }
+
+            guard let valuesArray = scenarioDict["values"]?.value as? [AnyCodable] else {
+                throw ToolError.invalidArguments("Each scenario must have a 'values' array")
+            }
+
+            var values: [Double] = []
+            for value in valuesArray {
+                if let doubleVal = value.value as? Double {
+                    values.append(doubleVal)
+                } else if let intVal = value.value as? Int {
+                    values.append(Double(intVal))
+                } else {
+                    throw ToolError.invalidArguments("All scenario values must be numbers")
+                }
+            }
+
+            if values.count != inputNames.count {
+                throw ToolError.invalidArguments("Scenario '\(name)' has \(values.count) values but \(inputNames.count) inputs are defined")
+            }
+
+            scenarioConfigs.append(ScenarioConfig(name: name, values: values))
+        }
+
+        // Create scenario analysis
+        let model: @Sendable ([Double]) -> Double = { inputs in
+            evaluateCalculation(calculation, with: inputs)
+        }
+
+        var analysis = ScenarioAnalysis(
+            inputNames: inputNames,
+            model: model,
+            iterations: iterations
+        )
+
+        // Add each scenario
+        for config in scenarioConfigs {
+            let scenario = Scenario(name: config.name) { scenarioConfig in
+                for (index, inputName) in inputNames.enumerated() {
+                    scenarioConfig.setValue(config.values[index], forInput: inputName)
+                }
+            }
+            analysis.addScenario(scenario)
+        }
+
+        // Run analysis
+        let results = try analysis.run()
+        let comparison = ScenarioComparison(results: results)
+
+        // Generate output
+        var output = """
+        Scenario Analysis Results
+
+        Model:
+        • Formula: \(calculation)
+        • Inputs: \(inputNames.joined(separator: ", "))
+        • Iterations per scenario: \(formatNumber(Double(iterations), decimals: 0))
+
+        """
+
+        // Summary table
+        output += "\nScenario Comparison:\n"
+        output += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        output += "Scenario".paddingRight(toLength: 20) + " | Mean      | Median    | Std Dev   | P5        | P95\n"
+        output += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+        for config in scenarioConfigs {
+            if let scenarioResults = results[config.name] {
+                let stats = scenarioResults.statistics
+                let percentiles = scenarioResults.percentiles
+
+                output += "\(config.name.paddingRight(toLength: 20)) | "
+                output += "\(formatNumber(stats.mean, decimals: 0).paddingLeft(toLength: 9)) | "
+                output += "\(formatNumber(stats.median, decimals: 0).paddingLeft(toLength: 9)) | "
+                output += "\(formatNumber(stats.stdDev, decimals: 0).paddingLeft(toLength: 9)) | "
+                output += "\(formatNumber(percentiles.p5, decimals: 0).paddingLeft(toLength: 9)) | "
+                output += "\(formatNumber(percentiles.p95, decimals: 0))\n"
+            }
+        }
+
+        output += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+        // Best/Worst scenarios
+        let bestByMean = comparison.bestScenario(by: .mean)
+        let worstByMean = comparison.worstScenario(by: .mean)
+
+        output += """
+
+
+        Key Insights:
+        • Best Scenario (by mean): \(bestByMean.name) - \(formatNumber(bestByMean.results.statistics.mean, decimals: 2))
+        • Worst Scenario (by mean): \(worstByMean.name) - \(formatNumber(worstByMean.results.statistics.mean, decimals: 2))
+        • Range: \(formatNumber(bestByMean.results.statistics.mean - worstByMean.results.statistics.mean, decimals: 2))
+
+        Input Assumptions by Scenario:
+        """
+
+        for (scenarioIndex, config) in scenarioConfigs.enumerated() {
+            output += "\n\n\(scenarioIndex + 1). \(config.name):"
+            for (inputIndex, inputName) in inputNames.enumerated() {
+                output += "\n   • \(inputName): \(formatNumber(config.values[inputIndex], decimals: 2))"
+            }
+        }
+
+        output += """
+
+
+        Interpretation:
+        • Each scenario uses fixed assumptions for inputs
+        • Compare outcomes to understand impact of different assumptions
+        • Best/worst cases show potential range of outcomes
+        • Use scenario planning for strategic decision-making
+
+        Next Steps:
+        • Identify which scenarios are most likely
+        • Develop contingency plans for worst-case scenarios
+        • Understand key drivers that distinguish scenarios
+        """
+
+        return .success(text: output)
+    }
 }

@@ -89,28 +89,47 @@ public struct OptimizePortfolioTool: MCPToolHandler, Sendable {
             timeSeriesArray.append(TimeSeries(periods: periods, values: returns))
         }
 
-        // Create portfolio
-        let portfolio = Portfolio(
-            assets: assetNames,
-            returns: timeSeriesArray,
+        // Calculate expected returns (mean of each asset's returns)
+        let expectedReturns = VectorN(returnsData.map { returns in
+            returns.reduce(0, +) / Double(returns.count)
+        })
+
+        // Calculate covariance matrix
+        let n = returnsData.count
+        var covarianceMatrix: [[Double]] = Array(repeating: Array(repeating: 0.0, count: n), count: n)
+
+        for i in 0..<n {
+            let meanI = expectedReturns[i]
+            for j in 0..<n {
+                let meanJ = expectedReturns[j]
+                var covariance = 0.0
+                for k in 0..<returnsData[i].count {
+                    covariance += (returnsData[i][k] - meanI) * (returnsData[j][k] - meanJ)
+                }
+                covarianceMatrix[i][j] = covariance / Double(returnsData[i].count - 1)
+            }
+        }
+
+        // Use new PortfolioOptimizer API
+        let optimizer = PortfolioOptimizer()
+        let optimalPortfolio = try optimizer.maximumSharpePortfolio(
+            expectedReturns: expectedReturns,
+            covariance: covarianceMatrix,
             riskFreeRate: riskFreeRate
         )
-
-        // Optimize
-        let optimalAllocation = portfolio.optimizePortfolio()
 
         var result = """
         Portfolio Optimization Results
 
         Optimal Portfolio (Maximum Sharpe Ratio):
-        - Expected Return: \(String(format: "%.2f%%", optimalAllocation.expectedReturn * 100))
-        - Risk (Volatility): \(String(format: "%.2f%%", optimalAllocation.risk * 100))
-        - Sharpe Ratio: \(String(format: "%.3f", optimalAllocation.sharpeRatio))
+        - Expected Return: \(String(format: "%.2f%%", optimalPortfolio.expectedReturn * 100))
+        - Risk (Volatility): \(String(format: "%.2f%%", optimalPortfolio.volatility * 100))
+        - Sharpe Ratio: \(String(format: "%.3f", optimalPortfolio.sharpeRatio))
 
         Optimal Weights:
         """
 
-        for (asset, weight) in zip(assetNames, optimalAllocation.weights) {
+        for (asset, weight) in zip(assetNames, optimalPortfolio.weights.toArray()) {
             result += "\n  \(asset): \(String(format: "%.1f%%", weight * 100))"
         }
 
@@ -208,24 +227,34 @@ public struct EfficientFrontierTool: MCPToolHandler, Sendable {
             returnsData.append(assetReturnValues)
         }
 
-        // Create TimeSeries
-        let numPeriods = returnsData[0].count
-        let periods = (1...numPeriods).map { Period.month(year: 2024, month: $0) }
+        // Calculate expected returns and covariance matrix
+        let expectedReturns = VectorN(returnsData.map { returns in
+            returns.reduce(0, +) / Double(returns.count)
+        })
 
-        var timeSeriesArray: [TimeSeries<Double>] = []
-        for returns in returnsData {
-            timeSeriesArray.append(TimeSeries(periods: periods, values: returns))
+        let n = returnsData.count
+        var covarianceMatrix: [[Double]] = Array(repeating: Array(repeating: 0.0, count: n), count: n)
+
+        for i in 0..<n {
+            let meanI = expectedReturns[i]
+            for j in 0..<n {
+                let meanJ = expectedReturns[j]
+                var covariance = 0.0
+                for k in 0..<returnsData[i].count {
+                    covariance += (returnsData[i][k] - meanI) * (returnsData[j][k] - meanJ)
+                }
+                covarianceMatrix[i][j] = covariance / Double(returnsData[i].count - 1)
+            }
         }
 
-        // Create portfolio
-        let portfolio = Portfolio(
-            assets: assetNames,
-            returns: timeSeriesArray,
-            riskFreeRate: riskFreeRate
+        // Use new PortfolioOptimizer API
+        let optimizer = PortfolioOptimizer()
+        let frontier = try optimizer.efficientFrontier(
+            expectedReturns: expectedReturns,
+            covariance: covarianceMatrix,
+            riskFreeRate: riskFreeRate,
+            numberOfPoints: numPoints
         )
-
-        // Generate efficient frontier
-        let frontier = portfolio.efficientFrontier(points: numPoints)
 
         var result = """
         Efficient Frontier (\(numPoints) points)
@@ -236,24 +265,25 @@ public struct EfficientFrontierTool: MCPToolHandler, Sendable {
         ----------|------------|---------|---------------
         """
 
-        for allocation in frontier {
+        for portfolio in frontier.portfolios {
             // Find top holding
-            let maxWeightIndex = allocation.weights.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
+            let weights = portfolio.weights.toArray()
+            let maxWeightIndex = weights.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
             let topAsset = assetNames[maxWeightIndex]
-            let topWeight = allocation.weights[maxWeightIndex]
-			result += "[\n \((allocation.risk).number(2).paddingLeft(toLength: 6)) | \((allocation.risk).number(2).paddingLeft(toLength: 7))) | \(allocation.sharpeRatio.number(2).paddingLeft(toLength: 6)) | \(topAsset) | \(topWeight.percent(1).paddingLeft(toLength: 4))]"
+            let topWeight = weights[maxWeightIndex]
+            result += "\n\(String(format: "%6.2f%%", portfolio.volatility * 100)) | \(String(format: "%7.2f%%", portfolio.expectedReturn * 100)) | \(String(format: "%6.3f", portfolio.sharpeRatio)) | \(topAsset) (\(String(format: "%.1f%%", topWeight * 100)))"
         }
 
-        // Find key points
-        let minRisk = frontier.min(by: { $0.risk < $1.risk })!
-        let maxSharpe = frontier.max(by: { $0.sharpeRatio < $1.sharpeRatio })!
+        // Get key points from frontier
+        let minRisk = frontier.minimumVariancePortfolio
+        let maxSharpe = frontier.maximumSharpePortfolio
 
         result += """
 
 
         Key Points:
-        • Minimum Risk Portfolio: \(minRisk.risk.percent()) risk, \(minRisk.expectedReturn.percent())) return
-        • Maximum Sharpe Portfolio: \(maxSharpe.sharpeRatio.number(3)) Sharpe, \(maxSharpe.expectedReturn.percent()) return
+        • Minimum Risk Portfolio: \(String(format: "%.2f%%", minRisk.volatility * 100)) risk, \(String(format: "%.2f%%", minRisk.expectedReturn * 100)) return
+        • Maximum Sharpe Portfolio: \(String(format: "%.3f", maxSharpe.sharpeRatio)) Sharpe, \(String(format: "%.2f%%", maxSharpe.expectedReturn * 100)) return
 
         Usage:
         - Portfolios on the frontier are optimal (no portfolio with same risk has higher return)
@@ -330,24 +360,37 @@ public struct RiskParityAllocationTool: MCPToolHandler, Sendable {
             returnsData.append(assetReturnValues)
         }
 
-        // Create TimeSeries
-        let numPeriods = returnsData[0].count
-        let periods = (1...numPeriods).map { Period.month(year: 2024, month: $0) }
+        // Calculate expected returns and covariance matrix
+        let expectedReturns = VectorN(returnsData.map { returns in
+            returns.reduce(0, +) / Double(returns.count)
+        })
 
-        var timeSeriesArray: [TimeSeries<Double>] = []
-        for returns in returnsData {
-            timeSeriesArray.append(TimeSeries(periods: periods, values: returns))
+        let n = returnsData.count
+        var covarianceMatrix: [[Double]] = Array(repeating: Array(repeating: 0.0, count: n), count: n)
+
+        for i in 0..<n {
+            let meanI = expectedReturns[i]
+            for j in 0..<n {
+                let meanJ = expectedReturns[j]
+                var covariance = 0.0
+                for k in 0..<returnsData[i].count {
+                    covariance += (returnsData[i][k] - meanI) * (returnsData[j][k] - meanJ)
+                }
+                covarianceMatrix[i][j] = covariance / Double(returnsData[i].count - 1)
+            }
         }
 
-        // Calculate risk parity
-        let optimizer = RiskParityOptimizer<Double>()
-        let allocation = optimizer.optimize(assets: assetNames, returns: timeSeriesArray)
+        // Use new PortfolioOptimizer API
+        let optimizer = PortfolioOptimizer()
+        let portfolio = try optimizer.riskParityPortfolio(
+            expectedReturns: expectedReturns,
+            covariance: covarianceMatrix
+        )
 
-        // For risk contributions, we'll calculate a simple approximation
-        // Since calculateRiskContributions is private, we'll show that each should be roughly equal
+        // Calculate risk contributions for display
+        let weights = portfolio.weights.toArray()
         let numAssets = assetNames.count
         let targetContribution = 1.0 / Double(numAssets)
-        let riskContributions = Array(repeating: targetContribution, count: numAssets)
 
         var result = """
         Risk Parity Allocation
@@ -358,23 +401,34 @@ public struct RiskParityAllocationTool: MCPToolHandler, Sendable {
         Optimal Weights:
         """
 
-        for (asset, weight) in zip(assetNames, allocation.weights) {
+        for (asset, weight) in zip(assetNames, weights) {
             result += "\n  \(asset): \(String(format: "%.1f%%", weight * 100))"
         }
 
-        result += "\n\nRisk Contributions (should be roughly equal):"
+        result += "\n\nRisk Contributions (each should be ~\(String(format: "%.1f%%", targetContribution * 100))):"
 
-        for (asset, contribution) in zip(assetNames, riskContributions) {
-            result += "\n  \(asset): \(String(format: "%.1f%%", contribution * 100)) of total risk"
+        // Calculate actual risk contributions
+        var actualRiskContributions: [Double] = []
+        for i in 0..<n {
+            var marginalRisk = 0.0
+            for j in 0..<n {
+                marginalRisk += covarianceMatrix[i][j] * weights[j]
+            }
+            let riskContribution = weights[i] * marginalRisk / portfolio.volatility
+            actualRiskContributions.append(riskContribution)
+        }
+
+        for (asset, contribution) in zip(assetNames, actualRiskContributions) {
+            result += "\n  \(asset): \(String(format: "%.1f%%", (contribution / portfolio.volatility) * 100)) of total risk"
         }
 
         result += """
 
 
         Portfolio Metrics:
-        - Expected Return: \(String(format: "%.2f%%", allocation.expectedReturn * 100))
-        - Risk (Volatility): \(String(format: "%.2f%%", allocation.risk * 100))
-        - Sharpe Ratio: \(String(format: "%.3f", allocation.sharpeRatio))
+        - Expected Return: \(String(format: "%.2f%%", portfolio.expectedReturn * 100))
+        - Risk (Volatility): \(String(format: "%.2f%%", portfolio.volatility * 100))
+        - Sharpe Ratio: \(String(format: "%.3f", portfolio.sharpeRatio))
 
         When to use:
         ✓ Skeptical of return forecasts
