@@ -94,7 +94,7 @@ struct ReidsRaisinsModel {
 
     /// Open market grape price ($/lb)
     var openMarketPrice: Double
-}`
+}
 ```
 
 ### Step 2: Calculate Demand
@@ -206,149 +206,11 @@ Calculate profit under Mary Jo's suggested base-case assumptions:
 - Expected open-market price: $0.30 per pound
 
 ```swift
-/// Reid's Raisin Company profit model
-struct ReidsRaisinsModel {
-	// MARK: - Input Parameters
-
-	/// Contract grape price ($/lb)
-let contractGrapePrice: Double = 0.25
-
-	/// Sugar coating cost ($/lb)
-let coatingPrice: Double = 0.55
-
-	/// In-house processing cost ($/lb of grapes, up to capacity)
-let inHouseProcessingCost: Double = 0.20
-
-	/// Outsourced processing cost ($/lb of grapes, beyond capacity)
-let outsourcedProcessingCost: Double = 0.45
-
-	/// Processing capacity (lbs of grapes)
-let processingCapacity: Double = 1_500_000
-
-	/// Fixed annual overhead ($)
-let fixedOverhead: Double = 200_000
-
-	/// Grapes required per pound of raisins
-let grapesPerPound: Double = 2.5
-
-	/// Coating required per pound of raisins
-let coatingPerPound: Double = 0.05
-
-	// MARK: - Demand Model Parameters
-
-	/// Base demand at base price (lbs)
-let baseDemand: Double = 750_000
-
-	/// Base price ($/lb)
-let basePrice: Double = 2.20
-
-	/// Demand sensitivity (lbs per penny change)
-let demandSensitivity: Double = 15_000
-
-	// MARK: - Decision Variables
-
-	/// Contract grape quantity (lbs)
-var contractQuantity: Double
-
-	/// Selling price for raisins ($/lb)
-var raisinPrice: Double
-
-	/// Open market grape price ($/lb)
-var openMarketPrice: Double
-}
-
-extension ReidsRaisinsModel {
-	/// Calculate demand for sugar-coated raisins given a price
-	/// Demand = baseDemand + sensitivity × (basePrice - price) × 100
-func calculateDemand(price: Double) -> Double {
-	let priceDifferenceInCents = (basePrice - price) * 100
-	let demandChange = demandSensitivity * priceDifferenceInCents
-	return baseDemand + demandChange
-}
-}
-
-extension ReidsRaisinsModel {
-	/// Calculate total grapes needed for production
-func grapesNeeded(demand: Double) -> Double {
-	return demand * grapesPerPound
-}
-
-	/// Calculate grape procurement costs
-func grapeCost(totalGrapesNeeded: Double) -> Double {
-		// Use contract grapes first
-	let contractCost = min(contractQuantity, totalGrapesNeeded) * contractGrapePrice
-	
-		// Buy remainder on open market
-	let openMarketQuantity = max(0, totalGrapesNeeded - contractQuantity)
-	let openMarketCost = openMarketQuantity * openMarketPrice
-	
-	return contractCost + openMarketCost
-}
-
-	/// Calculate sugar coating costs
-func coatingCost(demand: Double) -> Double {
-	return demand * coatingPerPound * coatingPrice
-}
-
-	/// Calculate processing costs (in-house vs outsourced)
-func processingCost(totalGrapesNeeded: Double) -> Double {
-	let inHouseGrapes = min(totalGrapesNeeded, processingCapacity)
-	let outsourcedGrapes = max(0, totalGrapesNeeded - processingCapacity)
-	
-	let inHouseCost = inHouseGrapes * inHouseProcessingCost
-	let outsourcedCost = outsourcedGrapes * outsourcedProcessingCost
-	
-	return inHouseCost + outsourcedCost
-}
-}
-
-extension ReidsRaisinsModel {
-	/// Calculate annual profit given current parameters
-func calculateProfit() -> Double {
-		// Calculate demand at current price
-	let demand = calculateDemand(price: raisinPrice)
-	
-		// Calculate revenue
-	let revenue = raisinPrice * demand
-	
-		// Calculate all costs
-	let totalGrapes = grapesNeeded(demand: demand)
-	let grapes = grapeCost(totalGrapesNeeded: totalGrapes)
-	let coating = coatingCost(demand: demand)
-	let processing = processingCost(totalGrapesNeeded: totalGrapes)
-	
-		// Total cost = variable costs + fixed overhead
-	let totalCost = grapes + coating + processing + fixedOverhead
-	
-	return revenue - totalCost
-}
-
-	/// Calculate profit with detailed breakdown
-func profitBreakdown() -> (revenue: Double, costs: [String: Double], profit: Double) {
-	let demand = calculateDemand(price: raisinPrice)
-	let totalGrapes = grapesNeeded(demand: demand)
-	
-	let revenue = raisinPrice * demand
-	
-	let costs: [String: Double] = [
-		"Grapes": grapeCost(totalGrapesNeeded: totalGrapes),
-		"Coating": coatingCost(demand: demand),
-		"Processing": processingCost(totalGrapesNeeded: totalGrapes),
-		"Fixed Overhead": fixedOverhead
-	]
-	
-	let totalCost = costs.values.reduce(0, +)
-	let profit = revenue - totalCost
-	
-	return (revenue, costs, profit)
-}
-}
-
 // Create base-case model
 var baseCase = ReidsRaisinsModel(
-contractQuantity: 1_000_000,
-raisinPrice: 2.20,
-openMarketPrice: 0.30
+	contractQuantity: 1_000_000,
+	raisinPrice: 2.20,
+	openMarketPrice: 0.30
 )
 
 // Calculate profit with detailed breakdown
@@ -364,17 +226,14 @@ print()
 // Calculate demand
 let demand = baseCase.calculateDemand(price: baseCase.raisinPrice)
 print("Demand: \(demand.number(0)) lbs of raisins")
-print("Grapes needed: \(baseCase.grapesNeeded(demand: demand).number(0)) lbs")
-print()
+print("Grapes needed: \(baseCase.grapesNeeded(demand: demand).number(0)) lbs\n")
 
-print("Revenue: \(revenue.currency())")
-print()
+print("Revenue: \(revenue.currency())\n")
 print("Costs:")
 for (category, amount) in costs.sorted(by: { $0.key < $1.key }) {
-print("  \(category): \(amount.currency())")
+	print("  \(category): \(amount.currency())")
 }
-print("  Total Costs: \((costs.values.reduce(0, +)).currency())")
-print()
+print("  Total Costs: \((costs.values.reduce(0, +)).currency())\n")
 print("Annual Profit: \(profit.currency())")
 ```
 
@@ -406,199 +265,48 @@ Annual Profit: $448,125.00
 Find the open-market grape price where profit equals zero using Goal Seek optimization:
 
 ```swift
-import BusinessMath
-
-/// Reid's Raisin Company profit model
-struct ReidsRaisinsModel {
-	// MARK: - Input Parameters
-
-	/// Contract grape price ($/lb)
-let contractGrapePrice: Double = 0.25
-
-	/// Sugar coating cost ($/lb)
-let coatingPrice: Double = 0.55
-
-	/// In-house processing cost ($/lb of grapes, up to capacity)
-let inHouseProcessingCost: Double = 0.20
-
-	/// Outsourced processing cost ($/lb of grapes, beyond capacity)
-let outsourcedProcessingCost: Double = 0.45
-
-	/// Processing capacity (lbs of grapes)
-let processingCapacity: Double = 1_500_000
-
-	/// Fixed annual overhead ($)
-let fixedOverhead: Double = 200_000
-
-	/// Grapes required per pound of raisins
-let grapesPerPound: Double = 2.5
-
-	/// Coating required per pound of raisins
-let coatingPerPound: Double = 0.05
-
-	// MARK: - Demand Model Parameters
-
-	/// Base demand at base price (lbs)
-let baseDemand: Double = 750_000
-
-	/// Base price ($/lb)
-let basePrice: Double = 2.20
-
-	/// Demand sensitivity (lbs per penny change)
-let demandSensitivity: Double = 15_000
-
-	// MARK: - Decision Variables
-
-	/// Contract grape quantity (lbs)
-var contractQuantity: Double
-
-	/// Selling price for raisins ($/lb)
-var raisinPrice: Double
-
-	/// Open market grape price ($/lb)
-var openMarketPrice: Double
-}
-
-extension ReidsRaisinsModel {
-	/// Calculate demand for sugar-coated raisins given a price
-	/// Demand = baseDemand + sensitivity × (basePrice - price) × 100
-func calculateDemand(price: Double) -> Double {
-	let priceDifferenceInCents = (basePrice - price) * 100
-	let demandChange = demandSensitivity * priceDifferenceInCents
-	return baseDemand + demandChange
-}
-}
-
-extension ReidsRaisinsModel {
-	/// Calculate total grapes needed for production
-func grapesNeeded(demand: Double) -> Double {
-	return demand * grapesPerPound
-}
-
-	/// Calculate grape procurement costs
-func grapeCost(totalGrapesNeeded: Double) -> Double {
-		// Use contract grapes first
-	let contractCost = min(contractQuantity, totalGrapesNeeded) * contractGrapePrice
-	
-		// Buy remainder on open market
-	let openMarketQuantity = max(0, totalGrapesNeeded - contractQuantity)
-	let openMarketCost = openMarketQuantity * openMarketPrice
-	
-	return contractCost + openMarketCost
-}
-
-	/// Calculate sugar coating costs
-func coatingCost(demand: Double) -> Double {
-	return demand * coatingPerPound * coatingPrice
-}
-
-	/// Calculate processing costs (in-house vs outsourced)
-func processingCost(totalGrapesNeeded: Double) -> Double {
-	let inHouseGrapes = min(totalGrapesNeeded, processingCapacity)
-	let outsourcedGrapes = max(0, totalGrapesNeeded - processingCapacity)
-	
-	let inHouseCost = inHouseGrapes * inHouseProcessingCost
-	let outsourcedCost = outsourcedGrapes * outsourcedProcessingCost
-	
-	return inHouseCost + outsourcedCost
-}
-}
-
-extension ReidsRaisinsModel {
-	/// Calculate annual profit given current parameters
-func calculateProfit() -> Double {
-		// Calculate demand at current price
-	let demand = calculateDemand(price: raisinPrice)
-	
-		// Calculate revenue
-	let revenue = raisinPrice * demand
-	
-		// Calculate all costs
-	let totalGrapes = grapesNeeded(demand: demand)
-	let grapes = grapeCost(totalGrapesNeeded: totalGrapes)
-	let coating = coatingCost(demand: demand)
-	let processing = processingCost(totalGrapesNeeded: totalGrapes)
-	
-		// Total cost = variable costs + fixed overhead
-	let totalCost = grapes + coating + processing + fixedOverhead
-	
-	return revenue - totalCost
-}
-
-	/// Calculate profit with detailed breakdown
-func profitBreakdown() -> (revenue: Double, costs: [String: Double], profit: Double) {
-	let demand = calculateDemand(price: raisinPrice)
-	let totalGrapes = grapesNeeded(demand: demand)
-	
-	let revenue = raisinPrice * demand
-	
-	let costs: [String: Double] = [
-		"Grapes": grapeCost(totalGrapesNeeded: totalGrapes),
-		"Coating": coatingCost(demand: demand),
-		"Processing": processingCost(totalGrapesNeeded: totalGrapes),
-		"Fixed Overhead": fixedOverhead
-	]
-	
-	let totalCost = costs.values.reduce(0, +)
-	let profit = revenue - totalCost
-	
-	return (revenue, costs, profit)
-}
-}
-
-// Create base-case model
-var baseCase = ReidsRaisinsModel(
-contractQuantity: 1_000_000,
-raisinPrice: 2.20,
-openMarketPrice: 0.30
-)
-
 // Define profit as a function of open-market price
-func profitFunction(openMarketPrice: Double) -> Double {
-    var model = baseCase
-    model.openMarketPrice = openMarketPrice
-    return model.calculateProfit()
+@MainActor func profitFunction(openMarketPrice: Double) -> Double {
+	var model = baseCase
+	model.openMarketPrice = openMarketPrice
+	return model.calculateProfit()
 }
 
 // Use Goal Seek to find where profit = 0
 let optimizer = GoalSeekOptimizer<Double>(
-    target: 0.0,           // Find where profit equals zero
-    tolerance: 0.0001,
-    maxIterations: 1000
+	target: 0.0,           // Find where profit equals zero
+	tolerance: 0.0001,
+	maxIterations: 1000
 )
 
 let breakevenResult = optimizer.optimize(
-    objective: profitFunction,
-    constraints: [],
-    initialValue: 0.30,    // Start from base-case price
-    bounds: (0.0, 1.0)     // Price must be between $0 and $1
+	objective: profitFunction,
+	constraints: [],
+	initialValue: 0.30,    // Start from base-case price
+	bounds: (0.0, 1.0)     // Price must be between $0 and $1
 )
 
 print("\n=== Breakeven Analysis ===")
 if breakevenResult.converged {
-    print("Breakeven open-market grape price: $\(String(format: "%.4f", breakevenResult.optimalValue))")
-    print("Profit at breakeven: $\(Int(breakevenResult.objectiveValue).number()) (should be ≈$0)")
-    print("Converged in \(breakevenResult.iterations) iterations")
+print("Breakeven open-market grape price: \(breakevenResult.optimalValue.currency())")
+print("Profit at breakeven: \(breakevenResult.objectiveValue.currency()) (should be ≈$0)")
+print("Converged in \(breakevenResult.iterations) iterations")
 
-    // Show context
-    print()
-    print("Interpretation:")
-    print("  If open-market grapes cost more than $\(String(format: "%.4f", breakevenResult.optimalValue)),")
-    print("  RRC will lose money with current contract and pricing decisions.")
+// Show context
+print("Interpretation:\n\tIf open-market grapes cost more than \(breakevenResult.optimalValue.currency()), RRC will lose money with current contract and pricing decisions.")
 } else {
-    print("Failed to find breakeven point")
+print("Failed to find breakeven point")
 }
 ```
 
 **Expected Output:**
 ```
 === Breakeven Analysis ===
-Breakeven open-market grape price: $0.4398
-Profit at breakeven: $0 (should be ≈$0)
-
+Breakeven open-market grape price: $0.81
+Profit at breakeven: -$0.00 (should be ≈$0)
+Converged in 2 iterations
 Interpretation:
-  If open-market grapes cost more than $0.4398,
-  RRC will lose money with current contract and pricing decisions.
+	If open-market grapes cost more than $0.81, RRC will lose money with current contract and pricing decisions.
 ```
 
 ## Question C: Sensitivity Table - Profit vs Raisin Price
@@ -620,52 +328,48 @@ let prices = stride(from: minPrice, through: maxPrice, by: step)
 var results: [(price: Double, demand: Double, profit: Double)] = []
 
 for price in prices {
-    var model = baseCase
-    model.raisinPrice = price
+	var model = baseCase
+	model.raisinPrice = price
 
-    let demand = model.calculateDemand(price: price)
-    let profit = model.calculateProfit()
+	let demand = model.calculateDemand(price: price)
+	let profit = model.calculateProfit()
 
-    results.append((price, demand, profit))
+	results.append((price, demand, profit))
 }
 
 // Print table header
-print(String(format: "%8s  %12s  %15s", "Price", "Demand (lbs)", "Profit ($)"))
+print("\("Price") \("Demand (lbs)".paddingLeft(toLength: 15)) \("Profit ($)".paddingLeft(toLength: 16))")
 print(String(repeating: "-", count: 40))
 
 // Print results
 for result in results {
-    print(String(format: "$%6.2f  %12s  %15s",
-                 result.price,
-                 Int(result.demand).number(),
-                 Int(result.profit).number()))
+	print("\(result.price.currency()) \(result.demand.number(0).paddingLeft(toLength: 14))\(result.profit.currency(0).paddingLeft(toLength: 17))")
 }
 
 // Find optimal price
 if let optimalResult = results.max(by: { $0.profit < $1.profit }) {
-    print()
-    print("Optimal raisin price: $\(String(format: "%.2f", optimalResult.price))")
-    print("Maximum profit: $\(Int(optimalResult.profit).number())")
+	print("\nOptimal raisin price: \(optimalResult.price.currency())")
+	print("Maximum profit: \(optimalResult.profit.currency(0))")
 }
 ```
 
 **Expected Output:**
 ```
 === Sensitivity Analysis: Raisin Price vs Profit ===
-Open-market grape price held constant at $0.30
+Open-market grape price held constant at $0.3
 
-   Price |  Demand (lbs) |    Profit ($)
+Price    Demand (lbs)       Profit ($)
 ----------------------------------------
-   $1.80 |     1,350,000 |        86,625
-   $1.90 |     1,200,000 |       222,000
-   $2.00 |     1,050,000 |       327,375
-   $2.10 |       900,000 |       402,750
-   $2.20 |       750,000 |       448,125
-   $2.30 |       600,000 |       463,500
-   $2.40 |       450,000 |       355,125
-   $2.50 |       300,000 |       204,250
-   $2.60 |       150,000 |        17,125
-   $2.70 |             0 |      -200,000
+$1.80      1,350,000          $86,625
+$1.90      1,200,000         $222,000
+$2.00      1,050,000         $327,375
+$2.10        900,000         $402,750
+$2.20        750,000         $448,125
+$2.30        600,000         $463,500
+$2.40        450,000         $355,125
+$2.50        300,000         $204,250
+$2.60        150,000          $17,125
+$2.70              0        -$200,000
 
 Optimal raisin price: $2.30
 Maximum profit: $463,500
@@ -676,11 +380,8 @@ Maximum profit: $463,500
 Identify which parameters have the greatest impact on profit using tornado diagram analysis. Following standard practice, we'll vary each parameter by **±10% from its base-case value**.
 
 ```swift
-import BusinessMath
-
 print("\n=== Tornado Chart: Parameter Sensitivity Analysis ===")
-print("Using ±10% variation for all parameters")
-print()
+print("Using ±10% variation for all parameters\n")
 
 // Define parameters to test with their base values
 struct ParameterTest {
@@ -749,8 +450,6 @@ let rankedInputs = parameters.map { $0.name }.sorted { name1, name2 in
 	return impact1 > impact2
 }
 
-let profit = baseCase.calculateProfit()
-
 // Create TornadoDiagramAnalysis object
 let tornadoAnalysis = TornadoDiagramAnalysis(
 	inputs: rankedInputs,
@@ -777,7 +476,6 @@ for (index, input) in tornadoAnalysis.inputs.enumerated() {
 	print("   High scenario: \(high.currency())")
 	print("   Impact range:  \(impact.currency()) (\(percentImpact.percent()) of base profit)")
 }
-
 ```
 
 **Expected Output:**
@@ -788,43 +486,41 @@ Using ±10% variation for all parameters
 Tornado Diagram - Sensitivity Analysis
 Base Case: 448125
 
-Open-Market Grape Price   ◄█████████████████████████│█████████████████████████►  Impact: 131250 (29.3%)
-                             404375                 448125                 535625
+Open-Market Grape Price ◄█████████████████████████|█████████████████████████► Impact: 52500 (11.7%)
+						  421875                 448125                 474375
 
-Contract Grape Price      ◄████████████│████████████►                            Impact: 100000 (22.3%)
-                             398125     448125      498125
+Contract Grape Price    ◄  ███████████████████████|████████████████████████ ► Impact: 50000 (11.2%)
+						  423125                 448125                 473125
 
-Raisin Selling Price      ◄████████│████████►                                    Impact: 65625 (14.6%)
-                             417187   448125  482812
+Raisin Selling Price    ◄     ████████████████████|                         ► Impact: 21150 (4.7%)
+						  308700                 448125                 329850
 
-Contract Grape Quantity   ◄███│███►                                              Impact: 38750 (8.6%)
-                             428750  448125  467500
+Contract Grape Quantity ◄                     ████|█████                    ► Impact: 10000 (2.2%)
+						  443125                 448125                 453125
+
+
 
 Detailed Impact Analysis:
 
 1. Open-Market Grape Price
-   Parameter variation: $0.27 to $0.33 (±10%)
-   Low profit:  $404,375
-   High profit: $535,625
-   Impact range: $131,250 (29.3% of base profit)
+   Low scenario:  $421,875.00
+   High scenario: $474,375.00
+   Impact range:  $52,500.00 (11.72% of base profit)
 
 2. Contract Grape Price
-   Parameter variation: $0.225 to $0.275 (±10%)
-   Low profit:  $398,125
-   High profit: $498,125
-   Impact range: $100,000 (22.3% of base profit)
+   Low scenario:  $423,125.00
+   High scenario: $473,125.00
+   Impact range:  $50,000.00 (11.16% of base profit)
 
 3. Raisin Selling Price
-   Parameter variation: $1.98 to $2.42 (±10%)
-   Low profit:  $417,187
-   High profit: $482,812
-   Impact range: $65,625 (14.6% of base profit)
+   Low scenario:  $308,700.00
+   High scenario: $329,850.00
+   Impact range:  $21,150.00 (4.72% of base profit)
 
 4. Contract Grape Quantity
-   Parameter variation: 900,000 to 1,100,000 lbs (±10%)
-   Low profit:  $428,750
-   High profit: $467,500
-   Impact range: $38,750 (8.6% of base profit)
+   Low scenario:  $443,125.00
+   High scenario: $453,125.00
+   Impact range:  $10,000.00 (2.23% of base profit)
 ```
 
 ## Key Insights from Analysis
@@ -874,10 +570,7 @@ This captures uncertainty in customer orders while keeping other parameters at t
 ### Monte Carlo Implementation
 
 ```swift
-import BusinessMath
-
-print("\n=== Monte Carlo Simulation: Uncertain Demand ===")
-print()
+print("\n=== Monte Carlo Simulation: Uncertain Demand ===\n")
 
 // Create Monte Carlo simulation directly with inline model
 var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
@@ -913,46 +606,46 @@ simulation.addInput(SimulationInput(
 
 // Run the simulation
 print("Running 10,000 iterations...")
-let results = try simulation.run()
+let simulationResults = try simulation.run()
 
 // Analyze results
 print("\n=== Simulation Results ===")
-print("Mean profit: \(results.statistics.mean.currency())")
-print("Standard deviation: \(results.statistics.stdDev.currency())")
+print("Mean profit: \(simulationResults.statistics.mean.currency())")
+print("Standard deviation: \(simulationResults.statistics.stdDev.currency())")
 print()
 
 // Percentile analysis
 print("Profit Distribution:")
-print("  5th percentile:  \(results.percentiles.p5.currency())")
-print("  25th percentile: \(results.percentiles.p25.currency())")
-print("  50th percentile (median): \(results.percentiles.p50.currency())")
-print("  75th percentile: \(results.percentiles.p75.currency())")
-print("  95th percentile: \(results.percentiles.p95.currency())")
+print("  5th percentile:  \(simulationResults.percentiles.p5.currency())")
+print("  25th percentile: \(simulationResults.percentiles.p25.currency())")
+print("  50th percentile (median): \(simulationResults.percentiles.p50.currency())")
+print("  75th percentile: \(simulationResults.percentiles.p75.currency())")
+print("  95th percentile: \(simulationResults.percentiles.p95.currency())")
 print()
 
 // Risk metrics
 print("Risk Analysis:")
-let probLoss = results.probabilityBelow(0)
+let probLoss = simulationResults.probabilityBelow(0)
 print("  Probability of loss (profit < $0): \(probLoss.percent())")
 
-let probBelow200k = results.probabilityBelow(200_000)
+let probBelow200k = simulationResults.probabilityBelow(200_000)
 print("  Probability profit < $200k: \(probBelow200k.percent())")
 
-let probAbove600k = results.probabilityAbove(600_000)
+let probAbove600k = simulationResults.probabilityAbove(600_000)
 print("  Probability profit > $600k: \(probAbove600k.percent())")
 print()
 
 // Confidence intervals
 print("Confidence Intervals:")
-let ci68 = results.confidenceInterval(level: 0.68)  // ±1 standard deviation
-let ci95 = results.confidenceInterval(level: 0.95)  // ±2 standard deviations
+let ci68 = simulationResults.confidenceInterval(level: 0.68)  // ±1 standard deviation
+let ci95 = simulationResults.confidenceInterval(level: 0.95)  // ±2 standard deviations
 
 print("  68% CI: [\(ci68.low.currency()), \(ci68.high.currency())]")
 print("  95% CI: [\(ci95.low.currency()), \(ci95.high.currency())]")
 print()
 
 // Value at Risk (downside risk)
-let var95 = results.valueAtRisk(confidenceLevel: 0.95)
+let var95 = simulationResults.valueAtRisk(confidenceLevel: 0.95)
 print("Value at Risk (95%): \(var95.currency())")
 print("  (Interpretation: 95% confident profit will be at least this amount)")
 ```
@@ -964,26 +657,26 @@ print("  (Interpretation: 95% confident profit will be at least this amount)")
 Running 10,000 iterations...
 
 === Simulation Results ===
-Mean profit: $432,200.41
-Standard deviation: $87,929.57
+Mean profit: $434,575.38
+Standard deviation: $85,393.95
 
 Profit Distribution:
-  5th percentile:  $251,516.19
-  25th percentile: $409,913.31
-  50th percentile (median): $447,278.08
-  75th percentile: $484,556.68
-  95th percentile: $538,293.41
+  5th percentile:  $259,820.57
+  25th percentile: $411,010.33
+  50th percentile (median): $448,217.00
+  75th percentile: $485,315.92
+  95th percentile: $540,776.58
 
 Risk Analysis:
-  Probability of loss (profit < $0): 0.19%
-  Probability profit < $200k: 2.59%
-  Probability profit > $600k: 0.24%
+  Probability of loss (profit < $0): 0.11%
+  Probability profit < $200k: 2.37%
+  Probability profit > $600k: 0.40%
 
 Confidence Intervals:
-  68% CI: [$344,755.19, $519,645.63]
-  95% CI: [$259,865.90, $604,534.91]
+  68% CI: [$349,651.82, $519,498.95]
+  95% CI: [$267,210.48, $601,940.28]
 
-Value at Risk (95%): $251,516.19
+Value at Risk (95%): $259,820.57
   (Interpretation: 95% confident profit will be at least this amount)
 ```
 
@@ -1015,30 +708,32 @@ Value at Risk (95%): $251,516.19
 The model can easily be adapted for additional scenarios:
 
 ```swift
-// Scenario: What if we increase contract quantity to reduce open-market exposure?
-var conservativeStrategy = baseCase
-conservativeStrategy.contractQuantity = 1_500_000
-print("Conservative strategy (more contracts):")
-print("  Profit: \(conservativeStrategy.calculateProfit().currency())")
+	print("\n=== What-If Analysis ===\n")
 
-// Scenario: What if we price more aggressively?
-var aggressiveStrategy = baseCase
-aggressiveStrategy.raisinPrice = 2.40
-print("Aggressive pricing strategy:")
-print("  Profit: \(aggressiveStrategy.calculateProfit().currency())")
+	// Scenario: What if we increase contract quantity to reduce open-market exposure?
+	var conservativeStrategy = baseCase
+	conservativeStrategy.contractQuantity = 1_500_000
+	print("Conservative strategy (more contracts):")
+	print("  Profit: \(conservativeStrategy.calculateProfit().currency())")
 
-// Scenario: Best and worst case combined
-var bestCase = baseCase
-bestCase.raisinPrice = 2.30
-bestCase.openMarketPrice = 0.20
-print("Best case (high price, cheap grapes):")
-print("  Profit: \(bestCase.calculateProfit().currency())")
+	// Scenario: What if we price more aggressively?
+	var aggressiveStrategy = baseCase
+	aggressiveStrategy.raisinPrice = 2.40
+	print("Aggressive pricing strategy:")
+	print("  Profit: \(aggressiveStrategy.calculateProfit().currency())")
 
-var worstCase = baseCase
-worstCase.raisinPrice = 2.10
-worstCase.openMarketPrice = 0.35
-print("Worst case (low price, expensive grapes):")
-print("  Profit: \(worstCase.calculateProfit().currency())")
+	// Scenario: Best and worst case combined
+	var bestCase = baseCase
+	bestCase.raisinPrice = 2.30
+	bestCase.openMarketPrice = 0.20
+	print("Best case (high price, cheap grapes):")
+	print("  Profit: \(bestCase.calculateProfit().currency())")
+
+	var worstCase = baseCase
+	worstCase.raisinPrice = 2.10
+	worstCase.openMarketPrice = 0.35
+	print("Worst case (low price, expensive grapes):")
+	print("  Profit: \(worstCase.calculateProfit().currency())")
 
 ```
 
