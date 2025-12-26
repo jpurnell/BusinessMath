@@ -44,7 +44,7 @@
 	/// let result = optimizer.optimize(
 	///     objective: objective,
 	///     constraints: [],
-	///     initialValue: 0.0,
+	///     initialGuess: 0.0,
 	///     bounds: nil
 	/// )
 	///
@@ -118,7 +118,7 @@
 		///   - objective: The objective function f(x) to minimize.
 		///   - constraints: Constraints the solution must satisfy. Simple value-based constraints
 		///     (where `constraint.function == nil`) are projected to their boundary if violated.
-		///   - initialValue: Starting point for the search.
+		///   - initialGuess: Starting point for the search.
 		///   - bounds: Optional bounds (lower, upper); iterates are clamped into this interval.
 		/// - Returns: An `OptimizationResult` with the best value found, its objective, iterations, convergence flag, and history.
 		///
@@ -133,7 +133,7 @@
 		/// let result = optimizer.optimize(
 		///     objective: { x in (x - 5) * (x - 5) },
 		///     constraints: [],
-		///     initialValue: 0.0,
+		///     initialGuess: 0.0,
 		///     bounds: nil
 		/// )
 		/// // result.optimalValue ≈ 5.0
@@ -141,7 +141,7 @@
 		public func optimize(
 			objective: @escaping (T) -> T,
 			constraints: [Constraint<T>],
-			initialValue: T,
+			initialGuess: T,
 			bounds: (lower: T, upper: T)?
 		) -> OptimizationResult<T> {
 			// Local helpers kept within function scope.
@@ -206,7 +206,7 @@
 			}
 
 			// Initialize and project start to feasibility
-			var x = initialValue
+			var x = initialGuess
 			if let b = bounds {
 				x = clamp(x, lower: b.lower, upper: b.upper)
 			}

@@ -49,7 +49,7 @@ public struct IterationHistory<T: Real & Sendable & Codable>: Sendable {
 /// ## Example
 ///
 /// ```swift
-/// let result = optimizer.optimize(objective: f, initialValue: 0.0)
+/// let result = optimizer.optimize(objective: f, initialGuess: 0.0)
 ///
 /// if result.converged {
 ///     print("Found minimum: \(result.optimalValue)")
@@ -230,7 +230,7 @@ public struct Constraint<T: Real & Sendable & Codable> {
 ///     func optimize(
 ///         objective: @escaping (T) -> T,
 ///         constraints: [Constraint<T>],
-///         initialValue: T,
+///         initialGuess: T,
 ///         bounds: (lower: T, upper: T)?
 ///     ) -> OptimizationResult<T> {
 ///         // Implementation here
@@ -245,13 +245,13 @@ public protocol Optimizer {
 	/// - Parameters:
 	///   - objective: The objective function to minimize.
 	///   - constraints: Constraints that the solution must satisfy.
-	///   - initialValue: The starting value for the optimization.
+	///   - initialGuess: The starting value for the optimization.
 	///   - bounds: Optional bounds for the value (lower, upper).
 	/// - Returns: The optimization result.
 	func optimize(
 		objective: @escaping (T) -> T,
 		constraints: [Constraint<T>],
-		initialValue: T,
+		initialGuess: T,
 		bounds: (lower: T, upper: T)?
 	) -> OptimizationResult<T>
 }

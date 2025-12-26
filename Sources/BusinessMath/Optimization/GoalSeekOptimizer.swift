@@ -39,7 +39,7 @@ import Numerics
 /// let result = optimizer.optimize(
 ///     objective: profitFunction,
 ///     constraints: [],
-///     initialValue: 0.30,
+///     initialGuess: 0.30,
 ///     bounds: (0.0, 1.0)
 /// )
 ///
@@ -111,16 +111,16 @@ public struct GoalSeekOptimizer<T>: Optimizer where T: Real & Sendable & Codable
     /// - Parameters:
     ///   - objective: The objective function.
     ///   - constraints: Constraints that the solution must satisfy.
-    ///   - initialValue: The starting value.
+    ///   - initialGuess: The starting value.
     ///   - bounds: Optional bounds (lower, upper).
     /// - Returns: The optimization result containing the root.
     public func optimize(
         objective: @escaping (T) -> T,
         constraints: [Constraint<T>],
-        initialValue: T,
+        initialGuess: T,
         bounds: (lower: T, upper: T)?
     ) -> OptimizationResult<T> {
-        var x = initialValue
+        var x = initialGuess
         var history: [IterationHistory<T>] = []
         var converged = false
 

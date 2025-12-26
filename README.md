@@ -10,6 +10,19 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
+## 🎉 Version 2.0 Released!
+
+**Major milestone:** Production-ready API with unified parameter naming across all optimization algorithms.
+
+- ✅ **Consistent API:** `initialGuess` parameter everywhere
+- ✅ **Stable:** Semantic versioning guarantees (see [STABILITY.md](STABILITY.md))
+- ✅ **Migration Guide:** Easy upgrade from 1.x (see [MIGRATION.md](MIGRATION.md))
+- ✅ **3,013 Tests:** 99.9% pass rate across 240 test suites
+
+**Upgrading from 1.x?** Simply rename `initialValue:` → `initialGuess:` in optimizer calls. [Full migration guide →](MIGRATION.md)
+
+---
+
 ## Why BusinessMath?
 
 **Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real>`) and strict concurrency for thread safety.

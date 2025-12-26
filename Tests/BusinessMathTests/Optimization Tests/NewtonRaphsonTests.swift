@@ -17,7 +17,7 @@ struct NewtonRaphsonTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 1.0,
+			initialGuess: 1.0,
 			bounds: nil
 		)
 
@@ -40,7 +40,7 @@ struct NewtonRaphsonTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 0.0,
+			initialGuess: 0.0,
 			bounds: nil
 		)
 
@@ -61,7 +61,7 @@ struct NewtonRaphsonTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 5.0,
+			initialGuess: 5.0,
 			bounds: (lower: 2.0, upper: 10.0)
 		)
 
@@ -87,7 +87,7 @@ struct NewtonRaphsonTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [constraint],
-			initialValue: 5.0,
+			initialGuess: 5.0,
 			bounds: nil
 		)
 
@@ -110,7 +110,7 @@ struct NewtonRaphsonTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 1.0,
+			initialGuess: 1.0,
 			bounds: nil
 		)
 
@@ -139,7 +139,7 @@ struct NewtonRaphsonTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 10.0,  // Start far from minimum
+			initialGuess: 10.0,  // Start far from minimum
 			bounds: nil
 		)
 
@@ -170,7 +170,7 @@ struct NewtonRaphsonTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 0.0,
+			initialGuess: 0.0,
 			bounds: nil
 		)
 
