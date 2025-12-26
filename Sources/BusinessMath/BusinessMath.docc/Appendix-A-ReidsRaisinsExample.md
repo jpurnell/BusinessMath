@@ -282,7 +282,7 @@ let optimizer = GoalSeekOptimizer<Double>(
 let breakevenResult = optimizer.optimize(
 	objective: profitFunction,
 	constraints: [],
-	initialValue: 0.30,    // Start from base-case price
+	initialGuess: 0.30,    // Start from base-case price
 	bounds: (0.0, 1.0)     // Price must be between $0 and $1
 )
 

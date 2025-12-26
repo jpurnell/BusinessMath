@@ -70,7 +70,7 @@ import Numerics
 /// let result = nesterovOptimizer.optimize(
 ///     objective: objective,
 ///     constraints: [],
-///     initialValue: 10.0,
+///     initialGuess: 10.0,
 ///     bounds: nil
 /// )
 ///
@@ -170,16 +170,16 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 	/// - Parameters:
 	///   - objective: The objective function to minimize.
 	///   - constraints: Constraints that the solution must satisfy.
-	///   - initialValue: The starting value.
+	///   - initialGuess: The starting value.
 	///   - bounds: Optional bounds (lower, upper).
 	/// - Returns: The optimization result.
 	public func optimize(
 		objective: @escaping (T) -> T,
 		constraints: [Constraint<T>],
-		initialValue: T,
+		initialGuess: T,
 		bounds: (lower: T, upper: T)?
 	) -> OptimizationResult<T> {
-		var x = initialValue
+		var x = initialGuess
 		var velocity: T = 0
 		var history: [IterationHistory<T>] = []
 		var converged = false

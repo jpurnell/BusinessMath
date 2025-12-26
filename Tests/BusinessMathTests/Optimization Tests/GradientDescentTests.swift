@@ -22,7 +22,7 @@ struct GradientDescentTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 10.0,
+			initialGuess: 10.0,
 			bounds: nil
 		)
 
@@ -48,7 +48,7 @@ struct GradientDescentTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 0.0,
+			initialGuess: 0.0,
 			bounds: nil
 		)
 
@@ -73,7 +73,7 @@ struct GradientDescentTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 10.0,
+			initialGuess: 10.0,
 			bounds: nil
 		)
 
@@ -98,7 +98,7 @@ struct GradientDescentTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 10.0,
+			initialGuess: 10.0,
 			bounds: nil
 		)
 
@@ -125,7 +125,7 @@ struct GradientDescentTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: -3.0,
+			initialGuess: -3.0,
 			bounds: (lower: -5.0, upper: -1.0)
 		)
 
@@ -149,7 +149,7 @@ struct GradientDescentTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 5.0,
+			initialGuess: 5.0,
 			bounds: nil
 		)
 
@@ -183,7 +183,7 @@ struct GradientDescentTests {
 		let result = optimizer.optimize(
 			objective: objective,
 			constraints: [],
-			initialValue: 4.0,
+			initialGuess: 4.0,
 			bounds: nil
 		)
 
