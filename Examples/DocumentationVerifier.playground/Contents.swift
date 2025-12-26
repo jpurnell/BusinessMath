@@ -3,31 +3,34 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-let benchmark = PerformanceBenchmark<VectorN<Double>>()
+	// 10,000-point discretization
+	let n = 10_000
+	var triplets: [(Int, Int, Double)] = []
 
-let rosenbrock: (VectorN<Double>) -> Double = { v in
-	let x = v[0], y = v[1]
-	let a = 1 - x
-	let b = y - x*x
-	return a*a + 100*b*b
-}
+	for i in 0..<n {
+		triplets.append((i, i, 2.0))      // Diagonal
+		if i > 0 {
+			triplets.append((i, i-1, -1.0)) // Sub-diagonal
+		}
+		if i < n-1 {
+			triplets.append((i, i+1, -1.0)) // Super-diagonal
+		}
+	}
 
-let tolerances = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8]
+	let A = SparseMatrix(rows: n, columns: n, triplets: triplets)
+	let b = [Double](repeating: 0.0, count: n)
+	// Set boundary conditions
+	var b_modified = b
+	b_modified[0] = 100.0      // Hot end
+	b_modified[n-1] = 0.0      // Cold end
 
-let report = try benchmark.compareOptimizers(
-	objective: rosenbrock,
-	optimizers: tolerances.map { tol in
-		("tol=\(tol)", AdaptiveOptimizer(tolerance: tol))
-	},
-	initialGuess: VectorN([1.0, 1.0]),
-	trials: 20
-)
+	let solver = SparseSolver()
+	let temperature = try solver.solve(
+		A: A,
+		b: b_modified,
+		method: .conjugateGradient,
+		tolerance: 1e-10
+	)
 
-print(report.summary())
-
-// Find sweet spot (balance speed vs accuracy)
-let winner = report.winner
-print("\n🎯 Optimal tolerance: \(winner.name)")
-print("  Speed: \(winner.avgTime)s")
-print("  Accuracy: \(winner.avgObjectiveValue)")
-print("  Reliability: \(winner.successRate.percent())")
+	print("Solved 10,000-point heat equation")
+	print("Temperature range: \(temperature.min()!) to \(temperature.max()!)")
