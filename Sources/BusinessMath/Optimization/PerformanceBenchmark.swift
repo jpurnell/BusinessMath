@@ -103,7 +103,7 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 			let col2 = "Avg Time".padding(toLength: 10, withPad: " ", startingAt: 0)
 			let col3 = "Iterations".padding(toLength: 10, withPad: " ", startingAt: 0)
 			let col4 = "Success Rate".padding(toLength: 12, withPad: " ", startingAt: 0)
-			let col5 = "Best Obj".padding(toLength: 10, withPad: " ", startingAt: 0)
+			let col5 = "Best Obj".padding(toLength: 22, withPad: " ", startingAt: 0)
 			output += "\(col1) \(col2) \(col3) \(col4) \(col5)\n"
 			output += String(repeating: "-", count: 75) + "\n"
 
@@ -114,10 +114,10 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 
 				// Use string interpolation to avoid C string issues
 				let name = result.name.padding(toLength: 23, withPad: " ", startingAt: 0)
-				let time = String(format: "%8.4fs", result.avgTime)
-				let iters = String(format: "%10.1f", result.avgIterations)
-				let success = String(format: "%11.1f%%", result.successRate * 100)
-				let objective = String(format: "%10.6f", result.bestObjectiveValue)
+				let time = result.avgTime.number(4).paddingLeft(toLength: 8)
+				let iters = result.avgIterations.number(0).paddingLeft(toLength: 12)
+				let success = result.successRate.percent(1).paddingLeft(toLength: 7)
+				let objective = result.bestObjectiveValue.number(3).paddingLeft(toLength: 19)
 
 				output += "\(marker)\(name) \(time) \(iters) \(success) \(objective)\n"
 			}
@@ -161,6 +161,13 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 
 			return output
 		}
+	}
+
+	// MARK: - Initialization
+
+	/// Create a performance benchmark instance.
+	public init() {
+		// No stored properties to initialize
 	}
 
 	// MARK: - Benchmarking Methods
