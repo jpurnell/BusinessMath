@@ -881,155 +881,202 @@ public struct WeightedAverageTool: MCPToolHandler {
 
 // MARK: - Tool 12: Goal Seek
 
-public struct GoalSeekTool: MCPToolHandler {
+/// Evaluate a simple calculation string with an input value
+private func evaluateCalculation(_ calculation: String, with input: Double) -> Double {
+    let formula = calculation.replacingOccurrences(of: "{0}", with: "\(input)")
+
+    // Use NSExpression to evaluate
+    let expression = NSExpression(format: formula)
+    if let result = expression.expressionValue(with: nil, context: nil) as? Double {
+        return result
+    } else if let result = expression.expressionValue(with: nil, context: nil) as? NSNumber {
+        return result.doubleValue
+    }
+
+    // Fallback: return 0 if evaluation fails
+    return 0.0
+}
+
+public struct GoalSeekTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "goal_seek",
         description: """
-        Find the input value that produces a target output using Newton's method. Useful for solving equations and financial problems.
+        Find the input value that produces a target output using root-finding.
+
+        Goal seeking answers "what-if" questions in reverse:
+        • Instead of: "If revenue is $800K, what is profit?"
+        • Ask: "What revenue do I need to achieve $200K profit?"
+
+        Uses Newton-Raphson method to iteratively find the solution.
 
         REQUIRED STRUCTURE:
         {
-          "formula": "x * x",
-          "target": 16.0,
-          "initial_guess": 5.0,
-          "tolerance": 0.0001,
-          "max_iterations": 100
+          "calculation": "{0} * 1.15 - 600000",
+          "target": 200000,
+          "initialGuess": 800000
         }
 
-        **Parameters:**
-        - formula: Expression to evaluate (e.g., "x^2", "x*1.05^10")
-        - target: Desired output value
-        - initial_guess: Starting guess for x
-        - tolerance: Convergence tolerance (optional, default: 0.000001)
-        - max_iterations: Maximum iterations (optional, default: 1000)
+        Common Applications:
+        • Revenue Planning: What sales do we need for target profit?
+        • Pricing: What price achieves target margin?
+        • Growth Planning: What growth rate reaches revenue target?
+        • Break-even Analysis: What volume covers all costs?
+        • Financial Modeling: Find key drivers for target metrics
 
-        **Supported operations:**
-        - Basic: +, -, *, /
-        - Powers: x^2, x^n
-        - Functions: sqrt(x), exp(x), log(x)
+        Examples:
 
-        **Example 1: Find square root**
+        1. Revenue Goal Seeking:
         {
-          "formula": "x * x",
-          "target": 25.0,
-          "initial_guess": 1.0
+          "calculation": "{0} * 0.4",
+          "target": 400000,
+          "initialGuess": 900000,
+          "description": "What revenue achieves $400K profit (40% margin)?"
         }
-        Returns: x ≈ 5.0
 
-        **Example 2: Compound interest**
+        2. Growth Rate Calculation:
         {
-          "formula": "1000 * 1.05^x",
-          "target": 1500.0,
-          "initial_guess": 5.0
+          "calculation": "800000 * (1 + {0})",
+          "target": 1000000,
+          "initialGuess": 0.2,
+          "description": "What growth rate grows $800K to $1M?"
         }
-        Returns: Years needed for $1000 to grow to $1500 at 5% interest
 
-        **Note:** This tool requires function definition which is complex in MCP.
-        For now, use for simple formulas or predefined functions.
+        3. Pricing for Target Margin:
+        {
+          "calculation": "({0} - 50) * 10000",
+          "target": 250000,
+          "initialGuess": 75,
+          "description": "What price per unit achieves $250K profit?"
+        }
+
+        Returns the input value that achieves the target, along with verification.
         """,
         inputSchema: MCPToolInputSchema(
             properties: [
-                "formula_type": MCPSchemaProperty(type: "string", description: "Type of formula: 'quadratic', 'exponential', 'power', 'custom'"),
-                "coefficients": MCPSchemaProperty(type: "array", description: "Array of coefficients for the formula"),
-                "target": MCPSchemaProperty(type: "number", description: "Target value"),
-                "initial_guess": MCPSchemaProperty(type: "number", description: "Initial guess for x"),
-                "tolerance": MCPSchemaProperty(type: "number", description: "Convergence tolerance (optional)"),
-                "max_iterations": MCPSchemaProperty(type: "number", description: "Max iterations (optional)")
+                "calculation": MCPSchemaProperty(
+                    type: "string",
+                    description: """
+                    Formula using {0} for the variable to find.
+                    Examples:
+                    • "{0} * 1.15 - 600000" - revenue with 15% growth minus costs
+                    • "({0} - 50) * 10000" - (price - cost) × quantity
+                    • "{0} * {0} + 2 * {0}" - polynomial expressions
+                    """
+                ),
+                "target": MCPSchemaProperty(
+                    type: "number",
+                    description: "Target output value to achieve"
+                ),
+                "initialGuess": MCPSchemaProperty(
+                    type: "number",
+                    description: "Starting guess for the input value (affects convergence speed)"
+                ),
+                "tolerance": MCPSchemaProperty(
+                    type: "number",
+                    description: "Acceptable error tolerance (default: 0.000001)"
+                ),
+                "maxIterations": MCPSchemaProperty(
+                    type: "number",
+                    description: "Maximum iterations before giving up (default: 1000)"
+                ),
+                "description": MCPSchemaProperty(
+                    type: "string",
+                    description: "Optional description of what you're solving for (for display)"
+                )
             ],
-            required: ["formula_type", "target", "initial_guess"]
+            required: ["calculation", "target", "initialGuess"]
         )
     )
+
+    public init() {}
 
     public func execute(arguments: [String: AnyCodable]?) async throws -> MCPToolCallResult {
         guard let args = arguments else {
             throw ToolError.invalidArguments("Missing arguments")
         }
 
-        let formulaType = try args.getString("formula_type")
+        let calculation = try args.getString("calculation")
         let target = try args.getDouble("target")
-        let initialGuess = try args.getDouble("initial_guess")
+        let initialGuess = try args.getDouble("initialGuess")
         let tolerance = args.getDoubleOptional("tolerance") ?? 0.000001
-        let maxIterations = args.getIntOptional("max_iterations") ?? 1000
+        let maxIterations = args.getIntOptional("maxIterations") ?? 1000
+        let description = args.getStringOptional("description")
 
-        // Define function based on type
-        let function: (Double) -> Double
-        var formulaDescription: String
-
-        switch formulaType {
-        case "quadratic":
-            // f(x) = x^2
-            function = { x in x * x }
-            formulaDescription = "f(x) = x²"
-        case "square_root":
-            // For finding sqrt: f(x) = x^2, target = n finds sqrt(n)
-            function = { x in x * x }
-            formulaDescription = "f(x) = x² (solving for √\(target))"
-        case "exponential":
-            // f(x) = e^x
-            function = { x in exp(x) }
-            formulaDescription = "f(x) = eˣ"
-        case "custom_power":
-            // Need coefficient array: [base, exponent] for f(x) = base^x
-            guard let coeffs = try? args.getDoubleArray("coefficients"), coeffs.count >= 1 else {
-                throw ToolError.invalidArguments("custom_power requires coefficients array with base")
-            }
-            let base = coeffs[0]
-            function = { x in pow(base, x) }
-            formulaDescription = "f(x) = \(base)ˣ"
-        default:
-            throw ToolError.invalidArguments("Unsupported formula_type. Use: 'quadratic', 'square_root', 'exponential', 'custom_power'")
+        // Define the function: f(x) = calculation(x) - target
+        // We want to find x where f(x) = 0
+        let function: (Double) -> Double = { input in
+            let result = evaluateCalculation(calculation, with: input)
+            return result - target
         }
 
-        // Solve using goal seek
+        // Use goalSeek to find the solution
+        let solution: Double
         do {
-            let solution: Double = try goalSeek(
+            solution = try goalSeek(
                 function: function,
-                target: target,
+                target: 0.0,
                 guess: initialGuess,
                 tolerance: tolerance,
                 maxIterations: maxIterations
             )
-
-            let verification = function(solution)
-            let error = abs(verification - target)
-
-            let result = """
-            ## Goal Seek Result
-
-            **Problem:**
-            - Formula: \(formulaDescription)
-            - Target: \(target.formatDecimal(decimals: 6))
-            - Initial guess: \(initialGuess.formatDecimal(decimals: 4))
-
-            **Solution:**
-            - x = \(solution.formatDecimal(decimals: 8))
-            - f(x) = \(verification.formatDecimal(decimals: 8))
-            - Error: \(error.formatDecimal(decimals: 10))
-
-            **Convergence:**
-            - Tolerance: \(tolerance)
-            - Max iterations: \(maxIterations)
-            - ✓ Solution converged
-
-            **Interpretation:**
-            When x = \(solution.formatDecimal(decimals: 6)), the formula produces \(verification.formatDecimal(decimals: 6)),
-            which is within \(tolerance) of the target \(target.formatDecimal(decimals: 6)).
-            """
-
-            return MCPToolCallResult.success(text: result)
         } catch {
-            let errorText = """
-            ## Goal Seek Error
+            return .error(message: """
+                Goal Seek Failed
 
-            Goal seek failed to converge: \(error.localizedDescription)
+                Could not find a solution within \(maxIterations) iterations.
 
-            Try adjusting:
-            - Initial guess closer to expected solution
-            - Increase max_iterations
-            - Adjust tolerance
-            """
-            return MCPToolCallResult.success(text: errorText)
+                Possible reasons:
+                • No solution exists for this target
+                • Initial guess is too far from solution
+                • Formula has discontinuities or is non-smooth
+
+                Suggestions:
+                • Try a different initial guess
+                • Increase maxIterations
+                • Check if target is achievable
+                • Simplify the calculation formula
+
+                Error: \(error.localizedDescription)
+                """)
         }
+
+        // Verify the solution
+        let actualOutput = evaluateCalculation(calculation, with: solution)
+        let error = abs(actualOutput - target)
+        let errorPercent = target != 0 ? (error / abs(target)) * 100 : 0
+
+        var output = """
+        Goal Seek Result
+        """
+
+        if let desc = description {
+            output += "\n\nQuestion: \(desc)"
+        }
+
+        output += """
+
+
+        Solution Found:
+        • Input Value: \(solution.formatDecimal(decimals: 6))
+        • Achieves Output: \(actualOutput.formatDecimal(decimals: 6))
+        • Target Output: \(target.formatDecimal(decimals: 6))
+        • Error: \(error.formatDecimal(decimals: 8)) (\(errorPercent.formatDecimal(decimals: 6))%)
+
+        Verification:
+        • Formula: \(calculation)
+        • When {0} = \(solution.formatDecimal(decimals: 6))
+        • Result = \(actualOutput.formatDecimal(decimals: 6))
+
+        Convergence:
+        • Initial Guess: \(initialGuess.formatDecimal(decimals: 2))
+        • Solution converged within tolerance \((tolerance * 100).formatDecimal(decimals: 6))%
+        • \(error < tolerance ? "✓ Solution verified" : "⚠️ Solution may need refinement")
+
+        Usage:
+        Use this input value (\(solution.formatDecimal(decimals: 2))) to achieve your target of \(target.formatDecimal(decimals: 2)).
+        """
+
+        return .success(text: output)
     }
 }
 

@@ -14,4 +14,13 @@ extension String {
 			return String(self.suffix(toLength))
 		}
 	}
+
+	func paddingRight(toLength: Int, withPad character: Character = " ") -> String {
+		let stringLength = self.count
+		if stringLength < toLength {
+			return self + String(repeatElement(character, count: toLength - stringLength))
+		} else {
+			return String(self.prefix(toLength))
+		}
+	}
 }

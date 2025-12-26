@@ -4,7 +4,7 @@ A comprehensive **Model Context Protocol (MCP) server** that exposes all Busines
 
 ## Overview
 
-The BusinessMath MCP server provides AI assistants with access to **167 computational tools** across 32 categories, **14 comprehensive resources**, and **6 guided workflow templates**. This enables powerful financial analysis through natural language.
+The BusinessMath MCP server provides AI assistants with access to **170 computational tools** across 32 categories, **14 comprehensive resources**, and **6 guided workflow templates**. This enables powerful financial analysis through natural language.
 
 ### What is MCP?
 
@@ -45,10 +45,10 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 - Confidence intervals
 - Z-scores and standardization
 
-**Monte Carlo Simulation** (7 tools):
-- Risk modeling
-- 15 probability distributions
-- Sensitivity analysis
+**Monte Carlo Simulation** (8 tools):
+- Risk modeling with 15 probability distributions
+- Scenario analysis (base/best/worst cases)
+- Sensitivity analysis (one-at-a-time and tornado charts)
 - Portfolio simulation
 
 **Hypothesis Testing** (6 tools):
@@ -62,7 +62,7 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 **Advanced Statistics** (13 tools):
 - Combinatorics (permutations, combinations)
 - Statistical means (arithmetic, geometric, harmonic)
-- Goal seek
+- Goal seek with formula evaluation
 - Data tables (one-way and two-way)
 - What-if analysis
 
@@ -75,8 +75,8 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 - Geometric, Rayleigh
 
 **Optimization & Solvers** (8 tools):
-- Newton-Raphson method
-- Gradient descent
+- Newton-Raphson method with formula evaluation
+- Gradient descent with formula evaluation (multivariate)
 - Capital allocation optimization
 - Adaptive algorithm selection (2 tools)
 - Performance benchmarking (3 tools)
@@ -303,6 +303,17 @@ Forecast my quarterly revenue using exponential trend with
 historical data: [100, 120, 145, 175]
 ```
 
+**Optimization with Formulas:**
+```
+Find the value where x² - 25 = 0 using Newton-Raphson method
+starting from initial guess of 3
+```
+
+```
+Optimize the function x₀ * x₁ - x₀² to find maximum revenue
+where x₀ is price and x₁ is quantity, starting from [100, 500]
+```
+
 **Seasonal Analysis:**
 ```
 Calculate seasonal indices for my monthly sales data with annual seasonality:
@@ -408,10 +419,48 @@ See [HTTP_MODE_README.md](HTTP_MODE_README.md) for detailed HTTP mode documentat
 
 The BusinessMath server implements all core MCP capabilities:
 
-- ✅ **Tools** - 167 computational tools for financial analysis
+- ✅ **Tools** - 170 computational tools for financial analysis
 - ✅ **Resources** - 14 comprehensive documentation resources
 - ✅ **Prompts** - 6 guided workflow templates
 - ✅ **Logging** - Comprehensive error handling and logging
+
+### Formula Evaluation
+
+Several optimization and analysis tools support dynamic formula evaluation, allowing AI assistants to specify arbitrary mathematical expressions:
+
+**Supported Tools:**
+- **GoalSeekTool** - Find input value that produces target output
+- **NewtonRaphsonOptimizeTool** - Root-finding with formula evaluation
+- **GradientDescentOptimizeTool** - Multivariate optimization with formulas
+
+**Formula Syntax:**
+- Use `{0}`, `{1}`, `{2}`, etc. as variable placeholders
+- Standard mathematical operators: `+`, `-`, `*`, `/`, `^` (power)
+- Functions: `sqrt()`, `abs()`, `log()`, `exp()`, `sin()`, `cos()`, `tan()`
+
+**Examples:**
+```json
+// Goal Seek: Find break-even price
+{
+  "calculation": "{0} * 1000 - 50000",
+  "target": 0,
+  "initialGuess": 50
+}
+
+// Newton-Raphson: Find square root
+{
+  "formula": "{0} * {0} - 25",
+  "target": 0,
+  "initialGuess": 3
+}
+
+// Gradient Descent: Optimize revenue
+{
+  "formula": "{0} * {1} - {0} * {0}",
+  "initialValues": [100, 500],
+  "sense": "maximize"
+}
+```
 
 ### Error Handling
 
@@ -577,6 +626,16 @@ Contributions to the MCP server are welcome! Areas for enhancement:
 See the main [README.md](README.md) for contribution guidelines.
 
 ## Version History
+
+### v1.7.0 - Tool API Updates (2025-12-26)
+- ✨ Updated portfolio optimization tools to use new PortfolioOptimizer API
+- ✨ Updated Monte Carlo tools to use struct-based distribution API
+- ✨ Added RunScenarioAnalysisTool for discrete scenario comparison
+- ✨ Enhanced GoalSeekTool with formula evaluation (use {0} placeholders)
+- ✨ Enhanced NewtonRaphsonOptimizeTool with formula evaluation
+- ✨ Enhanced GradientDescentOptimizeTool with multivariate formula evaluation
+- 🔧 Fixed Swift 6 concurrency warnings (Sendable conformance)
+- 📚 Updated all documentation examples to use actual working APIs
 
 ### v1.6.0 - Integer Programming
 - Added branch-and-bound optimization

@@ -2,41 +2,123 @@ import Foundation
 import MCP
 import BusinessMath
 
+// MARK: - Helper Functions
+
+/// Evaluate a calculation string with a single input value
+private func evaluateExpression(_ expression: String, withVariable x: Double) -> Double {
+    let formula = expression.replacingOccurrences(of: "{0}", with: "\(x)")
+                            .replacingOccurrences(of: "x", with: "\(x)")
+
+    let nsExpression = NSExpression(format: formula)
+    if let result = nsExpression.expressionValue(with: nil, context: nil) as? Double {
+        return result
+    } else if let result = nsExpression.expressionValue(with: nil, context: nil) as? NSNumber {
+        return result.doubleValue
+    }
+
+    return 0.0
+}
+
+/// Evaluate a calculation string with multiple input values
+private func evaluateMultivariateExpression(_ expression: String, withVariables values: [Double]) -> Double {
+    var formula = expression
+    for (index, value) in values.enumerated() {
+        formula = formula.replacingOccurrences(of: "{\(index)}", with: "\(value)")
+    }
+
+    let nsExpression = NSExpression(format: formula)
+    if let result = nsExpression.expressionValue(with: nil, context: nil) as? Double {
+        return result
+    } else if let result = nsExpression.expressionValue(with: nil, context: nil) as? NSNumber {
+        return result.doubleValue
+    }
+
+    return 0.0
+}
+
 // MARK: - Newton-Raphson Optimizer Tool
 
 public struct NewtonRaphsonOptimizeTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "newton_raphson_optimize",
         description: """
-        Find the value where a function equals a target using Newton-Raphson method. Perfect for goal seek problems like finding break-even prices, yields to maturity, or any root-finding scenario.
+        Find the value where a function equals zero using Newton-Raphson method (root-finding). Perfect for break-even analysis, yield calculations, or any equation solving.
 
-        Example: Find the price where profit = $100,000
-        - expression: "price * (10000 - 50*price) - 50000 - 20*(10000 - 50*price) - 100000"
-        - initialGuess: 200
-        - tolerance: 0.01
+        Use {0} or 'x' as the variable placeholder in your formula.
 
-        Returns the optimal value and number of iterations.
+        REQUIRED STRUCTURE:
+        {
+          "formula": "{0} * {0} - 25",
+          "initialGuess": 3,
+          "target": 0
+        }
+
+        Common Applications:
+        • Break-even Analysis: Find quantity where profit = 0
+        • Yield Calculations: Find rate where NPV = 0 (IRR)
+        • Equation Solving: Find x where f(x) = target
+
+        Examples:
+
+        1. Find Square Root (solve x² = 25):
+        {
+          "formula": "{0} * {0} - 25",
+          "initialGuess": 3,
+          "target": 0
+        }
+
+        2. Break-even Price:
+        {
+          "formula": "{0} * 1000 - 500000 - 0.3 * {0} * 1000",
+          "initialGuess": 800,
+          "target": 0,
+          "description": "Find price where profit = 0"
+        }
+
+        3. Compound Growth Rate:
+        {
+          "formula": "100000 * (1 + {0}) - 150000",
+          "initialGuess": 0.4,
+          "target": 0,
+          "description": "What rate grows $100K to $150K?"
+        }
+
+        Returns the solution where formula(x) = target.
         """,
         inputSchema: MCPToolInputSchema(
             properties: [
-                "expression": MCPSchemaProperty(
+                "formula": MCPSchemaProperty(
                     type: "string",
-                    description: "Mathematical expression where x is the variable to solve for. Use standard operators: +, -, *, /, ^ for power"
+                    description: """
+                    Formula using {0} or 'x' for the variable.
+                    Examples:
+                    • "{0} * {0} - 16" - quadratic
+                    • "{0} * 1000 - 50000" - linear
+                    • "1000 * (1 + {0}) * (1 + {0})" - compound growth
+                    """
                 ),
                 "initialGuess": MCPSchemaProperty(
                     type: "number",
-                    description: "Starting value for the optimization (important for convergence)"
+                    description: "Starting value for Newton-Raphson iteration"
+                ),
+                "target": MCPSchemaProperty(
+                    type: "number",
+                    description: "Target value (default: 0 for root-finding)"
                 ),
                 "tolerance": MCPSchemaProperty(
                     type: "number",
-                    description: "Convergence tolerance (default: 0.0001). Smaller = more precise but slower"
+                    description: "Convergence tolerance (default: 0.000001)"
                 ),
                 "maxIterations": MCPSchemaProperty(
-                    type: "integer",
-                    description: "Maximum iterations before giving up (default: 100)"
+                    type: "number",
+                    description: "Maximum iterations (default: 1000)"
+                ),
+                "description": MCPSchemaProperty(
+                    type: "string",
+                    description: "Optional description of what you're solving"
                 )
             ],
-            required: ["expression", "initialGuess"]
+            required: ["formula", "initialGuess"]
         )
     )
 
@@ -47,34 +129,85 @@ public struct NewtonRaphsonOptimizeTool: MCPToolHandler, Sendable {
             throw ToolError.invalidArguments("Missing arguments")
         }
 
-        let expression = try args.getString("expression")
+        let formula = try args.getString("formula")
         let initialGuess = try args.getDouble("initialGuess")
-        let tolerance = args.getDoubleOptional("tolerance") ?? 0.0001
-        let maxIterations = args.getIntOptional("maxIterations") ?? 100
+        let target = args.getDoubleOptional("target") ?? 0.0
+        let tolerance = args.getDoubleOptional("tolerance") ?? 0.000001
+        let maxIterations = args.getIntOptional("maxIterations") ?? 1000
+        let description = args.getStringOptional("description")
 
-        // For now, return a simplified result explaining this is a placeholder
-        // In a real implementation, you'd parse and evaluate the expression
-        let result = """
-        Newton-Raphson Optimization Result:
+        // Define the function: f(x) = formula(x) - target
+        let function: (Double) -> Double = { x in
+            let result = evaluateExpression(formula, withVariable: x)
+            return result - target
+        }
 
-        Expression: \(expression)
-        Initial Guess: \(initialGuess)
-        Tolerance: \(tolerance)
-        Max Iterations: \(maxIterations)
+        // Use Newton-Raphson via goalSeek
+        let solution: Double
+        do {
+            solution = try goalSeek(
+                function: function,
+                target: 0.0,
+                guess: initialGuess,
+                tolerance: tolerance,
+                maxIterations: maxIterations
+            )
+        } catch {
+            return .error(message: """
+                Newton-Raphson Failed
 
-        Note: This tool requires expression parsing. Use BusinessMath's NewtonRaphsonOptimizer with a closure-based objective function for actual optimization.
+                Could not find solution within \(maxIterations) iterations.
 
-        Example Swift usage:
-        ```swift
-        let optimizer = NewtonRaphsonOptimizer<Double>()
-        let result = optimizer.optimize(
-            objective: { x in /* your function */ },
-            initialValue: \(initialGuess)
-        )
-        ```
+                Possible reasons:
+                • No solution exists for this target
+                • Initial guess is too far from solution
+                • Function has discontinuities or multiple roots
+
+                Suggestions:
+                • Try a different initial guess
+                • Increase maxIterations
+                • Check formula syntax
+
+                Error: \(error.localizedDescription)
+                """)
+        }
+
+        // Verify solution
+        let actualValue = evaluateExpression(formula, withVariable: solution)
+        let error = abs(actualValue - target)
+        let errorPercent = target != 0 ? (error / abs(target)) * 100 : 0
+
+        var output = """
+        Newton-Raphson Optimization Result
         """
 
-        return .success(text: result)
+        if let desc = description {
+            output += "\n\n\(desc)"
+        }
+
+        output += """
+
+
+        Solution Found:
+        • x = \(solution.formatDecimal(decimals: 8))
+        • f(x) = \(actualValue.formatDecimal(decimals: 8))
+        • Target = \(target.formatDecimal(decimals: 8))
+        • Error: \(error.formatDecimal(decimals: 10)) (\(errorPercent.formatDecimal(decimals: 6))%)
+
+        Verification:
+        • Formula: \(formula)
+        • When x = \(solution.formatDecimal(decimals: 6))
+        • Result = \(actualValue.formatDecimal(decimals: 6))
+
+        Convergence:
+        • Initial Guess: \(initialGuess.formatDecimal(decimals: 2))
+        • Converged within tolerance \((tolerance * 100).formatDecimal(decimals: 6))%
+        • \(error < tolerance ? "✓ Solution verified" : "⚠️ Solution may need refinement")
+
+        Method: Newton-Raphson root-finding algorithm
+        """
+
+        return .success(text: output)
     }
 }
 
@@ -84,41 +217,82 @@ public struct GradientDescentOptimizeTool: MCPToolHandler, Sendable {
     public let tool = MCPTool(
         name: "gradient_descent_optimize",
         description: """
-        Find the maximum or minimum of a multi-variable function using gradient descent. Perfect for profit maximization, cost minimization, or portfolio allocation.
+        Find minimum/maximum of a multi-variable function using gradient descent. Perfect for profit maximization, cost minimization, or optimization with multiple inputs.
 
-        Example: Maximize profit(price, marketing)
-        - objective: "maximize"
-        - variables: ["price": 100, "marketing": 20000]
-        - learningRate: 0.01
-        - maxIterations: 1000
+        Use {0}, {1}, {2}, etc. as variable placeholders in your formula.
+
+        REQUIRED STRUCTURE:
+        {
+          "formula": "({0} - 100) * ({0} - 100) + ({1} - 50) * ({1} - 50)",
+          "initialValues": [0, 0],
+          "sense": "minimize"
+        }
+
+        Common Applications:
+        • Profit Maximization: Find optimal price and marketing spend
+        • Cost Minimization: Minimize total production and distribution costs
+        • Resource Allocation: Optimize allocation across multiple channels
+
+        Examples:
+
+        1. Minimize Quadratic Function:
+        {
+          "formula": "({0} - 100) * ({0} - 100) + ({1} - 50) * ({1} - 50)",
+          "initialValues": [0, 0],
+          "sense": "minimize",
+          "learningRate": 0.1
+        }
+
+        2. Profit Maximization (price, quantity):
+        {
+          "formula": "{0} * {1} - {0} * {0} * 0.01 - {1} * 20 - 1000",
+          "initialValues": [100, 500],
+          "sense": "maximize",
+          "description": "Maximize profit from price and quantity"
+        }
 
         Returns optimal variable values and objective value.
         """,
         inputSchema: MCPToolInputSchema(
             properties: [
-                "objective": MCPSchemaProperty(
+                "formula": MCPSchemaProperty(
                     type: "string",
-                    description: "Optimization goal: 'maximize' or 'minimize'",
-                    enum: ["maximize", "minimize"]
+                    description: """
+                    Formula using {0}, {1}, {2}, etc. for variables.
+                    Examples:
+                    • "{0} * {0} + {1} * {1}" - sum of squares
+                    • "{0} * {1} - {0} * {0}" - profit function
+                    • "({0} - 10) * ({0} - 10) + ({1} - 5) * ({1} - 5)" - quadratic
+                    """
                 ),
                 "initialValues": MCPSchemaProperty(
-                    type: "object",
-                    description: "Initial values for variables as key-value pairs (e.g., {\"price\": 100, \"marketing\": 20000})"
+                    type: "array",
+                    description: "Initial values for each variable (starting point for optimization)",
+                    items: MCPSchemaItems(type: "number")
+                ),
+                "sense": MCPSchemaProperty(
+                    type: "string",
+                    description: "Optimization goal: 'minimize' or 'maximize'",
+                    enum: ["minimize", "maximize"]
                 ),
                 "learningRate": MCPSchemaProperty(
                     type: "number",
-                    description: "Step size for gradient descent (default: 0.01). Smaller = slower but more stable"
+                    description: "Step size (default: 0.01). Smaller = slower but more stable"
                 ),
                 "maxIterations": MCPSchemaProperty(
-                    type: "integer",
+                    type: "number",
                     description: "Maximum iterations (default: 1000)"
                 ),
                 "tolerance": MCPSchemaProperty(
                     type: "number",
                     description: "Convergence tolerance (default: 0.0001)"
+                ),
+                "description": MCPSchemaProperty(
+                    type: "string",
+                    description: "Optional description of optimization goal"
                 )
             ],
-            required: ["objective", "initialValues"]
+            required: ["formula", "initialValues", "sense"]
         )
     )
 
@@ -129,46 +303,119 @@ public struct GradientDescentOptimizeTool: MCPToolHandler, Sendable {
             throw ToolError.invalidArguments("Missing arguments")
         }
 
-        let objective = try args.getString("objective")
+        let formula = try args.getString("formula")
+        let sense = try args.getString("sense")
         let learningRate = args.getDoubleOptional("learningRate") ?? 0.01
         let maxIterations = args.getIntOptional("maxIterations") ?? 1000
         let tolerance = args.getDoubleOptional("tolerance") ?? 0.0001
+        let description = args.getStringOptional("description")
 
-        let result = """
-        Gradient Descent Optimization:
+        guard let initialValuesArray = args["initialValues"]?.value as? [AnyCodable] else {
+            throw ToolError.invalidArguments("initialValues must be an array of numbers")
+        }
 
-        Objective: \(objective == "maximize" ? "Maximize" : "Minimize")
-        Learning Rate: \(learningRate)
-        Max Iterations: \(maxIterations)
-        Tolerance: \(tolerance)
+        var initialValues: [Double] = []
+        for value in initialValuesArray {
+            if let d = value.value as? Double {
+                initialValues.append(d)
+            } else if let i = value.value as? Int {
+                initialValues.append(Double(i))
+            } else {
+                throw ToolError.invalidArguments("All initial values must be numbers")
+            }
+        }
 
-        Note: This tool requires a function definition. Use BusinessMath's GradientDescentOptimizer with a closure-based objective function.
+        guard !initialValues.isEmpty else {
+            throw ToolError.invalidArguments("Must provide at least one initial value")
+        }
 
-        Example Swift usage:
-        ```swift
-        let optimizer = GradientDescentOptimizer<Double>(
-            learningRate: \(learningRate),
-            maxIterations: \(maxIterations)
+        // Define objective function
+        let objectiveFunction: (VectorN<Double>) -> Double = { vector in
+            let values = vector.toArray()
+            let result = evaluateMultivariateExpression(formula, withVariables: values)
+            return sense == "maximize" ? -result : result
+        }
+
+        // Use gradient descent optimizer
+        let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+            learningRate: learningRate,
+            maxIterations: maxIterations,
+            tolerance: tolerance
         )
 
-        let result = optimizer.optimize(
-            objective: { variables in
-                // Your profit/cost function
-                let price = variables[0]
-                let marketing = variables[1]
-                // Return value to optimize
-            },
-            initialValues: [100.0, 20000.0]
-        )
-        ```
+        let result: MultivariateOptimizationResult<VectorN<Double>>
+        do {
+            result = try optimizer.minimize(
+                function: objectiveFunction,
+                initialGuess: VectorN(initialValues)
+            )
+        } catch {
+            return .error(message: """
+                Gradient Descent Failed
 
-        The optimizer returns:
-        - optimalValues: Best variable settings
-        - objectiveValue: Value at optimum
-        - iterations: Number of steps taken
+                Optimization did not converge within \(maxIterations) iterations.
+
+                Possible reasons:
+                • Learning rate too large (try smaller value)
+                • Starting point too far from optimum
+                • Function may not be differentiable
+
+                Suggestions:
+                • Reduce learningRate (try 0.001 or 0.0001)
+                • Try different initialValues
+                • Increase maxIterations
+
+                Error: \(error.localizedDescription)
+                """)
+        }
+
+        // Get final solution
+        let optimalValues = result.solution.toArray()
+        let actualObjective = evaluateMultivariateExpression(formula, withVariables: optimalValues)
+        _ = result.objectiveValue  // Discard optimizer's internal value
+
+        var output = """
+        Gradient Descent Optimization Result
         """
 
-        return .success(text: result)
+        if let desc = description {
+            output += "\n\n\(desc)"
+        }
+
+        output += """
+
+
+        Optimization Goal: \(sense.capitalized)
+
+        Optimal Solution:
+        """
+
+        for (i, value) in optimalValues.enumerated() {
+            output += "\n  Variable[\(i)] = \(value.formatDecimal(decimals: 6))"
+        }
+
+        output += """
+
+
+        Results:
+        • Objective Value: \(actualObjective.formatDecimal(decimals: 6)) (\(sense)d)
+        • Iterations: \(result.iterations)
+        • Convergence: \(result.convergenceReason)
+
+        Verification:
+        • Formula: \(formula)
+        • Values: [\(optimalValues.map { $0.formatDecimal(decimals: 4) }.joined(separator: ", "))]
+        • Result: \(actualObjective.formatDecimal(decimals: 6))
+
+        Settings:
+        • Learning Rate: \(learningRate)
+        • Tolerance: \(tolerance)
+        • Max Iterations: \(maxIterations)
+
+        Method: Gradient descent with numerical differentiation
+        """
+
+        return .success(text: output)
     }
 }
 
