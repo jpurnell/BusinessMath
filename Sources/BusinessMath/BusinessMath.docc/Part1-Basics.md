@@ -65,7 +65,8 @@ We recommend reading the chapters in this part sequentially:
 The `TimeSeries<T>` structure is the heart of BusinessMath. It combines temporal data (dates/periods) with numeric values, enabling calendar-aware operations like year-over-year growth, quarterly aggregations, and date-based filtering. Nearly every financial model you build will use time series.
 
 ```swift
-let revenue = TimeSeries(data: [100, 110, 121, 133], periods: quarters)
+let quarters = Period.year(2025).quarters()
+let revenue = TimeSeries(periods: quarters, values: [100, 110, 121, 133])
 let growth = revenue.percentChange() // Year-over-year growth rates
 ```
 

@@ -95,10 +95,17 @@ Find input values that achieve target outputs:
 
 ```swift
 let targetRevenue = 1_000_000.0
-let requiredGrowthRate = model.goalSeek(
+
+// Define revenue model as a function of growth rate
+let revenueFunction = { (growthRate: Double) -> Double in
+    let baseRevenue = 800_000.0
+    return baseRevenue * (1 + growthRate)
+}
+
+let requiredGrowthRate = try goalSeek(
+    function: revenueFunction,
     target: targetRevenue,
-    varyingParameter: \.growthRate,
-    initialGuess: 0.10
+    guess: 0.10
 )
 // What growth rate do we need to hit $1M revenue?
 ```
@@ -108,19 +115,30 @@ let requiredGrowthRate = model.goalSeek(
 Optimize subject to real-world constraints:
 
 ```swift
-let optimizer = Optimizer()
-    .objective { capital in
-        portfolio(capital).expectedReturn()
-    }
-    .constraint { capital in
-        capital.sum() == totalBudget  // Equality: use all budget
-    }
-    .constraint { capital in
-        portfolio(capital).risk() <= maxRisk  // Inequality: risk limit
-    }
-    .maximize()
+// Maximize expected return subject to budget and risk constraints
+let optimizer = InequalityOptimizer<VectorN<Double>>()
 
-let optimalAllocation = optimizer.solve()
+let totalBudget = 100_000.0
+let maxRisk = 0.20
+
+let objective = { (capital: VectorN<Double>) -> Double in
+    // Calculate expected return (minimize negative return to maximize)
+    let weights = capital.toArray().map { $0 / totalBudget }
+    let expectedReturn = zip(weights, [0.08, 0.12, 0.15]).map(*).reduce(0, +)
+    return -expectedReturn  // Negate to maximize
+}
+
+let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+    .equality { v in v.toArray().reduce(0, +) - totalBudget },  // Budget constraint
+    .inequality { v in  // Risk constraint
+        let weights = v.toArray().map { $0 / totalBudget }
+        let variance = /* calculate portfolio variance */
+        return sqrt(variance) - maxRisk
+    }
+]
+
+let result = try optimizer.minimize(objective, from: VectorN([30_000, 40_000, 30_000]), constraints: constraints)
+let optimalAllocation = result.solution
 ```
 
 ### Portfolio Optimization
@@ -128,16 +146,34 @@ let optimalAllocation = optimizer.solve()
 Construct efficient portfolios using Modern Portfolio Theory:
 
 ```swift
-let optimizer = PortfolioOptimizer(returns: returns, covariance: covMatrix)
+let returns = VectorN([0.08, 0.12, 0.15])
+let covMatrix = [
+    [0.04, 0.01, 0.02],
+    [0.01, 0.09, 0.03],
+    [0.02, 0.03, 0.16]
+]
+
+let optimizer = PortfolioOptimizer()
 
 // Minimum variance portfolio
-let minVar = optimizer.minimizeVariance()
+let minVar = try optimizer.minimumVariancePortfolio(
+    expectedReturns: returns,
+    covariance: covMatrix
+)
 
 // Maximum Sharpe ratio
-let maxSharpe = optimizer.maximizeSharpeRatio(riskFreeRate: 0.02)
+let maxSharpe = try optimizer.maximumSharpePortfolio(
+    expectedReturns: returns,
+    covariance: covMatrix,
+    riskFreeRate: 0.02
+)
 
 // Efficient frontier
-let frontier = optimizer.efficientFrontier(points: 50)
+let frontier = try optimizer.efficientFrontier(
+    expectedReturns: returns,
+    covariance: covMatrix,
+    numberOfPoints: 50
+)
 ```
 
 ### Integer Programming
@@ -145,17 +181,37 @@ let frontier = optimizer.efficientFrontier(points: 50)
 Optimize with discrete decisions (yes/no, count, selection):
 
 ```swift
-let optimizer = IntegerOptimizer()
-    .variables(projects.count, type: .binary)  // Select or reject
-    .objective { selected in
-        projects.filtered(selected).totalNPV()
-    }
-    .constraint { selected in
-        projects.filtered(selected).totalCost() <= budget
-    }
-    .maximize()
+// Select projects to maximize NPV subject to budget constraint
+let projectNPVs = [50_000.0, 75_000.0, 60_000.0, 90_000.0]
+let projectCosts = [20_000.0, 35_000.0, 25_000.0, 40_000.0]
+let budget = 80_000.0
 
-let selectedProjects = optimizer.solve()
+
+// Constraint: total cost <= budget
+let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+	.inequality { v in
+		let cost = zip(v.toArray(), projectCosts).map(*).reduce(0, +)
+		return cost - budget
+	}
+]
+
+// Integer specification: all variables are binary (0 or 1)
+let integerSpec = IntegerProgramSpecification.allBinary(dimension: projectNPVs.count)
+
+let solver = BranchAndBoundSolver<VectorN<Double>>()
+let result = try solver.solve(
+	objective: { (selected: VectorN<Double>) -> Double in
+		let npv = zip(selected.toArray(), projectNPVs).map(*).reduce(0, +)
+	 return -npv  // Negate to maximize
+ }, // Objective: maximize total NPV (minimize negative NPV)
+	from: VectorN([0, 0, 0, 0]),
+	subjectTo: constraints,
+	integerSpec: integerSpec,
+	minimize: true  // Minimize negative NPV = maximize NPV
+)
+
+let selectedProjects = result.solution
+
 ```
 
 ## Real-World Applications
