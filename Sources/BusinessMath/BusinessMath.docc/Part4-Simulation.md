@@ -56,15 +56,26 @@ Before diving into simulation and uncertainty quantification:
 Instead of a single forecast, generate thousands of possible futures:
 
 ```swift
-let simulation = revenue.monteCarlo()
-    .baseGrowth(mean: 0.15, standardDeviation: 0.05)
-    .volatility(0.12)
-    .simulations(10_000)
-    .run()
+var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+	let baseRevenue = inputs[0]
+	let growthRate = inputs[1]
+	return baseRevenue * (1 + growthRate)
+}
 
-let forecast = simulation.forecast
-let confidence90 = forecast.confidenceInterval(0.90)
-let probabilityOfPositiveGrowth = forecast.probability { $0 > 0 }
+simulation.addInput(SimulationInput(
+	name: "Base Revenue",
+	distribution: DistributionNormal(1_000_000, 100_000)
+))
+
+simulation.addInput(SimulationInput(
+	name: "Growth Rate",
+	distribution: DistributionNormal(0.15, 0.05)
+))
+
+let results = try simulation.run()
+let mean = results.statistics.mean
+let confidence90 = (results.percentiles.p5, results.percentiles.p95)
+let probabilityPositive = results.probabilityAbove(0)
 ```
 
 This gives you a complete probability distribution instead of a single point estimate.
@@ -74,26 +85,34 @@ This gives you a complete probability distribution instead of a single point est
 Structure thinking around discrete, internally consistent future states:
 
 ```swift
-let scenarios = ScenarioAnalysis()
-    .baseCase {
-        revenueGrowth = 0.10
-        marginExpansion = 0.02
-        probability = 0.60
-    }
-    .upsideCase {
-        revenueGrowth = 0.20
-        marginExpansion = 0.04
-        probability = 0.20
-    }
-    .downsideCase {
-        revenueGrowth = 0.02
-        marginExpansion = -0.01
-        probability = 0.20
-    }
-    .analyze()
+var analysis = ScenarioAnalysis(
+    inputNames: ["Revenue Growth", "Margin Expansion"],
+    model: { inputs in
+        let revenue = 1_000_000 * (1 + inputs[0])
+        let margin = 0.20 + inputs[1]
+        return revenue * margin
+    },
+    iterations: 1_000
+)
 
-let expectedValue = scenarios.probabilityWeightedAverage()
-let downside = scenarios.worstCase
+analysis.addScenario(Scenario(name: "Base Case") { config in
+    config.setValue(0.10, forInput: "Revenue Growth")
+    config.setValue(0.02, forInput: "Margin Expansion")
+})
+
+analysis.addScenario(Scenario(name: "Upside") { config in
+    config.setValue(0.20, forInput: "Revenue Growth")
+    config.setValue(0.04, forInput: "Margin Expansion")
+})
+
+analysis.addScenario(Scenario(name: "Downside") { config in
+    config.setValue(0.02, forInput: "Revenue Growth")
+    config.setValue(-0.01, forInput: "Margin Expansion")
+})
+
+let results = try analysis.run()
+let comparison = ScenarioComparison(results: results)
+let best = comparison.bestScenario(by: .mean)
 ```
 
 ### Probabilistic Forecasting
@@ -101,14 +120,34 @@ let downside = scenarios.worstCase
 Create forecasts that communicate uncertainty clearly:
 
 ```swift
-let forecast = revenue.forecastWithUncertainty()
-    .historicalVolatility(periods: 20)
-    .confidenceIntervals([0.50, 0.75, 0.90])
-    .periods(12)
-    .generate()
+// Forecast next 12 months with uncertainty
+var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+	let baseRevenue = inputs[0]
+	let growthRate = inputs[1]
+	let volatility = inputs[2]
 
-// Forecast includes median, confidence bands, and full distribution
-chart.show(forecast, showBands: true)
+	// Simple revenue forecast with uncertainty
+	let trend = baseRevenue * (1 + growthRate)
+	let randomShock = volatility * (Double.random(in: -1...1))
+	return trend + randomShock
+}
+
+simulation.addInput(SimulationInput(
+	name: "Base Revenue",
+	distribution: DistributionNormal(100_000, 5_000)
+))
+simulation.addInput(SimulationInput(
+	name: "Growth Rate",
+	distribution: DistributionNormal(0.10, 0.03)
+))
+simulation.addInput(SimulationInput(
+	name: "Volatility",
+	distribution: DistributionNormal( 0, 2_000)
+))
+
+let results = try simulation.run()
+let median = results.percentiles.p50
+let confidence90 = (results.percentiles.p5, results.percentiles.p95)
 ```
 
 ### Stress Testing
@@ -116,14 +155,32 @@ chart.show(forecast, showBands: true)
 Test how models perform under extreme but plausible conditions:
 
 ```swift
-let stressScenarios = [
-    .recession(duration: quarters(6), severity: 0.30),
-    .creditCrisis(spreadWidening: 300),  // basis points
-    .supplyShock(costIncrease: 0.40)
-]
+var stressTest = ScenarioAnalysis(
+	inputNames: ["Revenue", "Costs"],
+	model: { inputs in inputs[0] - inputs[1] },  // Profit
+	iterations: 1_000
+)
 
-let stressResults = portfolio.stress(scenarios: stressScenarios)
-// How does portfolio perform in each scenario?
+// Recession scenario
+stressTest.addScenario(Scenario(name: "Recession") { config in
+	config.setValue(700_000, forInput: "Revenue")      // -30% revenue
+	config.setValue(650_000, forInput: "Costs")        // Costs stay high
+})
+
+// Credit crisis scenario
+stressTest.addScenario(Scenario(name: "Credit Crisis") { config in
+	config.setValue(900_000, forInput: "Revenue")
+	config.setValue(800_000, forInput: "Costs")        // +40% financing costs
+})
+
+// Supply shock scenario
+stressTest.addScenario(Scenario(name: "Supply Shock") { config in
+	config.setValue(1_000_000, forInput: "Revenue")
+	config.setValue(900_000, forInput: "Costs")        // +40% costs
+})
+
+let results = try stressTest.run()
+// Analyze worst-case outcomes across scenarios
 ```
 
 ## When to Use Each Approach

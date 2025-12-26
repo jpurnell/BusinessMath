@@ -91,12 +91,16 @@ The reading path depends on your goals:
 The foundation of most financial models is a revenue forecast:
 
 ```swift
-let model = RevenueModel()
-    .historicalRevenue(historicalData)
-    .growthDriver(.compound(rate: 0.15))
-    .seasonalityPattern(quarters: [1.1, 0.9, 0.95, 1.05])
-    .forecastPeriods(20)
-    .calculate()
+let quarters = Period.year(2025).quarters()
+let model = FinancialModel {
+    Revenue {
+        Product("SaaS Subscriptions")
+            .price(99)
+            .customers(1000)
+    }
+}
+
+let revenue = model.totalRevenue(for: quarters[0])
 ```
 
 ### Valuation Methodologies
@@ -105,30 +109,32 @@ BusinessMath implements industry-standard valuation approaches:
 
 **Discounted Cash Flow (DCF):**
 ```swift
-let valuation = equity.valueDCF(
-    freeCashFlows: fcf,
-    terminalGrowth: 0.025,
-    wacc: 0.09
-)
+let freeCashFlows = [10_000.0, 12_000.0, 14_000.0, 16_000.0, 18_000.0]
+let terminalValue = 18_000 * (1 + 0.025) / (0.09 - 0.025)  // Gordon growth
+let allCashFlows = freeCashFlows + [terminalValue]
+let valuation = npv(discountRate: 0.09, cashFlows: allCashFlows)
 ```
 
 **Dividend Discount Model (DDM):**
 ```swift
-let value = equity.dividendDiscountModel(
-    currentDividend: 2.50,
+let equity = GordonGrowthModel(
+    dividendPerShare: 2.50,
     growthRate: 0.05,
     requiredReturn: 0.10
 )
+let value = equity.valuePerShare()
 ```
 
 **Bond Pricing:**
 ```swift
-let price = bond.price(
+let bond = Bond(
     faceValue: 1000,
     couponRate: 0.05,
-    yield: 0.045,
-    maturity: years(10)
+    maturityDate: Calendar.current.date(byAdding: .year, value: 10, to: Date())!,
+    paymentFrequency: .semiAnnual,
+    issueDate: Date()
 )
+let price = bond.price(yield: 0.045)
 ```
 
 ### Financial Statement Integration
@@ -136,16 +142,23 @@ let price = bond.price(
 Connect revenue models to complete financial statements:
 
 ```swift
-let statements = FinancialStatements()
-    .revenueModel(revenueModel)
-    .costStructure(variableCosts: 0.40, fixedCosts: 50_000)
-    .capitalExpenditures(capexSchedule)
-    .workingCapitalRatios(dso: 45, dpo: 30, inventoryDays: 60)
-    .generate()
+let quarters = Period.year(2025).quarters()
+let model = FinancialModel {
+    Revenue {
+        Product("SaaS Subscriptions")
+            .price(99)
+            .customers(1000)
+    }
 
-let incomeStatement = statements.incomeStatement
-let balanceSheet = statements.balanceSheet
-let cashFlowStatement = statements.cashFlow
+    Costs {
+        Fixed("Salaries", 50_000)
+        Variable("Server Costs", 0.20)
+    }
+}
+
+let revenue = model.totalRevenue(for: quarters[0])
+let expenses = model.totalExpenses(for: quarters[0])
+let profit = model.profit(for: quarters[0])
 ```
 
 ## Real-World Applications
