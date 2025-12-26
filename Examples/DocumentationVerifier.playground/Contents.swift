@@ -3,57 +3,47 @@ import BusinessMath
 import OSLog
 import PlaygroundSupport
 
-	// 20-year glide path (240 months → 80 quarters)
-	let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
-		numberOfPeriods: 80,
-		discountRate: 0.02  // 2% quarterly
-	)
+	// Simple Example: Minimize portfolio variance with no short-selling
+	// Problem: Minimize w'Cw subject to Σw = 1, w ≥ 0
 
-	// 3 assets: Stocks, Bonds, Cash
-	let returns = VectorN([0.10, 0.05, 0.02])  // Expected annual returns
-	let volatility = VectorN([0.18, 0.06, 0.01])
+	let covariance = [
+		[0.04, 0.01, 0.02],
+		[0.01, 0.09, 0.03],
+		[0.02, 0.03, 0.16]
+	]
 
-	// Risk tolerance decreases with age
-	func riskAversion(quarter: Int, totalQuarters: Int) -> Double {
-		let progress = Double(quarter) / Double(totalQuarters)
-		return 1.0 + 4.0 * progress  // 1.0 → 5.0 over lifetime
-	}
-
-print("hello")
-
-
-	// Objective: risk-adjusted return (mean-variance)
-	let result = try optimizer.optimize(
-		objective: { t, weights in
-			let expectedReturn = weights.dot(returns)
-			let risk = weights.toArray().enumerated()
-				.map { i, w in w * w * volatility.toArray()[i] * volatility.toArray()[i] }
-				.reduce(0, +)
-
-			let lambda = riskAversion(quarter: t, totalQuarters: 80)
-			return expectedReturn - lambda * risk
-		},
-		initialState: VectorN([0.80, 0.15, 0.05]),  // Start aggressive
-		constraints: [
-			.budgetEachPeriod,
-			.turnoverLimit(0.10),  // 10% max rebalancing per quarter
-			MultiPeriodConstraint<VectorN<Double>>.nonNegativityEachPeriod(dimension: 3)[0],
-			MultiPeriodConstraint<VectorN<Double>>.nonNegativityEachPeriod(dimension: 3)[1],
-			MultiPeriodConstraint<VectorN<Double>>.nonNegativityEachPeriod(dimension: 3)[2]
-		],
-		minimize: false
-	)
-
-print("hello")
-
-	// Analyze glide path (sample every 5 years)
-	print("Glide Path (every 5 years):")
-	for year in stride(from: 0, through: 20, by: 5) {
-		let quarter = year * 4
-		if quarter < result.trajectory.count {
-			let weights = result.trajectory[quarter].toArray()
-			print("Year \(year): Stocks \(weights[0].percent(1))), " +
-	  "Bonds \(weights[1].percent(1))), " +
-				  "Cash \(weights[2].percent(2))")
+	// Objective: Minimize portfolio variance
+	let portfolioVariance: (VectorN<Double>) -> Double = { weights in
+		var variance = 0.0
+		for i in 0..<3 {
+			for j in 0..<3 {
+				variance += weights[i] * covariance[i][j] * weights[j]
+			}
 		}
+		return variance
 	}
+
+	// Constraints:
+	// 1. Budget: Σw = 1 (equality)
+	// 2. No short-selling: w ≥ 0 (inequalities)
+	let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+		.budgetConstraint  // Σw = 1
+	] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3)  // w ≥ 0
+
+	// Initial guess: equal weights
+	let initial = VectorN([1.0/3, 1.0/3, 1.0/3])
+
+	let optimizer = InequalityOptimizer<VectorN<Double>>()
+	let result = try optimizer.minimize(
+		portfolioVariance,
+		from: initial,
+		subjectTo: constraints
+	)
+
+	print("Optimal portfolio:")
+	for (i, w) in result.solution.toArray().enumerated() {
+		print("  Asset \(i+1): \(w.percent(1))")
+	}
+print("Portfolio variance: \(result.objectiveValue.number(6))")
+print("Portfolio volatility: \((sqrt(result.objectiveValue).percent(1)))")
+	print("Converged: \(result.converged)")
