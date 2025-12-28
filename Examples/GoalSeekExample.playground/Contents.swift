@@ -71,11 +71,11 @@ func breakevenAnalysisExample() throws {
 		tolerance: 0.01
 	)
 
-	print("Breakeven price: \(breakevenPrice.number())")
+	print("Breakeven price: \(breakevenPrice.currency())")
 
 	// Calculate breakeven quantity
 	let breakevenQuantity = 10000 - 1000 * breakevenPrice
-	print("Breakeven quantity: \(breakevenQuantity.number()) units")
+	print("Breakeven quantity: \(breakevenQuantity.number(0)) units")
 
 	// Verify
 	let verifyProfit = profit(price: breakevenPrice)
@@ -103,29 +103,37 @@ func irrCalculationExample() throws {
 	}
 	print()
 
-	// Find IRR (rate where NPV = 0)
-	print("Finding IRR (rate where NPV = 0)...")
-	let irr = try goalSeek(
-		function: npv,
+	// Method 1: Use built-in IRR function (recommended)
+	print("Method 1: Using built-in IRR function")
+	let irrBuiltIn = try irr(cashFlows: cashFlows)
+	print("IRR: \(irrBuiltIn.percent())")
+	print()
+
+	// Method 2: Use goalSeek to find IRR manually (educational)
+	print("Method 2: Using goalSeek to find IRR manually")
+	let irrManual = try goalSeek(
+		function: { rate in
+			// NPV function: find rate where NPV = 0
+			npv(discountRate: rate, cashFlows: cashFlows)
+		},
 		target: 0.0,
 		guess: 0.10,  // Start with 10% guess
 		tolerance: 0.000001
 	)
-
-	print("IRR: \((irr * 100).number())%")
+	print("IRR (manual): \(irrManual.percent())")
+	print()
 
 	// Verify
-	let verifyNPV = npv(rate: irr)
+	let verifyNPV = npv(discountRate: irrBuiltIn, cashFlows: cashFlows)
 	print("Verification: NPV at IRR = \(verifyNPV.currency()) (should be ~$0)")
-
 	print()
 
 	// Show NPV at different rates
 	print("NPV at various discount rates:")
 	for rate in stride(from: 0.0, through: 0.30, by: 0.05) {
-		let npvValue = npv(rate: rate)
-		let marker = abs(rate - irr) < 0.01 ? " ← IRR" : ""
-		print("  \((rate * 100).number().paddingLeft(toLength: 5))%: \(npvValue.currency())\(marker)")
+		let npvValue = npv(discountRate: rate, cashFlows: cashFlows)
+		let marker = abs(rate - irrBuiltIn) < 0.01 ? " ← IRR" : ""
+		print("  \(rate.percent().paddingLeft(toLength: 5)): \(npvValue.currency())\(marker)")
 	}
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -151,8 +159,8 @@ func targetSeekingExample() throws {
 		guess: 1000.0
 	)
 
-	print("Required customers: \(requiredCustomers.number())")
-	print("Verification: $50 × \(requiredCustomers.number()) = \((pricePerSeat * requiredCustomers).currency())")
+	print("Required customers: \(requiredCustomers.number(0))")
+	print("Verification: $50 × \(requiredCustomers.number(0)) = \((pricePerSeat * requiredCustomers).currency(0))")
 
 	print()
 
@@ -175,10 +183,10 @@ func targetSeekingExample() throws {
 	)
 
 	print("Steady-state customers: \(steadyStateCustomers)")
-	print("Verification: 5%% × \(steadyStateCustomers.number()) = \((monthlyChurn * steadyStateCustomers).number()) new signups needed")
+	print("Verification: 5%% × \(steadyStateCustomers.number(0)) = \((monthlyChurn * steadyStateCustomers).number(0)) new signups needed")
 
 	let steadyStateMRR = pricePerSeat * steadyStateCustomers
-	print("Steady-state MRR: \(steadyStateMRR.currency())")
+	print("Steady-state MRR: \(steadyStateMRR.currency(0))")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }
@@ -197,11 +205,11 @@ func equationSolvingExample() throws {
 		tolerance: 0.000001
 	)
 
-	print("Solution: x = \(solution1.number())")
+	print("Solution: x = \(solution1.number(4))")
 
 	// Verify
 	let verify1 = exp(solution1) - 2*solution1 - 3
-	print("Verification: e^\(solution1.number()) - 2(\(solution1.number())) - 3 = \(verify1.number())")
+	print("Verification: e^\(solution1.number(4)) - 2(\(solution1.number(4))) - 3 = \(verify1.number())")
 
 	print()
 
@@ -276,14 +284,14 @@ func constrainedGoalSeekExample() throws {
 	let result = optimizer.optimize(
 		objective: profit,
 		constraints: [minPriceConstraint],
-		initialValue: 10.0,
+		initialGuess: 10.0,
 		bounds: (lower: 0.0, upper: 100.0)
 	)
 
 	if result.converged {
-		print(String(format: "Breakeven price: \(result.optimalValue.currency())", result.optimalValue))
-		print(String(format: "Profit at breakeven: \(result.objectiveValue.currency())", result.objectiveValue))
-		print(String(format: "Iterations: \(result.iterations.number())", result.iterations))
+		print("Breakeven price: \(result.optimalValue.currency())")
+		print("Profit at breakeven: \(result.objectiveValue.currency())")
+		print("Iterations: \(result.iterations)")
 		print()
 
 		// Check constraint
@@ -388,7 +396,7 @@ func multipleRootsExample() throws {
 	print()
 
 	func polynomial(x: Double) -> Double {
-		return x*x - 4*x + 3
+		return x * x - 4 * x + 3
 	}
 
 	// Find first root (starting near x=1)
@@ -401,7 +409,6 @@ func multipleRootsExample() throws {
 
 	print("Root 1 (guess=0): x = \(root1.number())")
 	print("  Verification: f(\(root1.number())) = \(polynomial(x: root1).number())")
-
 	print()
 
 	// Find second root (starting near x=3)
@@ -417,8 +424,8 @@ func multipleRootsExample() throws {
 
 	print()
 	print("Key insight: Initial guess determines which root is found")
-	print("  • Guess near 1 → finds x=1")
-	print("  • Guess near 3 → finds x=3")
+	print("  • Guess near 1 → finds x = 1")
+	print("  • Guess near 3 → finds x = 3")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
 }

@@ -239,7 +239,7 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 
 	// Build output string
 	var output = "Tornado Diagram - Sensitivity Analysis\n"
-	output += String(format: "Base Case: %.\(decimalPlaces)f\n\n", baseCaseOutput)
+	output += "Base Case: \(baseCaseOutput.number(decimalPlaces))\n\n"
 	
 	// Format the bar line
 	func barLine(_ paddedName: String, _ paddedLeftBar: String, _ paddedRightBar: String) -> String {
@@ -284,27 +284,27 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		let paddedName = input.padding(toLength: maxInputNameWidth, withPad: " ", startingAt: 0)
 
 		// Calculate percentage impact
-		let percentImpact = baseCaseOutput != 0 ? (abs(impact) / abs(baseCaseOutput)) * 100.0 : 0.0
+		let percentImpact = baseCaseOutput != 0 ? (abs(impact) / abs(baseCaseOutput)) : 0.0
 
 		// Pad bars: left bar is right-aligned (padding on left), right bar is left-aligned (padding on right)
 		let paddedLeftBar = String(repeating: " ", count: maxBarWidth - leftWidth) + leftBar
 		let paddedRightBar = rightBar.padding(toLength: maxBarWidth, withPad: " ", startingAt: 0)
 
 		// Format impact info
-		let impactInfo = String(format: " Impact: %.\(decimalPlaces)f (%.\(decimalPlaces == 0 ? 1 : decimalPlaces)f%%)",
-			impact, percentImpact)
+		let impactInfo = " Impact: \(impact.number(decimalPlaces)) \(percentImpact.percent(decimalPlaces == 0 ? 1 : decimalPlaces))"
 
 		output += barLine(paddedName, paddedLeftBar, paddedRightBar) + impactInfo + "\n"
 
 		// Add value labels underneath
-		let valueLabels = String(format: "%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f\n",
-			String(repeating: " ", count: maxInputNameWidth + 3),
-			low,
-			String(repeating: " ", count: maxBarWidth - 8),
-			baseCaseOutput,
-			String(repeating: " ", count: maxBarWidth - 8),
-			high
-		)
+		let valueLabels = "\(String(repeating: " ", count: maxInputNameWidth + 3))\(low.number(decimalPlaces))\(String(repeating: " ", count: maxBarWidth - 8))\(baseCaseOutput.number(decimalPlaces))\(String(repeating: " ", count: maxBarWidth - 8))\(high.number(decimalPlaces)))"
+//		let valueLabels = String(format: "%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f\n",
+//			String(repeating: " ", count: maxInputNameWidth + 3),
+//			low,
+//			String(repeating: " ", count: maxBarWidth - 8),
+//			baseCaseOutput,
+//			String(repeating: " ", count: maxBarWidth - 8),
+//			high
+//		)
 
 		output += valueLabels + "\n"
 	}

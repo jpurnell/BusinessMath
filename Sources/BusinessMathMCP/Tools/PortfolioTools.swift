@@ -122,15 +122,15 @@ public struct OptimizePortfolioTool: MCPToolHandler, Sendable {
         Portfolio Optimization Results
 
         Optimal Portfolio (Maximum Sharpe Ratio):
-        - Expected Return: \(String(format: "%.2f%%", optimalPortfolio.expectedReturn * 100))
-        - Risk (Volatility): \(String(format: "%.2f%%", optimalPortfolio.volatility * 100))
-        - Sharpe Ratio: \(String(format: "%.3f", optimalPortfolio.sharpeRatio))
+        - Expected Return: \(optimalPortfolio.expectedReturn.percent(2))
+        - Risk (Volatility): \(optimalPortfolio.volatility.percent(2))
+        - Sharpe Ratio: \(optimalPortfolio.sharpeRatio.number(3))
 
         Optimal Weights:
         """
 
         for (asset, weight) in zip(assetNames, optimalPortfolio.weights.toArray()) {
-            result += "\n  \(asset): \(String(format: "%.1f%%", weight * 100))"
+			result += "\n  \(asset): \(weight.percent(1))"
         }
 
         result += """
@@ -271,7 +271,7 @@ public struct EfficientFrontierTool: MCPToolHandler, Sendable {
             let maxWeightIndex = weights.enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
             let topAsset = assetNames[maxWeightIndex]
             let topWeight = weights[maxWeightIndex]
-            result += "\n\(String(format: "%6.2f%%", portfolio.volatility * 100)) | \(String(format: "%7.2f%%", portfolio.expectedReturn * 100)) | \(String(format: "%6.3f", portfolio.sharpeRatio)) | \(topAsset) (\(String(format: "%.1f%%", topWeight * 100)))"
+			result += "\n\(portfolio.volatility.percent(2).paddingLeft(toLength: 6)) | \(portfolio.expectedReturn.percent(2).paddingLeft(toLength: 8)) | \(portfolio.sharpeRatio.number(3).paddingLeft(toLength: 7)) | \(topAsset) (\(topWeight.percent(1).paddingLeft(toLength: 4)))"
         }
 
         // Get key points from frontier
@@ -282,8 +282,8 @@ public struct EfficientFrontierTool: MCPToolHandler, Sendable {
 
 
         Key Points:
-        • Minimum Risk Portfolio: \(String(format: "%.2f%%", minRisk.volatility * 100)) risk, \(String(format: "%.2f%%", minRisk.expectedReturn * 100)) return
-        • Maximum Sharpe Portfolio: \(String(format: "%.3f", maxSharpe.sharpeRatio)) Sharpe, \(String(format: "%.2f%%", maxSharpe.expectedReturn * 100)) return
+        • Minimum Risk Portfolio: \(minRisk.volatility.percent(2)) risk, \(minRisk.expectedReturn.percent(2)) return
+        • Maximum Sharpe Portfolio: \(maxSharpe.sharpeRatio.number(3)) Sharpe, \(maxSharpe.expectedReturn.percent(2)) return
 
         Usage:
         - Portfolios on the frontier are optimal (no portfolio with same risk has higher return)
@@ -402,10 +402,10 @@ public struct RiskParityAllocationTool: MCPToolHandler, Sendable {
         """
 
         for (asset, weight) in zip(assetNames, weights) {
-            result += "\n  \(asset): \(String(format: "%.1f%%", weight * 100))"
+			result += "\n  \(asset): \(weight.percent(1))"
         }
 
-        result += "\n\nRisk Contributions (each should be ~\(String(format: "%.1f%%", targetContribution * 100))):"
+		result += "\n\nRisk Contributions (each should be ~\(targetContribution.percent(1))):"
 
         // Calculate actual risk contributions
         var actualRiskContributions: [Double] = []
@@ -419,16 +419,16 @@ public struct RiskParityAllocationTool: MCPToolHandler, Sendable {
         }
 
         for (asset, contribution) in zip(assetNames, actualRiskContributions) {
-            result += "\n  \(asset): \(String(format: "%.1f%%", (contribution / portfolio.volatility) * 100)) of total risk"
+			result += "\n  \(asset): \((contribution / portfolio.volatility).percent(1)) of total risk"
         }
 
         result += """
 
 
         Portfolio Metrics:
-        - Expected Return: \(String(format: "%.2f%%", portfolio.expectedReturn * 100))
-        - Risk (Volatility): \(String(format: "%.2f%%", portfolio.volatility * 100))
-        - Sharpe Ratio: \(String(format: "%.3f", portfolio.sharpeRatio))
+        - Expected Return: \(portfolio.expectedReturn.percent(2))
+        - Risk (Volatility): \(portfolio.volatility.percent(2))
+        - Sharpe Ratio: \(portfolio.sharpeRatio.number(3))
 
         When to use:
         ✓ Skeptical of return forecasts

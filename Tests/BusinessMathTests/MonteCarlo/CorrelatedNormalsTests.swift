@@ -12,7 +12,7 @@ import OSLog
 
 @testable import BusinessMath
 
-@Suite("CorrelatedNormals Tests")
+@Suite("CorrelatedNormals Tests", .serialized)
 struct CorrelatedNormalsTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.CorrelatedNormalsTests", category: #function)
 
@@ -272,7 +272,7 @@ struct CorrelatedNormalsTests {
 	}
 }
 
-@Suite("CorrelatedNormals – Additional")
+@Suite("CorrelatedNormals – Additional", .serialized)
 struct CorrelatedNormalsAdditionalTests {
 
 	@Test("Single variable case (1D)")

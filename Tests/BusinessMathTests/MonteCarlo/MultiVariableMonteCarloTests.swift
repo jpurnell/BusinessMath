@@ -11,7 +11,7 @@ import OSLog
 
 @testable import BusinessMath
 
-@Suite("Multi-Variable Monte Carlo Tests")
+@Suite("Multi-Variable Monte Carlo Tests", .serialized)
 struct MultiVariableMonteCarloTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.MultiVariableMonteCarloTests", category: #function)
 

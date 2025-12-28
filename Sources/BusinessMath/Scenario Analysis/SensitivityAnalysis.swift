@@ -267,15 +267,15 @@ extension ScenarioSensitivityAnalysis {
 /// // Print data table
 /// print("         ", terminator: "")
 /// for cost in sensitivity.inputValues2 {
-///     print(String(format: "%10.0f", cost), terminator: "")
+///     print(cost.number(0).paddingLeft(to: 10), terminator: "")
 /// }
 /// print()
 ///
 /// for (i, revenue) in sensitivity.inputValues1.enumerated() {
-///     print(String(format: "%8.0f ", revenue), terminator: "")
+///     print(revenue.number(0).paddingLeft(to: 8), terminator: "")
 ///     for j in 0..<sensitivity.inputValues2.count {
-///         print(String(format: "%10.0f", sensitivity.results[i][j]), terminator: "")
-///     }
+///         print(sensitivity.results[i][j].number(0).paddingLeft(to: 12)), terminator: "")
+///     }	
 ///     print()
 /// }
 /// ```
