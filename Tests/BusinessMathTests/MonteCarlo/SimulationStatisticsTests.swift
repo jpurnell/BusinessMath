@@ -10,7 +10,7 @@ import Testing
 import Numerics
 @testable import BusinessMath
 
-@Suite("SimulationStatistics Tests")
+@Suite("SimulationStatistics Tests", .serialized)
 struct SimulationStatisticsTests {
 
 	@Test("SimulationStatistics initialization from simple dataset")
@@ -237,7 +237,7 @@ struct SimulationStatisticsTests {
 	}
 }
 
-@Suite("SimulationStatistics – Additional")
+@Suite("SimulationStatistics – Additional", .serialized)
 struct SimulationStatisticsAdditionalTests {
 
 	@Test("Coverage interval vs CI of the mean – semantics pin")

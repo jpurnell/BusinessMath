@@ -2,7 +2,7 @@ import Testing
 import Numerics
 @testable import BusinessMath
 
-@Suite("MultivariateOptimizer Performance Tests")
+@Suite("MultivariateOptimizer Performance Tests", .serialized)
 struct MultivariateOptimizerPerformanceTests {
 
     // MARK: - Protocol vs Concrete Type Performance

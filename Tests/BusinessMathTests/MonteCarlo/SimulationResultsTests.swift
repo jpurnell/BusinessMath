@@ -11,7 +11,7 @@ import Numerics
 import OSLog
 @testable import BusinessMath
 
-@Suite("SimulationResults Tests")
+@Suite("SimulationResults Tests", .serialized)
 struct SimulationResultsTests {
 	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 	@Test("SimulationResults initialization from values")
@@ -400,7 +400,7 @@ struct SimulationResultsTests {
 	}
 }
 
-@Suite("SimulationResults – Additional")
+@Suite("SimulationResults – Additional", .serialized)
 struct SimulationResultsAdditionalTests {
 
 	@Test("Probability boundary semantics are strict")

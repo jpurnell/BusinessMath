@@ -10,7 +10,7 @@ import Testing
 import Numerics
 @testable import BusinessMath
 
-@Suite("Percentiles Tests")
+@Suite("Percentiles Tests", .serialized)
 struct PercentilesTests {
 
 	@Test("Percentiles initialization from sorted data")
@@ -191,7 +191,7 @@ struct PercentilesTests {
 	}
 }
 
-@Suite("Percentiles – Additional")
+@Suite("Percentiles – Additional", .serialized)
 struct PercentilesAdditionalTests {
 
 	@Test("Empty dataset should throw")

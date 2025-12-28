@@ -6,7 +6,7 @@
 //
 
 import Foundation
-@testable import BusinessMath
+import BusinessMath
 
 /// Example: Equality-constrained optimization
 func equalityConstrainedExample() throws {
@@ -152,7 +152,7 @@ func constrainedLeastSquaresExample() throws {
 	print()
 	print("Data points:")
 	for point in dataPoints {
-		print(String(format: "  (%.0f, %.1f)", point.x, point.y))
+		print("(\(point.x.number(0)), \(point.y.number(1))")
 	}
 	print()
 
@@ -261,9 +261,9 @@ func portfolioWithLeverageExample() throws {
 
 	print("Assets:")
 	for (i, name) in assets.enumerated() {
-		let ret = expectedReturns[i] * 100
-		let vol = sqrt(covariance[i][i]) * 100
-		print("  \(name): \(ret)% return, \(vol)% volatility")
+		let ret = expectedReturns[i]
+		let vol = sqrt(covariance[i][i])
+		print("  \(name): \(ret.percent()) return, \(vol.percent()) volatility")
 	}
 	print()
 
@@ -313,7 +313,7 @@ func portfolioWithLeverageExample() throws {
 	print("Optimal portfolio:")
 	for (i, name) in assets.enumerated() {
 		let weight = result.solution[i]
-		print("  \(name): \((weight.percent())")
+		print("  \(name): \(weight.percent())")
 	}
 	print()
 
@@ -323,8 +323,8 @@ func portfolioWithLeverageExample() throws {
 					 weights[2] * expectedReturns[2]
 	let portVol = sqrt(result.objectiveValue)
 
-	print("Portfolio return: \((portReturn * 100).number())%")
-	print("Portfolio risk: \((portVol * 100).number())%")
+	print("Portfolio return: \(portReturn.percent())")
+	print("Portfolio risk: \(portVol.percent())")
 	print("Sharpe ratio (rf=2%%): \(((portReturn - 0.02) / portVol).number())")
 
 	print("\n" + String(repeating: "=", count: 50) + "\n")
@@ -353,7 +353,7 @@ func comparisonExample() throws {
 
 	print("   Solution: (\(unconstrainedResult.solution[0].number()),\(unconstrainedResult.solution[1].number()))")
 	print("   Value: \(unconstrainedResult.formattedObjectiveValue)")
-	print(String(format: "   Analytical solution: (1, 1)"))
+	print("   Analytical solution: (1, 1)")
 	print()
 
 	// 2. With constraint x + y = 1

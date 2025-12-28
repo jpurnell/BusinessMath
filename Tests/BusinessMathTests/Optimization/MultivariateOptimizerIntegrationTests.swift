@@ -2,7 +2,7 @@ import Testing
 import Numerics
 @testable import BusinessMath
 
-@Suite("MultivariateOptimizer Integration Tests")
+@Suite("MultivariateOptimizer Integration Tests", .serialized)
 struct MultivariateOptimizerIntegrationTests {
 
     // MARK: - Individual Optimizer Conformance Tests

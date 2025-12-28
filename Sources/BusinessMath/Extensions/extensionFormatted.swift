@@ -106,7 +106,8 @@ extension BinaryFloatingPoint {
 	
 	public func percent(_ decimals: Int = 2, _ signStrategy: BMNumberSignDisplay = .automatic, _ significantDigitsRange: ClosedRange<Int> = (1...3), _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ grouping: BMNumberGrouping = .automatic, _ notation: BMNumberNotation = .automatic) -> String {
 		let value = Double(self)
-		
+		if value.isInfinite { return "∞" }
+		if value.isNaN { return "NaN" }
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 			var style = FloatingPointFormatStyle<Double>.Percent.percent
 			style = style

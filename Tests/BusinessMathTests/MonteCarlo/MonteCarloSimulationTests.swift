@@ -11,7 +11,7 @@ import Numerics
 import OSLog
 @testable import BusinessMath
 
-@Suite("MonteCarloSimulation Tests")
+@Suite("MonteCarloSimulation Tests", .serialized)
 struct MonteCarloSimulationTests {
 	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 	@Test("MonteCarloSimulation basic initialization")
@@ -318,7 +318,7 @@ struct MonteCarloSimulationTests {
 	}
 }
 
-@Suite("MonteCarloSimulation – Additional")
+@Suite("MonteCarloSimulation – Additional", .serialized)
 struct MonteCarloSimulationAdditionalTests {
 	
 		// Deterministic sampler to make runs reproducible

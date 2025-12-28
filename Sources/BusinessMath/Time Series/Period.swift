@@ -288,7 +288,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return "\(yearStr)-\(quarterStr)"
 
 		case .annual:
-			return String(format: "%04d", components.year!)
+				return Double(components.year!).number(4)
 		}
 	}
 	

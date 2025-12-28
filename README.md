@@ -12,14 +12,18 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ## 🎉 Version 2.0 Released!
 
-**Major milestone:** Production-ready API with unified parameter naming across all optimization algorithms.
+**Major milestone:** Production-ready API with GPU-accelerated optimization and unified parameter naming.
 
+- ✅ **GPU Acceleration:** 10-100× speedup for genetic algorithms (populations ≥ 1,000) on Apple Silicon
 - ✅ **Consistent API:** `initialGuess` parameter everywhere
+- ✅ **Constraint Support:** Equality and inequality constraints via penalty method
 - ✅ **Stable:** Semantic versioning guarantees (see [STABILITY.md](STABILITY.md))
 - ✅ **Migration Guide:** Easy upgrade from 1.x (see [MIGRATION.md](MIGRATION.md))
-- ✅ **3,013 Tests:** 99.9% pass rate across 240 test suites
+- ✅ **3,013+ Tests:** 99.9% pass rate across 240+ test suites
 
 **Upgrading from 1.x?** Simply rename `initialValue:` → `initialGuess:` in optimizer calls. [Full migration guide →](MIGRATION.md)
+
+**New to GPU acceleration?** [Get started with the GPU tutorial →](GPU_ACCELERATION_TUTORIAL.md)
 
 ---
 
@@ -123,9 +127,9 @@ Run Monte Carlo simulations with 15 probability distributions. Calculate VaR/CVa
 → [Monte Carlo Guide](Sources/BusinessMath/BusinessMath.docc/4.1-MonteCarloTimeSeriesGuide.md) | [Risk Analytics](Sources/BusinessMath/BusinessMath.docc/2.3-RiskAnalyticsGuide.md)
 
 ### ⚡ Optimization
-Optimize portfolios (efficient frontier, Sharpe ratio maximization), solve integer programming problems (branch-and-bound, cutting planes), and allocate capital optimally. Includes adaptive algorithm selection for complex problems.
+Optimize portfolios (efficient frontier, Sharpe ratio maximization), solve integer programming problems (branch-and-bound, cutting planes), and allocate capital optimally. **GPU-accelerated genetic algorithms** provide 10-100× speedup for large-scale optimization (populations ≥ 1,000) with automatic Metal acceleration on Apple Silicon.
 
-→ [Portfolio Optimization](Sources/BusinessMath/BusinessMath.docc/5.2-PortfolioOptimizationGuide.md) | [Optimization Guide](Sources/BusinessMath/BusinessMath.docc/5.1-OptimizationGuide.md)
+→ [Portfolio Optimization](Sources/BusinessMath/BusinessMath.docc/5.2-PortfolioOptimizationGuide.md) | [Optimization Guide](Sources/BusinessMath/BusinessMath.docc/5.1-OptimizationGuide.md) | **[GPU Acceleration Tutorial](GPU_ACCELERATION_TUTORIAL.md)**
 
 ### 🤖 AI Assistant Integration
 BusinessMath includes an MCP server that lets AI assistants (like Claude Desktop) perform financial analysis using natural language. **167 tools** across time value of money, forecasting, optimization, and valuation—all accessible through conversation.
@@ -173,6 +177,7 @@ dependencies: [
 **Detailed examples** for common workflows:
 
 - **[EXAMPLES.md](EXAMPLES.md)** - Time series, forecasting, loans, securities, risk, optimization
+- **[GPU_ACCELERATION_TUTORIAL.md](GPU_ACCELERATION_TUTORIAL.md)** - GPU-accelerated optimization tutorial
 - **[Examples Folder](Examples/)** - Complete financial models and case studies
 - **[PERFORMANCE.md](Examples/PERFORMANCE.md)** - Benchmarks and optimization tips
 
@@ -190,6 +195,7 @@ dependencies: [
 - ✅ **Risk analytics** (VaR, CVaR, stress testing)
 - ✅ **Monte Carlo simulation** (15 distributions, sensitivity analysis)
 - ✅ **Portfolio optimization** (efficient frontier, Sharpe ratio, risk parity)
+- ✅ **Genetic algorithms** (GPU-accelerated for populations ≥ 1,000, automatic Metal acceleration)
 - ✅ **Integer programming** (branch-and-bound, cutting planes)
 - ✅ **Financial ratios** (profitability, leverage, efficiency)
 - ✅ **Real options** (Black-Scholes, binomial trees, Greeks)

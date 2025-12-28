@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "testExecutionSettings": {
+    "parallel": true,
+    "maxWorkers": 8
+  },
+  "description": "Optimized test configuration for 10-core system. Uses 8 parallel workers to maximize throughput while avoiding excessive context switching and resource contention."
+}

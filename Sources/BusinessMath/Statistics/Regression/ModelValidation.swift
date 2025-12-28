@@ -148,7 +148,7 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 			result += "\n\(name):\n"
 			result += "  True:      \(trueValue.number())\n"
 			result += "  Recovered: \(recoveredValue.number())\n"
-			result += "  Abs Error: \(absError.magnitude)\n"
+			result += "  Abs Error: \(absError.magnitude.number())\n"
 			result += "  Rel Error: \(relError.percent())\n"
 			result += "  Status:    \(status)\n"
 		}
