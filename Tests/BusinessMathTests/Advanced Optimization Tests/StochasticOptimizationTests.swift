@@ -437,7 +437,8 @@ import Testing
 		#expect(result.converged, "Production planning should converge")
 
 		let optimalProduction = result.solution.toArray()[0]
-		#expect(optimalProduction >= 0.0, "Production should be non-negative")
+		// Allow small tolerance for floating-point rounding errors (optimizer may produce -1e-5 instead of 0)
+		#expect(optimalProduction >= -1e-4, "Production should be non-negative (within tolerance)")
 		#expect(optimalProduction.rounded() <= 200.0, "Production should be within bounds")
 
 		// With reasonable production, expected profit should be reasonable

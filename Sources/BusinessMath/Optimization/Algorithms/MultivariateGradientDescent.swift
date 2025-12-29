@@ -174,6 +174,10 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 		var x = initialGuess
 		var history: [(Int, V, V.Scalar, V.Scalar)]? = recordHistory ? [] : nil
 
+		// Track best solution found so far (for graceful degradation on numerical issues)
+		var bestX = x
+		var bestValue = function(x)
+
 		// Momentum velocity
 		var velocity: V? = momentum > V.Scalar(0) ? V.zero : nil
 
@@ -182,23 +186,39 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 			let grad = try gradient(x)
 			let gradNorm = grad.norm
 
-			// Check for convergence
+			// Check for numerical stability - return best solution found so far if gradient becomes non-finite
 			guard gradNorm.isFinite else {
-				throw OptimizationError.nonFiniteValue(message: "Gradient norm is not finite")
+				// Gradient has become non-finite (likely due to numerical instability)
+				// Return the BEST solution found so far rather than the current (bad) one
+				return MultivariateOptimizationResult(
+					solution: bestX,
+					value: bestValue,
+					iterations: iteration,
+					converged: false,  // Did not converge normally
+					gradientNorm: gradNorm,
+					history: history
+				)
+			}
+
+			// Evaluate current function value (reuse for best tracking and history)
+			let currentValue = function(x)
+
+			// Update best solution if current is better
+			if currentValue < bestValue {
+				bestX = x
+				bestValue = currentValue
 			}
 
 			// Record history
 			if recordHistory {
-				let fValue = function(x)
-				history?.append((iteration, x, fValue, gradNorm))
+				history?.append((iteration, x, currentValue, gradNorm))
 			}
 
 			// Check convergence
 			if gradNorm < tolerance {
-				let finalValue = function(x)
 				return MultivariateOptimizationResult(
 					solution: x,
-					value: finalValue,
+					value: currentValue,
 					iterations: iteration,
 					converged: true,
 					gradientNorm: gradNorm,
@@ -234,13 +254,13 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 			x = x + step
 		}
 
-		// Max iterations reached
-		let finalGrad = try gradient(x)
-		let finalValue = function(x)
+		// Max iterations reached - return best solution found
+		// (current x might have diverged, but bestX is guaranteed to be the best we've seen)
+		let finalGrad = try gradient(bestX)
 
 		return MultivariateOptimizationResult(
-			solution: x,
-			value: finalValue,
+			solution: bestX,
+			value: bestValue,
 			iterations: maxIterations,
 			converged: false,
 			gradientNorm: finalGrad.norm,
@@ -332,28 +352,48 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 		var v = V.zero  // Second moment (velocity)
 		var history: [(Int, V, V.Scalar, V.Scalar)]? = recordHistory ? [] : nil
 
+		// Track best solution found so far (for graceful degradation on numerical issues)
+		var bestX = x
+		var bestValue = function(x)
+
 		for iteration in 1...maxIterations {
 			// Compute gradient
 			let grad = try gradient(x)
 			let gradNorm = grad.norm
 
-			// Check for non-finite values
+			// Check for numerical stability - return best solution found so far if gradient becomes non-finite
 			guard gradNorm.isFinite else {
-				throw OptimizationError.nonFiniteValue(message: "Gradient norm is not finite")
+				// Return the BEST solution found so far rather than the current (bad) one
+				return MultivariateOptimizationResult(
+					solution: bestX,
+					value: bestValue,
+					iterations: iteration,
+					converged: false,
+					gradientNorm: gradNorm,
+					history: history
+				)
+			}
+
+			// Evaluate current function value (reuse for best tracking and history)
+			let currentValue = function(x)
+
+			// Update best solution if current is better
+			if currentValue < bestValue {
+				bestX = x
+				bestValue = currentValue
 			}
 
 			// Record history
 			if recordHistory {
-				let fValue = function(x)
-				history?.append((iteration - 1, x, fValue, gradNorm))
+				history?.append((iteration - 1, x, currentValue, gradNorm))
 			}
 
 			// Check convergence
 			if gradNorm < tolerance {
-				let finalValue = function(x)
+				// Convergence achieved - return current solution (we already computed currentValue above)
 				return MultivariateOptimizationResult(
 					solution: x,
-					value: finalValue,
+					value: currentValue,
 					iterations: iteration - 1,
 					converged: true,
 					gradientNorm: gradNorm,
@@ -401,13 +441,13 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 			x = x + step
 		}
 
-		// Max iterations reached
-		let finalGrad = try gradient(x)
-		let finalValue = function(x)
+		// Max iterations reached - return best solution found
+		// (current x might have diverged, but bestX is guaranteed to be the best we've seen)
+		let finalGrad = try gradient(bestX)
 
 		return MultivariateOptimizationResult(
-			solution: x,
-			value: finalValue,
+			solution: bestX,
+			value: bestValue,
 			iterations: maxIterations,
 			converged: false,
 			gradientNorm: finalGrad.norm,

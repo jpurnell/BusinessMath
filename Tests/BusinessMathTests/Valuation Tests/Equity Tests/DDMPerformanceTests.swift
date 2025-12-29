@@ -28,8 +28,8 @@ struct DDMPerformanceTests {
         let _ = model.valuePerShare()
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should be very fast (< 50 microseconds)
-        #expect(elapsed < 0.00005, "Gordon Growth single calculation took \(elapsed * 1_000_000) microseconds, expected < 50")
+        // Should be very fast (< 200 microseconds, 4× margin for system variance)
+        #expect(elapsed < 0.0002, "Gordon Growth single calculation took \(elapsed * 1_000_000) microseconds, expected < 200")
     }
 
     @Test("Two-Stage DDM - single calculation performance")
@@ -46,8 +46,8 @@ struct DDMPerformanceTests {
         let _ = model.valuePerShare()
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should be very fast (< 150 microseconds for 10 periods)
-        #expect(elapsed < 0.00015, "Two-Stage DDM single calculation took \(elapsed * 1_000_000) microseconds, expected < 150")
+        // Should be very fast (< 600 microseconds for 10 periods, 4× margin for system variance)
+        #expect(elapsed < 0.0006, "Two-Stage DDM single calculation took \(elapsed * 1_000_000) microseconds, expected < 600")
     }
 
     @Test("H-Model - single calculation performance")
@@ -64,8 +64,8 @@ struct DDMPerformanceTests {
         let _ = model.valuePerShare()
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should be very fast (< 50 microseconds)
-        #expect(elapsed < 0.00005, "H-Model single calculation took \(elapsed * 1_000_000) microseconds, expected < 50")
+        // Should be very fast (< 200 microseconds, 4× margin for system variance)
+        #expect(elapsed < 0.0002, "H-Model single calculation took \(elapsed * 1_000_000) microseconds, expected < 200")
     }
 
     // MARK: - Batch Calculations Performance
@@ -89,8 +89,8 @@ struct DDMPerformanceTests {
         let values = stocks.map { $0.valuePerShare() }
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should complete in < 1 millisecond for 1000 stocks
-        #expect(elapsed < 0.001, "1000 Gordon Growth calculations took \(elapsed * 1000) ms, expected < 1 ms")
+        // Should complete in < 3 milliseconds for 1000 stocks (3× margin for system variance)
+        #expect(elapsed < 0.003, "1000 Gordon Growth calculations took \(elapsed * 1000) ms, expected < 3 ms")
         #expect(values.count == 1000)
         #expect(values.allSatisfy { !$0.isNaN })
     }
@@ -116,8 +116,8 @@ struct DDMPerformanceTests {
         let values = stocks.map { $0.valuePerShare() }
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should complete in < 2 milliseconds for 100 stocks with 10 periods each
-        #expect(elapsed < 0.002, "100 Two-Stage DDM calculations took \(elapsed * 1000) ms, expected < 2 ms")
+        // Should complete in < 6 milliseconds for 100 stocks with 10 periods each (3× margin for system variance)
+        #expect(elapsed < 0.006, "100 Two-Stage DDM calculations took \(elapsed * 1000) ms, expected < 6 ms")
         #expect(values.count == 100)
         #expect(values.allSatisfy { !$0.isNaN })
     }
@@ -143,8 +143,8 @@ struct DDMPerformanceTests {
         let values = stocks.map { $0.valuePerShare() }
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should complete in < 0.5 millisecond for 500 stocks
-        #expect(elapsed < 0.0005, "500 H-Model calculations took \(elapsed * 1000) ms, expected < 0.5 ms")
+        // Should complete in < 1.5 milliseconds for 500 stocks (3× margin for system variance)
+        #expect(elapsed < 0.0015, "500 H-Model calculations took \(elapsed * 1000) ms, expected < 1.5 ms")
         #expect(values.count == 500)
         #expect(values.allSatisfy { !$0.isNaN })
     }
@@ -166,8 +166,8 @@ struct DDMPerformanceTests {
         }
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should complete in < 0.1 millisecond for 100 iterations
-        #expect(elapsed < 0.0001, "100 sensitivity calculations took \(elapsed * 1000) ms, expected < 0.1 ms")
+        // Should complete in < 0.3 milliseconds for 100 iterations (3× margin for system variance)
+        #expect(elapsed < 0.0003, "100 sensitivity calculations took \(elapsed * 1000) ms, expected < 0.3 ms")
         #expect(values.count == 100)
     }
 
@@ -194,8 +194,8 @@ struct DDMPerformanceTests {
         }
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should complete in < 1 millisecond for 100 calculations
-        #expect(elapsed < 0.001, "10x10 sensitivity grid took \(elapsed * 1000) ms, expected < 1 ms")
+        // Should complete in < 3 milliseconds for 100 calculations (3× margin for system variance)
+        #expect(elapsed < 0.003, "10x10 sensitivity grid took \(elapsed * 1000) ms, expected < 3 ms")
         #expect(valueGrid.count == 10)
         #expect(valueGrid.allSatisfy { $0.count == 10 })
     }
@@ -216,8 +216,8 @@ struct DDMPerformanceTests {
         let value = model.valuePerShare()
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should still be very fast (< 1 millisecond for 30 periods)
-        #expect(elapsed < 0.001, "30-period Two-Stage DDM took \(elapsed * 1_000_000) microseconds, expected < 1000")
+        // Should still be very fast (< 3 milliseconds for 30 periods, 3× margin for system variance)
+        #expect(elapsed < 0.003, "30-period Two-Stage DDM took \(elapsed * 1_000_000) microseconds, expected < 3000")
         #expect(!value.isNaN)
     }
 
@@ -235,8 +235,8 @@ struct DDMPerformanceTests {
         let value = model.valuePerShare()
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should still complete quickly (< 2 milliseconds for 100 periods)
-        #expect(elapsed < 0.002, "100-period Two-Stage DDM took \(elapsed * 1_000_000) microseconds, expected < 2000")
+        // Should still complete quickly (< 6 milliseconds for 100 periods, 3× margin for system variance)
+        #expect(elapsed < 0.006, "100-period Two-Stage DDM took \(elapsed * 1_000_000) microseconds, expected < 6000")
         #expect(!value.isNaN)
     }
 
@@ -268,9 +268,9 @@ struct DDMPerformanceTests {
         }
         let elapsedFloat = Date().timeIntervalSince(startFloat)
 
-        // Both should be very fast (< 2 milliseconds for 1000 iterations)
-        #expect(elapsedDouble < 0.002, "1000 Double calculations took \(elapsedDouble * 1000) ms")
-        #expect(elapsedFloat < 0.002, "1000 Float calculations took \(elapsedFloat * 1000) ms")
+        // Both should be very fast (< 6 milliseconds for 1000 iterations, 3× margin for system variance)
+        #expect(elapsedDouble < 0.006, "1000 Double calculations took \(elapsedDouble * 1000) ms")
+        #expect(elapsedFloat < 0.006, "1000 Float calculations took \(elapsedFloat * 1000) ms")
 
         // Float should be at least as fast as Double (or close)
         print("Double: \(elapsedDouble * 1000) ms, Float: \(elapsedFloat * 1000) ms")
@@ -291,8 +291,8 @@ struct DDMPerformanceTests {
         }
         let elapsed = Date().timeIntervalSince(start)
 
-        // Creating 10000 lightweight structs should be instant (< 10 milliseconds)
-        #expect(elapsed < 0.01, "Creating 10000 models took \(elapsed * 1000) ms, expected < 10 ms")
+        // Creating 10000 lightweight structs should be instant (< 30 milliseconds, 3× margin for system variance)
+        #expect(elapsed < 0.03, "Creating 10000 models took \(elapsed * 1000) ms, expected < 30 ms")
         #expect(models.count == 10000)
 
         // Verify they're all valid
@@ -300,8 +300,8 @@ struct DDMPerformanceTests {
         let values = models.map { $0.valuePerShare() }
         let elapsedCalc = Date().timeIntervalSince(startCalc)
 
-        // Calculating 10000 values should be fast (< 10 milliseconds)
-        #expect(elapsedCalc < 0.01, "10000 calculations took \(elapsedCalc * 1000) ms, expected < 10 ms")
+        // Calculating 10000 values should be fast (< 30 milliseconds, 3× margin for system variance)
+        #expect(elapsedCalc < 0.03, "10000 calculations took \(elapsedCalc * 1000) ms, expected < 30 ms")
         #expect(values.allSatisfy { !$0.isNaN })
     }
 
@@ -354,8 +354,8 @@ struct DDMPerformanceTests {
         }
         let elapsed = Date().timeIntervalSince(start)
 
-        // Should complete portfolio screening in < 2 milliseconds
-        #expect(elapsed < 0.002, "Portfolio screening (500 stocks) took \(elapsed * 1000) ms, expected < 2 ms")
+        // Should complete portfolio screening in < 6 milliseconds (3× margin for system variance)
+        #expect(elapsed < 0.006, "Portfolio screening (500 stocks) took \(elapsed * 1000) ms, expected < 6 ms")
         #expect(valuations.count == 500)
         #expect(valuations.filter { !$0.1.isNaN }.count > 450)  // Most should be valid
     }

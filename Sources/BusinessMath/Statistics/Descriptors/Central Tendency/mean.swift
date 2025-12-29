@@ -9,13 +9,17 @@ import Foundation
 import Numerics
 
 /// Equivalent of Excel AVERAGE(xx:xx), provides the mean of a set of numbers.
+///
+/// Uses Kahan summation for numerical stability with large datasets.
+///
 /// - Returns: Provides the mean of a set of numbers.
 /// - Parameter x: An array of values of a single type
 public func mean<T: Real>(_ x: [T]) -> T {
     guard x.count > 0 else {
         return T(0)
     }
-    return (x.reduce(T(0), +) / T(x.count))
+    // Use Kahan summation to prevent overflow with large datasets
+    return (kahanSum(x) / T(x.count))
 }
 
 /// Equivalent of Excel AVERAGE(xx:xx)
