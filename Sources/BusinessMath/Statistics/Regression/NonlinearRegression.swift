@@ -331,9 +331,17 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		)
 
 		// Transform solution back from log-space to natural parameters
-		let fittedA = T.exp(result.solution[0])
-		let fittedB = T.exp(result.solution[1])
-		let fittedSigma = T.exp(result.solution[2])
+		// Clamp log-space values to prevent overflow/underflow in exp()
+		let maxLogValue = T(100)  // exp(100) ≈ 2.7e43 (safely finite)
+		let minLogValue = T(-100) // exp(-100) ≈ 3.7e-44 (safely positive)
+
+		let clampedLogA = max(minLogValue, min(maxLogValue, result.solution[0]))
+		let clampedLogB = max(minLogValue, min(maxLogValue, result.solution[1]))
+		let clampedLogSigma = max(minLogValue, min(maxLogValue, result.solution[2]))
+
+		let fittedA = T.exp(clampedLogA)
+		let fittedB = T.exp(clampedLogB)
+		let fittedSigma = T.exp(clampedLogSigma)
 
 		let fittedParams = Parameters(a: fittedA, b: fittedB, sigma: fittedSigma)
 

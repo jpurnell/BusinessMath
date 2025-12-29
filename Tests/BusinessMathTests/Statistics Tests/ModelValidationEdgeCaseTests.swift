@@ -102,12 +102,18 @@ final class ModelValidationEdgeCaseTests: XCTestCase {
 
 	func testReciprocalFitting_ExtremeOutlier() throws {
 		// Mostly reasonable data with one extreme outlier
+		// Use deterministic seeds for reproducibility
+		let seeds = DistributionSeedingTests.seedArray(count: 20)
+		let u1Seeds = seeds
+		let u2Seeds = Array(seeds.reversed())
+
 		var data: [ReciprocalRegressionModel<Double>.DataPoint] = []
 
-		// Generate reasonable data
+		// Generate reasonable data with SEEDED noise for reproducibility
 		for i in 1...20 {
 			let x = Double(i)
-			let y = 1.0 / (0.2 + 0.3 * x) + distributionNormal(mean: 0, stdDev: 0.01)
+			let noise = distributionNormal(mean: 0, stdDev: 0.01, u1Seeds[i-1], u2Seeds[i-1])
+			let y = 1.0 / (0.2 + 0.3 * x) + noise
 			data.append(ReciprocalRegressionModel<Double>.DataPoint(x: x, y: y))
 		}
 
@@ -119,9 +125,9 @@ final class ModelValidationEdgeCaseTests: XCTestCase {
 
 		// Should complete without crashing (though fit may be poor)
 		XCTAssertNotNil(result)
-		XCTAssertTrue(result.parameters.a.isFinite)
-		XCTAssertTrue(result.parameters.b.isFinite)
-		XCTAssertTrue(result.parameters.sigma.isFinite)
+		XCTAssertTrue(result.parameters.a.isFinite, "Parameter a should be finite even with extreme outlier")
+		XCTAssertTrue(result.parameters.b.isFinite, "Parameter b should be finite even with extreme outlier")
+		XCTAssertTrue(result.parameters.sigma.isFinite, "Parameter sigma should be finite even with extreme outlier")
 	}
 
 	// MARK: - Tolerance Boundary Tests

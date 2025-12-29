@@ -133,9 +133,9 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 		// Calculate percentage
 		let percentage = totalCount > 0 ? (Double(bin.count) / Double(totalCount)) : 0.0
 
-		// Format the line based on decimal places
+		// Format the line based on decimal places (no grouping for alignment)
 		let line: String
-		line = "[\(bin.range.lowerBound.number(decimalPlaces).paddingLeft(toLength: 8)) - \(bin.range.upperBound.number(decimalPlaces).paddingLeft(toLength: 8))):  \(paddedBar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.percent(1)))\n"
+		line = "[\(bin.range.lowerBound.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never).paddingLeft(toLength: 8)) - \(bin.range.upperBound.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never).paddingLeft(toLength: 8))):  \(paddedBar) \("\(bin.count)".paddingLeft(toLength: 4)) (\(percentage.percent(1)))\n"
 		output += line
 	}
 
@@ -239,7 +239,7 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 
 	// Build output string
 	var output = "Tornado Diagram - Sensitivity Analysis\n"
-	output += "Base Case: \(baseCaseOutput.number(decimalPlaces))\n\n"
+	output += "Base Case: \(baseCaseOutput.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never))\n\n"
 	
 	// Format the bar line
 	func barLine(_ paddedName: String, _ paddedLeftBar: String, _ paddedRightBar: String) -> String {
@@ -290,13 +290,13 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		let paddedLeftBar = String(repeating: " ", count: maxBarWidth - leftWidth) + leftBar
 		let paddedRightBar = rightBar.padding(toLength: maxBarWidth, withPad: " ", startingAt: 0)
 
-		// Format impact info
-		let impactInfo = " Impact: \(impact.number(decimalPlaces)) \(percentImpact.percent(decimalPlaces == 0 ? 1 : decimalPlaces))"
+		// Format impact info (no grouping for alignment)
+		let impactInfo = " Impact: \(impact.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never)) \(percentImpact.percent(decimalPlaces == 0 ? 1 : decimalPlaces))"
 
 		output += barLine(paddedName, paddedLeftBar, paddedRightBar) + impactInfo + "\n"
 
-		// Add value labels underneath
-		let valueLabels = "\(String(repeating: " ", count: maxInputNameWidth + 3))\(low.number(decimalPlaces))\(String(repeating: " ", count: maxBarWidth - 8))\(baseCaseOutput.number(decimalPlaces))\(String(repeating: " ", count: maxBarWidth - 8))\(high.number(decimalPlaces)))"
+		// Add value labels underneath (no grouping for alignment)
+		let valueLabels = "\(String(repeating: " ", count: maxInputNameWidth + 3))\(low.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never))\(String(repeating: " ", count: maxBarWidth - 8))\(baseCaseOutput.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never))\(String(repeating: " ", count: maxBarWidth - 8))\(high.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never)))"
 //		let valueLabels = String(format: "%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f\n",
 //			String(repeating: " ", count: maxInputNameWidth + 3),
 //			low,
