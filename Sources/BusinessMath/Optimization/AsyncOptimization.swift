@@ -221,6 +221,7 @@ public struct AsyncOptimizationProgress<T: Real & Sendable>: Sendable {
 /// - ``AsyncOptimizationProgress``
 /// - ``OptimizationConfig``
 /// - ``OptimizationPhase``
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public protocol AsyncOptimizer {
     /// The numeric type used for optimization values.
     associatedtype T: Real & Sendable & Codable
