@@ -256,6 +256,23 @@ Deep dive on inequality constraint handling.
 
 - <doc:5.15-InequalityConstraints>
 
+#### Modern Optimization Algorithms
+
+Advanced optimizers for different problem types: gradient-based methods for smooth functions, metaheuristics for global optimization, and derivative-free methods.
+
+**Gradient-Based Methods** - Fast convergence for smooth, differentiable functions with available gradients.
+
+- <doc:5.20-LBFGSOptimizationTutorial>
+- <doc:5.21-ConjugateGradientTutorial>
+
+**Metaheuristic Methods** - Global optimization for multimodal, non-convex functions that can escape local minima.
+
+- <doc:5.22-SimulatedAnnealingTutorial>
+
+**Derivative-Free Methods** - Robust optimization without gradients for non-smooth or noisy objectives.
+
+- <doc:5.23-NelderMeadTutorial>
+
 #### Part Overview
 
 - <doc:Part5-Optimization>

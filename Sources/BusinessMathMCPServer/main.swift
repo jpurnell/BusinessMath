@@ -330,15 +330,37 @@ struct BusinessMathMCPServerMain {
             fputs("✓ Starting server with HTTP transport on port \(port)\n", stderr)
             fputs("  Server will be available at http://localhost:\(port)\n", stderr)
             fputs("  Endpoints:\n", stderr)
+            fputs("    - GET /mcp/sse  : Server-Sent Events stream\n", stderr)
             fputs("    - POST /mcp     : JSON-RPC requests\n", stderr)
             fputs("    - GET /mcp      : Server info\n", stderr)
             fputs("    - GET /health   : Health check\n", stderr)
             fputs("\n", stderr)
-            fputs("  Note: HTTP transport is experimental.\n", stderr)
-            fputs("  Full bidirectional SSE support is planned for future releases.\n", stderr)
+
+            // Configure API key authentication from environment
+            let authenticator = APIKeyAuthenticator.fromEnvironment()
+            let keyCount = await authenticator.keyCount()
+            let authRequired = ProcessInfo.processInfo.environment["MCP_AUTH_REQUIRED"] != "false"
+
+            if authRequired {
+                if keyCount > 0 {
+                    fputs("  Authentication: ENABLED (\(keyCount) API key(s) configured)\n", stderr)
+                    fputs("    Set via MCP_API_KEYS environment variable (comma-separated)\n", stderr)
+                    fputs("    Include 'Authorization: Bearer <key>' header with requests\n", stderr)
+                } else {
+                    fputs("  Authentication: ENABLED but NO KEYS configured!\n", stderr)
+                    fputs("    All authenticated requests will be rejected\n", stderr)
+                    fputs("    Set MCP_API_KEYS environment variable with comma-separated keys\n", stderr)
+                }
+            } else {
+                fputs("  Authentication: DISABLED (development mode)\n", stderr)
+                fputs("    Set MCP_AUTH_REQUIRED=true to enable authentication\n", stderr)
+            }
             fputs("\n", stderr)
 
-            let httpTransport = HTTPServerTransport(port: UInt16(port))
+            let httpTransport = HTTPServerTransport(
+                port: UInt16(port),
+                authenticator: authRequired || keyCount > 0 ? authenticator : nil
+            )
             try await server.start(transport: httpTransport)
         }
 
