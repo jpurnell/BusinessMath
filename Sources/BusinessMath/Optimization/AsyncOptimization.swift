@@ -339,6 +339,7 @@ public protocol AsyncOptimizer {
 /// ## See Also
 /// - ``AsyncOptimizer``
 /// - ``AsyncOptimizationProgress``
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct OptimizationConfig: Sendable {
     /// Minimum time interval between progress updates.
     ///

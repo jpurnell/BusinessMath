@@ -376,6 +376,7 @@ public struct AsyncCatchErrorsSequence<Base: AsyncSequence>: AsyncSequence {
 
 extension AsyncSequence {
     /// Throttles the stream to emit at most one value per interval
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public func throttle(interval: Duration) -> AsyncThrottleSequence<Self> {
         AsyncThrottleSequence(base: self, interval: interval)
     }
@@ -387,6 +388,7 @@ extension AsyncSequence {
     // }
 }
 
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncThrottleSequence<Base: AsyncSequence>: AsyncSequence {
     public typealias Element = Base.Element
     public typealias AsyncIterator = Iterator
