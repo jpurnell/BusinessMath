@@ -26,6 +26,7 @@ import Foundation
 ///     print("Phase: \(progress.currentPhase)")
 /// }
 /// ```
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct SimplexProgress: Sendable {
     /// Current iteration number
     public let iteration: Int
@@ -112,6 +113,7 @@ public struct SimplexProgress: Sendable {
 /// - ``SimplexConstraint`` - Constraint specification
 /// - ``SimplexResult`` - Result type
 /// - ``SimplexProgress`` - Progress update type
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncSimplexSolver: Sendable {
 
     /// Numerical tolerance for zero comparisons

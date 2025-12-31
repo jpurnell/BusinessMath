@@ -91,6 +91,7 @@ import Numerics
 /// - ``GradientDescentOptimizer`` - Synchronous version
 /// - ``AsyncOptimizer`` - Protocol conformance
 /// - ``AsyncOptimizationProgress`` - Progress update type
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncGradientDescentOptimizer<T>: AsyncOptimizer where T: Real & Sendable & Codable {
 
     // MARK: - Properties

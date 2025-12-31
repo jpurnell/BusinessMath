@@ -10,6 +10,7 @@ import Foundation
 // MARK: - Timeout Error
 
 /// Error thrown when stream operation times out
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct TimeoutError: Error {
     public let duration: Duration
 
@@ -33,6 +34,7 @@ extension AsyncSequence {
     }
 
     /// Debounces the stream, only emitting after the specified interval of silence
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public func debounce(interval: Duration) -> AsyncDebounceSequence<Self> {
         AsyncDebounceSequence(base: self, interval: interval)
     }
@@ -63,6 +65,7 @@ extension AsyncSequence {
     }
 
     /// Samples the stream at regular intervals
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public func sample(interval: Duration) -> AsyncSampleSequence<Self> {
         AsyncSampleSequence(base: self, interval: interval)
     }
@@ -88,6 +91,7 @@ extension AsyncSequence {
     }
 
     /// Adds a timeout to the stream operations
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public func timeout(duration: Duration) -> AsyncTimeoutSequence<Self> {
         AsyncTimeoutSequence(base: self, duration: duration)
     }
@@ -191,6 +195,7 @@ public struct AsyncZipSequence<First: AsyncSequence, Second: AsyncSequence>: Asy
 
 // MARK: - Debounce
 
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncDebounceSequence<Base: AsyncSequence>: AsyncSequence {
     public typealias Element = Base.Element
     public typealias AsyncIterator = Iterator
@@ -495,6 +500,7 @@ public struct AsyncStartWithSequence<Base: AsyncSequence>: AsyncSequence {
 
 // MARK: - Sample
 
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence {
     public typealias Element = Base.Element
     public typealias AsyncIterator = Iterator
@@ -716,6 +722,7 @@ public struct AsyncSkipWhileSequence<Base: AsyncSequence>: AsyncSequence {
 
 // MARK: - Timeout
 
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence {
     public typealias Element = Base.Element
     public typealias AsyncIterator = Iterator

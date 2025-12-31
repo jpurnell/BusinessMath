@@ -162,6 +162,11 @@
 			<key>primary</key>
 			<true/>
 		</dict>
+		<key>BusinessMathDSL</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>BusinessMathMCP</key>
 		<dict>
 			<key>primary</key>
