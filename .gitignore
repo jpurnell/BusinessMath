@@ -5,6 +5,8 @@
 .github/workflows/*
 .swiftpm/xcode/
 .vscode
+Blog/
+Playgrounds/
 xcuserdata/
 howToResume.md
 overallRules
