@@ -43,13 +43,13 @@ struct AccountTests {
 		let account = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: timeSeries
 		)
 
 		#expect(account.entity == entity)
 		#expect(account.name == "Revenue")
-		#expect(account.type == .revenue)
+		#expect(account.incomeStatementRole == .revenue)
 		#expect(account.timeSeries.periods.count == 4)
 		#expect(account.metadata == nil)
 	}
@@ -68,7 +68,7 @@ struct AccountTests {
 		let account = try Account(
 			entity: entity,
 			name: "Product Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: timeSeries,
 			metadata: metadata
 		)
@@ -90,7 +90,7 @@ struct AccountTests {
 			_ = try Account(
 				entity: entity,
 				name: "",
-				type: .revenue,
+				incomeStatementRole: .revenue,
 				timeSeries: timeSeries
 			)
 		}
@@ -105,7 +105,7 @@ struct AccountTests {
 			_ = try Account(
 				entity: entity,
 				name: "   ",
-				type: .revenue,
+				incomeStatementRole: .revenue,
 				timeSeries: timeSeries
 			)
 		}
@@ -120,7 +120,7 @@ struct AccountTests {
 			_ = try Account(
 				entity: entity,
 				name: "Revenue",
-				type: .revenue,
+				incomeStatementRole: .revenue,
 				timeSeries: emptyTimeSeries
 			)
 		}
@@ -133,14 +133,13 @@ struct AccountTests {
 		let account = try Account(
 			entity: makeEntity(),
 			name: "Sales",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: makeTimeSeries()
 		)
 
 		#expect(account.isIncomeStatement)
 		#expect(!account.isBalanceSheet)
 		#expect(!account.isCashFlow)
-		#expect(account.category == .incomeStatement)
 	}
 
 	@Test("Expense account is categorized correctly")
@@ -148,14 +147,13 @@ struct AccountTests {
 		let account = try Account(
 			entity: makeEntity(),
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: makeTimeSeries()
 		)
 
 		#expect(account.isIncomeStatement)
 		#expect(!account.isBalanceSheet)
 		#expect(!account.isCashFlow)
-		#expect(account.category == .incomeStatement)
 	}
 
 	@Test("Asset account is categorized correctly")
@@ -163,14 +161,13 @@ struct AccountTests {
 		let account = try Account(
 			entity: makeEntity(),
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: makeTimeSeries()
 		)
 
 		#expect(!account.isIncomeStatement)
 		#expect(account.isBalanceSheet)
 		#expect(!account.isCashFlow)
-		#expect(account.category == .balanceSheet)
 	}
 
 	@Test("Liability account is categorized correctly")
@@ -178,14 +175,13 @@ struct AccountTests {
 		let account = try Account(
 			entity: makeEntity(),
 			name: "Accounts Payable",
-			type: .liability,
+			balanceSheetRole: .otherCurrentLiabilities,
 			timeSeries: makeTimeSeries()
 		)
 
 		#expect(!account.isIncomeStatement)
 		#expect(account.isBalanceSheet)
 		#expect(!account.isCashFlow)
-		#expect(account.category == .balanceSheet)
 	}
 
 	@Test("Equity account is categorized correctly")
@@ -193,14 +189,13 @@ struct AccountTests {
 		let account = try Account(
 			entity: makeEntity(),
 			name: "Retained Earnings",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: makeTimeSeries()
 		)
 
 		#expect(!account.isIncomeStatement)
 		#expect(account.isBalanceSheet)
 		#expect(!account.isCashFlow)
-		#expect(account.category == .balanceSheet)
 	}
 
 	@Test("Operating cash flow account is categorized correctly")
@@ -208,14 +203,13 @@ struct AccountTests {
 		let account = try Account(
 			entity: makeEntity(),
 			name: "Cash from Operations",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: makeTimeSeries()
 		)
 
 		#expect(!account.isIncomeStatement)
 		#expect(!account.isBalanceSheet)
 		#expect(account.isCashFlow)
-		#expect(account.category == .cashFlowStatement)
 	}
 
 	// MARK: - TimeSeries Access
@@ -228,7 +222,7 @@ struct AccountTests {
 		let account = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: timeSeries
 		)
 
@@ -246,7 +240,7 @@ struct AccountTests {
 		let account = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: timeSeries
 		)
 
@@ -264,14 +258,14 @@ struct AccountTests {
 		let account1 = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: makeTimeSeries()
 		)
 
 		let account2 = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: makeTimeSeries()
 		)
 
@@ -285,14 +279,14 @@ struct AccountTests {
 		let account1 = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: makeTimeSeries()
 		)
 
 		let account2 = try Account(
 			entity: entity,
 			name: "Other Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: makeTimeSeries()
 		)
 
@@ -306,14 +300,14 @@ struct AccountTests {
 		let account1 = try Account(
 			entity: entity,
 			name: "Cost",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: makeTimeSeries()
 		)
 
 		let account2 = try Account(
 			entity: entity,
 			name: "Cost",
-			type: .asset,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: makeTimeSeries()
 		)
 
@@ -327,14 +321,14 @@ struct AccountTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: makeTimeSeries()
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "COGS",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: makeTimeSeries()
 		)
 
@@ -414,7 +408,7 @@ struct AccountTests {
 		let account = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: timeSeries,
 			metadata: metadata
 		)
@@ -424,7 +418,7 @@ struct AccountTests {
 
 		#expect(decoded.entity == account.entity)
 		#expect(decoded.name == account.name)
-		#expect(decoded.type == account.type)
+		#expect(decoded.incomeStatementRole == account.incomeStatementRole)
 		#expect(decoded.metadata?.category == "Sales")
 	}
 
@@ -455,7 +449,7 @@ struct AccountTests {
 		let account = try Account(
 			entity: entity,
 			name: "Product Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: makeTimeSeries()
 		)
 
@@ -464,7 +458,6 @@ struct AccountTests {
 		#expect(description.contains("Product Revenue"))
 		#expect(description.contains("revenue"))
 	}
-	
 	@Suite("Hashability Semantics Tests")
 	struct HashabilitySemanticsTests {
 
@@ -483,8 +476,8 @@ struct AccountTests {
 			let entity = Entity(id: "TEST", primaryType: .internal, name: "Test Co")
 			let periods = [Period.quarter(year: 2025, quarter: 1)]
 			let ts = TimeSeries(periods: periods, values: [100.0])
-			let a1 = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: ts)
-			let a2 = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: ts)
+			let a1 = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: ts)
+			let a2 = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: ts)
 			var set: Set<Account<Double>> = []
 			set.insert(a1)
 			set.insert(a2)

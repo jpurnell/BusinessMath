@@ -17,63 +17,55 @@ struct ModelValidatorTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "COGS",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0]),
-			expenseType: .costOfGoodsSold
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
-			assetType: .cashAndEquivalents
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
-			equityType: .commonStock
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [cash, equity]
 		)
 
 		// Create operating cash flow accounts
 		let operatingCF = try Account(
 			entity: entity,
 			name: "Operating Cash Flow",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: TimeSeries(periods: periods, values: [40_000.0, 45_000.0])
 		)
 
 		let cashFlowStatement = try CashFlowStatement<Double>(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operatingCF],
-			investingAccounts: [],
-			financingAccounts: []
+			accounts: [operatingCF]
 		)
 
 		// Create a scenario
@@ -114,62 +106,54 @@ struct ModelValidatorTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "COGS",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: periods, values: [5_000.0]),
-			expenseType: .costOfGoodsSold
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0]),
-			assetType: .cashAndEquivalents
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0]),
-			equityType: .commonStock
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [cash, equity]
 		)
 
 		let operatingCF = try Account(
 			entity: entity,
 			name: "Operating Cash Flow",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: TimeSeries(periods: periods, values: [95_000.0])
 		)
 
 		let cashFlowStatement = try CashFlowStatement<Double>(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operatingCF],
-			investingAccounts: [],
-			financingAccounts: []
+			accounts: [operatingCF]
 		)
 
 		let scenario = FinancialScenario(
@@ -201,55 +185,48 @@ struct ModelValidatorTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: periods, values: [-100_000.0])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: []
+			accounts: [revenue]
 		)
 
 		// Unbalanced balance sheet
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0]),
-			assetType: .cashAndEquivalents
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [90_000.0]),  // Should be 100k
-			equityType: .commonStock
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [cash, equity]
 		)
 
 		let operatingCF = try Account(
 			entity: entity,
 			name: "Operating Cash Flow",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: TimeSeries(periods: periods, values: [-100_000.0])
 		)
 
 		let cashFlowStatement = try CashFlowStatement<Double>(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operatingCF],
-			investingAccounts: [],
-			financingAccounts: []
+			accounts: [operatingCF]
 		)
 
 		let scenario = FinancialScenario(
@@ -318,72 +295,60 @@ struct ModelValidatorTests {
 
 @Suite("Model Validator - Additional Tests")
 struct ModelValidatorAdditionalTests {
-	
 	func makeValidProjection() throws -> FinancialProjection {
 		let entity = Entity(id: "TEST", primaryType: .ticker, name: "Test Co")
 		let periods = [
 			Period.quarter(year: 2024, quarter: 1),
 			Period.quarter(year: 2024, quarter: 2)
 		]
-		
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0])
 		)
 		let cogs = try Account(
 			entity: entity,
 			name: "COGS",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0]),
-			expenseType: .costOfGoodsSold
 		)
 		let isStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
-		
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
-			assetType: .cashAndEquivalents
 		)
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
-			equityType: .commonStock
 		)
 		let bs = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [cash, equity]
 		)
 		let opCF = try Account(
 			entity: entity,
 			name: "Operating Cash Flow",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: TimeSeries(periods: periods, values: [40_000.0, 45_000.0])
 		)
 		let cf = try CashFlowStatement<Double>(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [opCF],
-			investingAccounts: [],
-			financingAccounts: []
+			accounts: [opCF]
 		)
 		let scenario = FinancialScenario(name: "Test Scenario", description: "Additional")
 		return FinancialProjection(scenario: scenario, incomeStatement: isStmt, balanceSheet: bs, cashFlowStatement: cf)
 	}
-	
 	@Test("Custom rule failing integrates into report")
 	func customRuleFailing() throws {
 		struct MinimumRevenueRule: FinancialValidationRule {

@@ -37,7 +37,7 @@ struct CashFlowStatementTests {
 		return try Account(
 			entity: entity,
 			name: "Cash from Operations",
-			type: .operating,
+			cashFlowRole: .netIncome,
 			timeSeries: timeSeries
 		)
 	}
@@ -48,7 +48,7 @@ struct CashFlowStatementTests {
 		return try Account(
 			entity: entity,
 			name: "Capital Expenditures",
-			type: .investing,
+			cashFlowRole: .capitalExpenditures,
 			timeSeries: timeSeries
 		)
 	}
@@ -59,7 +59,7 @@ struct CashFlowStatementTests {
 		return try Account(
 			entity: entity,
 			name: "Debt Proceeds",
-			type: .financing,
+			cashFlowRole: .proceedsFromDebt,
 			timeSeries: timeSeries
 		)
 	}
@@ -78,9 +78,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating],
-			investingAccounts: [investing],
-			financingAccounts: [financing]
+			accounts: [operating, investing, financing]
 		)
 
 		#expect(cashFlowStmt.entity == entity)
@@ -102,7 +100,7 @@ struct CashFlowStatementTests {
 		let operating2 = try Account(
 			entity: entity,
 			name: "Working Capital Changes",
-			type: .operating,
+			cashFlowRole: .changeInPayables,
 			timeSeries: timeSeries2
 		)
 
@@ -112,9 +110,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating1, operating2],
-			investingAccounts: [investing],
-			financingAccounts: [financing]
+			accounts: [operating1, operating2, investing, financing]
 		)
 
 		#expect(cashFlowStmt.operatingAccounts.count == 2)
@@ -132,73 +128,17 @@ struct CashFlowStatementTests {
 		let investing = try makeInvestingCFAccount(entity: entity2, periods: periods)
 		let financing = try makeFinancingCFAccount(entity: entity1, periods: periods)
 
-		#expect(throws: CashFlowStatementError.self) {
+		#expect(throws: FinancialModelError.self) {
 			_ = try CashFlowStatement(
 				entity: entity1,
 				periods: periods,
-				operatingAccounts: [operating],
-				investingAccounts: [investing],
-				financingAccounts: [financing]
+				accounts: [operating, investing, financing]
 			)
 		}
 	}
 
-	@Test("Cash flow statement creation fails with wrong account type in operating")
-	func cashFlowStatementWrongOperatingType() throws {
-		let entity = makeEntity()
-		let periods = makePeriods()
-
-		let investing = try makeInvestingCFAccount(entity: entity, periods: periods)
-		let financing = try makeFinancingCFAccount(entity: entity, periods: periods)
-
-		#expect(throws: CashFlowStatementError.self) {
-			_ = try CashFlowStatement(
-				entity: entity,
-				periods: periods,
-				operatingAccounts: [investing], // Wrong type!
-				investingAccounts: [],
-				financingAccounts: [financing]
-			)
-		}
-	}
-
-	@Test("Cash flow statement creation fails with wrong account type in investing")
-	func cashFlowStatementWrongInvestingType() throws {
-		let entity = makeEntity()
-		let periods = makePeriods()
-
-		let operating = try makeOperatingCFAccount(entity: entity, periods: periods)
-		let financing = try makeFinancingCFAccount(entity: entity, periods: periods)
-
-		#expect(throws: CashFlowStatementError.self) {
-			_ = try CashFlowStatement(
-				entity: entity,
-				periods: periods,
-				operatingAccounts: [operating],
-				investingAccounts: [financing], // Wrong type!
-				financingAccounts: [financing]
-			)
-		}
-	}
-
-	@Test("Cash flow statement creation fails with wrong account type in financing")
-	func cashFlowStatementWrongFinancingType() throws {
-		let entity = makeEntity()
-		let periods = makePeriods()
-
-		let operating = try makeOperatingCFAccount(entity: entity, periods: periods)
-		let investing = try makeInvestingCFAccount(entity: entity, periods: periods)
-
-		#expect(throws: CashFlowStatementError.self) {
-			_ = try CashFlowStatement(
-				entity: entity,
-				periods: periods,
-				operatingAccounts: [operating],
-				investingAccounts: [investing],
-				financingAccounts: [operating] // Wrong type!
-			)
-		}
-	}
+	// Note: Tests for "wrong account type in wrong category" removed
+	// The modern API uses a single accounts: parameter that allows any mix of cash flow account types
 
 	// MARK: - Aggregated Cash Flows
 
@@ -214,16 +154,14 @@ struct CashFlowStatementTests {
 		let operating2 = try Account(
 			entity: entity,
 			name: "Working Capital Changes",
-			type: .operating,
+			cashFlowRole: .changeInReceivables,
 			timeSeries: timeSeries2
 		)
 
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating1, operating2],
-			investingAccounts: [],
-			financingAccounts: []
+			accounts: [operating1, operating2]
 		)
 
 		let total = cashFlowStmt.operatingCashFlow
@@ -244,16 +182,14 @@ struct CashFlowStatementTests {
 		let investing2 = try Account(
 			entity: entity,
 			name: "Asset Sales",
-			type: .investing,
+			cashFlowRole: .capitalExpenditures,
 			timeSeries: timeSeries2
 		)
 
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [],
-			investingAccounts: [investing1, investing2],
-			financingAccounts: []
+			accounts: [investing1, investing2]
 		)
 
 		let total = cashFlowStmt.investingCashFlow
@@ -274,16 +210,14 @@ struct CashFlowStatementTests {
 		let financing2 = try Account(
 			entity: entity,
 			name: "Dividend Payments",
-			type: .financing,
+			cashFlowRole: .proceedsFromDebt,
 			timeSeries: timeSeries2
 		)
 
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [],
-			investingAccounts: [],
-			financingAccounts: [financing1, financing2]
+			accounts: [financing1, financing2]
 		)
 
 		let total = cashFlowStmt.financingCashFlow
@@ -306,9 +240,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating],
-			investingAccounts: [investing],
-			financingAccounts: [financing]
+			accounts: [operating, investing, financing]
 		)
 
 		let net = cashFlowStmt.netCashFlow
@@ -332,9 +264,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating],
-			investingAccounts: [investing],
-			financingAccounts: [financing]
+			accounts: [operating, investing, financing]
 		)
 
 		let fcf = cashFlowStmt.freeCashFlow
@@ -357,9 +287,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [],
-			investingAccounts: [investing],
-			financingAccounts: [financing]
+			accounts: [investing, financing]
 		)
 
 		let operating = cashFlowStmt.operatingCashFlow
@@ -379,9 +307,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating],
-			investingAccounts: [],
-			financingAccounts: [financing]
+			accounts: [operating, financing]
 		)
 
 		let investing = cashFlowStmt.investingCashFlow
@@ -401,9 +327,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating],
-			investingAccounts: [investing],
-			financingAccounts: []
+			accounts: [operating, investing]
 		)
 
 		let financing = cashFlowStmt.financingCashFlow
@@ -426,9 +350,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating],
-			investingAccounts: [investing],
-			financingAccounts: [financing]
+			accounts: [operating, investing, financing]
 		)
 
 		let materialized = cashFlowStmt.materialize()
@@ -460,9 +382,7 @@ struct CashFlowStatementTests {
 		let cashFlowStmt = try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operating],
-			investingAccounts: [investing],
-			financingAccounts: [financing]
+			accounts: [operating, investing, financing]
 		)
 
 		let encoded = try JSONEncoder().encode(cashFlowStmt)

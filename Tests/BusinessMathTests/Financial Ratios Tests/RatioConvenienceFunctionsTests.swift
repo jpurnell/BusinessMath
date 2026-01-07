@@ -28,7 +28,7 @@ import Foundation
 //		let revenue = try Account(
 //			entity: entity,
 //			name: "Revenue",
-//			type: .revenue,
+//			incomeStatementRole: .revenue,
 //			timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_100_000])
 //		)
 //
@@ -36,45 +36,40 @@ import Foundation
 //		let cogs = try Account(
 //			entity: entity,
 //			name: "Cost of Goods Sold",
-//			type: .expense,
+//			incomeStatementRole: .costOfGoodsSold,
 //			timeSeries: TimeSeries(periods: periods, values: [400_000, 440_000]),
-//			expenseType: .costOfGoodsSold
 //		)
 //
 //		// Operating expenses
 //		let opex = try Account(
 //			entity: entity,
 //			name: "Operating Expenses",
-//			type: .expense,
+//			incomeStatementRole: .operatingExpenseOther,
 //			timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-//			expenseType: .operatingExpense
 //		)
 //
 //		// Depreciation
 //		let depreciation = try Account(
 //			entity: entity,
 //			name: "Depreciation",
-//			type: .expense,
+//			incomeStatementRole: .depreciationAmortization,
 //			timeSeries: TimeSeries(periods: periods, values: [50_000, 50_000]),
-//			expenseType: .depreciationAmortization
 //		)
 //
 //		// Interest
 //		let interest = try Account(
 //			entity: entity,
 //			name: "Interest Expense",
-//			type: .expense,
+//			incomeStatementRole: .interestExpense,
 //			timeSeries: TimeSeries(periods: periods, values: [25_000, 25_000]),
-//			expenseType: .interestExpense
 //		)
 //
 //		// Tax
 //		let tax = try Account(
 //			entity: entity,
 //			name: "Income Tax",
-//			type: .expense,
+//			incomeStatementRole: .incomeTaxExpense,
 //			timeSeries: TimeSeries(periods: periods, values: [47_250, 51_450]),
-//			expenseType: .taxExpense
 //		)
 //
 //		// Create income statement
@@ -89,59 +84,52 @@ import Foundation
 //		let cash = try Account(
 //			entity: entity,
 //			name: "Cash",
-//			type: .asset,
+//			balanceSheetRole: .cashAndEquivalents,
 //			timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000]),
-//			assetType: .cashAndEquivalents
 //		)
 //
 //		let receivables = try Account(
 //			entity: entity,
 //			name: "Accounts Receivable",
-//			type: .asset,
+//			balanceSheetRole: .accountsReceivable,
 //			timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-//			assetType: .accountsReceivable
 //		)
 //
 //		let inventory = try Account(
 //			entity: entity,
 //			name: "Inventory",
-//			type: .asset,
+//			balanceSheetRole: .inventory,
 //			timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000]),
-//			assetType: .inventory
 //		)
 //
 //		let ppe = try Account(
 //			entity: entity,
 //			name: "PP&E",
-//			type: .asset,
+//			balanceSheetRole: .propertyPlantEquipment,
 //			timeSeries: TimeSeries(periods: periods, values: [2_000_000, 1_950_000]),
-//			assetType: .propertyPlantEquipment
 //		)
 //
 //		// Liabilities
 //		let payables = try Account(
 //			entity: entity,
 //			name: "Accounts Payable",
-//			type: .liability,
+//			balanceSheetRole: .accountsPayable,
 //			timeSeries: TimeSeries(periods: periods, values: [150_000, 165_000]),
-//			liabilityType: .accountsPayable
 //		)
 //
 //		let debt = try Account(
 //			entity: entity,
 //			name: "Long-term Debt",
-//			type: .liability,
+//			balanceSheetRole: .longTermDebt,
 //			timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_000_000]),
-//			liabilityType: .longTermDebt
 //		)
 //
 //		// Equity
 //		let equity = try Account(
 //			entity: entity,
 //			name: "Equity",
-//			type: .equity,
+//			balanceSheetRole: .retainedEarnings,
 //			timeSeries: TimeSeries(periods: periods, values: [1_850_000, 1_885_000]),
-//			equityType: .retainedEarnings
 //		)
 //
 //		// Create balance sheet
@@ -396,7 +384,7 @@ import Foundation
 //		let revenue = try Account(
 //			entity: entity,
 //			name: "Service Revenue",
-//			type: .revenue,
+//			incomeStatementRole: .revenue,
 //			timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000])
 //		)
 //
@@ -404,18 +392,16 @@ import Foundation
 //		let opex = try Account(
 //			entity: entity,
 //			name: "Operating Expenses",
-//			type: .expense,
+//			incomeStatementRole: .operatingExpenseOther,
 //			timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-//			expenseType: .operatingExpense
 //		)
 //
 //		// Tax
 //		let tax = try Account(
 //			entity: entity,
 //			name: "Income Tax",
-//			type: .expense,
+//			incomeStatementRole: .incomeTaxExpense,
 //			timeSeries: TimeSeries(periods: periods, values: [42_000, 46_200]),
-//			expenseType: .taxExpense
 //		)
 //
 //		// Create income statement (no COGS, no interest expense)
@@ -430,36 +416,32 @@ import Foundation
 //		let cash = try Account(
 //			entity: entity,
 //			name: "Cash",
-//			type: .asset,
+//			balanceSheetRole: .cashAndEquivalents,
 //			timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000]),
-//			assetType: .cashAndEquivalents
 //		)
 //
 //		// No receivables for cash-only business
 //		let ppe = try Account(
 //			entity: entity,
 //			name: "Equipment",
-//			type: .asset,
+//			balanceSheetRole: .propertyPlantEquipment,
 //			timeSeries: TimeSeries(periods: periods, values: [100_000, 95_000]),
-//			assetType: .propertyPlantEquipment
 //		)
 //
 //		// Liabilities (no payables, no debt)
 //		let currentLiab = try Account(
 //			entity: entity,
 //			name: "Accrued Expenses",
-//			type: .liability,
+//			balanceSheetRole: .accruedExpenses,
 //			timeSeries: TimeSeries(periods: periods, values: [50_000, 55_000]),
-//			liabilityType: .accruedExpenses
 //		)
 //
 //		// Equity
 //		let equity = try Account(
 //			entity: entity,
 //			name: "Equity",
-//			type: .equity,
+//			balanceSheetRole: .retainedEarnings,
 //			timeSeries: TimeSeries(periods: periods, values: [250_000, 260_000]),
-//			equityType: .retainedEarnings
 //		)
 //
 //		// Create balance sheet
@@ -527,7 +509,7 @@ struct RatioConvenienceFunctionsTests2 {
 				let revenue = try Account(
 						entity: entity,
 						name: "Revenue",
-						type: .revenue,
+						incomeStatementRole: .revenue,
 						timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_100_000])
 				)
 
@@ -535,121 +517,106 @@ struct RatioConvenienceFunctionsTests2 {
 				let cogs = try Account(
 						entity: entity,
 						name: "Cost of Goods Sold",
-						type: .expense,
+						incomeStatementRole: .costOfGoodsSold,
 						timeSeries: TimeSeries(periods: periods, values: [400_000, 440_000]),
-						expenseType: .costOfGoodsSold
 				)
 
 				// Operating expenses
 				let opex = try Account(
 						entity: entity,
 						name: "Operating Expenses",
-						type: .expense,
+						incomeStatementRole: .operatingExpenseOther,
 						timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-						expenseType: .operatingExpense
 				)
 
 				// Depreciation
 				let depreciation = try Account(
 						entity: entity,
 						name: "Depreciation",
-						type: .expense,
+						incomeStatementRole: .depreciationAmortization,
 						timeSeries: TimeSeries(periods: periods, values: [50_000, 50_000]),
-						expenseType: .depreciationAmortization
 				)
 
 				// Interest
 				let interest = try Account(
 						entity: entity,
 						name: "Interest Expense",
-						type: .expense,
+						incomeStatementRole: .interestExpense,
 						timeSeries: TimeSeries(periods: periods, values: [25_000, 25_000]),
-						expenseType: .interestExpense
 				)
 
 				// Tax
 				let tax = try Account(
 						entity: entity,
 						name: "Income Tax",
-						type: .expense,
+						incomeStatementRole: .incomeTaxExpense,
 						timeSeries: TimeSeries(periods: periods, values: [47_250, 51_450]),
-						expenseType: .taxExpense
 				)
 
 				// Create income statement
 				let incomeStatement = try IncomeStatement(
 						entity: entity,
 						periods: periods,
-						revenueAccounts: [revenue],
-						expenseAccounts: [cogs, opex, depreciation, interest, tax]
+						accounts: [revenue, cogs, opex, depreciation, interest, tax]
 				)
 
 				// Assets
 				let cash = try Account(
 						entity: entity,
 						name: "Cash",
-						type: .asset,
+						balanceSheetRole: .cashAndEquivalents,
 						timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000]),
-						assetType: .cashAndEquivalents
 				)
 
 				let receivables = try Account(
 						entity: entity,
 						name: "Accounts Receivable",
-						type: .asset,
+						balanceSheetRole: .accountsReceivable,
 						timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-						assetType: .accountsReceivable
 				)
 
 				let inventory = try Account(
 						entity: entity,
 						name: "Inventory",
-						type: .asset,
+						balanceSheetRole: .inventory,
 						timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000]),
-						assetType: .inventory
 				)
 
 				let ppe = try Account(
 						entity: entity,
 						name: "PP&E",
-						type: .asset,
+						balanceSheetRole: .propertyPlantEquipment,
 						timeSeries: TimeSeries(periods: periods, values: [2_000_000, 1_950_000]),
-						assetType: .propertyPlantEquipment
 				)
 
 				// Liabilities
 				let payables = try Account(
 						entity: entity,
 						name: "Accounts Payable",
-						type: .liability,
+						balanceSheetRole: .accountsPayable,
 						timeSeries: TimeSeries(periods: periods, values: [150_000, 165_000]),
-						liabilityType: .accountsPayable
 				)
 
 				let debt = try Account(
 						entity: entity,
 						name: "Long-term Debt",
-						type: .liability,
+						balanceSheetRole: .longTermDebt,
 						timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_000_000]),
-						liabilityType: .longTermDebt
 				)
 
 				// Equity
 				let equity = try Account(
 						entity: entity,
 						name: "Equity",
-						type: .equity,
+						balanceSheetRole: .retainedEarnings,
 						timeSeries: TimeSeries(periods: periods, values: [1_850_000, 1_885_000]),
-						equityType: .retainedEarnings
 				)
 
 				// Create balance sheet
 				let balanceSheet = try BalanceSheet(
 						entity: entity,
 						periods: periods,
-						assetAccounts: [cash, receivables, inventory, ppe],
-						liabilityAccounts: [payables, debt],
-						equityAccounts: [equity]
+						accounts: [cash, receivables, inventory, ppe, payables, debt, equity]
 				)
 
 				return (incomeStatement, balanceSheet)
@@ -827,16 +794,14 @@ struct RatioConvenienceFunctionsTests2 {
 				let operatingCF = try Account(
 						entity: entity,
 						name: "Operating Cash Flow",
-						type: .operating,
+						cashFlowRole: .otherOperatingActivities,
 						timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000])
 				)
 
 				let cashFlowStatement = try CashFlowStatement(
 						entity: entity,
 						periods: periods,
-						operatingAccounts: [operatingCF],
-						investingAccounts: [],
-						financingAccounts: []
+						accounts: [operatingCF]
 				)
 
 				let q1 = periods[0]
@@ -895,7 +860,7 @@ struct RatioConvenienceFunctionsTests2 {
 				let revenue = try Account(
 						entity: entity,
 						name: "Service Revenue",
-						type: .revenue,
+						incomeStatementRole: .revenue,
 						timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000])
 				)
 
@@ -903,71 +868,62 @@ struct RatioConvenienceFunctionsTests2 {
 				let opex = try Account(
 						entity: entity,
 						name: "Operating Expenses",
-						type: .expense,
+						incomeStatementRole: .operatingExpenseOther,
 						timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-						expenseType: .operatingExpense
 				)
 
 				// Tax
 				let tax = try Account(
 						entity: entity,
 						name: "Income Tax",
-						type: .expense,
+						incomeStatementRole: .incomeTaxExpense,
 						timeSeries: TimeSeries(periods: periods, values: [42_000, 46_200]),
-						expenseType: .taxExpense
 				)
 
 				// Create income statement (no COGS, no interest expense)
 				let incomeStatement = try IncomeStatement(
 						entity: entity,
 						periods: periods,
-						revenueAccounts: [revenue],
-						expenseAccounts: [opex, tax]
+						accounts: [revenue, opex, tax]
 				)
 
 				// Assets (no inventory)
 				let cash = try Account(
 						entity: entity,
 						name: "Cash",
-						type: .asset,
+						balanceSheetRole: .cashAndEquivalents,
 						timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000]),
-						assetType: .cashAndEquivalents
 				)
 
 				// No receivables for cash-only business
 				let ppe = try Account(
 						entity: entity,
 						name: "Equipment",
-						type: .asset,
+						balanceSheetRole: .propertyPlantEquipment,
 						timeSeries: TimeSeries(periods: periods, values: [100_000, 95_000]),
-						assetType: .propertyPlantEquipment
 				)
 
 				// Liabilities (no payables, no debt)
 				let currentLiab = try Account(
 						entity: entity,
 						name: "Accrued Expenses",
-						type: .liability,
+						balanceSheetRole: .accruedLiabilities,
 						timeSeries: TimeSeries(periods: periods, values: [50_000, 55_000]),
-						liabilityType: .accruedExpenses
 				)
 
 				// Equity
 				let equity = try Account(
 						entity: entity,
 						name: "Equity",
-						type: .equity,
+						balanceSheetRole: .retainedEarnings,
 						timeSeries: TimeSeries(periods: periods, values: [250_000, 260_000]),
-						equityType: .retainedEarnings
 				)
 
 				// Create balance sheet
 				let balanceSheet = try BalanceSheet(
 						entity: entity,
 						periods: periods,
-						assetAccounts: [cash, ppe],
-						liabilityAccounts: [currentLiab],
-						equityAccounts: [equity]
+						accounts: [cash, ppe, currentLiab, equity]
 				)
 
 				// Test efficiency ratios
@@ -1021,7 +977,7 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let revenue = try Account(
 												entity: entity,
 												name: "Revenue",
-												type: .revenue,
+												incomeStatementRole: .revenue,
 												timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_100_000])
 								)
 
@@ -1029,117 +985,102 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let cogs = try Account(
 												entity: entity,
 												name: "Cost of Goods Sold",
-												type: .expense,
+												incomeStatementRole: .costOfGoodsSold,
 												timeSeries: TimeSeries(periods: periods, values: [400_000, 440_000]),
-												expenseType: .costOfGoodsSold
 								)
 
 								// Operating expenses
 								let opex = try Account(
 												entity: entity,
 												name: "Operating Expenses",
-												type: .expense,
+												incomeStatementRole: .operatingExpenseOther,
 												timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-												expenseType: .operatingExpense
 								)
 
 								// Depreciation
 								let depreciation = try Account(
 												entity: entity,
 												name: "Depreciation",
-												type: .expense,
+												incomeStatementRole: .depreciationAmortization,
 												timeSeries: TimeSeries(periods: periods, values: [50_000, 50_000]),
-												expenseType: .depreciationAmortization
 								)
 
 								// Interest
 								let interest = try Account(
 												entity: entity,
 												name: "Interest Expense",
-												type: .expense,
+												incomeStatementRole: .interestExpense,
 												timeSeries: TimeSeries(periods: periods, values: [25_000, 25_000]),
-												expenseType: .interestExpense
 								)
 
 								// Tax
 								let tax = try Account(
 												entity: entity,
 												name: "Income Tax",
-												type: .expense,
+												incomeStatementRole: .incomeTaxExpense,
 												timeSeries: TimeSeries(periods: periods, values: [47_250, 51_450]),
-												expenseType: .taxExpense
 								)
 
 								// Income statement
 								let incomeStatement = try IncomeStatement(
 												entity: entity,
 												periods: periods,
-												revenueAccounts: [revenue],
-												expenseAccounts: [cogs, opex, depreciation, interest, tax]
+												accounts: [revenue, cogs, opex, depreciation, interest, tax]
 								)
 
 								// Assets
 								let cash = try Account(
 												entity: entity,
 												name: "Cash",
-												type: .asset,
+												balanceSheetRole: .cashAndEquivalents,
 												timeSeries: TimeSeries(periods: periods, values: [500_000, 550_000]),
-												assetType: .cashAndEquivalents
 								)
 								let receivables = try Account(
 												entity: entity,
 												name: "Accounts Receivable",
-												type: .asset,
+												balanceSheetRole: .accountsReceivable,
 												timeSeries: TimeSeries(periods: periods, values: [300_000, 330_000]),
-												assetType: .accountsReceivable
 								)
 								let inventory = try Account(
 												entity: entity,
 												name: "Inventory",
-												type: .asset,
+												balanceSheetRole: .inventory,
 												timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000]),
-												assetType: .inventory
 								)
 								let ppe = try Account(
 												entity: entity,
 												name: "PP&E",
-												type: .asset,
+												balanceSheetRole: .propertyPlantEquipment,
 												timeSeries: TimeSeries(periods: periods, values: [2_000_000, 1_950_000]),
-												assetType: .propertyPlantEquipment
 								)
 
 								// Liabilities
 								let payables = try Account(
 												entity: entity,
 												name: "Accounts Payable",
-												type: .liability,
+												balanceSheetRole: .accountsPayable,
 												timeSeries: TimeSeries(periods: periods, values: [150_000, 165_000]),
-												liabilityType: .accountsPayable
 								)
 								let debt = try Account(
 												entity: entity,
 												name: "Long-term Debt",
-												type: .liability,
+												balanceSheetRole: .longTermDebt,
 												timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_000_000]),
-												liabilityType: .longTermDebt
 								)
 
 								// Equity
 								let equity = try Account(
 												entity: entity,
 												name: "Equity",
-												type: .equity,
+												balanceSheetRole: .retainedEarnings,
 												timeSeries: TimeSeries(periods: periods, values: [1_850_000, 1_885_000]),
-												equityType: .retainedEarnings
 								)
 
 								// Balance sheet
 								let balanceSheet = try BalanceSheet(
 												entity: entity,
 												periods: periods,
-												assetAccounts: [cash, receivables, inventory, ppe],
-												liabilityAccounts: [payables, debt],
-												equityAccounts: [equity]
+												accounts: [cash, receivables, inventory, ppe, payables, debt, equity]
 								)
 
 								return (incomeStatement, balanceSheet)
@@ -1267,15 +1208,13 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let operatingCF = try Account(
 												entity: entity,
 												name: "Operating Cash Flow",
-												type: .operating,
+												cashFlowRole: .otherOperatingActivities,
 												timeSeries: TimeSeries(periods: periods, values: [200_000, 220_000])
 								)
 								let cfs = try CashFlowStatement(
 												entity: entity,
 												periods: periods,
-												operatingAccounts: [operatingCF],
-												investingAccounts: [],
-												financingAccounts: []
+												accounts: [operatingCF]
 								)
 
 								let q1 = periods[0]
@@ -1356,42 +1295,35 @@ struct RatioConvenienceFunctionsAdditionalTests {
 
 								// IS has Q1-Q3; BS has Q2-Q3 only
 								let revenue = try Account(
-												entity: entity, name: "Revenue", type: .revenue,
-												timeSeries: TimeSeries(periods: [p1, p2, p3], values: [100, 110, 120])
+												entity: entity, name: "Revenue", incomeStatementRole: .revenue,
+		timeSeries: TimeSeries(periods: [p1, p2, p3], values: [100, 110, 120])
 								)
 								let cogs = try Account(
-												entity: entity, name: "COGS", type: .expense,
+												entity: entity, name: "COGS", incomeStatementRole: .costOfGoodsSold,
 												timeSeries: TimeSeries(periods: [p1, p2, p3], values: [40, 44, 48]),
-												expenseType: .costOfGoodsSold
 								)
 								let isObj = try IncomeStatement(
 												entity: entity,
 												periods: [p1, p2, p3],
-												revenueAccounts: [revenue],
-												expenseAccounts: [cogs]
+												accounts: [revenue, cogs]
 								)
 
 								let cash = try Account(
-												entity: entity, name: "Cash", type: .asset,
+												entity: entity, name: "Cash", balanceSheetRole: .cashAndEquivalents,
 												timeSeries: TimeSeries(periods: [p2, p3], values: [50, 60]),
-												assetType: .cashAndEquivalents
 								)
 								let ap = try Account(
-												entity: entity, name: "AP", type: .liability,
+												entity: entity, name: "AP", balanceSheetRole: .accountsPayable,
 												timeSeries: TimeSeries(periods: [p2, p3], values: [10, 12]),
-												liabilityType: .accountsPayable
 								)
 								let equity = try Account(
-												entity: entity, name: "Equity", type: .equity,
+												entity: entity, name: "Equity", balanceSheetRole: .retainedEarnings,
 												timeSeries: TimeSeries(periods: [p2, p3], values: [40, 48]),
-												equityType: .retainedEarnings
 								)
 								let bsObj = try BalanceSheet(
 												entity: entity,
 												periods: [p2, p3],
-												assetAccounts: [cash],
-												liabilityAccounts: [ap],
-												equityAccounts: [equity]
+												accounts: [cash, ap, equity]
 								)
 
 								let efficiency = efficiencyRatios(incomeStatement: isObj, balanceSheet: bsObj)

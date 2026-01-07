@@ -137,11 +137,11 @@ struct StreamingCompositionTests {
         let stream = AsyncDelayedStream([1.0, 2.0], delay: .milliseconds(50))
 
         var debounced: [Double] = []
-        for try await value in stream.debounce(interval: .milliseconds(20)) {
+        for try await value in stream.debounce(interval: .milliseconds(40)) {
             debounced.append(value)
         }
 
-        // With 50ms between values and 20ms debounce, both should emit
+        // With 50ms between values and 40ms debounce, both should emit
         #expect(debounced.count == 2)
     }
 

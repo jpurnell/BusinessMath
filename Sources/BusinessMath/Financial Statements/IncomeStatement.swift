@@ -29,11 +29,11 @@ public enum IncomeStatementError: Error, Sendable {
 
 /// Income statement (Profit & Loss) for a single entity over multiple periods.
 ///
-/// `IncomeStatement` aggregates revenue and expense accounts to compute financial
+/// `IncomeStatement` aggregates accounts with income statement roles to compute financial
 /// performance metrics including gross profit, operating income, net income, and
 /// various margin ratios.
 ///
-/// ## Creating Income Statements
+/// ## Creating Income Statements (New Role-Based API)
 ///
 /// ```swift
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
@@ -44,29 +44,31 @@ public enum IncomeStatementError: Error, Sendable {
 ///     Period.quarter(year: 2024, quarter: 4)
 /// ]
 ///
-/// let revenueAccount = try Account(
+/// let productRevenue = try Account(
 ///     entity: entity,
 ///     name: "Product Sales",
-///     type: .revenue,
-///     timeSeries: revenueSeries
+///     incomeStatementRole: .productRevenue,
+///     timeSeries: productSeries
 /// )
 ///
-/// var cogsMetadata = AccountMetadata()
-/// cogsMetadata.category = "COGS"
+/// let serviceRevenue = try Account(
+///     entity: entity,
+///     name: "Service Revenue",
+///     incomeStatementRole: .serviceRevenue,
+///     timeSeries: serviceSeries
+/// )
 ///
-/// let cogsAccount = try Account(
+/// let cogs = try Account(
 ///     entity: entity,
 ///     name: "Cost of Goods Sold",
-///     type: .expense,
-///     timeSeries: cogsSeries,
-///     metadata: cogsMetadata
+///     incomeStatementRole: .costOfGoodsSold,
+///     timeSeries: cogsSeries
 /// )
 ///
 /// let incomeStmt = try IncomeStatement(
 ///     entity: entity,
 ///     periods: periods,
-///     revenueAccounts: [revenueAccount],
-///     expenseAccounts: [cogsAccount]
+///     accounts: [productRevenue, serviceRevenue, cogs]  // Single array!
 /// )
 /// ```
 ///
@@ -88,6 +90,24 @@ public enum IncomeStatementError: Error, Sendable {
 /// let netMargin = incomeStmt.netMargin
 /// ```
 ///
+/// ## Role-Based Filtering
+///
+/// Multiple accounts with the same role automatically aggregate:
+///
+/// ```swift
+/// // Two product revenue accounts from different regions
+/// let usRevenue = try Account(entity: entity, name: "US Revenue",
+///                              incomeStatementRole: .productRevenue, timeSeries: usSeries)
+/// let euRevenue = try Account(entity: entity, name: "EU Revenue",
+///                              incomeStatementRole: .productRevenue, timeSeries: euSeries)
+///
+/// let incomeStmt = try IncomeStatement(entity: entity, periods: periods,
+///                                       accounts: [usRevenue, euRevenue])
+///
+/// // Automatically aggregates both accounts
+/// let totalProduct = incomeStmt.totalRevenue  // US + EU
+/// ```
+///
 /// ## Materialization for Performance
 ///
 /// For repeated metric access across many companies, use materialization:
@@ -103,11 +123,12 @@ public enum IncomeStatementError: Error, Sendable {
 /// ## Topics
 ///
 /// ### Creating Income Statements
-/// - ``init(entity:periods:revenueAccounts:expenseAccounts:)``
+/// - ``init(entity:periods:accounts:)``
 ///
 /// ### Properties
 /// - ``entity``
 /// - ``periods``
+/// - ``accounts``
 /// - ``revenueAccounts``
 /// - ``expenseAccounts``
 ///
@@ -138,63 +159,100 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// The periods covered by this income statement.
 	public let periods: [Period]
 
-	/// All revenue accounts.
-	public let revenueAccounts: [Account<T>]
+	/// All accounts in this income statement.
+	///
+	/// Each account must have an `incomeStatementRole` to be included.
+	/// Accounts with the same role will be automatically aggregated when computing metrics.
+	public let accounts: [Account<T>]
 
-	/// All expense accounts.
-	public let expenseAccounts: [Account<T>]
+	/// All revenue accounts (accounts with revenue roles).
+	///
+	/// This computed property filters accounts by their `incomeStatementRole.isRevenue` flag.
+	public var revenueAccounts: [Account<T>] {
+		accounts.filter { $0.incomeStatementRole?.isRevenue == true }
+	}
 
-	/// Creates an income statement with validation.
+	/// All expense accounts (accounts with expense roles).
+	///
+	/// This computed property filters accounts by checking if they're not revenue.
+	public var expenseAccounts: [Account<T>] {
+		accounts.filter {
+			guard let role = $0.incomeStatementRole else { return false }
+			return !role.isRevenue
+		}
+	}
+
+	/// All cost of revenue accounts (COGS, cost of services, etc.).
+	public var costOfRevenueAccounts: [Account<T>] {
+		accounts.filter { $0.incomeStatementRole?.isCostOfRevenue == true }
+	}
+
+	/// All operating expense accounts (R&D, S&M, G&A).
+	public var operatingExpenseAccounts: [Account<T>] {
+		accounts.filter { $0.incomeStatementRole?.isOperatingExpense == true }
+	}
+
+	/// All non-cash charge accounts (D&A, stock-based comp, impairments).
+	public var nonCashChargeAccounts: [Account<T>] {
+		accounts.filter { $0.incomeStatementRole?.isNonCashCharge == true }
+	}
+
+	/// All interest expense accounts.
+	public var interestExpenseAccounts: [Account<T>] {
+		accounts.filter { $0.incomeStatementRole == .interestExpense }
+	}
+
+	/// All tax accounts.
+	public var taxAccounts: [Account<T>] {
+		accounts.filter { $0.incomeStatementRole == .incomeTaxExpense }
+	}
+
+	/// Creates an income statement with validation using the new role-based API.
 	///
 	/// - Parameters:
 	///   - entity: The entity this statement belongs to
 	///   - periods: The periods covered
-	///   - revenueAccounts: Revenue accounts (must have type .revenue)
-	///   - expenseAccounts: Expense accounts (must have type .expense)
+	///   - accounts: All accounts (must have `incomeStatementRole`)
 	///
-	/// - Throws: ``IncomeStatementError`` if validation fails
+	/// - Throws: ``FinancialModelError`` if validation fails
 	public init(
 		entity: Entity,
 		periods: [Period],
-		revenueAccounts: [Account<T>],
-		expenseAccounts: [Account<T>]
+		accounts: [Account<T>]
 	) throws {
-		// Validate entity consistency
-		for account in revenueAccounts + expenseAccounts {
-			guard account.entity == entity else {
-				throw IncomeStatementError.entityMismatch
+		// Validate all accounts have income statement roles
+		for account in accounts {
+			guard account.incomeStatementRole != nil else {
+				throw FinancialModelError.accountMissingRole(
+					statement: .incomeStatement,
+					accountName: account.name
+				)
 			}
 		}
 
-		// Validate account types
-		for account in revenueAccounts {
-			guard account.type == .revenue else {
-				throw IncomeStatementError.invalidAccountType(expected: .revenue, actual: account.type)
-			}
-		}
-
-		for account in expenseAccounts {
-			guard account.type == .expense else {
-				throw IncomeStatementError.invalidAccountType(expected: .expense, actual: account.type)
-			}
-		}
+		// Validate entity and period consistency using shared helpers
+		try FinancialStatementHelpers.validateEntityConsistency(accounts: accounts, entity: entity)
+		try FinancialStatementHelpers.validatePeriodConsistency(accounts: accounts, periods: periods)
 
 		self.entity = entity
 		self.periods = periods
-		self.revenueAccounts = revenueAccounts
-		self.expenseAccounts = expenseAccounts
+		self.accounts = accounts
 	}
 
 	// MARK: - Aggregated Totals
 
 	/// Total revenue across all revenue accounts.
+	///
+	/// Aggregates all accounts where `incomeStatementRole.isRevenue == true`.
 	public var totalRevenue: TimeSeries<T> {
-		return aggregateAccounts(revenueAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(revenueAccounts, periods: periods)
 	}
 
 	/// Total expenses across all expense accounts.
+	///
+	/// Aggregates all accounts where `incomeStatementRole.isRevenue == false`.
 	public var totalExpenses: TimeSeries<T> {
-		return aggregateAccounts(expenseAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(expenseAccounts, periods: periods)
 	}
 
 	/// Net income (total revenue - total expenses).
@@ -204,33 +262,39 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 
 	// MARK: - Profitability Metrics
 
-	/// Gross profit (revenue - cost of goods sold).
+	/// Gross profit (revenue - cost of revenue).
 	///
-	/// COGS accounts are identified by `expenseType == .costOfGoodsSold`.
+	/// Cost of revenue includes accounts where `incomeStatementRole.isCostOfRevenue == true`,
+	/// such as COGS, cost of services, fulfillment costs, etc.
+	///
+	/// For service companies with no cost of revenue accounts, returns total revenue (100% gross margin).
 	public var grossProfit: TimeSeries<T> {
-		let cogs = expenseAccounts.filter { $0.expenseType == .costOfGoodsSold }
-		let cogsTotal = aggregateAccounts(cogs)
-		return totalRevenue - cogsTotal
+		let costOfRevenue = FinancialStatementHelpers.aggregateAccounts(costOfRevenueAccounts, periods: periods)
+		return totalRevenue - costOfRevenue
 	}
 
-	/// Operating income (gross profit - operating expenses - D&A).
+	/// Operating expenses (R&D + S&M + G&A).
 	///
-	/// Operating expenses include both `.operatingExpense` and `.depreciationAmortization`.
+	/// Aggregates all accounts where `incomeStatementRole.isOperatingExpense == true`.
+	public var operatingExpenses: TimeSeries<T> {
+		return FinancialStatementHelpers.aggregateAccounts(operatingExpenseAccounts, periods: periods)
+	}
+
+	/// Operating income (gross profit - operating expenses - non-cash charges).
+	///
+	/// Operating income (EBIT) includes all operating costs, including depreciation and amortization.
+	/// This represents earnings from operations before interest and taxes.
 	public var operatingIncome: TimeSeries<T> {
-		let opex = expenseAccounts.filter {
-			$0.expenseType == .operatingExpense || $0.expenseType == .depreciationAmortization
-		}
-		let opexTotal = aggregateAccounts(opex)
-		return grossProfit - opexTotal
+		let nonCashCharges = FinancialStatementHelpers.aggregateAccounts(nonCashChargeAccounts, periods: periods)
+		return grossProfit - operatingExpenses - nonCashCharges
 	}
 
 	/// EBITDA (Earnings Before Interest, Taxes, Depreciation, and Amortization).
 	///
-	/// Adds back depreciation and amortization (identified by `expenseType == .depreciationAmortization`) to operating income.
+	/// Adds back non-cash charges (D&A, stock-based comp, impairments) to operating income.
 	public var ebitda: TimeSeries<T> {
-		let da = expenseAccounts.filter { $0.expenseType == .depreciationAmortization }
-		let daTotal = aggregateAccounts(da)
-		return operatingIncome + daTotal
+		let nonCashCharges = FinancialStatementHelpers.aggregateAccounts(nonCashChargeAccounts, periods: periods)
+		return operatingIncome + nonCashCharges
 	}
 
 	// MARK: - Margin Ratios
@@ -255,26 +319,6 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 		return ebitda / totalRevenue
 	}
 
-	// MARK: - Helper Methods
-
-	/// Aggregates multiple accounts into a single time series.
-	private func aggregateAccounts(_ accounts: [Account<T>]) -> TimeSeries<T> {
-		guard !accounts.isEmpty else {
-			// Return zero-filled series for empty account list
-			let zeros = Array(repeating: T(0), count: periods.count)
-			return TimeSeries(periods: periods, values: zeros)
-		}
-
-		// Start with first account's time series
-		var result = accounts[0].timeSeries
-
-		// Add remaining accounts
-		for account in accounts.dropFirst() {
-			result = result + account.timeSeries
-		}
-
-		return result
-	}
 }
 
 // MARK: - Materialized Income Statement
@@ -302,8 +346,7 @@ extension IncomeStatement {
 		public let entity: Entity
 		public let periods: [Period]
 
-		public let revenueAccounts: [Account<T>]
-		public let expenseAccounts: [Account<T>]
+		public let accounts: [Account<T>]
 
 		// Pre-computed totals
 		public let totalRevenue: TimeSeries<T>
@@ -312,6 +355,7 @@ extension IncomeStatement {
 
 		// Pre-computed profitability metrics
 		public let grossProfit: TimeSeries<T>
+		public let operatingExpenses: TimeSeries<T>
 		public let operatingIncome: TimeSeries<T>
 		public let ebitda: TimeSeries<T>
 
@@ -329,12 +373,12 @@ extension IncomeStatement {
 		return Materialized(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: revenueAccounts,
-			expenseAccounts: expenseAccounts,
+			accounts: accounts,
 			totalRevenue: totalRevenue,
 			totalExpenses: totalExpenses,
 			netIncome: netIncome,
 			grossProfit: grossProfit,
+			operatingExpenses: operatingExpenses,
 			operatingIncome: operatingIncome,
 			ebitda: ebitda,
 			grossMargin: grossMargin,
@@ -352,30 +396,27 @@ extension IncomeStatement: Codable {
 	private enum CodingKeys: String, CodingKey {
 		case entity
 		case periods
-		case revenueAccounts
-		case expenseAccounts
+		case accounts
 	}
 
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 		try container.encode(entity, forKey: .entity)
 		try container.encode(periods, forKey: .periods)
-		try container.encode(revenueAccounts, forKey: .revenueAccounts)
-		try container.encode(expenseAccounts, forKey: .expenseAccounts)
+		try container.encode(accounts, forKey: .accounts)
 	}
 
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		let entity = try container.decode(Entity.self, forKey: .entity)
 		let periods = try container.decode([Period].self, forKey: .periods)
-		let revenueAccounts = try container.decode([Account<T>].self, forKey: .revenueAccounts)
-		let expenseAccounts = try container.decode([Account<T>].self, forKey: .expenseAccounts)
+		let accounts = try container.decode([Account<T>].self, forKey: .accounts)
 
 		try self.init(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: revenueAccounts,
-			expenseAccounts: expenseAccounts
+			accounts: accounts
 		)
 	}
 }
+

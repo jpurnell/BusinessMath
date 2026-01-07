@@ -50,36 +50,31 @@ struct TornadoDiagramTests {
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 			let costSeries = TimeSeries<Double>(periods: periods, values: costValues)
 
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
-			let costAccount = try Account(entity: entity, name: "Costs", type: .expense, timeSeries: costSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
+			let costAccount = try Account(entity: entity, name: "Costs", incomeStatementRole: .operatingExpenseOther, timeSeries: costSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: [costAccount]
+				accounts: [revenueAccount, costAccount]
 			)
 
 			// Minimal balance sheet
 			let netIncome = incomeStatement.netIncome
-			let assetAccount = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: netIncome)
-			let equityAccount = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: netIncome)
+			let assetAccount = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: netIncome)
+			let equityAccount = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: netIncome)
 			let balanceSheet = try BalanceSheet(
 				entity: entity,
 				periods: periods,
-				assetAccounts: [assetAccount],
-				liabilityAccounts: [],
-				equityAccounts: [equityAccount]
+				accounts: [assetAccount, equityAccount]
 			)
 
 			// Minimal cash flow
-			let cashAccount = try Account(entity: entity, name: "Operating Cash", type: .operating, timeSeries: netIncome)
+			let cashAccount = try Account(entity: entity, name: "Operating Cash", cashFlowRole: .otherOperatingActivities, timeSeries: netIncome)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -167,7 +162,6 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
-		
 //		logger.info("Tornado diagram - Diagram Ranking:\n\n\(plotTornadoDiagram(tornado))")
 
 		// In this model: NetIncome = Price * Volume - Cost * Volume
@@ -215,7 +209,6 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
-		
 //		logger.info("Tornado diagram - Low/High Values Test:\n\n\(plotTornadoDiagram(tornado))")
 
 		// Verify we have low and high values for each input
@@ -260,7 +253,6 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
-		
 //		logger.info("Tornado diagram - Single Inputs Test:\n\n\(plotTornadoDiagram(tornado))")
 
 		#expect(tornado.inputs.count == 1)
@@ -299,7 +291,6 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
-		
 //		logger.info("Tornado diagram - 10% Variation:\n\n\(plotTornadoDiagram(tornado10))")
 
 		// Test with 30% variation
@@ -317,7 +308,6 @@ struct TornadoDiagramTests {
 		}
 
 //		logger.info("Tornado diagram - 30% Variation:\n\n\(plotTornadoDiagram(tornado30))")
-		
 		// Larger variation should produce larger impacts
 		let price10Impact = tornado10.impacts["Price"]!
 		let price30Impact = tornado30.impacts["Price"]!
@@ -358,7 +348,6 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
-		
 //		logger.info("Tornado diagram - Base Case Test:\n\n\(plotTornadoDiagram(tornado))")
 
 		// Verify base case value is stored
@@ -405,7 +394,6 @@ struct TornadoDiagramTests {
 			let q1 = Period.quarter(year: 2025, quarter: 1)
 			return projection.incomeStatement.netIncome[q1]!
 		}
-		
 //		logger.info("Tornado diagram - Zero Variation:\n\n\(plotTornadoDiagram(tornado))")
 
 		// Impact should be zero (no variation)
@@ -454,34 +442,29 @@ struct TornadoDiagramTests {
 			let opexSeries = TimeSeries<Double>(periods: periods, values: opexValues)
 			let netSeries = TimeSeries<Double>(periods: periods, values: netValues)
 
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
-			let cogsAccount = try Account(entity: entity, name: "COGS", type: .expense, timeSeries: cogsSeries)
-			let opexAccount = try Account(entity: entity, name: "OpEx", type: .expense, timeSeries: opexSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
+			let cogsAccount = try Account(entity: entity, name: "COGS", incomeStatementRole: .operatingExpenseOther, timeSeries: cogsSeries)
+			let opexAccount = try Account(entity: entity, name: "OpEx", incomeStatementRole: .operatingExpenseOther, timeSeries: opexSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: [cogsAccount, opexAccount]
+				accounts: [revenueAccount, cogsAccount, opexAccount]
 			)
 
-			let assetAccount = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: netSeries)
-			let equityAccount = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: netSeries)
+			let assetAccount = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: netSeries)
+			let equityAccount = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: netSeries)
 			let balanceSheet = try BalanceSheet(
 				entity: entity,
 				periods: periods,
-				assetAccounts: [assetAccount],
-				liabilityAccounts: [],
-				equityAccounts: [equityAccount]
+				accounts: [assetAccount, equityAccount]
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Operating Cash", type: .operating, timeSeries: netSeries)
+			let cashAccount = try Account(entity: entity, name: "Operating Cash", cashFlowRole: .otherOperatingActivities, timeSeries: netSeries)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -551,20 +534,20 @@ struct TornadoDiagramAdditionalTests {
 			let cogsSeries = TimeSeries<Double>(periods: periods, values: Array(repeating: cogs, count: periods.count))
 			let opexSeries = TimeSeries<Double>(periods: periods, values: Array(repeating: opex, count: periods.count))
 
-			let rev = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revSeries)
-			let cogsAcc = try Account(entity: entity, name: "COGS", type: .expense, timeSeries: cogsSeries)
-			let opexAcc = try Account(entity: entity, name: "OpEx", type: .expense, timeSeries: opexSeries)
-			let incomeStmt = try IncomeStatement(entity: entity, periods: periods, revenueAccounts: [rev], expenseAccounts: [cogsAcc, opexAcc])
+			let rev = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revSeries)
+			let cogsAcc = try Account(entity: entity, name: "COGS", incomeStatementRole: .operatingExpenseOther, timeSeries: cogsSeries)
+			let opexAcc = try Account(entity: entity, name: "OpEx", incomeStatementRole: .operatingExpenseOther, timeSeries: opexSeries)
+			let incomeStmt = try IncomeStatement(entity: entity, periods: periods, accounts: [rev, cogsAcc, opexAcc])
 
 			// Use after-tax only in BS/CFS to demonstrate the independence of the chosen output metric.
 			let afterTax = (revenue - cogs - opex) * (1 - tax)
 			let netSeries = TimeSeries<Double>(periods: periods, values: Array(repeating: afterTax, count: periods.count))
-			let asset = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: netSeries)
-			let equity = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: netSeries)
-			let bs = try BalanceSheet(entity: entity, periods: periods, assetAccounts: [asset], liabilityAccounts: [], equityAccounts: [equity])
+			let asset = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: netSeries)
+			let equity = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: netSeries)
+			let bs = try BalanceSheet(entity: entity, periods: periods, accounts: [asset, equity])
 
-			let op = try Account(entity: entity, name: "Operating", type: .operating, timeSeries: netSeries)
-			let cfs = try CashFlowStatement(entity: entity, periods: periods, operatingAccounts: [op], investingAccounts: [], financingAccounts: [])
+			let op = try Account(entity: entity, name: "Operating", cashFlowRole: .otherOperatingActivities, timeSeries: netSeries)
+			let cfs = try CashFlowStatement(entity: entity, periods: periods, accounts: [op])
 
 			return (incomeStmt, bs, cfs)
 		}

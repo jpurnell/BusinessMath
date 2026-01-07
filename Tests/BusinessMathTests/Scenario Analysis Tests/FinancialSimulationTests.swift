@@ -34,32 +34,27 @@ struct FinancialSimulationTests {
 			let revenueValues = Array(repeating: revenueValue, count: periods.count)
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: []
+				accounts: [revenueAccount]
 			)
 
-			let assetAccount = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: revenueSeries)
-			let equityAccount = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: revenueSeries)
+			let assetAccount = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: revenueSeries)
+			let equityAccount = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: revenueSeries)
 			let balanceSheet = try BalanceSheet(
 				entity: entity,
 				periods: periods,
-				assetAccounts: [assetAccount],
-				liabilityAccounts: [],
-				equityAccounts: [equityAccount]
+				accounts: [assetAccount, equityAccount]
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Cash", type: .operating, timeSeries: revenueSeries)
+			let cashAccount = try Account(entity: entity, name: "Cash", cashFlowRole: .otherOperatingActivities, timeSeries: revenueSeries)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -592,37 +587,28 @@ struct FinancialSimulationTests {
 }
 
 struct AdditionalFinancialSimulationTests {
-	
 		// MARK: - Helpers
-	
 	private func entity() -> Entity {
 		Entity(id: "TEST", primaryType: .ticker, name: "Test Company")
 	}
-	
 	private func singlePeriod() -> [Period] {
 		[ .quarter(year: 2025, quarter: 1) ]
 	}
-	
 	private func builder(entity: Entity) -> ScenarioRunner.StatementBuilder {
 		return { drivers, periods in
 				// Use "Revenue" driver; default 1000.0 if missing
 			let value = drivers["Revenue"]?.sample(for: periods[0]) ?? 1000.0
 			let series = TimeSeries<Double>(periods: periods, values: Array(repeating: value, count: periods.count))
-			
-			let revenue = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: series)
-			let income = try IncomeStatement(entity: entity, periods: periods, revenueAccounts: [revenue], expenseAccounts: [])
-			
-			let asset = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: series)
-			let equity = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: series)
-			let bs = try BalanceSheet(entity: entity, periods: periods, assetAccounts: [asset], liabilityAccounts: [], equityAccounts: [equity])
-			
-			let op = try Account(entity: entity, name: "Operating Cash", type: .operating, timeSeries: series)
-			let cfs = try CashFlowStatement(entity: entity, periods: periods, operatingAccounts: [op], investingAccounts: [], financingAccounts: [])
-			
+			let revenue = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: series)
+			let income = try IncomeStatement(entity: entity, periods: periods, accounts: [revenue])
+			let asset = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: series)
+			let equity = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: series)
+			let bs = try BalanceSheet(entity: entity, periods: periods, accounts: [asset, equity])
+			let op = try Account(entity: entity, name: "Operating Cash", cashFlowRole: .otherOperatingActivities, timeSeries: series)
+			let cfs = try CashFlowStatement(entity: entity, periods: periods, accounts: [op])
 			return (income, bs, cfs)
 		}
 	}
-	
 	@Test("Percentiles are monotonic (Normal(1000, 100))")
 		func percentileMonotonicity() throws {
 			let e = entity()
@@ -645,7 +631,6 @@ struct AdditionalFinancialSimulationTests {
 				last = value
 			}
 		}
-	
 	@Test("Sample mean and stddev reasonable for Normal(1000, 100)")
 		func sampleMomentsNormal() throws {
 			let e = entity()
@@ -669,7 +654,6 @@ struct AdditionalFinancialSimulationTests {
 			// Stddev within ~15%
 			#expect(abs(sd - 100.0) < 15.0)
 		}
-	
 	@Test("CVaR monotonic across confidence levels")
 		func cvarMonotonicity() throws {
 			let e = entity()

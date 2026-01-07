@@ -11,7 +11,7 @@ import Numerics
 // MARK: - AccountError
 
 /// Errors that can occur when creating or manipulating accounts.
-public enum AccountError: Error, Sendable {
+public enum AccountError: Error, Sendable, Equatable {
 	/// The account name is invalid (empty or whitespace only)
 	case invalidName
 
@@ -86,74 +86,83 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 
 /// A financial account belonging to a specific entity.
 ///
-/// `Account` combines an ``Entity``, ``AccountType``, and ``TimeSeries`` to represent
-/// a financial account over multiple time periods. Accounts are the building blocks
-/// of financial statements.
+/// `Account` uses a role-based system where each account declares its role(s) in financial statements.
+/// An account can have one, two, or even all three roles depending on how it appears across statements.
 ///
-/// ## Creating Accounts
+/// ## Multi-Role System (v2.0+)
+///
+/// Accounts now support **multiple roles** across statements:
 ///
 /// ```swift
-/// let apple = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
-///
-/// let periods = [
-///     Period.quarter(year: 2024, quarter: 1),
-///     Period.quarter(year: 2024, quarter: 2),
-///     Period.quarter(year: 2024, quarter: 3),
-///     Period.quarter(year: 2024, quarter: 4)
-/// ]
-///
-/// let values: [Double] = [90_000, 95_000, 100_000, 105_000]
-/// let revenueSeries = TimeSeries(periods: periods, values: values)
-///
-/// let revenueAccount = try Account(
+/// // Single role: Revenue appears only in Income Statement
+/// let revenue = try Account(
 ///     entity: apple,
 ///     name: "Product Revenue",
-///     type: .revenue,
+///     incomeStatementRole: .productRevenue,
 ///     timeSeries: revenueSeries
 /// )
-/// ```
 ///
-/// ## Adding Metadata
-///
-/// ```swift
-/// var metadata = AccountMetadata()
-/// metadata.category = "Sales"
-/// metadata.tags = ["recurring", "core"]
-///
-/// let account = try Account(
+/// // Multi-role: Depreciation appears in both IS and CFS
+/// let depreciation = try Account(
 ///     entity: apple,
-///     name: "Subscription Revenue",
-///     type: .revenue,
-///     timeSeries: revenueSeries,
-///     metadata: metadata
+///     name: "Depreciation & Amortization",
+///     incomeStatementRole: .depreciationAmortization,
+///     cashFlowRole: .depreciationAmortizationAddback,
+///     timeSeries: daSeries
+/// )
+///
+/// // Multi-role: Inventory appears in both BS and CFS
+/// let inventory = try Account(
+///     entity: apple,
+///     name: "Inventory",
+///     balanceSheetRole: .inventory,
+///     cashFlowRole: .changeInInventory,
+///     timeSeries: inventorySeries
 /// )
 /// ```
 ///
-/// ## Accessing Values
+/// ## Role Requirements
+///
+/// Every account must have **at least one role**:
+/// - `incomeStatementRole`: Appears in Income Statement
+/// - `balanceSheetRole`: Appears in Balance Sheet
+/// - `cashFlowRole`: Appears in Cash Flow Statement
+///
+/// ## Deprecated API
+///
+/// The old `AccountType` system is deprecated but still functional:
 ///
 /// ```swift
-/// let q1 = Period.quarter(year: 2024, quarter: 1)
-/// if let value = account.timeSeries[q1] {
-///     print("Q1 Revenue: \(value)")
-/// }
+/// // Old API (deprecated, but still works)
+/// let oldAccount = try Account(
+///     entity: apple,
+///     name: "Revenue",
+///     type: .revenue,  // Automatically migrates to .revenue role
+///     timeSeries: revenueSeries
+/// )
 /// ```
 ///
 /// ## Topics
 ///
 /// ### Creating Accounts
-/// - ``init(entity:name:type:timeSeries:metadata:)``
+/// - ``init(entity:name:incomeStatementRole:balanceSheetRole:cashFlowRole:timeSeries:metadata:)``
+/// - ``init(entity:name:type:timeSeries:assetType:liabilityType:expenseType:equityType:metadata:)``
 ///
 /// ### Properties
 /// - ``entity``
 /// - ``name``
-/// - ``type``
+/// - ``incomeStatementRole``
+/// - ``balanceSheetRole``
+/// - ``cashFlowRole``
 /// - ``timeSeries``
 /// - ``metadata``
 ///
-/// ### Account Categorization
-/// - ``isIncomeStatement``
-/// - ``isBalanceSheet``
-/// - ``isCashFlow``
+/// ### Deprecated Properties
+/// - ``type``
+/// - ``assetType``
+/// - ``liabilityType``
+/// - ``expenseType``
+/// - ``equityType``
 public struct Account<T: Real & Sendable>: Codable, Sendable where T: Codable {
 
 	/// The entity that owns this account.
@@ -162,91 +171,319 @@ public struct Account<T: Real & Sendable>: Codable, Sendable where T: Codable {
 	/// The name of this account.
 	public let name: String
 
-	/// The type of this account (revenue, expense, asset, etc.).
-	public let type: AccountType
+	// MARK: - Multi-Role Properties (v2.0+)
+
+	/// Role in Income Statement (nil if not applicable)
+	///
+	/// Use this to specify how the account appears in an Income Statement.
+	/// Examples: `.revenue`, `.costOfGoodsSold`, `.researchAndDevelopment`
+	public let incomeStatementRole: IncomeStatementRole?
+
+	/// Role in Balance Sheet (nil if not applicable)
+	///
+	/// Use this to specify how the account appears in a Balance Sheet.
+	/// Examples: `.cashAndEquivalents`, `.inventory`, `.longTermDebt`
+	public let balanceSheetRole: BalanceSheetRole?
+
+	/// Role in Cash Flow Statement (nil if not applicable)
+	///
+	/// Use this to specify how the account appears in a Cash Flow Statement.
+	/// Examples: `.netIncome`, `.capitalExpenditures`, `.changeInReceivables`
+	public let cashFlowRole: CashFlowRole?
 
 	/// The time series of values for this account.
 	public let timeSeries: TimeSeries<T>
 
-	/// Subtype for asset accounts (nil for non-asset accounts).
-	public let assetType: AssetType?
-
-	/// Subtype for liability accounts (nil for non-liability accounts).
-	public let liabilityType: LiabilityType?
-
-	/// Subtype for expense accounts (nil for non-expense accounts).
-	public let expenseType: ExpenseType?
-
-	/// Subtype for equity accounts (nil for non-equity accounts).
-	public let equityType: EquityType?
-
 	/// Optional metadata for categorization and description.
 	public var metadata: AccountMetadata?
 
-	/// Creates a new account with validation.
+//	// MARK: - Deprecated Properties
+//
+//	/// The type of this account (revenue, expense, asset, etc.).
+//	///
+//	/// - Warning: Deprecated in v2.0. Use statement-specific roles instead.
+//	@available(*, deprecated, message: "Use incomeStatementRole, balanceSheetRole, or cashFlowRole instead")
+//	public let type: AccountType
+//
+//	/// Subtype for asset accounts (nil for non-asset accounts).
+//	///
+//	/// - Warning: Deprecated in v2.0. Use balanceSheetRole instead.
+//	@available(*, deprecated, message: "Use balanceSheetRole instead")
+//	public let assetType: AssetType?
+//
+//	/// Subtype for liability accounts (nil for non-liability accounts).
+//	///
+//	/// - Warning: Deprecated in v2.0. Use balanceSheetRole instead.
+//	@available(*, deprecated, message: "Use balanceSheetRole instead")
+//	public let liabilityType: LiabilityType?
+//
+//	/// Subtype for expense accounts (nil for non-expense accounts).
+//	///
+//	/// - Warning: Deprecated in v2.0. Use incomeStatementRole instead.
+//	@available(*, deprecated, message: "Use incomeStatementRole instead")
+//	public let expenseType: ExpenseType?
+//
+//	/// Subtype for equity accounts (nil for non-equity accounts).
+//	///
+//	/// - Warning: Deprecated in v2.0. Use balanceSheetRole instead.
+//	@available(*, deprecated, message: "Use balanceSheetRole instead")
+//	public let equityType: EquityType?
+
+	// MARK: - New Initializer (v2.0+)
+
+	/// Creates a new account with role-based categorization.
+	///
+	/// At least one role must be specified. Accounts can have multiple roles
+	/// if they appear in multiple financial statements.
 	///
 	/// - Parameters:
 	///   - entity: The entity that owns this account
 	///   - name: The account name (must not be empty)
-	///   - type: The account type
+	///   - incomeStatementRole: Optional role in Income Statement
+	///   - balanceSheetRole: Optional role in Balance Sheet
+	///   - cashFlowRole: Optional role in Cash Flow Statement
 	///   - timeSeries: The time series of values (must not be empty)
-	///   - assetType: Subtype for asset accounts (required if type is .asset)
-	///   - liabilityType: Subtype for liability accounts (required if type is .liability)
-	///   - expenseType: Subtype for expense accounts (required if type is .expense)
-	///   - equityType: Subtype for equity accounts (required if type is .equity)
 	///   - metadata: Optional metadata
 	///
 	/// - Throws: ``AccountError/invalidName`` if name is empty
 	/// - Throws: ``AccountError/emptyTimeSeries`` if timeSeries has no periods
+	/// - Throws: ``FinancialModelError/accountMustHaveAtLeastOneRole`` if all roles are nil
 	public init(
 		entity: Entity,
 		name: String,
-		type: AccountType,
+		incomeStatementRole: IncomeStatementRole? = nil,
+		balanceSheetRole: BalanceSheetRole? = nil,
+		cashFlowRole: CashFlowRole? = nil,
 		timeSeries: TimeSeries<T>,
-		assetType: AssetType? = nil,
-		liabilityType: LiabilityType? = nil,
-		expenseType: ExpenseType? = nil,
-		equityType: EquityType? = nil,
 		metadata: AccountMetadata? = nil
 	) throws {
+		// Validate name
 		guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
 			throw AccountError.invalidName
 		}
+
+		// Validate time series
 		guard !timeSeries.periods.isEmpty else {
 			throw AccountError.emptyTimeSeries
 		}
 
+		// Validate at least one role is specified
+		guard incomeStatementRole != nil || balanceSheetRole != nil || cashFlowRole != nil else {
+			throw FinancialModelError.accountMustHaveAtLeastOneRole
+		}
+
 		self.entity = entity
 		self.name = name
-		self.type = type
+		self.incomeStatementRole = incomeStatementRole
+		self.balanceSheetRole = balanceSheetRole
+		self.cashFlowRole = cashFlowRole
 		self.timeSeries = timeSeries
-		self.assetType = assetType
-		self.liabilityType = liabilityType
-		self.expenseType = expenseType
-		self.equityType = equityType
 		self.metadata = metadata
+	}
+
+	// MARK: - Migration Helpers
+
+	/// Migrates old AccountType to new IncomeStatementRole
+	private static func migrateToIncomeStatementRole(type: AccountType, expenseType: ExpenseType? = nil) -> IncomeStatementRole? {
+		switch type {
+		case .revenue:
+			return .revenue
+		case .expense:
+			// Map expenseType to appropriate IncomeStatementRole
+			if let expenseType = expenseType {
+				switch expenseType {
+				case .costOfGoodsSold:
+					return .costOfGoodsSold
+				case .operatingExpense:
+					return .operatingExpenseOther
+				case .depreciationAmortization:
+					return .depreciationAmortization
+				case .interestExpense:
+					return .interestExpense
+				case .taxExpense:
+					return .incomeTaxExpense
+				}
+			}
+			return .operatingExpenseOther  // Generic expense mapping if no expenseType
+		case .operating, .investing, .financing:
+			// Cash flow types should not have income statement roles
+			return nil
+		default:
+			return nil
+		}
+	}
+
+	/// Migrates old AccountType to new BalanceSheetRole
+	private static func migrateToBalanceSheetRole(
+		type: AccountType,
+		assetType: AssetType?,
+		liabilityType: LiabilityType?
+	) -> BalanceSheetRole? {
+		switch type {
+		case .asset:
+			// Map AssetType to BalanceSheetRole
+			if let assetType = assetType {
+				switch assetType {
+				case .cashAndEquivalents:
+					return .cashAndEquivalents
+				case .accountsReceivable:
+					return .accountsReceivable
+				case .inventory:
+					return .inventory
+				case .propertyPlantEquipment:
+					return .propertyPlantEquipment
+				case .intangibleAssets:
+					return .intangibleAssets
+				case .investments:
+					return .longTermInvestments
+				case .otherCurrentAsset:
+					return .otherCurrentAssets
+				case .otherLongTermAsset:
+					return .otherNonCurrentAssets
+				}
+			}
+			return .otherCurrentAssets
+
+		case .liability:
+			// Map LiabilityType to BalanceSheetRole
+			if let liabilityType = liabilityType {
+				switch liabilityType {
+				case .accountsPayable:
+					return .accountsPayable
+				case .accruedExpenses:
+					return .accruedLiabilities
+				case .shortTermDebt:
+					return .shortTermDebt
+				case .currentPortionLongTermDebt:
+					return .currentPortionLongTermDebt
+				case .otherCurrentLiability:
+					return .otherCurrentLiabilities
+				case .longTermDebt:
+					return .longTermDebt
+				case .bonds:
+					return .longTermDebt  // Map bonds to long-term debt
+				case .capitalLeases:
+					return .leaseLiabilities
+				case .preferredStock:
+					return .preferredStock  // Actually equity
+				case .otherLongTermLiability:
+					return .otherNonCurrentLiabilities
+				}
+			}
+			return .otherCurrentLiabilities
+
+		case .equity:
+			return .retainedEarnings  // Generic equity mapping
+
+		default:
+			return nil
+		}
+	}
+
+	/// Migrates old AccountType to new CashFlowRole
+	private static func migrateToCashFlowRole(type: AccountType) -> CashFlowRole? {
+		switch type {
+		case .operating:
+			return .otherOperatingActivities
+		case .investing:
+			return .otherInvestingActivities
+		case .financing:
+			return .otherFinancingActivities
+		default:
+			return nil
+		}
+	}
+
+	/// Infers AccountType from new roles (for backward compatibility)
+	private static func inferAccountType(
+		incomeStatementRole: IncomeStatementRole?,
+		balanceSheetRole: BalanceSheetRole?,
+		cashFlowRole: CashFlowRole?
+	) -> AccountType {
+		// Priority: IS > BS > CFS
+		if let isRole = incomeStatementRole {
+			return isRole.isRevenue ? .revenue : .expense
+		}
+		if let bsRole = balanceSheetRole {
+			if bsRole.isAsset { return .asset }
+			if bsRole.isLiability { return .liability }
+			if bsRole.isEquity { return .equity }
+		}
+		if let cfRole = cashFlowRole {
+			if cfRole.isOperating { return .operating }
+			if cfRole.isInvesting { return .investing }
+			if cfRole.isFinancing { return .financing }
+		}
+		return .expense  // Default fallback
+	}
+
+	/// Infers AssetType from BalanceSheetRole (for backward compatibility)
+	private static func inferAssetType(from role: BalanceSheetRole?) -> AssetType? {
+		guard let role = role else { return nil }
+
+		switch role {
+		case .cashAndEquivalents:
+			return .cashAndEquivalents
+		case .accountsReceivable:
+			return .accountsReceivable
+		case .inventory:
+			return .inventory
+		case .propertyPlantEquipment, .accumulatedDepreciation:
+			return .propertyPlantEquipment
+		case .intangibleAssets, .goodwill:
+			return .intangibleAssets
+		case .longTermInvestments:
+			return .investments
+		case .otherCurrentAssets, .prepaidExpenses:
+			return .otherCurrentAsset
+		case .otherNonCurrentAssets, .deferredTaxAssets, .rightOfUseAssets:
+			return .otherLongTermAsset
+		default:
+			return nil
+		}
+	}
+
+	/// Infers LiabilityType from BalanceSheetRole (for backward compatibility)
+	private static func inferLiabilityType(from role: BalanceSheetRole?) -> LiabilityType? {
+		guard let role = role else { return nil }
+
+		switch role {
+		case .accountsPayable:
+			return .accountsPayable
+		case .accruedLiabilities:
+			return .accruedExpenses
+		case .shortTermDebt:
+			return .shortTermDebt
+		case .currentPortionLongTermDebt:
+			return .currentPortionLongTermDebt
+		case .otherCurrentLiabilities, .deferredRevenue:
+			return .otherCurrentLiability
+		case .longTermDebt:
+			return .longTermDebt
+		case .leaseLiabilities:
+			return .capitalLeases
+		case .otherNonCurrentLiabilities, .deferredTaxLiabilities, .pensionLiabilities:
+			return .otherLongTermLiability
+		default:
+			return nil
+		}
 	}
 
 	// MARK: - Account Categorization
 
 	/// Returns true if this is an income statement account.
 	public var isIncomeStatement: Bool {
-		return type.isIncomeStatement
+		return incomeStatementRole != nil
 	}
 
 	/// Returns true if this is a balance sheet account.
 	public var isBalanceSheet: Bool {
-		return type.isBalanceSheet
+		return balanceSheetRole != nil
 	}
 
 	/// Returns true if this is a cash flow statement account.
 	public var isCashFlow: Bool {
-		return type.isCashFlow
-	}
-
-	/// The high-level category this account belongs to.
-	public var category: AccountCategory {
-		return type.category
+		return cashFlowRole != nil
 	}
 }
 
@@ -259,7 +496,9 @@ extension Account: Equatable {
 	public static func == (lhs: Account<T>, rhs: Account<T>) -> Bool {
 		return lhs.entity == rhs.entity &&
 			lhs.name == rhs.name &&
-			lhs.type == rhs.type
+			lhs.incomeStatementRole == rhs.incomeStatementRole &&
+			lhs.balanceSheetRole == rhs.balanceSheetRole &&
+			lhs.cashFlowRole == rhs.cashFlowRole
 	}
 }
 
@@ -270,7 +509,9 @@ extension Account: Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(entity)
 		hasher.combine(name)
-		hasher.combine(type)
+		hasher.combine(incomeStatementRole)
+		hasher.combine(balanceSheetRole)
+		hasher.combine(cashFlowRole)
 	}
 }
 
@@ -279,6 +520,7 @@ extension Account: Hashable {
 extension Account: CustomStringConvertible {
 	/// A textual representation of this account.
 	public var description: String {
-		return "\(entity.name) - \(name) (\(type))"
+		let role = "\(incomeStatementRole?.description ?? "") | \(balanceSheetRole?.description ?? "") | \(cashFlowRole?.description ?? "")"
+		return "\(entity.name) - \(name) (\(role))"
 	}
 }

@@ -132,97 +132,123 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// The periods covered by this balance sheet.
 	public let periods: [Period]
 
-	/// All asset accounts.
-	public let assetAccounts: [Account<T>]
+	/// All accounts in this balance sheet.
+	///
+	/// Each account must have a `balanceSheetRole` to be included.
+	/// Accounts with the same role will be automatically aggregated when computing metrics.
+	public let accounts: [Account<T>]
 
-	/// All liability accounts.
-	public let liabilityAccounts: [Account<T>]
+	/// All asset accounts (accounts with asset roles).
+	///
+	/// This computed property filters accounts by their `balanceSheetRole.isAsset` flag.
+	public var assetAccounts: [Account<T>] {
+		accounts.filter { $0.balanceSheetRole?.isAsset == true }
+	}
 
-	/// All equity accounts.
-	public let equityAccounts: [Account<T>]
+	/// All liability accounts (accounts with liability roles).
+	///
+	/// This computed property filters accounts by their `balanceSheetRole.isLiability` flag.
+	public var liabilityAccounts: [Account<T>] {
+		accounts.filter { $0.balanceSheetRole?.isLiability == true }
+	}
 
-	/// Creates a balance sheet with validation.
+	/// All equity accounts (accounts with equity roles).
+	///
+	/// This computed property filters accounts by their `balanceSheetRole.isEquity` flag.
+	public var equityAccounts: [Account<T>] {
+		accounts.filter { $0.balanceSheetRole?.isEquity == true }
+	}
+
+	/// All current asset accounts.
+	public var currentAssetAccounts: [Account<T>] {
+		assetAccounts.filter { $0.balanceSheetRole?.isCurrent == true }
+	}
+
+	/// All non-current asset accounts.
+	public var nonCurrentAssetAccounts: [Account<T>] {
+		assetAccounts.filter { $0.balanceSheetRole?.isCurrent == false }
+	}
+
+	/// All current liability accounts.
+	public var currentLiabilityAccounts: [Account<T>] {
+		liabilityAccounts.filter { $0.balanceSheetRole?.isCurrent == true }
+	}
+
+	/// All non-current liability accounts.
+	public var nonCurrentLiabilityAccounts: [Account<T>] {
+		liabilityAccounts.filter { $0.balanceSheetRole?.isCurrent == false }
+	}
+
+	/// Creates a balance sheet with validation using the new role-based API.
 	///
 	/// - Parameters:
 	///   - entity: The entity this statement belongs to
 	///   - periods: The periods covered
-	///   - assetAccounts: Asset accounts (must have type .asset)
-	///   - liabilityAccounts: Liability accounts (must have type .liability)
-	///   - equityAccounts: Equity accounts (must have type .equity)
+	///   - accounts: All accounts (must have `balanceSheetRole`)
 	///
-	/// - Throws: ``BalanceSheetError`` if validation fails
+	/// - Throws: ``FinancialModelError`` if validation fails
 	public init(
 		entity: Entity,
 		periods: [Period],
-		assetAccounts: [Account<T>],
-		liabilityAccounts: [Account<T>],
-		equityAccounts: [Account<T>]
+		accounts: [Account<T>]
 	) throws {
-		// Validate entity consistency
-		for account in assetAccounts + liabilityAccounts + equityAccounts {
-			guard account.entity == entity else {
-				throw BalanceSheetError.entityMismatch
+		// Validate all accounts have balance sheet roles
+		for account in accounts {
+			guard account.balanceSheetRole != nil else {
+				throw FinancialModelError.accountMissingRole(
+					statement: .balanceSheet,
+					accountName: account.name
+				)
 			}
 		}
 
-		// Validate account types
-		for account in assetAccounts {
-			guard account.type == .asset else {
-				throw BalanceSheetError.invalidAccountType(expected: .asset, actual: account.type)
-			}
-		}
-
-		for account in liabilityAccounts {
-			guard account.type == .liability else {
-				throw BalanceSheetError.invalidAccountType(expected: .liability, actual: account.type)
-			}
-		}
-
-		for account in equityAccounts {
-			guard account.type == .equity else {
-				throw BalanceSheetError.invalidAccountType(expected: .equity, actual: account.type)
-			}
-		}
+		// Validate entity and period consistency using shared helpers
+		try FinancialStatementHelpers.validateEntityConsistency(accounts: accounts, entity: entity)
+		try FinancialStatementHelpers.validatePeriodConsistency(accounts: accounts, periods: periods)
 
 		self.entity = entity
 		self.periods = periods
-		self.assetAccounts = assetAccounts
-		self.liabilityAccounts = liabilityAccounts
-		self.equityAccounts = equityAccounts
+		self.accounts = accounts
 	}
 
 	// MARK: - Aggregated Totals
 
 	/// Total assets across all asset accounts.
 	public var totalAssets: TimeSeries<T> {
-		return aggregateAccounts(assetAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(assetAccounts, periods: periods)
 	}
 
 	/// Total liabilities across all liability accounts.
 	public var totalLiabilities: TimeSeries<T> {
-		return aggregateAccounts(liabilityAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(liabilityAccounts, periods: periods)
 	}
 
 	/// Total equity across all equity accounts.
 	public var totalEquity: TimeSeries<T> {
-		return aggregateAccounts(equityAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(equityAccounts, periods: periods)
 	}
 
 	// MARK: - Liquidity Metrics
 
-	/// Current assets (assets with subtype indicating current/short-term).
+	/// Current assets (assets with role indicating current/short-term).
 	///
 	/// Current assets are expected to be converted to cash within one year.
-	/// Includes: cash, accounts receivable, inventory, and other current assets.
+	/// Includes: cash, accounts receivable, inventory, prepaid expenses, and other current assets.
 	public var currentAssets: TimeSeries<T> {
 		let current = assetAccounts.filter {
-			guard let assetType = $0.assetType else { return false }
-			return assetType == .cashAndEquivalents ||
-				   assetType == .accountsReceivable ||
-				   assetType == .inventory ||
-				   assetType == .otherCurrentAsset
+			$0.balanceSheetRole?.isCurrent == true
 		}
-		return aggregateAccounts(current)
+		return FinancialStatementHelpers.aggregateAccounts(current, periods: periods)
+	}
+
+	/// Non-current assets (assets with role indicating long-term).
+	///
+	/// Non-current assets include property, plant, equipment, intangibles, goodwill, and long-term investments.
+	public var nonCurrentAssets: TimeSeries<T> {
+		let nonCurrent = assetAccounts.filter {
+			$0.balanceSheetRole?.isCurrent == false
+		}
+		return FinancialStatementHelpers.aggregateAccounts(nonCurrent, periods: periods)
 	}
 
 	/// Cash and cash equivalents (used in enterprise value calculation).
@@ -261,11 +287,11 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ```
 	public var cashAndEquivalents: TimeSeries<T> {
 		let cashAccounts = assetAccounts.filter {
-			$0.assetType == .cashAndEquivalents
+			$0.balanceSheetRole == .cashAndEquivalents
 		}
 
 		if !cashAccounts.isEmpty {
-			return aggregateAccounts(cashAccounts)
+			return FinancialStatementHelpers.aggregateAccounts(cashAccounts, periods: periods)
 		} else {
 			// No cash accounts found - return zero series
 			let zero = T(0)
@@ -320,18 +346,13 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// print("Total Debt: $\(debt[q1]!)")  // e.g., "Total Debt: $2,000,000"
 	/// ```
 	public var interestBearingDebt: TimeSeries<T> {
-		// Find debt accounts by subtype
+		// Find debt accounts by role
 		let debtAccounts = liabilityAccounts.filter {
-			guard let liabilityType = $0.liabilityType else { return false }
-			return liabilityType == .shortTermDebt ||
-				   liabilityType == .currentPortionLongTermDebt ||
-				   liabilityType == .longTermDebt ||
-				   liabilityType == .bonds ||
-				   liabilityType == .capitalLeases
+			$0.balanceSheetRole?.isDebt == true
 		}
 
 		if !debtAccounts.isEmpty {
-			return aggregateAccounts(debtAccounts)
+			return FinancialStatementHelpers.aggregateAccounts(debtAccounts, periods: periods)
 		} else {
 			// No debt accounts found - return zero series (some companies are debt-free)
 			let zero = T(0)
@@ -346,37 +367,38 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// current portion of long-term debt, and other current liabilities.
 	public var currentLiabilities: TimeSeries<T> {
 		let current = liabilityAccounts.filter {
-			guard let liabilityType = $0.liabilityType else { return false }
-			return liabilityType == .accountsPayable ||
-				   liabilityType == .accruedExpenses ||
-				   liabilityType == .shortTermDebt ||
-				   liabilityType == .currentPortionLongTermDebt ||
-				   liabilityType == .otherCurrentLiability
+			$0.balanceSheetRole?.isCurrent == true
 		}
-		return aggregateAccounts(current)
+		return FinancialStatementHelpers.aggregateAccounts(current, periods: periods)
+	}
+
+	/// Non-current liabilities (liabilities with role indicating long-term).
+	///
+	/// Non-current liabilities include long-term debt, lease liabilities, deferred revenue, and pension obligations.
+	public var nonCurrentLiabilities: TimeSeries<T> {
+		let nonCurrent = liabilityAccounts.filter {
+			$0.balanceSheetRole?.isCurrent == false
+		}
+		return FinancialStatementHelpers.aggregateAccounts(nonCurrent, periods: periods)
 	}
 
 	/// Long-term debt (bonds, notes payable, term loans with maturity > 1 year).
 	///
-	/// Filters liability accounts with subtype indicating long-term debt.
+	/// Filters liability accounts with role indicating long-term debt.
 	/// Used for credit metrics like Altman Z-Score and Piotroski F-Score.
 	public var longTermDebt: TimeSeries<T> {
-		let ltDebt = liabilityAccounts.filter {
-			guard let liabilityType = $0.liabilityType else { return false }
-			return liabilityType == .longTermDebt ||
-				   liabilityType == .bonds ||
-				   liabilityType == .capitalLeases
-		}
-		return aggregateAccounts(ltDebt)
+		let ltDebtRoles: Set<BalanceSheetRole> = [.longTermDebt, .leaseLiabilities]
+		let ltDebt = liabilityAccounts.filter { ltDebtRoles.contains($0.balanceSheetRole ?? .otherNonCurrentLiabilities) }
+		return FinancialStatementHelpers.aggregateAccounts(ltDebt, periods: periods)
 	}
 
 	/// Retained earnings (accumulated profits not distributed as dividends).
 	///
-	/// Filters equity accounts with subtype .retainedEarnings.
+	/// Filters equity accounts with role .retainedEarnings.
 	/// Used for credit metrics like Altman Z-Score and Piotroski F-Score.
 	public var retainedEarnings: TimeSeries<T> {
-		let retained = equityAccounts.filter { $0.equityType == .retainedEarnings }
-		return aggregateAccounts(retained)
+		let retained = equityAccounts.filter { $0.balanceSheetRole == .retainedEarnings }
+		return FinancialStatementHelpers.aggregateAccounts(retained, periods: periods)
 	}
 
 	/// Working capital (current assets - current liabilities).
@@ -448,12 +470,12 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	public var quickRatio: TimeSeries<T> {
 		// Find inventory in current assets
 		let inventoryAccounts = assetAccounts.filter {
-			$0.assetType == .inventory
+			$0.balanceSheetRole == .inventory
 		}
 
 		let inventory: TimeSeries<T>
 		if !inventoryAccounts.isEmpty {
-			inventory = aggregateAccounts(inventoryAccounts)
+			inventory = FinancialStatementHelpers.aggregateAccounts(inventoryAccounts, periods: periods)
 		} else {
 			// No inventory - quick ratio equals current ratio
 			let zero = T(0)
@@ -461,7 +483,10 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 			let zeroValues = periods.map { _ in zero }
 			inventory = TimeSeries(periods: periods, values: zeroValues)
 		}
-
+		print("Current Assets: \(currentAssets.valuesArray)")
+		print("\tless Inventory: \(inventory.valuesArray)")
+		print("\t= Quick Assets: \(zip(currentAssets.valuesArray,inventory.valuesArray).map({$0.0 - $0.1}))")
+		print("Current Liabilities: \(currentLiabilities.valuesArray)")
 		// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
 		let quickAssets = currentAssets - inventory
 		return quickAssets / currentLiabilities
@@ -502,24 +527,9 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// print("Cash Ratio: \(cashRatio[q1]!)")  // e.g., "Cash Ratio: 0.35"
 	/// ```
 	public var cashRatio: TimeSeries<T> {
-		// Find cash and cash equivalents in current assets
-		let cashAccounts = assetAccounts.filter {
-			$0.assetType == .cashAndEquivalents
-		}
-
-		let cash: TimeSeries<T>
-		if !cashAccounts.isEmpty {
-			cash = aggregateAccounts(cashAccounts)
-		} else {
-			// No cash accounts found - cash ratio is zero
-			let zero = T(0)
-			let periods = currentAssets.periods
-			let zeroValues = periods.map { _ in zero }
-			cash = TimeSeries(periods: periods, values: zeroValues)
-		}
-
 		// Cash Ratio = Cash / Current Liabilities
-		return cash / currentLiabilities
+		// Use the cashAndEquivalents property which handles aggregation and missing accounts
+		return cashAndEquivalents / currentLiabilities
 	}
 
 	/// Debt ratio - proportion of assets financed by debt.
@@ -606,26 +616,6 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		}
 	}
 
-	// MARK: - Helper Methods
-
-	/// Aggregates multiple accounts into a single time series.
-	private func aggregateAccounts(_ accounts: [Account<T>]) -> TimeSeries<T> {
-		guard !accounts.isEmpty else {
-			// Return zero-filled series for empty account list
-			let zeros = Array(repeating: T(0), count: periods.count)
-			return TimeSeries(periods: periods, values: zeros)
-		}
-
-		// Start with first account's time series
-		var result = accounts[0].timeSeries
-
-		// Add remaining accounts
-		for account in accounts.dropFirst() {
-			result = result + account.timeSeries
-		}
-
-		return result
-	}
 }
 
 // MARK: - Materialized Balance Sheet
@@ -652,9 +642,7 @@ extension BalanceSheet {
 		public let entity: Entity
 		public let periods: [Period]
 
-		public let assetAccounts: [Account<T>]
-		public let liabilityAccounts: [Account<T>]
-		public let equityAccounts: [Account<T>]
+		public let accounts: [Account<T>]
 
 		// Pre-computed totals
 		public let totalAssets: TimeSeries<T>
@@ -679,9 +667,7 @@ extension BalanceSheet {
 		return Materialized(
 			entity: entity,
 			periods: periods,
-			assetAccounts: assetAccounts,
-			liabilityAccounts: liabilityAccounts,
-			equityAccounts: equityAccounts,
+			accounts: accounts,
 			totalAssets: totalAssets,
 			totalLiabilities: totalLiabilities,
 			totalEquity: totalEquity,
@@ -702,34 +688,27 @@ extension BalanceSheet: Codable {
 	private enum CodingKeys: String, CodingKey {
 		case entity
 		case periods
-		case assetAccounts
-		case liabilityAccounts
-		case equityAccounts
+		case accounts
 	}
 
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 		try container.encode(entity, forKey: .entity)
 		try container.encode(periods, forKey: .periods)
-		try container.encode(assetAccounts, forKey: .assetAccounts)
-		try container.encode(liabilityAccounts, forKey: .liabilityAccounts)
-		try container.encode(equityAccounts, forKey: .equityAccounts)
+		try container.encode(accounts, forKey: .accounts)
 	}
 
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		let entity = try container.decode(Entity.self, forKey: .entity)
 		let periods = try container.decode([Period].self, forKey: .periods)
-		let assetAccounts = try container.decode([Account<T>].self, forKey: .assetAccounts)
-		let liabilityAccounts = try container.decode([Account<T>].self, forKey: .liabilityAccounts)
-		let equityAccounts = try container.decode([Account<T>].self, forKey: .equityAccounts)
+		let accounts = try container.decode([Account<T>].self, forKey: .accounts)
 
 		try self.init(
 			entity: entity,
 			periods: periods,
-			assetAccounts: assetAccounts,
-			liabilityAccounts: liabilityAccounts,
-			equityAccounts: equityAccounts
+			accounts: accounts
 		)
 	}
 }
+

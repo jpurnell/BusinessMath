@@ -37,9 +37,8 @@ struct BalanceSheetTests {
 		return try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
-			timeSeries: timeSeries,
-			assetType: .cashAndEquivalents
+			balanceSheetRole: .cashAndEquivalents,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -49,9 +48,8 @@ struct BalanceSheetTests {
 		return try Account(
 			entity: entity,
 			name: "Accounts Receivable",
-			type: .asset,
-			timeSeries: timeSeries,
-			assetType: .accountsReceivable
+			balanceSheetRole: .accountsReceivable,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -61,9 +59,8 @@ struct BalanceSheetTests {
 		return try Account(
 			entity: entity,
 			name: "Equipment",
-			type: .asset,
-			timeSeries: timeSeries,
-			assetType: .propertyPlantEquipment
+			balanceSheetRole: .propertyPlantEquipment,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -73,9 +70,8 @@ struct BalanceSheetTests {
 		return try Account(
 			entity: entity,
 			name: "Accounts Payable",
-			type: .liability,
-			timeSeries: timeSeries,
-			liabilityType: .accountsPayable
+			balanceSheetRole: .accountsPayable,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -85,9 +81,8 @@ struct BalanceSheetTests {
 		return try Account(
 			entity: entity,
 			name: "Long-term Debt",
-			type: .liability,
-			timeSeries: timeSeries,
-			liabilityType: .longTermDebt
+			balanceSheetRole: .longTermDebt,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -97,9 +92,8 @@ struct BalanceSheetTests {
 		return try Account(
 			entity: entity,
 			name: "Retained Earnings",
-			type: .equity,
-			timeSeries: timeSeries,
-			equityType: .retainedEarnings
+			balanceSheetRole: .retainedEarnings,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -117,9 +111,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ap, equity]
 		)
 
 		#expect(balanceSheet.entity == entity)
@@ -146,9 +138,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar, equipment],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [equity]
+			accounts: [cash, ar, equipment, ap, debt, equity]
 		)
 
 		#expect(balanceSheet.assetAccounts.count == 3)
@@ -168,73 +158,17 @@ struct BalanceSheetTests {
 		let ap = try makeAPAccount(entity: entity2, periods: periods)
 		let equity = try makeEquityAccount(entity: entity1, periods: periods)
 
-		#expect(throws: BalanceSheetError.self) {
+		#expect(throws: FinancialModelError.self) {
 			_ = try BalanceSheet(
 				entity: entity1,
 				periods: periods,
-				assetAccounts: [cash],
-				liabilityAccounts: [ap],
-				equityAccounts: [equity]
+				accounts: [cash, ap, equity]
 			)
 		}
 	}
 
-	@Test("Balance sheet creation fails with wrong account type in assets")
-	func balanceSheetWrongAssetType() throws {
-		let entity = makeEntity()
-		let periods = makePeriods()
-
-		let liability = try makeAPAccount(entity: entity, periods: periods)
-		let equity = try makeEquityAccount(entity: entity, periods: periods)
-
-		#expect(throws: BalanceSheetError.self) {
-			_ = try BalanceSheet(
-				entity: entity,
-				periods: periods,
-				assetAccounts: [liability], // Wrong type!
-				liabilityAccounts: [],
-				equityAccounts: [equity]
-			)
-		}
-	}
-
-	@Test("Balance sheet creation fails with wrong account type in liabilities")
-	func balanceSheetWrongLiabilityType() throws {
-		let entity = makeEntity()
-		let periods = makePeriods()
-
-		let cash = try makeCashAccount(entity: entity, periods: periods)
-		let equity = try makeEquityAccount(entity: entity, periods: periods)
-
-		#expect(throws: BalanceSheetError.self) {
-			_ = try BalanceSheet(
-				entity: entity,
-				periods: periods,
-				assetAccounts: [cash],
-				liabilityAccounts: [cash], // Wrong type!
-				equityAccounts: [equity]
-			)
-		}
-	}
-
-	@Test("Balance sheet creation fails with wrong account type in equity")
-	func balanceSheetWrongEquityType() throws {
-		let entity = makeEntity()
-		let periods = makePeriods()
-
-		let cash = try makeCashAccount(entity: entity, periods: periods)
-		let ap = try makeAPAccount(entity: entity, periods: periods)
-
-		#expect(throws: BalanceSheetError.self) {
-			_ = try BalanceSheet(
-				entity: entity,
-				periods: periods,
-				assetAccounts: [cash],
-				liabilityAccounts: [ap],
-				equityAccounts: [cash] // Wrong type!
-			)
-		}
-	}
+	// Note: Tests for "wrong account type in wrong parameter" removed
+	// The modern API uses a single accounts: parameter that auto-categorizes based on roles
 
 	// MARK: - Aggregated Totals
 
@@ -249,9 +183,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar],
-			liabilityAccounts: [],
-			equityAccounts: []
+			accounts: [cash, ar]
 		)
 
 		let total = balanceSheet.totalAssets
@@ -271,9 +203,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: []
+			accounts: [ap, debt]
 		)
 
 		let total = balanceSheet.totalLiabilities
@@ -294,16 +224,14 @@ struct BalanceSheetTests {
 		let equity2 = try Account(
 			entity: entity,
 			name: "Common Stock",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: timeSeries2
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [],
-			liabilityAccounts: [],
-			equityAccounts: [equity1, equity2]
+			accounts: [equity1, equity2]
 		)
 
 		let total = balanceSheet.totalEquity
@@ -326,9 +254,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar, equipment],
-			liabilityAccounts: [],
-			equityAccounts: []
+			accounts: [cash, ar, equipment]
 		)
 
 		let current = balanceSheet.currentAssets
@@ -349,9 +275,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: []
+			accounts: [ap, debt]
 		)
 
 		let current = balanceSheet.currentLiabilities
@@ -376,9 +300,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ar, ap, equity]
 		)
 
 		let ratio = balanceSheet.currentRatio
@@ -401,9 +323,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [equity]
+			accounts: [cash, ap, debt, equity]
 		)
 
 		let ratio = balanceSheet.debtToEquity
@@ -430,9 +350,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar, equipment],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [equity]
+			accounts: [cash, ar, equipment, ap, debt, equity]
 		)
 
 		let ratio = balanceSheet.equityRatio
@@ -456,9 +374,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ar, ap, equity]
 		)
 
 		let wc = balanceSheet.workingCapital
@@ -487,9 +403,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar, equipment], // 50+30+100 = 180
-			liabilityAccounts: [ap, debt],         // 20+80 = 100
-			equityAccounts: [equity]               // 80
+			accounts: [cash, ar, equipment, ap, debt, equity] // Assets: 180, Liabilities: 100, Equity: 80
 		)
 
 		// Should not throw
@@ -504,24 +418,22 @@ struct BalanceSheetTests {
 		// Create unbalanced balance sheet
 		let values1: [Double] = [100_000, 100_000, 100_000, 100_000]
 		let timeSeries1 = TimeSeries(periods: periods, values: values1)
-		let cash = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: timeSeries1)
+		let cash = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: timeSeries1)
 
 		let values2: [Double] = [50_000, 50_000, 50_000, 50_000]
 		let timeSeries2 = TimeSeries(periods: periods, values: values2)
-		let ap = try Account(entity: entity, name: "AP", type: .liability, timeSeries: timeSeries2)
+		let ap = try Account(entity: entity, name: "AP", balanceSheetRole: .otherCurrentLiabilities, timeSeries: timeSeries2)
 
 		let values3: [Double] = [30_000, 30_000, 30_000, 30_000]
 		let timeSeries3 = TimeSeries(periods: periods, values: values3)
-		let equity = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: timeSeries3)
+		let equity = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: timeSeries3)
 
 		// Assets: 100k, Liabilities: 50k, Equity: 30k
 		// 100k != 80k (unbalanced!)
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ap, equity]
 		)
 
 		#expect(throws: BalanceSheetError.self) {
@@ -548,9 +460,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar, equipment],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [equity]
+			accounts: [cash, ar, equipment, ap, debt, equity]
 		)
 
 		let materialized = balanceSheet.materialize()
@@ -588,9 +498,8 @@ struct BalanceSheetTests {
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
-			timeSeries: TimeSeries(periods: periods, values: [20_000, 20_000, 20_000, 20_000]),
-			assetType: .inventory
+			balanceSheetRole: .inventory,
+			timeSeries: TimeSeries(periods: periods, values: [20_000, 20_000, 20_000, 20_000])
 		)
 
 		// Accounts Payable: $20k
@@ -601,9 +510,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar, inventory],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ar, inventory, ap, equity]
 		)
 
 		let quickRatio = balanceSheet.quickRatio
@@ -633,9 +540,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ar, ap, equity]
 		)
 
 		let quickRatio = balanceSheet.quickRatio
@@ -666,9 +571,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, ar],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ar, ap, equity]
 		)
 
 		let cashRatio = balanceSheet.cashRatio
@@ -696,9 +599,8 @@ struct BalanceSheetTests {
 		let securities = try Account(
 			entity: entity,
 			name: "Marketable Securities",
-			type: .asset,
-			timeSeries: TimeSeries(periods: periods, values: [10_000, 10_000, 10_000, 10_000]),
-			assetType: .cashAndEquivalents
+			balanceSheetRole: .cashAndEquivalents,
+			timeSeries: TimeSeries(periods: periods, values: [10_000, 10_000, 10_000, 10_000])
 		)
 
 		let ap = try makeAPAccount(entity: entity, periods: periods)
@@ -707,9 +609,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, securities],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, securities, ap, equity]
 		)
 
 		let cashRatio = balanceSheet.cashRatio
@@ -733,9 +633,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [ar],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [ar, ap, equity]
 		)
 
 		let cashRatio = balanceSheet.cashRatio
@@ -763,9 +661,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, equipment],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [equity]
+			accounts: [cash, equipment, ap, debt, equity]
 		)
 
 		let debtRatio = balanceSheet.debtRatio
@@ -790,9 +686,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [cash, equity]
 		)
 
 		let debtRatio = balanceSheet.debtRatio
@@ -814,23 +708,21 @@ struct BalanceSheetTests {
 		let debt = try Account(
 			entity: entity,
 			name: "Total Debt",
-			type: .liability,
+			balanceSheetRole: .otherCurrentLiabilities,
 			timeSeries: TimeSeries(periods: periods, values: [120_000, 120_000, 120_000, 120_000])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [30_000, 30_000, 30_000, 30_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash, equipment],
-			liabilityAccounts: [debt],
-			equityAccounts: [equity]
+			accounts: [cash, equipment, debt, equity]
 		)
 
 		let debtRatio = balanceSheet.debtRatio
@@ -855,16 +747,14 @@ struct BalanceSheetTests {
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [30_000, 33_000, 36_000, 39_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ap, equity]
 		)
 
 		let debtRatio = balanceSheet.debtRatio
@@ -890,9 +780,7 @@ struct BalanceSheetTests {
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [ap],
-			equityAccounts: [equity]
+			accounts: [cash, ap, equity]
 		)
 
 		let encoded = try JSONEncoder().encode(balanceSheet)

@@ -28,47 +28,42 @@ struct DebtCovenantsTests {
         let revenueAccount = try! Account(
 			entity: entity,
             name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: revenue, count: periods.count))
         )
 
         let cogsAccount = try! Account(
 			entity: entity,
             name: "COGS",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cogs, count: periods.count)),
-			expenseType: .costOfGoodsSold
         )
 
         let opexAccount = try! Account(
 			entity: entity,
             name: "OpEx",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: opex, count: periods.count)),
-			expenseType: .operatingExpense
         )
 
         let interestAccount = try! Account(
 			entity: entity,
             name: "Interest",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: interest, count: periods.count)),
-			expenseType: .interestExpense
         )
 
         let taxAccount = try! Account(
 			entity: entity,
             name: "Tax",
-			type: .expense,
+			incomeStatementRole: .incomeTaxExpense,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: tax, count: periods.count)),
-			expenseType: .taxExpense
         )
 
         return try! IncomeStatement(
 			entity: entity,
 			periods: periods,
-            revenueAccounts: [revenueAccount],
-            expenseAccounts: [cogsAccount, opexAccount, interestAccount, taxAccount]
+            accounts: [revenueAccount, cogsAccount, opexAccount, interestAccount, taxAccount]
         )
     }
 
@@ -93,57 +88,49 @@ struct DebtCovenantsTests {
         let cashAccount = try! Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
-            timeSeries: TimeSeries(periods: periods, values: Array(repeating: cash, count: periods.count)),
-            assetType: .cashAndEquivalents
+			balanceSheetRole: .cashAndEquivalents,
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cash, count: periods.count)),
         )
 
         let otherCurrentAssets = try! Account(
 			entity: entity,
             name: "Other Current",
-			type: .asset,
-            timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentAssets - cash, count: periods.count)),
-            assetType: .otherCurrentAsset
+			balanceSheetRole: .otherCurrentAssets,
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentAssets - cash, count: periods.count)),
         )
 
         let fixedAssets = try! Account(
 			entity: entity,
 			name: "Fixed Assets",
-			type: .asset,
-            timeSeries: TimeSeries(periods: periods, values: Array(repeating: totalAssets - currentAssets, count: periods.count)),
-            assetType: .propertyPlantEquipment
+			balanceSheetRole: .propertyPlantEquipment,
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: totalAssets - currentAssets, count: periods.count)),
         )
 
         let currentLiabAccount = try! Account(
 			entity: entity,
             name: "Current Liabilities",
-			type: .liability,
+			balanceSheetRole: .accountsPayable,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentLiabilities, count: periods.count)),
-            liabilityType: .accountsPayable
         )
 
         let debtAccount = try! Account(
 			entity: entity,
             name: "Long-term Debt",
-			type: .liability,
+			balanceSheetRole: .longTermDebt,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: debt, count: periods.count)),
-            liabilityType: .longTermDebt
         )
 
         let equityAccount = try! Account(
 			entity: entity,
             name: "Equity",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: equity, count: periods.count)),
-			equityType: .retainedEarnings
         )
 
         return try! BalanceSheet(
 			entity: entity,
 			periods: periods,
-            assetAccounts: [cashAccount, otherCurrentAssets, fixedAssets],
-            liabilityAccounts: [currentLiabAccount, debtAccount],
-            equityAccounts: [equityAccount]
+            accounts: [cashAccount, otherCurrentAssets, fixedAssets, currentLiabAccount, debtAccount, equityAccount]
         )
     }
 
@@ -185,8 +172,6 @@ struct DebtCovenantsTests {
 				balanceSheet: balanceSheet,
 				period: q1
 		)
-        
-		
 
         // EBIT = 300,000, Interest = 50,000
         // Coverage = 6.0 (well above 2.0 threshold)
@@ -251,7 +236,6 @@ struct DebtCovenantsTests {
             tax: 50_000.0,
             periods: periods
         )
-		
 		let balanceSheet = createTestBalanceSheet(
 			cash: 50_000.0,
 			currentAssets: 200_000.0,
@@ -388,7 +372,6 @@ struct DebtCovenantsTests {
             equity: 400_000.0,
             periods: periods
         )
-		
         let covenant = FinancialCovenant(
             name: "Current Ratio",
             requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5)
@@ -402,7 +385,6 @@ struct DebtCovenantsTests {
 				period: q1
 		)
 
-	
         // Current Ratio = 600,000 / 300,000 = 2.0 (above 1.5)
 		#expect(isCompliant.map({$0.isCompliant}) == [true])
     }
@@ -979,7 +961,6 @@ struct DebtCovenantsTests {
             period: q1
         )
 		#expect(!q1Compliant.allCompliant)
-		
         // Still in cure period, can remedy
         let inCurePeriod = covenant.isInCurePeriod(
             violationDate: q1.startDate,
@@ -1057,26 +1038,25 @@ struct DebtCovenantsExtrasTests {
 	func income(revenue: Double, cogs: Double = 0, opex: Double = 0, interest: Double = 0, tax: Double = 0) -> IncomeStatement<Double> {
 		let e = entity()
 		let p = periods()
-		let rev = try! Account(entity: e, name: "Revenue", type: .revenue, timeSeries: TimeSeries(periods: p, values: [revenue]))
-		let c = try! Account(entity: e, name: "COGS", type: .expense, timeSeries: TimeSeries(periods: p, values: [cogs]), expenseType: .costOfGoodsSold)
-		let o = try! Account(entity: e, name: "OpEx", type: .expense, timeSeries: TimeSeries(periods: p, values: [opex]), expenseType: .operatingExpense)
-		let i = try! Account(entity: e, name: "Interest", type: .expense, timeSeries: TimeSeries(periods: p, values: [interest]), expenseType: .interestExpense)
-		let t = try! Account(entity: e, name: "Tax", type: .expense, timeSeries: TimeSeries(periods: p, values: [tax]), expenseType: .taxExpense)
-		return try! IncomeStatement(entity: e, periods: p, revenueAccounts: [rev], expenseAccounts: [c, o, i, t])
+		let rev = try! Account(entity: e, name: "Revenue", incomeStatementRole: .revenue, timeSeries: TimeSeries(periods: p, values: [revenue]))
+		let c = try! Account(entity: e, name: "COGS", incomeStatementRole: .costOfGoodsSold,  timeSeries: TimeSeries(periods: p, values: [cogs]))
+		let o = try! Account(entity: e, name: "OPEX", incomeStatementRole: .operatingExpenseOther,  timeSeries: TimeSeries(periods: p, values: [opex]))
+		let i = try! Account(entity: e, name: "Interest", incomeStatementRole: .incomeTaxExpense, timeSeries: TimeSeries(periods: p, values: [interest]))
+		let t = try! Account(entity: e, name: "Tax", incomeStatementRole: .incomeTaxExpense,  timeSeries: TimeSeries(periods: p, values: [tax]))
+		return try! IncomeStatement(entity: e, periods: p, accounts: [rev, c, o, i, t])
 	}
 
 	func balance(currentAssets: Double, currentLiabilities: Double, totalAssets: Double? = nil, debt: Double = 0, equity: Double = 0) -> BalanceSheet<Double> {
 		let e = entity()
 		let p = periods()
-		let ca = try! Account(entity: e, name: "CA", type: .asset, timeSeries: TimeSeries(periods: p, values: [currentAssets]), assetType: .otherCurrentAsset)
-		let cl = try! Account(entity: e, name: "CL", type: .liability, timeSeries: TimeSeries(periods: p, values: [currentLiabilities]), liabilityType: .accountsPayable)
-		let cash = try! Account(entity: e, name: "Cash", type: .asset, timeSeries: TimeSeries(periods: p, values: [0]), assetType: .cashAndEquivalents)
+		let ca = try! Account(entity: e, name: "CA", balanceSheetRole: .cashAndEquivalents, timeSeries: TimeSeries(periods: p, values: [currentAssets]))
 		let totalA = totalAssets ?? max(currentAssets, 1)
 		let nonCurrent = max(totalA - currentAssets, 0)
-		let fa = try! Account(entity: e, name: "FA", type: .asset, timeSeries: TimeSeries(periods: p, values: [nonCurrent]), assetType: .propertyPlantEquipment)
-		let d = try! Account(entity: e, name: "Debt", type: .liability, timeSeries: TimeSeries(periods: p, values: [debt]), liabilityType: .longTermDebt)
-		let eq = try! Account(entity: e, name: "Equity", type: .equity, timeSeries: TimeSeries(periods: p, values: [equity]), equityType: .retainedEarnings)
-		return try! BalanceSheet(entity: e, periods: p, assetAccounts: [cash, ca, fa], liabilityAccounts: [cl, d], equityAccounts: [eq])
+		let nc = try! Account(entity: e, name: "NC", balanceSheetRole: .otherNonCurrentAssets, timeSeries: TimeSeries(periods: p, values: [nonCurrent]))
+		let cl = try! Account(entity: e, name: "CL", balanceSheetRole: .otherCurrentLiabilities, timeSeries: TimeSeries(periods: p, values: [currentLiabilities]))
+		let d = try! Account(entity: e, name: "Debt", balanceSheetRole: .longTermDebt, timeSeries: TimeSeries(periods: p, values: [debt]))
+		let eq = try! Account(entity: e, name: "Equity", balanceSheetRole: .commonStock, timeSeries: TimeSeries(periods: p, values: [equity]))
+		return try! BalanceSheet(entity: e, periods: p, accounts: [ca, nc, cl, d, eq])
 	}
 
 	@Test("Headroom is negative when covenant is breached")

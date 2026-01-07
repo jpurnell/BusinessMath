@@ -11,6 +11,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 🏗️ Financial Statement Migration - Role-Based Architecture (v2.0.0-beta.5)
+
+**Date:** 2026-01-06
+
+BusinessMath v2.0 introduces a **role-based financial statement architecture** that replaces the legacy type-based system. This allows accounts to accurately represent their roles across multiple financial statements.
+
+**Breaking Changes:**
+- 🔴 **Account API Completely Redesigned**
+  - **OLD**: `type: .revenue`, `type: .expense, expenseType: .cogs`
+  - **NEW**: `incomeStatementRole: .revenue`, `incomeStatementRole: .costOfGoodsSold`
+  - Accounts now declare explicit roles: `incomeStatementRole`, `balanceSheetRole`, `cashFlowRole`
+  - Accounts can have **multiple roles** (e.g., Depreciation in both IS and CFS)
+
+- 🔴 **Statement Initializers Simplified**
+  - **OLD**: Separate arrays (`revenueAccounts:`, `expenseAccounts:`, `assetAccounts:`, etc.)
+  - **NEW**: Single `accounts:` parameter - statements auto-categorize based on roles
+  - More flexible: any mix of account types allowed
+
+- 🟡 **Error Type Consolidation**
+  - Statement-specific errors (`IncomeStatementError`, `BalanceSheetError`) replaced with `FinancialModelError`
+  - More detailed error messages with entity/account context
+
+**New Features:**
+- ✅ **Multi-Role Accounts**: Accounts can appear in multiple statements with different roles
+  - Example: Depreciation (IS expense + CFS add-back)
+  - Example: Inventory (BS asset + CFS working capital change)
+- ✅ **Flexible Account Distribution**: Statements accept any mix of accounts and auto-categorize
+- ✅ **Better Validation**: `AccountError.invalidName`, `AccountError.emptyTimeSeries`
+- ✅ **New Account Requirement**: Every account must have at least one role
+
+**Migration Impact:**
+- **200+ test locations updated** across 30+ test files
+- **99.9% test pass rate maintained** (3,552 tests across 278 suites)
+- **Comprehensive migration guide** with before/after examples
+
+**Documentation:**
+- [MIGRATION_GUIDE_v2.0.md](MIGRATION_GUIDE_v2.0.md) - Complete migration guide with timeline estimates
+- [FINANCIAL_STATEMENT_MIGRATION.md](Instruction%20Set/FINANCIAL_STATEMENT_MIGRATION.md) - Technical implementation details
+
+**Why This Change?**
+Real-world financial accounts often appear in multiple statements. The role-based system provides:
+- **Accuracy**: Matches real-world financial reporting practices
+- **Flexibility**: Accounts can have roles in multiple statements
+- **Clarity**: Explicit role declarations make intent clear
+- **Extensibility**: Easy to add new roles without breaking changes
+
+---
+
 #### 📚 Documentation Reorganization - Book-Style Structure
 
 The documentation has been completely reorganized into a cohesive, book-like structure with five main parts, chapter numbering, and guided learning paths.

@@ -29,158 +29,140 @@ struct CreditMetricsTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 120_000])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: quarters, values: [40_000, 45_000]), // Improving margin: 60% -> 62.5%
-			expenseType: .costOfGoodsSold
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000, 35_000]),
-			expenseType: .operatingExpense
 		)
 
 		let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
-			type: .expense,
+			incomeStatementRole: .depreciationAmortization,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000]),
-			expenseType: .depreciationAmortization
 		)
 
 		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [2_000, 2_000]),
-			expenseType: .interestExpense
 		)
 
 		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
-			type: .expense,
+			incomeStatementRole: .incomeTaxExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 7_000]),
-			expenseType: .taxExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex, depreciation, interest, tax]
+			accounts: [revenue, cogs, opex, depreciation, interest, tax]
 		)
 
 		// Balance Sheet - strong working capital, low debt
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 60_000]),
-			assetType: .cashAndEquivalents
 		)
 
 		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
-			type: .asset,
+			balanceSheetRole: .accountsReceivable,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000, 24_000]),
-			assetType: .accountsReceivable
 		)
 
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
+			balanceSheetRole: .inventory,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000]),
-			assetType: .inventory
 		)
 
 		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
-			type: .asset,
+			balanceSheetRole: .propertyPlantEquipment,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000]),
-			assetType: .propertyPlantEquipment
 		)
 
 		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
-			type: .liability,
+			balanceSheetRole: .accountsPayable,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000, 12_000]),
-			liabilityType: .accountsPayable
 		)
 
 		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
-			type: .liability,
+			balanceSheetRole: .longTermDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000, 25_000]), // Paying down debt
-			liabilityType: .longTermDebt
 		)
 
 		let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [80_000, 98_000]),
-			equityType: .retainedEarnings
 		)
 
 		let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: quarters, values: [65_000, 65_000]), // No new issuance
-			equityType: .commonStock
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [cash, ar, inventory, ppe],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [retainedEarnings, commonStock]
+			accounts: [cash, ar, inventory, ppe, ap, debt, retainedEarnings, commonStock]
 		)
 
 		// Cash Flow Statement - strong operating cash flow
 		let cfOperations = try Account(
 			entity: entity,
 			name: "Cash from Operations",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: TimeSeries(periods: quarters, values: [25_000, 35_000]) // CFO > Net Income (quality earnings)
 		)
 
 		let cfInvesting = try Account(
 			entity: entity,
 			name: "Cash from Investing",
-			type: .investing,
+			cashFlowRole: .capitalExpenditures,
 			timeSeries: TimeSeries(periods: quarters, values: [-10_000, -15_000])
 		)
 
 		let cfFinancing = try Account(
 			entity: entity,
 			name: "Cash from Financing",
-			type: .financing,
+			cashFlowRole: .proceedsFromDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [-5_000, -10_000])
 		)
 
 		let cashFlowStatement = try CashFlowStatement(
 			entity: entity,
 			periods: quarters,
-			operatingAccounts: [cfOperations],
-			investingAccounts: [cfInvesting],
-			financingAccounts: [cfFinancing]
+			accounts: [cfOperations, cfInvesting, cfFinancing]
 		)
 
 		// Market data for Z-Score
@@ -208,170 +190,147 @@ struct CreditMetricsTests {
 				let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [80_000, 70_000]), // Declining
-			
 		)
 
 				let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 48_000]), // Margin worsening: 37.5% -> 31.4%
-			expenseType: .costOfGoodsSold
 		)
 
 				let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: quarters, values: [35_000, 35_000]),
-			expenseType: .operatingExpense
 		)
 
 				let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
-			type: .expense,
+			incomeStatementRole: .depreciationAmortization,
 			timeSeries: TimeSeries(periods: quarters, values: [8_000, 8_000]),
-			expenseType: .depreciationAmortization
 		)
 
 				let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000, 12_000]), // High interest burden
-			expenseType: .interestExpense
 		)
 
 				let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
-			type: .expense,
+			incomeStatementRole: .incomeTaxExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [0, 0]), // No taxes (unprofitable)
-			expenseType: .taxExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex, depreciation, interest, tax]
+			accounts: [revenue, cogs, opex, depreciation, interest, tax]
 		)
 
 		// Balance Sheet - negative working capital, high debt
 				let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]), // Burning cash
-			assetType: .cashAndEquivalents
 		)
 
 				let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
-			type: .asset,
+			balanceSheetRole: .accountsReceivable,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000]),
-			assetType: .accountsReceivable
 		)
 
 				let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
+			balanceSheetRole: .inventory,
 			timeSeries: TimeSeries(periods: quarters, values: [25_000, 30_000]), // Excess inventory
-			assetType: .inventory
 		)
 
 				let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
-			type: .asset,
+			balanceSheetRole: .propertyPlantEquipment,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000, 55_000]), // Asset impairment
-			assetType: .propertyPlantEquipment
 		)
 
 				let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
-			type: .liability,
+			balanceSheetRole: .accountsPayable,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000, 35_000]), // Can't pay vendors
-			liabilityType: .accountsPayable
 		)
 
 				let shortTermDebt = try Account(
 			entity: entity,
 			name: "Short-Term Debt",
-			type: .liability,
+			balanceSheetRole: .shortTermDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000, 25_000]),
-			liabilityType: .shortTermDebt
 		)
 
 				let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
-			type: .liability,
+			balanceSheetRole: .longTermDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [80_000, 85_000]), // Taking on more debt
-			liabilityType: .longTermDebt
 		)
 
 				let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [-25_000, -48_000]), // Accumulated losses
-			equityType: .retainedEarnings
 		)
 
 				let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000, 15_000]), // Desperate equity raise
-			equityType: .commonStock
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [cash, ar, inventory, ppe],
-			liabilityAccounts: [ap, shortTermDebt, debt],
-			equityAccounts: [retainedEarnings, commonStock]
+			accounts: [cash, ar, inventory, ppe, ap, shortTermDebt, debt, retainedEarnings, commonStock]
 		)
 
 		// Cash Flow Statement - negative operating cash flow
 				let cfOperations = try Account(
 			entity: entity,
 			name: "Cash from Operations",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: TimeSeries(periods: quarters, values: [-15_000, -20_000]), // Negative OCF
-			
 		)
 
 				let cfInvesting = try Account(
 			entity: entity,
 			name: "Cash from Investing",
-			type: .investing,
+			cashFlowRole: .capitalExpenditures,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]), // Selling assets
-			
 		)
 
 				let cfFinancing = try Account(
 			entity: entity,
 			name: "Cash from Financing",
-			type: .financing,
+			cashFlowRole: .proceedsFromDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [8_000, 15_000]), // Raising debt/equity
-			
 		)
 
 		let cashFlowStatement = try CashFlowStatement(
 			entity: entity,
 			periods: quarters,
-			operatingAccounts: [cfOperations],
-			investingAccounts: [cfInvesting],
-			financingAccounts: [cfFinancing]
+			accounts: [cfOperations, cfInvesting, cfFinancing]
 		)
 
 		// Market data - low stock price
@@ -441,127 +400,111 @@ struct CreditMetricsTests {
 				let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000])
 		)
 
 				let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000]),
-			expenseType: .costOfGoodsSold
 		)
 
 				let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: quarters, values: [25_000]),
-			expenseType: .operatingExpense
 		)
 
 				let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
-			type: .expense,
+			incomeStatementRole: .depreciationAmortization,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000]),
-			expenseType: .depreciationAmortization
 		)
 
 				let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [3_000]),
-			expenseType: .interestExpense
 		)
 
 				let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
-			type: .expense,
+			incomeStatementRole: .incomeTaxExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [2_000]),
-			expenseType: .taxExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex, depreciation, interest, tax]
+			accounts: [revenue, cogs, opex, depreciation, interest, tax]
 		)
 
 				let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000]),
-			assetType: .cashAndEquivalents
 		)
 
 				let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
-			type: .asset,
+			balanceSheetRole: .accountsReceivable,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000]),
-			assetType: .accountsReceivable
 		)
 
 				let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
+			balanceSheetRole: .inventory,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000]),
-			assetType: .inventory
 		)
 
 				let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
-			type: .asset,
+			balanceSheetRole: .propertyPlantEquipment,
 			timeSeries: TimeSeries(periods: quarters, values: [80_000]),
-			assetType: .propertyPlantEquipment
 		)
 
 				let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
-			type: .liability,
+			balanceSheetRole: .accountsPayable,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000]),
-			liabilityType: .accountsPayable
 		)
 
 				let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
-			type: .liability,
+			balanceSheetRole: .longTermDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000]),
-			liabilityType: .longTermDebt
 		)
 
 				let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000]),
-			equityType: .retainedEarnings
 		)
 
 				let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000]),
-			equityType: .commonStock
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [cash, ar, inventory, ppe],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [retainedEarnings, commonStock]
+			accounts: [cash, ar, inventory, ppe, ap, debt, retainedEarnings, commonStock]
 		)
 
 		let marketPrice = TimeSeries(periods: quarters, values: [50.0])
@@ -802,132 +745,117 @@ struct CreditMetricsTests {
 				let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 110_000])
 		)
 
 				let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: quarters, values: [60_000, 65_000]),
-			expenseType: .costOfGoodsSold
 		)
 
 				let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: quarters, values: [20_000, 22_000]),
-			expenseType: .operatingExpense
 		)
 
 				let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
-			type: .expense,
+			incomeStatementRole: .depreciationAmortization,
 			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000]),
-			expenseType: .depreciationAmortization
 		)
 
 				let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [0, 0]), // Zero debt
-			expenseType: .interestExpense
 		)
 
 				let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
-			type: .expense,
+			incomeStatementRole: .incomeTaxExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [4_000, 5_000]),
-			expenseType: .taxExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex, depreciation, interest, tax]
+			accounts: [revenue, cogs, opex, depreciation, interest, tax]
 		)
 
 				let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 55_000]),
-			assetType: .cashAndEquivalents
 		)
 
 				let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
-			type: .asset,
+			balanceSheetRole: .propertyPlantEquipment,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000]),
-			assetType: .propertyPlantEquipment
 		)
 
 				let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
-			type: .liability,
+			balanceSheetRole: .accountsPayable,
 			timeSeries: TimeSeries(periods: quarters, values: [10_000, 11_000]),
-			liabilityType: .accountsPayable
 		)
 
 				let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 111_000]),
-			equityType: .retainedEarnings
 		)
 
 				let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: quarters, values: [40_000, 40_000]), // No new equity
-			equityType: .commonStock
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [cash, ppe],
-			liabilityAccounts: [ap],
-			equityAccounts: [retainedEarnings, commonStock]
+			accounts: [cash, ppe, ap, retainedEarnings, commonStock]
 		)
 
 				let cfOperations = try Account(
 			entity: entity,
 			name: "Cash from Operations",
-			type: .operating,
+			cashFlowRole: .otherOperatingActivities,
 			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000])
 		)
 
 				let cfInvesting = try Account(
 			entity: entity,
 			name: "Cash from Investing",
-			type: .investing,
+			cashFlowRole: .capitalExpenditures,
 			timeSeries: TimeSeries(periods: quarters, values: [-5_000, -6_000])
 		)
 
 				let cfFinancing = try Account(
 			entity: entity,
 			name: "Cash from Financing",
-			type: .financing,
+			cashFlowRole: .proceedsFromDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [-5_000, -7_000])
 		)
 
 		let cashFlowStatement = try CashFlowStatement(
 			entity: entity,
 			periods: quarters,
-			operatingAccounts: [cfOperations],
-			investingAccounts: [cfInvesting],
-			financingAccounts: [cfFinancing]
+			accounts: [cfOperations, cfInvesting, cfFinancing]
 		)
 
 		let priorPeriod = Period.quarter(year: 2024, quarter: 4)

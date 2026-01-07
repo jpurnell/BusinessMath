@@ -42,54 +42,49 @@ struct ScenarioSensitivityAnalysisTests {
 			let revenueAccount = try Account(
 				entity: entity,
 				name: "Revenue",
-				type: .revenue,
+				incomeStatementRole: .revenue,
 				timeSeries: revenueSeries
 			)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: []
+				accounts: [revenueAccount]
 			)
 
 			// Minimal balance sheet (Assets = Equity)
 			let assetAccount = try Account(
 				entity: entity,
 				name: "Cash",
-				type: .asset,
+				balanceSheetRole: .otherCurrentAssets,
 				timeSeries: revenueSeries
 			)
 
 			let equityAccount = try Account(
 				entity: entity,
 				name: "Retained Earnings",
-				type: .equity,
+				balanceSheetRole: .commonStock,
 				timeSeries: revenueSeries
 			)
 
 			let balanceSheet = try BalanceSheet(
 				entity: entity,
 				periods: periods,
-				assetAccounts: [assetAccount],
-				liabilityAccounts: [],
-				equityAccounts: [equityAccount]
+				accounts: [assetAccount, equityAccount]
 			)
 
 			// Minimal cash flow
 			let cashAccount = try Account(
 				entity: entity,
 				name: "Operating Cash",
-				type: .operating,
+				cashFlowRole: .otherOperatingActivities,
 				timeSeries: revenueSeries
 			)
 
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -304,35 +299,30 @@ struct ScenarioSensitivityAnalysisTests {
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 			let costSeries = TimeSeries<Double>(periods: periods, values: costValues)
 
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
-			let costAccount = try Account(entity: entity, name: "Cost", type: .expense, timeSeries: costSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
+			let costAccount = try Account(entity: entity, name: "Cost", incomeStatementRole: .operatingExpenseOther, timeSeries: costSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: [costAccount]
+				accounts: [revenueAccount, costAccount]
 			)
 
 			// Minimal balance sheet and cash flow
 			let netIncome = incomeStatement.netIncome
-			let assetAccount = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: netIncome)
-			let equityAccount = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: netIncome)
+			let assetAccount = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: netIncome)
+			let equityAccount = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: netIncome)
 			let balanceSheet = try BalanceSheet(
 				entity: entity,
 				periods: periods,
-				assetAccounts: [assetAccount],
-				liabilityAccounts: [],
-				equityAccounts: [equityAccount]
+				accounts: [assetAccount, equityAccount]
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Cash", type: .operating, timeSeries: netIncome)
+			let cashAccount = try Account(entity: entity, name: "Cash", cashFlowRole: .otherOperatingActivities, timeSeries: netIncome)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -400,34 +390,29 @@ struct ScenarioSensitivityAnalysisTests {
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 			let costSeries = TimeSeries<Double>(periods: periods, values: costValues)
 
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
-			let costAccount = try Account(entity: entity, name: "Cost", type: .expense, timeSeries: costSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
+			let costAccount = try Account(entity: entity, name: "Cost", incomeStatementRole: .operatingExpenseOther, timeSeries: costSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: [costAccount]
+				accounts: [revenueAccount, costAccount]
 			)
 
 			let netIncome = incomeStatement.netIncome
-			let assetAccount = try Account(entity: entity, name: "Cash", type: .asset, timeSeries: netIncome)
-			let equityAccount = try Account(entity: entity, name: "Equity", type: .equity, timeSeries: netIncome)
+			let assetAccount = try Account(entity: entity, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: netIncome)
+			let equityAccount = try Account(entity: entity, name: "Equity", balanceSheetRole: .commonStock, timeSeries: netIncome)
 			let balanceSheet = try BalanceSheet(
 				entity: entity,
 				periods: periods,
-				assetAccounts: [assetAccount],
-				liabilityAccounts: [],
-				equityAccounts: [equityAccount]
+				accounts: [assetAccount, equityAccount]
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Operating Cash", type: .operating, timeSeries: netIncome)
+			let cashAccount = try Account(entity: entity, name: "Operating Cash", cashFlowRole: .otherOperatingActivities, timeSeries: netIncome)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)

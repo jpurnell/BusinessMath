@@ -50,7 +50,7 @@ struct FinancialProjectionTests {
 		let revenueAccount = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: revenueSeries
 		)
 
@@ -62,15 +62,14 @@ struct FinancialProjectionTests {
 		let expenseAccount = try Account(
 			entity: entity,
 			name: "Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: expenseSeries
 		)
 
 		return try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenueAccount],
-			expenseAccounts: [expenseAccount]
+			accounts: [revenueAccount, expenseAccount]
 		)
 	}
 
@@ -86,7 +85,7 @@ struct FinancialProjectionTests {
 		let assetAccount = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: assetSeries
 		)
 
@@ -98,7 +97,7 @@ struct FinancialProjectionTests {
 		let liabilityAccount = try Account(
 			entity: entity,
 			name: "Debt",
-			type: .liability,
+			balanceSheetRole: .otherCurrentLiabilities,
 			timeSeries: liabilitySeries
 		)
 
@@ -110,16 +109,14 @@ struct FinancialProjectionTests {
 		let equityAccount = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: equitySeries
 		)
 
 		return try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [assetAccount],
-			liabilityAccounts: [liabilityAccount],
-			equityAccounts: [equityAccount]
+			accounts: [assetAccount, liabilityAccount, equityAccount]
 		)
 	}
 
@@ -135,7 +132,7 @@ struct FinancialProjectionTests {
 		let operatingAccount = try Account(
 			entity: entity,
 			name: "Operating Cash Flow",
-			type: .operating,
+			cashFlowRole: .netIncome,
 			timeSeries: operatingSeries
 		)
 
@@ -147,7 +144,7 @@ struct FinancialProjectionTests {
 		let investingAccount = try Account(
 			entity: entity,
 			name: "Investing Cash Flow",
-			type: .investing,
+			cashFlowRole: .capitalExpenditures,
 			timeSeries: investingSeries
 		)
 
@@ -159,16 +156,14 @@ struct FinancialProjectionTests {
 		let financingAccount = try Account(
 			entity: entity,
 			name: "Financing Cash Flow",
-			type: .financing,
+			cashFlowRole: .proceedsFromDebt,
 			timeSeries: financingSeries
 		)
 
 		return try CashFlowStatement(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: [operatingAccount],
-			investingAccounts: [investingAccount],
-			financingAccounts: [financingAccount]
+			accounts: [operatingAccount, investingAccount, financingAccount]
 		)
 	}
 
@@ -336,7 +331,7 @@ struct FinancialProjectionTests {
 		let highRevenueAccount = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: highRevenueSeries
 		)
 		let expenseSeries = TimeSeries<Double>(
@@ -346,14 +341,13 @@ struct FinancialProjectionTests {
 		let expenseAccount = try Account(
 			entity: entity,
 			name: "Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: expenseSeries
 		)
 		let optimisticIncome = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [highRevenueAccount],
-			expenseAccounts: [expenseAccount]
+			accounts: [highRevenueAccount, expenseAccount]
 		)
 
 		let optimisticProjection = FinancialProjection(
@@ -434,65 +428,52 @@ struct FinancialProjectionTests {
 
 @Suite("Financial Projection Additional Tests")
 struct FinancialProjectionAdditionalTests {
-	
 	private func entity() -> Entity {
 		Entity(id: "TEST", primaryType: .ticker, name: "Test Company")
 	}
-	
 	private func periods() -> [Period] {
 		[ .quarter(year: 2025, quarter: 1),
 		  .quarter(year: 2025, quarter: 2),
 		  .quarter(year: 2025, quarter: 3),
 		  .quarter(year: 2025, quarter: 4)]
 	}
-	
 	private func incomeStatement() throws -> IncomeStatement<Double> {
 		let e = entity()
 		let ps = periods()
 		let rev = TimeSeries<Double>(periods: ps, values: [1000, 1100, 1200, 1300])
 		let rev2 = TimeSeries<Double>(periods: ps, values: [100, 100, 100, 100]) // second revenue account
 		let exp = TimeSeries<Double>(periods: ps, values: [600, 650, 700, 750])
-		
-		let aRev = try Account(entity: e, name: "Revenue A", type: .revenue, timeSeries: rev)
-		let bRev = try Account(entity: e, name: "Revenue B", type: .revenue, timeSeries: rev2)
-		let aExp = try Account(entity: e, name: "Expenses", type: .expense, timeSeries: exp)
-		
-		return try IncomeStatement(entity: e, periods: ps, revenueAccounts: [aRev, bRev], expenseAccounts: [aExp])
+		let aRev = try Account(entity: e, name: "Revenue A", incomeStatementRole: .revenue, timeSeries: rev)
+		let bRev = try Account(entity: e, name: "Revenue B", incomeStatementRole: .revenue, timeSeries: rev2)
+		let aExp = try Account(entity: e, name: "Expenses", incomeStatementRole: .operatingExpenseOther, timeSeries: exp)
+		return try IncomeStatement(entity: e, periods: ps, accounts: [aRev, bRev, aExp])
 	}
-	
 	private func balanceSheet() throws -> BalanceSheet<Double> {
 		let e = entity()
 		let ps = periods()
 		let assets = TimeSeries<Double>(periods: ps, values: [5000, 5200, 5400, 5600])
 		let liabilities = TimeSeries<Double>(periods: ps, values: [2000, 1950, 1900, 1850])
 		let equity = TimeSeries<Double>(periods: ps, values: [3000, 3250, 3500, 3750])
-		
-		let a = try Account(entity: e, name: "Cash", type: .asset, timeSeries: assets)
-		let l = try Account(entity: e, name: "Debt", type: .liability, timeSeries: liabilities)
-		let eq = try Account(entity: e, name: "Equity", type: .equity, timeSeries: equity)
-		
-		return try BalanceSheet(entity: e, periods: ps, assetAccounts: [a], liabilityAccounts: [l], equityAccounts: [eq])
+		let a = try Account(entity: e, name: "Cash", balanceSheetRole: .otherCurrentAssets, timeSeries: assets)
+		let l = try Account(entity: e, name: "Debt", balanceSheetRole: .otherCurrentLiabilities, timeSeries: liabilities)
+		let eq = try Account(entity: e, name: "Equity", balanceSheetRole: .commonStock, timeSeries: equity)
+		return try BalanceSheet(entity: e, periods: ps, accounts: [a, l, eq])
 	}
-	
 	private func cfs() throws -> CashFlowStatement<Double> {
 		let e = entity()
 		let ps = periods()
 		let op = TimeSeries<Double>(periods: ps, values: [400, 450, 500, 550])
 		let inv = TimeSeries<Double>(periods: ps, values: [-100, -120, -140, -160])
 		let fin = TimeSeries<Double>(periods: ps, values: [-50, -50, -50, -50])
-		
-		let aOp = try Account(entity: e, name: "Operating", type: .operating, timeSeries: op)
-		let aInv = try Account(entity: e, name: "Investing", type: .investing, timeSeries: inv)
-		let aFin = try Account(entity: e, name: "Financing", type: .financing, timeSeries: fin)
-		
-		return try CashFlowStatement(entity: e, periods: ps, operatingAccounts: [aOp], investingAccounts: [aInv], financingAccounts: [aFin])
+		let aOp = try Account(entity: e, name: "Operating", cashFlowRole: .otherOperatingActivities, timeSeries: op)
+		let aInv = try Account(entity: e, name: "Investing", cashFlowRole: .capitalExpenditures, timeSeries: inv)
+		let aFin = try Account(entity: e, name: "Financing", cashFlowRole: .proceedsFromDebt, timeSeries: fin)
+		return try CashFlowStatement(entity: e, periods: ps, accounts: [aOp, aInv, aFin])
 	}
-	
 	@Test("Income statement sums multiple revenue accounts")
 	func sumsMultipleRevenueAccounts() throws {
 		let incomeStmt = try incomeStatement()
 		let ps = periods()
-		
 		for (i, p) in ps.enumerated() {
 			let totalRev = incomeStmt.totalRevenue[p]!
 			let exp = incomeStmt.totalExpenses[p]!
@@ -502,7 +483,6 @@ struct FinancialProjectionAdditionalTests {
 			#expect(net == totalRev - exp)
 		}
 	}
-	
 	@Test("Accounting equation holds for all periods")
 		func accountingEquationAllPeriods() throws {
 			let bs = try balanceSheet()
@@ -513,7 +493,6 @@ struct FinancialProjectionAdditionalTests {
 				#expect(abs(a - (l + e)) < 1e-6)
 			}
 		}
-	
 	@Test("Free cash flow equals operating + investing per period")
 		func fcfEqualsOperatingPlusInvesting() throws {
 			let c = try cfs()
