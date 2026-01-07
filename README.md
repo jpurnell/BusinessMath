@@ -12,16 +12,16 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ## 🎉 Version 2.0 Released!
 
-**Major milestone:** Production-ready API with GPU-accelerated optimization and unified parameter naming.
+**Major milestone:** Production-ready API with role-based financial statements, GPU-accelerated optimization, and unified parameter naming.
 
+- ✅ **Role-Based Financial Statements:** Multi-statement account support for accurate financial modeling
 - ✅ **GPU Acceleration:** 10-100× speedup for genetic algorithms (populations ≥ 1,000) on Apple Silicon
 - ✅ **Consistent API:** `initialGuess` parameter everywhere
 - ✅ **Constraint Support:** Equality and inequality constraints via penalty method
 - ✅ **Stable:** Semantic versioning guarantees (see [STABILITY.md](STABILITY.md))
-- ✅ **Migration Guide:** Easy upgrade from 1.x (see [MIGRATION.md](MIGRATION.md))
-- ✅ **3,013+ Tests:** 99.9% pass rate across 240+ test suites
+- ✅ **3,552+ Tests:** 99.9% pass rate across 278 test suites
 
-**Upgrading from 1.x?** Simply rename `initialValue:` → `initialGuess:` in optimizer calls. [Full migration guide →](MIGRATION.md)
+**Upgrading from 1.x?** Financial statements now use role-based API (accounts can appear in multiple statements). [Full migration guide →](MIGRATION_GUIDE_v2.0.md)
 
 **New to GPU acceleration?** [Get started with the GPU tutorial →](GPU_ACCELERATION_TUTORIAL.md)
 
@@ -152,7 +152,7 @@ Add BusinessMath to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.0.0-beta.1")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.0.0-beta.5")
 ]
 ```
 
@@ -190,7 +190,7 @@ dependencies: [
 - ✅ **Seasonal decomposition** (additive and multiplicative)
 - ✅ **Growth modeling** (CAGR, trend fitting)
 - ✅ **Loan amortization** (payment schedules, PPMT, IPMT)
-- ✅ **Financial statements** (integrated three-statement models)
+- ✅ **Financial statements** (role-based architecture with multi-statement account support)
 - ✅ **Securities valuation** (equity: DCF, DDM, FCFE; bonds: pricing, duration, convexity; credit: CDS, Merton model)
 - ✅ **Risk analytics** (VaR, CVaR, stress testing)
 - ✅ **Monte Carlo simulation** (15 distributions, sensitivity analysis)
@@ -204,7 +204,7 @@ dependencies: [
 
 ### Documentation & Testing
 - 📚 **44 comprehensive guides** (8,500+ lines of DocC documentation)
-- ✅ **2,943 tests** across 236 test suites
+- ✅ **3,552 tests** across 278 test suites (99.9% pass rate)
 - 📊 **Performance benchmarks** for typical use cases
 - 🎓 **Learning paths** for different roles
 

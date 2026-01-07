@@ -19,7 +19,7 @@ struct FinancialRatiosTests {
 	// MARK: - Test Fixtures
 
 	/// Create a simple test company with known values for ratio verification
-	private func createTestCompany() throws -> (Entity, IncomeStatement<Double>, BalanceSheet<Double>) {
+	private func createTestCompany() throws -> (Entity, [Account<Double>], [Account<Double>], [Period]) {
 		let entity = Entity(
 			id: "TMC",
 			primaryType: .ticker,
@@ -33,7 +33,8 @@ struct FinancialRatiosTests {
 		let revenueAccount = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(
 				periods: quarters,
 				values: [1_000_000, 1_100_000, 1_200_000, 1_300_000]
@@ -44,38 +45,32 @@ struct FinancialRatiosTests {
 		let opexAccount = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(
 				periods: quarters,
 				values: [400_000, 400_000, 400_000, 400_000]
-			),
-			expenseType: .operatingExpense
+			)
 		)
 
 		// Interest Expense: $50k per quarter
 		let interestAccount = try Account(
 			entity: entity,
 			name: "Interest Expense",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(
 				periods: quarters,
 				values: [50_000, 50_000, 50_000, 50_000]
 			)
 		)
 
-		// Income Statement
-		let incomeStatement = try IncomeStatement(
-			entity: entity,
-			periods: quarters,
-			revenueAccounts: [revenueAccount],
-			expenseAccounts: [opexAccount, interestAccount]
-		)
-
 		// Assets: $5,000k (growing slightly)
 		let assetAccount = try Account(
 			entity: entity,
 			name: "Total Assets",
-			type: .asset,
+			incomeStatementRole: nil,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: TimeSeries(
 				periods: quarters,
 				values: [5_000_000, 5_100_000, 5_200_000, 5_300_000]
@@ -86,7 +81,8 @@ struct FinancialRatiosTests {
 		let liabilityAccount = try Account(
 			entity: entity,
 			name: "Total Liabilities",
-			type: .liability,
+			incomeStatementRole: nil,
+			balanceSheetRole: .otherCurrentLiabilities,
 			timeSeries: TimeSeries(
 				periods: quarters,
 				values: [2_000_000, 2_000_000, 2_000_000, 2_000_000]
@@ -97,38 +93,44 @@ struct FinancialRatiosTests {
 		let equityAccount = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
-			type: .equity,
+			incomeStatementRole: nil,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(
 				periods: quarters,
 				values: [3_000_000, 3_100_000, 3_200_000, 3_300_000]
 			)
 		)
 
-		// Balance Sheet
-		let balanceSheet = try BalanceSheet(
-			entity: entity,
-			periods: quarters,
-			assetAccounts: [assetAccount],
-			liabilityAccounts: [liabilityAccount],
-			equityAccounts: [equityAccount]
-		)
+		let incomeAccounts = [revenueAccount, opexAccount, interestAccount]
+		let balanceAccounts = [assetAccount, liabilityAccount, equityAccount]
 
-		return (entity, incomeStatement, balanceSheet)
+		return (entity, incomeAccounts, balanceAccounts, quarters)
 	}
 
 	// MARK: - Return on Assets (ROA) Tests
 
 	@Test("Return on Assets - basic calculation")
 	func testROA() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		// Calculate ROA
 		let roa = returnOnAssets(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet
 		)
-
-		let quarters = Period.year(2025).quarters()
 
 		// Q1: Net Income = 1,000k - 400k - 50k = 550k
 		//     Average Assets = 5,000k (no prior period)
@@ -157,44 +159,45 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: periods, values: [100_000, 100_000, 100_000, 100_000])
 		)
 
 		let expenses = try Account(
 			entity: entity,
 			name: "Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: periods, values: [200_000, 200_000, 200_000, 200_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [expenses]
+			accounts: [revenue, expenses]
 		)
 
 		let assets = try Account(
 			entity: entity,
 			name: "Assets",
-			type: .asset,
+			incomeStatementRole: nil,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_000_000, 1_000_000, 1_000_000])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			incomeStatementRole: nil,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: periods, values: [1_000_000, 1_000_000, 1_000_000, 1_000_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [assets],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [assets, equity]
 		)
 
 		// Calculate ROA
@@ -211,15 +214,26 @@ struct FinancialRatiosTests {
 
 	@Test("Return on Equity - basic calculation")
 	func testROE() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		// Calculate ROE
 		let roe = returnOnEquity(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet
 		)
-
-		let quarters = Period.year(2025).quarters()
 
 		// Q1: Net Income = 550k
 		//     Average Equity = 3,000k (no prior period)
@@ -236,12 +250,23 @@ struct FinancialRatiosTests {
 
 	@Test("ROE vs ROA - leverage effect")
 	func testROEvsROALeverage() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		let roa = returnOnAssets(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 		let roe = returnOnEquity(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-
-		let quarters = Period.year(2025).quarters()
 
 		// With leverage (debt), ROE should be higher than ROA
 		// This company has $2M debt, so ROE > ROA
@@ -261,52 +286,54 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: periods, values: [200_000])
 		)
 
 		let expenses = try Account(
 			entity: entity,
 			name: "Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: periods, values: [100_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [expenses]
+			accounts: [revenue, expenses]
 		)
 
 		// Assets < Liabilities -> Negative equity
 		let assets = try Account(
 			entity: entity,
 			name: "Assets",
-			type: .asset,
+			incomeStatementRole: nil,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: TimeSeries(periods: periods, values: [500_000])
 		)
 
 		let liabilities = try Account(
 			entity: entity,
 			name: "Liabilities",
-			type: .liability,
+			incomeStatementRole: nil,
+			balanceSheetRole: .otherCurrentLiabilities,
 			timeSeries: TimeSeries(periods: periods, values: [600_000])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			incomeStatementRole: nil,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: periods, values: [-100_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [assets],
-			liabilityAccounts: [liabilities],
-			equityAccounts: [equity]
+			accounts: [assets, liabilities, equity]
 		)
 
 		// Calculate ROE - should handle negative equity
@@ -321,7 +348,20 @@ struct FinancialRatiosTests {
 
 	@Test("Return on Invested Capital - basic calculation")
 	func testROIC() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		// Tax rate of 21%
 		let taxRate = 0.21
@@ -332,8 +372,6 @@ struct FinancialRatiosTests {
 			balanceSheet: balanceSheet,
 			taxRate: taxRate
 		)
-
-		let quarters = Period.year(2025).quarters()
 
 		// Q1: Operating Income = Revenue - OpEx = 1,000k - 400k = 600k
 		//     NOPAT = 600k × (1 - 0.21) = 474k
@@ -347,20 +385,19 @@ struct FinancialRatiosTests {
 
 	@Test("ROIC with different tax rates")
 	func testROICTaxRates() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
-
-		let quarters = Period.year(2025).quarters()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
 
 		// Calculate ROIC with two different tax rates
 		let roic21 = returnOnInvestedCapital(
-			incomeStatement: incomeStatement,
-			balanceSheet: balanceSheet,
+			incomeStatement: try IncomeStatement(entity: entity, periods: quarters, accounts: incomeAccounts),
+			balanceSheet: try BalanceSheet(entity: entity, periods: quarters, accounts: balanceAccounts),
 			taxRate: 0.21
 		)
 
 		let roic35 = returnOnInvestedCapital(
-			incomeStatement: incomeStatement,
-			balanceSheet: balanceSheet,
+			incomeStatement: try IncomeStatement(entity: entity, periods: quarters, accounts: incomeAccounts),
+			balanceSheet: try BalanceSheet(entity: entity, periods: quarters, accounts: balanceAccounts),
 			taxRate: 0.35
 		)
 
@@ -372,7 +409,20 @@ struct FinancialRatiosTests {
 
 	@Test("Compare ROA, ROE, and ROIC")
 	func testCompareReturns() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		let roa = returnOnAssets(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 		let roe = returnOnEquity(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
@@ -381,8 +431,6 @@ struct FinancialRatiosTests {
 			balanceSheet: balanceSheet,
 			taxRate: 0.21
 		)
-
-		let quarters = Period.year(2025).quarters()
 
 		// All three should be positive
 		for quarter in quarters {
@@ -402,14 +450,25 @@ struct FinancialRatiosTests {
 
 	@Test("Asset Turnover - basic calculation")
 	func testAssetTurnover() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		let assetTurnover = assetTurnover(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet
 		)
-
-		let quarters = Period.year(2025).quarters()
 
 		// Q1: Revenue = 1,000k, Assets = 5,000k
 		//     Asset Turnover = 1,000k / 5,000k = 0.20
@@ -431,7 +490,8 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_100_000, 1_200_000, 1_300_000])
 		)
 
@@ -439,31 +499,32 @@ struct FinancialRatiosTests {
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [600_000, 660_000, 720_000, 780_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		// Inventory: $200k (slowly increasing)	
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
-			timeSeries: TimeSeries(periods: quarters, values: [200_000, 210_000, 220_000, 230_000]),
-			assetType: .inventory
+			incomeStatementRole: nil,
+			balanceSheetRole: .inventory,
+			timeSeries: TimeSeries(periods: quarters, values: [200_000, 210_000, 220_000, 230_000])
 		)
 
 		// Other assets
 		let otherAssets = try Account(
 			entity: entity,
 			name: "Other Assets",
-			type: .asset,
+			incomeStatementRole: nil,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: TimeSeries(periods: quarters, values: [800_000, 800_000, 800_000, 800_000])
 		)
 
@@ -471,16 +532,15 @@ struct FinancialRatiosTests {
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			incomeStatementRole: nil,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_010_000, 1_020_000, 1_030_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [inventory, otherAssets],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [inventory, otherAssets, equity]
 		)
 
 		// Calculate inventory turnover
@@ -509,45 +569,45 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [500_000, 500_000, 500_000, 500_000])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "COGS",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [400_000, 400_000, 400_000, 400_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
-			timeSeries: TimeSeries(periods: quarters, values: [50_000, 50_000, 50_000, 50_000]),
-			assetType: .inventory
+			incomeStatementRole: nil,
+			balanceSheetRole: .inventory,
+			timeSeries: TimeSeries(periods: quarters, values: [50_000, 50_000, 50_000, 50_000])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			incomeStatementRole: nil,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [50_000, 50_000, 50_000, 50_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [inventory],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [inventory, equity]
 		)
 
 		// Calculate DIO
@@ -578,46 +638,46 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_000_000, 1_000_000, 1_000_000])
 		)
 
 		let expenses = try Account(
 			entity: entity,
 			name: "Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [600_000, 600_000, 600_000, 600_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [expenses]
+			accounts: [revenue, expenses]
 		)
 
 		// Receivables: customers pay in ~60 days	
 		let receivables = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
-			type: .asset,
-			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000]),
-			assetType: .accountsReceivable
+			incomeStatementRole: nil,
+			balanceSheetRole: .accountsReceivable,
+			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			incomeStatementRole: nil,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [receivables],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [receivables, equity]
 		)
 
 		// Calculate receivables turnover
@@ -640,46 +700,46 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [365_000, 365_000, 365_000, 365_000])
 		)
 
 		let expenses = try Account(
 			entity: entity,
 			name: "Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [expenses]
+			accounts: [revenue, expenses]
 		)
 
 		// Receivables representing 30 days of sales	
 		let receivables = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
-			type: .asset,
-			timeSeries: TimeSeries(periods: quarters, values: [30_000, 30_000, 30_000, 30_000]),
-			assetType: .accountsReceivable
+			incomeStatementRole: nil,
+			balanceSheetRole: .accountsReceivable,
+			timeSeries: TimeSeries(periods: quarters, values: [30_000, 30_000, 30_000, 30_000])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			incomeStatementRole: nil,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [30_000, 30_000, 30_000, 30_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [receivables],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [receivables, equity]
 		)
 
 		// Calculate DSO
@@ -703,7 +763,20 @@ struct FinancialRatiosTests {
 
 	@Test("Missing inventory account throws error")
 	func testMissingInventory() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		// Our test company has no inventory account
 		#expect(throws: FinancialRatioError.self) {
@@ -716,7 +789,20 @@ struct FinancialRatiosTests {
 
 	@Test("Missing receivables account throws error")
 	func testMissingReceivables() throws {
-		let (_, incomeStatement, balanceSheet) = try createTestCompany()
+		let (_, incomeAccounts, balanceAccounts, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: quarters,
+			accounts: balanceAccounts
+		)
 
 		// Our test company has no receivables account
 		#expect(throws: FinancialRatioError.self) {
@@ -731,12 +817,17 @@ struct FinancialRatiosTests {
 
 	@Test("Interest Coverage - basic calculation")
 	func testInterestCoverage() throws {
-		let (_, incomeStatement, _) = try createTestCompany()
+		let (_, incomeAccounts, _, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
+
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
 
 		// Calculate interest coverage
 		let coverage = try interestCoverage(incomeStatement: incomeStatement)
-
-		let quarters = Period.year(2025).quarters()
 
 		// Q1: Operating Income = Revenue - OpEx = 1,000k - 400k = 600k
 		//     Interest Expense = 50k
@@ -765,7 +856,8 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [100_000, 100_000, 100_000, 100_000])
 		)
 
@@ -773,24 +865,24 @@ struct FinancialRatiosTests {
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
-			timeSeries: TimeSeries(periods: quarters, values: [70_000, 70_000, 70_000, 70_000]),
-			expenseType: .operatingExpense
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
+			timeSeries: TimeSeries(periods: quarters, values: [70_000, 70_000, 70_000, 70_000])
 		)
 
 		// High interest expense (relative to operating income)
 		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [25_000, 25_000, 25_000, 25_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [opex, interest]
+			accounts: [revenue, opex, interest]
 		)
 
 		// Calculate interest coverage
@@ -812,22 +904,23 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [1_000_000, 1_000_000, 1_000_000, 1_000_000])
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [400_000, 400_000, 400_000, 400_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [opex]
+			accounts: [revenue, opex]
 		)
 
 		// Should throw error when no interest expense found
@@ -838,9 +931,14 @@ struct FinancialRatiosTests {
 
 	@Test("Debt Service Coverage Ratio - basic calculation")
 	func testDebtServiceCoverage() throws {
-		let (_, incomeStatement, _) = try createTestCompany()
+		let (_, incomeAccounts, _, quarters) = try createTestCompany()
+		let entity = incomeAccounts[0].entity
 
-		let quarters = Period.year(2025).quarters()
+		let incomeStatement = try IncomeStatement(
+			entity: entity,
+			periods: quarters,
+			accounts: incomeAccounts
+		)
 
 		// Create principal and interest payment series
 		let principalPayments = TimeSeries(
@@ -880,23 +978,23 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [500_000, 500_000, 500_000, 500_000])
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
-			timeSeries: TimeSeries(periods: quarters, values: [350_000, 350_000, 350_000, 350_000]),
-			expenseType: .operatingExpense
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
+			timeSeries: TimeSeries(periods: quarters, values: [350_000, 350_000, 350_000, 350_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [opex]
+			accounts: [revenue, opex]
 		)
 
 		// High debt payments relative to operating income
@@ -933,23 +1031,23 @@ struct FinancialRatiosTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
+			balanceSheetRole: nil,
 			timeSeries: TimeSeries(periods: quarters, values: [200_000, 200_000, 200_000, 200_000])
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
-			timeSeries: TimeSeries(periods: quarters, values: [150_000, 150_000, 150_000, 150_000]),
-			expenseType: .operatingExpense
+			incomeStatementRole: .operatingExpenseOther,
+			balanceSheetRole: nil,
+			timeSeries: TimeSeries(periods: quarters, values: [150_000, 150_000, 150_000, 150_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [opex]
+			accounts: [revenue, opex]
 		)
 
 		// Debt payments exceed operating income
@@ -977,3 +1075,4 @@ struct FinancialRatiosTests {
 		#expect(q1DSCR < 1.0, "DSCR < 1.0 indicates insufficient coverage")
 	}
 }
+

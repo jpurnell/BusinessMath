@@ -37,7 +37,7 @@ struct ScenarioRunnerTests {
 		let cashAccount = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: values
 		)
 
@@ -45,16 +45,14 @@ struct ScenarioRunnerTests {
 		let equityAccount = try Account(
 			entity: entity,
 			name: "Retained Earnings",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: values
 		)
 
 		return try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cashAccount],
-			liabilityAccounts: [],
-			equityAccounts: [equityAccount]
+			accounts: [cashAccount, equityAccount]
 		)
 	}
 
@@ -97,15 +95,14 @@ struct ScenarioRunnerTests {
 			let revenueAccount = try Account(
 				entity: entity,
 				name: "Revenue",
-				type: .revenue,
+				incomeStatementRole: .revenue,
 				timeSeries: revenueSeries
 			)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: []
+				accounts: [revenueAccount]
 			)
 
 			// Create minimal balance sheet (just cash = equity)
@@ -120,16 +117,14 @@ struct ScenarioRunnerTests {
 			let cashAccount = try Account(
 				entity: entity,
 				name: "Operating Cash",
-				type: .operating,
+				cashFlowRole: .otherOperatingActivities,
 				timeSeries: cashSeries
 			)
 
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -182,13 +177,12 @@ struct ScenarioRunnerTests {
 			}
 
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: []
+				accounts: [revenueAccount]
 			)
 
 			let balanceSheet = try self.createBalancedBalanceSheet(
@@ -197,13 +191,11 @@ struct ScenarioRunnerTests {
 				values: revenueSeries
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Cash", type: .operating, timeSeries: revenueSeries)
+			let cashAccount = try Account(entity: entity, name: "Cash", cashFlowRole: .otherOperatingActivities, timeSeries: revenueSeries)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -256,14 +248,13 @@ struct ScenarioRunnerTests {
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 			let costSeries = TimeSeries<Double>(periods: periods, values: costValues)
 
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
-			let costAccount = try Account(entity: entity, name: "Costs", type: .expense, timeSeries: costSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
+			let costAccount = try Account(entity: entity, name: "Costs", incomeStatementRole: .operatingExpenseOther, timeSeries: costSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: [costAccount]
+				accounts: [revenueAccount, costAccount]
 			)
 
 			let equitySeries = revenueSeries - costSeries
@@ -273,13 +264,11 @@ struct ScenarioRunnerTests {
 				values: equitySeries
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Cash", type: .operating, timeSeries: revenueSeries)
+			let cashAccount = try Account(entity: entity, name: "Cash", cashFlowRole: .otherOperatingActivities, timeSeries: revenueSeries)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -328,13 +317,12 @@ struct ScenarioRunnerTests {
 			) { drivers, periods in
 				let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
 				let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
-				let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
+				let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
 
 				let incomeStatement = try IncomeStatement(
 					entity: entity,
 					periods: periods,
-					revenueAccounts: [revenueAccount],
-					expenseAccounts: []
+					accounts: [revenueAccount]
 				)
 
 				let balanceSheet = try self.createBalancedBalanceSheet(
@@ -343,13 +331,11 @@ struct ScenarioRunnerTests {
 					values: revenueSeries
 				)
 
-				let cashAccount = try Account(entity: entity, name: "Cash", type: .operating, timeSeries: revenueSeries)
+				let cashAccount = try Account(entity: entity, name: "Cash", cashFlowRole: .otherOperatingActivities, timeSeries: revenueSeries)
 				let cashFlowStatement = try CashFlowStatement(
 					entity: entity,
 					periods: periods,
-					operatingAccounts: [cashAccount],
-					investingAccounts: [],
-					financingAccounts: []
+					accounts: [cashAccount]
 				)
 
 				return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -393,12 +379,11 @@ struct ScenarioRunnerTests {
 			let defaultValues = Array(repeating: 100.0, count: periods.count)
 			let defaultSeries = TimeSeries<Double>(periods: periods, values: defaultValues)
 
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: defaultSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: defaultSeries)
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: []
+				accounts: [revenueAccount]
 			)
 
 			let balanceSheet = try self.createBalancedBalanceSheet(
@@ -407,13 +392,11 @@ struct ScenarioRunnerTests {
 				values: defaultSeries
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Cash", type: .operating, timeSeries: defaultSeries)
+			let cashAccount = try Account(entity: entity, name: "Cash", cashFlowRole: .otherOperatingActivities, timeSeries: defaultSeries)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)
@@ -452,13 +435,12 @@ struct ScenarioRunnerTests {
 		) { drivers, periods in
 			let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
-			let revenueAccount = try Account(entity: entity, name: "Revenue", type: .revenue, timeSeries: revenueSeries)
+			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [revenueAccount],
-				expenseAccounts: []
+				accounts: [revenueAccount]
 			)
 
 			let balanceSheet = try self.createBalancedBalanceSheet(
@@ -467,13 +449,11 @@ struct ScenarioRunnerTests {
 				values: revenueSeries
 			)
 
-			let cashAccount = try Account(entity: entity, name: "Cash", type: .operating, timeSeries: revenueSeries)
+			let cashAccount = try Account(entity: entity, name: "Cash", cashFlowRole: .otherOperatingActivities, timeSeries: revenueSeries)
 			let cashFlowStatement = try CashFlowStatement(
 				entity: entity,
 				periods: periods,
-				operatingAccounts: [cashAccount],
-				investingAccounts: [],
-				financingAccounts: []
+				accounts: [cashAccount]
 			)
 
 			return (incomeStatement, balanceSheet, cashFlowStatement)

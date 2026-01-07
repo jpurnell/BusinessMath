@@ -37,7 +37,7 @@ struct IncomeStatementTests {
 		return try Account(
 			entity: entity,
 			name: "Product Revenue",
-			type: .revenue,
+			incomeStatementRole: .productRevenue,
 			timeSeries: timeSeries
 		)
 	}
@@ -48,9 +48,8 @@ struct IncomeStatementTests {
 		return try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
-			timeSeries: timeSeries,
-			expenseType: .costOfGoodsSold
+			incomeStatementRole: .costOfGoodsSold,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -60,9 +59,8 @@ struct IncomeStatementTests {
 		return try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
-			timeSeries: timeSeries,
-			expenseType: .operatingExpense
+			incomeStatementRole: .operatingExpenseOther,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -72,9 +70,8 @@ struct IncomeStatementTests {
 		return try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
-			type: .expense,
-			timeSeries: timeSeries,
-			expenseType: .depreciationAmortization
+			incomeStatementRole: .depreciationAmortization,
+			timeSeries: timeSeries
 		)
 	}
 
@@ -90,12 +87,12 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		#expect(incomeStmt.entity == entity)
 		#expect(incomeStmt.periods.count == 4)
+		#expect(incomeStmt.accounts.count == 2)
 		#expect(incomeStmt.revenueAccounts.count == 1)
 		#expect(incomeStmt.expenseAccounts.count == 1)
 	}
@@ -112,7 +109,7 @@ struct IncomeStatementTests {
 		let revenue2 = try Account(
 			entity: entity,
 			name: "Service Revenue",
-			type: .revenue,
+			incomeStatementRole: .serviceRevenue,
 			timeSeries: timeSeries2
 		)
 
@@ -122,10 +119,10 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue1, revenue2],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue1, revenue2, cogs, opex]
 		)
 
+		#expect(incomeStmt.accounts.count == 4)
 		#expect(incomeStmt.revenueAccounts.count == 2)
 		#expect(incomeStmt.expenseAccounts.count == 2)
 	}
@@ -141,46 +138,37 @@ struct IncomeStatementTests {
 		let revenue = try makeRevenueAccount(entity: entity1, periods: periods)
 		let cogs = try makeCogsAccount(entity: entity2, periods: periods)
 
-		#expect(throws: IncomeStatementError.self) {
+		#expect(throws: FinancialModelError.self) {
 			_ = try IncomeStatement(
 				entity: entity1,
 				periods: periods,
-				revenueAccounts: [revenue],
-				expenseAccounts: [cogs]
+				accounts: [revenue, cogs]
 			)
 		}
 	}
 
-	@Test("Income statement creation fails with wrong account type in revenue")
-	func incomeStatementWrongRevenueType() throws {
+	@Test("Income statement creation fails with account missing income statement role")
+	func incomeStatementMissingRole() throws {
 		let entity = makeEntity()
 		let periods = makePeriods()
 
-		let expenseAccount = try makeCogsAccount(entity: entity, periods: periods)
+		let revenue = try makeRevenueAccount(entity: entity, periods: periods)
 
-		#expect(throws: IncomeStatementError.self) {
+		// Create an account with balance sheet role only (no income statement role)
+		let values: [Double] = [1000, 1100, 1200, 1300]
+		let timeSeries = TimeSeries(periods: periods, values: values)
+		let cashAccount = try Account(
+			entity: entity,
+			name: "Cash",
+			balanceSheetRole: .cashAndEquivalents,
+			timeSeries: timeSeries
+		)
+
+		#expect(throws: FinancialModelError.self) {
 			_ = try IncomeStatement(
 				entity: entity,
 				periods: periods,
-				revenueAccounts: [expenseAccount], // Wrong type!
-				expenseAccounts: []
-			)
-		}
-	}
-
-	@Test("Income statement creation fails with wrong account type in expenses")
-	func incomeStatementWrongExpenseType() throws {
-		let entity = makeEntity()
-		let periods = makePeriods()
-
-		let revenueAccount = try makeRevenueAccount(entity: entity, periods: periods)
-
-		#expect(throws: IncomeStatementError.self) {
-			_ = try IncomeStatement(
-				entity: entity,
-				periods: periods,
-				revenueAccounts: [],
-				expenseAccounts: [revenueAccount] // Wrong type!
+				accounts: [revenue, cashAccount] // Cash account has no income statement role!
 			)
 		}
 	}
@@ -199,15 +187,14 @@ struct IncomeStatementTests {
 		let revenue2 = try Account(
 			entity: entity,
 			name: "Service Revenue",
-			type: .revenue,
+			incomeStatementRole: .serviceRevenue,
 			timeSeries: timeSeries2
 		)
 
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue1, revenue2],
-			expenseAccounts: []
+			accounts: [revenue1, revenue2]
 		)
 
 		let total = incomeStmt.totalRevenue
@@ -227,8 +214,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [],
-			expenseAccounts: [cogs, opex]
+			accounts: [cogs, opex]
 		)
 
 		let total = incomeStmt.totalExpenses
@@ -249,8 +235,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		let netIncome = incomeStmt.netIncome
@@ -274,8 +259,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		let grossProfit = incomeStmt.grossProfit
@@ -297,8 +281,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		let operatingIncome = incomeStmt.operatingIncome
@@ -321,8 +304,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex, da]
+			accounts: [revenue, cogs, opex, da]
 		)
 
 		let ebitda = incomeStmt.ebitda
@@ -346,8 +328,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		let grossMargin = incomeStmt.grossMargin
@@ -369,8 +350,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		let operatingMargin = incomeStmt.operatingMargin
@@ -392,8 +372,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		let netMargin = incomeStmt.netMargin
@@ -416,8 +395,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex, da]
+			accounts: [revenue, cogs, opex, da]
 		)
 
 		let ebitdaMargin = incomeStmt.ebitdaMargin
@@ -429,8 +407,8 @@ struct IncomeStatementTests {
 
 	// MARK: - Empty Account Handling
 
-	@Test("Income statement handles empty revenue accounts")
-	func emptyRevenueAccounts() throws {
+	@Test("Income statement handles statement with only expenses (no revenue)")
+	func noRevenueAccounts() throws {
 		let entity = makeEntity()
 		let periods = makePeriods()
 		let cogs = try makeCogsAccount(entity: entity, periods: periods)
@@ -438,8 +416,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [],
-			expenseAccounts: [cogs]
+			accounts: [cogs]
 		)
 
 		let totalRevenue = incomeStmt.totalRevenue
@@ -448,8 +425,8 @@ struct IncomeStatementTests {
 		#expect(totalRevenue[q1] == 0)
 	}
 
-	@Test("Income statement handles empty expense accounts")
-	func emptyExpenseAccounts() throws {
+	@Test("Income statement handles statement with only revenue (no expenses)")
+	func noExpenseAccounts() throws {
 		let entity = makeEntity()
 		let periods = makePeriods()
 		let revenue = try makeRevenueAccount(entity: entity, periods: periods)
@@ -457,8 +434,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: []
+			accounts: [revenue]
 		)
 
 		let totalExpenses = incomeStmt.totalExpenses
@@ -481,16 +457,14 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		let materialized = incomeStmt.materialize()
 
 		#expect(materialized.entity == entity)
 		#expect(materialized.periods.count == 4)
-		#expect(materialized.revenueAccounts.count == 1)
-		#expect(materialized.expenseAccounts.count == 2)
+		#expect(materialized.accounts.count == 3)  // 1 revenue + 2 expense accounts
 
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
@@ -518,8 +492,7 @@ struct IncomeStatementTests {
 		let incomeStmt = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		let encoded = try JSONEncoder().encode(incomeStmt)

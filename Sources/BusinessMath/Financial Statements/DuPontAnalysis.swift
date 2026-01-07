@@ -293,9 +293,7 @@ public func dupontAnalysis5Way<T: Real>(
 	let ebit = incomeStatement.operatingIncome
 
 	// Calculate EBT (Earnings Before Tax) = Net Income + Tax
-	let taxAccounts = incomeStatement.expenseAccounts.filter {
-		$0.expenseType == .taxExpense
-	}
+	let taxAccounts = incomeStatement.taxAccounts
 
 	let taxExpense: TimeSeries<T>
 	if !taxAccounts.isEmpty {

@@ -18,112 +18,98 @@ struct DuPontAnalysisTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [1_000, 1_100, 1_200, 1_300])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: quarters, values: [600, 660, 720, 780]),
-			expenseType: .costOfGoodsSold
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: quarters, values: [200, 220, 240, 260]),
-			expenseType: .operatingExpense
 		)
 
 		let da = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
-			type: .expense,
+			incomeStatementRole: .depreciationAmortization,
 			timeSeries: TimeSeries(periods: quarters, values: [50, 50, 50, 50]),
-			expenseType: .depreciationAmortization
 		)
 
 		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
-			type: .expense,
+			incomeStatementRole: .interestExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [20, 20, 20, 20]),
-			expenseType: .interestExpense
 		)
 
 		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
-			type: .expense,
+			incomeStatementRole: .incomeTaxExpense,
 			timeSeries: TimeSeries(periods: quarters, values: [32.5, 37.5, 42.5, 47.5]),
-			expenseType: .taxExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex, da, interest, tax]
+			accounts: [revenue, cogs, opex, da, interest, tax]
 		)
 
 		// Balance Sheet	
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130]),
-			assetType: .cashAndEquivalents
 		)
 
 		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
-			type: .asset,
+			balanceSheetRole: .accountsReceivable,
 			timeSeries: TimeSeries(periods: quarters, values: [150, 165, 180, 195]),
-			assetType: .accountsReceivable
 		)
 
 		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
-			type: .asset,
+			balanceSheetRole: .propertyPlantEquipment,
 			timeSeries: TimeSeries(periods: quarters, values: [800, 850, 900, 950]),
-			assetType: .propertyPlantEquipment
 		)
 
 		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
-			type: .liability,
+			balanceSheetRole: .accountsPayable,
 			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130]),
-			liabilityType: .accountsPayable
 		)
 
 		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
-			type: .liability,
+			balanceSheetRole: .longTermDebt,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			liabilityType: .longTermDebt
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [650, 715, 780, 845]),
-			equityType: .retainedEarnings
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [cash, ar, ppe],
-			liabilityAccounts: [ap, debt],
-			equityAccounts: [equity]
+			accounts: [cash, ar, ppe, ap, debt, equity]
 		)
 
 		return (entity, incomeStatement, balanceSheet)
@@ -209,56 +195,49 @@ struct DuPontAnalysisTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [500, 500, 500, 500])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			expenseType: .costOfGoodsSold
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: quarters, values: [100, 100, 100, 100]),
-			expenseType: .operatingExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		// Large asset base (luxury inventory, stores)	
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
+			balanceSheetRole: .inventory,
 			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000]),
-			assetType: .inventory
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000]),
-			equityType: .retainedEarnings
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [inventory],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [inventory, equity]
 		)
 
 		let dupont = dupontAnalysis(
@@ -285,56 +264,49 @@ struct DuPontAnalysisTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: quarters, values: [5000, 5000, 5000, 5000])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: quarters, values: [4500, 4500, 4500, 4500]),
-			expenseType: .costOfGoodsSold
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
-			type: .expense,
+			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: quarters, values: [400, 400, 400, 400]),
-			expenseType: .operatingExpense
 		)
 
 		let incomeStatement = try IncomeStatement(
 			entity: entity,
 			periods: quarters,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs, opex]
+			accounts: [revenue, cogs, opex]
 		)
 
 		// Small asset base (fast inventory turnover)	
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
-			type: .asset,
+			balanceSheetRole: .inventory,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			assetType: .inventory
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
-			type: .equity,
+			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
-			equityType: .retainedEarnings
 		)
 
 		let balanceSheet = try BalanceSheet(
 			entity: entity,
 			periods: quarters,
-			assetAccounts: [inventory],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [inventory, equity]
 		)
 
 		let dupont = dupontAnalysis(

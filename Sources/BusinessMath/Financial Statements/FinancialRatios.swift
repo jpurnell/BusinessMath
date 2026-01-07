@@ -351,7 +351,7 @@ public func inventoryTurnover<T: Real & Sendable>(
 
 	// Find inventory in balance sheet
 	guard let inventory = balanceSheet.assetAccounts.first(where: {
-		$0.assetType == .inventory
+		$0.balanceSheetRole == .inventory
 	}) else {
 		throw FinancialRatioError.missingAccount("Inventory")
 	}
@@ -473,7 +473,7 @@ public func receivablesTurnover<T: Real & Sendable>(
 ) throws -> TimeSeries<T> {
 	// Find accounts receivable in balance sheet
 	guard let receivables = balanceSheet.assetAccounts.first(where: {
-		$0.assetType == .accountsReceivable
+		$0.balanceSheetRole == .accountsReceivable
 	}) else {
 		throw FinancialRatioError.missingAccount("Accounts Receivable")
 	}
@@ -611,7 +611,7 @@ public func daysPayableOutstanding<T: Real & Sendable>(
 
 	// Find accounts payable in balance sheet
 	guard let payables = balanceSheet.liabilityAccounts.first(where: {
-		$0.liabilityType == .accountsPayable
+		$0.balanceSheetRole == .accountsPayable
 	}) else {
 		throw FinancialRatioError.missingAccount("Accounts Payable")
 	}
@@ -677,7 +677,9 @@ public func interestCoverage<T: Real & Sendable>(
 	}
 
 	let operatingIncome = incomeStatement.operatingIncome
+	print("Operating Income:\t\(operatingIncome.valuesArray)")
 	let interestTimeSeries = interestExpense.timeSeries
+	print("Interest Time Series:\t\(interestTimeSeries.valuesArray)")
 
 	// Interest Coverage = Operating Income / Interest Expense
 	return operatingIncome / interestTimeSeries
@@ -1205,6 +1207,93 @@ public func solvencyRatios<T: Real & Sendable>(
 	)
 }
 
+/// Calculate solvency ratios with automatic principal payment derivation.
+///
+/// Convenience overload that automatically calculates principal payments from
+/// period-over-period reductions in the debt account balance. This eliminates
+/// the need to manually compute principal payments when you have a debt account
+/// on the balance sheet.
+///
+/// Principal payments are calculated as the reduction in debt balance from one
+/// period to the next:
+///
+/// ```
+/// Principal Payment(t) = Debt Balance(t-1) - Debt Balance(t)
+/// ```
+///
+/// For increasing debt balances (new borrowing), principal payments will be
+/// negative, which is appropriate for the debt service coverage calculation.
+///
+/// ## When to Use This Overload
+///
+/// Use this convenience method when:
+/// - You have a debt account with period-over-period balance changes
+/// - Debt balance decreases represent principal repayments
+/// - You want automatic calculation instead of manual specification
+///
+/// Use the explicit `principalPayments` parameter when:
+/// - Principal payments don't match balance sheet changes (e.g., refinancing)
+/// - You need to exclude certain debt transactions
+/// - You have off-balance-sheet debt obligations
+///
+/// ## Example
+///
+/// ```swift
+/// // Find the long-term debt account
+/// let debtAccount = balanceSheet.liabilityAccounts.first {
+///     $0.name.contains("Long-term Debt")
+/// }!
+///
+/// // Interest expense from income statement
+/// let interestAccount = incomeStatement.expenseAccounts.first {
+///     $0.name.contains("Interest")
+/// }!
+///
+/// // Automatically derives principal payments from debt reduction
+/// let solvency = solvencyRatios(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     debtAccount: debtAccount,
+///     interestAccount: interestAccount
+/// )
+///
+/// // Debt service coverage is now available
+/// print("DSCR: \(solvency.debtServiceCoverage![q1]!)x")
+/// ```
+///
+/// ## See Also
+///
+/// - ``solvencyRatios(incomeStatement:balanceSheet:principalPayments:interestPayments:)``
+/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing operating income
+///   - balanceSheet: Balance sheet containing the debt account
+///   - debtAccount: Debt liability account to derive principal payments from
+///   - interestAccount: Interest expense account from income statement
+/// - Returns: Structure containing all solvency ratios including debt service coverage
+public func solvencyRatios<T: Real & Sendable>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>,
+	debtAccount: Account<T>,
+	interestAccount: Account<T>
+) -> SolvencyRatios<T> {
+	// Derive principal payments from period-over-period debt reduction
+	// debt.diff() returns currentBalance - previousBalance
+	// For declining debt, this is negative, so we negate to get positive principal payments
+	let debtChanges = debtAccount.timeSeries.diff(lag: 1)
+	let principalPayments = debtChanges.mapValues { -$0 }  // Negate: reduction = payment
+	// Interest payments from income statement
+	let interestPayments = interestAccount.timeSeries
+	// Delegate to the main implementation
+	return solvencyRatios(
+		incomeStatement: incomeStatement,
+		balanceSheet: balanceSheet,
+		principalPayments: principalPayments,
+		interestPayments: interestPayments
+	)
+}
+
 /// Valuation metrics - market-based valuation ratios.
 ///
 /// Contains all key market valuation metrics for assessing whether a stock is
@@ -1302,14 +1391,9 @@ public func valuationMetrics<T: Real & Sendable>(
 	let equity = balanceSheet.totalEquity
 	let debt = balanceSheet.interestBearingDebt
 
-	// Find cash in balance sheet (if available)
-	let cash: TimeSeries<T>
-	if let cashAccount = balanceSheet.assetAccounts.first(where: { $0.assetType == .cashAndEquivalents }) {
-		cash = cashAccount.timeSeries
-	} else {
-		// If no cash account, assume zero
-		cash = TimeSeries(periods: netIncome.periods, values: Array(repeating: T.zero, count: netIncome.periods.count))
-	}
+	// Get cash from balance sheet using the cashAndEquivalents property
+	// (which already handles the case of no cash accounts by returning zeros)
+	let cash = balanceSheet.cashAndEquivalents
 
 	// Market Cap = Shares Outstanding × Price
 	let marketCap = netIncome.mapValues { _ in sharesOutstanding * marketPrice }

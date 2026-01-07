@@ -246,7 +246,7 @@ public enum FinancialValidation {
 			var errors: [ValidationError] = []
 
 			// Get cash balances from balance sheet
-			let cashAccounts = balanceSheet.assetAccounts.filter { $0.assetType == .cashAndEquivalents }
+			let cashAccounts = balanceSheet.assetAccounts.filter { $0.balanceSheetRole == .cashAndEquivalents }
 			guard !cashAccounts.isEmpty else {
 				return .invalid([ValidationError(
 					field: context.fieldName,

@@ -68,9 +68,8 @@ struct JSONSerializationTests {
 		let original = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
-			timeSeries: timeSeries,
-			assetType: .cashAndEquivalents
+			balanceSheetRole: .cashAndEquivalents,
+			timeSeries: timeSeries
 		)
 
 		let encoder = JSONEncoder()
@@ -80,7 +79,7 @@ struct JSONSerializationTests {
 		let decoded = try decoder.decode(Account<Double>.self, from: data)
 
 		#expect(decoded.name == original.name)
-		#expect(decoded.type == original.type)
+		#expect(decoded.balanceSheetRole == original.balanceSheetRole)
 		#expect(decoded.timeSeries.valuesArray == original.timeSeries.valuesArray)
 	}
 
@@ -94,23 +93,21 @@ struct JSONSerializationTests {
 		let revenue = try Account(
 			entity: entity,
 			name: "Revenue",
-			type: .revenue,
+			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0])
 		)
 
 		let cogs = try Account(
 			entity: entity,
 			name: "COGS",
-			type: .expense,
+			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: periods, values: [60_000.0]),
-			expenseType: .costOfGoodsSold
 		)
 
 		let original = try IncomeStatement(
 			entity: entity,
 			periods: periods,
-			revenueAccounts: [revenue],
-			expenseAccounts: [cogs]
+			accounts: [revenue, cogs]
 		)
 
 		let encoder = JSONEncoder()
@@ -133,25 +130,21 @@ struct JSONSerializationTests {
 		let cash = try Account(
 			entity: entity,
 			name: "Cash",
-			type: .asset,
+			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: periods, values: [50_000.0]),
-			assetType: .cashAndEquivalents
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
-			type: .equity,
+			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [50_000.0]),
-			equityType: .commonStock
 		)
 
 		let original = try BalanceSheet(
 			entity: entity,
 			periods: periods,
-			assetAccounts: [cash],
-			liabilityAccounts: [],
-			equityAccounts: [equity]
+			accounts: [cash, equity]
 		)
 
 		let encoder = JSONEncoder()
@@ -251,7 +244,6 @@ struct JSONSerializationTests {
 		#expect(timeSeries.periods.count == 1)
 		#expect(timeSeries.valuesArray[0] == 100_000.0)
 	}
-	
 	@Test("Decode invalid JSON throws")
 			func decodeInvalidJSONThrows() throws {
 					let invalid = "{ not valid json }".data(using: .utf8)!

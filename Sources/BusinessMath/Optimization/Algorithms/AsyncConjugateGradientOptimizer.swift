@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RealModule
 
 // MARK: - Conjugate Gradient Method
 
@@ -394,3 +395,4 @@ public struct AsyncConjugateGradientOptimizer {
         }
     }
 }
+

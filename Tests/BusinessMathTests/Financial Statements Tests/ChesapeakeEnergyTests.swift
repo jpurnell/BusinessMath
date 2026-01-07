@@ -60,7 +60,7 @@ struct ChesapeakeEnergyTests {
 			let revenue = try Account(
 				entity: entity,
 				name: "Oil & Gas Revenue",
-				type: .revenue,
+				incomeStatementRole: .revenue,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.revenue])
 			)
 
@@ -68,64 +68,56 @@ struct ChesapeakeEnergyTests {
 			let loe = try Account(
 				entity: entity,
 				name: "Lease Operating Expenses",
-				type: .expense,
+				incomeStatementRole: .operatingExpenseOther,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.45]),
-				expenseType: .operatingExpense
 			)
 
 			let gathering = try Account(
 				entity: entity,
 				name: "Gathering & Transportation",
-				type: .expense,
+				incomeStatementRole: .operatingExpenseOther,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.25]),
-				expenseType: .operatingExpense
 			)
 
 			let production_taxes = try Account(
 				entity: entity,
 				name: "Production Taxes",
-				type: .expense,
+				incomeStatementRole: .operatingExpenseOther,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.revenue * 0.08]),
-				expenseType: .operatingExpense
 			)
 
 			let ga = try Account(
 				entity: entity,
 				name: "G&A",
-				type: .expense,
+				incomeStatementRole: .operatingExpenseOther,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.30]),
-				expenseType: .operatingExpense
 			)
 
 			let dd_a = try Account(
 				entity: entity,
 				name: "DD&A",
-				type: .expense,
+				incomeStatementRole: .depreciationAmortization,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.capex * 0.40]),
-				expenseType: .depreciationAmortization
 			)
 
 			let interest = try Account(
 				entity: entity,
 				name: "Interest Expense",
-				type: .expense,
+				incomeStatementRole: .interestExpense,
 				timeSeries: TimeSeries(periods: [quarter], values: [125]),
-				expenseType: .interestExpense
 			)
 
 			let tax = try Account(
 				entity: entity,
 				name: "Income Tax",
-				type: .expense,
+				incomeStatementRole: .incomeTaxExpense,
 				timeSeries: TimeSeries(periods: [quarter], values: [(data.revenue - data.opex - data.capex * 0.40 - 125) * 0.21]),
-				expenseType: .taxExpense
 			)
 
 			let incomeStatement = try IncomeStatement(
 				entity: entity,
 				periods: [quarter],
-				revenueAccounts: [revenue],
-				expenseAccounts: [loe, gathering, production_taxes, ga, dd_a, interest, tax]
+				accounts: [revenue, loe, gathering, production_taxes, ga, dd_a, interest, tax]
 			)
 			incomeStatements.append(incomeStatement)
 
@@ -137,75 +129,65 @@ struct ChesapeakeEnergyTests {
 			let cash = try Account(
 				entity: entity,
 				name: "Cash & Equivalents",
-				type: .asset,
+				balanceSheetRole: .cashAndEquivalents,
 				timeSeries: TimeSeries(periods: [quarter], values: [800 + Double(index) * 50]),
-				assetType: .cashAndEquivalents
 			)
 
 			let ar = try Account(
 				entity: entity,
 				name: "Accounts Receivable",
-				type: .asset,
+				balanceSheetRole: .accountsReceivable,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.revenue * 0.30]),
-				assetType: .accountsReceivable
 			)
 
 			let inventory = try Account(
 				entity: entity,
 				name: "Inventory",
-				type: .asset,
+				balanceSheetRole: .inventory,
 				timeSeries: TimeSeries(periods: [quarter], values: [150]),
-				assetType: .inventory
 			)
 
 			let ppe = try Account(
 				entity: entity,
 				name: "Property, Plant & Equipment",
-				type: .asset,
+				balanceSheetRole: .propertyPlantEquipment,
 				timeSeries: TimeSeries(periods: [quarter], values: [baseAssets]),
-				assetType: .propertyPlantEquipment
 			)
 
 			// Liabilities
 			let ap = try Account(
 				entity: entity,
 				name: "Accounts Payable",
-				type: .liability,
+				balanceSheetRole: .accountsPayable,
 				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.40]),
-				liabilityType: .accountsPayable
 			)
 
 			let currentDebt = try Account(
 				entity: entity,
 				name: "Current Portion of Debt",
-				type: .liability,
+				balanceSheetRole: .shortTermDebt,
 				timeSeries: TimeSeries(periods: [quarter], values: [200]),
-				liabilityType: .shortTermDebt
 			)
 
 			let longTermDebt = try Account(
 				entity: entity,
 				name: "Long-Term Debt",
-				type: .liability,
+				balanceSheetRole: .longTermDebt,
 				timeSeries: TimeSeries(periods: [quarter], values: [5_500 - Double(index) * 100]),  // Debt paydown
-				liabilityType: .longTermDebt
 			)
 
 			// Equity grows with retained earnings
 			let equity = try Account(
 				entity: entity,
 				name: "Shareholders' Equity",
-				type: .equity,
+				balanceSheetRole: .retainedEarnings,
 				timeSeries: TimeSeries(periods: [quarter], values: [10_000 + Double(index) * 200]),
-				equityType: .retainedEarnings
 			)
 
 			let balanceSheet = try BalanceSheet(
 				entity: entity,
 				periods: [quarter],
-				assetAccounts: [cash, ar, inventory, ppe],
-				liabilityAccounts: [ap, currentDebt, longTermDebt],
-				equityAccounts: [equity]
+				accounts: [cash, ar, inventory, ppe, ap, currentDebt, longTermDebt, equity]
 			)
 			balanceSheets.append(balanceSheet)
 

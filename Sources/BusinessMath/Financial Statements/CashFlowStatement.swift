@@ -110,63 +110,63 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// The periods covered by this cash flow statement.
 	public let periods: [Period]
 
+	/// All accounts in this cash flow statement.
+	///
+	/// Each account must have a `cashFlowRole` to be included.
+	/// Accounts with the same role will be automatically aggregated when computing metrics.
+	public let accounts: [Account<T>]
+
 	/// All operating cash flow accounts.
-	public let operatingAccounts: [Account<T>]
+	///
+	/// This computed property filters accounts by their `cashFlowRole.isOperating` flag.
+	public var operatingAccounts: [Account<T>] {
+		accounts.filter { $0.cashFlowRole?.isOperating == true }
+	}
 
 	/// All investing cash flow accounts.
-	public let investingAccounts: [Account<T>]
+	///
+	/// This computed property filters accounts by their `cashFlowRole.isInvesting` flag.
+	public var investingAccounts: [Account<T>] {
+		accounts.filter { $0.cashFlowRole?.isInvesting == true }
+	}
 
 	/// All financing cash flow accounts.
-	public let financingAccounts: [Account<T>]
+	///
+	/// This computed property filters accounts by their `cashFlowRole.isFinancing` flag.
+	public var financingAccounts: [Account<T>] {
+		accounts.filter { $0.cashFlowRole?.isFinancing == true }
+	}
 
-	/// Creates a cash flow statement with validation.
+	/// Creates a cash flow statement with validation using the new role-based API.
 	///
 	/// - Parameters:
 	///   - entity: The entity this statement belongs to
 	///   - periods: The periods covered
-	///   - operatingAccounts: Operating cash flow accounts (must have type .operating)
-	///   - investingAccounts: Investing cash flow accounts (must have type .investing)
-	///   - financingAccounts: Financing cash flow accounts (must have type .financing)
+	///   - accounts: All accounts (must have `cashFlowRole`)
 	///
-	/// - Throws: ``CashFlowStatementError`` if validation fails
+	/// - Throws: ``FinancialModelError`` if validation fails
 	public init(
 		entity: Entity,
 		periods: [Period],
-		operatingAccounts: [Account<T>],
-		investingAccounts: [Account<T>],
-		financingAccounts: [Account<T>]
+		accounts: [Account<T>]
 	) throws {
-		// Validate entity consistency
-		for account in operatingAccounts + investingAccounts + financingAccounts {
-			guard account.entity == entity else {
-				throw CashFlowStatementError.entityMismatch
+		// Validate all accounts have cash flow roles
+		for account in accounts {
+			guard account.cashFlowRole != nil else {
+				throw FinancialModelError.accountMissingRole(
+					statement: .cashFlowStatement,
+					accountName: account.name
+				)
 			}
 		}
 
-		// Validate account types
-		for account in operatingAccounts {
-			guard account.type == .operating else {
-				throw CashFlowStatementError.invalidAccountType(expected: .operating, actual: account.type)
-			}
-		}
-
-		for account in investingAccounts {
-			guard account.type == .investing else {
-				throw CashFlowStatementError.invalidAccountType(expected: .investing, actual: account.type)
-			}
-		}
-
-		for account in financingAccounts {
-			guard account.type == .financing else {
-				throw CashFlowStatementError.invalidAccountType(expected: .financing, actual: account.type)
-			}
-		}
+		// Validate entity and period consistency using shared helpers
+		try FinancialStatementHelpers.validateEntityConsistency(accounts: accounts, entity: entity)
+		try FinancialStatementHelpers.validatePeriodConsistency(accounts: accounts, periods: periods)
 
 		self.entity = entity
 		self.periods = periods
-		self.operatingAccounts = operatingAccounts
-		self.investingAccounts = investingAccounts
-		self.financingAccounts = financingAccounts
+		self.accounts = accounts
 	}
 
 	// MARK: - Cash Flow Metrics
@@ -178,7 +178,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// - Cash paid to suppliers and employees
 	/// - Working capital changes
 	public var operatingCashFlow: TimeSeries<T> {
-		return aggregateAccounts(operatingAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(operatingAccounts, periods: periods)
 	}
 
 	/// Investing cash flow from buying/selling long-term assets.
@@ -188,7 +188,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// - Asset sales - typically positive
 	/// - Investment purchases/sales
 	public var investingCashFlow: TimeSeries<T> {
-		return aggregateAccounts(investingAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(investingAccounts, periods: periods)
 	}
 
 	/// Financing cash flow from debt and equity transactions.
@@ -199,7 +199,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// - Dividend payments
 	/// - Stock buybacks
 	public var financingCashFlow: TimeSeries<T> {
-		return aggregateAccounts(financingAccounts)
+		return FinancialStatementHelpers.aggregateAccounts(financingAccounts, periods: periods)
 	}
 
 	/// Net cash flow (operating + investing + financing).
@@ -223,26 +223,38 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 		return operatingCashFlow + investingCashFlow
 	}
 
-	// MARK: - Helper Methods
+	/// Working capital changes (changes in receivables, inventory, payables, etc.).
+	///
+	/// Aggregates all accounts where `cashFlowRole.usesChangeInBalance == true`.
+	/// These accounts represent balance sheet items where the period-over-period
+	/// change affects operating cash flow.
+	///
+	/// For accounts with `usesChangeInBalance == true`, automatically applies
+	/// `TimeSeries.diff()` to convert balance data to period changes.
+	public var workingCapitalChanges: TimeSeries<T> {
+		let wcAccounts = accounts.filter { $0.cashFlowRole?.usesChangeInBalance == true }
 
-	/// Aggregates multiple accounts into a single time series.
-	private func aggregateAccounts(_ accounts: [Account<T>]) -> TimeSeries<T> {
-		guard !accounts.isEmpty else {
-			// Return zero-filled series for empty account list
+		guard !wcAccounts.isEmpty else {
 			let zeros = Array(repeating: T(0), count: periods.count)
 			return TimeSeries(periods: periods, values: zeros)
 		}
 
-		// Start with first account's time series
-		var result = accounts[0].timeSeries
+		// Apply diff() to each account to get period-over-period changes
+		var changesSeries = [TimeSeries<T>]()
+		for account in wcAccounts {
+			let changes = account.timeSeries.diff()
+			changesSeries.append(changes)
+		}
 
-		// Add remaining accounts
-		for account in accounts.dropFirst() {
-			result = result + account.timeSeries
+		// Aggregate all changes
+		var result = changesSeries[0]
+		for series in changesSeries.dropFirst() {
+			result = result + series
 		}
 
 		return result
 	}
+
 }
 
 // MARK: - Materialized Cash Flow Statement
@@ -269,9 +281,7 @@ extension CashFlowStatement {
 		public let entity: Entity
 		public let periods: [Period]
 
-		public let operatingAccounts: [Account<T>]
-		public let investingAccounts: [Account<T>]
-		public let financingAccounts: [Account<T>]
+		public let accounts: [Account<T>]
 
 		// Pre-computed cash flows
 		public let operatingCashFlow: TimeSeries<T>
@@ -279,6 +289,7 @@ extension CashFlowStatement {
 		public let financingCashFlow: TimeSeries<T>
 		public let netCashFlow: TimeSeries<T>
 		public let freeCashFlow: TimeSeries<T>
+		public let workingCapitalChanges: TimeSeries<T>
 	}
 
 	/// Creates a materialized version with all metrics pre-computed.
@@ -288,14 +299,13 @@ extension CashFlowStatement {
 		return Materialized(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: operatingAccounts,
-			investingAccounts: investingAccounts,
-			financingAccounts: financingAccounts,
+			accounts: accounts,
 			operatingCashFlow: operatingCashFlow,
 			investingCashFlow: investingCashFlow,
 			financingCashFlow: financingCashFlow,
 			netCashFlow: netCashFlow,
-			freeCashFlow: freeCashFlow
+			freeCashFlow: freeCashFlow,
+			workingCapitalChanges: workingCapitalChanges
 		)
 	}
 }
@@ -307,34 +317,27 @@ extension CashFlowStatement: Codable {
 	private enum CodingKeys: String, CodingKey {
 		case entity
 		case periods
-		case operatingAccounts
-		case investingAccounts
-		case financingAccounts
+		case accounts
 	}
 
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 		try container.encode(entity, forKey: .entity)
 		try container.encode(periods, forKey: .periods)
-		try container.encode(operatingAccounts, forKey: .operatingAccounts)
-		try container.encode(investingAccounts, forKey: .investingAccounts)
-		try container.encode(financingAccounts, forKey: .financingAccounts)
+		try container.encode(accounts, forKey: .accounts)
 	}
 
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		let entity = try container.decode(Entity.self, forKey: .entity)
 		let periods = try container.decode([Period].self, forKey: .periods)
-		let operatingAccounts = try container.decode([Account<T>].self, forKey: .operatingAccounts)
-		let investingAccounts = try container.decode([Account<T>].self, forKey: .investingAccounts)
-		let financingAccounts = try container.decode([Account<T>].self, forKey: .financingAccounts)
+		let accounts = try container.decode([Account<T>].self, forKey: .accounts)
 
 		try self.init(
 			entity: entity,
 			periods: periods,
-			operatingAccounts: operatingAccounts,
-			investingAccounts: investingAccounts,
-			financingAccounts: financingAccounts
+			accounts: accounts
 		)
 	}
 }
+
