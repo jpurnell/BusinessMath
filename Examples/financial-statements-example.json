@@ -1,0 +1,241 @@
+{
+  "entity": {
+    "id": "AAPL",
+    "primaryType": "ticker",
+    "name": "Apple Inc."
+  },
+  "fiscalYear": 2024,
+  "periods": [
+    {
+      "type": "quarter",
+      "year": 2024,
+      "quarter": 1
+    },
+    {
+      "type": "quarter",
+      "year": 2024,
+      "quarter": 2
+    },
+    {
+      "type": "quarter",
+      "year": 2024,
+      "quarter": 3
+    },
+    {
+      "type": "quarter",
+      "year": 2024,
+      "quarter": 4
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Product Revenue",
+      "incomeStatementRole": "productRevenue",
+      "values": [85600000000, 89300000000, 94900000000, 119600000000]
+    },
+    {
+      "name": "Service Revenue",
+      "incomeStatementRole": "serviceRevenue",
+      "values": [23100000000, 24200000000, 22300000000, 23100000000]
+    },
+    {
+      "name": "Cost of Goods Sold",
+      "incomeStatementRole": "costOfGoodsSold",
+      "values": [54000000000, 56300000000, 58800000000, 71200000000]
+    },
+    {
+      "name": "Cost of Services",
+      "incomeStatementRole": "costOfServices",
+      "values": [6400000000, 6700000000, 6200000000, 6400000000]
+    },
+    {
+      "name": "Research & Development",
+      "incomeStatementRole": "researchDevelopment",
+      "values": [7900000000, 8100000000, 8000000000, 8300000000]
+    },
+    {
+      "name": "Sales & Marketing",
+      "incomeStatementRole": "salesMarketing",
+      "values": [6400000000, 6600000000, 6500000000, 6900000000]
+    },
+    {
+      "name": "General & Administrative",
+      "incomeStatementRole": "generalAdministrative",
+      "values": [2500000000, 2600000000, 2500000000, 2700000000]
+    },
+    {
+      "name": "Depreciation & Amortization",
+      "incomeStatementRole": "depreciationAmortization",
+      "cashFlowRole": "depreciationAmortizationAddback",
+      "values": [2800000000, 2900000000, 2800000000, 3000000000]
+    },
+    {
+      "name": "Interest Expense",
+      "incomeStatementRole": "interestExpense",
+      "values": [900000000, 950000000, 920000000, 980000000]
+    },
+    {
+      "name": "Tax Expense",
+      "incomeStatementRole": "taxExpense",
+      "values": [4200000000, 4500000000, 5100000000, 7800000000]
+    },
+    {
+      "name": "Cash and Cash Equivalents",
+      "balanceSheetRole": "cashAndEquivalents",
+      "values": [28900000000, 32100000000, 30500000000, 40100000000]
+    },
+    {
+      "name": "Short-Term Investments",
+      "balanceSheetRole": "shortTermInvestments",
+      "values": [31600000000, 29800000000, 32100000000, 35900000000]
+    },
+    {
+      "name": "Accounts Receivable",
+      "balanceSheetRole": "accountsReceivable",
+      "cashFlowRole": "changeInReceivables",
+      "values": [26300000000, 28100000000, 30200000000, 33800000000]
+    },
+    {
+      "name": "Inventory",
+      "balanceSheetRole": "inventory",
+      "cashFlowRole": "changeInInventory",
+      "values": [6300000000, 6800000000, 7200000000, 6500000000]
+    },
+    {
+      "name": "Other Current Assets",
+      "balanceSheetRole": "otherCurrentAssets",
+      "values": [13700000000, 14200000000, 14800000000, 15300000000]
+    },
+    {
+      "name": "Property, Plant & Equipment",
+      "balanceSheetRole": "propertyPlantEquipment",
+      "values": [43700000000, 44200000000, 44800000000, 45300000000]
+    },
+    {
+      "name": "Intangible Assets",
+      "balanceSheetRole": "intangibleAssets",
+      "values": [8900000000, 8700000000, 8500000000, 8300000000]
+    },
+    {
+      "name": "Goodwill",
+      "balanceSheetRole": "goodwill",
+      "values": [0, 0, 0, 0]
+    },
+    {
+      "name": "Other Non-Current Assets",
+      "balanceSheetRole": "otherNonCurrentAssets",
+      "values": [194700000000, 197200000000, 199800000000, 202300000000]
+    },
+    {
+      "name": "Accounts Payable",
+      "balanceSheetRole": "accountsPayable",
+      "cashFlowRole": "changeInPayables",
+      "values": [58100000000, 60200000000, 62800000000, 65400000000]
+    },
+    {
+      "name": "Accrued Expenses",
+      "balanceSheetRole": "accruedExpenses",
+      "values": [26700000000, 27800000000, 28900000000, 30100000000]
+    },
+    {
+      "name": "Deferred Revenue",
+      "balanceSheetRole": "deferredRevenue",
+      "cashFlowRole": "changeInDeferredRevenue",
+      "values": [8100000000, 8400000000, 8700000000, 9000000000]
+    },
+    {
+      "name": "Short-Term Debt",
+      "balanceSheetRole": "shortTermDebt",
+      "values": [15800000000, 16200000000, 16600000000, 17000000000]
+    },
+    {
+      "name": "Current Portion of Long-Term Debt",
+      "balanceSheetRole": "currentPortionLongTermDebt",
+      "values": [11100000000, 11400000000, 11700000000, 12000000000]
+    },
+    {
+      "name": "Long-Term Debt",
+      "balanceSheetRole": "longTermDebt",
+      "values": [95300000000, 96800000000, 98300000000, 99800000000]
+    },
+    {
+      "name": "Deferred Tax Liabilities",
+      "balanceSheetRole": "deferredTaxLiabilities",
+      "values": [0, 0, 0, 0]
+    },
+    {
+      "name": "Other Non-Current Liabilities",
+      "balanceSheetRole": "otherNonCurrentLiabilities",
+      "values": [48900000000, 50100000000, 51300000000, 52500000000]
+    },
+    {
+      "name": "Common Stock",
+      "balanceSheetRole": "commonStock",
+      "values": [73800000000, 73800000000, 73800000000, 73800000000]
+    },
+    {
+      "name": "Retained Earnings",
+      "balanceSheetRole": "retainedEarnings",
+      "values": [4900000000, 8200000000, 14300000000, 23500000000]
+    },
+    {
+      "name": "Accumulated Other Comprehensive Income",
+      "balanceSheetRole": "accumulatedOCI",
+      "values": [-11400000000, -11600000000, -11800000000, -12000000000]
+    },
+    {
+      "name": "Capital Expenditures",
+      "cashFlowRole": "capitalExpenditures",
+      "values": [-2800000000, -2900000000, -2700000000, -3100000000]
+    },
+    {
+      "name": "Acquisitions",
+      "cashFlowRole": "acquisitions",
+      "values": [0, -500000000, 0, 0]
+    },
+    {
+      "name": "Purchases of Investments",
+      "cashFlowRole": "purchasesOfInvestments",
+      "values": [-28100000000, -29300000000, -31200000000, -33400000000]
+    },
+    {
+      "name": "Sales of Investments",
+      "cashFlowRole": "salesOfInvestments",
+      "values": [26700000000, 27900000000, 29800000000, 31900000000]
+    },
+    {
+      "name": "Proceeds from Debt",
+      "cashFlowRole": "proceedsFromDebt",
+      "values": [0, 5000000000, 0, 0]
+    },
+    {
+      "name": "Repayment of Debt",
+      "cashFlowRole": "repaymentOfDebt",
+      "values": [-3200000000, -3400000000, -3600000000, -3800000000]
+    },
+    {
+      "name": "Share Repurchases",
+      "cashFlowRole": "shareRepurchases",
+      "values": [-18000000000, -19000000000, -20000000000, -21000000000]
+    },
+    {
+      "name": "Dividends Paid",
+      "cashFlowRole": "dividendsPaid",
+      "values": [-3800000000, -3900000000, -4000000000, -4100000000]
+    },
+    {
+      "name": "Stock-Based Compensation",
+      "incomeStatementRole": "stockBasedCompensation",
+      "cashFlowRole": "stockBasedCompensationAddback",
+      "values": [2700000000, 2800000000, 2900000000, 3000000000]
+    }
+  ],
+  "metadata": {
+    "sourceFormat": "JSON",
+    "currency": "USD",
+    "scale": "actual",
+    "dataSource": "Example Financial Statements",
+    "createdDate": "2024-01-15",
+    "notes": "This is example data for demonstration purposes. Values are illustrative and may not represent actual Apple Inc. financial data."
+  }
+}
