@@ -116,8 +116,7 @@ public struct ProfitabilityIndexTool: MCPToolHandler, Sendable {
         let pi = profitabilityIndex(rate: rate, cashFlows: cashFlows)
 
         // Calculate NPV for context
-		let npValue = try? npv(discountRate: rate, cashFlows: cashFlows)
-		let npvValue = (npValue ?? 0.0)
+		let npvValue = try calculateNPV(discountRate: rate, cashFlows: cashFlows)
 
         // Calculate PV components
         var pvPositive = 0.0

@@ -747,6 +747,212 @@ public func debtServiceCoverage<T: Real & Sendable>(
 	return operatingIncome / totalDebtService
 }
 
+/// Debt Service Coverage Ratio (DSCR) with automatic derivation from financial statements.
+///
+/// **Recommended approach** - uses aggregated debt and interest from financial statements.
+///
+/// This high-level convenience overload automatically:
+/// 1. Uses `balanceSheet.interestBearingDebt` for total debt (includes LT + CPLTD + short-term)
+/// 2. Finds interest expense in the income statement
+/// 3. Derives principal payments from period-over-period debt changes
+/// 4. Calculates DSCR
+///
+/// This is the simplest and most common usage pattern.
+///
+/// ## Example
+///
+/// ```swift
+/// // Simple! Just pass the financial statements
+/// let dscr = try debtServiceCoverage(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
+/// ```
+///
+/// ## See Also
+///
+/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)`` - Manual specification
+/// - ``debtServiceCoverage(incomeStatement:balanceSheet:debtAccount:interestAccount:)`` - Custom accounts
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing operating income and interest expense
+///   - balanceSheet: Balance sheet containing debt accounts
+/// - Returns: Time series of debt service coverage ratios
+/// - Throws: ``FinancialRatioError/missingExpense(_:)`` if interest expense not found
+public func debtServiceCoverage<T: Real & Sendable>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>
+) throws -> TimeSeries<T> {
+	// Find interest expense in income statement
+	guard let interestAccount = incomeStatement.expenseAccounts.first(where: {
+		$0.name.localizedCaseInsensitiveContains("Interest")
+	}) else {
+		throw FinancialRatioError.missingExpense("Interest Expense")
+	}
+
+	// Use aggregated debt from balance sheet (includes LT + CPLTD + short-term)
+	let totalDebtTS = balanceSheet.interestBearingDebt
+
+	// Derive principal payments from period-over-period debt reduction
+	// debt.diff(lag: 1) returns: currentBalance - previousBalance
+	// For declining debt (repayment), this is negative, so we negate to get positive payments
+	let debtChanges = totalDebtTS.diff(lag: 1)
+	let principalPayments = debtChanges.mapValues { -$0 }
+
+	// Interest payments from income statement
+	let interestPayments = interestAccount.timeSeries
+
+	// Calculate DSCR using the manual payment overload
+	return debtServiceCoverage(
+		incomeStatement: incomeStatement,
+		principalPayments: principalPayments,
+		interestPayments: interestPayments
+	)
+}
+
+/// Debt Service Coverage Ratio (DSCR) with custom account specification.
+///
+/// Advanced overload that automatically calculates principal payments from
+/// period-over-period changes in a specific debt account balance. Use this when
+/// you need to specify custom debt or interest accounts rather than using the
+/// aggregated values from financial statements.
+///
+/// ## Principal Payment Derivation
+///
+/// Principal payments are calculated as the reduction in debt balance from one
+/// period to the next:
+///
+/// ```
+/// Principal Payment(t) = Debt Balance(t-1) - Debt Balance(t)
+/// ```
+///
+/// **Key behaviors:**
+/// - **Debt decreases** (repayment): Principal payments are positive
+/// - **Debt increases** (new borrowing): Principal payments are negative
+/// - **Debt unchanged**: Principal payments are zero
+///
+/// This correctly reflects cash flows:
+/// - Positive principal payments reduce cash (debt repayment)
+/// - Negative principal payments increase cash (new borrowing)
+///
+/// ## Which Debt Account to Use?
+///
+/// **Critical:** You should typically use **total debt** (long-term + current portion),
+/// not just a single debt account, because:
+///
+/// **❌ Current Portion of Long-term Debt (CPLTD) alone:**
+/// - Changes reflect BOTH principal payments AND reclassification
+/// - Example: $5k payment reduces CPLTD, but $5k reclassification increases it
+/// - Net change ≠ principal payment (unreliable!)
+///
+/// **✅ Total Debt (LT + CPLTD):**
+/// - Reclassification is internal (no net change to total)
+/// - Changes reflect ONLY actual principal payments
+/// - Net change = principal payment (reliable!)
+///
+/// **Recommended approach:**
+/// ```swift
+/// // Option 1: Use balance sheet's aggregated debt (best)
+/// let totalDebtTS = balanceSheet.interestBearingDebt  // Includes all debt
+/// let totalDebtAccount = Account(
+///     name: "Total Interest-Bearing Debt",
+///     timeSeries: totalDebtTS,
+///     role: .longTermDebt
+/// )
+///
+/// // Option 2: If balance sheet has a single "Total Debt" account
+/// let totalDebtAccount = balanceSheet.liabilityAccounts.first {
+///     $0.name.contains("Total Debt")
+/// }!
+///
+/// // Then compute DSCR
+/// let dscr = debtServiceCoverage(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     debtAccount: totalDebtAccount,
+///     interestAccount: interestAccount
+/// )
+/// ```
+///
+/// ## When to Use This Overload
+///
+/// Use this convenience method when:
+/// - ✅ Debt balance changes on balance sheet represent actual principal payments
+/// - ✅ No refinancing or debt restructuring occurred
+/// - ✅ Off-balance-sheet debt is not significant
+///
+/// Use the explicit `principalPayments` parameter when:
+/// - ❌ Refinancing occurred (debt stays flat but payments were made)
+/// - ❌ Debt was acquired through M&A (not organic borrowing)
+/// - ❌ Off-balance-sheet obligations need to be included
+/// - ❌ Principal schedule doesn't match balance sheet changes
+///
+/// ## Example
+///
+/// ```swift
+/// // Use aggregated total debt (includes LT + current portion)
+/// let totalDebtTS = balanceSheet.interestBearingDebt
+/// let debtAccount = Account(
+///     name: "Total Interest-Bearing Debt",
+///     timeSeries: totalDebtTS,
+///     role: .longTermDebt
+/// )
+///
+/// // Find interest expense account
+/// let interestAccount = incomeStatement.expenseAccounts.first {
+///     $0.name.contains("Interest")
+/// }!
+///
+/// // Automatically derives principal from total debt changes
+/// let dscr = debtServiceCoverage(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet,
+///     debtAccount: debtAccount,
+///     interestAccount: interestAccount
+/// )
+///
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+/// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
+/// ```
+///
+/// ## See Also
+///
+/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
+/// - ``solvencyRatios(incomeStatement:balanceSheet:debtAccount:interestAccount:)``
+///
+/// - Parameters:
+///   - incomeStatement: Income statement containing operating income
+///   - balanceSheet: Balance sheet containing the debt account
+///   - debtAccount: Debt liability account to derive principal payments from
+///   - interestAccount: Interest expense account from income statement
+/// - Returns: Time series of debt service coverage ratios
+public func debtServiceCoverage<T: Real & Sendable>(
+	incomeStatement: IncomeStatement<T>,
+	balanceSheet: BalanceSheet<T>,
+	debtAccount: Account<T>,
+	interestAccount: Account<T>
+) -> TimeSeries<T> {
+	// Derive principal payments from period-over-period debt reduction
+	// debt.diff(lag: 1) returns: currentBalance - previousBalance
+	// For declining debt (repayment), this is negative, so we negate to get positive payments
+	// For increasing debt (new borrowing), this becomes negative payments (cash inflow)
+	let debtChanges = debtAccount.timeSeries.diff(lag: 1)
+	let principalPayments = debtChanges.mapValues { -$0 }  // Negate: reduction = payment
+
+	// Interest payments from income statement
+	let interestPayments = interestAccount.timeSeries
+
+	// Delegate to the main implementation
+	return debtServiceCoverage(
+		incomeStatement: incomeStatement,
+		principalPayments: principalPayments,
+		interestPayments: interestPayments
+	)
+}
+
 // MARK: - Helper Functions
 
 // Note: averageTimeSeries() is defined in TimeSeriesExtensions.swift
@@ -1144,18 +1350,29 @@ public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// Calculate all solvency ratios at once.
 ///
 /// Convenience function that computes all key solvency metrics and returns them
-/// in a single structure. Gracefully handles missing accounts by returning nil for
-/// ratios that cannot be calculated.
+/// in a single structure. **NEW:** Automatically derives debt service coverage from
+/// balance sheet debt changes if manual payment data is not provided.
+///
+/// ## Automatic DSCR Calculation
+///
+/// When called with just `incomeStatement` and `balanceSheet`:
+/// - **Automatically calculates DSCR** using `balanceSheet.interestBearingDebt`
+/// - Principal payments derived from period-over-period debt changes
+/// - Interest expense found automatically in income statement
+/// - No manual account extraction needed!
+///
+/// To use manual payment data instead, pass `principalPayments` and `interestPayments`.
 ///
 /// ## Optional Ratios
 ///
-/// Ratios are nil if required accounts are missing:
-/// - `interestCoverage`: Requires interest expense account (not all companies have debt)
-/// - `debtServiceCoverage`: Requires principal and interest payment data (optional parameter)
+/// Ratios are nil only if required accounts are missing:
+/// - `interestCoverage`: nil if no interest expense (debt-free companies)
+/// - `debtServiceCoverage`: nil if no interest expense OR debt accounts
 ///
 /// ## Example
 ///
 /// ```swift
+/// // Simple usage - DSCR automatically calculated!
 /// let solvency = solvencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
@@ -1164,19 +1381,21 @@ public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// // Leverage ratios are always available
 /// print("Debt-to-Equity: \(solvency.debtToEquity[q1]!)")
 ///
-/// // Interest coverage may be nil for debt-free companies
+/// // Coverage ratios automatically calculated (if debt exists)
 /// if let coverage = solvency.interestCoverage {
 ///     print("Interest Coverage: \(coverage[q1]!)x")
-/// } else {
-///     print("No interest expense (debt-free company)")
+/// }
+///
+/// if let dscr = solvency.debtServiceCoverage {
+///     print("DSCR: \(dscr[q1]!)x")  // ← Now automatically available!
 /// }
 /// ```
 ///
 /// - Parameters:
 ///   - incomeStatement: Income statement containing operating income and optionally interest
 ///   - balanceSheet: Balance sheet containing assets, liabilities, and equity
-///   - principalPayments: Optional time series of principal payments
-///   - interestPayments: Optional time series of interest payments
+///   - principalPayments: Optional manual principal payments (overrides automatic derivation)
+///   - interestPayments: Optional manual interest payments (overrides automatic derivation)
 /// - Returns: Structure containing all solvency ratios (some may be nil)
 public func solvencyRatios<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
@@ -1186,16 +1405,21 @@ public func solvencyRatios<T: Real & Sendable>(
 ) -> SolvencyRatios<T> {
 	let interestCoverageRatio = try? interestCoverage(incomeStatement: incomeStatement)
 
-	// Calculate debt service coverage if payment data provided
+	// Calculate debt service coverage
 	let dscr: TimeSeries<T>?
 	if let principal = principalPayments, let interest = interestPayments {
+		// Manual payment data provided - use it
 		dscr = debtServiceCoverage(
 			incomeStatement: incomeStatement,
 			principalPayments: principal,
 			interestPayments: interest
 		)
 	} else {
-		dscr = nil
+		// No manual data - automatically derive from balance sheet
+		dscr = try? debtServiceCoverage(
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet
+		)
 	}
 
 	return SolvencyRatios(
@@ -1239,17 +1463,21 @@ public func solvencyRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
-/// // Find the long-term debt account
-/// let debtAccount = balanceSheet.liabilityAccounts.first {
-///     $0.name.contains("Long-term Debt")
-/// }!
+/// // Use aggregated total debt (includes LT + current portion)
+/// // This correctly captures principal payments by tracking total debt changes
+/// let totalDebtTS = balanceSheet.interestBearingDebt
+/// let debtAccount = Account(
+///     name: "Total Interest-Bearing Debt",
+///     timeSeries: totalDebtTS,
+///     role: .longTermDebt
+/// )
 ///
 /// // Interest expense from income statement
 /// let interestAccount = incomeStatement.expenseAccounts.first {
 ///     $0.name.contains("Interest")
 /// }!
 ///
-/// // Automatically derives principal payments from debt reduction
+/// // Automatically derives principal payments from total debt changes
 /// let solvency = solvencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,

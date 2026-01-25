@@ -179,6 +179,36 @@ import RealModule
             Issue.record("Expected BusinessMathError, got \(type(of: error))")
         }
     }
+	
+	@Test("E004: Numerical Instability - Manual detection")
+	  func numericalInstabilityManual() throws {
+		  // Source: ErrorHandlingGuide.md - Numerical Instability section
+
+		  // Simulate detecting overflow in compound growth
+		  let base = 1e200
+		  let rate = 0.99
+		  let periods = 1000
+
+		  // Manually check for potential overflow and throw
+		  do {
+			  // Detect if result would overflow
+			  if base > Double.greatestFiniteMagnitude / 2 {
+				  throw BusinessMathError.numericalInstability(
+					  message: "Value overflow detected in compound growth calculation",
+					  suggestions: [
+						  "Use logarithmic transformation for large numbers",
+						  "Scale inputs to a smaller range",
+						  "Consider using higher precision types"
+					  ]
+				  )
+			  }
+		  } catch let error as BusinessMathError {
+			  if case .numericalInstability(let message, let suggestions) = error {
+				  #expect(message.contains("overflow"))
+				  #expect(!suggestions.isEmpty)
+			  }
+		  }
+	  }
 
     // MARK: - Data Quality Tests
 
@@ -337,7 +367,7 @@ import RealModule
             Issue.record("Expected error to be thrown")
         } catch let error as BusinessMathError {
             switch error {
-            case .invalidInput(_, let value, let expectedRange):
+            case .invalidInput(_, _, let expectedRange):
 					#expect(expectedRange != nil)
 			default:
                 Issue.record("Expected .invalidInput error, got \(error)")
@@ -518,7 +548,7 @@ struct ErrorHandlingAdditionalTests {
 			Issue.record("Expected invalidInput error for zero cost")
 		} catch let error as BusinessMathError {
 			switch error {
-			case .invalidInput(let message, let value, let expectedRange):
+			case .invalidInput(let message, let value, _):
 				#expect(message.localizedCaseInsensitiveContains("positive"))
 				#expect(value == "0.0")
 			default:
@@ -576,7 +606,7 @@ struct ErrorHandlingAdditionalTests {
 			Issue.record("Expected invalidInput error for empty cash flows")
 		} catch let error as BusinessMathError {
 			switch error {
-			case .invalidInput(_, let value, let expectedRange):
+			case .invalidInput(_, let value, _):
 				#expect(value == "0")
 			default:
 				Issue.record("Expected .invalidInput")

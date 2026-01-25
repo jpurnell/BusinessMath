@@ -173,7 +173,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
         config: OptimizationConfig = .default
     ) -> AsyncThrowingStream<AsyncOptimizationProgress<T>, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            Task { @Sendable in
                 // Generate starting points
                 let startingPoints = generateStartingPoints(
                     initialGuess: initialGuess,
@@ -183,7 +183,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
                 // Launch parallel optimizations
                 await withThrowingTaskGroup(of: Void.self) { group in
                     for start in startingPoints {
-                        group.addTask {
+                        group.addTask { @Sendable in
                             // Stream progress from this optimizer
                             for try await progress in self.baseOptimizer.optimizeWithProgress(
                                 objective: objective,

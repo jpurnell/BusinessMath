@@ -194,7 +194,7 @@ public actor ModelProfiler {
                 category: measurements.first?.category,
                 executionCount: measurements.count,
                 totalTime: durations.reduce(0, +),
-                averageTime: average(durations),
+                averageTime: mean(durations),
 				stdDevTime: stdDev(durations),
                 minTime: durations.min() ?? 0,
                 maxTime: durations.max() ?? 0,
@@ -254,20 +254,6 @@ public actor ModelProfiler {
 	public func setWarningThreshold(_ threshold: TimeInterval) async {
 		self.warningThreshold = threshold
 	}
-
-    // MARK: - Statistics Helpers
-
-    private func average(_ values: [TimeInterval]) -> TimeInterval {
-        guard !values.isEmpty else { return 0 }
-        return values.reduce(0, +) / Double(values.count)
-    }
-
-    private func stdDev(_ values: [TimeInterval]) -> TimeInterval {
-        guard values.count > 1 else { return 0 }
-        let avg = average(values)
-        let variance = values.reduce(0) { $0 + pow($1 - avg, 2) } / Double(values.count - 1)
-        return sqrt(variance)
-    }
 
     private func currentMemoryUsage() -> Int64 {
         // Memory tracking using Mach APIs can crash in Swift Playgrounds

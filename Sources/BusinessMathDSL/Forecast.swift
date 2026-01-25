@@ -136,25 +136,25 @@ public struct Forecast {
 
     /// Calculate projected EBITDA for all years
     public var projectedEBITDA: [Double] {
-        guard let revenue = revenue, let ebitda = ebitda else { return [] }
+        guard let ebitda = ebitda else { return [] }
         return projectedRevenues.map { $0 * ebitda.margin }
     }
 
     /// Calculate projected depreciation for all years
     public var projectedDepreciation: [Double] {
-        guard let revenue = revenue, let depreciation = depreciation else { return [] }
+        guard let depreciation = depreciation else { return [] }
         return projectedRevenues.map { $0 * depreciation.percentage }
     }
 
     /// Calculate projected CapEx for all years
     public var projectedCapEx: [Double] {
-        guard let revenue = revenue, let capex = capex else { return [] }
+        guard let capex = capex else { return [] }
         return projectedRevenues.map { $0 * capex.percentage }
     }
 
     /// Calculate working capital changes for all years
     public var workingCapitalChanges: [Double] {
-        guard let revenue = revenue, let wc = workingCapital else { return [] }
+        guard let wc = workingCapital else { return [] }
 
         let revenues = projectedRevenues
         var changes: [Double] = []

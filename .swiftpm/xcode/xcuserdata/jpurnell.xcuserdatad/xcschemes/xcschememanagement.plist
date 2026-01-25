@@ -4,6 +4,731 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>01-mon-data-tables (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>42</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>87</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>88</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>89</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>90</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>98</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>43</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>44</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>45</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>62</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>63</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>64</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>65</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>73</integer>
+		</dict>
+		<key>01-mon-data-tables (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>34</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>30</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>75</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>76</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>77</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>78</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>95</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>31</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>32</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>33</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>50</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>51</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>52</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>53</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>70</integer>
+		</dict>
+		<key>01-mon-getting-started (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>86</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>46</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>91</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>92</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>93</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>94</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>99</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>47</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>48</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>49</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>66</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>67</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>68</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>69</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>74</integer>
+		</dict>
+		<key>03-wed-financial-ratios (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>82</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>34</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>79</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>80</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>81</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>82</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>96</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>35</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>36</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>37</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>54</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>55</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>56</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>57</integer>
+		</dict>
+		<key>03-wed-time-series (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>71</integer>
+		</dict>
+		<key>03-wed-time-series (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>41</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>38</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>83</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>84</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>85</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>86</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>97</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>39</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>40</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>41</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>58</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>59</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>60</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>61</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>72</integer>
+		</dict>
+		<key>04-fri-case-retirement (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>78</integer>
+		</dict>
+		<key>1.1-GettingStarted (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>22</integer>
+		</dict>
+		<key>1.2-TimeSeries (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>88</integer>
+		</dict>
+		<key>1.3-TimeValueOfMoney (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>21</integer>
+		</dict>
+		<key>1.4-FluentAPIGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>48</integer>
+		</dict>
+		<key>1.5-TemplateGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>61</integer>
+		</dict>
+		<key>1.6-DebuggingGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>69</integer>
+		</dict>
+		<key>1.7-ErrorHandlingGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>79</integer>
+		</dict>
+		<key>2.1-DataTableAnalysis (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>25</integer>
+		</dict>
+		<key>2.1-DataTableAnalysis (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>85</integer>
+		</dict>
+		<key>2.2-FinancialRatiosGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>43</integer>
+		</dict>
+		<key>2.3-RiskAnalyticsGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>28</integer>
+		</dict>
+		<key>2.4-VisualizationGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>23</integer>
+		</dict>
+		<key>2.5-ModelValidationGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>56</integer>
+		</dict>
+		<key>3.1-GrowthModeling (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>93</integer>
+		</dict>
+		<key>3.10-BondValuationGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>12</integer>
+		</dict>
+		<key>3.11-CreditDerivativesGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>73</integer>
+		</dict>
+		<key>3.12-RealOptionsGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>59</integer>
+		</dict>
+		<key>3.13-EquityFinancingGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>44</integer>
+		</dict>
+		<key>3.14-DebtAndFinancingGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>39</integer>
+		</dict>
+		<key>3.15-DataIngestionGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>45</integer>
+		</dict>
+		<key>3.16-FinancialStatementsReference (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>35</integer>
+		</dict>
+		<key>3.2-ForecastingGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>62</integer>
+		</dict>
+		<key>3.3-BuildingRevenueModel (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>74</integer>
+		</dict>
+		<key>3.4-BuildingFinancialReports (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>63</integer>
+		</dict>
+		<key>3.5-FinancialStatementsGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>77</integer>
+		</dict>
+		<key>3.6-LeaseAccountingGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>76</integer>
+		</dict>
+		<key>3.7-LoanAmortization (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>58</integer>
+		</dict>
+		<key>3.8-InvestmentAnalysis (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>80</integer>
+		</dict>
+		<key>3.9-EquityValuationGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>7</integer>
+		</dict>
+		<key>4.1-MonteCarloTimeSeriesGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>70</integer>
+		</dict>
+		<key>4.2-ScenarioAnalysisGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>6</integer>
+		</dict>
+		<key>5.1-OptimizationGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>29</integer>
+		</dict>
+		<key>5.1.5-MultivariateOptimizerGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>47</integer>
+		</dict>
+		<key>5.10-ParallelOptimization (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>81</integer>
+		</dict>
+		<key>5.11-PerformanceBenchmarking (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>9</integer>
+		</dict>
+		<key>5.12-SparseMatrix (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>64</integer>
+		</dict>
+		<key>5.13-MultiPeriod (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>83</integer>
+		</dict>
+		<key>5.14-RobustOptimization (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>94</integer>
+		</dict>
+		<key>5.15-InequalityConstraints (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>30</integer>
+		</dict>
+		<key>5.16-GPUAccelerationTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>11</integer>
+		</dict>
+		<key>5.17-DifferentialEvolutionTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>10</integer>
+		</dict>
+		<key>5.18-IslandModelTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>19</integer>
+		</dict>
+		<key>5.19-ParticleSwarmOptimizationTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>89</integer>
+		</dict>
+		<key>5.2-PortfolioOptimizationGuide (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>60</integer>
+		</dict>
+		<key>5.20-LBFGSOptimizationTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>8</integer>
+		</dict>
+		<key>5.21-ConjugateGradientTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>15</integer>
+		</dict>
+		<key>5.22-SimulatedAnnealingTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>40</integer>
+		</dict>
+		<key>5.23-NelderMeadTutorial (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>67</integer>
+		</dict>
+		<key>5.3-CoreOptimization (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>72</integer>
+		</dict>
+		<key>5.4-VectorOperations (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>31</integer>
+		</dict>
+		<key>5.5-MultivariateOptimization (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>52</integer>
+		</dict>
+		<key>5.6-ConstrainedOptimization (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>75</integer>
+		</dict>
+		<key>5.7-BusinessOptimization.md (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>92</integer>
+		</dict>
+		<key>5.8-IntegerProgramming (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>53</integer>
+		</dict>
+		<key>5.9-AdaptiveSelection (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>20</integer>
+		</dict>
+		<key>AsyncLinearProgrammingExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>403</integer>
+		</dict>
+		<key>AsyncLinearProgrammingExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>404</integer>
+		</dict>
+		<key>AsyncLinearProgrammingExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>405</integer>
+		</dict>
+		<key>AsyncLinearProgrammingExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>406</integer>
+		</dict>
+		<key>AsyncLinearProgrammingExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>84</integer>
+		</dict>
+		<key>AsyncOptimizationBenchmarks (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>408</integer>
+		</dict>
+		<key>AsyncOptimizationBenchmarks (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>409</integer>
+		</dict>
+		<key>AsyncOptimizationBenchmarks (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>410</integer>
+		</dict>
+		<key>AsyncOptimizationBenchmarks (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>411</integer>
+		</dict>
+		<key>AsyncOptimizationBenchmarks (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>17</integer>
+		</dict>
+		<key>AyncGradientDescentExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>398</integer>
+		</dict>
+		<key>AyncGradientDescentExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>399</integer>
+		</dict>
+		<key>AyncGradientDescentExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>400</integer>
+		</dict>
+		<key>AyncGradientDescentExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>401</integer>
+		</dict>
+		<key>AyncGradientDescentExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>54</integer>
+		</dict>
 		<key>BusinessMath-Package.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -29,120 +754,1735 @@
 			<key>orderHint</key>
 			<integer>4</integer>
 		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>100</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>171</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>172</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>173</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>174</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>231</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>246</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>247</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 17.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>248</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 18.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>249</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 19.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>306</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>101</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 20.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>321</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 21.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>322</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 22.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>323</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 23.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>324</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 24.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>381</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>102</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>103</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>104</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>105</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>106</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>107</integer>
+		</dict>
+		<key>ConstrainedOptimizationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>108</integer>
+		</dict>
 		<key>ConstrainedOptimizationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>10</integer>
+			<integer>65</integer>
 		</dict>
 		<key>DocumentationVerifier (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>13</integer>
+			<integer>16</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>109</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>253</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>307</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>325</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>326</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>327</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>328</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>382</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>175</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>176</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>177</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>178</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>232</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>250</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>251</integer>
+		</dict>
+		<key>DriverOptimizationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>252</integer>
 		</dict>
 		<key>DriverOptimizationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>17</integer>
+			<integer>25</integer>
 		</dict>
 		<key>Example Tester (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>15</integer>
+			<integer>18</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>110</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>179</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>180</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>181</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>182</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>233</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>254</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>255</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 17.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>256</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 18.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>257</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 19.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>308</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>111</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 20.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>329</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 21.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>330</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 22.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>331</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 23.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>332</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 24.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>383</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>112</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>113</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>114</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>115</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>116</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>117</integer>
+		</dict>
+		<key>ExponentialDecayValidationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>118</integer>
 		</dict>
 		<key>ExponentialDecayValidationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>11</integer>
+			<integer>37</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>119</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>183</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>184</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>185</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>186</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>234</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>258</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>259</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 17.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>260</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 18.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>261</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 19.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>309</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>120</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 20.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>333</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 21.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>334</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 22.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>335</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 23.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>336</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 24.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>384</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>121</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>122</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>123</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>124</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>125</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>126</integer>
+		</dict>
+		<key>FakeDataSimulationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>127</integer>
 		</dict>
 		<key>FakeDataSimulationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>18</integer>
+			<integer>87</integer>
+		</dict>
+		<key>GPU Acceleration (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>396</integer>
 		</dict>
 		<key>GPU Acceleration (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>29</integer>
+			<integer>57</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>128</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>265</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>310</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>337</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>338</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>339</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>340</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>385</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>187</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>188</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>189</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>190</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>235</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>262</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>263</integer>
+		</dict>
+		<key>GoalSeekExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>264</integer>
 		</dict>
 		<key>GoalSeekExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>12</integer>
+			<integer>33</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>129</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>269</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>311</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>341</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>342</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>343</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>344</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>386</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>191</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>192</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>193</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>194</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>236</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>266</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>267</integer>
+		</dict>
+		<key>LinearRegressionValidationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>268</integer>
 		</dict>
 		<key>LinearRegressionValidationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>19</integer>
+			<integer>68</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>130</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>273</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>312</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>345</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>346</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>347</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>348</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>387</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>195</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>196</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>197</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>198</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>237</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>270</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>271</integer>
+		</dict>
+		<key>OptimizationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>272</integer>
 		</dict>
 		<key>OptimizationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>7</integer>
+			<integer>90</integer>
 		</dict>
-		<key>PolynomialRegressionValidationExample (Playground).xcscheme</key>
+		<key>OptimizationMacrosExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>9</integer>
+			<integer>46</integer>
 		</dict>
-		<key>PortfolioOptimizationExample (Playground).xcscheme</key>
+		<key>ParallelOptimizationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>21</integer>
+			<integer>50</integer>
 		</dict>
-		<key>ProductionPlanningExample (Playground).xcscheme</key>
+		<key>Part1-Basics (Playground) 1.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>8</integer>
+			<integer>101</integer>
 		</dict>
-		<key>QuickStart (Playground).xcscheme</key>
+		<key>Part1-Basics (Playground) 2.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>14</integer>
+			<integer>102</integer>
 		</dict>
-		<key>ReidsRaisinsDemo (Playground) 1.xcscheme</key>
+		<key>Part1-Basics (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>103</integer>
+		</dict>
+		<key>Part1-Basics (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>104</integer>
+		</dict>
+		<key>Part1-Basics (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>100</integer>
+		</dict>
+		<key>Part2-Analysis (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>106</integer>
+		</dict>
+		<key>Part2-Analysis (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>107</integer>
+		</dict>
+		<key>Part2-Analysis (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>108</integer>
+		</dict>
+		<key>Part2-Analysis (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>109</integer>
+		</dict>
+		<key>Part2-Analysis (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>105</integer>
+		</dict>
+		<key>Part3-Modeling (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>110</integer>
+		</dict>
+		<key>Part4-Simulation (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>111</integer>
+		</dict>
+		<key>Part5-Optimization (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>112</integer>
+		</dict>
+		<key>PerformanceProfilingBaseline (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>24</integer>
 		</dict>
-		<key>ReidsRaisinsDemo (Playground) 2.xcscheme</key>
+		<key>PolynomialRegressionValidationExample (Playground) 1.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>25</integer>
+			<integer>131</integer>
 		</dict>
-		<key>ReidsRaisinsDemo (Playground) 3.xcscheme</key>
+		<key>PolynomialRegressionValidationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>199</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>200</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>201</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>202</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>238</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>274</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>275</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 17.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>276</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 18.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>277</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 19.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>313</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>132</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 20.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>349</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 21.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>350</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 22.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>351</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 23.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>352</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 24.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>388</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>133</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>134</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>135</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>136</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>137</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>138</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>139</integer>
+		</dict>
+		<key>PolynomialRegressionValidationExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>51</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>140</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>203</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>204</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>205</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>206</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>239</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>278</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>279</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 17.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>280</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 18.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>281</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 19.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>314</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>141</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 20.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>353</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 21.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>354</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 22.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>355</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 23.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>356</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 24.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>389</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>142</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>143</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>144</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>145</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>146</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>147</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>148</integer>
+		</dict>
+		<key>PortfolioOptimizationExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>32</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>149</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>285</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>315</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>357</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>358</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>359</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>360</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>390</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>207</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>208</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>209</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>210</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>240</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>282</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>283</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>284</integer>
+		</dict>
+		<key>ProductionPlanningExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>26</integer>
 		</dict>
+		<key>QuickStart (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>150</integer>
+		</dict>
+		<key>QuickStart (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>211</integer>
+		</dict>
+		<key>QuickStart (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>212</integer>
+		</dict>
+		<key>QuickStart (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>213</integer>
+		</dict>
+		<key>QuickStart (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>214</integer>
+		</dict>
+		<key>QuickStart (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>241</integer>
+		</dict>
+		<key>QuickStart (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>286</integer>
+		</dict>
+		<key>QuickStart (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>287</integer>
+		</dict>
+		<key>QuickStart (Playground) 17.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>288</integer>
+		</dict>
+		<key>QuickStart (Playground) 18.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>289</integer>
+		</dict>
+		<key>QuickStart (Playground) 19.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>316</integer>
+		</dict>
+		<key>QuickStart (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>151</integer>
+		</dict>
+		<key>QuickStart (Playground) 20.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>361</integer>
+		</dict>
+		<key>QuickStart (Playground) 21.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>362</integer>
+		</dict>
+		<key>QuickStart (Playground) 22.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>363</integer>
+		</dict>
+		<key>QuickStart (Playground) 23.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>364</integer>
+		</dict>
+		<key>QuickStart (Playground) 24.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>391</integer>
+		</dict>
+		<key>QuickStart (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>152</integer>
+		</dict>
+		<key>QuickStart (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>153</integer>
+		</dict>
+		<key>QuickStart (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>154</integer>
+		</dict>
+		<key>QuickStart (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>155</integer>
+		</dict>
+		<key>QuickStart (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>156</integer>
+		</dict>
+		<key>QuickStart (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>157</integer>
+		</dict>
+		<key>QuickStart (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>158</integer>
+		</dict>
+		<key>QuickStart (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>55</integer>
+		</dict>
+		<key>Reids Raisins (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>96</integer>
+		</dict>
+		<key>Reids Raisins (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>97</integer>
+		</dict>
+		<key>Reids Raisins (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>98</integer>
+		</dict>
+		<key>Reids Raisins (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>99</integer>
+		</dict>
+		<key>Reids Raisins (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>95</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>159</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>293</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>317</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>365</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>366</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>367</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>368</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>392</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>215</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>216</integer>
+		</dict>
 		<key>ReidsRaisinsDemo (Playground) 4.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>27</integer>
+			<integer>217</integer>
 		</dict>
 		<key>ReidsRaisinsDemo (Playground) 5.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>28</integer>
+			<integer>218</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>242</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>290</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>291</integer>
+		</dict>
+		<key>ReidsRaisinsDemo (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>292</integer>
 		</dict>
 		<key>ReidsRaisinsDemo (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>22</integer>
+			<integer>27</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>160</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>297</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>318</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>369</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>370</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>371</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>372</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>393</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>219</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>220</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>221</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>222</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>243</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>294</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>295</integer>
+		</dict>
+		<key>ResourceAllocationExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>296</integer>
 		</dict>
 		<key>ResourceAllocationExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>23</integer>
+			<integer>14</integer>
+		</dict>
+		<key>StreamingAnomalyDectectionExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>36</integer>
+		</dict>
+		<key>StreamingCompositionExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>38</integer>
+		</dict>
+		<key>StreamingForecastingExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>71</integer>
+		</dict>
+		<key>StreamingInfrastructureExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>91</integer>
+		</dict>
+		<key>StreamingStatisticsExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>49</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>161</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>301</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>319</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>373</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>374</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>375</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>376</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>394</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>223</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>224</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>225</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>226</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>244</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>298</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>299</integer>
+		</dict>
+		<key>TemplateRegistryExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>300</integer>
 		</dict>
 		<key>TemplateRegistryExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>20</integer>
+			<integer>13</integer>
+		</dict>
+		<key>ValidationMacrosExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>42</integer>
+		</dict>
+		<key>ValidationMacrosExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>43</integer>
+		</dict>
+		<key>ValidationMacrosExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>44</integer>
+		</dict>
+		<key>ValidationMacrosExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>45</integer>
+		</dict>
+		<key>ValidationMacrosExample (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>66</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>162</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 10.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>227</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 11.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>228</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 12.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>229</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 13.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>230</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 14.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>245</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 15.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>302</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 16.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>303</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 17.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>304</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 18.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>305</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 19.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>320</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>163</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 20.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>377</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 21.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>378</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 22.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>379</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 23.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>380</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 24.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>395</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 3.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>164</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 4.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>165</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 5.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>166</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 6.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>167</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 7.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>168</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 8.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>169</integer>
+		</dict>
+		<key>VectorSpaceExample (Playground) 9.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>170</integer>
 		</dict>
 		<key>VectorSpaceExample (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>16</integer>
+			<integer>42</integer>
 		</dict>
 		<key>businessmath-mcp-server.xcscheme_^#shared#^_</key>
 		<dict>

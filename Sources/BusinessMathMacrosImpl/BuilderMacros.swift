@@ -7,12 +7,17 @@
 
 import SwiftSyntax
 import SwiftSyntaxMacros
+import SwiftSyntaxBuilder
+import SwiftCompilerPlugin
+import SwiftDiagnostics
+import Foundation
 
 /// Macro that generates builder initialization methods for structs
 public struct BuilderInitializableMacro: MemberMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
+		conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         // 1. Extract struct name

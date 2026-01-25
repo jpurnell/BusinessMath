@@ -214,6 +214,8 @@ public struct AsyncCUSUMSequence<Base: AsyncSequence>: AsyncSequence where Base.
         private var cPlusIndex: Double = 0.0
         private var cMinusIndex: Double = 0.0
         private var index = 0
+		public var cPlusIndexValue: Double { cPlusIndex }
+		public var cMinusIndexValue: Double { cMinusIndex }
 
         init(base: Base.AsyncIterator, target: Double, drift: Double, threshold: Double) {
             self.baseIterator = base

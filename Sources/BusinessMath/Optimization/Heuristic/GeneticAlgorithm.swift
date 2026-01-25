@@ -278,6 +278,20 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
                     if violation > V.Scalar.zero {
                         totalPenalty += violation * violation
                     }
+
+                case .linearInequality, .linearEquality:
+                    // Linear constraints: use function property
+                    let g = constraint.function
+                    let violation = g(point)
+                    if constraint.isEquality {
+                        // Equality: (g(x))²
+                        totalPenalty += violation * violation
+                    } else {
+                        // Inequality: max(0, g(x))²
+                        if violation > V.Scalar.zero {
+                            totalPenalty += violation * violation
+                        }
+                    }
                 }
             }
 

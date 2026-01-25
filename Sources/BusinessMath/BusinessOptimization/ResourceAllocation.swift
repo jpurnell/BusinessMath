@@ -22,7 +22,7 @@ import Numerics
 ///     strategicValue: 8.5
 /// )
 /// ```
-public struct AllocationOption {
+public struct AllocationOption: Sendable{
 	/// Unique identifier
 	public let id: String
 

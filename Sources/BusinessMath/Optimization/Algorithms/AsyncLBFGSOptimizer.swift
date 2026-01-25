@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RealModule
 
 // MARK: - L-BFGS Progress
 
@@ -63,7 +64,7 @@ public struct LBFGSProgress: Sendable {
 /// - Optional convergence detection for early stopping
 /// - Configurable memory size (typical: 5-20)
 /// - AsyncSequence support for real-time progress monitoring
-public struct AsyncLBFGSOptimizer {
+public struct AsyncLBFGSOptimizer: Sendable {
     /// Number of previous iterations to store (typically 5-20)
     public let memorySize: Int
 
@@ -300,7 +301,7 @@ public struct AsyncLBFGSOptimizer {
         bounds: (lower: Double, upper: Double)?
     ) -> AsyncThrowingStream<LBFGSProgress, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            Task { @Sendable in
                 do {
                     let result = try await optimizeWithProgress(
                         objective: objective,
@@ -384,3 +385,4 @@ public struct AsyncLBFGSOptimizer {
         return -r
     }
 }
+

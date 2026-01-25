@@ -113,14 +113,36 @@ let stressScenario = riskMetrics.stressTest(scenarios: [recession, crisis])
 
 ### Visualization
 
-Communicating analysis effectively requires clear visual presentation:
+BusinessMath provides command-line visualization for quick data exploration:
 
 ```swift
-let chart = revenue.chart()
-    .title("Revenue Growth 2020-2024")
-    .type(.line)
-    .showTrend(true)
-    .export(to: "revenue_chart.png")
+// Histogram visualization for distributions
+let results = SimulationResults(values: revenueData)
+let histogram = results.histogram(bins: 20)
+let plot = plotHistogram(histogram)
+print(plot)
+
+// Tornado diagram for sensitivity analysis
+let tornado = try runTornadoAnalysis(
+    baseCase: baseCase,
+    entity: entity,
+    periods: periods,
+    inputDrivers: ["Revenue", "COGS", "OpEx"],
+    variationPercent: 0.20,
+    steps: 2,
+    builder: builder
+) { projection in
+    projection.incomeStatement.netIncome[q4]!
+}
+print(plotTornadoDiagram(tornado))
+```
+
+For graphical charts, export data to external tools like Swift Charts, Excel, or Python:
+
+```swift
+// Export for external visualization
+let csvData = revenue.toCSV()
+try csvData.write(to: URL(fileURLWithPath: "revenue.csv"))
 ```
 
 ### Model Validation

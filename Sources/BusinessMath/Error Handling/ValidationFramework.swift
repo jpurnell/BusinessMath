@@ -119,6 +119,46 @@ extension TimeSeries: Validatable where T: Real & Sendable {
         return validate(detectOutliers: false)
     }
 
+    /// Validate time series and throw if errors are found.
+    ///
+    /// This method validates the time series and throws `BusinessMathError` if critical
+    /// errors are detected (NaN values, infinite values, empty series, or period gaps).
+    /// Use this when you need error handling instead of inspecting validation results.
+    ///
+    /// - Parameter detectOutliers: Whether to detect outliers (default: false)
+    /// - Throws: ``BusinessMathError/dataQuality`` if validation fails
+    ///
+    /// ## Example
+    /// ```swift
+    /// do {
+    ///     try timeSeries.validateAndThrow()
+    ///     // TimeSeries is valid, safe to use
+    /// } catch let error as BusinessMathError {
+    ///     print("Validation failed: \(error.errorDescription!)")
+    ///     // Handle invalid time series
+    /// }
+    /// ```
+    public func validateAndThrow(detectOutliers: Bool = false) throws {
+        let result = validate(detectOutliers: detectOutliers)
+
+        guard result.isValid else {
+            // Collect error messages
+            let errorMessages = result.errors.map { $0.message }.joined(separator: "; ")
+
+            // Build context dictionary
+            var context: [String: String] = [:]
+            for error in result.errors {
+                context.merge(error.context) { $1 }
+            }
+            context["errorCount"] = String(result.errors.count)
+
+            throw BusinessMathError.dataQuality(
+                message: errorMessages,
+                context: context
+            )
+        }
+    }
+
     /// Validate with optional outlier detection
     public func validate(detectOutliers shouldDetectOutliers: Bool) -> BMValidationResult {
         var warnings: [CalculationWarning] = []

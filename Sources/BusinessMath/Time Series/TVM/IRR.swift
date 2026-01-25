@@ -119,7 +119,7 @@ public func irr<T: Real>(
 
 	for _ in 0..<maxIterations {
 		// Calculate NPV at current rate
-		let npv = calculateNPV(cashFlows: cashFlows, rate: rate)
+		let npv = try calculateNPV(discountRate: rate, cashFlows: cashFlows)
 
 		// Check for convergence
 		if abs(npv) < actualTolerance {
@@ -127,7 +127,7 @@ public func irr<T: Real>(
 		}
 
 		// Calculate derivative of NPV (dNPV/dr)
-		let derivative = calculateNPVDerivative(cashFlows: cashFlows, rate: rate)
+		let derivative = calculateNPVDerivative(discountRate: rate, cashFlows: cashFlows)
 
 		// Avoid division by zero
 		let minDerivative = T(1) / T(1000000)  // 0.000001
@@ -262,38 +262,4 @@ public func mirr<T: Real>(
 	let mirr = T.pow(ratio, exponent) - T(1)
 
 	return mirr
-}
-
-// MARK: - Helper Functions
-
-/// Calculates Net Present Value at a given discount rate.
-private func calculateNPV<T: Real>(cashFlows: [T], rate: T) -> T {
-	var npv = T.zero
-
-	for (period, cashFlow) in cashFlows.enumerated() {
-		let discountFactor = T.pow(T(1) + rate, T(period))
-		npv = npv + cashFlow / discountFactor
-	}
-
-	return npv
-}
-
-/// Calculates the derivative of NPV with respect to the discount rate.
-///
-/// This is used in the Newton-Raphson method:
-/// ```
-/// dNPV/dr = -Σ(t × CF_t / (1+r)^(t+1))
-/// ```
-private func calculateNPVDerivative<T: Real>(cashFlows: [T], rate: T) -> T {
-	var derivative = T.zero
-
-	for (period, cashFlow) in cashFlows.enumerated() {
-		if period > 0 {  // Skip period 0 (derivative term is 0)
-			let numerator = T(period) * cashFlow
-			let denominator = T.pow(T(1) + rate, T(period + 1))
-			derivative = derivative - numerator / denominator
-		}
-	}
-
-	return derivative
 }

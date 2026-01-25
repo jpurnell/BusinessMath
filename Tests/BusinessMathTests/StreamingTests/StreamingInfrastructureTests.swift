@@ -216,9 +216,9 @@ struct StreamingInfrastructureTests {
 
         var collected: [Double] = []
         var iterations = 0
-        for try await value in stream.catchErrors { error in
+        for try await value in stream.catchErrors ({ error in
             return 0.0  // Fallback value
-        } {
+        }) {
             collected.append(value)
             iterations += 1
             if iterations >= 3 {

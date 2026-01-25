@@ -83,11 +83,54 @@ Money today is worth more than money tomorrow—this fundamental principle drive
 BusinessMath uses SwiftUI-style fluent APIs that let you chain operations together declaratively:
 
 ```swift
+import BusinessMath
+
+// Define quarters for 2025
+let quarters = Period.year(2025).quarters()
+
+// Create and configure revenue model using fluent API
 let model = RevenueModel()
     .baseRevenue(100_000)
     .growthRate(0.15)
     .periods(quarters)
     .calculate()
+
+print("Q1 2025 revenue: \(model.revenue[0].currency(0))")  // $100,000
+print("Q4 2025 revenue: \(model.revenue[3].currency(0))")  // $152,088
+
+// Simple RevenueModel implementation for playground use
+struct RevenueModel {
+    private var base: Double = 0
+    private var growth: Double = 0
+    private var periods: [Period] = []
+    var revenue: [Double] = []
+
+    func baseRevenue(_ value: Double) -> RevenueModel {
+        var copy = self
+        copy.base = value
+        return copy
+    }
+
+    func growthRate(_ value: Double) -> RevenueModel {
+        var copy = self
+        copy.growth = value
+        return copy
+    }
+
+    func periods(_ value: [Period]) -> RevenueModel {
+        var copy = self
+        copy.periods = value
+        return copy
+    }
+
+    func calculate() -> RevenueModel {
+        var copy = self
+        copy.revenue = periods.enumerated().map { i, _ in
+            base * pow(1.0 + growth, Double(i))
+        }
+        return copy
+    }
+}
 ```
 
 This pattern makes complex financial models more readable and easier to maintain.

@@ -720,6 +720,15 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
                     // Inequality: g(x) ≤ 0
                     let gVal = g(solution)
                     violation = max(V.Scalar.zero, gVal) * max(V.Scalar.zero, gVal)
+                case .linearInequality, .linearEquality:
+                    // Linear constraints: use function property
+                    let g = constraint.function
+                    let gVal = g(solution)
+                    if constraint.isEquality {
+                        violation = gVal * gVal
+                    } else {
+                        violation = max(V.Scalar.zero, gVal) * max(V.Scalar.zero, gVal)
+                    }
                 }
                 penalty += violation
             }

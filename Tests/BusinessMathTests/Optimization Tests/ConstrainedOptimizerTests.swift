@@ -312,6 +312,7 @@ struct ConstrainedOptimizerTests {
 		if let history = result.history, history.count > 1 {
 			let firstObj = history[0].2  // tuple.2 is objectiveValue
 			let lastObj = history.last!.2
+			print(firstObj)
 			// Augmented Lagrangian can increase temporarily, so just check final value is reasonable
 			#expect(lastObj < 1.0, "Final objective should be reasonable for this problem")
 		}

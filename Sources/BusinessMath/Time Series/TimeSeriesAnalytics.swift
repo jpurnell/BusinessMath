@@ -8,6 +8,86 @@
 import Foundation
 import Numerics
 
+// MARK: - Forecast Error Metrics
+
+/// Error metrics for comparing forecasted values against actual values.
+///
+/// Contains standard forecast accuracy measures used to evaluate and compare
+/// different forecasting models.
+///
+/// ## Metrics Included
+/// - **RMSE** (Root Mean Squared Error): Penalizes large errors more heavily
+/// - **MAE** (Mean Absolute Error): Average magnitude of errors
+/// - **MAPE** (Mean Absolute Percentage Error): Percentage error, scale-independent
+///
+/// ## Example
+/// ```swift
+/// let actual = TimeSeries(periods: periods, values: [100, 110, 120])
+/// let forecast = TimeSeries(periods: periods, values: [98, 112, 118])
+///
+/// let metrics = actual.forecastError(against: forecast)
+/// print("RMSE: \(metrics.rmse)")
+/// print("MAE: \(metrics.mae)")
+/// print("MAPE: \(metrics.mape)")
+///
+/// // Compare models
+/// if model1Metrics.rmse < model2Metrics.rmse {
+///     print("Model 1 is more accurate")
+/// }
+/// ```
+public struct ForecastErrorMetrics<T: Real & Sendable & Codable>: Sendable where T: BinaryFloatingPoint {
+	/// Root Mean Squared Error - sqrt(mean((actual - forecast)²))
+	///
+	/// RMSE penalizes larger errors more heavily due to squaring.
+	/// Lower values indicate better forecast accuracy.
+	public let rmse: T
+
+	/// Mean Absolute Error - mean(|actual - forecast|)
+	///
+	/// MAE represents the average magnitude of errors.
+	/// Lower values indicate better forecast accuracy.
+	public let mae: T
+
+	/// Mean Absolute Percentage Error - mean(|actual - forecast| / |actual|)
+	///
+	/// MAPE expresses error as a percentage, making it scale-independent.
+	/// Lower values indicate better forecast accuracy.
+	/// Note: Excludes periods where actual value is zero to avoid division by zero.
+	public let mape: T
+
+	/// Number of periods included in the error calculation
+	///
+	/// Only periods present in both actual and forecast series are counted.
+	public let count: Int
+
+	/// Creates forecast error metrics.
+	///
+	/// - Parameters:
+	///   - rmse: Root mean squared error
+	///   - mae: Mean absolute error
+	///   - mape: Mean absolute percentage error
+	///   - count: Number of periods compared
+	public init(rmse: T, mae: T, mape: T, count: Int) {
+		self.rmse = rmse
+		self.mae = mae
+		self.mape = mape
+		self.count = count
+	}
+
+	/// Human-readable summary of error metrics.
+	@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+	public var summary: String {
+		"""
+		Forecast Error Metrics
+		======================
+		Periods Compared: \(count)
+		RMSE: \(rmse.number(4))
+		MAE:  \(mae.number(4))
+		MAPE: \(mape.percent(2))%
+		"""
+	}
+}
+
 // MARK: - TimeSeries Analytics
 
 extension TimeSeries {
@@ -96,6 +176,109 @@ extension TimeSeries {
 		let growth = T.pow(ratio, exponent) - T(1)
 
 		return growth
+	}
+
+	// MARK: - Forecast Evaluation
+
+	/// Calculates forecast error metrics by comparing this series (actual) against a forecast.
+	///
+	/// Computes standard forecast accuracy measures: RMSE, MAE, and MAPE.
+	/// Only periods present in both series are included in the calculation.
+	///
+	/// - Parameter forecast: The forecasted time series to compare against.
+	/// - Returns: Forecast error metrics including RMSE, MAE, MAPE, and comparison count.
+	///
+	/// ## Example
+	/// ```swift
+	/// let actual = TimeSeries(periods: periods, values: [100, 110, 120, 130])
+	/// let forecast = TimeSeries(periods: periods, values: [98, 112, 118, 132])
+	///
+	/// let metrics = actual.forecastError(against: forecast)
+	///
+	/// print("RMSE: \(metrics.rmse.number(2))")
+	/// print("MAE: \(metrics.mae.number(2))")
+	/// print("MAPE: \(metrics.mape.percent(2))")
+	///
+	/// // Compare two forecast models
+	/// let model1Metrics = actual.forecastError(against: linearForecast)
+	/// let model2Metrics = actual.forecastError(against: exponentialForecast)
+	///
+	/// let bestModel = model1Metrics.rmse < model2Metrics.rmse ? "Linear" : "Exponential"
+	/// print("Best model: \(bestModel)")
+	/// ```
+	///
+	/// ## Metrics Explanation
+	///
+	/// **RMSE (Root Mean Squared Error)**
+	/// - Calculated as: sqrt(mean((actual - forecast)²))
+	/// - Penalizes large errors more heavily due to squaring
+	/// - Same units as the original data
+	/// - Useful when large errors are particularly undesirable
+	///
+	/// **MAE (Mean Absolute Error)**
+	/// - Calculated as: mean(|actual - forecast|)
+	/// - Average magnitude of all errors
+	/// - Same units as the original data
+	/// - More robust to outliers than RMSE
+	///
+	/// **MAPE (Mean Absolute Percentage Error)**
+	/// - Calculated as: mean(|actual - forecast| / |actual|)
+	/// - Expressed as a percentage
+	/// - Scale-independent, useful for comparing across different data scales
+	/// - Excludes periods where actual value is zero
+	///
+	/// ## Notes
+	/// - If series have no overlapping periods, returns NaN or 0 for all metrics with count = 0
+	/// - MAPE calculation skips periods where actual value is zero to avoid division by zero
+	/// - RMSE ≥ MAE always (equality only when all errors are identical)
+	public func forecastError(against forecast: TimeSeries<T>) -> ForecastErrorMetrics<T> where T: BinaryFloatingPoint {
+		var sumSquaredError = T.zero
+		var sumAbsoluteError = T.zero
+		var sumAbsPercentError = T.zero
+		var count = 0
+		var mapeCount = 0
+
+		// Iterate through all periods in the actual series
+		for period in periods {
+			guard let actualValue = self[period],
+				  let forecastValue = forecast[period] else {
+				continue  // Skip periods not present in both series
+			}
+
+			let error = actualValue - forecastValue
+
+			// Accumulate for RMSE and MAE
+			sumSquaredError = sumSquaredError + (error * error)
+			sumAbsoluteError = sumAbsoluteError + abs(error)
+			count += 1
+
+			// Accumulate for MAPE (only for non-zero actuals)
+			if actualValue != T.zero {
+				let percentError = abs(error / actualValue)
+				sumAbsPercentError = sumAbsPercentError + percentError
+				mapeCount += 1
+			}
+		}
+
+		// Calculate final metrics
+		guard count > 0 else {
+			// No overlapping periods - return zero/NaN metrics
+			return ForecastErrorMetrics(rmse: T.zero, mae: T.zero, mape: T.zero, count: 0)
+		}
+
+		let mse = sumSquaredError / T(count)
+		let rmse = sqrt(mse)
+		let mae = sumAbsoluteError / T(count)
+
+		// Calculate MAPE only if we had non-zero actuals
+		let mape: T
+		if mapeCount > 0 {
+			mape = (sumAbsPercentError / T(mapeCount))
+		} else {
+			mape = T.zero  // All actual values were zero
+		}
+
+		return ForecastErrorMetrics(rmse: rmse, mae: mae, mape: mape, count: count)
 	}
 
 	// MARK: - Moving Averages
@@ -262,7 +445,7 @@ extension TimeSeries {
 
 	/// Calculates period-over-period percent changes.
 	///
-	/// Percent change is calculated as ((current - previous) / previous) * 100.
+	/// Percent change is calculated as ((current - previous) / previous).
 	///
 	/// - Parameter lag: The number of periods to look back (default: 1).
 	/// - Returns: A time series of percent changes.
@@ -273,7 +456,7 @@ extension TimeSeries {
 	/// ```
 	public func percentChange(lag: Int = 1) -> TimeSeries<T> {
 		let growth = self.growthRate(lag: lag)
-		return growth.mapValues { $0 * T(100) }
+		return growth.mapValues { $0 }
 	}
 
 	// MARK: - Rolling Window Operations

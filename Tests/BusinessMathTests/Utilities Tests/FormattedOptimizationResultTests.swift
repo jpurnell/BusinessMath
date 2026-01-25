@@ -113,7 +113,8 @@ struct FormattedOptimizationResultTests {
             nodesExplored: 47,
             status: .optimal,
             solveTime: 0.15,
-            integerSpec: spec
+            integerSpec: spec,
+            cuttingPlaneStats: nil
         )
 
         // CRITICAL: Integer solution must use round(), not truncation
@@ -148,7 +149,8 @@ struct FormattedOptimizationResultTests {
             nodesExplored: 10,
             status: .optimal,
             solveTime: 0.01,
-            integerSpec: spec
+            integerSpec: spec,
+            cuttingPlaneStats: nil
         )
 
         let intSolution = result.integerSolution

@@ -35,7 +35,7 @@ import Numerics
 ///     }
 /// ]
 /// ```
-public enum MultiPeriodConstraint<V: VectorSpace> where V.Scalar == Double {
+public enum MultiPeriodConstraint<V: VectorSpace>: Sendable where V.Scalar == Double, V: Sendable {
 
 	// MARK: - Intra-Temporal Constraints
 
@@ -48,7 +48,7 @@ public enum MultiPeriodConstraint<V: VectorSpace> where V.Scalar == Double {
 	///   - function: Constraint function f(t, xₜ)
 	///   - isEquality: Whether this is an equality constraint (default: false)
 	case eachPeriod(
-		function: (Int, V) -> Double,
+		function: @Sendable (Int, V) -> Double,
 		isEquality: Bool = false
 	)
 
@@ -68,7 +68,7 @@ public enum MultiPeriodConstraint<V: VectorSpace> where V.Scalar == Double {
 	///   - function: Constraint function g(t, xₜ, xₜ₊₁)
 	///   - isEquality: Whether this is an equality constraint (default: false)
 	case transition(
-		function: (Int, V, V) -> Double,
+		function: @Sendable (Int, V, V) -> Double,
 		isEquality: Bool = false
 	)
 
@@ -88,7 +88,7 @@ public enum MultiPeriodConstraint<V: VectorSpace> where V.Scalar == Double {
 	///   - function: Constraint function h(xₜ)
 	///   - isEquality: Whether this is an equality constraint (default: false)
 	case terminal(
-		function: (V) -> Double,
+		function: @Sendable (V) -> Double,
 		isEquality: Bool = false
 	)
 
@@ -108,7 +108,7 @@ public enum MultiPeriodConstraint<V: VectorSpace> where V.Scalar == Double {
 	///   - function: Constraint function k(x₁, ..., xₜ)
 	///   - isEquality: Whether this is an equality constraint (default: false)
 	case trajectory(
-		function: ([V]) -> Double,
+		function: @Sendable ([V]) -> Double,
 		isEquality: Bool = false
 	)
 
@@ -242,7 +242,7 @@ extension MultiPeriodConstraint {
 	/// - Returns: Terminal constraint
 	public static func terminalWealth(
 		targetValue: Double,
-		valuationFunction: @escaping (V) -> Double
+		valuationFunction: @escaping @Sendable (V) -> Double
 	) -> MultiPeriodConstraint {
 		.terminal { xₜ in
 			targetValue - valuationFunction(xₜ)  // value ≥ target → target - value ≤ 0
@@ -260,7 +260,7 @@ extension MultiPeriodConstraint {
 	///   - threshold: Minimum average value
 	/// - Returns: Trajectory constraint
 	public static func averageConstraint(
-		metric: @escaping (V) -> Double,
+		metric: @escaping @Sendable (V) -> Double,
 		minimumAverage threshold: Double
 	) -> MultiPeriodConstraint {
 		.trajectory { trajectory in
@@ -279,7 +279,7 @@ extension MultiPeriodConstraint {
 	///   - maxCumulative: Maximum cumulative sum
 	/// - Returns: Trajectory constraint
 	public static func cumulativeLimit(
-		metric: @escaping (V) -> Double,
+		metric: @escaping @Sendable (V) -> Double,
 		maximum maxCumulative: Double
 	) -> MultiPeriodConstraint {
 		.trajectory { trajectory in

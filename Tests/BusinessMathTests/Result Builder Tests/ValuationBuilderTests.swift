@@ -229,7 +229,7 @@ struct ValuationBuilderTests {
     @Test("DCF sensitivity to WACC changes")
     func dcfSensitivityToWACC() async throws {
         let baseWACC = 0.10
-        let values = [0.08, 0.10, 0.12].map { waccRate in
+		let values = stride(from: baseWACC - 0.02, through: baseWACC + 0.02, by: 0.02).map { waccRate in
             let dcf = DCFModel {
                 Forecast( 5) {
                     ForecastRevenue(base: 1_000_000, cagr: 0.15)

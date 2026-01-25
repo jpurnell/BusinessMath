@@ -91,6 +91,36 @@ public func npv<T: Real>(discountRate r: T, cashFlows c: [T]) -> T {
 	return presentValue
 }
 
+public func calculateNPV<T: Real>(discountRate r: T, cashFlows c: [T]) throws -> T {
+	guard r >= 0 else {
+		throw BusinessMathError.invalidInput(message: "Invalid input parameter - discountRate must be non-negative.", value: "\(r)", expectedRange: "≥ 0.0")
+	}
+	guard !c.isEmpty else {
+		throw BusinessMathError.insufficientData(required: 1, actual: 0, context: "At least one cash flow value is needed to calculate NPV. 0 cash flow values provided. ,npv(\(r), \(c))")
+	}
+	return npv(discountRate: r, cashFlows: c)
+}
+
+/// Calculates the derivative of NPV with respect to the discount rate.
+///
+/// This is used in the Newton-Raphson method:
+/// ```
+/// dNPV/dr = -Σ(t × CF_t / (1+r)^(t+1))
+/// ```
+public func calculateNPVDerivative<T: Real>(discountRate: T, cashFlows: [T]) -> T {
+	var derivative = T.zero
+
+	for (period, cashFlow) in cashFlows.enumerated() {
+		if period > 0 {  // Skip period 0 (derivative term is 0)
+			let numerator = T(period) * cashFlow
+			let denominator = T.pow(T(1) + discountRate, T(period + 1))
+			derivative = derivative - numerator / denominator
+		}
+	}
+	return derivative
+}
+
+
 /// Calculates the Net Present Value (NPV) for a TimeSeries.
 ///
 /// This variant accepts a `TimeSeries` object and calculates NPV from its values.

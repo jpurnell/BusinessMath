@@ -1,0 +1,147 @@
+import XCTest
+import BusinessMath
+//import BusinessMathMacros
+
+/ Tests demonstrating optimization macro usage
+/ These examples show how macros simplify optimization problem definitions
+final class OptimizationMacrosExampleTests: XCTestCase {
+
+    // MARK: - Example 1: Simple Portfolio Optimization
+
+    func testSimplePortfolioOptimization() {
+        print("=== Example 1: Simple Portfolio Optimization ===\n")
+
+        /// Portfolio allocation problem using optimization macros
+        struct PortfolioProblem {
+            // Decision variables with bounds
+            @Variable(bounds: 0...1)
+            var stocks: Double
+
+            @Variable(bounds: 0...1)
+            var bonds: Double
+
+            // Portfolio parameters
+            var stockReturn: Double = 0.12
+            var bondReturn: Double = 0.05
+            var stockRisk: Double = 0.20
+            var bondRisk: Double = 0.05
+
+            // Constraint: allocations must sum to 1
+            @Constraint
+            func allocationSumToOne() -> Bool {
+                return abs(stocks + bonds - 1.0) < 0.001
+            }
+
+            // Objective: maximize return
+            @Objective
+            func expectedReturn() -> Double {
+                return stocks * stockReturn + bonds * bondReturn
+            }
+
+            // Helper to manually optimize
+            func optimize() -> (stocks: Double, bonds: Double, return: Double) {
+                // For this simple case, solve analytically
+                // To maximize return with no risk constraint, allocate to highest return asset
+                let optimalStocks = 1.0
+                let optimalBonds = 0.0
+                let optimalReturn = optimalStocks * stockReturn + optimalBonds * bondReturn
+
+                return (optimalStocks, optimalBonds, optimalReturn)
+            }
+        }
+
+		let portfolio = PortfolioProblem(stocks: 0.0, bonds: 0.0)
+        let result = portfolio.optimize()
+
+        print("Portfolio Optimization Results:")
+        print("  Optimal Allocation:")
+        print("    Stocks: \(String(format: "%.1f%%", result.stocks * 100))")
+        print("    Bonds:  \(String(format: "%.1f%%", result.bonds * 100))")
+        print("  Expected Return: \(String(format: "%.2f%%", result.return * 100))")
+
+        // Verify results
+        XCTAssertEqual(result.stocks, 1.0, accuracy: 0.01)
+        XCTAssertEqual(result.bonds, 0.0, accuracy: 0.01)
+        XCTAssertEqual(result.return, 0.12, accuracy: 0.001)
+    }
+
+    // MARK: - Example 2: Production Planning
+
+    func testProductionPlanning() {
+        print("\n=== Example 2: Production Planning ===\n")
+
+        /// Manufacturing optimization using integer programming
+        struct ProductionProblem {
+            // Decision variables (integer)
+            @Variable(bounds: 0...100)
+            var chairs: Double  // Treat as integer in optimization
+
+            @Variable(bounds: 0...100)
+            var tables: Double  // Treat as integer in optimization
+
+            // Resource constraints
+            let chairWood: Double = 5.0     // board-feet per chair
+            let tableWood: Double = 20.0    // board-feet per table
+            let chairLabor: Double = 3.0    // hours per chair
+            let tableLabor: Double = 10.0   // hours per table
+
+            let woodAvailable: Double = 400.0   // board-feet
+            let laborAvailable: Double = 200.0  // hours
+
+            // Profit per unit
+            let chairProfit: Double = 45.0
+            let tableProfit: Double = 80.0
+
+            // Constraint: wood usage
+            @Constraint
+            func woodConstraint() -> Bool {
+                return chairs * chairWood + tables * tableWood <= woodAvailable
+            }
+
+            // Constraint: labor usage
+            @Constraint
+            func laborConstraint() -> Bool {
+                return chairs * chairLabor + tables * tableLabor <= laborAvailable
+            }
+
+            // Objective: maximize profit
+            @Objective
+            func totalProfit() -> Double {
+                return chairs * chairProfit + tables * tableProfit
+            }
+
+            // Solve using simplex (for demonstration)
+            func optimize() -> (chairs: Double, tables: Double, profit: Double) {
+                // Use BusinessMath's SimplexSolver
+				let result = try! SimplexSolver().maximize(
+                    objective: [chairProfit, tableProfit],
+					subjectTo: [
+                        SimplexConstraint(coefficients: [chairWood, tableWood], relation: .lessOrEqual, rhs: woodAvailable),
+                        SimplexConstraint(coefficients: [chairLabor, tableLabor], relation: .lessOrEqual, rhs: laborAvailable)
+                    ]
+                )
+
+                return (result.solution[0], result.solution[1], result.objectiveValue)
+            }
+        }
+
+        let production = ProductionProblem(chairs: 0, tables: 0)
+        let result = production.optimize()
+
+        print("Production Planning Results:")
+        print("  Optimal Production:")
+        print("    Chairs: \(Int(result.chairs.rounded()))")
+        print("    Tables: \(Int(result.tables.rounded()))")
+        print("  Maximum Profit: $\(String(format: "%.2f", result.profit))")
+        print("\nResource Usage:")
+        let woodUsed = result.chairs * production.chairWood + result.tables * production.tableWood
+        let laborUsed = result.chairs * production.chairLabor + result.tables * production.tableLabor
+        print("  Wood:  \(String(format: "%.1f", woodUsed))/\(production.woodAvailable) board-feet")
+        print("  Labor: \(String(format: "%.1f", laborUsed))/\(production.laborAvailable) hours")
+
+        // Verify constraints are satisfied
+        XCTAssertLessThanOrEqual(woodUsed, production.woodAvailable)
+        XCTAssertLessThanOrEqual(laborUsed, production.laborAvailable)
+        XCTAssertGreaterThan(result.profit, 0)
+    }
+}

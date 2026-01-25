@@ -92,7 +92,7 @@ import Numerics
 /// - ``AsyncOptimizer`` - Protocol conformance
 /// - ``AsyncOptimizationProgress`` - Progress update type
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-public struct AsyncGradientDescentOptimizer<T>: AsyncOptimizer where T: Real & Sendable & Codable {
+public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T: Real & Sendable & Codable {
 
     // MARK: - Properties
 
@@ -186,7 +186,7 @@ public struct AsyncGradientDescentOptimizer<T>: AsyncOptimizer where T: Real & S
         config: OptimizationConfig = .default
     ) -> AsyncThrowingStream<AsyncOptimizationProgress<T>, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            Task { @Sendable in
                 var x = initialGuess
                 var velocity: T = 0
                 var converged = false

@@ -83,7 +83,7 @@ public struct ConjugateGradientProgress: Sendable {
 /// - Integrated adaptive progress reporting via `ProgressStrategy`
 /// - Optional convergence detection for early stopping
 /// - AsyncSequence support for real-time progress monitoring
-public struct AsyncConjugateGradientOptimizer {
+public struct AsyncConjugateGradientOptimizer: Sendable {
     /// Method for computing beta parameter
     public let method: ConjugateGradientMethod
 
@@ -321,7 +321,7 @@ public struct AsyncConjugateGradientOptimizer {
         bounds: (lower: Double, upper: Double)?
     ) -> AsyncThrowingStream<ConjugateGradientProgress, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            Task { @Sendable in
                 do {
                     let result = try await optimizeWithProgress(
                         objective: objective,

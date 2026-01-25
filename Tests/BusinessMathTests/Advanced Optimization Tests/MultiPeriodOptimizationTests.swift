@@ -50,7 +50,7 @@ import Testing
 //		print("Test result trajectory:")
 		for (t, xₜ) in result.trajectory.enumerated() {
 			let weights = xₜ.toArray()
-//			print("  Period \(t): \(weights.map { String(format: "%.4f", $0) }.joined(separator: ", "))")
+			print("  Period \(t): \(weights.map { String(format: "%.4f", $0) }.joined(separator: ", "))")
 		}
 
 		// Without turnover constraints, should allocate 100% to highest return asset (index 1)

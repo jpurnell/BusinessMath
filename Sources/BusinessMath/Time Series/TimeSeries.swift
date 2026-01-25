@@ -156,7 +156,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 		valueDict.reserveCapacity(periods.count)
 
 		var labelDict: [Period: String]?
-		if let labels = labels {
+		if let _ = labels {
 			labelDict = [:]
 			labelDict?.reserveCapacity(periods.count)
 		}
@@ -173,6 +173,69 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 		self.values = valueDict
 		self.metadata = metadata
 		self.labels = labelDict
+	}
+
+	/// Creates a time series with validation that throws on mismatched dimensions.
+	///
+	/// This initializer validates inputs and throws `BusinessMathError` if dimensions don't match,
+	/// making it safer for user-provided or uncertain data.
+	///
+	/// - Parameters:
+	///   - periods: Array of periods (must have same count as values).
+	///   - values: Array of values (must have same count as periods).
+	///   - metadata: Optional metadata describing the time series.
+	///   - labels: Optional array of labels (must have same count as periods if provided).
+	/// - Throws:
+	///   - ``BusinessMathError/mismatchedDimensions`` if array counts don't match
+	///   - ``BusinessMathError/invalidInput`` if periods or values are empty
+	///
+	/// ## Example
+	/// ```swift
+	/// do {
+	///     let periods = [Period.month(year: 2025, month: 1), Period.month(year: 2025, month: 2)]
+	///     let values: [Double] = [100.0, 200.0]
+	///     let ts = try TimeSeries(validating: periods, values: values)
+	/// } catch let error as BusinessMathError {
+	///     print("Validation failed: \(error.errorDescription!)")
+	/// }
+	/// ```
+	///
+	/// - Note: For guaranteed-valid data, use the non-throwing `init(periods:values:)` instead.
+	public init(
+		validating periods: [Period],
+		values: [T],
+		metadata: TimeSeriesMetadata = TimeSeriesMetadata(),
+		labels: [String]? = nil
+	) throws {
+		// Validate empty arrays
+		guard !periods.isEmpty && !values.isEmpty else {
+			throw BusinessMathError.invalidInput(
+				message: "Time series cannot be created from empty arrays"
+			)
+		}
+
+		// Validate dimension match
+		guard periods.count == values.count else {
+			throw BusinessMathError.mismatchedDimensions(
+				message: "Periods and values must have same length",
+				expected: String(periods.count),
+				actual: String(values.count)
+			)
+		}
+
+		// Validate labels if provided
+		if let labels = labels {
+			guard labels.count == periods.count else {
+				throw BusinessMathError.mismatchedDimensions(
+					message: "Labels array must have same count as periods and values",
+					expected: String(periods.count),
+					actual: String(labels.count)
+				)
+			}
+		}
+
+		// Use non-throwing initializer now that validation passed
+		self.init(periods: periods, values: values, metadata: metadata, labels: labels)
 	}
 
 	/// Creates a time series from a dictionary of period-value pairs.

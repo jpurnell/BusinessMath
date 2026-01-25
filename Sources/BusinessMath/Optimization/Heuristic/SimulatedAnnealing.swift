@@ -387,6 +387,14 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
                 case .inequality(function: let g, gradient: _):
                     let gVal = g(solution)
                     violation = max(V.Scalar.zero, gVal) * max(V.Scalar.zero, gVal)
+                case .linearInequality, .linearEquality:
+                    let g = constraint.function
+                    let gVal = g(solution)
+                    if constraint.isEquality {
+                        violation = gVal * gVal
+                    } else {
+                        violation = max(V.Scalar.zero, gVal) * max(V.Scalar.zero, gVal)
+                    }
                 }
                 penalty += violation
             }

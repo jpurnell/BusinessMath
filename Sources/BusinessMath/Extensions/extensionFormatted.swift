@@ -83,7 +83,6 @@ extension BinaryFloatingPoint {
 					style = style.presentation(.fullName)
 			}
 			
-			return value.formatted(style)
 			return value.formatted(
 				.currency(code: code)
 				.precision(.fractionLength(decimals))

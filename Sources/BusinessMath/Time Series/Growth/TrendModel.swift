@@ -184,9 +184,53 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	private var lastPeriod: Period?
 	private var metadata: TimeSeriesMetadata?
 	private var fittedDataCount: Int = 0
+	private var residuals: [T] = []
 
 	/// Creates a new linear trend model.
 	public init() {}
+
+	/// The fitted slope (rate of change per period).
+	///
+	/// Returns `nil` if the model hasn't been fitted yet.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = LinearTrend<Double>()
+	/// try model.fit(to: revenue)
+	/// print("Growth rate: \(model.slopeValue ?? 0) per period")
+	/// ```
+	public var slopeValue: T? { fittedSlope }
+
+	/// The fitted intercept (value at time 0).
+	///
+	/// Returns `nil` if the model hasn't been fitted yet.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = LinearTrend<Double>()
+	/// try model.fit(to: revenue)
+	/// print("Base value: \(model.interceptValue ?? 0)")
+	/// ```
+	public var interceptValue: T? { fittedIntercept }
+
+	/// A summary of the fitted model parameters.
+	///
+	/// Returns a human-readable description of the model, including the
+	/// linear equation and fitted parameters.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = LinearTrend<Double>()
+	/// try model.fit(to: revenue)
+	/// print(model.summary)
+	/// // Output: "LinearTrend: y = 5000.0x + 100000.0 (fitted on 12 data points)"
+	/// ```
+	public var summary: String {
+		guard let slope = fittedSlope, let intercept = fittedIntercept else {
+			return "LinearTrend: Not fitted"
+		}
+		return "LinearTrend: y = \(slope)x + \(intercept) (fitted on \(fittedDataCount) data points)"
+	}
 
 	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
 		guard timeSeries.count >= 2 else {
@@ -206,6 +250,13 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.lastPeriod = periods.last
 		self.metadata = timeSeries.metadata
 		self.fittedDataCount = values.count
+
+		// Calculate and store residuals for confidence intervals
+		self.residuals = []
+		for (i, actual) in values.enumerated() {
+			let fitted = self.fittedSlope! * T(i) + self.fittedIntercept!
+			self.residuals.append(actual - fitted)
+		}
 	}
 
 	public func project(periods: Int) throws -> TimeSeries<T> {
@@ -252,6 +303,114 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 			periods: futurePeriods,
 			values: futureValues,
 			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Linear Trend")
+		)
+	}
+
+	/// Projects future values with confidence intervals.
+	///
+	/// Generates a forecast with upper and lower bounds representing the specified
+	/// confidence level. The confidence intervals widen over time (forecast horizon effect).
+	///
+	/// - Parameters:
+	///   - periods: Number of future periods to project.
+	///   - confidenceLevel: The confidence level (e.g., 0.95 for 95% confidence).
+	/// - Returns: A forecast with confidence intervals.
+	/// - Throws: `TrendModelError.modelNotFitted` if the model hasn't been fitted yet,
+	///           or `ForecastError.invalidConfidenceLevel` if confidence level is invalid.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = LinearTrend<Double>()
+	/// try model.fit(to: historical)
+	///
+	/// let forecastWithCI = try model.projectWithConfidence(
+	///     periods: 12,
+	///     confidenceLevel: 0.95
+	/// )
+	///
+	/// for i in 0..<12 {
+	///     let forecast = forecastWithCI.forecast.valuesArray[i]
+	///     let lower = forecastWithCI.lowerBound.valuesArray[i]
+	///     let upper = forecastWithCI.upperBound.valuesArray[i]
+	///     print("Forecast: \(forecast), 95% CI: [\(lower), \(upper)]")
+	/// }
+	/// ```
+	///
+	/// ## Notes
+	/// - Confidence intervals widen as forecast horizon increases
+	/// - Better model fit (lower residuals) produces narrower intervals
+	/// - More historical data provides tighter confidence bounds
+	public func projectWithConfidence(
+		periods: Int,
+		confidenceLevel: T
+	) throws -> ForecastWithConfidence<T> where T: BinaryFloatingPoint {
+		// Generate point forecast
+		let forecast = try project(periods: periods)
+
+		// Validate confidence level
+		guard confidenceLevel > T.zero && confidenceLevel <= T(1) else {
+			throw ForecastError.invalidConfidenceLevel
+		}
+
+		// Handle empty forecast
+		guard periods > 0 else {
+			return ForecastWithConfidence(
+				forecast: forecast,
+				lowerBound: forecast,
+				upperBound: forecast,
+				confidenceLevel: confidenceLevel
+			)
+		}
+
+		// Calculate standard error from residuals
+		let sumSquaredResiduals = residuals.map { $0 * $0 }.reduce(T.zero, +)
+		let degreesOfFreedom = max(residuals.count - 2, 1)  // -2 for slope and intercept
+		let mse = sumSquaredResiduals / T(degreesOfFreedom)
+		let standardError = sqrt(mse)
+
+		// Get z-score for confidence level using built-in function
+		let zScoreValue = zScore(ci: confidenceLevel)
+
+		// Calculate confidence intervals with widening for forecast horizon
+		var lowerValues: [T] = []
+		var upperValues: [T] = []
+
+		let n = T(fittedDataCount)
+
+		for (h, forecastValue) in forecast.valuesArray.enumerated() {
+			let horizon = T(h + 1)
+
+			// Standard error increases with forecast horizon
+			// Formula: SE * sqrt(1 + 1/n + (h^2)/(n * sum((x - mean(x))^2)))
+			// Simplified approximation for equally-spaced time points
+			let term1 = T(1)
+			let term2 = T(1) / n
+			let term3 = (horizon * horizon) / (T(12) * n)
+			let varianceFactor = sqrt(term1 + term2 + term3)
+			let forecastSE = standardError * varianceFactor
+
+			let margin = zScoreValue * forecastSE
+			lowerValues.append(forecastValue - margin)
+			upperValues.append(forecastValue + margin)
+		}
+
+		let lowerBound = TimeSeries(
+			periods: forecast.periods,
+			values: lowerValues,
+			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Lower Bound")
+		)
+
+		let upperBound = TimeSeries(
+			periods: forecast.periods,
+			values: upperValues,
+			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Upper Bound")
+		)
+
+		return ForecastWithConfidence(
+			forecast: forecast,
+			lowerBound: lowerBound,
+			upperBound: upperBound,
+			confidenceLevel: confidenceLevel
 		)
 	}
 }
@@ -341,9 +500,84 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	private var lastPeriod: Period?
 	private var metadata: TimeSeriesMetadata?
 	private var fittedDataCount: Int = 0
+	private var residuals: [T] = []
 
 	/// Creates a new exponential trend model.
 	public init() {}
+
+	/// The fitted log-space slope (growth rate coefficient).
+	///
+	/// Returns `nil` if the model hasn't been fitted yet.
+	///
+	/// This is the 'b' parameter in the equation: y = a × e^(bx)
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = ExponentialTrend<Double>()
+	/// try model.fit(to: users)
+	/// if let b = model.logSlope {
+	///     let growthRate = (exp(b) - 1) * 100
+	///     print("Compound growth rate: \(growthRate)% per period")
+	/// }
+	/// ```
+	public var logSlope: T? { fittedLogSlope }
+
+	/// The fitted log-space intercept (initial value coefficient).
+	///
+	/// Returns `nil` if the model hasn't been fitted yet.
+	///
+	/// The initial value 'a' can be calculated as: a = exp(logIntercept)
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = ExponentialTrend<Double>()
+	/// try model.fit(to: users)
+	/// if let logA = model.logIntercept {
+	///     let initialValue = exp(logA)
+	///     print("Initial value: \(initialValue)")
+	/// }
+	/// ```
+	public var logIntercept: T? { fittedLogIntercept }
+
+	/// The effective compound growth rate per period.
+	///
+	/// Returns `nil` if the model hasn't been fitted yet.
+	///
+	/// Converts the log-slope to an effective percentage growth rate.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = ExponentialTrend<Double>()
+	/// try model.fit(to: users)
+	/// if let rate = model.growthRate {
+	///     print("Growing at \((rate * 100).number(2))% per period")
+	/// }
+	/// ```
+	public var growthRate: T? {
+		guard let logSlope = fittedLogSlope else { return nil }
+		return T.exp(logSlope) - T(1)
+	}
+
+	/// A summary of the fitted model parameters.
+	///
+	/// Returns a human-readable description of the model, including the
+	/// exponential equation and fitted parameters.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = ExponentialTrend<Double>()
+	/// try model.fit(to: users)
+	/// print(model.summary)
+	/// // Output: "ExponentialTrend: y = 1000.0 × e^(0.2x) [15% growth rate] (fitted on 6 data points)"
+	/// ```
+	public var summary: String {
+		guard let logSlope = fittedLogSlope, let logIntercept = fittedLogIntercept else {
+			return "ExponentialTrend: Not fitted"
+		}
+		let a = T.exp(logIntercept)
+		let rate = (T.exp(logSlope) - T(1)) * T(100)
+		return "ExponentialTrend: y = \(a) × e^(\(logSlope)x) [\(rate)% growth rate] (fitted on \(fittedDataCount) data points)"
+	}
 
 	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
 		guard timeSeries.count >= 2 else {
@@ -373,6 +607,14 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.lastPeriod = periods.last
 		self.metadata = timeSeries.metadata
 		self.fittedDataCount = values.count
+
+		// Calculate and store residuals for confidence intervals
+		self.residuals = []
+		for (i, actual) in values.enumerated() {
+			let logFitted = self.fittedLogSlope! * T(i) + self.fittedLogIntercept!
+			let fitted = T.exp(logFitted)
+			self.residuals.append(actual - fitted)
+		}
 	}
 
 	public func project(periods: Int) throws -> TimeSeries<T> {
@@ -419,6 +661,101 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 			periods: futurePeriods,
 			values: futureValues,
 			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Exponential Trend")
+		)
+	}
+
+	/// Projects future values with confidence intervals.
+	///
+	/// Generates a forecast with upper and lower bounds representing the specified
+	/// confidence level. The confidence intervals widen over time (forecast horizon effect).
+	///
+	/// - Parameters:
+	///   - periods: Number of future periods to project.
+	///   - confidenceLevel: The confidence level (e.g., 0.95 for 95% confidence).
+	/// - Returns: A forecast with confidence intervals.
+	/// - Throws: `TrendModelError.modelNotFitted` if the model hasn't been fitted yet,
+	///           or `ForecastError.invalidConfidenceLevel` if confidence level is invalid.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = ExponentialTrend<Double>()
+	/// try model.fit(to: historical)
+	///
+	/// let forecastWithCI = try model.projectWithConfidence(
+	///     periods: 12,
+	///     confidenceLevel: 0.95
+	/// )
+	/// ```
+	public func projectWithConfidence(
+		periods: Int,
+		confidenceLevel: T
+	) throws -> ForecastWithConfidence<T> where T: BinaryFloatingPoint {
+		// Generate point forecast
+		let forecast = try project(periods: periods)
+
+		// Validate confidence level
+		guard confidenceLevel > T.zero && confidenceLevel <= T(1) else {
+			throw ForecastError.invalidConfidenceLevel
+		}
+
+		// Handle empty forecast
+		guard periods > 0 else {
+			return ForecastWithConfidence(
+				forecast: forecast,
+				lowerBound: forecast,
+				upperBound: forecast,
+				confidenceLevel: confidenceLevel
+			)
+		}
+
+		// Calculate standard error from residuals
+		let sumSquaredResiduals = residuals.map { $0 * $0 }.reduce(T.zero, +)
+		let degreesOfFreedom = max(residuals.count - 2, 1)
+		let mse = sumSquaredResiduals / T(degreesOfFreedom)
+		let standardError = sqrt(mse)
+
+		// Get z-score for confidence level
+		let zScoreValue = zScore(ci: confidenceLevel)
+
+		// Calculate confidence intervals
+		var lowerValues: [T] = []
+		var upperValues: [T] = []
+
+		let n = T(fittedDataCount)
+
+		for (h, forecastValue) in forecast.valuesArray.enumerated() {
+			let horizon = T(h + 1)
+
+			// Standard error increases with forecast horizon
+			let term1 = T(1)
+			let term2 = T(1) / n
+			let term3 = (horizon * horizon) / (T(12) * n)
+			let varianceFactor = sqrt(term1 + term2 + term3)
+			let forecastSE = standardError * varianceFactor
+
+			let margin = zScoreValue * forecastSE
+			// For exponential trend, ensure lower bound stays positive
+			lowerValues.append(max(forecastValue - margin, T.zero))
+			upperValues.append(forecastValue + margin)
+		}
+
+		let lowerBound = TimeSeries(
+			periods: forecast.periods,
+			values: lowerValues,
+			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Lower Bound")
+		)
+
+		let upperBound = TimeSeries(
+			periods: forecast.periods,
+			values: upperValues,
+			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Upper Bound")
+		)
+
+		return ForecastWithConfidence(
+			forecast: forecast,
+			lowerBound: lowerBound,
+			upperBound: upperBound,
+			confidenceLevel: confidenceLevel
 		)
 	}
 }
@@ -509,6 +846,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	private var lastPeriod: Period?
 	private var metadata: TimeSeriesMetadata?
 	private var fittedDataCount: Int = 0
+	private var residuals: [T] = []
 
 	/// Creates a new logistic trend model with the specified capacity.
 	///
@@ -574,6 +912,20 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.lastPeriod = periods.last
 		self.metadata = timeSeries.metadata
 		self.fittedDataCount = values.count
+
+		// Calculate and store residuals for confidence intervals
+		self.residuals = []
+		// Capture values to avoid mutating self in closure
+		let kValue = self.k!
+		let x0Value = self.x0!
+		let capacityValue = self.capacity
+
+		for (i, actual) in values.enumerated() {
+			let exponent = -kValue * (T(i) - x0Value)
+			let denominator = T(1) + T.exp(exponent)
+			let fitted = capacityValue / denominator
+			self.residuals.append(actual - fitted)
+		}
 	}
 
 	public func project(periods: Int) throws -> TimeSeries<T> {
@@ -624,6 +976,102 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 			periods: futurePeriods,
 			values: futureValues,
 			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Logistic Trend")
+		)
+	}
+
+	/// Projects future values with confidence intervals.
+	///
+	/// Generates a forecast with upper and lower bounds representing the specified
+	/// confidence level. The confidence intervals widen over time (forecast horizon effect).
+	///
+	/// - Parameters:
+	///   - periods: Number of future periods to project.
+	///   - confidenceLevel: The confidence level (e.g., 0.95 for 95% confidence).
+	/// - Returns: A forecast with confidence intervals.
+	/// - Throws: `TrendModelError.modelNotFitted` if the model hasn't been fitted yet,
+	///           or `ForecastError.invalidConfidenceLevel` if confidence level is invalid.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = LogisticTrend<Double>(capacity: 1000.0)
+	/// try model.fit(to: historical)
+	///
+	/// let forecastWithCI = try model.projectWithConfidence(
+	///     periods: 12,
+	///     confidenceLevel: 0.95
+	/// )
+	/// ```
+	public func projectWithConfidence(
+		periods: Int,
+		confidenceLevel: T
+	) throws -> ForecastWithConfidence<T> where T: BinaryFloatingPoint {
+		// Generate point forecast
+		let forecast = try project(periods: periods)
+
+		// Validate confidence level
+		guard confidenceLevel > T.zero && confidenceLevel <= T(1) else {
+			throw ForecastError.invalidConfidenceLevel
+		}
+
+		// Handle empty forecast
+		guard periods > 0 else {
+			return ForecastWithConfidence(
+				forecast: forecast,
+				lowerBound: forecast,
+				upperBound: forecast,
+				confidenceLevel: confidenceLevel
+			)
+		}
+
+		// Calculate standard error from residuals
+		let sumSquaredResiduals = residuals.map { $0 * $0 }.reduce(T.zero, +)
+		let degreesOfFreedom = max(residuals.count - 3, 1)  // -3 for logistic parameters
+		let mse = sumSquaredResiduals / T(degreesOfFreedom)
+		let standardError = sqrt(mse)
+
+		// Get z-score for confidence level
+		let zScoreValue = zScore(ci: confidenceLevel)
+
+		// Calculate confidence intervals
+		var lowerValues: [T] = []
+		var upperValues: [T] = []
+
+		let n = T(fittedDataCount)
+
+		for (h, forecastValue) in forecast.valuesArray.enumerated() {
+			let horizon = T(h + 1)
+
+			// Standard error increases with forecast horizon
+			// Break down complex expression to avoid compiler timeout
+			let term1 = T(1)
+			let term2 = T(1) / n
+			let term3 = (horizon * horizon) / (T(12) * n)
+			let varianceFactor = sqrt(term1 + term2 + term3)
+			let forecastSE = standardError * varianceFactor
+
+			let margin = zScoreValue * forecastSE
+			// Ensure bounds respect capacity constraint
+			lowerValues.append(max(forecastValue - margin, T.zero))
+			upperValues.append(min(forecastValue + margin, capacity))
+		}
+
+		let lowerBound = TimeSeries(
+			periods: forecast.periods,
+			values: lowerValues,
+			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Lower Bound")
+		)
+
+		let upperBound = TimeSeries(
+			periods: forecast.periods,
+			values: upperValues,
+			metadata: TimeSeriesMetadata(name: "\(metadata?.name ?? "Projection") - Upper Bound")
+		)
+
+		return ForecastWithConfidence(
+			forecast: forecast,
+			lowerBound: lowerBound,
+			upperBound: upperBound,
+			confidenceLevel: confidenceLevel
 		)
 	}
 }

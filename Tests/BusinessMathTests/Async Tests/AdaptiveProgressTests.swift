@@ -36,23 +36,23 @@ struct AdaptiveProgressTests {
 
         // Should report more frequently early, less frequently later
         // With initial interval 1 and factor 2, reports at: 0, 1, 3, 7, 15...
-        var reported0 = strategy.shouldReport(iteration: 0)
+        let reported0 = strategy.shouldReport(iteration: 0)
         #expect(reported0)
-        var reported1 = strategy.shouldReport(iteration: 1)
+        let reported1 = strategy.shouldReport(iteration: 1)
         #expect(reported1)
-        var reported2 = strategy.shouldReport(iteration: 2)
+        let reported2 = strategy.shouldReport(iteration: 2)
         #expect(!reported2)  // Should NOT report - next is at iteration 3
-        var reported3 = strategy.shouldReport(iteration: 3)
+        let reported3 = strategy.shouldReport(iteration: 3)
         #expect(reported3)
 
         // Verify exponential sequence continues: next should be at 7
-        var reported4 = strategy.shouldReport(iteration: 4)
+        let reported4 = strategy.shouldReport(iteration: 4)
         #expect(!reported4)
-        var reported5 = strategy.shouldReport(iteration: 5)
+        let reported5 = strategy.shouldReport(iteration: 5)
         #expect(!reported5)
-        var reported6 = strategy.shouldReport(iteration: 6)
+        let reported6 = strategy.shouldReport(iteration: 6)
         #expect(!reported6)
-        var reported7 = strategy.shouldReport(iteration: 7)
+        let reported7 = strategy.shouldReport(iteration: 7)
         #expect(reported7)  // Reports at 0, 1, 3, 7 with interval doubling
     }
 

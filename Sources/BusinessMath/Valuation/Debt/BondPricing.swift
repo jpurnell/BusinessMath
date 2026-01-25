@@ -1019,4 +1019,5 @@ public enum OptimizationError: Error {
     case singularMatrix(message: String)
     case maxIterationsReached
     case unsupportedConstraints(String)
+    case nonlinearModel(message: String)  // NEW: For MILP solvers requiring linear models
 }

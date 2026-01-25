@@ -161,13 +161,15 @@ CAGR and trend fitting (linear, exponential, logistic), plus complete forecastin
 
 #### Financial Modeling & Reporting
 
-Step-by-step revenue model construction, financial statements (income statement, balance sheet, cash flow), integrated framework, lease accounting (IFRS 16 / ASC 842), and loan schedules.
+Step-by-step revenue model construction, financial statements (income statement, balance sheet, cash flow), integrated framework, lease accounting (IFRS 16 / ASC 842), loan schedules, and data ingestion from external sources.
 
 - <doc:3.3-BuildingRevenueModel>
 - <doc:3.4-BuildingFinancialReports>
 - <doc:3.5-FinancialStatementsGuide>
 - <doc:3.6-LeaseAccountingGuide>
 - <doc:3.7-LoanAmortization>
+- <doc:3.15-DataIngestionGuide>
+- <doc:3.16-FinancialStatementsReference>
 
 #### Valuation & Investment Analysis
 

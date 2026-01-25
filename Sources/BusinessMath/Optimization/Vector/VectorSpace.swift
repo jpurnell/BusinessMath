@@ -204,7 +204,12 @@ public struct Vector2D<T: Real & Sendable & Codable>: VectorSpace {
 	public static func * (lhs: T, rhs: Vector2D<T>) -> Vector2D<T> {
 		Vector2D(x: lhs * rhs.x, y: lhs * rhs.y)
 	}
-	
+
+	/// Scalar division.
+	public static func / (lhs: Vector2D<T>, rhs: T) -> Vector2D<T> {
+		Vector2D(x: lhs.x / rhs, y: lhs.y / rhs)
+	}
+
 	/// Vector negation.
 	public static prefix func - (vector: Vector2D<T>) -> Vector2D<T> {
 		Vector2D(x: -vector.x, y: -vector.y)
@@ -318,7 +323,12 @@ public struct Vector3D<T: Real & Sendable & Codable>: VectorSpace {
 	public static func * (lhs: T, rhs: Vector3D<T>) -> Vector3D<T> {
 		Vector3D(x: lhs * rhs.x, y: lhs * rhs.y, z: lhs * rhs.z)
 	}
-	
+
+	/// Scalar division.
+	public static func / (lhs: Vector3D<T>, rhs: T) -> Vector3D<T> {
+		Vector3D(x: lhs.x / rhs, y: lhs.y / rhs, z: lhs.z / rhs)
+	}
+
 	/// Vector negation.
 	public static prefix func - (vector: Vector3D<T>) -> Vector3D<T> {
 		Vector3D(x: -vector.x, y: -vector.y, z: -vector.z)
