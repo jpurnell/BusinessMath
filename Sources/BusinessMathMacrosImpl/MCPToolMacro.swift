@@ -7,7 +7,10 @@
 
 import SwiftSyntax
 import SwiftSyntaxMacros
+import SwiftSyntaxBuilder
+import SwiftCompilerPlugin
 import SwiftDiagnostics
+import Foundation
 
 /// Macro that generates MCP tool definitions from functions.
 ///

@@ -152,7 +152,7 @@ Add BusinessMath to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.0.0-beta.5")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.0.0")
 ]
 ```
 
@@ -176,6 +176,7 @@ dependencies: [
 ### 💻 Code Examples
 **Detailed examples** for common workflows:
 
+- **[QUICK_START_EXAMPLE.swift](QUICK_START_EXAMPLE.swift)** - 🚀 Copy-paste investment analysis example (start here!)
 - **[EXAMPLES.md](EXAMPLES.md)** - Time series, forecasting, loans, securities, risk, optimization
 - **[GPU_ACCELERATION_TUTORIAL.md](GPU_ACCELERATION_TUTORIAL.md)** - GPU-accelerated optimization tutorial
 - **[Examples Folder](Examples/)** - Complete financial models and case studies
@@ -238,6 +239,10 @@ See [MCP_README.md](MCP_README.md) for full AI integration details.
 
 ---
 
+## Release Notes
+
+📢 **[v2.0.0 Release Notes](RELEASE_NOTES_v2.0.0.md)** - Complete what's new guide for the 2.0 release
+
 ## Contributing
 
 Contributions welcome! Please:
@@ -249,7 +254,7 @@ Contributions welcome! Please:
 5. Update documentation
 6. Open a Pull Request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+📖 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for detailed guidelines and code standards.
 
 ---
 

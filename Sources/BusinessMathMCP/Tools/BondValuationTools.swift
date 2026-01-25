@@ -226,7 +226,8 @@ public struct BondYieldToMaturityTool: MCPToolHandler, Sendable {
 
         // Calculate capital gain/loss component
         let totalReturn = (faceValue - marketPrice + (annualCoupon * yearsToMaturity)) / marketPrice
-        let annualizedReturn = pow(1 + totalReturn, 1 / yearsToMaturity) - 1
+        // Annualized Return
+		let _ = pow(1 + totalReturn, 1 / yearsToMaturity) - 1
 
         let result = """
         Yield to Maturity Analysis

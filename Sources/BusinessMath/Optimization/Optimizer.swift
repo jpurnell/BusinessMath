@@ -158,7 +158,7 @@ public enum ConstraintType: Sendable {
 ///     function: { $0 * $0 }
 /// )
 /// ```
-public struct Constraint<T: Real & Sendable & Codable> {
+public struct Constraint<T: Real & Sendable & Codable>: Sendable {
 	/// The type of constraint.
 	public let type: ConstraintType
 
@@ -166,7 +166,7 @@ public struct Constraint<T: Real & Sendable & Codable> {
 	public let bound: T
 
 	/// Optional function to apply to the value before checking the constraint.
-	public let function: ((T) -> T)?
+	public let function: (@Sendable (T) -> T)?
 
 	/// Tolerance for equality constraints.
 	public let tolerance: T
@@ -181,7 +181,7 @@ public struct Constraint<T: Real & Sendable & Codable> {
 	public init(
 		type: ConstraintType,
 		bound: T,
-		function: ((T) -> T)? = nil,
+		function: (@Sendable (T) -> T)? = nil,
 		tolerance: T = 0.0001
 	) {
 		self.type = type

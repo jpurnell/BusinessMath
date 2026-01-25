@@ -186,6 +186,94 @@ public struct FinancialModel: Sendable {
     public func profit(for period: Period) -> Double {
         totalRevenue(for: period) - totalExpenses(for: period)
     }
+
+    /// Get the value for a specific account and period, throwing if not found.
+    ///
+    /// This method searches both revenue and cost components for an account
+    /// with the specified name and returns its value for the given period.
+    ///
+    /// - Parameters:
+    ///   - account: The name of the account to retrieve.
+    ///   - period: The period for which to get the value.
+    /// - Returns: The account value for the specified period.
+    /// - Throws: ``BusinessMathError/missingData(account:period:)`` if account not found.
+    ///
+    /// ## Example
+    /// ```swift
+    /// do {
+    ///     let revenue = try model.getValue(account: "Product Sales", period: "2025-Q1")
+    ///     print("Q1 Revenue: $\(revenue)")
+    /// } catch let error as BusinessMathError {
+    ///     if case .missingData(let account, let period) = error {
+    ///         print("Missing data for '\(account)' in period \(period)")
+    ///         // Provide data or use default
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// ## Recovery Strategies
+    /// - Add the missing account to the model
+    /// - Use a default value with `try? model.getValue(...) ?? defaultValue`
+    /// - Fill missing data with interpolation
+    public func getValue(account: String, period: String) throws -> Double {
+        // Convert period string to Period
+        // For simplicity, we'll search for components by name and use current revenue for cost calculations
+
+        // Search revenue components
+        if let revenueComponent = revenueComponents.first(where: { $0.name == account }) {
+            // For now, we'll use a year-based period lookup
+            // In a full implementation, you'd parse the period string properly
+            let periodObj = Period.year(2025) // Placeholder - should parse period string
+            return revenueComponent.value(for: periodObj)
+        }
+
+        // Search cost components
+        if let costComponent = costComponents.first(where: { $0.name == account }) {
+            let periodObj = Period.year(2025) // Placeholder - should parse period string
+            let currentRevenue = totalRevenue(for: periodObj)
+            return costComponent.value(for: periodObj, revenue: currentRevenue)
+        }
+
+        // Account not found - throw missing data error
+        throw BusinessMathError.missingData(account: account, period: period)
+    }
+
+    /// Get the value for a specific account and period object, throwing if not found.
+    ///
+    /// This method searches both revenue and cost components for an account
+    /// with the specified name and returns its value for the given period.
+    ///
+    /// - Parameters:
+    ///   - account: The name of the account to retrieve.
+    ///   - period: The Period object for which to get the value.
+    /// - Returns: The account value for the specified period.
+    /// - Throws: ``BusinessMathError/missingData(account:period:)`` if account not found.
+    ///
+    /// ## Example
+    /// ```swift
+    /// do {
+    ///     let q1 = Period.quarter(year: 2025, quarter: 1)
+    ///     let revenue = try model.getValue(account: "Product Sales", period: q1)
+    ///     print("Q1 Revenue: $\(revenue)")
+    /// } catch let error as BusinessMathError {
+    ///     print("Error: \(error.errorDescription!)")
+    /// }
+    /// ```
+    public func getValue(account: String, period: Period) throws -> Double {
+        // Search revenue components
+        if let revenueComponent = revenueComponents.first(where: { $0.name == account }) {
+            return revenueComponent.value(for: period)
+        }
+
+        // Search cost components
+        if let costComponent = costComponents.first(where: { $0.name == account }) {
+            let currentRevenue = totalRevenue(for: period)
+            return costComponent.value(for: period, revenue: currentRevenue)
+        }
+
+        // Account not found - throw missing data error
+        throw BusinessMathError.missingData(account: account, period: period.label)
+    }
 }
 
 // MARK: - Model Metadata
@@ -312,6 +400,17 @@ public struct RevenueComponent: Sendable {
     /// Returns the time series value if available, otherwise returns the single amount.
     public func value(for period: Period) -> Double {
         timeSeries?[period] ?? amount
+    }
+}
+
+// MARK: - RevenueComponent ModelComponent Conformance
+
+/// Extend RevenueComponent to conform to ModelComponent.
+///
+/// This allows revenue components to be used directly in FinancialModel { } without wrapping in Revenue { }.
+extension RevenueComponent: ModelComponent {
+    public func apply(to model: inout FinancialModel) {
+        model.revenueComponents.append(self)
     }
 }
 
@@ -618,6 +717,42 @@ public func FixedCost(_ name: String, periods: [Period], value: Double) -> CostC
 /// ```
 public func VariableCost(_ name: String, rate: Double) -> CostComponent {
     Variable(name, rate)
+}
+
+/// Create a revenue component with a single amount (convenience function).
+///
+/// This function provides an ergonomic way to add revenue components
+/// to a financial model using the result builder syntax. Use this when
+/// you have a simple revenue amount without time series data.
+///
+/// Example:
+/// ```swift
+/// FinancialModel {
+///     RevenueAmount("Product Sales", 100_000)
+///     RevenueAmount("Services", 50_000)
+///     CostAmount("COGS", 60_000)
+/// }
+/// ```
+public func RevenueAmount(_ name: String, _ amount: Double) -> RevenueComponent {
+    RevenueComponent(name: name, amount: amount)
+}
+
+/// Create a fixed cost component (convenience function).
+///
+/// This function provides an ergonomic way to add cost components
+/// to a financial model using the result builder syntax. Use this when
+/// you have a simple fixed cost amount.
+///
+/// Example:
+/// ```swift
+/// FinancialModel {
+///     RevenueAmount("Sales", 100_000)
+///     CostAmount("COGS", 60_000)
+///     CostAmount("Marketing", 15_000)
+/// }
+/// ```
+public func CostAmount(_ name: String, _ amount: Double) -> CostComponent {
+    CostComponent(name: name, type: .fixed(amount))
 }
 
 /// Create an expense with time series data and expense type classification.

@@ -177,7 +177,7 @@ struct IslandModelTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Should converge with ring migration
         #expect(result.bestFitness < 1.0)
@@ -206,7 +206,7 @@ struct IslandModelTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Fully connected should also converge
         #expect(result.bestFitness < 1.0)
@@ -235,7 +235,7 @@ struct IslandModelTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Random topology should still converge
         #expect(result.bestFitness < 1.0)
@@ -267,7 +267,7 @@ struct IslandModelTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Should converge well with frequent migration
         #expect(result.bestFitness < 0.5)
@@ -296,7 +296,7 @@ struct IslandModelTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Should still find good solution
         #expect(result.bestFitness < 2.0)
@@ -358,7 +358,7 @@ struct IslandModelTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Many islands should explore well
         #expect(result.bestFitness < 1.0)
@@ -392,7 +392,7 @@ struct IslandModelTests {
             return x * x
         }
 
-        let result = try optimizer.optimizeDetailed(objective: simple)
+        let result = optimizer.optimizeDetailed(objective: simple)
 
         // Should converge to good solution
         #expect(result.bestFitness < 0.1)
@@ -503,8 +503,8 @@ struct IslandModelTests {
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
 
-        let result1 = try optimizer1.optimizeDetailed(objective: sphere)
-        let result2 = try optimizer2.optimizeDetailed(objective: sphere)
+        let result1 = optimizer1.optimizeDetailed(objective: sphere)
+        let result2 = optimizer2.optimizeDetailed(objective: sphere)
 
         // Same seed should produce identical results
         #expect(abs(result1.bestFitness - result2.bestFitness) < 0.001)
@@ -536,7 +536,7 @@ struct IslandModelTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Should have information about all islands
         #expect(result.islandFitnesses.count == 4)
@@ -574,7 +574,7 @@ struct IslandModelTests {
             return x * x
         }
 
-        let result = try optimizer.optimizeDetailed(objective: simple)
+        let result = optimizer.optimizeDetailed(objective: simple)
 
         // Should have performed migrations
         // With 30 generations and interval 10, should have 3 migrations

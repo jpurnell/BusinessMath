@@ -7,6 +7,10 @@
 
 import SwiftSyntax
 import SwiftSyntaxMacros
+import SwiftSyntaxBuilder
+import SwiftCompilerPlugin
+import SwiftDiagnostics
+import Foundation
 
 /// Macro that generates async wrapper functions for synchronous functions
 public struct AsyncWrapperMacro: PeerMacro {
@@ -39,7 +43,7 @@ public struct AsyncWrapperMacro: PeerMacro {
         }.joined(separator: ", ")
 
         // 5. Generate async wrapper function
-        let throwsKeyword = isThrows ? "throws " : ""
+        let _ = isThrows ? "throws " : ""
         let tryKeyword = isThrows ? "try " : ""
         let asyncThrowsKeyword = isThrows ? " throws" : ""
 

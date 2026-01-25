@@ -6,6 +6,7 @@
 .swiftpm/xcode/
 .vscode
 Blog/
+Site/
 Playgrounds/
 xcuserdata/
 howToResume.md

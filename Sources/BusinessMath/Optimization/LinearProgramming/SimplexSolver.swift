@@ -40,6 +40,101 @@ public enum ConstraintRelation: Sendable {
     case greaterOrEqual   // ≥
 }
 
+// MARK: - Simplex Tableau
+
+/// Public interface to the final simplex tableau
+///
+/// Exposes the tableau structure needed for cutting plane generation
+/// without leaking internal implementation details.
+///
+/// ## Usage with Cutting Planes
+/// ```swift
+/// let result = try solver.maximize(objective: [...], subjectTo: [...])
+///
+/// if let tableau = result.tableau, let basis = result.basis {
+///     // Generate Gomory cuts from fractional basic variables
+///     let cutGenerator = CuttingPlaneGenerator()
+///
+///     for (rowIndex, basicVarIndex) in basis.enumerated() {
+///         let value = result.solution[basicVarIndex]
+///         let tableauRow = tableau.getRow(rowIndex)
+///
+///         if let cut = try cutGenerator.generateGomoryCut(
+///             tableauRow: tableauRow,
+///             rhs: value,
+///             basicVariableIndex: basicVarIndex
+///         ) {
+///             // Add cut to LP and re-solve
+///         }
+///     }
+/// }
+/// ```
+public struct SimplexTableau: Sendable {
+    /// Internal tableau representation
+    private let table: [[Double]]
+
+    /// Number of original decision variables
+    private let numOriginalVars: Int
+
+    /// Number of rows (constraints)
+    public var rowCount: Int {
+        // Exclude objective row
+        return table.count > 0 ? table.count - 1 : 0
+    }
+
+    /// Number of columns (variables + slacks + RHS)
+    public var columnCount: Int {
+        return table.first?.count ?? 0
+    }
+
+    /// Internal initializer
+    internal init(table: [[Double]], numOriginalVars: Int) {
+        self.table = table
+        self.numOriginalVars = numOriginalVars
+    }
+
+    /// Get a tableau row (coefficients of non-basic variables)
+    ///
+    /// Returns the coefficients from the tableau row, excluding the RHS.
+    /// These coefficients are used for Gomory cut generation.
+    ///
+    /// - Parameter index: Row index (0-based, excluding objective row)
+    /// - Returns: Array of coefficients for this constraint row
+    public func getRow(_ index: Int) -> [Double] {
+        guard index >= 0 && index < rowCount else {
+            return []
+        }
+
+        // Return row excluding RHS (last column)
+        let fullRow = table[index]
+        return Array(fullRow.dropLast())
+    }
+
+    /// Get the RHS value for a row
+    ///
+    /// - Parameter index: Row index (0-based, excluding objective row)
+    /// - Returns: Right-hand side value
+    public func getRHS(_ index: Int) -> Double {
+        guard index >= 0 && index < rowCount else {
+            return 0.0
+        }
+
+        return table[index].last ?? 0.0
+    }
+
+    /// Get full row including RHS
+    ///
+    /// - Parameter index: Row index
+    /// - Returns: Full row with RHS
+    public func getFullRow(_ index: Int) -> [Double] {
+        guard index >= 0 && index < rowCount else {
+            return []
+        }
+
+        return table[index]
+    }
+}
+
 // MARK: - Simplex Result
 
 /// Result from simplex linear programming solver.
@@ -69,12 +164,49 @@ public struct SimplexResult: Sendable {
     /// Number of simplex iterations performed
     public let iterations: Int
 
+    /// Final simplex tableau (for cutting plane generation)
+    ///
+    /// Contains the optimal tableau structure needed to generate Gomory cuts
+    /// and other cutting planes. Only available when status is `.optimal`.
+    public let tableau: SimplexTableau?
+
+    /// Basis information (which variables are basic in each row)
+    ///
+    /// Array where `basis[i]` is the index of the basic variable in row `i`.
+    /// Used for identifying fractional basic variables for cut generation.
+    public let basis: [Int]?
+
+    /// Dual variable values (shadow prices)
+    ///
+    /// The dual values indicate how much the objective would improve
+    /// per unit increase in each constraint's RHS. Only available for optimal solutions.
+    public let dualValues: [Double]?
+
+    /// Reduced costs for non-basic variables
+    ///
+    /// Indicates how much the objective would worsen if a non-basic variable
+    /// entered the basis. Only available for optimal solutions.
+    public let reducedCosts: [Double]?
+
     /// Creates a simplex result.
-    public init(solution: [Double], objectiveValue: Double, status: SimplexStatus, iterations: Int) {
+    public init(
+        solution: [Double],
+        objectiveValue: Double,
+        status: SimplexStatus,
+        iterations: Int,
+        tableau: SimplexTableau? = nil,
+        basis: [Int]? = nil,
+        dualValues: [Double]? = nil,
+        reducedCosts: [Double]? = nil
+    ) {
         self.solution = solution
         self.objectiveValue = objectiveValue
         self.status = status
         self.iterations = iterations
+        self.tableau = tableau
+        self.basis = basis
+        self.dualValues = dualValues
+        self.reducedCosts = reducedCosts
     }
 }
 
@@ -83,6 +215,7 @@ public enum SimplexStatus: Sendable {
     case optimal      // Found optimal solution
     case unbounded    // Problem is unbounded
     case infeasible   // No feasible solution exists
+	case unknown	  // In case of failure
 }
 
 // MARK: - Simplex Solver
@@ -189,7 +322,11 @@ public struct SimplexSolver: Sendable {
             solution: result.solution,
             objectiveValue: -result.objectiveValue,  // Negate back
             status: result.status,
-            iterations: result.iterations
+            iterations: result.iterations,
+            tableau: result.tableau,        // Preserve tableau for cuts
+            basis: result.basis,            // Preserve basis for cuts
+            dualValues: result.dualValues,  // Preserve dual values
+            reducedCosts: result.reducedCosts  // Preserve reduced costs
         )
         return result
     }
@@ -241,7 +378,7 @@ public struct SimplexSolver: Sendable {
         objective: [Double],
         constraints: [SimplexConstraint],
         maximize: Bool
-    ) throws -> SimplexTableau {
+    ) throws -> InternalSimplexTableau {
 
         let numVars = objective.count
         let numConstraints = constraints.count
@@ -352,7 +489,7 @@ public struct SimplexSolver: Sendable {
         //     }
         // }
 
-        return SimplexTableau(
+        return InternalSimplexTableau(
             table: tableau,
             basis: basis,
             numOriginalVars: numVars,
@@ -372,7 +509,7 @@ public struct SimplexSolver: Sendable {
 
     // MARK: - Two-Phase Simplex
 
-    private func solveSimplex(tableau: SimplexTableau, numOriginalVars: Int) throws -> SimplexResult {
+    private func solveSimplex(tableau: InternalSimplexTableau, numOriginalVars: Int) throws -> SimplexResult {
         var currentTableau = tableau
         var totalIterations = 0
 
@@ -401,16 +538,53 @@ public struct SimplexSolver: Sendable {
         // Objective value is in RHS of objective row (already correct sign)
         let objectiveValue = phaseIIResult.tableau.table.last![phaseIIResult.tableau.table[0].count - 1]
 
+        // Create public tableau for cutting plane generation
+        let publicTableau = SimplexTableau(
+            table: phaseIIResult.tableau.table,
+            numOriginalVars: numOriginalVars
+        )
+
+        // Extract basis information
+        let basis = phaseIIResult.tableau.basis
+
+        // Extract dual values (from objective row)
+        // Dual values correspond to slack variables (constraints)
+        let numConstraints = phaseIIResult.tableau.table.count - 1
+        var dualValues: [Double] = []
+        if phaseIIResult.status == .optimal {
+            let objectiveRow = phaseIIResult.tableau.table.last!
+            // Dual values are negatives of slack variable coefficients in objective row
+            for i in 0..<numConstraints {
+                let slackIndex = numOriginalVars + i
+                if slackIndex < objectiveRow.count - 1 {
+                    dualValues.append(-objectiveRow[slackIndex])
+                }
+            }
+        }
+
+        // Extract reduced costs (objective row coefficients for non-basic variables)
+        var reducedCosts: [Double] = []
+        if phaseIIResult.status == .optimal {
+            let objectiveRow = phaseIIResult.tableau.table.last!
+            for i in 0..<numOriginalVars {
+                reducedCosts.append(objectiveRow[i])
+            }
+        }
+
         return SimplexResult(
             solution: solution,
             objectiveValue: objectiveValue,
             status: phaseIIResult.status,
-            iterations: totalIterations
+            iterations: totalIterations,
+            tableau: publicTableau,
+            basis: basis,
+            dualValues: dualValues.isEmpty ? nil : dualValues,
+            reducedCosts: reducedCosts.isEmpty ? nil : reducedCosts
         )
     }
 
     /// Phase I: Find a basic feasible solution
-    private func phaseI(tableau: SimplexTableau) throws -> (tableau: SimplexTableau, status: SimplexStatus, iterations: Int) {
+    private func phaseI(tableau: InternalSimplexTableau) throws -> (tableau: InternalSimplexTableau, status: SimplexStatus, iterations: Int) {
         var workingTableau = tableau
         let numRows = workingTableau.table.count - 1
         let numCols = workingTableau.table[0].count
@@ -468,7 +642,7 @@ public struct SimplexSolver: Sendable {
     }
 
     /// Phase II: Optimize from feasible solution
-    private func phaseII(tableau: SimplexTableau) throws -> (tableau: SimplexTableau, status: SimplexStatus, iterations: Int) {
+    private func phaseII(tableau: InternalSimplexTableau) throws -> (tableau: InternalSimplexTableau, status: SimplexStatus, iterations: Int) {
         var workingTableau = tableau
         let numRows = workingTableau.table.count - 1
         let numCols = workingTableau.table[0].count
@@ -562,10 +736,10 @@ public struct SimplexSolver: Sendable {
     }
 
     /// Main simplex pivot iterations
-    private func simplexIterations(tableau: SimplexTableau) throws -> (tableau: SimplexTableau, status: SimplexStatus, iterations: Int) {
+    private func simplexIterations(tableau: InternalSimplexTableau) throws -> (tableau: InternalSimplexTableau, status: SimplexStatus, iterations: Int) {
         var workingTableau = tableau
-        let numRows = workingTableau.table.count - 1
-        let numCols = workingTableau.table[0].count - 1  // Exclude RHS
+//        let numRows = workingTableau.table.count - 1
+//        let numCols = workingTableau.table[0].count - 1  // Exclude RHS
 
         for iteration in 0..<maxIterations {
             // Find entering variable (most negative coefficient in objective row)
@@ -595,7 +769,7 @@ public struct SimplexSolver: Sendable {
     }
 
     /// Select entering variable using Bland's rule (smallest index with negative cost)
-    private func selectEnteringVariable(tableau: SimplexTableau) -> Int {
+    private func selectEnteringVariable(tableau: InternalSimplexTableau) -> Int {
         let objectiveRow = tableau.table.last!
         let numCols = objectiveRow.count - 1
 
@@ -609,7 +783,7 @@ public struct SimplexSolver: Sendable {
     }
 
     /// Select leaving variable using minimum ratio test
-    private func selectLeavingVariable(tableau: SimplexTableau, enteringVar: Int) -> Int {
+    private func selectLeavingVariable(tableau: InternalSimplexTableau, enteringVar: Int) -> Int {
         let numRows = tableau.table.count - 1
         let rhsCol = tableau.table[0].count - 1
 
@@ -638,7 +812,7 @@ public struct SimplexSolver: Sendable {
     }
 
     /// Perform pivot operation
-    private func pivot(tableau: inout SimplexTableau, pivotRow: Int, pivotCol: Int) {
+    private func pivot(tableau: inout InternalSimplexTableau, pivotRow: Int, pivotCol: Int) {
         let numRows = tableau.table.count
         let numCols = tableau.table[0].count
         let pivotElement = tableau.table[pivotRow][pivotCol]
@@ -660,7 +834,7 @@ public struct SimplexSolver: Sendable {
     }
 
     /// Extract solution values for original variables
-    private func extractSolution(from tableau: SimplexTableau, numVars: Int) -> [Double] {
+    private func extractSolution(from tableau: InternalSimplexTableau, numVars: Int) -> [Double] {
         var solution = Array(repeating: 0.0, count: numVars)
         let rhsCol = tableau.table[0].count - 1
 
@@ -688,7 +862,7 @@ public struct SimplexSolver: Sendable {
         // the original variable may be non-basic (defaulting to 0), violating the lower bound.
         // We need to set such variables to their lower bound value.
         for surplusInfo in tableau.surplusVars {
-            let basicVarInRow = tableau.basis[surplusInfo.row]
+			_ = tableau.basis[surplusInfo.row]
 
             // Check if this is a single-variable lower bound constraint (like x[i] ≥ k)
             var singleVarIndex: Int? = nil
@@ -728,7 +902,7 @@ public struct SimplexSolver: Sendable {
 // MARK: - Internal Tableau Structure
 
 /// Internal simplex tableau structure
-private struct SimplexTableau {
+private struct InternalSimplexTableau {
     var table: [[Double]]          // Augmented matrix [A | b]
     var basis: [Int]               // Basic variable for each row
     let numOriginalVars: Int       // Number of original decision variables

@@ -364,7 +364,7 @@ public struct AsyncSimplexSolver: Sendable {
                     )
                     continuation.yield(finalProgress)
                     continuation.finish()
-
+					print(lastReportTime)
                 } catch {
                     continuation.finish(throwing: error)
                 }

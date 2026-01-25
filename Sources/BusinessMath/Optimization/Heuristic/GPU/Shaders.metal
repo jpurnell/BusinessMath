@@ -360,3 +360,86 @@ kernel void deSelection(
         fitness[id] = trialFitness[id];
     }
 }
+
+// ============================================================================
+// MARK: - Particle Swarm Optimization Kernel
+// ============================================================================
+
+/// PSO Update: Update particle velocities and positions.
+///
+/// Applies the standard PSO velocity update equation:
+/// v = w×v + c1×r1×(pbest - x) + c2×r2×(gbest - x)
+///
+/// Then updates position: x = x + v
+///
+/// - Parameters:
+///   - currentVelocities: Current velocity vectors
+///   - currentPositions: Current position vectors
+///   - personalBest: Each particle's personal best position
+///   - globalBest: Global best position (shared across all particles)
+///   - newVelocities: Output velocity vectors
+///   - newPositions: Output position vectors
+///   - randomSeeds: Random seed per particle
+///   - dimension: Number of dimensions
+///   - inertiaWeight: w - inertia weight for previous velocity
+///   - cognitiveCoeff: c1 - cognitive coefficient (attraction to personal best)
+///   - socialCoeff: c2 - social coefficient (attraction to global best)
+///   - searchSpace: Bounds per dimension (lower, upper)
+///   - velocityLimits: Velocity bounds per dimension (optional clamping)
+///   - hasVelocityClamp: Whether to apply velocity clamping
+///   - id: Thread index (particle index)
+kernel void psoUpdateParticles(
+    device const float* currentVelocities [[buffer(0)]],
+    device const float* currentPositions [[buffer(1)]],
+    device const float* personalBest [[buffer(2)]],
+    device const float* globalBest [[buffer(3)]],
+    device float* newVelocities [[buffer(4)]],
+    device float* newPositions [[buffer(5)]],
+    device const uint* randomSeeds [[buffer(6)]],
+    constant int& dimension [[buffer(7)]],
+    constant float& inertiaWeight [[buffer(8)]],
+    constant float& cognitiveCoeff [[buffer(9)]],
+    constant float& socialCoeff [[buffer(10)]],
+    constant float2* searchSpace [[buffer(11)]],
+    constant float2* velocityLimits [[buffer(12)]],
+    constant bool& hasVelocityClamp [[buffer(13)]],
+    uint id [[thread_position_in_grid]]
+) {
+    uint seed = randomSeeds[id];
+    uint offset = id * dimension;
+
+    for (int d = 0; d < dimension; d++) {
+        // Generate random values r1, r2
+        float r1 = random_float(seed, uint(d) * 2);
+        float r2 = random_float(seed, uint(d) * 2 + 1);
+
+        // PSO velocity update: v = w×v + c1×r1×(pbest - x) + c2×r2×(gbest - x)
+        float v = currentVelocities[offset + d];
+        float x = currentPositions[offset + d];
+        float pbest = personalBest[offset + d];
+        float gbest = globalBest[d];
+
+        float newV = inertiaWeight * v
+                   + cognitiveCoeff * r1 * (pbest - x)
+                   + socialCoeff * r2 * (gbest - x);
+
+        // Clamp velocity if needed
+        if (hasVelocityClamp) {
+            float vLower = velocityLimits[d].x;
+            float vUpper = velocityLimits[d].y;
+            newV = clamp(newV, vLower, vUpper);
+        }
+
+        // Update position: x = x + v
+        float newX = x + newV;
+
+        // Clamp position to search space
+        float xLower = searchSpace[d].x;
+        float xUpper = searchSpace[d].y;
+        newX = clamp(newX, xLower, xUpper);
+
+        // Write outputs
+        newVelocities[offset + d] = newV;
+        newPositions[offset + d] = newX;
+    }
+}

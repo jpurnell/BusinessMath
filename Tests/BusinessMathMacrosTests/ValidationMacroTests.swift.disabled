@@ -1,0 +1,502 @@
+//
+//  ValidationMacroTests.swift
+//  BusinessMath
+//
+//  Created on December 30, 2025.
+//
+
+import SwiftSyntaxMacros
+import SwiftSyntaxMacrosTestSupport
+import Testing
+@testable import BusinessMathMacrosImpl
+
+/// Tests for validation macros (@Validated, @Positive, @Range, etc.)
+@Suite("Validation Macro Tests")
+struct ValidationMacroTests {
+
+    // MARK: - Test Helpers
+
+    let testMacros: [String: Macro.Type] = [
+        "Validated": ValidatedMacro.self,
+        "Positive": PositiveMacro.self,
+        "NonNegative": NonNegativeMacro.self,
+        "Range": RangeMacro.self,
+        "Min": MinMacro.self,
+        "Max": MaxMacro.self,
+        "NonEmpty": NonEmptyMacro.self
+    ]
+
+    // MARK: - Empty Struct Tests
+
+    @Test("@Validated on struct with no validation attributes")
+    func validatedNoValidation() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct SimpleModel {
+                var value: Double
+            }
+            """,
+            expandedSource: """
+            struct SimpleModel {
+                var value: Double
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    // No validation rules defined
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+
+    // MARK: - @Positive Validation Tests
+
+    @Test("@Validated with @Positive attribute")
+    func validatedWithPositive() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct Investment {
+                @Positive var amount: Double
+            }
+            """,
+            expandedSource: """
+            struct Investment {
+                @Positive var amount: Double
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    if amount <= 0 {
+                        throw ValidationError(
+                            property: "amount",
+                            violation: "must be positive (> 0)",
+                            value: amount
+                        )
+                    }
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+
+    // MARK: - @Range Validation Tests
+
+    @Test("@Validated with @Range attribute")
+    func validatedWithRange() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct Portfolio {
+                @Range(0...1) var allocation: Double
+            }
+            """,
+            expandedSource: """
+            struct Portfolio {
+                @Range(0...1) var allocation: Double
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    let range_allocation = 0...1
+                    if !0...1.contains(allocation) {
+                        throw ValidationError(
+                            property: "allocation",
+                            violation: "must be within range \\(range_allocation)",
+                            value: allocation
+                        )
+                    }
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+
+    // MARK: - @Min and @Max Validation Tests
+
+    @Test("@Validated with @Min attribute")
+    func validatedWithMin() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct Loan {
+                @Min(1000) var amount: Double
+            }
+            """,
+            expandedSource: """
+            struct Loan {
+                @Min(1000) var amount: Double
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    if amount < 1000 {
+                        throw ValidationError(
+                            property: "amount",
+                            violation: "must be at least 1000",
+                            value: amount
+                        )
+                    }
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("@Validated with @Max attribute")
+    func validatedWithMax() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct Bond {
+                @Max(1.0) var couponRate: Double
+            }
+            """,
+            expandedSource: """
+            struct Bond {
+                @Max(1.0) var couponRate: Double
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    if couponRate > 1.0 {
+                        throw ValidationError(
+                            property: "couponRate",
+                            violation: "must be at most 1.0",
+                            value: couponRate
+                        )
+                    }
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+
+    // MARK: - Multiple Validation Attributes Tests
+
+    @Test("@Validated with multiple validation attributes")
+    func validatedMultipleAttributes() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct LoanCalculation {
+                @Positive var principal: Double
+                @Range(0...1) var interestRate: Double
+                @Min(1) var years: Int
+            }
+            """,
+            expandedSource: """
+            struct LoanCalculation {
+                @Positive var principal: Double
+                @Range(0...1) var interestRate: Double
+                @Min(1) var years: Int
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    if principal <= 0 {
+                        throw ValidationError(
+                            property: "principal",
+                            violation: "must be positive (> 0)",
+                            value: principal
+                        )
+                    }
+                    let range_interestRate = 0...1
+                    if !0...1.contains(interestRate) {
+                        throw ValidationError(
+                            property: "interestRate",
+                            violation: "must be within range \\(range_interestRate)",
+                            value: interestRate
+                        )
+                    }
+                    if years < 1 {
+                        throw ValidationError(
+                            property: "years",
+                            violation: "must be at least 1",
+                            value: years
+                        )
+                    }
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+
+    // MARK: - @NonNegative and @NonEmpty Tests
+
+    @Test("@Validated with @NonNegative attribute")
+    func validatedWithNonNegative() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct Account {
+                @NonNegative var balance: Double
+            }
+            """,
+            expandedSource: """
+            struct Account {
+                @NonNegative var balance: Double
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    if balance < 0 {
+                        throw ValidationError(
+                            property: "balance",
+                            violation: "must be non-negative (>= 0)",
+                            value: balance
+                        )
+                    }
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("@Validated with @NonEmpty attribute")
+    func validatedWithNonEmpty() {
+        assertMacroExpansion(
+            """
+            @Validated
+            struct Portfolio {
+                @NonEmpty var name: String
+            }
+            """,
+            expandedSource: """
+            struct Portfolio {
+                @NonEmpty var name: String
+
+                /// Validates all properties with validation attributes
+                /// - Throws: ValidationError if any validation rule fails
+                func validate() throws {
+                    if name.isEmpty {
+                        throw ValidationError(
+                            property: "name",
+                            violation: "must not be empty",
+                            value: nil
+                        )
+                    }
+                }
+
+                /// Returns true if all validation rules pass
+                var isValid: Bool {
+                    do {
+                        try validate()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+
+                /// Returns the first validation error, or nil if valid
+                var validationError: ValidationError? {
+                    do {
+                        try validate()
+                        return nil
+                    } catch let error as ValidationError {
+                        return error
+                    } catch {
+                        return ValidationError(
+                            property: "unknown",
+                            violation: error.localizedDescription,
+                            value: nil
+                        )
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+    }
+}

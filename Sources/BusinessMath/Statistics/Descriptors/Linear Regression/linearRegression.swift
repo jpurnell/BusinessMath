@@ -48,8 +48,9 @@ import Numerics
  */
 
 public func linearRegression<T: Real>(_ xValues: [T], _ yValues: [T]) throws -> (T) -> T {
-	guard xValues.count == yValues.count else { throw ArrayError.mismatchedLengths }
-	guard !xValues.isEmpty || !yValues.isEmpty else { throw ArrayError.emptyArray }
+	guard xValues.count == yValues.count else { throw BusinessMathError.mismatchedDimensions(message: "Dimensions or sizes don't match", expected: "Matching Data Lengths", actual: "\(xValues.count) x values with \(yValues.count) y values") }
+	guard !xValues.isEmpty || !yValues.isEmpty else { throw BusinessMathError.insufficientData(required: 0, actual: 0, context: "Empty data sets") }
+	guard xValues.count > 1 && yValues.count > 1 else { throw BusinessMathError.insufficientData(required: 2, actual: xValues.count, context: "Insufficient data points for calculation")}
 	
 	let slope = try slope(xValues, yValues)
     let intercept = try! intercept(xValues, yValues)

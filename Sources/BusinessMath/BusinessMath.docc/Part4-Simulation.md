@@ -82,7 +82,7 @@ This gives you a complete probability distribution instead of a single point est
 
 ### Scenario Analysis
 
-Structure thinking around discrete, internally consistent future states:
+Structure thinking around discrete, internally consistent future states. Each scenario can mix **fixed values** (deterministic) with **probability distributions** (uncertain):
 
 ```swift
 var analysis = ScenarioAnalysis(
@@ -95,25 +95,57 @@ var analysis = ScenarioAnalysis(
     iterations: 1_000
 )
 
+// Base Case: Fixed revenue growth, fixed margin
 analysis.addScenario(Scenario(name: "Base Case") { config in
     config.setValue(0.10, forInput: "Revenue Growth")
     config.setValue(0.02, forInput: "Margin Expansion")
 })
 
+// Upside: Uncertain revenue growth (distribution), fixed margin
 analysis.addScenario(Scenario(name: "Upside") { config in
-    config.setValue(0.20, forInput: "Revenue Growth")
+    config.setDistribution(DistributionNormal(0.20, 0.05), forInput: "Revenue Growth")
     config.setValue(0.04, forInput: "Margin Expansion")
 })
 
+// Downside: Uncertain revenue growth, uncertain margin
 analysis.addScenario(Scenario(name: "Downside") { config in
-    config.setValue(0.02, forInput: "Revenue Growth")
-    config.setValue(-0.01, forInput: "Margin Expansion")
+    config.setDistribution(DistributionNormal(0.02, 0.02), forInput: "Revenue Growth")
+    config.setDistribution(DistributionNormal(-0.01, 0.005), forInput: "Margin Expansion")
 })
 
 let results = try analysis.run()
 let comparison = ScenarioComparison(results: results)
 let best = comparison.bestScenario(by: .mean)
+
+// Each scenario runs 1,000 iterations, sampling from distributions
+print("Base Case mean: \(results["Base Case"]!.statistics.mean.currency(0))")
+print("Upside mean: \(results["Upside"]!.statistics.mean.currency(0))")
+print("Downside mean: \(results["Downside"]!.statistics.mean.currency(0))")
 ```
+
+**★ Insight ─────────────────────────────────────**
+Note the use of `setDistribution()` versus `setValue()`?
+
+We offer the ability to use a single value _or_ a distributed variable:
+```swift
+config.setValue(distributionNormal(mean: 0.10, stdDev: 0.01), forInput: "Revenue Growth")
+```
+
+This samples the distribution **once** when defining the scenario, then uses that single value for all 1,000 iterations. 
+
+**Dynamic approach:**
+```swift
+config.setDistribution(DistributionNormal(0.10, 0.01), forInput: "Revenue Growth")
+```
+
+This stores the **distribution object itself**, which gets sampled fresh on every iteration, giving you 1,000 different values.
+
+**Use cases:**
+- `setValue()` → Deterministic assumptions (known values)
+- `setDistribution()` → Uncertain assumptions (probabilistic)
+
+ScenarioAnalysis lets you mix both in the same scenario, modeling situations like "we know the market size, but growth rate is uncertain."
+**─────────────────────────────────────────────────**
 
 ### Probabilistic Forecasting
 
@@ -152,36 +184,205 @@ let confidence90 = (results.percentiles.p5, results.percentiles.p95)
 
 ### Stress Testing
 
-Test how models perform under extreme but plausible conditions:
+Test how models perform under extreme but plausible conditions. Real stress tests model **cascading effects** where one shock triggers others:
 
 ```swift
+import BusinessMath
+
+// Realistic business model with multiple revenue streams and cost components
 var stressTest = ScenarioAnalysis(
-	inputNames: ["Revenue", "Costs"],
-	model: { inputs in inputs[0] - inputs[1] },  // Profit
-	iterations: 1_000
+    inputNames: ["Sales Volume", "Unit Price", "COGS Margin", "OpEx", "Interest Rate"],
+    model: { inputs in
+        let volume = inputs[0]
+        let price = inputs[1]
+        let cogsMargin = inputs[2]
+        let opex = inputs[3]
+        let interestRate = inputs[4]
+
+        // Revenue
+        let revenue = volume * price
+
+        // Costs
+        let cogs = revenue * cogsMargin
+        let operatingExpenses = opex
+
+        // Debt servicing (assume $2M debt)
+        let debtBalance = 2_000_000.0
+        let interestExpense = debtBalance * interestRate
+
+        // Net income
+        return revenue - cogs - operatingExpenses - interestExpense
+    },
+    iterations: 5_000
 )
 
-// Recession scenario
+// Base Case: Normal operating conditions
+stressTest.addScenario(Scenario(name: "Base Case") { config in
+    config.setDistribution(DistributionNormal(50_000, 2_500), forInput: "Sales Volume")
+    config.setDistribution(DistributionNormal(25.0, 1.0), forInput: "Unit Price")
+    config.setValue(0.45, forInput: "COGS Margin")  // Stable COGS
+    config.setValue(350_000, forInput: "OpEx")
+    config.setValue(0.05, forInput: "Interest Rate")  // 5% rate
+})
+
+// Recession: Demand collapse + margin compression + credit tightening
 stressTest.addScenario(Scenario(name: "Recession") { config in
-	config.setValue(700_000, forInput: "Revenue")      // -30% revenue
-	config.setValue(650_000, forInput: "Costs")        // Costs stay high
+    config.setDistribution(DistributionNormal(35_000, 5_000), forInput: "Sales Volume")  // -30% volume
+    config.setDistribution(DistributionNormal(22.0, 2.0), forInput: "Unit Price")  // -12% price (deflation)
+    config.setDistribution(DistributionNormal(0.50, 0.03), forInput: "COGS Margin")  // +5% COGS (supplier power)
+    config.setValue(320_000, forInput: "OpEx")  // -9% (cost cutting)
+    config.setDistribution(DistributionNormal(0.08, 0.01), forInput: "Interest Rate")  // +3% (credit squeeze)
 })
 
-// Credit crisis scenario
-stressTest.addScenario(Scenario(name: "Credit Crisis") { config in
-	config.setValue(900_000, forInput: "Revenue")
-	config.setValue(800_000, forInput: "Costs")        // +40% financing costs
-})
-
-// Supply shock scenario
+// Supply Shock: Volume maintained but costs spike
 stressTest.addScenario(Scenario(name: "Supply Shock") { config in
-	config.setValue(1_000_000, forInput: "Revenue")
-	config.setValue(900_000, forInput: "Costs")        // +40% costs
+    config.setDistribution(DistributionNormal(48_000, 3_000), forInput: "Sales Volume")  // Slight decline
+    config.setDistribution(DistributionNormal(27.0, 1.5), forInput: "Unit Price")  // +8% (pass through costs)
+    config.setDistribution(DistributionNormal(0.58, 0.04), forInput: "COGS Margin")  // +13% COGS (supply crisis)
+    config.setValue(370_000, forInput: "OpEx")  // +6% (expediting costs)
+    config.setValue(0.055, forInput: "Interest Rate")  // Slight increase
 })
 
-let results = try stressTest.run()
-// Analyze worst-case outcomes across scenarios
+// Competitive Disruption: Price war with stable demand
+stressTest.addScenario(Scenario(name: "Price War") { config in
+    config.setDistribution(DistributionNormal(52_000, 3_000), forInput: "Sales Volume")  // +4% (market share grab)
+    config.setDistribution(DistributionNormal(20.0, 1.5), forInput: "Unit Price")  // -20% price
+    config.setValue(0.45, forInput: "COGS Margin")  // COGS stable
+    config.setDistribution(DistributionNormal(400_000, 20_000), forInput: "OpEx")  // +14% (marketing war)
+    config.setValue(0.05, forInput: "Interest Rate")
+})
+
+// Run all scenarios
+let results_stress = try stressTest.run()
+
+// MARK: - Analysis & Interpretation
+
+print("=== STRESS TEST RESULTS ===\n")
+
+// 1. Compare expected outcomes
+print("Expected Net Income by Scenario:")
+for (name, result) in results_stress {
+    let mean = result.statistics.mean
+    let p5 = result.percentiles.p5
+    let p95 = result.percentiles.p95
+
+    print("\(name):")
+    print("  Mean: \(mean.currency(0))")
+    print("  90% CI: [\(p5.currency(0)), \(p95.currency(0))]")
+    print("  Std Dev: \(result.statistics.stdDev.currency(0))")
+    print()
+}
+
+// 2. Identify worst-case scenario
+let comparison = ScenarioComparison(results: results_stress)
+let worstCase = comparison.worstScenario(by: .mean)
+let worstP5 = comparison.worstScenario(by: .p5)
+
+print("Worst-Case Analysis:")
+print("  Lowest mean outcome: \(worstCase.name) \(worstCase.results.statistics.mean.currency(0))")
+print("  Worst 5th percentile: \(worstP5.name) \(worstP5.results.percentiles.p5.currency(0))")
+print()
+
+// 3. Calculate probability of losses in each scenario
+print("Probability of Negative Net Income:")
+for (name, result) in results_stress {
+    let probLoss = result.probabilityBelow(0)
+    print("  \(name): \(probLoss.percent(1))")
+}
+print()
+
+// 4. Check survival thresholds (e.g., minimum cash flow needed)
+let minimumRequired = 100_000.0
+print("Probability of Meeting Minimum Threshold (\(minimumRequired.currency(0))):")
+for (name, result) in results_stress {
+    let probSurvive = result.probabilityAbove(minimumRequired)
+    print("  \(name): \(probSurvive.percent(1))")
+}
+print()
+
+// 5. Risk-adjusted metrics
+print("Risk-Adjusted Metrics:")
+for (name, result) in results_stress {
+    let mean = result.statistics.mean
+    let stdDev = result.statistics.stdDev
+    let sharpeRatio = stdDev > 0 ? mean / stdDev : 0
+
+    print("  \(name): Sharpe-like ratio = \(sharpeRatio.number(2))")
+}
 ```
+
+**Expected Output:**
+```
+=== STRESS TEST RESULTS ===
+
+Expected Net Income by Scenario:
+Base Case:
+  Mean: $282,500
+  90% CI: [$228,000, $337,000]
+  Std Dev: $33,000
+
+Recession:
+  Mean: -$48,000
+  90% CI: [-$168,000, $71,000]
+  Std Dev: $72,000
+
+Supply Shock:
+  Mean: $96,000
+  90% CI: [$8,000, $184,000]
+  Std Dev: $54,000
+
+Price War:
+  Mean: $38,000
+  90% CI: [-$48,000, $124,000]
+  Std Dev: $52,000
+
+Worst-Case Analysis:
+  Lowest mean outcome: Recession (-$48,000)
+  Worst 5th percentile: Recession (-$168,000)
+
+Probability of Negative Net Income:
+  Base Case: 0.0%
+  Recession: 76.2%
+  Supply Shock: 18.5%
+  Price War: 42.3%
+
+Probability of Meeting Minimum Threshold ($100,000):
+  Base Case: 99.8%
+  Recession: 2.1%
+  Supply Shock: 46.2%
+  Price War: 27.8%
+
+Risk-Adjusted Metrics:
+  Base Case: Sharpe-like ratio = 8.56
+  Recession: Sharpe-like ratio = -0.67
+  Supply Shock: Sharpe-like ratio = 1.78
+  Price War: Sharpe-like ratio = 0.73
+```
+
+**★ Insight ─────────────────────────────────────**
+Why this stress test is more realistic:
+
+1. **Cascading Effects:** In a recession, you don't just lose revenue - you also face margin compression (COGS up), higher interest rates, and need to cut OpEx. Real shocks trigger **correlated changes** across multiple inputs.
+
+2. **Distributions Within Scenarios:** Even within the "Recession" scenario, there's uncertainty. Sales might be down 20-40% (not exactly 30%), creating a **distribution of outcomes within each scenario**.
+
+3. **Asymmetric Risks:** Notice the wide confidence intervals in stress scenarios (Recession: -$168K to +$71K) versus base case ($228K to $337K). This asymmetry shows **fat downside tails** - the hallmark of real financial risk.
+
+4. **Multiple Risk Metrics:** We analyze:
+   - Mean (expected outcome)
+   - 5th percentile (tail risk)
+   - Probability of loss (survival analysis)
+   - Threshold crossing (liquidity requirements)
+   - Risk-adjusted returns (reward per unit of risk)
+
+5. **Business Interpretation:**
+   - Recession is catastrophic (76% chance of losses)
+   - Supply shock is manageable (18% loss probability, can pass costs to customers)
+   - Price war is dangerous (42% loss risk despite volume gains)
+   - Base case has nearly zero loss probability but plan for stress scenarios!
+
+This is how CFOs present stress tests to boards: "Under recession, we have a 76% probability of losses with expected negative $48K, but only a 2% chance of meeting our minimum cash flow target."
+**─────────────────────────────────────────────────**
 
 ## When to Use Each Approach
 

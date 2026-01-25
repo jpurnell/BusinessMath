@@ -219,7 +219,7 @@ public struct ScenarioOptimizer<V: VectorSpace> where V.Scalar == Double {
 	/// - Returns: Scenario optimization result
 	/// - Throws: OptimizationError if optimization fails
 	public func optimize(
-		objective: @escaping (V, NamedScenario) -> Double,
+		objective: @escaping @Sendable (V, NamedScenario) -> Double,
 		initialSolution: V,
 		constraints: [ScenarioConstraint<V>] = [],
 		minimize: Bool = false
@@ -334,7 +334,7 @@ public struct ScenarioOptimizer<V: VectorSpace> where V.Scalar == Double {
 	/// Convert scenario constraints to standard constraints.
 	private func convertScenarioConstraints(
 		_ constraints: [ScenarioConstraint<V>],
-		objective: @escaping (V, NamedScenario) -> Double
+		objective: @escaping @Sendable (V, NamedScenario) -> Double
 	) throws -> [MultivariateConstraint<V>] {
 
 		var standardConstraints: [MultivariateConstraint<V>] = []
@@ -404,7 +404,7 @@ extension ScenarioOptimizer {
 		)
 
 		// Create objective that dispatches based on scenario
-		let objective: (V, NamedScenario) -> Double = { x, scenario in
+		let objective: @Sendable (V, NamedScenario) -> Double = { x, scenario in
 			let index = Int(scenario["index"] ?? 0)
 			return scenarioValues[index].objective(x)
 		}
@@ -416,6 +416,10 @@ extension ScenarioOptimizer {
 				return .all(function: function, isEquality: true)
 			case .inequality(let function, _):
 				return .all(function: function, isEquality: false)
+			case .linearInequality, .linearEquality:
+				// Linear constraints: use the function property which converts them
+				let function = constraint.function
+				return .all(function: function, isEquality: constraint.isEquality)
 			}
 		}
 

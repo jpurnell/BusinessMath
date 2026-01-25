@@ -51,7 +51,7 @@ public actor SSESessionManager {
     /// Register a new SSE session
     /// - Parameter session: The SSE session to register
     public func registerSession(_ session: SSESession) async {
-        let sessionId = await session.sessionId
+        let sessionId = session.sessionId
         sessions[sessionId] = session
         logger.info("Registered SSE session: \(sessionId)")
     }
@@ -175,7 +175,7 @@ public actor SSESessionManager {
         heartbeatTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self = self else { break }
-                try? await Task.sleep(nanoseconds: UInt64(await self.heartbeatInterval * 1_000_000_000))
+                try? await Task.sleep(nanoseconds: UInt64(self.heartbeatInterval * 1_000_000_000))
                 await self.sendHeartbeats()
             }
         }

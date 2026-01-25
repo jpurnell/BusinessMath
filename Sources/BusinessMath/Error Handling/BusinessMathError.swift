@@ -103,7 +103,7 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
             if !suggestions.isEmpty {
                 description += "\nSuggestions:"
                 for suggestion in suggestions {
-                    description += "\n• \(suggestion)"
+                    description += "\n\t• \(suggestion)"
                 }
             }
             return description
@@ -114,14 +114,17 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
         case .numericalInstability(let message, let suggestions):
             var description = "Numerical instability: \(message)"
             if !suggestions.isEmpty {
-                description += "\nSuggestions: \(suggestions.joined(separator: ", "))"
+				description += "\nSuggestions:"
+				for suggestion in suggestions {
+					description += "\n\t• \(suggestion)"
+				}
             }
             return description
 
         case .mismatchedDimensions(let message, let expected, let actual):
             var description = "Mismatched dimensions: \(message)"
             if let expected = expected, let actual = actual {
-                description += " (expected: \(expected), got: \(actual))"
+                description += " (provided: \(actual), expected: \(expected))"
             }
             return description
 
@@ -129,7 +132,7 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
             var description = "Data quality issue: \(message)"
             if !context.isEmpty {
                 for (key, value) in context.sorted(by: { $0.key < $1.key }) {
-                    description += "; \(key): \(value)"
+                    description += "\n\t• \(key): \(value)"
                 }
             }
             return description
@@ -150,7 +153,7 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
             return "Data inconsistency: \(description)"
 
         case .validationFailed(let errors):
-            return "Validation failed with \(errors.count) error(s):\n" + errors.map { "• \($0)" }.joined(separator: "\n")
+            return "Validation failed with \(errors.count) error(s):\n" + errors.map { "\t• \($0)" }.joined(separator: "\n")
 
         case .negativeValue(let name, let value, let context):
             return "Negative value for '\(name)' (\(value)) in \(context)"
@@ -172,7 +175,7 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
             guard !suggestions.isEmpty else {
                 return "Try adjusting your input parameters or using a different calculation method"
             }
-            return "Possible solutions:\n" + suggestions.map { "• \($0)" }.joined(separator: "\n")
+            return "Possible solutions:\n" + suggestions.map { "\t• \($0)" }.joined(separator: "\n")
 
         case .divisionByZero:
             return """

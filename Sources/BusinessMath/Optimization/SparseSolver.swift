@@ -127,7 +127,7 @@ public struct SparseSolver {
         x0: [Double],
         tolerance: Double
     ) throws -> [Double] {
-        let n = b.count
+        let _ = b.count
         var x = x0
 
         // r = b - Ax
@@ -191,7 +191,7 @@ public struct SparseSolver {
         x0: [Double],
         tolerance: Double
     ) throws -> [Double] {
-        let n = b.count
+        let _ = b.count
         var x = x0
 
         // r = b - Ax

@@ -326,7 +326,7 @@ private struct MockAsyncOptimizer: AsyncOptimizer {
                     let progress = AsyncOptimizationProgress(
                         iteration: iteration,
                         currentValue: x,
-                        objectiveValue: objective(x),
+                        objectiveValue: fx,
                         gradient: gradient,
                         hasConverged: hasConverged,
                         timestamp: Date(),

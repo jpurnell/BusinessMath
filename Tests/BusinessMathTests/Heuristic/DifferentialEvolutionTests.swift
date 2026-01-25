@@ -270,7 +270,7 @@ struct DifferentialEvolutionTests {
             return x * x
         }
 
-        let result = try optimizer.optimizeDetailed(objective: simple)
+        let result = optimizer.optimizeDetailed(objective: simple)
 
         // Should converge before max generations
         #expect(result.converged)
@@ -294,7 +294,7 @@ struct DifferentialEvolutionTests {
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
 
-        let result = try optimizer.optimizeDetailed(objective: rosenbrock)
+        let result = optimizer.optimizeDetailed(objective: rosenbrock)
 
         #expect(!result.converged)
         #expect(result.generations == 10)
@@ -328,8 +328,8 @@ struct DifferentialEvolutionTests {
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
 
-        let result1 = try optimizer1.optimizeDetailed(objective: sphere)
-        let result2 = try optimizer2.optimizeDetailed(objective: sphere)
+        let result1 = optimizer1.optimizeDetailed(objective: sphere)
+        let result2 = optimizer2.optimizeDetailed(objective: sphere)
 
         // Same seed should produce identical results
         #expect(abs(result1.fitness - result2.fitness) < 0.001)
@@ -391,7 +391,7 @@ struct DifferentialEvolutionTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Should have history for each generation
         #expect(result.convergenceHistory.count == result.generations)
@@ -416,7 +416,7 @@ struct DifferentialEvolutionTests {
         )
 
         let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
-        let result = try optimizer.optimizeDetailed(objective: sphere)
+        let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Initial population + generations
         #expect(result.evaluations <= config.populationSize * (config.generations + 1))

@@ -23,7 +23,7 @@ import Numerics
 ///     resourceRequirements: ["machine_hours": 2.5, "labor_hours": 1.0]
 /// )
 /// ```
-public struct ManufacturedProduct {
+public struct ManufacturedProduct: Sendable {
 	/// Unique identifier
 	public let id: String
 
@@ -68,7 +68,7 @@ public struct ManufacturedProduct {
 // MARK: - Product Demand
 
 /// Demand constraint for a product.
-public enum ProductDemand {
+public enum ProductDemand: Sendable {
 	/// Unlimited demand (sell as much as produced)
 	case unlimited
 
@@ -420,7 +420,7 @@ public struct ProductionPlanningOptimizer {
 		// Additional constraints
 		for constraint in productionConstraints {
 			switch constraint {
-			case .resourceCapacity(let resource, let capacity):
+				case .resourceCapacity(_, _):
 				// Already handled above
 				break
 

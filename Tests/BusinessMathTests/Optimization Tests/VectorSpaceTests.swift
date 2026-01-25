@@ -966,7 +966,7 @@ struct VectorSpaceTests {
 		
 			// Start at x = 5.0
 		var x = VectorN<Double>([5.0])
-		let target = VectorN<Double>([0.0])  // Minimum at x = 0
+		let _ = VectorN<Double>([0.0])  // Minimum at x = 0
 		
 			// Perform gradient descent steps
 		for _ in 0..<50 {
@@ -1001,10 +1001,10 @@ struct VectorSpaceTests {
 			VectorN<Double>([1.0, 0.0])
 		]
 		
-//		let rotated = vector.multiply(by: rotation90)
+		let rotated = rotation90.map({ vector.dot($0) })
 //		#expect(rotated != nil)
-//		#expect(rotated![0] == -2.0)  // 0*1 + (-1)*2
-//		#expect(rotated![1] == 1.0)   // 1*1 + 0*2
+		#expect(rotated[0] == -2.0)  // 0*1 + (-1)*2
+		#expect(rotated[1] == 1.0)   // 1*1 + 0*2
 		
 			// Scaling matrix
 		let scaling = [
@@ -1012,10 +1012,10 @@ struct VectorSpaceTests {
 			VectorN<Double>([0.0, 3.0])
 		]
 		
-//		let scaled = vector.multiply(by: scaling)
+		let scaled = scaling.map({ vector.dot($0) })
 //		#expect(scaled != nil)
-//		#expect(scaled![0] == 2.0)  // 2*1 + 0*2
-//		#expect(scaled![1] == 6.0)  // 0*1 + 3*2
+		#expect(scaled[0] == 2.0)  // 2*1 + 0*2
+		#expect(scaled[1] == 6.0)  // 0*1 + 3*2
 		
 			// Test outer product for covariance-like calculation
 		let v1 = VectorN<Double>([1.0, 2.0, 3.0])

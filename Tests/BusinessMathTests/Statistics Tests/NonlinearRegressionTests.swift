@@ -5,61 +5,67 @@
 //  Unit tests for nonlinear regression and model validation.
 //
 
-import XCTest
+import Testing
 @testable import BusinessMath
 
-final class NonlinearRegressionTests: XCTestCase {
+@Suite("Nonlinear Regression Tests")
+struct NonlinearRegressionTests {
 
 	// MARK: - Simulation Tests
 
-	func testReciprocalSimulation_GeneratesCorrectNumberOfPoints() {
+	@Test("Reciprocal simulation generates correct number of points")
+	func reciprocalSimulationGeneratesPoints() {
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
 		let data = simulator.simulate(n: 100, xRange: 0.0...10.0)
 
-		XCTAssertEqual(data.count, 100, "Should generate exactly n data points")
+		#expect(data.count == 100, "Should generate exactly n data points")
 	}
 
-	func testReciprocalSimulation_XValuesInRange() {
+	@Test("Reciprocal simulation x values in range")
+	func reciprocalSimulationXValues() {
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
 		let data = simulator.simulate(n: 100, xRange: 2.0...8.0)
 
 		for point in data {
-			XCTAssertGreaterThanOrEqual(point.x, 2.0, "X values should be >= 2.0")
-			XCTAssertLessThanOrEqual(point.x, 8.0, "X values should be <= 8.0")
+			#expect(point.x >= 2.0, "X values should be >= 2.0")
+			#expect(point.x <= 8.0, "X values should be <= 8.0")
 		}
 	}
 
-	func testReciprocalSimulation_WithSpecificXValues() {
+	@Test("Reciprocal simulation with specific x values")
+	func reciprocalSimulationSpecificXValues() {
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.001)
 		let xValues = [1.0, 2.0, 3.0, 4.0, 5.0]
 		let data = simulator.simulate(xValues: xValues)
 
-		XCTAssertEqual(data.count, xValues.count, "Should generate one point per x value")
+		#expect(data.count == xValues.count, "Should generate one point per x value")
 
 		// With very small sigma, y should be close to 1/(a + b*x)
 		for (i, point) in data.enumerated() {
-			XCTAssertEqual(point.x, xValues[i], accuracy: 1e-10, "X values should match input")
+			#expect(abs(point.x - xValues[i]) < 1e-10, "X values should match input")
 
 			let expectedMean = 1.0 / (0.2 + 0.3 * xValues[i])
-			XCTAssertEqual(point.y, expectedMean, accuracy: 0.01, "Y should be close to mean with small sigma")
+			#expect(abs(point.y - expectedMean) < 0.01, "Y should be close to mean with small sigma")
 		}
 	}
 
 	// MARK: - Model Tests
 
-	func testReciprocalModel_PredictedMean() {
+	@Test("Reciprocal model predicted mean")
+	func reciprocalModelPredictedMean () {
 		let params = ReciprocalRegressionModel<Double>.Parameters(a: 0.2, b: 0.3, sigma: 0.2)
 
 		// Test at x = 2.0: expected = 1/(0.2 + 0.3*2) = 1/0.8 = 1.25
 		let predicted = ReciprocalRegressionModel<Double>.predictedMean(x: 2.0, params: params)
-		XCTAssertEqual(predicted, 1.25, accuracy: 1e-10)
+		#expect(abs(predicted - 1.25) < 1e-10)
 
 		// Test at x = 0.0: expected = 1/0.2 = 5.0
 		let predicted0 = ReciprocalRegressionModel<Double>.predictedMean(x: 0.0, params: params)
-		XCTAssertEqual(predicted0, 5.0, accuracy: 1e-10)
+		#expect(abs(predicted0 - 5.0) < 1e-10)
 	}
 
-	func testReciprocalModel_LogLikelihood() {
+	@Test("Reciprocal model log likelihood")
+	func reciprocalModelLogLikelihood () {
 		let params = ReciprocalRegressionModel<Double>.Parameters(a: 0.2, b: 0.3, sigma: 0.2)
 
 		// Data point at mean (perfect fit): log-likelihood should be high
@@ -69,11 +75,12 @@ final class NonlinearRegressionTests: XCTestCase {
 		let logLik = ReciprocalRegressionModel<Double>.logLikelihood(dataPoint: perfectPoint, params: params)
 
 		// For normal distribution at mean, log-likelihood = -log(sigma) - 0.5*log(2π)
-		let expectedLogLik = -log(0.2) - 0.5 * log(2.0 * .pi)
-		XCTAssertEqual(logLik, expectedLogLik, accuracy: 1e-6)
+		let expectedLogLik = -Double.log(0.2) - 0.5 * Double.log(2.0 * .pi)
+		#expect(abs(logLik - expectedLogLik) < 1e-6)
 	}
 
-	func testReciprocalModel_TotalLogLikelihood() {
+	@Test("Reciprocal model total log likelihood")
+	func reciprocalModelTotalLogLikelihood () {
 		let params = ReciprocalRegressionModel<Double>.Parameters(a: 0.2, b: 0.3, sigma: 0.2)
 
 		let data = [
@@ -89,7 +96,7 @@ final class NonlinearRegressionTests: XCTestCase {
 			sum + ReciprocalRegressionModel<Double>.logLikelihood(dataPoint: point, params: params)
 		}
 
-		XCTAssertEqual(totalLogLik, expectedTotal, accuracy: 1e-10)
+		#expect(abs(totalLogLik - expectedTotal) < 1e-10)
 	}
 
 	// MARK: - Fitting Tests
@@ -99,7 +106,8 @@ final class NonlinearRegressionTests: XCTestCase {
 	// reasonable results, but may not always achieve perfect parameter recovery
 	// due to local minima, initialization sensitivity, and optimization challenges.
 
-	func testReciprocalFitting_RunsWithoutCrashing() throws {
+	@Test("Fitting Completes without Errors")
+	func fittingCompletes () throws {
 		// This test verifies fitting completes without errors
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.5, b: 0.5, sigma: 0.1)
 		let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
@@ -113,14 +121,15 @@ final class NonlinearRegressionTests: XCTestCase {
 		)
 
 		// Should complete without throwing
-		XCTAssertNotNil(result)
+		#expect(result != nil)
 		// Parameters should be positive
-		XCTAssertGreaterThan(result.parameters.a, 0, "a should be positive")
-		XCTAssertGreaterThan(result.parameters.b, 0, "b should be positive")
-		XCTAssertGreaterThan(result.parameters.sigma, 0, "sigma should be positive")
+		#expect(result.parameters.a > 0, "a should be positive")
+		#expect(result.parameters.b > 0, "b should be positive")
+		#expect(result.parameters.sigma > 0, "sigma should be positive")
 	}
 
-	func testReciprocalFitting_LogLikelihoodImproves() throws {
+	@Test("Fitting Improves Log Likelihood")
+	func fittingImprovesLogLikelihood () throws {
 			// Test that fitting improves log-likelihood from initial guess
 			// Create deterministic data by manually generating with fixed seeds
 			let trueA = 0.2
@@ -175,13 +184,13 @@ final class NonlinearRegressionTests: XCTestCase {
 			// For more rigorous parameter recovery validation, see testParameterRecoveryCheck_* tests.
 
 			// Verify optimizer completed
-			XCTAssertNotNil(result)
+			#expect(result != nil)
 
 			// Parameters should be positive and finite
-			XCTAssertGreaterThan(result.parameters.a, 0, "a should be positive")
-			XCTAssertGreaterThan(result.parameters.b, 0, "b should be positive")
-			XCTAssertGreaterThan(result.parameters.sigma, 0, "sigma should be positive")
-			XCTAssertTrue(result.logLikelihood.isFinite, "Log-likelihood should be finite")
+			#expect(result.parameters.a > 0, "a should be positive")
+			#expect(result.parameters.b > 0, "b should be positive")
+			#expect(result.parameters.sigma > 0, "sigma should be positive")
+			#expect(result.logLikelihood.isFinite, "Log-likelihood should be finite")
 
 			// Log the result for diagnostic purposes
 			if result.logLikelihood > initialLogLik {
@@ -194,7 +203,8 @@ final class NonlinearRegressionTests: XCTestCase {
 
 	// MARK: - Parameter Recovery Validation Tests
 
-	func testParameterRecoveryCheck_BasicRun() throws {
+	@Test("Reciprocal Parameter Recovery")
+	func reciprocalParameterRecovery() throws {
 		let report = try ReciprocalParameterRecoveryCheck.run(
 			trueA: 0.2,
 			trueB: 0.3,
@@ -205,18 +215,19 @@ final class NonlinearRegressionTests: XCTestCase {
 			maxIterations: 2000
 		)
 
-		XCTAssertNotNil(report)
-		XCTAssertEqual(report.sampleSize, 150)
+		#expect(report != nil)
+		#expect(report.sampleSize == 150)
 		// Note: We don't strictly require convergence since gradient descent can have challenges
 
 		// Check that report structure is correct
-		XCTAssertEqual(report.trueParameters.count, 3, "Should have 3 true parameters")
-		XCTAssertEqual(report.recoveredParameters.count, 3, "Should have 3 recovered parameters")
-		XCTAssertEqual(report.absoluteErrors.count, 3, "Should have 3 absolute errors")
-		XCTAssertEqual(report.relativeErrors.count, 3, "Should have 3 relative errors")
+		#expect(report.trueParameters.count == 3, "Should have 3 true parameters")
+		#expect(report.recoveredParameters.count == 3, "Should have 3 recovered parameters")
+		#expect(report.absoluteErrors.count == 3, "Should have 3 absolute errors")
+		#expect(report.relativeErrors.count == 3, "Should have 3 relative errors")
 	}
 
-	func testParameterRecoveryCheck_ToleranceChecking() throws {
+	@Test("Reciprocal Parameter Tolerance Logic")
+	func reciprocalParameterTolerance() throws {
 		let report = try ReciprocalParameterRecoveryCheck.run(
 			trueA: 0.2,
 			trueB: 0.3,
@@ -231,14 +242,15 @@ final class NonlinearRegressionTests: XCTestCase {
 		for (param, withinTol) in report.withinTolerance {
 			let relError = report.relativeErrors[param]!
 			if withinTol {
-				XCTAssertLessThanOrEqual(relError, report.tolerance, "\(param) marked as passing but error > tolerance")
+				#expect(relError <= report.tolerance, "\(param) marked as passing but error > tolerance")
 			} else {
-				XCTAssertGreaterThan(relError, report.tolerance, "\(param) marked as failing but error <= tolerance")
+				#expect(relError > report.tolerance, "\(param) marked as failing but error <= tolerance")
 			}
 		}
 	}
 
-	func testParameterRecoveryCheck_MultipleReplicates() throws {
+	@Test("Reciprocal Parameter Recovery - Multiple Replicates")
+	func reciprocalParameterRecoveryMultipleReplicates() throws {
 		let reports = try ReciprocalParameterRecoveryCheck.runMultiple(
 			trueA: 0.2,
 			trueB: 0.3,
@@ -249,15 +261,16 @@ final class NonlinearRegressionTests: XCTestCase {
 			tolerance: 0.30
 		)
 
-		XCTAssertEqual(reports.count, 3, "Should generate 3 replicates")
+		#expect(reports.count == 3, "Should generate 3 replicates")
 
 		// Check that summary works (don't require all to converge)
 		let summary = ReciprocalParameterRecoveryCheck.summarizeReplicates(reports)
-		XCTAssertFalse(summary.isEmpty, "Summary should not be empty")
-		XCTAssertTrue(summary.contains("Replicates"), "Summary should mention replicates")
+		#expect(!(summary.isEmpty), "Summary should not be empty")
+		#expect(summary.contains("Replicates"), "Summary should mention replicates")
 	}
 
-	func testParameterRecoveryReport_SummaryFormat() throws {
+	@Test("Reciprocal Parameter Recovery - Single Run - Verbose Output")
+	func reciprocalParameterRecoveryVerboseOutput() throws {
 		let report = try ReciprocalParameterRecoveryCheck.run(
 			trueA: 0.2,
 			trueB: 0.3,
@@ -270,23 +283,24 @@ final class NonlinearRegressionTests: XCTestCase {
 		let summary = report.summary
 
 		// Check that summary contains key information
-		XCTAssertTrue(summary.contains("Parameter Recovery Validation"), "Summary should have title")
-		XCTAssertTrue(summary.contains("Sample Size"), "Summary should show sample size")
-		XCTAssertTrue(summary.contains("Converged"), "Summary should show convergence status")
-		XCTAssertTrue(summary.contains("a:"), "Summary should show parameter a")
-		XCTAssertTrue(summary.contains("b:"), "Summary should show parameter b")
-		XCTAssertTrue(summary.contains("sigma:"), "Summary should show parameter sigma")
+		#expect(summary.contains("Parameter Recovery Validation"), "Summary should have title")
+		#expect(summary.contains("Sample Size"), "Summary should show sample size")
+		#expect(summary.contains("Converged"), "Summary should show convergence status")
+		#expect(summary.contains("a:"), "Summary should show parameter a")
+		#expect(summary.contains("b:"), "Summary should show parameter b")
+		#expect(summary.contains("sigma:"), "Summary should show parameter sigma")
 
 		if report.passed {
-			XCTAssertTrue(summary.contains("✓") || summary.contains("PASS"), "Summary should indicate success")
+			#expect(summary.contains("✓") || summary.contains("PASS"), "Summary should indicate success")
 		} else {
-			XCTAssertTrue(summary.contains("✗") || summary.contains("FAIL"), "Summary should indicate failure")
+			#expect(summary.contains("✗") || summary.contains("FAIL"), "Summary should indicate failure")
 		}
 	}
 
 	// MARK: - Numerical Gradient Tests
 
-	func testNumericalGradient_SimpleQuadratic() throws {
+	@Test("Numerical Gradient Test")
+	func numericalGradientTest() throws {
 		// f(x) = x₁² + x₂²
 		// ∇f = [2x₁, 2x₂]
 		let f: (VectorN<Double>) -> Double = { v in
@@ -297,11 +311,12 @@ final class NonlinearRegressionTests: XCTestCase {
 		let gradient = try numericalGradient(f, at: point, h: 1e-6)
 
 		// Expected: [6.0, 8.0]
-		XCTAssertEqual(gradient[0], 6.0, accuracy: 1e-4, "Gradient x₁ component")
-		XCTAssertEqual(gradient[1], 8.0, accuracy: 1e-4, "Gradient x₂ component")
+		#expect(abs(gradient[0] - 6.0) < 1e-4, "Gradient x₁ component")
+		#expect(abs(gradient[1] - 8.0) < 1e-4, "Gradient x₂ component")
 	}
 
-	func testNumericalGradient_AtMinimum() throws {
+	@Test("Numerical Gradient Minimizes Simple Parabola")
+	func numericalGradientSimple() throws {
 		// f(x) = (x₁ - 2)² + (x₂ + 1)²
 		// Minimum at (2, -1), gradient should be [0, 0]
 		let f: (VectorN<Double>) -> Double = { v in
@@ -311,11 +326,12 @@ final class NonlinearRegressionTests: XCTestCase {
 		let minimum = VectorN<Double>([2.0, -1.0])
 		let gradient = try numericalGradient(f, at: minimum, h: 1e-6)
 
-		XCTAssertEqual(gradient[0], 0.0, accuracy: 1e-4, "Gradient should be zero at minimum")
-		XCTAssertEqual(gradient[1], 0.0, accuracy: 1e-4, "Gradient should be zero at minimum")
+		#expect(abs(gradient[0] - 0.0) < 1e-4, "Gradient should be zero at minimum")
+		#expect(abs(gradient[1] - 0.0) < 1e-4, "Gradient should be zero at minimum")
 	}
 
-	func testNumericalGradient_ThreeDimensions() throws {
+	@Test("Numerical Gradient in Higher Dimensions")
+	func numericalGradientHigherDimension() throws {
 		// f(x) = x₁² + 2x₂² + 3x₃²
 		// ∇f = [2x₁, 4x₂, 6x₃]
 		let f: (VectorN<Double>) -> Double = { v in
@@ -325,14 +341,15 @@ final class NonlinearRegressionTests: XCTestCase {
 		let point = VectorN<Double>([1.0, 2.0, 3.0])
 		let gradient = try numericalGradient(f, at: point, h: 1e-6)
 
-		XCTAssertEqual(gradient[0], 2.0, accuracy: 1e-4, "∂f/∂x₁")
-		XCTAssertEqual(gradient[1], 8.0, accuracy: 1e-4, "∂f/∂x₂")
-		XCTAssertEqual(gradient[2], 18.0, accuracy: 1e-4, "∂f/∂x₃")
+		#expect(abs(gradient[0] - 2.0) < 1e-4, "∂f/∂x₁")
+		#expect(abs(gradient[1] - 8.0) < 1e-4, "∂f/∂x₂")
+		#expect(abs(gradient[2] - 18.0) < 1e-4, "∂f/∂x₃")
 	}
 
 	// MARK: - Edge Case Tests
 
-	func testReciprocalFitting_SmallSampleSize() throws {
+	@Test("Reciprocal Regression: Very Small n")
+	func reciprocalRegressionSmallN() throws {
 		// With very small n, fitting may struggle
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
 		let data = simulator.simulate(n: 10, xRange: 1.0...10.0)
@@ -345,27 +362,29 @@ final class NonlinearRegressionTests: XCTestCase {
 			maxIterations: 1000
 		)
 
-		XCTAssertNotNil(result)
-		XCTAssertGreaterThan(result.parameters.a, 0, "a should be positive")
-		XCTAssertGreaterThan(result.parameters.b, 0, "b should be positive")
-		XCTAssertGreaterThan(result.parameters.sigma, 0, "sigma should be positive")
+		#expect(result != nil)
+		#expect(result.parameters.a > 0, "a should be positive")
+		#expect(result.parameters.b > 0, "b should be positive")
+		#expect(result.parameters.sigma > 0, "sigma should be positive")
 	}
 
-	func testReciprocalSimulation_HighNoise() {
+	@Test("Reciprocal Regression - High Sigma")
+	func reciprocalRegressionHighSigma () {
 		// Test with very high sigma relative to signal
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 5.0)
 		let data = simulator.simulate(n: 50, xRange: 1.0...10.0)
 
-		XCTAssertEqual(data.count, 50, "Should generate all points even with high noise")
+		#expect(data.count == 50, "Should generate all points even with high noise")
 
 		// Y values should be highly variable (not a strict test, just checking it runs)
 		let yValues = data.map { $0.y }
-		XCTAssertFalse(yValues.allSatisfy { $0 == yValues[0] }, "Y values should vary with high noise")
+		#expect(!(yValues.allSatisfy { $0 == yValues[0] }), "Y values should vary with high noise")
 	}
 
-	func testParameterRecoveryCheck_EmptyReplicateSummary() {
+	@Test("Parameter Recovery Report - Empty Array")
+	func parameterRecoveryReportEmptyArray() {
 		let emptyReports: [ParameterRecoveryReport<Double>] = []
 		let summary = ReciprocalParameterRecoveryCheck.summarizeReplicates(emptyReports)
-		XCTAssertTrue(summary.contains("No reports"), "Should handle empty array")
+		#expect(summary.contains("No reports"), "Should handle empty array")
 	}
 }

@@ -36,7 +36,7 @@ struct IntegrationTests {
 		)
 
 		// Calculate NPV
-		let npv = npv(discountRate: 0.10, cashFlows: ts.valuesArray)
+		let npv = try calculateNPV(discountRate: 0.10, cashFlows: ts.valuesArray)
 
 		// Should have positive NPV with these cash flows
 		#expect(npv > 0)
@@ -82,7 +82,7 @@ struct IntegrationTests {
 
 		// Calculate present value of forecast
 		let discountRate = 0.12
-		let pv = npv(discountRate: discountRate, cashFlows: projectedCashFlows)
+		let pv = try calculateNPV(discountRate: discountRate, cashFlows: projectedCashFlows)
 
 		#expect(pv > 0)
 	}
@@ -131,7 +131,7 @@ struct IntegrationTests {
 
 		// Step 6: Calculate NPV of forecast
 		let discountRate = 0.10
-		let forecastNPV = npv(discountRate: discountRate, cashFlows: seasonalForecast.valuesArray)
+		let forecastNPV = try calculateNPV(discountRate: discountRate, cashFlows: seasonalForecast.valuesArray)
 
 		#expect(forecastNPV > 0)
 	}
@@ -349,7 +349,7 @@ struct IntegrationTests {
 		// Calculate DCF valuation
 		let wacc = 0.12
 		let terminalGrowth = 0.03
-		let explicitPeriodNPV = npv(discountRate: wacc, cashFlows: cashFlows)
+		let explicitPeriodNPV = try calculateNPV(discountRate: wacc, cashFlows: cashFlows)
 
 		// Calculate terminal value
 		let terminalCashFlow = cashFlows.last! * (1 + terminalGrowth)
@@ -482,7 +482,7 @@ struct IntegrationTests {
 
 		// Calculate investment metrics
 		let investmentIRR = try irr(cashFlows: cashFlows)
-		let investmentNPV = npv(discountRate: 0.10, cashFlows: cashFlows)
+		let investmentNPV = try calculateNPV(discountRate: 0.10, cashFlows: cashFlows)
 
 		#expect(investmentIRR > 0.10)  // Should beat 10% hurdle rate
 		#expect(investmentNPV > 0)     // Positive NPV

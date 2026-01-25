@@ -77,7 +77,7 @@ public struct AsyncIteratorSequence<Iterator: AsyncIteratorProtocol>: AsyncSeque
     private let makeIterator: () -> Iterator
 
     public init(_ iterator: Iterator) {
-        var iter = iterator
+        let iter = iterator
         self.makeIterator = { iter }
     }
 

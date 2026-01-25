@@ -11,7 +11,7 @@ import Numerics
 // MARK: - Multi-Period Result
 
 /// Result from multi-period optimization.
-public struct MultiPeriodResult<V: VectorSpace> where V.Scalar == Double {
+public struct MultiPeriodResult<V: VectorSpace>: Sendable where V.Scalar == Double, V: Sendable {
 	/// Optimal trajectory (decision for each period)
 	public let trajectory: [V]
 
@@ -77,7 +77,7 @@ public struct MultiPeriodResult<V: VectorSpace> where V.Scalar == Double {
 ///     ]
 /// )
 /// ```
-public struct MultiPeriodOptimizer<V: VectorSpace> where V.Scalar == Double {
+public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == Double, V: Sendable {
 
 	// MARK: - Properties
 
@@ -132,7 +132,7 @@ public struct MultiPeriodOptimizer<V: VectorSpace> where V.Scalar == Double {
 	/// - Returns: Multi-period optimization result
 	/// - Throws: OptimizationError if optimization fails
 	public func optimize(
-		objective: @escaping (Int, V) -> Double,
+		objective: @escaping @Sendable (Int, V) -> Double,
 		initialState: V,
 		constraints: [MultiPeriodConstraint<V>] = [],
 		minimize: Bool = false  // Default: maximize
@@ -141,7 +141,8 @@ public struct MultiPeriodOptimizer<V: VectorSpace> where V.Scalar == Double {
 		// Flatten the multi-period problem into a single large vector space
 		// Decision vector: [x₀, x₁, ..., xₜ₋₁] concatenated
 		let dimension = initialState.toArray().count
-		let totalDimension = dimension * numberOfPeriods
+		// Total Dimension
+		let _ = dimension * numberOfPeriods
 
 		precondition(dimension > 0, "Initial state must have positive dimension")
 
@@ -325,11 +326,11 @@ public struct MultiPeriodOptimizer<V: VectorSpace> where V.Scalar == Double {
 	private func createPeriodConstraint(
 		period t: Int,
 		dimension: Int,
-		function: @escaping (Int, V) -> Double,
+		function: @escaping @Sendable (Int, V) -> Double,
 		isEquality: Bool
 	) -> MultivariateConstraint<VectorN<Double>> {
 
-		let constraintFunction: (VectorN<Double>) -> Double = { flat in
+		let constraintFunction: @Sendable (VectorN<Double>) -> Double = { flat in
 			let trajectory = self.unflattenTrajectory(flat, dimension: dimension)
 			return function(t, trajectory[t])
 		}
@@ -345,11 +346,11 @@ public struct MultiPeriodOptimizer<V: VectorSpace> where V.Scalar == Double {
 	private func createTransitionConstraint(
 		period t: Int,
 		dimension: Int,
-		function: @escaping (Int, V, V) -> Double,
+		function: @escaping @Sendable (Int, V, V) -> Double,
 		isEquality: Bool
 	) -> MultivariateConstraint<VectorN<Double>> {
 
-		let constraintFunction: (VectorN<Double>) -> Double = { flat in
+		let constraintFunction: @Sendable (VectorN<Double>) -> Double = { flat in
 			let trajectory = self.unflattenTrajectory(flat, dimension: dimension)
 			return function(t, trajectory[t], trajectory[t+1])
 		}
@@ -364,11 +365,11 @@ public struct MultiPeriodOptimizer<V: VectorSpace> where V.Scalar == Double {
 	/// Create constraint for terminal period.
 	private func createTerminalConstraint(
 		dimension: Int,
-		function: @escaping (V) -> Double,
+		function: @escaping @Sendable (V) -> Double,
 		isEquality: Bool
 	) -> MultivariateConstraint<VectorN<Double>> {
 
-		let constraintFunction: (VectorN<Double>) -> Double = { flat in
+		let constraintFunction: @Sendable (VectorN<Double>) -> Double = { flat in
 			let trajectory = self.unflattenTrajectory(flat, dimension: dimension)
 			return function(trajectory.last!)
 		}
@@ -383,11 +384,11 @@ public struct MultiPeriodOptimizer<V: VectorSpace> where V.Scalar == Double {
 	/// Create constraint for entire trajectory.
 	private func createTrajectoryConstraint(
 		dimension: Int,
-		function: @escaping ([V]) -> Double,
+		function: @escaping @Sendable ([V]) -> Double,
 		isEquality: Bool
 	) -> MultivariateConstraint<VectorN<Double>> {
 
-		let constraintFunction: (VectorN<Double>) -> Double = { flat in
+		let constraintFunction: @Sendable (VectorN<Double>) -> Double = { flat in
 			let trajectory = self.unflattenTrajectory(flat, dimension: dimension)
 			return function(trajectory)
 		}
@@ -414,7 +415,7 @@ extension MultiPeriodOptimizer {
 	///   - constraints: Multi-period constraints
 	///   - minimize: Whether to minimize (default: false = maximize)
 	public func optimize(
-		objective: @escaping (V) -> Double,
+		objective: @escaping @Sendable (V) -> Double,
 		initialState: V,
 		constraints: [MultiPeriodConstraint<V>] = [],
 		minimize: Bool = false

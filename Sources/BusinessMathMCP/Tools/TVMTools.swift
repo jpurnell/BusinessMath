@@ -138,7 +138,7 @@ public struct NPVTool: MCPToolHandler, Sendable {
             throw ToolError.invalidArguments("Cash flows array cannot be empty")
         }
 
-        let npvValue = npv(discountRate: rate, cashFlows: cashFlows)
+        let npvValue = try calculateNPV(discountRate: rate, cashFlows: cashFlows)
 
         var cashFlowDetails = ""
         for (index, cf) in cashFlows.enumerated() {

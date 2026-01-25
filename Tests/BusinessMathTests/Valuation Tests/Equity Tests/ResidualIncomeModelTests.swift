@@ -261,9 +261,9 @@ struct ResidualIncomeModelTests {
             costOfEquity: 0.10,
             terminalGrowthRate: 0.03
         )
-
+		
         // Then: ROE = NI / BV = 120 / 1000 = 12%
-        let roe = netIncome.valuesArray[0] / bookValue.valuesArray[0]
+		let roe = model.netIncome.valuesArray[0] / model.bookValue.valuesArray[0]
         #expect(abs(roe - 0.12) < 0.001)
     }
 

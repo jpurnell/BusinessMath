@@ -375,7 +375,7 @@ public actor HTTPServerTransport: Transport {
         let session = SSESession(connection: connection, logger: logger)
 
         Task {
-            let sessionId = await session.sessionId
+            let sessionId = session.sessionId
 
             // Register session with manager
             await sseSessionManager.registerSession(session)
