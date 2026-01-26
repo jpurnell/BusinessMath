@@ -1,21 +1,28 @@
-.gitignore
+# Hidden files and folders (all dot files/folders)
+.*
+!.gitignore
+
+# Build artifacts
 .build/
-.claude/
-.DS_Store
-.github/workflows/*
-.swiftpm/xcode/
-.vscode
+.swiftpm/
+xcuserdata/
+Package.resolved
+
+# Internal documentation and planning
 Blog/
 Site/
 Playgrounds/
-xcuserdata/
+Instruction Set/
+Sources/BusinessMath/zzz In Process/
+
+# Temporary and backup files
+*~
+\#*\#
 howToResume.md
 overallRules
 codingRules.md~
-Instruction Set/
-Sources/BusinessMath/zzz In Process/
-#TODO.md#
-Package.resolved
+
+# Deprecated/internal documentation
 HTTP_MODE_README.md
 MCP_SERVER_README.md
 missing_MCP.md
@@ -25,5 +32,4 @@ FORMATPERCENTAGE_CONSOLIDATION_PLAN.md
 MIGRATION_GUIDE.md
 PARAMETER_NAMING_AUDIT.md
 STABILITY.md
-missing_MCP.md
 2_0_RELEASE_PATH.md
