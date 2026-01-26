@@ -1,11 +1,18 @@
 # Hidden files and folders (all dot files/folders)
 .*
 !.gitignore
+!.github/
+!.swift-version
+!.swiftpm/
 
 # Build artifacts
 .build/
 xcuserdata/
 Package.resolved
+
+# SwiftPM - ignore user-specific data but keep shared workspace/schemes for CI
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+.swiftpm/configuration/
 
 # Internal documentation and planning
 Blog/
