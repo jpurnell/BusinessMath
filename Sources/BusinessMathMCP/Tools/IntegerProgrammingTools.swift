@@ -126,17 +126,43 @@ public struct BranchAndBoundTool: MCPToolHandler, Sendable {
         - Large problems (50-100 variables): Minutes
         - Very large problems: May need cutting planes (see solve_with_cutting_planes)
 
+        **🆕 v2.0 Enhancements:**
+
+        **Relaxation Solver Selection:**
+        Choose how LP relaxations are solved at each node:
+        - `.simplex`: Use simplex method (linear objectives only, fastest for linear problems)
+        - `.nonlinear`: Use nonlinear optimizer (works with nonlinear objectives, slower but more flexible)
+
+        **Variable Shift Strategies:**
+        Control how fractional values are rounded to integers:
+        - `.round`: Round to nearest integer (default, balanced)
+        - `.floor`: Always round down (conservative)
+        - `.ceiling`: Always round up (aggressive)
+        - `.none`: No automatic rounding (let branch-and-bound handle it)
+
+        **Linearity Validation:**
+        Automatically detect if your objective is linear:
+        ```swift
+        if LinearFunction.validate(objective, at: initialGuess, dimensions: \(dimensions)) {
+            print("Objective is linear - using simplex relaxation ✓")
+        } else {
+            print("Objective is nonlinear - using nonlinear relaxation")
+        }
+        ```
+
         **Swift Implementation:**
         ```swift
         import BusinessMath
 
-        // Create branch-and-bound solver
+        // Create branch-and-bound solver with v2.0 enhancements
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 10000,          // Maximum nodes to explore
             timeLimit: 60.0,          // Seconds (0 = no limit)
             relativeGapTolerance: 1e-4,  // Stop if gap < 0.01%
             nodeSelection: .bestBound,    // Best-first search
-            branchingRule: .mostFractional  // Branch on most fractional
+            branchingRule: .mostFractional,  // Branch on most fractional
+            relaxationSolver: .simplex,   // v2.0: Choose LP relaxation method (.simplex or .nonlinear)
+            variableShift: .round         // v2.0: Rounding strategy for integer conversion
         )
 
         // Define objective function
@@ -559,7 +585,7 @@ public struct BranchAndCutTool: MCPToolHandler, Sendable {
         ```swift
         import BusinessMath
 
-        // Create Branch-and-Cut solver
+        // Create Branch-and-Cut solver with v2.0 enhancements
         let solver = BranchAndCutSolver<VectorN<Double>>(
             maxNodes: 10000,
             maxCuttingRounds: \(maxCuttingRounds),      // \(maxCuttingRounds) rounds of cuts per node
@@ -569,7 +595,9 @@ public struct BranchAndCutTool: MCPToolHandler, Sendable {
             timeLimit: 300.0,                // 5 minute limit
             relativeGapTolerance: 1e-4,      // Stop at 0.01% gap
             nodeSelection: .bestBound,       // Best-first search
-            branchingRule: .mostFractional   // Branch on most fractional
+            branchingRule: .mostFractional,  // Branch on most fractional
+            relaxationSolver: .simplex,      // v2.0: Choose LP relaxation method
+            variableShift: .round            // v2.0: Rounding strategy
         )
 
         // Define objective (same as branch-and-bound)

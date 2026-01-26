@@ -1,10 +1,17 @@
-# BusinessMath MCP Server
+# BusinessMath MCP Server v2.0
 
 A comprehensive **Model Context Protocol (MCP) server** that exposes all BusinessMath functionality to AI assistants like Claude Desktop, enabling natural language financial analysis, modeling, and advanced analytics.
 
 ## Overview
 
-The BusinessMath MCP server provides AI assistants with access to **170 computational tools** across 32 categories, **14 comprehensive resources**, and **6 guided workflow templates**. This enables powerful financial analysis through natural language.
+The BusinessMath MCP server provides AI assistants with access to **172 computational tools** across 33 categories, **14 comprehensive resources**, and **6 guided workflow templates**. This enables powerful financial analysis through natural language.
+
+### 🆕 What's New in v2.0
+
+- **Mean-Variance Portfolio Optimization**: Realistic portfolio allocation with risk-return tradeoffs, covariance matrices, and concentration limits
+- **Discrete Scenario Analysis**: Multi-scenario stress testing with mixed deterministic/probabilistic inputs (setValue vs setDistribution)
+- **Enhanced Integer Programming**: Relaxation solver selection (simplex/nonlinear) and variable shift strategies
+- **Swift 6 Compliance**: Full concurrency support with @Sendable throughout all optimization tools
 
 ### What is MCP?
 
@@ -12,7 +19,7 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 
 ## What's Included
 
-### 🔧 167 Computational Tools
+### 🔧 172 Computational Tools
 
 **Time Value of Money** (9 tools):
 - NPV, IRR, Modified IRR (MIRR)
@@ -45,11 +52,12 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 - Confidence intervals
 - Z-scores and standardization
 
-**Monte Carlo Simulation** (8 tools):
+**Monte Carlo Simulation** (9 tools):
 - Risk modeling with 15 probability distributions
-- Scenario analysis (base/best/worst cases)
+- **🆕 Discrete scenario analysis** (base/best/worst cases with distributions within scenarios)
 - Sensitivity analysis (one-at-a-time and tornado charts)
 - Portfolio simulation
+- **Stress testing** with cascading effects (multi-component business models)
 
 **Hypothesis Testing** (6 tools):
 - T-tests (one-sample, two-sample, paired)
@@ -81,17 +89,21 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 - Adaptive algorithm selection (2 tools)
 - Performance benchmarking (3 tools)
 
-**Integer Programming** (2 tools):
+**Integer Programming** (2 tools with v2.0 enhancements):
 - Branch-and-bound algorithm
+  - **🆕 Relaxation solver selection** (simplex/nonlinear)
+  - **🆕 Variable shift strategies** (round/floor/ceiling/none)
+  - **🆕 Linearity validation** for optimal solver choice
 - Branch-and-cut with cutting planes:
   - Gomory cuts
   - Mixed-Integer Rounding (MIR)
   - Cover cuts
 
-**Portfolio Optimization** (3 tools):
+**Portfolio Optimization** (4 tools):
 - Modern Portfolio Theory (MPT)
 - Efficient frontier calculation
 - Risk parity allocation
+- **🆕 Mean-variance optimization** with concentration limits (realistic tradeoffs, no trivial solutions)
 
 **Real Options** (5 tools):
 - Black-Scholes option pricing
