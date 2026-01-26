@@ -137,7 +137,7 @@ public struct NewtonRaphsonOptimizeTool: MCPToolHandler, Sendable {
         let description = args.getStringOptional("description")
 
         // Define the function: f(x) = formula(x) - target
-        let function: (Double) -> Double = { x in
+        let function: @Sendable (Double) -> Double = { x in
             let result = evaluateExpression(formula, withVariable: x)
             return result - target
         }
@@ -330,7 +330,7 @@ public struct GradientDescentOptimizeTool: MCPToolHandler, Sendable {
         }
 
         // Define objective function
-        let objectiveFunction: (VectorN<Double>) -> Double = { vector in
+        let objectiveFunction: @Sendable (VectorN<Double>) -> Double = { vector in
             let values = vector.toArray()
             let result = evaluateMultivariateExpression(formula, withVariables: values)
             return sense == "maximize" ? -result : result

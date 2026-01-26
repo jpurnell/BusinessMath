@@ -96,6 +96,16 @@ struct BusinessMathMCPServerMain {
             try await toolRegistry.register(handler.toToolDefinition())
         }
 
+        // Mean-Variance Portfolio Tools (1 tool) - Phase 2A
+        for handler in getMeanVariancePortfolioTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
+        // Scenario Analysis Tools (1 tool) - Phase 2A
+        for handler in getScenarioAnalysisTools() {
+            try await toolRegistry.register(handler.toToolDefinition())
+        }
+
         // Real Options Tools (5 tools)
         for handler in getRealOptionsTools() {
             try await toolRegistry.register(handler.toToolDefinition())
@@ -223,12 +233,18 @@ struct BusinessMathMCPServerMain {
         // Create and configure the MCP server using official SDK
         let server = Server(
             name: "BusinessMath MCP Server",
-            version: "1.7.0",
+            version: "2.0.0",
             instructions: """
             Comprehensive business mathematics, financial modeling, Monte Carlo simulation, and advanced analytics server.
 
+            **🆕 v2.0 Highlights:**
+            - Mean-variance portfolio optimization with realistic risk-return tradeoffs
+            - Discrete scenario analysis with distributions within scenarios (stress testing)
+            - Enhanced integer programming with relaxation solver selection & variable shift strategies
+            - Swift 6 concurrency compliance (@Sendable throughout)
+
             **Capabilities**:
-            - \(toolCount) computational tools across 32 categories
+            - \(toolCount) computational tools across 33 categories
             - 15 probability distributions (Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh, and more)
             - 9 essential financial ratios (liquidity, leverage, profitability, efficiency)
             - 12 valuation calculators (EPS, P/E, P/B, market cap, enterprise value, free cash flow)
@@ -247,14 +263,14 @@ struct BusinessMathMCPServerMain {
             3. Forecasting: Trend analysis, seasonal adjustment, projections
             4. Debt & Financing: Amortization, WACC, CAPM, coverage ratios
             5. Statistical Analysis: Correlation, regression, confidence intervals
-            6. Monte Carlo Simulation: Risk modeling, 15 distributions, sensitivity analysis
+            6. Monte Carlo Simulation: Risk modeling, 15 distributions, sensitivity analysis, **discrete scenario analysis with setValue/setDistribution**
             7. Hypothesis Testing: T-tests, chi-square, F-tests, sample size, A/B testing, p-values
             8. Probability Distributions: Normal, Uniform, Triangular, Exponential, Lognormal, Beta, Gamma, Weibull, Chi-Squared, F, T, Pareto, Logistic, Geometric, Rayleigh
             9. Combinatorics: Combinations, permutations, factorial
             10. Statistical Means: Geometric, harmonic, weighted average
             11. Analysis Tools: Goal seek, data tables
-            12. Optimization & Solvers: Newton-Raphson, gradient descent, capital allocation
-            13. Portfolio Optimization: Modern Portfolio Theory, efficient frontier, risk parity
+            12. Optimization & Solvers: Newton-Raphson, gradient descent, capital allocation (Swift 6 @Sendable)
+            13. Portfolio Optimization: Modern Portfolio Theory, efficient frontier, risk parity, **mean-variance optimization with concentration limits**
             14. Real Options: Black-Scholes, binomial trees, Greeks, expansion/abandonment valuation
             15. Risk Analytics: Stress testing, VaR/CVaR, risk aggregation, comprehensive risk metrics
             16. Financial Ratios: Asset turnover, current ratio, quick ratio, D/E, interest coverage, inventory turnover, profit margin, ROE, ROI
@@ -266,12 +282,21 @@ struct BusinessMathMCPServerMain {
             22. Trend Forecasting: Linear trend, exponential trend, logistic trend, time series decomposition
             23. Seasonality: Calculate seasonal indices, seasonally adjust data, apply seasonal patterns
             24. Advanced Options: Calculate option Greeks (Delta, Gamma, Vega, Theta, Rho), binomial tree option pricing (American & European)
-            25. Integer Programming: Branch-and-bound, branch-and-cut with cutting planes, 0-1 knapsack, project selection, facility location
+            25. Integer Programming: Branch-and-bound, branch-and-cut with cutting planes, **v2.0: relaxation solver selection (simplex/nonlinear), variable shift strategies**
+            26. **🆕 Scenario Analysis & Stress Testing**: Discrete scenarios with mixed deterministic/probabilistic inputs, cascading effects, best/worst case identification, threshold probabilities
 
             **Resources**: Access comprehensive documentation, examples, and reference data using resources/read
             **Prompts**: Use prompt templates for guided analysis workflows
 
-            For best results, consult the documentation resources before starting complex analyses.
+            **Swift 6 Compatibility:**
+            All optimization and simulation tools support Swift 6 strict concurrency with @Sendable closures.
+            Integer programming and portfolio tools include v2.0 enhancements for production use.
+
+            **Best Practices:**
+            - Use scenario analysis (analyze_scenarios) for stress testing multi-component business models
+            - Use mean-variance optimization (optimize_mean_variance_portfolio) for realistic portfolio allocation with risk constraints
+            - Consult documentation resources before starting complex analyses
+            - Verify results with validation examples when using Monte Carlo simulations
             """,
             capabilities: Server.Capabilities(
                 logging: Server.Capabilities.Logging(),

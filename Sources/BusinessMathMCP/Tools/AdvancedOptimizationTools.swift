@@ -116,7 +116,7 @@ public struct MultiPeriodOptimizeTool: MCPToolHandler, Sendable {
         )
 
         // Define period-specific objective
-        let objective: (Int, VectorN<Double>) -> Double = { period, x in
+        let objective: @Sendable (Int, VectorN<Double>) -> Double = { period, x in
             // x contains decisions for this period
             // Return objective value for this period (will be discounted automatically)
             \(getObjectiveExample(problemType: problemType, dimensions: dimensions))
@@ -374,7 +374,7 @@ public struct StochasticOptimizeTool: MCPToolHandler, Sendable {
         )
 
         // Define stochastic objective
-        let objective: (VectorN<Double>, OptimizationScenario) -> Double = { x, scenario in
+        let objective: @Sendable (VectorN<Double>, OptimizationScenario) -> Double = { x, scenario in
             // x: your decision variables
             // scenario.parameters: uncertain parameters for this scenario
 
@@ -663,7 +663,7 @@ public struct RobustOptimizeTool: MCPToolHandler, Sendable {
         )
 
         // Define objective (evaluated in each scenario)
-        let objective: (VectorN<Double>, OptimizationScenario) -> Double = { x, scenario in
+        let objective: @Sendable (VectorN<Double>, OptimizationScenario) -> Double = { x, scenario in
             \(getRobustObjective(problemType: problemType))
         }
 
@@ -947,7 +947,7 @@ public struct ScenarioOptimizeTool: MCPToolHandler, Sendable {
         )
 
         // Define scenario-specific objective
-        let objective: (VectorN<Double>, Scenario<VectorN<Double>>) -> Double = { x, scenario in
+        let objective: @Sendable (VectorN<Double>, Scenario<VectorN<Double>>) -> Double = { x, scenario in
             \(getScenarioObjective(problemType: problemType))
         }
 
