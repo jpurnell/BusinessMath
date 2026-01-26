@@ -16,26 +16,26 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 - ✅ **Role-Based Financial Statements:** Multi-statement account support for accurate financial modeling
 - ✅ **GPU Acceleration:** 10-100× speedup for genetic algorithms (populations ≥ 1,000) on Apple Silicon
-- ✅ **Consistent API:** `initialGuess` parameter everywhere
+- ✅ **Consistent API:** `initialGuess` parameter everywhere, `@Sendable` closures for Swift 6 concurrency
 - ✅ **Constraint Support:** Equality and inequality constraints via penalty method
-- ✅ **Stable:** Semantic versioning guarantees (see [STABILITY.md](STABILITY.md))
+- ✅ **Playground-Ready:** All examples work in Xcode Playgrounds with proper `PlaygroundSupport` integration
 - ✅ **3,552+ Tests:** 99.9% pass rate across 278 test suites
 
-**Upgrading from 1.x?** Financial statements now use role-based API (accounts can appear in multiple statements). [Full migration guide →](MIGRATION_GUIDE_v2.0.md)
-
-**New to GPU acceleration?** [Get started with the GPU tutorial →](GPU_ACCELERATION_TUTORIAL.md)
+**See what's new:** [Complete v2.0.0 Release Notes →](RELEASE_NOTES_v2.0.0.md)
 
 ---
 
 ## Why BusinessMath?
 
-**Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real>`) and strict concurrency for thread safety.
+**Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real>`) and strict concurrency for thread safety. All examples include `@Sendable` closures and proper `PlaygroundSupport` integration.
 
-**Complete**: 44 comprehensive guides, 2,000+ tests, and production implementations of valuation models, optimization algorithms, and risk analytics.
+**Complete**: 44 comprehensive guides, 3,552+ tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every tutorial example has been validated** to work correctly in Xcode Playgrounds and production code.
 
-**Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and validated against real-world use cases.
+**Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and validated against real-world use cases. Documentation examples reflect actual API behavior with realistic tradeoffs (mean-variance optimization, risk constraints, budget limits).
 
 **Fast**: Sub-millisecond NPV/IRR calculations, complete forecasts in <50ms, optimized for interactive dashboards and real-time analysis.
+
+**Ergonomic**: Fluent APIs that read like financial prose. Risk-aware examples that demonstrate real tradeoffs, not trivial solutions. Clear error messages and comprehensive debugging guides.
 
 ---
 
@@ -129,7 +129,7 @@ Run Monte Carlo simulations with 15 probability distributions. Calculate VaR/CVa
 ### ⚡ Optimization
 Optimize portfolios (efficient frontier, Sharpe ratio maximization), solve integer programming problems (branch-and-bound, cutting planes), and allocate capital optimally. **GPU-accelerated genetic algorithms** provide 10-100× speedup for large-scale optimization (populations ≥ 1,000) with automatic Metal acceleration on Apple Silicon.
 
-→ [Portfolio Optimization](Sources/BusinessMath/BusinessMath.docc/5.2-PortfolioOptimizationGuide.md) | [Optimization Guide](Sources/BusinessMath/BusinessMath.docc/5.1-OptimizationGuide.md) | **[GPU Acceleration Tutorial](GPU_ACCELERATION_TUTORIAL.md)**
+→ [Portfolio Optimization](Sources/BusinessMath/BusinessMath.docc/5.2-PortfolioOptimizationGuide.md) | [Optimization Guide](Sources/BusinessMath/BusinessMath.docc/5.1-OptimizationGuide.md) | [GPU Acceleration](Sources/BusinessMath/BusinessMath.docc/5.16-GPUAccelerationTutorial.md)
 
 ### 🤖 AI Assistant Integration
 BusinessMath includes an MCP server that lets AI assistants (like Claude Desktop) perform financial analysis using natural language. **167 tools** across time value of money, forecasting, optimization, and valuation—all accessible through conversation.
@@ -140,7 +140,7 @@ BusinessMath includes an MCP server that lets AI assistants (like Claude Desktop
 "Forecast quarterly revenue with exponential trend and seasonality"
 ```
 
-→ [Full MCP Server Documentation](MCP_README.md)
+→ [Full MCP Server Documentation](BusinessMathMCP_README/MCP_README.md)
 
 ---
 
@@ -178,9 +178,7 @@ dependencies: [
 
 - **[QUICK_START_EXAMPLE.swift](QUICK_START_EXAMPLE.swift)** - 🚀 Copy-paste investment analysis example (start here!)
 - **[EXAMPLES.md](EXAMPLES.md)** - Time series, forecasting, loans, securities, risk, optimization
-- **[GPU_ACCELERATION_TUTORIAL.md](GPU_ACCELERATION_TUTORIAL.md)** - GPU-accelerated optimization tutorial
-- **[Examples Folder](Examples/)** - Complete financial models and case studies
-- **[PERFORMANCE.md](Examples/PERFORMANCE.md)** - Benchmarks and optimization tips
+- **[All DocC Tutorials](Sources/BusinessMath/BusinessMath.docc/)** - 44 comprehensive guides with runnable examples
 
 ## What's Included
 
@@ -215,7 +213,7 @@ dependencies: [
 - 🎯 **6 prompt templates** for guided workflows
 - 🔗 **Stdio & HTTP modes** (stdio recommended for production)
 
-See [MCP_README.md](MCP_README.md) for full AI integration details.
+See [BusinessMathMCP_README/MCP_README.md](BusinessMathMCP_README/MCP_README.md) for full AI integration details.
 
 ---
 
@@ -269,6 +267,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **Documentation**: [BusinessMath.docc](Sources/BusinessMath/BusinessMath.docc/)
 - **Issues**: [GitHub Issues](https://github.com/jpurnell/BusinessMath/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/jpurnell/BusinessMath/discussions)
-- **Examples**: [EXAMPLES.md](EXAMPLES.md) | [Examples Folder](Examples/)
+- **Examples**: [QUICK_START_EXAMPLE.swift](QUICK_START_EXAMPLE.swift) | [EXAMPLES.md](EXAMPLES.md)
 
 ---
