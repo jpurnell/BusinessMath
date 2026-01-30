@@ -130,7 +130,7 @@ public struct AdaptiveOptimizeTool: MCPToolHandler, Sendable {
         **Problem Configuration:**
         - Variables: \(variables.joined(separator: ", "))
         - Dimensions: \(variables.count)
-        - Initial guess: \(initialGuess.map { String(format: "%.4f", $0) }.joined(separator: ", "))
+        - Initial guess: \(initialGuess.map { $0.number(4) }.joined(separator: ", "))
         - Objective: \(objective.capitalized)
         - Preferences: \(preferSpeed ? "Speed" : preferAccuracy ? "Accuracy" : "Balanced")
 

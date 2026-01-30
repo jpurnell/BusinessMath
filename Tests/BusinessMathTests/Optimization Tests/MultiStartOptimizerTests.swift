@@ -102,8 +102,7 @@ struct MultiStartOptimizerTests {
         #expect(abs(result.objectiveValue) < 0.6)
     }
 
-    // MARK: - Parallel Execution Tests
-
+    // MARK: - Parallel Execution Tests - These tests may fail when run as part of a suite as they are forced to run sequentially
     @Test("MultiStartOptimizer runs optimizations in parallel")
     func runsInParallel() async throws {
         let baseOptimizer = AsyncGradientDescentOptimizer<Double>(

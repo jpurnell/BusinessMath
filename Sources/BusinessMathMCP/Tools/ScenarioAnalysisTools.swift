@@ -285,10 +285,10 @@ public struct ScenarioAnalysisTool: MCPToolHandler, Sendable {
             output += """
 
             **\(name):**
-            - Mean: \(String(format: "%.2f", mean))
-            - Median: \(String(format: "%.2f", median))
-            - Std Dev: \(String(format: "%.2f", stdDev))
-            - 90% CI: [\(String(format: "%.2f", p5)), \(String(format: "%.2f", p95))]
+            - Mean: \(mean.number(2))
+            - Median: \(median.number(2))
+            - Std Dev: \(stdDev.number(2))
+            - 90% CI: [\(p5.number(2))), \(p95.number(2))]
 
             """
         }
@@ -307,12 +307,12 @@ public struct ScenarioAnalysisTool: MCPToolHandler, Sendable {
 
         output += """
         **Best/Worst by Mean:**
-        - Best: \(bestByMean.name) (\(String(format: "%.2f", bestByMean.results.statistics.mean)))
-        - Worst: \(worstByMean.name) (\(String(format: "%.2f", worstByMean.results.statistics.mean)))
+        - Best: \(bestByMean.name) (\(bestByMean.results.statistics.mean.number(2))
+        - Worst: \(worstByMean.name) (\(worstByMean.results.statistics.mean.number(2))
 
         **Best/Worst by 5th Percentile (Downside Risk):**
-        - Best: \(bestByP5.name) (\(String(format: "%.2f", bestByP5.results.percentiles.p5)))
-        - Worst: \(worstByP5.name) (\(String(format: "%.2f", worstByP5.results.percentiles.p5)))
+        - Best: \(bestByP5.name) (\(bestByP5.results.percentiles.p5.number(2))
+        - Worst: \(worstByP5.name) (\(worstByP5.results.percentiles.p5.number(2))
 
         """
 
@@ -326,14 +326,14 @@ public struct ScenarioAnalysisTool: MCPToolHandler, Sendable {
             for threshold in thresholds {
                 output += """
 
-                **Probability of Exceeding \(String(format: "%.0f", threshold)):**
+                **Probability of Exceeding \(threshold.number(0)):**
                 """
 
                 for (name, result) in results.sorted(by: { $0.key < $1.key }) {
                     let prob = result.probabilityAbove(threshold)
                     output += """
 
-                    - \(name): \(String(format: "%.1f%%", prob * 100))
+                    - \(name): \(prob.percent(1))
                     """
                 }
             }
@@ -355,7 +355,7 @@ public struct ScenarioAnalysisTool: MCPToolHandler, Sendable {
             let sharpe = stdDev > 0 ? mean / stdDev : 0
             output += """
 
-            - \(name): \(String(format: "%.3f", sharpe))
+            - \(name): \(sharpe.number(3))
             """
         }
 

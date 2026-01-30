@@ -610,7 +610,7 @@ extension Investment: CustomStringConvertible {
 		result += "  NPV: \(npv.currency())\n"
 
         if let irr = irr {
-            result += "  IRR: \(String(format: "%.2f%%", irr * 100))\n"
+			result += "  IRR: \(irr.percent())\n"
         }
 
 		result += "  Profitability Index: \(profitabilityIndex.number())\n"

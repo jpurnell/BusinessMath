@@ -184,7 +184,7 @@ struct FloatingPointFormatterTests {
     @Test("Custom formatting strategy")
     func testCustomStrategy() throws {
         let customFormat: @Sendable (Double) -> String = { value in
-            "CUSTOM: \(String(format: "%.2f", value))"
+			"CUSTOM: \(value.number(2))"
         }
 
         let formatter = FloatingPointFormatter(strategy: .custom(customFormat))

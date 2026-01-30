@@ -85,6 +85,27 @@ extension Period {
 		}
 
 		switch type {
+		case .millisecond:
+			// Distance in milliseconds
+			let components = cachedCalendar.dateComponents([.nanosecond], from: self.startDate, to: other.startDate)
+			let nanoseconds = components.nanosecond ?? 0
+			return nanoseconds / 1_000_000
+
+		case .second:
+			// Distance in seconds
+			let components = cachedCalendar.dateComponents([.second], from: self.startDate, to: other.startDate)
+			return components.second ?? 0
+
+		case .minute:
+			// Distance in minutes
+			let components = cachedCalendar.dateComponents([.minute], from: self.startDate, to: other.startDate)
+			return components.minute ?? 0
+
+		case .hourly:
+			// Distance in hours
+			let components = cachedCalendar.dateComponents([.hour], from: self.startDate, to: other.startDate)
+			return components.hour ?? 0
+
 		case .daily:
 			// Distance in days
 			let components = cachedCalendar.dateComponents([.day], from: self.startDate, to: other.startDate)
@@ -126,6 +147,18 @@ extension Period {
 		var components = DateComponents()
 
 		switch type {
+		case .millisecond:
+			components.nanosecond = n * 1_000_000
+
+		case .second:
+			components.second = n
+
+		case .minute:
+			components.minute = n
+
+		case .hourly:
+			components.hour = n
+
 		case .daily:
 			components.day = n
 

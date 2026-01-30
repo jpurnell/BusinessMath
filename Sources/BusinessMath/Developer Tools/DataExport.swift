@@ -60,7 +60,7 @@ public struct DataExporter: Sendable {
                 let row = "\(escapeCsv(component.name)),Cost,Fixed,\(amount),"
                 lines.append(row)
             case .variable(let percentage):
-                let percentageStr = String(format: "%.2f%%", percentage * 100)
+					let percentageStr = percentage.percent()
                 let row = "\(escapeCsv(component.name)),Cost,Variable,,\(percentageStr)"
                 lines.append(row)
             }

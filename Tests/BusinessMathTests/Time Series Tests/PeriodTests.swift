@@ -19,6 +19,93 @@ struct PeriodTests {
 	// will be provided through integration with FiscalCalendar (Phase 1.4), which will map
 	// calendar periods to fiscal periods.
 
+	// MARK: - Factory Methods: Sub-Daily
+
+	@Test("Can create millisecond period")
+	func createMillisecondPeriod() {
+		let period = Period.millisecond(
+			year: 2025, month: 1, day: 29,
+			hour: 14, minute: 30, second: 45, millisecond: 123
+		)
+		#expect(period.type == .millisecond)
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents(
+			[.year, .month, .day, .hour, .minute, .second, .nanosecond],
+			from: period.date
+		)
+		#expect(components.year == 2025)
+		#expect(components.month == 1)
+		#expect(components.day == 29)
+		#expect(components.hour == 14)
+		#expect(components.minute == 30)
+		#expect(components.second == 45)
+		// Allow small precision difference due to Date/Calendar rounding
+		let expectedNanos = 123_000_000
+		let actualNanos = components.nanosecond ?? 0
+		#expect(abs(actualNanos - expectedNanos) < 1_000_000) // Within 1ms tolerance
+	}
+
+	@Test("Can create second period")
+	func createSecondPeriod() {
+		let period = Period.second(
+			year: 2025, month: 1, day: 29,
+			hour: 14, minute: 30, second: 45
+		)
+		#expect(period.type == .second)
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents(
+			[.year, .month, .day, .hour, .minute, .second],
+			from: period.date
+		)
+		#expect(components.year == 2025)
+		#expect(components.month == 1)
+		#expect(components.day == 29)
+		#expect(components.hour == 14)
+		#expect(components.minute == 30)
+		#expect(components.second == 45)
+	}
+
+	@Test("Can create minute period")
+	func createMinutePeriod() {
+		let period = Period.minute(
+			year: 2025, month: 1, day: 29,
+			hour: 14, minute: 30
+		)
+		#expect(period.type == .minute)
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents(
+			[.year, .month, .day, .hour, .minute],
+			from: period.date
+		)
+		#expect(components.year == 2025)
+		#expect(components.month == 1)
+		#expect(components.day == 29)
+		#expect(components.hour == 14)
+		#expect(components.minute == 30)
+	}
+
+	@Test("Can create hour period")
+	func createHourPeriod() {
+		let period = Period.hour(
+			year: 2025, month: 1, day: 29,
+			hour: 14
+		)
+		#expect(period.type == .hourly)
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents(
+			[.year, .month, .day, .hour],
+			from: period.date
+		)
+		#expect(components.year == 2025)
+		#expect(components.month == 1)
+		#expect(components.day == 29)
+		#expect(components.hour == 14)
+	}
+
 	// MARK: - Factory Methods: Daily
 
 	@Test("Create daily period from Date")
@@ -617,6 +704,78 @@ struct PeriodTests {
 
 		// 2024 is a leap year: 366 days
 		#expect(leapDays.count == 366)
+	}
+
+	// MARK: - Period Subdivision: hours()
+
+	@Test("Can subdivide day into hours")
+	func dayToHours() {
+		let day = Period.day(Date(timeIntervalSince1970: 1738195200)) // 2025-01-30
+		let hours = day.hours()
+		#expect(hours.count == 24)
+		#expect(hours.first!.type == .hourly)
+	}
+
+	@Test("Can subdivide hour into itself")
+	func hourToHours() {
+		let hour = Period.hour(year: 2025, month: 1, day: 29, hour: 14)
+		let hours = hour.hours()
+		#expect(hours.count == 1)
+		#expect(hours.first! == hour)
+	}
+
+	// MARK: - Period Subdivision: minutes()
+
+	@Test("Can subdivide hour into minutes")
+	func hourToMinutes() {
+		let hour = Period.hour(year: 2025, month: 1, day: 29, hour: 14)
+		let minutes = hour.minutes()
+		#expect(minutes.count == 60)
+		#expect(minutes.first!.type == .minute)
+	}
+
+	@Test("Can subdivide minute into itself")
+	func minuteToMinutes() {
+		let minute = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 30)
+		let minutes = minute.minutes()
+		#expect(minutes.count == 1)
+		#expect(minutes.first! == minute)
+	}
+
+	// MARK: - Period Subdivision: seconds()
+
+	@Test("Can subdivide minute into seconds")
+	func minuteToSeconds() {
+		let minute = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 30)
+		let seconds = minute.seconds()
+		#expect(seconds.count == 60)
+		#expect(seconds.first!.type == .second)
+	}
+
+	@Test("Can subdivide second into itself")
+	func secondToSeconds() {
+		let second = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45)
+		let seconds = second.seconds()
+		#expect(seconds.count == 1)
+		#expect(seconds.first! == second)
+	}
+
+	// MARK: - Period Subdivision: milliseconds()
+
+	@Test("Can subdivide second into milliseconds")
+	func secondToMilliseconds() {
+		let second = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45)
+		let milliseconds = second.milliseconds()
+		#expect(milliseconds.count == 1000)
+		#expect(milliseconds.first!.type == .millisecond)
+	}
+
+	@Test("Can subdivide millisecond into itself")
+	func millisecondToMilliseconds() {
+		let ms = Period.millisecond(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45, millisecond: 123)
+		let milliseconds = ms.milliseconds()
+		#expect(milliseconds.count == 1)
+		#expect(milliseconds.first! == ms)
 	}
 
 	// MARK: - Edge Cases

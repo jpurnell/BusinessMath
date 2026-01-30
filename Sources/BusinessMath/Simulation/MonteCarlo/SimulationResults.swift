@@ -61,6 +61,12 @@ public struct SimulationResults: Sendable {
 	/// Computed percentiles for the simulation results
 	public let percentiles: Percentiles
 
+	/// Whether the simulation was executed on GPU
+	///
+	/// - `true`: Simulation used GPU acceleration (Metal)
+	/// - `false`: Simulation used CPU execution
+	public let usedGPU: Bool
+
 	// MARK: - Initialization
 
 	/// Creates a SimulationResults struct from an array of simulation output values.
@@ -69,7 +75,9 @@ public struct SimulationResults: Sendable {
 	/// - Complete statistical summary (mean, median, standard deviation, etc.)
 	/// - Percentiles (p5, p10, p25, p50, p75, p90, p95, p99)
 	///
-	/// - Parameter values: An array of simulation output values
+	/// - Parameters:
+	///   - values: An array of simulation output values
+	///   - usedGPU: Whether GPU acceleration was used (default: false)
 	///
 	/// ## Example
 	///
@@ -79,15 +87,17 @@ public struct SimulationResults: Sendable {
 	///     distributionNormal(mean: 100, stdDev: 15)
 	/// }
 	///
-	/// let results = SimulationResults(values: simulationOutputs)
+	/// let results = SimulationResults(values: simulationOutputs, usedGPU: true)
 	/// ```
-	public init(values: [Double]) {
+	public init(values: [Double], usedGPU: Bool = false) {
 		self.values = values
+		self.usedGPU = usedGPU
 //		logger.debug("Set values with \(values.count) values")
 		let simStats = SimulationStatistics(values: values)
 //		logger.debug("simStats set with \(simStats.values.count) values, mean of \(simStats.mean)")
 		self.statistics = simStats
-		guard let _percentiles = try? Percentiles(values: values) else { self.percentiles = try! Percentiles(values: [0])
+		guard let _percentiles = try? Percentiles(values: values) else {
+			self.percentiles = try! Percentiles(values: [0])
 			return
 		}
 		self.percentiles = _percentiles

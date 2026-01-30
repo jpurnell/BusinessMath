@@ -708,21 +708,21 @@ public struct DebugTrace<T: Sendable>: Sendable {
             return """
             Calculation: \(value)
             Result: \(result)
-            Duration: \(String(format: "%.3f", duration))s
+            Duration: \(duration.number(3))s
             Timestamp: \(timestamp)
             """
         } else if let error = error {
             return """
             Calculation: \(value)
             Error: \(error.localizedDescription)
-            Duration: \(String(format: "%.3f", duration))s
+            Duration: \(duration.number(3))s
             Timestamp: \(timestamp)
             """
         } else {
             return """
             Calculation: \(value)
             Result: Unknown
-            Duration: \(String(format: "%.3f", duration))s
+            Duration: \(duration.number(3))s
             """
         }
     }
@@ -753,7 +753,7 @@ public struct DetailedDebugTrace<T: Sendable>: Sendable {
         var output = """
         \(value) = \(result)
         Formula: \(formula)
-        Duration: \(String(format: "%.3f", duration))s
+        Duration: \(duration.number(3))s
 
         Dependencies:
         """

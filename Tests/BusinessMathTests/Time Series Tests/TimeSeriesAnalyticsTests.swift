@@ -211,9 +211,9 @@ struct TimeSeriesAnalyticsTests {
 		let pctChange = ts.percentChange(lag: 1)
 		
 		#expect(pctChange.count == 3)
-		#expect(abs(pctChange[periods[1]]! - 10.0) < tolerance)  // 10% change
-		#expect(abs(pctChange[periods[2]]! - 10.0) < tolerance)  // 10% change
-		#expect(abs(pctChange[periods[3]]! - 10.0) < tolerance)  // 10% change
+		#expect(abs(pctChange[periods[1]]! - 0.1) < tolerance)  // 10% change
+		#expect(abs(pctChange[periods[2]]! - 0.1) < tolerance)  // 10% change
+		#expect(abs(pctChange[periods[3]]! - 0.1) < tolerance)  // 10% change
 	}
 	
 	@Test("percentChange with negative change")
@@ -223,8 +223,8 @@ struct TimeSeriesAnalyticsTests {
 		
 		let pctChange = ts.percentChange(lag: 1)
 		
-		#expect(abs(pctChange[periods[1]]! - (-10.0)) < tolerance)  // -10%
-		#expect(abs(pctChange[periods[2]]! - (-10.0)) < tolerance)  // -10%
+		#expect(abs(pctChange[periods[1]]! - (-0.1)) < tolerance)  // -10%
+		#expect(abs(pctChange[periods[2]]! - (-0.1)) < tolerance)  // -10%
 	}
 	
 		// MARK: - Rolling Sum Tests

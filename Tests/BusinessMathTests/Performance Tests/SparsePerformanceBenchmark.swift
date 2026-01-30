@@ -55,11 +55,11 @@ struct SparsePerformanceBenchmark {
         print("═══════════════════════════════════════════════════════")
         print("  Sparse vs Dense Benchmark (500×500, 0.6% density)")
         print("═══════════════════════════════════════════════════════")
-        print("  Sparse time: \(String(format: "%.3f", sparseDuration * 1000))ms")
-        print("  Dense time:  \(String(format: "%.3f", denseDuration * 1000))ms")
-        print("  Speedup:     \(String(format: "%.1f", speedup))×")
+		print("  Sparse time: \((sparseDuration * 1000).number(3))ms")
+		print("  Dense time:  \((denseDuration * 1000).number(3))ms")
+		print("  Speedup:     \(speedup.number(1))×")
         print("  Non-zeros:   \(sparse.nonZeroCount)")
-        print("  Sparsity:    \(String(format: "%.1f", sparse.sparsity * 100))%")
+		print("  Sparsity:    \(sparse.sparsity.percent(1))")
         print("═══════════════════════════════════════════════════════")
 
         // Sparse should be significantly faster
@@ -97,9 +97,9 @@ struct SparsePerformanceBenchmark {
         print("═══════════════════════════════════════════════════════")
         print("  Matrix size:     \(n)×\(n)")
         print("  Non-zeros:       \(sparse.nonZeroCount)")
-        print("  Sparsity:        \(String(format: "%.2f", sparse.sparsity * 100))%")
-        print("  Avg multiply:    \(String(format: "%.3f", avgTime * 1000))ms")
-        print("  Throughput:      \(String(format: "%.1f", 1.0 / avgTime)) mult/sec")
+		print("  Sparsity:        \(sparse.sparsity.percent(2))")
+		print("  Avg multiply:    \((avgTime * 1000).number(3))ms")
+		print("  Throughput:      \((1.0 / avgTime).number(1)) mult/sec")
         print("═══════════════════════════════════════════════════════")
 
         // Should complete reasonably fast
@@ -140,8 +140,8 @@ struct SparsePerformanceBenchmark {
         print("  Conjugate Gradient Solver Benchmark (100×100)")
         print("═══════════════════════════════════════════════════════")
         print("  System size:     \(n)×\(n)")
-        print("  Solve time:      \(String(format: "%.3f", duration * 1000))ms")
-        print("  Final residual:  \(String(format: "%.2e", residual))")
+		print("  Solve time:      \((duration * 1000).number(3))ms")
+		print("  Final residual:  \(residual.number(2))")
         print("  Converged:       \(residual < 1e-6 ? "✓" : "✗")")
         print("═══════════════════════════════════════════════════════")
 
@@ -182,8 +182,8 @@ struct SparsePerformanceBenchmark {
         print("  Biconjugate Gradient Benchmark (50×50)")
         print("═══════════════════════════════════════════════════════")
         print("  System size:     \(n)×\(n)")
-        print("  Solve time:      \(String(format: "%.3f", duration * 1000))ms")
-        print("  Final residual:  \(String(format: "%.2e", residual))")
+		print("  Solve time:      \((duration * 1000).number(3))ms")
+		print("  Final residual:  \(residual.number(2))")
         print("  Converged:       \(residual < 1e-4 ? "✓" : "✗")")
         print("═══════════════════════════════════════════════════════")
 
@@ -222,9 +222,9 @@ struct SparsePerformanceBenchmark {
         print("═══════════════════════════════════════════════════════")
         print("  Dense memory:    \(denseMemory / 1024 / 1024)MB")
         print("  Sparse memory:   \(sparseMemory / 1024 / 1024)MB")
-        print("  Memory saved:    \(String(format: "%.1f", memorySavings * 100))%")
+		print("  Memory saved:    \(memorySavings.percent(1))")
         print("  Non-zeros:       \(sparse.nonZeroCount)")
-        print("  Compression:     \(String(format: "%.1f", Double(denseMemory) / Double(sparseMemory)))×")
+		print("  Compression:     \((Double(denseMemory) / Double(sparseMemory)).number(1))×")
         print("═══════════════════════════════════════════════════════")
 
         #expect(memorySavings > 0.95, "Should save >95% memory for sparse matrices")

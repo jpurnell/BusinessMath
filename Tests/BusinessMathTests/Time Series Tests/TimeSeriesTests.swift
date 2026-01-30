@@ -67,6 +67,61 @@ struct TimeSeriesTests {
 		#expect(ts.metadata.unit == "USD")
 	}
 
+	// MARK: - Sub-Daily Period Integration
+
+	@Test("TimeSeries works with hourly data")
+	func timeSeriesWithHourlyData() {
+		let hours = (0..<24).map { hour in
+			Period.hour(year: 2025, month: 1, day: 29, hour: hour)
+		}
+		let values = (0..<24).map { Double($0) * 10.0 }
+
+		let timeSeries = TimeSeries(periods: hours, values: values)
+		#expect(timeSeries.count == 24)
+		#expect(timeSeries[hours[12]] == 120.0)
+	}
+
+	@Test("TimeSeries works with minute data")
+	func timeSeriesWithMinuteData() {
+		let minutes = (0..<60).map { minute in
+			Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: minute)
+		}
+		let values = (0..<60).map { Double($0) }
+
+		let timeSeries = TimeSeries(periods: minutes, values: values)
+		#expect(timeSeries.count == 60)
+		#expect(timeSeries[minutes[30]] == 30.0)
+	}
+
+	@Test("TimeSeries works with second data")
+	func timeSeriesWithSecondData() {
+		let seconds = (0..<60).map { second in
+			Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: second)
+		}
+		let values = (0..<60).map { Double($0) }
+
+		let timeSeries = TimeSeries(periods: seconds, values: values)
+		#expect(timeSeries.count == 60)
+		#expect(timeSeries[seconds[45]] == 45.0)
+	}
+
+	@Test("TimeSeries works with millisecond data")
+	func timeSeriesWithMillisecondData() {
+		// Just test a subset (100 milliseconds) to avoid performance issues
+		let milliseconds = (0..<100).map { ms in
+			Period.millisecond(
+				year: 2025, month: 1, day: 29,
+				hour: 14, minute: 30, second: 45,
+				millisecond: ms
+			)
+		}
+		let values = (0..<100).map { Double($0) }
+
+		let timeSeries = TimeSeries(periods: milliseconds, values: values)
+		#expect(timeSeries.count == 100)
+		#expect(timeSeries[milliseconds[50]] == 50.0)
+	}
+
 	@Test("Create time series from dictionary")
 	func initFromDictionary() {
 		let jan = Period.month(year: 2025, month: 1)

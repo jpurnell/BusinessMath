@@ -10,7 +10,7 @@ public struct PeriodJSON: Codable, Sendable {
     public let year: Int
     public let month: Int?
     public let day: Int?
-    public let type: String
+    public let type: Int
 
     public init(from period: Period) {
         self.year = period.year
@@ -21,7 +21,7 @@ public struct PeriodJSON: Codable, Sendable {
 
     public func toPeriod() throws -> Period {
         guard let periodType = PeriodType(rawValue: type) else {
-            throw MarshallingError.invalidPeriodType(type)
+            throw MarshallingError.invalidPeriodType(String(type))
         }
 
         switch periodType {
@@ -39,6 +39,10 @@ public struct PeriodJSON: Codable, Sendable {
                 throw MarshallingError.missingField("month")
             }
             return Period.month(year: year, month: month)
+        case .millisecond, .second, .minute, .hourly:
+            // Sub-daily periods not yet supported in MCP JSON interface
+            // TODO: Extend PeriodJSON to include hour, minute, second, millisecond fields
+            throw MarshallingError.invalidData("Sub-daily periods not yet supported in MCP interface")
         case .daily:
             // For daily periods, need to construct a Date
             guard let month = month, let day = day else {
@@ -275,12 +279,15 @@ extension Dictionary where Key == String, Value == MCP.Value {
         guard let yearValue = dict["year"],
               let year = yearValue.intValue,
               let typeValue = dict["type"],
-              let typeString = typeValue.stringValue,
-              let periodType = PeriodType(rawValue: typeString) else {
+              let typeInt = typeValue.intValue,
+              let periodType = PeriodType(rawValue: typeInt) else {
             throw ValueExtractionError.invalidArguments("\(key) must have valid year and type")
         }
 
         switch periodType {
+        case .millisecond, .second, .minute, .hourly:
+            // Sub-daily periods not yet supported in MCP JSON interface
+            throw ValueExtractionError.invalidArguments("Sub-daily periods not yet supported in MCP interface")
         case .annual:
             return Period.year(year)
         case .quarterly:
@@ -340,6 +347,6 @@ extension Double {
 
     /// Format as decimal
     public func formatDecimal(decimals: Int = 2) -> String {
-        return String(format: "%.\(decimals)f", self)
+		return self.number(decimals)
     }
 }

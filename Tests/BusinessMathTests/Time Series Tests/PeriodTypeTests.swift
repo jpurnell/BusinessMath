@@ -19,30 +19,46 @@ struct PeriodTypeTests {
 
 	@Test("All period types are defined")
 	func allCasesExist() {
-		let types: [PeriodType] = [.daily, .monthly, .quarterly, .annual]
-		#expect(types.count == 4)
+		let types: [PeriodType] = [.millisecond, .second, .minute, .hourly, .daily, .monthly, .quarterly, .annual]
+		#expect(types.count == 8)
 	}
 
-	// MARK: - String Raw Values
+	// MARK: - Integer Raw Values
 
-	@Test("Period types have correct string raw values")
-	func stringRawValues() {
-		#expect(PeriodType.daily.rawValue == "daily")
-		#expect(PeriodType.monthly.rawValue == "monthly")
-		#expect(PeriodType.quarterly.rawValue == "quarterly")
-		#expect(PeriodType.annual.rawValue == "annual")
+	@Test("Period types follow natural ordering via raw values")
+	func integerRawValues() {
+		#expect(PeriodType.millisecond.rawValue == 0)
+		#expect(PeriodType.second.rawValue == 1)
+		#expect(PeriodType.minute.rawValue == 2)
+		#expect(PeriodType.hourly.rawValue == 3)
+		#expect(PeriodType.daily.rawValue == 4)
+		#expect(PeriodType.monthly.rawValue == 5)
+		#expect(PeriodType.quarterly.rawValue == 6)
+		#expect(PeriodType.annual.rawValue == 7)
 	}
 
-	@Test("Period types can be created from string raw values")
-	func initFromString() {
-		#expect(PeriodType(rawValue: "daily") == .daily)
-		#expect(PeriodType(rawValue: "monthly") == .monthly)
-		#expect(PeriodType(rawValue: "quarterly") == .quarterly)
-		#expect(PeriodType(rawValue: "annual") == .annual)
-		#expect(PeriodType(rawValue: "invalid") == nil)
+	@Test("Period types can be created from integer raw values")
+	func initFromInteger() {
+		#expect(PeriodType(rawValue: 0) == .millisecond)
+		#expect(PeriodType(rawValue: 1) == .second)
+		#expect(PeriodType(rawValue: 2) == .minute)
+		#expect(PeriodType(rawValue: 3) == .hourly)
+		#expect(PeriodType(rawValue: 4) == .daily)
+		#expect(PeriodType(rawValue: 5) == .monthly)
+		#expect(PeriodType(rawValue: 6) == .quarterly)
+		#expect(PeriodType(rawValue: 7) == .annual)
+		#expect(PeriodType(rawValue: 99) == nil)
 	}
 
 	// MARK: - Comparable Conformance
+
+	@Test("Sub-daily period types are ordered correctly")
+	func orderingSubDaily() {
+		#expect(PeriodType.millisecond < .second)
+		#expect(PeriodType.second < .minute)
+		#expect(PeriodType.minute < .hourly)
+		#expect(PeriodType.hourly < .daily)
+	}
 
 	@Test("Period types are ordered correctly: daily < monthly")
 	func orderingDailyMonthly() {
@@ -61,9 +77,9 @@ struct PeriodTypeTests {
 
 	@Test("Period types can be sorted")
 	func sorting() {
-		let unsorted: [PeriodType] = [.annual, .daily, .quarterly, .monthly]
+		let unsorted: [PeriodType] = [.annual, .daily, .quarterly, .monthly, .second, .hourly, .millisecond, .minute]
 		let sorted = unsorted.sorted()
-		#expect(sorted == [.daily, .monthly, .quarterly, .annual])
+		#expect(sorted == [.millisecond, .second, .minute, .hourly, .daily, .monthly, .quarterly, .annual])
 	}
 
 	@Test("Same period types are equal")
@@ -107,6 +123,62 @@ struct PeriodTypeTests {
 		// Accounting for leap years (1 extra day every 4 years)
 		let days = PeriodType.annual.daysApproximate
 		#expect(abs(days - 365.25) < tolerance)
+	}
+
+	// MARK: - Milliseconds Exact
+
+	@Test("Millisecond period has 1 millisecond")
+	func millisecondsExactMillisecond() {
+		let ms = PeriodType.millisecond.millisecondsExact
+		#expect(abs(ms - 1.0) < tolerance)
+	}
+
+	@Test("Second period has 1000 milliseconds")
+	func millisecondsExactSecond() {
+		let ms = PeriodType.second.millisecondsExact
+		#expect(abs(ms - 1_000.0) < tolerance)
+	}
+
+	@Test("Minute period has 60,000 milliseconds")
+	func millisecondsExactMinute() {
+		let ms = PeriodType.minute.millisecondsExact
+		#expect(abs(ms - 60_000.0) < tolerance)
+	}
+
+	@Test("Hourly period has 3,600,000 milliseconds")
+	func millisecondsExactHourly() {
+		let ms = PeriodType.hourly.millisecondsExact
+		#expect(abs(ms - 3_600_000.0) < tolerance)
+	}
+
+	@Test("Daily period has 86,400,000 milliseconds")
+	func millisecondsExactDaily() {
+		let ms = PeriodType.daily.millisecondsExact
+		#expect(abs(ms - 86_400_000.0) < tolerance)
+	}
+
+	@Test("Monthly period has ~2.628 billion milliseconds")
+	func millisecondsExactMonthly() {
+		// 30.4375 days * 86,400,000 ms/day
+		let ms = PeriodType.monthly.millisecondsExact
+		let expected = 30.4375 * 86_400_000.0
+		#expect(abs(ms - expected) < tolerance)
+	}
+
+	@Test("Quarterly period has ~7.884 billion milliseconds")
+	func millisecondsExactQuarterly() {
+		// 91.3125 days * 86,400,000 ms/day
+		let ms = PeriodType.quarterly.millisecondsExact
+		let expected = 91.3125 * 86_400_000.0
+		#expect(abs(ms - expected) < tolerance)
+	}
+
+	@Test("Annual period has ~31.536 billion milliseconds")
+	func millisecondsExactAnnual() {
+		// 365.25 days * 86,400,000 ms/day
+		let ms = PeriodType.annual.millisecondsExact
+		let expected = 365.25 * 86_400_000.0
+		#expect(abs(ms - expected) < tolerance)
 	}
 
 	// MARK: - Months Equivalent
@@ -237,14 +309,14 @@ struct PeriodTypeTests {
 
 		#expect(data.count > 0)
 
-		// Verify it encodes as the raw string value
+		// Verify it encodes as the raw integer value (5 for monthly)
 		let string = String(data: data, encoding: .utf8)
-		#expect(string?.contains("monthly") == true)
+		#expect(string == "5")
 	}
 
 	@Test("Period type can be decoded from JSON")
 	func decodingFromJSON() throws {
-		let json = "\"quarterly\"".data(using: .utf8)!
+		let json = "6".data(using: .utf8)!  // 6 = quarterly
 		let decoder = JSONDecoder()
 		let periodType = try decoder.decode(PeriodType.self, from: json)
 
@@ -253,7 +325,7 @@ struct PeriodTypeTests {
 
 	@Test("All period types can be round-trip encoded and decoded")
 	func codableRoundTrip() throws {
-		let types: [PeriodType] = [.daily, .monthly, .quarterly, .annual]
+		let types: [PeriodType] = [.millisecond, .second, .minute, .hourly, .daily, .monthly, .quarterly, .annual]
 		let encoder = JSONEncoder()
 		let decoder = JSONDecoder()
 
@@ -266,7 +338,7 @@ struct PeriodTypeTests {
 
 	@Test("Decoding invalid JSON fails gracefully")
 	func decodingInvalidJSON() {
-		let json = "\"invalid_period\"".data(using: .utf8)!
+		let json = "99".data(using: .utf8)!  // Invalid raw value
 		let decoder = JSONDecoder()
 
 		#expect(throws: Error.self) {
@@ -279,7 +351,11 @@ struct PeriodTypeTests {
 	@Test("All cases can be iterated")
 	func caseIterable() {
 		let allCases = PeriodType.allCases
-		#expect(allCases.count == 4)
+		#expect(allCases.count == 8)
+		#expect(allCases.contains(.millisecond))
+		#expect(allCases.contains(.second))
+		#expect(allCases.contains(.minute))
+		#expect(allCases.contains(.hourly))
 		#expect(allCases.contains(.daily))
 		#expect(allCases.contains(.monthly))
 		#expect(allCases.contains(.quarterly))

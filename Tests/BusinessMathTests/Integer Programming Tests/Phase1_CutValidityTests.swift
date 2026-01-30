@@ -49,10 +49,10 @@ struct CutValidityTests {
         // When RHS is nearly integer (2.0 + 1e-8 ≈ 2.0), cuts should not be generated
         // The LP solution will be x = 2.00000001, which is within tolerance of integer 2
         let solver = BranchAndBoundSolver<VectorN<Double>>(
-            integralityTolerance: 1e-5,
+            integralityTolerance: 1e-6,
             enableCuttingPlanes: true,
             maxCuttingRounds: 3,
-            cutTolerance: 1e-5  // Must be ≥ integralityTolerance
+            cutTolerance: 1e-6  // Must be ≥ integralityTolerance
         )
 
         let objective: @Sendable (VectorN<Double>) -> Double = { v in

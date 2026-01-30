@@ -110,22 +110,22 @@ public struct BlackScholesOptionTool: MCPToolHandler, Sendable {
 
         Option Details:
         - Type: \(optionType == .call ? "Call" : "Put") (\(moneyness))
-        - Spot Price: $\(String(format: "%.2f", spotPrice))
-        - Strike Price: $\(String(format: "%.2f", strikePrice))
-        - Time to Expiry: \(String(format: "%.2f", timeToExpiry)) years
-        - Risk-Free Rate: \(String(format: "%.1f%%", riskFreeRate * 100))
-        - Volatility: \(String(format: "%.1f%%", volatility * 100))
+        - Spot Price: \(spotPrice.currency())
+        - Strike Price: \(strikePrice.currency())
+        - Time to Expiry: \(timeToExpiry.number(2)) years
+        - Risk-Free Rate: \(riskFreeRate.percent(1))
+        - Volatility: \(volatility.percent())
 
-        Option Value: $\(String(format: "%.2f", price))
+        Option Value: \(price.currency())
 
         Value Breakdown:
-        - Intrinsic Value: $\(String(format: "%.2f", intrinsicValue))
-        - Time Value: $\(String(format: "%.2f", timeValue))
+        - Intrinsic Value: \(intrinsicValue.currency())
+        - Time Value: \(timeValue.currency())
 
         Interpretation:
         \(optionType == .call ?
-          "Call option gives the right to BUY at $\(String(format: "%.2f", strikePrice))" :
-          "Put option gives the right to SELL at $\(String(format: "%.2f", strikePrice))")
+        "Call option gives the right to BUY at \(strikePrice.currency())" :
+        "Put option gives the right to SELL at \(strikePrice.currency())")
         Current profit if exercised: $\(String(format: "%.2f", intrinsicValue))
         Premium for waiting/flexibility: $\(String(format: "%.2f", timeValue))
 
@@ -216,42 +216,42 @@ public struct CalculateGreeksTool: MCPToolHandler, Sendable {
         Option Greeks for \(optionType == .call ? "Call" : "Put") Option
 
         Greek Values:
-        • Delta: \(String(format: "%.4f", greeks.delta))
-        • Gamma: \(String(format: "%.4f", greeks.gamma))
-        • Vega: \(String(format: "%.4f", greeks.vega))
-        • Theta: \(String(format: "%.4f", greeks.theta))
-        • Rho: \(String(format: "%.4f", greeks.rho))
+        • Delta: \(greeks.delta.number(4))
+        • Gamma: \(greeks.gamma.number(4))
+        • Vega: \(greeks.vega.number(4))
+        • Theta: \(greeks.theta.number(4))
+        • Rho: \(greeks.rho.number(4))
 
         Interpretations:
 
-        Delta (\(String(format: "%.4f", greeks.delta))):
-        If underlying rises $1, option price changes by $\(String(format: "%.4f", greeks.delta))
+        Delta (\(greeks.delta.number(4))):
+        If underlying rises $1, option price changes by \(greeks.delta.currency(4))
         Range: 0 to 1 for calls, -1 to 0 for puts
-        Hedge ratio: Buy \(String(format: "%.0f", abs(greeks.delta) * 100)) shares per 100 option contracts
+        Hedge ratio: Buy \((abs(greeks.delta) * 100).number(0)) shares per 100 option contracts
 
-        Gamma (\(String(format: "%.4f", greeks.gamma))):
+        Gamma (\(greeks.gamma.number(4))):
         Delta sensitivity to $1 price change
         Higher gamma = delta changes faster = more risk/opportunity
         Highest at-the-money, approaches 0 deep ITM/OTM
 
-        Vega (\(String(format: "%.4f", greeks.vega))):
-        If volatility rises 1%, option price changes by $\(String(format: "%.4f", greeks.vega * 0.01))
+        Vega (\(greeks.vega.number(4))):
+        If volatility rises 1%, option price changes by \((greeks.vega * 0.01).currency(4))
         All options benefit from increased volatility (positive vega)
         Highest at-the-money, with more time to expiration
 
-        Theta (\(String(format: "%.4f", greeks.theta))):
-        Daily time decay: $\(String(format: "%.4f", greeks.theta / 365)) per day
+        Theta (\(greeks.theta.number(4))):
+        Daily time decay: \((greeks.theta / 365).currency(4)) per day
         \(greeks.theta < 0 ? "Losing" : "Gaining") value as time passes
         Accelerates as expiration approaches
 
-        Rho (\(String(format: "%.4f", greeks.rho))):
-        If risk-free rate rises 1%, option price changes by $\(String(format: "%.4f", greeks.rho * 0.01))
+        Rho (\(greeks.rho.number(4))):
+        If risk-free rate rises 1%, option price changes by \((greeks.rho * 0.01).currency(4))
         Usually least important Greek for short-dated options
 
         Risk Management:
-        - Delta hedge: Need \(String(format: "%.0f", abs(greeks.delta * 100))) shares opposite position
-        - Gamma risk: Delta will change by \(String(format: "%.4f", greeks.gamma)) per $1 move
-        - Theta decay: Losing $\(String(format: "%.2f", abs(greeks.theta / 365))) per day
+        - Delta hedge: Need \(abs(greeks.delta * 100).number(4)) shares opposite position
+        - Gamma risk: Delta will change by \(greeks.gamma.number(4)) per $1 move
+        - Theta decay: Losing \((abs(greeks.theta / 365)).currency()) per day
         """
 
         return .success(text: result)
@@ -512,27 +512,27 @@ public struct RealOptionsExpansionTool: MCPToolHandler, Sendable {
         Expansion Option Valuation
 
         Project Components:
-        - Base Business NPV: $\(String(format: "%.0f", baseNPV))
-        - Expansion Cost: $\(String(format: "%.0f", expansionCost))
-        - Expansion NPV (if successful): $\(String(format: "%.0f", expansionNPV))
-        - Uncertainty (volatility): \(String(format: "%.0f%%", volatility * 100))
-        - Time to Decision: \(String(format: "%.1f", timeToDecision)) years
+        - Base Business NPV: \(baseNPV.currency(0))
+        - Expansion Cost: \(expansionCost.currency(0))
+        - Expansion NPV (if successful): \(expansionNPV.currency(0))
+        - Uncertainty (volatility): \(volatility.percent(0))
+        - Time to Decision: \(timeToDecision.number(1)) years
 
         Valuation Results:
-        - Expansion Option Value: $\(String(format: "%.0f", optionValue))
-        - Total Project Value: $\(String(format: "%.0f", projectValue))
+        - Expansion Option Value: \(optionValue.currency(0))
+        - Total Project Value: \(projectValue.currency(0))
 
         Comparison to Traditional NPV:
-        - Traditional NPV: $\(String(format: "%.0f", traditionalNPV))
-        - Real Options Value: $\(String(format: "%.0f", projectValue))
-        - Value of Flexibility: $\(String(format: "%.0f", valueMissed))
+        - Traditional NPV: \(traditionalNPV.currency(0))
+        - Real Options Value: \(projectValue.currency(0))
+        - Value of Flexibility: \(valueMissed.currency(0))
 
         Interpretation:
-        The option to expand is worth $\(String(format: "%.0f", optionValue)), which is
-        \(String(format: "%.1f%%", (optionValue / baseNPV) * 100)) of the base business value.
+        The option to expand is worth \(optionValue.currency(0)), which is
+        \((optionValue / baseNPV).percent(0)) of the base business value.
 
         Traditional NPV analysis would \(valueMissed > 0 ? "undervalue" : "properly value")
-        this project by $\(String(format: "%.0f", abs(valueMissed))).
+        this project by \(abs(valueMissed).currency(0)).
 
         Key Insight: You're paying for the RIGHT to expand, not the obligation.
         If market conditions turn unfavorable, you can choose not to expand,
@@ -620,30 +620,30 @@ public struct RealOptionsAbandonmentTool: MCPToolHandler, Sendable {
         Abandonment Option Valuation
 
         Project Details:
-        - Project NPV (if continued): $\(String(format: "%.0f", projectNPV))
-        - Salvage Value (if abandoned): $\(String(format: "%.0f", salvageValue))
-        - Uncertainty (volatility): \(String(format: "%.0f%%", volatility * 100))
-        - Decision Point: \(String(format: "%.1f", timeToDecision)) years
+        - Project NPV (if continued): \(projectNPV.currency(0))
+        - Salvage Value (if abandoned): \(salvageValue.currency(0))
+        - Uncertainty (volatility): \(volatility.percent(0))
+        - Decision Point: \(timeToDecision.number(1)) years
 
         Valuation Results:
-        - Abandonment Option Value: $\(String(format: "%.0f", optionValue))
-        - Total Value with Option: $\(String(format: "%.0f", valueWithOption))
-        - Value Increase: \(String(format: "%.1f%%", (optionValue / projectNPV) * 100))
+        - Abandonment Option Value: \(optionValue.currency(0)))
+        - Total Value with Option: \(valueWithOption.currency(0))
+        - Value Increase: \((optionValue / projectNPV).percent(1))
 
         Interpretation:
-        The safety net of being able to abandon adds $\(String(format: "%.0f", optionValue))
-        in value, which is \(String(format: "%.1f%%", (optionValue / projectNPV) * 100)) of the
+        The safety net of being able to abandon adds \(optionValue.currency(0))
+        in value, which is \((optionValue / projectNPV).percent(1)) of the
         base project value.
 
         Strategic Implications:
         • This is a "put option" on the project
-        • If conditions worsen, you can walk away with $\(String(format: "%.0f", salvageValue))
+        • If conditions worsen, you can walk away with \(salvageValue.currency(0))
         • Limits downside while keeping upside
         • More valuable with higher uncertainty
 
         Decision Rule:
-        After \(String(format: "%.1f", timeToDecision)) years, abandon if:
-        - Project value falls below $\(String(format: "%.0f", salvageValue))
+        After \(timeToDecision.number(1)) years, abandon if:
+        - Project value falls below \(salvageValue.currency(0))
         - Market conditions have deteriorated significantly
         - Better opportunities have emerged
 

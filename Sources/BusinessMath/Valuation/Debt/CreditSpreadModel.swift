@@ -454,7 +454,7 @@ public struct CreditCurve<T: Real> where T: Sendable {
         // Use the period's type to estimate years
         // For more precision, could use date differences
         switch period.type {
-        case .daily:
+        case .millisecond, .second, .minute, .hourly, .daily:
             // Use the date to calculate years from epoch
             let secondsPerYear = T(365) * T(24) * T(3600) + T(1)/T(4) * T(24) * T(3600)
             let seconds = T(Int(period.date.timeIntervalSince1970))

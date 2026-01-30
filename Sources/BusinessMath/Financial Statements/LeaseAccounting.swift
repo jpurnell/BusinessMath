@@ -102,14 +102,22 @@ public struct Lease {
         let periodicRate: Double
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {
+            case .millisecond:
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000)
+            case .second:
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60)
+            case .minute:
+                periodicRate = discountRate / (365.25 * 24 * 60)
+            case .hourly:
+                periodicRate = discountRate / (365.25 * 24)
+            case .daily:
+                periodicRate = discountRate / 365.25
             case .monthly:
                 periodicRate = discountRate / 12.0
             case .quarterly:
                 periodicRate = discountRate / 4.0
             case .annual:
                 periodicRate = discountRate
-            case .daily:
-                periodicRate = discountRate / 365.25
             }
         } else {
             // Default to annual if no period info
@@ -147,14 +155,22 @@ public struct Lease {
         let periodicRate: Double
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {
+            case .millisecond:
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000)
+            case .second:
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60)
+            case .minute:
+                periodicRate = discountRate / (365.25 * 24 * 60)
+            case .hourly:
+                periodicRate = discountRate / (365.25 * 24)
+            case .daily:
+                periodicRate = discountRate / 365.25
             case .monthly:
                 periodicRate = discountRate / 12.0
             case .quarterly:
                 periodicRate = discountRate / 4.0
             case .annual:
                 periodicRate = discountRate
-            case .daily:
-                periodicRate = discountRate / 365.25
             }
         } else {
             periodicRate = discountRate
@@ -250,6 +266,15 @@ public struct Lease {
         }
         return 0.0
     }
+	
+	public func totalInterest() -> Double {
+		var interestExpenses: [Double] = []
+		guard let periods else { return interestExpenses.reduce(0.0, +) }
+		for period in periods {
+			interestExpenses.append(self.interestExpense(period: period))
+		}
+		return interestExpenses.reduce(0.0, +)
+	}
 
     /// Calculate principal reduction for a period
     public func principalReduction(period: Period) -> Double {

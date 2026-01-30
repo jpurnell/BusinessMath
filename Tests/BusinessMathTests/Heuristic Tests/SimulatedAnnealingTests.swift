@@ -213,7 +213,7 @@ struct SimulatedAnnealingTests {
         )
 
         let result = try optimizer.minimize(objective, from: VectorN([0.0]))
-
+		print("Result:\n\(result.formattedDescription)")
         #expect(result.converged)
         #expect(abs(result.solution[0] - 3.0) < 1.0)
     }

@@ -74,6 +74,17 @@ public struct SimulationInput: Sendable {
 	/// to generate random samples from the underlying distribution.
 	private let sampler: @Sendable () -> Double
 
+	/// Optional storage of the original distribution for GPU compatibility
+	///
+	/// When initialized with a distribution type (as opposed to a custom sampler),
+	/// this property stores a reference to the original distribution object.
+	/// This allows GPU acceleration to extract distribution parameters without
+	/// breaking the type erasure abstraction.
+	///
+	/// - `nil` for inputs created with custom samplers (GPU incompatible)
+	/// - Non-nil for inputs created with `DistributionRandom` types (GPU compatible)
+	internal let originalDistribution: (Any & Sendable)?
+
 	// MARK: - Initialization from Distribution
 
 	/// Creates a SimulationInput from any type conforming to `DistributionRandom`.
@@ -117,6 +128,9 @@ public struct SimulationInput: Sendable {
 		self.sampler = {
 			distribution.next()
 		}
+
+		// Store original distribution for GPU compatibility
+		self.originalDistribution = distribution
 	}
 
 	// MARK: - Initialization from Custom Sampler
@@ -165,6 +179,7 @@ public struct SimulationInput: Sendable {
 		self.name = name
 		self.metadata = metadata
 		self.sampler = sampler
+		self.originalDistribution = nil  // Custom samplers are not GPU-compatible
 	}
 
 	// MARK: - Sampling

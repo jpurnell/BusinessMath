@@ -349,6 +349,7 @@ struct ConstrainedDriverTests {
 		// Expected profit: (1000 × 100) - (10,000 + 60 × 1000) = 30,000
 		for period in periods {
 			let stats = results.statistics[period]!
+			print("Stats:\n\(stats.formattedDescription)")
 			#expect(abs(stats.mean - 30_000.0) < 5000.0)
 		}
 	}
