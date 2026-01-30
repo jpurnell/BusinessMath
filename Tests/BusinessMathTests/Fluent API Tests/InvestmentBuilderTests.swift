@@ -606,6 +606,7 @@ struct InvestmentBuilderTests {
             CashFlows {
                 Year(1) => 30_000
                 Year(2) => 35_000
+				Year(3) => 45_000
             }
 
             DiscountRate(0.10)

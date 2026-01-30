@@ -243,6 +243,131 @@ struct DividendDiscountModelTests {
         #expect(value.isInfinite || value.isNaN)
     }
 
+    @Test("Two-Stage DDM - high growth phase value decomposition")
+    func twoStageHighGrowthPhaseValue() {
+        // Given: Tech stock from blog post example
+        // - Current dividend: $1.00/share
+        // - High growth: 20% for 5 years
+        // - Stable growth: 5% thereafter
+        // - Required return: 12%
+        let model = TwoStageDDM(
+            currentDividend: 1.00,
+            highGrowthRate: 0.20,
+            highGrowthPeriods: 5,
+            stableGrowthRate: 0.05,
+            requiredReturn: 0.12
+        )
+
+        // When: Calculate high growth phase value
+        let highGrowthValue = model.highGrowthPhaseValue()
+
+        // Then: Should match calculated value decomposition
+        // Expected: $6.18 (present value of dividends years 1-5)
+        // Manual calculation:
+        // D1 = 1.00 * 1.20 = 1.20, PV = 1.20 / 1.12 = 1.0714
+        // D2 = 1.20 * 1.20 = 1.44, PV = 1.44 / 1.2544 = 1.1480
+        // D3 = 1.44 * 1.20 = 1.728, PV = 1.728 / 1.4049 = 1.2300
+        // D4 = 1.728 * 1.20 = 2.0736, PV = 2.0736 / 1.5735 = 1.3178
+        // D5 = 2.0736 * 1.20 = 2.4883, PV = 2.4883 / 1.7623 = 1.4119
+        // Sum ≈ 6.18
+        #expect(abs(highGrowthValue - 6.18) < 0.05)
+    }
+
+    @Test("Two-Stage DDM - terminal value decomposition")
+    func twoStageTerminalValue() {
+        // Given: Same tech stock from blog post
+        let model = TwoStageDDM(
+            currentDividend: 1.00,
+            highGrowthRate: 0.20,
+            highGrowthPeriods: 5,
+            stableGrowthRate: 0.05,
+            requiredReturn: 0.12
+        )
+
+        // When: Calculate terminal value (present value)
+        let terminalValue = model.terminalValue()
+
+        // Then: Should match calculated value decomposition
+        // Expected: $21.18 (PV of perpetuity starting year 6)
+        // Terminal value at end of year 5: D6 / (r - g)
+        // D5 = 1.00 * 1.20^5 = 2.4883
+        // D6 = 2.4883 * 1.05 = 2.6127
+        // TV = 2.6127 / (0.12 - 0.05) = 37.32
+        // PV = 37.32 / 1.12^5 = 37.32 / 1.7623 = 21.18
+        #expect(abs(terminalValue - 21.18) < 0.05)
+    }
+
+    @Test("Two-Stage DDM - components sum to total value")
+    func twoStageComponentsSumToTotal() {
+        // Given: Tech stock from blog post
+        let model = TwoStageDDM(
+            currentDividend: 1.00,
+            highGrowthRate: 0.20,
+            highGrowthPeriods: 5,
+            stableGrowthRate: 0.05,
+            requiredReturn: 0.12
+        )
+
+        // When: Calculate components and total
+        let highGrowthValue = model.highGrowthPhaseValue()
+        let terminalValue = model.terminalValue()
+        let totalValue = model.valuePerShare()
+
+        // Then: Components should sum to total
+        let sumOfComponents = highGrowthValue + terminalValue
+        #expect(abs(sumOfComponents - totalValue) < 0.01)
+
+        // And total should match calculated expected value
+        // Expected: $27.36 (= $6.18 + $21.18)
+        #expect(abs(totalValue - 27.36) < 0.05)
+    }
+
+    @Test("Two-Stage DDM - terminal value dominates in growth stocks")
+    func twoStageTerminalValueDominates() {
+        // Given: Tech stock from blog post
+        let model = TwoStageDDM(
+            currentDividend: 1.00,
+            highGrowthRate: 0.20,
+            highGrowthPeriods: 5,
+            stableGrowthRate: 0.05,
+            requiredReturn: 0.12
+        )
+
+        // When: Calculate components
+        let highGrowthValue = model.highGrowthPhaseValue()
+        let terminalValue = model.terminalValue()
+
+        // Then: Terminal value should be ~77% of total (demonstrating most value is in perpetuity)
+        let totalValue = highGrowthValue + terminalValue
+        let terminalPercentage = terminalValue / totalValue
+
+        #expect(terminalPercentage > 0.75)  // At least 75%
+        #expect(terminalPercentage < 0.80)  // At most 80%
+    }
+
+    @Test("Two-Stage DDM - zero high growth periods gives zero high growth value")
+    func twoStageZeroHighGrowthPeriods() {
+        // Given: Model with no high growth period
+        let model = TwoStageDDM(
+            currentDividend: 2.0,
+            highGrowthRate: 0.20,
+            highGrowthPeriods: 0,
+            stableGrowthRate: 0.05,
+            requiredReturn: 0.10
+        )
+
+        // When: Calculate high growth phase value
+        let highGrowthValue = model.highGrowthPhaseValue()
+
+        // Then: Should be zero (no high growth dividends)
+        #expect(abs(highGrowthValue) < 0.01)
+
+        // And terminal value should equal total value
+        let terminalValue = model.terminalValue()
+        let totalValue = model.valuePerShare()
+        #expect(abs(terminalValue - totalValue) < 0.01)
+    }
+
     // MARK: - H-Model Tests
 
     @Test("H-Model - linearly declining growth")

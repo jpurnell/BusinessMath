@@ -111,12 +111,31 @@ public struct MonteCarloSimulation: Sendable {
 	/// The uncertain input variables
 	public private(set) var inputs: [SimulationInput]
 
+	/// Whether GPU acceleration is enabled
+	///
+	/// When `true`, the simulation will use GPU acceleration for large simulations
+	/// (≥ 1000 iterations) if Metal is available and the model is GPU-compatible.
+	/// Automatically falls back to CPU if GPU is unavailable or model is not supported.
+	public let enableGPU: Bool
+
+	/// Optional expression model for GPU acceleration
+	///
+	/// When present, the simulation can compile the model to GPU bytecode.
+	/// Expression models provide automatic GPU acceleration for large simulations.
+	private let expressionModel: MonteCarloExpressionModel?
+
+	#if canImport(Metal)
+	/// GPU device manager for Metal acceleration
+	private let gpuDevice: MonteCarloGPUDevice?
+	#endif
+
 	// MARK: - Initialization
 
 	/// Creates a new Monte Carlo simulation.
 	///
 	/// - Parameters:
 	///   - iterations: Number of iterations to run (must be > 0)
+	///   - enableGPU: Enable GPU acceleration for large simulations (default: true)
 	///   - model: The model function that computes outcomes from sampled inputs
 	///
 	/// ## Example
@@ -127,10 +146,98 @@ public struct MonteCarloSimulation: Sendable {
 	///     return inputs[0] * inputs[1]
 	/// }
 	/// ```
-	public init(iterations: Int, model: @escaping @Sendable ([Double]) -> Double) {
+	///
+	/// ## GPU Acceleration
+	///
+	/// When `enableGPU` is `true` and iterations ≥ 1000:
+	/// - Automatically uses GPU (Metal) if available
+	/// - Falls back to CPU if GPU unavailable or model not supported
+	/// - Typical speedup: 10-100x for large simulations
+	public init(iterations: Int, enableGPU: Bool = true, model: @escaping @Sendable ([Double]) -> Double) {
 		self.iterations = iterations
+		self.enableGPU = enableGPU
 		self.model = model
 		self.inputs = []
+		self.expressionModel = nil  // Closure-based models don't have expression representation
+
+		#if canImport(Metal)
+		// Initialize GPU device if enabled
+		if enableGPU {
+			self.gpuDevice = MonteCarloGPUDevice()
+		} else {
+			self.gpuDevice = nil
+		}
+		#endif
+	}
+
+	/// Creates a new Monte Carlo simulation with an expression-based model.
+	///
+	/// Expression models provide automatic GPU acceleration for large simulations
+	/// (≥ 1000 iterations) when Metal is available. The model is automatically
+	/// compiled to GPU bytecode for efficient parallel execution.
+	///
+	/// - Parameters:
+	///   - iterations: Number of iterations to run (must be > 0)
+	///   - enableGPU: Enable GPU acceleration (default: true)
+	///   - expressionModel: Expression-based model for GPU acceleration
+	///
+	/// ## Example - GPU-Accelerated Simulation
+	///
+	/// ```swift
+	/// // Define model using expression builder
+	/// let model = MonteCarloExpressionModel { builder in
+	///     let revenue = builder[0]
+	///     let costs = builder[1]
+	///     return revenue - costs
+	/// }
+	///
+	/// // Create simulation with GPU acceleration
+	/// var simulation = MonteCarloSimulation(
+	///     iterations: 100_000,
+	///     enableGPU: true,
+	///     expressionModel: model
+	/// )
+	///
+	/// // Add inputs
+	/// simulation.addInput(SimulationInput(
+	///     name: "Revenue",
+	///     distribution: DistributionNormal(1_000_000, 100_000)
+	/// ))
+	/// simulation.addInput(SimulationInput(
+	///     name: "Costs",
+	///     distribution: DistributionNormal(700_000, 50_000)
+	/// ))
+	///
+	/// // Run on GPU (if available) or CPU (fallback)
+	/// let results = try simulation.run()
+	///
+	/// // Check execution path
+	/// print("Executed on: \(results.usedGPU ? "GPU ⚡" : "CPU")")
+	/// ```
+	///
+	/// ## Automatic Fallback
+	///
+	/// GPU execution automatically falls back to CPU when:
+	/// - Metal is unavailable (older Macs, non-Apple platforms)
+	/// - Iterations < 1000 (CPU is faster for small simulations)
+	/// - GPU execution fails (rare)
+	///
+	/// Results are statistically equivalent regardless of execution path.
+	public init(iterations: Int, enableGPU: Bool = true, expressionModel: MonteCarloExpressionModel) {
+		self.iterations = iterations
+		self.enableGPU = enableGPU
+		self.expressionModel = expressionModel
+		self.model = expressionModel.toClosure()  // Store closure for CPU fallback
+		self.inputs = []
+
+		#if canImport(Metal)
+		// Initialize GPU device if enabled
+		if enableGPU {
+			self.gpuDevice = MonteCarloGPUDevice()
+		} else {
+			self.gpuDevice = nil
+		}
+		#endif
 	}
 
 	/// Creates a new Monte Carlo simulation with default parameters.
@@ -152,8 +259,14 @@ public struct MonteCarloSimulation: Sendable {
 	/// ```
 	public init() {
 		self.iterations = 0
+		self.enableGPU = false
 		self.model = { _ in 0.0 }
 		self.inputs = []
+		self.expressionModel = nil
+
+		#if canImport(Metal)
+		self.gpuDevice = nil
+		#endif
 	}
 
 	// MARK: - Input Management
@@ -226,7 +339,36 @@ public struct MonteCarloSimulation: Sendable {
 			throw SimulationError.noInputs
 		}
 
-		// Run simulation
+		#if canImport(Metal)
+		// Try GPU path if eligible
+		if enableGPU && iterations >= 1000 && gpuDevice != nil {
+			// Check if inputs are GPU-compatible
+			if let distributionConfigs = getGPUDistributionConfigs() {
+				// Check if model can be compiled for GPU
+				if let modelBytecode = compileModelForGPU() {
+					// Attempt GPU execution
+					do {
+						let gpuResults = try gpuDevice!.runSimulation(
+							distributions: distributionConfigs,
+							modelBytecode: modelBytecode,
+							iterations: iterations
+						)
+
+						// Convert Float results to Double
+						let outcomes = gpuResults.map { Double($0) }
+
+						// Return GPU results
+						return SimulationResults(values: outcomes, usedGPU: true)
+					} catch {
+						// GPU failed, fall back to CPU
+						// (Error is silently caught - automatic fallback behavior)
+					}
+				}
+			}
+		}
+		#endif
+
+		// CPU path (original implementation)
 		var outcomes: [Double] = []
 		outcomes.reserveCapacity(iterations)
 
@@ -249,7 +391,7 @@ public struct MonteCarloSimulation: Sendable {
 		}
 
 		// Create and return results
-		return SimulationResults(values: outcomes)
+		return SimulationResults(values: outcomes, usedGPU: false)
 	}
 
 	// MARK: - Correlated Variables
@@ -398,6 +540,92 @@ public struct MonteCarloSimulation: Sendable {
 
 		return SimulationResults(values: outcomes)
 	}
+
+	// MARK: - GPU Support
+
+	#if canImport(Metal)
+	/// Checks if the simulation inputs are GPU-compatible
+	///
+	/// GPU-compatible distributions:
+	/// - DistributionNormal
+	/// - DistributionUniform
+	/// - DistributionTriangular
+	///
+	/// - Returns: true if all inputs are GPU-compatible
+	private func areInputsGPUCompatible() -> Bool {
+		for input in inputs {
+			guard let dist = input.originalDistribution else {
+				return false  // Custom sampler, not GPU-compatible
+			}
+			// Check if distribution is one of the supported types
+			if !(dist is DistributionNormal ||
+				 dist is DistributionUniform ||
+				 dist is DistributionTriangular) {
+				return false
+			}
+		}
+		return true
+	}
+
+	/// Extracts GPU distribution configurations from inputs
+	///
+	/// Maps SimulationInput distributions to GPU-compatible format:
+	/// - Normal(mean, stdDev) → (type: 0, params: (mean, stdDev, 0))
+	/// - Uniform(min, max) → (type: 1, params: (min, max, 0))
+	/// - Triangular(min, max, mode) → (type: 2, params: (min, max, mode))
+	///
+	/// - Returns: Array of (type, params) tuples for GPU
+	private func getGPUDistributionConfigs() -> [(type: Int32, params: (Float, Float, Float))]? {
+		guard areInputsGPUCompatible() else { return nil }
+
+		var configs: [(type: Int32, params: (Float, Float, Float))] = []
+
+		for input in inputs {
+			guard let dist = input.originalDistribution else {
+				return nil  // Custom sampler
+			}
+
+			if let normal = dist as? DistributionNormal {
+				// Normal distribution: type = 0
+				configs.append((type: 0, params: (Float(normal.mean), Float(normal.stdDev), 0.0)))
+			} else if let uniform = dist as? DistributionUniform {
+				// Uniform distribution: type = 1
+				configs.append((type: 1, params: (Float(uniform.min), Float(uniform.max), 0.0)))
+			} else if let triangular = dist as? DistributionTriangular {
+				// Triangular distribution: type = 2
+				configs.append((type: 2, params: (Float(triangular.low), Float(triangular.high), Float(triangular.base))))
+			} else {
+				return nil  // Unsupported distribution
+			}
+		}
+
+		return configs
+	}
+
+	/// Compiles the model function into GPU bytecode
+	///
+	/// If an expression model is present, returns its pre-compiled GPU bytecode.
+	/// For closure-based models, returns nil (triggers CPU fallback).
+	///
+	/// - Returns: Array of bytecode operations or nil if not GPU-compatible
+	private func compileModelForGPU() -> [(opcode: Int32, arg1: Int32, arg2: Float)]? {
+		// If we have an expression model, use its pre-compiled bytecode
+		guard let expressionModel = self.expressionModel else {
+			// Closure-based model - cannot compile to GPU bytecode
+			return nil
+		}
+
+		// Get GPU-compatible bytecode from expression model
+		let bytecode = expressionModel.gpuBytecode()
+
+		// Validate bytecode is not empty
+		guard !bytecode.isEmpty else {
+			return nil
+		}
+
+		return bytecode
+	}
+	#endif
 }
 
 // MARK: - Helper Functions

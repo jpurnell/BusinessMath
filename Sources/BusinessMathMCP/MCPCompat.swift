@@ -320,12 +320,15 @@ extension Dictionary where Key == String, Value == AnyCodable {
         guard let yearValue = dict["year"],
               let year = yearValue.value as? Int,
               let typeValue = dict["type"],
-              let typeString = typeValue.value as? String,
-              let periodType = PeriodType(rawValue: typeString) else {
+              let typeInt = typeValue.value as? Int,
+              let periodType = PeriodType(rawValue: typeInt) else {
             throw ToolError.invalidArguments("\(key) must have valid year and type")
         }
 
         switch periodType {
+        case .millisecond, .second, .minute, .hourly:
+            // Sub-daily periods not yet supported in MCP interface
+            throw ToolError.invalidArguments("Sub-daily periods not yet supported in MCP interface")
         case .annual:
             return Period.year(year)
         case .quarterly:

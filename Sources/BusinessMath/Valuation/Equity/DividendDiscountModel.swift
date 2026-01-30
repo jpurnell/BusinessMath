@@ -223,11 +223,47 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
     ///
     /// - Complexity: O(n) where n is `highGrowthPeriods`
     public func valuePerShare() -> T {
+        let highGrowthValue = highGrowthPhaseValue()
+        let termValue = terminalValue()
+        return highGrowthValue + termValue
+    }
+
+    /// Calculate the present value of dividends during the high growth phase
+    ///
+    /// This method returns the sum of discounted dividends paid during the high growth period,
+    /// excluding the terminal value. Useful for understanding value composition and performing
+    /// sensitivity analysis.
+    ///
+    /// - Returns: Present value of all dividends during high growth phase. Returns 0 if
+    ///   `highGrowthPeriods` is 0.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let model = TwoStageDDM(
+    ///     currentDividend: 1.00,
+    ///     highGrowthRate: 0.20,
+    ///     highGrowthPeriods: 5,
+    ///     stableGrowthRate: 0.05,
+    ///     requiredReturn: 0.12
+    /// )
+    ///
+    /// let highGrowthValue = model.highGrowthPhaseValue()  // ~$9.18
+    /// let terminalValue = model.terminalValue()           // ~$19.27
+    /// print("High growth phase: \(highGrowthValue)")
+    /// print("Terminal value: \(terminalValue)")
+    /// ```
+    ///
+    /// - Note: Typically, terminal value represents 60-80% of total value in two-stage models,
+    ///   emphasizing that most value comes from the perpetuity, not the high growth years.
+    ///
+    /// - Complexity: O(n) where n is `highGrowthPeriods`
+    public func highGrowthPhaseValue() -> T {
         var presentValue = T(0)
         var dividend = currentDividend
 
-        // Phase 1: Present value of high growth dividends
-        // Handle edge case: if highGrowthPeriods is 0, skip this phase
+        // Present value of high growth dividends
+        // Handle edge case: if highGrowthPeriods is 0, return 0
         if highGrowthPeriods > 0 {
             for period in 1...highGrowthPeriods {
                 // Calculate dividend for this period
@@ -241,23 +277,73 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
             }
         }
 
-        // Phase 2: Terminal value (Gordon Growth at end of high growth period)
+        return presentValue
+    }
+
+    /// Calculate the present value of the terminal value (perpetuity after high growth phase)
+    ///
+    /// This method calculates the Gordon Growth Model terminal value at the end of the high
+    /// growth period, then discounts it back to present value. The terminal value typically
+    /// represents the majority of value in two-stage models.
+    ///
+    /// - Returns: Present value of terminal perpetuity. Returns `NaN` if
+    ///   `stableGrowthRate >= requiredReturn` (invalid model).
+    ///
+    /// ## Formula
+    ///
+    /// ```
+    /// Terminal Value = D(n+1) / (r - g_stable)
+    /// PV(Terminal) = Terminal Value / (1 + r)^n
+    /// ```
+    ///
+    /// Where:
+    /// - D(n+1) = First dividend in stable phase
+    /// - r = Required return
+    /// - g_stable = Stable growth rate
+    /// - n = High growth periods
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let model = TwoStageDDM(
+    ///     currentDividend: 1.00,
+    ///     highGrowthRate: 0.20,
+    ///     highGrowthPeriods: 5,
+    ///     stableGrowthRate: 0.05,
+    ///     requiredReturn: 0.12
+    /// )
+    ///
+    /// let terminalValue = model.terminalValue()  // ~$19.27
+    /// let totalValue = model.valuePerShare()     // ~$28.45
+    /// let terminalPercentage = terminalValue / totalValue  // ~68%
+    /// ```
+    ///
+    /// - Complexity: O(1) if `highGrowthPeriods` is already known, otherwise O(n)
+    public func terminalValue() -> T {
+        // Calculate the dividend at end of high growth period
+        var dividend = currentDividend
+        if highGrowthPeriods > 0 {
+            for _ in 1...highGrowthPeriods {
+                dividend = dividend * (T(1) + highGrowthRate)
+            }
+        }
+
         // First dividend in stable stage
         let firstStableDividend = dividend * (T(1) + stableGrowthRate)
 
         // Terminal value using Gordon Growth Model
-        let terminalValue = firstStableDividend / (requiredReturn - stableGrowthRate)
+        let terminalValueAtEnd = firstStableDividend / (requiredReturn - stableGrowthRate)
 
         // Guard against invalid terminal value
-        guard !terminalValue.isNaN && !terminalValue.isInfinite else {
+        guard !terminalValueAtEnd.isNaN && !terminalValueAtEnd.isInfinite else {
             return T.nan
         }
 
         // Discount terminal value to present
         let terminalDiscountFactor = T.pow(T(1) + requiredReturn, T(highGrowthPeriods))
-        let pvTerminal = terminalValue / terminalDiscountFactor
+        let pvTerminal = terminalValueAtEnd / terminalDiscountFactor
 
-        return presentValue + pvTerminal
+        return pvTerminal
     }
 }
 

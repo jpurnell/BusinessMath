@@ -539,9 +539,9 @@ struct GeneticAlgorithmTests {
         let gpuTime = Date().timeIntervalSince(gpuStart)
 
         // Print benchmark results
-        print("GPU (2000 individuals × 20 gen × 5D): \(String(format: "%.3f", gpuTime))s")
-        print("Final fitness: \(String(format: "%.6f", result.value))")
-        print("Throughput: \(String(format: "%.0f", Double(2000 * 20) / gpuTime)) evaluations/sec")
+		print("GPU (2000 individuals × 20 gen × 5D): \(gpuTime.number(3))s")
+		print("Final fitness: \(result.value.number(6))")
+		print("Throughput: \((Double(2000 * 20) / gpuTime).number(0)) evaluations/sec")
 
         // Should complete efficiently (< 3 seconds on Apple Silicon)
         #expect(gpuTime < 5.0)
@@ -574,8 +574,8 @@ struct GeneticAlgorithmTests {
         let result = try gpuOptimizer.minimize(sphere, from: VectorN(Array(repeating: 5.0, count: 10)))
         let gpuTime = Date().timeIntervalSince(gpuStart)
 
-        print("GPU (2000 individuals × 30 gen × 10D): \(String(format: "%.3f", gpuTime))s")
-        print("Final fitness: \(String(format: "%.6f", result.value))")
+		print("GPU (2000 individuals × 30 gen × 10D): \(gpuTime.number(3))s")
+		print("Final fitness: \(result.value.number(6))")
 
         // Should complete in reasonable time (< 5 seconds on M1/M2)
         #expect(gpuTime < 10.0)

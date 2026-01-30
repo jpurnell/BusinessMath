@@ -7,21 +7,29 @@
 
 import Foundation
 
-/// Represents the type of time period used in financial models.
+/// Represents the type of time period used in financial and analytical models.
 ///
-/// `PeriodType` defines the granularity of time periods for financial analysis,
+/// `PeriodType` defines the granularity of time periods from milliseconds to years,
 /// enabling precise conversion between different time scales. All conversions
 /// account for leap years using 365.25 days per year.
 ///
 /// ## Supported Period Types
 ///
-/// - ``daily``: Single day periods
+/// **Sub-Daily Periods** (for high-frequency data analysis):
+/// - ``millisecond``: Millisecond periods (0.001 seconds)
+/// - ``second``: Second periods
+/// - ``minute``: Minute periods (60 seconds)
+/// - ``hourly``: Hourly periods (3600 seconds)
+///
+/// **Standard Periods** (for financial analysis):
+/// - ``daily``: Single day periods (86,400 seconds)
 /// - ``monthly``: Monthly periods (30.4375 days average)
 /// - ``quarterly``: Quarterly periods (91.3125 days average)
 /// - ``annual``: Annual periods (365.25 days accounting for leap years)
 ///
-/// ## Usage Example
+/// ## Usage Examples
 ///
+/// ### Financial Analysis
 /// ```swift
 /// // Compare period types
 /// let monthly = PeriodType.monthly
@@ -30,10 +38,6 @@ import Foundation
 ///     print("Monthly periods are shorter than quarterly")
 /// }
 ///
-/// // Convert between period types
-/// let daysInYear = PeriodType.annual.daysApproximate  // 365.25
-/// let monthsInQuarter = PeriodType.quarterly.monthsEquivalent  // 3.0
-///
 /// // Convert 12 months to years
 /// let years = PeriodType.monthly.convert(12.0, to: .annual)  // 1.0
 ///
@@ -41,6 +45,23 @@ import Foundation
 /// let dailyBarrels = 1000.0
 /// let daysInMonth = 31.0
 /// let monthlyRate = PeriodType.daily.convert(dailyBarrels * daysInMonth, to: .monthly)
+/// ```
+///
+/// ### High-Frequency Data Analysis
+/// ```swift
+/// // Sub-daily period ordering
+/// let millisecond = PeriodType.millisecond
+/// let second = PeriodType.second
+/// if millisecond < second {
+///     print("Milliseconds are finer granularity than seconds")
+/// }
+///
+/// // Convert milliseconds to exact duration
+/// let msPerSecond = PeriodType.second.millisecondsExact  // 1000.0
+/// let msPerHour = PeriodType.hourly.millisecondsExact   // 3,600,000.0
+///
+/// // Convert hours to days
+/// let hoursInDay = PeriodType.hourly.convert(24.0, to: .daily)  // 1.0
 /// ```
 ///
 /// ## Topics
@@ -57,27 +78,39 @@ import Foundation
 ///
 /// ### Conversions
 /// - ``convert(_:to:)``
-public enum PeriodType: String, Codable, Comparable, CaseIterable, Sendable {
+public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 
 	// MARK: - Cases
 
+	/// Millisecond period type (0.001 seconds).
+	case millisecond = 0
+
+	/// Second period type (1 second).
+	case second = 1
+
+	/// Minute period type (60 seconds).
+	case minute = 2
+
+	/// Hourly period type (3600 seconds).
+	case hourly = 3
+
 	/// Daily period type (1 day).
-	case daily
+	case daily = 4
 
 	/// Monthly period type (average 30.4375 days).
 	///
 	/// Calculated as 365.25 days per year / 12 months per year.
-	case monthly
+	case monthly = 5
 
 	/// Quarterly period type (average 91.3125 days).
 	///
 	/// Calculated as 365.25 days per year / 4 quarters per year.
-	case quarterly
+	case quarterly = 6
 
 	/// Annual period type (365.25 days).
 	///
 	/// Accounts for leap years by using 365.25 days per year.
-	case annual
+	case annual = 7
 
 	// MARK: - Computed Properties
 
@@ -98,6 +131,14 @@ public enum PeriodType: String, Codable, Comparable, CaseIterable, Sendable {
 	/// ```
 	public var daysApproximate: Double {
 		switch self {
+		case .millisecond:
+			return 1.0 / 86_400_000.0
+		case .second:
+			return 1.0 / 86_400.0
+		case .minute:
+			return 1.0 / 1_440.0
+		case .hourly:
+			return 1.0 / 24.0
 		case .daily:
 			return 1.0
 		case .monthly:
@@ -109,9 +150,53 @@ public enum PeriodType: String, Codable, Comparable, CaseIterable, Sendable {
 		}
 	}
 
+	/// The exact number of milliseconds in this period type.
+	///
+	/// Returns precise millisecond values for sub-daily periods:
+	/// - Millisecond: 1
+	/// - Second: 1,000
+	/// - Minute: 60,000
+	/// - Hourly: 3,600,000
+	/// - Daily: 86,400,000
+	/// - Monthly: ~2,628,000,000 (average)
+	/// - Quarterly: ~7,884,000,000 (average)
+	/// - Annual: ~31,536,000,000
+	///
+	/// - Returns: The number of milliseconds as a `Double`.
+	///
+	/// ## Example
+	/// ```swift
+	/// let msPerSecond = PeriodType.second.millisecondsExact
+	/// print(msPerSecond)  // 1000.0
+	/// ```
+	public var millisecondsExact: Double {
+		switch self {
+		case .millisecond:
+			return 1.0
+		case .second:
+			return 1_000.0
+		case .minute:
+			return 60_000.0
+		case .hourly:
+			return 3_600_000.0
+		case .daily:
+			return 86_400_000.0
+		case .monthly:
+			return 30.4375 * 86_400_000.0  // ~2,628,000,000
+		case .quarterly:
+			return 91.3125 * 86_400_000.0  // ~7,884,000,000
+		case .annual:
+			return 365.25 * 86_400_000.0   // ~31,536,000,000
+		}
+	}
+
 	/// The number of months equivalent to this period type.
 	///
 	/// Returns:
+	/// - Millisecond: ~3.80518e-10
+	/// - Second: ~3.80518e-7
+	/// - Minute: ~2.28311e-5
+	/// - Hourly: ~0.00136986
 	/// - Daily: ~0.03285 (1 / 30.4375)
 	/// - Monthly: 1.0
 	/// - Quarterly: 3.0
@@ -126,6 +211,14 @@ public enum PeriodType: String, Codable, Comparable, CaseIterable, Sendable {
 	/// ```
 	public var monthsEquivalent: Double {
 		switch self {
+		case .millisecond:
+			return 1.0 / (365.25 / 12.0 * 86_400_000.0)
+		case .second:
+			return 1.0 / (365.25 / 12.0 * 86_400.0)
+		case .minute:
+			return 1.0 / (365.25 / 12.0 * 1_440.0)
+		case .hourly:
+			return 1.0 / (365.25 / 12.0 * 24.0)
 		case .daily:
 			return 1.0 / (365.25 / 12.0)  // ~0.03285
 		case .monthly:
@@ -200,7 +293,7 @@ public enum PeriodType: String, Codable, Comparable, CaseIterable, Sendable {
 	/// Compares two period types based on their duration.
 	///
 	/// Period types are ordered by their typical duration:
-	/// `daily < monthly < quarterly < annual`
+	/// `millisecond < second < minute < hourly < daily < monthly < quarterly < annual`
 	///
 	/// - Parameters:
 	///   - lhs: The left-hand period type.
@@ -210,19 +303,12 @@ public enum PeriodType: String, Codable, Comparable, CaseIterable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let periods: [PeriodType] = [.annual, .daily, .quarterly, .monthly]
+	/// let periods: [PeriodType] = [.annual, .second, .daily, .quarterly, .millisecond]
 	/// let sorted = periods.sorted()
-	/// // Result: [.daily, .monthly, .quarterly, .annual]
+	/// // Result: [.millisecond, .second, .daily, .quarterly, .annual]
 	/// ```
 	public static func < (lhs: PeriodType, rhs: PeriodType) -> Bool {
-		// Define ordering based on duration
-		let order: [PeriodType] = [.daily, .monthly, .quarterly, .annual]
-
-		guard let lhsIndex = order.firstIndex(of: lhs),
-		      let rhsIndex = order.firstIndex(of: rhs) else {
-			return false
-		}
-
-		return lhsIndex < rhsIndex
+		// Natural ordering via raw values (0 = smallest, 7 = largest)
+		return lhs.rawValue < rhs.rawValue
 	}
 }

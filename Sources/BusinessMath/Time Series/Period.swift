@@ -108,6 +108,113 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 
 	// MARK: - Factory Methods
 
+	/// Creates a millisecond period for the specified time.
+	///
+	/// - Parameters:
+	///   - year: The year.
+	///   - month: The month (1-12).
+	///   - day: The day of month.
+	///   - hour: The hour (0-23).
+	///   - minute: The minute (0-59).
+	///   - second: The second (0-59).
+	///   - millisecond: The millisecond (0-999).
+	///
+	/// - Returns: A millisecond period.
+	public static func millisecond(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int, millisecond: Int) -> Period {
+		var components = DateComponents()
+		components.year = year
+		components.month = month
+		components.day = day
+		components.hour = hour
+		components.minute = minute
+		components.second = second
+		components.nanosecond = millisecond * 1_000_000
+
+		guard let date = cachedCalendar.date(from: components) else {
+			fatalError("Unable to create date from millisecond components")
+		}
+
+		return Period(type: .millisecond, date: date)
+	}
+
+	/// Creates a second period for the specified time.
+	///
+	/// - Parameters:
+	///   - year: The year.
+	///   - month: The month (1-12).
+	///   - day: The day of month.
+	///   - hour: The hour (0-23).
+	///   - minute: The minute (0-59).
+	///   - second: The second (0-59).
+	///
+	/// - Returns: A second period.
+	public static func second(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int) -> Period {
+		var components = DateComponents()
+		components.year = year
+		components.month = month
+		components.day = day
+		components.hour = hour
+		components.minute = minute
+		components.second = second
+
+		guard let date = cachedCalendar.date(from: components) else {
+			fatalError("Unable to create date from second components")
+		}
+
+		return Period(type: .second, date: date)
+	}
+
+	/// Creates a minute period for the specified time.
+	///
+	/// - Parameters:
+	///   - year: The year.
+	///   - month: The month (1-12).
+	///   - day: The day of month.
+	///   - hour: The hour (0-23).
+	///   - minute: The minute (0-59).
+	///
+	/// - Returns: A minute period.
+	public static func minute(year: Int, month: Int, day: Int, hour: Int, minute: Int) -> Period {
+		var components = DateComponents()
+		components.year = year
+		components.month = month
+		components.day = day
+		components.hour = hour
+		components.minute = minute
+		components.second = 0
+
+		guard let date = cachedCalendar.date(from: components) else {
+			fatalError("Unable to create date from minute components")
+		}
+
+		return Period(type: .minute, date: date)
+	}
+
+	/// Creates an hourly period for the specified time.
+	///
+	/// - Parameters:
+	///   - year: The year.
+	///   - month: The month (1-12).
+	///   - day: The day of month.
+	///   - hour: The hour (0-23).
+	///
+	/// - Returns: An hourly period.
+	public static func hour(year: Int, month: Int, day: Int, hour: Int) -> Period {
+		var components = DateComponents()
+		components.year = year
+		components.month = month
+		components.day = day
+		components.hour = hour
+		components.minute = 0
+		components.second = 0
+
+		guard let date = cachedCalendar.date(from: components) else {
+			fatalError("Unable to create date from hour components")
+		}
+
+		return Period(type: .hourly, date: date)
+	}
+
 	/// Creates a daily period for the specified date.
 	///
 	/// The period represents a single day, from 00:00:00 to 23:59:59.
@@ -226,6 +333,26 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		let calendar = cachedCalendar
 
 		switch type {
+		case .millisecond:
+			// End of millisecond: next millisecond minus 1 nanosecond
+			let nextMillisecond = calendar.date(byAdding: .nanosecond, value: 1_000_000, to: startDate)!
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextMillisecond)!
+
+		case .second:
+			// End of second: next second minus 1 nanosecond
+			let nextSecond = calendar.date(byAdding: .second, value: 1, to: startDate)!
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextSecond)!
+
+		case .minute:
+			// End of minute: next minute minus 1 nanosecond
+			let nextMinute = calendar.date(byAdding: .minute, value: 1, to: startDate)!
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextMinute)!
+
+		case .hourly:
+			// End of hour: next hour minus 1 nanosecond
+			let nextHour = calendar.date(byAdding: .hour, value: 1, to: startDate)!
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextHour)!
+
 		case .daily:
 			// End of day: 23:59:59
 			var components = DateComponents()
@@ -267,9 +394,43 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// For custom formatting, use ``formatted(using:)``.
 	public var label: String {
 		let calendar = cachedCalendar
-		let components = calendar.dateComponents([.year, .month, .day], from: startDate)
+		let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: startDate)
 
 		switch type {
+		case .millisecond:
+			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
+			let minuteStr = String(components.minute!).paddingLeft(toLength: 2, withPad: "0")
+			let secondStr = String(components.second!).paddingLeft(toLength: 2, withPad: "0")
+			let msStr = String(components.nanosecond! / 1_000_000).paddingLeft(toLength: 3, withPad: "0")
+			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr):\(minuteStr):\(secondStr).\(msStr)"
+
+		case .second:
+			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
+			let minuteStr = String(components.minute!).paddingLeft(toLength: 2, withPad: "0")
+			let secondStr = String(components.second!).paddingLeft(toLength: 2, withPad: "0")
+			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr):\(minuteStr):\(secondStr)"
+
+		case .minute:
+			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
+			let minuteStr = String(components.minute!).paddingLeft(toLength: 2, withPad: "0")
+			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr):\(minuteStr)"
+
+		case .hourly:
+			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
+			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr)"
+
 		case .daily:
 			let yearStr = String(year).padding(toLength: 4, withPad: "0", startingAt: 0)
 			let monthStr = String(month).paddingLeft(toLength: 2, withPad: "0")
@@ -334,8 +495,8 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// ```
 	public func months() -> [Period] {
 		switch type {
-		case .daily:
-			return []  // Cannot subdivide daily period
+		case .millisecond, .second, .minute, .hourly, .daily:
+			return []  // Cannot subdivide sub-daily or daily periods to months
 
 		case .monthly:
 			return [self]
@@ -374,7 +535,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// ```
 	public func quarters() -> [Period] {
 		switch type {
-		case .daily, .monthly:
+		case .millisecond, .second, .minute, .hourly, .daily, .monthly:
 			return []  // Cannot subdivide to quarters
 
 		case .quarterly:
@@ -431,6 +592,191 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		return days
 	}
 
+	/// Returns an array of hourly periods that comprise this period.
+	///
+	/// - Returns: Array of hourly periods, or empty array if period cannot be subdivided.
+	///
+	/// ## Example
+	/// ```swift
+	/// let day = Period.day(Date())
+	/// let hours = day.hours()
+	/// print(hours.count)  // 24
+	/// ```
+	public func hours() -> [Period] {
+		switch type {
+		case .millisecond, .second, .minute:
+			return []  // Cannot subdivide sub-hourly periods into hours
+		case .hourly:
+			return [self]
+		case .daily, .monthly, .quarterly, .annual:
+			// Generate hourly periods
+			let calendar = cachedCalendar
+			var currentDate = startDate
+			let end = endDate
+			var hours: [Period] = []
+
+			while currentDate < end {
+				let components = calendar.dateComponents([.year, .month, .day, .hour], from: currentDate)
+				hours.append(Period.hour(
+					year: components.year!,
+					month: components.month!,
+					day: components.day!,
+					hour: components.hour!
+				))
+
+				// Move to next hour
+				var nextComponents = DateComponents()
+				nextComponents.hour = 1
+				guard let nextDate = calendar.date(byAdding: nextComponents, to: currentDate) else {
+					break
+				}
+				currentDate = nextDate
+			}
+
+			return hours
+		}
+	}
+
+	/// Returns an array of minute periods that comprise this period.
+	///
+	/// - Returns: Array of minute periods, or empty array if period cannot be subdivided.
+	///
+	/// ## Example
+	/// ```swift
+	/// let hour = Period.hour(year: 2025, month: 1, day: 29, hour: 14)
+	/// let minutes = hour.minutes()
+	/// print(minutes.count)  // 60
+	/// ```
+	public func minutes() -> [Period] {
+		switch type {
+		case .millisecond, .second:
+			return []  // Cannot subdivide sub-minute periods into minutes
+		case .minute:
+			return [self]
+		case .hourly, .daily, .monthly, .quarterly, .annual:
+			// Generate minute periods
+			let calendar = cachedCalendar
+			var currentDate = startDate
+			let end = endDate
+			var minutes: [Period] = []
+
+			while currentDate < end {
+				let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: currentDate)
+				minutes.append(Period.minute(
+					year: components.year!,
+					month: components.month!,
+					day: components.day!,
+					hour: components.hour!,
+					minute: components.minute!
+				))
+
+				// Move to next minute
+				var nextComponents = DateComponents()
+				nextComponents.minute = 1
+				guard let nextDate = calendar.date(byAdding: nextComponents, to: currentDate) else {
+					break
+				}
+				currentDate = nextDate
+			}
+
+			return minutes
+		}
+	}
+
+	/// Returns an array of second periods that comprise this period.
+	///
+	/// - Returns: Array of second periods, or empty array if period cannot be subdivided.
+	///
+	/// ## Example
+	/// ```swift
+	/// let minute = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 30)
+	/// let seconds = minute.seconds()
+	/// print(seconds.count)  // 60
+	/// ```
+	public func seconds() -> [Period] {
+		switch type {
+		case .millisecond:
+			return []  // Cannot subdivide milliseconds into seconds
+		case .second:
+			return [self]
+		case .minute, .hourly, .daily, .monthly, .quarterly, .annual:
+			// Generate second periods
+			let calendar = cachedCalendar
+			var currentDate = startDate
+			let end = endDate
+			var seconds: [Period] = []
+
+			while currentDate < end {
+				let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: currentDate)
+				seconds.append(Period.second(
+					year: components.year!,
+					month: components.month!,
+					day: components.day!,
+					hour: components.hour!,
+					minute: components.minute!,
+					second: components.second!
+				))
+
+				// Move to next second
+				var nextComponents = DateComponents()
+				nextComponents.second = 1
+				guard let nextDate = calendar.date(byAdding: nextComponents, to: currentDate) else {
+					break
+				}
+				currentDate = nextDate
+			}
+
+			return seconds
+		}
+	}
+
+	/// Returns an array of millisecond periods that comprise this period.
+	///
+	/// - Returns: Array of millisecond periods, or empty array if period cannot be subdivided.
+	///
+	/// ## Example
+	/// ```swift
+	/// let second = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45)
+	/// let milliseconds = second.milliseconds()
+	/// print(milliseconds.count)  // 1000
+	/// ```
+	public func milliseconds() -> [Period] {
+		switch type {
+		case .millisecond:
+			return [self]
+		case .second, .minute, .hourly, .daily, .monthly, .quarterly, .annual:
+			// Generate millisecond periods
+			let calendar = cachedCalendar
+			var currentDate = startDate
+			let end = endDate
+			var milliseconds: [Period] = []
+
+			while currentDate < end {
+				let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: currentDate)
+				let ms = (components.nanosecond ?? 0) / 1_000_000
+				milliseconds.append(Period.millisecond(
+					year: components.year!,
+					month: components.month!,
+					day: components.day!,
+					hour: components.hour!,
+					minute: components.minute!,
+					second: components.second!,
+					millisecond: ms
+				))
+
+				// Move to next millisecond
+				var nextComponents = DateComponents()
+				nextComponents.nanosecond = 1_000_000
+				guard let nextDate = calendar.date(byAdding: nextComponents, to: currentDate) else {
+					break
+				}
+				currentDate = nextDate
+			}
+
+			return milliseconds
+		}
+	}
+
 	// MARK: - Comparable Conformance
 
 	// MARK: - Period Advancement
@@ -454,6 +800,60 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		let calendar = cachedCalendar
 
 		switch type {
+		case .millisecond:
+			guard let nextDate = calendar.date(byAdding: .nanosecond, value: 1_000_000, to: date) else {
+				fatalError("Failed to advance millisecond")
+			}
+			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: nextDate)
+			return Period.millisecond(
+				year: components.year!,
+				month: components.month!,
+				day: components.day!,
+				hour: components.hour!,
+				minute: components.minute!,
+				second: components.second!,
+				millisecond: components.nanosecond! / 1_000_000
+			)
+
+		case .second:
+			guard let nextDate = calendar.date(byAdding: .second, value: 1, to: date) else {
+				fatalError("Failed to advance second")
+			}
+			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: nextDate)
+			return Period.second(
+				year: components.year!,
+				month: components.month!,
+				day: components.day!,
+				hour: components.hour!,
+				minute: components.minute!,
+				second: components.second!
+			)
+
+		case .minute:
+			guard let nextDate = calendar.date(byAdding: .minute, value: 1, to: date) else {
+				fatalError("Failed to advance minute")
+			}
+			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: nextDate)
+			return Period.minute(
+				year: components.year!,
+				month: components.month!,
+				day: components.day!,
+				hour: components.hour!,
+				minute: components.minute!
+			)
+
+		case .hourly:
+			guard let nextDate = calendar.date(byAdding: .hour, value: 1, to: date) else {
+				fatalError("Failed to advance hour")
+			}
+			let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDate)
+			return Period.hour(
+				year: components.year!,
+				month: components.month!,
+				day: components.day!,
+				hour: components.hour!
+			)
+
 		case .daily:
 			guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else {
 				fatalError("Failed to advance day")

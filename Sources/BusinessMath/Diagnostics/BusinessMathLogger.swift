@@ -395,7 +395,7 @@ public struct Logger: Sendable {
 
     public func calculationCompleted(_ name: String, result: Any, duration: TimeInterval? = nil) {
         if let duration = duration {
-            info("Completed \(name) in \(String(format: "%.3f", duration))s")
+			info("Completed \(name) in \(duration.number(3))s")
         } else {
             info("Completed \(name)")
         }
@@ -423,14 +423,14 @@ public struct Logger: Sendable {
 
     public func performance(_ operation: String, duration: TimeInterval, context: String? = nil) {
         if let context = context {
-            notice("\(operation) [\(context)]: \(String(format: "%.3f", duration))s")
+            notice("\(operation) [\(context)]: \(duration.number(3))s")
         } else {
-            notice("\(operation): \(String(format: "%.3f", duration))s")
+            notice("\(operation): \(duration.number(3))s")
         }
     }
 
     public func performanceWarning(_ operation: String, duration: TimeInterval, threshold: TimeInterval) {
-        warning("\(operation) took \(String(format: "%.3f", duration))s (expected < \(String(format: "%.3f", threshold))s)")
+        warning("\(operation) took \(duration.number(3))s (expected < \(threshold.number(3))s)")
     }
 
     public func modelBuildingStarted(_ modelType: String, components: Int? = nil) {
@@ -443,7 +443,7 @@ public struct Logger: Sendable {
 
     public func modelBuildingCompleted(_ modelType: String, duration: TimeInterval? = nil) {
         if let duration = duration {
-            info("Completed \(modelType) in \(String(format: "%.3f", duration))s")
+            info("Completed \(modelType) in \(duration.number(3))s")
         } else {
             info("Completed \(modelType)")
         }

@@ -250,7 +250,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	/// ```
 	public func periodInFiscalYear(_ period: Period) -> Int {
 		switch period.type {
-		case .daily:
+		case .millisecond, .second, .minute, .hourly, .daily:
 			return fiscalMonth(for: period.startDate)
 
 		case .monthly:

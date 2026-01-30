@@ -12,6 +12,102 @@ import Foundation
 @Suite("Period Arithmetic Tests")
 struct PeriodArithmeticTests {
 
+	// MARK: - Addition: Sub-Daily Periods
+
+	@Test("Add milliseconds to period")
+	func addMilliseconds() {
+		let start = Period.millisecond(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45, millisecond: 500)
+		let end = start + 750  // Add 750 milliseconds
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents([.second, .nanosecond], from: end.date)
+		#expect(components.second == 46)  // Should advance to next second
+		// 500ms + 750ms = 1250ms = 1 second + 250ms
+		let expectedNanos = 250_000_000
+		let actualNanos = components.nanosecond ?? 0
+		#expect(abs(actualNanos - expectedNanos) < 1_000_000)
+	}
+
+	@Test("Add seconds to period")
+	func addSeconds() {
+		let start = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 0)
+		let end = start + 1500  // Add 1500 seconds = 25 minutes
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents([.hour, .minute, .second], from: end.date)
+		#expect(components.hour == 14)
+		#expect(components.minute == 55)
+		#expect(components.second == 0)
+	}
+
+	@Test("Add minutes to period")
+	func addMinutes() {
+		let start = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 0)
+		let end = start + 150  // Add 150 minutes = 2.5 hours
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents([.hour, .minute], from: end.date)
+		#expect(components.hour == 16)
+		#expect(components.minute == 30)
+	}
+
+	@Test("Add hours to period")
+	func addHours() {
+		let start = Period.hour(year: 2025, month: 1, day: 29, hour: 10)
+		let end = start + 5
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents([.hour], from: end.date)
+		#expect(components.hour == 15)
+	}
+
+	@Test("Add hours across day boundary")
+	func addHoursAcrossDayBoundary() {
+		let start = Period.hour(year: 2025, month: 1, day: 29, hour: 22)
+		let end = start + 4  // Should cross to next day
+
+		let calendar = Calendar.current
+		let components = calendar.dateComponents([.day, .hour], from: end.date)
+		#expect(components.day == 30)
+		#expect(components.hour == 2)
+	}
+
+	// MARK: - Subtraction: Period - Period (Sub-Daily)
+
+	@Test("Subtract sub-daily periods")
+	func subtractHours() throws {
+		let start = Period.hour(year: 2025, month: 1, day: 29, hour: 15)
+		let end = Period.hour(year: 2025, month: 1, day: 29, hour: 10)
+		let difference = try start.distance(to: end)
+		#expect(difference == -5)
+	}
+
+	@Test("Distance between seconds")
+	func distanceBetweenSeconds() throws {
+		let start = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 0)
+		let end = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 31, second: 30)
+		let difference = try start.distance(to: end)
+		#expect(difference == 90)  // 1 minute 30 seconds = 90 seconds
+	}
+
+	// MARK: - Comparison: Mixed Granularity
+
+	@Test("Periods with different granularity compare correctly")
+	func mixedGranularityComparison() {
+		let hourPeriod = Period.hour(year: 2025, month: 1, day: 29, hour: 14)
+		let minutePeriod = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 30)
+		// Smaller granularity (minute) comes before larger granularity (hourly)
+		#expect(minutePeriod < hourPeriod)
+	}
+
+	@Test("Sub-daily periods sort correctly with daily periods")
+	func subDailyWithDailySort() {
+		let hour = Period.hour(year: 2025, month: 1, day: 29, hour: 10)
+		let day = Period.day(Date(timeIntervalSince1970: 1738195200)) // 2025-01-30
+
+		#expect(hour < day)
+	}
+
 	// MARK: - Addition: Period + Int
 
 	@Test("Add 1 month to January gives February")

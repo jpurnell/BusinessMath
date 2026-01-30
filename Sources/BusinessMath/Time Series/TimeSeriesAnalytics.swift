@@ -83,7 +83,7 @@ public struct ForecastErrorMetrics<T: Real & Sendable & Codable>: Sendable where
 		Periods Compared: \(count)
 		RMSE: \(rmse.number(4))
 		MAE:  \(mae.number(4))
-		MAPE: \(mape.percent(2))%
+		MAPE: \(mape.percent(2))
 		"""
 	}
 }

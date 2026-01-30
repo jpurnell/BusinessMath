@@ -71,8 +71,8 @@ struct ForecastErrorMetricsTests {
 		// MAPE: 30/4 = 7.5%
 
 		let metrics = actual.forecastError(against: forecast)
-
-		#expect(abs(metrics.mape - 7.5) < tolerance)
+		
+		#expect(abs(metrics.mape - 0.075) < tolerance)
 	}
 
 	// MARK: - Edge Cases
@@ -118,7 +118,7 @@ struct ForecastErrorMetricsTests {
 
 		let metrics = actual.forecastError(against: forecast)
 
-		#expect(abs(metrics.mape - 10.0) < tolerance)
+		#expect(abs(metrics.mape - 0.1) < tolerance)
 		// RMSE and MAE should still use all 4 periods
 		#expect(metrics.count == 4)
 	}

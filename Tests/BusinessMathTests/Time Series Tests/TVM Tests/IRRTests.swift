@@ -56,6 +56,7 @@ struct IRRTests {
 
 	@Test("IRR for break-even investment (IRR = 0)")
 	func irrBreakEven() throws {
+		// Cash flows that sum to exactly 0 for true break-even
 		let cashFlows = [-1000.0, 250.0, 250.0, 250.0, 250.0]
 		let irr = try irr(cashFlows: cashFlows)
 

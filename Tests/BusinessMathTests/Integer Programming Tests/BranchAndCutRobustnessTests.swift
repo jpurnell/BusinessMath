@@ -155,7 +155,7 @@ struct BranchAndCutRobustnessTests {
     @Test("Numerical tolerance does not reject near-integer solutions")
     func nearIntegerSolutionsAccepted() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
-            integralityTolerance: 1e-5
+            integralityTolerance: 1e-6
         )
 
         // Create linear objective: min x

@@ -18,7 +18,7 @@ Think of this documentation as a book with five parts that take you from foundat
 
 ### Key Capabilities
 
-**Time Series Analysis**: Comprehensive temporal data structures with calendar-aware operations, aggregations, and transformations
+**Time Series Analysis**: Comprehensive temporal data structures from milliseconds to years, with calendar-aware operations, aggregations, and transformations
 
 **Financial Modeling**: Revenue forecasting, growth modeling, financial statements, and complete three-statement integration
 
@@ -275,6 +275,10 @@ Advanced optimizers for different problem types: gradient-based methods for smoo
 
 - <doc:5.23-NelderMeadTutorial>
 
+**Clustering & Pattern Discovery** - Unsupervised learning for discovering structure and grouping similar data points.
+
+- <doc:5.24-K-MeansTutorial>
+
 #### Part Overview
 
 - <doc:Part5-Optimization>
@@ -322,6 +326,8 @@ Each track provides a curated sequence of chapters with checkpoints to validate 
 **Model credit risk**: See <doc:3.11-CreditDerivativesGuide> and <doc:2.3-RiskAnalyticsGuide>
 
 **Build efficient portfolios**: See <doc:5.2-PortfolioOptimizationGuide>
+
+**Segment customers or discover patterns**: See <doc:5.24-K-MeansTutorial>
 
 ## What's New
 

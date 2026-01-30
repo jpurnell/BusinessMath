@@ -55,7 +55,7 @@ struct BranchAndBoundRefactoringTests {
             nodeSelection: .depthFirst,
             branchingRule: .mostFractional,
             lpTolerance: 1e-7,
-            integralityTolerance: 1e-5,
+            integralityTolerance: 1e-6,
             validateLinearity: false,
             enableVariableShifting: true,
             relaxationSolver: customSolver

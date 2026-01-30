@@ -89,7 +89,7 @@ public struct StressTestTool: MCPToolHandler, Sendable {
         let revenueImpact = stressedRevenue - baseRevenue
         let costsImpact = stressedCosts - baseCosts
         let npvImpact = stressedNPV - baseNPV
-        let npvImpactPercent = (npvImpact / baseNPV) * 100
+        let npvImpactPercent = npvImpact / baseNPV
 
         let result = """
         Stress Test Results
@@ -98,27 +98,27 @@ public struct StressTestTool: MCPToolHandler, Sendable {
         Description: \(shocks.description)
 
         Baseline Metrics:
-        - Revenue: $\(String(format: "%.0f", baseRevenue))
-        - Costs: $\(String(format: "%.0f", baseCosts))
-        - NPV/Profit: $\(String(format: "%.0f", baseNPV))
+        - Revenue: \(baseRevenue.currency(0))
+        - Costs: \(baseCosts.currency(0))
+        - NPV/Profit: \(baseNPV.currency(0))
 
         Applied Shocks:
-        - Revenue: \(String(format: "%+.0f%%", shocks.revenue * 100))
-        - Costs: \(String(format: "%+.0f%%", shocks.costs * 100))
+        - Revenue: \(shocks.revenue.percent(0, .always(includingZero: true)))
+        - Costs: \(shocks.costs.percent(0,.always(includingZero: true)))
 
         Stressed Metrics:
-        - Revenue: $\(String(format: "%.0f", stressedRevenue)) (\(String(format: "%+.0f", revenueImpact)))
-        - Costs: $\(String(format: "%.0f", stressedCosts)) (\(String(format: "%+.0f", costsImpact)))
-        - NPV/Profit: $\(String(format: "%.0f", stressedNPV)) (\(String(format: "%+.0f", npvImpact)))
+        - Revenue: \(stressedRevenue.currency(0)) (\(revenueImpact.number(0,.toNearestOrAwayFromZero,.autoupdatingCurrent,.always(includingZero: true)))
+        - Costs: \(stressedCosts.currency(0)) (\(costsImpact.number(0,.toNearestOrAwayFromZero,.autoupdatingCurrent,.always(includingZero: true)))
+        - NPV/Profit: \(stressedNPV.currency(0)) (\(npvImpact.number(0,.toNearestOrAwayFromZero,.autoupdatingCurrent,.always(includingZero: true))))
 
         Impact Analysis:
-        - NPV Impact: \(String(format: "%+.0f%%", npvImpactPercent))
+        - NPV Impact: \(npvImpactPercent.percent(0))
         - \(stressedNPV > 0 ? "Project remains viable" : "⚠️ Project becomes unprofitable")
-        - \(abs(npvImpactPercent) > 50 ? "⚠️ HIGH SENSITIVITY - material risk" : "Moderate sensitivity")
+        - \(abs(npvImpactPercent) > 0.50 ? "⚠️ HIGH SENSITIVITY - material risk" : "Moderate sensitivity")
 
         Risk Assessment:
-        \(abs(npvImpactPercent) < 20 ? "✓ Low risk - project resilient to this scenario" :
-          abs(npvImpactPercent) < 50 ? "⚠ Moderate risk - monitor key assumptions" :
+        \(abs(npvImpactPercent) < 0.20 ? "✓ Low risk - project resilient to this scenario" :
+          abs(npvImpactPercent) < 0.50 ? "⚠ Moderate risk - monitor key assumptions" :
           "⚠️ High risk - consider contingency planning")
 
         Recommendations:
@@ -203,30 +203,30 @@ public struct ValueAtRiskTool: MCPToolHandler, Sendable {
         let result = """
         Value at Risk (VaR) Analysis
 
-        Portfolio: $\(String(format: "%.0f", portfolioValue))
+        Portfolio: \(portfolioValue.currency(0))
         Historical Periods: \(returns.count)
-        Confidence Level: \(String(format: "%.0f%%", confidenceLevel * 100))
+        Confidence Level: \(confidenceLevel.percent(0))
 
         VaR Metrics:
-        • 95% VaR: \(String(format: "%.2f%%", var95 * 100))
-          → Maximum loss: $\(String(format: "%.0f", var95Loss))
+        • 95% VaR: \(var95.percent())
+          → Maximum loss: \(var95Loss.currency(0))
           → Interpretation: 95% confident loss won't exceed this
 
-        • 99% VaR: \(String(format: "%.2f%%", var99 * 100))
-          → Maximum loss: $\(String(format: "%.0f", var99Loss))
+        • 99% VaR: \(var99.percent())
+          → Maximum loss: \(var99Loss.currency(0))
           → Interpretation: 99% confident loss won't exceed this
 
-        • CVaR (95%): \(String(format: "%.2f%%", cvar95 * 100))
-          → Expected loss in worst 5%: $\(String(format: "%.0f", cvarLoss))
+        • CVaR (95%): \(cvar95.percent())
+          → Expected loss in worst 5%: \(cvarLoss.currency(0))
           → Interpretation: Average loss when in the tail
 
         Additional Risk Metrics:
-        • Maximum Drawdown: \(String(format: "%.2f%%", riskMetrics.maxDrawdown * 100))
-        • Sharpe Ratio: \(String(format: "%.3f", riskMetrics.sharpeRatio))
-        • Sortino Ratio: \(String(format: "%.3f", riskMetrics.sortinoRatio))
-        • Tail Risk Ratio: \(String(format: "%.3f", riskMetrics.tailRisk))
-        • Skewness: \(String(format: "%.3f", riskMetrics.skewness))
-        • Kurtosis: \(String(format: "%.3f", riskMetrics.kurtosis))
+        • Maximum Drawdown: \(riskMetrics.maxDrawdown.percent(2))
+        • Sharpe Ratio: \(riskMetrics.sharpeRatio.number(3))
+        • Sortino Ratio: \(riskMetrics.sortinoRatio.number(3))
+        • Tail Risk Ratio: \(riskMetrics.tailRisk.number(3))
+        • Skewness: \(riskMetrics.skewness.number(3))
+        • Kurtosis: \(riskMetrics.kurtosis.number(3))
 
         Risk Profile Assessment:
         \(riskMetrics.maxDrawdown < 0.10 ? "✓ Low risk - small drawdowns" :
@@ -241,9 +241,9 @@ public struct ValueAtRiskTool: MCPToolHandler, Sendable {
           "Normal tail behavior")
 
         Risk Management Recommendations:
-        • Set stop-loss at 95% VaR: $\(String(format: "%.0f", var95Loss))
-        • Reserve for tail events: $\(String(format: "%.0f", cvarLoss))
-        • Monitor drawdown limit: \(String(format: "%.0f%%", riskMetrics.maxDrawdown * 100))
+        • Set stop-loss at 95% VaR: \(var95Loss.currency(0))
+        • Reserve for tail events: \(cvarLoss.currency(0))
+        • Monitor drawdown limit: \(riskMetrics.maxDrawdown.percent(1))
         • \(riskMetrics.tailRisk > 1.3 ? "Consider tail risk hedging" : "Tail risk manageable")
         """
 
@@ -340,7 +340,7 @@ public struct AggregateRiskTool: MCPToolHandler, Sendable {
 
         let simpleSum = portfolioVaRs.reduce(0, +)
         let diversificationBenefit = simpleSum - aggregatedVaR
-        let diversificationPercent = (diversificationBenefit / simpleSum) * 100
+        let diversificationPercent = (diversificationBenefit / simpleSum)
 
         var result = """
         Portfolio Risk Aggregation
@@ -349,21 +349,21 @@ public struct AggregateRiskTool: MCPToolHandler, Sendable {
         """
 
         for (i, varValue) in portfolioVaRs.enumerated() {
-            result += "\n  \(portfolioNames[i]): $\(String(format: "%.0f", varValue))"
+			result += "\n  \(portfolioNames[i]): \(varValue.currency(0))"
         }
 
         result += """
 
 
         Aggregation Results:
-        • Simple Sum: $\(String(format: "%.0f", simpleSum))
-        • Aggregated VaR: $\(String(format: "%.0f", aggregatedVaR))
-        • Diversification Benefit: $\(String(format: "%.0f", diversificationBenefit)) (\(String(format: "%.1f%%", diversificationPercent)))
+        • Simple Sum: \(simpleSum.currency(0))
+        • Aggregated VaR: \(aggregatedVaR.currency(1))
+        • Diversification Benefit: \(diversificationBenefit.currency(0)) (\(diversificationPercent.percent(1)))
 
         Interpretation:
         Due to imperfect correlations, the combined portfolio risk is
-        $\(String(format: "%.0f", diversificationBenefit)) LESS than the simple sum.
-        This is a \(String(format: "%.1f%%", diversificationPercent)) reduction in risk from diversification.
+        \(diversificationBenefit.currency()) LESS than the simple sum.
+        This is a \(diversificationPercent.percent(1)) reduction in risk from diversification.
 
         Marginal VaR (Risk Contribution):
         """
@@ -374,12 +374,12 @@ public struct AggregateRiskTool: MCPToolHandler, Sendable {
                 individualVaRs: portfolioVaRs,
                 correlations: correlations
             )
-            let contribution = (marginalVaR / aggregatedVaR) * 100
+            let contribution = (marginalVaR / aggregatedVaR)
 
             result += "\n  \(portfolioNames[i]):"
-            result += "\n    Individual VaR: $\(String(format: "%.0f", portfolioVaRs[i]))"
-            result += "\n    Marginal VaR: $\(String(format: "%.0f", marginalVaR))"
-            result += "\n    Contribution: \(String(format: "%.1f%%", contribution)) of total risk"
+			result += "\n    Individual VaR: \(portfolioVaRs[i].currency(0))"
+			result += "\n    Marginal VaR: \(marginalVaR.currency(0))"
+			result += "\n    Contribution: \(contribution.percent(1)) of total risk"
         }
 
         // Component VaR if weights provided
@@ -393,12 +393,12 @@ public struct AggregateRiskTool: MCPToolHandler, Sendable {
             )
 
             for i in 0..<portfolioVaRs.count {
-                result += "\n  \(portfolioNames[i]): $\(String(format: "%.0f", componentVaRs[i])) (weight: \(String(format: "%.1f%%", weightsArray[i] * 100)))"
+				result += "\n  \(portfolioNames[i]): \(componentVaRs[i].currency(0)) (weight: \(weightsArray[i].percent(1)))"
             }
 
             let totalComponent = componentVaRs.reduce(0, +)
-            result += "\n\n  Sum of components: $\(String(format: "%.0f", totalComponent))"
-            result += "\n  (Should equal aggregated VaR: $\(String(format: "%.0f", aggregatedVaR)))"
+			result += "\n\n  Sum of components: \(totalComponent.currency(0))"
+			result += "\n  (Should equal aggregated VaR: \(aggregatedVaR.currency(0)))"
         }
 
         result += """
@@ -469,34 +469,34 @@ public struct ComprehensiveRiskMetricsTool: MCPToolHandler, Sendable {
         Comprehensive Risk Metrics
 
         Value at Risk:
-        • VaR (95%): \(String(format: "%.2f%%", metrics.var95 * 100))
-        • VaR (99%): \(String(format: "%.2f%%", metrics.var99 * 100))
-        • CVaR (95%): \(String(format: "%.2f%%", metrics.cvar95 * 100))
+        • VaR (95%): \(metrics.var95.percent())
+        • VaR (99%): \(metrics.var99.percent())
+        • CVaR (95%): \(metrics.cvar95.percent())
 
         Drawdown Analysis:
-        • Maximum Drawdown: \(String(format: "%.2f%%", metrics.maxDrawdown * 100))
+        • Maximum Drawdown: \(metrics.maxDrawdown.percent())
         • Risk Level: \(metrics.maxDrawdown < 0.10 ? "Low" : metrics.maxDrawdown < 0.20 ? "Moderate" : "High")
 
         Risk-Adjusted Returns:
-        • Sharpe Ratio: \(String(format: "%.3f", metrics.sharpeRatio))
+        • Sharpe Ratio: \(metrics.sharpeRatio.number(3))
           → Return per unit of total volatility
           → \(metrics.sharpeRatio > 1.0 ? "Excellent" : metrics.sharpeRatio > 0.5 ? "Good" : "Poor") risk-adjusted performance
 
-        • Sortino Ratio: \(String(format: "%.3f", metrics.sortinoRatio))
+        • Sortino Ratio: \(metrics.sortinoRatio.number(3))
           → Return per unit of downside volatility
           → \(metrics.sortinoRatio > metrics.sharpeRatio ? "Limited downside with upside potential" : "Symmetric risk profile")
 
         Tail Statistics:
-        • Tail Risk Ratio: \(String(format: "%.3f", metrics.tailRisk))
+        • Tail Risk Ratio: \(metrics.tailRisk.number(3))
           → CVaR / VaR ratio
           → \(metrics.tailRisk > 1.3 ? "High tail risk" : "Normal tail risk")
 
-        • Skewness: \(String(format: "%.3f", metrics.skewness))
+        • Skewness: \(metrics.skewness.number(3))
           \(metrics.skewness < -0.5 ? "→ Negative skew: more frequent small gains, rare large losses\n  → ⚠️ Fat left tail risk" :
             metrics.skewness > 0.5 ? "→ Positive skew: more frequent small losses, rare large gains\n  → Favorable asymmetry" :
             "→ Roughly symmetric distribution")
 
-        • Excess Kurtosis: \(String(format: "%.3f", metrics.kurtosis))
+        • Excess Kurtosis: \(metrics.kurtosis.number(3))
           \(metrics.kurtosis > 1.0 ? "→ Fat tails: more extreme events than normal distribution\n  → ⚠️ Higher probability of large moves" :
             "→ Normal tail behavior")
 

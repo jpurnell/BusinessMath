@@ -119,10 +119,11 @@ public func irr<T: Real>(
 
 	for _ in 0..<maxIterations {
 		// Calculate NPV at current rate
-		let npv = try calculateNPV(discountRate: rate, cashFlows: cashFlows)
+		// Note: Use internal npv() not calculateNPV() to allow negative rates during iteration
+		let npvValue = npv(discountRate: rate, cashFlows: cashFlows)
 
 		// Check for convergence
-		if abs(npv) < actualTolerance {
+		if abs(npvValue) < actualTolerance {
 			return rate
 		}
 
@@ -144,7 +145,7 @@ public func irr<T: Real>(
 		}
 
 		// Newton-Raphson update: rate_new = rate_old - f(rate) / f'(rate)
-		rate = rate - npv / derivative
+		rate = rate - npvValue / derivative
 	}
 
 	// If we get here, didn't converge

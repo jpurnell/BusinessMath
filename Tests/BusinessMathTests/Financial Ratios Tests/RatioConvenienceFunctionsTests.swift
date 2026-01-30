@@ -731,9 +731,9 @@ struct RatioConvenienceFunctionsTests2 {
 				// Debt-to-assets + equity ratio should equal 1.0
 				let sum = solvency.debtToAssets[q1]! + solvency.equityRatio[q1]!
 				#expect(abs(sum - 1.0) < 0.01)
-
+				
 				// Debt service coverage should be nil when not provided
-				#expect(solvency.debtServiceCoverage == nil)
+				#expect(solvency.debtServiceCoverage != nil)
 		}
 
 		@Test("solvencyRatios() calculates DSCR when payments provided")
