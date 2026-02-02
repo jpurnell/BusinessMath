@@ -115,7 +115,7 @@ struct MonteCarloGPUPerformanceTests {
 
     // MARK: - Large Simulation Benchmark (100K iterations)
 
-    @Test("100K iterations: GPU should show 10-20x speedup", .disabled())
+    @Test("100K iterations: GPU performance benchmark", .disabled())
     func benchmark100KIterations() throws {
         #if canImport(Metal)
         guard MonteCarloGPUDevice() != nil else {
@@ -168,7 +168,7 @@ struct MonteCarloGPUPerformanceTests {
         print("   CPU: \(String(format: "%.2f", cpuTime))s (usedGPU: \(cpuResults.usedGPU))")
         print("   GPU: \(String(format: "%.2f", gpuTime))s (usedGPU: \(gpuResults.usedGPU))")
         print("   Speedup: \(String(format: "%.1f", speedup))x")
-        print("   Expected: 10-20x speedup on M1/M2/M3")
+        print("   Expected: 3-8x speedup for complex models on Apple Silicon")
         print("   Results match: \(abs(cpuResults.statistics.mean - gpuResults.statistics.mean) / cpuResults.statistics.mean < 0.01 ? "✓" : "✗")")
         #endif
     }

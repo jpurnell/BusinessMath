@@ -274,7 +274,154 @@ extension ExpressionProxy {
     }
 }
 
-// MARK: - Trigonometric Functions (Future Extension)
+// MARK: - Comparison Operators
+
+extension ExpressionProxy {
+
+    /// Less than: `a < b` (returns 1.0 if true, 0.0 if false)
+    ///
+    /// ## Example
+    /// ```swift
+    /// let builder = ExpressionBuilder()
+    /// let revenue = builder[0]
+    /// let threshold = builder[1]
+    /// let isBelowThreshold = revenue.lessThan(threshold)
+    /// ```
+    public func lessThan(_ other: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.lessThan, expression, other.expression))
+    }
+
+    /// Less than constant: `a < constant`
+    public func lessThan(_ constant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.lessThan, expression, .constant(constant)))
+    }
+
+    /// Greater than: `a > b` (returns 1.0 if true, 0.0 if false)
+    ///
+    /// ## Example
+    /// ```swift
+    /// let builder = ExpressionBuilder()
+    /// let profit = builder[0]
+    /// let isProfitable = profit.greaterThan(0.0)
+    /// ```
+    public func greaterThan(_ other: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.greaterThan, expression, other.expression))
+    }
+
+    /// Greater than constant: `a > constant`
+    public func greaterThan(_ constant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.greaterThan, expression, .constant(constant)))
+    }
+
+    /// Less than or equal: `a <= b` (returns 1.0 if true, 0.0 if false)
+    public func lessOrEqual(_ other: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.lessOrEqual, expression, other.expression))
+    }
+
+    /// Less than or equal to constant: `a <= constant`
+    public func lessOrEqual(_ constant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.lessOrEqual, expression, .constant(constant)))
+    }
+
+    /// Greater than or equal: `a >= b` (returns 1.0 if true, 0.0 if false)
+    public func greaterOrEqual(_ other: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.greaterOrEqual, expression, other.expression))
+    }
+
+    /// Greater than or equal to constant: `a >= constant`
+    public func greaterOrEqual(_ constant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.greaterOrEqual, expression, .constant(constant)))
+    }
+
+    /// Equal: `a == b` (returns 1.0 if true, 0.0 if false, with floating-point epsilon)
+    public func equal(_ other: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.equal, expression, other.expression))
+    }
+
+    /// Equal to constant: `a == constant`
+    public func equal(_ constant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.equal, expression, .constant(constant)))
+    }
+
+    /// Not equal: `a != b` (returns 1.0 if true, 0.0 if false, with floating-point epsilon)
+    public func notEqual(_ other: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.notEqual, expression, other.expression))
+    }
+
+    /// Not equal to constant: `a != constant`
+    public func notEqual(_ constant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.notEqual, expression, .constant(constant)))
+    }
+}
+
+// MARK: - Conditional Expressions
+
+extension ExpressionProxy {
+
+    /// Conditional selection: `condition ? trueValue : falseValue`
+    ///
+    /// Creates a ternary if-else expression. The condition is evaluated as a boolean:
+    /// non-zero = true, zero = false.
+    ///
+    /// ## Example - Revenue-Based Bonus
+    ///
+    /// ```swift
+    /// let model = MonteCarloExpressionModel { builder in
+    ///     let revenue = builder[0]
+    ///     let baseProfit = builder[1]
+    ///
+    ///     // If revenue > 1M, apply 20% bonus
+    ///     let condition = revenue.greaterThan(1_000_000)
+    ///     let bonus = baseProfit * 1.2
+    ///     let profit = condition.ifElse(then: bonus, else: baseProfit)
+    ///
+    ///     return profit
+    /// }
+    /// ```
+    ///
+    /// ## Example - Capacity Constraints
+    ///
+    /// ```swift
+    /// let model = MonteCarloExpressionModel { builder in
+    ///     let demand = builder[0]
+    ///     let capacity = builder[1]
+    ///
+    ///     // Production = min(demand, capacity) using conditional
+    ///     let exceedsCapacity = demand.greaterThan(capacity)
+    ///     let production = exceedsCapacity.ifElse(
+    ///         then: capacity,
+    ///         else: demand
+    ///     )
+    ///
+    ///     return production
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - trueValue: Expression to use if condition is non-zero
+    ///   - falseValue: Expression to use if condition is zero
+    /// - Returns: Selected expression based on condition
+    public func ifElse(then trueValue: ExpressionProxy, else falseValue: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.conditional(expression, trueValue.expression, falseValue.expression))
+    }
+
+    /// Conditional with constant true branch: `condition ? constant : falseValue`
+    public func ifElse(then trueConstant: Double, else falseValue: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.conditional(expression, .constant(trueConstant), falseValue.expression))
+    }
+
+    /// Conditional with constant false branch: `condition ? trueValue : constant`
+    public func ifElse(then trueValue: ExpressionProxy, else falseConstant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.conditional(expression, trueValue.expression, .constant(falseConstant)))
+    }
+
+    /// Conditional with both constants: `condition ? const1 : const2`
+    public func ifElse(then trueConstant: Double, else falseConstant: Double) -> ExpressionProxy {
+        return ExpressionProxy(.conditional(expression, .constant(trueConstant), .constant(falseConstant)))
+    }
+}
+
+// MARK: - Trigonometric Functions
 
 extension ExpressionProxy {
 

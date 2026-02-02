@@ -417,12 +417,7 @@ public func bs(
     let d1 = (log(stockPrice / strikePrice) + (riskFreeRate + 0.5 * volatility * volatility) * timeToExpiration) / (volatility * sqrt(timeToExpiration))
     let d2 = d1 - volatility * sqrt(timeToExpiration)
 
-    // Approximation of normal CDF
-    func normalCDF(_ x: Double) -> Double {
-        return 0.5 * (1.0 + erf(x / sqrt(2.0)))
-    }
-
-    return stockPrice * normalCDF(d1) - strikePrice * exp(-riskFreeRate * timeToExpiration) * normalCDF(d2)
+	return stockPrice * normalCDF(x: d1) - strikePrice * exp(-riskFreeRate * timeToExpiration) * normalCDF(x: d2)
 }
 
 // MARK: - Array Extensions for Covenant Compliance

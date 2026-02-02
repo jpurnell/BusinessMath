@@ -123,7 +123,8 @@ public struct BytecodeOptimizer {
             case .input, .constant:
                 stack.append(.single(instruction))
 
-            case .add, .subtract, .multiply, .divide, .power, .min, .max:
+            case .add, .subtract, .multiply, .divide, .power, .min, .max,
+                 .lessThan, .greaterThan, .lessOrEqual, .greaterOrEqual, .equal, .notEqual:
                 guard stack.count >= 2 else { continue }
                 let right = stack.removeLast()
                 let left = stack.removeLast()
@@ -157,6 +158,28 @@ public struct BytecodeOptimizer {
                     sequence.append(instruction)
                     stack.append(.computed(sequence))
                 }
+
+            case .select:
+                guard stack.count >= 3 else { continue }
+                let falseValue = stack.removeLast()
+                let trueValue = stack.removeLast()
+                let condition = stack.removeLast()
+
+                // Try constant folding if condition is constant
+                if case .single(.constant(let cond)) = condition,
+                   case .single(.constant(let trueConst)) = trueValue,
+                   case .single(.constant(let falseConst)) = falseValue {
+                    let result = (cond != 0.0) ? trueConst : falseConst
+                    stack.append(.single(.constant(result)))
+                } else {
+                    // Can't fold - rebuild bytecode sequence
+                    var sequence: [Bytecode] = []
+                    sequence.append(contentsOf: extractBytecode(condition))
+                    sequence.append(contentsOf: extractBytecode(trueValue))
+                    sequence.append(contentsOf: extractBytecode(falseValue))
+                    sequence.append(instruction)
+                    stack.append(.computed(sequence))
+                }
             }
         }
 
@@ -178,6 +201,12 @@ public struct BytecodeOptimizer {
         case .power:    return pow(a, b)
         case .min:      return Swift.min(a, b)
         case .max:      return Swift.max(a, b)
+        case .lessThan:        return a < b ? 1.0 : 0.0
+        case .greaterThan:     return a > b ? 1.0 : 0.0
+        case .lessOrEqual:     return a <= b ? 1.0 : 0.0
+        case .greaterOrEqual:  return a >= b ? 1.0 : 0.0
+        case .equal:           return abs(a - b) < 1e-10 ? 1.0 : 0.0
+        case .notEqual:        return abs(a - b) >= 1e-10 ? 1.0 : 0.0
         default:        return 0.0  // Should never happen
         }
     }

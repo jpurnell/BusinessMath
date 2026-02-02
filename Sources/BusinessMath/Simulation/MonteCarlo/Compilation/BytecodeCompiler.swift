@@ -75,6 +75,31 @@ public enum Bytecode: Sendable, Equatable {
     /// Pop b, pop a, push max(a, b)
     case max
 
+    // MARK: Comparison Operations
+
+    /// Pop b, pop a, push 1.0 if a < b, else 0.0
+    case lessThan
+
+    /// Pop b, pop a, push 1.0 if a > b, else 0.0
+    case greaterThan
+
+    /// Pop b, pop a, push 1.0 if a <= b, else 0.0
+    case lessOrEqual
+
+    /// Pop b, pop a, push 1.0 if a >= b, else 0.0
+    case greaterOrEqual
+
+    /// Pop b, pop a, push 1.0 if |a - b| < epsilon, else 0.0
+    case equal
+
+    /// Pop b, pop a, push 1.0 if |a - b| >= epsilon, else 0.0
+    case notEqual
+
+    // MARK: Conditional Operations
+
+    /// Pop falseValue, pop trueValue, pop condition, push (condition != 0.0 ? trueValue : falseValue)
+    case select
+
     // MARK: Unary Operations
 
     /// Pop a, push -a
@@ -158,13 +183,19 @@ public struct BytecodeCompiler {
 
             // Then compile operator
             switch op {
-            case .add:      bytecode.append(.add)
-            case .subtract: bytecode.append(.subtract)
-            case .multiply: bytecode.append(.multiply)
-            case .divide:   bytecode.append(.divide)
-            case .power:    bytecode.append(.power)
-            case .min:      bytecode.append(.min)
-            case .max:      bytecode.append(.max)
+            case .add:              bytecode.append(.add)
+            case .subtract:         bytecode.append(.subtract)
+            case .multiply:         bytecode.append(.multiply)
+            case .divide:           bytecode.append(.divide)
+            case .power:            bytecode.append(.power)
+            case .min:              bytecode.append(.min)
+            case .max:              bytecode.append(.max)
+            case .lessThan:         bytecode.append(.lessThan)
+            case .greaterThan:      bytecode.append(.greaterThan)
+            case .lessOrEqual:      bytecode.append(.lessOrEqual)
+            case .greaterOrEqual:   bytecode.append(.greaterOrEqual)
+            case .equal:            bytecode.append(.equal)
+            case .notEqual:         bytecode.append(.notEqual)
             }
 
         case .unary(let op, let operand):
@@ -182,6 +213,15 @@ public struct BytecodeCompiler {
             case .cos:    bytecode.append(.cos)
             case .tan:    bytecode.append(.tan)
             }
+
+        case .conditional(let condition, let trueValue, let falseValue):
+            // Compile all three operands (condition, true, false)
+            try compileRecursive(condition, into: &bytecode)
+            try compileRecursive(trueValue, into: &bytecode)
+            try compileRecursive(falseValue, into: &bytecode)
+
+            // Then compile SELECT operator
+            bytecode.append(.select)
         }
     }
 
@@ -204,6 +244,13 @@ public struct BytecodeCompiler {
     /// - NEG = 9, ABS = 10, SQRT = 11
     /// - LOG = 12, EXP = 13
     /// - SIN = 14, COS = 15, TAN = 16
+    ///
+    /// Comparison operations:
+    /// - LT = 17, GT = 18, LE = 19
+    /// - GE = 20, EQ = 21, NE = 22
+    ///
+    /// Conditional operations:
+    /// - SELECT = 23
     ///
     /// Stack operations:
     /// - INPUT = 4, CONST = 5
@@ -239,6 +286,17 @@ public struct BytecodeCompiler {
             case .sin:      gpu.append((14, 0, 0.0)) // SIN opcode = 14
             case .cos:      gpu.append((15, 0, 0.0)) // COS opcode = 15
             case .tan:      gpu.append((16, 0, 0.0)) // TAN opcode = 16
+
+            // Comparison operations
+            case .lessThan:        gpu.append((17, 0, 0.0)) // LT opcode = 17
+            case .greaterThan:     gpu.append((18, 0, 0.0)) // GT opcode = 18
+            case .lessOrEqual:     gpu.append((19, 0, 0.0)) // LE opcode = 19
+            case .greaterOrEqual:  gpu.append((20, 0, 0.0)) // GE opcode = 20
+            case .equal:           gpu.append((21, 0, 0.0)) // EQ opcode = 21
+            case .notEqual:        gpu.append((22, 0, 0.0)) // NE opcode = 22
+
+            // Conditional operations
+            case .select:          gpu.append((23, 0, 0.0)) // SELECT opcode = 23
             }
         }
 
@@ -278,12 +336,16 @@ extension Array where Element == Bytecode {
                 currentDepth += 1
                 maxDepth = Swift.max(maxDepth, currentDepth)
 
-            case .add, .subtract, .multiply, .divide, .power, .min, .max:
+            case .add, .subtract, .multiply, .divide, .power, .min, .max,
+                 .lessThan, .greaterThan, .lessOrEqual, .greaterOrEqual, .equal, .notEqual:
                 currentDepth -= 1  // Pop 2, push 1: net -1
 
             case .negate, .abs, .sqrt, .log, .exp, .sin, .cos, .tan:
                 // Pop 1, push 1: net 0
                 break
+
+            case .select:
+                currentDepth -= 2  // Pop 3, push 1: net -2
             }
         }
 

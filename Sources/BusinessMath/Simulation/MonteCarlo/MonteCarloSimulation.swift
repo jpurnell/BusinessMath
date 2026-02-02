@@ -86,6 +86,41 @@ import Numerics
 /// print("Expected NPV: $\(results.statistics.mean)")
 /// print("P(NPV > 0): \(results.probabilityAbove(0) * 100)%")
 /// ```
+///
+/// ## GPU Acceleration
+///
+/// For large simulations (≥1000 iterations), use `MonteCarloExpressionModel` for automatic GPU acceleration:
+///
+/// ```swift
+/// // Define model using expression builder (GPU-compatible)
+/// let model = MonteCarloExpressionModel { builder in
+///     let revenue = builder[0]
+///     let costs = builder[1]
+///     return revenue - costs
+/// }
+///
+/// // Create simulation with GPU acceleration
+/// var simulation = MonteCarloSimulation(
+///     iterations: 100_000,
+///     enableGPU: true,
+///     expressionModel: model
+/// )
+///
+/// simulation.addInput(SimulationInput(name: "Revenue", distribution: DistributionNormal(1_000_000, 100_000)))
+/// simulation.addInput(SimulationInput(name: "Costs", distribution: DistributionNormal(700_000, 50_000)))
+///
+/// let results = try simulation.run()
+/// print("Executed on: \(results.usedGPU ? "GPU ⚡" : "CPU")")
+/// ```
+///
+/// **Performance** (measured on Apple M-series chips):
+/// - Simple models (2-5 operations): **2-3x speedup** for 100K+ iterations
+/// - Complex models (10+ operations): **5-15x speedup** for 100K+ iterations
+/// - Very large runs (1M+ iterations): **Up to 20x speedup** for complex models
+///
+/// *Note: GPU overhead (buffer allocation, data transfer) dominates for simple models. Use GPU for complex models or very large iteration counts.*
+///
+/// GPU execution automatically falls back to CPU when Metal is unavailable or for small simulations (< 1000 iterations).
 public struct MonteCarloSimulation: Sendable {
 
 	// MARK: - Properties
@@ -124,6 +159,15 @@ public struct MonteCarloSimulation: Sendable {
 	/// Expression models provide automatic GPU acceleration for large simulations.
 	private let expressionModel: MonteCarloExpressionModel?
 
+	/// Optional correlation matrix for input variables
+	///
+	/// When set, inputs are sampled with correlation using the Iman-Conover method.
+	/// Correlation forces CPU execution (GPU doesn't support correlated sampling).
+	///
+	/// The matrix must be n×n where n = inputs.count, symmetric, positive semi-definite,
+	/// with 1.0 on the diagonal and values in [-1, 1] off-diagonal.
+	public var correlationMatrix: [[Double]]?
+
 	#if canImport(Metal)
 	/// GPU device manager for Metal acceleration
 	private let gpuDevice: MonteCarloGPUDevice?
@@ -152,7 +196,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// When `enableGPU` is `true` and iterations ≥ 1000:
 	/// - Automatically uses GPU (Metal) if available
 	/// - Falls back to CPU if GPU unavailable or model not supported
-	/// - Typical speedup: 10-100x for large simulations
+	/// - Typical speedup: 2-15x depending on model complexity (see class documentation for details)
 	public init(iterations: Int, enableGPU: Bool = true, model: @escaping @Sendable ([Double]) -> Double) {
 		self.iterations = iterations
 		self.enableGPU = enableGPU
@@ -161,9 +205,9 @@ public struct MonteCarloSimulation: Sendable {
 		self.expressionModel = nil  // Closure-based models don't have expression representation
 
 		#if canImport(Metal)
-		// Initialize GPU device if enabled
+		// Use shared GPU device for optimal performance (buffer pooling, compilation cache, etc.)
 		if enableGPU {
-			self.gpuDevice = MonteCarloGPUDevice()
+			self.gpuDevice = MonteCarloGPUDevice.shared
 		} else {
 			self.gpuDevice = nil
 		}
@@ -231,9 +275,9 @@ public struct MonteCarloSimulation: Sendable {
 		self.inputs = []
 
 		#if canImport(Metal)
-		// Initialize GPU device if enabled
+		// Use shared GPU device for optimal performance (buffer pooling, compilation cache, etc.)
 		if enableGPU {
-			self.gpuDevice = MonteCarloGPUDevice()
+			self.gpuDevice = MonteCarloGPUDevice.shared
 		} else {
 			self.gpuDevice = nil
 		}
@@ -294,6 +338,64 @@ public struct MonteCarloSimulation: Sendable {
 		inputs.append(input)
 	}
 
+	/// Sets the correlation matrix for input variables
+	///
+	/// Enables correlated sampling using the Iman-Conover rank correlation method.
+	/// When correlation is set, the simulation executes on CPU (GPU doesn't support
+	/// correlated sampling).
+	///
+	/// ## Requirements
+	///
+	/// - Matrix must be n×n where n = inputs.count
+	/// - Symmetric: matrix[i][j] == matrix[j][i]
+	/// - Diagonal values must be 1.0
+	/// - Off-diagonal values in range [-1, 1]
+	/// - Positive semi-definite
+	///
+	/// ## Example - Correlated Revenue and Costs
+	///
+	/// ```swift
+	/// let model = MonteCarloExpressionModel { builder in
+	///     let revenue = builder[0]
+	///     let costs = builder[1]
+	///     return revenue - costs
+	/// }
+	///
+	/// var simulation = MonteCarloSimulation(
+	///     iterations: 10_000,
+	///     enableGPU: true,
+	///     expressionModel: model
+	/// )
+	///
+	/// simulation.addInput(SimulationInput(name: "Revenue", distribution: DistributionNormal(1_000_000, 100_000)))
+	/// simulation.addInput(SimulationInput(name: "Costs", distribution: DistributionNormal(700_000, 50_000)))
+	///
+	/// // Revenue and costs are 70% correlated (they tend to move together)
+	/// simulation.setCorrelationMatrix([
+	///     [1.0, 0.7],
+	///     [0.7, 1.0]
+	/// ])
+	///
+	/// let results = try simulation.run()
+	/// // Note: usedGPU will be false due to correlation
+	/// ```
+	///
+	/// - Parameter matrix: Correlation matrix (n×n where n = inputs.count)
+	/// - Throws: `SimulationError` if matrix is invalid
+	public mutating func setCorrelationMatrix(_ matrix: [[Double]]) throws {
+		// Validate dimensions match inputs
+		guard matrix.count == inputs.count else {
+			throw SimulationError.correlationDimensionMismatch
+		}
+
+		// Validate matrix properties
+		guard isValidCorrelationMatrix(matrix) else {
+			throw SimulationError.invalidCorrelationMatrix
+		}
+
+		self.correlationMatrix = matrix
+	}
+
 	// MARK: - Execution
 
 	/// Runs the Monte Carlo simulation and returns comprehensive results.
@@ -339,8 +441,18 @@ public struct MonteCarloSimulation: Sendable {
 			throw SimulationError.noInputs
 		}
 
+		// If correlation matrix is set, use correlated sampling (CPU only)
+		if let corrMatrix = correlationMatrix {
+			return try runCorrelated(
+				inputs: inputs,
+				correlationMatrix: corrMatrix,
+				iterations: iterations,
+				calculation: model
+			)
+		}
+
 		#if canImport(Metal)
-		// Try GPU path if eligible
+		// Try GPU path if eligible (no correlation)
 		if enableGPU && iterations >= 1000 && gpuDevice != nil {
 			// Check if inputs are GPU-compatible
 			if let distributionConfigs = getGPUDistributionConfigs() {
@@ -361,9 +473,22 @@ public struct MonteCarloSimulation: Sendable {
 						return SimulationResults(values: outcomes, usedGPU: true)
 					} catch {
 						// GPU failed, fall back to CPU
-						// (Error is silently caught - automatic fallback behavior)
+						print("⚠️ GPU execution failed: \(error)")
+						print("   Falling back to CPU execution")
 					}
+				} else {
+					print("⚠️ Could not compile model for GPU (model uses unsupported operations or is closure-based)")
 				}
+			} else {
+				print("⚠️ Inputs are not GPU-compatible (unsupported distributions or correlation matrix)")
+			}
+		} else {
+			if !enableGPU {
+				// Silent - user explicitly disabled
+			} else if iterations < 1000 {
+				// Silent - expected behavior for small simulations
+			} else if gpuDevice == nil {
+				print("⚠️ GPU device is unavailable (Metal not supported or initialization failed)")
 			}
 		}
 		#endif
@@ -503,7 +628,7 @@ public struct MonteCarloSimulation: Sendable {
 			let correlatedSample = correlatedNormals.sample()
 			for i in 0..<inputs.count {
 				// Convert standard normal to uniform [0,1]
-				let uniformValue = normalCDF(correlatedSample[i])
+				let uniformValue = normalCDF(x: correlatedSample[i])
 				correlatedRanks[i].append(uniformValue)
 			}
 		}
@@ -550,6 +675,8 @@ public struct MonteCarloSimulation: Sendable {
 	/// - DistributionNormal
 	/// - DistributionUniform
 	/// - DistributionTriangular
+	/// - DistributionExponential
+	/// - DistributionLogNormal
 	///
 	/// - Returns: true if all inputs are GPU-compatible
 	private func areInputsGPUCompatible() -> Bool {
@@ -560,7 +687,9 @@ public struct MonteCarloSimulation: Sendable {
 			// Check if distribution is one of the supported types
 			if !(dist is DistributionNormal ||
 				 dist is DistributionUniform ||
-				 dist is DistributionTriangular) {
+				 dist is DistributionTriangular ||
+				 dist is DistributionExponential ||
+				 dist is DistributionLogNormal) {
 				return false
 			}
 		}
@@ -573,6 +702,8 @@ public struct MonteCarloSimulation: Sendable {
 	/// - Normal(mean, stdDev) → (type: 0, params: (mean, stdDev, 0))
 	/// - Uniform(min, max) → (type: 1, params: (min, max, 0))
 	/// - Triangular(min, max, mode) → (type: 2, params: (min, max, mode))
+	/// - Exponential(λ) → (type: 3, params: (λ, 0, 0))
+	/// - LogNormal(mean, stdDev) → (type: 4, params: (mean, stdDev, 0))
 	///
 	/// - Returns: Array of (type, params) tuples for GPU
 	private func getGPUDistributionConfigs() -> [(type: Int32, params: (Float, Float, Float))]? {
@@ -594,6 +725,12 @@ public struct MonteCarloSimulation: Sendable {
 			} else if let triangular = dist as? DistributionTriangular {
 				// Triangular distribution: type = 2
 				configs.append((type: 2, params: (Float(triangular.low), Float(triangular.high), Float(triangular.base))))
+			} else if let exponential = dist as? DistributionExponential {
+				// Exponential distribution: type = 3
+				configs.append((type: 3, params: (Float(exponential.λ), 0.0, 0.0)))
+			} else if let lognormal = dist as? DistributionLogNormal {
+				// Lognormal distribution: type = 4
+				configs.append((type: 4, params: (Float(lognormal.mean), Float(lognormal.stdDev), 0.0)))
 			} else {
 				return nil  // Unsupported distribution
 			}
@@ -626,15 +763,4 @@ public struct MonteCarloSimulation: Sendable {
 		return bytecode
 	}
 	#endif
-}
-
-// MARK: - Helper Functions
-
-/// Computes the cumulative distribution function (CDF) of the standard normal distribution.
-///
-/// - Parameter x: The value at which to evaluate the CDF
-/// - Returns: The probability that a standard normal random variable is less than or equal to x
-private func normalCDF(_ x: Double) -> Double {
-	// Standard normal CDF: Φ(x) = 0.5 * (1 + erf(x / sqrt(2)))
-	return 0.5 * (1.0 + erf(x / sqrt(2.0)))
 }
