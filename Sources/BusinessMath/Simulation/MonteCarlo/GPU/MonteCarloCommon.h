@@ -73,12 +73,40 @@ constant int MAX_STACK = 32;      ///< Maximum stack depth for bytecode evaluato
 constant int MAX_OPS = 128;       ///< Maximum number of bytecode operations
 
 // Bytecode opcodes
+// Arithmetic operations
 constant int OP_ADD = 0;
 constant int OP_SUB = 1;
 constant int OP_MUL = 2;
 constant int OP_DIV = 3;
 constant int OP_INPUT = 4;
 constant int OP_CONST = 5;
+constant int OP_POW = 6;
+constant int OP_MIN = 7;
+constant int OP_MAX = 8;
+
+// Unary operations
+constant int OP_NEG = 9;
+constant int OP_ABS = 10;
+constant int OP_SQRT = 11;
+constant int OP_LOG = 12;
+constant int OP_EXP = 13;
+constant int OP_SIN = 14;
+constant int OP_COS = 15;
+constant int OP_TAN = 16;
+
+// Comparison operations (return 1.0 for true, 0.0 for false)
+constant int OP_LT = 17;    // Less than
+constant int OP_GT = 18;    // Greater than
+constant int OP_LE = 19;    // Less or equal
+constant int OP_GE = 20;    // Greater or equal
+constant int OP_EQ = 21;    // Equal (within epsilon)
+constant int OP_NE = 22;    // Not equal
+
+// Conditional operations
+constant int OP_SELECT = 23;  // Ternary: condition ? true : false
+
+// Floating-point epsilon for equality comparisons
+constant float EPSILON = 1e-10f;
 
 // MARK: - RNG Function Implementations
 
@@ -89,7 +117,7 @@ inline float nextUniform(device RNGState* state) {
     state->s0 = s0;
     s1 ^= s1 << 23;
     state->s1 = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
-    return float(state->s0 + state->s1) * 1.08420217e-19f;
+    return float(state->s0 + state->s1) * 5.421010862427522e-20f;
 }
 
 /// Generate normal pair using Box-Muller transform

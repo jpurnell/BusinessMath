@@ -208,6 +208,12 @@ Scenario modeling and stress testing.
 
 - <doc:4.2-ScenarioAnalysisGuide>
 
+#### GPU-Accelerated Monte Carlo
+
+High-performance simulation with expression models (10-100× speedup).
+
+- <doc:4.3-MonteCarloExpressionModelsGuide>
+
 #### Part Overview
 
 - <doc:Part4-Simulation>

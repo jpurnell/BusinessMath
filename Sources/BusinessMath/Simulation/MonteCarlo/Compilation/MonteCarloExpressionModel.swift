@@ -310,6 +310,53 @@ enum BytecodeInterpreter {
                 guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
                 let a = stack.removeLast()
                 stack.append(tan(a))
+
+            // Comparison operations
+            case .lessThan:
+                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
+                let b = stack.removeLast()
+                let a = stack.removeLast()
+                stack.append(a < b ? 1.0 : 0.0)
+
+            case .greaterThan:
+                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
+                let b = stack.removeLast()
+                let a = stack.removeLast()
+                stack.append(a > b ? 1.0 : 0.0)
+
+            case .lessOrEqual:
+                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
+                let b = stack.removeLast()
+                let a = stack.removeLast()
+                stack.append(a <= b ? 1.0 : 0.0)
+
+            case .greaterOrEqual:
+                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
+                let b = stack.removeLast()
+                let a = stack.removeLast()
+                stack.append(a >= b ? 1.0 : 0.0)
+
+            case .equal:
+                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
+                let b = stack.removeLast()
+                let a = stack.removeLast()
+                let epsilon = 1e-10
+                stack.append(abs(a - b) < epsilon ? 1.0 : 0.0)
+
+            case .notEqual:
+                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
+                let b = stack.removeLast()
+                let a = stack.removeLast()
+                let epsilon = 1e-10
+                stack.append(abs(a - b) >= epsilon ? 1.0 : 0.0)
+
+            // Conditional operation
+            case .select:
+                guard stack.count >= 3 else { throw EvaluationError.stackUnderflow }
+                let falseValue = stack.removeLast()
+                let trueValue = stack.removeLast()
+                let condition = stack.removeLast()
+                stack.append(condition != 0.0 ? trueValue : falseValue)
             }
         }
 

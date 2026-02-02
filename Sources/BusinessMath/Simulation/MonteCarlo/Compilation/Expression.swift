@@ -86,10 +86,22 @@ public indirect enum Expression: Sendable, Equatable {
     /// Example: `.unary(.negate, .input(0))` represents `-input[0]`
     case unary(UnaryOp, Expression)
 
+    /// Ternary conditional operation (if-else selection)
+    ///
+    /// - Parameters:
+    ///   - Expression: Condition (evaluated as boolean: 0.0 = false, non-zero = true)
+    ///   - Expression: True branch value
+    ///   - Expression: False branch value
+    ///
+    /// Example: `.conditional(.binary(.greaterThan, .input(0), .constant(100)), .input(0), .constant(0))`
+    /// represents `input[0] > 100 ? input[0] : 0`
+    case conditional(Expression, Expression, Expression)
+
     // MARK: - Binary Operations
 
     /// Binary mathematical operations
     public enum BinaryOp: Sendable, Equatable {
+        // Arithmetic operations
         /// Addition: a + b
         case add
 
@@ -110,6 +122,25 @@ public indirect enum Expression: Sendable, Equatable {
 
         /// Maximum: max(a, b)
         case max
+
+        // Comparison operations (return 1.0 for true, 0.0 for false)
+        /// Less than: a < b
+        case lessThan
+
+        /// Greater than: a > b
+        case greaterThan
+
+        /// Less than or equal: a <= b
+        case lessOrEqual
+
+        /// Greater than or equal: a >= b
+        case greaterOrEqual
+
+        /// Equal: a == b (within floating-point epsilon)
+        case equal
+
+        /// Not equal: a != b (outside floating-point epsilon)
+        case notEqual
     }
 
     // MARK: - Unary Operations
@@ -157,13 +188,19 @@ extension Expression: CustomStringConvertible {
         case .binary(let op, let left, let right):
             let opStr: String
             switch op {
-            case .add:      opStr = "+"
-            case .subtract: opStr = "-"
-            case .multiply: opStr = "*"
-            case .divide:   opStr = "/"
-            case .power:    opStr = "^"
-            case .min:      opStr = "min"
-            case .max:      opStr = "max"
+            case .add:              opStr = "+"
+            case .subtract:         opStr = "-"
+            case .multiply:         opStr = "*"
+            case .divide:           opStr = "/"
+            case .power:            opStr = "^"
+            case .min:              opStr = "min"
+            case .max:              opStr = "max"
+            case .lessThan:         opStr = "<"
+            case .greaterThan:      opStr = ">"
+            case .lessOrEqual:      opStr = "<="
+            case .greaterOrEqual:   opStr = ">="
+            case .equal:            opStr = "=="
+            case .notEqual:         opStr = "!="
             }
 
             if op == .min || op == .max {
@@ -185,6 +222,9 @@ extension Expression: CustomStringConvertible {
             case .tan:    opStr = "tan"
             }
             return "\(opStr)(\(operand))"
+
+        case .conditional(let condition, let trueValue, let falseValue):
+            return "(\(condition) ? \(trueValue) : \(falseValue))"
         }
     }
 }
@@ -217,6 +257,13 @@ extension Expression {
 
         case .unary(_, let operand):
             return operand.maxInputIndex()
+
+        case .conditional(let condition, let trueValue, let falseValue):
+            let condMax = condition.maxInputIndex()
+            let trueMax = trueValue.maxInputIndex()
+            let falseMax = falseValue.maxInputIndex()
+
+            return [condMax, trueMax, falseMax].compactMap { $0 }.max()
         }
     }
 
@@ -235,6 +282,9 @@ extension Expression {
 
         case .unary(_, let operand):
             return 1 + operand.operationCount()
+
+        case .conditional(let condition, let trueValue, let falseValue):
+            return 1 + condition.operationCount() + trueValue.operationCount() + falseValue.operationCount()
         }
     }
 
@@ -256,6 +306,9 @@ extension Expression {
 
         case .unary(_, let operand):
             return operand.isConstant()
+
+        case .conditional(let condition, let trueValue, let falseValue):
+            return condition.isConstant() && trueValue.isConstant() && falseValue.isConstant()
         }
     }
 }
