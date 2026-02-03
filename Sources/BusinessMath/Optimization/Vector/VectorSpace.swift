@@ -645,6 +645,28 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		guard n > T(0) else { return VectorN(repeating: T(0), count: components.count) }
 		return (T(1) / n) * self
 	}
+
+		/// Project the vector onto the probability simplex (components sum to 1.0).
+		///
+		/// This is useful for portfolio weights, probability distributions, and mixture coefficients.
+		/// Unlike `normalized()`, which creates a unit vector (Euclidean norm = 1.0),
+		/// this ensures the components sum to 1.0.
+		///
+		/// # Example
+		/// ```swift
+		/// // Portfolio weights
+		/// let rawWeights = VectorN([3.0, 1.0, 2.0])
+		/// let weights = rawWeights.simplexProjection()  // [0.5, 0.167, 0.333]
+		/// print(weights.sum)  // 1.0
+		/// ```
+		///
+		/// - Returns: A new vector where all components sum to 1.0
+		/// - Precondition: Vector must have at least one non-zero component
+	public func simplexProjection() -> VectorN<T> {
+		let s = self.sum
+		precondition(s != 0, "Cannot project zero vector onto simplex")
+		return self / s
+	}
 	
 		/// Project this vector onto another vector.
 		/// - Parameter other: Vector to project onto
@@ -850,6 +872,27 @@ extension VectorN {
 		/// - Returns: Vector where all components are 1.
 	public static func ones(dimension: Int) -> VectorN<T> {
 		VectorN(repeating: T(1), count: dimension)
+	}
+
+		/// Create equal weights that sum to 1.0 (useful for equal-weighted portfolios).
+		///
+		/// This creates a vector where each component is 1/n, ensuring they sum to 1.0
+		/// for use as portfolio weights, probability distributions, or mixture coefficients.
+		///
+		/// # Example
+		/// ```swift
+		/// // Equal-weighted 4-asset portfolio
+		/// let weights = VectorN<Double>.equalWeights(dimension: 4)  // [0.25, 0.25, 0.25, 0.25]
+		/// print(weights.sum)  // 1.0
+		/// ```
+		///
+		/// - Parameter dimension: Number of components (must be positive)
+		/// - Returns: Vector where all components are 1/dimension
+		/// - Precondition: dimension must be positive
+	public static func equalWeights(dimension: Int) -> VectorN<T> {
+		precondition(dimension > 0, "Dimension must be positive")
+		let weight = T(1) / T(dimension)
+		return VectorN(repeating: weight, count: dimension)
 	}
 	
 		/// Create a vector with linearly spaced values.
