@@ -182,7 +182,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V,
         constraints: [MultivariateConstraint<V>] = []
     ) throws -> MultivariateOptimizationResult<V> {
@@ -712,7 +712,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
 
     /// Minimize with constraints using penalty method.
     private func minimizeWithPenalty(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {
 

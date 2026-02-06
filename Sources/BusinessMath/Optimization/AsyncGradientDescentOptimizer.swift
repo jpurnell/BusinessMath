@@ -189,7 +189,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
             Task { @Sendable in
                 var x = initialGuess
                 var velocity: T = 0
-                var converged = false
+                let converged = false
 
                 // Apply bounds to initial value
                 if let bounds = bounds {

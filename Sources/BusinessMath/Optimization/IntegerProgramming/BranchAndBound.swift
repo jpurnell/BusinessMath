@@ -727,7 +727,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     weakCutTolerance: cutTolerance
                 )
 
-                for round in 0..<maxCuttingRounds {
+                for _ in 0..<maxCuttingRounds {
                     // Check if solution is fractional for integer variables
                     let solutionArray = currentSolution.toArray()
                     var hasFractional = false

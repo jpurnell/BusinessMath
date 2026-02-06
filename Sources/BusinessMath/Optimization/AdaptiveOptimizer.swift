@@ -139,7 +139,7 @@ public struct AdaptiveOptimizer<V: VectorSpace> where V.Scalar == Double {
 	/// - Returns: Optimization result with algorithm info
 	/// - Throws: OptimizationError if optimization fails
 	public func optimize(
-		objective: @escaping (V) -> V.Scalar,
+		objective: @escaping @Sendable (V) -> V.Scalar,
 		gradient: ((V) throws -> V)? = nil,
 		initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []

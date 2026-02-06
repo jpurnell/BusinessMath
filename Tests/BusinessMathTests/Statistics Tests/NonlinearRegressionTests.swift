@@ -303,7 +303,7 @@ struct NonlinearRegressionTests {
 	func numericalGradientTest() throws {
 		// f(x) = x₁² + x₂²
 		// ∇f = [2x₁, 2x₂]
-		let f: (VectorN<Double>) -> Double = { v in
+		let f: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -319,7 +319,7 @@ struct NonlinearRegressionTests {
 	func numericalGradientSimple() throws {
 		// f(x) = (x₁ - 2)² + (x₂ + 1)²
 		// Minimum at (2, -1), gradient should be [0, 0]
-		let f: (VectorN<Double>) -> Double = { v in
+		let f: @Sendable (VectorN<Double>) -> Double = { v in
 			(v[0] - 2.0) * (v[0] - 2.0) + (v[1] + 1.0) * (v[1] + 1.0)
 		}
 
@@ -334,7 +334,7 @@ struct NonlinearRegressionTests {
 	func numericalGradientHigherDimension() throws {
 		// f(x) = x₁² + 2x₂² + 3x₃²
 		// ∇f = [2x₁, 4x₂, 6x₃]
-		let f: (VectorN<Double>) -> Double = { v in
+		let f: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + 2.0 * v[1] * v[1] + 3.0 * v[2] * v[2]
 		}
 

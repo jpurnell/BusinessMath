@@ -196,7 +196,7 @@ public protocol MultivariateOptimizer<V> {
     ///   - ``MultivariateOptimizationResult`` for result type details
     ///   - ``MultivariateConstraint`` for constraint specification
     func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V>
@@ -232,7 +232,7 @@ extension MultivariateOptimizer {
     ///
     /// - SeeAlso: ``minimize(_:from:constraints:)`` for constrained optimization
     public func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V
     ) throws -> MultivariateOptimizationResult<V> {
         try minimize(objective, from: initialGuess, constraints: [])

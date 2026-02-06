@@ -51,7 +51,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // PSO should find minimum accurately
@@ -74,7 +74,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(0.0, 10.0)]
         )
 
-        let parabola = { (v: VectorN<Double>) -> Double in
+        let parabola: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             return (x - 3.0) * (x - 3.0)
         }
@@ -98,7 +98,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
 
-        let rosenbrock = { (v: VectorN<Double>) -> Double in
+        let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -125,7 +125,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Should still converge despite high inertia
@@ -144,7 +144,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Low inertia should converge quickly
@@ -167,7 +167,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Should still find reasonable solution
@@ -188,7 +188,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Should converge (may be premature)
@@ -211,7 +211,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: searchSpace
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let initialGuess = VectorN(Array(repeating: 2.0, count: dimension))
         let result = try optimizer.minimize(sphere, from: initialGuess)
 
@@ -237,7 +237,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in
             v[0] + v[1] - 1.0
         }
@@ -261,7 +261,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-2.0, 2.0), (-2.0, 2.0)]
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in -(v[0] + v[1]) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in -(v[0] + v[1]) }
         let constraint = MultivariateConstraint<VectorN<Double>>.inequality { v in
             v.dot(v) - 1.0
         }
@@ -291,7 +291,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-1.0, 1.0)]
         )
 
-        let simple = { (v: VectorN<Double>) -> Double in
+        let simple: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             return x * x
         }
@@ -315,7 +315,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let rosenbrock = { (v: VectorN<Double>) -> Double in
+        let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -352,7 +352,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: searchSpace
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let result1 = optimizer1.optimizeDetailed(objective: sphere)
         let result2 = optimizer2.optimizeDetailed(objective: sphere)
@@ -382,7 +382,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Should still find reasonable solution despite extreme params
@@ -402,7 +402,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Should have history for each iteration
@@ -427,7 +427,7 @@ struct ParticleSwarmOptimizationTests {
             searchSpace: [(-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Initial swarm + iterations

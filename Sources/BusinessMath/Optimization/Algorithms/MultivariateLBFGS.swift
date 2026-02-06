@@ -118,7 +118,7 @@ public struct MultivariateLBFGS<V: VectorSpace> where V.Scalar: Real {
 	/// )
 	/// ```
 	public func minimizeLBFGS(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		gradient: (V) throws -> V,
 		initialGuess: V
 	) throws -> MultivariateOptimizationResult<V> {
@@ -232,7 +232,7 @@ public struct MultivariateLBFGS<V: VectorSpace> where V.Scalar: Real {
 	/// )
 	/// ```
 	public func minimizeLBFGS(
-		function: @escaping (V) -> V.Scalar,
+		function: @escaping @Sendable (V) -> V.Scalar,
 		initialGuess: V,
 		epsilon: V.Scalar = V.Scalar(1) / V.Scalar(1_000_000)
 	) throws -> MultivariateOptimizationResult<V> {
@@ -385,7 +385,7 @@ public struct MultivariateLBFGS<V: VectorSpace> where V.Scalar: Real {
 	///   - rho: Backtracking factor (typically 0.5)
 	/// - Returns: Optimal step size α
 	private func backtrackingLineSearch(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		point: V,
 		gradient: V,
 		direction: V,

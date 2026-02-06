@@ -115,7 +115,7 @@ public struct GoalSeekOptimizer<T>: Optimizer where T: Real & Sendable & Codable
     ///   - bounds: Optional bounds (lower, upper).
     /// - Returns: The optimization result containing the root.
     public func optimize(
-        objective: @escaping (T) -> T,
+        objective: @escaping @Sendable (T) -> T,
         constraints: [Constraint<T>],
         initialGuess: T,
         bounds: (lower: T, upper: T)?

@@ -50,7 +50,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // DE should find minimum very accurately
@@ -73,7 +73,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(0.0, 10.0)]
         )
 
-        let parabola = { (v: VectorN<Double>) -> Double in
+        let parabola: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             return (x - 3.0) * (x - 3.0)
         }
@@ -99,7 +99,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
 
-        let rosenbrock = { (v: VectorN<Double>) -> Double in
+        let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -126,7 +126,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         #expect(result.value < 0.1)
@@ -144,7 +144,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // best/1 often converges faster
@@ -163,7 +163,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         #expect(result.value < 0.1)
@@ -185,7 +185,7 @@ struct DifferentialEvolutionTests {
             searchSpace: searchSpace
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let initialGuess = VectorN(Array(repeating: 2.0, count: dimension))
         let result = try optimizer.minimize(sphere, from: initialGuess)
 
@@ -211,7 +211,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in
             v[0] + v[1] - 1.0
         }
@@ -235,7 +235,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-2.0, 2.0), (-2.0, 2.0)]
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in -(v[0] + v[1]) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in -(v[0] + v[1]) }
         let constraint = MultivariateConstraint<VectorN<Double>>.inequality { v in
             v.dot(v) - 1.0
         }
@@ -265,7 +265,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-1.0, 1.0)]
         )
 
-        let simple = { (v: VectorN<Double>) -> Double in
+        let simple: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             return x * x
         }
@@ -289,7 +289,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let rosenbrock = { (v: VectorN<Double>) -> Double in
+        let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -326,7 +326,7 @@ struct DifferentialEvolutionTests {
             searchSpace: searchSpace
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let result1 = optimizer1.optimizeDetailed(objective: sphere)
         let result2 = optimizer2.optimizeDetailed(objective: sphere)
@@ -352,7 +352,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Should still converge despite high mutation
@@ -371,7 +371,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         #expect(result.value < 1.0)
@@ -390,7 +390,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Should have history for each generation
@@ -415,7 +415,7 @@ struct DifferentialEvolutionTests {
             searchSpace: [(-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = optimizer.optimizeDetailed(objective: sphere)
 
         // Initial population + generations

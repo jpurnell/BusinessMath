@@ -16,7 +16,7 @@ struct MultivariateOptimizerProtocolTests {
 
         // Simple quadratic function: f(x,y) = x² + y²
         // Minimum at (0,0)
-        let objective = { (v: VectorN<Double>) -> Double in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -35,7 +35,7 @@ struct MultivariateOptimizerProtocolTests {
             tolerance: 0.0001
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -52,7 +52,7 @@ struct MultivariateOptimizerProtocolTests {
             maxIterations: 1000
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint: MultivariateConstraint<VectorN<Double>> = .equality { v in v[0] - 1.0 }
 
         #expect(throws: OptimizationError.self) {
@@ -65,7 +65,7 @@ struct MultivariateOptimizerProtocolTests {
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = InequalityOptimizer<VectorN<Double>>()
 
         // Minimize x² + y² subject to x = 1
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint: MultivariateConstraint<VectorN<Double>> = .equality { v in v[0] - 1.0 }
 
         let result = try optimizer.minimize(
@@ -84,7 +84,7 @@ struct MultivariateOptimizerProtocolTests {
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = InequalityOptimizer<VectorN<Double>>()
 
         // Minimize x² + y² subject to x ≥ 1 (i.e., 1 - x ≤ 0)
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint: MultivariateConstraint<VectorN<Double>> = .inequality { v in 1.0 - v[0] }
 
         let result = try optimizer.minimize(
@@ -113,7 +113,7 @@ struct MultivariateOptimizerProtocolTests {
             )
         ]
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         for optimizer in algorithms {
             let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
@@ -132,7 +132,7 @@ struct MultivariateOptimizerProtocolTests {
             maxIterations: 1000
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         // Should be able to call without specifying constraints parameter
         let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
@@ -145,7 +145,7 @@ struct MultivariateOptimizerProtocolTests {
     func equalityOnlyRejectsInequality() throws {
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = ConstrainedOptimizer<VectorN<Double>>()
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let inequality: MultivariateConstraint<VectorN<Double>> = .inequality { v in 1.0 - v[0] }
 
         #expect(throws: OptimizationError.self) {
@@ -160,7 +160,7 @@ struct MultivariateOptimizerProtocolTests {
             maxIterations: 1000
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
 
         // Verify all expected result fields are accessible

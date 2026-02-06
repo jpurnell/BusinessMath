@@ -23,7 +23,7 @@ struct ConstrainedOptimizerTests {
 		// Solution: x = 0.5, y = 0.5, f* = 0.5
 		// Lagrange multiplier: λ = -1
 
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -95,7 +95,7 @@ struct ConstrainedOptimizerTests {
 		//
 		// Solution: x = 1, y = 1, z = 1, f* = 3
 
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1] + v[2] * v[2]
 		}
 
@@ -129,7 +129,7 @@ struct ConstrainedOptimizerTests {
 		//
 		// Solution: x = 1, y = 1, f* = -2
 
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			-(v[0] * v[0] + v[1] * v[1])
 		}
 
@@ -163,7 +163,7 @@ struct ConstrainedOptimizerTests {
 		// At b = 1: λ ≈ -1 (negative because we're minimizing)
 
 		let testConstraintValue: (Double) -> (solution: VectorN<Double>, multiplier: Double) = { b in
-			let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
+			let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
 			let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in v[0] + v[1] - b }
 			let optimizer = ConstrainedOptimizer<VectorN<Double>>()
 
@@ -191,7 +191,7 @@ struct ConstrainedOptimizerTests {
 	func feasibleInitialPoint() throws {
 		// Starting from a point that already satisfies the constraint
 
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
 		let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
 
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>()
@@ -211,7 +211,7 @@ struct ConstrainedOptimizerTests {
 	func infeasibleInitialPoint() throws {
 		// Starting from a point that violates the constraint
 
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
 		let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
 
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>()
@@ -236,7 +236,7 @@ struct ConstrainedOptimizerTests {
 		// Solution: xᵢ = 1/n for all i
 
 		let n = 10
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -268,7 +268,7 @@ struct ConstrainedOptimizerTests {
 
 	@Test("Reject inequality constraints")
 	func rejectInequalityConstraints() throws {
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] }
 		let constraint = MultivariateConstraint<VectorN<Double>>.inequality { v in -v[0] }
 
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>()
@@ -280,7 +280,7 @@ struct ConstrainedOptimizerTests {
 
 	@Test("Reject empty constraints")
 	func rejectEmptyConstraints() throws {
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] }
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>()
 
 		#expect(throws: OptimizationError.self) {
@@ -292,7 +292,7 @@ struct ConstrainedOptimizerTests {
 
 	@Test("Convergence history tracking")
 	func convergenceHistoryTracking() throws {
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
 		let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
 
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>(maxIterations: 20)
@@ -320,7 +320,7 @@ struct ConstrainedOptimizerTests {
 
 	@Test("Different starting points converge to same solution")
 	func multipleStartingPoints() throws {
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
 		let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
 
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>()

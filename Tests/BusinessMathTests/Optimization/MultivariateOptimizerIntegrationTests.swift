@@ -15,7 +15,7 @@ struct MultivariateOptimizerIntegrationTests {
         )
 
         // Simple quadratic: f(x,y) = x² + y²
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
 
@@ -32,7 +32,7 @@ struct MultivariateOptimizerIntegrationTests {
             tolerance: 1e-6
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let result = try optimizer.minimize(objective, from: VectorN([3.0, 4.0]))
 
@@ -46,7 +46,7 @@ struct MultivariateOptimizerIntegrationTests {
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = ConstrainedOptimizer()
 
         // Minimize x² + y² subject to x + y = 1
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in
             v[0] + v[1] - 1.0
         }
@@ -69,7 +69,7 @@ struct MultivariateOptimizerIntegrationTests {
     func inequalityOptimizerViaProtocol() throws {
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = InequalityOptimizer()
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         // Budget constraint (equality) + non-negativity (inequality)
         let constraints = [
@@ -95,7 +95,7 @@ struct MultivariateOptimizerIntegrationTests {
             tolerance: 1e-6
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let result = try optimizer.minimize(objective, from: VectorN([2.0, 3.0]))
 
@@ -113,7 +113,7 @@ struct MultivariateOptimizerIntegrationTests {
             maxIterations: 100
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in v[0] - 1.0 }
 
         #expect(throws: OptimizationError.self) {
@@ -128,7 +128,7 @@ struct MultivariateOptimizerIntegrationTests {
             tolerance: 1e-6
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint = MultivariateConstraint<VectorN<Double>>.inequality { v in v[0] - 1.0 }
 
         #expect(throws: OptimizationError.self) {
@@ -140,7 +140,7 @@ struct MultivariateOptimizerIntegrationTests {
     func constrainedRejectsInequality() throws {
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = ConstrainedOptimizer()
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let inequality = MultivariateConstraint<VectorN<Double>>.inequality { v in v[0] - 1.0 }
 
         #expect(throws: OptimizationError.self) {
@@ -152,7 +152,7 @@ struct MultivariateOptimizerIntegrationTests {
     func inequalityAcceptsBoth() throws {
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = InequalityOptimizer()
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let equality = MultivariateConstraint<VectorN<Double>>.equality { v in v[0] + v[1] - 1.0 }
         let inequality = MultivariateConstraint<VectorN<Double>>.inequality { v in -v[0] }  // x >= 0
@@ -173,7 +173,7 @@ struct MultivariateOptimizerIntegrationTests {
     func rosenbrockOptimization() throws {
         // Rosenbrock: f(x,y) = (1-x)² + 100(y-x²)²
         // Global minimum at (1, 1) with value 0
-        let rosenbrock = { (v: VectorN<Double>) -> Double in
+        let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
         }
@@ -244,7 +244,7 @@ struct MultivariateOptimizerIntegrationTests {
         let dimension = 10
 
         // Sum of squares: f(x) = Σxᵢ²
-        let sumOfSquares = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sumOfSquares: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let initialGuess = VectorN(Array(repeating: 5.0, count: dimension))
 
@@ -306,7 +306,7 @@ struct MultivariateOptimizerIntegrationTests {
 
     @Test("Protocol - Algorithm comparison on same problem")
     func algorithmComparison() throws {
-        let objective = { (v: VectorN<Double>) -> Double in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 2) * (v[0] - 2) + (v[1] - 3) * (v[1] - 3)
         }
 
@@ -334,7 +334,7 @@ struct MultivariateOptimizerIntegrationTests {
 
         // Minimize x² + y² + z²
         // Subject to: x + y + z = 1, x + 2y = 0.5
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let constraints = [
             MultivariateConstraint<VectorN<Double>>.equality { v in
@@ -365,7 +365,7 @@ struct MultivariateOptimizerIntegrationTests {
 
         // Minimize (x-2)² + (y-3)²
         // Subject to: 0 ≤ x ≤ 1, 0 ≤ y ≤ 1
-        let objective = { (v: VectorN<Double>) -> Double in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 2) * (v[0] - 2) + (v[1] - 3) * (v[1] - 3)
         }
 
@@ -398,7 +398,7 @@ struct MultivariateOptimizerIntegrationTests {
             maxIterations: 100
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(objective, from: VectorN([1.0, 1.0]))
 
         // Verify all protocol-required fields are accessible
@@ -419,7 +419,7 @@ struct MultivariateOptimizerIntegrationTests {
             maxIterations: 10  // Low limit to test non-convergence
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(objective, from: VectorN([100.0, 100.0]))
 
         // Should have meaningful convergence reason

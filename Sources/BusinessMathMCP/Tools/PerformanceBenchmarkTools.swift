@@ -85,7 +85,7 @@ public struct ProfileOptimizerTool: MCPToolHandler, Sendable {
         import BusinessMath
 
         // Define your objective function
-        let objective: (VectorN<Double>) -> Double = { x in
+        let objective: @Sendable (VectorN<Double>) -> Double = { x in
             // Your objective calculation here
             return 0.0  // Replace with actual calculation
         }
@@ -393,7 +393,7 @@ public struct CompareOptimizersTool: MCPToolHandler, Sendable {
         import BusinessMath
 
         // Define your objective function
-        let objective: (VectorN<Double>) -> Double = { x in
+        let objective: @Sendable (VectorN<Double>) -> Double = { x in
             // Your objective calculation
             return 0.0
         }

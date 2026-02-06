@@ -167,7 +167,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	/// - Returns: Optimization result containing solution and convergence info
 	/// - Throws: `OptimizationError` if optimization fails
 	public func minimize(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		gradient: (V) throws -> V,
 		initialGuess: V
 	) throws -> MultivariateOptimizationResult<V> {
@@ -340,7 +340,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	/// - Returns: Optimization result
 	/// - Throws: `OptimizationError` if optimization fails
 	public func minimizeAdam(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		gradient: (V) throws -> V,
 		initialGuess: V,
 		beta1: V.Scalar = V.Scalar(9) / V.Scalar(10),
@@ -530,7 +530,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	///   - rho: Step size reduction factor (default: 0.5)
 	/// - Returns: Optimal step size α
 	private func backtrackingLineSearch(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		point: V,
 		gradient: V,
 		direction: V,

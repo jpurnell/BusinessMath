@@ -10,7 +10,7 @@ struct MultivariateOptimizerPerformanceTests {
     @Test("Performance - Protocol dispatch vs concrete type")
     func protocolVsConcretePerformance() throws {
         let iterations = 100
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let initialGuess = VectorN([5.0, 5.0])
 
         // Measure concrete type performance
@@ -49,7 +49,7 @@ struct MultivariateOptimizerPerformanceTests {
 
     @Test("Performance - Algorithm factory overhead")
     func factoryOverhead() throws {
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let initialGuess = VectorN([3.0, 4.0])
         let iterations = 50
 
@@ -85,7 +85,7 @@ struct MultivariateOptimizerPerformanceTests {
             tolerance: 1e-6
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(objective, from: VectorN([10.0, 10.0]))
 
         #expect(result.converged)
@@ -101,7 +101,7 @@ struct MultivariateOptimizerPerformanceTests {
             tolerance: 1e-3
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let initialGuess = VectorN(Array(repeating: 5.0, count: dimension))
 
         let result = try optimizer.minimize(objective, from: initialGuess)
@@ -119,7 +119,7 @@ struct MultivariateOptimizerPerformanceTests {
             tolerance: 1e-2
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let initialGuess = VectorN(Array(repeating: 2.0, count: dimension))
 
         let result = try optimizer.minimize(objective, from: initialGuess)
@@ -136,7 +136,7 @@ struct MultivariateOptimizerPerformanceTests {
             maxIterations: 50
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint = MultivariateConstraint<VectorN<Double>>.budgetConstraint
 
         let result = try optimizer.minimize(
@@ -156,7 +156,7 @@ struct MultivariateOptimizerPerformanceTests {
             maxIterations: 200
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         // Budget + non-negativity constraints
         let constraints = [
@@ -178,7 +178,7 @@ struct MultivariateOptimizerPerformanceTests {
             maxIterations: 200
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(objective, from: VectorN([10.0, 10.0]))
 
         #expect(result.converged)
@@ -193,7 +193,7 @@ struct MultivariateOptimizerPerformanceTests {
             tolerance: 1e-6
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(objective, from: VectorN([10.0, 10.0]))
 
         #expect(result.converged)
@@ -208,7 +208,7 @@ struct MultivariateOptimizerPerformanceTests {
             tolerance: 1e-4
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
 
         #expect(result.converged)
@@ -225,7 +225,7 @@ struct MultivariateOptimizerPerformanceTests {
             maxIterations: 100
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         // Run many optimizations to check for memory leaks
         for i in 0..<100 {
@@ -243,7 +243,7 @@ struct MultivariateOptimizerPerformanceTests {
     @Test("Performance - Convergence rate for well-conditioned problems")
     func wellConditionedConvergence() throws {
         // Well-conditioned: f(x,y) = x² + y²
-        let wellConditioned = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let wellConditioned: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let optimizer: any MultivariateOptimizer<VectorN<Double>> = MultivariateGradientDescent(
             learningRate: 0.1,
@@ -261,7 +261,7 @@ struct MultivariateOptimizerPerformanceTests {
     @Test("Performance - Convergence rate for ill-conditioned problems")
     func illConditionedConvergence() throws {
         // Ill-conditioned: f(x,y) = x² + 100y²
-        let illConditioned = { (v: VectorN<Double>) -> Double in
+        let illConditioned: @Sendable (VectorN<Double>) -> Double = { v in
             v[0] * v[0] + 100 * v[1] * v[1]
         }
 
@@ -328,7 +328,7 @@ struct MultivariateOptimizerPerformanceTests {
             tolerance: 1e-2
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         // Start very far from optimum
         let result = try optimizer.minimize(objective, from: VectorN([1000.0, 1000.0]))
@@ -345,7 +345,7 @@ struct MultivariateOptimizerPerformanceTests {
             tolerance: 1e-6
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         // Start very close to optimum
         let result = try optimizer.minimize(objective, from: VectorN([0.001, 0.001]))

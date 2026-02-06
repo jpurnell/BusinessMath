@@ -93,7 +93,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 	/// - Returns: Optimization result with solution and Lagrange multipliers
 	/// - Throws: `OptimizationError` if optimization fails
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		subjectTo constraints: [MultivariateConstraint<V>]
 	) throws -> ConstrainedOptimizationResult<V> {
@@ -247,7 +247,7 @@ extension InequalityOptimizer: MultivariateOptimizer {
 	/// - Note: For access to Lagrange multipliers, use the specialized
 	///   ``minimize(_:from:subjectTo:)`` method which returns ``ConstrainedOptimizationResult``.
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> MultivariateOptimizationResult<V> {

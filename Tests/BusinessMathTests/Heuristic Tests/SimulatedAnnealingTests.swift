@@ -18,7 +18,7 @@ struct SimulatedAnnealingTests {
     @Test("Simulated Annealing minimizes simple quadratic")
     func simpleQuadratic() throws {
         // f(x,y) = x² + y², minimum at (0, 0)
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -43,7 +43,7 @@ struct SimulatedAnnealingTests {
     func rosenbrockFunction() throws {
         // f(x,y) = (1-x)² + 100(y-x²)²
         // Global minimum at (1, 1)
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -74,7 +74,7 @@ struct SimulatedAnnealingTests {
     func rastriginFunction() throws {
         // Rastrigin: f(x) = 10n + Σ(x²- 10cos(2πx))
         // Many local minima, global minimum at origin
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             let n = Double(v.dimension)
             var sum = 10.0 * n
             for i in 0..<v.dimension {
@@ -109,7 +109,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Geometric cooling schedule")
     func geometricCooling() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 2.0) * (v[0] - 2.0)
         }
 
@@ -132,7 +132,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Fast cooling vs slow cooling")
     func coolingRateComparison() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -174,7 +174,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Small perturbation scale for fine-tuning")
     func smallPerturbation() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 3.0) * (v[0] - 3.0)
         }
 
@@ -197,7 +197,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Large perturbation scale for exploration")
     func largePerturbation() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 3.0) * (v[0] - 3.0)
         }
 
@@ -222,7 +222,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Simulated Annealing with reheating")
     func reheatingEscapesLocalMinima() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             // Multiple local minima
             return sin(x) + sin(3.0 * x) / 3.0 + x * x / 100.0
@@ -253,7 +253,7 @@ struct SimulatedAnnealingTests {
     @Test("Simulated Annealing with equality constraint")
     func equalityConstraint() throws {
         // Minimize x² + y² subject to x + y = 1
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -283,7 +283,7 @@ struct SimulatedAnnealingTests {
     @Test("Simulated Annealing with inequality constraint")
     func inequalityConstraint() throws {
         // Minimize (x-2)² + (y-2)² subject to x + y ≤ 3
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 2.0) * (v[0] - 2.0) + (v[1] - 2.0) * (v[1] - 2.0)
         }
 
@@ -314,7 +314,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Early convergence when temperature reaches final")
     func earlyConvergence() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -338,7 +338,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Respects max iterations")
     func respectsMaxIterations() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -361,7 +361,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Default configuration is reasonable")
     func defaultConfiguration() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -378,7 +378,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Custom seed provides deterministic results")
     func deterministicWithSeed() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -412,7 +412,7 @@ struct SimulatedAnnealingTests {
 
     @Test("Already optimal initial guess")
     func alreadyOptimal() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -430,7 +430,7 @@ struct SimulatedAnnealingTests {
     @Test("High-dimensional problem")
     func highDimensional() throws {
         // 10D sphere function
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 

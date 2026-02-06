@@ -155,7 +155,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V,
         constraints: [MultivariateConstraint<V>] = []
     ) throws -> MultivariateOptimizationResult<V> {
@@ -696,7 +696,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
 
     /// Minimize with constraints using penalty method.
     private func minimizeWithPenalty(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {
 

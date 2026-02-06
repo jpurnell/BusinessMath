@@ -19,7 +19,7 @@ struct LinearityValidationTests {
     @Test("Accepts truly linear function")
     func testAcceptsLinear() throws {
         // f(x, y) = 3x + 2y + 1 (perfectly linear)
-        let linear: (VectorN<Double>) -> Double = { v in
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in
             3.0 * v[0] + 2.0 * v[1] + 1.0
         }
 
@@ -38,7 +38,7 @@ struct LinearityValidationTests {
     @Test("Accepts linear function with zero coefficients")
     func testAcceptsLinearWithZeroCoeffs() throws {
         // f(x, y) = 2y + 5 (x has zero coefficient)
-        let linear: (VectorN<Double>) -> Double = { v in
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in
             0.0 * v[0] + 2.0 * v[1] + 5.0
         }
 
@@ -76,7 +76,7 @@ struct LinearityValidationTests {
     @Test("Rejects quadratic function")
     func testRejectsQuadratic() throws {
         // f(x) = x² (nonlinear)
-        let quadratic: (VectorN<Double>) -> Double = { v in
+        let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
             v[0] * v[0]
         }
 
@@ -92,7 +92,7 @@ struct LinearityValidationTests {
     @Test("Rejects bilinear function")
     func testRejectsBilinear() throws {
         // f(x, y) = xy (nonlinear)
-        let bilinear: (VectorN<Double>) -> Double = { v in
+        let bilinear: @Sendable (VectorN<Double>) -> Double = { v in
             v[0] * v[1]
         }
 
@@ -108,7 +108,7 @@ struct LinearityValidationTests {
     @Test("Rejects exponential function")
     func testRejectsExponential() throws {
         // f(x) = e^x (nonlinear)
-        let exponential: (VectorN<Double>) -> Double = { v in
+        let exponential: @Sendable (VectorN<Double>) -> Double = { v in
             exp(v[0])
         }
 
@@ -124,7 +124,7 @@ struct LinearityValidationTests {
     @Test("Rejects logarithmic function")
     func testRejectsLogarithmic() throws {
         // f(x) = log(x) (nonlinear)
-        let logarithmic: (VectorN<Double>) -> Double = { v in
+        let logarithmic: @Sendable (VectorN<Double>) -> Double = { v in
             log(v[0])
         }
 
@@ -140,7 +140,7 @@ struct LinearityValidationTests {
     @Test("Rejects polynomial function")
     func testRejectsPolynomial() throws {
         // f(x, y) = x² + 2xy + y² + 3x + 4y + 5 (nonlinear)
-        let polynomial: (VectorN<Double>) -> Double = { v in
+        let polynomial: @Sendable (VectorN<Double>) -> Double = { v in
             v[0]*v[0] + 2.0*v[0]*v[1] + v[1]*v[1] + 3.0*v[0] + 4.0*v[1] + 5.0
         }
 
@@ -156,7 +156,7 @@ struct LinearityValidationTests {
     @Test("Rejects absolute value function")
     func testRejectsAbsoluteValue() throws {
         // f(x) = |x| (nonlinear, not differentiable at 0)
-        let absValue: (VectorN<Double>) -> Double = { v in
+        let absValue: @Sendable (VectorN<Double>) -> Double = { v in
             abs(v[0])
         }
 
@@ -174,7 +174,7 @@ struct LinearityValidationTests {
     @Test("Accepts high-dimensional linear function")
     func testAcceptsHighDimensionalLinear() throws {
         // f(x) = Σᵢ xᵢ (sum of all variables)
-        let linear: (VectorN<Double>) -> Double = { v in
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in
             v.toArray().reduce(0.0, +)
         }
 
@@ -196,7 +196,7 @@ struct LinearityValidationTests {
     @Test("Rejects high-dimensional nonlinear function")
     func testRejectsHighDimensionalNonlinear() throws {
         // f(x) = Σᵢ xᵢ² (sum of squares - nonlinear)
-        let nonlinear: (VectorN<Double>) -> Double = { v in
+        let nonlinear: @Sendable (VectorN<Double>) -> Double = { v in
             v.toArray().reduce(0.0) { $0 + $1 * $1 }
         }
 
@@ -215,7 +215,7 @@ struct LinearityValidationTests {
     @Test("Handles negative coefficients correctly")
     func testNegativeCoefficients() throws {
         // f(x, y) = -3x + 2y - 1
-        let linear: (VectorN<Double>) -> Double = { v in
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in
             -3.0 * v[0] + 2.0 * v[1] - 1.0
         }
 
@@ -233,7 +233,7 @@ struct LinearityValidationTests {
     @Test("Handles large coefficients correctly")
     func testLargeCoefficients() throws {
         // f(x, y) = 1000x + 2000y + 500
-        let linear: (VectorN<Double>) -> Double = { v in
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in
             1000.0 * v[0] + 2000.0 * v[1] + 500.0
         }
 
@@ -251,7 +251,7 @@ struct LinearityValidationTests {
     @Test("Handles small coefficients correctly")
     func testSmallCoefficients() throws {
         // f(x, y) = 0.001x + 0.002y + 0.0005
-        let linear: (VectorN<Double>) -> Double = { v in
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in
             0.001 * v[0] + 0.002 * v[1] + 0.0005
         }
 
@@ -271,7 +271,7 @@ struct LinearityValidationTests {
     @Test("Validates at different initial points")
     func testDifferentInitialPoints() throws {
         // f(x, y) = 2x + 3y + 1
-        let linear: (VectorN<Double>) -> Double = { v in
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in
             2.0 * v[0] + 3.0 * v[1] + 1.0
         }
 
@@ -300,7 +300,7 @@ struct LinearityValidationTests {
     @Test("Custom tolerance parameter")
     func testCustomTolerance() throws {
         // f(x) = x (perfectly linear)
-        let linear: (VectorN<Double>) -> Double = { v in v[0] }
+        let linear: @Sendable (VectorN<Double>) -> Double = { v in v[0] }
 
         // Should accept with tight tolerance (realistic for finite-diff method)
         let (coeffs, constant) = try validateLinearModel(

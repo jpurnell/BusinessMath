@@ -143,7 +143,7 @@ import Testing
 	@Test func rosenbrockOptimization() throws {
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>()
 
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -241,7 +241,7 @@ import Testing
 		let optimizer = AdaptiveOptimizer<VectorN<Double>>(maxIterations: 5)  // Very low limit
 
 		// Rosenbrock is hard to optimize
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}

@@ -82,7 +82,7 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	/// - Returns: Optimization result containing solution and convergence info
 	/// - Throws: `OptimizationError` if optimization fails
 	public func minimize(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		gradient: (V) throws -> V,
 		hessian: (V) throws -> [[V.Scalar]],
 		initialGuess: V
@@ -174,7 +174,7 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	/// - Returns: Optimization result
 	/// - Throws: `OptimizationError` if optimization fails
 	public func minimizeBFGS(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		gradient: (V) throws -> V,
 		initialGuess: V
 	) throws -> MultivariateOptimizationResult<V> {
@@ -280,7 +280,7 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	///   - initialStepSize: Initial step size to try
 	/// - Returns: Optimal step size α
 	private func backtrackingLineSearch(
-		function: (V) -> V.Scalar,
+		function: @Sendable (V) -> V.Scalar,
 		point: V,
 		gradient: V,
 		direction: V,

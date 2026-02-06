@@ -188,7 +188,7 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V,
         constraints: [MultivariateConstraint<V>] = []
     ) throws -> MultivariateOptimizationResult<V> {
@@ -223,7 +223,7 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
     /// print("Migrations: \(result.migrationCount)")
     /// ```
     public func optimizeDetailed(
-        objective: @escaping (V) -> V.Scalar,
+        objective: @escaping @Sendable (V) -> V.Scalar,
         constraints: [MultivariateConstraint<V>] = []
     ) -> IslandModelResult<V> {
 
@@ -232,7 +232,7 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
         let migrationInterval = islandConfig.migrationInterval
 
         // Create objective (with penalties if constrained)
-        let objectiveFn: (V) -> V.Scalar
+        let objectiveFn: @Sendable (V) -> V.Scalar
         if !constraints.isEmpty {
             objectiveFn = createPenalizedObjective(objective, constraints: constraints)
         } else {
@@ -305,9 +305,9 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
 
     /// Create penalized objective function for constraints.
     private func createPenalizedObjective(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         constraints: [MultivariateConstraint<V>]
-    ) -> (V) -> V.Scalar {
+    ) -> @Sendable (V) -> V.Scalar {
         let penaltyWeight = V.Scalar(100)
 
         return { solution in

@@ -270,7 +270,7 @@ import Testing
 		let benchmark = PerformanceBenchmark<VectorN<Double>>()
 
 		// Use a problem where algorithm choice matters
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
