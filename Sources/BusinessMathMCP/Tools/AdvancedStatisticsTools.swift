@@ -1004,7 +1004,7 @@ public struct GoalSeekTool: MCPToolHandler, Sendable {
 
         // Define the function: f(x) = calculation(x) - target
         // We want to find x where f(x) = 0
-        let function: (Double) -> Double = { input in
+        let function: @Sendable (Double) -> Double = { input in
             let result = evaluateCalculation(calculation, with: input)
             return result - target
         }

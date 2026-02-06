@@ -23,7 +23,7 @@ struct InequalityOptimizerTests {
 		// Unconstrained minimum: (2, 2)
 		// Constrained minimum: (2, 2) (feasible, so same)
 
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			(v[0] - 2.0) * (v[0] - 2.0) + (v[1] - 2.0) * (v[1] - 2.0)
 		}
 
@@ -55,7 +55,7 @@ struct InequalityOptimizerTests {
 		// Unconstrained minimum: (1, 1)
 		// Constrained minimum: (1, 1) (feasible, so same)
 
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0] - 1
 			let y = v[1] - 1
 			return x*x + y*y
@@ -90,7 +90,7 @@ struct InequalityOptimizerTests {
 		// Unconstrained minimum: (2, 2)
 		// Constrained minimum: (1, 2) - x hits upper bound
 
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			(v[0] - 2.0) * (v[0] - 2.0) + (v[1] - 2.0) * (v[1] - 2.0)
 		}
 
@@ -242,7 +242,7 @@ struct InequalityOptimizerTests {
 
 	@Test("Feasible initial point for inequalities")
 	func feasibleInitialPoint() throws {
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
 
 		let constraints = MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 2)
 
@@ -266,7 +266,7 @@ struct InequalityOptimizerTests {
 		//
 		// Maximum at (0.75, 0.75)
 
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			-((v[0] - 1.0) * (v[0] - 1.0) + (v[1] - 1.0) * (v[1] - 1.0))
 		}
 
@@ -351,7 +351,7 @@ struct InequalityOptimizerTests {
 
 	@Test("Reject empty constraints")
 	func rejectEmptyConstraints() throws {
-		let objective: (VectorN<Double>) -> Double = { v in v[0] * v[0] }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] }
 		let optimizer = InequalityOptimizer<VectorN<Double>>()
 
 		#expect(throws: OptimizationError.self) {

@@ -138,7 +138,7 @@ public struct StochasticOptimizer<V: VectorSpace> where V.Scalar == Double {
 	///   - minimize: Whether to minimize (true) or maximize (false)
 	/// - Returns: Stochastic optimization result
 	public func optimize<S: OptimizationScenario>(
-		objective: @escaping (V, S) -> Double,
+		objective: @escaping @Sendable (V, S) -> Double,
 		scenarioGenerator: @escaping () -> S,
 		initialSolution: V,
 		constraints: [MultivariateConstraint<V>] = [],
@@ -152,7 +152,7 @@ public struct StochasticOptimizer<V: VectorSpace> where V.Scalar == Double {
 		}
 
 		// Create SAA objective: E[f(x,ω)] ≈ (1/N) Σ f(x,ωᵢ)
-		let saaObjective: (V) -> Double = { x in
+		let saaObjective: @Sendable (V) -> Double = { x in
 			var total = 0.0
 			for scenario in scenarios {
 				let value = objective(x, scenario)
@@ -315,7 +315,7 @@ extension StochasticOptimizer: MultivariateOptimizer {
 	///   analysis. Use the specialized ``optimize()`` methods for stochastic results with
 	///   expected value and standard deviation across scenarios.
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> MultivariateOptimizationResult<V> {

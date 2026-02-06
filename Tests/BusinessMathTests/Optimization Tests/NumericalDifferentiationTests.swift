@@ -19,7 +19,7 @@ struct NumericalDifferentiationTests {
 	func gradientQuadratic() throws {
 		// f(x, y) = x² + y²
 		// ∇f = [2x, 2y]
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -38,7 +38,7 @@ struct NumericalDifferentiationTests {
 	func gradientAtMinimum() throws {
 		// f(x, y) = x² + y²
 		// At (0, 0), ∇f = [0, 0]
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -54,7 +54,7 @@ struct NumericalDifferentiationTests {
 	func gradientRosenbrock() throws {
 		// Rosenbrock: f(x, y) = (1-x)² + 100(y-x²)²
 		// ∇f = [-2(1-x) - 400x(y-x²), 200(y-x²)]
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			let term1 = (1 - x) * (1 - x)
 			let term2 = 100 * (y - x*x) * (y - x*x)
@@ -74,7 +74,7 @@ struct NumericalDifferentiationTests {
 	func gradient3D() throws {
 		// f(x, y, z) = x² + 2y² + 3z²
 		// ∇f = [2x, 4y, 6z]
-		let function3D: (VectorN<Double>) -> Double = { v in
+		let function3D: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + 2*v[1]*v[1] + 3*v[2]*v[2]
 		}
 
@@ -110,7 +110,7 @@ struct NumericalDifferentiationTests {
 	func hessianQuadratic() throws {
 		// f(x, y) = x² + y²
 		// H = [[2, 0], [0, 2]]
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -128,7 +128,7 @@ struct NumericalDifferentiationTests {
 	func hessianMixedPartials() throws {
 		// f(x, y) = xy
 		// H = [[0, 1], [1, 0]]
-		let bilinear: (VectorN<Double>) -> Double = { v in
+		let bilinear: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[1]
 		}
 
@@ -145,7 +145,7 @@ struct NumericalDifferentiationTests {
 	@Test("Hessian symmetry")
 	func hessianSymmetry() throws {
 		// Hessian should always be symmetric
-		let function: (VectorN<Double>) -> Double = { v in
+		let function: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0]*v[1] + v[1]*v[1]*v[2]
 		}
 
@@ -165,7 +165,7 @@ struct NumericalDifferentiationTests {
 	func hessian3DQuadratic() throws {
 		// f(x, y, z) = x² + 2y² + 3z²
 		// H = [[2, 0, 0], [0, 4, 0], [0, 0, 6]]
-		let function: (VectorN<Double>) -> Double = { v in
+		let function: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + 2*v[1]*v[1] + 3*v[2]*v[2]
 		}
 
@@ -293,7 +293,7 @@ struct NumericalDifferentiationTests {
 
 	@Test("Gradient with non-finite values throws")
 	func gradientNonFinite() {
-		let badFunction: (VectorN<Double>) -> Double = { v in
+		let badFunction: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] == 0 ? .infinity : v[0]
 		}
 
@@ -322,7 +322,7 @@ struct NumericalDifferentiationTests {
 	func gradientHessianConsistency() throws {
 		// For a quadratic function, the Hessian should be constant
 		// and the gradient should increase linearly
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 

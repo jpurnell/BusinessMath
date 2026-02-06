@@ -109,7 +109,7 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V,
         constraints: [MultivariateConstraint<V>] = []
     ) throws -> MultivariateOptimizationResult<V> {
@@ -486,7 +486,7 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
     ///
     /// - Returns: Optimization result
     private func minimizeWithPenalty(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         initialGuess: V,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {

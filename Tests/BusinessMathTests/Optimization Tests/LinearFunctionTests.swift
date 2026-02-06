@@ -95,7 +95,7 @@ struct LinearFunctionTests {
         )
 
         // Closure-based: finite-diff extraction (numerical error ~1e-9)
-        let closure: (VectorN<Double>) -> Double = { v in
+        let closure: @Sendable (VectorN<Double>) -> Double = { v in
             1.234567890123456 * v[0] + 9.876543210987654 * v[1]
         }
 
@@ -193,7 +193,7 @@ struct LinearFunctionTests {
 
     @Test("fromClosure extracts coefficients correctly")
     func testFromClosure() throws {
-        let closure: (VectorN<Double>) -> Double = { v in
+        let closure: @Sendable (VectorN<Double>) -> Double = { v in
             3.0 * v[0] + 2.0 * v[1] + 1.0
         }
 

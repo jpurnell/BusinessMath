@@ -11,7 +11,7 @@ import Numerics
 // MARK: - Scenario Definition
 
 /// A named scenario with probability and parameters.
-public struct NamedScenario {
+public struct NamedScenario: Sendable {
 	/// Scenario name (e.g., "Bull Market", "Base Case", "Bear Market")
 	public let name: String
 
@@ -37,15 +37,15 @@ public struct NamedScenario {
 // MARK: - Scenario Constraint
 
 /// Constraint that may be conditional on scenarios.
-public enum ScenarioConstraint<V: VectorSpace> where V.Scalar == Double {
+public enum ScenarioConstraint<V: VectorSpace>: Sendable where V.Scalar == Double, V: Sendable {
 	/// Constraint that applies to all scenarios
-	case all(function: (V) -> Double, isEquality: Bool)
+	case all(function: @Sendable (V) -> Double, isEquality: Bool)
 
 	/// Constraint that applies only to specific scenario
-	case inScenario(String, function: (V) -> Double, isEquality: Bool)
+	case inScenario(String, function: @Sendable (V) -> Double, isEquality: Bool)
 
 	/// Constraint that applies to multiple scenarios
-	case inScenarios([String], function: (V) -> Double, isEquality: Bool)
+	case inScenarios([String], function: @Sendable (V) -> Double, isEquality: Bool)
 
 	/// Check if constraint applies to a given scenario
 	public func appliesTo(scenario: String) -> Bool {
@@ -60,7 +60,7 @@ public enum ScenarioConstraint<V: VectorSpace> where V.Scalar == Double {
 	}
 
 	/// Get the constraint function if it applies
-	public func function(for scenario: String) -> ((V) -> Double)? {
+	public func function(for scenario: String) -> (@Sendable (V) -> Double)? {
 		guard appliesTo(scenario: scenario) else { return nil }
 
 		switch self {
@@ -173,7 +173,7 @@ public struct ScenarioOptimizationResult<V: VectorSpace> where V.Scalar == Doubl
 ///     minimize: false
 /// )
 /// ```
-public struct ScenarioOptimizer<V: VectorSpace> where V.Scalar == Double {
+public struct ScenarioOptimizer<V: VectorSpace>: Sendable where V.Scalar == Double, V: Sendable {
 
 	// MARK: - Properties
 
@@ -228,7 +228,7 @@ public struct ScenarioOptimizer<V: VectorSpace> where V.Scalar == Double {
 		// Create expected value objective
 		let totalProbability = scenarios.map { $0.probability }.reduce(0.0, +)
 
-		let expectedObjective: (V) -> Double = { x in
+		let expectedObjective: @Sendable (V) -> Double = { x in
 			var total = 0.0
 			for scenario in self.scenarios {
 				let value = objective(x, scenario)
@@ -280,7 +280,7 @@ public struct ScenarioOptimizer<V: VectorSpace> where V.Scalar == Double {
 					maxInnerIterations: 1000
 				)
 				result = try optimizer.minimize(
-					minimize ? expectedObjective : { -expectedObjective($0) },
+					minimize ? expectedObjective : { @Sendable (x: V) -> Double in -expectedObjective(x) },
 					from: initialSolution,
 					subjectTo: standardConstraints
 				)
@@ -292,7 +292,7 @@ public struct ScenarioOptimizer<V: VectorSpace> where V.Scalar == Double {
 					maxInnerIterations: 1000
 				)
 				result = try optimizer.minimize(
-					minimize ? expectedObjective : { -expectedObjective($0) },
+					minimize ? expectedObjective : { @Sendable (x: V) -> Double in -expectedObjective(x) },
 					from: initialSolution,
 					subjectTo: standardConstraints
 				)
@@ -380,7 +380,7 @@ extension ScenarioOptimizer {
 	///   - constraints: Standard constraints
 	///   - minimize: Whether to minimize
 	public static func optimizeWeighted(
-		scenarioValues: [(name: String, probability: Double, objective: (V) -> Double)],
+		scenarioValues: [(name: String, probability: Double, objective: @Sendable (V) -> Double)],
 		initialSolution: V,
 		constraints: [MultivariateConstraint<V>] = [],
 		minimize: Bool = false,

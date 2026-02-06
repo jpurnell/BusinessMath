@@ -275,26 +275,31 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
 
             Task {
                 var baseIterator = base.makeAsyncIterator()
-                var lastValue: Element?
-                var debounceTask: Task<Void, Never>?
+
+                // Create actor for safe state management
+                let state = DebounceState<Element>()
 
                 while let value = try? await baseIterator.next() {
-                    // Cancel previous debounce
-                    debounceTask?.cancel()
+                    // Update state through actor
+                    await state.updateValue(value)
 
-                    lastValue = value
-
-                    // Start new debounce timer
-                    debounceTask = Task { @Sendable in
+                    // Create new debounce task and store in actor
+                    let debounceTask = Task { @Sendable in
                         try? await Task.sleep(for: interval)
-                        if !Task.isCancelled, let val = lastValue {
-                            continuationBox.yield(val)
+                        if !Task.isCancelled {
+                            // Safely read value through actor
+                            if let val = await state.getValue() {
+                                continuationBox.yield(val)
+                            }
                         }
                     }
+
+                    // Store task in actor (cancels previous)
+                    await state.setDebounceTask(debounceTask)
                 }
 
-                // Wait for final debounce to complete
-                await debounceTask?.value
+                // Wait for final debounce through actor
+                await state.waitForDebounce()
                 continuationBox.finish()
             }
         }
@@ -891,6 +896,30 @@ actor ThreadSafeBox<T> {
 
     func setValue(_ newValue: T) {
         self._value = newValue
+    }
+}
+
+/// Actor for managing debounce state safely across concurrent tasks
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+private actor DebounceState<Element: Sendable> {
+    private var lastValue: Element?
+    private var debounceTask: Task<Void, Never>?
+
+    func updateValue(_ value: Element) {
+        lastValue = value
+    }
+
+    func getValue() -> Element? {
+        return lastValue
+    }
+
+    func setDebounceTask(_ task: Task<Void, Never>) {
+        debounceTask?.cancel()
+        debounceTask = task
+    }
+
+    func waitForDebounce() async {
+        await debounceTask?.value
     }
 }
 

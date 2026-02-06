@@ -341,7 +341,7 @@ struct ModelValidationEdgeCaseTests {
 	@Test("Numerical gradient with very small step size")
 	func numericalGradient_VerySmallStepSize() throws {
 		// Test with very small h (may hit numerical precision limits)
-		let f: (VectorN<Double>) -> Double = { v in
+		let f: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -361,7 +361,7 @@ struct ModelValidationEdgeCaseTests {
 	@Test("Numerical gradient with large step size")
 	func numericalGradient_LargeStepSize() throws {
 		// Test with large h (less accurate approximation)
-		let f: (VectorN<Double>) -> Double = { v in
+		let f: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -380,7 +380,7 @@ struct ModelValidationEdgeCaseTests {
 	@Test("Numerical gradient with discontinuous function")
 	func numericalGradient_DiscontiniousFunction() throws {
 		// Test on a function with discontinuity (gradient is not well-defined everywhere)
-		let f: (VectorN<Double>) -> Double = { v in
+		let f: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] > 0 ? v[0] * v[0] : 0.0
 		}
 
@@ -432,7 +432,7 @@ struct ModelValidationEdgeCaseTests {
 	@Test("Numerical gradient in high dimensional space")
 	func numericalGradient_HighDimensional() throws {
 		// Test gradient in high-dimensional space
-		let f: (VectorN<Double>) -> Double = { v in
+		let f: @Sendable (VectorN<Double>) -> Double = { v in
 			// Sum of squares: f(x) = Σ xᵢ²
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}

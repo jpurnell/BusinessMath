@@ -134,7 +134,7 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V,
         constraints: [MultivariateConstraint<V>] = []
     ) throws -> MultivariateOptimizationResult<V> {
@@ -364,7 +364,7 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
     ///
     /// - Returns: Optimization result
     private func minimizeWithPenalty(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         initialSolution: V,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {

@@ -18,7 +18,7 @@ struct NelderMeadTests {
     @Test("Nelder-Mead minimizes simple quadratic")
     func simpleQuadratic() throws {
         // f(x,y) = x² + y², minimum at (0, 0)
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -39,7 +39,7 @@ struct NelderMeadTests {
     func rosenbrockFunction() throws {
         // f(x,y) = (1-x)² + 100(y-x²)²
         // Global minimum at (1, 1)
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -66,7 +66,7 @@ struct NelderMeadTests {
     @Test("Nelder-Mead handles non-smooth function")
     func nonSmoothFunction() throws {
         // f(x,y) = |x| + |y|, minimum at (0, 0)
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             abs(v[0]) + abs(v[1])
         }
 
@@ -87,7 +87,7 @@ struct NelderMeadTests {
 
     @Test("Reflection operation improves solution")
     func reflectionOperation() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 2.0) * (v[0] - 2.0)
         }
 
@@ -107,7 +107,7 @@ struct NelderMeadTests {
 
     @Test("Expansion explores promising directions")
     func expansionOperation() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 10.0) * (v[0] - 10.0)
         }
 
@@ -127,7 +127,7 @@ struct NelderMeadTests {
 
     @Test("Contraction refines near minimum")
     func contractionOperation() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -149,7 +149,7 @@ struct NelderMeadTests {
     @Test("Shrink operation when other operations fail")
     func shrinkOperation() throws {
         // Create a difficult valley function
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (x - 1.0) * (x - 1.0) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -173,7 +173,7 @@ struct NelderMeadTests {
 
     @Test("Custom simplex coefficients")
     func customCoefficients() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -196,7 +196,7 @@ struct NelderMeadTests {
 
     @Test("Adaptive simplex size")
     func adaptiveSimplexSize() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 5.0) * (v[0] - 5.0) + (v[1] - 3.0) * (v[1] - 3.0)
         }
 
@@ -219,7 +219,7 @@ struct NelderMeadTests {
 
     @Test("Converges when simplex size is small")
     func simplexSizeConvergence() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -238,7 +238,7 @@ struct NelderMeadTests {
 
     @Test("Converges when function value improvement is small")
     func functionValueConvergence() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             exp(v.dot(v))
         }
 
@@ -257,7 +257,7 @@ struct NelderMeadTests {
 
     @Test("Respects max iterations")
     func respectsMaxIterations() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -278,7 +278,7 @@ struct NelderMeadTests {
     @Test("Nelder-Mead with equality constraint")
     func equalityConstraint() throws {
         // Minimize x² + y² subject to x + y = 2
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -304,7 +304,7 @@ struct NelderMeadTests {
     @Test("Nelder-Mead with inequality constraint")
     func inequalityConstraint() throws {
         // Minimize (x-3)² + (y-3)² subject to x + y ≤ 4
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 3.0) * (v[0] - 3.0) + (v[1] - 3.0) * (v[1] - 3.0)
         }
 
@@ -331,7 +331,7 @@ struct NelderMeadTests {
 
     @Test("1D optimization")
     func oneDimensional() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 7.0) * (v[0] - 7.0)
         }
 
@@ -346,7 +346,7 @@ struct NelderMeadTests {
     @Test("High-dimensional optimization")
     func highDimensional() throws {
         // 5D sphere function
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -368,7 +368,7 @@ struct NelderMeadTests {
 
     @Test("Default configuration is reasonable")
     func defaultConfiguration() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -382,7 +382,7 @@ struct NelderMeadTests {
 
     @Test("High precision configuration")
     func highPrecisionConfiguration() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -398,7 +398,7 @@ struct NelderMeadTests {
 
     @Test("Already optimal initial guess")
     func alreadyOptimal() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -414,7 +414,7 @@ struct NelderMeadTests {
 
     @Test("Difficult initial guess far from minimum")
     func difficultInitialGuess() throws {
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             (v[0] - 5.0) * (v[0] - 5.0)
         }
 
@@ -434,7 +434,7 @@ struct NelderMeadTests {
     @Test("Flat region near minimum")
     func flatRegion() throws {
         // Function with flat region
-        let objective: (VectorN<Double>) -> Double = { v in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             return x * x * x * x // Very flat near origin
         }

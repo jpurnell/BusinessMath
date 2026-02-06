@@ -153,7 +153,7 @@ public struct AdaptiveOptimizeTool: MCPToolHandler, Sendable {
         )
 
         // Define your objective function
-        let objective: (VectorN<Double>) -> Double = { x in
+        let objective: @Sendable (VectorN<Double>) -> Double = { x in
             // Extract variables: \(variables.joined(separator: ", "))
             // Example: let x0 = x[0], x1 = x[1], ...
             // Your objective function here (return value to \(objective))

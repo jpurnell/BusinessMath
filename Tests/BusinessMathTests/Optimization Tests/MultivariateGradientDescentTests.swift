@@ -19,7 +19,7 @@ struct MultivariateGradientDescentTests {
 	func minimize2DQuadratic() throws {
 		// f(x, y) = x² + y²
 		// Minimum at (0, 0) with f(0,0) = 0
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -47,7 +47,7 @@ struct MultivariateGradientDescentTests {
 	func minimizeRosenbrock() throws {
 		// Rosenbrock: f(x,y) = (1-x)² + 100(y-x²)²
 		// Minimum at (1, 1) with f(1,1) = 0
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -75,7 +75,7 @@ struct MultivariateGradientDescentTests {
 	func minimize3DSphere() throws {
 		// f(x, y, z) = x² + y² + z²
 		// Minimum at (0, 0, 0)
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1] + v[2]*v[2]
 		}
 
@@ -102,7 +102,7 @@ struct MultivariateGradientDescentTests {
 	func minimizeNDSphere() throws {
 		// f(x₁, x₂, ..., xₙ) = Σxᵢ²
 		let dimensions = 10
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -130,7 +130,7 @@ struct MultivariateGradientDescentTests {
 	@Test("Gradient descent with momentum")
 	func gradientDescentWithMomentum() throws {
 		// Quadratic bowl with momentum should converge faster
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -158,7 +158,7 @@ struct MultivariateGradientDescentTests {
 
 	@Test("Adam optimizer on quadratic")
 	func adamOnQuadratic() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -182,7 +182,7 @@ struct MultivariateGradientDescentTests {
 
 	@Test("Adam optimizer on Rosenbrock")
 	func adamOnRosenbrock() throws {
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -209,7 +209,7 @@ struct MultivariateGradientDescentTests {
 
 	@Test("Line search improves convergence")
 	func lineSearchConvergence() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			2*v[0]*v[0] + v[1]*v[1]  // Elongated bowl
 		}
 
@@ -236,7 +236,7 @@ struct MultivariateGradientDescentTests {
 
 	@Test("History recording")
 	func historyRecording() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -273,7 +273,7 @@ struct MultivariateGradientDescentTests {
 	@Test("Convergence detection")
 	func convergenceDetection() throws {
 		// Very simple function that's already at minimum
-		let function: (VectorN<Double>) -> Double = { v in
+		let function: @Sendable (VectorN<Double>) -> Double = { v in
 			0.0  // Already at minimum
 		}
 
@@ -298,7 +298,7 @@ struct MultivariateGradientDescentTests {
 	@Test("Max iterations without convergence")
 	func maxIterationsReached() throws {
 		// Make it hard to converge
-		let function: (VectorN<Double>) -> Double = { v in
+		let function: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -389,7 +389,7 @@ struct MultivariateGradientDescentTests {
 
 	@Test("Convenience factory methods")
 	func convenienceFactories() throws {
-		let function: (VectorN<Double>) -> Double = { v in
+		let function: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -431,7 +431,7 @@ struct MultivariateGradientDescentTests {
 	@Test("Minimize with automatic gradient computation")
 	func minimizeWithAutoGradient() throws {
 		// Test the new convenience API that doesn't require explicit gradient
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -459,7 +459,7 @@ struct MultivariateGradientDescentTests {
 	@Test("Adam with automatic gradient computation")
 	func adamWithAutoGradient() throws {
 		// Test the Adam optimizer convenience API
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}

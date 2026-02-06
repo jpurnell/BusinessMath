@@ -103,7 +103,7 @@ public struct BranchAndCutSolver<V: VectorSpace> where V.Scalar == Double, V: Se
         // Track cutting plane statistics
         var totalCutsGenerated = 0
         var totalCuttingRounds = 0
-        var cutsPerRound: [Int] = []
+        let cutsPerRound: [Int] = []
 
         // Solve using branch-and-bound
         // For now, we'll wrap the B&B solver and add cutting planes at the root

@@ -207,7 +207,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V,
         constraints: [MultivariateConstraint<V>] = []
     ) throws -> MultivariateOptimizationResult<V> {
@@ -251,7 +251,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     /// ```
     /// where g(x) are constraint violations.
     private func minimizeWithPenalty(
-        _ objective: @escaping (V) -> V.Scalar,
+        _ objective: @escaping @Sendable (V) -> V.Scalar,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {
 
@@ -332,7 +332,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     /// print("Convergence history: \(result.convergenceHistory)")
     /// print("Diversity history: \(result.diversityHistory)")
     /// ```
-    public func optimizeDetailed(objective: @escaping (V) -> V.Scalar) throws -> GeneticAlgorithmResult<V> {
+    public func optimizeDetailed(objective: @escaping @Sendable (V) -> V.Scalar) throws -> GeneticAlgorithmResult<V> {
         return try optimize(objective: objective)
     }
 
@@ -340,7 +340,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     ///
     /// - Parameter objective: Function to minimize
     /// - Returns: Detailed genetic algorithm result with history
-    internal func optimize(objective: @escaping (V) -> V.Scalar) throws -> GeneticAlgorithmResult<V> {
+    internal func optimize(objective: @escaping @Sendable (V) -> V.Scalar) throws -> GeneticAlgorithmResult<V> {
 
         // Initialize population
         var population = initializePopulation()

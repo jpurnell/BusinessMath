@@ -208,7 +208,7 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 		algorithm: Algorithm,
 		maxIterations: Int,
 		tolerance: Double,
-		objective: @escaping (V) -> Double,
+		objective: @escaping @Sendable (V) -> Double,
 		initialGuess: V,
 		constraints: [MultivariateConstraint<V>]
 	) throws -> MultivariateOptimizationResult<V> {

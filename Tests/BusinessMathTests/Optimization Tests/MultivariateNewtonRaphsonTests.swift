@@ -19,7 +19,7 @@ struct MultivariateNewtonRaphsonTests {
 	func newtonRaphsonQuadraticFast() throws {
 		// f(x, y) = x² + y²
 		// For quadratic functions, Newton-Raphson converges in exactly 1 iteration!
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -45,7 +45,7 @@ struct MultivariateNewtonRaphsonTests {
 
 	@Test("Newton-Raphson on Rosenbrock")
 	func newtonRaphsonRosenbrock() throws {
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -71,7 +71,7 @@ struct MultivariateNewtonRaphsonTests {
 
 	@Test("Newton-Raphson on 3D sphere")
 	func newtonRaphson3D() throws {
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1] + v[2]*v[2]
 		}
 
@@ -98,7 +98,7 @@ struct MultivariateNewtonRaphsonTests {
 
 	@Test("BFGS on 2D quadratic")
 	func bfgsQuadratic() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -121,7 +121,7 @@ struct MultivariateNewtonRaphsonTests {
 
 	@Test("BFGS on Rosenbrock")
 	func bfgsRosenbrock() throws {
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -146,7 +146,7 @@ struct MultivariateNewtonRaphsonTests {
 	@Test("BFGS on higher-dimensional sphere")
 	func bfgsHighDimensional() throws {
 		let dimensions = 5
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -172,7 +172,7 @@ struct MultivariateNewtonRaphsonTests {
 
 	@Test("Newton-Raphson converges faster than gradient descent")
 	func convergenceSpeed() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -214,7 +214,7 @@ struct MultivariateNewtonRaphsonTests {
 	@Test("Line search prevents overshooting")
 	func lineSearchStability() throws {
 		// Elongated quadratic that could overshoot without line search
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			10*v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -328,7 +328,7 @@ struct MultivariateNewtonRaphsonTests {
 
 	@Test("Convenience factory methods")
 	func convenienceFactories() throws {
-		let function: (VectorN<Double>) -> Double = { v in
+		let function: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -356,7 +356,7 @@ struct MultivariateNewtonRaphsonTests {
 
 	@Test("History recording for Newton-Raphson")
 	func historyRecording() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1]
 		}
 
@@ -388,7 +388,7 @@ struct MultivariateNewtonRaphsonTests {
 	func bfgsAutomaticGradient() throws {
 		// f(x, y) = x² + y² - 2x - 2y
 		// Minimum at (1, 1) with value -2
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return x*x + y*y - 2*x - 2*y
 		}
@@ -415,7 +415,7 @@ struct MultivariateNewtonRaphsonTests {
 	@Test("BFGS automatic gradient vs explicit gradient")
 	func bfgsCompareGradientMethods() throws {
 		// Compare automatic vs explicit gradient to ensure they give same results
-		let objective: (VectorN<Double>) -> Double = { v in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return x*x + y*y - 2*x - 2*y
 		}
@@ -460,7 +460,7 @@ struct MultivariateNewtonRaphsonTests {
 	func bfgsAutomaticGradientRosenbrock() throws {
 		// Rosenbrock: f(x, y) = (1 - x)² + 100(y - x²)²
 		// Minimum at (1, 1) with value 0
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			let a = 1 - x
 			let b = y - x*x

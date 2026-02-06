@@ -21,7 +21,7 @@ struct ParallelOptimizerTests {
 		// Problem: minimize f(x,y) = (x-3)² + (y-4)²
 		// Global optimum: (3, 4) with f = 0
 
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0]
 			let y = v[1]
 			return (x - 3.0) * (x - 3.0) + (y - 4.0) * (y - 4.0)
@@ -56,7 +56,7 @@ struct ParallelOptimizerTests {
 		// Problem with multiple local minima: f(x) = x⁴ - 3x³ + 2x
 		// Has local minima but global optimum around x ≈ 2.25
 
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0]
 			return x*x*x*x - 3.0*x*x*x + 2.0*x
 		}
@@ -106,7 +106,7 @@ struct ParallelOptimizerTests {
 	/// Test that all starting points are tracked
 	@Test("Track all optimization results")
 	func testResultTracking() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -133,7 +133,7 @@ struct ParallelOptimizerTests {
 	/// Test success rate calculation
 	@Test("Calculate success rate correctly")
 	func testSuccessRate() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0]
 		}
 
@@ -165,7 +165,7 @@ struct ParallelOptimizerTests {
 	/// Test best result selection
 	@Test("Select best result from all starts")
 	func testBestResultSelection() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			(v[0] - 2.0) * (v[0] - 2.0) + (v[1] - 3.0) * (v[1] - 3.0)
 		}
 
@@ -197,7 +197,7 @@ struct ParallelOptimizerTests {
 	/// Test gradient descent algorithm
 	@Test("Use gradient descent algorithm")
 	func testGradientDescentAlgorithm() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -223,7 +223,7 @@ struct ParallelOptimizerTests {
 	/// Test Newton-Raphson algorithm
 	@Test("Use Newton-Raphson algorithm")
 	func testNewtonRaphsonAlgorithm() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -254,7 +254,7 @@ struct ParallelOptimizerTests {
 		// Minimize x² + y² subject to x + y = 1
 		// Solution: x = y = 0.5, f = 0.5
 
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -292,7 +292,7 @@ struct ParallelOptimizerTests {
 		// Minimize (x-1)² + (y-1)² subject to x ≥ 0, y ≥ 0
 		// Unconstrained optimum: (1, 1), constrained optimum: (1, 1) (same)
 
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			(v[0] - 1.0) * (v[0] - 1.0) + (v[1] - 1.0) * (v[1] - 1.0)
 		}
 
@@ -334,7 +334,7 @@ struct ParallelOptimizerTests {
 	/// Test with single starting point (edge case)
 	@Test("Handle single starting point")
 	func testSingleStart() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0]
 		}
 
@@ -361,7 +361,7 @@ struct ParallelOptimizerTests {
 	/// Test with very narrow search region
 	@Test("Handle narrow search region")
 	func testNarrowRegion() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			(v[0] - 5.0) * (v[0] - 5.0)
 		}
 
@@ -390,7 +390,7 @@ struct ParallelOptimizerTests {
 	/// Test best starting point tracking
 	@Test("Track best starting point")
 	func testBestStartingPointTracking() async throws {
-		let objective: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			(v[0] - 3.0) * (v[0] - 3.0) + (v[1] - 4.0) * (v[1] - 4.0)
 		}
 
@@ -428,7 +428,7 @@ struct ParallelOptimizerPerformanceTests {
 	@Test("Verify parallel execution completes faster")
 	func testParallelSpeedup() async throws {
 		// Use a computationally expensive objective (but not too expensive for CI)
-		let expensive: @Sendable (VectorN<Double>) -> Double = { (v: VectorN<Double>) -> Double in
+		let expensive: @Sendable (VectorN<Double>) -> Double = { v in
 			var sum = 0.0
 			for i in 0..<500 {
 				sum += (v[0] - Double(i)/500.0) * (v[0] - Double(i)/500.0)

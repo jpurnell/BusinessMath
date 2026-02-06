@@ -249,7 +249,7 @@ public protocol Optimizer {
 	///   - bounds: Optional bounds for the value (lower, upper).
 	/// - Returns: The optimization result.
 	func optimize(
-		objective: @escaping (T) -> T,
+		objective: @escaping @Sendable (T) -> T,
 		constraints: [Constraint<T>],
 		initialGuess: T,
 		bounds: (lower: T, upper: T)?

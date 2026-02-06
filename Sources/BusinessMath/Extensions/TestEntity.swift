@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import RealModule
+
 public struct TestEntity {
     public init() {}
 	public func createTestEntity() -> Entity {

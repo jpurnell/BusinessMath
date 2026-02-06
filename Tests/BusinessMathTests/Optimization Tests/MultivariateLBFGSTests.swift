@@ -18,7 +18,7 @@ struct MultivariateLBFGSTests {
 	@Test("L-BFGS on 2D quadratic")
 	func lbfgsQuadratic2D() throws {
 		// f(x, y) = x² + y²
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] * v[0] + v[1] * v[1]
 		}
 
@@ -38,7 +38,7 @@ struct MultivariateLBFGSTests {
 	@Test("L-BFGS on Rosenbrock function")
 	func lbfgsRosenbrock() throws {
 		// f(x,y) = (1-x)² + 100(y-x²)²
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -63,7 +63,7 @@ struct MultivariateLBFGSTests {
 	@Test("L-BFGS on 3D sphere")
 	func lbfgs3DSphere() throws {
 		// f(x, y, z) = x² + y² + z²
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0]*v[0] + v[1]*v[1] + v[2]*v[2]
 		}
 
@@ -85,7 +85,7 @@ struct MultivariateLBFGSTests {
 	@Test("L-BFGS on 10-dimensional sphere")
 	func lbfgs10D() throws {
 		let dimensions = 10
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -105,7 +105,7 @@ struct MultivariateLBFGSTests {
 	@Test("L-BFGS on 100-dimensional sphere")
 	func lbfgs100D() throws {
 		let dimensions = 100
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -125,7 +125,7 @@ struct MultivariateLBFGSTests {
 	@Test("L-BFGS on 1000-dimensional sphere", .timeLimit(.minutes(1)))
 	func lbfgs1000D() throws {
 		let dimensions = 1000
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -147,7 +147,7 @@ struct MultivariateLBFGSTests {
 
 	@Test("Compare memory sizes m = 3, 5, 10, 20")
 	func memorySizeComparison() throws {
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -245,7 +245,7 @@ struct MultivariateLBFGSTests {
 	@Test("History FIFO correctly removes oldest")
 	func historyFIFO() throws {
 		// Use a simple quadratic with history recording
-		let quadratic: (VectorN<Double>) -> Double = { v in
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v.dot(v)
 		}
 
@@ -270,7 +270,7 @@ struct MultivariateLBFGSTests {
 	func curvatureConditionCheck() throws {
 		// Create a function that might violate curvature
 		// f(x,y) = x⁴ - x² + y²
-		let nonConvex: (VectorN<Double>) -> Double = { v in
+		let nonConvex: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return x*x*x*x - x*x + y*y
 		}
@@ -298,7 +298,7 @@ struct MultivariateLBFGSTests {
 		let optimizer: any MultivariateOptimizer<VectorN<Double>> =
 			MultivariateLBFGS<VectorN<Double>>.standard()
 
-		let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
 		let result = try optimizer.minimize(
 			objective,
@@ -314,7 +314,7 @@ struct MultivariateLBFGSTests {
 	func constraintRejection() throws {
 		let optimizer = MultivariateLBFGS<VectorN<Double>>.standard()
 
-		let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 		let constraint: MultivariateConstraint<VectorN<Double>> = .equality(
 			function: { v in v[0] - 1.0 },
 			gradient: nil
@@ -334,7 +334,7 @@ struct MultivariateLBFGSTests {
 	@Test("Converges with different tolerances")
 	func toleranceTest() throws {
 		// Use Rosenbrock which is more challenging
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -372,7 +372,7 @@ struct MultivariateLBFGSTests {
 
 	@Test("Max iterations reached")
 	func maxIterationsTest() throws {
-		let rosenbrock: (VectorN<Double>) -> Double = { v in
+		let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0], y = v[1]
 			return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 		}
@@ -398,7 +398,7 @@ struct MultivariateLBFGSTests {
 	@Test("L-BFGS vs BFGS on 10D problem")
 	func lbfgsVsBFGS() throws {
 		let dimensions = 10
-		let sphere: (VectorN<Double>) -> Double = { v in
+		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 			v.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -438,7 +438,7 @@ struct MultivariateLBFGSTests {
 
 	@Test("Factory methods create valid optimizers")
 	func factoryMethods() throws {
-		let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+		let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 		let initialGuess = VectorN([3.0, 4.0])
 
 		// Test each factory method
@@ -464,7 +464,7 @@ struct MultivariateLBFGSTests {
 
 	@Test("Already at optimal")
 	func alreadyOptimal() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in v.dot(v) }
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
 		let optimizer = MultivariateLBFGS<VectorN<Double>>.standard()
 		let result = try optimizer.minimizeLBFGS(
@@ -478,7 +478,7 @@ struct MultivariateLBFGSTests {
 
 	@Test("Far initial guess")
 	func farInitialGuess() throws {
-		let quadratic: (VectorN<Double>) -> Double = { v in v.dot(v) }
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
 		let optimizer = MultivariateLBFGS<VectorN<Double>>.largeScale(maxIterations: 200)
 		let result = try optimizer.minimizeLBFGS(

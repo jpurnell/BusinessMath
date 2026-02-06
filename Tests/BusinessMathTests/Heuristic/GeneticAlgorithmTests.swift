@@ -51,7 +51,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -77,7 +77,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(0.0, 10.0)]
         )
 
-        let parabola = { (v: VectorN<Double>) -> Double in
+        let parabola: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             return (x - 3.0) * (x - 3.0)
         }
@@ -103,7 +103,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
 
-        let rosenbrock = { (v: VectorN<Double>) -> Double in
+        let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -132,7 +132,7 @@ struct GeneticAlgorithmTests {
             searchSpace: searchSpace
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in
             v.dot(v)
         }
 
@@ -161,7 +161,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.optimizeDetailed(objective: sphere)
 
         // Should have history for each generation
@@ -184,7 +184,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.optimizeDetailed(objective: sphere)
 
         // Should have diversity history for each generation
@@ -208,7 +208,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.optimizeDetailed(objective: sphere)
 
         // Each individual in initial population + any new individuals
@@ -230,7 +230,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in
             v[0] + v[1] - 1.0  // x + y = 1
@@ -258,7 +258,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-2.0, 2.0), (-2.0, 2.0)]
         )
 
-        let objective = { (v: VectorN<Double>) -> Double in
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
             -(v[0] + v[1])  // Minimize negative (i.e., maximize x+y)
         }
 
@@ -290,7 +290,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-1.0, 2.0), (-1.0, 2.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let constraints = [
             MultivariateConstraint<VectorN<Double>>.inequality { v in -v[0] },  // x ≥ 0 → -x ≤ 0
@@ -320,7 +320,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-1.0, 1.0)]
         )
 
-        let simple = { (v: VectorN<Double>) -> Double in
+        let simple: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0]
             return x * x
         }
@@ -345,7 +345,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let rosenbrock = { (v: VectorN<Double>) -> Double in
+        let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
             let x = v[0], y = v[1]
             return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
         }
@@ -385,7 +385,7 @@ struct GeneticAlgorithmTests {
             searchSpace: searchSpace
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let result1 = try optimizer1.optimizeDetailed(objective: sphere)
         let result2 = try optimizer2.optimizeDetailed(objective: sphere)
@@ -427,7 +427,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Should still converge despite high mutation
@@ -453,7 +453,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 
         // Verify GPU produced valid result
@@ -496,7 +496,7 @@ struct GeneticAlgorithmTests {
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         let cpuResult = try cpuOptimizer.minimize(sphere, from: VectorN([3.0, 3.0]))
         let gpuResult = try gpuOptimizer.minimize(sphere, from: VectorN([3.0, 3.0]))
@@ -519,7 +519,7 @@ struct GeneticAlgorithmTests {
             return
         }
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let searchSpace = Array(repeating: (-10.0, 10.0), count: 5)  // 5D problem
         let generations = 20
 
@@ -556,7 +556,7 @@ struct GeneticAlgorithmTests {
             return
         }
 
-        let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+        let sphere: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let searchSpace = Array(repeating: (-10.0, 10.0), count: 10)  // 10D problem
 
         // Large GPU problem

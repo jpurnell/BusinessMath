@@ -130,7 +130,7 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 	/// - Returns: Robust optimization result
 	/// - Throws: OptimizationError if optimization fails
 	public func optimize(
-		objective: @escaping (V, [Double]) -> Double,
+		objective: @escaping @Sendable (V, [Double]) -> Double,
 		nominalParameters: [Double],
 		initialSolution: V,
 		constraints: [MultivariateConstraint<V>] = [],
@@ -146,7 +146,7 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 		let uncertaintyPoints = uncertaintySet.samplePoints(numberOfSamples: samplesPerIteration)
 
 		// Create worst-case objective: for each x, find max_ω f(x, ω)
-		let worstCaseObjective: (V) -> Double = { x in
+		let worstCaseObjective: @Sendable (V) -> Double = { x in
 			var worstValue = minimize ? -Double.infinity : Double.infinity
 			for omega in uncertaintyPoints {
 				let value = objective(x, omega)
@@ -341,7 +341,7 @@ extension RobustOptimizer: MultivariateOptimizer {
 	///   analysis. Use the specialized ``optimize()`` method for robust results with
 	///   worst-case and nominal objective values.
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> MultivariateOptimizationResult<V> {
