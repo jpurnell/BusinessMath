@@ -184,6 +184,7 @@ struct DriverProjectionTests {
 		// All std devs should be close to 100
 		for period in periods {
 			let stdDev = stdDevSeries[period]!
+			print("Std Dev: \(stdDev)")
 			#expect(abs(stdDev - 100.0) < 20.0)
 		}
 	}

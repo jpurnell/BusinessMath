@@ -452,7 +452,8 @@ struct ParallelOptimizerPerformanceTests {
 			constraints: []
 		)
 		let elapsed = Date().timeIntervalSince(startTime)
-
+		// Uncomment below for single run testing
+//		print("Elapsed: \(elapsed.number(3))")
 		#expect(result.success, "Should complete successfully")
 		// With serialized execution, should have full CPU access and complete quickly
 		// Threshold set to 60s to account for system variance under full test suite load (4× margin)
