@@ -226,7 +226,7 @@ extension ExpressionProxy {
         return ExpressionProxy(.unary(.exp, expression))
     }
 
-    /// Power: `a^b`
+    /// Power: `a^b` (where b is constant)
     ///
     /// ## Example
     /// ```swift
@@ -236,6 +236,19 @@ extension ExpressionProxy {
     /// ```
     public func power(_ exponent: Double) -> ExpressionProxy {
         return ExpressionProxy(.binary(.power, expression, .constant(exponent)))
+    }
+
+    /// Power: `a^b` (where b is an expression)
+    ///
+    /// ## Example
+    /// ```swift
+    /// let builder = ExpressionBuilder()
+    /// let base = builder[0]
+    /// let exponent = builder[1]
+    /// let result = base.power(exponent)  // base^exponent
+    /// ```
+    public func power(_ exponent: ExpressionProxy) -> ExpressionProxy {
+        return ExpressionProxy(.binary(.power, expression, exponent.expression))
     }
 
     /// Minimum: `min(a, b)`
