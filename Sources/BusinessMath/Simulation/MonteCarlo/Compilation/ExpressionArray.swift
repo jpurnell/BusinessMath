@@ -354,7 +354,7 @@ extension ExpressionBuilder {
         body: (Int, ExpressionProxy) -> ExpressionProxy
     ) -> ExpressionProxy where R.Bound == Int {
 
-        let bounds = Array(range)
+        let bounds = range.toArray()
 
         return bounds.reduce(initial) { accumulated, iteration in
             body(iteration, accumulated)
@@ -384,23 +384,12 @@ extension ExpressionBuilder {
 extension RangeExpression where Bound == Int {
     fileprivate func toArray() -> [Int] {
         if let range = self as? Range<Int> {
-            return Array(range)
+            return [Int](range)
         } else if let range = self as? ClosedRange<Int> {
-            return Array(range)
+            return [Int](range)
         } else {
-            return Array(0..<0)  // Fallback
+            return [Int](0..<0)  // Fallback
         }
     }
 }
 
-private extension Array where Element == Int {
-    init<R: RangeExpression>(_ range: R) where R.Bound == Int {
-        if let r = range as? Range<Int> {
-            self = Array(r)
-        } else if let r = range as? ClosedRange<Int> {
-            self = Array(r)
-        } else {
-            self = []
-        }
-    }
-}
