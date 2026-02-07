@@ -91,6 +91,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BusinessMathMCPServer"
+               BuildableName = "BusinessMathMCPServer"
+               BlueprintName = "BusinessMathMCPServer"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -136,9 +150,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "performance-profiling"
-            BuildableName = "performance-profiling"
-            BlueprintName = "performance-profiling"
+            BlueprintIdentifier = "BusinessMathMCPServer"
+            BuildableName = "BusinessMathMCPServer"
+            BlueprintName = "BusinessMathMCPServer"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -162,9 +176,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "performance-profiling"
-            BuildableName = "performance-profiling"
-            BlueprintName = "performance-profiling"
+            BlueprintIdentifier = "BusinessMathMCPServer"
+            BuildableName = "BusinessMathMCPServer"
+            BlueprintName = "BusinessMathMCPServer"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>

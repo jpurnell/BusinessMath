@@ -17,16 +17,8 @@ var products: [Product] = [
 		targets: ["BusinessMath"]
 	),
 	.library(
-		name: "BusinessMathMCP",
-		targets: ["BusinessMathMCP"]
-	),
-	.library(
 		name: "BusinessMathDSL",
 		targets: ["BusinessMathDSL"]
-	),
-	.executable(
-		name: "businessmath-mcp-server",
-		targets: ["BusinessMathMCPServer"]
 	)
 ]
 
@@ -46,10 +38,6 @@ let dependencies: [Package.Dependency] = [
 	.package(
 		url: "https://github.com/apple/swift-numerics",
 		from: "1.1.1"
-	),
-	.package(
-		url: "https://github.com/modelcontextprotocol/swift-sdk.git",
-		from: "0.10.0"
 	),
 	.package(
 		url: "https://github.com/apple/swift-syntax.git",
@@ -78,32 +66,6 @@ var targets: [Target] = [
 		]
 	),
 
-	// MCP integration
-	.target(
-		name: "BusinessMathMCP",
-		dependencies: [
-			"BusinessMath",
-			.product(name: "Numerics", package: "swift-numerics"),
-			.product(
-				name: "MCP",
-				package: "swift-sdk",
-				condition: .when(platforms: [.macOS])
-			)
-		],
-		swiftSettings: [
-			.enableUpcomingFeature("StrictConcurrency")
-		]
-	),
-
-	// MCP server executable
-	.executableTarget(
-		name: "BusinessMathMCPServer",
-		dependencies: ["BusinessMathMCP"],
-		swiftSettings: [
-			.enableUpcomingFeature("StrictConcurrency")
-		]
-	),
-
 	// DSL
 	.target(
 		name: "BusinessMathDSL",
@@ -121,7 +83,6 @@ var targets: [Target] = [
 		name: "BusinessMathTests",
 		dependencies: [
 			"BusinessMath",
-			"BusinessMathMCP",
 			"BusinessMathDSL"
 		]
 	)
