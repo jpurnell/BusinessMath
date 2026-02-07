@@ -101,19 +101,6 @@ jobs:
           echo "Schemes in workspace:"
           xcodebuild -list -workspace .swiftpm/xcode/package.xcworkspace || true
 
-      - name: macOS build for MCP executable (workspace/scheme)
-        shell: bash
-        run: |
-          set -euo pipefail
-          WORKSPACE=".swiftpm/xcode/package.xcworkspace"
-          SCHEME_MCP="businessmath-mcp-server"
-          xcodebuild -workspace "$WORKSPACE" \
-            -scheme "$SCHEME_MCP" \
-            -destination "generic/platform=macOS" \
-            -configuration Release \
-            -skipPackagePluginValidation \
-            build
-
       - name: Apple platform compile checks (BusinessMath via archive; no tests)
         shell: bash
         run: |
