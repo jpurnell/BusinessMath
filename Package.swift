@@ -59,7 +59,10 @@ var targets: [Target] = [
 		exclude: [
 			// Exclude Metal shaders to avoid Metal Toolchain requirement in Playgrounds/Xcode
 			// GPU acceleration is optional - only needed for large-scale optimizations
-			"Optimization/Heuristic/GPU/Shaders.metal"
+			"Optimization/Heuristic/GPU/Shaders.metal",
+			"Simulation/MonteCarlo/GPU/MonteCarloKernel.metal",
+			"Simulation/MonteCarlo/GPU/MonteCarloRNG.metal",
+			"Simulation/MonteCarlo/GPU/MonteCarloDistributions.metal"
 		],
 		swiftSettings: [
 			.enableUpcomingFeature("StrictConcurrency")
