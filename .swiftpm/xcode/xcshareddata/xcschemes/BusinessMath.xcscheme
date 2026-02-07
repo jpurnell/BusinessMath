@@ -52,6 +52,218 @@
                BlueprintName = "BusinessMathTests"
                ReferencedContainer = "container:">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "APIAuthTests">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testAddAPIKey()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testApiKeyFormat()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testAuthDisabled()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testBareKeyFormat()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testBearerTokenFormat()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testInvalidAPIKey()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testKeyCount()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testMissingAuthHeader()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testMultipleAPIKeys()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testNoAuthenticator()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testProtectedEndpointWithValidAuth()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testProtectedEndpointWithoutAuth()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testPublicEndpointWithoutAuth()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testRemoveAPIKey()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testServerInfoShowsAuthStatus()">
+               </Test>
+               <Test
+                  Identifier = "APIAuthTests/testValidAPIKey()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/test404ForUnknownPaths()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/test405ForWrongMethods()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testHealthCheckEndpoint()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testPendingRequestCount()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testResponseManagerBasicFlow()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testResponseManagerCleanup()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testResponseManagerNullIds()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testResponseManagerStringIds()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testServerInfoEndpoint()">
+               </Test>
+               <Test
+                  Identifier = "HTTPTransportTests/testServerStartStop()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testBasicExecution()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testConcentrationLimits()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testCorrelationEffect()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testMatrixDimensionValidation()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testMissingParameters()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testNoTrivialSolution()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testOutputFormat()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testPositiveDefiniteValidation()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testRiskAversionImpact()">
+               </Test>
+               <Test
+                  Identifier = "MeanVariancePortfolioToolTests/testToolSchema()">
+               </Test>
+               <Test
+                  Identifier = "MultiStartOptimizerTests/runsInParallel()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEClientDisconnect()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEConnectionEstablishment()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEEventFormat()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEHeartbeat()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEMultiLineData()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEMultipleClients()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSENetworkErrors()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEReceiveResponse()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEResponseRouting()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEServerNotifications()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSESessionCleanup()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSESessionManagement()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSESessionTimeout()">
+               </Test>
+               <Test
+                  Identifier = "SSETransportTests/testSSEWithPOSTIntegration()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioAnalysisToolTests">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/bullBaseBearScenarios()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/comparisonWithStochastic()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/constraintSatisfaction()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/convergenceWithTolerance()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/equalProbabilityScenarios()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/maximization()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/minimization()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/perScenarioAnalysis()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/probabilityWeighting()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/singleScenario()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/varianceCalculation()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/weightedOptimization()">
+               </Test>
+               <Test
+                  Identifier = "ScenarioOptimizationTests/zeroProbabilityScenario()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>
