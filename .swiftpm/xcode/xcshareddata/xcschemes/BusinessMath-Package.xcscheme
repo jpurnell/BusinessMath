@@ -29,48 +29,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BusinessMathMCP"
-               BuildableName = "BusinessMathMCP"
-               BlueprintName = "BusinessMathMCP"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "businessmath-mcp-server"
-               BuildableName = "businessmath-mcp-server"
-               BlueprintName = "businessmath-mcp-server"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "performance-profiling"
-               BuildableName = "performance-profiling"
-               BlueprintName = "performance-profiling"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "BusinessMathMacros"
                BuildableName = "BusinessMathMacros"
                BlueprintName = "BusinessMathMacros"
@@ -88,20 +46,6 @@
                BlueprintIdentifier = "BusinessMathDSL"
                BuildableName = "BusinessMathDSL"
                BlueprintName = "BusinessMathDSL"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BusinessMathMCPServer"
-               BuildableName = "BusinessMathMCPServer"
-               BlueprintName = "BusinessMathMCPServer"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -146,25 +90,6 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BusinessMathMCPServer"
-            BuildableName = "BusinessMathMCPServer"
-            BlueprintName = "BusinessMathMCPServer"
-            ReferencedContainer = "container:">
-         </BuildableReference>
-      </BuildableProductRunnable>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "businessmath-mcp-server"
-            BuildableName = "businessmath-mcp-server"
-            BlueprintName = "businessmath-mcp-server"
-            ReferencedContainer = "container:">
-         </BuildableReference>
-      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -172,16 +97,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BusinessMathMCPServer"
-            BuildableName = "BusinessMathMCPServer"
-            BlueprintName = "BusinessMathMCPServer"
+            BlueprintIdentifier = "BusinessMath"
+            BuildableName = "BusinessMath"
+            BlueprintName = "BusinessMath"
             ReferencedContainer = "container:">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
