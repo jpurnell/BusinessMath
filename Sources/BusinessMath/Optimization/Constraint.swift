@@ -336,7 +336,7 @@ public enum MultivariateConstraint<V: VectorSpace>: Sendable where V.Scalar: Rea
 }
 
 // MARK: - Common Constraints for Portfolio Optimization
-
+///  A collection of common constraints in Portfolio Optimization
 public extension MultivariateConstraint where V == VectorN<Double> {
 
 	/// Budget constraint: weights must sum to 1
@@ -596,7 +596,7 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 }
 
 // MARK: - Constraint Validation Utilities
-
+/// An extension on array to help validate the expected constraints
 public extension Array where Element == MultivariateConstraint<VectorN<Double>> {
 
 	/// Check if all constraints are satisfied at a point

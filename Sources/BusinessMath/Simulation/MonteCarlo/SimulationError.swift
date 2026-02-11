@@ -57,6 +57,7 @@ public enum SimulationError: Error, Sendable {
 }
 
 extension SimulationError: LocalizedError {
+    /// Returns a human-readable error description for debugging
 	public var errorDescription: String? {
 		switch self {
 		case .insufficientIterations:

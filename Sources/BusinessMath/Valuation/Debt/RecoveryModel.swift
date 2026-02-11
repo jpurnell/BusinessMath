@@ -156,6 +156,7 @@ public enum Seniority: Sendable, CaseIterable {
 ///   - ``CreditSpreadModel`` for spread calculations
 public struct RecoveryModel<T: Real> where T: Sendable {
 
+    /// Creates a recovery model for debt recovery rate calculations.
     public init() {}
 
     /// Standard recovery rate by seniority

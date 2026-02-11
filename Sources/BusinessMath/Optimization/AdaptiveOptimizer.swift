@@ -325,7 +325,7 @@ public struct AdaptiveOptimizer<V: VectorSpace> where V.Scalar == Double {
 
 	/// Optimize with minimal parameters (uses all defaults).
 	public func optimizeSimple(
-		objective: @escaping (V) -> V.Scalar,
+		objective: @escaping @Sendable (V) -> V.Scalar,
 		initialGuess: V
 	) throws -> Result {
 		try optimize(
@@ -343,11 +343,22 @@ extension AdaptiveOptimizer {
 
 	/// Analyze problem characteristics for debugging.
 	public struct ProblemAnalysis {
+		/// Number of optimization variables.
 		public let size: Int
+
+		/// Whether the problem has any constraints (equality or inequality).
 		public let hasConstraints: Bool
+
+		/// Whether the problem has inequality constraints.
 		public let hasInequalities: Bool
+
+		/// Whether an analytical gradient function is provided.
 		public let hasGradient: Bool
+
+		/// Name of the algorithm that will be selected.
 		public let recommendedAlgorithm: String
+
+		/// Explanation of why this algorithm was chosen.
 		public let reason: String
 	}
 
@@ -439,7 +450,7 @@ extension AdaptiveOptimizer: MultivariateOptimizer {
 	///   ``optimize(objective:gradient:initialGuess:constraints:)`` method which returns
 	///   ``AdaptiveOptimizer/Result`` with `algorithmUsed` and `selectionReason` properties.
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> MultivariateOptimizationResult<V> {

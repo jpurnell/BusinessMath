@@ -32,6 +32,12 @@ public struct TraceStep: Sendable {
     /// Timestamp when this step was recorded
     public let timestamp: Date
 
+    /// Creates a trace step.
+    ///
+    /// - Parameters:
+    ///   - category: The category of calculation (revenue, costs, or profit).
+    ///   - description: Human-readable description of this calculation step.
+    ///   - value: The calculated value, or nil if not applicable.
     public init(category: TraceCategory, description: String, value: Double?) {
         self.category = category
         self.description = description
@@ -80,6 +86,12 @@ public final class CalculationTrace: Sendable {
 
     // MARK: - Initialization
 
+    /// Creates a calculation trace for a financial model.
+    ///
+    /// The trace starts empty. Call calculation methods like ``calculateProfit()`` to
+    /// populate the trace with calculation steps.
+    ///
+    /// - Parameter model: The financial model to trace.
     public init(model: FinancialModel) {
         self.model = model
         self._steps = ThreadSafeArray<TraceStep>()

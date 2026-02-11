@@ -221,6 +221,14 @@ public struct Greeks<T: Real & Sendable>: Sendable {
 	/// Rho: Price sensitivity to interest rate (∂V/∂r).
 	public let rho: T
 
+	/// Creates a collection of option Greeks for risk management.
+	///
+	/// - Parameters:
+	///   - delta: Price sensitivity to underlying asset (∂V/∂S). Range: [0,1] for calls, [-1,0] for puts.
+	///   - gamma: Delta sensitivity to underlying (∂²V/∂S²). Measures delta hedging risk.
+	///   - vega: Price sensitivity to volatility (∂V/∂σ). Higher for at-the-money options.
+	///   - theta: Price sensitivity to time decay (∂V/∂t). Typically negative (options lose value over time).
+	///   - rho: Price sensitivity to interest rate (∂V/∂r). More significant for longer-dated options.
 	public init(delta: T, gamma: T, vega: T, theta: T, rho: T) {
 		self.delta = delta
 		self.gamma = gamma

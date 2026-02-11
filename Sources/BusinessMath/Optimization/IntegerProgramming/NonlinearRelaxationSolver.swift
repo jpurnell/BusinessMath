@@ -47,6 +47,96 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
         self.tolerance = tolerance
     }
 
+    /// Solve the continuous relaxation of an integer programming problem using nonlinear optimization.
+    ///
+    /// This method solves the continuous relaxation of a Mixed-Integer Nonlinear Programming (MINLP)
+    /// problem by removing integer constraints and solving the resulting Nonlinear Programming (NLP)
+    /// problem. The solution provides a bound for branch-and-bound algorithms.
+    ///
+    /// Uses `InequalityOptimizer` to handle nonlinear objectives and constraints through interior-point
+    /// methods. If the optimizer fails to converge or produces an infeasible solution, the result is
+    /// marked as infeasible.
+    ///
+    /// - Parameters:
+    ///   - objective: The objective function to optimize. Takes a vector and returns a scalar value.
+    ///     Can be nonlinear (quadratic, exponential, etc.).
+    ///   - constraints: Array of multivariate constraints (inequalities or equalities). Each constraint
+    ///     function should evaluate to ≤ 0 for feasibility.
+    ///   - initialGuess: Starting point for the optimization algorithm. Should be in the interior of
+    ///     the feasible region when possible for better convergence.
+    ///   - minimize: `true` to minimize the objective, `false` to maximize.
+    ///
+    /// - Returns: A `RelaxationResult` containing:
+    ///   - `solution`: The optimal continuous solution (as `VectorN<Double>`), or `nil` if infeasible
+    ///   - `objectiveValue`: The optimal objective value, or ±∞ if infeasible
+    ///   - `status`: `.optimal` if solution found, `.infeasible` if no feasible solution exists
+    ///
+    /// - Throws: Does not throw. Optimization failures are returned as infeasible results.
+    ///
+    /// - Complexity: Depends on the problem structure. For smooth convex problems, typically O(n³)
+    ///   per iteration where n is the dimension. Non-convex problems may require many iterations.
+    ///
+    /// ## Algorithm Details
+    ///
+    /// 1. **Interior-Point Method**: Uses `InequalityOptimizer` with barrier functions
+    /// 2. **Feasibility Check**: Evaluates all constraints at the solution with tolerance checking
+    /// 3. **Error Handling**: Treats optimizer failures as infeasibility rather than throwing errors
+    ///
+    /// ## Usage Example
+    ///
+    /// ```swift
+    /// // Portfolio optimization with risk constraint
+    /// let solver = NonlinearRelaxationSolver(maxIterations: 1000, tolerance: 1e-6)
+    ///
+    /// // Minimize portfolio variance
+    /// let result = try solver.solveRelaxation(
+    ///     objective: { weights in
+    ///         // Quadratic form: wᵀΣw
+    ///         let w = weights.toArray()
+    ///         var variance = 0.0
+    ///         for i in 0..<w.count {
+    ///             for j in 0..<w.count {
+    ///                 variance += w[i] * covariance[i][j] * w[j]
+    ///             }
+    ///         }
+    ///         return variance
+    ///     },
+    ///     constraints: [
+    ///         // Weights sum to 1
+    ///         .equality { w in w.toArray().reduce(0, +) - 1.0 },
+    ///         // Minimum expected return
+    ///         .inequality { w in 0.08 - dot(expectedReturns, w.toArray()) }
+    ///     ],
+    ///     initialGuess: VectorN(Array(repeating: 1.0 / n, count: n)),
+    ///     minimize: true
+    /// )
+    ///
+    /// if result.status == .optimal, let solution = result.solution {
+    ///     print("Optimal weights: \(solution)")
+    ///     print("Minimum variance: \(result.objectiveValue)")
+    /// } else {
+    ///     print("No feasible solution found")
+    /// }
+    /// ```
+    ///
+    /// ## When to Use
+    ///
+    /// - **Nonlinear problems**: Quadratic objectives, exponential constraints, etc.
+    /// - **MINLP relaxations**: Computing bounds for branch-and-cut algorithms
+    /// - **Portfolio optimization**: Variance minimization with nonlinear constraints
+    /// - **Engineering design**: Problems with physical laws (heat transfer, fluid dynamics)
+    ///
+    /// - Important: For linear problems, use ``SimplexRelaxationSolver`` instead for much better
+    ///   performance (O(n²) vs O(n³)). Only use this solver when nonlinearity is essential.
+    ///
+    /// - Note: The solution may violate constraints by up to `tolerance` due to numerical precision.
+    ///   Solutions with violation > tolerance are automatically rejected as infeasible.
+    ///
+    /// - SeeAlso:
+    ///   - ``SimplexRelaxationSolver``
+    ///   - ``InequalityOptimizer``
+    ///   - ``RelaxationResult``
+    ///   - ``MultivariateConstraint``
     public func solveRelaxation<V: VectorSpace>(
         objective: @Sendable @escaping (V) -> Double,
         constraints: [MultivariateConstraint<V>],

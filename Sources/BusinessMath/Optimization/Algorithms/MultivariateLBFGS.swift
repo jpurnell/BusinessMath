@@ -501,7 +501,7 @@ extension MultivariateLBFGS: MultivariateOptimizer {
 	/// let result = try optimizer.minimize(objective, from: VectorN(repeating: 5.0, count: 1000))
 	/// ```
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>]
 	) throws -> MultivariateOptimizationResult<V> {

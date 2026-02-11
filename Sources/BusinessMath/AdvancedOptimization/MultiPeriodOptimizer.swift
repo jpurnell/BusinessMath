@@ -154,7 +154,7 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 		let initialFlat = VectorN(flatInitial)
 
 		// Flattened objective: sum of discounted period objectives
-		let flatObjective: (VectorN<Double>) -> Double = { flat in
+		let flatObjective: @Sendable (VectorN<Double>) -> Double = { flat in
 			let trajectory = self.unflattenTrajectory(flat, dimension: dimension)
 			var total = 0.0
 			for (t, xₜ) in trajectory.enumerated() {

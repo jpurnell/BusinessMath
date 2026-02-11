@@ -138,6 +138,19 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	/// Whether to use line search for adaptive step size
 	public let useLineSearch: Bool
 
+	/// Creates a multivariate gradient descent optimizer with specified configuration.
+	///
+	/// - Parameters:
+	///   - learningRate: Step size for gradient updates. Larger values converge faster but may overshoot.
+	///     Typical values: 0.001 to 0.1. Too large causes divergence; too small causes slow convergence.
+	///   - maxIterations: Maximum number of iterations before termination (default: 1000)
+	///   - tolerance: Convergence tolerance for gradient norm (default: 1e-6). Stops when `||∇f|| < tolerance`.
+	///   - recordHistory: Whether to record full optimization trajectory (default: false). Useful for visualization
+	///     but increases memory usage.
+	///   - momentum: Momentum coefficient for accelerated gradient descent (default: 0). Values in [0.5, 0.99]
+	///     can accelerate convergence. 0 = standard gradient descent.
+	///   - useLineSearch: Whether to use line search for adaptive step sizing (default: false). Improves
+	///     robustness but adds computational cost per iteration.
 	public init(
 		learningRate: V.Scalar,
 		maxIterations: Int = 1000,
@@ -306,7 +319,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	///         evaluations per iteration, where n is the dimension.
 	///         For high-dimensional problems, consider providing analytical gradients.
 	public func minimize(
-		function: @escaping (V) -> V.Scalar,
+		function: @escaping @Sendable (V) -> V.Scalar,
 		initialGuess: V,
 		epsilon: V.Scalar = V.Scalar(1) / V.Scalar(1_000_000)
 	) throws -> MultivariateOptimizationResult<V> {
@@ -491,7 +504,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	/// - Note: Automatic gradient computation costs approximately 2n function
 	///         evaluations per iteration, where n is the dimension.
 	public func minimizeAdam(
-		function: @escaping (V) -> V.Scalar,
+		function: @escaping @Sendable (V) -> V.Scalar,
 		initialGuess: V,
 		epsilon: V.Scalar = V.Scalar(1) / V.Scalar(1_000_000),
 		beta1: V.Scalar = V.Scalar(9) / V.Scalar(10),
@@ -627,7 +640,7 @@ extension MultivariateGradientDescent: MultivariateOptimizer {
 	/// - Note: For algorithm-specific methods like `minimizeAdam()` or `minimizeMomentum()`,
 	///         use the concrete type `MultivariateGradientDescent<V>` instead of the protocol.
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> MultivariateOptimizationResult<V> {

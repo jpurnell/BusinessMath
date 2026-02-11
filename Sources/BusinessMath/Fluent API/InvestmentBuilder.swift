@@ -187,10 +187,65 @@ extension Investment {
 // MARK: - Cash Flow
 
 /// A cash flow in a specific period.
+///
+/// Represents a single cash inflow or outflow occurring in a specific period
+/// (typically a year). Used to model investment returns over time.
+///
+/// ## Usage Example
+/// ```swift
+/// // Manual creation
+/// let cf1 = CashFlow(period: 1, amount: 30_000)
+/// let cf2 = CashFlow(period: 2, amount: 35_000)
+///
+/// // Using convenience syntax
+/// let cf3 = Year(3) => 40_000
+///
+/// // In investment builder
+/// let investment = Investment {
+///     InitialCost(100_000)
+///     CashFlows {
+///         Year(1) => 30_000
+///         Year(2) => 35_000
+///         Year(3) => 40_000
+///     }
+///     DiscountRate(0.10)
+/// }
+/// ```
+///
+/// ## SeeAlso
+/// - ``Investment``
+/// - ``CashFlowBuilder``
+/// - ``Year(_:)``
 public struct CashFlow: Sendable {
+    /// The period (typically year) when this cash flow occurs.
+    ///
+    /// Period 1 represents the first year after initial investment,
+    /// period 2 the second year, etc. The initial investment (period 0)
+    /// is handled separately in ``Investment/initialCost``.
     public let period: Int
+
+    /// The amount of the cash flow.
+    ///
+    /// Positive for inflows (revenue, savings), negative for outflows
+    /// (additional costs, investments).
     public let amount: Double
 
+    /// Creates a cash flow for a specific period.
+    ///
+    /// - Parameters:
+    ///   - period: The period (year) when cash flow occurs
+    ///   - amount: The cash flow amount (positive for inflows, negative for outflows)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let cashFlow = CashFlow(period: 1, amount: 30_000)
+    ///
+    /// // Or use convenience initializer
+    /// let cashFlow2 = CashFlow(year: 2, amount: 35_000)
+    ///
+    /// // Or use arrow syntax
+    /// let cashFlow3 = Year(3) => 40_000
+    /// ```
     public init(period: Int, amount: Double) {
         self.period = period
         self.amount = amount
@@ -213,28 +268,86 @@ public enum InvestmentComponent: Sendable {
 // MARK: - Investment Builder
 
 /// Result builder for constructing investments.
+///
+/// Enables SwiftUI-style declarative syntax for defining investment analyses.
+/// You typically don't use this directly—it's applied via the `@InvestmentBuilder`
+/// attribute on ``Investment/init(builder:)`` and ``buildInvestment(builder:)``.
+///
+/// ## Supported Syntax
+/// - Multiple investment components
+/// - Conditional components (`if`/`else`)
+/// - Optional components (`if let`)
+/// - Loops (`for`...`in`)
+///
+/// ## Usage Example
+/// ```swift
+/// let shouldIncludeSalvage = true
+///
+/// let investment = Investment {
+///     InitialCost(100_000)
+///
+///     CashFlows {
+///         Year(1) => 30_000
+///         Year(2) => 35_000
+///         Year(3) => 40_000
+///     }
+///
+///     if shouldIncludeSalvage {
+///         CashFlows {
+///             Year(4) => 20_000  // Salvage value
+///         }
+///     }
+///
+///     DiscountRate(0.10)
+///     Name("Equipment Purchase")
+/// }
+/// ```
+///
+/// ## SeeAlso
+/// - ``Investment``
+/// - ``InvestmentComponent``
+/// - ``buildInvestment(builder:)``
 @resultBuilder
 public struct InvestmentBuilder {
+    /// Combines multiple arrays of investment components.
+    ///
+    /// Called when you have multiple components in an investment block.
     public static func buildBlock(_ components: [InvestmentComponent]...) -> [InvestmentComponent] {
         components.flatMap { $0 }
     }
 
+    /// Converts a single component into an array.
+    ///
+    /// Wraps individual components so they can be combined with others.
     public static func buildExpression(_ component: InvestmentComponent) -> [InvestmentComponent] {
         [component]
     }
 
+    /// Flattens arrays of component arrays.
+    ///
+    /// Enables `for`...`in` loops within investment blocks.
     public static func buildArray(_ components: [[InvestmentComponent]]) -> [InvestmentComponent] {
         components.flatMap { $0 }
     }
 
+    /// Handles optional investment components.
+    ///
+    /// Returns the components if present, or an empty array if nil.
+    /// Enables `if let` and other optional patterns.
     public static func buildOptional(_ components: [InvestmentComponent]?) -> [InvestmentComponent] {
         components ?? []
     }
 
+    /// Returns the first branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to true.
     public static func buildEither(first components: [InvestmentComponent]) -> [InvestmentComponent] {
         components
     }
 
+    /// Returns the second branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to false.
     public static func buildEither(second components: [InvestmentComponent]) -> [InvestmentComponent] {
         components
     }
@@ -243,32 +356,102 @@ public struct InvestmentBuilder {
 // MARK: - Cash Flow Builder
 
 /// Result builder for constructing cash flows.
+///
+/// Enables declarative syntax for defining cash flows within a ``CashFlows(_:)``
+/// block. Automatically sorts cash flows by period for proper NPV calculation.
+///
+/// ## Supported Syntax
+/// - Arrow syntax: `Year(1) => 30_000`
+/// - Direct construction: `CashFlow(period: 1, amount: 30_000)`
+/// - Conditional cash flows (`if`/`else`)
+/// - Optional cash flows (`if let`)
+/// - Loops (`for`...`in`)
+///
+/// ## Usage Example
+/// ```swift
+/// let investment = Investment {
+///     InitialCost(100_000)
+///
+///     CashFlows {
+///         // Arrow syntax (most readable)
+///         Year(1) => 30_000
+///         Year(2) => 35_000
+///
+///         // Conditional cash flow
+///         if includeBonus {
+///             Year(3) => 50_000
+///         } else {
+///             Year(3) => 40_000
+///         }
+///
+///         // Loop over years
+///         for year in 4...6 {
+///             Year(year) => 45_000
+///         }
+///     }
+///
+///     DiscountRate(0.10)
+/// }
+/// ```
+///
+/// ## Automatic Sorting
+/// Cash flows are automatically sorted by period, so you can define them
+/// in any order—they'll be properly ordered for calculations.
+///
+/// ## SeeAlso
+/// - ``CashFlow``
+/// - ``CashFlows(_:)``
+/// - ``Year(_:)``
 @resultBuilder
 public struct CashFlowBuilder {
+    /// Combines multiple arrays of cash flows and sorts by period.
+    ///
+    /// Called when you have multiple cash flows in a CashFlows block.
+    /// Automatically sorts by period for proper chronological ordering.
     public static func buildBlock(_ cashFlows: [CashFlow]...) -> [CashFlow] {
         cashFlows.flatMap { $0 }.sorted { $0.period < $1.period }
     }
 
+    /// Converts a single cash flow into an array.
+    ///
+    /// Wraps individual cash flows so they can be combined with others.
     public static func buildExpression(_ cashFlow: CashFlow) -> [CashFlow] {
         [cashFlow]
     }
 
+    /// Passes through an array of cash flows unchanged.
+    ///
+    /// Enables nested builder results to be flattened properly.
     public static func buildExpression(_ cashFlows: [CashFlow]) -> [CashFlow] {
         cashFlows
     }
 
+    /// Flattens arrays of cash flow arrays and sorts by period.
+    ///
+    /// Enables `for`...`in` loops within CashFlows blocks.
+    /// Automatically sorts the combined result.
     public static func buildArray(_ cashFlows: [[CashFlow]]) -> [CashFlow] {
         cashFlows.flatMap { $0 }.sorted { $0.period < $1.period }
     }
 
+    /// Handles optional cash flows.
+    ///
+    /// Returns the cash flows if present, or an empty array if nil.
+    /// Enables `if let` and other optional patterns.
     public static func buildOptional(_ cashFlows: [CashFlow]?) -> [CashFlow] {
         cashFlows ?? []
     }
 
+    /// Returns the first branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to true.
     public static func buildEither(first cashFlows: [CashFlow]) -> [CashFlow] {
         cashFlows
     }
 
+    /// Returns the second branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to false.
     public static func buildEither(second cashFlows: [CashFlow]) -> [CashFlow] {
         cashFlows
     }
@@ -395,17 +578,84 @@ public struct CashFlowPeriod {
 
 /// Date-based cash flow for XNPV/XIRR calculations.
 ///
-/// Example:
+/// While ``CashFlow`` uses integer periods (years), DateBasedCashFlow uses
+/// specific dates. This is more accurate for irregular cash flow timing and
+/// is required for XNPV (Extended Net Present Value) and XIRR (Extended Internal
+/// Rate of Return) calculations.
+///
+/// ## When to Use
+/// - **DateBasedCashFlow**: Irregular timing, exact dates known, XNPV/XIRR needed
+/// - **CashFlow**: Annual periods, regular timing, standard NPV/IRR sufficient
+///
+/// ## Usage Example
 /// ```swift
 /// let today = Date()
-/// let oneYear = Calendar.current.date(byAdding: .year, value: 1, to: today)!
+/// let calendar = Calendar.current
 ///
-/// let dateFlow = DateBasedCashFlow(date: oneYear, amount: 30_000)
+/// let initialInvestment = DateBasedCashFlow(
+///     date: today,
+///     amount: -100_000
+/// )
+///
+/// let cashFlows = [
+///     DateBasedCashFlow(
+///         date: calendar.date(byAdding: .month, value: 6, to: today)!,
+///         amount: 20_000
+///     ),
+///     DateBasedCashFlow(
+///         date: calendar.date(byAdding: .year, value: 1, to: today)!,
+///         amount: 35_000
+///     ),
+///     DateBasedCashFlow(
+///         date: calendar.date(byAdding: .month, value: 18, to: today)!,
+///         amount: 45_000
+///     )
+/// ]
+///
+/// let xnpv = BusinessMath.xnpv(
+///     rate: 0.10,
+///     cashFlows: [initialInvestment] + cashFlows
+/// )
 /// ```
+///
+/// ## SeeAlso
+/// - ``CashFlow``
+/// - ``xnpv(rate:cashFlows:)``
+/// - ``xirr(cashFlows:guess:)``
 public struct DateBasedCashFlow: Sendable {
+    /// The specific date when this cash flow occurs.
+    ///
+    /// Should be the actual transaction date, not an approximation.
+    /// More accurate timing leads to more accurate XNPV/XIRR calculations.
     public let date: Date
+
+    /// The amount of the cash flow.
+    ///
+    /// Positive for inflows, negative for outflows.
+    /// The initial investment should typically be negative.
     public let amount: Double
 
+    /// Creates a date-based cash flow.
+    ///
+    /// - Parameters:
+    ///   - date: The exact date when the cash flow occurs
+    ///   - amount: The cash flow amount (positive for inflows, negative for outflows)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let today = Date()
+    ///
+    /// // Initial investment (negative)
+    /// let initial = DateBasedCashFlow(date: today, amount: -100_000)
+    ///
+    /// // Cash inflow 6 months later
+    /// let sixMonths = Calendar.current.date(byAdding: .month, value: 6, to: today)!
+    /// let cashInflow = DateBasedCashFlow(date: sixMonths, amount: 30_000)
+    ///
+    /// // Use with XNPV
+    /// let allFlows = [initial, cashInflow]
+    /// let npv = BusinessMath.xnpv(rate: 0.10, cashFlows: allFlows)
+    /// ```
     public init(date: Date, amount: Double) {
         self.date = date
         self.amount = amount
@@ -477,9 +727,95 @@ extension Investment {
 // MARK: - Investment Portfolio
 
 /// A collection of investments for comparison and analysis.
+///
+/// Use InvestmentPortfolio to evaluate multiple investment opportunities,
+/// rank them by various metrics (NPV, IRR, PI), and select the best options
+/// subject to capital constraints.
+///
+/// ## Usage Example
+/// ```swift
+/// var portfolio = InvestmentPortfolio()
+///
+/// // Add multiple investments
+/// portfolio.add(Investment {
+///     Name("Project A")
+///     InitialCost(100_000)
+///     CashFlows {
+///         Year(1) => 40_000
+///         Year(2) => 50_000
+///         Year(3) => 60_000
+///     }
+///     DiscountRate(0.10)
+/// })
+///
+/// portfolio.add(Investment {
+///     Name("Project B")
+///     InitialCost(150_000)
+///     CashFlows {
+///         Year(1) => 60_000
+///         Year(2) => 70_000
+///         Year(3) => 80_000
+///     }
+///     DiscountRate(0.10)
+/// })
+///
+/// // Rank by different metrics
+/// let byNPV = portfolio.rankedByNPV()
+/// let byIRR = portfolio.rankedByIRR()
+/// let byPI = portfolio.rankedByPI()
+///
+/// // Filter by criteria
+/// let highNPV = portfolio.filter(minNPV: 50_000)
+/// let highIRR = portfolio.filter(minIRR: 0.15)
+///
+/// // Capital budgeting
+/// print("Total NPV: \(portfolio.totalNPV)")
+/// print("Total Investment Required: \(portfolio.totalInitialCost)")
+/// ```
+///
+/// ## Capital Rationing
+/// When capital is limited, rank by profitability index (PI) to maximize
+/// NPV per dollar invested:
+/// ```swift
+/// let rankedByPI = portfolio.rankedByPI()
+/// var budget = 200_000.0
+/// var selectedInvestments: [Investment] = []
+///
+/// for investment in rankedByPI {
+///     if budget >= investment.initialCost {
+///         selectedInvestments.append(investment)
+///         budget -= investment.initialCost
+///     }
+/// }
+/// ```
+///
+/// ## SeeAlso
+/// - ``Investment``
+/// - ``Investment/npv``
+/// - ``Investment/irr``
+/// - ``Investment/profitabilityIndex``
 public struct InvestmentPortfolio: Sendable {
+    /// Array of investments in the portfolio.
+    ///
+    /// Can be mutated using ``add(_:)`` or directly modified.
     public var investments: [Investment]
 
+    /// Creates an investment portfolio.
+    ///
+    /// - Parameter investments: Initial array of investments (default: empty)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// // Empty portfolio
+    /// var portfolio = InvestmentPortfolio()
+    ///
+    /// // Portfolio with initial investments
+    /// let portfolio2 = InvestmentPortfolio(investments: [
+    ///     projectA,
+    ///     projectB,
+    ///     projectC
+    /// ])
+    /// ```
     public init(investments: [Investment] = []) {
         self.investments = investments
     }
@@ -599,6 +935,48 @@ extension Investment {
 // MARK: - CustomStringConvertible
 
 extension Investment: CustomStringConvertible {
+    /// Human-readable description of the investment with key metrics.
+    ///
+    /// Provides a formatted summary including:
+    /// - Investment name (if provided)
+    /// - Initial cost
+    /// - Discount rate
+    /// - NPV (Net Present Value)
+    /// - IRR (Internal Rate of Return, if calculable)
+    /// - Profitability Index
+    /// - Payback Period (if investment pays back)
+    /// - Discounted Payback Period (if investment pays back on discounted basis)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let investment = Investment {
+    ///     Name("Equipment Upgrade")
+    ///     InitialCost(100_000)
+    ///     CashFlows {
+    ///         Year(1) => 30_000
+    ///         Year(2) => 35_000
+    ///         Year(3) => 40_000
+    ///         Year(4) => 45_000
+    ///     }
+    ///     DiscountRate(0.10)
+    /// }
+    ///
+    /// print(investment)
+    /// // Output:
+    /// // Investment 'Equipment Upgrade':
+    /// //   Initial Cost: $100,000.00
+    /// //   Discount Rate: 10.00%
+    /// //   NPV: $17,234.56
+    /// //   IRR: 23.45%
+    /// //   Profitability Index: 1.17
+    /// //   Payback Period: 2.86 years
+    /// //   Discounted Payback: 3.12 years
+    /// ```
+    ///
+    /// ## Note
+    /// This property is automatically synthesized by conformance to
+    /// `CustomStringConvertible`, enabling readable `print()` output and
+    /// string interpolation.
     public var description: String {
         var result = "Investment"
         if let name = name {

@@ -97,6 +97,28 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     /// Defaults to SimplexRelaxationSolver for fast linear relaxations.
     public let relaxationSolver: any RelaxationSolver
 
+    /// Creates a branch-and-bound solver with comprehensive configuration options.
+    ///
+    /// - Parameters:
+    ///   - maxNodes: Maximum nodes to explore before terminating (default: 10,000)
+    ///   - timeLimit: Maximum time in seconds, 0 for no limit (default: 300.0)
+    ///   - relativeGapTolerance: Relative optimality gap to stop when `gap < tolerance` (default: 1e-4 = 0.01%)
+    ///   - nodeSelection: Strategy for selecting next node (default: `.bestBound`)
+    ///   - branchingRule: Strategy for selecting branching variable (default: `.mostFractional`)
+    ///   - lpTolerance: Tolerance for LP solver (default: 1e-8)
+    ///   - integralityTolerance: Tolerance for integrality—values within this of an integer are rounded (default: 1e-6)
+    ///   - validateLinearity: Whether to validate that objectives/constraints are linear (default: false)
+    ///   - enableVariableShifting: Automatically shift variables with negative bounds to satisfy x ≥ 0 (default: false)
+    ///   - enableCuttingPlanes: Enable Gomory cuts and other cutting planes (default: false)
+    ///   - maxCuttingRounds: Maximum cutting plane rounds per node (default: 5)
+    ///   - cutTolerance: Minimum violation for a cut to be added (default: 1e-6)
+    ///   - normalizeCuts: Normalize cut coefficients to unit norm for numerical stability (default: true)
+    ///   - cutCoefficientThreshold: Minimum coefficient magnitude after normalization (default: 1e-8)
+    ///   - detectStagnation: Terminate cutting if bound doesn't improve (default: true)
+    ///   - stagnationTolerance: Minimum bound improvement to continue cutting (default: 1e-8)
+    ///   - detectCycling: Detect repeated LP solutions and terminate early (default: true)
+    ///   - cyclingWindowSize: Number of recent solutions to check for cycles (default: 5)
+    ///   - relaxationSolver: Custom relaxation solver, or `nil` for default `SimplexRelaxationSolver`
     public init(
         maxNodes: Int = 10_000,
         timeLimit: Double = 300.0,
@@ -1507,6 +1529,19 @@ public struct CuttingPlaneStats: Sendable {
     /// where improvement = |boundAfterCuts - boundBeforeCuts|
     public let percentageGapClosed: Double
 
+    /// Creates cutting plane statistics for branch-and-bound results.
+    ///
+    /// - Parameters:
+    ///   - totalCutsGenerated: Total number of cutting planes generated across all nodes (default: 0)
+    ///   - cuttingRounds: Number of cutting plane rounds performed (default: 0)
+    ///   - lpResolves: Number of LP re-solves after adding cuts (default: 0)
+    ///   - maxRoundsAtNode: Maximum rounds performed at any single node (default: 0)
+    ///   - gomoryCuts: Number of Gomory fractional cuts generated (default: 0)
+    ///   - mirCuts: Number of mixed-integer rounding cuts generated (default: 0)
+    ///   - coverCuts: Number of cover cuts generated (default: 0)
+    ///   - rootLPBoundBeforeCuts: LP bound at root node before cut generation (default: 0.0)
+    ///   - rootLPBoundAfterCuts: LP bound at root node after cut generation (default: 0.0)
+    ///   - percentageGapClosed: Percentage of integrality gap closed by cuts (default: 0.0)
     public init(
         totalCutsGenerated: Int = 0,
         cuttingRounds: Int = 0,

@@ -22,6 +22,10 @@ public enum ScenarioError: Error, Sendable {
 	case noScenarios
 }
 
+    /// A localized human-readable description of the error.
+    ///
+    /// Provides context-specific error messages with relevant details like
+    /// values, ranges, and suggestions.
 extension ScenarioError: LocalizedError {
 	public var errorDescription: String? {
 		switch self {

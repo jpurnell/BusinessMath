@@ -55,6 +55,16 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	/// Whether to record optimization history
 	public let recordHistory: Bool
 
+	/// Creates a multivariate Newton-Raphson optimizer with specified configuration.
+	///
+	/// - Parameters:
+	///   - maxIterations: Maximum number of iterations before termination (default: 100). Newton-Raphson
+	///     typically converges in fewer iterations than gradient descent due to quadratic convergence.
+	///   - tolerance: Convergence tolerance for gradient norm (default: 1e-6). Stops when `||∇f|| < tolerance`.
+	///   - useLineSearch: Whether to use line search for step sizing (default: true). Highly recommended
+	///     for Newton-Raphson to ensure convergence from poor initial guesses.
+	///   - recordHistory: Whether to record full optimization trajectory (default: false). Useful for
+	///     analysis but increases memory usage.
 	public init(
 		maxIterations: Int = 100,
 		tolerance: V.Scalar? = nil,
@@ -462,7 +472,7 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	///         evaluations per iteration, where n is the dimension.
 	///         For high-dimensional problems, consider providing analytical gradients.
 	public func minimizeBFGS(
-		function: @escaping (V) -> V.Scalar,
+		function: @escaping @Sendable (V) -> V.Scalar,
 		initialGuess: V,
 		epsilon: V.Scalar = V.Scalar(1) / V.Scalar(1_000_000)
 	) throws -> MultivariateOptimizationResult<V> {
@@ -544,7 +554,7 @@ extension MultivariateNewtonRaphson: MultivariateOptimizer {
 	///              For better performance, use `minimize(function:gradient:hessian:initialGuess:)`
 	///              with analytical derivatives when available.
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> MultivariateOptimizationResult<V> {

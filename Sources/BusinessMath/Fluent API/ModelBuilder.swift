@@ -279,12 +279,63 @@ public struct FinancialModel: Sendable {
 // MARK: - Model Metadata
 
 /// Metadata about a financial model.
+///
+/// Use this structure to attach descriptive information to your financial models,
+/// including naming, versioning, and documentation. This metadata is useful for
+/// model tracking, auditing, and governance.
+///
+/// ## Usage Example
+/// ```swift
+/// var metadata = ModelMetadata(
+///     name: "SaaS Revenue Model",
+///     version: "2.1",
+///     description: "Monthly recurring revenue projections with churn"
+/// )
+///
+/// let model = FinancialModel {
+///     // ... model components
+/// }
+/// model.metadata = metadata
+/// ```
 public struct ModelMetadata: Sendable {
+    /// The name of the financial model.
+    ///
+    /// Use descriptive names that help identify the model's purpose,
+    /// such as "Q4 2025 Budget" or "SaaS Growth Scenario".
     public var name: String?
+
+    /// The date and time when the model was created.
+    ///
+    /// Defaults to the current date when the metadata is initialized.
     public var createdAt: Date = Date()
+
+    /// The version string for this model.
+    ///
+    /// Use semantic versioning (e.g., "1.0", "2.1") to track model
+    /// revisions over time. Defaults to "1.0".
     public var version: String = "1.0"
+
+    /// An optional description of what this model represents.
+    ///
+    /// Use this field to document the model's purpose, assumptions,
+    /// or key methodologies.
     public var description: String?
 
+    /// Creates model metadata with optional name, version, and description.
+    ///
+    /// - Parameters:
+    ///   - name: The name of the model. Defaults to nil.
+    ///   - version: The version string. Defaults to "1.0".
+    ///   - description: A description of the model. Defaults to nil.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let metadata = ModelMetadata(
+    ///     name: "Annual Budget Model",
+    ///     version: "1.0",
+    ///     description: "Initial budget for fiscal year 2025"
+    /// )
+    /// ```
     public init(name: String? = nil, version: String = "1.0", description: String? = nil) {
         self.name = name
         self.version = version
@@ -369,10 +420,47 @@ public struct ModelBuilder {
 // MARK: - Revenue Components
 
 /// A revenue source in the financial model.
+///
+/// Revenue components represent individual streams of income in your model.
+/// They support both single-period amounts (for backward compatibility) and
+/// multi-period time series for more sophisticated modeling.
+///
+/// Use ``Revenue`` container to group multiple revenue components together,
+/// or create components directly for use in financial models.
+///
+/// ## Usage Example
+/// ```swift
+/// // Single-period revenue
+/// let simpleRevenue = RevenueComponent(name: "Product Sales", amount: 100_000)
+///
+/// // Multi-period revenue with time series
+/// let periods = [Period.year(2023), Period.year(2024), Period.year(2025)]
+/// let values = [100_000.0, 110_000.0, 121_000.0]
+/// let growingRevenue = RevenueComponent(name: "Product Sales", periods: periods, values: values)
+/// ```
+///
+/// ## SeeAlso
+/// - ``Revenue``
+/// - ``Product``
+/// - ``ModelComponent``
 public struct RevenueComponent: Sendable {
+    /// The name of this revenue source.
+    ///
+    /// Use descriptive names that identify the revenue stream,
+    /// such as "Product Sales", "Subscription Revenue", or "Consulting Fees".
     public let name: String
-    public let amount: Double  // Single-period amount (backward compatible)
-    public let timeSeries: TimeSeries<Double>?  // Optional multi-period time series
+
+    /// Single-period amount for backward compatibility.
+    ///
+    /// When ``timeSeries`` is nil, this amount is used. When a time series
+    /// is provided, this field is set to 0 and ignored.
+    public let amount: Double
+
+    /// Optional multi-period time series of revenue values.
+    ///
+    /// When provided, enables period-specific revenue calculations.
+    /// Use this for models that span multiple time periods.
+    public let timeSeries: TimeSeries<Double>?
 
     /// Create a revenue component with a single amount (backward compatible).
     public init(name: String, amount: Double) {
@@ -409,6 +497,15 @@ public struct RevenueComponent: Sendable {
 ///
 /// This allows revenue components to be used directly in FinancialModel { } without wrapping in Revenue { }.
 extension RevenueComponent: ModelComponent {
+    /// Applies this revenue component to the financial model.
+    ///
+    /// This method is called automatically by the ``ModelBuilder`` result builder
+    /// when you include revenue components in your model definition.
+    ///
+    /// - Parameter model: The financial model to modify.
+    ///
+    /// ## Implementation Note
+    /// Appends this component to the model's ``FinancialModel/revenueComponents`` array.
     public func apply(to model: inout FinancialModel) {
         model.revenueComponents.append(self)
     }
@@ -441,42 +538,108 @@ public struct Revenue: ModelComponent {
         self.components = [RevenueComponent(name: name, periods: periods, values: values)]
     }
 
+    /// Applies all contained revenue components to the financial model.
+    ///
+    /// This method is called automatically by the ``ModelBuilder`` result builder
+    /// when you include a Revenue block in your model definition.
+    ///
+    /// - Parameter model: The financial model to modify.
+    ///
+    /// ## Implementation Note
+    /// Appends all components in this container to the model's ``FinancialModel/revenueComponents`` array.
     public func apply(to model: inout FinancialModel) {
         model.revenueComponents.append(contentsOf: components)
     }
 }
 
 /// Result builder for revenue components.
+///
+/// This result builder enables SwiftUI-style declarative syntax for defining
+/// revenue components within a ``Revenue`` container. You typically don't use
+/// this directly—it's applied automatically via the `@RevenueBuilder` attribute.
+///
+/// ## Supported Syntax
+/// The builder supports:
+/// - Multiple revenue components
+/// - Conditional revenue (`if`/`else`)
+/// - Optional revenue (`if let`)
+/// - Loops (`for`...`in`)
+/// - Direct ``Product`` expressions
+///
+/// ## Usage Example
+/// ```swift
+/// Revenue {
+///     Product("Widget").price(50).quantity(1000)
+///     Product("Gadget").price(100).quantity(500)
+///
+///     if includeServices {
+///         RevenueComponent(name: "Consulting", amount: 50_000)
+///     }
+/// }
+/// ```
+///
+/// ## SeeAlso
+/// - ``Revenue``
+/// - ``RevenueComponent``
+/// - ``ModelBuilder``
 @resultBuilder
 public struct RevenueBuilder {
+    /// Combines multiple arrays of revenue components into a single array.
+    ///
+    /// This method is called when you have multiple revenue components
+    /// in a Revenue block.
     public static func buildBlock(_ components: [RevenueComponent]...) -> [RevenueComponent] {
         components.flatMap { $0 }
     }
 
+    /// Converts a single revenue component into an array.
+    ///
+    /// This method wraps individual components in an array so they can
+    /// be combined with other components.
     public static func buildExpression(_ component: RevenueComponent) -> [RevenueComponent] {
         [component]
     }
 
+    /// Passes through an array of revenue components unchanged.
+    ///
+    /// Enables nested builder results to be flattened properly.
     public static func buildExpression(_ components: [RevenueComponent]) -> [RevenueComponent] {
         components
     }
 
+    /// Converts a ``Product`` builder into a revenue component.
+    ///
+    /// This allows you to use Product directly in Revenue blocks without
+    /// explicitly calling ``Product/toComponent()``.
     public static func buildExpression(_ product: Product) -> [RevenueComponent] {
         [product.toComponent()]
     }
 
+    /// Flattens arrays of revenue component arrays.
+    ///
+    /// Enables `for`...`in` loops within Revenue blocks.
     public static func buildArray(_ components: [[RevenueComponent]]) -> [RevenueComponent] {
         components.flatMap { $0 }
     }
 
+    /// Handles optional revenue components.
+    ///
+    /// Returns the components if present, or an empty array if nil.
+    /// Enables `if let` and other optional patterns.
     public static func buildOptional(_ component: [RevenueComponent]?) -> [RevenueComponent] {
         component ?? []
     }
 
+    /// Returns the first branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to true.
     public static func buildEither(first component: [RevenueComponent]) -> [RevenueComponent] {
         component
     }
 
+    /// Returns the second branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to false.
     public static func buildEither(second component: [RevenueComponent]) -> [RevenueComponent] {
         component
     }
@@ -485,6 +648,33 @@ public struct RevenueBuilder {
 // MARK: - Product Revenue Builder
 
 /// Fluent builder for product revenue.
+///
+/// Product provides a convenient, chainable API for defining revenue from
+/// product sales. It calculates revenue as `price × quantity` and supports
+/// both single values and time series data.
+///
+/// ## Usage Example
+/// ```swift
+/// // Simple single-period product
+/// Product("Widget")
+///     .price(50)
+///     .quantity(1000)  // Revenue = $50,000
+///
+/// // Multi-period product with time series
+/// let periods = [Period.year(2023), Period.year(2024), Period.year(2025)]
+/// Product("Widget")
+///     .price(periods: periods, values: [50, 52, 54])
+///     .quantity(periods: periods, values: [1000, 1100, 1200])
+/// ```
+///
+/// ## Alternative APIs
+/// You can use ``customers(_:)`` instead of ``quantity(_:)`` when modeling
+/// subscription or service-based revenue where the count represents people
+/// rather than units.
+///
+/// ## SeeAlso
+/// - ``RevenueComponent``
+/// - ``Revenue``
 public struct Product: Sendable {
     private let name: String
     private var priceValue: Double = 0
@@ -495,6 +685,19 @@ public struct Product: Sendable {
     private var priceSeries: TimeSeries<Double>?
     private var quantitySeries: TimeSeries<Double>?
 
+    /// Creates a new product revenue builder.
+    ///
+    /// After initialization, chain ``price(_:)`` and ``quantity(_:)`` methods
+    /// to specify the revenue calculation.
+    ///
+    /// - Parameter name: The name of the product or revenue stream.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let widget = Product("Premium Widget")
+    ///     .price(99.99)
+    ///     .quantity(500)
+    /// ```
     public init(_ name: String) {
         self.name = name
     }
@@ -569,16 +772,73 @@ public struct Product: Sendable {
 // MARK: - Cost Components
 
 /// A cost in the financial model.
+///
+/// Cost components represent expenses in your model. They can be either:
+/// - **Fixed costs**: Constant amounts regardless of revenue (e.g., rent, salaries)
+/// - **Variable costs**: Percentages of revenue (e.g., COGS, commissions)
+///
+/// Cost components support both single-period values and multi-period time series
+/// for sophisticated financial modeling.
+///
+/// ## Usage Example
+/// ```swift
+/// // Fixed cost
+/// let rent = CostComponent(name: "Office Rent", type: .fixed(5_000))
+///
+/// // Variable cost (30% of revenue)
+/// let cogs = CostComponent(name: "COGS", type: .variable(0.30))
+///
+/// // Time series cost
+/// let periods = [Period.year(2023), Period.year(2024)]
+/// let salaries = CostComponent(
+///     name: "Salaries",
+///     periods: periods,
+///     values: [500_000, 550_000]
+/// )
+/// ```
+///
+/// ## SeeAlso
+/// - ``CostType``
+/// - ``Costs``
+/// - ``Fixed(_:_:)``
+/// - ``Variable(_:_:)``
 public enum CostType: Sendable {
     case fixed(Double)
     case variable(Double) // Percentage of revenue
 }
 
+/// A cost component in the financial model.
+///
+/// Represents an individual expense item with support for fixed and variable
+/// costs, time series data, and standardized expense classification.
+///
+/// ## SeeAlso
+/// - ``CostType``
+/// - ``ExpenseType``
+/// - ``Costs``
 public struct CostComponent: Sendable {
+    /// The name of this cost component.
+    ///
+    /// Use descriptive names like "Salaries", "Marketing", or "COGS".
     public let name: String
+
+    /// The type of cost (fixed amount or variable percentage).
+    ///
+    /// Ignored when ``timeSeries`` is provided.
     public let type: CostType
-    public let timeSeries: TimeSeries<Double>?  // Optional multi-period time series
-    public let expenseType: ExpenseType?  // Optional classification for inter-company comparisons
+
+    /// Optional multi-period time series of cost values.
+    ///
+    /// When provided, enables period-specific cost calculations.
+    public let timeSeries: TimeSeries<Double>?
+
+    /// Optional standardized expense classification.
+    ///
+    /// Useful for inter-company comparisons where different companies
+    /// may use different naming conventions for similar expense categories.
+    ///
+    /// Example: "COGS" vs "Cost of Sales" both map to ``ExpenseType/costOfGoodsSold``.
+    public let expenseType: ExpenseType?
 
     /// Create a cost component with a single value (backward compatible).
     public init(name: String, type: CostType) {
@@ -631,41 +891,140 @@ public struct CostComponent: Sendable {
 }
 
 /// Container for cost components.
+///
+/// Use the Costs container to group multiple expense items together in your
+/// financial model using declarative syntax.
+///
+/// ## Usage Example
+/// ```swift
+/// FinancialModel {
+///     Revenue {
+///         Product("Widget").price(50).quantity(1000)
+///     }
+///
+///     Costs {
+///         Fixed("Rent", 5_000)
+///         Fixed("Salaries", 50_000)
+///         Variable("COGS", 0.30)
+///         Variable("Commission", 0.05)
+///     }
+/// }
+/// ```
+///
+/// ## SeeAlso
+/// - ``CostComponent``
+/// - ``Fixed(_:_:)``
+/// - ``Variable(_:_:)``
+/// - ``CostBuilder``
 public struct Costs: ModelComponent {
     private let components: [CostComponent]
 
+    /// Creates a costs container with nested cost components using builder syntax.
+    ///
+    /// - Parameter builder: A closure that builds the cost components.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// Costs {
+    ///     Fixed("Office Rent", 10_000)
+    ///     Fixed("Salaries", 75_000)
+    ///     Variable("Materials", 0.40)
+    /// }
+    /// ```
     public init(@CostBuilder builder: () -> [CostComponent]) {
         self.components = builder()
     }
 
+    /// Applies all contained cost components to the financial model.
+    ///
+    /// This method is called automatically by the ``ModelBuilder`` result builder
+    /// when you include a Costs block in your model definition.
+    ///
+    /// - Parameter model: The financial model to modify.
+    ///
+    /// ## Implementation Note
+    /// Appends all components in this container to the model's ``FinancialModel/costComponents`` array.
     public func apply(to model: inout FinancialModel) {
         model.costComponents.append(contentsOf: components)
     }
 }
 
 /// Result builder for cost components.
+///
+/// This result builder enables SwiftUI-style declarative syntax for defining
+/// cost components within a ``Costs`` container. You typically don't use this
+/// directly—it's applied automatically via the `@CostBuilder` attribute.
+///
+/// ## Supported Syntax
+/// The builder supports:
+/// - Multiple cost components
+/// - Conditional costs (`if`/`else`)
+/// - Optional costs (`if let`)
+/// - Loops (`for`...`in`)
+///
+/// ## Usage Example
+/// ```swift
+/// Costs {
+///     Fixed("Base Salary", 50_000)
+///     Variable("Commission", 0.10)
+///
+///     if includeMarketing {
+///         Fixed("Marketing", 15_000)
+///     }
+///
+///     for dept in departments {
+///         Fixed("\(dept) Overhead", dept.overhead)
+///     }
+/// }
+/// ```
+///
+/// ## SeeAlso
+/// - ``Costs``
+/// - ``CostComponent``
+/// - ``ModelBuilder``
 @resultBuilder
 public struct CostBuilder {
+    /// Combines multiple arrays of cost components into a single array.
+    ///
+    /// This method is called when you have multiple cost components
+    /// in a Costs block.
     public static func buildBlock(_ components: [CostComponent]...) -> [CostComponent] {
         components.flatMap { $0 }
     }
 
+    /// Converts a single cost component into an array.
+    ///
+    /// This method wraps individual components in an array so they can
+    /// be combined with other components.
     public static func buildExpression(_ component: CostComponent) -> [CostComponent] {
         [component]
     }
 
+    /// Flattens arrays of cost component arrays.
+    ///
+    /// Enables `for`...`in` loops within Costs blocks.
     public static func buildArray(_ components: [[CostComponent]]) -> [CostComponent] {
         components.flatMap { $0 }
     }
 
+    /// Handles optional cost components.
+    ///
+    /// Returns the components if present, or an empty array if nil.
+    /// Enables `if let` and other optional patterns.
     public static func buildOptional(_ component: [CostComponent]?) -> [CostComponent] {
         component ?? []
     }
 
+    /// Returns the first branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to true.
     public static func buildEither(first component: [CostComponent]) -> [CostComponent] {
         component
     }
 
+    /// Returns the second branch of an `if`/`else` expression.
+    ///
+    /// Called when the condition evaluates to false.
     public static func buildEither(second component: [CostComponent]) -> [CostComponent] {
         component
     }
@@ -787,6 +1146,25 @@ public func Expense(_ name: String, periods: [Period], values: [Double], type: E
 ///
 /// This allows costs to be used directly in buildModel { } without wrapping in Costs { }.
 extension CostComponent: ModelComponent {
+    /// Applies this cost component to the financial model.
+    ///
+    /// This method is called automatically by the ``ModelBuilder`` result builder
+    /// when you include cost components in your model definition.
+    ///
+    /// - Parameter model: The financial model to modify.
+    ///
+    /// ## Implementation Note
+    /// Appends this component to the model's ``FinancialModel/costComponents`` array.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// // CostComponent can be used directly without Costs { } wrapper
+    /// let model = buildModel {
+    ///     RevenueAmount("Sales", 100_000)
+    ///     CostAmount("COGS", 60_000)  // Applied via this method
+    ///     CostAmount("OpEx", 20_000)   // Applied via this method
+    /// }
+    /// ```
     public func apply(to model: inout FinancialModel) {
         model.costComponents.append(self)
     }
@@ -795,6 +1173,21 @@ extension CostComponent: ModelComponent {
 // MARK: - Scenario Components
 
 /// Adjustment type for scenarios.
+///
+/// Specifies what component(s) of the financial model should be adjusted
+/// in a scenario analysis.
+///
+/// ## Cases
+/// - ``revenue``: Adjust all revenue components
+/// - ``costs``: Adjust all cost components
+/// - ``specific(_:)``: Adjust a specific component by name
+///
+/// ## Usage Example
+/// ```swift
+/// ModelScenario("Pessimistic")
+///     .adjust(.revenue, by: -0.20)           // All revenue down 20%
+///     .adjust(.specific("COGS"), by: 0.10)   // COGS up 10%
+/// ```
 public enum AdjustmentTarget: Sendable {
     case revenue
     case costs
@@ -802,10 +1195,37 @@ public enum AdjustmentTarget: Sendable {
 }
 
 /// An adjustment to apply in a scenario.
+///
+/// Represents a percentage change to apply to a model component in a scenario.
+/// Adjustments are typically defined using the fluent ``ModelScenario`` API.
+///
+/// ## Usage Example
+/// ```swift
+/// let adj = Adjustment(target: .revenue, percentage: -0.15)  // 15% decrease
+/// ```
+///
+/// ## SeeAlso
+/// - ``AdjustmentTarget``
+/// - ``ModelScenario``
+/// - ``ScenarioDefinition``
 public struct Adjustment: Sendable {
+    /// The target component(s) to adjust.
     public let target: AdjustmentTarget
+
+    /// The percentage change to apply (e.g., -0.20 for -20%, 0.10 for +10%).
     public let percentage: Double
 
+    /// Creates an adjustment with a target and percentage.
+    ///
+    /// - Parameters:
+    ///   - target: What to adjust (revenue, costs, or a specific component)
+    ///   - percentage: The percentage change (e.g., 0.10 = +10%, -0.20 = -20%)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let optimistic = Adjustment(target: .revenue, percentage: 0.25)
+    /// let pessimistic = Adjustment(target: .costs, percentage: 0.15)
+    /// ```
     public init(target: AdjustmentTarget, percentage: Double) {
         self.target = target
         self.percentage = percentage
@@ -813,30 +1233,130 @@ public struct Adjustment: Sendable {
 }
 
 /// A scenario definition.
+///
+/// Defines a named scenario with a collection of adjustments to apply to
+/// a financial model. Scenarios enable "what-if" analysis.
+///
+/// ## Usage Example
+/// ```swift
+/// var scenario = ScenarioDefinition(name: "Best Case")
+/// scenario.adjustments = [
+///     Adjustment(target: .revenue, percentage: 0.30),
+///     Adjustment(target: .costs, percentage: -0.10)
+/// ]
+/// ```
+///
+/// Typically, you'll use the more ergonomic ``ModelScenario`` fluent API instead
+/// of constructing ScenarioDefinition directly.
+///
+/// ## SeeAlso
+/// - ``ModelScenario``
+/// - ``Adjustment``
 public struct ScenarioDefinition: Sendable {
+    /// The name of the scenario (e.g., "Base Case", "Pessimistic", "Optimistic").
     public let name: String
+
+    /// The adjustments to apply in this scenario.
     public var adjustments: [Adjustment] = []
 
+    /// Creates a scenario definition with a name.
+    ///
+    /// - Parameter name: The scenario name.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let scenario = ScenarioDefinition(name: "Worst Case")
+    /// ```
     public init(name: String) {
         self.name = name
     }
 }
 
 /// Fluent scenario builder.
+///
+/// ModelScenario provides a chainable API for defining scenarios with adjustments
+/// to revenue, costs, or specific components. Use this within a financial model
+/// to enable scenario analysis.
+///
+/// ## Usage Example
+/// ```swift
+/// let model = FinancialModel {
+///     Revenue {
+///         Product("Widget").price(50).quantity(1000)
+///     }
+///
+///     Costs {
+///         Fixed("Overhead", 10_000)
+///         Variable("COGS", 0.30)
+///     }
+///
+///     // Define scenarios
+///     ModelScenario("Optimistic")
+///         .adjust(.revenue, by: 0.20)
+///         .adjust(.costs, by: -0.10)
+///
+///     ModelScenario("Pessimistic")
+///         .adjust(.revenue, by: -0.20)
+///         .adjust(.costs, by: 0.15)
+/// }
+/// ```
+///
+/// ## SeeAlso
+/// - ``ScenarioDefinition``
+/// - ``Adjustment``
+/// - ``AdjustmentTarget``
 public struct ModelScenario: ModelComponent {
     private var definition: ScenarioDefinition
 
+    /// Creates a new scenario with the given name.
+    ///
+    /// After initialization, chain ``adjust(_:by:)`` calls to define
+    /// the adjustments for this scenario.
+    ///
+    /// - Parameter name: The scenario name (e.g., "Base Case", "Worst Case").
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// ModelScenario("Best Case")
+    ///     .adjust(.revenue, by: 0.30)
+    ///     .adjust(.costs, by: -0.15)
+    /// ```
     public init(_ name: String) {
         self.definition = ScenarioDefinition(name: name)
     }
 
     /// Add an adjustment to this scenario.
+    ///
+    /// Returns a new ModelScenario with the adjustment added, enabling
+    /// method chaining.
+    ///
+    /// - Parameters:
+    ///   - target: What to adjust (revenue, costs, or specific component)
+    ///   - percentage: The percentage change (e.g., 0.10 = +10%, -0.20 = -20%)
+    ///
+    /// - Returns: A new ModelScenario with the adjustment added.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// ModelScenario("Growth Scenario")
+    ///     .adjust(.revenue, by: 0.50)
+    ///     .adjust(.specific("Marketing"), by: 0.25)
+    /// ```
     public func adjust(_ target: AdjustmentTarget, by percentage: Double) -> Self {
         var copy = self
         copy.definition.adjustments.append(Adjustment(target: target, percentage: percentage))
         return copy
     }
 
+    /// Applies this scenario definition to the financial model.
+    ///
+    /// This method is called automatically by the ``ModelBuilder`` result builder
+    /// when you include scenarios in your model definition.
+    ///
+    /// - Parameter model: The financial model to modify.
+    ///
+    /// ## Implementation Note
+    /// Appends this scenario to the model's ``FinancialModel/scenarios`` array.
     public func apply(to model: inout FinancialModel) {
         model.scenarios.append(definition)
     }
@@ -882,23 +1402,52 @@ public func buildModel(for entity: Entity, @ModelBuilder builder: () -> [ModelCo
 
 /// Create a product revenue component directly at the model level.
 ///
+/// DirectProduct is a wrapper that allows ``Product`` builders to be used
+/// directly in model blocks without a ``Revenue`` container. This is handled
+/// automatically by the ``ModelBuilder`` through its `buildExpression` method.
+///
 /// Products must specify periods for both price and quantity to work at the top level.
 ///
-/// Example:
+/// ## Usage Example
 /// ```swift
+/// let periods = (1...12).map { Period.month(year: 2025, month: $0) }
+/// let prices = Array(repeating: 50.0, count: 12)
+/// let quantities = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210]
+///
 /// let model = buildModel {
 ///     Product("Widget")
-///         .price(periods: months, values: [10.0, 10.5, 11.0])
-///         .quantity(periods: months, values: [1000, 1100, 1200])
+///         .price(periods: periods, values: prices)
+///         .quantity(periods: periods, values: quantities)
 /// }
 /// ```
+///
+/// ## Note
+/// You typically don't create DirectProduct instances yourself—the ``ModelBuilder``
+/// creates them automatically when you use ``Product`` directly in a model block.
+///
+/// ## SeeAlso
+/// - ``Product``
+/// - ``ModelBuilder``
+/// - ``RevenueComponent``
 public struct DirectProduct: ModelComponent {
     private let product: Product
 
+    /// Creates a direct product wrapper.
+    ///
+    /// - Parameter product: The product builder to wrap.
+    ///
+    /// ## Note
+    /// This initializer is typically called automatically by ``ModelBuilder/buildExpression(_:)``
+    /// when you use a ``Product`` directly in a model definition.
     public init(_ product: Product) {
         self.product = product
     }
 
+    /// Applies the product as a revenue component to the financial model.
+    ///
+    /// Converts the ``Product`` to a ``RevenueComponent`` and adds it to the model.
+    ///
+    /// - Parameter model: The financial model to modify.
     public func apply(to model: inout FinancialModel) {
         model.revenueComponents.append(product.toComponent())
     }

@@ -277,7 +277,7 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 	/// - Returns: Optimization result with solution and Lagrange multipliers
 	/// - Throws: `OptimizationError` if optimization fails
 	public func maximize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		subjectTo constraints: [MultivariateConstraint<V>]
 	) throws -> ConstrainedOptimizationResult<V> {
@@ -289,7 +289,7 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 	// MARK: - Augmented Lagrangian Method
 
 	private func optimizeWithAugmentedLagrangian(
-		objective: @escaping (V) -> V.Scalar,
+		objective: @escaping @Sendable (V) -> V.Scalar,
 		initialGuess: V,
 		equalityConstraints: [MultivariateConstraint<V>]
 	) throws -> ConstrainedOptimizationResult<V> {
@@ -301,7 +301,7 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 
 		for outerIter in 0..<maxIterations {
 			// Build augmented Lagrangian: L(x) = f(x) + Σλᵢhᵢ(x) + (μ/2)Σhᵢ(x)²
-			let augmentedLagrangian: (V) -> V.Scalar = { point in
+			let augmentedLagrangian: @Sendable (V) -> V.Scalar = { point in
 				let objValue = objective(point)
 				var augmented = objValue
 

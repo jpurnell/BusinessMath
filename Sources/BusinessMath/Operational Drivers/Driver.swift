@@ -129,7 +129,27 @@ public struct AnyDriver<T: Real & Sendable>: Driver, Sendable {
 			driver.sample(for: period)
 		}
 	}
-
+	
+	// Generates a single sample value for the specified period.
+	///
+	/// This method is called during projection to generate values for each period.
+	/// For deterministic drivers, this returns the same value every time for a given period.
+	/// For probabilistic drivers, this samples from the underlying distribution.
+	///
+	/// - Parameter period: The time period for which to generate a value.
+	/// - Returns: A sampled value for the specified period.
+	///
+	/// ## Example
+	/// ```swift
+	/// let driver = ProbabilisticDriver(
+	///     name: "Sales",
+	///     distribution: DistributionNormal(1000.0, 100.0)
+	/// )
+	///
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	/// let sample1 = driver.sample(for: q1)  // e.g., 1023.5
+	/// let sample2 = driver.sample(for: q1)  // e.g., 987.3 (different sample)
+	/// ```
 	public func sample(for period: Period) -> T {
 		return _sample(period)
 	}

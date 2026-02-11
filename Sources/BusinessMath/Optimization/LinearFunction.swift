@@ -98,7 +98,9 @@ extension LinearFunction {
 public struct StandardLinearFunction<V: VectorSpace>: LinearFunction
     where V.Scalar == Double, V: Sendable
 {
+    /// Declare linear oefficients
     public let coefficients: [Double]
+    /// Declare linear constant
     public let constant: Double
 
     /// Create a linear function with explicit coefficients
@@ -194,6 +196,12 @@ extension StandardLinearFunction {
 // MARK: - CustomStringConvertible
 
 extension StandardLinearFunction: CustomStringConvertible {
+    // MARK: - LocalizedError Conformance
+
+    /// A localized human-readable description of the error.
+    ///
+    /// Provides context-specific error messages with relevant details like
+    /// values, ranges, and suggestions.
     public var description: String {
         var terms: [String] = []
 

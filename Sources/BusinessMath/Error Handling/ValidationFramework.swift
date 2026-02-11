@@ -48,6 +48,14 @@ public struct CalculationWarning: Sendable {
     /// Recovery suggestions
     public let suggestions: [String]
 
+    /// Creates a calculation warning with context and recovery suggestions.
+    ///
+    /// - Parameters:
+    ///   - severity: Severity level (`.info`, `.warning`, or `.error`)
+    ///   - type: Warning classification for filtering and categorization
+    ///   - message: Human-readable description of the issue
+    ///   - context: Additional key-value pairs providing context (e.g., variable names, values)
+    ///   - suggestions: Array of recommended actions to resolve or mitigate the issue
     public init(
         severity: WarningSeverity,
         type: WarningType,
@@ -88,6 +96,11 @@ public struct BMValidationResult: Sendable {
         warnings.filter { $0.severity == .info }
     }
 
+    /// Creates a validation result with validity status and warnings.
+    ///
+    /// - Parameters:
+    ///   - isValid: Whether validation passed (true = no errors, false = has errors)
+    ///   - warnings: Array of all warnings including info, warnings, and errors
     public init(isValid: Bool, warnings: [CalculationWarning] = []) {
         self.isValid = isValid
         self.warnings = warnings
@@ -115,6 +128,7 @@ public protocol Validatable {
 // MARK: - TimeSeries Validation
 
 extension TimeSeries: Validatable where T: Real & Sendable {
+	/// Validate the instance and return a result
     public func validate() -> BMValidationResult {
         return validate(detectOutliers: false)
     }
@@ -310,6 +324,7 @@ extension TimeSeries: Validatable where T: Real & Sendable {
 // MARK: - FinancialModel Validation
 
 extension FinancialModel: Validatable {
+	/// Checks for three types of errors: Empty Models, Models with costs, but without Revenue, or negative Revenue values
     public func validate() -> BMValidationResult {
         var warnings: [CalculationWarning] = []
 

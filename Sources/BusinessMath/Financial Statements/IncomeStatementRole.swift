@@ -51,6 +51,20 @@ protocol StatementRole {
 	var description: String { get }
 }
 
+/// Categorizes line items on an income statement by their functional role.
+///
+/// Provides semantic classification of revenue, cost, and expense accounts
+/// for income statement preparation and analysis. Each role identifies whether
+/// an item represents revenue, cost of revenue, operating expenses, non-cash charges,
+/// or non-operating items.
+///
+/// ## Example
+/// ```swift
+/// let salesRole = IncomeStatementRole.revenue
+/// if salesRole.isRevenue {
+///     // Include in revenue section
+/// }
+/// ```
 public enum IncomeStatementRole: String, Sendable, Hashable, Codable, CaseIterable, StatementRole {
 	var roleStatements: String { return "Income Statement"}
 	

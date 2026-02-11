@@ -56,7 +56,16 @@ public struct SaaSModel: Sendable {
     public var priceIncreases: [(month: Int, percentage: Double)]
 
     // MARK: - Initialization
-
+	
+	/// Creates a Subscription as a Service model with baseline financial parameters.
+	/// - Parameters:
+	///   - initialMRR: Starting Monthly Recurring Revenue
+	///   - churnRate: Monthly churn rate (percentage of customers lost per month)
+	///   - newCustomersPerMonth: Number of new customers acquired per month
+	///   - averageRevenuePerUser: Average revenue per user (ARPU)
+	///   - grossMargin: Gross margin percentage (optional, defaults to 1.0 for 100%)
+	///   - customerAcquisitionCost: Customer Acquisition Cost (optional)
+	///   - priceIncreases: Price increases at specific months
     public init(
         initialMRR: Double,
         churnRate: Double,

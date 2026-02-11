@@ -410,7 +410,14 @@ public struct CapitalStructureAdjustment {
 
     /// The target debt ratio
     public let targetDebtRatio: Double
-
+	
+	/// Creates an adjustment to the capital structure with the specified components.
+	///
+	/// - Parameters:
+	///   - debtChange: The change in debt value (positive = increase, negative = decrease)
+	///   - equityChange: The change in equity value (positive = increase, negative = decrease)
+	///   - currentDebtRatio: The current debt ratio
+	///   - targetDebtRatio: The target debt ratio
     public init(debtChange: Double, equityChange: Double, currentDebtRatio: Double, targetDebtRatio: Double) {
         self.debtChange = debtChange
         self.equityChange = equityChange

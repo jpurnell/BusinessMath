@@ -65,6 +65,13 @@ public struct DuPontAnalysis<T: Real & Sendable>: Sendable where T: Codable {
 	/// Should equal netMargin × assetTurnover × equityMultiplier
 	public let roe: TimeSeries<T>
 
+	/// Creates a 3-way DuPont analysis result with all components.
+	///
+	/// - Parameters:
+	///   - netMargin: Net profit margin (Net Income / Revenue)
+	///   - assetTurnover: Asset turnover ratio (Revenue / Average Assets)
+	///   - equityMultiplier: Equity multiplier (Average Assets / Average Equity)
+	///   - roe: Return on equity (Net Income / Average Equity)
 	public init(
 		netMargin: TimeSeries<T>,
 		assetTurnover: TimeSeries<T>,
@@ -220,6 +227,15 @@ public struct DuPont5WayAnalysis<T: Real & Sendable>: Sendable where T: Codable 
 	/// Should equal product of all 5 components
 	public let roe: TimeSeries<T>
 
+	/// Creates a 5-way DuPont analysis result with all components.
+	///
+	/// - Parameters:
+	///   - taxBurden: Tax retention rate (Net Income / EBT)
+	///   - interestBurden: Interest burden (EBT / EBIT)
+	///   - operatingMargin: Operating profit margin (EBIT / Revenue)
+	///   - assetTurnover: Asset turnover ratio (Revenue / Average Assets)
+	///   - equityMultiplier: Equity multiplier (Average Assets / Average Equity)
+	///   - roe: Return on equity (Net Income / Average Equity)
 	public init(
 		taxBurden: TimeSeries<T>,
 		interestBurden: TimeSeries<T>,

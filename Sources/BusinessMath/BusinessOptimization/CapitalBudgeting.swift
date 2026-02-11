@@ -1,12 +1,51 @@
 import Foundation
 
-/// Represents a capital investment project with NPV and cost information
+/// Represents a capital investment project with NPV and cost information.
+///
+/// Use `CapitalProject` to model investment opportunities in capital budgeting decisions.
+/// Projects can have dependencies (must select another project first) and mutual exclusivity
+/// constraints (cannot select both projects).
+///
+/// ## Example
+/// ```swift
+/// let project = CapitalProject(
+///     name: "Factory Expansion",
+///     npv: 500_000,
+///     cost: 2_000_000,
+///     requires: "Site Preparation",
+///     mutuallyExclusiveWith: "Warehouse Renovation"
+/// )
+/// ```
 public struct CapitalProject: Sendable {
+    /// The project identifier/name.
     public let name: String
+
+    /// The net present value of the project's cash flows.
+    ///
+    /// Projects with positive NPV add value; higher NPV is preferred.
     public let npv: Double
+
+    /// The total capital cost across all periods.
+    ///
+    /// This is the sum of `periodicCosts`.
     public let cost: Double
+
+    /// The capital costs required in each time period.
+    ///
+    /// For single-period projects, this contains one element equal to `cost`.
+    /// For multi-period projects, this tracks when capital is deployed over time.
     public let periodicCosts: [Double]
+
+    /// Optional dependency: name of another project that must be selected first.
+    ///
+    /// If specified, this project can only be selected if the required project is also selected.
+    /// Use this to model logical dependencies (e.g., "Phase 2" requires "Phase 1").
     public let requires: String?
+
+    /// Optional mutual exclusivity: name of another project that cannot be selected together.
+    ///
+    /// If specified, at most one of this project and the mutually exclusive project can be selected.
+    /// Use this to model competing alternatives (e.g., "Build" vs "Buy").
     public let mutuallyExclusiveWith: String?
 
     /// Create a single-period capital project
@@ -48,14 +87,52 @@ public enum CapitalBudgetingObjective: Sendable {
     case profitabilityIndex    // Maximize NPV per dollar spent
 }
 
-/// Result of capital budgeting optimization
+/// Result of capital budgeting optimization.
+///
+/// Contains the optimal selection of projects that maximizes the objective function
+/// while respecting budget constraints and project dependencies.
+///
+/// ## Example
+/// ```swift
+/// let result = try optimizer.selectProjects(projects: allProjects, budget: 10_000_000)
+/// print("Selected \(result.selectedProjects.count) projects")
+/// print("Total NPV: $\(result.totalNPV)")
+/// print("Total Cost: $\(result.totalCost)")
+/// print("Profitability Index: \(result.profitabilityIndex)")
+/// ```
 public struct CapitalBudgetingResult: Sendable {
+    /// The projects selected by the optimizer.
+    ///
+    /// These projects jointly maximize the objective while satisfying all constraints.
     public let selectedProjects: [CapitalProject]
+
+    /// The combined NPV of all selected projects.
     public let totalNPV: Double
+
+    /// The combined capital cost of all selected projects.
     public let totalCost: Double
+
+    /// The profitability index: total NPV divided by total cost.
+    ///
+    /// Measures the value created per dollar invested. Higher is better.
+    /// Returns 0 if `totalCost` is 0.
     public let profitabilityIndex: Double
+
+    /// The solution status from the integer programming solver.
+    ///
+    /// - `.optimal`: Found the best possible selection
+    /// - `.feasible`: Found a valid selection but may not be optimal
+    /// - `.infeasible`: No selection satisfies all constraints
+    /// - `.unbounded`: Problem is not well-formed
     public let status: IntegerSolutionStatus
 
+    /// Creates a capital budgeting result.
+    ///
+    /// - Parameters:
+    ///   - selectedProjects: The projects chosen by the optimizer.
+    ///   - totalNPV: The sum of NPVs for selected projects.
+    ///   - totalCost: The sum of costs for selected projects.
+    ///   - status: The optimization solution status.
     public init(
         selectedProjects: [CapitalProject],
         totalNPV: Double,
@@ -70,11 +147,39 @@ public struct CapitalBudgetingResult: Sendable {
     }
 }
 
-/// Optimizer for capital budgeting and project selection problems
+/// Optimizer for capital budgeting and project selection problems.
+///
+/// Uses mixed-integer programming via branch-and-bound to find the optimal selection
+/// of capital projects that maximizes NPV or profitability index while respecting
+/// budget constraints, project dependencies, and mutual exclusivity.
+///
+/// ## Example
+/// ```swift
+/// let optimizer = CapitalBudgetingOptimizer(maxNodes: 50_000, timeLimit: 120.0)
+///
+/// let projects = [
+///     CapitalProject(name: "Project A", npv: 100_000, cost: 300_000),
+///     CapitalProject(name: "Project B", npv: 80_000, cost: 200_000),
+///     CapitalProject(name: "Project C", npv: 60_000, cost: 150_000)
+/// ]
+///
+/// let result = try optimizer.selectProjects(
+///     projects: projects,
+///     budget: 500_000,
+///     objective: .totalNPV
+/// )
+/// ```
 public struct CapitalBudgetingOptimizer: Sendable {
     private let maxNodes: Int
     private let timeLimit: Double
 
+    /// Creates a capital budgeting optimizer with solver limits.
+    ///
+    /// - Parameters:
+    ///   - maxNodes: Maximum number of branch-and-bound nodes to explore.
+    ///     Higher values allow finding better solutions but take longer. Default: 10,000.
+    ///   - timeLimit: Maximum solver time in seconds. Solver stops after this duration
+    ///     and returns the best solution found. Default: 60 seconds.
     public init(
         maxNodes: Int = 10_000,
         timeLimit: Double = 60.0

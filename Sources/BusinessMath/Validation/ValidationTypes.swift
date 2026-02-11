@@ -87,6 +87,7 @@ public struct ValidationError: Error, CustomStringConvertible {
 		self.suggestion = suggestion
 	}
 
+	/// Human-readable description of the validation error.
 	public var description: String {
 		var desc = "Validation Error (\(rule)) in '\(field)': \(message)\n"
 		desc += "  Value: \(value)"

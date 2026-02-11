@@ -47,6 +47,7 @@ public enum FinancialRatioError: Error, CustomStringConvertible {
 	/// Required expense not found in income statement.
 	case missingExpense(String)
 
+	/// Human-readable error description.
 	public var description: String {
 		switch self {
 		case .missingAccount(let name):
@@ -998,6 +999,15 @@ public struct ProfitabilityRatios<T: Real & Sendable>: Sendable where T: Codable
 	/// Return on Invested Capital - NOPAT / Average Invested Capital
 	public let roic: TimeSeries<T>
 
+	/// Creates a profitability ratios result.
+	/// - Parameters:
+	///   - grossMargin: Gross profit margin time series
+	///   - operatingMargin: Operating profit margin time series
+	///   - netMargin: Net profit margin time series
+	///   - ebitdaMargin: EBITDA margin time series
+	///   - roa: Return on assets time series
+	///   - roe: Return on equity time series
+	///   - roic: Return on invested capital time series
 	public init(
 		grossMargin: TimeSeries<T>,
 		operatingMargin: TimeSeries<T>,
@@ -1140,6 +1150,15 @@ public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 	/// Cash conversion cycle: DIO + DSO - DPO (nil if any component missing)
 	public let cashConversionCycle: TimeSeries<T>?
 
+	/// Creates an efficiency ratios result.
+	/// - Parameters:
+	///   - assetTurnover: Asset turnover ratio time series
+	///   - inventoryTurnover: Inventory turnover ratio (nil if no inventory)
+	///   - receivablesTurnover: Receivables turnover ratio (nil if no receivables)
+	///   - daysSalesOutstanding: Days sales outstanding (nil if no receivables)
+	///   - daysInventoryOutstanding: Days inventory outstanding (nil if no inventory)
+	///   - daysPayableOutstanding: Days payable outstanding (nil if no payables)
+	///   - cashConversionCycle: Cash conversion cycle (nil if any component missing)
 	public init(
 		assetTurnover: TimeSeries<T>,
 		inventoryTurnover: TimeSeries<T>?,
@@ -1252,6 +1271,12 @@ public struct LiquidityRatios<T: Real & Sendable>: Sendable where T: Codable {
 	/// Current Assets - Current Liabilities
 	public let workingCapital: TimeSeries<T>
 
+	/// Creates a liquidity ratios result.
+	/// - Parameters:
+	///   - currentRatio: Current ratio time series
+	///   - quickRatio: Quick ratio time series
+	///   - cashRatio: Cash ratio time series
+	///   - workingCapital: Working capital time series
 	public init(
 		currentRatio: TimeSeries<T>,
 		quickRatio: TimeSeries<T>,
@@ -1332,6 +1357,13 @@ public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 	/// Operating Income / (Principal + Interest) (nil if payment data not provided)
 	public let debtServiceCoverage: TimeSeries<T>?
 
+	/// Creates a solvency ratios result.
+	/// - Parameters:
+	///   - debtToEquity: Debt-to-equity ratio time series
+	///   - debtToAssets: Debt-to-assets ratio time series
+	///   - equityRatio: Equity ratio time series
+	///   - interestCoverage: Interest coverage ratio (nil if no interest expense)
+	///   - debtServiceCoverage: Debt service coverage ratio (nil if payment data unavailable)
 	public init(
 		debtToEquity: TimeSeries<T>,
 		debtToAssets: TimeSeries<T>,
@@ -1563,6 +1595,15 @@ public struct ValuationMetrics<T: Real & Sendable>: Sendable where T: Codable {
 	/// EV / Sales ratio
 	public let evToSales: TimeSeries<T>
 
+	/// Creates a valuation ratios result.
+	/// - Parameters:
+	///   - marketCap: Market capitalization time series
+	///   - priceToEarnings: P/E ratio time series
+	///   - priceToBook: P/B ratio time series
+	///   - priceToSales: P/S ratio time series
+	///   - enterpriseValue: Enterprise value time series
+	///   - evToEbitda: EV/EBITDA ratio time series
+	///   - evToSales: EV/Sales ratio time series
 	public init(
 		marketCap: TimeSeries<T>,
 		priceToEarnings: TimeSeries<T>,

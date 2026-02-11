@@ -39,6 +39,18 @@ public protocol TimeSeriesEntry<Value>: Sendable {
 ///     growing(by: 0.10)
 /// }
 /// ```
+///
+/// ## Result Builder Methods
+/// Implements all standard result builder methods to support:
+/// - Multiple entries: `buildBlock`
+/// - Arrays/loops: `buildArray`
+/// - Conditionals: `buildOptional`, `buildEither`
+/// - Single entries: `buildExpression`
+/// - API availability: `buildLimitedAvailability`
+///
+/// ## See Also
+/// - ``TimeSeries/init(builder:)`` for using this builder
+/// - ``=>(_:_:)-5bki9`` for the arrow operator syntax
 @resultBuilder
 public struct TimeSeriesBuilder<T: Real & Sendable> {
     /// Build a block of time series entries.
@@ -81,10 +93,33 @@ public struct TimeSeriesBuilder<T: Real & Sendable> {
 // MARK: - Time Series Entry Implementation
 
 /// Concrete implementation of a time series entry.
+///
+/// Represents a single (period, value) pair in a time series. Created using
+/// the arrow operator or directly via the initializer.
+///
+/// ## Example
+/// ```swift
+/// // Using arrow operator (preferred)
+/// let entry1 = Period.year(2023) => 1_000_000
+///
+/// // Direct initialization
+/// let entry2 = TimeSeriesEntryImpl(period: Period.year(2024), value: 1_100_000)
+/// ```
+///
+/// ## See Also
+/// - ``=>(_:_:)-5bki9`` for arrow operator syntax
+/// - ``TimeSeriesEntry`` protocol
 public struct TimeSeriesEntryImpl<T: Real & Sendable>: TimeSeriesEntry, Sendable {
+    /// The time period for this entry (year, quarter, month, etc.).
     public let period: Period
+
+    /// The numeric value associated with this period.
     public let value: T
 
+    /// Create a time series entry with an explicit period and value.
+    /// - Parameters:
+    ///   - period: The time period
+    ///   - value: The numeric value
     public init(period: Period, value: T) {
         self.period = period
         self.value = value
@@ -173,8 +208,31 @@ public struct TimeSeriesProjection<T: Real & Sendable>: Sendable {
 // MARK: - Projection Builder
 
 /// Result builder for creating time series projections.
+///
+/// Combines projection components (starting value, growth rate, custom generator)
+/// into a complete projection pattern. Used with ``TimeSeries/init(from:to:builder:)``.
+///
+/// ## Example
+/// ```swift
+/// let projection = TimeSeries(from: 2023, to: 2030) {
+///     starting(at: 1_000_000)
+///     growing(by: 0.10)
+/// }
+/// ```
+///
+/// ## See Also
+/// - ``starting(at:)`` for setting initial value
+/// - ``growing(by:)`` for setting growth rate
+/// - ``custom(generator:)`` for custom generation logic
 @resultBuilder
 public struct ProjectionBuilder<T: Real & Sendable> {
+    /// Build a projection from components.
+    ///
+    /// Processes components in order, combining them into a single projection.
+    /// If multiple components of the same type are provided, the last one wins.
+    ///
+    /// - Parameter components: Projection components (starting, growing, custom)
+    /// - Returns: A complete time series projection
     public static func buildBlock(_ components: ProjectionComponent<T>...) -> TimeSeriesProjection<T> {
         var initialValue: T = 0
         var growthRate: T? = nil
@@ -194,6 +252,9 @@ public struct ProjectionBuilder<T: Real & Sendable> {
         return TimeSeriesProjection(initialValue: initialValue, growthRate: growthRate, generator: generator)
     }
 
+    /// Convert a projection component into a result builder component.
+    /// - Parameter component: A projection component
+    /// - Returns: The component unchanged
     public static func buildExpression(_ component: ProjectionComponent<T>) -> ProjectionComponent<T> {
         component
     }
@@ -306,10 +367,27 @@ extension TimeSeries where T: Real & Sendable {
 ///
 /// Used with `buildTimeSeries(startingAt:)` to create time series where periods
 /// are automatically sequenced from a starting point.
+///
+/// ## Example
+/// ```swift
+/// let entry1 = SimpleEntry(value: 100.0, label: "January")
+/// let entry2 = SimpleEntry(value: 105.0, label: nil)
+/// ```
+///
+/// ## See Also
+/// - ``Entry(_:)`` for creating entries in a builder context
+/// - ``buildTimeSeries(startingAt:builder:)``
 public struct SimpleEntry<T: Real & Sendable>: Sendable {
+    /// The numeric value for this entry.
     public let value: T
+
+    /// Optional label for this entry (e.g., month name, description).
     public let label: String?
 
+    /// Create a simple entry with a value and optional label.
+    /// - Parameters:
+    ///   - value: The numeric value
+    ///   - label: Optional descriptive label
     public init(value: T, label: String? = nil) {
         self.value = value
         self.label = label
@@ -319,36 +397,73 @@ public struct SimpleEntry<T: Real & Sendable>: Sendable {
 // MARK: - Sequential Time Series Builder
 
 /// Result builder for constructing time series with auto-sequenced periods.
+///
+/// This builder enables declarative construction of time series where periods
+/// are automatically sequenced from a starting point using ``buildTimeSeries(startingAt:builder:)``.
+///
+/// ## Example
+/// ```swift
+/// let series = buildTimeSeries(startingAt: Period.month(year: 2025, month: 1)) {
+///     Entry(100)
+///     Entry(105)
+///     Entry(110)
+/// }
+/// // Creates monthly series: Jan=100, Feb=105, Mar=110
+/// ```
 @resultBuilder
 public struct SequentialTimeSeriesBuilder<T: Real & Sendable> {
+    /// Build a block of simple entries from variadic arrays.
+    /// - Parameter entries: Arrays of entries to flatten
+    /// - Returns: Flattened array of all entries
     public static func buildBlock(_ entries: [SimpleEntry<T>]...) -> [SimpleEntry<T>] {
         entries.flatMap { $0 }
     }
 
+    /// Build entries from for-loop arrays.
+    /// - Parameter entries: Nested arrays from loops
+    /// - Returns: Flattened array of entries
     public static func buildArray(_ entries: [[SimpleEntry<T>]]) -> [SimpleEntry<T>] {
         entries.flatMap { $0 }
     }
 
+    /// Build optional entries (from if statements without else).
+    /// - Parameter entries: Optional array of entries
+    /// - Returns: Entries if present, empty array otherwise
     public static func buildOptional(_ entries: [SimpleEntry<T>]?) -> [SimpleEntry<T>] {
         entries ?? []
     }
 
+    /// Build conditional entries (if/else first branch).
+    /// - Parameter entries: Entries from the first branch
+    /// - Returns: The entries unchanged
     public static func buildEither(first entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
         entries
     }
 
+    /// Build conditional entries (if/else second branch).
+    /// - Parameter entries: Entries from the second branch
+    /// - Returns: The entries unchanged
     public static func buildEither(second entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
         entries
     }
 
+    /// Convert a single entry into an array.
+    /// - Parameter entry: A single entry
+    /// - Returns: Array containing the entry
     public static func buildExpression(_ entry: SimpleEntry<T>) -> [SimpleEntry<T>] {
         [entry]
     }
 
+    /// Convert an array of entries (pass through).
+    /// - Parameter entries: Array of entries
+    /// - Returns: The array unchanged
     public static func buildExpression(_ entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
         entries
     }
 
+    /// Build entries with limited availability (API availability attributes).
+    /// - Parameter entries: Entries from availability-restricted code
+    /// - Returns: The entries unchanged
     public static func buildLimitedAvailability(_ entries: [SimpleEntry<T>]) -> [SimpleEntry<T>] {
         entries
     }

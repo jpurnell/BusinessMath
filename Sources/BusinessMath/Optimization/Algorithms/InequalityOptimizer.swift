@@ -118,7 +118,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 
 	/// Maximize an objective function subject to constraints.
 	public func maximize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		subjectTo constraints: [MultivariateConstraint<V>]
 	) throws -> ConstrainedOptimizationResult<V> {
@@ -129,7 +129,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 	// MARK: - Quadratic Penalty Method
 
 	private func optimizeWithQuadraticPenalty(
-		objective: @escaping (V) -> V.Scalar,
+		objective: @escaping @Sendable (V) -> V.Scalar,
 		initialGuess: V,
 		equalityConstraints: [MultivariateConstraint<V>],
 		inequalityConstraints: [MultivariateConstraint<V>]
@@ -142,7 +142,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 
 		for outerIter in 0..<maxIterations {
 			// Build augmented Lagrangian with quadratic penalties
-			let augmentedLagrangian: (V) -> V.Scalar = { point in
+			let augmentedLagrangian: @Sendable (V) -> V.Scalar = { point in
 				var value = objective(point)
 
 				// Equality constraints: λᵢhᵢ(x) + (ρ/2)hᵢ(x)²

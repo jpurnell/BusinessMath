@@ -550,12 +550,27 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
 
 // MARK: - Error Types
 
+/// Errors that can occur during GPU-accelerated Monte Carlo simulation.
+///
+/// Represents failures in Metal pipeline setup, buffer allocation, kernel execution,
+/// or invalid input parameters.
 public enum GPUError: Error {
+    /// Metal shader kernel not found in library
     case kernelNotFound(String)
+
+    /// Failed to allocate GPU buffer memory
     case bufferAllocationFailed
+
+    /// Failed to create Metal command buffer
     case commandBufferCreationFailed
+
+    /// GPU kernel execution failed
     case executionFailed(String)
+
+    /// Compute pipeline state not compiled
     case pipelineNotCompiled(String)
+
+    /// Invalid input parameters for GPU computation
     case invalidInput(String)
 }
 

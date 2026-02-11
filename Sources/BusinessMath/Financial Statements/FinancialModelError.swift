@@ -45,7 +45,8 @@ public enum StatementType: String, Sendable {
 // MARK: - LocalizedError Conformance
 
 extension FinancialModelError: LocalizedError {
-	public var errorDescription: String? {
+    /// Human-Reaadable description of the error for debugging
+        public var errorDescription: String? {
 		switch self {
 		case .accountMustHaveAtLeastOneRole:
 			return "Account must have at least one role: incomeStatementRole, balanceSheetRole, or cashFlowRole"

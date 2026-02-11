@@ -22,6 +22,8 @@ import Foundation
 /// // Customize tolerance
 /// await FormattingConfiguration.setDefaultTolerance(1e-10)
 /// ```
+///
+/// - Note: All setters are `@MainActor` to ensure thread-safe configuration updates
 @MainActor
 public final class FormattingConfiguration {
 
@@ -49,14 +51,23 @@ public final class FormattingConfiguration {
 
     // MARK: - Setters (for concurrency-safe updates)
 
+    /// Sets whether to use formatted output globally.
+    ///
+    /// - Parameter value: `true` to enable formatted output, `false` for raw values
     public static func setUseFormattedOutput(_ value: Bool) {
         useFormattedOutput = value
     }
 
+    /// Sets the default tolerance for integer detection.
+    ///
+    /// - Parameter value: Tolerance value (e.g., 1e-8)
     public static func setDefaultTolerance(_ value: Double) {
         defaultTolerance = value
     }
 
+    /// Sets the default maximum decimal places to display.
+    ///
+    /// - Parameter value: Maximum decimal places (e.g., 6)
     public static func setDefaultMaxDecimals(_ value: Int) {
         defaultMaxDecimals = value
     }

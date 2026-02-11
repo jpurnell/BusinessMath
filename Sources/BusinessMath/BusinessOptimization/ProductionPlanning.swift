@@ -315,7 +315,7 @@ public struct ProductionPlanningOptimizer {
 		products: [ManufacturedProduct],
 		resources: [String: Double],
 		objective: ProductionObjective
-	) -> (VectorN<Double>) -> Double {
+	) -> @Sendable (VectorN<Double>) -> Double {
 		switch objective {
 		case .maximizeProfit:
 			return { quantities in

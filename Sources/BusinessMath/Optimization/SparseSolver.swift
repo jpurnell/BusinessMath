@@ -45,6 +45,12 @@ public struct SparseSolver {
         case singularMatrix
         case invalidDimensions
 
+        // MARK: - LocalizedError Conformance
+
+        /// A localized human-readable description of the error.
+        ///
+        /// Provides context-specific error messages with relevant details like
+        /// values, ranges, and suggestions.
         public var errorDescription: String? {
             switch self {
             case .notConverged(let iterations, let residual):
@@ -63,6 +69,13 @@ public struct SparseSolver {
     /// Default convergence tolerance
     public var defaultTolerance: Double
 
+    /// Creates a sparse linear system solver with specified configuration.
+    ///
+    /// - Parameters:
+    ///   - maxIterations: Maximum iterations for iterative solvers (default: 10,000). Conjugate gradient
+    ///     typically converges in fewer iterations for well-conditioned systems.
+    ///   - defaultTolerance: Default convergence tolerance for residual norm `||Ax - b||` (default: 1e-10).
+    ///     Can be overridden per solve call.
     public init(maxIterations: Int = 10000, defaultTolerance: Double = 1e-10) {
         self.maxIterations = maxIterations
         self.defaultTolerance = defaultTolerance

@@ -314,6 +314,7 @@ public struct ParallelOptimizationResult<V: VectorSpace>: Sendable where V.Scala
 	/// Starting point that led to best solution
 	public let bestStartingPoint: V
 
+        /// Initialization
 	public init(
 		success: Bool,
 		solution: V,
@@ -375,7 +376,7 @@ extension ParallelOptimizer: MultivariateOptimizer {
 	///   (±5 units in each dimension). For custom search regions, use the async
 	///   ``optimize(objective:searchRegion:constraints:)`` method.
 	public func minimize(
-		_ objective: @escaping (V) -> V.Scalar,
+		_ objective: @escaping @Sendable (V) -> V.Scalar,
 		from initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> MultivariateOptimizationResult<V> {

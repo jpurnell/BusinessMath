@@ -150,7 +150,97 @@ public struct SimulationResults: Sendable {
 		let proportionExact = Double(exactMatches) / Double(values.count)
 		return cdfValue - proportionExact
 	}
-	
+
+	/// Generate a formatted risk analysis summary with probability calculations at key thresholds.
+	///
+	/// Creates a human-readable text summary showing the probability of outcomes relative to important
+	/// thresholds. If no thresholds are provided, automatically selects meaningful percentiles including
+	/// zero (for loss probability) and quartiles.
+	///
+	/// This is particularly useful for presenting simulation results to stakeholders who need to
+	/// understand downside risks and upside potential without viewing raw statistical tables.
+	///
+	/// - Parameter thresholds: Array of threshold values to analyze. If empty, uses default thresholds:
+	///   `[0, p5, p25, p50, p75, p95]`. Thresholds can be in any order.
+	///
+	/// - Returns: A formatted string with one line per threshold showing:
+	///   - Descriptive label (e.g., "Probability of loss" for threshold 0)
+	///   - Whether analyzing above (≥) or below (<) the threshold (based on median)
+	///   - Probability as a percentage
+	///
+	/// ## Usage Example
+	///
+	/// ```swift
+	/// // Run profit simulation
+	/// var profitValues: [Double] = []
+	/// for _ in 0..<10_000 {
+	///     let revenue = distributionNormal(mean: 1_000_000, stdDev: 150_000)
+	///     let costs = distributionNormal(mean: 700_000, stdDev: 80_000)
+	///     profitValues.append(revenue - costs)
+	/// }
+	///
+	/// let results = SimulationResults(values: profitValues)
+	///
+	/// // Default thresholds (0, p5, p25, p50, p75, p95)
+	/// print(results.riskAnalysis())
+	/// // Output:
+	/// //   Probability of loss 2.1%
+	/// //   Probability profit < 53.7k 5.0%
+	/// //   Probability profit < 230.4k 25.0%
+	/// //   Probability profit < 301.2k 50.0%
+	/// //   Probability profit >= 372.8k 25.0%
+	/// //   Probability profit >= 548.3k 5.0%
+	///
+	/// // Custom thresholds (e.g., business targets)
+	/// let analysis = results.riskAnalysis([
+	///     0,           // Break-even
+	///     200_000,     // Minimum acceptable profit
+	///     400_000,     // Target profit
+	///     600_000      // Stretch goal
+	/// ])
+	/// print(analysis)
+	/// // Output:
+	/// //   Probability of loss 2.1%
+	/// //   Probability profit < 200.0k 18.3%
+	/// //   Probability profit >= 400.0k 31.7%
+	/// //   Probability profit >= 600.0k 8.9%
+	/// ```
+	///
+	/// ## Automatic Threshold Selection
+	///
+	/// When `thresholds` is empty, uses these defaults:
+	/// - **0**: Shows probability of loss (negative outcome)
+	/// - **p5, p95**: 90% confidence interval bounds
+	/// - **p25, p75**: Interquartile range (middle 50%)
+	/// - **p50**: Median (50th percentile)
+	///
+	/// ## Output Format Details
+	///
+	/// - **Threshold labels**: Formatted in thousands (k) with appropriate precision
+	/// - **Direction**: Automatically chooses "≥" or "<" based on whether threshold is above/below median
+	/// - **Percentages**: Displayed with one decimal place (e.g., "15.7%")
+	/// - **Special case**: Threshold 0 always labeled as "Probability of loss"
+	///
+	/// ## Interpretation Guide
+	///
+	/// | Threshold | Probability | Interpretation |
+	/// |-----------|-------------|----------------|
+	/// | 0 | 5.0% | 5% chance of loss (negative profit) |
+	/// | p5 | 5.0% | 5% chance of being below this pessimistic scenario |
+	/// | p50 | 50.0% | 50% chance of exceeding median outcome |
+	/// | p95 | 5.0% | 5% chance of exceeding this optimistic scenario |
+	///
+	/// - Note: For thresholds below the median, shows probability BELOW threshold (downside risk).
+	///   For thresholds above median, shows probability ABOVE threshold (upside potential).
+	///
+	/// - Important: Probabilities are empirical (based on simulation samples), not parametric.
+	///   Accuracy improves with more samples (10,000+ recommended for 1% precision).
+	///
+	/// - SeeAlso:
+	///   - ``probabilityAbove(_:)``
+	///   - ``probabilityBelow(_:)``
+	///   - ``percentiles``
+	///   - ``formattedDescription``
 	public func riskAnalysis(_ thresholds: [Double] = []) -> String {
 		var returnString = ""
 		var comparisonThresholds: [Double] = []

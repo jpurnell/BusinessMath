@@ -241,7 +241,7 @@ extension RobustOptimizer {
 	///   - minimize: Whether to minimize worst-case
 	/// - Returns: Robust optimization result
 	public static func optimizeBox(
-		objective: @escaping (V, [Double]) -> Double,
+		objective: @escaping @Sendable (V, [Double]) -> Double,
 		nominal: [Double],
 		deviations: [Double],
 		initialSolution: V,
@@ -284,7 +284,7 @@ extension RobustOptimizer {
 	///   - minimize: Whether to minimize worst-case
 	/// - Returns: Robust optimization result
 	public static func optimizeDiscrete(
-		objective: @escaping (V, [Double]) -> Double,
+		objective: @escaping @Sendable (V, [Double]) -> Double,
 		uncertainPoints: [[Double]],
 		nominalIndex: Int = 0,
 		initialSolution: V,

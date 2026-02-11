@@ -386,6 +386,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 			self.values = values
 		}
 
+		/// Advances to the next element and returns it, or nil if no next element exists.
 		public mutating func next() -> T? {
 			guard let period = periodIterator.next() else {
 				return nil

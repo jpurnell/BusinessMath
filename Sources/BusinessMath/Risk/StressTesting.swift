@@ -42,6 +42,12 @@ public struct StressScenario<T: Real & Sendable>: Sendable {
 	/// Shocks to apply: driver name -> proportional change.
 	public let shocks: [String: T]
 
+	/// Creates a stress scenario with defined shocks to business drivers.
+	///
+	/// - Parameters:
+	///   - name: Name of the scenario (e.g., "Recession", "Crisis")
+	///   - description: Detailed description of the scenario
+	///   - shocks: Dictionary mapping driver names to proportional changes (e.g., -0.15 for -15%)
 	public init(name: String, description: String, shocks: [String: T]) {
 		self.name = name
 		self.description = description
@@ -112,6 +118,9 @@ public struct StressTest<T: Real & Sendable>: Sendable {
 	/// Scenarios to test.
 	public let scenarios: [StressScenario<T>]
 
+	/// Creates a stress test with specified scenarios.
+	///
+	/// - Parameter scenarios: Array of stress scenarios to apply
 	public init(scenarios: [StressScenario<T>]) {
 		self.scenarios = scenarios
 	}
@@ -133,6 +142,13 @@ public struct ScenarioResult<T: Real & Sendable>: Sendable {
 	/// Impact (scenario - baseline).
 	public let impact: T
 
+	/// Creates a scenario result with calculated impact.
+	///
+	/// - Parameters:
+	///   - scenario: The stress scenario that was applied
+	///   - baselineNPV: NPV before the stress shock
+	///   - scenarioNPV: NPV after applying the stress shock
+	///   - impact: Difference between scenario and baseline NPV
 	public init(
 		scenario: StressScenario<T>,
 		baselineNPV: T,
@@ -145,6 +161,7 @@ public struct ScenarioResult<T: Real & Sendable>: Sendable {
 		self.impact = impact
 	}
 
+	/// A formatted description of the scenario result including baseline, scenario NPV, and impact percentage.
 	public var description: String {
 		let impactPercent = (impact / baselineNPV) * T(100)
 		return """
@@ -163,6 +180,9 @@ public struct StressTestReport<T: Real & Sendable>: Sendable {
 	/// Results for each scenario.
 	public let results: [ScenarioResult<T>]
 
+	/// Creates a stress test report with scenario results.
+	///
+	/// - Parameter results: Array of scenario results to include in the report
 	public init(results: [ScenarioResult<T>]) {
 		self.results = results
 	}

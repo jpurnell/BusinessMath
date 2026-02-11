@@ -20,6 +20,7 @@ public enum FinancialValidation {
 
 	/// Validates that a balance sheet balances (Assets = Liabilities + Equity).
 	public struct BalanceSheetBalances<T>: ValidationRule where T: Real & Sendable & Codable & Comparable & FloatingPoint {
+			/// The type of value being validated (BalanceSheet).
 			public typealias Value = BalanceSheet<T>
 			
 			@inline(__always)
@@ -40,6 +41,7 @@ public enum FinancialValidation {
 				return diff <= tol + eps
 			}
 
+			/// Tolerance for rounding errors in the accounting equation.
 			public let tolerance: T
 
 			/// Creates a balance sheet balance validation rule.
@@ -49,6 +51,11 @@ public enum FinancialValidation {
 				self.tolerance = tolerance
 			}
 
+			/// Validates that Assets = Liabilities + Equity within tolerance.
+			/// - Parameters:
+			///   - value: The balance sheet to validate
+			///   - context: Validation context
+			/// - Returns: Valid if the accounting equation holds, invalid otherwise
 			public func validate(_ value: BalanceSheet<T>?, context: ValidationContext) -> ValidationResult {
 				guard let balanceSheet = value else {
 					return .invalid([ValidationError(
@@ -106,10 +113,17 @@ public enum FinancialValidation {
 
 	/// Validates that all revenue values are positive.
 	public struct PositiveRevenue<T>: ValidationRule where T: Real & Sendable & Codable & Comparable {
+		/// The type of value being validated (IncomeStatement).
 		public typealias Value = IncomeStatement<T>
 
+		/// Creates a positive revenue validation rule.
 		public init() {}
 
+		/// Validates that all revenue accounts have positive values.
+		/// - Parameters:
+		///   - value: The income statement to validate
+		///   - context: Validation context
+		/// - Returns: Valid if all revenues are positive, invalid otherwise
 		public func validate(_ value: IncomeStatement<T>?, context: ValidationContext) -> ValidationResult {
 			guard let incomeStatement = value else {
 				return .invalid([ValidationError(
@@ -147,6 +161,7 @@ public enum FinancialValidation {
 
 	/// Validates that gross margin is reasonable (warns if unusual).
 	public struct ReasonableGrossMargin<T>: ValidationRule where T: Real & Sendable & Codable & Comparable & FloatingPoint {
+		/// The type of value being validated (IncomeStatement).
 		public typealias Value = IncomeStatement<T>
 
 		private let minMargin: T
@@ -161,7 +176,8 @@ public enum FinancialValidation {
 			self.minMargin = minMargin
 			self.maxMargin = maxMargin
 		}
-
+		
+		/// Confirms that the value is not nil
 		public func validate(_ value: IncomeStatement<T>?, context: ValidationContext) -> ValidationResult {
 			guard let incomeStatement = value else {
 				return .invalid([ValidationError(
@@ -209,6 +225,7 @@ public enum FinancialValidation {
 	/// This rule checks that the net cash flow from the cash flow statement matches
 	/// the change in cash and cash equivalents on the balance sheet between periods.
 	public struct CashFlowReconciliation<T>: ValidationRule where T: Real & Sendable & Codable & Comparable {
+		/// The type of value being validated (tuple of CashFlowStatement and BalanceSheet).
 		public typealias Value = (cashFlowStatement: CashFlowStatement<T>, balanceSheet: BalanceSheet<T>)
 
 		private let tolerance: T
@@ -219,7 +236,8 @@ public enum FinancialValidation {
 		public init(tolerance: T = 0.01) {
 			self.tolerance = tolerance
 		}
-
+		
+		/// Confirms that the value is not nil
 		public func validate(_ value: (cashFlowStatement: CashFlowStatement<T>, balanceSheet: BalanceSheet<T>)?, context: ValidationContext) -> ValidationResult {
 			guard let value = value else {
 				return .invalid([ValidationError(

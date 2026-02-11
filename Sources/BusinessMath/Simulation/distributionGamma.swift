@@ -17,6 +17,7 @@ import Numerics
 /// - Parameters:
 ///   - r: The shape parameter of the Gamma distribution, which must be an integer indicating the number of exponential random variables to sum.
 ///   - λ: The rate parameter (inverse of the scale parameter) of the Gamma distribution.
+///   - seeds: Optional array of uniform random seeds for deterministic generation (default: nil)
 /// - Returns: A random number generated from the Gamma distribution with shape parameter `r` and rate parameter `λ`.
 ///
 /// - Note: The function generates `r` exponential random variables with rate parameter `λ` and returns their sum. This approaches the Gamma distribution using the definition that a Gamma distribution with integer shape parameter `r` can be constructed from the sum of `r` exponential variables.
@@ -124,19 +125,31 @@ public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, se
 	}
 }
 
+/// A Gamma distribution generator for producing random values.
+///
+/// The Gamma distribution is useful for modeling waiting times and is a generalization
+/// of the exponential distribution. Common in queuing theory and reliability analysis.
 public struct DistributionGamma: DistributionRandom {
 	var r: Int
 	var λ: Double
-	
+
+	/// Creates a Gamma distribution generator.
+	/// - Parameters:
+	///   - r: Shape parameter (integer number of exponential variables to sum)
+	///   - λ: Rate parameter (inverse of scale parameter)
 	public init(r: Int, λ: Double) {
 		self.r = r
 		self.λ = λ
 	}
-	
+
+	/// Generates a random value from the Gamma distribution.
+	/// - Returns: A random Double from the Gamma distribution
 	public func random() -> Double {
 		return distributionGamma(r: r, λ: λ)
 	}
-	
+
+	/// Generates the next random value from the Gamma distribution.
+	/// - Returns: A random Double from the Gamma distribution
 	public func next() -> Double {
 		return random()
 	}

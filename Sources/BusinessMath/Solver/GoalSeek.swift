@@ -29,9 +29,6 @@ import Numerics
 ///	let result = try goalSeek(function: { x in x * x }, target: 4.0, guess: 25, tolerance: 0.0000001, maxIterations: 1000)
 ///	print(result)  ///	 prints the result
 ///	```
-///
-
-
 public func goalSeek<T: Real>(function: @escaping (T) -> T, target: T, guess: T, tolerance: T = T(1) / T(1000000), maxIterations: Int = 1000) throws -> T {
 	var x0 = guess
 	var iteration = 0

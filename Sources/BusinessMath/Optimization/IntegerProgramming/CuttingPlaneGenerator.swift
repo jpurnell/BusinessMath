@@ -16,6 +16,13 @@ public struct CuttingPlane: Sendable {
     /// Source variable index (for tracking)
     public let sourceIndex: Int?
 
+    /// Creates a cutting plane with specified characteristics.
+    ///
+    /// - Parameters:
+    ///   - coefficients: Coefficients for the left-hand side of the inequality
+    ///   - rhs: Right-hand side constant
+    ///   - type: Type of cut (Gomory, MIR, cover, or clique)
+    ///   - sourceIndex: Optional index of the source variable for tracking
     public init(coefficients: [Double], rhs: Double, type: CutType, sourceIndex: Int? = nil) {
         self.coefficients = coefficients
         self.rhs = rhs
@@ -56,6 +63,11 @@ public struct CuttingPlaneGenerator: Sendable {
     /// Tolerance for considering a cut weak
     public let weakCutTolerance: Double
 
+    /// Creates a cutting plane generator with specified tolerances.
+    ///
+    /// - Parameters:
+    ///   - fractionalTolerance: Tolerance for considering a value fractional (default: 1e-6)
+    ///   - weakCutTolerance: Tolerance for considering a cut weak (default: 1e-6)
     public init(
         fractionalTolerance: Double = 1e-6,
         weakCutTolerance: Double = 1e-6
@@ -339,11 +351,18 @@ public struct CuttingPlaneGenerator: Sendable {
 
 // MARK: - Errors
 
+/// Errors that can occur during cutting plane generation.
 public enum CuttingPlaneError: Error, LocalizedError {
+    /// Dimension mismatch between solution vector and coefficients
     case dimensionMismatch
+
+    /// Invalid simplex tableau structure
     case invalidTableau
+
+    /// Unable to generate a valid cutting plane
     case noCutGenerated
 
+    /// A localized human-readable description of the error.
     public var errorDescription: String? {
         switch self {
         case .dimensionMismatch:

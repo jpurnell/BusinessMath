@@ -200,6 +200,14 @@ public struct BondMarketData: Sendable, Codable {
 	/// Payment frequency (payments per year)
 	public let frequency: Int
 
+	/// Creates bond market data for Nelson-Siegel calibration.
+	///
+	/// - Parameters:
+	///   - maturity: Time to maturity in years (e.g., 5.0 for 5-year bond)
+	///   - couponRate: Annual coupon rate as decimal (e.g., 0.05 for 5%)
+	///   - faceValue: Par value of the bond (typically 100 or 1000)
+	///   - marketPrice: Observed market price for the bond
+	///   - frequency: Number of coupon payments per year (default: 2 for semiannual)
 	public init(maturity: Double, couponRate: Double, faceValue: Double, marketPrice: Double, frequency: Int = 2) {
 		self.maturity = maturity
 		self.couponRate = couponRate
@@ -297,7 +305,7 @@ extension NelsonSiegelYieldCurve {
 
 		// Create objective function: minimize sum of squared pricing errors
 		// We optimize over (β₀, β₁, β₂) with λ fixed
-		let objective: (VectorN<Double>) -> Double = { params in
+		let objective: @Sendable (VectorN<Double>) -> Double = { params in
 			let beta0 = params[0]
 			let beta1 = params[1]
 			let beta2 = params[2]
@@ -406,6 +414,15 @@ public struct NelsonSiegelCalibrationResult: Sendable {
 	/// Individual bond pricing errors
 	public let bondErrors: [(maturity: Double, marketPrice: Double, modelPrice: Double, error: Double)]
 
+	/// Creates calibration result with error statistics.
+	///
+	/// Automatically computes pricing errors and fit statistics from the calibrated curve.
+	///
+	/// - Parameters:
+	///   - curve: Calibrated Nelson-Siegel yield curve
+	///   - bonds: Market bond data used for calibration
+	///   - iterations: Number of optimization iterations performed
+	///   - converged: Whether the optimization converged to a solution
 	public init(
 		curve: NelsonSiegelYieldCurve,
 		bonds: [BondMarketData],
@@ -460,7 +477,7 @@ extension NelsonSiegelYieldCurve {
 	) throws -> NelsonSiegelCalibrationResult {
 		let initial = initialGuess ?? estimateInitialParameters(bonds: bonds, lambda: fixedLambda)
 
-		let objective: (VectorN<Double>) -> Double = { params in
+		let objective: @Sendable (VectorN<Double>) -> Double = { params in
 			let curve = NelsonSiegelYieldCurve(parameters: NelsonSiegelParameters(
 				beta0: params[0],
 				beta1: params[1],

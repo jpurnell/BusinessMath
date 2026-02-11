@@ -16,12 +16,43 @@ public enum TrendDirection {
     case flat
 }
 
-/// Trend detection result
+/// Result of trend detection in a time series.
+///
+/// Identifies the direction, steepness, and statistical confidence of a detected trend.
+/// Streaming trend detection continuously updates as new data arrives, making it suitable
+/// for real-time monitoring.
+///
+/// ## Example
+/// ```swift
+/// let trend = TrendDetection(
+///     direction: .upward,
+///     slope: 2.5,
+///     confidence: 0.95
+/// )
+/// print("Detected \(trend.direction) trend with \(trend.confidence * 100)% confidence")
+/// ```
 public struct TrendDetection {
+    /// The direction of the detected trend (upward, downward, or flat).
     public let direction: TrendDirection
+
+    /// The slope of the trend line, measured in units per time period.
+    ///
+    /// Positive values indicate upward trends, negative values indicate downward trends.
+    /// Magnitude represents the rate of change.
     public let slope: Double
+
+    /// Statistical confidence level of the trend detection, ranging from 0 to 1.
+    ///
+    /// Higher values indicate stronger statistical evidence for the detected trend.
+    /// Typically, confidence above 0.95 is considered statistically significant.
     public let confidence: Double
 
+    /// Creates a trend detection result.
+    ///
+    /// - Parameters:
+    ///   - direction: The direction of the trend.
+    ///   - slope: The trend line slope (rate of change per period).
+    ///   - confidence: Statistical confidence level (0 to 1).
     public init(direction: TrendDirection, slope: Double, confidence: Double) {
         self.direction = direction
         self.slope = slope
@@ -36,12 +67,43 @@ public enum ChangePointType {
     case varianceChange
 }
 
-/// Change point detection result
+/// Result of change point detection in a time series.
+///
+/// Identifies significant structural changes in streaming data, such as sudden level shifts,
+/// trend changes, or changes in variance. Change points indicate moments where the statistical
+/// properties of the series fundamentally change.
+///
+/// ## Example
+/// ```swift
+/// let changePoint = ChangePoint(
+///     type: .levelShift,
+///     magnitude: 15.3,
+///     index: 127
+/// )
+/// print("Level shift of \(changePoint.magnitude) detected at position \(changePoint.index)")
+/// ```
 public struct ChangePoint {
+    /// The type of structural change detected.
     public let type: ChangePointType
+
+    /// The magnitude of the change in the series' statistical properties.
+    ///
+    /// For level shifts, this represents the change in mean value.
+    /// For trend changes, this represents the change in slope.
+    /// For variance changes, this represents the ratio of new variance to old variance.
     public let magnitude: Double
+
+    /// The index in the stream where the change point was detected.
+    ///
+    /// Represents the position (0-based) in the data stream.
     public let index: Int
 
+    /// Creates a change point detection result.
+    ///
+    /// - Parameters:
+    ///   - type: The type of structural change.
+    ///   - magnitude: The size of the change.
+    ///   - index: The position in the stream where the change occurred.
     public init(type: ChangePointType, magnitude: Double, index: Int) {
         self.type = type
         self.magnitude = magnitude
@@ -49,12 +111,44 @@ public struct ChangePoint {
     }
 }
 
-/// Streaming forecast error metrics
+/// Forecast accuracy metrics computed over streaming data.
+///
+/// Tracks three complementary error metrics that provide different perspectives on
+/// forecast quality: absolute errors (MAE), squared errors (RMSE), and percentage errors (MAPE).
+/// These metrics update continuously as new observations arrive.
+///
+/// ## Example
+/// ```swift
+/// let errors = StreamingForecastError(
+///     mae: 5.2,
+///     rmse: 6.8,
+///     mape: 0.12
+/// )
+/// print("Forecast accuracy: MAE=\(errors.mae), RMSE=\(errors.rmse), MAPE=\(errors.mape * 100)%")
+/// ```
 public struct StreamingForecastError {
-    public let mae: Double  // Mean Absolute Error
-    public let rmse: Double // Root Mean Squared Error
-    public let mape: Double // Mean Absolute Percentage Error
+    /// Mean Absolute Error: average absolute difference between forecasts and actuals.
+    ///
+    /// MAE is in the same units as the data and is less sensitive to outliers than RMSE.
+    public let mae: Double
 
+    /// Root Mean Squared Error: square root of average squared forecast errors.
+    ///
+    /// RMSE penalizes large errors more heavily than MAE and is in the same units as the data.
+    public let rmse: Double
+
+    /// Mean Absolute Percentage Error: average absolute percentage error.
+    ///
+    /// MAPE expresses errors as a percentage (0 to 1 scale) and is scale-independent,
+    /// making it useful for comparing forecasts across different data series.
+    public let mape: Double
+
+    /// Creates forecast error metrics.
+    ///
+    /// - Parameters:
+    ///   - mae: Mean absolute error.
+    ///   - rmse: Root mean squared error.
+    ///   - mape: Mean absolute percentage error (0 to 1 scale).
     public init(mae: Double, rmse: Double, mape: Double) {
         self.mae = mae
         self.rmse = rmse
@@ -62,33 +156,100 @@ public struct StreamingForecastError {
     }
 }
 
-/// Double exponential smoothing forecast
+/// Double exponential smoothing forecast with level and trend components.
+///
+/// Also known as Holt's linear trend method, this captures both the current level
+/// and the rate of change (trend) in a time series. Useful for data with trends
+/// but no seasonal patterns.
+///
+/// ## Example
+/// ```swift
+/// let forecast = DoubleExponentialForecast(level: 100.0, trend: 2.5)
+/// let oneStepAhead = forecast.forecast(steps: 1)   // 102.5
+/// let tenStepsAhead = forecast.forecast(steps: 10) // 125.0
+/// ```
+///
+/// - SeeAlso: ``TripleExponentialForecast`` for seasonal data
 public struct DoubleExponentialForecast {
+    /// The current level (baseline value) of the time series.
     public let level: Double
+
+    /// The current trend (rate of change per period) of the time series.
+    ///
+    /// Positive values indicate an upward trend, negative values indicate a downward trend.
     public let trend: Double
 
+    /// Creates a double exponential smoothing forecast.
+    ///
+    /// - Parameters:
+    ///   - level: The current baseline value.
+    ///   - trend: The rate of change per period.
     public init(level: Double, trend: Double) {
         self.level = level
         self.trend = trend
     }
 
+    /// Projects the forecast forward by a specified number of steps.
+    ///
+    /// Uses the formula: level + (steps × trend)
+    ///
+    /// - Parameter steps: Number of time periods to forecast ahead.
+    /// - Returns: The forecasted value.
     public func forecast(steps: Int) -> Double {
         return level + Double(steps) * trend
     }
 }
 
-/// Triple exponential smoothing forecast
+/// Triple exponential smoothing forecast with level, trend, and seasonal components.
+///
+/// Also known as Holt-Winters method, this extends double exponential smoothing to handle
+/// seasonal patterns. The seasonal factors repeat cyclically, making it ideal for data
+/// with regular seasonal variations (daily, weekly, monthly, etc.).
+///
+/// ## Example
+/// ```swift
+/// let forecast = TripleExponentialForecast(
+///     level: 100.0,
+///     trend: 2.5,
+///     seasonalFactors: [0.8, 0.9, 1.0, 1.2, 1.1] // 5-period seasonal cycle
+/// )
+/// let nextPeriod = forecast.forecast(steps: 1)  // Applies first seasonal factor
+/// let sixthPeriod = forecast.forecast(steps: 6) // Cycles back to second factor
+/// ```
+///
+/// - SeeAlso: ``DoubleExponentialForecast`` for non-seasonal data
 public struct TripleExponentialForecast {
+    /// The current level (deseasonalized baseline value) of the time series.
     public let level: Double
+
+    /// The current trend (rate of change per period) of the time series.
     public let trend: Double
+
+    /// Seasonal factors for each period in the seasonal cycle.
+    ///
+    /// Multiplicative seasonal factors where 1.0 = average, > 1.0 = above average,
+    /// < 1.0 = below average. The array length defines the seasonal period
+    /// (e.g., 12 for monthly seasonality, 7 for weekly, 4 for quarterly).
     public let seasonalFactors: [Double]
 
+    /// Creates a triple exponential smoothing forecast.
+    ///
+    /// - Parameters:
+    ///   - level: The deseasonalized baseline value.
+    ///   - trend: The rate of change per period.
+    ///   - seasonalFactors: Multiplicative seasonal factors for each period in the cycle.
     public init(level: Double, trend: Double, seasonalFactors: [Double]) {
         self.level = level
         self.trend = trend
         self.seasonalFactors = seasonalFactors
     }
 
+    /// Projects the forecast forward by a specified number of steps.
+    ///
+    /// Applies both trend and seasonal components: (level + steps × trend) × seasonalFactor
+    ///
+    /// - Parameter steps: Number of time periods to forecast ahead.
+    /// - Returns: The forecasted value with seasonal adjustment applied.
     public func forecast(steps: Int) -> Double {
         let seasonIndex = (steps - 1) % seasonalFactors.count
         return (level + Double(steps) * trend) * seasonalFactors[seasonIndex]
@@ -158,11 +319,28 @@ extension AsyncSequence where Element == Double {
     }
 }
 
-/// Pair of actual and forecasted values
+/// Pair of actual and forecasted values for error calculation.
+///
+/// Used to track forecasts alongside their corresponding actual values, enabling
+/// computation of forecast accuracy metrics over streaming data.
+///
+/// ## Example
+/// ```swift
+/// let pair = ForecastPair(actual: 105.3, forecast: 102.5)
+/// let error = pair.actual - pair.forecast  // 2.8
+/// ```
 public struct ForecastPair {
+    /// The actual observed value.
     public let actual: Double
+
+    /// The forecasted value for this observation.
     public let forecast: Double
 
+    /// Creates a forecast/actual pair.
+    ///
+    /// - Parameters:
+    ///   - actual: The observed value.
+    ///   - forecast: The predicted value.
     public init(actual: Double, forecast: Double) {
         self.actual = actual
         self.forecast = forecast
@@ -179,8 +357,33 @@ extension AsyncSequence where Element == ForecastPair {
 
 // MARK: - Simple Exponential Smoothing
 
+/// AsyncSequence that applies simple exponential smoothing to streaming data.
+///
+/// Simple exponential smoothing produces forecasts as a weighted average of past observations,
+/// with exponentially decreasing weights for older data. Higher alpha values respond faster
+/// to changes but may be noisier. Best for data without trends or seasonality.
+///
+/// Formula: F(t+1) = α × Y(t) + (1-α) × F(t)
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([100, 105, 103, 108, 107])
+/// for try await forecast in stream.simpleExponentialSmoothing(alpha: 0.3) {
+///     print("Smoothed forecast: \(forecast)")
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **alpha = 0.1 to 0.3**: Slow response, very smooth, good for stable data
+/// - **alpha = 0.5**: Balanced smoothing
+/// - **alpha = 0.7 to 0.9**: Fast response, less smooth, good for volatile data
+///
+/// - SeeAlso: ``AsyncDoubleExponentialSmoothingSequence`` for data with trends
 public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields smoothed forecast values.
     public typealias Element = Double
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -191,10 +394,14 @@ public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
         self.alpha = alpha
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields exponentially smoothed forecasts.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), alpha: alpha)
     }
 
+    /// Iterator that computes exponentially smoothed forecasts asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let alpha: Double
@@ -205,6 +412,9 @@ public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
             self.alpha = alpha
         }
 
+        /// Yields the next smoothed forecast.
+        ///
+        /// - Returns: The exponentially smoothed forecast value.
         public mutating func next() async throws -> Double? {
             guard let value = try await baseIterator.next() else {
                 return nil
@@ -225,8 +435,35 @@ public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 
 // MARK: - Double Exponential Smoothing (Holt's Method)
 
+/// AsyncSequence that applies double exponential smoothing (Holt's method) to streaming data.
+///
+/// Double exponential smoothing extends simple smoothing to handle data with trends by
+/// maintaining separate components for level and trend. Suitable for data with linear trends
+/// but no seasonal patterns.
+///
+/// Formulas:
+/// - Level: L(t) = α × Y(t) + (1-α) × (L(t-1) + T(t-1))
+/// - Trend: T(t) = β × (L(t) - L(t-1)) + (1-β) × T(t-1)
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([100, 103, 105, 109, 112])
+/// for try await forecast in stream.doubleExponentialSmoothing(alpha: 0.3, beta: 0.1) {
+///     let nextStep = forecast.forecast(steps: 1)
+///     print("Level: \(forecast.level), Trend: \(forecast.trend), Next: \(nextStep)")
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **alpha**: Level smoothing (0.1-0.3 for stable data, 0.5-0.9 for volatile data)
+/// - **beta**: Trend smoothing (typically 0.1-0.2 for slow trend changes)
+///
+/// - SeeAlso: ``AsyncTripleExponentialSmoothingSequence`` for seasonal data
 public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields forecast objects containing level and trend components.
     public typealias Element = DoubleExponentialForecast
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -239,10 +476,14 @@ public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
         self.beta = beta
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields double exponential smoothing forecasts.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), alpha: alpha, beta: beta)
     }
 
+    /// Iterator that computes double exponential smoothing forecasts asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let alpha: Double
@@ -257,6 +498,9 @@ public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
             self.beta = beta
         }
 
+        /// Yields the next forecast with updated level and trend components.
+        ///
+        /// - Returns: A forecast object containing level and trend for projection.
         public mutating func next() async throws -> DoubleExponentialForecast? {
             guard let value = try await baseIterator.next() else {
                 return nil
@@ -289,8 +533,38 @@ public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 
 // MARK: - Triple Exponential Smoothing (Holt-Winters Method)
 
+/// AsyncSequence that applies triple exponential smoothing (Holt-Winters method) to streaming data.
+///
+/// Triple exponential smoothing extends double smoothing to handle seasonal patterns by
+/// maintaining components for level, trend, and seasonality. Suitable for data with both
+/// trends and repeating seasonal patterns.
+///
+/// Formulas:
+/// - Level: L(t) = α × (Y(t) / S(t-s)) + (1-α) × (L(t-1) + T(t-1))
+/// - Trend: T(t) = β × (L(t) - L(t-1)) + (1-β) × T(t-1)
+/// - Seasonal: S(t) = γ × (Y(t) / L(t)) + (1-γ) × S(t-s)
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([100, 110, 95, 105, 115, 100, 110, 120])
+/// for try await forecast in stream.tripleExponentialSmoothing(
+///     alpha: 0.3, beta: 0.1, gamma: 0.2, seasonLength: 4
+/// ) {
+///     let nextStep = forecast.forecast(steps: 1)
+///     print("Next forecast: \(nextStep)")
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **alpha**: Level smoothing (0.1-0.3 typical)
+/// - **beta**: Trend smoothing (0.1-0.2 typical)
+/// - **gamma**: Seasonal smoothing (0.1-0.3 typical)
+/// - **seasonLength**: Number of periods in one seasonal cycle (e.g., 12 for monthly, 7 for daily)
 public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields forecast objects containing level, trend, and seasonal components.
     public typealias Element = TripleExponentialForecast
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -307,6 +581,9 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
         self.seasonLength = seasonLength
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields triple exponential smoothing forecasts.
     public func makeAsyncIterator() -> Iterator {
         Iterator(
             base: base.makeAsyncIterator(),
@@ -317,6 +594,7 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
         )
     }
 
+    /// Iterator that computes triple exponential smoothing forecasts asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let alpha: Double
@@ -338,6 +616,9 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
             self.seasonalFactors = Array(repeating: 1.0, count: seasonLength)
         }
 
+        /// Yields the next forecast with updated level, trend, and seasonal components.
+        ///
+        /// - Returns: A forecast object containing all three components for projection.
         public mutating func next() async throws -> TripleExponentialForecast? {
             guard let value = try await baseIterator.next() else {
                 return nil
@@ -398,8 +679,30 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 
 // MARK: - Moving Average Forecast
 
+/// AsyncSequence that forecasts using the moving average method.
+///
+/// The moving average forecast uses the mean of the most recent window of values as the
+/// next forecast. This simple method works well for stable data without strong trends or
+/// seasonality. Larger windows produce smoother forecasts but are slower to respond to changes.
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([100, 102, 98, 105, 103, 107])
+/// for try await forecast in stream.movingAverageForecast(window: 3) {
+///     print("Next forecast: \(forecast)")
+/// }
+/// // Uses mean of last 3 values to forecast next value
+/// ```
+///
+/// ## Window Size Guidance
+/// - **Small window (3-5)**: Responsive to recent changes, but noisier
+/// - **Medium window (7-15)**: Balanced smoothing and responsiveness
+/// - **Large window (20+)**: Very smooth, but slow to detect changes
 public struct AsyncMovingAverageForecastSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields forecast values (mean of the window).
     public typealias Element = Double
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -410,10 +713,14 @@ public struct AsyncMovingAverageForecastSequence<Base: AsyncSequence>: AsyncSequ
         self.window = window
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields moving average forecasts.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), window: window)
     }
 
+    /// Iterator that computes moving average forecasts asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
@@ -425,6 +732,9 @@ public struct AsyncMovingAverageForecastSequence<Base: AsyncSequence>: AsyncSequ
             self.window = window
         }
 
+        /// Yields the next moving average forecast.
+        ///
+        /// - Returns: The mean of the current window of values.
         public mutating func next() async throws -> Double? {
             guard !isComplete else { return nil }
 
@@ -455,8 +765,30 @@ public struct AsyncMovingAverageForecastSequence<Base: AsyncSequence>: AsyncSequ
 
 // MARK: - Trend Detection
 
+/// AsyncSequence that detects trends in streaming data using linear regression.
+///
+/// Continuously analyzes the most recent window of data to detect trend direction, slope,
+/// and statistical significance. Uses least-squares linear regression to fit a trend line
+/// and compute confidence metrics. Useful for monitoring whether data is trending up, down,
+/// or remaining flat.
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([100, 102, 105, 108, 112, 115])
+/// for try await trend in stream.detectTrend(window: 5) {
+///     print("Direction: \(trend.direction), Slope: \(trend.slope), Confidence: \(trend.confidence)")
+/// }
+/// ```
+///
+/// ## Interpretation
+/// - **Direction**: `.upward`, `.downward`, or `.flat` based on slope and significance
+/// - **Slope**: Rate of change per period (units per time step)
+/// - **Confidence**: R² value (0 to 1), where higher values indicate stronger trends
 public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields trend detection results.
     public typealias Element = TrendDetection
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -467,10 +799,14 @@ public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence wh
         self.window = window
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields trend detection results.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), window: window)
     }
-
+	
+	/// Iterator that yields generated values asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
@@ -481,7 +817,8 @@ public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence wh
             self.baseIterator = base
             self.window = window
         }
-
+        
+        /// Yields the next value from the array, or nil when exhausted.
         public mutating func next() async throws -> TrendDetection? {
             guard !isComplete else { return nil }
 
@@ -543,8 +880,31 @@ public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence wh
 
 // MARK: - Change Point Detection
 
+/// AsyncSequence that detects structural changes (change points) in streaming data.
+///
+/// Monitors the stream for significant shifts in statistical properties. Currently focuses
+/// on level shift detection by comparing consecutive windows. When the mean shifts by more
+/// than the threshold, a change point is emitted. Useful for detecting regime changes,
+/// anomalous events, or phase transitions in business metrics.
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([100, 102, 98, 105, 150, 148, 152, 155])
+/// for try await changePoint in stream.detectChangePoints(window: 3, threshold: 20) {
+///     print("Change detected at index \(changePoint.index): \(changePoint.type)")
+///     print("Magnitude: \(changePoint.magnitude)")
+/// }
+/// // Detects level shift from ~100 to ~150
+/// ```
+///
+/// ## Parameter Guidance
+/// - **window**: Size of window for computing statistics (larger = smoother, slower to detect)
+/// - **threshold**: Minimum change to consider significant (domain-specific, e.g., 2× std dev)
 public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields change point detections.
     public typealias Element = ChangePoint
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -557,10 +917,14 @@ public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSeque
         self.threshold = threshold
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields change point detections.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), window: window, threshold: threshold)
     }
 
+    /// Iterator that detects change points asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
@@ -575,6 +939,9 @@ public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSeque
             self.threshold = threshold
         }
 
+        /// Yields the next change point when detected.
+        ///
+        /// - Returns: A change point when a significant shift is detected, or nil when the stream ends.
         public mutating func next() async throws -> ChangePoint? {
             // Read values until we detect a change point
             while true {
@@ -618,8 +985,35 @@ public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSeque
 
 // MARK: - Forecast Error Calculation
 
+/// AsyncSequence that computes cumulative forecast error metrics from forecast/actual pairs.
+///
+/// Takes a stream of ``ForecastPair`` values and continuously computes running error metrics
+/// (MAE, RMSE, MAPE). Each emitted value represents the cumulative error metrics up to that point,
+/// enabling real-time monitoring of forecast accuracy as new predictions and actuals arrive.
+///
+/// ## Example
+/// ```swift
+/// let pairs = AsyncValueStream([
+///     ForecastPair(actual: 100, forecast: 98),
+///     ForecastPair(actual: 105, forecast: 103),
+///     ForecastPair(actual: 110, forecast: 112)
+/// ])
+///
+/// for try await errors in pairs.forecastErrors() {
+///     print("MAE: \(errors.mae), RMSE: \(errors.rmse), MAPE: \(errors.mape * 100)%")
+/// }
+/// ```
+///
+/// ## Use Cases
+/// - Monitor forecast model performance in real-time
+/// - Compare multiple forecasting methods
+/// - Detect when forecast accuracy degrades (trigger model retraining)
+/// - Track error metrics over different time periods
 public struct AsyncForecastErrorSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == ForecastPair {
+    /// Yields cumulative forecast error metrics.
     public typealias Element = StreamingForecastError
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -628,10 +1022,14 @@ public struct AsyncForecastErrorSequence<Base: AsyncSequence>: AsyncSequence whe
         self.base = base
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields cumulative forecast error metrics.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator())
     }
 
+    /// Iterator that computes forecast error metrics asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private var count: Int = 0
@@ -643,6 +1041,9 @@ public struct AsyncForecastErrorSequence<Base: AsyncSequence>: AsyncSequence whe
             self.baseIterator = base
         }
 
+        /// Yields the next cumulative error metrics after incorporating a new forecast/actual pair.
+        ///
+        /// - Returns: Cumulative error metrics (MAE, RMSE, MAPE) up to this point.
         public mutating func next() async throws -> StreamingForecastError? {
             guard let pair = try await baseIterator.next() else {
                 return nil

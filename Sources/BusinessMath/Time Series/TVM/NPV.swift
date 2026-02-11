@@ -91,6 +91,16 @@ public func npv<T: Real>(discountRate r: T, cashFlows c: [T]) -> T {
 	return presentValue
 }
 
+/// Calculates the Net Present Value (NPV) with input validation.
+///
+/// This is a validated wrapper around ``npv(discountRate:cashFlows:)`` that throws errors
+/// for invalid inputs instead of returning incorrect results.
+///
+/// - Parameters:
+///   - r: Discount rate (must be ≥ 0)
+///   - c: Array of cash flows over time (must not be empty)
+/// - Returns: Net present value of the cash flows
+/// - Throws: ``BusinessMathError`` if discount rate is negative or cash flows array is empty
 public func calculateNPV<T: Real>(discountRate r: T, cashFlows c: [T]) throws -> T {
 	guard r >= 0 else {
 		throw BusinessMathError.invalidInput(message: "Invalid input parameter - discountRate must be non-negative.", value: "\(r)", expectedRange: "≥ 0.0")

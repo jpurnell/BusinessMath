@@ -59,7 +59,15 @@ public struct SubscriptionBoxModel: Sendable {
     public let customerAcquisitionCost: Double
 
     // MARK: - Initialization
-
+	/// Creates a Subscription as a Service model with baseline financial parameters.
+	/// - Parameters:
+	///   - initialSubscribers: Initial number of subscribers
+	///   - monthlyBoxPrice: Monthly subscription box price
+	///   - costOfGoodsPerBox: Cost of goods per box
+	///   - shippingCostPerBox: Shipping cost per box
+	///   - monthlyChurnRate: Monthly churn rate (percentage of subscribers lost)
+	///   - newSubscribersPerMonth: Number of new subscribers acquired per month
+	///   - customerAcquisitionCost: Customer acquisition cost
     public init(
         initialSubscribers: Double,
         monthlyBoxPrice: Double,

@@ -85,6 +85,14 @@ public struct TemplateSchema: Codable, Sendable {
         /// Validation rules
         public let validation: [ValidationRule]?
 
+        /// Creates a template parameter definition.
+        /// - Parameters:
+        ///   - name: Parameter name
+        ///   - type: Parameter type (string, number, boolean, array, or object)
+        ///   - description: Human-readable description of the parameter
+        ///   - required: Whether parameter is required (default: true)
+        ///   - defaultValue: Default value as JSON string (default: nil)
+        ///   - validation: Array of validation rules to apply (default: nil)
         public init(
             name: String,
             type: ParameterType,
@@ -119,6 +127,10 @@ public struct TemplateSchema: Codable, Sendable {
         /// Error message if validation fails
         public let message: String
 
+        /// Creates a parameter validation rule.
+        /// - Parameters:
+        ///   - rule: Rule type (e.g., "min", "max", "pattern")
+        ///   - message: Error message shown if validation fails
         public init(rule: String, message: String) {
             self.rule = rule
             self.message = message
@@ -131,6 +143,10 @@ public struct TemplateSchema: Codable, Sendable {
     /// Example parameter sets
     public let examples: [String: [String: String]]
 
+    /// Creates a template parameter schema.
+    /// - Parameters:
+    ///   - parameters: Array of parameter definitions
+    ///   - examples: Named example parameter sets for documentation (default: empty)
     public init(
         parameters: [Parameter],
         examples: [String: [String: String]] = [:]
@@ -207,6 +223,18 @@ public struct TemplateMetadata: Codable, Sendable {
     /// Documentation URL
     public let documentation: URL?
 
+    /// Creates template metadata.
+    /// - Parameters:
+    ///   - name: Template name
+    ///   - description: Brief description of the template
+    ///   - author: Author name or organization
+    ///   - version: Semantic version string (e.g., "1.0.0")
+    ///   - category: Template category for organization
+    ///   - requiredParameters: Names of required parameters (default: empty)
+    ///   - optionalParameters: Names of optional parameters (default: empty)
+    ///   - tags: Searchable tags for discovery (default: empty)
+    ///   - license: License identifier like "MIT" or "Apache-2.0" (default: nil)
+    ///   - documentation: URL to template documentation (default: nil)
     public init(
         name: String,
         description: String,
@@ -254,6 +282,12 @@ public struct TemplatePackage: Codable, Sendable {
     /// Package creation timestamp
     public let createdAt: Date
 
+    /// Creates a shareable template package.
+    /// - Parameters:
+    ///   - metadata: Template metadata (name, description, author, etc.)
+    ///   - templateJSON: Template definition as JSON string
+    ///   - checksum: SHA-256 checksum for integrity verification
+    ///   - createdAt: Package creation timestamp (default: current date/time)
     public init(
         metadata: TemplateMetadata,
         templateJSON: String,
@@ -297,6 +331,12 @@ public struct RegisteredTemplate: Sendable {
     /// Template schema
     public let schema: TemplateSchema
 
+    /// Creates a registered template record.
+    /// - Parameters:
+    ///   - identifier: Unique template identifier
+    ///   - metadata: Template metadata (name, description, author, etc.)
+    ///   - registeredAt: Registration timestamp (default: current date/time)
+    ///   - schema: Template parameter schema
     public init(
         identifier: String,
         metadata: TemplateMetadata,
@@ -646,6 +686,12 @@ public struct TemplateValidationReport: Sendable {
     /// Validation timestamp
     public let validatedAt: Date
 
+    /// Creates a template validation report.
+    /// - Parameters:
+    ///   - templateName: Name of the validated template
+    ///   - isValid: Whether the template passed validation
+    ///   - issues: List of validation issues found (empty if valid)
+    ///   - validatedAt: Timestamp of validation (default: current date/time)
     public init(
         templateName: String,
         isValid: Bool,

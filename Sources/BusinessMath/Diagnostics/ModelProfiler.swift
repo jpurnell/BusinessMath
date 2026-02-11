@@ -251,6 +251,7 @@ public actor ModelProfiler {
         metrics.removeValue(forKey: operation)
     }
 	
+	/// Set the minimum duration in seconds
 	public func setWarningThreshold(_ threshold: TimeInterval) async {
 		self.warningThreshold = threshold
 	}
