@@ -58,7 +58,14 @@ public struct ManufacturingModel: Sendable {
     public let targetProduction: Double?
 
     // MARK: - Initialization
-
+	/// Creates a Subscription as a Service model with baseline financial parameters.
+	/// - Parameters:
+	///   - productionCapacity: Production capacity (units per month)
+	///   - sellingPricePerUnit: Selling price per unit
+	///   - directMaterialCostPerUnit: Direct material cost per unit
+	///   - directLaborCostPerUnit: Direct labor cost per unit
+	///   - monthlyOverhead: Monthly overhead (fixed costs)
+	///   - targetProduction: Target production level (optional, for efficiency calculations)
     public init(
         productionCapacity: Double,
         sellingPricePerUnit: Double,

@@ -22,10 +22,21 @@ public enum BondCashFlowType: Sendable {
 
 /// Represents a single cash flow from a bond
 public struct BondCashFlow<T: Real>: Sendable where T: Sendable {
+    /// Date when the cash flow occurs.
     public let date: Date
+
+    /// Amount of the cash flow.
     public let amount: T
+
+    /// Type of cash flow (coupon, principal, call redemption, or put redemption).
     public let type: BondCashFlowType
 
+    /// Creates a bond cash flow with specified characteristics.
+    ///
+    /// - Parameters:
+    ///   - date: Date when the cash flow occurs
+    ///   - amount: Amount of the cash flow
+    ///   - type: Type of cash flow
     public init(date: Date, amount: T, type: BondCashFlowType) {
         self.date = date
         self.amount = amount
@@ -677,6 +688,11 @@ public struct AmortizationPayment<T: Real>: Sendable where T: Sendable {
     /// Amount of principal to be repaid
     public let principalAmount: T
 
+    /// Creates an amortization payment with specified date and amount.
+    ///
+    /// - Parameters:
+    ///   - date: Date of the principal payment
+    ///   - principalAmount: Amount of principal to be repaid
     public init(date: Date, principalAmount: T) {
         self.date = date
         self.principalAmount = principalAmount

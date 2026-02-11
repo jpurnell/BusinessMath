@@ -6,6 +6,36 @@ import OSLog
 ///
 /// Covenants are restrictions placed on borrowers to protect lenders.
 /// Violations can trigger default, higher interest rates, or mandatory repayment.
+///
+/// ## Covenant Types
+/// - **Maintenance Covenants**: Must be satisfied continuously (e.g., maintain current ratio > 1.5)
+/// - **Incurrence Covenants**: Triggered by specific actions (e.g., can't issue more debt if debt/equity > 2.0)
+///
+/// ## Common Financial Covenants
+/// - **Current Ratio**: Current Assets / Current Liabilities (typical minimum: 1.2-1.5)
+/// - **Debt-to-Equity**: Total Debt / Total Equity (typical maximum: 2.0-3.0)
+/// - **Interest Coverage**: EBIT / Interest Expense (typical minimum: 2.5-3.0)
+/// - **Debt Service Coverage (DSCR)**: EBITDA / (Interest + Principal) (typical minimum: 1.25-1.50)
+/// - **Debt-to-EBITDA**: Total Debt / EBITDA (typical maximum: 3.0-4.0)
+///
+/// ## Example
+/// ```swift
+/// let covenant = FinancialCovenant(
+///     name: "Minimum Current Ratio",
+///     requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5),
+///     curePeriodDays: 30
+/// )
+///
+/// let results = covenant.isCompliant(
+///     incomeStatement: income,
+///     balanceSheet: balance,
+///     period: Period.quarter(year: 2024, quarter: 1)
+/// )
+/// ```
+///
+/// ## See Also
+/// - ``CovenantMonitor`` for checking multiple covenants
+/// - ``headroom(incomeStatement:balanceSheet:period:)`` for calculating cushion before violation
 @available(macOS 11.0, *)
 public struct FinancialCovenant {
 	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
@@ -29,6 +59,29 @@ public struct FinancialCovenant {
         case tangibleNetWorth
         case custom(String)
 
+        /// Initialize a metric from a string literal.
+        ///
+        /// Automatically maps common string representations to standard metrics,
+        /// allowing covenants to be specified with natural language strings.
+        ///
+        /// ## Supported Strings
+        /// - "Current Ratio" → `currentRatio`
+        /// - "Debt to Equity", "Debt/Equity" → `debtToEquity`
+        /// - "Interest Coverage" → `interestCoverage`
+        /// - "Debt to EBITDA", "Debt/EBITDA" → `debtToEBITDA`
+        /// - "Debt Service Coverage", "DSCR" → `debtServiceCoverage`
+        /// - "Quick Ratio" → `quickRatio`
+        /// - "Tangible Net Worth", "Net Worth" → `tangibleNetWorth`
+        /// - "EBITDA" → custom("EBITDA")
+        /// - Other strings → custom(value)
+        ///
+        /// ## Example
+        /// ```swift
+        /// let metric: FinancialMetric = "Current Ratio"  // Maps to .currentRatio
+        /// let custom: FinancialMetric = "Custom Metric"  // Maps to .custom("Custom Metric")
+        /// ```
+        ///
+        /// - Parameter value: String representation of the metric
         public init(stringLiteral value: String) {
             // Map common string names to standard metrics
             switch value.lowercased() {
@@ -55,10 +108,36 @@ public struct FinancialCovenant {
         }
     }
 
+    /// The name or description of this covenant (e.g., "Minimum Current Ratio").
     public let name: String
+
+    /// The specific requirement this covenant enforces.
+    ///
+    /// ## See Also
+    /// - ``Requirement`` for available covenant types
     public let requirement: Requirement
+
+    /// Number of days borrower has to cure (fix) a covenant violation.
+    ///
+    /// During the cure period, the violation doesn't trigger default.
+    /// Common cure periods: 30, 60, or 90 days.
     public let curePeriodDays: Int
 
+    /// Create a financial covenant with a name, requirement, and optional cure period.
+    ///
+    /// - Parameters:
+    ///   - name: Descriptive name for the covenant
+    ///   - requirement: The covenant requirement (minimum/maximum ratio or value)
+    ///   - curePeriodDays: Days allowed to cure violations (default: 0 = immediate default)
+    ///
+    /// ## Example
+    /// ```swift
+    /// let covenant = FinancialCovenant(
+    ///     name: "Minimum Current Ratio",
+    ///     requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5),
+    ///     curePeriodDays: 30
+    /// )
+    /// ```
     public init(name: String, requirement: Requirement, curePeriodDays: Int = 0) {
         self.name = name
         self.requirement = requirement
@@ -143,15 +222,43 @@ public struct FinancialCovenant {
     }
 }
 
-/// Result of checking covenant compliance
+/// Result of checking covenant compliance.
+///
+/// Contains the covenant being evaluated, whether it's compliant, and the
+/// actual vs. required metric values.
+///
+/// ## Example
+/// ```swift
+/// let result = CovenantComplianceResult(
+///     covenant: covenant,
+///     isCompliant: true,
+///     actualValue: 2.1,    // Current ratio of 2.1
+///     requiredValue: 1.5   // Required minimum of 1.5
+/// )
+/// print("Headroom: \(result.actualValue - result.requiredValue)")  // 0.6
+/// ```
 @available(macOS 11.0, *)
 public struct CovenantComplianceResult {
 	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
+
+    /// The covenant that was evaluated.
     public let covenant: FinancialCovenant
+
+    /// Whether the covenant requirement is satisfied.
     public let isCompliant: Bool
+
+    /// The actual value of the metric (e.g., current ratio = 2.1).
     public let actualValue: Double
+
+    /// The required threshold value (e.g., minimum = 1.5).
     public let requiredValue: Double
 
+    /// Create a covenant compliance result.
+    /// - Parameters:
+    ///   - covenant: The covenant being evaluated
+    ///   - isCompliant: Whether the covenant is satisfied
+    ///   - actualValue: The calculated metric value
+    ///   - requiredValue: The covenant's threshold value
     public init(covenant: FinancialCovenant, isCompliant: Bool, actualValue: Double, requiredValue: Double) {
         self.covenant = covenant
         self.isCompliant = isCompliant
@@ -160,12 +267,29 @@ public struct CovenantComplianceResult {
     }
 }
 
-/// Monitors and checks compliance with financial covenants
+/// Monitors and checks compliance with financial covenants.
+///
+/// The `CovenantMonitor` evaluates multiple covenants against financial statements
+/// for a given period, returning compliance results for each.
+///
+/// ## Example
+/// ```swift
+/// let covenants = [
+///     FinancialCovenant(name: "Min Current Ratio", requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5)),
+///     FinancialCovenant(name: "Max Debt/Equity", requirement: .maximumRatio(metric: .debtToEquity, threshold: 2.0))
+/// ]
+/// let monitor = CovenantMonitor(covenants: covenants)
+/// let results = monitor.checkCompliance(incomeStatement: income, balanceSheet: balance, period: q1)
+/// ```
 @available(macOS 11.0, *)
 public struct CovenantMonitor {
 	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
+
+    /// The financial covenants to monitor for compliance.
     public let covenants: [FinancialCovenant]
 
+    /// Create a covenant monitor with a list of covenants to check.
+    /// - Parameter covenants: Array of financial covenants to monitor
     public init(covenants: [FinancialCovenant]) {
         self.covenants = covenants
     }

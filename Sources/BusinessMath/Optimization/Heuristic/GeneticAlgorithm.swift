@@ -259,7 +259,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         let penaltyCoefficient = V.Scalar(1000)
 
         // Create penalized objective
-        let penalizedObjective: (V) -> V.Scalar = { point in
+        let penalizedObjective: @Sendable (V) -> V.Scalar = { point in
             let baseValue = objective(point)
 
             // Calculate total penalty

@@ -255,8 +255,6 @@ public struct SimulationStatistics: Sendable {
 	/// let ci = stats.confidenceInterval(level: 0.95)
 	/// print("95% CI: [\(ci.lower), \(ci.upper)]")
 	/// ```
-
-
 	public func confidenceInterval(level: Double) -> (low: Double, high: Double) { return globalConfidenceInterval(level, values) }
 
 }

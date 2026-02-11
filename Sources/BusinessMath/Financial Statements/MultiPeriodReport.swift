@@ -293,7 +293,8 @@ public enum MultiPeriodReportError: Error, CustomStringConvertible {
 
 	/// Summaries belong to different entities
 	case entityMismatch
-
+	
+	/// String describing the error for logging and debugging
 	public var description: String {
 		switch self {
 		case .emptyPeriods:

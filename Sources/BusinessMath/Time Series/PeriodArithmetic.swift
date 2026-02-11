@@ -20,6 +20,7 @@ public enum PeriodError: Error, Equatable {
 }
 
 extension PeriodError: LocalizedError {
+	/// A localized human-readable description of the period error.
 	public var errorDescription: String? {
 		switch self {
 		case .typeMismatch(let from, let to):
@@ -197,11 +198,17 @@ public struct PeriodRange: Sequence {
 		self.end = end
 	}
 
+	/// Creates an iterator for traversing the period range.
+	///
+	/// - Returns: An iterator that yields each period from start to end (inclusive)
 	public func makeIterator() -> PeriodRangeIterator {
 		return PeriodRangeIterator(start: start, end: end)
 	}
 }
 
+/// Iterator for traversing a range of periods.
+///
+/// Produces each period in sequence from start to end (inclusive).
 public struct PeriodRangeIterator: IteratorProtocol {
 	private var current: Period
 	private let end: Period
@@ -212,6 +219,9 @@ public struct PeriodRangeIterator: IteratorProtocol {
 		self.end = end
 	}
 
+	/// Advances to the next period in the range and returns it.
+	///
+	/// - Returns: The next period in the range, or `nil` if iteration is complete
 	public mutating func next() -> Period? {
 		guard !finished else { return nil }
 

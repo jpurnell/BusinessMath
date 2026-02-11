@@ -67,7 +67,8 @@ public struct URLSessionNetworkSession: NetworkSession {
 	public init(urlSession: URLSession = .shared) {
 		self.urlSession = urlSession
 	}
-
+	
+	/// Returns data and a URLResponse type from a network request
 	public func data(for request: URLRequest) async throws -> (Data, URLResponse) {
 		return try await urlSession.data(for: request)
 	}

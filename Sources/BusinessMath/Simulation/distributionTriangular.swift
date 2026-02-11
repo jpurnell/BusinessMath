@@ -21,6 +21,7 @@ import OSLog
 ///   - a: The lower bound of the interval.
 ///   - b: The upper bound of the interval.
 ///   - c: The mode (most frequent value) of the distribution. It must be within the interval [a, b].
+///   - uSeed: Random seed value in [0, 1] (default: newly generated)
 /// - Returns: A random number generated from the triangular distribution between `a` and `b` with mode `c`.
 ///
 /// - Note: The function uses the inverse transform sampling method to generate a random number from the triangular distribution. The method distinguishes between two cases based on the cumulative distribution function (CDF) of the triangular distribution:
@@ -49,21 +50,34 @@ public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uS
     }
 }
 
+/// A triangular distribution generator for producing random values with a specified mode.
+///
+/// The triangular distribution is useful in simulation when you know the minimum, maximum,
+/// and most likely value but don't have enough data for more complex distributions.
 public struct DistributionTriangular: DistributionRandom, Sendable {
 	let low: Double
 	let high: Double
 	let base: Double
 
+	/// Creates a triangular distribution generator.
+	/// - Parameters:
+	///   - low: Lower bound of the distribution
+	///   - high: Upper bound of the distribution
+	///   - base: Mode (most likely value) within [low, high]
 	public init(low: Double, high: Double, base: Double) {
 		self.low = low
 		self.high = high
 		self.base = base
 	}
-	
+
+	/// Generates a random value from the triangular distribution.
+	/// - Returns: A random Double from the triangular distribution
 	public func random() -> Double {
 		triangularDistribution(low: low, high: high, base: base)
 	}
-	
+
+	/// Generates the next random value from the triangular distribution.
+	/// - Returns: A random Double from the triangular distribution
 	public func next() -> Double {
 		return random()
 	}

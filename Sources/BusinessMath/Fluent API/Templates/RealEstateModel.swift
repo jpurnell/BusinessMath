@@ -78,7 +78,21 @@ public struct RealEstateModel: Sendable {
     public let taxRate: Double
 
     // MARK: - Initialization
-
+	/// Creates a Subscription as a Service model with baseline financial parameters.
+	/// - Parameters:
+	///   - purchasePrice: Purchase price of the property
+	///   - downPaymentPercentage: Down payment as percentage of purchase price (0.0 to 1.0)
+	///   - interestRate: Annual interest rate on mortgage (0.0 to 1.0)
+	///   - loanTermYears: Loan term in years
+	///   - annualRent: Expected annual rental income (gross)
+	///   - vacancyRate: Vacancy rate (percentage of time property is vacant, 0.0 to 1.0)
+	///   - annualOperatingExpenses: Annual operating expenses (property management, maintenance, insurance, property taxes)
+	///   - annualAppreciationRate: Annual appreciation rate (0.0 to 1.0)
+	///   - closingCostsPercentage: Closing costs as percentage of purchase price (optional, defaults to 3%)
+	///   - rentGrowthRate: Annual rent increase rate (optional, defaults to 2.5%)
+	///   - depreciationPeriodYears: Property depreciation period in years (for tax purposes, defaults to 27.5 for residential)
+	///   - taxRate: Marginal tax rate for investor (optional, defaults to 0.24)
+	///
     public init(
         purchasePrice: Double,
         downPaymentPercentage: Double,

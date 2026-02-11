@@ -8,12 +8,19 @@
 import Foundation
 import RealModule
 
+/// Utility for creating test financial entities and statements.
 public struct TestEntity {
+    /// Creates a test entity helper.
     public init() {}
+
+	/// Creates a test entity with standard test values.
+	/// - Returns: Entity with id "TEST" and name "Test Company"
 	public func createTestEntity() -> Entity {
 		return Entity(id: "TEST", primaryType: .ticker, name: "Test Company")
 	}
-	
+
+	/// Creates a set of test periods (4 quarters in 2025).
+	/// - Returns: Array of quarterly periods for 2025
 	public func createTestPeriods() -> [Period] {
 		return [
 			Period.quarter(year: 2025, quarter: 1),
@@ -22,7 +29,9 @@ public struct TestEntity {
 			Period.quarter(year: 2025, quarter: 4)
 		]
 	}
-	
+
+	/// Creates a test financial scenario with sample drivers.
+	/// - Returns: FinancialScenario with test revenue and cost drivers
 	public func createTestScenario() -> FinancialScenario {
 		var overrides: [String: AnyDriver<Double>] = [:]
 		overrides["Revenue"] = AnyDriver(DeterministicDriver(name: "Revenue", value: 1000.0))
@@ -33,7 +42,10 @@ public struct TestEntity {
 			driverOverrides: overrides
 		)
 	}
-	
+
+	/// Creates a test income statement with sample accounts.
+	/// - Returns: IncomeStatement with test revenue and expense accounts
+	/// - Throws: If statement creation fails validation
 	public func createTestIncomeStatement() throws -> IncomeStatement<Double> {
 		let entity = createTestEntity()
 		let periods = createTestPeriods()
@@ -91,7 +103,10 @@ public struct TestEntity {
 			accounts: [revenueAccount, cogsAccount, expenseAccount, interestExpenseAccount]
 		)
 	}
-	
+
+	/// Creates a test balance sheet with sample accounts.
+	/// - Returns: BalanceSheet with test asset, liability, and equity accounts
+	/// - Throws: If statement creation fails validation
 	public func createTestBalanceSheet() throws -> BalanceSheet<Double> {
 		let entity = createTestEntity()
 		let periods = createTestPeriods()
@@ -171,7 +186,10 @@ public struct TestEntity {
 			accounts: [assetAccount, inventoryAccount, accountsReceivable, accountsPayable, liabilityAccount, equityAccount]
 		)
 	}
-	
+
+	/// Creates a test cash flow statement with sample accounts.
+	/// - Returns: CashFlowStatement with test operating, investing, and financing accounts
+	/// - Throws: If statement creation fails validation
 	public func createTestCashFlowStatement() throws -> CashFlowStatement<Double> {
 		let entity = createTestEntity()
 		let periods = createTestPeriods()

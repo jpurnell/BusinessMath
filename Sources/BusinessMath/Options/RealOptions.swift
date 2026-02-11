@@ -172,6 +172,12 @@ public struct DecisionNode<T: Real & Sendable>: Sendable {
 		case decision
 	}
 
+	/// Creates a decision tree node for real options valuation.
+	///
+	/// - Parameters:
+	///   - type: Type of node (`.terminal` for leaf, `.chance` for uncertainty, `.decision` for choice point)
+	///   - value: Value at this node (default: 0). For terminal nodes, this is the payoff.
+	///   - branches: Array of branches leading from this node (default: empty for terminal nodes)
 	public init(type: NodeType, value: T = T(0), branches: [Branch<T>] = []) {
 		self.type = type
 		self.value = value
@@ -189,6 +195,11 @@ public struct Branch<T: Real & Sendable>: Sendable {
 	/// Node this branch leads to.
 	public let node: DecisionNode<T>
 
+	/// Creates a branch in a decision tree.
+	///
+	/// - Parameters:
+	///   - probability: Probability of this branch occurring. For chance nodes, probabilities should sum to 1.
+	///   - node: The node this branch leads to
 	public init(probability: T, node: DecisionNode<T>) {
 		self.probability = probability
 		self.node = node

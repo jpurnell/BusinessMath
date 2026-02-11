@@ -639,24 +639,66 @@ extension BalanceSheet {
 	/// }
 	/// ```
 	public struct Materialized: Sendable {
+		/// The entity this balance sheet belongs to.
 		public let entity: Entity
+
+		/// The time periods covered by this balance sheet.
 		public let periods: [Period]
 
+		/// All accounts in the balance sheet (assets, liabilities, equity).
 		public let accounts: [Account<T>]
 
 		// Pre-computed totals
+
+		/// Total assets: Sum of all asset accounts.
+		///
+		/// Per the accounting equation: Assets = Liabilities + Equity
 		public let totalAssets: TimeSeries<T>
+
+		/// Total liabilities: Sum of all liability accounts.
 		public let totalLiabilities: TimeSeries<T>
+
+		/// Total equity: Sum of all equity accounts.
+		///
+		/// Also equals: Assets - Liabilities (by the accounting equation)
 		public let totalEquity: TimeSeries<T>
 
 		// Pre-computed liquidity metrics
+
+		/// Current assets: Assets expected to convert to cash within one year.
+		///
+		/// Includes: Cash, marketable securities, accounts receivable, inventory.
 		public let currentAssets: TimeSeries<T>
+
+		/// Current liabilities: Obligations due within one year.
+		///
+		/// Includes: Accounts payable, short-term debt, accrued expenses.
 		public let currentLiabilities: TimeSeries<T>
+
+		/// Working capital: Current Assets - Current Liabilities.
+		///
+		/// Measures short-term liquidity and operational efficiency.
+		/// Positive working capital means the company can cover short-term obligations.
 		public let workingCapital: TimeSeries<T>
 
 		// Pre-computed ratios
+
+		/// Current ratio: Current Assets / Current Liabilities.
+		///
+		/// Key liquidity measure. Typical healthy range: 1.5-3.0.
+		/// Below 1.0 indicates potential liquidity problems.
 		public let currentRatio: TimeSeries<T>
+
+		/// Debt-to-equity ratio: Total Liabilities / Total Equity.
+		///
+		/// Measures financial leverage. Higher ratio = more debt financing.
+		/// Typical ranges: 0.5-1.5 (varies by industry).
 		public let debtToEquity: TimeSeries<T>
+
+		/// Equity ratio: Total Equity / Total Assets.
+		///
+		/// Percentage of assets financed by shareholders' equity.
+		/// Higher ratio indicates less leverage and more financial stability.
 		public let equityRatio: TimeSeries<T>
 	}
 
@@ -683,6 +725,17 @@ extension BalanceSheet {
 
 // MARK: - Codable Conformance
 
+/// Codable conformance for BalanceSheet enables JSON serialization.
+///
+/// Only encodes the essential data (entity, periods, accounts). Computed properties
+/// like totals and ratios are recalculated upon decoding.
+///
+/// ## Example
+/// ```swift
+/// let balanceSheet = BalanceSheet(...)
+/// let json = try JSONEncoder().encode(balanceSheet)
+/// let decoded = try JSONDecoder().decode(BalanceSheet<Double>.self, from: json)
+/// ```
 extension BalanceSheet: Codable {
 
 	private enum CodingKeys: String, CodingKey {
@@ -691,6 +744,12 @@ extension BalanceSheet: Codable {
 		case accounts
 	}
 
+	/// Encode the balance sheet to an encoder.
+	///
+	/// Only encodes entity, periods, and accounts. Computed metrics are not encoded.
+	///
+	/// - Parameter encoder: The encoder to write to
+	/// - Throws: EncodingError if encoding fails
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 		try container.encode(entity, forKey: .entity)
@@ -698,6 +757,13 @@ extension BalanceSheet: Codable {
 		try container.encode(accounts, forKey: .accounts)
 	}
 
+	/// Decode a balance sheet from a decoder.
+	///
+	/// Reconstructs the balance sheet from entity, periods, and accounts.
+	/// All computed metrics (totals, ratios) are automatically recalculated.
+	///
+	/// - Parameter decoder: The decoder to read from
+	/// - Throws: DecodingError if decoding fails, or validation errors from init
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		let entity = try container.decode(Entity.self, forKey: .entity)

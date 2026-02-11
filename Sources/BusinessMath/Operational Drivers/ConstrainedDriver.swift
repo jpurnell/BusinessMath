@@ -317,7 +317,10 @@ public struct ValidatedDriver<Base: Driver>: Sendable where Base.Value: BinaryFl
 	public typealias Value = Base.Value
 
 	// MARK: - Properties
-
+        /// - Parameters:
+        ///   - name: The name of this driver (defaults to base driver's name).
+        ///   - base: The underlying driver to validate.
+        ///   - validator: A function that validates and potentially transforms the value.
 	public let name: String
 	private let base: Base
 	private let validator: @Sendable (Base.Value) throws -> Base.Value

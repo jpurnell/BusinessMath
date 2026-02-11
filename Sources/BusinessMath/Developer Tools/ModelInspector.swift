@@ -37,18 +37,34 @@ public struct ModelInspector: Sendable {
 
     // MARK: - Initialization
 
+    /// Creates a model inspector for analyzing a financial model.
+    ///
+    /// - Parameter model: The financial model to inspect and analyze.
     public init(model: FinancialModel) {
         self.model = model
     }
 
     // MARK: - Revenue Source Information
 
-    /// Information about a revenue source
+    /// Information about a revenue source in the financial model.
+    ///
+    /// Contains metadata about a revenue component for inspection and analysis purposes.
     public struct RevenueSourceInfo: Sendable {
+        /// The name identifying this revenue source.
         public let name: String
+
+        /// The monetary amount contributed by this revenue source.
         public let amount: Double
+
+        /// The zero-based index of this revenue source in the model's revenue components array.
         public let index: Int
 
+        /// Creates revenue source information.
+        ///
+        /// - Parameters:
+        ///   - name: The revenue source identifier.
+        ///   - amount: The monetary amount this source contributes.
+        ///   - index: The position in the model's revenue components array.
         public init(name: String, amount: Double, index: Int) {
             self.name = name
             self.amount = amount
@@ -71,14 +87,36 @@ public struct ModelInspector: Sendable {
 
     // MARK: - Cost Driver Information
 
-    /// Information about a cost driver
+    /// Information about a cost driver in the financial model.
+    ///
+    /// Cost drivers can be either fixed (constant amount) or variable (percentage of revenue).
+    /// The `amount` or `percentage` field is populated depending on the driver type.
     public struct CostDriverInfo: Sendable {
+        /// The name identifying this cost driver.
         public let name: String
+
+        /// The type of cost driver: "fixed" or "variable".
         public let type: String
+
+        /// The fixed cost amount (populated for fixed costs, nil for variable costs).
         public let amount: Double?
+
+        /// The percentage of revenue (populated for variable costs, nil for fixed costs).
+        ///
+        /// For variable costs, this represents the portion of revenue consumed (e.g., 0.30 = 30%).
         public let percentage: Double?
+
+        /// The zero-based index of this cost driver in the model's cost components array.
         public let index: Int
 
+        /// Creates cost driver information.
+        ///
+        /// - Parameters:
+        ///   - name: The cost driver identifier.
+        ///   - type: The type: "fixed" or "variable".
+        ///   - amount: The fixed cost amount (for fixed costs).
+        ///   - percentage: The revenue percentage (for variable costs).
+        ///   - index: The position in the model's cost components array.
         public init(name: String, type: String, amount: Double? = nil, percentage: Double? = nil, index: Int) {
             self.name = name
             self.type = type
@@ -215,11 +253,24 @@ public struct ModelInspector: Sendable {
 
     // MARK: - Structure Validation
 
-    /// Result of structure validation
+    /// Result of structure validation for a financial model.
+    ///
+    /// Contains a boolean indicating overall validity plus an array of specific issues found.
+    /// An empty `issues` array indicates a structurally valid model.
     public struct StructureValidation: Sendable {
+        /// Whether the model structure is valid (true if no issues found).
         public let isValid: Bool
+
+        /// Array of human-readable issue descriptions found during validation.
+        ///
+        /// Empty array indicates the model passed all structural checks.
         public let issues: [String]
 
+        /// Creates a structure validation result.
+        ///
+        /// - Parameters:
+        ///   - isValid: Whether the model structure is valid.
+        ///   - issues: Array of issue descriptions (empty for valid models).
         public init(isValid: Bool, issues: [String]) {
             self.isValid = isValid
             self.issues = issues

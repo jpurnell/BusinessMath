@@ -32,10 +32,17 @@ public enum StandardValidation {
 
 	/// Validates that a number is non-negative (>= 0).
 	public struct NonNegative<T: Real & Comparable & Sendable>: ValidationRule {
+		/// The type of value being validated.
 		public typealias Value = T
 
+		/// Creates a non-negative validation rule.
 		public init() {}
 
+		/// Validates that the value is non-negative (>= 0).
+		/// - Parameters:
+		///   - value: The value to validate
+		///   - context: Validation context with field information
+		/// - Returns: Valid if value >= 0, invalid otherwise
 		public func validate(_ value: T?, context: ValidationContext) -> ValidationResult {
 			guard let value = value else {
 				return .invalid([ValidationError(
@@ -64,10 +71,17 @@ public enum StandardValidation {
 
 	/// Validates that a number is positive (> 0).
 	public struct Positive<T: Real & Comparable & Sendable>: ValidationRule {
+		/// The type of value being validated.
 		public typealias Value = T
 
+		/// Creates a positive validation rule.
 		public init() {}
 
+		/// Validates that the value is positive (> 0).
+		/// - Parameters:
+		///   - value: The value to validate
+		///   - context: Validation context with field information
+		/// - Returns: Valid if value > 0, invalid otherwise
 		public func validate(_ value: T?, context: ValidationContext) -> ValidationResult {
 			guard let value = value else {
 				return .invalid([ValidationError(
@@ -96,6 +110,7 @@ public enum StandardValidation {
 
 	/// Validates that a number falls within a specified range.
 	public struct Range<T: Real & Comparable & Sendable>: ValidationRule {
+		/// The type of value being validated.
 		public typealias Value = T
 
 		private let min: T
@@ -111,6 +126,11 @@ public enum StandardValidation {
 			self.max = max
 		}
 
+		/// Validates that the value falls within the specified range.
+		/// - Parameters:
+		///   - value: The value to validate
+		///   - context: Validation context with field information
+		/// - Returns: Valid if min <= value <= max, invalid otherwise
 		public func validate(_ value: T?, context: ValidationContext) -> ValidationResult {
 			guard let value = value else {
 				return .invalid([ValidationError(
@@ -140,9 +160,11 @@ public enum StandardValidation {
 	/// Validates that a value is not nil.
 	public struct Required<T>: ValidationRule {
 		public typealias Value = T
-
+		
+		/// Initializes the Rule
 		public init() {}
-
+		
+		/// Confirms that the value is not nil
 		public func validate(_ value: T?, context: ValidationContext) -> ValidationResult {
 			guard value != nil else {
 				return .invalid([ValidationError(

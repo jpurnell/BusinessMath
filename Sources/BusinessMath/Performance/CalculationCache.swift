@@ -133,6 +133,27 @@ import Foundation
 //		}
 //}
 
+/// Thread-safe LRU cache with TTL and single-flight pattern for expensive calculations.
+///
+/// Provides automatic caching of computation results to avoid redundant expensive operations.
+/// Features:
+/// - **LRU eviction**: Least-recently-used entries are evicted when cache is full
+/// - **TTL expiration**: Entries expire after a configurable time-to-live
+/// - **Single-flight**: Multiple concurrent requests for the same key share one computation
+/// - **Admission control**: Prevents cache thrashing by tracking previously-seen keys
+///
+/// ## Usage
+///
+/// ```swift
+/// let cache = CalculationCache(maxSize: 1000, ttl: 300)
+///
+/// let result = cache.getOrCalculate(key: "expensive_calc_\(params)") {
+///     // This closure runs only if not cached or expired
+///     performExpensiveCalculation(params)
+/// }
+/// ```
+///
+/// - Note: Uses `@unchecked Sendable` with internal locking for thread safety
 public final class CalculationCache: @unchecked Sendable {
 	private struct CachedValue {
 		var value: Any
@@ -159,6 +180,12 @@ public final class CalculationCache: @unchecked Sendable {
 	private let ttl: TimeInterval
 	private var nextAccessId: UInt64 = 0
 	
+	/// Creates a calculation cache with specified size and TTL limits.
+	///
+	/// - Parameters:
+	///   - maxSize: Maximum number of cached entries (default: 1000)
+	///   - ttl: Time-to-live for cached values in seconds (default: 300 = 5 minutes)
+	///   - seenKeysCapacity: Maximum size of admission history (default: max(maxSize, maxSize * 10))
 	public init(maxSize: Int = 1000, ttl: TimeInterval = 300, seenKeysCapacity: Int? = nil) {
 		self.maxSize = maxSize
 		self.ttl = ttl
@@ -186,10 +213,31 @@ public final class CalculationCache: @unchecked Sendable {
 		}
 	}
 	
+	/// Gets a cached value or computes and caches it if not present.
+	///
+	/// Implements an LRU cache with TTL expiration and single-flight pattern to avoid
+	/// redundant computation when multiple threads request the same key simultaneously.
+	///
+	/// **Admission Policy:**
+	/// - If cache is full and key was seen before: bypass caching (return computed value without storing)
+	/// - If cache is full and key is new: evict LRU entry and insert
+	///
+	/// - Parameters:
+	///   - key: Unique identifier for this calculation
+	///   - calculation: Closure that computes the value if not cached
+	/// - Returns: The cached or newly computed value
+	///
+	/// ## Example
+	/// ```swift
+	/// let cache = CalculationCache()
+	/// let profit = cache.getOrCalculate(key: "model_profit_Q1") {
+	///     expensiveCalculation()
+	/// }
+	/// ```
 	public func getOrCalculate<T: Sendable>(key: String, calculation: () -> T) -> T {
 		lock.lock()
 		let now = Date()
-		
+
 		// 1) Cache hit path
 		if var entry = cache[key] {
 			let age = now.timeIntervalSince(entry.createdAt)
@@ -276,6 +324,10 @@ public final class CalculationCache: @unchecked Sendable {
 		return computed
 	}
 	
+	/// Clears all cached entries and admission history.
+	///
+	/// Removes all cached values and resets the seen keys tracking.
+	/// In-flight computations are not interrupted.
 	public func clear() {
 		lock.lock()
 		cache.removeAll()
@@ -285,6 +337,12 @@ public final class CalculationCache: @unchecked Sendable {
 		lock.unlock()
 	}
 	
+	/// Removes a specific entry from the cache.
+	///
+	/// Explicitly deletes the cached value for the given key and "forgets" it
+	/// for admission purposes (next computation will be treated as a new key).
+	///
+	/// - Parameter key: The key to remove from the cache
 	public func remove(key: String) {
 		lock.lock()
 		cache.removeValue(forKey: key)
@@ -293,6 +351,12 @@ public final class CalculationCache: @unchecked Sendable {
 		lock.unlock()
 	}
 	
+	/// The current number of entries in the cache.
+	///
+	/// Returns the count of cached values, excluding evicted or expired entries.
+	/// Thread-safe via internal locking.
+	///
+	/// - Returns: Number of cached entries
 	public var count: Int {
 		lock.lock(); defer { lock.unlock() }
 		return cache.count

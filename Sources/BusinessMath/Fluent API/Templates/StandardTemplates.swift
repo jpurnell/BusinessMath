@@ -9,22 +9,82 @@ import Foundation
 
 // MARK: - SaaS Template
 
-/// Template wrapper for SaaS business model
+/// Template wrapper for SaaS business model.
 ///
 /// Provides TemplateProtocol conformance for the SaaSModel,
 /// enabling registration and sharing via TemplateRegistry.
 ///
-/// Example:
+/// ## Required Parameters
+/// - **initialMRR**: Starting Monthly Recurring Revenue
+/// - **churnRate**: Monthly customer churn (0.0 to 1.0)
+/// - **newCustomersPerMonth**: Customer acquisition rate
+/// - **averageRevenuePerUser**: ARPU (Average Revenue Per User)
+///
+/// ## Optional Parameters
+/// - **grossMargin**: Gross margin percentage (0.0 to 1.0)
+/// - **customerAcquisitionCost**: CAC per customer
+///
+/// ## Usage Example
 /// ```swift
 /// let registry = TemplateRegistry()
 /// let saasTemplate = SaaSTemplate()
-/// try await registry.register(saasTemplate, metadata: saasMetadata)
+///
+/// let parameters: [String: Any] = [
+///     "initialMRR": 50_000.0,
+///     "churnRate": 0.05,  // 5% monthly churn
+///     "newCustomersPerMonth": 100.0,
+///     "averageRevenuePerUser": 99.0,
+///     "grossMargin": 0.85,
+///     "customerAcquisitionCost": 500.0
+/// ]
+///
+/// let model = try saasTemplate.create(parameters: parameters) as! SaaSModel
 /// ```
+///
+/// ## SeeAlso
+/// - ``SaaSModel``
+/// - ``TemplateProtocol``
+/// - ``TemplateRegistry``
 public struct SaaSTemplate: TemplateProtocol {
+    /// Unique identifier for this template.
+    ///
+    /// Used by the ``TemplateRegistry`` to register and retrieve this template.
+    /// Format follows reverse-DNS notation: `com.businessmath.templates.saas`.
     public let identifier: String = "com.businessmath.templates.saas"
 
+    /// Creates a new SaaS template instance.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let template = SaaSTemplate()
+    /// let schema = template.schema()  // Get parameter requirements
+    /// ```
     public init() {}
 
+    /// Returns the schema defining required and optional parameters.
+    ///
+    /// The schema specifies:
+    /// - Parameter names and types
+    /// - Descriptions and validation rules
+    /// - Example parameter sets
+    ///
+    /// - Returns: Template schema with parameter definitions and examples.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let template = SaaSTemplate()
+    /// let schema = template.schema()
+    ///
+    /// for param in schema.parameters {
+    ///     print("\(param.name): \(param.description)")
+    ///     print("  Required: \(param.required)")
+    ///     print("  Type: \(param.type)")
+    /// }
+    /// ```
+    ///
+    /// ## SeeAlso
+    /// - ``TemplateSchema``
+    /// - ``validate(parameters:)``
     public func schema() -> TemplateSchema {
         TemplateSchema(
             parameters: [
@@ -101,6 +161,40 @@ public struct SaaSTemplate: TemplateProtocol {
         )
     }
 
+    /// Validates the provided parameters against the schema.
+    ///
+    /// Ensures all required parameters are present and within valid ranges.
+    /// Throws ``BusinessMathError`` if validation fails.
+    ///
+    /// - Parameter parameters: Dictionary of parameter values to validate.
+    /// - Throws: ``BusinessMathError/missingData(account:period:)`` if required parameter is missing.
+    /// - Throws: ``BusinessMathError/invalidInput(message:value:expectedRange:)`` if parameter is out of range.
+    ///
+    /// ## Validation Rules
+    /// - `initialMRR`: Must be positive
+    /// - `churnRate`: Must be between 0.0 and 1.0
+    /// - `newCustomersPerMonth`: Must be positive
+    /// - `averageRevenuePerUser`: Must be positive
+    /// - `grossMargin`: If provided, must be between 0.0 and 1.0
+    /// - `customerAcquisitionCost`: If provided, must be positive
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let template = SaaSTemplate()
+    /// let params: [String: Any] = [
+    ///     "initialMRR": 10_000.0,
+    ///     "churnRate": 0.05,
+    ///     "newCustomersPerMonth": 50.0,
+    ///     "averageRevenuePerUser": 99.0
+    /// ]
+    ///
+    /// do {
+    ///     try template.validate(parameters: params)
+    ///     print("Parameters valid")
+    /// } catch let error as BusinessMathError {
+    ///     print("Validation failed: \(error)")
+    /// }
+    /// ```
     public func validate(parameters: [String: Any]) throws {
         guard let initialMRR = parameters["initialMRR"] as? Double else {
             throw BusinessMathError.missingData(
@@ -179,6 +273,34 @@ public struct SaaSTemplate: TemplateProtocol {
         }
     }
 
+    /// Creates a SaaS model from validated parameters.
+    ///
+    /// Validates parameters then constructs a ``SaaSModel`` instance.
+    /// All required parameters must be present and valid.
+    ///
+    /// - Parameter parameters: Dictionary of parameter values.
+    /// - Returns: A ``SaaSModel`` instance (returned as `Any` for protocol conformance).
+    /// - Throws: ``BusinessMathError`` if validation fails.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let template = SaaSTemplate()
+    /// let params: [String: Any] = [
+    ///     "initialMRR": 25_000.0,
+    ///     "churnRate": 0.05,
+    ///     "newCustomersPerMonth": 75.0,
+    ///     "averageRevenuePerUser": 99.0,
+    ///     "grossMargin": 0.85,
+    ///     "customerAcquisitionCost": 400.0
+    /// ]
+    ///
+    /// let model = try template.create(parameters: params) as! SaaSModel
+    /// // Use model for projections
+    /// ```
+    ///
+    /// ## SeeAlso
+    /// - ``SaaSModel``
+    /// - ``validate(parameters:)``
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
@@ -202,12 +324,44 @@ public struct SaaSTemplate: TemplateProtocol {
 
 // MARK: - Retail Template
 
-/// Template wrapper for retail business model
+/// Template wrapper for retail business model.
+///
+/// Models retail operations including inventory management, cost of goods sold,
+/// and operating expenses. Suitable for brick-and-mortar or e-commerce retail.
+///
+/// ## Required Parameters
+/// - **initialInventoryValue**: Starting inventory value
+/// - **monthlyRevenue**: Expected monthly sales
+/// - **costOfGoodsSoldPercentage**: COGS as % of revenue (0.0 to 1.0)
+/// - **operatingExpenses**: Monthly operating costs
+///
+/// ## Usage Example
+/// ```swift
+/// let template = RetailTemplate()
+/// let params: [String: Any] = [
+///     "initialInventoryValue": 100_000.0,
+///     "monthlyRevenue": 50_000.0,
+///     "costOfGoodsSoldPercentage": 0.60,  // 60% COGS
+///     "operatingExpenses": 15_000.0
+/// ]
+/// let model = try template.create(parameters: params) as! RetailModel
+/// ```
+///
+/// ## SeeAlso
+/// - ``RetailModel``
+/// - ``TemplateProtocol``
 public struct RetailTemplate: TemplateProtocol {
+    /// Unique identifier for this template.
+    ///
+    /// Format: `com.businessmath.templates.retail`
     public let identifier: String = "com.businessmath.templates.retail"
 
+    /// Creates a new retail template instance.
     public init() {}
 
+    /// Returns the schema defining required parameters.
+    ///
+    /// - Returns: Template schema with parameter definitions.
     public func schema() -> TemplateSchema {
         TemplateSchema(
             parameters: [
@@ -239,6 +393,14 @@ public struct RetailTemplate: TemplateProtocol {
         )
     }
 
+    /// Validates retail model parameters.
+    ///
+    /// - Parameter parameters: Dictionary of parameter values to validate.
+    /// - Throws: ``BusinessMathError/invalidInput(message:value:expectedRange:)`` if validation fails.
+    ///
+    /// ## Validation Rules
+    /// - All monetary values must be positive
+    /// - COGS percentage must be between 0.0 and 1.0
     public func validate(parameters: [String: Any]) throws {
         guard let inventory = parameters["initialInventoryValue"] as? Double, inventory > 0 else {
             throw BusinessMathError.invalidInput(
@@ -270,6 +432,11 @@ public struct RetailTemplate: TemplateProtocol {
         }
     }
 
+    /// Creates a retail model from validated parameters.
+    ///
+    /// - Parameter parameters: Dictionary of parameter values.
+    /// - Returns: A ``RetailModel`` instance.
+    /// - Throws: ``BusinessMathError`` if validation fails.
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
@@ -284,12 +451,28 @@ public struct RetailTemplate: TemplateProtocol {
 
 // MARK: - Manufacturing Template
 
-/// Template wrapper for manufacturing business model
+/// Template wrapper for manufacturing business model.
+///
+/// Models production operations with capacity constraints, unit economics,
+/// and fixed overhead costs.
+///
+/// ## Required Parameters
+/// - **productionCapacity**: Maximum units per month
+/// - **sellingPricePerUnit**: Price per unit
+/// - **directMaterialCostPerUnit**: Raw material cost per unit
+/// - **directLaborCostPerUnit**: Labor cost per unit
+/// - **monthlyOverhead**: Fixed overhead costs
+///
+/// ## SeeAlso
+/// - ``ManufacturingModel``
 public struct ManufacturingTemplate: TemplateProtocol {
+    /// Unique identifier: `com.businessmath.templates.manufacturing`
     public let identifier: String = "com.businessmath.templates.manufacturing"
 
+    /// Creates a new manufacturing template instance.
     public init() {}
 
+    /// Returns the schema defining required parameters.
     public func schema() -> TemplateSchema {
         TemplateSchema(
             parameters: [
@@ -327,6 +510,12 @@ public struct ManufacturingTemplate: TemplateProtocol {
         )
     }
 
+    /// Validates manufacturing model parameters.
+    ///
+    /// - Throws: ``BusinessMathError`` if any parameter is invalid.
+    ///
+    /// ## Validation Rules
+    /// - All values must be positive
     public func validate(parameters: [String: Any]) throws {
         guard let capacity = parameters["productionCapacity"] as? Double, capacity > 0 else {
             throw BusinessMathError.invalidInput(
@@ -364,6 +553,10 @@ public struct ManufacturingTemplate: TemplateProtocol {
         }
     }
 
+    /// Creates a manufacturing model from validated parameters.
+    ///
+    /// - Returns: A ``ManufacturingModel`` instance.
+    /// - Throws: ``BusinessMathError`` if validation fails.
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
@@ -379,12 +572,29 @@ public struct ManufacturingTemplate: TemplateProtocol {
 
 // MARK: - Marketplace Template
 
-/// Template wrapper for marketplace business model
+/// Template wrapper for marketplace business model.
+///
+/// Models two-sided marketplace platforms with buyers, sellers,
+/// transaction volumes, and take rates (commission).
+///
+/// ## Required Parameters
+/// - **initialBuyers/initialSellers**: Starting user counts
+/// - **monthlyTransactionsPerBuyer**: Transaction frequency
+/// - **averageOrderValue**: AOV per transaction
+/// - **takeRate**: Platform commission (0.0 to 1.0)
+/// - **newBuyersPerMonth/newSellersPerMonth**: Growth rates
+/// - **buyerChurnRate/sellerChurnRate**: Monthly churn (0.0 to 1.0)
+///
+/// ## SeeAlso
+/// - ``MarketplaceModel``
 public struct MarketplaceTemplate: TemplateProtocol {
+    /// Unique identifier: `com.businessmath.templates.marketplace`
     public let identifier: String = "com.businessmath.templates.marketplace"
 
+    /// Creates a new marketplace template instance.
     public init() {}
 
+    /// Returns the schema defining required parameters.
     public func schema() -> TemplateSchema {
         TemplateSchema(
             parameters: [
@@ -446,6 +656,13 @@ public struct MarketplaceTemplate: TemplateProtocol {
         )
     }
 
+    /// Validates marketplace model parameters.
+    ///
+    /// - Throws: ``BusinessMathError`` if any parameter is invalid.
+    ///
+    /// ## Validation Rules
+    /// - User counts and monetary values must be positive
+    /// - Rates must be between 0.0 and 1.0
     public func validate(parameters: [String: Any]) throws {
         guard let buyers = parameters["initialBuyers"] as? Double, buyers > 0 else {
             throw BusinessMathError.invalidInput(
@@ -514,6 +731,10 @@ public struct MarketplaceTemplate: TemplateProtocol {
         }
     }
 
+    /// Creates a marketplace model from validated parameters.
+    ///
+    /// - Returns: A ``MarketplaceModel`` instance.
+    /// - Throws: ``BusinessMathError`` if validation fails.
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
@@ -533,12 +754,29 @@ public struct MarketplaceTemplate: TemplateProtocol {
 
 // MARK: - Subscription Box Template
 
-/// Template wrapper for subscription box business model
+/// Template wrapper for subscription box business model.
+///
+/// Models recurring subscription box services with COGS, shipping,
+/// churn, and customer acquisition costs.
+///
+/// ## Required Parameters
+/// - **initialSubscribers**: Starting subscriber count
+/// - **monthlyBoxPrice**: Subscription price
+/// - **costOfGoodsPerBox/shippingCostPerBox**: Per-box costs
+/// - **monthlyChurnRate**: Subscriber churn (0.0 to 1.0)
+/// - **newSubscribersPerMonth**: Growth rate
+/// - **customerAcquisitionCost**: CAC per subscriber
+///
+/// ## SeeAlso
+/// - ``SubscriptionBoxModel``
 public struct SubscriptionBoxTemplate: TemplateProtocol {
+    /// Unique identifier: `com.businessmath.templates.subscriptionbox`
     public let identifier: String = "com.businessmath.templates.subscriptionbox"
 
+    /// Creates a new subscription box template instance.
     public init() {}
 
+    /// Returns the schema defining required parameters.
     public func schema() -> TemplateSchema {
         TemplateSchema(
             parameters: [
@@ -588,6 +826,13 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
         )
     }
 
+    /// Validates subscription box model parameters.
+    ///
+    /// - Throws: ``BusinessMathError`` if any parameter is invalid.
+    ///
+    /// ## Validation Rules
+    /// - Counts and monetary values must be positive
+    /// - Churn rate must be between 0.0 and 1.0
     public func validate(parameters: [String: Any]) throws {
         guard let subscribers = parameters["initialSubscribers"] as? Double, subscribers > 0 else {
             throw BusinessMathError.invalidInput(
@@ -640,6 +885,10 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
         }
     }
 
+    /// Creates a subscription box model from validated parameters.
+    ///
+    /// - Returns: A ``SubscriptionBoxModel`` instance.
+    /// - Throws: ``BusinessMathError`` if validation fails.
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
@@ -657,12 +906,39 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
 
 // MARK: - Real Estate Template
 
-/// Template wrapper for real estate investment model
+/// Template wrapper for real estate investment model.
+///
+/// Models rental property investments with mortgages, rental income,
+/// operating expenses, appreciation, and tax benefits.
+///
+/// ## Required Parameters
+/// - **purchasePrice**: Property purchase price
+/// - **downPaymentPercentage**: Down payment % (0.0 to 1.0)
+/// - **interestRate**: Annual mortgage rate (0.0 to 1.0)
+/// - **loanTermYears**: Mortgage term in years
+/// - **annualRent**: Expected annual rental income
+/// - **annualOperatingExpenses**: Operating costs
+/// - **annualAppreciationRate**: Property appreciation rate
+///
+/// ## Optional Parameters
+/// - **vacancyRate**: Rental vacancy rate (default: 5%)
+/// - **closingCostsPercentage**: Closing costs % (default: 3%)
+/// - **rentGrowthRate**: Annual rent increase (default: 2.5%)
+/// - **depreciationPeriodYears**: Depreciation period (default: 27.5 years)
+/// - **taxRate**: Investor's tax rate (default: 24%)
+///
+/// ## SeeAlso
+/// - ``RealEstateModel``
 public struct RealEstateTemplate: TemplateProtocol {
+    /// Unique identifier: `com.businessmath.templates.realestate`
     public let identifier: String = "com.businessmath.templates.realestate"
 
+    /// Creates a new real estate template instance.
     public init() {}
 
+    /// Returns the schema defining required and optional parameters.
+    ///
+    /// Includes example parameter sets for single-family and multifamily properties.
     public func schema() -> TemplateSchema {
         TemplateSchema(
             parameters: [
@@ -763,6 +1039,14 @@ public struct RealEstateTemplate: TemplateProtocol {
         )
     }
 
+    /// Validates real estate model parameters.
+    ///
+    /// - Throws: ``BusinessMathError`` if any parameter is invalid.
+    ///
+    /// ## Validation Rules
+    /// - Prices and expenses must be positive
+    /// - Percentages must be between 0.0 and 1.0
+    /// - Appreciation rate can be between -1.0 and 1.0 (allows depreciation)
     public func validate(parameters: [String: Any]) throws {
         guard let purchasePrice = parameters["purchasePrice"] as? Double, purchasePrice > 0 else {
             throw BusinessMathError.invalidInput(
@@ -853,6 +1137,17 @@ public struct RealEstateTemplate: TemplateProtocol {
         }
     }
 
+    /// Creates a real estate model from validated parameters.
+    ///
+    /// Optional parameters are filled with sensible defaults if not provided:
+    /// - Vacancy rate: 5%
+    /// - Closing costs: 3%
+    /// - Rent growth: 2.5%
+    /// - Depreciation period: 27.5 years (residential)
+    /// - Tax rate: 24%
+    ///
+    /// - Returns: A ``RealEstateModel`` instance.
+    /// - Throws: ``BusinessMathError`` if validation fails.
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 

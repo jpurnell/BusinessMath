@@ -89,9 +89,26 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 
 	/// Fitting diagnostics
 	public let converged: Bool
+
+	/// Number of iterations required for convergence.
 	public let iterations: Int
+
+	/// Final log-likelihood value of the fitted model.
 	public let logLikelihood: T
 
+	/// Creates a parameter recovery validation result.
+	///
+	/// - Parameters:
+	///   - trueParameters: True parameter values used to generate data
+	///   - recoveredParameters: Parameters recovered by fitting the model
+	///   - absoluteErrors: Absolute differences between true and recovered
+	///   - relativeErrors: Relative errors as fractions of true values
+	///   - withinTolerance: Whether each parameter was recovered within tolerance
+	///   - tolerance: Tolerance threshold used for validation
+	///   - sampleSize: Number of observations in the simulated data
+	///   - converged: Whether the fitting process converged
+	///   - iterations: Number of iterations required
+	///   - logLikelihood: Final log-likelihood of the fitted model
 	public init(
 		trueParameters: [String: T],
 		recoveredParameters: [String: T],
@@ -121,7 +138,11 @@ public struct ParameterRecoveryReport<T: Real & Sendable & Codable>: Sendable wh
 		withinTolerance.values.allSatisfy { $0 }
 	}
 
-	/// Human-readable summary of validation results
+	/// A human-readable summary of parameter recovery validation results.
+	///
+	/// Includes sample size, convergence status, iterations, log-likelihood, and
+	/// detailed parameter-by-parameter recovery statistics showing true values,
+	/// recovered values, and errors.
 	@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 	public var summary: String {
 		var result = "Parameter Recovery Validation\n"

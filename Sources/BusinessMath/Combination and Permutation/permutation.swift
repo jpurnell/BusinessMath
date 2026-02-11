@@ -18,13 +18,16 @@ import Foundation
 /// - Returns: The number of permutations, denoted as \( P(n, r) \), which is equal to
 ///   \[ P(n, r) = \frac{n!}{(n - r)!} \]
 ///
-/// - Example:
-///   ```swift
-///   let n: Int = 5
-///   let r: Int = 3
-///   let result = permutation(n, p: r)
-///   // result should be 60 since there are 60 ways to arrange 3 elements out of a set of 5 elements
-
+/// ## Example
+/// ```swift
+/// let n: Int = 5
+/// let r: Int = 3
+/// let result = permutation(n, p: r)
+/// print(result)  // Outputs: 60
+/// // There are 60 ways to arrange 3 elements out of a set of 5 elements
+/// ```
+///
+/// - SeeAlso: ``combination(_:c:)``
 public func permutation(_ n: Int, p r: Int) -> Int {
     return (factorial(n) / factorial(n - r))
 }

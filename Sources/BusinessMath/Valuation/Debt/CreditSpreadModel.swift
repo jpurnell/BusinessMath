@@ -81,6 +81,7 @@ import Numerics
 ///   - ``RecoveryModel`` for recovery rate estimation
 public struct CreditSpreadModel<T: Real> where T: Sendable {
 
+    /// Creates a credit spread model for calculating credit risk metrics.
     public init() {}
 
     /// Convert Altman Z-Score to probability of default

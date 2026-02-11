@@ -269,7 +269,7 @@ public struct PortfolioOptimizer {
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		// Portfolio variance: σ² = w'Σw
-		let varianceFunction: (VectorN<Double>) -> Double = { weights in
+		let varianceFunction: @Sendable (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
 			var variance = 0.0
 			for i in 0..<w.count {
@@ -333,7 +333,7 @@ public struct PortfolioOptimizer {
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		// Negative Sharpe ratio (minimize negative = maximize positive)
-		let negativeSharpeFunction: (VectorN<Double>) -> Double = { weights in
+		let negativeSharpeFunction: @Sendable (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
 
 			// Calculate return
@@ -475,7 +475,7 @@ public struct PortfolioOptimizer {
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		// Objective: minimize sum of squared differences in risk contributions
-		let riskParityObjective: (VectorN<Double>) -> Double = { weights in
+		let riskParityObjective: @Sendable (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
 
 			// Calculate portfolio variance
@@ -594,7 +594,7 @@ public struct PortfolioOptimizer {
 		let n = expectedReturns.count
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
-		let varianceFunction: (VectorN<Double>) -> Double = { weights in
+		let varianceFunction: @Sendable (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
 			var variance = 0.0
 			for i in 0..<w.count {

@@ -48,6 +48,18 @@ public struct BranchAndCutSolver<V: VectorSpace> where V.Scalar == Double, V: Se
 
     // MARK: - Initialization
 
+    /// Creates a branch-and-cut solver with specified configuration.
+    ///
+    /// - Parameters:
+    ///   - maxNodes: Maximum number of branch-and-bound nodes to explore (default: 10,000)
+    ///   - maxCuttingRounds: Maximum cutting plane rounds per node (default: 5)
+    ///   - cutTolerance: Tolerance for cut violation—cuts with violation below this are not added (default: 1e-6)
+    ///   - enableCoverCuts: Enable cover cuts for 0-1 knapsack constraints (default: false)
+    ///   - enableMIRCuts: Enable mixed-integer rounding cuts (default: true)
+    ///   - timeLimit: Time limit in seconds, 0 for no limit (default: 0)
+    ///   - relativeGapTolerance: Relative optimality gap for early termination (default: 1e-4 = 0.01%)
+    ///   - nodeSelection: Strategy for selecting next node to explore (default: `.bestBound`)
+    ///   - branchingRule: Rule for selecting branching variable (default: `.mostFractional`)
     public init(
         maxNodes: Int = 10000,
         maxCuttingRounds: Int = 5,
@@ -198,6 +210,20 @@ public struct BranchAndCutResult<V: VectorSpace>: Sendable where V.Scalar == Dou
     /// Reason for termination
     public let terminationReason: String
 
+    /// Creates a branch-and-cut result with solution and cutting plane statistics.
+    ///
+    /// - Parameters:
+    ///   - success: Whether an optimal or feasible solution was found
+    ///   - solution: Best integer solution found
+    ///   - objectiveValue: Objective value at the solution
+    ///   - bound: Best dual bound (lower bound for minimization, upper bound for maximization)
+    ///   - gap: Relative optimality gap: `|(objective - bound) / objective|`
+    ///   - nodesExplored: Number of branch-and-bound nodes explored
+    ///   - cutsGenerated: Total number of cutting planes generated
+    ///   - cuttingRounds: Number of cutting plane rounds performed
+    ///   - cutsPerRound: Number of cuts added in each round
+    ///   - solveTime: Total solve time in seconds
+    ///   - terminationReason: Human-readable explanation of why the solver stopped
     public init(
         success: Bool,
         solution: V,

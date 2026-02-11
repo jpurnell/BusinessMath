@@ -23,21 +23,152 @@ public enum DiscountRateType {
 ///
 /// Under IFRS 16 and ASC 842, most leases must be recognized on the balance sheet
 /// as a right-of-use (ROU) asset and lease liability.
+///
+/// ## Accounting Standards
+/// - **IFRS 16**: Requires lessees to recognize assets and liabilities for all leases
+///   (with limited exemptions for short-term and low-value leases)
+/// - **ASC 842** (US GAAP): Similar to IFRS 16 but retains operating vs. finance lease distinction
+///
+/// ## Usage Example
+/// ```swift
+/// // 5-year equipment lease with monthly payments
+/// let monthlyPayment = 5_000.0
+/// let months = 60
+/// let payments = Array(repeating: monthlyPayment, count: months)
+///
+/// let lease = Lease(
+///     payments: payments,
+///     discountRate: 0.06,  // 6% annual rate
+///     residualValue: 10_000.0,
+///     initialDirectCosts: 2_000.0
+/// )
+///
+/// let liability = lease.presentValue()
+/// let rouAsset = lease.rightOfUseAsset()
+/// ```
+///
+/// ## SeeAlso
+/// - ``LeaseTerm``
+/// - ``DepreciationMethod``
+/// - ``DiscountRateType``
 public struct Lease {
+    /// Array of fixed lease payments.
+    ///
+    /// These are the contractually determined minimum payments.
+    /// Does not include variable payments (which are tracked separately).
     public let payments: [Double]
+
+    /// Optional time periods corresponding to each payment.
+    ///
+    /// When provided, enables period-specific calculations and proper
+    /// discount rate adjustments based on payment frequency.
     public let periods: [Period]?
+
+    /// Annual discount rate for present value calculations.
+    ///
+    /// Should be either:
+    /// - The rate implicit in the lease (if readily determinable), OR
+    /// - The lessee's incremental borrowing rate
+    ///
+    /// Express as decimal (e.g., 0.06 for 6%).
     public let discountRate: Double
+
+    /// Estimated residual value at lease end.
+    ///
+    /// For lessee accounting, this is typically zero unless the lessee
+    /// guarantees a residual value or has a purchase option it's reasonably
+    /// certain to exercise.
     public let residualValue: Double
+
+    /// Lease commencement date.
+    ///
+    /// The date the lessor makes the underlying asset available for use.
+    /// If nil, uses the first period's start date when periods are provided.
     public let startDate: Date?
+
+    /// Initial direct costs incurred by the lessee.
+    ///
+    /// Costs directly attributable to negotiating and arranging the lease
+    /// (e.g., commissions, legal fees). Added to ROU asset value.
     public let initialDirectCosts: Double
+
+    /// Lease payments made at or before commencement.
+    ///
+    /// Prepaid amounts are added to the ROU asset value.
     public let prepaidAmount: Double
+
+    /// Method used to depreciate the right-of-use asset.
+    ///
+    /// Defaults to ``DepreciationMethod/straightLine``, which is most common.
+    /// The ROU asset is typically depreciated over the shorter of:
+    /// - The lease term, OR
+    /// - The useful life of the asset (if ownership transfers)
     public let depreciationMethod: DepreciationMethod
+
+    /// Variable lease payments not dependent on an index or rate.
+    ///
+    /// Variable payments based on usage, performance, or other variable factors
+    /// are excluded from lease liability and recognized as expense when incurred.
+    ///
+    /// Example: Percentage rent in retail leases based on sales.
     public let variablePayments: TimeSeries<Double>?
+
+    /// Specified lease term.
+    ///
+    /// Used to determine if short-term exemption applies (≤12 months).
+    /// If nil, term is inferred from payment count.
     public let leaseTerm: LeaseTerm?
+
+    /// Fair value of the underlying asset.
+    ///
+    /// Used to determine if low-value exemption applies (typically <$5,000).
+    /// For finance lease classification under ASC 842, also compared to lease PV.
     public let underlyingAssetValue: Double?
+
+    /// Type of discount rate used.
+    ///
+    /// Indicates whether the rate is:
+    /// - ``DiscountRateType/implicitRate``: Rate implicit in the lease
+    /// - ``DiscountRateType/incrementalBorrowingRate``: Lessee's IBR
+    ///
+    /// Documentation purposes; doesn't affect calculations.
     public let discountRateType: DiscountRateType
+
+    /// Fair value of the leased asset.
+    ///
+    /// Used in finance lease tests under ASC 842. A lease is classified
+    /// as a finance lease if PV of payments ≥ 90% of fair value.
     public let fairValueOfAsset: Double?
 
+    /// Creates a lease with an array of fixed payments.
+    ///
+    /// Use this initializer when payments are not tied to specific time periods
+    /// or when using a simple array is more convenient.
+    ///
+    /// - Parameters:
+    ///   - payments: Array of fixed lease payments
+    ///   - discountRate: Annual discount rate (as decimal, e.g., 0.06 for 6%)
+    ///   - residualValue: Residual value at lease end (default: 0.0)
+    ///   - startDate: Lease commencement date (optional)
+    ///   - initialDirectCosts: Initial direct costs (default: 0.0)
+    ///   - prepaidAmount: Prepaid lease payments (default: 0.0)
+    ///   - depreciationMethod: How to depreciate ROU asset (default: straight-line)
+    ///   - variablePayments: Variable payments time series (optional)
+    ///   - leaseTerm: Specified lease term (optional)
+    ///   - underlyingAssetValue: Fair value of asset (optional)
+    ///   - discountRateType: Type of discount rate (default: IBR)
+    ///   - fairValueOfAsset: Fair value for finance lease tests (optional)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let monthlyPayments = Array(repeating: 5_000.0, count: 36)
+    /// let lease = Lease(
+    ///     payments: monthlyPayments,
+    ///     discountRate: 0.05,
+    ///     residualValue: 5_000.0,
+    ///     leaseTerm: .years(3)
+    /// )
+    /// ```
     public init(
         payments: [Double],
         discountRate: Double,
@@ -67,6 +198,41 @@ public struct Lease {
         self.fairValueOfAsset = fairValueOfAsset
     }
 
+    /// Creates a lease with a time series of payments.
+    ///
+    /// Use this initializer when payments are tied to specific time periods.
+    /// The periods enable more accurate discount rate adjustments based on
+    /// payment frequency (monthly, quarterly, etc.).
+    ///
+    /// - Parameters:
+    ///   - payments: Time series of fixed lease payments with associated periods
+    ///   - discountRate: Annual discount rate (as decimal)
+    ///   - residualValue: Residual value at lease end (default: 0.0)
+    ///   - startDate: Lease commencement date (default: uses first period's start date)
+    ///   - initialDirectCosts: Initial direct costs (default: 0.0)
+    ///   - prepaidAmount: Prepaid lease payments (default: 0.0)
+    ///   - depreciationMethod: How to depreciate ROU asset (default: straight-line)
+    ///   - variablePayments: Variable payments time series (optional)
+    ///   - leaseTerm: Specified lease term (optional)
+    ///   - underlyingAssetValue: Fair value of asset (optional)
+    ///   - discountRateType: Type of discount rate (default: IBR)
+    ///   - fairValueOfAsset: Fair value for finance lease tests (optional)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let months = (1...60).map { Period.month(year: 2025, month: $0) }
+    /// let paymentSeries = TimeSeries(periods: months, values: Array(repeating: 3_500.0, count: 60))
+    ///
+    /// let lease = Lease(
+    ///     payments: paymentSeries,
+    ///     discountRate: 0.07,
+    ///     residualValue: 8_000.0,
+    ///     initialDirectCosts: 1_500.0
+    /// )
+    ///
+    /// // Get liability schedule with period-specific balances
+    /// let schedule = lease.liabilitySchedule()
+    /// ```
 	public init(
         payments: TimeSeries<Double>,
         discountRate: Double,
@@ -266,7 +432,25 @@ public struct Lease {
         }
         return 0.0
     }
-	
+
+    /// Calculate total interest expense over the entire lease term.
+    ///
+    /// Sums interest expense across all periods. Returns 0 if periods are not specified.
+    ///
+    /// - Returns: Total interest expense for the entire lease.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let lease = Lease(payments: paymentSeries, discountRate: 0.06)
+    /// let totalInterest = lease.totalInterest()
+    /// let totalPayments = lease.totalFuturePayments()
+    /// let principalPaid = totalPayments - totalInterest
+    /// print("Principal: $\(principalPaid), Interest: $\(totalInterest)")
+    /// ```
+    ///
+    /// ## Note
+    /// This represents the financing cost—the difference between total payments
+    /// and the present value of the lease liability.
 	public func totalInterest() -> Double {
 		var interestExpenses: [Double] = []
 		guard let periods else { return interestExpenses.reduce(0.0, +) }
@@ -457,11 +641,64 @@ public struct Lease {
     }
 }
 
-/// Analysis comparing leasing vs buying an asset
+/// Analysis comparing leasing vs buying an asset.
+///
+/// Calculates the Net Advantage to Leasing (NAL) by comparing present values
+/// of lease payments vs. asset purchase (including maintenance and salvage value).
+///
+/// ## Decision Rule
+/// - **NAL > 0**: Leasing is financially advantageous—lease the asset
+/// - **NAL < 0**: Buying is financially advantageous—purchase the asset
+/// - **NAL = 0**: Indifferent between leasing and buying
+///
+/// ## Usage Example
+/// ```swift
+/// // Calculate lease PV
+/// let leasePV = leasePaymentsPV(
+///     periodicPayment: 5_000,
+///     periods: 60,
+///     discountRate: 0.06 / 12
+/// )
+///
+/// // Calculate buy PV
+/// let buyPV = buyAssetPV(
+///     purchasePrice: 250_000,
+///     salvageValue: 50_000,
+///     holdingPeriod: 5,
+///     discountRate: 0.06,
+///     maintenanceCost: 3_000
+/// )
+///
+/// let analysis = LeaseVsBuyAnalysis(leasePV: leasePV, buyPV: buyPV)
+/// print(analysis.recommendation)  // "Lease (NAL: $15,000)" or "Buy (NAL: -$10,000)"
+/// ```
+///
+/// ## SeeAlso
+/// - ``leasePaymentsPV(periodicPayment:periods:discountRate:)``
+/// - ``buyAssetPV(purchasePrice:salvageValue:holdingPeriod:discountRate:maintenanceCost:)``
 public struct LeaseVsBuyAnalysis {
+    /// Present value of leasing the asset.
+    ///
+    /// Sum of discounted lease payments over the lease term.
     public let leasePV: Double
+
+    /// Present value of buying the asset.
+    ///
+    /// Purchase price plus PV of maintenance costs minus PV of salvage value.
     public let buyPV: Double
 
+    /// Creates a lease vs. buy analysis.
+    ///
+    /// - Parameters:
+    ///   - leasePV: Present value of lease payments
+    ///   - buyPV: Present value of buying (net of salvage and maintenance)
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let analysis = LeaseVsBuyAnalysis(leasePV: 275_000, buyPV: 300_000)
+    /// print("NAL: $\(analysis.netAdvantageToLeasing)")  // $25,000
+    /// print("Should lease: \(analysis.shouldLease)")     // true
+    /// ```
     public init(leasePV: Double, buyPV: Double) {
         self.leasePV = leasePV
         self.buyPV = buyPV
@@ -535,14 +772,91 @@ public func buyAssetPV(
     return pv
 }
 
-/// Represents a sale-and-leaseback transaction
+/// Represents a sale-and-leaseback transaction.
+///
+/// A sale-leaseback occurs when a company sells an asset and immediately leases
+/// it back from the buyer. This provides cash while retaining use of the asset.
+///
+/// ## Accounting Treatment (ASC 842)
+/// - If transfer qualifies as a sale: Recognize gain/loss, record new lease
+/// - If not a sale: Treat as financing (no derecognition)
+/// - Gain recognition may be limited if leaseback represents significant continuing use
+///
+/// ## Common Uses
+/// - Raise capital while retaining asset use
+/// - Improve balance sheet ratios
+/// - Take advantage of depreciation/tax benefits
+///
+/// ## Usage Example
+/// ```swift
+/// let slb = SaleAndLeaseback(
+///     salePrice: 5_000_000,
+///     bookValue: 3_500_000,
+///     leaseTerm: 10,
+///     annualLeasePayment: 500_000,
+///     discountRate: 0.06
+/// )
+///
+/// print("Gain on sale: $\(slb.gainOnSale)")
+/// print("Lease obligation PV: $\(slb.leaseObligationPV)")
+/// print("Net cash benefit: $\(slb.netCashBenefit)")
+/// print("Immediate gain: $\(slb.immediateGain())")
+/// print("Economically beneficial: \(slb.isEconomicallyBeneficial)")
+/// ```
+///
+/// ## SeeAlso
+/// - ``Lease``
+/// - ``leasePaymentsPV(periodicPayment:periods:discountRate:)``
 public struct SaleAndLeaseback {
+    /// Sale price of the asset.
+    ///
+    /// Amount received from selling the asset to the buyer/lessor.
     public let salePrice: Double
+
+    /// Book value (carrying value) of the asset at sale date.
+    ///
+    /// Used to calculate gain or loss on sale.
     public let bookValue: Double
+
+    /// Leaseback term in years.
+    ///
+    /// Number of years the seller will lease back the asset.
     public let leaseTerm: Int
+
+    /// Annual lease payment to be made to the buyer.
+    ///
+    /// Fixed annual payment for leasing back the asset.
     public let annualLeasePayment: Double
+
+    /// Discount rate for present value calculations.
+    ///
+    /// Typically the lessee's incremental borrowing rate.
     public let discountRate: Double
 
+    /// Creates a sale-and-leaseback transaction.
+    ///
+    /// - Parameters:
+    ///   - salePrice: Amount received from sale
+    ///   - bookValue: Carrying value of asset before sale
+    ///   - leaseTerm: Leaseback term in years
+    ///   - annualLeasePayment: Annual payment to lease back the asset
+    ///   - discountRate: Discount rate for PV calculations
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// // Company sells building for $10M, leases it back for 15 years at $800K/year
+    /// let transaction = SaleAndLeaseback(
+    ///     salePrice: 10_000_000,
+    ///     bookValue: 7_000_000,
+    ///     leaseTerm: 15,
+    ///     annualLeasePayment: 800_000,
+    ///     discountRate: 0.05
+    /// )
+    ///
+    /// if transaction.isEconomicallyBeneficial {
+    ///     print("Net benefit: $\(transaction.netCashBenefit)")
+    /// }
+    /// ```
     public init(
         salePrice: Double,
         bookValue: Double,
@@ -663,7 +977,65 @@ public func classifyLease(
     return .operating
 }
 
+/// Lease classification under ASC 842 (US GAAP).
+///
+/// ASC 842 requires lessees to classify leases as either finance or operating.
+/// This affects how lease expense is recognized:
+///
+/// ## Finance Lease
+/// - Similar to a capital lease under old standards
+/// - Treated like an asset purchase with financing
+/// - **Expense pattern**: Front-loaded (interest + depreciation)
+/// - **Balance sheet**: ROU asset and lease liability
+///
+/// ## Operating Lease
+/// - Similar to old operating leases but now on balance sheet
+/// - **Expense pattern**: Straight-line (combined single expense)
+/// - **Balance sheet**: ROU asset and lease liability (now required under ASC 842)
+///
+/// ## Classification Criteria (Any ONE triggers finance lease)
+/// 1. Ownership transfers at lease end
+/// 2. Purchase option reasonably certain to be exercised
+/// 3. Lease term ≥ 75% of asset's economic life
+/// 4. PV of payments ≥ 90% of asset's fair value
+/// 5. Asset is specialized with no alternative use
+///
+/// ## Usage Example
+/// ```swift
+/// let classification = classifyLease(
+///     leaseTerm: 8,
+///     assetUsefulLife: 10,
+///     presentValue: 450_000,
+///     assetFairValue: 500_000,
+///     ownershipTransfer: false,
+///     purchaseOption: false
+/// )
+///
+/// switch classification {
+/// case .finance:
+///     print("Finance lease: Record interest + depreciation")
+/// case .operating:
+///     print("Operating lease: Record straight-line expense")
+/// }
+/// ```
+///
+/// ## IFRS 16 Note
+/// IFRS 16 doesn't use this classification—all leases are treated similarly
+/// to finance leases under US GAAP (except short-term and low-value exemptions).
+///
+/// ## SeeAlso
+/// - ``Lease``
+/// - ``classifyLease(leaseTerm:assetUsefulLife:presentValue:assetFairValue:ownershipTransfer:purchaseOption:)``
 public enum LeaseClassification {
+    /// Finance lease classification.
+    ///
+    /// Lease meets at least one of the five finance lease criteria.
+    /// Expense is front-loaded (interest expense + depreciation).
     case finance
+
+    /// Operating lease classification.
+    ///
+    /// Lease doesn't meet any finance lease criteria.
+    /// Expense is recognized on a straight-line basis.
     case operating
 }

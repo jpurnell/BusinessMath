@@ -18,13 +18,16 @@ import Foundation
 /// - Returns: The number of combinations, denoted as \( C(n, r) \), which is equal to
 ///   \[ \binom{n}{r} = \frac{n!}{r!(n - r)!} \]
 ///
-/// - Example:
-///   ```swift
-///   let n: Int = 5
-///   let r: Int = 3
-///   let result = combination(n, c: r)
-///   // result should be 10 since there are 10 ways to choose 3 elements from a set of 5 elements
-
+/// ## Example
+/// ```swift
+/// let n: Int = 5
+/// let r: Int = 3
+/// let result = combination(n, c: r)
+/// print(result)  // Outputs: 10
+/// // There are 10 ways to choose 3 elements from a set of 5 elements
+/// ```
+///
+/// - SeeAlso: ``permutation(_:p:)``
 public func combination(_ n: Int, c r: Int) -> Int {
     return (factorial(n) / (factorial(r) * factorial(n - r)))
 }

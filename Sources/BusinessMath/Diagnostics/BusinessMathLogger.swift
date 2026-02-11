@@ -341,39 +341,93 @@ public extension Logger {
 #else
 
 // MARK: - Linux Fallback Support
-/// Fallback logger for Linux platforms using print statements
+
+/// Fallback logger for Linux platforms using print statements.
 ///
 /// This provides basic logging functionality on platforms without OSLog.
-/// For production use on Linux, consider integrating swift-log.
+/// Uses simple print statements with category prefixes. For production use on Linux,
+/// consider integrating swift-log for more sophisticated logging capabilities.
+///
+/// ## Platform Availability
+/// This implementation is used automatically on Linux and other platforms that don't support OSLog.
+/// On Apple platforms (macOS, iOS, tvOS, watchOS), the OSLog-based implementation is used instead.
+///
+/// ## Example
+/// ```swift
+/// let logger = Logger.shared
+/// logger.info("Application started")
+/// logger.warning("Low memory condition")
+/// ```
 public struct Logger: Sendable {
     let subsystem: String
     let category: String
 
+    /// Creates a logger with the specified subsystem and category.
+    ///
+    /// - Parameters:
+    ///   - subsystem: Reverse DNS notation identifying the subsystem (e.g., "com.example.app").
+    ///   - category: Category name for grouping related log messages (e.g., "networking", "database").
     public init(subsystem: String, category: String) {
         self.subsystem = subsystem
         self.category = category
     }
 
+    /// Logs a debug-level message.
+    ///
+    /// Debug messages provide detailed information for diagnosing problems.
+    /// Outputs to console with `[category] DEBUG:` prefix.
+    ///
+    /// - Parameter message: The message to log.
     public func debug(_ message: String) {
         print("[\(category)] DEBUG: \(message)")
     }
 
+    /// Logs an informational message.
+    ///
+    /// Info messages document normal application events and state changes.
+    /// Outputs to console with `[category] INFO:` prefix.
+    ///
+    /// - Parameter message: The message to log.
     public func info(_ message: String) {
         print("[\(category)] INFO: \(message)")
     }
 
+    /// Logs a notice-level message.
+    ///
+    /// Notice messages highlight significant but normal events.
+    /// Outputs to console with `[category] NOTICE:` prefix.
+    ///
+    /// - Parameter message: The message to log.
     public func notice(_ message: String) {
         print("[\(category)] NOTICE: \(message)")
     }
 
+    /// Logs a warning message.
+    ///
+    /// Warning messages indicate potential problems that don't prevent execution.
+    /// Outputs to console with `[category] WARNING:` prefix.
+    ///
+    /// - Parameter message: The message to log.
     public func warning(_ message: String) {
         print("[\(category)] WARNING: \(message)")
     }
 
+    /// Logs an error message.
+    ///
+    /// Error messages indicate failures that impact functionality.
+    /// Outputs to console with `[category] ERROR:` prefix.
+    ///
+    /// - Parameter message: The message to log.
     public func error(_ message: String) {
         print("[\(category)] ERROR: \(message)")
     }
 
+    /// Logs a trace-level message (debug builds only).
+    ///
+    /// Trace messages provide very detailed execution information.
+    /// Only outputs in DEBUG builds to avoid performance impact.
+    ///
+    /// - Parameter message: The message to log.
     public func trace(_ message: String) {
         // Trace is very verbose, only in debug builds
         #if DEBUG
@@ -382,17 +436,39 @@ public struct Logger: Sendable {
     }
 
     // Category loggers
+
+    /// Main shared logger for general-purpose logging.
     public static let shared = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "general")
+
+    /// Logger for model execution and building operations.
     public static let modelExecution = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "model-execution")
+
+    /// Logger for mathematical calculations and formulas.
     public static let calculations = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "calculations")
+
+    /// Logger for performance metrics and profiling.
     public static let performance = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "performance")
+
+    /// Logger for validation and error checking.
     public static let validation = Logger(subsystem: "com.justinpurnell.BusinessMath", category: "validation")
 
     // Convenience methods (simplified for Linux)
+
+    /// Logs the start of a calculation operation (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - name: Name of the calculation.
+    ///   - context: Optional context dictionary (simplified implementation logs name only).
     public func calculationStarted(_ name: String, context: [String: Any] = [:]) {
         info("Starting calculation: \(name)")
     }
 
+    /// Logs successful completion of a calculation (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - name: Name of the calculation.
+    ///   - result: The calculation result.
+    ///   - duration: Optional execution duration in seconds.
     public func calculationCompleted(_ name: String, result: Any, duration: TimeInterval? = nil) {
         if let duration = duration {
 			info("Completed \(name) in \(duration.number(3))s")
@@ -401,10 +477,20 @@ public struct Logger: Sendable {
         }
     }
 
+    /// Logs a calculation error or failure (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - name: Name of the calculation.
+    ///   - error: The error that occurred.
     public func calculationFailed(_ name: String, error: Error) {
         self.error("Failed \(name): \(error.localizedDescription)")
     }
 
+    /// Logs a validation warning (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - message: Warning message.
+    ///   - field: Optional field name that triggered the warning.
     public func validationWarning(_ message: String, field: String? = nil) {
         if let field = field {
             warning("\(field): \(message)")
@@ -413,6 +499,11 @@ public struct Logger: Sendable {
         }
     }
 
+    /// Logs a validation error (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - message: Error message.
+    ///   - field: Optional field name that failed validation.
     public func validationError(_ message: String, field: String? = nil) {
         if let field = field {
             error("\(field): \(message)")
@@ -421,6 +512,12 @@ public struct Logger: Sendable {
         }
     }
 
+    /// Logs a performance metric (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - operation: Name of the operation.
+    ///   - duration: Execution duration in seconds.
+    ///   - context: Optional context description.
     public func performance(_ operation: String, duration: TimeInterval, context: String? = nil) {
         if let context = context {
             notice("\(operation) [\(context)]: \(duration.number(3))s")
@@ -429,10 +526,21 @@ public struct Logger: Sendable {
         }
     }
 
+    /// Logs a performance warning for slow operations (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - operation: Name of the operation.
+    ///   - duration: Execution duration in seconds.
+    ///   - threshold: Expected threshold in seconds.
     public func performanceWarning(_ operation: String, duration: TimeInterval, threshold: TimeInterval) {
         warning("\(operation) took \(duration.number(3))s (expected < \(threshold.number(3))s)")
     }
 
+    /// Logs the start of model building (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - modelType: Type of model being built.
+    ///   - components: Number of components.
     public func modelBuildingStarted(_ modelType: String, components: Int? = nil) {
         if let components = components {
             info("Building \(modelType) with \(components) component(s)")
@@ -441,6 +549,11 @@ public struct Logger: Sendable {
         }
     }
 
+    /// Logs successful model building completion (simplified for Linux).
+    ///
+    /// - Parameters:
+    ///   - modelType: Type of model that was built.
+    ///   - duration: Optional build duration in seconds.
     public func modelBuildingCompleted(_ modelType: String, duration: TimeInterval? = nil) {
         if let duration = duration {
             info("Completed \(modelType) in \(duration.number(3))s")

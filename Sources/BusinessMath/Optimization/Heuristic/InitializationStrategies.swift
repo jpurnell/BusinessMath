@@ -86,7 +86,22 @@ public protocol CentroidInitialization {
 public struct RandomInitialization: CentroidInitialization {
 	/// Creates a random initialization strategy.
 	public init() {}
-
+	
+	/// - Parameters:
+	///   - data: Array of data points to cluster. Must contain at least k points.
+	///   - k: Number of centroids to initialize. Must be positive and ≤ data.count.
+	///   - distanceMetric: Distance metric to use for computing distances between points and centroids.
+	///     Common choices are `.euclidean` or `.manhattan`.
+	///   - seed: Optional random seed for deterministic initialization. If `nil`, uses system
+	///     random number generator for non-deterministic results. Provide a seed value for
+	///     reproducible testing and debugging.
+	///
+	/// - Returns: Array of k initial centroid vectors selected from the data space. These centroids
+	///   are spread out to maximize minimum inter-centroid distances.
+	///
+	/// - Complexity: O(n·k·d) where n is the number of data points, k is the number of clusters,
+	///   and d is the dimensionality of each point.
+	///
 	public func initialize<V: VectorSpace>(
 		data: [V],
 		k: Int,
@@ -146,7 +161,22 @@ public struct RandomInitialization: CentroidInitialization {
 public struct ForgyInitialization: CentroidInitialization {
 	/// Creates a Forgy initialization strategy.
 	public init() {}
-
+	
+	/// - Parameters:
+	///   - data: Array of data points to cluster. Must contain at least k points.
+	///   - k: Number of centroids to initialize. Must be positive and ≤ data.count.
+	///   - distanceMetric: Distance metric to use for computing distances between points and centroids.
+	///     Common choices are `.euclidean` or `.manhattan`.
+	///   - seed: Optional random seed for deterministic initialization. If `nil`, uses system
+	///     random number generator for non-deterministic results. Provide a seed value for
+	///     reproducible testing and debugging.
+	///
+	/// - Returns: Array of k initial centroid vectors selected from the data space. These centroids
+	///   are spread out to maximize minimum inter-centroid distances.
+	///
+	/// - Complexity: O(n·k·d) where n is the number of data points, k is the number of clusters,
+	///   and d is the dimensionality of each point.
+	///
 	public func initialize<V: VectorSpace>(
 		data: [V],
 		k: Int,
@@ -232,6 +262,23 @@ public struct KMeansPlusPlusInitialization: CentroidInitialization {
 	/// Creates a K-Means++ initialization strategy.
 	public init() {}
 
+	/// Initialize k centroids using the K-Means++ algorithm.
+	///
+	/// - Parameters:
+	///   - data: Array of data points to cluster. Must contain at least k points.
+	///   - k: Number of centroids to initialize. Must be positive and ≤ data.count.
+	///   - distanceMetric: Distance metric to use for computing distances between points and centroids.
+	///     Common choices are `.euclidean` or `.manhattan`.
+	///   - seed: Optional random seed for deterministic initialization. If `nil`, uses system
+	///     random number generator for non-deterministic results. Provide a seed value for
+	///     reproducible testing and debugging.
+	///
+	/// - Returns: Array of k initial centroid vectors selected from the data space. These centroids
+	///   are spread out to maximize minimum inter-centroid distances.
+	///
+	/// - Complexity: O(n·k·d) where n is the number of data points, k is the number of clusters,
+	///   and d is the dimensionality of each point.
+	///
 	public func initialize<V: VectorSpace>(
 		data: [V],
 		k: Int,

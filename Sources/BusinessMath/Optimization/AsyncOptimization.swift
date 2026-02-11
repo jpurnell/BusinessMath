@@ -221,6 +221,42 @@ public struct AsyncOptimizationProgress<T: Real & Sendable>: Sendable {
 /// - ``AsyncOptimizationProgress``
 /// - ``OptimizationConfig``
 /// - ``OptimizationPhase``
+///
+/// Protocol for optimizers that support asynchronous execution with real-time progress updates.
+///
+/// Conforming types provide optimization with streaming progress events, enabling:
+/// - Real-time monitoring of convergence
+/// - Early stopping based on custom criteria
+/// - Visualization of optimization trajectories
+/// - Cancellation support via Swift's task system
+///
+/// ## Implementation Requirements
+///
+/// Implementers must provide the ``optimizeWithProgress(objective:constraints:initialGuess:bounds:)``
+/// method that returns an async stream of progress updates.
+///
+/// ## Example Conformance
+///
+/// ```swift
+/// struct MyAsyncOptimizer: AsyncOptimizer {
+///     typealias T = Double
+///
+///     func optimizeWithProgress(
+///         objective: @Sendable (T) -> T,
+///         constraints: [Constraint<T>],
+///         initialGuess: T,
+///         bounds: (lower: T, upper: T)?
+///     ) -> AsyncThrowingStream<AsyncOptimizationProgress<T>, Error> {
+///         AsyncThrowingStream { continuation in
+///             Task {
+///                 // Emit progress updates
+///                 continuation.yield(progress)
+///                 continuation.finish()
+///             }
+///         }
+///     }
+/// }
+/// ```
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public protocol AsyncOptimizer: Sendable {
     /// The numeric type used for optimization values.

@@ -230,7 +230,7 @@ extension StochasticOptimizer {
 	///   - constraints: Constraints on decision
 	///   - minimize: Whether to minimize
 	public func optimize<S: OptimizationScenario>(
-		objective: @escaping (V, S) -> Double,
+		objective: @escaping @Sendable (V, S) -> Double,
 		scenarios: [S],
 		initialSolution: V,
 		constraints: [MultivariateConstraint<V>] = [],
@@ -240,7 +240,7 @@ extension StochasticOptimizer {
 		precondition(!scenarios.isEmpty, "Must provide at least one scenario")
 
 		// Create SAA objective
-		let saaObjective: (V) -> Double = { x in
+		let saaObjective: @Sendable (V) -> Double = { x in
 			var total = 0.0
 			for scenario in scenarios {
 				let value = objective(x, scenario)

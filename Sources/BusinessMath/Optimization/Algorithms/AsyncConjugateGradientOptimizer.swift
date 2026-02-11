@@ -44,6 +44,14 @@ public struct ConjugateGradientProgress: Sendable {
     /// Final result (only present on last update)
     public let result: OptimizationResult<Double>?
 
+    /// Creates a progress update snapshot for conjugate gradient optimization.
+    ///
+    /// - Parameters:
+    ///   - iteration: Current iteration number (0-indexed)
+    ///   - metrics: Convergence metrics including objective value and gradient norm
+    ///   - conjugateDirection: Current conjugate search direction magnitude
+    ///   - beta: Beta parameter computed from selected formula (Fletcher-Reeves, Polak-Ribière, etc.)
+    ///   - result: Final optimization result (only present on the last progress update)
     public init(
         iteration: Int,
         metrics: ConvergenceMetrics,
@@ -102,6 +110,19 @@ public struct AsyncConjugateGradientOptimizer: Sendable {
     /// Optional convergence detector for early stopping
     public let convergenceDetector: ConvergenceDetector?
 
+    /// Creates a conjugate gradient optimizer with specified configuration.
+    ///
+    /// - Parameters:
+    ///   - method: Beta computation formula (default: `.fletcherReeves`). Different methods offer
+    ///     different convergence properties for various problem types.
+    ///   - tolerance: Convergence tolerance for gradient norm (default: 1e-6). Iteration stops when
+    ///     `||gradient|| < tolerance`.
+    ///   - maxIterations: Maximum number of iterations before termination (default: 100)
+    ///   - restartInterval: Optional iteration count for automatic restart. `nil` disables automatic
+    ///     restart. Restarting can improve convergence for ill-conditioned problems.
+    ///   - progressStrategy: Optional strategy for adaptive progress reporting. Use this to monitor
+    ///     optimization progress in real-time.
+    ///   - convergenceDetector: Optional detector for early stopping based on custom convergence criteria
     public init(
         method: ConjugateGradientMethod = .fletcherReeves,
         tolerance: Double = 1e-6,

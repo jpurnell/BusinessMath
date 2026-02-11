@@ -343,26 +343,52 @@ extension IncomeStatement {
 	/// }
 	/// ```
 	public struct Materialized: Sendable {
+		/// The entity this income statement belongs to.
 		public let entity: Entity
+
+		/// The time periods covered by this statement.
 		public let periods: [Period]
 
+		/// All accounts in the income statement (revenue and expenses).
 		public let accounts: [Account<T>]
 
 		// Pre-computed totals
+
+		/// Total revenue across all periods (sum of all revenue accounts).
 		public let totalRevenue: TimeSeries<T>
+
+		/// Total expenses across all periods (sum of all expense accounts).
 		public let totalExpenses: TimeSeries<T>
+
+		/// Net income: totalRevenue - totalExpenses.
 		public let netIncome: TimeSeries<T>
 
 		// Pre-computed profitability metrics
+
+		/// Gross profit: Revenue - Cost of Goods Sold.
 		public let grossProfit: TimeSeries<T>
+
+		/// Operating expenses: SG&A and other operating costs.
 		public let operatingExpenses: TimeSeries<T>
+
+		/// Operating income (EBIT): Gross Profit - Operating Expenses.
 		public let operatingIncome: TimeSeries<T>
+
+		/// EBITDA: Operating Income + Depreciation + Amortization.
 		public let ebitda: TimeSeries<T>
 
 		// Pre-computed margins
+
+		/// Gross margin: Gross Profit / Total Revenue.
 		public let grossMargin: TimeSeries<T>
+
+		/// Operating margin: Operating Income / Total Revenue.
 		public let operatingMargin: TimeSeries<T>
+
+		/// Net margin: Net Income / Total Revenue.
 		public let netMargin: TimeSeries<T>
+
+		/// EBITDA margin: EBITDA / Total Revenue.
 		public let ebitdaMargin: TimeSeries<T>
 	}
 
@@ -391,6 +417,17 @@ extension IncomeStatement {
 
 // MARK: - Codable Conformance
 
+/// Codable conformance for IncomeStatement enables JSON serialization.
+///
+/// Only encodes the essential data (entity, periods, accounts). Computed properties
+/// like totals and margins are recalculated upon decoding.
+///
+/// ## Example
+/// ```swift
+/// let statement = IncomeStatement(...)
+/// let json = try JSONEncoder().encode(statement)
+/// let decoded = try JSONDecoder().decode(IncomeStatement<Double>.self, from: json)
+/// ```
 extension IncomeStatement: Codable {
 
 	private enum CodingKeys: String, CodingKey {
@@ -399,6 +436,12 @@ extension IncomeStatement: Codable {
 		case accounts
 	}
 
+	/// Encode the income statement to an encoder.
+	///
+	/// Only encodes entity, periods, and accounts. Computed metrics are not encoded.
+	///
+	/// - Parameter encoder: The encoder to write to
+	/// - Throws: EncodingError if encoding fails
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 		try container.encode(entity, forKey: .entity)
@@ -406,6 +449,13 @@ extension IncomeStatement: Codable {
 		try container.encode(accounts, forKey: .accounts)
 	}
 
+	/// Decode an income statement from a decoder.
+	///
+	/// Reconstructs the income statement from entity, periods, and accounts.
+	/// All computed metrics (totals, margins) are automatically recalculated.
+	///
+	/// - Parameter decoder: The decoder to read from
+	/// - Throws: DecodingError if decoding fails, or validation errors from init
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		let entity = try container.decode(Entity.self, forKey: .entity)

@@ -168,7 +168,11 @@ public struct OperationalMetricsMetadata: Codable, Sendable {
 
 	/// Notes about data quality, methodology, or special circumstances
 	public var notes: String?
-
+	/// Creates a metadata object with the parameters
+	/// - industry: Industry classification (e.g., "E-commerce", "SaaS", "Oil & Gas")
+	/// - businessModel: Description of the business model
+	/// - metricDefinitions:  Documentation of metric definitions; Maps metric names to their definitions
+	/// - notes: Notes about data quality, methodology, or special circumstances
 	public init(
 		industry: String? = nil,
 		businessModel: String? = nil,
@@ -285,7 +289,8 @@ public enum OperationalMetricsError: Error, CustomStringConvertible {
 
 	/// Required metric not found
 	case metricNotFound(String)
-
+        
+        /// Human-readable error for debugging
 	public var description: String {
 		switch self {
 		case .entityMismatch:

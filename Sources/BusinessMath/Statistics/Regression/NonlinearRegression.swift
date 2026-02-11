@@ -55,6 +55,11 @@ public struct ReciprocalRegressionModel<T: Real & Sendable & Codable> where T: B
 		/// Standard deviation of residuals (must be > 0)
 		public let sigma: T
 
+		/// Creates reciprocal regression parameters.
+		/// - Parameters:
+		///   - a: Intercept parameter
+		///   - b: Slope parameter
+		///   - sigma: Standard deviation of residuals
 		public init(a: T, b: T, sigma: T) {
 			self.a = a
 			self.b = b
@@ -64,9 +69,16 @@ public struct ReciprocalRegressionModel<T: Real & Sendable & Codable> where T: B
 
 	/// Data point for regression
 	public struct DataPoint: Sendable, Codable {
+		/// The independent variable (x-value).
 		public let x: T
+
+		/// The dependent variable (y-value).
 		public let y: T
 
+		/// Creates a data point with x and y coordinates.
+		/// - Parameters:
+		///   - x: Independent variable
+		///   - y: Dependent variable
 		public init(x: T, y: T) {
 			self.x = x
 			self.y = y
@@ -137,7 +149,10 @@ public struct ReciprocalRegressionModel<T: Real & Sendable & Codable> where T: B
 /// // data now contains 100 (x, y) pairs generated from the model
 /// ```
 public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where T: BinaryFloatingPoint {
+	/// Data point type (x, y coordinate pair).
 	public typealias DataPoint = ReciprocalRegressionModel<T>.DataPoint
+
+	/// Model parameters (a, b, sigma).
 	public typealias Parameters = ReciprocalRegressionModel<T>.Parameters
 
 	/// True parameter values used for simulation
@@ -229,7 +244,10 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 /// print("  log-likelihood = \(result.logLikelihood)")
 /// ```
 public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: BinaryFloatingPoint {
+	/// Data point type (x, y coordinate pair).
 	public typealias DataPoint = ReciprocalRegressionModel<T>.DataPoint
+
+	/// Model parameters (a, b, sigma).
 	public typealias Parameters = ReciprocalRegressionModel<T>.Parameters
 
 	/// Result of model fitting
@@ -252,6 +270,14 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		/// Standard errors of parameter estimates (if available)
 		public let standardErrors: Parameters?
 
+		/// Creates a fit result with estimated parameters and diagnostics.
+		/// - Parameters:
+		///   - parameters: Estimated model parameters
+		///   - logLikelihood: Log-likelihood at the solution
+		///   - negativeLogLikelihood: Negative log-likelihood (optimization objective)
+		///   - iterations: Number of optimization iterations performed
+		///   - converged: Whether the optimization converged
+		///   - standardErrors: Standard errors of estimates (optional)
 		public init(
 			parameters: Parameters,
 			logLikelihood: T,
@@ -268,7 +294,8 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 			self.standardErrors = standardErrors
 		}
 	}
-
+	
+	/// Initializes the Fitter
 	public init() {}
 
 	/// Fit the model to data using gradient-based optimization
@@ -293,7 +320,7 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		// We optimize: logParams = [log(a), log(b), log(sigma)]
 		// Then transform back: a = exp(logParams[0]), etc.
 
-		let objective: (VectorN<T>) -> T = { logParams in
+		let objective: @Sendable (VectorN<T>) -> T = { logParams in
 			// Transform from log-space to natural parameters
 			// exp() naturally enforces positivity with smooth gradients
 			let a = T.exp(logParams[0])

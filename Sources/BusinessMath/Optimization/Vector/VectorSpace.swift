@@ -91,6 +91,7 @@ public protocol VectorSpace: AdditiveArithmetic, Hashable, Codable, Sendable {
 
 // MARK: - Default Implementations
 
+/// Default Implementations
 public extension VectorSpace {
 	/// Vector subtraction (default implementation using addition and negation).
 	/// - Parameters:
@@ -173,6 +174,10 @@ public extension VectorSpace {
 /// Faster than `VectorN` for 2D operations due to compile-time optimization
 /// and avoidance of array bounds checking.
 public struct Vector2D<T: Real & Sendable & Codable>: VectorSpace {
+	/// The scalar type over which this 2D vector space is defined.
+	///
+	/// Must conform to `Real`, `Sendable`, and `Codable` for mathematical operations,
+	/// concurrency safety, and serialization.
 	public typealias Scalar = T
 	
 	/// The x-component of the vector.
@@ -287,6 +292,10 @@ public struct Vector2D<T: Real & Sendable & Codable>: VectorSpace {
 /// # Performance
 /// Faster than `VectorN` for 3D operations due to compile-time optimization.
 public struct Vector3D<T: Real & Sendable & Codable>: VectorSpace {
+	/// The scalar type over which this 3D vector space is defined.
+	///
+	/// Must conform to `Real`, `Sendable`, and `Codable` for mathematical operations,
+	/// concurrency safety, and serialization.
 	public typealias Scalar = T
 	
 	/// The x-component of the vector.
@@ -411,32 +420,36 @@ public struct Vector3D<T: Real & Sendable & Codable>: VectorSpace {
 /// More flexible than fixed-dimension vectors but has array bounds checking overhead.
 /// Use `Vector2D` or `Vector3D` when dimension is known at compile time.
 public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
+	/// The scalar type over which this vector space is defined.
+	///
+	/// Must conform to `Real`, `Sendable`, and `Codable` for mathematical operations,
+	/// concurrency safety, and serialization.
 	public typealias Scalar = T
 	
-		/// The components of the vector.
+	/// The components of the vector.
 	private var components: [T]
 	
-		/// Create an N-dimensional vector from an array of components.
-		/// - Parameter components: Array of scalar components
+	/// Create an N-dimensional vector from an array of components.
+	/// - Parameter components: Array of scalar components
 	public init(_ components: [T]) {
 		self.components = components
 	}
 	
-		/// Create a vector with all components equal to a value.
-		/// - Parameters:
-		///   - value: Value for all components
-		///   - count: Number of components
+	/// Create a vector with all components equal to a value.
+	/// - Parameters:
+	///   - value: Value for all components
+	///   - count: Number of components
 	public init(repeating value: T, count: Int) {
 		self.components = Array(repeating: value, count: count)
 	}
 	
-		/// The zero vector (empty vector).
+	/// The zero vector (empty vector).
 	public static var zero: VectorN<T> {
 		VectorN([])
 	}
 	
-		/// Vector addition.
-		/// If dimensions don't match, returns a zero vector of maximum dimension.
+	/// Vector addition.
+	/// If dimensions don't match, returns a zero vector of maximum dimension.
 	public static func + (lhs: VectorN<T>, rhs: VectorN<T>) -> VectorN<T> {
 		guard lhs.components.count == rhs.components.count else {
 				// Return zero vector for dimension mismatch
@@ -447,27 +460,27 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		return VectorN(result)
 	}
 	
-		/// Scalar multiplication.
+	/// Scalar multiplication.
 	public static func * (lhs: T, rhs: VectorN<T>) -> VectorN<T> {
 		VectorN(rhs.components.map { lhs * $0 })
 	}
 
-		/// Scalar division.
+	/// Scalar division.
 	public static func / (lhs: VectorN<T>, rhs: T) -> VectorN<T> {
 		VectorN(lhs.components.map { $0 / rhs })
 	}
 
-		/// Vector negation.
+	/// Vector negation.
 	public static prefix func - (vector: VectorN<T>) -> VectorN<T> {
 		VectorN(vector.components.map { -$0 })
 	}
 	
-		/// Euclidean norm: √(v₁² + v₂² + ... + vₙ²).
+	/// Euclidean norm: √(v₁² + v₂² + ... + vₙ²).
 	public var norm: T {
 		T.sqrt(components.reduce(T(0)) { $0 + $1 * $1 })
 	}
 	
-		/// Dot product: v₁·w₁ + v₂·w₂ + ... + vₙ·wₙ.
+	/// Dot product: v₁·w₁ + v₂·w₂ + ... + vₙ·wₙ.
 	public func dot(_ other: VectorN<T>) -> T {
 		guard components.count == other.components.count else {
 			return T(0)
@@ -476,34 +489,34 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		return zip(components, other.components).reduce(T(0)) { $0 + $1.0 * $1.1 }
 	}
 	
-		/// Create an N-dimensional vector from an array.
-		/// - Parameter array: Array of scalar components
-		/// - Returns: VectorN with the given components.
+	/// Create an N-dimensional vector from an array.
+	/// - Parameter array: Array of scalar components
+	/// - Returns: VectorN with the given components.
 	public static func fromArray(_ array: [T]) -> VectorN<T>? {
 		VectorN(array)
 	}
 	
-		/// Convert to array: [v₁, v₂, ..., vₙ].
+	/// Convert to array: [v₁, v₂, ..., vₙ].
 	public func toArray() -> [T] {
 		components
 	}
 	
-		/// Dimension is the number of components.
+	/// Dimension is the number of components.
 	public static var dimension: Int { -1 } // Variable dimension
 	
-		/// The actual dimension of this vector.
+	/// The actual dimension of this vector.
 	public var dimension: Int {
 		components.count
 	}
 	
-		/// Check if all components are finite.
+	/// Check if all components are finite.
 	public var isFinite: Bool {
 		components.allSatisfy { $0.isFinite }
 	}
 	
-		/// Access individual components by index.
-		/// - Parameter index: Component index (0-based)
-		/// - Returns: Component value, or 0 if index out of bounds.
+	/// Access individual components by index.
+	/// - Parameter index: Component index (0-based)
+	/// - Returns: Component value, or 0 if index out of bounds.
 	public subscript(index: Int) -> T {
 		get {
 			guard index >= 0 && index < components.count else { return T(0) }
@@ -515,16 +528,16 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		}
 	}
 
-		/// The number of components in the vector.
+	/// The number of components in the vector.
 	public var count: Int {
 		components.count
 	}
 
-		/// Set individual component by index.
-		/// - Parameters:
-		///   - index: Component index (0-based)
-		///   - value: New component value
-		/// - Returns: New vector with updated component, or nil if index out of bounds.
+	/// Set individual component by index.
+	/// - Parameters:
+	///   - index: Component index (0-based)
+	///   - value: New component value
+	/// - Returns: New vector with updated component, or nil if index out of bounds.
 	public func settingComponent(at index: Int, to value: T) -> VectorN<T>? {
 		guard index >= 0 && index < components.count else { return nil }
 		var newComponents = components
@@ -532,38 +545,38 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		return VectorN(newComponents)
 	}
 	
-		/// Append a component to the vector.
-		/// - Parameter value: Value to append
-		/// - Returns: New vector with appended component.
+	/// Append a component to the vector.
+	/// - Parameter value: Value to append
+	/// - Returns: New vector with appended component.
 	public func appending(_ value: T) -> VectorN<T> {
 		VectorN(components + [value])
 	}
 	
-		/// Remove the last component from the vector.
-		/// - Returns: New vector without last component, or nil if vector is empty.
+	/// Remove the last component from the vector.
+	/// - Returns: New vector without last component, or nil if vector is empty.
 	public func removingLast() -> VectorN<T>? {
 		guard !components.isEmpty else { return nil }
 		return VectorN(Array(components.dropLast()))
 	}
 	
-		/// Concatenate two vectors.
-		/// - Parameter other: Vector to concatenate
-		/// - Returns: New vector with components from both vectors.
+	/// Concatenate two vectors.
+	/// - Parameter other: Vector to concatenate
+	/// - Returns: New vector with components from both vectors.
 	public func concatenated(with other: VectorN<T>) -> VectorN<T> {
 		VectorN(components + other.components)
 	}
 	
-		/// Slice the vector.
-		/// - Parameter range: Range of indices to include
-		/// - Returns: New vector with sliced components, or nil if range invalid.
+	/// Slice the vector.
+	/// - Parameter range: Range of indices to include
+	/// - Returns: New vector with sliced components, or nil if range invalid.
 	public func slice(_ range: Range<Int>) -> VectorN<T>? {
 		guard range.lowerBound >= 0 && range.upperBound <= components.count else { return nil }
 		return VectorN(Array(components[range]))
 	}
 	
-		/// Element-wise multiplication (Hadamard product).
-		/// - Parameter other: Another vector
-		/// - Returns: Vector where each component is the product of corresponding components.
+	/// Element-wise multiplication (Hadamard product).
+	/// - Parameter other: Another vector
+	/// - Returns: Vector where each component is the product of corresponding components.
 	public func hadamardProduct(with other: VectorN<T>) -> VectorN<T> {
 		guard components.count == other.components.count else {
 			return VectorN(repeating: T(0), count: Swift.max(components.count, other.components.count))
@@ -573,15 +586,15 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		return VectorN(result)
 	}
 
-		/// Convenient alias for hadamardProduct.
+	/// Convenient alias for hadamardProduct.
 	public func hadamard(_ other: VectorN<T>) -> VectorN<T> {
 		hadamardProduct(with: other)
 	}
 	
-		/// Element-wise division.
-		/// - Parameter other: Another vector
-		/// - Returns: Vector where each component is the division of corresponding components.
-		///            Returns zero vector for division by zero.
+	/// Element-wise division.
+	/// - Parameter other: Another vector
+	/// - Returns: Vector where each component is the division of corresponding components.
+	///            Returns zero vector for division by zero.
 	public func elementwiseDivide(by other: VectorN<T>) -> VectorN<T> {
 		guard components.count == other.components.count else {
 			return VectorN(repeating: T(0), count: Swift.max(components.count, other.components.count))
@@ -594,22 +607,22 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		return VectorN(result)
 	}
 	
-		/// Sum of all components.
-		/// - Returns: Sum of v₁ + v₂ + ... + vₙ
+	/// Sum of all components.
+	/// - Returns: Sum of v₁ + v₂ + ... + vₙ
 	public var sum: T {
 		components.reduce(T(0), +)
 	}
 	
-		/// Mean (average) of all components.
-		/// - Returns: (v₁ + v₂ + ... + vₙ) / n, or 0 if vector is empty.
+	/// Mean (average) of all components.
+	/// - Returns: (v₁ + v₂ + ... + vₙ) / n, or 0 if vector is empty.
 	public var mean: T {
 		guard !components.isEmpty else { return T(0) }
 		return sum / T(components.count)
 	}
 	
-		/// Standard deviation of components.
-		/// - Parameter isSample: True for sample standard deviation (n-1), false for population (n)
-		/// - Returns: Standard deviation, or 0 if vector has fewer than 2 components.
+	/// Standard deviation of components.
+	/// - Parameter isSample: True for sample standard deviation (n-1), false for population (n)
+	/// - Returns: Standard deviation, or 0 if vector has fewer than 2 components.
 	public func standardDeviation(isSample: Bool = true) -> T {
 		guard components.count > 1 else { return T(0) }
 
@@ -619,58 +632,58 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		return T.sqrt(sumSquaredDiffs / divisor)
 	}
 	
-		/// Minimum component value.
-		/// - Returns: Minimum value, or nil if vector is empty.
+	/// Minimum component value.
+	/// - Returns: Minimum value, or nil if vector is empty.
 	public var min: T? {
 		components.min()
 	}
 	
-		/// Maximum component value.
-		/// - Returns: Maximum value, or nil if vector is empty.
+	/// Maximum component value.
+	/// - Returns: Maximum value, or nil if vector is empty.
 	public var max: T? {
 		components.max()
 	}
 	
-		/// Range of component values.
-		/// - Returns: (min, max) tuple, or nil if vector is empty.
+	/// Range of component values.
+	/// - Returns: (min, max) tuple, or nil if vector is empty.
 	public var range: (min: T, max: T)? {
 		guard let minVal = min, let maxVal = max else { return nil }
 		return (minVal, maxVal)
 	}
 	
-		/// Normalize the vector to unit length.
-		/// - Returns: Unit vector in same direction, or zero vector if norm is zero.
+	/// Normalize the vector to unit length.
+	/// - Returns: Unit vector in same direction, or zero vector if norm is zero.
 	public func normalized() -> VectorN<T> {
 		let n = norm
 		guard n > T(0) else { return VectorN(repeating: T(0), count: components.count) }
 		return (T(1) / n) * self
 	}
 
-		/// Project the vector onto the probability simplex (components sum to 1.0).
-		///
-		/// This is useful for portfolio weights, probability distributions, and mixture coefficients.
-		/// Unlike `normalized()`, which creates a unit vector (Euclidean norm = 1.0),
-		/// this ensures the components sum to 1.0.
-		///
-		/// # Example
-		/// ```swift
-		/// // Portfolio weights
-		/// let rawWeights = VectorN([3.0, 1.0, 2.0])
-		/// let weights = rawWeights.simplexProjection()  // [0.5, 0.167, 0.333]
-		/// print(weights.sum)  // 1.0
-		/// ```
-		///
-		/// - Returns: A new vector where all components sum to 1.0
-		/// - Precondition: Vector must have at least one non-zero component
+	/// Project the vector onto the probability simplex (components sum to 1.0).
+	///
+	/// This is useful for portfolio weights, probability distributions, and mixture coefficients.
+	/// Unlike `normalized()`, which creates a unit vector (Euclidean norm = 1.0),
+	/// this ensures the components sum to 1.0.
+	///
+	/// # Example
+	/// ```swift
+	/// // Portfolio weights
+	/// let rawWeights = VectorN([3.0, 1.0, 2.0])
+	/// let weights = rawWeights.simplexProjection()  // [0.5, 0.167, 0.333]
+	/// print(weights.sum)  // 1.0
+	/// ```
+	///
+	/// - Returns: A new vector where all components sum to 1.0
+	/// - Precondition: Vector must have at least one non-zero component
 	public func simplexProjection() -> VectorN<T> {
 		let s = self.sum
 		precondition(s != 0, "Cannot project zero vector onto simplex")
 		return self / s
 	}
 	
-		/// Project this vector onto another vector.
-		/// - Parameter other: Vector to project onto
-		/// - Returns: Projection vector: (self·other / ‖other‖²) * other
+	/// Project this vector onto another vector.
+	/// - Parameter other: Vector to project onto
+	/// - Returns: Projection vector: (self·other / ‖other‖²) * other
 	public func projection(onto other: VectorN<T>) -> VectorN<T> {
 		let otherNormSquared = other.squaredNorm
 		guard otherNormSquared > T(0) else { return VectorN(repeating: T(0), count: components.count) }
@@ -680,26 +693,26 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		return scalar * other
 	}
 	
-		/// Rejection of this vector from another vector.
-		/// - Parameter other: Vector to reject from
-		/// - Returns: Rejection vector: self - projection(onto: other)
+	/// Rejection of this vector from another vector.
+	/// - Parameter other: Vector to reject from
+	/// - Returns: Rejection vector: self - projection(onto: other)
 	public func rejection(from other: VectorN<T>) -> VectorN<T> {
 		self - projection(onto: other)
 	}
 	
-		/// Check if this vector is orthogonal to another vector.
-		/// - Parameter other: Another vector
-		/// - Parameter tolerance: Numerical tolerance for dot product comparison
-		/// - Returns: True if dot product is approximately zero.
+	/// Check if this vector is orthogonal to another vector.
+	/// - Parameter other: Another vector
+	/// - Parameter tolerance: Numerical tolerance for dot product comparison
+	/// - Returns: True if dot product is approximately zero.
 	public func isOrthogonal(to other: VectorN<T>, tolerance: T? = nil) -> Bool {
 		let tol = tolerance ?? (T(1) / T(10_000_000))
 		return abs(self.dot(other)) < tol
 	}
 	
-		/// Check if this vector is parallel to another vector.
-		/// - Parameter other: Another vector
-		/// - Parameter tolerance: Numerical tolerance for cross product magnitude comparison
-		/// - Returns: True if vectors are scalar multiples (for 2D/3D) or if cosine similarity is ±1.
+	/// Check if this vector is parallel to another vector.
+	/// - Parameter other: Another vector
+	/// - Parameter tolerance: Numerical tolerance for cross product magnitude comparison
+	/// - Returns: True if vectors are scalar multiples (for 2D/3D) or if cosine similarity is ±1.
 	public func isParallel(to other: VectorN<T>, tolerance: T? = nil) -> Bool {
 		let tol = tolerance ?? (T(1) / T(10_000_000))
 		let cosSim = self.cosineSimilarity(with: other)
@@ -708,32 +721,31 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 }
 
 // MARK: - Formatting Extensions (Double only)
-
 extension VectorN where T == Double {
-		/// Formatted description with clean floating-point display
-		///
-		/// Uses the default optimization formatter (context-aware).
-		///
-		/// ## Example
-		/// ```swift
-		/// let v = VectorN([2.9999999999999964, 0.7500000000000002, 1e-15])
-		/// print(v.formattedDescription())  // "[3, 0.75, 0]"
-		/// ```
+	/// Formatted description with clean floating-point display
+	///
+	/// Uses the default optimization formatter (context-aware).
+	///
+	/// ## Example
+	/// ```swift
+	/// let v = VectorN([2.9999999999999964, 0.7500000000000002, 1e-15])
+	/// print(v.formattedDescription())  // "[3, 0.75, 0]"
+	/// ```
 	public func formattedDescription() -> String {
 		formattedDescription(with: .optimization)
 	}
 
-		/// Formatted description with custom formatter
-		///
-		/// ## Example
-		/// ```swift
-		/// let v = VectorN([123.456, 789.012])
-		/// let formatter = FloatingPointFormatter(strategy: .significantFigures(count: 2))
-		/// print(v.formattedDescription(with: formatter))  // "[120, 790]"
-		/// ```
-		///
-		/// - Parameter formatter: Custom formatter to use
-		/// - Returns: Formatted string representation
+	/// Formatted description with custom formatter
+	///
+	/// ## Example
+	/// ```swift
+	/// let v = VectorN([123.456, 789.012])
+	/// let formatter = FloatingPointFormatter(strategy: .significantFigures(count: 2))
+	/// print(v.formattedDescription(with: formatter))  // "[120, 790]"
+	/// ```
+	///
+	/// - Parameter formatter: Custom formatter to use
+	/// - Returns: Formatted string representation
 	public func formattedDescription(with formatter: FloatingPointFormatter) -> String {
 		let formatted = formatter.format(components)
 		return "[" + formatted.map(\.formatted).joined(separator: ", ") + "]"
@@ -742,12 +754,34 @@ extension VectorN where T == Double {
 
 // MARK: - Conformance to AdditiveArithmetic
 
+/// Conformance of VectorN to AdditiveArithmetic for generic numeric algorithms.
+///
+/// This conformance allows VectorN to work with Swift's standard library functions
+/// that operate on additive types, such as `reduce` with addition.
+///
+/// ## Example
+/// ```swift
+/// let vectors = [
+///     VectorN([1.0, 2.0]),
+///     VectorN([3.0, 4.0]),
+///     VectorN([5.0, 6.0])
+/// ]
+/// let sum = vectors.reduce(.zero, +)  // VectorN([9.0, 12.0])
+/// ```
 extension VectorN: AdditiveArithmetic {
+	/// Vector subtraction.
+	///
+	/// Returns a zero vector if dimensions don't match.
+	///
+	/// - Parameters:
+	///   - lhs: Left-hand side vector
+	///   - rhs: Right-hand side vector
+	/// - Returns: Component-wise difference, or zero vector for dimension mismatch
 	public static func - (lhs: VectorN<T>, rhs: VectorN<T>) -> VectorN<T> {
 		guard lhs.components.count == rhs.components.count else {
 			return VectorN(repeating: T(0), count: Swift.max(lhs.components.count, rhs.components.count))
 		}
-		
+
 		let result = zip(lhs.components, rhs.components).map { $0 - $1 }
 		return VectorN(result)
 	}
@@ -755,11 +789,35 @@ extension VectorN: AdditiveArithmetic {
 
 // MARK: - Conformance to Hashable
 
+/// Conformance of VectorN to Hashable for use in Sets and Dictionary keys.
+///
+/// Two vectors are equal if they have identical components in the same order.
+/// The hash is computed from the component array, ensuring that equal vectors
+/// produce equal hashes.
+///
+/// ## Example
+/// ```swift
+/// let v1 = VectorN([1.0, 2.0, 3.0])
+/// let v2 = VectorN([1.0, 2.0, 3.0])
+/// let v3 = VectorN([1.0, 2.0, 3.1])
+///
+/// print(v1 == v2)  // true
+/// print(v1 == v3)  // false
+///
+/// let vectorSet: Set = [v1, v2, v3]  // {v1, v3} (v2 equals v1)
+/// ```
 extension VectorN: Hashable {
+	/// Hash the vector by combining its components.
+	/// - Parameter hasher: The hasher to use
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(components)
 	}
-	
+
+	/// Compare two vectors for equality.
+	/// - Parameters:
+	///   - lhs: Left-hand side vector
+	///   - rhs: Right-hand side vector
+	/// - Returns: True if vectors have identical components
 	public static func == (lhs: VectorN<T>, rhs: VectorN<T>) -> Bool {
 		lhs.components == rhs.components
 	}
@@ -767,13 +825,33 @@ extension VectorN: Hashable {
 
 // MARK: - Conformance to Codable
 
+/// Conformance of VectorN to Codable for JSON serialization.
+///
+/// VectorN is encoded and decoded as a simple array of scalars, making
+/// it compatible with standard JSON formats.
+///
+/// ## Example
+/// ```swift
+/// let v = VectorN([1.0, 2.0, 3.0])
+/// let json = try JSONEncoder().encode(v)
+/// // JSON: [1.0, 2.0, 3.0]
+///
+/// let decoded = try JSONDecoder().decode(VectorN<Double>.self, from: json)
+/// // decoded == v
+/// ```
 extension VectorN: Codable {
+	/// Decode a VectorN from a decoder.
+	/// - Parameter decoder: The decoder to read from
+	/// - Throws: DecodingError if the format is invalid
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.singleValueContainer()
 		let components = try container.decode([T].self)
 		self.init(components)
 	}
-	
+
+	/// Encode this VectorN to an encoder.
+	/// - Parameter encoder: The encoder to write to
+	/// - Throws: EncodingError if encoding fails
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.singleValueContainer()
 		try container.encode(components)
@@ -786,6 +864,7 @@ extension VectorN: Sendable where T: Sendable {}
 
 // MARK: - Additional Operations
 
+/// Conformance to Codable
 extension VectorN {
 		/// Outer product with another vector.
 		/// - Parameter other: Another vector
@@ -798,9 +877,9 @@ extension VectorN {
 		}
 	}
 	
-		/// Kronecker product with another vector.
-		/// - Parameter other: Another vector
-		/// - Returns: Vector representing Kronecker product.
+	/// Kronecker product with another vector.
+	/// - Parameter other: Another vector
+	/// - Returns: Vector representing Kronecker product.
 	public func kroneckerProduct(with other: VectorN<T>) -> VectorN<T> {
 		var result: [T] = []
 		for v_i in components {
@@ -811,18 +890,18 @@ extension VectorN {
 		return VectorN(result)
 	}
 	
-		/// Apply a function element-wise to the vector.
-		/// - Parameter transform: Function to apply to each component
-		/// - Returns: New vector with transformed components.
+	/// Apply a function element-wise to the vector.
+	/// - Parameter transform: Function to apply to each component
+	/// - Returns: New vector with transformed components.
 	public func map(_ transform: (T) -> T) -> VectorN<T> {
 		VectorN(components.map(transform))
 	}
 	
-		/// Zip with another vector and apply a function.
-		/// - Parameters:
-		///   - other: Another vector
-		///   - transform: Function to apply to pairs of components
-		/// - Returns: New vector with transformed component pairs.
+	/// Zip with another vector and apply a function.
+	/// - Parameters:
+	///   - other: Another vector
+	///   - transform: Function to apply to pairs of components
+	/// - Returns: New vector with transformed component pairs.
 	public func zipWith(_ other: VectorN<T>, _ transform: (T, T) -> T) -> VectorN<T> {
 		guard components.count == other.components.count else {
 			return VectorN(repeating: T(0), count: Swift.max(components.count, other.components.count))
@@ -832,18 +911,18 @@ extension VectorN {
 		return VectorN(result)
 	}
 	
-		/// Reduce the vector to a single value.
-		/// - Parameters:
-		///   - initial: Initial value
-		///   - transform: Reduction function
-		/// - Returns: Reduced value.
+	/// Reduce the vector to a single value.
+	/// - Parameters:
+	///   - initial: Initial value
+	///   - transform: Reduction function
+	/// - Returns: Reduced value.
 	public func reduce(_ initial: T, _ transform: (T, T) -> T) -> T {
 		components.reduce(initial, transform)
 	}
 	
-		/// Filter components based on a predicate.
-		/// - Parameter isIncluded: Predicate to test components
-		/// - Returns: New vector with filtered components.
+	/// Filter components based on a predicate.
+	/// - Parameter isIncluded: Predicate to test components
+	/// - Returns: New vector with filtered components.
 	public func filter(_ isIncluded: (T) -> Bool) -> VectorN<T> {
 		VectorN(components.filter(isIncluded))
 	}
@@ -851,12 +930,12 @@ extension VectorN {
 
 // MARK: - Factory Methods
 extension VectorN {
-		/// Create a basis vector (all zeros except one component).
-		/// - Parameters:
-		///   - dimension: Total dimension of vector
-		///   - index: Index of the non-zero component (0-based)
-		///   - value: Value of the non-zero component (default: 1)
-		/// - Returns: Basis vector, or zero vector if index out of bounds.
+	/// Create a basis vector (all zeros except one component).
+	/// - Parameters:
+	///   - dimension: Total dimension of vector
+	///   - index: Index of the non-zero component (0-based)
+	///   - value: Value of the non-zero component (default: 1)
+	/// - Returns: Basis vector, or zero vector if index out of bounds.
 	public static func basisVector(dimension: Int, index: Int, value: T = T(1)) -> VectorN<T> {
 		guard index >= 0 && index < dimension else {
 			return VectorN(repeating: T(0), count: dimension)
@@ -867,40 +946,40 @@ extension VectorN {
 		return VectorN(components)
 	}
 	
-		/// Create a vector of ones.
-		/// - Parameter dimension: Dimension of vector
-		/// - Returns: Vector where all components are 1.
+	/// Create a vector of ones.
+	/// - Parameter dimension: Dimension of vector
+	/// - Returns: Vector where all components are 1.
 	public static func ones(dimension: Int) -> VectorN<T> {
 		VectorN(repeating: T(1), count: dimension)
 	}
 
-		/// Create equal weights that sum to 1.0 (useful for equal-weighted portfolios).
-		///
-		/// This creates a vector where each component is 1/n, ensuring they sum to 1.0
-		/// for use as portfolio weights, probability distributions, or mixture coefficients.
-		///
-		/// # Example
-		/// ```swift
-		/// // Equal-weighted 4-asset portfolio
-		/// let weights = VectorN<Double>.equalWeights(dimension: 4)  // [0.25, 0.25, 0.25, 0.25]
-		/// print(weights.sum)  // 1.0
-		/// ```
-		///
-		/// - Parameter dimension: Number of components (must be positive)
-		/// - Returns: Vector where all components are 1/dimension
-		/// - Precondition: dimension must be positive
+	/// Create equal weights that sum to 1.0 (useful for equal-weighted portfolios).
+	///
+	/// This creates a vector where each component is 1/n, ensuring they sum to 1.0
+	/// for use as portfolio weights, probability distributions, or mixture coefficients.
+	///
+	/// # Example
+	/// ```swift
+	/// // Equal-weighted 4-asset portfolio
+	/// let weights = VectorN<Double>.equalWeights(dimension: 4)  // [0.25, 0.25, 0.25, 0.25]
+	/// print(weights.sum)  // 1.0
+	/// ```
+	///
+	/// - Parameter dimension: Number of components (must be positive)
+	/// - Returns: Vector where all components are 1/dimension
+	/// - Precondition: dimension must be positive
 	public static func equalWeights(dimension: Int) -> VectorN<T> {
 		precondition(dimension > 0, "Dimension must be positive")
 		let weight = T(1) / T(dimension)
 		return VectorN(repeating: weight, count: dimension)
 	}
 	
-		/// Create a vector with linearly spaced values.
-		/// - Parameters:
-		///   - start: Starting value
-		///   - end: Ending value
-		///   - count: Number of components
-		/// - Returns: Vector with linearly spaced values.
+	/// Create a vector with linearly spaced values.
+	/// - Parameters:
+	///   - start: Starting value
+	///   - end: Ending value
+	///   - count: Number of components
+	/// - Returns: Vector with linearly spaced values.
 	public static func linearSpace(from start: T, to end: T, count: Int) -> VectorN<T> {
 		guard count > 0 else { return VectorN([]) }
 		guard count > 1 else { return VectorN([start]) }
@@ -913,12 +992,12 @@ extension VectorN {
 		return VectorN(components)
 	}
 	
-		/// Create a vector with logarithmically spaced values.
-		/// - Parameters:
-		///   - start: Starting value (must be positive)
-		///   - end: Ending value (must be positive)
-		///   - count: Number of components
-		/// - Returns: Vector with logarithmically spaced values.
+	/// Create a vector with logarithmically spaced values.
+	/// - Parameters:
+	///   - start: Starting value (must be positive)
+	///   - end: Ending value (must be positive)
+	///   - count: Number of components
+	/// - Returns: Vector with logarithmically spaced values.
 	public static func logSpace(from start: T, to end: T, count: Int) -> VectorN<T> {
 		guard count > 0 else { return VectorN([]) }
 		guard start > T(0) && end > T(0) else {
@@ -992,30 +1071,107 @@ extension VectorN {
 
 // MARK: - Scalar VectorSpace Conformance
 
+/// Conformance of Double to VectorSpace, treating scalars as 1-dimensional vectors.
+///
+/// This allows Double values to be used directly in vector space operations, which is
+/// useful for scalar optimization problems or as building blocks for higher-dimensional vectors.
+///
+/// ## Example
+/// ```swift
+/// let a: Double = 3.5
+/// let b: Double = 2.0
+/// let c = a + b  // Standard arithmetic
+/// let d = a.dot(b)  // 7.0 (scalar multiplication)
+/// print(a.norm)  // 3.5 (absolute value)
+/// ```
+///
+/// ## Mathematical Interpretation
+/// Scalars form a 1-dimensional vector space where:
+/// - The zero element is 0.0
+/// - The norm is the absolute value
+/// - The dot product is multiplication
+///
+/// ## See Also
+/// - ``Float`` for single-precision scalar vector space
 extension Double: VectorSpace {
+	/// The scalar type is Double itself.
 	public typealias Scalar = Double
+
+	/// The zero element in the 1-dimensional scalar space.
 	public static var zero: Double { 0.0 }
+
+	/// The norm (absolute value) of the scalar.
 	public var norm: Double { abs(self) }
+
+	/// Dot product with another scalar (multiplication).
+	/// - Parameter other: Another Double value
+	/// - Returns: The product of the two scalars
 	public func dot(_ other: Double) -> Double { self * other }
+
+	/// Create a Double from an array.
+	/// - Parameter array: Must contain exactly one element
+	/// - Returns: The single Double value, or nil if array size != 1
 	public static func fromArray(_ array: [Double]) -> Double? {
 		guard array.count == 1 else { return nil }
 		return array[0]
 	}
+
+	/// Convert to array representation.
+	/// - Returns: Single-element array containing this Double
 	public func toArray() -> [Double] { [self] }
+
+	/// Dimension is always 1 for scalars.
 	public static var dimension: Int { 1 }
 	// isFinite is already provided by FloatingPoint protocol
 }
 
+/// Conformance of Float to VectorSpace, treating scalars as 1-dimensional vectors.
+///
+/// This allows Float values to be used directly in vector space operations, which is
+/// useful for scalar optimization problems or as building blocks for higher-dimensional vectors.
+///
+/// ## Example
+/// ```swift
+/// let a: Float = 3.5
+/// let b: Float = 2.0
+/// let c = a + b  // Standard arithmetic
+/// let d = a.dot(b)  // 7.0 (scalar multiplication)
+/// print(a.norm)  // 3.5 (absolute value)
+/// ```
+///
+/// ## Mathematical Interpretation
+/// Scalars form a 1-dimensional vector space where:
+/// - The zero element is 0.0
+/// - The norm is the absolute value
+/// - The dot product is multiplication
 extension Float: VectorSpace {
+	/// The scalar type is Float itself.
 	public typealias Scalar = Float
+
+	/// The zero element in the 1-dimensional scalar space.
 	public static var zero: Float { 0.0 }
+
+	/// The norm (absolute value) of the scalar.
 	public var norm: Float { abs(self) }
+
+	/// Dot product with another scalar (multiplication).
+	/// - Parameter other: Another Float value
+	/// - Returns: The product of the two scalars
 	public func dot(_ other: Float) -> Float { self * other }
+
+	/// Create a Float from an array.
+	/// - Parameter array: Must contain exactly one element
+	/// - Returns: The single Float value, or nil if array size != 1
 	public static func fromArray(_ array: [Float]) -> Float? {
 		guard array.count == 1 else { return nil }
 		return array[0]
 	}
+
+	/// Convert to array representation.
+	/// - Returns: Single-element array containing this Float
 	public func toArray() -> [Float] { [self] }
+
+	/// Dimension is always 1 for scalars.
 	public static var dimension: Int { 1 }
 	// isFinite is already provided by FloatingPoint protocol
 }

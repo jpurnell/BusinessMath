@@ -88,6 +88,24 @@ public struct ScenarioConfig: Sendable {
     /// Probability of this scenario occurring (optional)
     public var probability: Double?
 
+    /// Create a scenario configuration with a name and optional metadata.
+    ///
+    /// - Parameters:
+    ///   - name: Name of the scenario (e.g., "Baseline", "Pessimistic")
+    ///   - description: Optional detailed description
+    ///   - probability: Optional probability (0.0 to 1.0) for weighted analysis
+    ///
+    /// ## Example
+    /// ```swift
+    /// let scenario = ScenarioConfig(
+    ///     name: "Aggressive Growth",
+    ///     description: "High market share capture with premium pricing",
+    ///     probability: 0.25
+    /// )
+    /// ```
+    ///
+    /// ## See Also
+    /// - ``Baseline(_:)`` for creating baseline scenarios via builder
     public init(name: String, description: String? = nil, probability: Double? = nil) {
         self.name = name
         self.description = description
@@ -108,60 +126,142 @@ public struct ScenarioConfig: Sendable {
 // MARK: - Result Builders
 
 /// Result builder for creating a set of scenarios.
+///
+/// Enables declarative construction of multiple scenarios for sensitivity analysis.
+///
+/// ## Example
+/// ```swift
+/// let scenarios = ScenarioSet {
+///     Baseline {
+///         revenue(1_000_000)
+///         growth(0.10)
+///     }
+///
+///     Pessimistic {
+///         revenue(800_000)
+///         growth(0.05)
+///     }
+///
+///     Optimistic {
+///         revenue(1_200_000)
+///         growth(0.15)
+///     }
+/// }
+/// ```
+///
+/// ## See Also
+/// - ``ScenarioSet/init(builder:)`` for using this builder
+/// - ``Baseline(_:)``, ``Pessimistic(_:)``, ``Optimistic(_:)`` for scenario functions
 @resultBuilder
 public struct ScenarioSetBuilder {
+    /// Build a block of scenarios from variadic arrays.
+    /// - Parameter scenarios: Arrays of scenarios to flatten
+    /// - Returns: Flattened array of all scenarios
     public static func buildBlock(_ scenarios: [ScenarioConfig]...) -> [ScenarioConfig] {
         scenarios.flatMap { $0 }
     }
 
+    /// Convert a single scenario into an array.
+    /// - Parameter scenario: A single scenario configuration
+    /// - Returns: Array containing the scenario
     public static func buildExpression(_ scenario: ScenarioConfig) -> [ScenarioConfig] {
         [scenario]
     }
 
+    /// Build scenarios from for-loop arrays.
+    /// - Parameter scenarios: Nested arrays from loops
+    /// - Returns: Flattened array of scenarios
     public static func buildArray(_ scenarios: [[ScenarioConfig]]) -> [ScenarioConfig] {
         scenarios.flatMap { $0 }
     }
 
+    /// Build optional scenarios (from if statements without else).
+    /// - Parameter scenarios: Optional array of scenarios
+    /// - Returns: Scenarios if present, empty array otherwise
     public static func buildOptional(_ scenarios: [ScenarioConfig]?) -> [ScenarioConfig] {
         scenarios ?? []
     }
 
+    /// Build conditional scenarios (if/else first branch).
+    /// - Parameter scenarios: Scenarios from the first branch
+    /// - Returns: The scenarios unchanged
     public static func buildEither(first scenarios: [ScenarioConfig]) -> [ScenarioConfig] {
         scenarios
     }
 
+    /// Build conditional scenarios (if/else second branch).
+    /// - Parameter scenarios: Scenarios from the second branch
+    /// - Returns: The scenarios unchanged
     public static func buildEither(second scenarios: [ScenarioConfig]) -> [ScenarioConfig] {
         scenarios
     }
 }
 
 /// Result builder for configuring individual scenarios.
+///
+/// Enables declarative definition of scenario parameters using functions like
+/// `revenue()`, `growth()`, `adjustCosts()`, etc.
+///
+/// ## Example
+/// ```swift
+/// let scenario = Baseline {
+///     revenue(1_000_000)
+///     growth(0.10)
+///     costs(600_000)
+///     adjustCosts(by: -0.05)  // 5% cost reduction
+/// }
+/// ```
+///
+/// ## See Also
+/// - ``Baseline(_:)`` for creating baseline scenarios
+/// - ``revenue(_:)``, ``growth(_:)``, etc. for parameter functions
 @resultBuilder
 public struct ScenarioConfigBuilder {
+    /// Build a block of scenario parameters from variadic arrays.
+    /// - Parameter components: Arrays of parameters to flatten
+    /// - Returns: Flattened array of all parameters
     public static func buildBlock(_ components: [ScenarioParameter]...) -> [ScenarioParameter] {
         components.flatMap { $0 }
     }
 
+    /// Convert a single parameter into an array.
+    /// - Parameter component: A single scenario parameter
+    /// - Returns: Array containing the parameter
     public static func buildExpression(_ component: ScenarioParameter) -> [ScenarioParameter] {
         [component]
     }
 
+    /// Convert an array of parameters (pass through).
+    /// - Parameter components: Array of parameters
+    /// - Returns: The array unchanged
     public static func buildExpression(_ components: [ScenarioParameter]) -> [ScenarioParameter] {
         components
     }
 
+    /// Build parameters from for-loop arrays.
+    /// - Parameter components: Nested arrays from loops
+    /// - Returns: Flattened array of parameters
     public static func buildArray(_ components: [[ScenarioParameter]]) -> [ScenarioParameter] {
         components.flatMap { $0 }
     }
 
+    /// Build optional parameters (from if statements without else).
+    /// - Parameter components: Optional array of parameters
+    /// - Returns: Parameters if present, empty array otherwise
     public static func buildOptional(_ components: [ScenarioParameter]?) -> [ScenarioParameter] {
         components ?? []
     }
 
+    /// Build conditional parameters (if/else first branch).
+    /// - Parameter components: Parameters from the first branch
+    /// - Returns: The parameters unchanged
     public static func buildEither(first components: [ScenarioParameter]) -> [ScenarioParameter] {
         components
     }
 
+    /// Build conditional parameters (if/else second branch).
+    /// - Parameter components: Parameters from the second branch
+    /// - Returns: The parameters unchanged
     public static func buildEither(second components: [ScenarioParameter]) -> [ScenarioParameter] {
         components
     }

@@ -8,20 +8,49 @@
 import Foundation
 import Numerics
 
-	/// Computes the p-Value for an A/B Test. A value below 0.9 is unlikely to be statistically significant, a value between 0.9 and 0.95 is unlikely to be statistically significant, and a value over 0.95 is statistically significant.
-	///
-	/// - Parameters:
-	///     - obsA: The number of tests of type A.
-	///     - convA: The number of successful conversions from test A.
-	///     - obsB: The number of tests of type B.
-	///     - convB: The number of successful conversions from test B.
-	///
-	/// - Returns: The pValue as a `Double` number.
-	///
-	/// - Precondition: `convA` and `convB` must be a less than `obsA` and `obsB`.
-	/// - Complexity: O(1), constant time complexity.
-	///
-	
+/// Computes the p-value for an A/B test comparing conversion rates between two variants.
+///
+/// Use this function to determine if the difference in conversion rates between variant A and variant B
+/// is statistically significant. The function performs a two-proportion z-test and returns the p-value.
+///
+/// - Parameters:
+///   - obsA: The number of observations (trials) for variant A.
+///   - convA: The number of successful conversions for variant A.
+///   - obsB: The number of observations (trials) for variant B.
+///   - convB: The number of successful conversions for variant B.
+///
+/// - Returns: The p-value as a value between 0 and 1. Lower values indicate stronger evidence
+///   that the conversion rates are different:
+///   - p < 0.05: Statistically significant difference (95% confidence)
+///   - p < 0.01: Highly significant difference (99% confidence)
+///   - p ≥ 0.05: No significant difference detected
+///
+/// - Precondition: `convA` must be less than or equal to `obsA`, and `convB` must be less than or equal to `obsB`.
+/// - Complexity: O(1), constant time complexity.
+///
+/// ## Usage Example
+/// ```swift
+/// // Test two landing page variants
+/// let observationsA = 1000
+/// let conversionsA = 120  // 12% conversion rate
+///
+/// let observationsB = 1000
+/// let conversionsB = 145  // 14.5% conversion rate
+///
+/// let p: Double = pValue(obsA: observationsA, convA: conversionsA,
+///                        obsB: observationsB, convB: conversionsB)
+/// print("p-value: \(p)")
+/// // Output: p-value: 0.043 (statistically significant at 95% level)
+/// ```
+///
+/// ## Statistical Background
+/// The function calculates:
+/// 1. Conversion rates for each variant: pₐ = convA/obsA, pᵦ = convB/obsB
+/// 2. Standard errors for each proportion
+/// 3. Z-score: z = (pₐ - pᵦ) / √(SE²ₐ + SE²ᵦ)
+/// 4. P-value from the standard normal distribution
+///
+/// - SeeAlso: ``sampleSize(ci:proportion:n:error:)``
 public func pValue<T: Real>(obsA: Int, convA: Int, obsB: Int, convB: Int) -> T {
 	let conversionRateA: T = T(convA) / T(obsA)
 	let conversionRateB: T = T(convB) / T(obsB)

@@ -182,7 +182,7 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 	///   - trials: Number of trials to run for each optimizer
 	/// - Returns: Comparison report with aggregated results
 	public func compareOptimizers(
-		objective: @escaping (V) -> Double,
+		objective: @escaping @Sendable (V) -> Double,
 		optimizers: [(String, AdaptiveOptimizer<V>)],
 		initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = [],
@@ -244,7 +244,7 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 	public func profileOptimizer(
 		name: String,
 		optimizer: AdaptiveOptimizer<V>,
-		objective: @escaping (V) -> Double,
+		objective: @escaping @Sendable (V) -> Double,
 		initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> RunResult {
@@ -297,7 +297,7 @@ extension PerformanceBenchmark {
 	///   - trials: Number of trials per optimizer
 	/// - Returns: Comparison report
 	public func quickCompare(
-		objective: @escaping (V) -> Double,
+		objective: @escaping @Sendable (V) -> Double,
 		initialGuess: V,
 		constraints: [MultivariateConstraint<V>] = [],
 		trials: Int = 10

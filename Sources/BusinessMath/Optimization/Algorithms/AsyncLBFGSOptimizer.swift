@@ -27,6 +27,14 @@ public struct LBFGSProgress: Sendable {
     /// Final result (only present on last update)
     public let result: OptimizationResult<Double>?
 
+    /// Creates a progress update snapshot for L-BFGS optimization.
+    ///
+    /// - Parameters:
+    ///   - iteration: Current iteration number (0-indexed)
+    ///   - metrics: Convergence metrics including objective value and gradient norm
+    ///   - position: Current position in the search space
+    ///   - gradient: Current gradient at the position
+    ///   - result: Final optimization result (only present on the last progress update)
     public init(
         iteration: Int,
         metrics: ConvergenceMetrics,
@@ -80,6 +88,17 @@ public struct AsyncLBFGSOptimizer: Sendable {
     /// Optional convergence detector for early stopping
     public let convergenceDetector: ConvergenceDetector?
 
+    /// Creates an L-BFGS optimizer with specified configuration.
+    ///
+    /// - Parameters:
+    ///   - memorySize: Number of previous iterations to store for Hessian approximation (default: 10).
+    ///     Typical values are 5-20. Larger values improve convergence but use more memory.
+    ///   - tolerance: Convergence tolerance for gradient norm (default: 1e-6). Iteration stops when
+    ///     `||gradient|| < tolerance`.
+    ///   - maxIterations: Maximum number of iterations before termination (default: 100)
+    ///   - progressStrategy: Optional strategy for adaptive progress reporting. Use this to monitor
+    ///     optimization progress in real-time.
+    ///   - convergenceDetector: Optional detector for early stopping based on custom convergence criteria
     public init(
         memorySize: Int = 10,
         tolerance: Double = 1e-6,

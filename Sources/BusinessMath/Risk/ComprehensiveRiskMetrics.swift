@@ -187,6 +187,8 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 
 	// MARK: - Description
 
+        /// A localized human-readable description of the components of the struct.
+
 	public var description: String {
 		return """
 		Comprehensive Risk Metrics:

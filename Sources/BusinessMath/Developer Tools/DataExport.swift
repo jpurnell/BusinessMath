@@ -34,6 +34,9 @@ public struct DataExporter: Sendable {
     /// The financial model to export
     public let model: FinancialModel
 
+    /// Creates a data exporter for a financial model.
+    ///
+    /// - Parameter model: The financial model to export to CSV or JSON format.
     public init(model: FinancialModel) {
         self.model = model
     }
@@ -138,6 +141,9 @@ public struct TimeSeriesExporter<T: Real & Sendable>: Sendable {
     /// The time series to export
     public let series: TimeSeries<T>
 
+    /// Creates a time series exporter.
+    ///
+    /// - Parameter series: The time series to export to CSV or JSON format.
 	public init(series: TimeSeries<T>) {
         self.series = series
     }
@@ -202,6 +208,9 @@ public struct InvestmentExporter: Sendable {
     /// The investment to export
     public let investment: Investment
 
+    /// Creates an investment exporter.
+    ///
+    /// - Parameter investment: The investment analysis to export to CSV or JSON format.
     public init(investment: Investment) {
         self.investment = investment
     }

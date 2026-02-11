@@ -387,6 +387,12 @@ public enum EvaluationError: Error, CustomStringConvertible {
     /// Stack has invalid number of values after evaluation
     case invalidStack(count: Int)
 
+    // MARK: - LocalizedError Conformance
+
+    /// A localized human-readable description of the error.
+    ///
+    /// Provides context-specific error messages with relevant details like
+    /// values, ranges, and suggestions.
     public var description: String {
         switch self {
         case .stackUnderflow:

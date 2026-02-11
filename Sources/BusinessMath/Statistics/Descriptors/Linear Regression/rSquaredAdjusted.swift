@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  rSquaredAdjusted.swift
 //  
 //
 //  Created by Justin Purnell on 10/22/22.
@@ -29,7 +29,6 @@ import Numerics
 ///   let yValues: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
 ///   let result = rSquaredAdjusted(xValues, yValues, .sample, 1)
 ///   // result should be the adjusted R² value for the datasets `xValues` and `yValues`
-
 public func rSquaredAdjusted<T: Real>(_ x: [T], _ y: [T], _ population: Population = .population, _ descriptors: T = T(1)) -> T {
     if (x.count == y.count) == false { return T(0) }
     let observations = T(x.count)

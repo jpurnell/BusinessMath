@@ -32,6 +32,11 @@ public struct CallProvision<T: Real> where T: Sendable {
     /// Price at which the bond can be called
     public let callPrice: T
 
+    /// Creates a call provision specifying when and at what price a bond can be called.
+    ///
+    /// - Parameters:
+    ///   - date: Date when the bond becomes callable
+    ///   - callPrice: Price at which the issuer can redeem the bond (typically above par value)
     public init(date: Date, callPrice: T) {
         self.date = date
         self.callPrice = callPrice
@@ -121,6 +126,11 @@ public struct CallableBond<T: Real> where T: Sendable {
     /// Schedule of call dates and prices
     public let callSchedule: [CallProvision<T>]
 
+    /// Creates a callable bond with embedded call option.
+    ///
+    /// - Parameters:
+    ///   - bond: Underlying bond without the call feature
+    ///   - callSchedule: Array of call provisions specifying when and at what prices the bond can be called
     public init(bond: Bond<T>, callSchedule: [CallProvision<T>]) {
         self.bond = bond
         self.callSchedule = callSchedule

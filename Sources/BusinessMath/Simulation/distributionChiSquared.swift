@@ -77,6 +77,16 @@ public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Doubl
 	return gammaVariate(shape: shape, scale: scale, seeds: seeds, seedIndex: &seedIndex)
 }
 
+/// Generates a random value from a Chi-squared distribution with validation.
+///
+/// Same as ``distributionChiSquared(degreesOfFreedom:seeds:)`` but throws an error instead
+/// of returning NaN for invalid degrees of freedom.
+///
+/// - Parameters:
+///   - degreesOfFreedom: The degrees of freedom parameter (must be > 0)
+///   - seeds: Optional array of seed values for deterministic generation
+/// - Returns: A random value sampled from the χ²(df) distribution
+/// - Throws: ``BusinessMathError/invalidInput(message:value:expectedRange:)`` if df ≤ 0
 @available(macOS 11.0, *)
 public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) throws -> T where T: BinaryFloatingPoint {
 	guard degreesOfFreedom > 0 else {

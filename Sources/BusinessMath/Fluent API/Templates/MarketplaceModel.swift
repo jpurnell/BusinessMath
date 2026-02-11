@@ -68,14 +68,54 @@ public struct MarketplaceModel: Sendable {
     public let sellerChurnRate: Double
 
     // Snapshot model properties (for simplified usage)
+
+    /// Total number of buyers (snapshot model only).
+    ///
+    /// Used when modeling a static marketplace state rather than growth over time.
+    /// `nil` for growth-based models.
     public let numberOfBuyers: Double?
+
+    /// Total number of sellers (snapshot model only).
+    ///
+    /// Used when modeling a static marketplace state rather than growth over time.
+    /// `nil` for growth-based models.
     public let numberOfSellers: Double?
+
+    /// Total transactions per month (snapshot model only).
+    ///
+    /// Used when modeling a static marketplace state rather than growth over time.
+    /// `nil` for growth-based models.
     public let transactionsPerMonth: Double?
+
+    /// Cost to acquire each buyer (snapshot model only).
+    ///
+    /// Used for CAC calculations in snapshot models.
+    /// `nil` for growth-based models.
     public let buyerAcquisitionCost: Double?
+
+    /// Cost to acquire each seller (snapshot model only).
+    ///
+    /// Used for CAC calculations in snapshot models.
+    /// `nil` for growth-based models.
     public let sellerAcquisitionCost: Double?
 
     // MARK: - Initialization
 
+    /// Creates a marketplace model with growth-over-time parameters.
+    ///
+    /// Use this initializer to model marketplace dynamics with buyer/seller acquisition,
+    /// churn, and transaction patterns evolving over time.
+    ///
+    /// - Parameters:
+    ///   - initialBuyers: Starting number of buyers
+    ///   - initialSellers: Starting number of sellers
+    ///   - monthlyTransactionsPerBuyer: Average transactions per buyer per month
+    ///   - averageOrderValue: Average transaction value (GMV per transaction)
+    ///   - takeRate: Platform commission rate (e.g., 0.15 for 15%)
+    ///   - newBuyersPerMonth: Buyer acquisition rate per month
+    ///   - newSellersPerMonth: Seller acquisition rate per month
+    ///   - buyerChurnRate: Monthly buyer churn rate (e.g., 0.05 for 5%)
+    ///   - sellerChurnRate: Monthly seller churn rate (e.g., 0.03 for 3%)
     public init(
         initialBuyers: Double,
         initialSellers: Double,

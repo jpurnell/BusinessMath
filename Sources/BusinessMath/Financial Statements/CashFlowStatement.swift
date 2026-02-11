@@ -278,17 +278,33 @@ extension CashFlowStatement {
 	/// }
 	/// ```
 	public struct Materialized: Sendable {
+		/// The entity this cash flow statement belongs to.
 		public let entity: Entity
+
+		/// The time periods covered by this statement.
 		public let periods: [Period]
 
+		/// All accounts in the cash flow statement.
 		public let accounts: [Account<T>]
 
 		// Pre-computed cash flows
+
+		/// Cash flow from operating activities (net income + non-cash items ± working capital changes).
 		public let operatingCashFlow: TimeSeries<T>
+
+		/// Cash flow from investing activities (capex, acquisitions, asset sales).
 		public let investingCashFlow: TimeSeries<T>
+
+		/// Cash flow from financing activities (debt issuance/repayment, dividends, equity).
 		public let financingCashFlow: TimeSeries<T>
+
+		/// Net cash flow: Operating + Investing + Financing.
 		public let netCashFlow: TimeSeries<T>
+
+		/// Free cash flow: Operating Cash Flow - Capital Expenditures.
 		public let freeCashFlow: TimeSeries<T>
+
+		/// Changes in working capital (current assets - current liabilities).
 		public let workingCapitalChanges: TimeSeries<T>
 	}
 
@@ -312,6 +328,10 @@ extension CashFlowStatement {
 
 // MARK: - Codable Conformance
 
+/// Codable conformance for CashFlowStatement enables JSON serialization.
+///
+/// Only encodes essential data (entity, periods, accounts). Computed cash flows
+/// are recalculated upon decoding.
 extension CashFlowStatement: Codable {
 
 	private enum CodingKeys: String, CodingKey {
@@ -320,6 +340,9 @@ extension CashFlowStatement: Codable {
 		case accounts
 	}
 
+	/// Encode the cash flow statement to an encoder.
+	/// - Parameter encoder: The encoder to write to
+	/// - Throws: EncodingError if encoding fails
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 		try container.encode(entity, forKey: .entity)
@@ -327,6 +350,9 @@ extension CashFlowStatement: Codable {
 		try container.encode(accounts, forKey: .accounts)
 	}
 
+	/// Decode a cash flow statement from a decoder.
+	/// - Parameter decoder: The decoder to read from
+	/// - Throws: DecodingError if decoding fails
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		let entity = try container.decode(Entity.self, forKey: .entity)

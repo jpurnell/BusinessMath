@@ -86,6 +86,10 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
 	
     // MARK: - LocalizedError Conformance
 
+    /// A localized human-readable description of the error.
+    ///
+    /// Provides context-specific error messages with relevant details like
+    /// values, ranges, and suggestions.
     public var errorDescription: String? {
         switch self {
         case .invalidInput(let message, let value, let expectedRange):
@@ -163,6 +167,13 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
         }
     }
 
+    /// Actionable suggestions for recovering from the error.
+    ///
+    /// Provides specific steps the user can take to fix the issue, including:
+    /// - Adjusting input values
+    /// - Using alternative calculation methods
+    /// - Cleaning or transforming data
+    /// - Breaking circular dependencies
     public var recoverySuggestion: String? {
         switch self {
         case .invalidInput(_, _, let expectedRange):
@@ -251,11 +262,18 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
         }
     }
 
+    /// The underlying reason for the failure (for technical debugging).
+    ///
+    /// Returns `nil` by default. Subclasses or extensions can provide technical details.
     public var failureReason: String? {
         // Could provide technical details for debugging
         return nil
     }
 
+    /// A help anchor linking to error documentation.
+    ///
+    /// Provides a URL to detailed documentation for this error code.
+    /// Format: `https://businessmath.com/errors/{code}`
     public var helpAnchor: String? {
         // Link to documentation
         return "https://businessmath.com/errors/\(self.code)"
@@ -297,6 +315,7 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
 public struct ErrorAggregator: Sendable {
     private var errors: [Error] = []
 
+    /// Creates an empty error aggregator.
     public init() {}
 
     /// Add an error to the collection

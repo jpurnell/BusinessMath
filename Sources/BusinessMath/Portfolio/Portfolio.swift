@@ -354,6 +354,14 @@ public struct PortfolioAllocation<T: Real & Sendable & Codable>: Sendable {
 	/// Sharpe ratio.
 	public let sharpeRatio: T
 
+	/// Creates a portfolio allocation result with performance metrics.
+	///
+	/// - Parameters:
+	///   - assets: Array of asset names/identifiers
+	///   - weights: Allocation weights for each asset (should sum to 1.0)
+	///   - expectedReturn: Expected portfolio return (as decimal, e.g., 0.08 = 8%)
+	///   - risk: Portfolio risk/volatility (standard deviation of returns)
+	///   - sharpeRatio: Risk-adjusted return metric (return per unit of risk)
 	public init(
 		assets: [String],
 		weights: [T],

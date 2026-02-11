@@ -16,13 +16,49 @@ public enum CUSUMDirection {
     case stable
 }
 
-/// CUSUM control chart signal
+/// CUSUM (Cumulative Sum) control chart signal for detecting mean shifts.
+///
+/// CUSUM is a statistical process control method that detects small shifts in the process mean
+/// by accumulating deviations from a target. More sensitive to persistent shifts than simple
+/// threshold-based methods. Widely used in quality control and real-time monitoring.
+///
+/// ## Example
+/// ```swift
+/// let signal = CUSUMSignal(
+///     direction: .upward,
+///     cumulativeSum: 15.3,
+///     isSignaling: true,
+///     index: 42
+/// )
+/// if signal.isSignaling {
+///     print("Process mean has shifted \(signal.direction) at position \(signal.index)")
+/// }
+/// ```
 public struct CUSUMSignal {
+    /// The direction of the detected shift (upward, downward, or stable).
     public let direction: CUSUMDirection
+
+    /// The cumulative sum of deviations from the target.
+    ///
+    /// Positive values indicate upward drift, negative values indicate downward drift.
+    /// Magnitude represents the strength of the signal.
     public let cumulativeSum: Double
+
+    /// Whether the signal exceeds the control limit (true = out of control).
+    ///
+    /// When true, indicates a significant shift in the process mean requiring investigation.
     public let isSignaling: Bool
+
+    /// The position in the stream where this signal was generated.
     public let index: Int
 
+    /// Creates a CUSUM signal.
+    ///
+    /// - Parameters:
+    ///   - direction: The shift direction detected.
+    ///   - cumulativeSum: The accumulated sum of deviations.
+    ///   - isSignaling: Whether the signal exceeds control limits.
+    ///   - index: The stream position.
     public init(direction: CUSUMDirection, cumulativeSum: Double, isSignaling: Bool, index: Int) {
         self.direction = direction
         self.cumulativeSum = cumulativeSum
@@ -31,14 +67,53 @@ public struct CUSUMSignal {
     }
 }
 
-/// EWMA control chart signal
+/// EWMA (Exponentially Weighted Moving Average) control chart signal.
+///
+/// EWMA is a statistical process control method that detects small shifts by weighting
+/// recent observations more heavily. More responsive than traditional control charts while
+/// still filtering noise. Particularly effective for autocorrelated data.
+///
+/// ## Example
+/// ```swift
+/// let signal = EWMASignal(
+///     ewma: 102.5,
+///     upperControlLimit: 105.0,
+///     lowerControlLimit: 95.0,
+///     isOutOfControl: false,
+///     index: 50
+/// )
+/// if signal.isOutOfControl {
+///     print("Process out of control at \(signal.index)")
+/// }
+/// ```
 public struct EWMASignal {
+    /// The current exponentially weighted moving average value.
     public let ewma: Double
+
+    /// The upper control limit (UCL) for detecting high anomalies.
+    ///
+    /// When EWMA exceeds this limit, the process is out of control on the high side.
     public let upperControlLimit: Double
+
+    /// The lower control limit (LCL) for detecting low anomalies.
+    ///
+    /// When EWMA falls below this limit, the process is out of control on the low side.
     public let lowerControlLimit: Double
+
+    /// Whether the EWMA is outside control limits (true = anomaly detected).
     public let isOutOfControl: Bool
+
+    /// The position in the stream where this signal was generated.
     public let index: Int
 
+    /// Creates an EWMA signal.
+    ///
+    /// - Parameters:
+    ///   - ewma: The exponentially weighted moving average value.
+    ///   - upperControlLimit: The upper control limit.
+    ///   - lowerControlLimit: The lower control limit.
+    ///   - isOutOfControl: Whether the EWMA is outside control limits.
+    ///   - index: The stream position.
     public init(ewma: Double, upperControlLimit: Double, lowerControlLimit: Double, isOutOfControl: Bool, index: Int) {
         self.ewma = ewma
         self.upperControlLimit = upperControlLimit
@@ -55,14 +130,54 @@ public enum OutlierMethod {
     case mad(threshold: Double)
 }
 
-/// Outlier detection result
+/// Outlier detection result identifying extreme values in streaming data.
+///
+/// Detects values that deviate significantly from the typical pattern using statistical
+/// methods like z-score, IQR, or MAD. Each method has different sensitivity and robustness
+/// characteristics suitable for different data distributions.
+///
+/// ## Example
+/// ```swift
+/// let detection = OutlierDetection(
+///     value: 250.0,
+///     score: 3.5,
+///     isOutlier: true,
+///     method: "z-score",
+///     index: 127
+/// )
+/// if detection.isOutlier {
+///     print("Outlier \(detection.value) detected using \(detection.method) (score: \(detection.score))")
+/// }
+/// ```
 public struct OutlierDetection {
+    /// The observed value being evaluated.
     public let value: Double
+
+    /// The anomaly score computed by the detection method.
+    ///
+    /// Higher scores indicate more extreme outliers. Interpretation depends on the method:
+    /// - Z-score: Number of standard deviations from mean
+    /// - IQR: Distance beyond IQR bounds
+    /// - MAD: Median absolute deviations from median
     public let score: Double
+
+    /// Whether this value is classified as an outlier.
     public let isOutlier: Bool
+
+    /// The detection method used (e.g., "z-score", "iqr", "mad").
     public let method: String
+
+    /// The position in the stream where this value occurred.
     public let index: Int
 
+    /// Creates an outlier detection result.
+    ///
+    /// - Parameters:
+    ///   - value: The observed value.
+    ///   - score: The anomaly score.
+    ///   - isOutlier: Whether classified as an outlier.
+    ///   - method: The detection method name.
+    ///   - index: The stream position.
     public init(value: Double, score: Double, isOutlier: Bool, method: String, index: Int) {
         self.value = value
         self.score = score
@@ -77,13 +192,47 @@ public enum BreakpointMethod {
     case binarySegmentation(minSegmentSize: Int, maxBreakpoints: Int)
 }
 
-/// Detected breakpoint in time series
+/// Detected breakpoint in time series segmentation.
+///
+/// Identifies locations where the time series characteristics change significantly, such as
+/// abrupt shifts in mean, variance, or trend. Used for segmenting data into homogeneous
+/// intervals for analysis or modeling different regimes separately.
+///
+/// ## Example
+/// ```swift
+/// let breakpoint = Breakpoint(
+///     index: 150,
+///     costReduction: 45.2,
+///     leftMean: 100.5,
+///     rightMean: 125.3
+/// )
+/// print("Mean shifted from \(breakpoint.leftMean) to \(breakpoint.rightMean) at index \(breakpoint.index)")
+/// ```
 public struct Breakpoint {
+    /// The position in the stream where the breakpoint occurs.
+    ///
+    /// Values before this index belong to one segment, values at or after belong to the next.
     public let index: Int
+
+    /// The reduction in segmentation cost achieved by this breakpoint.
+    ///
+    /// Higher values indicate stronger evidence for the breakpoint. Measures how much
+    /// better the data is explained by splitting at this location.
     public let costReduction: Double
+
+    /// The mean of the segment to the left of the breakpoint.
     public let leftMean: Double
+
+    /// The mean of the segment to the right of the breakpoint.
     public let rightMean: Double
 
+    /// Creates a breakpoint detection result.
+    ///
+    /// - Parameters:
+    ///   - index: The breakpoint position.
+    ///   - costReduction: The cost reduction from splitting here.
+    ///   - leftMean: Mean of the left segment.
+    ///   - rightMean: Mean of the right segment.
     public init(index: Int, costReduction: Double, leftMean: Double, rightMean: Double) {
         self.index = index
         self.costReduction = costReduction
@@ -92,14 +241,55 @@ public struct Breakpoint {
     }
 }
 
-/// Seasonal anomaly detection result
+/// Seasonal anomaly detection result for data with repeating patterns.
+///
+/// Identifies values that deviate from expected seasonal patterns by comparing observed
+/// values against seasonal baselines. Particularly useful for detecting anomalies in
+/// business metrics with daily, weekly, or monthly cycles (e.g., retail sales, web traffic).
+///
+/// ## Example
+/// ```swift
+/// let anomaly = SeasonalAnomaly(
+///     value: 150.0,
+///     expectedValue: 100.0,
+///     deviation: 50.0,
+///     isAnomaly: true,
+///     index: 42
+/// )
+/// if anomaly.isAnomaly {
+///     print("Seasonal anomaly: observed \(anomaly.value), expected \(anomaly.expectedValue)")
+/// }
+/// ```
 public struct SeasonalAnomaly {
+    /// The observed value being evaluated.
     public let value: Double
+
+    /// The expected value based on seasonal patterns.
+    ///
+    /// Computed from historical data for this position in the seasonal cycle.
     public let expectedValue: Double
+
+    /// The deviation from expected (value - expectedValue).
+    ///
+    /// Positive deviations indicate values above expected, negative indicate below expected.
     public let deviation: Double
+
+    /// Whether this value is classified as a seasonal anomaly.
+    ///
+    /// True when deviation exceeds threshold relative to typical seasonal variation.
     public let isAnomaly: Bool
+
+    /// The position in the stream where this value occurred.
     public let index: Int
 
+    /// Creates a seasonal anomaly detection result.
+    ///
+    /// - Parameters:
+    ///   - value: The observed value.
+    ///   - expectedValue: The seasonally-adjusted expected value.
+    ///   - deviation: The difference from expected.
+    ///   - isAnomaly: Whether classified as anomalous.
+    ///   - index: The stream position.
     public init(value: Double, expectedValue: Double, deviation: Double, isAnomaly: Bool, index: Int) {
         self.value = value
         self.expectedValue = expectedValue
@@ -116,13 +306,50 @@ public enum AnomalyMethod {
     case mad
 }
 
-/// Composite anomaly score combining multiple methods
+/// Composite anomaly score combining multiple detection methods.
+///
+/// Aggregates results from multiple anomaly detection techniques (z-score, IQR, MAD) into
+/// a single consolidated score. Provides more robust detection by reducing false positives
+/// from any single method. The composite score indicates overall anomaly strength.
+///
+/// ## Example
+/// ```swift
+/// let composite = CompositeAnomalyScore(
+///     value: 150.0,
+///     score: 0.85,
+///     methodScores: ["z-score": 0.9, "iqr": 0.8, "mad": 0.85],
+///     index: 42
+/// )
+/// if composite.score > 0.8 {
+///     print("Strong anomaly detected (score: \(composite.score))")
+/// }
+/// ```
 public struct CompositeAnomalyScore {
+    /// The observed value being evaluated.
     public let value: Double
-    public let score: Double  // 0.0 to 1.0
+
+    /// The aggregated anomaly score from all methods (0.0 to 1.0).
+    ///
+    /// Higher scores indicate stronger evidence of anomaly. Typically computed as
+    /// the average or weighted average of individual method scores, normalized to 0-1 range.
+    public let score: Double
+
+    /// Individual anomaly scores from each detection method.
+    ///
+    /// Maps method names (e.g., "z-score", "iqr", "mad") to their respective scores,
+    /// enabling detailed analysis of which methods flagged the anomaly.
     public let methodScores: [String: Double]
+
+    /// The position in the stream where this value occurred.
     public let index: Int
 
+    /// Creates a composite anomaly score.
+    ///
+    /// - Parameters:
+    ///   - value: The observed value.
+    ///   - score: The aggregated anomaly score (0 to 1).
+    ///   - methodScores: Individual scores from each method.
+    ///   - index: The stream position.
     public init(value: Double, score: Double, methodScores: [String: Double], index: Int) {
         self.value = value
         self.score = score
@@ -186,8 +413,32 @@ extension AsyncSequence where Element == Double {
 
 // MARK: - CUSUM Control Chart
 
+/// AsyncSequence that applies CUSUM control charting for mean shift detection.
+///
+/// CUSUM (Cumulative Sum) monitors cumulative deviations from a target value to detect
+/// persistent shifts in the process mean. More sensitive to small, sustained shifts than
+/// simple threshold methods. Uses tabular CUSUM with separate cumulative sums for upward
+/// and downward shifts.
+///
+/// ## Example
+/// ```swift
+/// let stream = createProcessDataStream()
+/// for try await signal in stream.cusum(target: 100.0, drift: 1.0, threshold: 5.0) {
+///     if signal.isSignaling {
+///         print("Process shifted \(signal.direction) at position \(signal.index)")
+///     }
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **target**: The target mean (centerline)
+/// - **drift**: Half the shift size you want to detect (typically 0.5-1.0 σ)
+/// - **threshold**: Decision threshold, typically 4-5 for good detection/false alarm balance
 public struct AsyncCUSUMSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields CUSUM signals indicating shift detection.
     public typealias Element = CUSUMSignal
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -202,10 +453,14 @@ public struct AsyncCUSUMSequence<Base: AsyncSequence>: AsyncSequence where Base.
         self.threshold = threshold
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields CUSUM signals.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), target: target, drift: drift, threshold: threshold)
     }
 
+    /// Iterator that computes CUSUM statistics asynchronously.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let target: Double
@@ -224,6 +479,9 @@ public struct AsyncCUSUMSequence<Base: AsyncSequence>: AsyncSequence where Base.
             self.threshold = threshold
         }
 
+        /// Yields the next CUSUM signal after processing a value.
+        ///
+        /// - Returns: A CUSUM signal with current cumulative sums and shift detection status.
         public mutating func next() async throws -> CUSUMSignal? {
             guard let value = try await baseIterator.next() else {
                 return nil
@@ -267,8 +525,34 @@ public struct AsyncCUSUMSequence<Base: AsyncSequence>: AsyncSequence where Base.
 
 // MARK: - EWMA Control Chart
 
+/// AsyncSequence that applies EWMA control charting for anomaly detection.
+///
+/// EWMA (Exponentially Weighted Moving Average) provides a smoothed running average that
+/// weighs recent observations more heavily. Control limits are computed based on the EWMA
+/// distribution. More responsive to small shifts than traditional control charts while
+/// filtering random noise. Particularly effective for autocorrelated processes.
+///
+/// Formula: Z(t) = λ × X(t) + (1-λ) × Z(t-1)
+///
+/// ## Example
+/// ```swift
+/// let stream = createProcessDataStream()
+/// for try await signal in stream.ewma(target: 100.0, lambda: 0.2, controlLimitSigma: 3.0) {
+///     if signal.isOutOfControl {
+///         print("Out of control at \(signal.index): EWMA=\(signal.ewma)")
+///     }
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **target**: The target mean (centerline)
+/// - **lambda**: Smoothing parameter (0.2-0.3 typical for small shifts, 0.4 for responsiveness)
+/// - **controlLimitSigma**: Number of standard deviations for control limits (typically 3)
 public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields EWMA signals indicating process control status.
     public typealias Element = EWMASignal
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -283,10 +567,18 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
         self.controlLimitSigma = controlLimitSigma
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields EWMA signals.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), target: target, lambda: lambda, controlLimitSigma: controlLimitSigma)
     }
 
+    /// Iterator for the EWMA anomaly detection sequence.
+    ///
+    /// Maintains EWMA state and computes control limits at each step. The iterator
+    /// tracks all observed values to estimate process variability, which is used
+    /// to compute control limits that tighten as more data is collected.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let target: Double
@@ -303,6 +595,14 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
             self.controlLimitSigma = controlLimitSigma
         }
 
+        /// Advances to the next EWMA signal in the sequence.
+        ///
+        /// Computes the EWMA statistic using the formula Z(t) = λ × X(t) + (1-λ) × Z(t-1),
+        /// estimates process standard deviation from observed values, and computes control
+        /// limits based on the EWMA distribution: target ± L × σ × √(λ/(2-λ)).
+        ///
+        /// - Returns: The next EWMA signal, or `nil` if the base sequence is exhausted.
+        /// - Throws: Rethrows any error from the base sequence.
         public mutating func next() async throws -> EWMASignal? {
             guard let value = try await baseIterator.next() else {
                 return nil
@@ -350,8 +650,42 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
 
 // MARK: - Outlier Detection
 
+/// AsyncSequence that detects outliers using statistical methods.
+///
+/// Outlier detection identifies individual observations that deviate significantly from the
+/// expected pattern. Unlike control charting (CUSUM/EWMA) which tracks process shifts, outlier
+/// detection focuses on identifying individual anomalous points. Supports multiple detection
+/// methods (z-score, IQR, MAD) that can be selected based on data characteristics.
+///
+/// The detector uses a rolling window to establish baseline statistics, then compares each
+/// new value against those statistics. Critically, the new value is tested **before** being
+/// added to the baseline window, preventing contamination of statistics.
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([98, 102, 99, 101, 150, 100])
+/// for try await detection in stream.detectOutliers(method: .zScore(threshold: 2.0), window: 10) {
+///     if detection.isOutlier {
+///         print("Outlier detected at \(detection.index): \(detection.value)")
+///     }
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **method**: Detection method (z-score for normal data, IQR for skewed, MAD for robust)
+/// - **window**: Rolling window size (20-50 typical for stable baselines)
+///
+/// ## Method Selection
+/// - **Z-Score**: Best for normally distributed data, sensitive to extreme values
+/// - **IQR**: Robust to outliers, works well with skewed distributions
+/// - **MAD**: Most robust, resistant to extreme outliers in baseline
+///
+/// - SeeAlso: ``OutlierDetection``, ``OutlierMethod``
 public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields outlier detection results.
     public typealias Element = OutlierDetection
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -364,10 +698,18 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
         self.window = window
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields outlier detection results.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), method: method, window: window)
     }
 
+    /// Iterator for the outlier detection sequence.
+    ///
+    /// Maintains a rolling window of historical values for computing baseline statistics.
+    /// Each new value is tested against the current baseline **before** being added to
+    /// the window, ensuring outliers don't contaminate the reference statistics.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let method: OutlierMethod
@@ -381,6 +723,14 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
             self.window = window
         }
 
+        /// Advances to the next outlier detection result.
+        ///
+        /// Tests the incoming value against baseline statistics computed from the buffer,
+        /// then adds the value to the buffer for future comparisons. This ordering prevents
+        /// outliers from affecting their own detection.
+        ///
+        /// - Returns: The next outlier detection result, or `nil` if the base sequence is exhausted.
+        /// - Throws: Rethrows any error from the base sequence.
         public mutating func next() async throws -> OutlierDetection? {
             guard let value = try await baseIterator.next() else {
                 return nil
@@ -477,8 +827,42 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
 
 // MARK: - Binary Segmentation Breakpoint Detection
 
+/// AsyncSequence that detects structural breaks (change points) in time series data.
+///
+/// Breakpoint detection identifies points where the statistical properties of the series
+/// change abruptly, such as shifts in mean level. This is useful for detecting regime
+/// changes, process modifications, or external interventions. Uses binary segmentation,
+/// an iterative algorithm that recursively splits the series at points of maximum cost
+/// reduction.
+///
+/// **Note**: This iterator collects all values from the base sequence before performing
+/// detection, then yields the discovered breakpoints. It is not truly "streaming" but
+/// provides an async interface for consistency.
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([100, 102, 98, 101, 150, 152, 148, 151])
+/// for try await breakpoint in stream.detectBreakpoints(method: .binarySegmentation(minSegmentSize: 2, maxBreakpoints: 5)) {
+///     print("Breakpoint at index \(breakpoint.index): \(breakpoint.leftMean) → \(breakpoint.rightMean)")
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **minSegmentSize**: Minimum observations per segment (5-10 typical to ensure reliable statistics)
+/// - **maxBreakpoints**: Maximum number of breaks to detect (prevents over-segmentation)
+///
+/// ## Algorithm
+/// Binary segmentation works by:
+/// 1. Finding the split point that minimizes total variance
+/// 2. Recursively splitting the resulting segments
+/// 3. Stopping when no significant improvements are found
+///
+/// - SeeAlso: ``Breakpoint``, ``BreakpointMethod``
 public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields detected breakpoints.
     public typealias Element = Breakpoint
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -489,10 +873,19 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
         self.method = method
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields detected breakpoints.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base, method: method)
     }
 
+    /// Iterator for the breakpoint detection sequence.
+    ///
+    /// Collects all values from the base sequence on first invocation, performs binary
+    /// segmentation to find change points, then yields breakpoints one at a time. This
+    /// batch-collect-then-yield pattern is necessary because binary segmentation requires
+    /// the complete series to evaluate split points.
     public struct Iterator: AsyncIteratorProtocol {
         private let base: Base
         private let method: BreakpointMethod
@@ -506,6 +899,14 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
             self.method = method
         }
 
+        /// Advances to the next detected breakpoint.
+        ///
+        /// On first call, collects all values from the base sequence and runs binary
+        /// segmentation to identify change points. Subsequent calls yield the detected
+        /// breakpoints in index order.
+        ///
+        /// - Returns: The next breakpoint, or `nil` if all breakpoints have been yielded.
+        /// - Throws: Rethrows any error from the base sequence.
         public mutating func next() async throws -> Breakpoint? {
             // First, collect all values from the stream
             if !hasCollected {
@@ -622,8 +1023,43 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
 
 // MARK: - Seasonal Anomaly Detection
 
+/// AsyncSequence that detects anomalies in seasonal (periodic) time series data.
+///
+/// Seasonal anomaly detection identifies values that deviate from their expected seasonal
+/// pattern. The detector learns separate baseline statistics (mean and standard deviation)
+/// for each position in the seasonal cycle, then flags values that deviate significantly
+/// from their position-specific baseline.
+///
+/// This is particularly useful for data with regular cyclical patterns (hourly, daily,
+/// weekly, monthly, etc.) where the expected value at any time depends on the position
+/// within the cycle rather than just recent history.
+///
+/// ## Example
+/// ```swift
+/// // Detect weekly anomalies (period=7 for days of week)
+/// let stream = AsyncValueStream([100, 80, 85, 90, 95, 120, 110,  // Week 1
+///                                105, 82, 87, 88, 92, 150, 115]) // Week 2 (Saturday anomaly)
+/// for try await anomaly in stream.detectSeasonalAnomalies(period: 7, threshold: 2.0) {
+///     if anomaly.isAnomaly {
+///         print("Seasonal anomaly at \(anomaly.index): expected \(anomaly.expectedValue), got \(anomaly.value)")
+///     }
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **period**: Length of the seasonal cycle (7 for weekly, 12 for monthly, 24 for hourly daily patterns)
+/// - **threshold**: Deviation threshold in standard deviations (2.0-3.0 typical)
+///
+/// ## Requirements
+/// - Needs at least 2 complete periods (2×period observations) to begin detecting anomalies
+/// - Works best with stable seasonal patterns; adapts as more cycles are observed
+///
+/// - SeeAlso: ``SeasonalAnomaly``
 public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields seasonal anomaly detection results.
     public typealias Element = SeasonalAnomaly
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -636,10 +1072,18 @@ public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence w
         self.threshold = threshold
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields seasonal anomaly detection results.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), period: period, threshold: threshold)
     }
 
+    /// Iterator for the seasonal anomaly detection sequence.
+    ///
+    /// Maintains position-specific statistics (mean and standard deviation) for each
+    /// position in the seasonal cycle. Updates these statistics incrementally as more
+    /// complete cycles are observed, allowing the detector to adapt to evolving patterns.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let period: Int
@@ -657,6 +1101,14 @@ public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence w
             self.seasonalStdDevs = Array(repeating: 0.0, count: period)
         }
 
+        /// Advances to the next seasonal anomaly detection result.
+        ///
+        /// Updates seasonal statistics from historical buffer, tests the new value against
+        /// its position-specific baseline, then adds the value to the buffer. Requires at
+        /// least 2 complete periods before flagging anomalies.
+        ///
+        /// - Returns: The next seasonal anomaly result, or `nil` if the base sequence is exhausted.
+        /// - Throws: Rethrows any error from the base sequence.
         public mutating func next() async throws -> SeasonalAnomaly? {
             guard let value = try await baseIterator.next() else {
                 return nil
@@ -736,8 +1188,44 @@ public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence w
 
 // MARK: - Composite Anomaly Score
 
+/// AsyncSequence that computes composite anomaly scores by combining multiple detection methods.
+///
+/// Composite anomaly detection aggregates scores from multiple methods (z-score, IQR, MAD)
+/// to provide a more robust anomaly score than any single method alone. This ensemble approach
+/// reduces false positives by requiring consensus across methods, while still catching
+/// anomalies that any individual method detects.
+///
+/// Each method contributes a normalized score, which are averaged and scaled to produce a
+/// composite score in the range [0, 1], where higher scores indicate stronger evidence of
+/// anomaly. Individual method scores are also provided for diagnostic purposes.
+///
+/// ## Example
+/// ```swift
+/// let stream = AsyncValueStream([98, 102, 99, 101, 200, 100])
+/// for try await composite in stream.compositeAnomalyScore(window: 10, methods: [.zScore, .iqr, .mad]) {
+///     print("Composite score: \(composite.score)")
+///     print("Method scores: \(composite.methodScores)")
+///     if composite.score > 0.7 {
+///         print("Strong anomaly consensus!")
+///     }
+/// }
+/// ```
+///
+/// ## Parameter Guidance
+/// - **window**: Rolling window size for baseline (20-50 typical)
+/// - **methods**: Detection methods to combine (use all 3 for maximum robustness)
+///
+/// ## Use Cases
+/// - High-stakes anomaly detection where false positives are costly
+/// - Data with unknown distribution characteristics
+/// - Situations requiring explainable anomaly scores
+///
+/// - SeeAlso: ``CompositeAnomalyScore``, ``AnomalyMethod``
 public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields composite anomaly scores.
     public typealias Element = CompositeAnomalyScore
+
+    /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
     private let base: Base
@@ -750,10 +1238,18 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
         self.methods = methods
     }
 
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields composite anomaly scores.
     public func makeAsyncIterator() -> Iterator {
         Iterator(base: base.makeAsyncIterator(), window: window, methods: methods)
     }
 
+    /// Iterator for the composite anomaly detection sequence.
+    ///
+    /// Maintains a rolling window for baseline statistics and computes scores from multiple
+    /// detection methods. Averages the method scores and normalizes to [0, 1] range to
+    /// produce the final composite score.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
@@ -767,6 +1263,14 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             self.methods = methods
         }
 
+        /// Advances to the next composite anomaly score.
+        ///
+        /// Computes anomaly scores using each specified detection method, averages them,
+        /// and normalizes to produce a composite score. Individual method scores are
+        /// preserved for diagnostics and explainability.
+        ///
+        /// - Returns: The next composite anomaly score, or `nil` if the base sequence is exhausted.
+        /// - Throws: Rethrows any error from the base sequence.
         public mutating func next() async throws -> CompositeAnomalyScore? {
             guard let value = try await baseIterator.next() else {
                 return nil

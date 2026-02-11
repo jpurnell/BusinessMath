@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - Double Formatting Extensions
-
+/// Formatters used throughout the system
 public extension Double {
 
     /// Round to nearest integer if very close (within tolerance)
@@ -93,7 +93,7 @@ public extension Double {
 }
 
 // MARK: - Array Extensions
-
+/// Formatters used throughout the system
 public extension Array where Element == Double {
 
     /// Format all values in the array

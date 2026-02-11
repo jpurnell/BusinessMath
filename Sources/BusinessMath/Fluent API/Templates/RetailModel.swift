@@ -51,15 +51,28 @@ public struct RetailModel: Sendable {
     public let seasonalMultipliers: [Int: Double]
 
     // Store-level properties (optional, for multi-store models)
+    /// Number of retail store locations
     public let numberOfStores: Int?
+    /// Average monthly revenue per store
     public let averageStoreRevenue: Double?
+    /// Same-store sales growth rate (comp store growth)
     public let sameStoreSalesGrowth: Double?
+    /// Average monthly customer visits per store
     public let footTraffic: Double?
+    /// Percentage of visitors who make a purchase
     public let conversionRate: Double?
+    /// Average transaction value
     public let averageTransaction: Double?
 
     // MARK: - Initialization
 
+    /// Creates a retail model with baseline financial parameters.
+    /// - Parameters:
+    ///   - initialInventoryValue: Starting inventory value
+    ///   - monthlyRevenue: Baseline monthly revenue before seasonal adjustments
+    ///   - costOfGoodsSoldPercentage: COGS as percentage of revenue (e.g., 0.60 for 60%)
+    ///   - operatingExpenses: Monthly operating expenses (rent, salaries, utilities)
+    ///   - seasonalMultipliers: Optional multipliers by month (1-12) for seasonal variations (default: empty)
     public init(
         initialInventoryValue: Double,
         monthlyRevenue: Double,

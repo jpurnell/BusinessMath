@@ -18,6 +18,7 @@ import Numerics
 ///
 /// - Parameters:
 ///   - p: The probability of success on each trial. It should be a value between 0 and 1.
+///   - seeds: Optional array of uniform random seeds for deterministic generation (default: nil)
 /// - Returns: A random number generated from the geometric distribution with success probability `p`.
 ///
 /// - Note: The function generates random numbers using a uniform random number generator to simulate Bernoulli trials until the first success occurs.
@@ -49,17 +50,27 @@ public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T 
 	return x + 1
 }
 
+/// A geometric distribution generator for modeling number of trials until first success.
+///
+/// The geometric distribution models scenarios like: number of coin flips until heads,
+/// number of attempts until success, or waiting time in discrete trials.
 public struct DistributionGeometric: DistributionRandom {
 	let p: Double
-	
+
+	/// Creates a geometric distribution generator.
+	/// - Parameter probabilityOfSuccess: Success probability per trial (0 < p ≤ 1)
 	public init(_ probabilityOfSuccess: Double) {
 		self.p = probabilityOfSuccess
 	}
-	
+
+	/// Generates a random value from the geometric distribution.
+	/// - Returns: A random positive integer (as Double) representing number of trials
 	public func random() -> Double {
 		distributionGeometric(p)
 	}
-	
+
+	/// Generates the next random value from the geometric distribution.
+	/// - Returns: A random positive integer (as Double) representing number of trials
 	public func next() -> Double {
 		return random()
 	}

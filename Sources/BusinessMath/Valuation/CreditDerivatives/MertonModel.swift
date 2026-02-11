@@ -251,6 +251,7 @@ public enum MertonCalibrationError: Error, LocalizedError {
     case noConvergence
     case invalidInputs
 
+    /// Human-readable error description.
     public var errorDescription: String? {
         switch self {
         case .noConvergence:
