@@ -329,7 +329,7 @@ extension AsyncSequence where Element == Double {
 /// let pair = ForecastPair(actual: 105.3, forecast: 102.5)
 /// let error = pair.actual - pair.forecast  // 2.8
 /// ```
-public struct ForecastPair {
+public struct ForecastPair: Sendable {
     /// The actual observed value.
     public let actual: Double
 

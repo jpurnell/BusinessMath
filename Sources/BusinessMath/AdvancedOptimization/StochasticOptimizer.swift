@@ -88,7 +88,7 @@ public struct StochasticResult<V: VectorSpace> where V.Scalar == Double {
 ///     constraints: [.budgetConstraint]
 /// )
 /// ```
-public struct StochasticOptimizer<V: VectorSpace> where V.Scalar == Double {
+public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Double, V: Sendable {
 
 	// MARK: - Properties
 
@@ -152,14 +152,17 @@ public struct StochasticOptimizer<V: VectorSpace> where V.Scalar == Double {
 		}
 
 		// Create SAA objective: E[f(x,ω)] ≈ (1/N) Σ f(x,ωᵢ)
+		// Create local copy for Sendable closure
+		let scenariosCopy = scenarios
+
 		let saaObjective: @Sendable (V) -> Double = { x in
 			var total = 0.0
-			for scenario in scenarios {
+			for scenario in scenariosCopy {
 				let value = objective(x, scenario)
 				total += value * scenario.probability
 			}
 			// Normalize by sum of probabilities
-			let probSum = scenarios.map { $0.probability }.reduce(0.0, +)
+			let probSum = scenariosCopy.map { $0.probability }.reduce(0.0, +)
 			return total / probSum
 		}
 
@@ -240,14 +243,17 @@ extension StochasticOptimizer {
 		precondition(!scenarios.isEmpty, "Must provide at least one scenario")
 
 		// Create SAA objective
+		// Create local copy for Sendable closure
+		let scenariosCopy = scenarios
+
 		let saaObjective: @Sendable (V) -> Double = { x in
 			var total = 0.0
-			for scenario in scenarios {
+			for scenario in scenariosCopy {
 				let value = objective(x, scenario)
 				total += value * scenario.probability
 			}
 			// Normalize by sum of probabilities
-			let probSum = scenarios.map { $0.probability }.reduce(0.0, +)
+			let probSum = scenariosCopy.map { $0.probability }.reduce(0.0, +)
 			return total / probSum
 		}
 

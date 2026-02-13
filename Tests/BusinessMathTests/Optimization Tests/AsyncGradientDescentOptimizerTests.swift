@@ -140,7 +140,7 @@ struct AsyncGradientDescentOptimizerTests {
             maxIterations: 2000
         )
 
-        var progressUpdates: [AsyncOptimizationProgress<Double>] = []
+        let collector = ProgressCollector<AsyncOptimizationProgress<Double>>()
 
         for try await progress in optimizer.optimizeWithProgress(
             objective: { x in (x - 2.0) * (x - 2.0) },
@@ -148,8 +148,10 @@ struct AsyncGradientDescentOptimizerTests {
             initialGuess: 10.0,
             bounds: nil
         ) {
-            progressUpdates.append(progress)
+            collector.append(progress)
         }
+
+        let progressUpdates = collector.getItems()
 
         // Should have received multiple progress updates
         #expect(progressUpdates.count > 0)
@@ -244,7 +246,7 @@ struct AsyncGradientDescentOptimizerTests {
             maxIterations: config.maxIterations
         )
 
-        var progressUpdates: [AsyncOptimizationProgress<Double>] = []
+        let collector = ProgressCollector<AsyncOptimizationProgress<Double>>()
 
         for try await progress in optimizer.optimizeWithProgress(
             objective: { x in x * x },
@@ -253,8 +255,10 @@ struct AsyncGradientDescentOptimizerTests {
             bounds: nil,
             config: config
         ) {
-            progressUpdates.append(progress)
+            collector.append(progress)
         }
+
+        let progressUpdates = collector.getItems()
 
         // Should respect maxIterations
         if let last = progressUpdates.last {
@@ -324,7 +328,7 @@ struct AsyncGradientDescentOptimizerTests {
             momentum: 0.5
         )
 
-        let objective: (Double) -> Double = { x in (x - 4.0) * (x - 4.0) }
+        let objective: @Sendable (Double) -> Double = { x in (x - 4.0) * (x - 4.0) }
 
         let asyncResult = try await asyncOptimizer.optimize(
             objective: objective,

@@ -202,7 +202,7 @@ struct MultivariateOptimizerIntegrationTests {
             [0.02, 0.03, 0.16]
         ]
 
-        let variance = { (weights: VectorN<Double>) -> Double in
+        let variance = { @Sendable (weights: VectorN<Double>) -> Double in
             let w = weights.toArray()
             var v = 0.0
             for i in 0..<3 {
@@ -272,7 +272,7 @@ struct MultivariateOptimizerIntegrationTests {
             maxIterations: 500
         )
 
-        let objective = { (v: Vector2D<Double>) -> Double in
+        let objective = { @Sendable (v: Vector2D<Double>) -> Double in
             v.x * v.x + v.y * v.y
         }
 
@@ -290,7 +290,7 @@ struct MultivariateOptimizerIntegrationTests {
             tolerance: 1e-6
         )
 
-        let objective = { (v: Vector3D<Double>) -> Double in
+        let objective = { @Sendable (v: Vector3D<Double>) -> Double in
             v.x * v.x + v.y * v.y + v.z * v.z
         }
 

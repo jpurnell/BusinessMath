@@ -119,7 +119,7 @@ struct BusinessMathErrorTests {
             expected: "12 periods",
             actual: "10 periods"
         )
-		print("ERROR:\n\t\(error.errorDescription)")
+		print("ERROR:\n\t\(error.errorDescription ?? "NO DESCRIPTION PROVIDED")")
         #expect(error.errorDescription?.contains("expected: 12 periods") == true)
         #expect(error.errorDescription?.contains("provided: 10 periods") == true)
     }

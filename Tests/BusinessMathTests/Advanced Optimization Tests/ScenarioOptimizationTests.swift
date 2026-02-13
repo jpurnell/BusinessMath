@@ -115,7 +115,7 @@ import Testing
 
 	/// Test the convenience weighted optimization method.
 	@Test func weightedOptimization() throws {
-		let scenarioValues: [(name: String, probability: Double, objective: (VectorN<Double>) -> Double)] = [
+		let scenarioValues: [(name: String, probability: Double, objective: @Sendable (VectorN<Double>) -> Double)] = [
 			("High Demand", 0.40, { x in x.toArray()[0] * 150.0 }),
 			("Medium Demand", 0.40, { x in x.toArray()[0] * 100.0 }),
 			("Low Demand", 0.20, { x in x.toArray()[0] * 50.0 })

@@ -178,7 +178,7 @@ struct MultivariateOptimizerProtocolTests {
             maxIterations: 1000
         )
 
-        let objective2D = { (v: Vector2D<Double>) -> Double in
+        let objective2D = { @Sendable (v: Vector2D<Double>) -> Double in
             v.x * v.x + v.y * v.y
         }
 
@@ -193,7 +193,7 @@ struct MultivariateOptimizerProtocolTests {
             maxIterations: 1000
         )
 
-        let objective3D = { (v: Vector3D<Double>) -> Double in
+        let objective3D = { @Sendable (v: Vector3D<Double>) -> Double in
             v.x * v.x + v.y * v.y + v.z * v.z
         }
 

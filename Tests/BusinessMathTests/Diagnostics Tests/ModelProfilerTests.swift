@@ -62,9 +62,9 @@ struct ModelProfilerTests {
     func measureMultipleOperations() async {
         let profiler = ModelProfiler()
 
-        await profiler.measure(operation: "Op1") { 1 }
-        await profiler.measure(operation: "Op2") { 2 }
-        await profiler.measure(operation: "Op3") { 3 }
+        let _ = await profiler.measure(operation: "Op1") { 1 }
+		let _ = await profiler.measure(operation: "Op2") { 2 }
+		let _ = await profiler.measure(operation: "Op3") { 3 }
 
         let report = await profiler.report()
         #expect(report.operations.count == 3)
@@ -76,7 +76,7 @@ struct ModelProfilerTests {
         let profiler = ModelProfiler()
 
         for i in 1...5 {
-            await profiler.measure(operation: "Repeated") {
+			let _ = await profiler.measure(operation: "Repeated") {
                 i * 2
             }
         }
@@ -90,7 +90,7 @@ struct ModelProfilerTests {
     func measureWithCategory() async {
         let profiler = ModelProfiler()
 
-        await profiler.measure(operation: "NPV", category: "Valuation") {
+		let _ = await profiler.measure(operation: "NPV", category: "Valuation") {
             1000.0
         }
 
@@ -161,7 +161,7 @@ struct ModelProfilerTests {
 
         // Create 100 measurements with known distribution
         for i in 1...100 {
-            await profiler.measure(operation: "Distribution") {
+			let _ = await profiler.measure(operation: "Distribution") {
                 Thread.sleep(forTimeInterval: Double(i) / 100000.0)
                 return i
             }
@@ -193,7 +193,7 @@ struct ModelProfilerTests {
     func reportFormatting() async {
         let profiler = ModelProfiler()
 
-        await profiler.measure(operation: "Test") { 42 }
+		let _ = await profiler.measure(operation: "Test") { 42 }
 
         let report = await profiler.report()
         let formatted = report.formatted()
@@ -207,7 +207,7 @@ struct ModelProfilerTests {
     func reportCSVExport() async {
         let profiler = ModelProfiler()
 
-        await profiler.measure(operation: "Export") { 100 }
+		let _ = await profiler.measure(operation: "Export") { 100 }
 
         let report = await profiler.report()
         let csv = report.asCSV()
@@ -242,11 +242,11 @@ struct ModelProfilerTests {
         let profiler = ModelProfiler()
 
         // Operation executed once
-        await profiler.measure(operation: "Once") { 1 }
+		let _ = await profiler.measure(operation: "Once") { 1 }
 
         // Operation executed multiple times
         for _ in 1...5 {
-            await profiler.measure(operation: "Multiple") { 2 }
+			let _ = await profiler.measure(operation: "Multiple") { 2 }
         }
 
         let report = await profiler.report(sortBy: .executionCount)
@@ -259,9 +259,9 @@ struct ModelProfilerTests {
     func reportFiltering() async {
         let profiler = ModelProfiler()
 
-        await profiler.measure(operation: "Op1") { 1 }
-        await profiler.measure(operation: "Op2") { 2 }
-        await profiler.measure(operation: "Op3") { 3 }
+		let _ = await profiler.measure(operation: "Op1") { 1 }
+		let _ = await profiler.measure(operation: "Op2") { 2 }
+		let _ = await profiler.measure(operation: "Op3") { 3 }
 
         let report = await profiler.report(operations: ["Op1", "Op3"])
 
@@ -316,7 +316,7 @@ struct ModelProfilerTests {
         let profiler = ModelProfiler()
 
         for i in 1...10 {
-            await profiler.measure(operation: "Fast\(i)") {
+			let _ = await profiler.measure(operation: "Fast\(i)") {
                 i * 2
             }
         }
@@ -332,8 +332,8 @@ struct ModelProfilerTests {
     func resetAll() async {
         let profiler = ModelProfiler()
 
-        await profiler.measure(operation: "Op1") { 1 }
-        await profiler.measure(operation: "Op2") { 2 }
+		let _ = await profiler.measure(operation: "Op1") { 1 }
+		let _ = await profiler.measure(operation: "Op2") { 2 }
 
         var report = await profiler.report()
         #expect(report.operations.count == 2)
@@ -348,8 +348,8 @@ struct ModelProfilerTests {
     func resetSpecificOperation() async {
         let profiler = ModelProfiler()
 
-        await profiler.measure(operation: "Keep") { 1 }
-        await profiler.measure(operation: "Remove") { 2 }
+		let _ = await profiler.measure(operation: "Keep") { 1 }
+		let _ = await profiler.measure(operation: "Remove") { 2 }
 
         await profiler.reset(operation: "Remove")
 
@@ -362,7 +362,7 @@ struct ModelProfilerTests {
 
     @Test("Custom warning threshold")
     func customWarningThreshold() async {
-        var profiler = ModelProfiler()
+        let profiler = ModelProfiler()
         await profiler.setWarningThreshold(0.005) // 5ms
 
         await profiler.measure(operation: "Fast") {
@@ -452,7 +452,7 @@ struct ModelProfilerTests {
         }
 
         for _ in 1...10 {
-            await profiler.measure(operation: "Calculate", category: "Core") {
+			let _ = await profiler.measure(operation: "Calculate", category: "Core") {
                 var sum = 0.0
                 for i in 1...1000 {
                     sum += Double(i)

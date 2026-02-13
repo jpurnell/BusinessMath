@@ -21,15 +21,8 @@ struct SparsePerformanceBenchmark {
         let n = 500
         let density = 0.001  // 0.1% density
 
-        // Create sparse tridiagonal matrix (0.6% density)
-        var triplets: [(Int, Int, Double)] = []
-        for i in 0..<n {
-            triplets.append((i, i, 2.0))  // Diagonal
-            if i > 0 { triplets.append((i, i-1, -1.0)) }  // Sub-diagonal
-            if i < n-1 { triplets.append((i, i+1, -1.0)) }  // Super-diagonal
-        }
-
-        let sparse = SparseMatrix(rows: n, columns: n, triplets: triplets)
+        // Create random sparse matrix with specified density
+        let sparse = createRandomSparseMatrix(rows: n, columns: n, density: density)
         let vector = (0..<n).map { _ in Double.random(in: -1.0...1.0) }
 
         // Sparse benchmark
@@ -53,7 +46,7 @@ struct SparsePerformanceBenchmark {
         // Results
         print("")
         print("═══════════════════════════════════════════════════════")
-        print("  Sparse vs Dense Benchmark (500×500, 0.6% density)")
+        print("  Sparse vs Dense Benchmark (500×500, 0.1% density)")
         print("═══════════════════════════════════════════════════════")
 		print("  Sparse time: \((sparseDuration * 1000).number(3))ms")
 		print("  Dense time:  \((denseDuration * 1000).number(3))ms")
@@ -70,16 +63,10 @@ struct SparsePerformanceBenchmark {
 	@Test("Large sparse matrix: 5,000×5,000 (0.06% density)")
     func benchmarkLargeSparse() throws {
         let n = 5_000
+        let density = 0.0006  // 0.06% density
 
-        // Create sparse tridiagonal matrix
-        var triplets: [(Int, Int, Double)] = []
-        for i in 0..<n {
-            triplets.append((i, i, 2.0))
-            if i > 0 { triplets.append((i, i-1, -1.0)) }
-            if i < n-1 { triplets.append((i, i+1, -1.0)) }
-        }
-
-        let sparse = SparseMatrix(rows: n, columns: n, triplets: triplets)
+        // Create random sparse matrix with specified density
+        let sparse = createRandomSparseMatrix(rows: n, columns: n, density: density)
         let vector = (0..<n).map { _ in Double.random(in: -1.0...1.0) }
 
         // Benchmark sparse multiply
@@ -112,16 +99,10 @@ struct SparsePerformanceBenchmark {
     @Test("CG Solver: 100×100 SPD system")
     func benchmarkCGSolver() throws {
         let n = 100
+        let density = 0.03  // 3% density (similar to tridiagonal)
 
-        // Create SPD tridiagonal matrix
-        var triplets: [(Int, Int, Double)] = []
-        for i in 0..<n {
-            triplets.append((i, i, 4.0))  // Diagonal (dominant)
-            if i > 0 { triplets.append((i, i-1, -1.0)) }
-            if i < n-1 { triplets.append((i, i+1, -1.0)) }
-        }
-
-        let A = SparseMatrix(rows: n, columns: n, triplets: triplets)
+        // Create SPD sparse matrix suitable for CG
+        let A = createSPDSparseMatrix(size: n, density: density, diagonalStrength: 2.0)
         let b = [Double](repeating: 1.0, count: n)
 
         let solver = SparseSolver()
@@ -153,17 +134,10 @@ struct SparsePerformanceBenchmark {
     @Test("BiCG Solver: 50×50 non-symmetric system")
     func benchmarkBiCGSolver() throws {
         let n = 50
+        let density = 0.06  // 6% density (similar to tridiagonal)
 
-        // Create well-conditioned non-symmetric matrix
-        // Diagonal dominant with mild asymmetry
-        var triplets: [(Int, Int, Double)] = []
-        for i in 0..<n {
-            triplets.append((i, i, 5.0))  // Strong diagonal
-            if i > 0 { triplets.append((i, i-1, -1.0)) }  // Sub-diagonal
-            if i < n-1 { triplets.append((i, i+1, -0.8)) }  // Super-diagonal (slightly weaker)
-        }
-
-        let A = SparseMatrix(rows: n, columns: n, triplets: triplets)
+        // Create diagonal dominant non-symmetric sparse matrix suitable for BiCG
+        let A = createDiagonalDominantSparseMatrix(size: n, density: density, asymmetryFactor: 0.2, diagonalStrength: 2.0)
         let b = [Double](repeating: 1.0, count: n)
 
         let solver = SparseSolver(maxIterations: 1000)
@@ -197,16 +171,10 @@ struct SparsePerformanceBenchmark {
     @Test("Memory efficiency: 1,000×1,000 sparse matrix")
     func benchmarkMemoryEfficiency() throws {
         let n = 1_000
+        let density = 0.003  // 0.3% density
 
-        // Create very sparse matrix (0.3% density)
-        var triplets: [(Int, Int, Double)] = []
-        for i in 0..<n {
-            triplets.append((i, i, 2.0))
-            if i > 0 { triplets.append((i, i-1, -1.0)) }
-            if i < n-1 { triplets.append((i, i+1, -1.0)) }
-        }
-
-        let sparse = SparseMatrix(rows: n, columns: n, triplets: triplets)
+        // Create random sparse matrix with specified density
+        let sparse = createRandomSparseMatrix(rows: n, columns: n, density: density)
 
         // Calculate memory usage
         let sparseMemory = sparse.nonZeroCount * (MemoryLayout<Double>.size + MemoryLayout<Int>.size)
@@ -231,6 +199,149 @@ struct SparsePerformanceBenchmark {
     }
 
     // MARK: - Helper Functions
+
+    /// Create a random sparse matrix with specified density
+    /// - Parameters:
+    ///   - rows: Number of rows
+    ///   - columns: Number of columns
+    ///   - density: Desired density (fraction of non-zero elements, e.g., 0.001 for 0.1%)
+    /// - Returns: A sparse matrix with approximately the specified density
+    private func createRandomSparseMatrix(rows: Int, columns: Int, density: Double) -> SparseMatrix {
+        let totalElements = rows * columns
+        let targetNonZeros = Int(Double(totalElements) * density)
+
+        var triplets: [(Int, Int, Double)] = []
+        var usedPositions = Set<Int>()
+
+        // Generate random non-zero entries
+        while triplets.count < targetNonZeros {
+            let row = Int.random(in: 0..<rows)
+            let col = Int.random(in: 0..<columns)
+            let position = row * columns + col
+
+            // Avoid duplicate positions
+            if !usedPositions.contains(position) {
+                let value = Double.random(in: -10.0...10.0)
+                if abs(value) > 0.01 {  // Avoid near-zero values
+                    triplets.append((row, col, value))
+                    usedPositions.insert(position)
+                }
+            }
+        }
+
+        return SparseMatrix(rows: rows, columns: columns, triplets: triplets)
+    }
+
+    /// Create a symmetric positive definite (SPD) sparse matrix suitable for CG solver
+    /// - Parameters:
+    ///   - size: Matrix size (n×n)
+    ///   - density: Desired density (fraction of non-zero elements)
+    ///   - diagonalStrength: How dominant the diagonal should be (default: 2.0)
+    /// - Returns: An SPD sparse matrix that will converge with CG
+    private func createSPDSparseMatrix(size: Int, density: Double, diagonalStrength: Double = 2.0) -> SparseMatrix {
+        let totalElements = size * size
+        let targetNonZeros = Int(Double(totalElements) * density)
+
+        // We'll use half the budget for off-diagonal pairs (symmetric), rest for diagonal enhancement
+        let offDiagonalPairs = (targetNonZeros - size) / 2  // Reserve size entries for diagonal
+
+        var triplets: [(Int, Int, Double)] = []
+        var usedPairs = Set<String>()
+
+        // Start with positive diagonal (required for SPD)
+        var diagonalValues = [Double](repeating: diagonalStrength, count: size)
+
+        // Add symmetric off-diagonal entries
+        var pairsAdded = 0
+        while pairsAdded < offDiagonalPairs {
+            let row = Int.random(in: 0..<size)
+            let col = Int.random(in: 0..<size)
+
+            // Only off-diagonal
+            guard row != col else { continue }
+
+            // Ensure we haven't used this pair (treat (i,j) same as (j,i))
+            let pairKey = row < col ? "\(row),\(col)" : "\(col),\(row)"
+            guard !usedPairs.contains(pairKey) else { continue }
+
+            let value = Double.random(in: -1.0...1.0)
+            guard abs(value) > 0.01 else { continue }
+
+            // Add both (i,j) and (j,i) for symmetry
+            triplets.append((row, col, value))
+            triplets.append((col, row, value))
+            usedPairs.insert(pairKey)
+
+            // Accumulate for diagonal dominance
+            diagonalValues[row] += abs(value)
+            diagonalValues[col] += abs(value)
+
+            pairsAdded += 1
+        }
+
+        // Add diagonal with accumulated dominance
+        for i in 0..<size {
+            triplets.append((i, i, diagonalValues[i]))
+        }
+
+        return SparseMatrix(rows: size, columns: size, triplets: triplets)
+    }
+
+    /// Create a diagonal dominant sparse matrix suitable for BiCG solver
+    /// - Parameters:
+    ///   - size: Matrix size (n×n)
+    ///   - density: Desired density (fraction of non-zero elements)
+    ///   - asymmetryFactor: How asymmetric to make the matrix (0.0 = symmetric, 1.0 = fully asymmetric, default: 0.2)
+    ///   - diagonalStrength: How dominant the diagonal should be (default: 2.0)
+    /// - Returns: A well-conditioned diagonal dominant sparse matrix
+    private func createDiagonalDominantSparseMatrix(size: Int, density: Double, asymmetryFactor: Double = 0.2, diagonalStrength: Double = 2.0) -> SparseMatrix {
+        let totalElements = size * size
+        let targetNonZeros = Int(Double(totalElements) * density)
+        let offDiagonalCount = targetNonZeros - size  // Reserve size entries for diagonal
+
+        var triplets: [(Int, Int, Double)] = []
+        var usedPositions = Set<Int>()
+        var diagonalAccumulation = [Double](repeating: diagonalStrength, count: size)
+
+        // Add off-diagonal entries
+        var added = 0
+        while added < offDiagonalCount {
+            let row = Int.random(in: 0..<size)
+            let col = Int.random(in: 0..<size)
+
+            guard row != col else { continue }
+
+            let position = row * size + col
+            guard !usedPositions.contains(position) else { continue }
+
+            // Create mild asymmetry by varying the range
+            let baseValue = Double.random(in: -1.0...1.0)
+            let value: Double
+            if Double.random(in: 0...1) < asymmetryFactor {
+                // Make this entry more asymmetric
+                value = baseValue * Double.random(in: 0.5...1.5)
+            } else {
+                value = baseValue
+            }
+
+            guard abs(value) > 0.01 else { continue }
+
+            triplets.append((row, col, value))
+            usedPositions.insert(position)
+
+            // Accumulate absolute value for diagonal dominance
+            diagonalAccumulation[row] += abs(value)
+
+            added += 1
+        }
+
+        // Add diagonal with accumulated dominance
+        for i in 0..<size {
+            triplets.append((i, i, diagonalAccumulation[i]))
+        }
+
+        return SparseMatrix(rows: size, columns: size, triplets: triplets)
+    }
 
     /// Convert sparse matrix to dense 2D array (for benchmarking only)
     private func densifyMatrix(_ sparse: SparseMatrix, rows: Int, columns: Int) -> [[Double]] {

@@ -125,7 +125,7 @@ struct InequalityOptimizerTests {
 		// minimum variance portfolio is w = [1/n, 1/n, ..., 1/n]
 
 		let n = 3
-		let objective: (VectorN<Double>) -> Double = { weights in
+		let objective: @Sendable (VectorN<Double>) -> Double = { weights in
 			// Simplified variance for uncorrelated assets
 			weights.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
@@ -170,7 +170,7 @@ struct InequalityOptimizerTests {
 
 		let variances = VectorN([0.04, 0.01, 0.09])  // Asset 1: 20%, Asset 2: 10%, Asset 3: 30% vol
 
-		let objective: (VectorN<Double>) -> Double = { weights in
+		let objective: @Sendable (VectorN<Double>) -> Double = { weights in
 			// Portfolio variance: Σwᵢ²σᵢ²
 			var variance = 0.0
 			for i in 0..<3 {
@@ -211,7 +211,7 @@ struct InequalityOptimizerTests {
 		// - No short-selling: w ≥ 0 (inequality)
 		// - Position limits: w ≤ 0.5 (inequality)
 
-		let objective: (VectorN<Double>) -> Double = { weights in
+		let objective: @Sendable (VectorN<Double>) -> Double = { weights in
 			weights.toArray().reduce(0.0) { $0 + $1 * $1 }
 		}
 
@@ -313,7 +313,7 @@ struct InequalityOptimizerTests {
 			}
 		}
 
-		let portfolioVariance: (VectorN<Double>) -> Double = { w in
+		let portfolioVariance: @Sendable (VectorN<Double>) -> Double = { w in
 			var variance = 0.0
 			for i in 0..<3 {
 				for j in 0..<3 {

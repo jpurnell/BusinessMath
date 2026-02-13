@@ -183,7 +183,7 @@ struct AsyncSimplexSolverTests {
     func streamsProgressUpdates() async throws {
         let solver = AsyncSimplexSolver()
 
-        var progressUpdates: [SimplexProgress] = []
+        let collector = ProgressCollector<SimplexProgress>()
 
         for try await progress in solver.maximizeWithProgress(
             objective: [3.0, 2.0],
@@ -192,8 +192,10 @@ struct AsyncSimplexSolverTests {
                 SimplexConstraint(coefficients: [2.0, 1.0], relation: .lessOrEqual, rhs: 5.0)
             ]
         ) {
-            progressUpdates.append(progress)
+            collector.append(progress)
         }
+
+        let progressUpdates = collector.getItems()
 
         // Should receive progress updates
         #expect(progressUpdates.count > 0)
@@ -382,7 +384,7 @@ struct AsyncSimplexSolverTests {
             maxIterations: config.maxIterations
         )
 
-        var progressUpdates: [SimplexProgress] = []
+        let collector = ProgressCollector<SimplexProgress>()
 
         for try await progress in solver.maximizeWithProgress(
             objective: [3.0, 2.0],
@@ -392,8 +394,10 @@ struct AsyncSimplexSolverTests {
             ],
             config: config
         ) {
-            progressUpdates.append(progress)
+            collector.append(progress)
         }
+
+        let progressUpdates = collector.getItems()
 
         // Should receive updates
         #expect(progressUpdates.count > 0)

@@ -17,7 +17,7 @@ struct ConjugateGradientOptimizerTests {
     @Test("Conjugate Gradient optimizes simple quadratic function")
     func simpleQuadratic() async throws {
         // f(x) = (x - 4)^2, minimum at x = 4
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 4.0) * (x - 4.0)
         }
 
@@ -42,7 +42,7 @@ struct ConjugateGradientOptimizerTests {
     @Test("Conjugate Gradient optimizes steep quadratic")
     func steepQuadratic() async throws {
         // f(x) = 10(x - 2)^2, minimum at x = 2
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable  (Double) -> Double = { x in
             10.0 * (x - 2.0) * (x - 2.0)
         }
 
@@ -67,7 +67,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Fletcher-Reeves method")
     func fletcherReevesMethod() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 3.0) * (x - 3.0)
         }
 
@@ -90,7 +90,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Polak-Ribière method")
     func polakRibiereMethod() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 3.0) * (x - 3.0)
         }
 
@@ -113,7 +113,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Hestenes-Stiefel method")
     func hestenesStiefelMethod() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 3.0) * (x - 3.0)
         }
 
@@ -136,7 +136,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Dai-Yuan method")
     func daiYuanMethod() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 3.0) * (x - 3.0)
         }
 
@@ -161,7 +161,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient with automatic restart")
     func automaticRestart() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 5.0) * (x - 5.0)
         }
 
@@ -185,7 +185,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient without restart")
     func noRestart() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 5.0) * (x - 5.0)
         }
 
@@ -211,7 +211,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient with fixed interval progress")
     func fixedIntervalProgress() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 2.0) * (x - 2.0)
         }
 
@@ -222,23 +222,24 @@ struct ConjugateGradientOptimizerTests {
             progressStrategy: FixedIntervalStrategy(interval: 5)
         )
 
-        var progressUpdates: [Int] = []
+        let collector = ProgressCollector<Int>()
         let result = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 10.0,
             bounds: nil
         ) { progress in
-            progressUpdates.append(progress.iteration)
+            collector.append(progress.iteration)
         }
 
         #expect(result.converged)
+        let progressUpdates = collector.getItems()
         #expect(progressUpdates.count > 0)
     }
 
     @Test("Conjugate Gradient with exponential backoff progress")
     func exponentialBackoffProgress() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 2.0) * (x - 2.0)
         }
 
@@ -253,16 +254,17 @@ struct ConjugateGradientOptimizerTests {
             )
         )
 
-        var progressUpdates: [ConjugateGradientProgress] = []
+        let collector = ProgressCollector<ConjugateGradientProgress>()
         let _ = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 10.0,
             bounds: nil
         ) { progress in
-            progressUpdates.append(progress)
+            collector.append(progress)
         }
 
+        let progressUpdates = collector.getItems()
         #expect(progressUpdates.count > 0)
 
         // Verify progress contains conjugate gradient info
@@ -273,7 +275,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient reports beta parameter correctly")
     func betaParameterReporting() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 1.0) * (x - 1.0)
         }
 
@@ -284,18 +286,19 @@ struct ConjugateGradientOptimizerTests {
             progressStrategy: FixedIntervalStrategy(interval: 1)
         )
 
-        var betaValues: [Double] = []
+        let betaCollector = ProgressCollector<Double>()
         let result = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 5.0,
             bounds: nil
         ) { progress in
-            betaValues.append(progress.beta)
+            betaCollector.append(progress.beta)
         }
 
         #expect(result.converged)
 
+        let betaValues = betaCollector.getItems()
         // Beta should be 0 for first iteration, non-zero for subsequent
         if betaValues.count >= 2 {
             #expect(betaValues[0] == 0.0) // First iteration
@@ -307,7 +310,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient with convergence detector")
     func convergenceDetector() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 3.0) * (x - 3.0)
         }
 
@@ -340,7 +343,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient convergence metrics accuracy")
     func convergenceMetricsAccuracy() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 1.0) * (x - 1.0)
         }
 
@@ -351,23 +354,25 @@ struct ConjugateGradientOptimizerTests {
             progressStrategy: FixedIntervalStrategy(interval: 1)
         )
 
-        var lastMetrics: ConvergenceMetrics?
+        let metricsCollector = ProgressCollector<ConvergenceMetrics>()
         let result = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 5.0,
             bounds: nil
         ) { progress in
-            lastMetrics = progress.metrics
+            metricsCollector.append(progress.metrics)
         }
 
         #expect(result.converged)
-        #expect(lastMetrics != nil)
 
-        if let metrics = lastMetrics {
+        let allMetrics = metricsCollector.getItems()
+        #expect(allMetrics.count > 0)
+
+        if let lastMetrics = allMetrics.last {
             // Near convergence
-            #expect(metrics.gradientNorm < 0.1)
-            #expect(metrics.relativeChange < 0.1)
+            #expect(lastMetrics.gradientNorm < 0.1)
+            #expect(lastMetrics.relativeChange < 0.1)
         }
     }
 
@@ -375,7 +380,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient provides AsyncSequence progress stream")
     func progressAsyncSequence() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 2.0) * (x - 2.0)
         }
 
@@ -412,7 +417,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient handles already optimal initial guess")
     func alreadyOptimal() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 6.0) * (x - 6.0)
         }
 
@@ -436,7 +441,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient handles difficult initial guess")
     func difficultInitialGuess() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 5.0) * (x - 5.0)
         }
 
@@ -460,7 +465,7 @@ struct ConjugateGradientOptimizerTests {
     @Test("Conjugate Gradient respects max iterations")
     func respectsMaxIterations() async throws {
         // Difficult function with tight tolerance
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             let term1 = (1.0 - x) * (1.0 - x)
             let term2 = 100.0 * (2.0 - x * x) * (2.0 - x * x)
             return term1 + term2
@@ -484,7 +489,7 @@ struct ConjugateGradientOptimizerTests {
 
     @Test("Conjugate Gradient with tight tolerance")
     func tightTolerance() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 7.0) * (x - 7.0)
         }
 

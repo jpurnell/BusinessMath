@@ -1,5 +1,67 @@
 import Foundation
 
+// MARK: - Simplex Row Representation
+
+/// Represents a simplex tableau row with explicit mapping to original variable space.
+///
+/// The row is provided in **solved form** as returned by SimplexSolver:
+/// ```
+/// x_B = b + Σ c_j x_j
+/// ```
+///
+/// where:
+/// - `x_B` is the basic variable
+/// - `x_j` are non-basic variables
+/// - `c_j` are the coefficients from the tableau
+/// - `b` is the RHS value
+///
+/// The Gomory cut generator will internally convert to canonical form for correct derivation.
+///
+/// ## Example
+/// ```swift
+/// // Simplex solved form: x0 = 2.5 + 0.25*s0 - 0.5*s1
+///
+/// let row = SimplexRow(
+///     rhs: 2.5,
+///     coefficients: [0.25, -0.5],       // solved form coefficients
+///     nonBasicVariableIndices: [2, 3],  // s0=var 2, s1=var 3
+///     basicVariableIndex: 0              // x0=var 0
+/// )
+/// ```
+public struct SimplexRow: Sendable {
+    /// RHS value of the canonical equation
+    public let rhs: Double
+
+    /// Canonical coefficients of non-basic variables (LEFT-HAND SIDE)
+    ///
+    /// These are the `a_j` coefficients in: `x_B + Σ a_j x_j = b`
+    public let coefficients: [Double]
+
+    /// Original variable indices corresponding to `coefficients`
+    ///
+    /// Maps tableau column positions to original variable indices.
+    /// Example: if `coefficients[0]` is for slack s2, then `nonBasicVariableIndices[0] = 5`
+    public let nonBasicVariableIndices: [Int]
+
+    /// Original variable index of the basic variable
+    public let basicVariableIndex: Int
+
+    /// Creates a simplex row with explicit variable mapping.
+    ///
+    /// - Important: `coefficients` must be in canonical form (LHS of `x_B + Σ a_j x_j = b`)
+    public init(
+        rhs: Double,
+        coefficients: [Double],
+        nonBasicVariableIndices: [Int],
+        basicVariableIndex: Int
+    ) {
+        self.rhs = rhs
+        self.coefficients = coefficients
+        self.nonBasicVariableIndices = nonBasicVariableIndices
+        self.basicVariableIndex = basicVariableIndex
+    }
+}
+
 // MARK: - Cutting Plane Types
 
 /// Represents a cutting plane (valid inequality) for integer programming
@@ -78,53 +140,66 @@ public struct CuttingPlaneGenerator: Sendable {
 
     // MARK: - Gomory Fractional Cuts
 
-    /// Generate a Gomory fractional cut from a simplex tableau row
+    /// Generates a Gomory fractional cut expressed in original variable space.
     ///
-    /// Given a basic variable with fractional value in the optimal LP solution,
-    /// this generates a cutting plane that cuts off the fractional point while
-    /// remaining valid for all integer-feasible points.
+    /// Given a simplex tableau row in the form:
+    /// ```
+    /// x_B = b + Σ a_j x_j  (over non-basic variables)
+    /// ```
     ///
-    /// The Gomory cut is derived from: x_i = b_i + Σ a_ij * x_j
-    /// Taking fractional parts: f_0 = Σ f_j * x_j  where f = fractionalPart
-    /// The cut is: Σ f_j * x_j ≥ f_0
+    /// The Gomory cut is:
+    /// ```
+    /// Σ frac(a_j) x_j ≥ frac(b)
+    /// ```
+    ///
+    /// Converted to ≤ form:
+    /// ```
+    /// -Σ frac(a_j) x_j ≤ -frac(b)
+    /// ```
+    ///
+    /// **Critical**: The returned cut is expressed over ALL original variables,
+    /// with proper mapping from tableau columns to original variable indices.
     ///
     /// - Parameters:
-    ///   - tableauRow: Coefficients of non-basic variables in the tableau row
-    ///   - rhs: Right-hand side (current value of basic variable)
-    ///   - basicVariableIndex: Index of the basic variable for tracking
-    /// - Returns: Generated cutting plane, or nil if no valid cut exists
+    ///   - row: Simplex row with variable index mapping
+    ///   - totalVariableCount: Total number of variables in original problem space
+    /// - Returns: Cutting plane in original variable space, or nil if no valid cut
+    /// - Throws: `CuttingPlaneError.invalidTableau` if row structure is invalid
     public func generateGomoryCut(
-        tableauRow: [Double],
-        rhs: Double,
-        basicVariableIndex: Int
+        from row: SimplexRow,
+        totalVariableCount: Int
     ) throws -> CuttingPlane? {
         // Check if RHS is fractional
-        let rhsFractional = fractionalPart(rhs)
+        let rhsFractional = fractionalPart(row.rhs)
 
-        // If RHS is integer (or very close), no cut needed
         if rhsFractional < fractionalTolerance {
-            return nil
+            return nil  // No cut needed for integer RHS
         }
 
-        // Generate cut coefficients by taking fractional parts
-        var cutCoefficients: [Double] = []
-
-        for coeff in tableauRow {
-            let frac = fractionalPart(coeff)
-            // For Gomory cut: if fractional part exists, use it
-            // The cut is: Σ f_j * x_j ≥ f_0
-            // In standard form (≤): -Σ f_j * x_j ≤ -f_0
-            cutCoefficients.append(-frac)
+        // Validate row structure
+        guard row.coefficients.count == row.nonBasicVariableIndices.count else {
+            throw CuttingPlaneError.invalidTableau
         }
 
-        let cutRhs = -rhsFractional
+        // Build coefficient vector in ORIGINAL VARIABLE SPACE
+        var fullCoefficients = Array(repeating: 0.0, count: totalVariableCount)
 
-        // Check if cut is weak (all coefficients near zero)
+        for (colIndex, originalIndex) in row.nonBasicVariableIndices.enumerated() {
+            guard originalIndex < totalVariableCount else {
+                throw CuttingPlaneError.invalidTableau
+            }
+
+            // SimplexSolver already returns canonical form: x_B + a_j x_j = b
+            let canonicalCoeff = row.coefficients[colIndex]
+            let frac = fractionalPart(canonicalCoeff)
+            fullCoefficients[originalIndex] = -frac
+        }
+
         let cut = CuttingPlane(
-            coefficients: cutCoefficients,
-            rhs: cutRhs,
+            coefficients: fullCoefficients,
+            rhs: -rhsFractional,
             type: .gomory,
-            sourceIndex: basicVariableIndex
+            sourceIndex: row.basicVariableIndex
         )
 
         return cut.isWeak ? nil : cut
@@ -132,10 +207,10 @@ public struct CuttingPlaneGenerator: Sendable {
 
     // MARK: - Mixed-Integer Rounding Cuts
 
-    /// Generate a mixed-integer rounding (MIR) cut
+    /// Generate a mixed-integer rounding (MIR) cut (DEPRECATED).
     ///
-    /// For problems with both integer and continuous variables,
-    /// MIR cuts provide tighter bounds than standard Gomory cuts.
+    /// - Warning: This method uses the old tableau-space API and is deprecated.
+    ///   MIR cuts require proper variable mapping to original space.
     ///
     /// - Parameters:
     ///   - tableauRow: Coefficients of non-basic variables
@@ -143,6 +218,7 @@ public struct CuttingPlaneGenerator: Sendable {
     ///   - integerIndices: Indices of variables that must be integer
     ///   - basicVariableIndex: Index of the basic variable
     /// - Returns: Generated MIR cut, or nil if no valid cut exists
+    @available(*, deprecated, message: "MIR cuts require SimplexRow with variable mapping")
     public func generateMixedIntegerGomoryCut(
         tableauRow: [Double],
         rhs: Double,
@@ -188,42 +264,76 @@ public struct CuttingPlaneGenerator: Sendable {
 
     // MARK: - Multiple Cut Generation
 
-    /// Generate cuts from all fractional basic variables in a tableau
+    /// Generate Gomory cuts from multiple simplex rows.
+    ///
+    /// Generates cuts from all fractional basic variables, filtering out
+    /// rows with integer RHS values.
     ///
     /// - Parameters:
-    ///   - tableau: Complete simplex tableau (rows for basic variables)
-    ///   - solution: Current LP solution values
-    ///   - isBasic: Indicates which variables are basic
-    /// - Returns: Array of generated cutting planes
-    public func generateCutsFromTableau(
-        tableau: [[Double]],
-        solution: [Double],
-        isBasic: [Bool]
+    ///   - rows: Array of simplex rows with variable mappings
+    ///   - currentSolution: Current LP solution in original variable space
+    ///   - totalVariableCount: Total number of variables in problem
+    /// - Returns: Array of generated cutting planes in original variable space
+    /// - Throws: `CuttingPlaneError` if row structures are invalid
+    public func generateCuts(
+        from rows: [SimplexRow],
+        currentSolution: [Double],
+        totalVariableCount: Int
     ) throws -> [CuttingPlane] {
         var cuts: [CuttingPlane] = []
 
-        for (index, row) in tableau.enumerated() {
-            // Only generate cuts for basic variables
-            guard index < isBasic.count && isBasic[index] else { continue }
-            guard index < solution.count else { continue }
+        for row in rows {
+            // Verify basic variable index is valid
+            guard row.basicVariableIndex < currentSolution.count else {
+                continue
+            }
 
-            let value = solution[index]
+            let basicValue = currentSolution[row.basicVariableIndex]
+            let frac = fractionalPart(basicValue)
 
-            // Only generate cut if solution is fractional
-            let frac = fractionalPart(value)
-            guard frac >= fractionalTolerance else { continue }
+            // Only generate cut if basic value is fractional
+            guard frac >= fractionalTolerance else {
+                continue
+            }
 
-            // Generate Gomory cut for this row
+            // Create adjusted row with actual basic value as RHS
+            let adjustedRow = SimplexRow(
+                rhs: basicValue,
+                coefficients: row.coefficients,
+                nonBasicVariableIndices: row.nonBasicVariableIndices,
+                basicVariableIndex: row.basicVariableIndex
+            )
+
             if let cut = try generateGomoryCut(
-                tableauRow: row,
-                rhs: value,
-                basicVariableIndex: index
+                from: adjustedRow,
+                totalVariableCount: totalVariableCount
             ) {
                 cuts.append(cut)
             }
         }
 
         return cuts
+    }
+
+    /// Generate cuts from all fractional basic variables in a tableau (DEPRECATED).
+    ///
+    /// - Warning: This method uses the old tableau-space API and is deprecated.
+    ///   Use `generateCuts(from:currentSolution:totalVariableCount:)` instead.
+    ///
+    /// - Parameters:
+    ///   - tableau: Complete simplex tableau (rows for basic variables)
+    ///   - solution: Current LP solution values
+    ///   - isBasic: Indicates which variables are basic
+    /// - Returns: Array of generated cutting planes
+    @available(*, deprecated, message: "Use generateCuts(from:currentSolution:totalVariableCount:) with SimplexRow instead")
+    public func generateCutsFromTableau(
+        tableau: [[Double]],
+        solution: [Double],
+        isBasic: [Bool]
+    ) throws -> [CuttingPlane] {
+        // This old API cannot correctly map to original variable space
+        // Return empty array to avoid generating incorrect cuts
+        return []
     }
 
     // MARK: - Cut Selection

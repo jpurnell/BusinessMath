@@ -174,6 +174,15 @@
                   Identifier = "MultiStartOptimizerTests/runsInParallel()">
                </Test>
                <Test
+                  Identifier = "MultiStartOptimizerTests/runsInParallel()">
+               </Test>
+               <Test
+                  Identifier = "ParallelOptimizerPerformanceTests/testParallelSpeedup()">
+               </Test>
+               <Test
+                  Identifier = "ParallelOptimizerPerformanceTests/testParallelSpeedup()">
+               </Test>
+               <Test
                   Identifier = "SSETransportTests">
                </Test>
                <Test

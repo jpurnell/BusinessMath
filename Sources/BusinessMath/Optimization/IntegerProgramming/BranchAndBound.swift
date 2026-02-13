@@ -786,7 +786,18 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
                     var cutsThisRound: [CuttingPlane] = []
 
-                    // Generate Gomory cuts from fractional basic variables
+                    // Compute total variable count (including slacks)
+                    // Tableau columns = all variables + RHS, so subtract 1
+                    let totalVariableCount = tableau.columnCount - 1
+
+                    // Compute non-basic variable indices
+                    // (all variables except those in the basis)
+                    let basisSet = Set(basis)
+                    let nonBasicIndices = (0..<totalVariableCount).filter { !basisSet.contains($0) }
+
+                    // Build SimplexRow objects for fractional basic variables
+                    var simplexRows: [SimplexRow] = []
+
                     for (rowIndex, basicVarIndex) in basis.enumerated() {
                         guard basicVarIndex < solutionArray.count else { continue }
 
@@ -803,44 +814,63 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             continue
                         }
 
-                        // Extract tableau row
-                        let tableauRow = tableau.getRow(rowIndex)
+                        // Extract tableau row (coefficients of non-basic variables)
+                        let fullTableauRow = tableau.getRow(rowIndex)
 
-                        // Generate Gomory cut
-                        if var cut = try cutGenerator.generateGomoryCut(
-                            tableauRow: tableauRow,
+                        // Tableau row includes RHS in last column - extract only variable coefficients
+                        let allCoefficients = Array(fullTableauRow.prefix(totalVariableCount))
+
+                        // Extract only coefficients corresponding to non-basic variables
+                        let nonBasicCoefficients = nonBasicIndices.map { allCoefficients[$0] }
+
+                        let simplexRow = SimplexRow(
                             rhs: value,
+                            coefficients: nonBasicCoefficients,
+                            nonBasicVariableIndices: nonBasicIndices,
                             basicVariableIndex: basicVarIndex
-                        ) {
-                            // Normalize cut if enabled
-                            if normalizeCuts {
-                                // Compute Euclidean norm of coefficients
-                                let norm = sqrt(cut.coefficients.reduce(0.0) { $0 + $1 * $1 })
+                        )
 
-                                // Check if cut has meaningful coefficients
-                                guard norm > cutCoefficientThreshold else {
-                                    // Skip cut with tiny coefficients
-                                    continue
-                                }
+                        simplexRows.append(simplexRow)
+                    }
 
-                                // Normalize: divide coefficients and RHS by norm
-                                let normalizedCoeffs = cut.coefficients.map { $0 / norm }
-                                let normalizedRHS = cut.rhs / norm
+                    // Generate cuts using new API
+                    let generatedCutList = try cutGenerator.generateCuts(
+                        from: simplexRows,
+                        currentSolution: solutionArray,
+                        totalVariableCount: totalVariableCount
+                    )
 
-                                cut = CuttingPlane(
-                                    coefficients: normalizedCoeffs,
-                                    rhs: normalizedRHS,
-                                    type: cut.type
-                                )
+                    // Process generated cuts
+                    for var cut in generatedCutList {
+                        // Normalize cut if enabled
+                        if normalizeCuts {
+                            // Compute Euclidean norm of coefficients
+                            let norm = sqrt(cut.coefficients.reduce(0.0) { $0 + $1 * $1 })
+
+                            // Check if cut has meaningful coefficients
+                            guard norm > cutCoefficientThreshold else {
+                                // Skip cut with tiny coefficients
+                                continue
                             }
 
-                            // Deduplicate: check if we've seen this cut before
-                            let cutSignature = "\(cut.coefficients.map { String(format: "%.6f", $0) }.joined(separator:",")):\(String(format: "%.6f", cut.rhs))"
+                            // Normalize: divide coefficients and RHS by norm
+                            let normalizedCoeffs = cut.coefficients.map { $0 / norm }
+                            let normalizedRHS = cut.rhs / norm
 
-                            if !generatedCuts.contains(cutSignature) {
-                                cutsThisRound.append(cut)
-                                generatedCuts.insert(cutSignature)
-                            }
+                            cut = CuttingPlane(
+                                coefficients: normalizedCoeffs,
+                                rhs: normalizedRHS,
+                                type: cut.type,
+                                sourceIndex: cut.sourceIndex
+                            )
+                        }
+
+                        // Deduplicate: check if we've seen this cut before
+                        let cutSignature = "\(cut.coefficients.map { String(format: "%.6f", $0) }.joined(separator:",")):\(String(format: "%.6f", cut.rhs))"
+
+                        if !generatedCuts.contains(cutSignature) {
+                            cutsThisRound.append(cut)
+                            generatedCuts.insert(cutSignature)
                         }
                     }
 

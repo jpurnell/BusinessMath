@@ -36,7 +36,7 @@ public func distributionExponential<T: Real>(λ: T, seed: Double? = nil) -> T wh
 ///
 /// The exponential distribution is memoryless and commonly used for modeling waiting times,
 /// lifetimes, and inter-arrival times in Poisson processes.
-public struct DistributionExponential: DistributionRandom {
+public struct DistributionExponential: DistributionRandom, Sendable {
 	let λ: Double
 
 	/// Creates an exponential distribution generator.

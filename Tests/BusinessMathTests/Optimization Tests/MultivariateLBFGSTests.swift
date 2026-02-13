@@ -194,7 +194,7 @@ struct MultivariateLBFGSTests {
 
 		// Mean-variance objective: -μ + λσ²
 		// Simplified: assumes uncorrelated assets for faster testing
-		let portfolio: (VectorN<Double>) -> Double = { weights in
+		let portfolio: @Sendable (VectorN<Double>) -> Double = { weights in
 			let expectedReturn = weights.dot(returns)
 			let variance = weights.dot(weights)  // Simplified: identity covariance
 			return -(expectedReturn - riskAversion * variance)
@@ -222,7 +222,7 @@ struct MultivariateLBFGSTests {
 		let riskAversion = 2.0
 
 		// Mean-variance objective
-		let portfolio: (VectorN<Double>) -> Double = { weights in
+		let portfolio: @Sendable (VectorN<Double>) -> Double = { weights in
 			let expectedReturn = weights.dot(returns)
 			let variance = weights.dot(weights)
 			return -(expectedReturn - riskAversion * variance)

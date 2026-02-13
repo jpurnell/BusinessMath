@@ -133,10 +133,10 @@ struct RelaxationSolverTests {
 
     // MARK: - RelaxationSolver Protocol Tests
 
-    @Test("RelaxationSolver protocol exists")
-    func testRelaxationSolverProtocolExists() {
-        // This test verifies the protocol can be referenced at compile time
-        // We'll create a mock implementation to test protocol conformance
+    @Test("RelaxationSolver protocol can be used as existential type")
+    func testRelaxationSolverProtocolExistential() throws {
+        // Test that the protocol can be used as an existential (any RelaxationSolver)
+        // and that conforming types can be called through the protocol interface
 
         struct MockRelaxationSolver: RelaxationSolver {
             func solveRelaxation<V: VectorSpace>(
@@ -145,17 +145,33 @@ struct RelaxationSolverTests {
                 initialGuess: V,
                 minimize: Bool
             ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable {
-                // Mock implementation
+                // Mock implementation that echoes back the initial guess
                 return RelaxationResult(
                     solution: initialGuess as? VectorN<Double>,
-                    objectiveValue: 0.0,
+                    objectiveValue: objective(initialGuess),
                     status: .optimal
                 )
             }
         }
 
+        // Use the protocol as an existential type
         let solver: any RelaxationSolver = MockRelaxationSolver()
-        #expect(solver is RelaxationSolver)
+
+        // Actually call the protocol method to verify it works
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
+        let initialGuess = VectorN([1.0, 2.0])
+
+        let result = try solver.solveRelaxation(
+            objective: objective,
+            constraints: [],
+            initialGuess: initialGuess,
+            minimize: true
+        )
+
+        // Verify the result is valid
+        #expect(result.status == .optimal)
+        #expect(result.solution != nil)
+        #expect(result.objectiveValue == 5.0)  // 1^2 + 2^2 = 5
     }
 
     @Test("RelaxationSolver is Sendable")

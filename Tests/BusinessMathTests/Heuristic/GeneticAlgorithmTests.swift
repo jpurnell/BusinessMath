@@ -406,7 +406,7 @@ struct GeneticAlgorithmTests {
             searchSpace: []
         )
 
-        let constant = { (_: VectorN<Double>) -> Double in 1.0 }
+        let constant = { @Sendable (_: VectorN<Double>) -> Double in 1.0 }
 
         let result = try optimizer.minimize(constant, from: VectorN([]))
 

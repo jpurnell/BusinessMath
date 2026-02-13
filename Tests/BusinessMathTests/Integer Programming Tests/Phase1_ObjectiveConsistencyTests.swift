@@ -73,7 +73,7 @@ struct ObjectiveConsistencyTests {
         )
 
         // For linear objectives, value should match exactly
-        let solution = result.solution.toArray()
+		// let solution = result.solution.toArray()
         let recomputedObjective = objective(result.solution)
 
         #expect(abs(result.objectiveValue - recomputedObjective) < 1e-6)

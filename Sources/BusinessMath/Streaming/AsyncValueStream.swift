@@ -21,7 +21,7 @@ import Foundation
 ///     print(value)
 /// }
 /// ```
-public struct AsyncValueStream<Element>: AsyncSequence {
+public struct AsyncValueStream<Element: Sendable>: AsyncSequence, @unchecked Sendable {
     /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
@@ -42,7 +42,7 @@ public struct AsyncValueStream<Element>: AsyncSequence {
     }
 
     /// Iterator that yields values from an array asynchronously.
-    public struct Iterator: AsyncIteratorProtocol {
+	public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private var index: Int = 0
         private let values: [Element]
 
@@ -78,7 +78,7 @@ public struct AsyncValueStream<Element>: AsyncSequence {
 ///     print(value)  // Prints 1 through 10
 /// }
 /// ```
-public struct AsyncGeneratorStream<Element>: AsyncSequence {
+public struct AsyncGeneratorStream<Element: Sendable>: AsyncSequence, @unchecked Sendable {
     /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
 
@@ -99,7 +99,7 @@ public struct AsyncGeneratorStream<Element>: AsyncSequence {
     }
 
     /// Iterator that yields generated values asynchronously.
-    public struct Iterator: AsyncIteratorProtocol {
+    public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let generator: () async throws -> Element
 
         init(generator: @escaping () async throws -> Element) {

@@ -62,7 +62,7 @@ public struct AllocationOption: Sendable{
 // MARK: - Allocation Constraints
 
 /// Constraints for resource allocation optimization.
-public enum AllocationConstraint {
+public enum AllocationConstraint: Sendable {
 	/// Maximum total budget across all options
 	case totalBudget(Double)
 
@@ -91,7 +91,7 @@ public enum AllocationConstraint {
 // MARK: - Allocation Objective
 
 /// Objective function for resource allocation.
-public enum AllocationObjective {
+public enum AllocationObjective: Sendable {
 	/// Maximize sum of expected values
 	case maximizeValue
 
@@ -105,13 +105,13 @@ public enum AllocationObjective {
 	case maximizeRiskAdjustedValue(riskDiscount: Double)
 
 	/// Custom objective function
-	case custom((AllocationResult) -> Double)
+	case custom(@Sendable (AllocationResult) -> Double)
 }
 
 // MARK: - Allocation Result
 
 /// Result from resource allocation optimization.
-public struct AllocationResult {
+public struct AllocationResult: Sendable {
 	/// Allocation amounts by option ID
 	public let allocations: [String: Double]
 
@@ -190,7 +190,7 @@ public struct AllocationResult {
 /// print("Selected: \(result.selectedOptions.map { $0.name })")
 /// print("Total value: $\(result.totalValue)")
 /// ```
-public struct ResourceAllocationOptimizer {
+public struct ResourceAllocationOptimizer: Sendable {
 
 	/// Maximum iterations for optimization
 	public let maxIterations: Int
@@ -275,13 +275,16 @@ public struct ResourceAllocationOptimizer {
 	private func buildObjectiveFunction(
 		options: [AllocationOption],
 		objective: AllocationObjective
-	) -> (VectorN<Double>) -> Double {
+	) -> @Sendable (VectorN<Double>) -> Double {
+		// Create local copy for Sendable closure
+		let optionsCopy = options
+
 		switch objective {
 		case .maximizeValue:
 			return { allocation in
 				// Sum of value * allocation
 				var totalValue = 0.0
-				for (i, option) in options.enumerated() {
+				for (i, option) in optionsCopy.enumerated() {
 					totalValue += option.expectedValue * allocation[i]
 				}
 				return totalValue
@@ -291,7 +294,7 @@ public struct ResourceAllocationOptimizer {
 			return { allocation in
 				// Sum of (value / cost) * allocation
 				var totalValue = 0.0
-				for (i, option) in options.enumerated() {
+				for (i, option) in optionsCopy.enumerated() {
 					let cost = option.resourceRequirements["budget"] ?? 1.0
 					let efficiency = option.expectedValue / cost
 					totalValue += efficiency * allocation[i]
@@ -303,7 +306,7 @@ public struct ResourceAllocationOptimizer {
 			return { allocation in
 				// Weighted sum: (1-w)*value + w*strategic
 				var totalValue = 0.0
-				for (i, option) in options.enumerated() {
+				for (i, option) in optionsCopy.enumerated() {
 					let value = option.expectedValue
 					let strategic = option.strategicValue ?? 0.0
 					let weighted = (1.0 - strategicWeight) * value + strategicWeight * strategic
@@ -316,7 +319,7 @@ public struct ResourceAllocationOptimizer {
 			return { allocation in
 				// Value discounted by risk: value * (1 - risk)
 				var totalValue = 0.0
-				for (i, option) in options.enumerated() {
+				for (i, option) in optionsCopy.enumerated() {
 					let adjustedValue = option.expectedValue * (1.0 - riskDiscount)
 					totalValue += adjustedValue * allocation[i]
 				}
@@ -324,10 +327,10 @@ public struct ResourceAllocationOptimizer {
 			}
 
 		case .custom(let customFunction):
-			return { allocation in
+			return { [self] allocation in
 				// Build temporary result for custom function
 				let result = self.buildResult(
-					options: options,
+					options: optionsCopy,
 					allocation: allocation,
 					converged: true,
 					iterations: 0

@@ -121,7 +121,7 @@ struct NonlinearRegressionTests {
 		)
 
 		// Should complete without throwing
-		#expect(result != nil)
+//		#expect(result != nil)
 		// Parameters should be positive
 		#expect(result.parameters.a > 0, "a should be positive")
 		#expect(result.parameters.b > 0, "b should be positive")
@@ -158,10 +158,10 @@ struct NonlinearRegressionTests {
 				// Compute mean
 				let mu = 1.0 / (trueA + trueB * x)
 
-				// Generate seeded normal noise with very small sigma for this test
+				// Generate seeded normal noise using trueSigma
 				let u1 = rng.next()
 				let u2 = rng.next()
-				let noise = distributionNormal(mean: 0.0, stdDev: 0.05, u1, u2)
+				let noise = distributionNormal(mean: 0.0, stdDev: trueSigma, u1, u2)
 
 				let y = mu + noise
 				data.append(ReciprocalRegressionModel<Double>.DataPoint(x: x, y: y))
@@ -184,7 +184,7 @@ struct NonlinearRegressionTests {
 			// For more rigorous parameter recovery validation, see testParameterRecoveryCheck_* tests.
 
 			// Verify optimizer completed
-			#expect(result != nil)
+//			#expect(result != nil)
 
 			// Parameters should be positive and finite
 			#expect(result.parameters.a > 0, "a should be positive")
@@ -192,11 +192,24 @@ struct NonlinearRegressionTests {
 			#expect(result.parameters.sigma > 0, "sigma should be positive")
 			#expect(result.logLikelihood.isFinite, "Log-likelihood should be finite")
 
+			// Verify parameters are in reasonable ranges (not checking exact recovery)
+			// Gradient descent is challenging for nonlinear models, so we just verify basic sanity
+			#expect(result.parameters.a < 1.0, "a should be reasonable (not diverged)")
+			#expect(result.parameters.b < 2.0, "b should be reasonable (not diverged)")
+			#expect(result.parameters.sigma < 5.0, "sigma should be reasonable (not diverged)")
+
+			// The optimization should at least not make things catastrophically worse
+			// (Allow some degradation since gradient descent can get stuck in local minima)
+			let likelihoodChange = result.logLikelihood - initialLogLik
+			#expect(likelihoodChange > -50.0, "Log-likelihood should not degrade catastrophically")
+
 			// Log the result for diagnostic purposes
 			if result.logLikelihood > initialLogLik {
 				print("✓ Optimizer improved log-likelihood: \(initialLogLik) → \(result.logLikelihood)")
+				print("  Parameter estimates: a=\(result.parameters.a), b=\(result.parameters.b), σ=\(result.parameters.sigma)")
 			} else {
 				print("⚠ Optimizer did not improve (this can happen with gradient descent): \(initialLogLik) → \(result.logLikelihood)")
+				print("  Final parameters: a=\(result.parameters.a), b=\(result.parameters.b), σ=\(result.parameters.sigma)")
 			}
 		}
 
@@ -215,7 +228,7 @@ struct NonlinearRegressionTests {
 			maxIterations: 2000
 		)
 
-		#expect(report != nil)
+//		#expect(report != nil)
 		#expect(report.sampleSize == 150)
 		// Note: We don't strictly require convergence since gradient descent can have challenges
 
@@ -362,7 +375,7 @@ struct NonlinearRegressionTests {
 			maxIterations: 1000
 		)
 
-		#expect(result != nil)
+//		#expect(result != nil)
 		#expect(result.parameters.a > 0, "a should be positive")
 		#expect(result.parameters.b > 0, "b should be positive")
 		#expect(result.parameters.sigma > 0, "sigma should be positive")

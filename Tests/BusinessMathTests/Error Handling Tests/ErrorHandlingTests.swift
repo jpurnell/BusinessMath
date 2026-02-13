@@ -186,8 +186,8 @@ import RealModule
 
 		  // Simulate detecting overflow in compound growth
 		  let base = 1e200
-		  let rate = 0.99
-		  let periods = 1000
+//		  let rate = 0.99
+//		  let periods = 1000
 
 		  // Manually check for potential overflow and throw
 		  do {

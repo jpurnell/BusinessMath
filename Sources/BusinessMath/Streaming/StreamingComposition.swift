@@ -222,7 +222,7 @@ extension AsyncSequence {
 /// - Values are yielded immediately as they arrive from either stream
 ///
 /// - SeeAlso: ``AsyncZipSequence``, ``AsyncCombineLatestSequence``
-public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: AsyncSequence where First.Element == Second.Element {
+public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: AsyncSequence where First.Element == Second.Element, First.Element: Sendable, First.AsyncIterator: Sendable, Second.AsyncIterator: Sendable {
     /// The merged element type (same as both input streams).
     public typealias Element = First.Element
 
@@ -256,10 +256,14 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
             // Use AsyncStream as a channel to merge values from both streams
             // SAFETY: ContinuationBox allows safe concurrent access to continuation
             // from multiple task group children. The AsyncStream serializes yields.
-            var continuationBox: ContinuationBox<Element>!
-            channel = AsyncStream { cont in
-                continuationBox = ContinuationBox(cont)
-            }
+            let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
+                var box: ContinuationBox<Element>!
+                let ch = AsyncStream<Element> { cont in
+                    box = ContinuationBox(cont)
+                }
+                return (ch, box!)
+            }()
+            self.channel = channel
             iterator = channel.makeAsyncIterator()
 
             // Create iterators before Task to avoid capturing metatypes
@@ -276,7 +280,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
                         }
                     }
 
-                    group.addTask {
+                    group.addTask { @Sendable in
                         var iter = secondIterator
                         while let value = try? await iter.next() {
                             continuationBox.yield(value)
@@ -455,13 +459,17 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
 
         init(base: Base, interval: Duration) {
             // SAFETY: ContinuationBox allows safe concurrent access from debounce tasks
-            var continuationBox: ContinuationBox<Element>!
-            channel = AsyncStream { cont in
-                continuationBox = ContinuationBox(cont)
-            }
+            let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
+                var box: ContinuationBox<Element>!
+                let ch = AsyncStream<Element> { cont in
+                    box = ContinuationBox(cont)
+                }
+                return (ch, box!)
+            }()
+            self.channel = channel
             iterator = channel.makeAsyncIterator()
 
-            Task {
+            Task { @Sendable in
                 var baseIterator = base.makeAsyncIterator()
 
                 // Create actor for safe state management
@@ -572,10 +580,14 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
         init(first: First, second: Second) {
             // SAFETY: ContinuationBox allows safe concurrent access from task group children
             // ThreadSafeBox (actor) provides synchronized access to latest values
-            var continuationBox: ContinuationBox<Element>!
-            channel = AsyncStream { cont in
-                continuationBox = ContinuationBox(cont)
-            }
+            let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
+                var box: ContinuationBox<Element>!
+                let ch = AsyncStream<Element> { cont in
+                    box = ContinuationBox(cont)
+                }
+                return (ch, box!)
+            }()
+            self.channel = channel
             iterator = channel.makeAsyncIterator()
 
             Task { @Sendable in
@@ -655,7 +667,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
 /// - Uses actor-based storage for thread-safe value access
 ///
 /// - SeeAlso: ``AsyncCombineLatestSequence``, ``AsyncSampleSequence``
-public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: AsyncSequence>: AsyncSequence where Trigger: Sendable, Sampled: Sendable, Sampled.Element: Sendable {
+public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: AsyncSequence>: AsyncSequence where Trigger: Sendable, Sampled: Sendable, Sampled.Element: Sendable, Trigger.AsyncIterator: Sendable, Sampled.AsyncIterator: Sendable {
     /// The sampled element type.
     public typealias Element = Sampled.Element
 
@@ -688,21 +700,25 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
         init(trigger: Trigger, sampled: Sampled) {
             // SAFETY: ContinuationBox allows safe concurrent access from task group children
             // ThreadSafeBox (actor) provides synchronized access to latest sampled value
-            var continuationBox: ContinuationBox<Element>!
-            channel = AsyncStream { cont in
-                continuationBox = ContinuationBox(cont)
-            }
+            let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
+                var box: ContinuationBox<Element>!
+                let ch = AsyncStream<Element> { cont in
+                    box = ContinuationBox(cont)
+                }
+                return (ch, box!)
+            }()
+            self.channel = channel
             iterator = channel.makeAsyncIterator()
 
             // Create iterators before Task to avoid capturing metatypes
             let triggerIterator = trigger.makeAsyncIterator()
             let sampledIterator = sampled.makeAsyncIterator()
 
-            Task {
+            Task { @Sendable in
                 let latestSampled = ThreadSafeBox<Sampled.Element?>(nil)
 
                 await withTaskGroup(of: Void.self) { group in
-                    group.addTask {
+                    group.addTask { @Sendable in
                         var iter = triggerIterator
                         while let _ = try? await iter.next() {
                             if let value = await latestSampled.getValue() {
@@ -711,7 +727,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
                         }
                     }
 
-                    group.addTask {
+                    group.addTask { @Sendable in
                         var iter = sampledIterator
                         while let value = try? await iter.next() {
                             await latestSampled.setValue(value)
@@ -1038,7 +1054,7 @@ public struct AsyncStartWithSequence<Base: AsyncSequence>: AsyncSequence {
 ///
 /// - SeeAlso: ``AsyncDebounceSequence``, ``AsyncWithLatestFromSequence``
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base: Sendable, Base.Element: Sendable {
+public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base: Sendable, Base.Element: Sendable, Base.AsyncIterator: Sendable {
     /// The sampled element type.
     public typealias Element = Base.Element
 
@@ -1071,21 +1087,25 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
         init(base: Base, interval: Duration) {
             // SAFETY: ContinuationBox allows safe concurrent access from task group children
             // ThreadSafeBox (actor) provides synchronized access to latest value
-            var continuationBox: ContinuationBox<Element>!
-            channel = AsyncStream { cont in
-                continuationBox = ContinuationBox(cont)
-            }
+            let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
+                var box: ContinuationBox<Element>!
+                let ch = AsyncStream<Element> { cont in
+                    box = ContinuationBox(cont)
+                }
+                return (ch, box!)
+            }()
+            self.channel = channel
             iterator = channel.makeAsyncIterator()
 
             // Create iterator before Task to avoid capturing metatype
             let baseIterator = base.makeAsyncIterator()
 
-            Task {
+            Task { @Sendable in
                 let latestValue = ThreadSafeBox<Element?>(nil)
 
                 await withTaskGroup(of: Void.self) { group in
                     // Consume base stream
-                    group.addTask {
+                    group.addTask { @Sendable in
                         var iter = baseIterator
                         while let value = try? await iter.next() {
                             await latestValue.setValue(value)
@@ -1093,7 +1113,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
                     }
 
                     // Sample at intervals
-                    group.addTask {
+                    group.addTask { @Sendable in
                         while !Task.isCancelled {
                             try? await Task.sleep(for: interval)
                             if let value = await latestValue.getValue() {
@@ -1505,7 +1525,7 @@ public struct AsyncSkipWhileSequence<Base: AsyncSequence>: AsyncSequence {
 ///
 /// - SeeAlso: ``TimeoutError``, ``AsyncDebounceSequence``
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Base.Element: Sendable {
+public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Base: Sendable, Base.Element: Sendable, Base.AsyncIterator: Sendable {
     /// The element type (same as base stream).
     public typealias Element = Base.Element
 
@@ -1540,30 +1560,49 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
             case timeout
         }
 
+        /// Actor to safely wrap the mutable iterator for concurrent access
+        actor IteratorWrapper {
+            var iter: Base.AsyncIterator
+
+            init(_ iter: Base.AsyncIterator) {
+                self.iter = iter
+            }
+
+            func next() async throws -> Element? {
+                // Use local copy pattern to handle mutating async call
+                var localIter = iter
+                defer { iter = localIter }
+                return try await localIter.next()
+            }
+        }
+
         init(base: Base, duration: Duration) {
             // SAFETY: ThrowingContinuationBox allows safe concurrent access from timeout tasks
-            var continuationBox: ThrowingContinuationBox<Element>!
-            channel = AsyncThrowingStream { cont in
-                continuationBox = ThrowingContinuationBox(cont)
-            }
+            let (channel, continuationBox): (AsyncThrowingStream<Element, Error>, ThrowingContinuationBox<Element>) = {
+                var box: ThrowingContinuationBox<Element>!
+                let ch = AsyncThrowingStream<Element, Error> { cont in
+                    box = ThrowingContinuationBox(cont)
+                }
+                return (ch, box!)
+            }()
+            self.channel = channel
             iterator = channel.makeAsyncIterator()
 
-            // Create iterator before Task to avoid capturing metatype
+            // Create iterator wrapper before Task
             let baseIterator = base.makeAsyncIterator()
+            let wrapper = IteratorWrapper(baseIterator)
 
-            Task {
-                var iter = baseIterator
-
+            Task { @Sendable in
                 while true {
                     // Race each element against timeout using a result enum
                     do {
                         let result = try await withThrowingTaskGroup(of: TimeoutResult.self) { group in
-                            group.addTask {
-                                let val = try await iter.next()
+                            group.addTask { @Sendable in
+                                let val = try await wrapper.next()
                                 return TimeoutResult.value(val)
                             }
 
-                            group.addTask {
+                            group.addTask { @Sendable in
                                 try await Task.sleep(for: duration)
                                 return TimeoutResult.timeout
                             }

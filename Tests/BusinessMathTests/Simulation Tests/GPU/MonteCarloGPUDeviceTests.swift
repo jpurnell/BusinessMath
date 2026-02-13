@@ -106,7 +106,7 @@ struct MonteCarloGPUDeviceTests {
         }
 
         // Write data to buffer
-        var testData: [Float] = (0..<count).map { Float($0) }
+        let testData: [Float] = (0..<count).map { Float($0) }
         let pointer = buffer.contents().bindMemory(to: Float.self, capacity: count)
         for i in 0..<count {
             pointer[i] = testData[i]

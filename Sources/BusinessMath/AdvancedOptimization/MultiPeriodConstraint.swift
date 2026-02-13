@@ -224,6 +224,7 @@ extension MultiPeriodConstraint {
 	/// Penalizes portfolio changes proportionally: cost = rate × turnover
 	///
 	/// - Parameter rate: Transaction cost rate (default: 0.001 = 0.1%)
+	/// - Parameter maxCost: the Maximum Cost allowable
 	/// - Returns: Transition constraint (inequality for maximum cost)
 	public static func transactionCost(rate: Double = 0.001, maxCost: Double) -> MultiPeriodConstraint {
 		.transition { _, xₜ, xₜ₊₁ in

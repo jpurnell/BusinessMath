@@ -10,6 +10,7 @@ import Foundation
 import Numerics
 @testable import BusinessMath
 
+
 /// Tests for MultiStartOptimizer (Phase 3.3)
 ///
 /// Following TDD:
@@ -176,7 +177,7 @@ struct MultiStartOptimizerTests {
             numberOfStarts: 3
         )
 
-        var progressUpdates: [AsyncOptimizationProgress<Double>] = []
+        let collector = ProgressCollector<AsyncOptimizationProgress<Double>>()
 
         for try await progress in multiStart.optimizeWithProgress(
             objective: { x in (x - 5.0) * (x - 5.0) },
@@ -184,8 +185,10 @@ struct MultiStartOptimizerTests {
             initialGuess: 0.0,
             bounds: (lower: 0.0, upper: 10.0)
         ) {
-            progressUpdates.append(progress)
+            collector.append(progress)
         }
+
+        let progressUpdates = collector.getItems()
 
         // Should receive progress updates
         #expect(progressUpdates.count > 0)

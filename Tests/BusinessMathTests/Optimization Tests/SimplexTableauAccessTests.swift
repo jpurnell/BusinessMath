@@ -113,6 +113,7 @@ struct SimplexTableauAccessTests {
 
         // Should be able to identify which basic variables are fractional
         if let basis = result.basis, let tableau = result.tableau {
+			print(tableau.rowCount)
             var fractionalBasicVars: [Int] = []
 
             for (rowIndex, basicVarIndex) in basis.enumerated() {
@@ -129,7 +130,78 @@ struct SimplexTableauAccessTests {
             #expect(!fractionalBasicVars.isEmpty, "Should identify fractional basic variables")
         }
     }
+	// MARK: - Invariant Test
+	@Test("Basis columns form identity matrix and match RHS values")
+		func testBasisIdentityAndConsistency() throws {
 
+			let solver = SimplexSolver()
+
+			// Example LP:
+			// max 3x + 2y
+			// s.t.
+			//   x + y ≤ 4
+			//   2x + y ≤ 5
+			//   x, y ≥ 0
+
+			let objective = [3.0, 2.0]
+			let constraints = [
+				SimplexConstraint(coefficients: [1.0, 1.0], relation: .lessOrEqual, rhs: 4.0),
+				SimplexConstraint(coefficients: [2.0, 1.0], relation: .lessOrEqual, rhs: 5.0)
+			]
+
+			let result = try solver.maximize(objective: objective, subjectTo: constraints)
+
+			#expect(result.status == .optimal)
+
+			guard let tableau = result.tableau,
+				  let basis = result.basis else {
+				Issue.record("Missing tableau or basis")
+				return
+			}
+
+			let rowCount = tableau.rowCount
+			let columnCount = tableau.columnCount
+			let tolerance = 1e-6
+
+			// ✅ 1. Basis count must equal number of constraint rows
+			#expect(basis.count == rowCount)
+
+			// ✅ 2. No duplicate basis indices
+			let uniqueBasis = Set(basis)
+			#expect(uniqueBasis.count == basis.count)
+
+			// ✅ 3. Each basis column must form identity vector
+			for (rowIndex, basicVarIndex) in basis.enumerated() {
+
+				#expect(basicVarIndex >= 0)
+				#expect(basicVarIndex < columnCount - 1) // exclude RHS column
+
+				for r in 0..<rowCount {
+					let value = tableau.getFullRow(r)[basicVarIndex]
+
+					if r == rowIndex {
+						#expect(abs(value - 1.0) < tolerance,
+								"Pivot element must be 1 at row \(rowIndex), column \(basicVarIndex)")
+					} else {
+						#expect(abs(value) < tolerance,
+								"Non-pivot entries must be 0 in basis column \(basicVarIndex)")
+					}
+				}
+			}
+
+			// ✅ 4. RHS must equal value of basic variable (for original variables only)
+			for (rowIndex, basicVarIndex) in basis.enumerated() {
+
+				let rhs = tableau.getRHS(rowIndex)
+
+				if basicVarIndex < result.solution.count {
+					let solutionValue = result.solution[basicVarIndex]
+
+					#expect(abs(solutionValue - rhs) < tolerance,
+							"Solution value must match RHS for basic variable \(basicVarIndex)")
+				}
+			}
+		}
     // MARK: - Integration with Cutting Plane Generator
 
     @Test("Extract tableau row for Gomory cut generation")
@@ -197,20 +269,54 @@ struct SimplexTableauAccessTests {
             return
         }
 
-        // Note: Gomory cuts require the tableau to have non-basic variable coefficients
-        // The current SimplexTableau exposes rows, but may not separate basic/non-basic correctly
-        // For now, just verify we can access the tableau structure
-
         #expect(basis.count > 0, "Basis should have entries")
         #expect(tableau.rowCount > 0, "Tableau should have rows")
 
-        // Verify we can extract tableau rows
-        for rowIndex in 0..<min(basis.count, tableau.rowCount) {
-            let tableauRow = tableau.getRow(rowIndex)
-            #expect(tableauRow.count > 0, "Tableau row should have coefficients")
+        // Build SimplexRow objects from tableau for cut generation
+        // For this simple LP with 2 original vars + 2 slacks = 4 total vars
+        let totalVariableCount = 4
+        var simplexRows: [SimplexRow] = []
 
+        for rowIndex in 0..<min(basis.count, tableau.rowCount) {
+            let basicVarIndex = basis[rowIndex]
             let rhs = tableau.getRHS(rowIndex)
-            #expect(rhs.isFinite, "RHS should be finite")
+            let rowCoeffs = tableau.getRow(rowIndex)
+
+            // Determine non-basic variable indices (all except the basic one)
+            var nonBasicIndices: [Int] = []
+            var nonBasicCoeffs: [Double] = []
+
+            for varIndex in 0..<min(totalVariableCount, rowCoeffs.count) {
+                if varIndex != basicVarIndex {
+                    nonBasicIndices.append(varIndex)
+                    nonBasicCoeffs.append(rowCoeffs[varIndex])
+                }
+            }
+
+            let simplexRow = SimplexRow(
+                rhs: rhs,
+                coefficients: nonBasicCoeffs,
+                nonBasicVariableIndices: nonBasicIndices,
+                basicVariableIndex: basicVarIndex
+            )
+            simplexRows.append(simplexRow)
+        }
+
+        // Attempt to generate Gomory cuts
+        let cuts = try cutGenerator.generateCuts(
+            from: simplexRows,
+            currentSolution: result.solution + [0.0, 0.0], // Add slack values (assume 0)
+            totalVariableCount: totalVariableCount
+        )
+
+        // For this problem with fractional solution, we expect at least one cut
+        #expect(cuts.count > 0, "Should generate Gomory cuts from fractional solution")
+
+        // Verify cuts are valid
+        for cut in cuts {
+            #expect(cut.coefficients.count == totalVariableCount,
+                    "Cut should span all variables")
+            #expect(cut.rhs.isFinite, "Cut RHS should be finite")
         }
     }
 
@@ -297,7 +403,12 @@ struct SimplexTableauAccessTests {
         let cutGenerator = CuttingPlaneGenerator()
 
         if let tableau = result.tableau, let basis = result.basis {
-            var cuts: [CuttingPlane] = []
+            // Compute total variable count and non-basic indices
+            let totalVariableCount = tableau.columnCount - 1
+            let basisSet = Set(basis)
+            let nonBasicIndices = (0..<totalVariableCount).filter { !basisSet.contains($0) }
+
+            var simplexRows: [SimplexRow] = []
 
             for (rowIndex, basicVarIndex) in basis.enumerated() {
                 guard basicVarIndex < result.solution.count else { continue }
@@ -305,14 +416,21 @@ struct SimplexTableauAccessTests {
                 let value = result.solution[basicVarIndex]
                 let tableauRow = tableau.getRow(rowIndex)
 
-                if let cut = try cutGenerator.generateGomoryCut(
-                    tableauRow: tableauRow,
+                let simplexRow = SimplexRow(
                     rhs: value,
+                    coefficients: tableauRow,
+                    nonBasicVariableIndices: nonBasicIndices,
                     basicVariableIndex: basicVarIndex
-                ) {
-                    cuts.append(cut)
-                }
+                )
+
+                simplexRows.append(simplexRow)
             }
+
+            let cuts = try cutGenerator.generateCuts(
+                from: simplexRows,
+                currentSolution: result.solution,
+                totalVariableCount: totalVariableCount
+            )
 
             #expect(cuts.isEmpty, "No cuts should be generated for integer solution")
         }

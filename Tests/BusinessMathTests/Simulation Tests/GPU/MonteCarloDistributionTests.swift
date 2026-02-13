@@ -32,18 +32,18 @@ struct MonteCarloDistributionTests {
         switch type {
         case "normal":
             // Use positional parameters: init(_ mean, _ stdDev)
-            var dist = DistributionNormal(param1, param2)
+            let dist = DistributionNormal(param1, param2)
             for _ in 0..<count {
                 samples.append(dist.next())
             }
         case "uniform":
-            var dist = DistributionUniform(param1, param2)
+            let dist = DistributionUniform(param1, param2)
             for _ in 0..<count {
                 samples.append(dist.next())
             }
         case "triangular":
             // Check DistributionTriangular init signature
-            var dist = DistributionTriangular(low: param1, high: param2, base: param3)
+            let dist = DistributionTriangular(low: param1, high: param2, base: param3)
             for _ in 0..<count {
                 samples.append(dist.next())
             }

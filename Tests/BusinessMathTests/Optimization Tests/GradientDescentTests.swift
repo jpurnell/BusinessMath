@@ -15,7 +15,7 @@ struct GradientDescentTests {
 		)
 
 		// Minimize f(x) = x^2 (minimum at x = 0)
-		let objective = { (x: Double) -> Double in
+		let objective = { @Sendable (x: Double) -> Double in
 			return x * x
 		}
 
@@ -40,7 +40,7 @@ struct GradientDescentTests {
 		)
 
 		// Minimize f(x) = (x - 7)^2 (minimum at x = 7)
-		let objective = { (x: Double) -> Double in
+		let objective = { @Sendable (x: Double) -> Double in
 			let diff = x - 7.0
 			return diff * diff
 		}
@@ -66,7 +66,7 @@ struct GradientDescentTests {
 		)
 
 		// Minimize f(x) = x^2
-		let objective = { (x: Double) -> Double in
+		let objective = { @Sendable (x: Double) -> Double in
 			return x * x
 		}
 
@@ -91,7 +91,7 @@ struct GradientDescentTests {
 			momentum: 0.0
 		)
 
-		let objective = { (x: Double) -> Double in
+		let objective = { @Sendable (x: Double) -> Double in
 			return x * x
 		}
 
@@ -118,7 +118,7 @@ struct GradientDescentTests {
 
 		// Minimize f(x) = x^2 with bounds [-5, -1]
 		// Should converge to -1 (closest to 0 within bounds)
-		let objective = { (x: Double) -> Double in
+		let objective = { @Sendable (x: Double) -> Double in
 			return x * x
 		}
 
@@ -142,7 +142,7 @@ struct GradientDescentTests {
 			maxIterations: 50
 		)
 
-		let objective = { (x: Double) -> Double in
+		let objective = { @Sendable (x: Double) -> Double in
 			return x * x
 		}
 
@@ -174,7 +174,7 @@ struct GradientDescentTests {
 
 		// For f(x) = x^3 - 6x^2 + 9x, f'(x) = 3x^2 - 12x + 9
 		// This has a local maximum at x=1 and local minimum at x=3
-		let objective = { (x: Double) -> Double in
+		let objective = { @Sendable (x: Double) -> Double in
 			return x * x * x - 6 * x * x + 9 * x
 		}
 

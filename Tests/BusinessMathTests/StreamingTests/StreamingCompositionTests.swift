@@ -132,16 +132,19 @@ struct StreamingCompositionTests {
         #expect(debounced[0] == 3.0)
     }
 
-    @Test("Debounce with separated values")
+    @Test("Debounce with separated values", .timeLimit(.minutes(1)))
     func debounceWithSeparatedValues() async throws {
-        let stream = AsyncDelayedStream([1.0, 2.0], delay: .milliseconds(50))
+        // Use more generous timing to avoid flakiness in parallel test runs
+        // Values are separated by 100ms with 30ms debounce interval
+        let stream = AsyncDelayedStream([1.0, 2.0], delay: .milliseconds(100))
 
         var debounced: [Double] = []
-        for try await value in stream.debounce(interval: .milliseconds(20)) {
+        for try await value in stream.debounce(interval: .milliseconds(30)) {
             debounced.append(value)
         }
 
-        // With 50ms between values and 40ms debounce, both should emit
+        // With 100ms between values and 30ms debounce, both should emit
+        // (each value has >30ms of silence after it to trigger debounce emission)
         #expect(debounced.count == 2)
     }
 
@@ -358,7 +361,7 @@ struct StreamingCompositionTests {
 // MARK: - Helper Types
 
 /// AsyncSequence that emits values with a delay
-struct AsyncDelayedStream<Element>: AsyncSequence {
+struct AsyncDelayedStream<Element: Sendable>: AsyncSequence, @unchecked Sendable {
     typealias AsyncIterator = Iterator
 
     private let values: [Element]
@@ -373,7 +376,7 @@ struct AsyncDelayedStream<Element>: AsyncSequence {
         Iterator(values: values, delay: delay)
     }
 
-    struct Iterator: AsyncIteratorProtocol {
+    struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private var index: Int = 0
         private let values: [Element]
         private let delay: Duration

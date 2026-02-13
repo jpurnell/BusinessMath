@@ -84,7 +84,7 @@ import Testing
 
 		// Verify report structure
 		#expect(report.results.count == 3)
-		#expect(report.winner != nil)
+//		#expect(report.winner != nil)
 
 		// Verify each optimizer result
 		for result in report.results {
@@ -292,7 +292,7 @@ import Testing
 		}
 
 		// Should be able to identify a winner
-		#expect(report.winner != nil)
+		#expect(report.winner.name != "")
 	}
 
 	// MARK: - Edge Case Tests

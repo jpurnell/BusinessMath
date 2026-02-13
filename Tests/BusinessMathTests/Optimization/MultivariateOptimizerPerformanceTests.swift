@@ -285,12 +285,15 @@ struct MultivariateOptimizerPerformanceTests {
         let numAssets = 10
 
         // Simplified covariance matrix (diagonal)
-        var covariance = Array(repeating: Array(repeating: 0.0, count: numAssets), count: numAssets)
-        for i in 0..<numAssets {
-            covariance[i][i] = 0.04 + Double(i) * 0.01  // Increasing variance
-        }
+        let covariance: [[Double]] = {
+            var matrix = Array(repeating: Array(repeating: 0.0, count: numAssets), count: numAssets)
+            for i in 0..<numAssets {
+                matrix[i][i] = 0.04 + Double(i) * 0.01  // Increasing variance
+            }
+            return matrix
+        }()
 
-        let variance = { (weights: VectorN<Double>) -> Double in
+        let variance = { @Sendable (weights: VectorN<Double>) -> Double in
             let w = weights.toArray()
             var v = 0.0
             for i in 0..<numAssets {

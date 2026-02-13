@@ -70,7 +70,7 @@ struct ModelValidationEdgeCaseTests {
 		// Should complete without crashing (though results may not be meaningful)
 		let result = try fitter.fit(data: data, maxIterations: 100)
 
-		#expect(result != nil)
+//		#expect(result != nil)
 		// Parameters should still be positive due to constraints
 		#expect(result.parameters.a > 0)
 		#expect(result.parameters.b > 0)
@@ -88,7 +88,7 @@ struct ModelValidationEdgeCaseTests {
 		let fitter = ReciprocalRegressionFitter<Double>()
 		let result = try fitter.fit(data: data, maxIterations: 500)
 
-		#expect(result != nil)
+//		#expect(result != nil)
 		#expect(result.parameters.a.isFinite, "a should be finite")
 		#expect(result.parameters.b.isFinite, "b should be finite")
 		#expect(result.parameters.sigma.isFinite, "sigma should be finite")
@@ -103,7 +103,7 @@ struct ModelValidationEdgeCaseTests {
 		let result = try fitter.fit(data: data, maxIterations: 500)
 
 		// Should complete without crashing
-		#expect(result != nil)
+//		#expect(result != nil)
 		#expect(result.parameters.a > 0)
 		#expect(result.parameters.b > 0)
 	}
@@ -133,7 +133,7 @@ struct ModelValidationEdgeCaseTests {
 		let result = try fitter.fit(data: data, maxIterations: 1000)
 
 		// Should complete without crashing (though fit may be poor)
-		#expect(result != nil)
+//		#expect(result != nil)
 		#expect(result.parameters.a.isFinite, "Parameter a should be finite even with extreme outlier")
 		#expect(result.parameters.b.isFinite, "Parameter b should be finite even with extreme outlier")
 		#expect(result.parameters.sigma.isFinite, "Parameter sigma should be finite even with extreme outlier")
@@ -182,7 +182,7 @@ struct ModelValidationEdgeCaseTests {
 		)
 
 		// Test completed without crashing (may or may not pass)
-		#expect(report != nil)
+//		#expect(report != nil)
 		#expect(report.tolerance == 0.01)
 
 		// Check that failed parameters actually have error > tolerance
@@ -211,7 +211,7 @@ struct ModelValidationEdgeCaseTests {
 		)
 
 		// Should complete without crashing
-		#expect(result != nil)
+//		#expect(result != nil)
 
 		// May or may not converge well, but parameters should be finite and positive
 		#expect(result.parameters.a.isFinite && result.parameters.a > 0)
@@ -245,8 +245,8 @@ struct ModelValidationEdgeCaseTests {
 		)
 
 		// Both should complete
-		#expect(resultSlow != nil)
-		#expect(resultFast != nil)
+//		#expect(resultSlow != nil)
+//		#expect(resultFast != nil)
 
 		// Faster learning typically achieves better objective in fewer iterations
 		// (though not guaranteed due to optimization challenges)
@@ -311,7 +311,7 @@ struct ModelValidationEdgeCaseTests {
 		)
 
 		// With almost no noise, recovery should be better (though still challenging due to optimization)
-		#expect(report != nil)
+//		#expect(report != nil)
 		#expect(report.sampleSize == 100)
 	}
 
@@ -329,7 +329,7 @@ struct ModelValidationEdgeCaseTests {
 		)
 
 		// Should complete even with high noise
-		#expect(report != nil)
+//		#expect(report != nil)
 		#expect(report.sampleSize == 200)
 
 		// High noise makes recovery harder

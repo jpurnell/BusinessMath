@@ -228,13 +228,17 @@ public struct ScenarioOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 		// Create expected value objective
 		let totalProbability = scenarios.map { $0.probability }.reduce(0.0, +)
 
+		// Create local copy for Sendable closure
+		let scenariosCopy = self.scenarios
+		let totalProbabilityCopy = totalProbability
+
 		let expectedObjective: @Sendable (V) -> Double = { x in
 			var total = 0.0
-			for scenario in self.scenarios {
+			for scenario in scenariosCopy {
 				let value = objective(x, scenario)
 				total += value * scenario.probability
 			}
-			return total / totalProbability
+			return total / totalProbabilityCopy
 		}
 
 		// Convert scenario constraints to standard constraints
@@ -252,12 +256,12 @@ public struct ScenarioOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 			let optimizer = MultivariateGradientDescent<V>(
 				learningRate: V.Scalar(0.01),
 				maxIterations: maxIterations,
-				tolerance: V.Scalar(tolerance)
+				tolerance: V.Scalar(tolerance),
 			)
-			let objectiveToMinimize = minimize ? expectedObjective : { -expectedObjective($0) }
+			let objectiveToMinimize: @Sendable (V) -> Double = minimize ? expectedObjective : { @Sendable (x: V) -> Double in -expectedObjective(x) }
 			let unconstrainedResult = try optimizer.minimize(
 				function: objectiveToMinimize,
-				gradient: { x in try numericalGradient(objectiveToMinimize, at: x) },
+				gradient: { @Sendable x in try numericalGradient(objectiveToMinimize, at: x) },
 				initialGuess: initialSolution
 			)
 			// Convert to ConstrainedOptimizationResult format

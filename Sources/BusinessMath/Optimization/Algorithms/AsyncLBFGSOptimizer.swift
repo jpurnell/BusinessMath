@@ -135,7 +135,7 @@ public struct AsyncLBFGSOptimizer: Sendable {
         constraints: [Constraint<Double>],
         initialGuess: Double,
         bounds: (lower: Double, upper: Double)?,
-        onProgress: @escaping @Sendable (LBFGSProgress) -> Void = { _ in }
+        onProgress: @escaping @Sendable (LBFGSProgress) async -> Void = { _ in }
     ) async throws -> OptimizationResult<Double> {
         var x = initialGuess
         var iteration = 0
@@ -231,7 +231,7 @@ public struct AsyncLBFGSOptimizer: Sendable {
                         gradient: gradient,
                         result: nil
                     )
-                    onProgress(progress)
+                    await onProgress(progress)
                 }
 
                 mutableStrategy = strategy
@@ -258,7 +258,7 @@ public struct AsyncLBFGSOptimizer: Sendable {
                         gradient: gradient,
                         result: result
                     )
-                    onProgress(finalProgress)
+                    await onProgress(finalProgress)
 
                     return result
                 }
@@ -284,7 +284,7 @@ public struct AsyncLBFGSOptimizer: Sendable {
                     gradient: gradient,
                     result: result
                 )
-                onProgress(finalProgress)
+                await onProgress(finalProgress)
 
                 return result
             }
