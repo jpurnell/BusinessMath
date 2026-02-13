@@ -36,7 +36,7 @@ public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1), _
 ///
 /// The log-normal distribution is useful for modeling quantities that are always positive
 /// and have multiplicative rather than additive variation (e.g., stock prices, incomes).
-public struct DistributionLogNormal: DistributionRandom {
+public struct DistributionLogNormal: DistributionRandom, Sendable {
 	let mean: Double
 	let stdDev: Double
 

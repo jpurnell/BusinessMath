@@ -25,10 +25,12 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0]
         let stream = AsyncValueStream(values)
 
-        var collected: [Double] = []
+        let collector = ProgressCollector<Double>()
         for try await value in stream {
-            collected.append(value)
+            collector.append(value)
         }
+
+        let collected = collector.getItems()
 
         #expect(collected == values)
     }
@@ -41,15 +43,17 @@ struct StreamingInfrastructureTests {
             return counter
         }
 
-        var collected: [Double] = []
+        let collector = ProgressCollector<Double>()
         var iterations = 0
         for try await value in stream {
-            collected.append(value)
+            collector.append(value)
             iterations += 1
             if iterations >= 10 {
                 break
             }
         }
+
+        let collected = collector.getItems()
 
         #expect(collected == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
     }
@@ -61,10 +65,12 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
         let stream = AsyncValueStream(values)
 
-        var windows: [[Double]] = []
+        let collector = ProgressCollector<[Double]>()
         for try await window in stream.tumblingWindow(size: 3) {
-            windows.append(window)
+            collector.append(window)
         }
+
+        let windows = collector.getItems()
 
         // Expected: [1,2,3], [4,5,6], [7,8] (last window may be incomplete)
         #expect(windows.count == 3)
@@ -78,10 +84,12 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0]
         let stream = AsyncValueStream(values)
 
-        var windows: [[Double]] = []
+        let collector = ProgressCollector<[Double]>()
         for try await window in stream.slidingWindow(size: 3) {
-            windows.append(window)
+            collector.append(window)
         }
+
+        let windows = collector.getItems()
 
         // Expected: [1,2,3], [2,3,4], [3,4,5]
         #expect(windows.count == 3)
@@ -95,10 +103,12 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
         let stream = AsyncValueStream(values)
 
-        var windows: [[Double]] = []
+        let collector = ProgressCollector<[Double]>()
         for try await window in stream.slidingWindow(size: 3, step: 2) {
-            windows.append(window)
+            collector.append(window)
         }
+
+        let windows = collector.getItems()
 
         // Expected: [1,2,3], [3,4,5], [5,6,7], [7,8]
         #expect(windows.count == 4)
@@ -115,10 +125,12 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
         let stream = AsyncValueStream(values)
 
-        var buffers: [[Double]] = []
+        let collector = ProgressCollector<[Double]>()
         for try await buffer in stream.buffer(size: 3) {
-            buffers.append(buffer)
+            collector.append(buffer)
         }
+
+        let buffers = collector.getItems()
 
         // Expected: [1,2,3], [4,5,6], [7,8]
         #expect(buffers.count == 3)
@@ -139,10 +151,12 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0]
         let stream = AsyncValueStream(values)
 
-        var collected: [Double] = []
+        let collector = ProgressCollector<Double>()
         for try await value in stream.map({ $0 * 2 }) {
-            collected.append(value)
+            collector.append(value)
         }
+
+        let collected = collector.getItems()
 
         #expect(collected == [2.0, 4.0, 6.0, 8.0, 10.0])
     }
@@ -152,10 +166,12 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0]
         let stream = AsyncValueStream(values)
 
-        var collected: [Double] = []
+        let collector = ProgressCollector<Double>()
         for try await value in stream.filter({ $0 > 2.5 }) {
-            collected.append(value)
+            collector.append(value)
         }
+
+        let collected = collector.getItems()
 
         #expect(collected == [3.0, 4.0, 5.0])
     }
@@ -165,13 +181,15 @@ struct StreamingInfrastructureTests {
         let values = [1.0, 2.0, 3.0, 4.0, 5.0]
         let stream = AsyncValueStream(values)
 
-        var collected: [String] = []
+        let collector = ProgressCollector<String>()
         for try await value in stream.compactMap({ value -> String? in
             guard value > 2.5 else { return nil }
             return String(Int(value))
         }) {
-            collected.append(value)
+            collector.append(value)
         }
+
+        let collected = collector.getItems()
 
         #expect(collected == ["3", "4", "5"])
     }
@@ -189,15 +207,17 @@ struct StreamingInfrastructureTests {
             return Double(attemptCount)
         }
 
-        var collected: [Double] = []
+        let collector = ProgressCollector<Double>()
         var iterations = 0
         for try await value in stream.retry(maxAttempts: 3) {
-            collected.append(value)
+            collector.append(value)
             iterations += 1
             if iterations >= 5 {
                 break
             }
         }
+
+        let collected = collector.getItems()
 
         // Should succeed after 3 attempts
         #expect(collected.count > 0)
@@ -214,17 +234,19 @@ struct StreamingInfrastructureTests {
             return 42.0
         }
 
-        var collected: [Double] = []
+        let collector = ProgressCollector<Double>()
         var iterations = 0
         for try await value in stream.catchErrors ({ error in
             return 0.0  // Fallback value
         }) {
-            collected.append(value)
+            collector.append(value)
             iterations += 1
             if iterations >= 3 {
                 break
             }
         }
+
+        let collected = collector.getItems()
 
         // First value should be fallback (0.0), rest should be 42.0
         #expect(collected[0] == 0.0)

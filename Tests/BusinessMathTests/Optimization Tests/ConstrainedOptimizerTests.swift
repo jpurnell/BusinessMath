@@ -56,7 +56,7 @@ struct ConstrainedOptimizerTests {
 		// For 3 uncorrelated assets with equal variance σ² = 1
 		// Minimum variance portfolio: w = [1/3, 1/3, 1/3], σ² = 1/3
 
-		let objective: (VectorN<Double>) -> Double = { weights in
+		let objective: @Sendable (VectorN<Double>) -> Double = { weights in
 			// Simplified variance: σ² = Σwᵢ² (for uncorrelated assets)
 			weights[0] * weights[0] +
 			weights[1] * weights[1] +
@@ -366,7 +366,7 @@ struct ConstrainedOptimizerTests {
 		}
 
 		// Portfolio variance: σ²ₚ = wᵀΣw
-		let portfolioVariance: (VectorN<Double>) -> Double = { w in
+		let portfolioVariance: @Sendable (VectorN<Double>) -> Double = { w in
 			var variance = 0.0
 			for i in 0..<3 {
 				for j in 0..<3 {

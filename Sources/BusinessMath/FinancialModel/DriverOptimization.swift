@@ -74,7 +74,7 @@ public enum DriverChangeConstraint: Sendable {
 ///     weight: 1.0
 /// )
 /// ```
-public struct FinancialTarget {
+public struct FinancialTarget: Sendable {
 	/// Metric name (e.g., "revenue", "EBITDA", "FCF")
 	public let metric: String
 
@@ -99,7 +99,7 @@ public struct FinancialTarget {
 // MARK: - Target Value
 
 /// Target value specification for a financial metric.
-public enum TargetValue {
+public enum TargetValue: Sendable {
 	/// Exact target value
 	case exact(Double)
 
@@ -116,7 +116,7 @@ public enum TargetValue {
 // MARK: - Driver Objective
 
 /// Objective function for driver optimization.
-public enum DriverObjective {
+public enum DriverObjective: Sendable {
 	/// Minimize changes to drivers (target seeking)
 	case minimizeChange
 
@@ -127,13 +127,13 @@ public enum DriverObjective {
 	case maximizeFeasibility
 
 	/// Custom objective
-	case custom(([String: Double]) -> Double)  // driverValues -> score
+	case custom(@Sendable ([String: Double]) -> Double)  // driverValues -> score
 }
 
 // MARK: - Driver Optimization Result
 
 /// Result from driver optimization.
-public struct DriverOptimization {
+public struct DriverOptimization: Sendable {
 	/// Optimized driver values
 	public let optimizedDrivers: [String: Double]
 
@@ -220,7 +220,7 @@ public struct DriverOptimization {
 /// print("Optimized drivers: \(result.optimizedDrivers)")
 /// print("Revenue: \(result.achievedMetrics["revenue"]!)")
 /// ```
-public struct DriverOptimizer {
+public struct DriverOptimizer: Sendable {
 
 	/// Maximum iterations for optimization
 	public let maxIterations: Int
@@ -244,7 +244,7 @@ public struct DriverOptimizer {
 	public func optimize(
 		drivers: [OptimizableDriver],
 		targets: [FinancialTarget],
-		model: @escaping ([String: Double]) -> [String: Double],
+		model: @escaping @Sendable ([String: Double]) -> [String: Double],
 		objective: DriverObjective = .minimizeChange
 	) throws -> DriverOptimization {
 
@@ -294,16 +294,21 @@ public struct DriverOptimizer {
 	private func buildObjectiveFunction(
 		drivers: [OptimizableDriver],
 		targets: [FinancialTarget],
-		model: @escaping ([String: Double]) -> [String: Double],
+		model: @escaping @Sendable ([String: Double]) -> [String: Double],
 		objective: DriverObjective
-	) -> (VectorN<Double>) -> Double {
+	) -> @Sendable (VectorN<Double>) -> Double {
+
+		// Create local copies for Sendable closures
+		let driversCopy = drivers
+		let targetsCopy = targets
+		let modelCopy = model
 
 		switch objective {
 		case .minimizeChange:
-			return { values in
+			return { [self] values in
 				// Sum of squared normalized changes: Σ((new - current) / current)²
 				var totalChange = 0.0
-				for (i, driver) in drivers.enumerated() {
+				for (i, driver) in driversCopy.enumerated() {
 					let change = values[i] - driver.currentValue
 					let normalizedChange = change / max(abs(driver.currentValue), 1e-6)
 					totalChange += normalizedChange * normalizedChange
@@ -312,19 +317,19 @@ public struct DriverOptimizer {
 				// Add soft penalty for missing targets
 				let penalty = self.calculateTargetPenalty(
 					values: values,
-					drivers: drivers,
-					targets: targets,
-					model: model
+					drivers: driversCopy,
+					targets: targetsCopy,
+					model: modelCopy
 				)
 
 				return totalChange + 100.0 * penalty  // Heavy penalty for missing targets
 			}
 
 		case .minimizeCost(let costs):
-			return { values in
+			return { [self] values in
 				// Weighted sum of absolute changes
 				var totalCost = 0.0
-				for (i, driver) in drivers.enumerated() {
+				for (i, driver) in driversCopy.enumerated() {
 					let change = abs(values[i] - driver.currentValue)
 					let cost = costs[driver.name] ?? 1.0
 					totalCost += change * cost
@@ -333,28 +338,28 @@ public struct DriverOptimizer {
 				// Add soft penalty for missing targets (high weight to ensure feasibility)
 				let penalty = self.calculateTargetPenalty(
 					values: values,
-					drivers: drivers,
-					targets: targets,
-					model: model
+					drivers: driversCopy,
+					targets: targetsCopy,
+					model: modelCopy
 				)
 
 				return totalCost + 10000.0 * penalty
 			}
 
 		case .maximizeFeasibility:
-			return { values in
+			return { [self] values in
 				// Just the penalty (minimize penalty = maximize feasibility)
 				self.calculateTargetPenalty(
 					values: values,
-					drivers: drivers,
-					targets: targets,
-					model: model
+					drivers: driversCopy,
+					targets: targetsCopy,
+					model: modelCopy
 				)
 			}
 
 		case .custom(let customFunction):
-			return { values in
-				let driverDict = self.buildDriverDictionary(drivers: drivers, values: values)
+			return { [self] values in
+				let driverDict = self.buildDriverDictionary(drivers: driversCopy, values: values)
 				return customFunction(driverDict)
 			}
 		}

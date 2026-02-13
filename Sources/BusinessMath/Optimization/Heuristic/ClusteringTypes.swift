@@ -178,7 +178,7 @@ public struct ClusteringResult<V: VectorSpace>: Equatable where V: Equatable {
 ///   - ``VectorSpace/distance(to:)``
 ///   - ``VectorSpace/manhattanDistance(to:)``
 ///   - ``VectorSpace/chebyshevDistance(to:)``
-public enum DistanceMetric {
+public enum DistanceMetric: Sendable {
 	/// Euclidean distance (L2 norm).
 	/// Standard geometric distance: √(Σ(vᵢ - wᵢ)²)
 	case euclidean

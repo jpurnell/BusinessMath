@@ -57,7 +57,7 @@ struct DSCR_EdgeCaseTests {
 		// Simple declining debt
 		let debt = [100_000.0, 95_000.0, 90_000.0, 85_000.0]
 		let interest = [5_000.0, 5_000.0, 5_000.0, 5_000.0]
-		let operatingIncome = [60_000.0, 60_000.0, 60_000.0, 60_000.0]
+//		let operatingIncome = [60_000.0, 60_000.0, 60_000.0, 60_000.0]
 
 		// Create income statement
 		let revenueAccount = try Account(

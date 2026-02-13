@@ -300,6 +300,10 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 		var history: [(Int, V, V.Scalar, V.Scalar)] = []
 
 		for outerIter in 0..<maxIterations {
+			// Create immutable snapshots for Sendable closure
+			let lambdaSnapshot = lambda
+			let muSnapshot = mu
+
 			// Build augmented Lagrangian: L(x) = f(x) + Σλᵢhᵢ(x) + (μ/2)Σhᵢ(x)²
 			let augmentedLagrangian: @Sendable (V) -> V.Scalar = { point in
 				let objValue = objective(point)
@@ -308,11 +312,11 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 				// Add Lagrange multiplier terms: Σλᵢhᵢ(x)
 				for (i, constraint) in equalityConstraints.enumerated() {
 					let h = constraint.evaluate(at: point)
-					augmented = augmented + lambda[i] * h
+					augmented = augmented + lambdaSnapshot[i] * h
 				}
 
 				// Add penalty terms: (μ/2)Σhᵢ(x)²
-				let halfMu = mu / V.Scalar(2)
+				let halfMu = muSnapshot / V.Scalar(2)
 				for constraint in equalityConstraints {
 					let h = constraint.evaluate(at: point)
 					augmented = augmented + halfMu * h * h

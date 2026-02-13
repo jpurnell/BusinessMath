@@ -141,6 +141,10 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		var history: [(Int, V, V.Scalar, V.Scalar)] = []
 
 		for outerIter in 0..<maxIterations {
+			// Create immutable snapshots for Sendable closure
+			let lambdaEqSnapshot = lambdaEq
+			let rhoSnapshot = rho
+
 			// Build augmented Lagrangian with quadratic penalties
 			let augmentedLagrangian: @Sendable (V) -> V.Scalar = { point in
 				var value = objective(point)
@@ -148,7 +152,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 				// Equality constraints: λᵢhᵢ(x) + (ρ/2)hᵢ(x)²
 				for (i, constraint) in equalityConstraints.enumerated() {
 					let h = constraint.evaluate(at: point)
-					value = value + lambdaEq[i] * h + (rho / V.Scalar(2)) * h * h
+					value = value + lambdaEqSnapshot[i] * h + (rhoSnapshot / V.Scalar(2)) * h * h
 				}
 
 				// Inequality constraints: (ρ/2)Σmax(0, gⱼ(x))²
@@ -156,7 +160,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 				for constraint in inequalityConstraints {
 					let g = constraint.evaluate(at: point)
 					if g > V.Scalar(0) {
-						value = value + (rho / V.Scalar(2)) * g * g
+						value = value + (rhoSnapshot / V.Scalar(2)) * g * g
 					}
 				}
 

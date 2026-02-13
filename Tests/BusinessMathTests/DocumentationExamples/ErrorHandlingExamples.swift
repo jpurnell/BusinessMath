@@ -61,6 +61,7 @@ struct ErrorHandlingExamples {
         } catch let error as BusinessMathError {
             if case .calculationFailed(let operation, let reason, let suggestions) = error {
                 #expect(operation.contains("IRR"))
+				#expect(!reason.isEmpty)
                 #expect(!suggestions.isEmpty)
             } else {
                 Issue.record("Wrong error type: \(error)")
@@ -104,6 +105,7 @@ struct ErrorHandlingExamples {
             _ = try TimeSeries(validating: periods, values: values)
         } catch let error as BusinessMathError {
             if case .mismatchedDimensions(let message, let expected, let actual) = error {
+				#expect(!message.isEmpty)
                 #expect(expected == "3")
                 #expect(actual == "2")
                 #expect(error.code == "E100")
@@ -151,6 +153,7 @@ struct ErrorHandlingExamples {
             _ = try model.getValue(account: "Marketing Expenses", period: period)
         } catch let error as BusinessMathError {
             if case .missingData(let account, let period) = error {
+				#expect(period.description == Period.quarter(year: 2025, quarter: 1).description)
                 #expect(account == "Marketing Expenses")
                 #expect(error.code == "E102")
             }
@@ -282,12 +285,15 @@ extension ErrorHandlingExamples {
     /// Source tag: npvErrorHandlingExample
     static func npvErrorHandlingExample() {
         do {
-            let result = try npv(discountRate: 0.10, cashFlows: [-1000, 300, 400, 500])
-            print("NPV: $\(result)")
+            // Use calculateNPV which validates inputs and throws errors
+            let result = try calculateNPV(discountRate: 0.10, cashFlows: [-1000, 300, 400, 500])
+			print("NPV: \(result.currency())")
         } catch let error as BusinessMathError {
             print(error.errorDescription!)
             print(error.recoverySuggestion!)
             print("Error Code: \(error.code)")
+        } catch {
+            print("Unexpected error: \(error)")
         }
     }
 

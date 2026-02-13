@@ -884,17 +884,19 @@ struct VectorSpaceTests {
 //		let cgFloatVec = VectorN<CGFloat>([1.0, 2.0])
 		
 			// All should support basic operations
-		#expect(doubleVec.norm is Double)
-		#expect(floatVec.norm is Float)
+//		#expect(doubleVec.norm is Double)
+//		#expect(floatVec.norm is Float)
 //		#expect(cgFloatVec.norm is CGFloat)
 		
 			// Mixing types should not compile (type safety)
 			// Uncommenting this should cause a compile error:
-			// let mixed = doubleVec + floatVec  // Should not compile
+//			 let mixed = doubleVec + floatVec  // Should not compile
 		
 			// But conversion should work
-		let converted = VectorN<Double>(floatVec.toArray().map { Double($0) })
-		#expect(converted.count == 2)
+		let convertedFloat = VectorN<Float>(doubleVec.toArray().map { Float($0) })
+		let convertedDouble = VectorN<Double>(floatVec.toArray().map { Double($0) })
+		#expect(convertedFloat.count == 2)
+		#expect(convertedDouble.count == 2)
 	}
 	
 	@Test("Sendable conformance")
@@ -1076,13 +1078,42 @@ struct VectorSpaceTests {
 		let expectedReturn = returns.dot(weights)
 		#expect(abs(expectedReturn - 0.090) < 1e-10)  // 0.4*0.08 + 0.4*0.12 + 0.2*0.05 = 0.090
 		
-			// Simulate covariance matrix (simplified)
+			// Simulate covariance matrix using volatilities and correlations
 		let volatilities = VectorN<Double>([0.15, 0.20, 0.10])  // Standard deviations
-		let correlations = VectorN<Double>([1.0, 0.3, 0.1])     // Correlation with first asset
-		
-			// Calculate portfolio variance (simplified)
-		let variance = weights.hadamard(volatilities).dot(weights.hadamard(volatilities))
+
+		// Build correlation matrix (symmetric)
+		// Asset 0-1: 0.3, Asset 0-2: 0.1, Asset 1-2: 0.2
+		let correlationMatrix: [[Double]] = [
+			[1.0, 0.3, 0.1],  // Asset 0 correlations
+			[0.3, 1.0, 0.2],  // Asset 1 correlations
+			[0.1, 0.2, 1.0]   // Asset 2 correlations
+		]
+
+		// Build covariance matrix: Cov(i,j) = σ_i * σ_j * ρ_ij
+		var covarianceMatrix: [[Double]] = Array(repeating: Array(repeating: 0.0, count: 3), count: 3)
+		for i in 0..<3 {
+			for j in 0..<3 {
+				covarianceMatrix[i][j] = volatilities[i] * volatilities[j] * correlationMatrix[i][j]
+			}
+		}
+
+		// Calculate portfolio variance: σ²_p = Σᵢ Σⱼ w_i w_j Cov(i,j)
+		var variance = 0.0
+		for i in 0..<3 {
+			for j in 0..<3 {
+				variance += weights[i] * weights[j] * covarianceMatrix[i][j]
+			}
+		}
+
 		#expect(variance > 0)
+
+		// Compare to undiversified case (perfect correlation, ρ = 1.0)
+		// Undiversified variance: (Σ w_i * σ_i)² - the square of the sum, not sum of squares!
+		let weightedVolSum = weights.dot(volatilities)  // Σ w_i * σ_i
+		let undiversifiedVariance = weightedVolSum * weightedVolSum  // (Σ w_i * σ_i)²
+
+		// With imperfect correlations (< 1.0), diversification reduces variance
+		#expect(variance < undiversifiedVariance, "Diversification should reduce portfolio variance")
 		
 		// Weights already sum to 1.0 (0.4 + 0.4 + 0.2 = 1.0)
 	#expect(abs(weights.sum - 1.0) < 1e-10)

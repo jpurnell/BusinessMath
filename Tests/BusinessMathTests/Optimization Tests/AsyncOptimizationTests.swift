@@ -10,6 +10,7 @@ import Foundation
 import Numerics
 @testable import BusinessMath
 
+
 /// Tests for Async Optimization Infrastructure (Phase 3.1)
 ///
 /// Following TDD:
@@ -178,7 +179,7 @@ struct AsyncOptimizationTests {
     func asyncOptimizerStreamsProgress() async throws {
         let optimizer = MockAsyncOptimizer()
 
-        var progressUpdates: [AsyncOptimizationProgress<Double>] = []
+        let collector = ProgressCollector<AsyncOptimizationProgress<Double>>()
 
         // Collect progress updates
         for try await progress in optimizer.optimizeWithProgress(
@@ -187,8 +188,10 @@ struct AsyncOptimizationTests {
             initialGuess: 0.0,
             bounds: nil
         ) {
-            progressUpdates.append(progress)
+            collector.append(progress)
         }
+
+        let progressUpdates = collector.getItems()
 
         // Should have received multiple progress updates
         #expect(progressUpdates.count > 0)
@@ -235,8 +238,7 @@ struct AsyncOptimizationTests {
     func asyncOptimizerProgressIncludesObjectiveValues() async throws {
         let optimizer = MockAsyncOptimizer()
 
-        // Track objective values
-        var objectiveValues: [Double] = []
+        let collector = ProgressCollector<Double>()
 
         for try await progress in optimizer.optimizeWithProgress(
             objective: { x in (x - 5.0) * (x - 5.0) },
@@ -244,8 +246,10 @@ struct AsyncOptimizationTests {
             initialGuess: 0.0,
             bounds: nil
         ) {
-            objectiveValues.append(progress.objectiveValue)
+            collector.append(progress.objectiveValue)
         }
+
+        let objectiveValues = collector.getItems()
 
         // Objective values should generally decrease (for minimization)
         #expect(objectiveValues.count > 0)

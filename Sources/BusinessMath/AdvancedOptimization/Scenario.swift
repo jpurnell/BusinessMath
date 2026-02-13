@@ -27,7 +27,7 @@ import Foundation
 ///     }
 /// }
 /// ```
-public protocol OptimizationScenario {
+public protocol OptimizationScenario: Sendable {
 	/// Optional probability for discrete scenarios.
 	///
 	/// For continuous distributions (Monte Carlo), this is typically 1/N.

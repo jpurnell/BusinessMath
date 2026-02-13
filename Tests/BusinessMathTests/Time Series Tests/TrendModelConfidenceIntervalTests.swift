@@ -234,7 +234,7 @@ struct TrendModelConfidenceIntervalTests {
 
 	@Test("Model not fitted throws error")
 	func modelNotFitted() throws {
-		var model = LinearTrend<Double>()
+		let model = LinearTrend<Double>()
 		// Don't fit the model
 
 		#expect(throws: TrendModelError.self) {

@@ -17,7 +17,7 @@ struct LBFGSOptimizerTests {
     @Test("L-BFGS optimizes simple quadratic function")
     func simpleQuadratic() async throws {
         // f(x) = (x - 3)^2, minimum at x = 3
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 3.0) * (x - 3.0)
         }
 
@@ -44,7 +44,7 @@ struct LBFGSOptimizerTests {
         // Rosenbrock: f(x,y) = (1-x)^2 + 100(y-x^2)^2
         // Represented as f(t) where t encodes both x and y
         // For 1D test: f(x) = (1-x)^2 + 100(2-x^2)^2, minimum near x ≈ 1
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             let term1 = (1.0 - x) * (1.0 - x)
             let term2 = 100.0 * (2.0 - x * x) * (2.0 - x * x)
             return term1 + term2
@@ -70,7 +70,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS with tight tolerance")
     func tightTolerance() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 5.0) * (x - 5.0)
         }
 
@@ -95,7 +95,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS with limited memory (m=3)")
     func limitedMemory() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 4.0) * (x - 4.0)
         }
 
@@ -118,7 +118,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS with larger memory (m=20)")
     func largerMemory() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 4.0) * (x - 4.0)
         }
 
@@ -145,7 +145,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS with fixed interval progress reporting")
     func fixedIntervalProgress() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 2.0) * (x - 2.0)
         }
 
@@ -156,17 +156,18 @@ struct LBFGSOptimizerTests {
             progressStrategy: FixedIntervalStrategy(interval: 5)
         )
 
-        var progressUpdates: [Int] = []
+        let collector = ProgressCollector<Int>()
         let result = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 10.0,
             bounds: nil
         ) { progress in
-            progressUpdates.append(progress.iteration)
+            collector.append(progress.iteration)
         }
 
         #expect(result.converged)
+        let progressUpdates = collector.getItems()
         #expect(progressUpdates.count > 0)
 
         // Verify fixed interval reporting
@@ -178,7 +179,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS with exponential backoff progress")
     func exponentialBackoffProgress() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 2.0) * (x - 2.0)
         }
 
@@ -193,23 +194,24 @@ struct LBFGSOptimizerTests {
             )
         )
 
-        var progressUpdates: [Int] = []
+        let collector = ProgressCollector<Int>()
         let result = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 10.0,
             bounds: nil
         ) { progress in
-            progressUpdates.append(progress.iteration)
+            collector.append(progress.iteration)
         }
 
         #expect(result.converged)
+        let progressUpdates = collector.getItems()
         #expect(progressUpdates.count > 0)
     }
 
     @Test("L-BFGS with convergence-based progress")
     func convergenceBasedProgress() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 2.0) * (x - 2.0)
         }
 
@@ -224,17 +226,18 @@ struct LBFGSOptimizerTests {
             )
         )
 
-        var metricsHistory: [ConvergenceMetrics] = []
+        let metricsCollector = ProgressCollector<ConvergenceMetrics>()
         let result = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 10.0,
             bounds: nil
         ) { progress in
-            metricsHistory.append(progress.metrics)
+            metricsCollector.append(progress.metrics)
         }
 
         #expect(result.converged)
+        let metricsHistory = metricsCollector.getItems()
         #expect(metricsHistory.count > 0)
 
         // Verify metrics are reasonable
@@ -247,7 +250,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS with convergence detector enables early stopping")
     func convergenceDetectorEarlyStopping() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 3.0) * (x - 3.0)
         }
 
@@ -280,7 +283,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS reports convergence metrics correctly")
     func convergenceMetricsCorrectness() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 1.0) * (x - 1.0)
         }
 
@@ -291,17 +294,18 @@ struct LBFGSOptimizerTests {
             progressStrategy: FixedIntervalStrategy(interval: 1)
         )
 
-        var lastMetrics: ConvergenceMetrics?
+        let metricsCollector = ProgressCollector<ConvergenceMetrics>()
         let result = try await optimizer.optimizeWithProgress(
             objective: objective,
             constraints: [],
             initialGuess: 5.0,
             bounds: nil
         ) { progress in
-            lastMetrics = progress.metrics
+			metricsCollector.append(progress.metrics)
         }
 
         #expect(result.converged)
+        let lastMetrics = metricsCollector.last()
         #expect(lastMetrics != nil)
 
         if let metrics = lastMetrics {
@@ -318,7 +322,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS provides AsyncSequence of progress updates")
     func progressAsyncSequence() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 2.0) * (x - 2.0)
         }
 
@@ -355,7 +359,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS handles already optimal initial guess")
     func alreadyOptimal() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 7.0) * (x - 7.0)
         }
 
@@ -379,7 +383,7 @@ struct LBFGSOptimizerTests {
 
     @Test("L-BFGS handles difficult initial guess")
     func difficultInitialGuess() async throws {
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             (x - 5.0) * (x - 5.0)
         }
 
@@ -403,7 +407,7 @@ struct LBFGSOptimizerTests {
     @Test("L-BFGS respects max iterations")
     func respectsMaxIterations() async throws {
         // Difficult function with very tight tolerance
-        let objective: (Double) -> Double = { x in
+        let objective: @Sendable (Double) -> Double = { x in
             let term1 = (1.0 - x) * (1.0 - x)
             let term2 = 100.0 * (2.0 - x * x) * (2.0 - x * x)
             return term1 + term2

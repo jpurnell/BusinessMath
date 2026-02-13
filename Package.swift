@@ -87,6 +87,9 @@ var targets: [Target] = [
 		dependencies: [
 			"BusinessMath",
 			"BusinessMathDSL"
+		],
+		swiftSettings: [
+			.enableUpcomingFeature("StrictConcurrency")
 		]
 	)
 ]

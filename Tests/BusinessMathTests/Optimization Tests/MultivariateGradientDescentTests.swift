@@ -323,7 +323,7 @@ struct MultivariateGradientDescentTests {
 
 	@Test("Optimize with Vector2D")
 	func optimizeVector2D() throws {
-		let function: (Vector2D<Double>) -> Double = { v in
+		let function: @Sendable (Vector2D<Double>) -> Double = { v in
 			v.x*v.x + v.y*v.y
 		}
 
@@ -354,7 +354,7 @@ struct MultivariateGradientDescentTests {
 		let covariance = [[0.04, 0.01],
 						  [0.01, 0.09]]
 
-		let portfolioVariance: (VectorN<Double>) -> Double = { weights in
+		let portfolioVariance: @Sendable (VectorN<Double>) -> Double = { weights in
 			let w = weights.toArray()
 			var variance = 0.0
 			for i in 0..<2 {

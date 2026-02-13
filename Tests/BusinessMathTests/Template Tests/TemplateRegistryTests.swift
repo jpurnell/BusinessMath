@@ -451,7 +451,7 @@ struct TemplateRegistryTests {
 
         var caughtError: Error?
         do {
-            try await registry.import(package)
+           let _ = try await registry.import(package)
         } catch {
             caughtError = error
         }
@@ -465,7 +465,7 @@ struct TemplateRegistryTests {
 
         var caughtError: Error?
         do {
-            try await registry.export("Does Not Exist")
+           let _ = try await registry.export("Does Not Exist")
         } catch {
             caughtError = error
         }

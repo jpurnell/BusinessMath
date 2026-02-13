@@ -56,7 +56,7 @@ struct ExpressionCompilationIntegrationTests {
 
     @Test("Pipeline with constant folding: sqrt(16) + 3 → 7")
     func testConstantFoldingPipeline() throws {
-        let builder = ExpressionBuilder()
+        // Test constant folding with no inputs (builder not needed)
         let sqrtExpr = ExpressionProxy(MathExpression.unary(.sqrt, .constant(16.0)))
         let expr = sqrtExpr + 3.0
 
@@ -246,7 +246,7 @@ struct ExpressionCompilationIntegrationTests {
 
     @Test("Max input index: No inputs (constants only)")
     func testMaxInputIndexNoInputs() throws {
-        let builder = ExpressionBuilder()
+        // Test with constants only (builder not needed)
         let constExpr = ExpressionProxy(MathExpression.constant(42.0))
         let expr = constExpr + 10.0
 
