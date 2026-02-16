@@ -71,7 +71,7 @@ public func requiredSampleSize<T: Real>(ci: T, stdDev: T, sampleMean: T, populat
 ///     - ci: The desired confidence interval. It should adhere to the `Real` type (a protocol in the Swift Standard Library defining a common API for all types that can represent real numbers).
 ///     - prob: The assumed proportion in the population.
 ///     - maxError: The maximum acceptable error.
-///
+///     - populationSize: The total number of elements in the observation set
 /// - Returns: The required sample size.
 ///
 /// - Precondition: `ci` and `prob` must be a value between `0` and `1` (inclusive), and `maxError` must be a non-negative number.

@@ -39,8 +39,8 @@ public func standardErrorProbabilistic<T: Real>(_ prob: T, observations n: Int) 
 ///
 /// - Parameters:
 ///     - prob: The probability of the event. It should adhere to the `Real` protocol, a protocol in the Swift Standard Library defining a common API for all types that can represent real numbers.
-///     - obs: The number of observed events.
-///     - total: The total number of observations.
+///     - n: The observation to be evaluated
+///    - total: The total number of observations.
 ///
 /// - Returns: The standard error for the given parameters.
 ///

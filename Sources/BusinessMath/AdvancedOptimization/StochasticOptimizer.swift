@@ -318,7 +318,7 @@ extension StochasticOptimizer: MultivariateOptimizer {
 	/// - Throws: ``OptimizationError`` if optimization fails
 	///
 	/// - Note: The returned result is based on the deterministic objective, not scenario
-	///   analysis. Use the specialized ``optimize()`` methods for stochastic results with
+	///   analysis. Use the specialized ``optimize(objective:scenarios:initialSolution:constraints:minimize:)`` methods for stochastic results with
 	///   expected value and standard deviation across scenarios.
 	public func minimize(
 		_ objective: @escaping @Sendable (V) -> V.Scalar,

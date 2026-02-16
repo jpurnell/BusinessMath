@@ -13,6 +13,7 @@ import Numerics
 /// The Rayleigh distribution is a continuous probability distribution for non-negative-valued random variables.
 ///
 /// - Parameter mean: The mean of the Rayleigh distribution.
+/// - Parameter seed: Optional seed for reproducibility
 /// - Returns: A random value sampled from the Rayleigh distribution.
 public func distributionRayleigh<T: Real>(mean: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
 	let u: T

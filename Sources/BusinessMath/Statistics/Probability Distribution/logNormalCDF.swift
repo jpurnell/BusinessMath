@@ -40,9 +40,9 @@ import Numerics
 ///
 /// - Parameter x: The value at which to evaluate the CDF. Must be positive (x > 0).
 ///   For x ≤ 0, the function returns 0.
-/// - Parameter mean: The mean (μ) of the underlying normal distribution. Defaults to 0.
+/// - Parameter μ: The mean (μ) of the underlying normal distribution. Defaults to 0.
 ///   This is NOT the mean of the lognormal distribution itself.
-/// - Parameter stdDev: The standard deviation (σ) of the underlying normal distribution.
+/// - Parameter σ: The standard deviation (σ) of the underlying normal distribution.
 ///   Defaults to 1. Must be positive (σ > 0).
 ///
 /// ## Returns
@@ -100,7 +100,7 @@ import Numerics
 ///
 /// - ``logNormalPDF(_:mean:stdDev:)`` - Probability density function
 /// - ``distributionLogNormal(mean:stdDev:_:_:)`` - Random sampling
-/// - ``normalCDF(_:mean:standardDeviation:)`` - Normal CDF (used internally)
+/// - ``normalCDF(x:mean:stdDev:)`` - Normal CDF (used internally)
 ///
 /// ## See Also
 ///

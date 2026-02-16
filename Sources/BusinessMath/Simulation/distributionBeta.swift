@@ -36,6 +36,7 @@ import Numerics
 /// - Parameters:
 ///   - alpha: The first shape parameter (α > 0)
 ///   - beta: The second shape parameter (β > 0)
+///   - seeds: Optional seeds for reproducibility
 /// - Returns: A random value sampled from the Beta(α, β) distribution
 ///
 /// ## Example

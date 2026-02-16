@@ -35,7 +35,7 @@ This progressive tutorial series builds optimization capabilities from first pri
 **Phase 3-5: Core Algorithms**
 - <doc:5.5-MultivariateOptimization> - Gradient descent and Newton-Raphson methods
 - <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints
-- <doc:5.6-BusinessOptimization> - Resource allocation, production planning, financial model drivers
+- <doc:5.7-BusinessOptimization> - Resource allocation, production planning, financial model drivers
 
 **Phase 6-7: Advanced Techniques**
 - <doc:5.8-IntegerProgramming> - Branch-and-bound, branch-and-cut with cutting planes
@@ -72,7 +72,7 @@ Basic calculus (derivatives) helps for understanding gradient-based methods, but
 
 ### For Quantitative Analysts:
 1. <doc:5.1-OptimizationGuide> - Complete overview
-2. <doc:5.3-CoreOptimization> through <doc:5.6-BusinessOptimization> - Core sequence
+2. <doc:5.3-CoreOptimization> through <doc:5.7-BusinessOptimization> - Core sequence
 3. <doc:5.2-PortfolioOptimizationGuide> - Portfolio applications
 4. Advanced phases as needed
 

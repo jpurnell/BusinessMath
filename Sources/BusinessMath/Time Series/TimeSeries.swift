@@ -129,7 +129,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///   - periods: The periods for this time series.
 	///   - values: The values corresponding to each period.
 	///   - metadata: Optional metadata describing the time series.
-	///
+	///   - labels: Informal names for the periods
 	/// - Precondition: `periods.count == values.count`
 	///
 	/// ## Example
@@ -186,8 +186,8 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///   - metadata: Optional metadata describing the time series.
 	///   - labels: Optional array of labels (must have same count as periods if provided).
 	/// - Throws:
-	///   - ``BusinessMathError/mismatchedDimensions`` if array counts don't match
-	///   - ``BusinessMathError/invalidInput`` if periods or values are empty
+	///   - ``BusinessMathError/mismatchedDimensions(message:expected:actual:)`` if array counts don't match
+	///   - ``BusinessMathError/invalidInput(message:value:expectedRange:)`` if periods or values are empty
 	///
 	/// ## Example
 	/// ```swift
@@ -245,7 +245,8 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// - Parameters:
 	///   - data: A dictionary mapping periods to values.
 	///   - metadata: Optional metadata describing the time series.
-	///
+	///   - labels: An array of localized names for the Periods
+	///  
 	/// ## Example
 	/// ```swift
 	/// let data = [
@@ -283,7 +284,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///
 	/// - Parameters:
 	///   - period: The period to look up.
-	///   - default: The default value to return if the period is not found.
+	///   - defaultValue: The default value to return if the period is not found.
 	/// - Returns: The value for the period, or the default value.
 	///
 	/// ## Example
@@ -350,8 +351,8 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// as all periods between them that exist in the original time series.
 	///
 	/// - Parameters:
-	///   - from: The starting period (inclusive).
-	///   - to: The ending period (inclusive).
+	///   - start: The starting period (inclusive).
+	///   - end: The ending period (inclusive).
 	/// - Returns: A new time series containing only the specified range.
 	///
 	/// ## Example

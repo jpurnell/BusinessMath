@@ -121,7 +121,7 @@ import Metal
 ///
 /// ### Optimization Methods
 /// - ``minimize(_:from:constraints:)``
-/// - ``optimizeDetailed(objective:)``
+/// - ``optimizeDetailed(objective:constraints:)``
 ///
 /// ### Related Types
 /// - ``IslandModelConfig``

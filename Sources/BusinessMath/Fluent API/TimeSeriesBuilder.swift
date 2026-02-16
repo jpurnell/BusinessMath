@@ -50,7 +50,7 @@ public protocol TimeSeriesEntry<Value>: Sendable {
 ///
 /// ## See Also
 /// - ``TimeSeries/init(builder:)`` for using this builder
-/// - ``=>(_:_:)-5bki9`` for the arrow operator syntax
+/// - `=>` operator for creating entries with arrow syntax (e.g., `Period.year(2023) => 1000`)
 @resultBuilder
 public struct TimeSeriesBuilder<T: Real & Sendable> {
     /// Build a block of time series entries.
@@ -107,7 +107,7 @@ public struct TimeSeriesBuilder<T: Real & Sendable> {
 /// ```
 ///
 /// ## See Also
-/// - ``=>(_:_:)-5bki9`` for arrow operator syntax
+/// - ``init(period:value:)`` for arrow operator syntax
 /// - ``TimeSeriesEntry`` protocol
 public struct TimeSeriesEntryImpl<T: Real & Sendable>: TimeSeriesEntry, Sendable {
     /// The time period for this entry (year, quarter, month, etc.).

@@ -46,6 +46,7 @@ import Numerics
 ///
 /// - Parameters:
 ///   - degreesOfFreedom: The degrees of freedom parameter (df > 0)
+///   - seeds: Optional seeding to enable reproducibility
 /// - Returns: A random value sampled from the t(df) distribution
 ///
 /// ## Example

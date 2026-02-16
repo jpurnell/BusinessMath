@@ -322,6 +322,7 @@ public struct PortfolioOptimizer {
 	///   - expectedReturns: Expected return for each asset
 	///   - covariance: Covariance matrix (n×n)
 	///   - riskFreeRate: Risk-free rate (default: 0.02)
+	///   - constraintSet: A set of Portfolio Constraints
 	/// - Returns: Optimal portfolio with maximum Sharpe ratio
 	public func maximumSharpePortfolio(
 		expectedReturns: VectorN<Double>,
@@ -465,6 +466,7 @@ public struct PortfolioOptimizer {
 	/// - Parameters:
 	///   - expectedReturns: Expected return for each asset
 	///   - covariance: Covariance matrix (n×n)
+	///   - constraintSet: A set of Portfolio Constraints
 	/// - Returns: Risk parity portfolio
 	public func riskParityPortfolio(
 		expectedReturns: VectorN<Double>,

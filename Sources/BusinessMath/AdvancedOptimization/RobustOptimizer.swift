@@ -239,6 +239,9 @@ extension RobustOptimizer {
 	///   - initialSolution: Starting point
 	///   - constraints: Constraints on decision variables
 	///   - minimize: Whether to minimize worst-case
+	///   - tolerance: The tolerance level. Defaults to 1e-6
+	///   - samplesPerIteration: The number of samples taken per iteration. Defaults to 100
+	///   - maxIterations: The maximum number of iterations. Defaults to 500
 	/// - Returns: Robust optimization result
 	public static func optimizeBox(
 		objective: @escaping @Sendable (V, [Double]) -> Double,
@@ -282,6 +285,8 @@ extension RobustOptimizer {
 	///   - initialSolution: Starting point
 	///   - constraints: Constraints on decision variables
 	///   - minimize: Whether to minimize worst-case
+	///   - tolerance: The tolerance level. Defaults to 1e-6
+	///   - maxIterations: The maximum number of iterations. Defaults to 500
 	/// - Returns: Robust optimization result
 	public static func optimizeDiscrete(
 		objective: @escaping @Sendable (V, [Double]) -> Double,
@@ -336,9 +341,8 @@ extension RobustOptimizer: MultivariateOptimizer {
 	///   - constraints: Array of constraints
 	/// - Returns: Optimization result (base protocol type)
 	/// - Throws: ``OptimizationError`` if optimization fails
-	///
 	/// - Note: The returned result is based on the deterministic objective, not worst-case
-	///   analysis. Use the specialized ``optimize()`` method for robust results with
+	///   analysis. Use the specialized ``optimize(objective:nominalParameters:initialSolution:constraints:minimize:)`` method for robust results with
 	///   worst-case and nominal objective values.
 	public func minimize(
 		_ objective: @escaping @Sendable (V) -> V.Scalar,

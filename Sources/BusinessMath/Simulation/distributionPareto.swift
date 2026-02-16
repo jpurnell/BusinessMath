@@ -46,6 +46,7 @@ import Numerics
 /// - Parameters:
 ///   - scale: The scale parameter xₘ (minimum value, xₘ > 0)
 ///   - shape: The shape parameter α (α > 0, controls inequality)
+///   - seed: Optional seed for reproducibility
 /// - Returns: A random value sampled from the Pareto(xₘ, α) distribution
 ///
 /// ## Example

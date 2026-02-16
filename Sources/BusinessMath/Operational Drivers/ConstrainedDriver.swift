@@ -151,8 +151,8 @@ extension Driver where Value: BinaryFloatingPoint {
 	/// Values below `min` are set to `min`, values above `max` are set to `max`.
 	///
 	/// - Parameters:
-	///   - min: The minimum allowed value (optional).
-	///   - max: The maximum allowed value (optional).
+	///   - minValue: The minimum allowed value (optional).
+	///   - maxValue: The maximum allowed value (optional).
 	/// - Returns: A constrained driver with values in the specified range.
 	///
 	/// ## Example

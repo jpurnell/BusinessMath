@@ -125,10 +125,6 @@ import Numerics
 /// - ``description``
 /// - ``driverOverrides``
 /// - ``assumptions``
-///
-/// ### Running Scenarios
-/// - ``ScenarioRunner``
-/// - ``FinancialProjection``
 public struct FinancialScenario: Sendable {
 
 	// MARK: - Properties

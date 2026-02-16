@@ -357,7 +357,7 @@ public struct InvestmentBuilder {
 
 /// Result builder for constructing cash flows.
 ///
-/// Enables declarative syntax for defining cash flows within a ``CashFlows(_:)``
+/// Enables declarative syntax for defining cash flows within a ``CashFlows(builder:)``
 /// block. Automatically sorts cash flows by period for proper NPV calculation.
 ///
 /// ## Supported Syntax
@@ -400,7 +400,7 @@ public struct InvestmentBuilder {
 ///
 /// ## SeeAlso
 /// - ``CashFlow``
-/// - ``CashFlows(_:)``
+/// - ``CashFlows(builder:)``
 /// - ``Year(_:)``
 @resultBuilder
 public struct CashFlowBuilder {
@@ -620,8 +620,8 @@ public struct CashFlowPeriod {
 ///
 /// ## SeeAlso
 /// - ``CashFlow``
-/// - ``xnpv(rate:cashFlows:)``
-/// - ``xirr(cashFlows:guess:)``
+/// - ``xnpv(rate:dates:cashFlows:)``
+/// - ``xirr(dates:cashFlows:guess:tolerance:maxIterations:)``
 public struct DateBasedCashFlow: Sendable {
     /// The specific date when this cash flow occurs.
     ///

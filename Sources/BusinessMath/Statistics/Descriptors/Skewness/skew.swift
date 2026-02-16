@@ -15,6 +15,7 @@ import Numerics
 ///
 /// - Parameters:
 ///   - values: An array of values representing the population dataset.
+///   - pop: An enum to determine if you are using a sample or the total population
 /// - Returns: The skewness of the dataset. The skewness is positive if the data are skewed to the right (longer tail on the right side), negative if the data are skewed to the left (longer tail on the left side), and zero if the data are symmetrically distributed.
 ///
 /// - Note: The function computes the skewness using the formula:

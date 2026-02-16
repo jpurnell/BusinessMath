@@ -140,7 +140,8 @@ extension Driver {
 	/// Creates a `SumDriver` that computes the sum of both drivers.
 	///
 	/// - Parameters:
-	///   - rhs: The driver to add.
+	///  - lhs: The driver to add to
+	///  - rhs: The driver to add.
 	/// - Returns: A new sum driver.
 	///
 	/// ## Example
@@ -158,6 +159,7 @@ extension Driver {
 	/// Creates a `SumDriver` where the right-hand side is negated.
 	///
 	/// - Parameters:
+	///   - lhs: The driver to subtract from
 	///   - rhs: The driver to subtract.
 	/// - Returns: A new sum driver representing the difference.
 	///

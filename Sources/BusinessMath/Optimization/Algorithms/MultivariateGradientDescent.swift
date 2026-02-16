@@ -621,7 +621,7 @@ extension MultivariateGradientDescent: MultivariateOptimizer {
 	///
 	/// - Throws:
 	///   - ``OptimizationError/unsupportedConstraints(_:)`` if constraints are provided (unconstrained optimizer)
-	///   - ``OptimizationError/convergenceFailed`` if optimization fails to converge
+	///   - ``OptimizationError/failedToConverge(message:)`` if optimization fails to converge
 	///   - ``OptimizationError/nonFiniteValue(message:)`` if non-finite values encountered
 	///
 	/// ## Example

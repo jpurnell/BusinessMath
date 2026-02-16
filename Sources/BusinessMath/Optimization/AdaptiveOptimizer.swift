@@ -135,7 +135,6 @@ public struct AdaptiveOptimizer<V: VectorSpace> where V.Scalar == Double {
 	///   - gradient: Optional gradient function (nil for numerical)
 	///   - initialGuess: Starting point
 	///   - constraints: Constraints (equality and inequality)
-	///   - options: Optimization options
 	/// - Returns: Optimization result with algorithm info
 	/// - Throws: OptimizationError if optimization fails
 	public func optimize(

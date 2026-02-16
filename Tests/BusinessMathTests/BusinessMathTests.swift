@@ -574,10 +574,13 @@ struct UnassortedTests {
             return Double.exp(pow(x, 2))
         }
         
-        let result = (integrate(f, iterations: 10000) * 100).rounded() / 100
-        let resultE = (integrate(e, iterations: 20000) * 100).rounded() / 100
-        #expect(result > 0.31)
-        #expect(result < 0.35)
+//        let result = (integrate(f, iterations: 10000) * 100).rounded() / 100
+//        let resultE = (integrate(e, iterations: 20000) * 100).rounded() / 100
+		let result = integrate(f, iterations: 10000)
+		let resultE = integrate(e, iterations: 20000)
+
+		#expect(abs(result - 1.0/3.0) < 0.015)
+		#expect(abs(resultE - 1.4626517) < 0.006)
         #expect(resultE > 1.45)
 		#expect(resultE < 1.48)
     }

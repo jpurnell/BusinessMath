@@ -44,6 +44,7 @@ import OSLog
 ///
 /// - Parameters:
 ///   - degreesOfFreedom: The degrees of freedom parameter (df > 0)
+///   - seeds: Optional seeds for reproducibility
 /// - Returns: A random value sampled from the χ²(df) distribution, or NaN if df ≤ 0
 ///
 /// ## Example

@@ -14,6 +14,7 @@ By the end of this part, you'll be comfortable creating time series, performing 
 
 - **Time Series Operations**: How to create, manipulate, and analyze temporal data using the `TimeSeries<T>` structure
 - **Time Value of Money**: Core financial calculations including present value, future value, NPV, IRR, and annuities
+- **Statistical Distributions**: Descriptive statistics and probability distributions for data analysis
 - **Fluent APIs**: SwiftUI-style declarative syntax for building readable, maintainable financial models
 - **Templates & Patterns**: Reusable patterns for common financial modeling scenarios
 - **Error Handling**: How to handle errors gracefully and debug issues in your models
@@ -28,6 +29,9 @@ By the end of this part, you'll be comfortable creating time series, performing 
 
 ### Fundamental Financial Concepts
 - <doc:1.3-TimeValueOfMoney> - Present value, future value, and the time value of money
+
+### Statistical Foundations
+- <doc:1.8-StatisticalDistributionsGuide> - Descriptive statistics and probability distributions
 
 ### API Patterns & Developer Tools
 - <doc:1.4-FluentAPIGuide> - Declarative APIs for building readable models
@@ -56,7 +60,8 @@ We recommend reading the chapters in this part sequentially:
 3. **Learn Time Value of Money** (<doc:1.3-TimeValueOfMoney>) for fundamental financial calculations
 4. **Explore Fluent APIs** (<doc:1.4-FluentAPIGuide>) to write more readable code
 5. **Review Templates** (<doc:1.5-TemplateGuide>) for reusable patterns
-6. **Keep Debugging and Error Handling guides** (<doc:1.6-DebuggingGuide>, <doc:1.7-ErrorHandlingGuide>) as references
+6. **Study Statistical Distributions** (<doc:1.8-StatisticalDistributionsGuide>) for data analysis foundations
+7. **Keep Debugging and Error Handling guides** (<doc:1.6-DebuggingGuide>, <doc:1.7-ErrorHandlingGuide>) as references
 
 ## Key Concepts
 

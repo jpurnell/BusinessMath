@@ -259,7 +259,7 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	///
 	/// ## SeeAlso
 	/// - ``returnOnEquity(incomeStatement:balanceSheet:)``
-	/// - ``dupontROE(incomeStatement:balanceSheet:)``
+	/// - ``dupontAnalysis(incomeStatement:balanceSheet:)``
 	public let roe: T
 
 	// MARK: - Liquidity Ratios
@@ -480,7 +480,7 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - Note: Optional—requires market data. Only reported if positive.
 	///
 	/// ## SeeAlso
-	/// - ``priceToEarnings(incomeStatement:marketPrice:sharesOutstanding:)``
+	/// - ``priceToEarnings(incomeStatement:marketPrice:sharesOutstanding:diluted:dilutedShares:)``
 	public let peRatio: T?
 
 	/// Price-to-book (P/B) ratio.

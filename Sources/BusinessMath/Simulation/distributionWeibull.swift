@@ -39,7 +39,8 @@ import Numerics
 ///
 /// - Parameters:
 ///   - shape: The shape parameter k (k > 0)
-///   - scale: The scale parameter λ (λ > 0)
+///   - scale: The scale parameter λ (λ > 0) 
+///   - seed: Optional, to select a particular seed for reproducibility
 /// - Returns: A random value sampled from the Weibull(k, λ) distribution
 ///
 /// ## Example

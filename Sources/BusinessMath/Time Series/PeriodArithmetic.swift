@@ -240,7 +240,8 @@ public struct PeriodRangeIterator: IteratorProtocol {
 extension Period {
 	/// Creates a range from this period to another period.
 	///
-	/// - Parameter end: The ending period (inclusive). Must be the same type as this period.
+	/// - Parameter lhs: The starting period (inclusive). Must be the same type as this period.
+	/// - Parameter rhs: The ending period (inclusive). Must be the same type as this period.
 	/// - Returns: A sequence of periods from this period to `end`.
 	///
 	/// - Precondition: Both periods must be of the same type.

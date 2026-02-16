@@ -377,12 +377,12 @@ extension ScenarioOptimizer {
 	/// Optimize with simple probability-weighted scenarios.
 	///
 	/// - Parameters:
-	///   - objective: Objective that doesn't need scenario object
 	///   - scenarioValues: Objective value for each scenario
-	///   - probabilities: Probability for each scenario value
 	///   - initialSolution: Starting point
 	///   - constraints: Standard constraints
 	///   - minimize: Whether to minimize
+	///   - tolerance: The tolerance level. Defaults to 1e-6
+	///   - maxIterations: The maximum number of iterations. Defaults to 500
 	public static func optimizeWeighted(
 		scenarioValues: [(name: String, probability: Double, objective: @Sendable (V) -> Double)],
 		initialSolution: V,

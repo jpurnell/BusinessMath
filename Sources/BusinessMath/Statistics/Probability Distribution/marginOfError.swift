@@ -12,9 +12,9 @@ import Numerics
 ///
 /// - Parameters:
 ///     - prob: The level of confidence required.
-///     - sampleProportion: proportion of the sample
-///     - sampleSize: The number of observations made
-///     - totalPopulation: The total population size
+///     - p: proportion of the sample
+///     - n: The number of observations made
+///     - N: The total population size
 ///
 /// - Returns: The standard error as a `Real` number.
 

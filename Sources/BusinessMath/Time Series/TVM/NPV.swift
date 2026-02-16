@@ -28,8 +28,8 @@ import Numerics
 /// - t = Time period (0, 1, 2, ...)
 ///
 /// - Parameters:
-///   - discountRate: The discount rate per period (e.g., 0.10 for 10%).
-///   - cashFlows: Array of cash flows where index represents the period.
+///   - r: The discount rate per period (e.g., 0.10 for 10%).
+///   - c: Array of cash flows where index represents the period.
 ///     First element (period 0) is typically the initial investment (negative).
 /// - Returns: The net present value.
 ///

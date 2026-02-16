@@ -1437,7 +1437,7 @@ public struct DirectProduct: ModelComponent {
     /// - Parameter product: The product builder to wrap.
     ///
     /// ## Note
-    /// This initializer is typically called automatically by ``ModelBuilder/buildExpression(_:)``
+	/// This initializer is typically called automatically by ``ModelBuilder/buildExpression(_:)-(Product)``
     /// when you use a ``Product`` directly in a model definition.
     public init(_ product: Product) {
         self.product = product
