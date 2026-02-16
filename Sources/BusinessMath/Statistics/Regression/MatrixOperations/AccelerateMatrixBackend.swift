@@ -35,6 +35,9 @@ import Accelerate
 /// - Note: Only available on Apple platforms (macOS, iOS, tvOS, watchOS, visionOS).
 public struct AccelerateMatrixBackend: MatrixBackend {
 
+    /// LAPACK integer type (platform-dependent: Int32 on some platforms, Int on watchOS)
+    private typealias LapackInt = __CLPK_integer
+
     public init() {}
 
     public func multiply(_ A: [[Double]], _ B: [[Double]]) throws -> [[Double]] {
@@ -109,14 +112,14 @@ public struct AccelerateMatrixBackend: MatrixBackend {
         var x = b
 
         // Pivot indices for LU decomposition
-        var ipiv = [Int32](repeating: 0, count: n)
+        var ipiv = [LapackInt](repeating: 0, count: n)
 
         // dgesv_ parameters
-        var n_lapack = Int32(n)
-        var nrhs = Int32(1)  // Number of right-hand sides
-        var lda = Int32(n)    // Leading dimension of A
-        var ldb = Int32(n)    // Leading dimension of b
-        var info = Int32(0)   // Output: 0 = success, <0 = illegal parameter, >0 = singular
+        var n_lapack: LapackInt = LapackInt(n)
+        var nrhs: LapackInt = 1  // Number of right-hand sides
+        var lda: LapackInt = LapackInt(n)    // Leading dimension of A
+        var ldb: LapackInt = LapackInt(n)    // Leading dimension of b
+        var info: LapackInt = 0   // Output: 0 = success, <0 = illegal parameter, >0 = singular
 
         // Call dgesv_: solves AX = B using LU decomposition with partial pivoting
         dgesv_(&n_lapack, &nrhs, &flatA, &lda, &ipiv, &x, &ldb, &info)
@@ -146,11 +149,11 @@ public struct AccelerateMatrixBackend: MatrixBackend {
         var tau = [Double](repeating: 0.0, count: min(m, n))
 
         // Workspace query
-        var m_lapack = Int32(m)
-        var n_lapack = Int32(n)
-        var lda = Int32(m)
-        var info = Int32(0)
-        var workSize = Int32(-1)
+        var m_lapack: LapackInt = LapackInt(m)
+        var n_lapack: LapackInt = LapackInt(n)
+        var lda: LapackInt = LapackInt(m)
+        var info: LapackInt = 0
+        var workSize: LapackInt = -1
         var queryWork = [Double](repeating: 0.0, count: 1)
 
         // Query optimal workspace size
@@ -161,7 +164,7 @@ public struct AccelerateMatrixBackend: MatrixBackend {
         }
 
         // Allocate optimal workspace
-        workSize = Int32(queryWork[0])
+        workSize = LapackInt(queryWork[0])
         var work = [Double](repeating: 0.0, count: Int(workSize))
 
         // Compute QR factorization
@@ -183,10 +186,10 @@ public struct AccelerateMatrixBackend: MatrixBackend {
 
         // Generate Q using dorgqr_
         // First query optimal workspace size for dorgqr_
-        let k = Int32(min(m, n))
+        let k: LapackInt = LapackInt(min(m, n))
         var k_copy1 = k  // Need separate variables to avoid overlapping access
         var k_copy2 = k
-        workSize = Int32(-1)
+        workSize = -1
         queryWork = [Double](repeating: 0.0, count: 1)
 
         dorgqr_(&m_lapack, &k_copy1, &k_copy2, &flatA, &lda, &tau, &queryWork, &workSize, &info)
@@ -196,7 +199,7 @@ public struct AccelerateMatrixBackend: MatrixBackend {
         }
 
         // Allocate optimal workspace for dorgqr_
-        workSize = Int32(queryWork[0])
+        workSize = LapackInt(queryWork[0])
         work = [Double](repeating: 0.0, count: Int(workSize))
 
         // Generate explicit Q matrix
