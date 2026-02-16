@@ -130,7 +130,7 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 8. <doc:5.4-VectorOperations> - Vector mathematics (1 hour)
 9. <doc:5.5-MultivariateOptimization> - Gradient descent, Newton (1.5 hours)
 10. <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints (1.5 hours)
-11. <doc:5.6-BusinessOptimization> - Business applications (1.5 hours)
+11. <doc:5.7-BusinessOptimization> - Business applications (1.5 hours)
 
 **Checkpoint**: Implement constrained optimization for a business problem
 

@@ -140,7 +140,7 @@ extension TimeSeries: Validatable where T: Real & Sendable {
     /// Use this when you need error handling instead of inspecting validation results.
     ///
     /// - Parameter detectOutliers: Whether to detect outliers (default: false)
-    /// - Throws: ``BusinessMathError/dataQuality`` if validation fails
+	/// - Throws: ``BusinessMathError/dataQuality(message:context:)`` if validation fails
     ///
     /// ## Example
     /// ```swift

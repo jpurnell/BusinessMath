@@ -193,6 +193,59 @@ extension DataTable where Output: CustomStringConvertible {
 
         return lines.joined(separator: "\n")
     }
+
+    /// Formats a two-variable table with custom output formatting.
+    ///
+    /// Allows you to specify how each output value should be formatted, enabling
+    /// control over decimal places, currency formatting, percentages, etc.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Format as currency with 2 decimal places
+    /// let formatted = DataTable<Double, Double>.formatTwoVariable(
+    ///     costMatrix,
+    ///     rowInputs: prices,
+    ///     columnInputs: volumes,
+    ///     formatOutput: { $0.number(4) }  // 4 decimal places
+    /// )
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - table: The two-variable table to format
+    ///   - rowInputs: Row input values for labeling
+    ///   - columnInputs: Column input values for labeling
+    ///   - formatOutput: Closure that formats each output value
+    ///
+    /// - Returns: Formatted table as a string
+    public static func formatTwoVariable(
+        _ table: [[Output]],
+        rowInputs: [Input],
+        columnInputs: [Input],
+        formatOutput: (Output) -> String
+    ) -> String where Input: CustomStringConvertible {
+        var lines: [String] = []
+
+        // Header row with column labels
+        var headerRow = " ".padding(toLength: 16, withPad: " ", startingAt: 0)
+        for colInput in columnInputs {
+            headerRow += "\(colInput)".paddingLeft(toLength: 12)
+        }
+        lines.append(headerRow)
+        lines.append(String(repeating: "=", count: columnInputs.count * 12 + 16))
+
+        // Data rows with row labels
+        for (rowIndex, rowInput) in rowInputs.enumerated() {
+            var row = "\(rowInput)".padding(toLength: 16, withPad: " ", startingAt: 0)
+            for colIndex in 0..<columnInputs.count {
+                let formattedValue = formatOutput(table[rowIndex][colIndex])
+                row += formattedValue.paddingLeft(toLength: 12)
+            }
+            lines.append(row)
+        }
+
+        return lines.joined(separator: "\n")
+    }
 }
 
 /// Extension for CSV export of data tables

@@ -114,10 +114,27 @@ public func isPositiveSemiDefinite(_ matrix: [[Double]]) -> Bool {
 }
 
 /// Error types for matrix operations.
-public enum MatrixError: Error {
+public enum MatrixError: Error, Equatable {
+	/// Matrix is not positive definite (required for Cholesky decomposition)
 	case notPositiveDefinite
+
+	/// Matrix is not square (required for certain operations)
 	case notSquare
-	case invalidDimensions
+
+	/// Matrix dimensions are invalid (e.g., empty or jagged array)
+	case invalidDimensions(expected: String, actual: String)
+
+	/// Matrix is not symmetric
+	case notSymmetric
+
+	/// Matrix is singular (determinant is zero, not invertible)
+	case singularMatrix
+
+	/// Dimensions are incompatible for the requested operation
+	case dimensionMismatch(expected: String, actual: String)
+
+	/// Decomposition failed
+	case invalidDecomposition(reason: String)
 }
 
 /// Performs Cholesky decomposition on a symmetric positive definite matrix.
@@ -148,7 +165,7 @@ public enum MatrixError: Error {
 /// - Throws: `MatrixError.notPositiveDefinite` if the matrix is not positive definite
 public func choleskyDecomposition(_ matrix: [[Double]]) throws -> [[Double]] {
 	guard !matrix.isEmpty else {
-		throw MatrixError.invalidDimensions
+		throw MatrixError.invalidDimensions(expected: "Non-empty matrix", actual: "Empty matrix")
 	}
 
 	let n = matrix.count

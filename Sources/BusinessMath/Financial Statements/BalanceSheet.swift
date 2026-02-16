@@ -94,7 +94,7 @@ public enum BalanceSheetError: Error, Sendable {
 /// ## Topics
 ///
 /// ### Creating Balance Sheets
-/// - ``init(entity:periods:assetAccounts:liabilityAccounts:equityAccounts:)``
+/// - ``init(entity:periods:accounts:)``
 ///
 /// ### Properties
 /// - ``entity``

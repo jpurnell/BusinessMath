@@ -146,7 +146,7 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 ///
 /// ### Creating Accounts
 /// - ``init(entity:name:incomeStatementRole:balanceSheetRole:cashFlowRole:timeSeries:metadata:)``
-/// - ``init(entity:name:type:timeSeries:assetType:liabilityType:expenseType:equityType:metadata:)``
+/// - ``init(entity:name:incomeStatementRole:balanceSheetRole:cashFlowRole:timeSeries:metadata:)``
 ///
 /// ### Properties
 /// - ``entity``
@@ -157,12 +157,6 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 /// - ``timeSeries``
 /// - ``metadata``
 ///
-/// ### Deprecated Properties
-/// - ``type``
-/// - ``assetType``
-/// - ``liabilityType``
-/// - ``expenseType``
-/// - ``equityType``
 public struct Account<T: Real & Sendable>: Codable, Sendable where T: Codable {
 
 	/// The entity that owns this account.

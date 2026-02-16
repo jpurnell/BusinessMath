@@ -40,7 +40,7 @@ func g<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
 ///
 /// - Parameters:
 ///   - x: The value at which to evaluate the probability density function. This must be a positive number.
-///   - mean: The mean (average) of the underlying normal distribution. Defaults to `0`.
+///   - µ: The mean (average) of the underlying normal distribution. Defaults to `0`.
 ///   - stdDev: The standard deviation of the underlying normal distribution. Defaults to `1`.
 /// - Returns: The value of the log-normal probability density function at `x`.
 ///

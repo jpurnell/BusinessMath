@@ -101,7 +101,7 @@ import Numerics
 ///
 /// - SeeAlso:
 ///   - ``FCFEModel`` for direct equity valuation without the EV bridge
-///   - ``enterpriseValueFromFCFF(_:wacc:terminalGrowthRate:)`` for calculating EV from cash flows
+///   - ``enterpriseValue`` for calculating EV from cash flows
 ///   - ``GordonGrowthModel`` for alternative equity valuation approach
 public struct EnterpriseValueBridge<T: Real> where T: Sendable {
 

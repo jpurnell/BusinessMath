@@ -232,7 +232,7 @@ public struct AsyncOptimizationProgress<T: Real & Sendable>: Sendable {
 ///
 /// ## Implementation Requirements
 ///
-/// Implementers must provide the ``optimizeWithProgress(objective:constraints:initialGuess:bounds:)``
+/// Implementers must provide the ``optimizeWithProgress(objective:constraints:initialGuess:bounds:config:)``
 /// method that returns an async stream of progress updates.
 ///
 /// ## Example Conformance
@@ -274,7 +274,8 @@ public protocol AsyncOptimizer: Sendable {
     ///   - constraints: Array of constraints that the solution must satisfy.
     ///   - initialGuess: Starting point for the optimization.
     ///   - bounds: Optional lower and upper bounds for the parameter value.
-    ///
+	///
+	///   - config: The Optimization Configuration
     /// - Returns: An async stream of progress updates. The stream completes when
     ///            optimization finishes or throws if an error occurs.
     ///
@@ -303,7 +304,7 @@ public protocol AsyncOptimizer: Sendable {
     ///
     /// This is a convenience method that runs the optimization to completion
     /// without streaming progress updates. For progress monitoring, use
-    /// ``optimizeWithProgress(objective:constraints:initialGuess:bounds:)`` instead.
+    /// ``optimizeWithProgress(objective:constraints:initialGuess:bounds:config:)`` instead.
     ///
     /// - Parameters:
     ///   - objective: The objective function to minimize. Must be `@Sendable` for

@@ -139,8 +139,8 @@ extension TimeSeries {
 	/// starting period and the end of the ending period.
 	///
 	/// - Parameters:
-	///   - from: The starting period.
-	///   - to: The ending period.
+	///   - start: The starting period.
+	///   - end: The ending period.
 	/// - Returns: The CAGR as a decimal (e.g., 0.10 for 10%).
 	///
 	/// ## Example

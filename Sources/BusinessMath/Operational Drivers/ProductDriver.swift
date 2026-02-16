@@ -140,6 +140,7 @@ extension Driver {
 	/// Creates a `ProductDriver` that computes the product of both drivers.
 	///
 	/// - Parameters:
+	///   - lhs: The driver to multiply.
 	///   - rhs: The driver to multiply with.
 	/// - Returns: A new product driver.
 	///

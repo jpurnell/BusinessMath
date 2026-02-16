@@ -122,7 +122,7 @@ import Numerics
 ///
 /// ## See Also
 /// - ``ComprehensiveRiskMetrics``
-/// - ``StressTesting``
+/// - ``StressTest``
 /// - ``Portfolio``
 public struct RiskAggregator<T: Real & Sendable> {
 

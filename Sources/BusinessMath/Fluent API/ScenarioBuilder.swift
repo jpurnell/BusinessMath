@@ -105,7 +105,7 @@ public struct ScenarioConfig: Sendable {
     /// ```
     ///
     /// ## See Also
-    /// - ``Baseline(_:)`` for creating baseline scenarios via builder
+    /// - ``Baseline(builder:)`` for creating baseline scenarios via builder
     public init(name: String, description: String? = nil, probability: Double? = nil) {
         self.name = name
         self.description = description
@@ -151,7 +151,7 @@ public struct ScenarioConfig: Sendable {
 ///
 /// ## See Also
 /// - ``ScenarioSet/init(builder:)`` for using this builder
-/// - ``Baseline(_:)``, ``Pessimistic(_:)``, ``Optimistic(_:)`` for scenario functions
+/// - ``Baseline(builder:)``, ``Pessimistic(builder:)``, ``Optimistic(builder:)`` for scenario functions
 @resultBuilder
 public struct ScenarioSetBuilder {
     /// Build a block of scenarios from variadic arrays.
@@ -213,7 +213,7 @@ public struct ScenarioSetBuilder {
 /// ```
 ///
 /// ## See Also
-/// - ``Baseline(_:)`` for creating baseline scenarios
+/// - ``Baseline(builder:)`` for creating baseline scenarios
 /// - ``revenue(_:)``, ``growth(_:)``, etc. for parameter functions
 @resultBuilder
 public struct ScenarioConfigBuilder {

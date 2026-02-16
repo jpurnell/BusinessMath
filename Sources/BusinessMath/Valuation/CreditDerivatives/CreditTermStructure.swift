@@ -79,8 +79,8 @@ public struct HazardRateCurve<T: Real & Sendable>: Sendable {
     /// ```
     ///
     /// - Parameters:
-    ///   - from: Start time
-    ///   - to: End time
+	///   - t1: Start time
+	///   - t2: End time
     /// - Returns: Forward hazard rate
     public func forwardHazardRate(from t1: T, to t2: T) -> T {
         guard t2 > t1 else { return T.zero }

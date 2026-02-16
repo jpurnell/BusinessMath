@@ -116,9 +116,10 @@ Overview of analytical techniques including sensitivity analysis, financial rati
 
 #### Analytical Methods
 
-Excel-style sensitivity and scenario analysis.
+Excel-style sensitivity and scenario analysis, plus statistical regression modeling.
 
 - <doc:2.1-DataTableAnalysis>
+- <doc:MultipleLinearRegressionGuide>
 
 #### Financial Metrics
 
@@ -327,6 +328,8 @@ Each track provides a curated sequence of chapters with checkpoints to validate 
 
 **Analyze sensitivity**: See <doc:2.1-DataTableAnalysis> and <doc:4.2-ScenarioAnalysisGuide>
 
+**Build regression models**: See <doc:MultipleLinearRegressionGuide>
+
 **Price bonds or calculate duration**: See <doc:3.10-BondValuationGuide>
 
 **Model credit risk**: See <doc:3.11-CreditDerivativesGuide> and <doc:2.3-RiskAnalyticsGuide>
@@ -340,25 +343,25 @@ Each track provides a curated sequence of chapters with checkpoints to validate 
 ### Latest Release Highlights
 
 **Securities Valuation (v1.4.0)**:
-- Equity valuation: DCF, DDM, FCFE, residual income models (<doc:3.9-EquityValuationGuide>)
-- Fixed income: Bond pricing, duration, convexity, callable bonds (<doc:3.10-BondValuationGuide>)
-- Credit derivatives: CDS pricing with ISDA Standard Model (<doc:3.11-CreditDerivativesGuide>)
+ Equity valuation: DCF, DDM, FCFE, residual income models (<doc:3.9-EquityValuationGuide>)
+ Fixed income: Bond pricing, duration, convexity, callable bonds (<doc:3.10-BondValuationGuide>)
+ Credit derivatives: CDS pricing with ISDA Standard Model (<doc:3.11-CreditDerivativesGuide>)
 
 **Advanced Optimization (v1.3.0)**:
-- Portfolio optimization: Efficient frontier, Sharpe ratio maximization (<doc:5.2-PortfolioOptimizationGuide>)
-- Integer programming: Branch-and-bound with cutting planes (<doc:5.8-IntegerProgramming>)
-- Robust optimization: Uncertainty-aware optimization (<doc:5.14-RobustOptimization>)
+ Portfolio optimization: Efficient frontier, Sharpe ratio maximization (<doc:5.2-PortfolioOptimizationGuide>)
+ Integer programming: Branch-and-bound with cutting planes (<doc:5.8-IntegerProgramming>)
+ Robust optimization: Uncertainty-aware optimization (<doc:5.14-RobustOptimization>)
 
 **Risk Analytics (v1.2.0)**:
-- Monte Carlo simulation for time series (<doc:4.1-MonteCarloTimeSeriesGuide>)
-- VaR/CVaR calculation and stress testing (<doc:2.3-RiskAnalyticsGuide>)
-- Scenario analysis framework (<doc:4.2-ScenarioAnalysisGuide>)
+ Monte Carlo simulation for time series (<doc:4.1-MonteCarloTimeSeriesGuide>)
+ VaR/CVaR calculation and stress testing (<doc:2.3-RiskAnalyticsGuide>)
+ Scenario analysis framework (<doc:4.2-ScenarioAnalysisGuide>)
 
 ## System Requirements
 
-- Swift 6.0 or later
-- macOS 13.0+ / iOS 16.0+ / Linux with Swift 6.0+
-- Xcode 16.0+ (for development)
+ Swift 6.0 or later
+ macOS 13.0+ / iOS 16.0+ / Linux with Swift 6.0+
+ Xcode 16.0+ (for development)
 
 ## Installation
 
@@ -374,10 +377,10 @@ dependencies: [
 
 ## Support & Community
 
-- **Documentation**: You're reading it! Start with <doc:1.1-GettingStarted>
-- **GitHub**: [https://github.com/jpurnell/BusinessMath](https://github.com/jpurnell/BusinessMath)
-- **Issues**: Report bugs or request features on GitHub
-- **Discussions**: Share ideas and ask questions in GitHub Discussions
+ **Documentation**: You're reading it! Start with <doc:1.1-GettingStarted>
+ **GitHub**: [https://github.com/jpurnell/BusinessMath](https://github.com/jpurnell/BusinessMath)
+ **Issues**: Report bugs or request features on GitHub
+ **Discussions**: Share ideas and ask questions in GitHub Discussions
 
 ## License
 
@@ -386,10 +389,10 @@ BusinessMath is available under the MIT License. See the LICENSE file for detail
 ## Acknowledgments
 
 Built with industry-standard methodologies including:
-- ISDA Standard CDS Model for credit derivatives
-- Black-Scholes framework for options pricing
-- Modern Portfolio Theory (Markowitz)
-- IFRS 16 / ASC 842 for lease accounting
+ ISDA Standard CDS Model for credit derivatives
+ Black-Scholes framework for options pricing
+ Modern Portfolio Theory (Markowitz)
+ IFRS 16 / ASC 842 for lease accounting
 
 ---
 

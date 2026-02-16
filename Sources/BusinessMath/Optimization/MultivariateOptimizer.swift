@@ -96,7 +96,7 @@ import Numerics
 /// - ``minimize(_:from:constraints:)``
 ///
 /// ### Convenience Method
-/// - ``minimize(_:from:)-4yx7g``
+/// - ``minimize(_:from:)``
 ///
 /// ### Conforming Types
 /// - ``MultivariateGradientDescent``
@@ -138,9 +138,9 @@ public protocol MultivariateOptimizer<V> {
     ///
     /// - Throws:
     ///   - ``OptimizationError/unsupportedConstraints(_:)`` if constraints not supported
-    ///   - ``OptimizationError/convergenceFailed`` if optimization fails to converge
-    ///   - ``OptimizationError/invalidInitialGuess`` if starting point is invalid
-    ///   - ``OptimizationError/singularMatrix`` if numerical issues occur (Newton methods)
+    ///   - ``OptimizationError/failedToConverge(message:)`` if optimization fails to converge
+    ///   - ``OptimizationError/invalidInput(message:)`` if starting point is invalid
+    ///   - ``OptimizationError/singularMatrix(message:)`` if numerical issues occur (Newton methods)
     ///
     /// ## Usage Example
     ///
@@ -192,7 +192,7 @@ public protocol MultivariateOptimizer<V> {
     /// ```
     ///
     /// - SeeAlso:
-    ///   - ``minimize(_:from:)-4yx7g`` for convenience method without constraints
+    ///   - ``minimize(_:from:)`` for convenience method without constraints
     ///   - ``MultivariateOptimizationResult`` for result type details
     ///   - ``MultivariateConstraint`` for constraint specification
     func minimize(

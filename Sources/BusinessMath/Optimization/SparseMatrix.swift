@@ -204,8 +204,8 @@ public struct SparseMatrix {
     /// Extract a submatrix
     ///
     /// - Parameters:
-    ///   - rows: Range of rows to extract
-    ///   - columns: Range of columns to extract
+	///   - rowRange: Range of rows to extract
+	///   - colRange: Range of columns to extract
     /// - Returns: Submatrix as a new sparse matrix
     public func submatrix(rows rowRange: Range<Int>, columns colRange: Range<Int>) -> SparseMatrix {
         var triplets: [(Int, Int, Double)] = []

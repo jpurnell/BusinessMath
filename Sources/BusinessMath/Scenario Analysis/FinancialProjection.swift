@@ -117,10 +117,6 @@ import Numerics
 /// - ``incomeStatement``
 /// - ``balanceSheet``
 /// - ``cashFlowStatement``
-///
-/// ### Running Scenarios
-/// - ``ScenarioRunner``
-/// - ``FinancialScenario``
 public struct FinancialProjection: Sendable {
 
 	// MARK: - Properties

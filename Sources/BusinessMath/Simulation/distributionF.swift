@@ -45,6 +45,7 @@ import OSLog
 /// - Parameters:
 ///   - df1: The first degrees of freedom parameter (numerator, df1 > 0)
 ///   - df2: The second degrees of freedom parameter (denominator, df2 > 0)
+///   - seeds: Optional seeds for reproducibility
 /// - Returns: A random value sampled from the F(df1, df2) distribution, or NaN if df1 ≤ 0 or df2 ≤ 0
 ///
 /// ## Example

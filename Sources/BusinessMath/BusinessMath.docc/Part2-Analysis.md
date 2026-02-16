@@ -13,6 +13,7 @@ This section bridges the gap between calculation and insight. Whether you're eva
 ## What You'll Learn
 
 - **Sensitivity Analysis**: How to identify which inputs have the greatest impact on your results
+- **Regression Modeling**: Building predictive models with multiple linear regression and comprehensive diagnostics
 - **Financial Ratios**: Industry-standard metrics for evaluating business performance and health
 - **Risk Analytics**: Quantifying uncertainty with VaR, CVaR, stress testing, and risk aggregation
 - **Visualization**: Creating publication-quality charts and diagrams for your analyses
@@ -22,6 +23,7 @@ This section bridges the gap between calculation and insight. Whether you're eva
 
 ### Analytical Techniques
 - <doc:2.1-DataTableAnalysis> - Excel-style data tables for sensitivity and scenario analysis
+- <doc:MultipleLinearRegressionGuide> - Multiple linear regression with GPU acceleration and comprehensive diagnostics
 
 ### Financial Metrics
 - <doc:2.2-FinancialRatiosGuide> - Profitability, leverage, efficiency, and other key ratios
@@ -51,9 +53,10 @@ The chapters in this part can be read in any order based on your needs:
 
 **For Financial Analysts:**
 1. <doc:2.2-FinancialRatiosGuide> - Start with familiar territory
-2. <doc:2.1-DataTableAnalysis> - Excel-like sensitivity analysis
-3. <doc:2.3-RiskAnalyticsGuide> - Risk measurement techniques
-4. <doc:2.4-VisualizationGuide> - Presentation and reporting
+2. <doc:MultipleLinearRegressionGuide> - Predictive modeling with regression
+3. <doc:2.1-DataTableAnalysis> - Excel-like sensitivity analysis
+4. <doc:2.3-RiskAnalyticsGuide> - Risk measurement techniques
+5. <doc:2.4-VisualizationGuide> - Presentation and reporting
 
 **For Risk Managers:**
 1. <doc:2.3-RiskAnalyticsGuide> - Core risk metrics
@@ -62,11 +65,12 @@ The chapters in this part can be read in any order based on your needs:
 4. <doc:2.4-VisualizationGuide> - Risk dashboards
 
 **For Quantitative Developers:**
-1. <doc:2.5-ModelValidationGuide> - Essential for verifying implementations
-2. <doc:2.1-DataTableAnalysis> - Systematic sensitivity analysis
-3. <doc:2.3-RiskAnalyticsGuide> - Statistical risk measures
-4. <doc:2.4-VisualizationGuide> - Programmatic visualization
-5. <doc:2.2-FinancialRatiosGuide> - Metrics for validation
+1. <doc:MultipleLinearRegressionGuide> - GPU-accelerated regression with numerical stability
+2. <doc:2.5-ModelValidationGuide> - Essential for verifying implementations
+3. <doc:2.1-DataTableAnalysis> - Systematic sensitivity analysis
+4. <doc:2.3-RiskAnalyticsGuide> - Statistical risk measures
+5. <doc:2.4-VisualizationGuide> - Programmatic visualization
+6. <doc:2.2-FinancialRatiosGuide> - Metrics for validation
 
 ## Key Concepts
 
@@ -82,6 +86,41 @@ let dataTable = DataTable()
     }
     .calculate()
 ```
+
+### Regression Modeling
+
+Build predictive models to understand relationships between variables with GPU-accelerated performance and comprehensive diagnostics:
+
+```swift
+// Model: Sales = β₀ + β₁×Advertising + β₂×Price
+let advertising = [10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
+let price = [50.0, 48.0, 52.0, 49.0, 51.0, 47.0]
+let sales = [120.0, 145.0, 168.0, 195.0, 218.0, 245.0]
+
+// Create predictor matrix: each row = [advertising, price]
+let X = zip(advertising, price).map { [$0, $1] }
+
+let result = try multipleLinearRegression(X: X, y: sales)
+
+// Comprehensive diagnostics
+print("R² = \(result.rSquared)")  // Model fit
+print("F-statistic p-value = \(result.fStatisticPValue)")  // Overall significance
+print("VIF = \(result.vif)")  // Multicollinearity check
+
+// Check individual predictors
+for i in 0..<result.coefficients.count {
+    if result.pValues[i+1] < 0.05 {
+        print("Predictor \(i) is significant (p = \(result.pValues[i+1]))")
+    }
+}
+
+// Make predictions
+let prediction = result.intercept +
+                result.coefficients[0] * 40.0 +  // $40k advertising
+                result.coefficients[1] * 50.0    // $50 price
+```
+
+**Performance**: Automatically uses Accelerate BLAS for 40-13,000× speedup on Apple platforms. A 500×500 regression completes in 2.5ms instead of 20 seconds.
 
 ### Financial Ratios
 
@@ -168,6 +207,9 @@ if report.passed {
 ```
 
 ## Real-World Applications
+
+### Predictive Modeling
+Use regression to forecast outcomes based on multiple factors. Model house prices from size and location, predict customer churn from usage patterns, or estimate sales from advertising spend and market conditions. Get comprehensive diagnostics (R², VIF, confidence intervals) to assess model quality.
 
 ### Investment Analysis
 Combine financial ratios with risk metrics to evaluate potential investments. Calculate P/E ratios, debt levels, and volatility measures to make informed allocation decisions.

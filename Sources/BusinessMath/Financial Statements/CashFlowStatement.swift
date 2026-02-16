@@ -83,7 +83,7 @@ public enum CashFlowStatementError: Error, Sendable {
 /// ## Topics
 ///
 /// ### Creating Cash Flow Statements
-/// - ``init(entity:periods:operatingAccounts:investingAccounts:financingAccounts:)``
+/// - ``init(entity:periods:accounts:)``
 ///
 /// ### Properties
 /// - ``entity``

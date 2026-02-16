@@ -127,11 +127,6 @@ import Numerics
 /// ### Convenience
 /// - ``outputRange``
 /// - ``count``
-///
-/// ### Related Types
-/// - ``TwoWayScenarioSensitivityAnalysis``
-/// - ``runSensitivity(baseCase:entity:periods:inputDriver:inputRange:steps:builder:outputExtractor:)``
-/// - ``runTwoWaySensitivity(baseCase:entity:periods:inputDriver1:inputRange1:steps1:inputDriver2:inputRange2:steps2:builder:outputExtractor:)``
 public struct ScenarioSensitivityAnalysis: Sendable {
 
 	// MARK: - Properties
@@ -295,10 +290,6 @@ extension ScenarioSensitivityAnalysis {
 /// - ``inputValues1``
 /// - ``inputValues2``
 /// - ``results``
-///
-/// ### Related Types
-/// - ``ScenarioSensitivityAnalysis``
-/// - ``runTwoWaySensitivity(baseCase:entity:periods:inputDriver1:inputRange1:steps1:inputDriver2:inputRange2:steps2:builder:outputExtractor:)``
 public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 
 	// MARK: - Properties

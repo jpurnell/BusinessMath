@@ -298,8 +298,7 @@ public extension Logger {
     ///   - name: Name of the interval
     ///   - id: Signpost ID (default is exclusive)
     ///
-    /// - Returns: The signpost interval state to pass to `endSignpost`
-    ///
+	/// 
     /// Example:
     /// ```swift
     /// logger.beginSignpost("Calculation")

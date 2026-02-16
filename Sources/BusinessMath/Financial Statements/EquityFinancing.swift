@@ -807,7 +807,6 @@ public struct SAFE {
 ///
 /// ## SeeAlso
 /// - ``SAFE``
-/// - ``SAFEType``
 public struct SAFEConversion {
     /// Which term governed the SAFE conversion.
     ///
