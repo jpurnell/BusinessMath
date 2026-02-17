@@ -47,10 +47,22 @@ import Foundation
 ///   All algorithms use numerically stable methods (QR decomposition, partial pivoting).
 public struct CPUMatrixBackend: MatrixBackend {
 
+    /// Creates a new CPU backend instance.
     public init() {}
 
     // MARK: - MatrixBackend Protocol
 
+    /// Multiplies two matrices using a pure Swift O(n³) algorithm.
+    ///
+    /// Computes **C = A × B** with a standard triple-loop implementation.
+    /// Prefer ``AccelerateMatrixBackend`` for medium matrices or ``MetalMatrixBackend``
+    /// for large matrices when performance is important.
+    ///
+    /// - Parameters:
+    ///   - A: Left-hand matrix of size m×n.
+    ///   - B: Right-hand matrix of size n×p.
+    /// - Returns: Product matrix of size m×p.
+    /// - Throws: ``MatrixError/dimensionMismatch(expected:actual:)`` if inner dimensions don't match.
     public func multiply(_ A: [[Double]], _ B: [[Double]]) throws -> [[Double]] {
         let m = A.count
         let n = A[0].count
@@ -78,6 +90,19 @@ public struct CPUMatrixBackend: MatrixBackend {
         return result
     }
 
+    /// Solves the linear system **Ax = b** using QR decomposition.
+    ///
+    /// Decomposes A into Q and R, then back-substitutes to find **x = R⁻¹Qᵀb**.
+    /// QR is preferred over Gaussian elimination for numerical stability,
+    /// especially when A is nearly singular.
+    ///
+    /// - Parameters:
+    ///   - A: Square coefficient matrix of size n×n.
+    ///   - b: Right-hand side vector of length n.
+    /// - Returns: Solution vector **x** of length n.
+    /// - Throws: ``MatrixError/notSquare`` if A is not square;
+    ///   ``MatrixError/singularMatrix`` if a diagonal of R is near zero;
+    ///   ``MatrixError/dimensionMismatch(expected:actual:)`` if `b.count ≠ n`.
     public func solve(_ A: [[Double]], _ b: [Double]) throws -> [Double] {
         let n = A.count
 
@@ -124,6 +149,15 @@ public struct CPUMatrixBackend: MatrixBackend {
         return x
     }
 
+    /// Computes the QR decomposition of a matrix using successive Householder reflections.
+    ///
+    /// Decomposes **A = Q × R** where Q is orthogonal (Qᵀ = Q⁻¹) and R is upper-triangular.
+    /// Householder reflections are numerically stable and avoid the cancellation errors
+    /// that affect classical Gram–Schmidt orthogonalisation.
+    ///
+    /// - Parameter A: Input matrix of size m×n.
+    /// - Returns: A tuple `(q, r)` where **Q** is m×m orthogonal and **R** is m×n upper-triangular.
+    /// - Throws: Never throws directly; singularity is handled gracefully by skipping near-zero columns.
     public func qrDecomposition(_ A: [[Double]]) throws -> (q: [[Double]], r: [[Double]]) {
         let m = A.count
         let n = A[0].count

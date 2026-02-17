@@ -16,6 +16,7 @@ import Numerics
 /// ## Percentile Calculation
 ///
 /// Uses linear interpolation between data points for accurate percentile estimation:
+/// - p025: 2.5th percentile (bottom 2.5%)
 /// - p5: 5th percentile (bottom 5%)
 /// - p10: 10th percentile
 /// - p25: 25th percentile (first quartile, Q1)
@@ -23,6 +24,7 @@ import Numerics
 /// - p75: 75th percentile (third quartile, Q3)
 /// - p90: 90th percentile
 /// - p95: 95th percentile (top 5% threshold)
+/// - p975: 97.5th percentile (top 2.5% threshold)
 /// - p99: 99th percentile (top 1% threshold)
 ///
 /// ## Example
@@ -49,7 +51,10 @@ public struct Percentiles: Sendable {
 	public let max: Double
 	
 	// MARK: - Standard Percentiles
-
+	
+	/// The 2.5th percentile - value below which 2.5% of observations fall
+	public let p025: Double
+	
 	/// The 5th percentile - value below which 5% of observations fall
 	public let p5: Double
 
@@ -70,6 +75,9 @@ public struct Percentiles: Sendable {
 
 	/// The 95th percentile - value below which 95% of observations fall
 	public let p95: Double
+
+	/// The 97.5th percentile - value below which 97.5% of observations fall
+	public let p975: Double
 
 	/// The 99th percentile - value below which 99% of observations fall
 	public let p99: Double
@@ -139,6 +147,7 @@ public struct Percentiles: Sendable {
 					self.max = sorted.last!
 
 					// Precompute commonly used percentiles
+					self.p025 = Self.quantileR7(sorted, 0.025)
 					self.p5  = Self.quantileR7(sorted, 0.05)
 					self.p10 = Self.quantileR7(sorted, 0.10)
 					self.p25 = Self.quantileR7(sorted, 0.25)
@@ -146,6 +155,7 @@ public struct Percentiles: Sendable {
 					self.p75 = Self.quantileR7(sorted, 0.75)
 					self.p90 = Self.quantileR7(sorted, 0.90)
 					self.p95 = Self.quantileR7(sorted, 0.95)
+					self.p975 = Self.quantileR7(sorted, 0.975)
 					self.p99 = Self.quantileR7(sorted, 0.99)
 
 					self.interquartileRange = self.p75 - self.p25

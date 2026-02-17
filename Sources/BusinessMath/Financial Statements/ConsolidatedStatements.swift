@@ -435,6 +435,13 @@ extension ConsolidatedStatements: Codable where T: Codable {
 		let summaries: [Period: FinancialPeriodSummary<T>]
 	}
 
+	/// Restores a consolidated statements collection from an encoded representation.
+	///
+	/// Decodes an array of entity/summaries pairs and reconstructs the internal
+	/// storage dictionary and entity lookup table.
+	///
+	/// - Parameter decoder: The decoder to read data from.
+	/// - Throws: `DecodingError` if the encoded data is malformed or type-mismatched.
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		let entitySummariesArray = try container.decode([EntitySummaries].self, forKey: .summaries)
@@ -448,6 +455,13 @@ extension ConsolidatedStatements: Codable where T: Codable {
 		}
 	}
 
+	/// Encodes the consolidated statements collection into an external representation.
+	///
+	/// Serialises all entity/period/summary combinations as an ordered array,
+	/// preserving entity metadata alongside its financial summaries.
+	///
+	/// - Parameter encoder: The encoder to write data to.
+	/// - Throws: `EncodingError` if a value cannot be encoded in the requested format.
 	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 
