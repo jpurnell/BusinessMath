@@ -18,6 +18,11 @@ public struct ConfidenceInterval: Sendable, Equatable {
     /// Upper bound of the interval
     public let upper: Double
 
+    /// Creates a confidence interval with explicit bounds.
+    ///
+    /// - Parameters:
+    ///   - lower: The lower bound of the interval.
+    ///   - upper: The upper bound of the interval. Must be ≥ `lower`.
     public init(lower: Double, upper: Double) {
         self.lower = lower
         self.upper = upper

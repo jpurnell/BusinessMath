@@ -12,14 +12,16 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ## 🎉 Version 2.0 Released!
 
-**Major milestone:** Production-ready API with role-based financial statements, GPU-accelerated optimization, and unified parameter naming.
+**Major milestone:** Production-ready API with role-based financial statements, GPU-accelerated optimization, multiple linear regression, and 100% documented public API.
 
 - ✅ **Role-Based Financial Statements:** Multi-statement account support for accurate financial modeling
 - ✅ **GPU Acceleration:** 10-100× speedup for genetic algorithms (populations ≥ 1,000) on Apple Silicon
 - ✅ **Consistent API:** `initialGuess` parameter everywhere, `@Sendable` closures for Swift 6 concurrency
 - ✅ **Constraint Support:** Equality and inequality constraints via penalty method
 - ✅ **Playground-Ready:** All examples work in Xcode Playgrounds with proper `PlaygroundSupport` integration
-- ✅ **3,552+ Tests:** 99.9% pass rate across 278 test suites
+- ✅ **Multiple Linear Regression:** GPU-accelerated matrix backends (CPU / Accelerate / Metal) for statistical modeling
+- ✅ **100% Documentation Coverage:** 4,593 public APIs fully documented
+- ✅ **4,289+ Tests:** 99.9% pass rate across 275+ test suites
 
 **See what's new:** [Complete v2.0.0 Release Notes →](RELEASE_NOTES_v2.0.0.md)
 
@@ -29,7 +31,7 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 **Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real>`) and strict concurrency for thread safety. All examples include `@Sendable` closures and proper `PlaygroundSupport` integration.
 
-**Complete**: 44 comprehensive guides, 3,552+ tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every tutorial example has been validated** to work correctly in Xcode Playgrounds and production code.
+**Complete**: 61 comprehensive guides, 4,289+ tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every tutorial example has been validated** to work correctly in Xcode Playgrounds and production code.
 
 **Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and validated against real-world use cases. Documentation examples reflect actual API behavior with realistic tradeoffs (mean-variance optimization, risk constraints, budget limits).
 
@@ -131,17 +133,6 @@ Optimize portfolios (efficient frontier, Sharpe ratio maximization), solve integ
 
 → [Portfolio Optimization](Sources/BusinessMath/BusinessMath.docc/5.2-PortfolioOptimizationGuide.md) | [Optimization Guide](Sources/BusinessMath/BusinessMath.docc/5.1-OptimizationGuide.md) | [GPU Acceleration](Sources/BusinessMath/BusinessMath.docc/5.16-GPUAccelerationTutorial.md)
 
-### 🤖 AI Assistant Integration
-BusinessMath includes an MCP server that lets AI assistants (like Claude Desktop) perform financial analysis using natural language. **167 tools** across time value of money, forecasting, optimization, and valuation—all accessible through conversation.
-
-```
-"Calculate NPV for a $100k investment with $30k annual returns over 5 years at 10%"
-"Optimize a 3-asset portfolio to maximize Sharpe ratio"
-"Forecast quarterly revenue with exponential trend and seasonality"
-```
-
-→ [Full MCP Server Documentation](BusinessMathMCP_README/MCP_README.md)
-
 ---
 
 ## Installation
@@ -163,7 +154,7 @@ dependencies: [
 ## Getting Started
 
 ### 📚 Documentation
-**44 comprehensive guides** organized into 5 parts (Basics, Analysis, Modeling, Simulation, Optimization):
+**61 comprehensive guides** organized into 5 parts (Basics, Analysis, Modeling, Simulation, Optimization):
 
 - **[Documentation Home](Sources/BusinessMath/BusinessMath.docc/BusinessMath.md)** - Complete structure and index
 - **[Learning Path Guide](Sources/BusinessMath/BusinessMath.docc/LearningPath.md)** - Four specialized tracks:
@@ -178,7 +169,7 @@ dependencies: [
 
 - **[QUICK_START_EXAMPLE.swift](QUICK_START_EXAMPLE.swift)** - 🚀 Copy-paste investment analysis example (start here!)
 - **[EXAMPLES.md](EXAMPLES.md)** - Time series, forecasting, loans, securities, risk, optimization
-- **[All DocC Tutorials](Sources/BusinessMath/BusinessMath.docc/)** - 44 comprehensive guides with runnable examples
+- **[All DocC Tutorials](Sources/BusinessMath/BusinessMath.docc/)** - 61 comprehensive guides with runnable examples
 
 ## What's Included
 
@@ -198,31 +189,21 @@ dependencies: [
 - ✅ **Integer programming** (branch-and-bound, cutting planes)
 - ✅ **Financial ratios** (profitability, leverage, efficiency)
 - ✅ **Real options** (Black-Scholes, binomial trees, Greeks)
+- ✅ **Multiple linear regression** (OLS with QR decomposition; CPU, Accelerate, and Metal matrix backends)
 - ✅ **Hypothesis testing** (t-tests, chi-square, F-tests, A/B testing)
 - ✅ **Model validation** (fake-data simulation, parameter recovery)
 
 ### Documentation & Testing
-- 📚 **44 comprehensive guides** (8,500+ lines of DocC documentation)
-- ✅ **3,552 tests** across 278 test suites (99.9% pass rate)
+- 📚 **61 comprehensive guides** (48,000+ lines of DocC documentation)
+- ✅ **4,289+ tests** across 275+ test suites (99.9% pass rate)
 - 📊 **Performance benchmarks** for typical use cases
 - 🎓 **Learning paths** for different roles
-
-### MCP Server
-- 🤖 **169 computational tools** for AI assistants
-- 📚 **14 resources** with comprehensive documentation
-- 🎯 **6 prompt templates** for guided workflows
-- 🔗 **Stdio & HTTP modes** (stdio recommended for production)
-
-See [BusinessMathMCP_README/MCP_README.md](BusinessMathMCP_README/MCP_README.md) for full AI integration details.
-
----
 
 ## Requirements
 
 - **Swift 6.0** or later
 - **Platforms**: iOS 14+ / macOS 13+ / tvOS 14+ / watchOS 7+ / visionOS 1+ / Linux
 - **Dependencies**: [Swift Numerics](https://github.com/apple/swift-numerics) (for `Real` protocol)
-- **MCP Server**: macOS 13+ (for AI assistant integration)
 
 ---
 

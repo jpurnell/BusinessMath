@@ -53,6 +53,21 @@ public struct MetalMatrixBackend: MatrixBackend {
         self.library = device.makeDefaultLibrary()
     }
 
+    /// Multiplies two matrices using a Metal GPU compute shader.
+    ///
+    /// Dispatches a 2-D thread grid where each GPU thread computes one output element,
+    /// enabling massive parallelism for large matrices. Falls back to ``CPUMatrixBackend``
+    /// if the shader, pipeline, or command buffer cannot be created.
+    ///
+    /// - Note: Internal precision is `Float` (32-bit). Results are converted back to `Double`
+    ///   on return, so very large or very precise computations may see slight rounding differences
+    ///   compared to the CPU and Accelerate backends.
+    ///
+    /// - Parameters:
+    ///   - A: Left-hand matrix of size m×n.
+    ///   - B: Right-hand matrix of size n×p.
+    /// - Returns: Product matrix of size m×p.
+    /// - Throws: ``MatrixError/dimensionMismatch(expected:actual:)`` if inner dimensions don't match.
     public func multiply(_ A: [[Double]], _ B: [[Double]]) throws -> [[Double]] {
         let m = A.count
         let n = A[0].count
@@ -146,6 +161,18 @@ public struct MetalMatrixBackend: MatrixBackend {
         return result
     }
 
+    /// Solves the linear system **Ax = b**, delegating to the most capable available backend.
+    ///
+    /// Linear system solving with LU or QR decomposition is largely sequential and benefits
+    /// more from LAPACK's `dgesv_` than GPU parallelism. Delegates to
+    /// ``AccelerateMatrixBackend`` when available, otherwise ``CPUMatrixBackend``.
+    ///
+    /// - Parameters:
+    ///   - A: Square coefficient matrix of size n×n.
+    ///   - b: Right-hand side vector of length n.
+    /// - Returns: Solution vector **x** of length n.
+    /// - Throws: ``MatrixError/singularMatrix`` if A is singular;
+    ///   ``MatrixError/dimensionMismatch(expected:actual:)`` if dimensions are incompatible.
     public func solve(_ A: [[Double]], _ b: [Double]) throws -> [Double] {
         // Linear system solving benefits more from optimized BLAS/LAPACK than GPU parallelization
         // for typical matrix sizes. Use Accelerate backend which is highly optimized.
@@ -158,6 +185,15 @@ public struct MetalMatrixBackend: MatrixBackend {
         #endif
     }
 
+    /// Computes the QR decomposition, delegating to the most capable available backend.
+    ///
+    /// QR decomposition is sequential by nature and is better served by LAPACK's
+    /// `dgeqrf_`/`dorgqr_` routines than GPU parallelism. Delegates to
+    /// ``AccelerateMatrixBackend`` when available, otherwise ``CPUMatrixBackend``.
+    ///
+    /// - Parameter A: Input matrix of size m×n.
+    /// - Returns: A tuple `(q, r)` where **Q** is m×m orthogonal and **R** is m×n upper-triangular.
+    /// - Throws: ``MatrixError/invalidDecomposition(reason:)`` if the underlying backend fails.
     public func qrDecomposition(_ A: [[Double]]) throws -> (q: [[Double]], r: [[Double]]) {
         // QR decomposition is sequential in nature and benefits from LAPACK optimizations
         // more than GPU parallelization. Use Accelerate backend for best performance.
