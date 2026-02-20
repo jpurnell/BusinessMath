@@ -99,9 +99,9 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 		self.maxDrawdown = Self.calculateMaxDrawdown(returns.valuesArray)
 
 		// Mean and variance
-		let mean = values.reduce(T(0), +) / T(n)
-		let variance = values.map { ($0 - mean) * ($0 - mean) }.reduce(T(0), +) / T(n)
-		let stdDev = T.sqrt(variance)
+		let mean = mean(values)
+		let variance = variance(values)
+		let stdDev = stdDev(values)
 
 		// Sharpe ratio
 		if stdDev > T(0) {
@@ -113,7 +113,9 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 		// Sortino ratio (downside deviation only)
 		let downsideReturns = values.filter { $0 < riskFreeRate }
 		if downsideReturns.count > 0 {
-			let downsideVariance = downsideReturns.map { ($0 - riskFreeRate) * ($0 - riskFreeRate) }.reduce(T(0), +) / T(downsideReturns.count)
+			let downsideDiffs = downsideReturns.map { ($0 - riskFreeRate) * ($0 - riskFreeRate) }
+			let downsideDiffsSum = downsideDiffs.reduce(0, +)
+			let downsideVariance = downsideDiffsSum / T(downsideReturns.count)
 			let downsideDeviation = T.sqrt(downsideVariance)
 			if downsideDeviation > T(0) {
 				self.sortinoRatio = (mean - riskFreeRate) / downsideDeviation
