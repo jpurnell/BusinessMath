@@ -61,15 +61,15 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 	/// Excess kurtosis (tail thickness).
 	public let kurtosis: T
 
-	/// Initialize with time series of returns.
+	/// Initialize with a Real Number.
 	///
 	/// - Parameters:
-	///   - returns: Time series of return values.
+	///   - valuesArray: Array of return values.
 	///   - riskFreeRate: Risk-free rate for ratio calculations.
-	public init(returns: TimeSeries<T>, riskFreeRate: T = T(0)) {
-		let values = returns.valuesArray.sorted()
+	public init(valuesArray: [T], riskFreeRate: T = T(0)) {
+		let values = valuesArray.sorted()
 		let n = values.count
-
+		
 		guard n > 0 else {
 			// Edge case: no data
 			self.var95 = T(0)
@@ -96,11 +96,11 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 		self.cvar95 = sumTailLosses / T(tailLosses.count)
 
 		// Max drawdown
-		self.maxDrawdown = Self.calculateMaxDrawdown(returns.valuesArray)
+		self.maxDrawdown = Self.calculateMaxDrawdown(values)
 
 		// Mean and variance
 		let mean = mean(values)
-		let variance = variance(values)
+		_ = variance(values)
 		let stdDev = stdDev(values)
 
 		// Sharpe ratio
@@ -137,7 +137,7 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 
 		// Skewness
 		if stdDev > T(0) {
-			let skewSum = values.map { 
+			let skewSum = values.map {
 				let z = ($0 - mean) / stdDev
 				return z * z * z  // z^3
 			}.reduce(T(0), +)
@@ -148,7 +148,7 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 
 		// Kurtosis (excess kurtosis: normal = 0)
 		if stdDev > T(0) {
-			let kurtSum = values.map { 
+			let kurtSum = values.map {
 				let z = ($0 - mean) / stdDev
 				let z2 = z * z
 				return z2 * z2  // z^4
@@ -157,6 +157,17 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 		} else {
 			self.kurtosis = T(0)
 		}
+	}
+	
+	/// Initialize with time series of returns.
+	///
+	/// - Parameters:
+	///   - returns: Time series of return values.
+	///   - riskFreeRate: Risk-free rate for ratio calculations.
+	public init(returns: TimeSeries<T>, riskFreeRate: T = T(0)) {
+		let values = returns.valuesArray.sorted()
+		
+		self.init(valuesArray: values, riskFreeRate: riskFreeRate)
 	}
 
 	// MARK: - Max Drawdown Calculation

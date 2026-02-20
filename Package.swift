@@ -82,6 +82,7 @@ var targets: [Target] = [
 	),
 
 	// Tests (core)
+	// Swift Testing requires iOS 16+, macOS 13+, tvOS 16+, watchOS 9+
 	.testTarget(
 		name: "BusinessMathTests",
 		dependencies: [
@@ -130,10 +131,11 @@ if !isLinux {
 let package = Package(
 	name: "BusinessMath",
 	platforms: [
-		.iOS(.v14),
+		// Swift Testing requires iOS 16+, macOS 13+, tvOS 16+, watchOS 9+
+		.iOS(.v16),
 		.macOS(.v13),
-		.tvOS(.v14),
-		.watchOS(.v7),
+		.tvOS(.v16),
+		.watchOS(.v9),
 		.visionOS(.v1)
 	],
 	products: products,

@@ -58,7 +58,7 @@ import Foundation
 /// This error is thrown by ``AsyncTimeoutSequence`` when the time between consecutive
 /// elements exceeds the configured timeout duration.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// do {
 ///     let stream = AsyncValueStream([1, 2, 3])
@@ -193,7 +193,7 @@ extension AsyncSequence {
 /// the merged stream completes when both input streams complete. Order of emission
 /// depends on the timing of values from each stream.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let prices = AsyncValueStream([100.0, 101.0, 102.0])
 /// let volumes = AsyncValueStream([1000.0, 1500.0, 2000.0])
@@ -209,13 +209,13 @@ extension AsyncSequence {
 /// // ...
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Combining multiple data sources (e.g., stock prices from different exchanges)
 /// - Aggregating event streams from different sensors
 /// - Merging user interaction events from multiple UI components
 /// - Consolidating log streams from different services
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Uses task group to consume both streams concurrently
 /// - Memory usage: O(1) - only stores AsyncStream continuation
 /// - Both streams are consumed independently; slower stream doesn't block faster one
@@ -310,7 +310,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
 /// containing one element from each stream, waiting for both values before emitting
 /// the pair. The zipped stream completes when either input stream completes.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let timestamps = AsyncValueStream([1.0, 2.0, 3.0, 4.0])
 /// let values = AsyncValueStream([100.0, 200.0, 300.0])
@@ -325,13 +325,13 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
 /// // (stops at 3 pairs - shorter stream determines length)
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Pairing timestamps with sensor readings
 /// - Combining feature vectors from different data sources
 /// - Synchronizing related data streams for processing
 /// - Creating coordinate pairs from separate X and Y streams
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - only stores iterator state
 /// - Waits for both streams synchronously; slower stream determines pace
 /// - Completes when the shorter stream ends (unpaired elements are discarded)
@@ -395,7 +395,7 @@ public struct AsyncZipSequence<First: AsyncSequence, Second: AsyncSequence>: Asy
 /// stream remains quiet for the full interval. Ideal for reducing rapid-fire events
 /// to meaningful changes.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let searchQuery = AsyncValueStream(["a", "ap", "app", "appl", "apple"])
 /// // Assume rapid typing with < 300ms between keystrokes
@@ -407,19 +407,19 @@ public struct AsyncZipSequence<First: AsyncSequence, Second: AsyncSequence>: Asy
 /// // Search for: apple
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Search-as-you-type with API calls (prevent request spam)
 /// - Window resize handlers (only respond after resizing stops)
 /// - Auto-save triggers (save after user stops editing)
 /// - Rate limiting user input (button clicks, form changes)
 ///
-/// ## Parameter Guidance
+/// ### Parameter Guidance
 /// - **interval**: Silence duration before emission
 ///   - UI input: 200-500ms (responsive but not too sensitive)
 ///   - Auto-save: 1-3 seconds (balance between safety and performance)
 ///   - API throttling: 500-1000ms (depends on rate limits)
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - stores only the latest value
 /// - Each new value cancels the previous debounce timer
 /// - Uses actor-based state management for thread safety
@@ -518,7 +518,7 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
 /// before producing the first output. Ideal for coordinating related data sources
 /// that update independently.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let temperature = AsyncValueStream([20.0, 21.0, 22.0])
 /// let humidity = AsyncValueStream([45.0, 50.0])
@@ -533,13 +533,13 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
 /// // Temp: 22.0°C, Humidity: 50.0%  (temp updates)
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Coordinating UI state from multiple sources (user input + server data)
 /// - Combining sensor readings for multi-parameter analysis
 /// - Reactive forms that validate on any field change
 /// - Dashboard widgets that display related metrics
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - stores only the latest value from each stream
 /// - Both streams are consumed concurrently using task group
 /// - First emission requires both streams to have emitted at least once
@@ -639,7 +639,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
 /// stream. The trigger values themselves are discarded - only the sampled values are
 /// emitted. Requires the sampled stream to have emitted at least once.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let buttonTaps = AsyncValueStream([(), (), ()])  // User taps
 /// let currentPrice = AsyncValueStream([100.0, 102.0, 101.0, 103.0])
@@ -653,13 +653,13 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
 /// // Price at tap: 103.0  (third tap, new price)
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Sampling current state on user actions (snapshot on button click)
 /// - Capturing context when events occur (get user location on photo)
 /// - Form submission with latest field values
 /// - Periodic reporting of continuously updating metrics
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - stores only the latest sampled value
 /// - Both streams run concurrently; sampled stream updates continuously
 /// - Trigger values are discarded; only sampled values are emitted
@@ -757,7 +757,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
 /// from the previous element. Uses equality comparison (requires `Equatable` elements).
 /// Useful for reducing redundant updates and focusing on meaningful state changes.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let stream = AsyncValueStream([1, 1, 2, 2, 2, 3, 1, 1])
 ///
@@ -771,13 +771,13 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
 /// // 1
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Filtering redundant sensor readings that haven't changed
 /// - Removing duplicate UI state updates
 /// - Optimizing database write operations (only save on change)
 /// - Reducing network traffic by skipping repeated values
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - stores only the previous value
 /// - Only filters consecutive duplicates (non-consecutive duplicates are preserved)
 /// - Requires `Equatable` conformance for element type
@@ -840,7 +840,7 @@ public struct AsyncDistinctSequence<Base: AsyncSequence>: AsyncSequence where Ba
 /// More flexible than ``AsyncDistinctSequence`` as it works with non-Equatable types
 /// and allows custom equality logic (e.g., fuzzy matching, partial comparison).
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// struct Reading {
 ///     let value: Double
@@ -862,13 +862,13 @@ public struct AsyncDistinctSequence<Base: AsyncSequence>: AsyncSequence where Ba
 /// // Significant reading: 105.0
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Fuzzy deduplication (ignore minor variations)
 /// - Custom equality for complex types
 /// - Threshold-based filtering (only emit on significant changes)
 /// - Case-insensitive string deduplication
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - stores only the previous value
 /// - Comparator returns `true` if values should be considered equal
 /// - Only filters consecutive duplicates
@@ -935,7 +935,7 @@ public struct AsyncDistinctUntilChangedSequence<Base: AsyncSequence>: AsyncSeque
 /// Useful for providing default states, seed values, or ensuring consumers have
 /// an initial value before the stream produces its first element.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let updates = AsyncValueStream([2, 3, 4])
 ///
@@ -949,13 +949,13 @@ public struct AsyncDistinctUntilChangedSequence<Base: AsyncSequence>: AsyncSeque
 /// // 4
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Providing default/initial state before updates arrive
 /// - Ensuring UI has a value to display immediately
 /// - Seeding calculations with a starting value
 /// - Testing stream behavior with known first value
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - stores initial value and emission flag
 /// - Initial value emitted synchronously on first call to `next()`
 /// - After initial value, passes through base stream unchanged
@@ -1019,7 +1019,7 @@ public struct AsyncStartWithSequence<Base: AsyncSequence>: AsyncSequence {
 /// intervals. Between samples, the latest value is tracked but not emitted. Useful
 /// for rate-limiting fast streams and creating periodic snapshots of changing values.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// // Rapidly changing price stream
 /// let prices = AsyncValueStream([100.0, 101.0, 102.0, 103.0, 104.0])
@@ -1033,19 +1033,19 @@ public struct AsyncStartWithSequence<Base: AsyncSequence>: AsyncSequence {
 /// // Current price: 104.0  (latest at second sample)
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Rate-limiting high-frequency sensor data
 /// - Creating periodic snapshots for logging/monitoring
 /// - Downsampling real-time data for display (e.g., chart updates)
 /// - Throttling UI updates to manageable frequency
 ///
-/// ## Parameter Guidance
+/// ### Parameter Guidance
 /// - **interval**: Sample period
 ///   - High-frequency monitoring: 100-500ms
 ///   - UI updates: 500ms-1s (human perception threshold)
 ///   - Data logging: 1s-60s (depends on volatility)
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - stores only the latest value
 /// - Samples occur at fixed intervals regardless of base stream timing
 /// - Always emits the most recent value at each interval
@@ -1145,7 +1145,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
 /// processing a fixed number of items, testing streams, or implementing pagination.
 /// Elements beyond the limit are ignored.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let stream = AsyncValueStream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 ///
@@ -1159,13 +1159,13 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
 /// // (stream completes)
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Limiting query results (top N items)
 /// - Processing batches of fixed size
 /// - Testing with sample data
 /// - Preview/sampling of large streams
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - only tracks count
 /// - Automatically completes after N elements
 /// - Base stream may continue producing; only consumption is limited
@@ -1228,7 +1228,7 @@ public struct AsyncTakeSequence<Base: AsyncSequence>: AsyncSequence {
 /// unchanged. Useful for pagination, removing headers, or starting processing after
 /// a warm-up period.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let stream = AsyncValueStream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 ///
@@ -1245,13 +1245,13 @@ public struct AsyncTakeSequence<Base: AsyncSequence>: AsyncSequence {
 /// // 10
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Pagination (skip first N pages)
 /// - Removing header rows from data streams
 /// - Ignoring warm-up/initialization values
 /// - Implementing "load more" functionality
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - only tracks skip count
 /// - Skipped elements are consumed but not emitted
 /// - After skipping, stream passes through all remaining elements
@@ -1316,7 +1316,7 @@ public struct AsyncSkipSequence<Base: AsyncSequence>: AsyncSequence {
 /// if they would satisfy the predicate. Useful for processing until a terminating
 /// condition is met.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let stream = AsyncValueStream([2, 4, 6, 7, 8, 10])
 ///
@@ -1330,13 +1330,13 @@ public struct AsyncSkipSequence<Base: AsyncSequence>: AsyncSequence {
 /// // (stops at 7, which is odd)
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Processing while values are within a threshold
 /// - Reading until a sentinel/terminator value
 /// - Taking elements during a stable condition
 /// - Consuming sorted data until a boundary
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - only stores completion flag
 /// - Predicate evaluated for each element until it returns false
 /// - Stream completes immediately on first failed predicate
@@ -1404,7 +1404,7 @@ public struct AsyncTakeWhileSequence<Base: AsyncSequence>: AsyncSequence {
 /// fails the condition, emits that element and all subsequent ones unchanged. The
 /// predicate is only evaluated during the initial skipping phase.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// let stream = AsyncValueStream([1, 3, 5, 6, 7, 9, 11])
 ///
@@ -1419,13 +1419,13 @@ public struct AsyncTakeWhileSequence<Base: AsyncSequence>: AsyncSequence {
 /// // (continues with all remaining values)
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Skipping header/metadata until data starts
 /// - Ignoring initial warm-up/unstable values
 /// - Bypassing values until a threshold is crossed
 /// - Removing leading whitespace/padding from streams
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - only stores skipping state flag
 /// - Predicate only evaluated while skipping (not for every element)
 /// - Once predicate fails, all remaining elements pass through
@@ -1492,7 +1492,7 @@ public struct AsyncSkipWhileSequence<Base: AsyncSequence>: AsyncSequence {
 /// specified duration. Each element resets the timer. Useful for detecting stalls,
 /// ensuring timely responses, and implementing service level agreements.
 ///
-/// ## Example
+/// ### Example
 /// ```swift
 /// do {
 ///     let stream = AsyncValueStream([1, 2, 3])  // Assuming fast delivery
@@ -1504,19 +1504,19 @@ public struct AsyncSkipWhileSequence<Base: AsyncSequence>: AsyncSequence {
 /// }
 /// ```
 ///
-/// ## Use Cases
+/// ### Use Cases
 /// - Detecting stalled network connections
 /// - Enforcing SLA response times
 /// - Implementing request deadlines
 /// - Preventing infinite waits in streaming APIs
 ///
-/// ## Parameter Guidance
+/// ### Parameter Guidance
 /// - **duration**: Maximum time between elements
 ///   - Real-time APIs: 1-5 seconds (depends on expected frequency)
 ///   - Batch processing: 30-60 seconds (allow for processing time)
 ///   - Health checks: 5-30 seconds (balance responsiveness vs. false positives)
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Memory usage: O(1) - only stores iterator state
 /// - Timer resets with each successful element emission
 /// - Throws ``TimeoutError`` on timeout (not `nil` completion)
@@ -1656,7 +1656,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
 /// operators like ``AsyncCombineLatestSequence`` and ``AsyncWithLatestFromSequence``
 /// to safely share the latest values across task group children.
 ///
-/// ## Technical Notes
+/// ### Technical Notes
 /// - Implemented as an actor for Swift concurrency safety
 /// - All access automatically serialized by the actor runtime
 /// - Memory barrier guarantees from actor isolation
@@ -1764,3 +1764,4 @@ final class ThrowingContinuationBox<Element: Sendable>: @unchecked Sendable {
         continuation.finish(throwing: error)
     }
 }
+

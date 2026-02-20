@@ -10,20 +10,22 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## 🎉 Version 2.0 Released!
+## 🎉 Version 2.0 (In Development)
 
-**Major milestone:** Production-ready API with role-based financial statements, GPU-accelerated optimization, multiple linear regression, and 100% documented public API.
+**Major milestone:** Production-ready API with role-based financial statements, GPU-accelerated optimization, multiple linear regression, and comprehensive operator tools.
 
 - ✅ **Role-Based Financial Statements:** Multi-statement account support for accurate financial modeling
 - ✅ **GPU Acceleration:** 10-100× speedup for genetic algorithms (populations ≥ 1,000) on Apple Silicon
 - ✅ **Consistent API:** `initialGuess` parameter everywhere, `@Sendable` closures for Swift 6 concurrency
 - ✅ **Constraint Support:** Equality and inequality constraints via penalty method
-- ✅ **Playground-Ready:** All examples work in Xcode Playgrounds with proper `PlaygroundSupport` integration
 - ✅ **Multiple Linear Regression:** GPU-accelerated matrix backends (CPU / Accelerate / Metal) for statistical modeling
-- ✅ **100% Documentation Coverage:** 4,593 public APIs fully documented
-- ✅ **4,289+ Tests:** 99.9% pass rate across 275+ test suites
+- ✅ **Operator Helpers:** Contribution margin, debt classification, pro forma adjustments, working capital tracking
+- ✅ **100% Documentation Coverage:** All public APIs fully documented
+- ✅ **4,418 Tests:** All passing with strict concurrency compliance
 
-**See what's new:** [Complete v2.0.0 Release Notes →](RELEASE_NOTES_v2.0.0.md)
+**Current Status:** v2.0.0-beta.6 - Core features complete, preparing playground tutorials and examples
+
+**See what's new:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

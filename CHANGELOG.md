@@ -11,6 +11,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 📊 Additional Operator Helpers (v2.0.0-beta.6)
+
+**Date:** 2026-02-20
+
+Incremental additions to financial statement APIs for operator workflows. All changes are backward compatible (additive-only).
+
+**Account Metadata & Extensions**
+- Added `metadata: [String: String]` property to `Account` for custom key-value pairs (covenant tracking, DSO targets, etc.)
+- Added 3 new `AccountType` cases: `.contributionMargin`, `.adjustedEBITDA`, `.proFormaEBITDA`
+
+**Contribution Margin Analysis** (`IncomeStatement`)
+- 7 new computed properties: `contributionMargin`, `contributionMarginRatio`, `contributionMarginPerUnit`, `breakEvenUnits`, `breakEvenRevenue`, `operatingLeverage`, `marginOfSafety`
+- Use cases: break-even analysis, pricing decisions, unit economics
+
+**Debt Classification** (`BalanceSheetRole`)
+- 5 new debt subtype cases: `.revolvingCreditFacility`, `.termLoanShortTerm`, `.termLoanLongTerm`, `.subordinatedDebt`, `.seniorSecuredDebt`
+- New `interestBearingDebtByType` property on `BalanceSheet` for debt stack breakdown
+
+**Pro Forma Adjustments** (`AccountAdjustment`)
+- New adjustment system: `AccountAdjustment<T>` with `.replace` or `.add` modes
+- Account extensions: `applyingAdjustment()`, `applyingAdjustments()`
+- IncomeStatement extension: `withProFormaEBITDA(adjustments:)`
+- Use cases: LBO synergy modeling, normalized EBITDA calculations
+
+**Working Capital Helpers** (`BalanceSheet`)
+- 3 new properties/methods: `netWorkingCapital`, `workingCapitalComponents`, `workingCapitalTurnover(revenue:)`
+- Use cases: working capital build/release tracking, efficiency analysis
+
+**Cash Flow Helpers** (`CashFlowStatement`)
+- New `workingCapitalChangesByComponent` property for period-over-period WC changes by role
+- Use cases: AR/AP/Inventory change attribution
+
+**Testing:**
+- 76 new tests added (all passing)
+- Total: 4,418 tests across 283 suites
+- Full Swift 6 strict concurrency compliance maintained
+
+**Files Modified:**
+- `Account.swift`, `AccountType.swift`, `IncomeStatement.swift`, `BalanceSheetRole.swift`, `BalanceSheet.swift`, `CashFlowStatement.swift`
+
+**New Files:**
+- `AccountAdjustment.swift` + 8 test files
+
+**Migration:** None required - all changes are additive.
+
+---
+
 #### 🏗️ Financial Statement Migration - Role-Based Architecture (v2.0.0-beta.5)
 
 **Date:** 2026-01-06

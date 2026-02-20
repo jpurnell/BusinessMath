@@ -319,6 +319,283 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 		return ebitda / totalRevenue
 	}
 
+	// MARK: - Contribution Margin Analysis (v2.0.0)
+
+	/// All expense accounts classified as variable costs.
+	///
+	/// Returns accounts where `metadata.isVariableCost == true`. Variable costs scale
+	/// with business volume (e.g., raw materials, direct labor, commissions).
+	///
+	/// ## Business Context
+	///
+	/// Variable costs are essential for contribution margin analysis and breakeven calculations.
+	/// They change proportionally with production or sales volume.
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// // Filter variable cost accounts
+	/// let variableAccounts = incomeStmt.variableCostAccounts
+	///
+	/// // Example variable costs: COGS, commissions, shipping
+	/// for account in variableAccounts {
+	///     print("\(account.name): \(account.metadata?.isVariableCost == true)")
+	/// }
+	/// ```
+	///
+	/// - Returns: Array of accounts with variable cost classification
+	/// - SeeAlso: ``AccountMetadata/isVariableCost``
+	public var variableCostAccounts: [Account<T>] {
+		expenseAccounts.filter { $0.metadata?.isVariableCost == true }
+	}
+
+	/// All expense accounts classified as fixed costs.
+	///
+	/// Returns accounts where `metadata.isFixedCost == true`. Fixed costs remain constant
+	/// regardless of business volume (e.g., rent, salaries, insurance).
+	///
+	/// ## Business Context
+	///
+	/// Fixed costs are used in contribution margin analysis to calculate operating leverage
+	/// and breakeven points. They do not change with production or sales volume.
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// // Filter fixed cost accounts
+	/// let fixedAccounts = incomeStmt.fixedCostAccounts
+	///
+	/// // Example fixed costs: Rent, salaries, insurance
+	/// for account in fixedAccounts {
+	///     print("\(account.name): \(account.metadata?.isFixedCost == true)")
+	/// }
+	/// ```
+	///
+	/// - Returns: Array of accounts with fixed cost classification
+	/// - SeeAlso: ``AccountMetadata/isFixedCost``
+	public var fixedCostAccounts: [Account<T>] {
+		expenseAccounts.filter { $0.metadata?.isFixedCost == true }
+	}
+
+	/// Total variable costs across all expense accounts.
+	///
+	/// Aggregates all expenses where `metadata.isVariableCost == true`. Variable costs
+	/// scale with business volume and are subtracted from revenue to calculate
+	/// contribution margin.
+	///
+	/// ## Business Context
+	///
+	/// Total variable costs represent expenses that change proportionally with sales volume.
+	/// Understanding variable costs is critical for:
+	/// - Contribution margin analysis
+	/// - Breakeven calculations
+	/// - Pricing decisions
+	/// - Operating leverage assessment
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// let incomeStmt = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
+	///
+	/// // Get total variable costs per period
+	/// let variableCosts = incomeStmt.totalVariableCosts
+	///
+	/// // If no accounts have cost classification, returns zero
+	/// print("Q1 Variable Costs: \(variableCosts.values[0])")
+	/// ```
+	///
+	/// ## Graceful Handling
+	///
+	/// If no accounts have `isVariableCost = true`, this property returns a time series
+	/// of zeros. The income statement remains functional without cost classification.
+	///
+	/// - Returns: Time series of total variable costs (absolute values, already negative for expenses)
+	/// - SeeAlso: ``contributionMargin``, ``totalFixedCosts``
+	public var totalVariableCosts: TimeSeries<T> {
+		return FinancialStatementHelpers.aggregateAccounts(variableCostAccounts, periods: periods)
+	}
+
+	/// Total fixed costs across all expense accounts.
+	///
+	/// Aggregates all expenses where `metadata.isFixedCost == true`. Fixed costs remain
+	/// constant regardless of business volume and are subtracted from contribution margin
+	/// to calculate operating income.
+	///
+	/// ## Business Context
+	///
+	/// Total fixed costs represent expenses that do not vary with sales volume. Understanding
+	/// fixed costs is essential for:
+	/// - Operating leverage analysis
+	/// - Breakeven point calculations
+	/// - Cost structure decisions
+	/// - Profitability forecasting
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// let incomeStmt = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
+	///
+	/// // Get total fixed costs per period
+	/// let fixedCosts = incomeStmt.totalFixedCosts
+	///
+	/// // If no accounts have cost classification, returns zero
+	/// print("Q1 Fixed Costs: \(fixedCosts.values[0])")
+	/// ```
+	///
+	/// ## Graceful Handling
+	///
+	/// If no accounts have `isFixedCost = true`, this property returns a time series
+	/// of zeros. The income statement remains functional without cost classification.
+	///
+	/// - Returns: Time series of total fixed costs (absolute values, already negative for expenses)
+	/// - SeeAlso: ``contributionMargin``, ``totalVariableCosts``
+	public var totalFixedCosts: TimeSeries<T> {
+		return FinancialStatementHelpers.aggregateAccounts(fixedCostAccounts, periods: periods)
+	}
+
+	/// Contribution margin (revenue - variable costs).
+	///
+	/// Represents the amount available to cover fixed costs and generate profit after
+	/// variable costs are subtracted from revenue. This is a key metric for understanding
+	/// operational leverage and breakeven analysis.
+	///
+	/// ## Business Context
+	///
+	/// Contribution margin shows how much each dollar of sales contributes to covering fixed
+	/// costs and profit. A higher contribution margin means:
+	/// - Greater ability to absorb fixed costs
+	/// - More profit per unit sold
+	/// - Higher operating leverage
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Contribution Margin = Total Revenue - Total Variable Costs
+	/// ```
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// // Revenue: $1,000,000
+	/// // Variable Costs: $600,000 (60% of revenue)
+	/// // Contribution Margin: $400,000 (40% of revenue)
+	///
+	/// let cm = incomeStmt.contributionMargin
+	/// let cmPercent = incomeStmt.contributionMarginPercent
+	///
+	/// print("Contribution Margin: \(cm.values[0])")        // $400,000
+	/// print("Contribution Margin %: \(cmPercent.values[0])")  // 0.40 (40%)
+	/// ```
+	///
+	/// ## Graceful Handling
+	///
+	/// If no accounts have variable cost classification, contribution margin equals total revenue
+	/// (assuming all costs are fixed). The calculation remains valid even without cost classification.
+	///
+	/// - Returns: Time series of contribution margin
+	/// - SeeAlso: ``contributionMarginPercent``, ``totalVariableCosts``, ``operatingLeverage()``
+	public var contributionMargin: TimeSeries<T> {
+		return totalRevenue - totalVariableCosts
+	}
+
+	/// Contribution margin percentage (contribution margin / revenue).
+	///
+	/// Expresses contribution margin as a percentage of revenue, showing what portion of
+	/// each sales dollar remains after variable costs to cover fixed costs and profit.
+	///
+	/// ## Business Context
+	///
+	/// Contribution margin percentage is critical for:
+	/// - Pricing decisions (minimum acceptable margin)
+	/// - Product mix optimization
+	/// - Breakeven analysis
+	/// - Comparing profitability across products/services
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Contribution Margin % = (Revenue - Variable Costs) / Revenue
+	/// ```
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// // Product A: 70% contribution margin
+	/// // Product B: 40% contribution margin
+	/// // → Product A contributes more per dollar of sales
+	///
+	/// let cmPercent = incomeStmt.contributionMarginPercent
+	///
+	/// for (i, period) in incomeStmt.periods.enumerated() {
+	///     print("\(period): \(cmPercent.values[i] * 100)%")
+	/// }
+	/// ```
+	///
+	/// ## Interpretation
+	///
+	/// - **High %** (>50%): Strong pricing power, high margins, scalable business model
+	/// - **Medium %** (30-50%): Typical for many businesses, moderate leverage
+	/// - **Low %** (<30%): Thin margins, high sensitivity to volume changes
+	///
+	/// - Returns: Time series of contribution margin as a decimal (0.40 = 40%)
+	/// - SeeAlso: ``contributionMargin``, ``grossMargin``
+	public var contributionMarginPercent: TimeSeries<T> {
+		return contributionMargin / totalRevenue
+	}
+
+	/// Operating leverage (contribution margin / operating income).
+	///
+	/// Measures how sensitive operating income is to changes in revenue. High operating leverage
+	/// means a small change in sales produces a large change in operating income (both up and down).
+	///
+	/// ## Business Context
+	///
+	/// Operating leverage quantifies the degree to which a business uses fixed costs in its
+	/// cost structure. It's essential for:
+	/// - Risk assessment (volatility of profits)
+	/// - Growth strategy decisions
+	/// - Understanding profit sensitivity to revenue changes
+	/// - Comparing business models
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Operating Leverage = Contribution Margin / Operating Income
+	/// ```
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// // Company with high fixed costs:
+	/// // Contribution Margin: $500,000
+	/// // Operating Income: $100,000
+	/// // Operating Leverage: 5.0×
+	/// // → A 10% increase in revenue yields ~50% increase in operating income
+	///
+	/// let leverage = incomeStmt.operatingLeverage()
+	///
+	/// for (i, period) in incomeStmt.periods.enumerated() {
+	///     print("\(period): \(leverage.values[i])×")
+	/// }
+	/// ```
+	///
+	/// ## Interpretation
+	///
+	/// - **Leverage > 1**: Each 1% change in revenue changes operating income by leverage%
+	/// - **High leverage (>3)**: High fixed costs, high profit volatility, high growth potential
+	/// - **Low leverage (<2)**: Low fixed costs, stable profits, lower growth amplification
+	///
+	/// ## Graceful Handling
+	///
+	/// Returns infinity (or very large values) when operating income approaches zero.
+	/// Returns NaN when both contribution margin and operating income are zero.
+	///
+	/// - Returns: Time series of operating leverage as a multiplier
+	/// - SeeAlso: ``contributionMargin``, ``operatingIncome``
+	public func operatingLeverage() -> TimeSeries<T> {
+		return contributionMargin / operatingIncome
+	}
+
 }
 
 // MARK: - Materialized Income Statement
