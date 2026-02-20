@@ -361,6 +361,80 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		}
 	}
 
+	/// Breakdown of debt by granular type (v2.0.0).
+	///
+	/// Returns a dictionary mapping each debt role to its aggregated time series. Useful for
+	/// analyzing debt composition, tracking covenant compliance, and understanding capital structure.
+	///
+	/// ## Business Context
+	///
+	/// PE operators and portfolio managers need to track debt by specific instrument type for:
+	/// - **Covenant tracking**: Different tranches have different leverage ratios
+	/// - **Refinancing planning**: Understanding maturity schedules by debt type
+	/// - **Capital structure analysis**: Seeing mix of senior, subordinated, and mezzanine debt
+	/// - **Investor reporting**: Detailed debt breakdowns for LP reports
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// let debtBreakdown = balanceSheet.interestBearingDebtByType
+	///
+	/// // Access specific debt types
+	/// if let revolver = debtBreakdown[.revolvingCreditFacility] {
+	///     print("Revolver balance: \(revolver[q1]!)")
+	/// }
+	///
+	/// if let termLoan = debtBreakdown[.termLoanLongTerm] {
+	///     print("Term loan balance: \(termLoan[q1]!)")
+	/// }
+	///
+	/// // Calculate senior vs subordinated debt
+	/// let seniorDebt = (debtBreakdown[.revolvingCreditFacility] ?? zeroSeries) +
+	///                   (debtBreakdown[.termLoanLongTerm] ?? zeroSeries)
+	/// let mezzDebt = debtBreakdown[.mezzanineDebt] ?? zeroSeries
+	/// ```
+	///
+	/// ## Covenant Calculations
+	///
+	/// ```swift
+	/// // Senior leverage ratio (excludes mezzanine)
+	/// let seniorDebtTypes: Set<BalanceSheetRole> = [
+	///     .revolvingCreditFacility,
+	///     .termLoanLongTerm
+	/// ]
+	///
+	/// let seniorDebt = debtBreakdown
+	///     .filter { seniorDebtTypes.contains($0.key) }
+	///     .values
+	///     .reduce(zeroSeries, +)
+	///
+	/// let seniorLeverage = seniorDebt / ebitda
+	/// ```
+	///
+	/// - Returns: Dictionary of debt roles to time series, only including roles with actual balances
+	/// - Note: Empty dictionary if no debt accounts exist
+	public var interestBearingDebtByType: [BalanceSheetRole: TimeSeries<T>] {
+		var debtByType: [BalanceSheetRole: TimeSeries<T>] = [:]
+
+		// Group debt accounts by their specific role
+		let debtAccounts = liabilityAccounts.filter {
+			$0.balanceSheetRole?.isDebt == true
+		}
+
+		// Get unique debt roles
+		let debtRoles = Set(debtAccounts.compactMap { $0.balanceSheetRole })
+
+		// Aggregate by each debt type
+		for role in debtRoles {
+			let accountsForRole = debtAccounts.filter { $0.balanceSheetRole == role }
+			if !accountsForRole.isEmpty {
+				debtByType[role] = FinancialStatementHelpers.aggregateAccounts(accountsForRole, periods: periods)
+			}
+		}
+
+		return debtByType
+	}
+
 	/// Current liabilities (liabilities expected to be paid within one year).
 	///
 	/// Includes: accounts payable, accrued expenses, short-term debt,
@@ -406,6 +480,244 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// Measures short-term liquidity.
 	public var workingCapital: TimeSeries<T> {
 		return currentAssets - currentLiabilities
+	}
+
+	/// Net working capital (synonym for working capital).
+	///
+	/// Net working capital represents the amount of current assets that exceed current liabilities,
+	/// providing a measure of short-term financial health and operational liquidity.
+	///
+	/// ## Business Context
+	///
+	/// Net working capital is critical for:
+	/// - **Day-to-day operations**: Ensuring sufficient resources to meet short-term obligations
+	/// - **Credit analysis**: Lenders use NWC to assess ability to service debt
+	/// - **LBO modeling**: Changes in NWC affect free cash flow projections
+	/// - **Operational efficiency**: Monitoring working capital management effectiveness
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Net Working Capital = Current Assets - Current Liabilities
+	/// ```
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(entity: company, periods: periods, accounts: accounts)
+	///
+	/// // Check working capital position
+	/// let nwc = balanceSheet.netWorkingCapital
+	/// print("Q1 NWC: $\(nwc[q1]!)") // e.g., $2.5M
+	///
+	/// // Monitor trend over time
+	/// let nwcChange = nwc[q2]! - nwc[q1]!  // Increase/decrease in NWC
+	/// ```
+	///
+	/// ## Interpretation
+	///
+	/// - **Positive NWC**: Company can cover short-term obligations (healthy)
+	/// - **Negative NWC**: Potential liquidity issues (unless business model allows, e.g., retail with negative CCC)
+	/// - **Increasing NWC**: More capital tied up in operations (may reduce cash flow)
+	/// - **Decreasing NWC**: More efficient working capital management (or potential stress)
+	///
+	/// - Note: This is equivalent to ``workingCapital``
+	/// - SeeAlso: ``workingCapital``
+	/// - SeeAlso: ``workingCapitalComponents``
+	/// - SeeAlso: ``workingCapitalTurnover(revenue:)``
+	public var netWorkingCapital: TimeSeries<T> {
+		return workingCapital
+	}
+
+	/// Breakdown of net working capital by balance sheet role.
+	///
+	/// Returns a dictionary showing the contribution of each current asset and current liability
+	/// role to total working capital. Current assets contribute positively, current liabilities
+	/// contribute negatively.
+	///
+	/// ## Business Context
+	///
+	/// Understanding working capital composition is essential for:
+	/// - **Working capital optimization**: Identifying which components drive WC changes
+	/// - **Cash flow forecasting**: Different components have different cash conversion cycles
+	/// - **Operational diagnostics**: High AR or inventory may signal collection or turnover issues
+	/// - **LBO analysis**: Modeling working capital builds/releases by component
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(entity: company, periods: periods, accounts: accounts)
+	///
+	/// // Get working capital breakdown
+	/// let components = balanceSheet.workingCapitalComponents
+	///
+	/// // Analyze major drivers
+	/// if let ar = components[.accountsReceivable] {
+	///     print("AR (Q1): $\(ar[q1]!)")  // e.g., $3.5M
+	/// }
+	/// if let ap = components[.accountsPayable] {
+	///     print("AP (Q1): $\(ap[q1]!)")  // e.g., -$1.2M (negative = liability)
+	/// }
+	/// if let inventory = components[.inventory] {
+	///     print("Inventory (Q1): $\(inventory[q1]!)")  // e.g., $2.1M
+	/// }
+	///
+	/// // Calculate AR as % of total current assets
+	/// let currentAssets = balanceSheet.currentAssets
+	/// let arPercent = (ar[q1]! / currentAssets[q1]!) * 100  // e.g., 58%
+	/// ```
+	///
+	/// ## LBO Working Capital Build/Release Modeling
+	///
+	/// ```swift
+	/// // Track component changes period-over-period
+	/// let components = balanceSheet.workingCapitalComponents
+	///
+	/// if let ar = components[.accountsReceivable] {
+	///     let arChange = ar[q2]! - ar[q1]!
+	///     if arChange > 0 {
+	///         print("AR increased by $\(arChange) - use of cash")
+	///     } else {
+	///         print("AR decreased by $\(-arChange) - source of cash")
+	///     }
+	/// }
+	///
+	/// // Identify working capital efficiency opportunities
+	/// // - High AR → improve collections
+	/// // - High inventory → improve turnover
+	/// // - Low AP → negotiate better payment terms
+	/// ```
+	///
+	/// ## Return Value
+	///
+	/// Dictionary where:
+	/// - **Keys**: ``BalanceSheetRole`` for each current asset/liability
+	/// - **Values**: ``TimeSeries`` of component balances
+	/// - Current assets appear as **positive** values
+	/// - Current liabilities appear as **negative** values (to show they reduce NWC)
+	///
+	/// - Returns: Dictionary mapping balance sheet roles to their working capital contribution
+	/// - SeeAlso: ``netWorkingCapital``
+	/// - SeeAlso: ``currentAssets``
+	/// - SeeAlso: ``currentLiabilities``
+	public var workingCapitalComponents: [BalanceSheetRole: TimeSeries<T>] {
+		var components: [BalanceSheetRole: TimeSeries<T>] = [:]
+
+		// Current assets (positive contribution to NWC)
+		let currentAssetAccounts = assetAccounts.filter { $0.balanceSheetRole?.isCurrent == true }
+		let currentAssetRoles = Set(currentAssetAccounts.compactMap { $0.balanceSheetRole })
+
+		for role in currentAssetRoles {
+			let accountsForRole = currentAssetAccounts.filter { $0.balanceSheetRole == role }
+			if !accountsForRole.isEmpty {
+				components[role] = FinancialStatementHelpers.aggregateAccounts(accountsForRole, periods: periods)
+			}
+		}
+
+		// Current liabilities (negative contribution to NWC)
+		let currentLiabilityAccounts = liabilityAccounts.filter { $0.balanceSheetRole?.isCurrent == true }
+		let currentLiabilityRoles = Set(currentLiabilityAccounts.compactMap { $0.balanceSheetRole })
+
+		for role in currentLiabilityRoles {
+			let accountsForRole = currentLiabilityAccounts.filter { $0.balanceSheetRole == role }
+			if !accountsForRole.isEmpty {
+				// Negate to show as reduction in working capital
+				let aggregated = FinancialStatementHelpers.aggregateAccounts(accountsForRole, periods: periods)
+				let negatedValues = periods.map { period in -aggregated[period]! }
+				components[role] = TimeSeries(periods: periods, values: negatedValues)
+			}
+		}
+
+		return components
+	}
+
+	/// Working capital turnover ratio (revenue / average working capital).
+	///
+	/// Measures how efficiently a company uses its working capital to generate revenue.
+	/// Higher turnover indicates more efficient use of working capital.
+	///
+	/// ## Business Context
+	///
+	/// Working capital turnover is important for:
+	/// - **Operational efficiency**: How effectively is NWC deployed to generate sales?
+	/// - **Industry benchmarking**: Compare to peers to identify efficiency gaps
+	/// - **Cash flow optimization**: Higher turnover means less cash tied up in operations
+	/// - **Credit analysis**: Efficient WC management reduces financing needs
+	///
+	/// ## Formula
+	///
+	/// ```
+	/// Working Capital Turnover = Revenue / Average Working Capital
+	/// ```
+	///
+	/// For the first period, uses beginning working capital (no average).
+	/// For subsequent periods, uses average of current and prior period.
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// let balanceSheet = try BalanceSheet(entity: company, periods: periods, accounts: accounts)
+	/// let incomeStmt = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
+	///
+	/// // Calculate turnover
+	/// let turnover = balanceSheet.workingCapitalTurnover(revenue: incomeStmt.totalRevenue)
+	///
+	/// print("Q2 WC Turnover: \(turnover[q2]!)×")  // e.g., 5.2×
+	/// // Interpretation: Every $1 of working capital generates $5.20 in revenue
+	/// ```
+	///
+	/// ## Industry Benchmarks
+	///
+	/// Typical ranges by industry:
+	/// - **Retail**: 10-15× (low inventory, high volume, negative CCC)
+	/// - **Manufacturing**: 4-8× (higher inventory and AR)
+	/// - **Technology/SaaS**: 15-25× (minimal working capital needs)
+	/// - **Wholesale/Distribution**: 6-10× (moderate inventory turnover)
+	///
+	/// ## LBO Use Case
+	///
+	/// ```swift
+	/// // Assess working capital efficiency post-acquisition
+	/// let baselineTurnover = turnover[acquisitionDate]!
+	/// let currentTurnover = turnover[latestQuarter]!
+	///
+	/// if currentTurnover > baselineTurnover {
+	///     let improvement = ((currentTurnover / baselineTurnover) - 1) * 100
+	///     print("WC turnover improved \(improvement)% - operational excellence value creation")
+	/// }
+	///
+	/// // Calculate freed cash from working capital improvement
+	/// let revenue = incomeStmt.totalRevenue[latestQuarter]!
+	/// let optimalWC = revenue / industryBenchmarkTurnover  // e.g., 8×
+	/// let actualWC = balanceSheet.netWorkingCapital[latestQuarter]!
+	/// let excessWC = actualWC - optimalWC
+	/// print("Potential cash release: $\(excessWC)")
+	/// ```
+	///
+	/// - Parameter revenue: Revenue time series (typically from income statement)
+	/// - Returns: Working capital turnover ratio for each period
+	/// - SeeAlso: ``netWorkingCapital``
+	/// - SeeAlso: ``IncomeStatement/totalRevenue``
+	public func workingCapitalTurnover(revenue: TimeSeries<T>) -> TimeSeries<T> {
+		let nwc = self.netWorkingCapital
+
+		let turnoverValues = periods.enumerated().map { (index, period) -> T in
+			let currentRevenue = revenue[period]!
+
+			if index == 0 {
+				// First period: use current working capital
+				let currentWC = nwc[period]!
+				return currentRevenue / currentWC
+			} else {
+				// Subsequent periods: use average working capital
+				let currentWC = nwc[period]!
+				let priorWC = nwc[periods[index - 1]]!
+				let averageWC = (currentWC + priorWC) / T(2)
+				return currentRevenue / averageWC
+			}
+		}
+
+		return TimeSeries(periods: periods, values: turnoverValues)
 	}
 
 	// MARK: - Financial Ratios

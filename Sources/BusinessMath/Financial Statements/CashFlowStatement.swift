@@ -255,6 +255,169 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 		return result
 	}
 
+	/// Breakdown of working capital changes by cash flow role.
+	///
+	/// Returns a dictionary showing the period-over-period change for each working capital
+	/// component. This enables detailed analysis of which components are driving changes
+	/// in operating cash flow.
+	///
+	/// ## Business Context
+	///
+	/// Understanding working capital changes by component is critical for:
+	/// - **Cash flow forecasting**: Model individual components (AR, inventory, AP) separately
+	/// - **Working capital optimization**: Identify which components need management attention
+	/// - **LBO cash flow modeling**: Build detailed working capital builds/releases
+	/// - **Covenant compliance**: Track specific components mentioned in credit agreements
+	///
+	/// ## Formula
+	///
+	/// For each component with `usesChangeInBalance == true`:
+	/// ```
+	/// Component Change = Ending Balance - Beginning Balance
+	/// ```
+	///
+	/// **Convention:**
+	/// - **Positive change** (increase in asset or decrease in liability) = **use of cash**
+	/// - **Negative change** (decrease in asset or increase in liability) = **source of cash**
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// let cashFlowStmt = try CashFlowStatement(entity: company, periods: periods, accounts: accounts)
+	///
+	/// // Get detailed working capital breakdown
+	/// let wcComponents = cashFlowStmt.workingCapitalChangesByComponent
+	///
+	/// // Analyze AR changes
+	/// if let arChanges = wcComponents[.changeInAccountsReceivable] {
+	///     let q2Change = arChanges[q2]!
+	///     if q2Change > 0 {
+	///         print("AR increased by $\(q2Change) - use of cash")
+	///         print("Collections are slowing - review AR aging")
+	///     } else {
+	///         print("AR decreased by $\(-q2Change) - source of cash")
+	///         print("Improved collections")
+	///     }
+	/// }
+	///
+	/// // Analyze inventory changes
+	/// if let invChanges = wcComponents[.changeInInventory] {
+	///     let q2Change = invChanges[q2]!
+	///     if q2Change > 0 {
+	///         print("Inventory increased by $\(q2Change) - use of cash")
+	///         print("Building inventory (growth or inefficiency?)")
+	///     }
+	/// }
+	///
+	/// // Analyze AP changes
+	/// if let apChanges = wcComponents[.changeInAccountsPayable] {
+	///     let q2Change = apChanges[q2]!
+	///     if q2Change > 0 {
+	///         print("AP increased by $\(q2Change) - source of cash")
+	///         print("Taking longer to pay suppliers")
+	///     }
+	/// }
+	/// ```
+	///
+	/// ## LBO Cash Flow Modeling
+	///
+	/// ```swift
+	/// let wcComponents = cashFlowStmt.workingCapitalChangesByComponent
+	///
+	/// // Model working capital as % of revenue
+	/// let revenue = incomeStmt.totalRevenue
+	///
+	/// // Calculate AR as days sales outstanding (DSO)
+	/// if let arChanges = wcComponents[.changeInAccountsReceivable],
+	///    let arBalance = balanceSheet.accountsReceivableBalance {
+	///     let dso = (arBalance[q2]! / revenue[q2]!) * 365
+	///     print("DSO: \(dso) days")
+	///
+	///     // Forecast future AR based on target DSO
+	///     let targetDSO = 45.0  // days
+	///     let targetAR = (revenue[q3]! / 365) * targetDSO
+	///     let projectedARChange = targetAR - arBalance[q2]!
+	///     print("Projected AR change Q3: $\(projectedARChange)")
+	/// }
+	///
+	/// // Calculate inventory turnover
+	/// // Calculate AP days payable outstanding (DPO)
+	/// // Build comprehensive working capital forecast
+	/// ```
+	///
+	/// ## Identifying Working Capital Efficiency Opportunities
+	///
+	/// ```swift
+	/// let wcComponents = cashFlowStmt.workingCapitalChangesByComponent
+	///
+	/// // Compare changes to identify trends
+	/// for (role, changes) in wcComponents {
+	///     let q1toQ2 = changes[q2]! - changes[q1]!
+	///
+	///     switch role {
+	///     case .changeInAccountsReceivable:
+	///         if q1toQ2 > 0 {
+	///             print("⚠️ AR build accelerating - review credit policies")
+	///         }
+	///
+	///     case .changeInInventory:
+	///         if q1toQ2 > 0 {
+	///             print("⚠️ Inventory build accelerating - check for obsolescence")
+	///         }
+	///
+	///     case .changeInAccountsPayable:
+	///         if q1toQ2 < 0 {
+	///             print("⚠️ AP declining - negotiate better payment terms")
+	///         }
+	///
+	///     default:
+	///         break
+	///     }
+	/// }
+	/// ```
+	///
+	/// ## Return Value
+	///
+	/// Dictionary where:
+	/// - **Keys**: ``CashFlowRole`` for each working capital component
+	/// - **Values**: ``TimeSeries`` of period-over-period changes
+	/// - Only includes roles where `usesChangeInBalance == true`
+	///
+	/// **Note:** The first period will have a change value (diff from period 0 to period 1).
+	/// This is automatically calculated by `TimeSeries.diff()`.
+	///
+	/// - Returns: Dictionary mapping cash flow roles to their period changes
+	/// - SeeAlso: ``workingCapitalChanges``
+	/// - SeeAlso: ``CashFlowRole/usesChangeInBalance``
+	public var workingCapitalChangesByComponent: [CashFlowRole: TimeSeries<T>] {
+		var components: [CashFlowRole: TimeSeries<T>] = [:]
+
+		// Filter to working capital accounts only
+		let wcAccounts = accounts.filter { $0.cashFlowRole?.usesChangeInBalance == true }
+
+		// Get unique roles
+		let wcRoles = Set(wcAccounts.compactMap { $0.cashFlowRole })
+
+		for role in wcRoles {
+			// Get all accounts for this role
+			let accountsForRole = wcAccounts.filter { $0.cashFlowRole == role }
+
+			if !accountsForRole.isEmpty {
+				// Aggregate balances for this role
+				let aggregatedBalance = FinancialStatementHelpers.aggregateAccounts(
+					accountsForRole,
+					periods: periods
+				)
+
+				// Apply diff() to get period-over-period changes
+				let changes = aggregatedBalance.diff()
+				components[role] = changes
+			}
+		}
+
+		return components
+	}
+
 }
 
 // MARK: - Materialized Cash Flow Statement

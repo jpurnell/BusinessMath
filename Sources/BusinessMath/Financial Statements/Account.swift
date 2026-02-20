@@ -38,6 +38,35 @@ public enum AccountError: Error, Sendable, Equatable {
 /// metadata.tags = ["recurring", "core"]
 /// metadata.externalId = "ACCT-1001"
 /// ```
+///
+/// ## External System Integration (v2.0.0)
+///
+/// For accounts imported from external accounting systems, use the external
+/// system fields to preserve source system metadata:
+///
+/// ```swift
+/// var importedAccount = AccountMetadata()
+/// importedAccount.externalSourceSystem = "Xero"
+/// importedAccount.externalAccountType = "Current Liability"
+/// importedAccount.externalDetailType = "Sales Tax Payable"
+/// ```
+///
+/// ## Cost Classification (v2.0.0)
+///
+/// For contribution margin analysis, classify expenses as fixed or variable:
+///
+/// ```swift
+/// // Variable cost (scales with volume)
+/// var cogsMetadata = AccountMetadata()
+/// cogsMetadata.isVariableCost = true
+///
+/// // Fixed cost (constant regardless of volume)
+/// var rentMetadata = AccountMetadata()
+/// rentMetadata.isFixedCost = true
+/// ```
+///
+/// **Note:** `isFixedCost` and `isVariableCost` are mutually exclusive. Setting one
+/// to `true` automatically sets the other to `false`.
 public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// Detailed description of the account
 	public var description: String?
@@ -54,6 +83,166 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// External system identifier for data integration
 	public var externalId: String?
 
+	// ───────────────────────────────────────────────────────────
+	// External System Integration Fields (v2.0.0)
+	// ───────────────────────────────────────────────────────────
+
+	/// Account type from external source system
+	///
+	/// Preserves the original account type classification from the source accounting
+	/// system. This field is informational and does not affect BusinessMath processing.
+	///
+	/// ## Example Values
+	///
+	/// - `"Current Liability"`
+	/// - `"Operating Expense"`
+	/// - `"Cost of Goods Sold"`
+	/// - `"Other Current Asset"`
+	///
+	/// ## Usage
+	///
+	/// ```swift
+	/// var metadata = AccountMetadata()
+	/// metadata.externalSourceSystem = "Xero"
+	/// metadata.externalAccountType = "Current Liability"
+	/// metadata.externalDetailType = "Sales Tax Payable"
+	/// ```
+	///
+	/// - Note: This is a free-form string field. Different accounting systems use
+	///   different terminology.
+	public var externalAccountType: String?
+
+	/// Detailed account subtype from external source system
+	///
+	/// Provides finer-grained classification than `externalAccountType`. The specific
+	/// values available depend on the source accounting system.
+	///
+	/// ## Example Values
+	///
+	/// - `"SalesTaxPayable"`
+	/// - `"PayrollTaxPayable"`
+	/// - `"AccountsReceivable"`
+	/// - `"Inventory"`
+	///
+	/// ## Usage
+	///
+	/// ```swift
+	/// var metadata = AccountMetadata()
+	/// metadata.externalDetailType = "PayrollTaxPayable"
+	/// ```
+	///
+	/// - Note: This field is optional. Not all accounting systems provide detail types.
+	public var externalDetailType: String?
+
+	/// Name of the external source system
+	///
+	/// Identifies which accounting or ERP system this account was imported from.
+	/// Useful for maintaining data lineage and debugging integration issues.
+	///
+	/// ## Example Values
+	///
+	/// - `"Xero"`
+	/// - `"NetSuite"`
+	/// - `"Sage Intacct"`
+	/// - `"Custom ERP v2.1"`
+	///
+	/// ## Usage
+	///
+	/// ```swift
+	/// var metadata = AccountMetadata()
+	/// metadata.externalSourceSystem = "Xero"
+	/// ```
+	public var externalSourceSystem: String?
+
+	// ───────────────────────────────────────────────────────────
+	// Cost Classification Fields (v2.0.0)
+	// ───────────────────────────────────────────────────────────
+
+	/// Indicates whether this account represents a fixed cost
+	///
+	/// Fixed costs remain constant regardless of business volume (e.g., rent, insurance,
+	/// salaries). Used for contribution margin analysis and operating leverage calculations.
+	///
+	/// ## Business Context
+	///
+	/// Fixed costs do not vary with production or sales volume. Examples:
+	/// - Rent and lease payments
+	/// - Insurance premiums
+	/// - Salaried employee compensation
+	/// - Software subscriptions
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// var rentMetadata = AccountMetadata()
+	/// rentMetadata.isFixedCost = true
+	///
+	/// let rent = try Account(
+	///     entity: company,
+	///     name: "Rent Expense",
+	///     timeSeries: rentData,
+	///     incomeStatementRole: .rent,
+	///     metadata: rentMetadata
+	/// )
+	/// ```
+	///
+	/// ## Mutual Exclusivity
+	///
+	/// Setting `isFixedCost = true` automatically sets `isVariableCost = false`.
+	///
+	/// - SeeAlso: ``isVariableCost`` for the complementary classification
+	/// - SeeAlso: ``IncomeStatement/contributionMargin`` for usage in analysis
+	public var isFixedCost: Bool? {
+		didSet {
+			if isFixedCost == true {
+				isVariableCost = false
+			}
+		}
+	}
+
+	/// Indicates whether this account represents a variable cost
+	///
+	/// Variable costs scale with business volume (e.g., raw materials, direct labor,
+	/// commissions). Used for contribution margin analysis and breakeven calculations.
+	///
+	/// ## Business Context
+	///
+	/// Variable costs change in direct proportion to production or sales volume. Examples:
+	/// - Raw materials and components
+	/// - Direct labor (hourly)
+	/// - Sales commissions
+	/// - Shipping and fulfillment costs
+	/// - Credit card processing fees
+	///
+	/// ## Example Usage
+	///
+	/// ```swift
+	/// var cogsMetadata = AccountMetadata()
+	/// cogsMetadata.isVariableCost = true
+	///
+	/// let cogs = try Account(
+	///     entity: company,
+	///     name: "Cost of Goods Sold",
+	///     timeSeries: cogsData,
+	///     incomeStatementRole: .costOfRevenue,
+	///     metadata: cogsMetadata
+	/// )
+	/// ```
+	///
+	/// ## Mutual Exclusivity
+	///
+	/// Setting `isVariableCost = true` automatically sets `isFixedCost = false`.
+	///
+	/// - SeeAlso: ``isFixedCost`` for the complementary classification
+	/// - SeeAlso: ``IncomeStatement/contributionMargin`` for usage in analysis
+	public var isVariableCost: Bool? {
+		didSet {
+			if isVariableCost == true {
+				isFixedCost = false
+			}
+		}
+	}
+
 	/// Creates empty metadata.
 	public init() {
 		self.tags = []
@@ -67,18 +256,50 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	///   - subCategory: Subcategory
 	///   - tags: Tags for grouping
 	///   - externalId: External system identifier
+	///   - externalAccountType: Account type from external system (v2.0.0)
+	///   - externalDetailType: Detailed subtype from external system (v2.0.0)
+	///   - externalSourceSystem: Name of source accounting system (v2.0.0)
+	///   - isFixedCost: Whether this is a fixed cost (v2.0.0)
+	///   - isVariableCost: Whether this is a variable cost (v2.0.0)
 	public init(
 		description: String? = nil,
 		category: String? = nil,
 		subCategory: String? = nil,
 		tags: [String] = [],
-		externalId: String? = nil
+		externalId: String? = nil,
+		externalAccountType: String? = nil,
+		externalDetailType: String? = nil,
+		externalSourceSystem: String? = nil,
+		isFixedCost: Bool? = nil,
+		isVariableCost: Bool? = nil
 	) {
 		self.description = description
 		self.category = category
 		self.subCategory = subCategory
 		self.tags = tags
 		self.externalId = externalId
+		self.externalAccountType = externalAccountType
+		self.externalDetailType = externalDetailType
+		self.externalSourceSystem = externalSourceSystem
+
+		// Handle mutual exclusivity
+		if isFixedCost == true && isVariableCost == true {
+			// If both are true, prefer fixed cost
+			self.isFixedCost = true
+			self.isVariableCost = false
+		} else if isFixedCost == true {
+			// If only fixed cost is true, ensure variable is false
+			self.isFixedCost = true
+			self.isVariableCost = false
+		} else if isVariableCost == true {
+			// If only variable cost is true, ensure fixed is false
+			self.isFixedCost = false
+			self.isVariableCost = true
+		} else {
+			// Neither is true, keep as-is (could be nil or false)
+			self.isFixedCost = isFixedCost
+			self.isVariableCost = isVariableCost
+		}
 	}
 }
 
