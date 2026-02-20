@@ -256,7 +256,7 @@ public struct ScenarioOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 			let optimizer = MultivariateGradientDescent<V>(
 				learningRate: V.Scalar(0.01),
 				maxIterations: maxIterations,
-				tolerance: V.Scalar(tolerance),
+				tolerance: V.Scalar(tolerance)
 			)
 			let objectiveToMinimize: @Sendable (V) -> Double = minimize ? expectedObjective : { @Sendable (x: V) -> Double in -expectedObjective(x) }
 			let unconstrainedResult = try optimizer.minimize(
