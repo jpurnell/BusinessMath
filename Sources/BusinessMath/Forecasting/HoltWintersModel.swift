@@ -79,13 +79,31 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 	///
 	/// - Parameter data: The historical time series data.
 	/// - Throws: `ForecastError.insufficientData` if not enough data.
-	public mutating func train(on data: TimeSeries<T>) throws {
+	/// Train the Holt-Winters model on a generic array of values.
+	///
+	/// Estimates level, trend, and seasonal components using exponential smoothing.
+	/// This method works independently of `TimeSeries` and does not set `lastPeriod`.
+	///
+	/// - Parameter values: Array of numeric values to train on (requires at least `2 * seasonalPeriods` values).
+	/// - Throws: ``ForecastError/insufficientData(required:got:)`` if insufficient data.
+	///
+	/// ## Important
+	///
+	/// This method does NOT set `lastPeriod`. To generate forecasts as a `TimeSeries`,
+	/// either use `train(on:)` with a `TimeSeries` object, or manually set `lastPeriod` after calling this method.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// try model.train(values: monthlyData)
+	/// let futureValues = model.predictValues(periods: 6)
+	/// ```
+	public mutating func train(values: [T]) throws {
 		let required = seasonalPeriods * 2
-		guard data.count >= required else {
-			throw ForecastError.insufficientData(required: required, got: data.count)
+		guard values.count >= required else {
+			throw ForecastError.insufficientData(required: required, got: values.count)
 		}
-
-		let values = data.valuesArray
 
 		// Initialize level as average of first seasonal cycle
 		let initialLevel = values.prefix(seasonalPeriods).reduce(T(0), +) / T(seasonalPeriods)
@@ -135,38 +153,100 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 		self.level = currentLevel
 		self.trend = currentTrend
 		self.seasonal = currentSeasonal
-		self.lastPeriod = data.periods.last
 		self.residuals = errors
+	}
+
+	/// Train the Holt-Winters model on a time series (convenience method).
+	///
+	/// Delegates to `train(values:)` and automatically sets `lastPeriod`.
+	///
+	/// - Parameter data: Time series to train on (requires at least `2 * seasonalPeriods` values).
+	/// - Throws: ``ForecastError/insufficientData(required:got:)`` if insufficient data.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// try model.train(on: monthlySales)
+	/// if let forecast = model.predict(periods: 6) {
+	///     // Use forecast TimeSeries
+	/// }
+	/// ```
+	public mutating func train(on data: TimeSeries<T>) throws {
+		try train(values: data.valuesArray)
+		self.lastPeriod = data.periods.last
 	}
 
 	// MARK: - Prediction
 
-	/// Predicts future values.
+	/// Predict future values using the trained Holt-Winters model.
 	///
-	/// - Parameter periods: Number of periods to forecast.
-	/// - Returns: A time series with the forecasted values.
-	public func predict(periods: Int) -> TimeSeries<T> {
+	/// Returns an array of predicted values without Period labels. This is the core prediction
+	/// method that works independently of `TimeSeries`.
+	///
+	/// - Parameter periods: Number of future values to predict.
+	/// - Returns: Array of predicted values, or empty array if model not trained or periods ≤ 0.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// try model.train(values: monthlyData)
+	/// let futureValues = model.predictValues(periods: 6)
+	/// ```
+	public func predictValues(periods: Int) -> [T] {
 		guard let level = level,
 			  let trend = trend,
-			  let seasonal = seasonal,
-			  let lastPeriod = lastPeriod else {
-			// Model not trained - return empty forecast
+			  let seasonal = seasonal else {
+			return []
+		}
+
+		guard periods > 0 else { return [] }
+
+		var forecastValues: [T] = []
+
+		for h in 1...periods {
+			// Calculate forecast: (level + h * trend) + seasonal component
+			let seasonalIndex = (h - 1) % seasonalPeriods
+			let pointForecast = (level + T(h) * trend) + seasonal[seasonalIndex]
+			forecastValues.append(pointForecast)
+		}
+
+		return forecastValues
+	}
+
+	/// Predict future values as a TimeSeries (convenience method).
+	///
+	/// Delegates to `predictValues(periods:)` and generates Period labels using `lastPeriod`.
+	/// Returns `nil` if `lastPeriod` has not been set (call `train(on:)` with a TimeSeries first).
+	///
+	/// - Parameter periods: Number of periods to forecast.
+	/// - Returns: A time series with the forecasted values, or `nil` if `lastPeriod` not set.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// try model.train(on: monthlySales)
+	/// if let forecast = model.predict(periods: 6) {
+	///     // Use forecast TimeSeries
+	/// }
+	/// ```
+	public func predict(periods: Int) -> TimeSeries<T>? {
+		guard let lastPeriod = lastPeriod else {
+			return nil
+		}
+
+		let forecastValues = predictValues(periods: periods)
+		guard !forecastValues.isEmpty else {
 			return TimeSeries(periods: [], values: [])
 		}
 
 		var forecastPeriods: [Period] = []
-		var forecastValues: [T] = []
 
 		for h in 1...periods {
-			// Generate next period
 			let nextPeriod = lastPeriod.advanced(by: h)
 			forecastPeriods.append(nextPeriod)
-
-			// Calculate forecast: (level + h * trend) + seasonal component
-			let seasonalIndex = (h - 1) % seasonalPeriods
-			let pointForecast = (level + T(h) * trend) + seasonal[seasonalIndex]
-
-			forecastValues.append(pointForecast)
 		}
 
 		return TimeSeries(periods: forecastPeriods, values: forecastValues)
@@ -178,11 +258,14 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 	///   - periods: Number of periods to forecast.
 	///   - confidenceLevel: Confidence level (e.g., 0.95 for 95%).
 	/// - Returns: Forecast with confidence intervals.
+	/// - Throws: ``ForecastError`` if model not trained or lastPeriod not set.
 	public func predictWithConfidence(
 		periods: Int,
 		confidenceLevel: T
 	) throws -> ForecastWithConfidence<T> {
-		let forecast = predict(periods: periods)
+		guard let forecast = predict(periods: periods) else {
+			throw ForecastError.modelNotTrained
+		}
 
 		// Calculate standard error from residuals
 		let mse = residuals.map { $0 * $0 }.reduce(T(0), +) / T(max(residuals.count, 1))
@@ -244,7 +327,10 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 	public func forecast(timeSeries: TimeSeries<T>, periods: Int) throws -> TimeSeries<T> {
 		var mutableModel = self
 		try mutableModel.train(on: timeSeries)
-		return mutableModel.predict(periods: periods)
+		guard let forecast = mutableModel.predict(periods: periods) else {
+			throw ForecastError.modelNotTrained
+		}
+		return forecast
 	}
 
 	/// Trains on historical data and generates a forecast with confidence intervals.

@@ -54,7 +54,7 @@ struct MovingAverageTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 3)
+		let forecast = model.predict(periods: 3)!
 
 		// Average of last 3 values: (26 + 28 + 24) / 3 = 26
 		// Forecast should be constant at that average
@@ -73,7 +73,7 @@ struct MovingAverageTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 24)
+		let forecast = model.predict(periods: 24)!
 
 		#expect(forecast.periods.count == 24)
 		#expect(forecast.valuesArray.count == 24)
@@ -94,7 +94,7 @@ struct MovingAverageTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predictWithConfidence(periods: 6, confidenceLevel: 0.95)
+		let forecast = try model.predictWithConfidence(periods: 6, confidenceLevel: 0.95)
 
 		#expect(forecast.forecast.valuesArray.count == 6)
 		#expect(forecast.lowerBound.valuesArray.count == 6)
@@ -118,8 +118,8 @@ struct MovingAverageTests {
 
 		try model.train(on: data)
 
-		let forecast95 = model.predictWithConfidence(periods: 6, confidenceLevel: 0.95)
-		let forecast99 = model.predictWithConfidence(periods: 6, confidenceLevel: 0.99)
+		let forecast95 = try model.predictWithConfidence(periods: 6, confidenceLevel: 0.95)
+		let forecast99 = try model.predictWithConfidence(periods: 6, confidenceLevel: 0.99)
 
 		// 99% interval should be wider
 		for i in 0..<6 {
@@ -138,11 +138,11 @@ struct MovingAverageTests {
 
 		var model3 = MovingAverageModel<Double>(window: 3)
 		try model3.train(on: data)
-		let forecast3 = model3.predict(periods: 1)
+		let forecast3 = model3.predict(periods: 1)!
 
 		var model12 = MovingAverageModel<Double>(window: 12)
 		try model12.train(on: data)
-		let forecast12 = model12.predict(periods: 1)
+		let forecast12 = model12.predict(periods: 1)!
 
 		// Both should produce forecasts
 		#expect(forecast3.valuesArray.count == 1)
@@ -163,7 +163,7 @@ struct MovingAverageTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 3)
+		let forecast = model.predict(periods: 3)!
 
 		// Forecast is average of all historical values
 		let expectedAvg = (0..<10).map { Double($0 * 10) }.reduce(0, +) / 10.0
@@ -183,7 +183,7 @@ struct MovingAverageTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 5)
+		let forecast = model.predict(periods: 5)!
 
 		// Forecast should be 100
 		for value in forecast.valuesArray {
@@ -220,7 +220,7 @@ struct AdditionalMovingAverageTests {
 		let data = TimeSeries(periods: periods, values: values)
 		try model.train(on: data)
 
-		let fc = model.predict(periods: 3)
+		let fc = model.predict(periods: 3)!
 		#expect(fc.valuesArray.count == 3)
 		for v in fc.valuesArray {
 			#expect(abs(v - 25.0) < 1e-9)
@@ -235,7 +235,7 @@ struct AdditionalMovingAverageTests {
 		let data = TimeSeries(periods: periods, values: values)
 		try model.train(on: data)
 
-		let fc = model.predict(periods: 0)
+		let fc = model.predict(periods: 0)!
 		#expect(fc.periods.isEmpty)
 		#expect(fc.valuesArray.isEmpty)
 	}
@@ -248,7 +248,7 @@ struct AdditionalMovingAverageTests {
 		let data = TimeSeries(periods: trainPeriods, values: values)
 		try model.train(on: data)
 
-		let fc = model.predict(periods: 3)
+		let fc = model.predict(periods: 3)!
 		let expected = [
 			Period.month(year: 2025, month: 1),
 			Period.month(year: 2025, month: 2),
@@ -265,7 +265,7 @@ struct AdditionalMovingAverageTests {
 		let data = TimeSeries(periods: periods, values: values)
 		try model.train(on: data)
 
-		let fc = model.predictWithConfidence(periods: 4, confidenceLevel: 0.95)
+		let fc = try model.predictWithConfidence(periods: 4, confidenceLevel: 0.95)
 		for i in 0..<4 {
 			#expect(abs(fc.forecast.valuesArray[i] - 100.0) < 1e-9)
 			#expect(abs(fc.lowerBound.valuesArray[i] - 100.0) < 1e-9)

@@ -75,14 +75,15 @@ public protocol TrendModel<Value>: Sendable {
 	/// Projects future values based on the fitted trend model.
 	///
 	/// This method generates a forecast by extending the fitted trend pattern
-	/// into the future for the specified number of periods.
+	/// into the future for the specified number of periods. Returns `nil` if
+	/// `lastPeriod` has not been set (call `fit(to:)` with a TimeSeries first).
 	///
 	/// - Parameter periods: The number of future periods to project.
-	/// - Returns: A time series containing the projected values.
+	/// - Returns: A time series containing the projected values, or `nil` if `lastPeriod` not set.
 	/// - Throws: An error if the model hasn't been fitted yet or if projection fails.
 	///
-	/// - Important: You must call `fit(to:)` before calling this method.
-	func project(periods: Int) throws -> TimeSeries<Value>
+	/// - Important: You must call `fit(to:)` before calling this method to set period information.
+	func project(periods: Int) throws -> TimeSeries<Value>?
 }
 
 // MARK: - Trend Model Error
@@ -251,14 +252,30 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// try model.fit(to: revenue)
 	/// print("Slope: \(model.slopeValue ?? 0)")  // Growth per period
 	/// ```
-	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
-		guard timeSeries.count >= 2 else {
-			throw TrendModelError.insufficientData(required: 2, provided: timeSeries.count)
+	/// Fit the linear trend model to a generic array of values.
+	///
+	/// This method performs linear regression using array indices as x-values.
+	/// It works independently of `TimeSeries` and does not set `lastPeriod` or `metadata`.
+	///
+	/// - Parameter values: Array of numeric values to fit.
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 values provided.
+	///
+	/// ## Important
+	///
+	/// This method does NOT set `lastPeriod` or `metadata`. To project forecasts as a `TimeSeries`,
+	/// either use `fit(to:)` with a `TimeSeries` object, or manually set `lastPeriod` after calling this method.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = LinearTrend<Double>()
+	/// try model.fit(values: [1.0, 2.5, 3.8, 5.2, 6.1])
+	/// let futureValues = model.projectValues(steps: 3)  // Returns [T] without periods
+	/// ```
+	public mutating func fit(values: [T]) throws {
+		guard values.count >= 2 else {
+			throw TrendModelError.insufficientData(required: 2, provided: values.count)
 		}
-
-		// Extract periods and values
-		let periods = timeSeries.periods
-		let values = timeSeries.valuesArray
 
 		// Create x values as sequential indices
 		let xValues = (0..<values.count).map { T($0) }
@@ -266,8 +283,6 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 		// Fit linear regression - store slope and intercept
 		self.fittedSlope = try slope(xValues, values)
 		self.fittedIntercept = try intercept(xValues, values)
-		self.lastPeriod = periods.last
-		self.metadata = timeSeries.metadata
 		self.fittedDataCount = values.count
 
 		// Calculate and store residuals for confidence intervals
@@ -278,13 +293,70 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 		}
 	}
 
-	/// Project the linear trend forward for a specified number of periods.
+	/// Fit the linear trend model to a time series (convenience method).
 	///
-	/// Generates future values by extending the fitted line: y = mx + b.
-	/// Each projected period continues the linear growth pattern.
+	/// Delegates to `fit(values:)` and automatically sets `lastPeriod` and `metadata`
+	/// for generating time-indexed projections.
+	///
+	/// - Parameter timeSeries: Time series data to fit.
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = LinearTrend<Double>()
+	/// try model.fit(to: historicalRevenue)
+	/// let forecast = model.project(steps: 12)  // Returns TimeSeries<T>?
+	/// ```
+	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
+		try fit(values: timeSeries.valuesArray)
+		self.lastPeriod = timeSeries.periods.last
+		self.metadata = timeSeries.metadata
+	}
+
+	/// Project future values using the fitted linear trend model.
+	///
+	/// Returns an array of projected values without Period labels. This is the core projection
+	/// method that works independently of `TimeSeries`.
+	///
+	/// - Parameter steps: Number of future values to project (must be ≥ 0).
+	/// - Returns: Array of projected values, or empty array if model not fitted or steps ≤ 0.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = LinearTrend<Double>()
+	/// try model.fit(values: [1.0, 2.0, 3.0, 4.0, 5.0])
+	/// let futureValues = model.projectValues(steps: 3)  // [6.0, 7.0, 8.0]
+	/// ```
+	public func projectValues(steps: Int) -> [T] {
+		guard let slope = fittedSlope,
+		      let intercept = fittedIntercept else {
+			return []
+		}
+
+		guard steps > 0 else { return [] }
+
+		let startIndex = fittedDataCount
+		var futureValues: [T] = []
+
+		for i in 0..<steps {
+			let index = T(startIndex + i)
+			// Linear function: y = slope * x + intercept
+			let projectedValue = slope * index + intercept
+			futureValues.append(projectedValue)
+		}
+
+		return futureValues
+	}
+
+	/// Project the linear trend forward as a TimeSeries (convenience method).
+	///
+	/// Delegates to `projectValues(steps:)` and generates Period labels using `lastPeriod`.
+	/// Returns `nil` if `lastPeriod` has not been set (call `fit(to:)` with a TimeSeries first).
 	///
 	/// - Parameter periods: Number of periods to project forward (must be ≥ 0)
-	/// - Returns: Time series containing projected values
+	/// - Returns: Time series containing projected values, or `nil` if `lastPeriod` not set
 	/// - Throws: ``TrendModelError/modelNotFitted`` if model hasn't been fitted yet,
 	///           or ``TrendModelError/projectionFailed(_:)`` if periods is negative
 	///
@@ -292,15 +364,17 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ```swift
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(to: historicalRevenue)
-	/// let forecast = try model.project(periods: 12)  // Next 12 periods
+	/// if let forecast = try model.project(periods: 12) {
+	///     // Use forecast TimeSeries
+	/// }
 	/// ```
-	public func project(periods: Int) throws -> TimeSeries<T> {
+	public func project(periods: Int) throws -> TimeSeries<T>? {
 		guard let slope = fittedSlope, let intercept = fittedIntercept else {
 			throw TrendModelError.modelNotFitted
 		}
 
 		guard let lastPeriod = lastPeriod else {
-			throw TrendModelError.modelNotFitted
+			return nil
 		}
 
 		guard periods >= 0 else {
@@ -316,20 +390,14 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 			)
 		}
 
-		// Generate projections starting from the next period after fitted data
-		let startIndex = fittedDataCount
-		var futureValues: [T] = []
-		var futurePeriods: [Period] = []
+		// Get projected values from core method
+		let futureValues = projectValues(steps: periods)
 
+		// Generate periods
+		var futurePeriods: [Period] = []
 		var currentPeriod = lastPeriod
 
-		for i in 0..<periods {
-			let index = T(startIndex + i)
-			// Linear function: y = slope * x + intercept
-			let projectedValue = slope * index + intercept
-			futureValues.append(projectedValue)
-
-			// Advance to next period
+		for _ in 0..<periods {
 			currentPeriod = currentPeriod.next()
 			futurePeriods.append(currentPeriod)
 		}
@@ -380,7 +448,9 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 		confidenceLevel: T
 	) throws -> ForecastWithConfidence<T> where T: BinaryFloatingPoint {
 		// Generate point forecast
-		let forecast = try project(periods: periods)
+		guard let forecast = try project(periods: periods) else {
+			throw TrendModelError.modelNotFitted
+		}
 
 		// Validate confidence level
 		guard confidenceLevel > T.zero && confidenceLevel <= T(1) else {
@@ -617,29 +687,30 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 		return "ExponentialTrend: y = \(a) × e^(\(logSlope)x) [\(rate)% growth rate] (fitted on \(fittedDataCount) data points)"
 	}
 
-	/// Fit the exponential trend model to historical time series data.
+	/// Fit the exponential trend model to a generic array of values.
 	///
 	/// Uses log-linear regression: log-transforms the data, fits a linear model,
 	/// then transforms back. The model equation is: y = a × e^(bx).
 	///
-	/// - Parameter timeSeries: Historical data to fit (requires at least 2 points, all positive values)
+	/// - Parameter values: Array of numeric values to fit (requires at least 2 points, all positive values).
 	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points,
 	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0
+	///
+	/// ## Important
+	///
+	/// This method does NOT set `lastPeriod` or `metadata`. To project forecasts as a `TimeSeries`,
+	/// either use `fit(to:)` with a `TimeSeries` object, or manually set `lastPeriod` after calling this method.
 	///
 	/// ## Example
 	/// ```swift
 	/// var model = ExponentialTrend<Double>()
-	/// let users = TimeSeries(periods: [...], values: [1000, 1150, 1323])
-	/// try model.fit(to: users)
-	/// print("Growth rate: \((model.growthRate ?? 0) * 100)%")
+	/// try model.fit(values: [1000, 1150, 1323, 1520])
+	/// let futureValues = model.projectValues(steps: 3)
 	/// ```
-	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
-		guard timeSeries.count >= 2 else {
-			throw TrendModelError.insufficientData(required: 2, provided: timeSeries.count)
+	public mutating func fit(values: [T]) throws {
+		guard values.count >= 2 else {
+			throw TrendModelError.insufficientData(required: 2, provided: values.count)
 		}
-
-		let periods = timeSeries.periods
-		let values = timeSeries.valuesArray
 
 		// Check for non-positive values
 		guard values.allSatisfy({ $0 > T.zero }) else {
@@ -653,13 +724,8 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 		let xValues = (0..<values.count).map { T($0) }
 
 		// Fit linear regression to log-transformed data
-		// Store slope and intercept for log-linear model
-		// Then we can transform back: exp(slope * x + intercept)
 		self.fittedLogSlope = try slope(xValues, logValues)
 		self.fittedLogIntercept = try intercept(xValues, logValues)
-
-		self.lastPeriod = periods.last
-		self.metadata = timeSeries.metadata
 		self.fittedDataCount = values.count
 
 		// Calculate and store residuals for confidence intervals
@@ -671,13 +737,73 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 		}
 	}
 
-	/// Project the exponential trend forward for a specified number of periods.
+	/// Fit the exponential trend model to a time series (convenience method).
 	///
-	/// Generates future values following the exponential growth pattern: y = a × e^(bx).
-	/// Each projected period continues the compound growth rate.
+	/// Delegates to `fit(values:)` and automatically sets `lastPeriod` and `metadata`.
+	///
+	/// - Parameter timeSeries: Historical data to fit (requires at least 2 points, all positive values).
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points,
+	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = ExponentialTrend<Double>()
+	/// let users = TimeSeries(periods: [...], values: [1000, 1150, 1323])
+	/// try model.fit(to: users)
+	/// if let forecast = try model.project(periods: 12) {
+	///     print("Growth rate: \((model.growthRate ?? 0) * 100)%")
+	/// }
+	/// ```
+	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
+		try fit(values: timeSeries.valuesArray)
+		self.lastPeriod = timeSeries.periods.last
+		self.metadata = timeSeries.metadata
+	}
+
+	/// Project future values using the fitted exponential trend model.
+	///
+	/// Returns an array of projected values without Period labels. This is the core projection
+	/// method that works independently of `TimeSeries`.
+	///
+	/// - Parameter steps: Number of future values to project (must be ≥ 0).
+	/// - Returns: Array of projected values, or empty array if model not fitted or steps ≤ 0.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = ExponentialTrend<Double>()
+	/// try model.fit(values: [1000, 1150, 1323, 1520])
+	/// let futureValues = model.projectValues(steps: 3)
+	/// ```
+	public func projectValues(steps: Int) -> [T] {
+		guard let logSlope = fittedLogSlope,
+		      let logIntercept = fittedLogIntercept else {
+			return []
+		}
+
+		guard steps > 0 else { return [] }
+
+		let startIndex = fittedDataCount
+		var futureValues: [T] = []
+
+		for i in 0..<steps {
+			let index = T(startIndex + i)
+			// Exponential function: exp(logSlope * x + logIntercept)
+			let logValue = logSlope * index + logIntercept
+			let projectedValue = T.exp(logValue)
+			futureValues.append(projectedValue)
+		}
+
+		return futureValues
+	}
+
+	/// Project the exponential trend forward as a TimeSeries (convenience method).
+	///
+	/// Delegates to `projectValues(steps:)` and generates Period labels using `lastPeriod`.
+	/// Returns `nil` if `lastPeriod` has not been set (call `fit(to:)` with a TimeSeries first).
 	///
 	/// - Parameter periods: Number of periods to project forward (must be ≥ 0)
-	/// - Returns: Time series containing projected values
+	/// - Returns: Time series containing projected values, or `nil` if `lastPeriod` not set
 	/// - Throws: ``TrendModelError/modelNotFitted`` if model hasn't been fitted yet,
 	///           or ``TrendModelError/projectionFailed(_:)`` if periods is negative
 	///
@@ -685,15 +811,17 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ```swift
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: historicalUsers)
-	/// let forecast = try model.project(periods: 12)  // Next 12 periods with exponential growth
+	/// if let forecast = try model.project(periods: 12) {
+	///     // Use forecast TimeSeries
+	/// }
 	/// ```
-	public func project(periods: Int) throws -> TimeSeries<T> {
+	public func project(periods: Int) throws -> TimeSeries<T>? {
 		guard let logSlope = fittedLogSlope, let logIntercept = fittedLogIntercept else {
 			throw TrendModelError.modelNotFitted
 		}
 
 		guard let lastPeriod = lastPeriod else {
-			throw TrendModelError.modelNotFitted
+			return nil
 		}
 
 		guard periods >= 0 else {
@@ -708,21 +836,14 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 			)
 		}
 
-		// Generate projections starting from the next period after fitted data
-		let startIndex = fittedDataCount
-		var futureValues: [T] = []
-		var futurePeriods: [Period] = []
+		// Get projected values from core method
+		let futureValues = projectValues(steps: periods)
 
+		// Generate periods
+		var futurePeriods: [Period] = []
 		var currentPeriod = lastPeriod
 
-		for i in 0..<periods {
-			let index = T(startIndex + i)
-			// Exponential function: exp(logSlope * x + logIntercept)
-			let logValue = logSlope * index + logIntercept
-			let projectedValue = T.exp(logValue)
-			futureValues.append(projectedValue)
-
-			// Advance to next period
+		for _ in 0..<periods {
 			currentPeriod = currentPeriod.next()
 			futurePeriods.append(currentPeriod)
 		}
@@ -761,7 +882,9 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 		confidenceLevel: T
 	) throws -> ForecastWithConfidence<T> where T: BinaryFloatingPoint {
 		// Generate point forecast
-		let forecast = try project(periods: periods)
+		guard let forecast = try project(periods: periods) else {
+			throw TrendModelError.modelNotFitted
+		}
 
 		// Validate confidence level
 		guard confidenceLevel > T.zero && confidenceLevel <= T(1) else {
@@ -929,36 +1052,35 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.capacity = capacity
 	}
 
-	/// Fits the logistic trend model to historical time series data.
+	/// Fit the logistic trend model to a generic array of values.
 	///
 	/// Estimates the steepness (k) and midpoint (x₀) parameters for the logistic curve
 	/// given the fixed capacity. Uses simple heuristics based on data characteristics.
 	///
-	/// - Parameter timeSeries: Historical data to fit (requires at least 3 points, all positive and below capacity)
+	/// - Parameter values: Array of numeric values to fit (requires at least 3 points, all positive and below capacity).
 	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 3 data points,
 	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0 or ≥ capacity
+	///
+	/// ## Important
+	///
+	/// This method does NOT set `lastPeriod` or `metadata`. To project forecasts as a `TimeSeries`,
+	/// either use `fit(to:)` with a `TimeSeries` object, or manually set `lastPeriod` after calling this method.
 	///
 	/// ## Example
 	/// ```swift
 	/// var model = LogisticTrend<Double>(capacity: 100_000.0)
-	/// let users = TimeSeries(periods: [...], values: [1000, 5000, 15000])
-	/// try model.fit(to: users)
+	/// try model.fit(values: [1000, 5000, 15000, 30000])
+	/// let futureValues = model.projectValues(steps: 3)
 	/// ```
-	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
-		guard timeSeries.count >= 3 else {
-			throw TrendModelError.insufficientData(required: 3, provided: timeSeries.count)
+	public mutating func fit(values: [T]) throws {
+		guard values.count >= 3 else {
+			throw TrendModelError.insufficientData(required: 3, provided: values.count)
 		}
-
-		let periods = timeSeries.periods
-		let values = timeSeries.valuesArray
 
 		// Check that all values are positive and below capacity
 		guard values.allSatisfy({ $0 > T.zero && $0 < capacity }) else {
 			throw TrendModelError.invalidData("Logistic trend requires positive values below capacity")
 		}
-
-		// Use simple parameter estimation
-		// For a logistic curve, we can estimate k and x0 from the data
 
 		// Estimate midpoint as the index where value is closest to L/2
 		let halfCapacity = capacity / T(2)
@@ -967,7 +1089,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 
 		for (index, value) in values.enumerated() {
 			let diff = value - halfCapacity
-			let distance = diff < T.zero ? -diff : diff  // abs(diff)
+			let distance = diff < T.zero ? -diff : diff
 			if distance < minDistance {
 				minDistance = distance
 				bestMidpointIndex = index
@@ -977,18 +1099,14 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.x0 = T(bestMidpointIndex)
 
 		// Estimate steepness k from the growth rate near the midpoint
-		// k ≈ (growth rate) / (L/4) near the midpoint
-		// Use a simple approximation based on the data spread
 		let dataRange = values.max()! - values.min()!
 		let indexRange = T(values.count - 1)
 
-		// Simple heuristic: k controls how quickly the curve rises
-		// Higher k = steeper curve
 		self.k = T(4) * dataRange / (capacity * indexRange)
 
 		// Clamp k to reasonable values
 		if let currentK = self.k {
-			let minK = T(1) / T(10)  // 0.1
+			let minK = T(1) / T(10)
 			let maxK = T(10)
 			if currentK < minK {
 				self.k = minK
@@ -997,13 +1115,10 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 			}
 		}
 
-		self.lastPeriod = periods.last
-		self.metadata = timeSeries.metadata
 		self.fittedDataCount = values.count
 
 		// Calculate and store residuals for confidence intervals
 		self.residuals = []
-		// Capture values to avoid mutating self in closure
 		let kValue = self.k!
 		let x0Value = self.x0!
 		let capacityValue = self.capacity
@@ -1016,13 +1131,77 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 		}
 	}
 
-	/// Projects the logistic trend forward for a specified number of periods.
+	/// Fit the logistic trend model to a time series (convenience method).
 	///
-	/// Generates future values following the S-curve pattern approaching the capacity limit.
-	/// Each projected value respects the maximum capacity constraint.
+	/// Delegates to `fit(values:)` and automatically sets `lastPeriod` and `metadata`.
+	///
+	/// - Parameter timeSeries: Historical data to fit (requires at least 3 points, all positive and below capacity).
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 3 data points,
+	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0 or ≥ capacity
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = LogisticTrend<Double>(capacity: 100_000.0)
+	/// let users = TimeSeries(periods: [...], values: [1000, 5000, 15000])
+	/// try model.fit(to: users)
+	/// if let forecast = try model.project(periods: 12) {
+	///     // Use forecast
+	/// }
+	/// ```
+	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
+		try fit(values: timeSeries.valuesArray)
+		self.lastPeriod = timeSeries.periods.last
+		self.metadata = timeSeries.metadata
+	}
+
+	/// Project future values using the fitted logistic trend model.
+	///
+	/// Returns an array of projected values without Period labels. This is the core projection
+	/// method that works independently of `TimeSeries`.
+	///
+	/// - Parameter steps: Number of future values to project (must be ≥ 0).
+	/// - Returns: Array of projected values, or empty array if model not fitted or steps ≤ 0.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = LogisticTrend<Double>(capacity: 1_000_000.0)
+	/// try model.fit(values: [1000, 5000, 15000, 30000])
+	/// let futureValues = model.projectValues(steps: 3)
+	/// ```
+	public func projectValues(steps: Int) -> [T] {
+		guard let k = k, let x0 = x0 else {
+			return []
+		}
+
+		guard steps > 0 else { return [] }
+
+		// Logistic function: L / (1 + e^(-k(x - x0)))
+		let logisticFunction: (T) -> T = { x in
+			let exponent = -k * (x - x0)
+			let denominator = T(1) + T.exp(exponent)
+			return self.capacity / denominator
+		}
+
+		let startIndex = fittedDataCount
+		var futureValues: [T] = []
+
+		for i in 0..<steps {
+			let index = T(startIndex + i)
+			let projectedValue = logisticFunction(index)
+			futureValues.append(projectedValue)
+		}
+
+		return futureValues
+	}
+
+	/// Project the logistic trend forward as a TimeSeries (convenience method).
+	///
+	/// Delegates to `projectValues(steps:)` and generates Period labels using `lastPeriod`.
+	/// Returns `nil` if `lastPeriod` has not been set (call `fit(to:)` with a TimeSeries first).
 	///
 	/// - Parameter periods: Number of periods to project forward (must be ≥ 0)
-	/// - Returns: Time series containing projected values
+	/// - Returns: Time series containing projected values, or `nil` if `lastPeriod` not set
 	/// - Throws: ``TrendModelError/modelNotFitted`` if model hasn't been fitted yet,
 	///           or ``TrendModelError/projectionFailed(_:)`` if periods is negative
 	///
@@ -1030,15 +1209,17 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ```swift
 	/// var model = LogisticTrend<Double>(capacity: 1_000_000.0)
 	/// try model.fit(to: userGrowth)
-	/// let forecast = try model.project(periods: 12)  // Next 12 periods with S-curve growth
+	/// if let forecast = try model.project(periods: 12) {
+	///     // Use forecast TimeSeries
+	/// }
 	/// ```
-	public func project(periods: Int) throws -> TimeSeries<T> {
+	public func project(periods: Int) throws -> TimeSeries<T>? {
 		guard let k = k, let x0 = x0 else {
 			throw TrendModelError.modelNotFitted
 		}
 
 		guard let lastPeriod = lastPeriod else {
-			throw TrendModelError.modelNotFitted
+			return nil
 		}
 
 		guard periods >= 0 else {
@@ -1053,25 +1234,14 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 			)
 		}
 
-		// Logistic function: L / (1 + e^(-k(x - x0)))
-		let logisticFunction: (T) -> T = { x in
-			let exponent = -k * (x - x0)
-			let denominator = T(1) + T.exp(exponent)
-			return self.capacity / denominator
-		}
+		// Get projected values from core method
+		let futureValues = projectValues(steps: periods)
 
-		// Generate projections
-		let startIndex = fittedDataCount
-		var futureValues: [T] = []
+		// Generate periods
 		var futurePeriods: [Period] = []
-
 		var currentPeriod = lastPeriod
 
-		for i in 0..<periods {
-			let index = T(startIndex + i)
-			let projectedValue = logisticFunction(index)
-			futureValues.append(projectedValue)
-
+		for _ in 0..<periods {
 			currentPeriod = currentPeriod.next()
 			futurePeriods.append(currentPeriod)
 		}
@@ -1110,7 +1280,9 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 		confidenceLevel: T
 	) throws -> ForecastWithConfidence<T> where T: BinaryFloatingPoint {
 		// Generate point forecast
-		let forecast = try project(periods: periods)
+		guard let forecast = try project(periods: periods) else {
+			throw TrendModelError.modelNotFitted
+		}
 
 		// Validate confidence level
 		guard confidenceLevel > T.zero && confidenceLevel <= T(1) else {
@@ -1290,38 +1462,91 @@ public struct CustomTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.trendFunction = trendFunction
 	}
 
-	/// Fits the custom trend model by storing time series metadata.
+	/// Fit the custom trend model to a generic array of values.
 	///
-	/// For custom trends, "fitting" simply records the historical data characteristics.
-	/// The projection function is already defined by the user at initialization.
+	/// For custom trends, "fitting" simply records the data count. The projection
+	/// function is already defined by the user at initialization.
 	///
-	/// - Parameter timeSeries: Historical data (requires at least 1 point)
-	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if empty
+	/// - Parameter values: Array of numeric values (requires at least 1 value).
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if empty.
+	///
+	/// ## Important
+	///
+	/// This method does NOT set `lastPeriod` or `metadata`. To project forecasts as a `TimeSeries`,
+	/// either use `fit(to:)` with a `TimeSeries` object, or manually set `lastPeriod` after calling this method.
 	///
 	/// ## Example
 	/// ```swift
 	/// var model = CustomTrend<Double> { t in t * t }
-	/// try model.fit(to: historicalData)  // Stores metadata for projection
+	/// try model.fit(values: [1.0, 4.0, 9.0, 16.0])
+	/// let futureValues = model.projectValues(steps: 3)
 	/// ```
-	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
-		guard timeSeries.count >= 1 else {
-			throw TrendModelError.insufficientData(required: 1, provided: timeSeries.count)
+	public mutating func fit(values: [T]) throws {
+		guard values.count >= 1 else {
+			throw TrendModelError.insufficientData(required: 1, provided: values.count)
 		}
 
-		// For custom trend, "fitting" just means storing metadata
-		// The function is already provided by the user
-		self.lastPeriod = timeSeries.periods.last
-		self.metadata = timeSeries.metadata
-		self.fittedDataCount = timeSeries.count
+		self.fittedDataCount = values.count
 	}
 
-	/// Projects future values using the custom trend function.
+	/// Fit the custom trend model to a time series (convenience method).
 	///
-	/// Generates forecast by applying the user-defined trend function to future period indices.
-	/// The function continues from where the fitted data ended.
+	/// Delegates to `fit(values:)` and automatically sets `lastPeriod` and `metadata`.
+	///
+	/// - Parameter timeSeries: Historical data (requires at least 1 point).
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if empty.
+	///
+	/// ## Example
+	/// ```swift
+	/// var model = CustomTrend<Double> { t in t * t }
+	/// try model.fit(to: historicalData)
+	/// if let forecast = try model.project(periods: 12) {
+	///     // Use forecast
+	/// }
+	/// ```
+	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
+		try fit(values: timeSeries.valuesArray)
+		self.lastPeriod = timeSeries.periods.last
+		self.metadata = timeSeries.metadata
+	}
+
+	/// Project future values using the custom trend function.
+	///
+	/// Returns an array of projected values without Period labels. This is the core projection
+	/// method that works independently of `TimeSeries`.
+	///
+	/// - Parameter steps: Number of future values to project (must be ≥ 0).
+	/// - Returns: Array of projected values, or empty array if steps ≤ 0.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = CustomTrend<Double> { t in 100.0 * pow(1.05, t) }
+	/// try model.fit(values: [100, 105, 110])
+	/// let futureValues = model.projectValues(steps: 3)
+	/// ```
+	public func projectValues(steps: Int) -> [T] {
+		guard steps > 0 else { return [] }
+
+		let startIndex = fittedDataCount
+		var futureValues: [T] = []
+
+		for i in 0..<steps {
+			let index = T(startIndex + i)
+			let projectedValue = trendFunction(index)
+			futureValues.append(projectedValue)
+		}
+
+		return futureValues
+	}
+
+	/// Project future values as a TimeSeries (convenience method).
+	///
+	/// Delegates to `projectValues(steps:)` and generates Period labels using `lastPeriod`.
+	/// Returns `nil` if `lastPeriod` has not been set (call `fit(to:)` with a TimeSeries first).
 	///
 	/// - Parameter periods: Number of periods to project forward (must be ≥ 0)
-	/// - Returns: Time series containing projected values
+	/// - Returns: Time series containing projected values, or `nil` if `lastPeriod` not set
 	/// - Throws: ``TrendModelError/modelNotFitted`` if model hasn't been fitted yet,
 	///           or ``TrendModelError/projectionFailed(_:)`` if periods is negative
 	///
@@ -1329,11 +1554,13 @@ public struct CustomTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ```swift
 	/// var model = CustomTrend<Double> { t in 100.0 * pow(1.05, t) }
 	/// try model.fit(to: historical)
-	/// let forecast = try model.project(periods: 12)  // Next 12 periods using custom function
+	/// if let forecast = try model.project(periods: 12) {
+	///     // Use forecast TimeSeries
+	/// }
 	/// ```
-	public func project(periods: Int) throws -> TimeSeries<T> {
-		guard lastPeriod != nil else {
-			throw TrendModelError.modelNotFitted
+	public func project(periods: Int) throws -> TimeSeries<T>? {
+		guard let lastPeriod = lastPeriod else {
+			return nil
 		}
 
 		guard periods >= 0 else {
@@ -1348,18 +1575,14 @@ public struct CustomTrend<T: Real & Sendable>: TrendModel, Sendable {
 			)
 		}
 
-		// Generate projections using the custom function
-		let startIndex = fittedDataCount
-		var futureValues: [T] = []
+		// Get projected values from core method
+		let futureValues = projectValues(steps: periods)
+
+		// Generate periods
 		var futurePeriods: [Period] = []
+		var currentPeriod = lastPeriod
 
-		var currentPeriod = lastPeriod!
-
-		for i in 0..<periods {
-			let index = T(startIndex + i)
-			let projectedValue = trendFunction(index)
-			futureValues.append(projectedValue)
-
+		for _ in 0..<periods {
 			currentPeriod = currentPeriod.next()
 			futurePeriods.append(currentPeriod)
 		}

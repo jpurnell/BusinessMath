@@ -154,7 +154,7 @@ public struct TimeSeriesDecomposition<T: Real & Sendable>: Sendable {
 
 // MARK: - Seasonal Indices
 
-/// Calculates seasonal indices for a time series.
+/// Calculates seasonal indices from a generic array of values.
 ///
 /// Seasonal indices quantify the typical seasonal pattern by calculating the average
 /// effect of each season relative to the overall level. For example, a quarterly
@@ -169,6 +169,89 @@ public struct TimeSeriesDecomposition<T: Real & Sendable>: Sendable {
 /// - Index > 1.0: Above average for that season
 /// - Index = 1.0: Average for that season
 /// - Index < 1.0: Below average for that season
+///
+/// This is the core implementation that works with any numeric array.
+///
+/// - Parameters:
+///   - values: Array of numeric values representing the time series
+///   - periodsPerYear: Number of periods in one seasonal cycle (e.g., 4 for quarterly, 12 for monthly)
+/// - Returns: Array of seasonal indices, one per season
+/// - Throws: `SeasonalityError` if insufficient data or invalid parameters
+///
+/// ## Example
+///
+/// ```swift
+/// let salesData: [Double] = [100, 105, 110, 165, 110, 115, 120, 180]
+/// let indices = try seasonalIndices(values: salesData, periodsPerYear: 4)
+/// // Result: [0.95, 1.00, 1.05, 1.60]
+/// // Q4 is 60% above average
+/// ```
+///
+/// ## Requirements
+///
+/// - At least 2 complete seasonal cycles (e.g., 8 values for quarterly data)
+/// - periodsPerYear must be positive
+///
+/// ## Use Cases
+///
+/// - **Forecasting:** Apply historical seasonal patterns to projections
+/// - **Budgeting:** Adjust targets based on typical seasonal effects
+/// - **Performance Analysis:** Compare actual vs. seasonally-adjusted results
+/// - **Capacity Planning:** Plan resources for high/low seasons
+public func seasonalIndices<T: Real & Sendable>(
+	values: [T],
+	periodsPerYear: Int
+) throws -> [T] {
+	guard periodsPerYear > 0 else {
+		throw SeasonalityError.invalidPeriodsPerYear(periodsPerYear)
+	}
+
+	guard values.count >= periodsPerYear * 2 else {
+		throw SeasonalityError.insufficientData(
+			required: periodsPerYear * 2,
+			provided: values.count
+		)
+	}
+
+	// Calculate centered moving average (trend)
+	let trend = calculateCenteredMovingAverage(values: values, window: periodsPerYear)
+
+	// Calculate ratios (value / trend) for each period
+	var seasonalRatios: [[T]] = Array(repeating: [], count: periodsPerYear)
+
+	for i in 0..<values.count {
+		if i < trend.count && !trend[i].isNaN && trend[i] != T.zero {
+			let ratio = values[i] / trend[i]
+			let seasonIndex = i % periodsPerYear
+			seasonalRatios[seasonIndex].append(ratio)
+		}
+	}
+
+	// Average the ratios for each season
+	var indices: [T] = []
+	for ratios in seasonalRatios {
+		guard !ratios.isEmpty else {
+			indices.append(T(1))
+			continue
+		}
+		let average = ratios.reduce(T.zero, +) / T(ratios.count)
+		indices.append(average)
+	}
+
+	// Normalize so indices average to 1.0
+	let indexSum = indices.reduce(T.zero, +)
+	let indexAverage = indexSum / T(indices.count)
+
+	if indexAverage != T.zero {
+		indices = indices.map { $0 / indexAverage }
+	}
+
+	return indices
+}
+
+/// Calculates seasonal indices for a time series (convenience method).
+///
+/// Delegates to `seasonalIndices(values:periodsPerYear:)` for the core calculation.
 ///
 /// - Parameters:
 ///   - timeSeries: The time series data to analyze
@@ -214,53 +297,7 @@ public func seasonalIndices<T: Real & Sendable>(
 	timeSeries: TimeSeries<T>,
 	periodsPerYear: Int
 ) throws -> [T] {
-	guard periodsPerYear > 0 else {
-		throw SeasonalityError.invalidPeriodsPerYear(periodsPerYear)
-	}
-
-	guard timeSeries.count >= periodsPerYear * 2 else {
-		throw SeasonalityError.insufficientData(
-			required: periodsPerYear * 2,
-			provided: timeSeries.count
-		)
-	}
-
-	let values = timeSeries.valuesArray
-
-	// Calculate centered moving average (trend)
-	let trend = calculateCenteredMovingAverage(values: values, window: periodsPerYear)
-
-	// Calculate ratios (value / trend) for each period
-	var seasonalRatios: [[T]] = Array(repeating: [], count: periodsPerYear)
-
-	for i in 0..<values.count {
-		if i < trend.count && !trend[i].isNaN && trend[i] != T.zero {
-			let ratio = values[i] / trend[i]
-			let seasonIndex = i % periodsPerYear
-			seasonalRatios[seasonIndex].append(ratio)
-		}
-	}
-
-	// Average the ratios for each season
-	var indices: [T] = []
-	for ratios in seasonalRatios {
-		guard !ratios.isEmpty else {
-			indices.append(T(1))
-			continue
-		}
-		let average = ratios.reduce(T.zero, +) / T(ratios.count)
-		indices.append(average)
-	}
-
-	// Normalize so indices average to 1.0
-	let indexSum = indices.reduce(T.zero, +)
-	let indexAverage = indexSum / T(indices.count)
-
-	if indexAverage != T.zero {
-		indices = indices.map { $0 / indexAverage }
-	}
-
-	return indices
+	return try seasonalIndices(values: timeSeries.valuesArray, periodsPerYear: periodsPerYear)
 }
 
 // MARK: - Seasonally Adjust
