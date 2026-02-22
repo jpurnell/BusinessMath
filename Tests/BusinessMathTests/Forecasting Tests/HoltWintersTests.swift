@@ -70,7 +70,7 @@ struct HoltWintersTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 12)
+		let forecast = model.predict(periods: 12)!
 
 		#expect(forecast.periods.count == 12)
 		#expect(forecast.valuesArray.count == 12)
@@ -151,8 +151,8 @@ struct HoltWintersTests {
 		try model2.train(on: data)
 
 		// Both should produce reasonable forecasts
-		let forecast1 = model1.predict(periods: 6)
-		let forecast2 = model2.predict(periods: 6)
+		let forecast1 = model1.predict(periods: 6)!
+		let forecast2 = model2.predict(periods: 6)!
 
 		#expect(forecast1.valuesArray.count == 6)
 		#expect(forecast2.valuesArray.count == 6)
@@ -167,7 +167,7 @@ struct HoltWintersTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 24)  // 2 years
+		let forecast = model.predict(periods: 24)!  // 2 years
 		// Q4 months (10, 11, 12), positions (9, 10, 11) should be higher than others
 		// Check second year of forecast
 		let q4Months = [9, 10, 11].map { /*print("getting \(forecast.valuesArray[$0 + 12])");*/ return forecast.valuesArray[$0 + 12] }
@@ -191,7 +191,7 @@ struct HoltWintersTests {
 
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 4)
+		let forecast = model.predict(periods: 4)!
 
 		// Forecast should be close to 100
 		for value in forecast.valuesArray {
@@ -224,7 +224,7 @@ struct AdditionalHoltWintersTests {
 		let data = makeTrendSeasonalData()
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 3)
+		let forecast = model.predict(periods: 3)!
 		let expectedPeriods = [Period.month(year: 2024, month: 1),
 							   Period.month(year: 2024, month: 2),
 							   Period.month(year: 2024, month: 3)]
@@ -237,7 +237,7 @@ struct AdditionalHoltWintersTests {
 		let data = makeTrendSeasonalData()
 		try model.train(on: data)
 
-		let forecast = model.predict(periods: 24)
+		let forecast = model.predict(periods: 24)!
 		// Focus on second forecast year for stability
 		let year2 = Array(forecast.valuesArray[12..<24])
 		let q4 = [year2[9], year2[10], year2[11]]
@@ -263,7 +263,7 @@ struct AdditionalHoltWintersTests {
 		)
 
 		try model.train(on: train)
-		let fc = model.predict(periods: 12)
+		let fc = model.predict(periods: 12)!
 		#expect(fc.periods == test.periods)
 
 		// MAPE on synthetic data should be reasonably low
@@ -344,7 +344,7 @@ struct ConvenienceForecastTests {
 		// Compare with manual train+predict
 		var manualModel = model
 		try manualModel.train(on: timeSeries)
-		let manualForecast = manualModel.predict(periods: 6)
+		let manualForecast = manualModel.predict(periods: 6)!
 
 		// Should produce identical results
 		for i in 0..<6 {

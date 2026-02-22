@@ -53,40 +53,116 @@ public struct MovingAverageModel<T: Real & Sendable & Codable> {
 	///
 	/// - Parameter data: The historical time series data.
 	/// - Throws: `ForecastError.insufficientData` if not enough data.
-	public mutating func train(on data: TimeSeries<T>) throws {
-		guard data.count >= window else {
-			throw ForecastError.insufficientData(required: window, got: data.count)
+	/// Train the moving average model on a generic array of values.
+	///
+	/// Calculates the average of the last `window` values. This method works independently
+	/// of `TimeSeries` and does not set `lastPeriod`.
+	///
+	/// - Parameter values: Array of numeric values to train on (requires at least `window` values).
+	/// - Throws: ``ForecastError/insufficientData(required:got:)`` if insufficient data.
+	///
+	/// ## Important
+	///
+	/// This method does NOT set `lastPeriod`. To generate forecasts as a `TimeSeries`,
+	/// either use `train(on:)` with a `TimeSeries` object, or manually set `lastPeriod` after calling this method.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = MovingAverageModel<Double>(window: 3)
+	/// try model.train(values: [10, 12, 15, 18, 20])
+	/// let futureValues = model.predictValues(periods: 3)  // All values = avg(15, 18, 20)
+	/// ```
+	public mutating func train(values: [T]) throws {
+		guard values.count >= window else {
+			throw ForecastError.insufficientData(required: window, got: values.count)
 		}
 
 		// Calculate moving average of last `window` values
-		let lastValues = Array(data.valuesArray.suffix(window))
+		let lastValues = Array(values.suffix(window))
 		let average = lastValues.reduce(T(0), +) / T(window)
 
 		self.movingAverage = average
+		self.historicalValues = Array(values)
+	}
+
+	/// Train the moving average model on a time series (convenience method).
+	///
+	/// Delegates to `train(values:)` and automatically sets `lastPeriod`.
+	///
+	/// - Parameter data: Time series to train on (requires at least `window` values).
+	/// - Throws: ``ForecastError/insufficientData(required:got:)`` if insufficient data.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = MovingAverageModel<Double>(window: 3)
+	/// try model.train(on: salesData)
+	/// if let forecast = model.predict(periods: 3) {
+	///     // Use forecast TimeSeries
+	/// }
+	/// ```
+	public mutating func train(on data: TimeSeries<T>) throws {
+		try train(values: data.valuesArray)
 		self.lastPeriod = data.periods.last
-		self.historicalValues = Array(data.valuesArray)
 	}
 
 	// MARK: - Prediction
 
-	/// Predicts future values.
+	/// Predict future values using the trained moving average model.
 	///
-	/// All forecasted values are the same (the moving average).
+	/// Returns an array of predicted values without Period labels. All forecasted values
+	/// are the same (the moving average). This is the core prediction method that works
+	/// independently of `TimeSeries`.
 	///
-	/// - Parameter periods: Number of periods to forecast.
-	/// - Returns: A time series with the forecasted values.
-	public func predict(periods: Int) -> TimeSeries<T> {
-		guard periods > 0 else {
-			return TimeSeries(periods: [], values: [])
+	/// - Parameter periods: Number of future values to predict.
+	/// - Returns: Array of predicted values, or empty array if model not trained or periods ≤ 0.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = MovingAverageModel<Double>(window: 3)
+	/// try model.train(values: [10, 12, 15, 18, 20])
+	/// let futureValues = model.predictValues(periods: 3)  // [17.67, 17.67, 17.67]
+	/// ```
+	public func predictValues(periods: Int) -> [T] {
+		guard let average = movingAverage else {
+			return []
 		}
 
-		// Require the model to be trained
-		guard let average = movingAverage, let last = lastPeriod else {
+		guard periods > 0 else { return [] }
+
+		return Array(repeating: average, count: periods)
+	}
+
+	/// Predict future values as a TimeSeries (convenience method).
+	///
+	/// Delegates to `predictValues(periods:)` and generates Period labels using `lastPeriod`.
+	/// Returns `nil` if `lastPeriod` has not been set (call `train(on:)` with a TimeSeries first).
+	///
+	/// - Parameter periods: Number of periods to forecast.
+	/// - Returns: A time series with the forecasted values, or `nil` if `lastPeriod` not set.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// var model = MovingAverageModel<Double>(window: 3)
+	/// try model.train(on: salesData)
+	/// if let forecast = model.predict(periods: 3) {
+	///     // Use forecast TimeSeries
+	/// }
+	/// ```
+	public func predict(periods: Int) -> TimeSeries<T>? {
+		guard let last = lastPeriod else {
+			return nil
+		}
+
+		let forecastValues = predictValues(periods: periods)
+		guard !forecastValues.isEmpty else {
 			return TimeSeries(periods: [], values: [])
 		}
 
 		let forecastPeriods = (1...periods).map { last.advanced(by: $0) }
-		let forecastValues = Array(repeating: average, count: periods)
 
 		return TimeSeries(periods: forecastPeriods, values: forecastValues)
 	}
@@ -97,19 +173,17 @@ public struct MovingAverageModel<T: Real & Sendable & Codable> {
 	///   - periods: Number of periods to forecast.
 	///   - confidenceLevel: Confidence level (e.g., 0.95 for 95%).
 	/// - Returns: Forecast with confidence intervals.
+	/// - Throws: ``ForecastError/modelNotTrained`` if model not trained or lastPeriod not set.
 	public func predictWithConfidence(
 		periods: Int,
 		confidenceLevel: T
-	) -> ForecastWithConfidence<T> {
-		let forecast = predict(periods: periods)
+	) throws -> ForecastWithConfidence<T> {
+		guard let forecast = predict(periods: periods) else {
+			throw ForecastError.modelNotTrained
+		}
 
 		guard let average = movingAverage else {
-			return ForecastWithConfidence(
-				forecast: forecast,
-				lowerBound: forecast,
-				upperBound: forecast,
-				confidenceLevel: confidenceLevel
-			)
+			throw ForecastError.modelNotTrained
 		}
 
 		// Calculate standard deviation of the last `window` values (same values used for moving average)

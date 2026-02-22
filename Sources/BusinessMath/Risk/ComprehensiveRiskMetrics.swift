@@ -1,8 +1,9 @@
 //
-//  RiskMetrics.swift
+//  ComprehensiveRiskMetrics.swift
 //  BusinessMath
 //
 //  Created by Justin Purnell on 10/31/25.
+//  Refactored by Claude on 2026-02-20.
 //
 
 import Foundation
@@ -10,27 +11,39 @@ import Numerics
 
 // MARK: - ComprehensiveRiskMetrics
 
-/// Comprehensive risk metrics for return distributions.
+/// Comprehensive risk metrics for return distributions (convenience wrapper).
 ///
-/// `ComprehensiveRiskMetrics` calculates a complete set of risk measures
-/// from a time series of returns, including:
-/// - Value at Risk (VaR) at 95% and 99% confidence levels
-/// - Conditional VaR (CVaR / Expected Shortfall)
-/// - Maximum drawdown
-/// - Sharpe and Sortino ratios
-/// - Tail risk, skewness, and kurtosis
+/// `ComprehensiveRiskMetrics` provides a convenient way to calculate all risk measures
+/// at once. For individual metrics, use the focused types:
+/// - ``ValueAtRisk`` - VaR at various confidence levels
+/// - ``ConditionalValueAtRisk`` - CVaR / Expected Shortfall
+/// - ``MaxDrawdown`` - Peak-to-trough decline
+/// - ``SharpeRatio`` - Risk-adjusted returns
+/// - ``SortinoRatio`` - Downside risk-adjusted returns
+/// - ``TailRisk`` - Tail severity measure
+/// - ``Skewness`` - Distribution asymmetry
+/// - ``Kurtosis`` - Tail thickness
 ///
 /// ## Usage
 ///
 /// ```swift
-/// let returns = TimeSeries(periods: periods, values: returnValues)
+/// let returns = [-0.05, -0.02, 0.01, 0.03, 0.04, 0.02, -0.01, 0.05]
 /// let metrics = ComprehensiveRiskMetrics(
-///     returns: returns,
+///     valuesArray: returns,
 ///     riskFreeRate: 0.03
 /// )
 ///
 /// print(metrics.var95)
 /// print(metrics.sharpeRatio)
+/// ```
+///
+/// ## Individual Metrics (Preferred for Focused Analysis)
+///
+/// ```swift
+/// // Use individual types when you only need specific metrics
+/// let var95 = ValueAtRisk.var95(values: returns)
+/// let sharpe = SharpeRatio.calculate(values: returns, riskFreeRate: 0.03)
+/// let maxDD = MaxDrawdown.calculate(values: returns)
 /// ```
 public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>: Sendable {
 
@@ -61,16 +74,13 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 	/// Excess kurtosis (tail thickness).
 	public let kurtosis: T
 
-	/// Initialize with a Real Number.
+	/// Initialize with array of returns.
 	///
 	/// - Parameters:
 	///   - valuesArray: Array of return values.
-	///   - riskFreeRate: Risk-free rate for ratio calculations.
+	///   - riskFreeRate: Risk-free rate for ratio calculations (default: 0).
 	public init(valuesArray: [T], riskFreeRate: T = T(0)) {
-		let values = valuesArray.sorted()
-		let n = values.count
-		
-		guard n > 0 else {
+		guard !valuesArray.isEmpty else {
 			// Edge case: no data
 			self.var95 = T(0)
 			self.var99 = T(0)
@@ -84,124 +94,30 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 			return
 		}
 
-		// VaR calculation
-		let var95Index = max(0, Int(Double(n) * 0.05) - 1)
-		let var99Index = max(0, Int(Double(n) * 0.01) - 1)
-		self.var95 = values[var95Index]
-		self.var99 = values[var99Index]
-
-		// CVaR (average of losses beyond VaR)
-		let tailLosses = values[0...var95Index]
-		let sumTailLosses = tailLosses.reduce(T(0), +)
-		self.cvar95 = sumTailLosses / T(tailLosses.count)
-
-		// Max drawdown
-		self.maxDrawdown = Self.calculateMaxDrawdown(values)
-
-		// Mean and variance
-		let mean = mean(values)
-		_ = variance(values)
-		let stdDev = stdDev(values)
-
-		// Sharpe ratio
-		if stdDev > T(0) {
-			self.sharpeRatio = (mean - riskFreeRate) / stdDev
-		} else {
-			self.sharpeRatio = T(0)
-		}
-
-		// Sortino ratio (downside deviation only)
-		let downsideReturns = values.filter { $0 < riskFreeRate }
-		if downsideReturns.count > 0 {
-			let downsideDiffs = downsideReturns.map { ($0 - riskFreeRate) * ($0 - riskFreeRate) }
-			let downsideDiffsSum = downsideDiffs.reduce(0, +)
-			let downsideVariance = downsideDiffsSum / T(downsideReturns.count)
-			let downsideDeviation = T.sqrt(downsideVariance)
-			if downsideDeviation > T(0) {
-				self.sortinoRatio = (mean - riskFreeRate) / downsideDeviation
-			} else {
-				self.sortinoRatio = T(0)
-			}
-		} else {
-			// No downside risk
-			self.sortinoRatio = T(0)
-		}
-
-		// Tail risk
-		if var95 != T(0) {
-			let ratio = cvar95 / var95
-			self.tailRisk = ratio < T(0) ? -ratio : ratio
-		} else {
-			self.tailRisk = T(1)
-		}
-
-		// Skewness
-		if stdDev > T(0) {
-			let skewSum = values.map {
-				let z = ($0 - mean) / stdDev
-				return z * z * z  // z^3
-			}.reduce(T(0), +)
-			self.skewness = skewSum / T(n)
-		} else {
-			self.skewness = T(0)
-		}
-
-		// Kurtosis (excess kurtosis: normal = 0)
-		if stdDev > T(0) {
-			let kurtSum = values.map {
-				let z = ($0 - mean) / stdDev
-				let z2 = z * z
-				return z2 * z2  // z^4
-			}.reduce(T(0), +)
-			self.kurtosis = (kurtSum / T(n)) - T(3)
-		} else {
-			self.kurtosis = T(0)
-		}
+		// Calculate all metrics using focused types
+		self.var95 = ValueAtRisk.var95(values: valuesArray)
+		self.var99 = ValueAtRisk.var99(values: valuesArray)
+		self.cvar95 = ConditionalValueAtRisk.cvar95(values: valuesArray)
+		self.maxDrawdown = MaxDrawdown.calculate(values: valuesArray)
+		self.sharpeRatio = SharpeRatio.calculate(values: valuesArray, riskFreeRate: riskFreeRate)
+		self.sortinoRatio = SortinoRatio.calculate(values: valuesArray, riskFreeRate: riskFreeRate)
+		self.tailRisk = TailRisk.calculate(values: valuesArray, confidenceLevel: T(0.95))
+		self.skewness = Skewness.calculate(values: valuesArray)
+		self.kurtosis = Kurtosis.calculate(values: valuesArray)
 	}
-	
-	/// Initialize with time series of returns.
+
+	/// Initialize with time series of returns (convenience method).
 	///
 	/// - Parameters:
 	///   - returns: Time series of return values.
-	///   - riskFreeRate: Risk-free rate for ratio calculations.
+	///   - riskFreeRate: Risk-free rate for ratio calculations (default: 0).
 	public init(returns: TimeSeries<T>, riskFreeRate: T = T(0)) {
-		let values = returns.valuesArray.sorted()
-		
-		self.init(valuesArray: values, riskFreeRate: riskFreeRate)
-	}
-
-	// MARK: - Max Drawdown Calculation
-
-	/// Calculate maximum drawdown from a series of values.
-	private static func calculateMaxDrawdown(_ values: [T]) -> T {
-		guard values.count > 1 else { return T(0) }
-
-		var maxDrawdown: T = 0
-
-		// Convert returns to cumulative prices
-		var cumulativeValue: T = T(1)
-		var cumulativePeak: T = T(1)
-
-		for value in values {
-			cumulativeValue = cumulativeValue * (T(1) + value)
-
-			if cumulativeValue > cumulativePeak {
-				cumulativePeak = cumulativeValue
-			}
-
-			let drawdown = (cumulativePeak - cumulativeValue) / cumulativePeak
-			if drawdown > maxDrawdown {
-				maxDrawdown = drawdown
-			}
-		}
-
-		return maxDrawdown
+		self.init(valuesArray: returns.valuesArray, riskFreeRate: riskFreeRate)
 	}
 
 	// MARK: - Description
 
-        /// A localized human-readable description of the components of the struct.
-
+	/// A localized human-readable description of the components of the struct.
 	public var description: String {
 		return """
 		Comprehensive Risk Metrics:

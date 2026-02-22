@@ -353,4 +353,92 @@ struct RiskMetricsAdditionalTests {
 		let expected = (1.2 - 0.8) / 1.2 // 1/3
 		#expect(abs(metrics.maxDrawdown - expected) < 1e-3)
 	}
+
+	// MARK: - Max Drawdown Edge Cases
+
+	@Test("Max drawdown handles portfolio bankruptcy (100% loss)")
+	func maxDrawdownBankruptcy() throws {
+		// Return of -1.0 means 100% loss (portfolio goes to zero)
+		let returns = [0.10, 0.05, -1.0, 0.50]  // Last return irrelevant after bankruptcy
+		let periods = returns.enumerated().map { Period.month(year: 2026, month: ($0.offset % 12) + 1) }
+		let ts = TimeSeries(periods: periods, values: returns)
+		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+		// Should return exactly 1.0 (100% drawdown) for bankruptcy
+		#expect(metrics.maxDrawdown == 1.0)
+	}
+
+	@Test("Max drawdown handles extreme negative return (>100% loss)")
+	func maxDrawdownExtremeLoss() throws {
+		// Return of -1.5 means 150% loss (impossible in reality, but can occur in simulations)
+		let returns = [0.10, 0.05, -1.5]
+		let periods = returns.enumerated().map { Period.month(year: 2026, month: ($0.offset % 12) + 1) }
+		let ts = TimeSeries(periods: periods, values: returns)
+		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+		// Should cap at 1.0 (100% drawdown) even for super-bankruptcy
+		#expect(metrics.maxDrawdown == 1.0)
+	}
+
+	@Test("Max drawdown handles N(0,1) extreme values")
+	func maxDrawdownNormalDistributionExtremes() throws {
+		// Simulate extreme N(0,1) returns that could cause cumulative value to go negative
+		// With mean=0, std=1, we can get values like -3, -2, -1.5 which compound badly
+		let returns = [-2.0, -1.5, -1.0, 0.5, 1.0, 2.0]
+		let periods = returns.enumerated().map { Period.month(year: 2026, month: ($0.offset % 12) + 1) }
+		let ts = TimeSeries(periods: periods, values: returns)
+		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+		// Should handle gracefully without infinity
+		#expect(metrics.maxDrawdown.isFinite)
+		#expect(metrics.maxDrawdown >= 0.0)
+		#expect(metrics.maxDrawdown <= 1.0)
+	}
+
+	@Test("Max drawdown returns 0 for empty or single-value arrays")
+	func maxDrawdownEdgeCases() throws {
+		// Empty array
+		let empty: [Double] = []
+		let emptyDrawdown = MaxDrawdown.calculate(values: empty)
+		#expect(emptyDrawdown == 0.0)
+
+		// Single value
+		let single = [0.05]
+		let singleDrawdown = MaxDrawdown.calculate(values: single)
+		#expect(singleDrawdown == 0.0)
+	}
+
+	@Test("Max drawdown handles sequence that recovers after bankruptcy")
+	func maxDrawdownPostBankruptcy() throws {
+		// 1.0 -> 1.2 -> 0.0 (bankruptcy) -> can't recover (you can't earn returns on $0)
+		// But mathematically: 0 * (1 + 0.5) = 0
+		let returns = [0.20, -1.0, 0.50, 1.0]
+		let periods = returns.enumerated().map { Period.month(year: 2026, month: ($0.offset % 12) + 1) }
+		let ts = TimeSeries(periods: periods, values: returns)
+		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+		// Once bankrupt, max drawdown is 100% regardless of subsequent returns
+		#expect(metrics.maxDrawdown == 1.0)
+	}
+
+	@Test("Max drawdown never exceeds 100%")
+	func maxDrawdownCapped() throws {
+		// Test various extreme scenarios
+		let extremeReturns = [
+			[-2.0, -3.0, -1.5],  // Extreme N(0,1) values
+			[-1.0],               // Exactly 100% loss
+			[-5.0, 0.0, 0.0],    // Super extreme loss
+			[0.5, -2.0, 0.3]     // Mixed with extreme negative
+		]
+
+		for returns in extremeReturns {
+			let periods = returns.enumerated().map { Period.month(year: 2026, month: ($0.offset % 12) + 1) }
+			let ts = TimeSeries(periods: periods, values: returns)
+			let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
+
+			// Max drawdown should never exceed 1.0 (100%)
+			#expect(metrics.maxDrawdown <= 1.0, "MaxDrawdown exceeded 100% for returns: \(returns)")
+			#expect(metrics.maxDrawdown.isFinite, "MaxDrawdown was infinite for returns: \(returns)")
+		}
+	}
 }

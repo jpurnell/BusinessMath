@@ -66,7 +66,7 @@ struct IntegrationTests {
 		try trendModel.fit(to: historical)
 
 		// Project next 4 quarters
-		let forecast = try trendModel.project(periods: 4)
+		let forecast = try trendModel.project(periods: 4)!
 
 		// Calculate growth rate
 		let firstForecast = forecast.valuesArray.first!
@@ -119,7 +119,7 @@ struct IntegrationTests {
 		try trend.fit(to: deseasonalized)
 
 		// Step 4: Project trend forward
-		let trendForecast = try trend.project(periods: 4)
+		let trendForecast = try trend.project(periods: 4)!
 
 		// Step 5: Reapply seasonality
 		let seasonalForecast = try applySeasonal(timeSeries: trendForecast, indices: seasonalIndices)
@@ -410,7 +410,7 @@ struct IntegrationTests {
 		try trendModel.fit(to: deseasonalized)
 
 		// Project trend for next year
-		let trendForecast = try trendModel.project(periods: 4)
+		let trendForecast = try trendModel.project(periods: 4)!
 
 		// Apply seasonality to forecast
 		let seasonalForecast = try applySeasonal(timeSeries: trendForecast, indices: indices)
