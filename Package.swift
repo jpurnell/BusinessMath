@@ -5,10 +5,6 @@ import CompilerPluginSupport
 import PackageDescription
 import Foundation
 
-let isLinux = ProcessInfo.processInfo.operatingSystemVersionString
-	.lowercased()
-	.contains("linux")
-
 // MARK: - Products
 
 var products: [Product] = [
@@ -22,7 +18,7 @@ var products: [Product] = [
 	)
 ]
 
-if !isLinux {
+#if !os(Linux)
 	products.append(
 		.library(
 			name: "BusinessMathMacros",
@@ -30,7 +26,7 @@ if !isLinux {
 			targets: ["BusinessMathMacros"]
 		)
 	)
-}
+#endif
 
 // MARK: - Dependencies
 
@@ -46,14 +42,14 @@ var dependencies: [Package.Dependency] = [
 ]
 
 // Add swift-crypto on Linux (CryptoKit is built-in on Apple platforms)
-if isLinux {
+#if os(Linux)
 	dependencies.append(
 		.package(
 			url: "https://github.com/apple/swift-crypto.git",
 			from: "3.0.0"
 		)
 	)
-}
+#endif
 
 // MARK: - Targets
 
@@ -63,11 +59,11 @@ var businessMathDeps: [Target.Dependency] = [
 ]
 
 // Add Crypto on Linux (CryptoKit built-in on Apple platforms)
-if isLinux {
+#if os(Linux)
 	businessMathDeps.append(
 		.product(name: "Crypto", package: "swift-crypto")
 	)
-}
+#endif
 
 var targets: [Target] = [
 
@@ -117,7 +113,7 @@ var targets: [Target] = [
 
 // MARK: - Macro Targets (non-Linux only)
 
-if !isLinux {
+#if !os(Linux)
 	targets += [
 
 		.macro(
@@ -144,7 +140,7 @@ if !isLinux {
 
 		// BusinessMathMacrosTests target removed - all test files are currently disabled (.swift.disabled)
 	]
-}
+#endif
 
 // MARK: - Package
 
