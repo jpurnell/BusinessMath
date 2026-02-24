@@ -7,7 +7,9 @@
 
 import Foundation
 import Numerics
+#if canImport(OSLog)
 import OSLog
+#endif
 
 // Triangular Distribution function
 // From https://en.wikipedia.org/wiki/Triangular_distribution#Generating_triangular-distributed_random_variates

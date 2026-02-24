@@ -7,7 +7,9 @@
 
 import Foundation
 import Numerics
+#if canImport(OSLog)
 import OSLog
+#endif
 // Private aliases to global statistics functions to avoid namespace conflicts
 // These are explicitly typed for Double to resolve generic parameters
 // Marked nonisolated(unsafe) since these are pure functions with no mutable state

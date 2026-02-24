@@ -7,7 +7,9 @@
 
 import Foundation
 import Testing
+#if canImport(OSLog)
 import OSLog
+#endif
 
 @testable import BusinessMath
 

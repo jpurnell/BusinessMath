@@ -1,6 +1,8 @@
 import Foundation
 import BusinessMath
+#if canImport(OSLog)
 import OSLog
+#endif
 import PlaygroundSupport
 
 

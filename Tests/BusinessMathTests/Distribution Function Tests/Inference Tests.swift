@@ -6,9 +6,11 @@
 //
 
 import Testing
-import OSLog
 import Numerics
 @testable import BusinessMath
+#if canImport(OSLog)
+import OSLog
+#endif
 
 @Suite("InferenceTests") struct InferenceTests {
 	let inferenceTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "Inference Tests: \(#function)")

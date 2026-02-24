@@ -7,8 +7,11 @@
 
 import Testing
 import Numerics
-@testable import BusinessMath
+#if canImport(OSLog)
 import OSLog
+#endif
+@testable import BusinessMath
+
 
 @Suite("SimulationTests") struct SimulationTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.SimulationTests", category: #function)
