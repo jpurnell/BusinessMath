@@ -252,7 +252,7 @@ struct LoggerTests {
 
     @Test("Linux fallback logger exists")
     func linuxFallbackLoggerExists() {
-        let logger = Logger.businessMath
+        let logger = Logger.shared
 
         // Verify logger can be created
         #expect(logger.subsystem == "com.justinpurnell.BusinessMath")

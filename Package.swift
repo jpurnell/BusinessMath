@@ -97,13 +97,21 @@ var targets: [Target] = [
 		]
 	),
 
+	// Test Support (cross-platform utilities)
+	.target(
+		name: "TestSupport",
+		dependencies: [],
+		path: "Tests/TestSupport"
+	),
+
 	// Tests (core)
 	// Swift Testing requires iOS 16+, macOS 13+, tvOS 16+, watchOS 9+
 	.testTarget(
 		name: "BusinessMathTests",
 		dependencies: [
 			"BusinessMath",
-			"BusinessMathDSL"
+			"BusinessMathDSL",
+			"TestSupport"
 		],
 		swiftSettings: [
 			.enableUpcomingFeature("StrictConcurrency")

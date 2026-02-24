@@ -126,7 +126,8 @@ struct MonteCarloRNGTests {
         let pointer = outputBuffer.contents().bindMemory(to: Float.self, capacity: count)
         return (0..<count).map { pointer[$0] }
         #else
-        throw TestSkip.skip("Metal not available on this platform")
+        // Return empty array when Metal is unavailable (tests will skip)
+        return []
         #endif
     }
 
@@ -252,7 +253,8 @@ struct MonteCarloRNGTests {
         let pointer = outputBuffer.contents().bindMemory(to: Float.self, capacity: count)
         return (0..<count).map { pointer[$0] }
         #else
-        throw TestSkip.skip("Metal not available on this platform")
+        // Return empty array when Metal is unavailable (tests will skip)
+        return []
         #endif
     }
 
