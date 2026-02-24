@@ -26,35 +26,35 @@ struct DuPontAnalysisTests {
 			entity: entity,
 			name: "Cost of Goods Sold",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: quarters, values: [600, 660, 720, 780]),
+			timeSeries: TimeSeries(periods: quarters, values: [600, 660, 720, 780])
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: quarters, values: [200, 220, 240, 260]),
+			timeSeries: TimeSeries(periods: quarters, values: [200, 220, 240, 260])
 		)
 
 		let da = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			incomeStatementRole: .depreciationAmortization,
-			timeSeries: TimeSeries(periods: quarters, values: [50, 50, 50, 50]),
+			timeSeries: TimeSeries(periods: quarters, values: [50, 50, 50, 50])
 		)
 
 		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			incomeStatementRole: .interestExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [20, 20, 20, 20]),
+			timeSeries: TimeSeries(periods: quarters, values: [20, 20, 20, 20])
 		)
 
 		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			incomeStatementRole: .incomeTaxExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [32.5, 37.5, 42.5, 47.5]),
+			timeSeries: TimeSeries(periods: quarters, values: [32.5, 37.5, 42.5, 47.5])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -68,42 +68,42 @@ struct DuPontAnalysisTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130]),
+			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130])
 		)
 
 		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			balanceSheetRole: .accountsReceivable,
-			timeSeries: TimeSeries(periods: quarters, values: [150, 165, 180, 195]),
+			timeSeries: TimeSeries(periods: quarters, values: [150, 165, 180, 195])
 		)
 
 		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			balanceSheetRole: .propertyPlantEquipment,
-			timeSeries: TimeSeries(periods: quarters, values: [800, 850, 900, 950]),
+			timeSeries: TimeSeries(periods: quarters, values: [800, 850, 900, 950])
 		)
 
 		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130]),
+			timeSeries: TimeSeries(periods: quarters, values: [100, 110, 120, 130])
 		)
 
 		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
+			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: quarters, values: [650, 715, 780, 845]),
+			timeSeries: TimeSeries(periods: quarters, values: [650, 715, 780, 845])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -203,14 +203,14 @@ struct DuPontAnalysisTests {
 			entity: entity,
 			name: "Cost of Goods Sold",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
+			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300])
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: quarters, values: [100, 100, 100, 100]),
+			timeSeries: TimeSeries(periods: quarters, values: [100, 100, 100, 100])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -224,14 +224,14 @@ struct DuPontAnalysisTests {
 			entity: entity,
 			name: "Inventory",
 			balanceSheetRole: .inventory,
-			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000]),
+			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000]),
+			timeSeries: TimeSeries(periods: quarters, values: [2000, 2000, 2000, 2000])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -272,14 +272,14 @@ struct DuPontAnalysisTests {
 			entity: entity,
 			name: "Cost of Goods Sold",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: quarters, values: [4500, 4500, 4500, 4500]),
+			timeSeries: TimeSeries(periods: quarters, values: [4500, 4500, 4500, 4500])
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: quarters, values: [400, 400, 400, 400]),
+			timeSeries: TimeSeries(periods: quarters, values: [400, 400, 400, 400])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -293,14 +293,14 @@ struct DuPontAnalysisTests {
 			entity: entity,
 			name: "Inventory",
 			balanceSheetRole: .inventory,
-			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
+			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Shareholders Equity",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300]),
+			timeSeries: TimeSeries(periods: quarters, values: [300, 300, 300, 300])
 		)
 
 		let balanceSheet = try BalanceSheet(

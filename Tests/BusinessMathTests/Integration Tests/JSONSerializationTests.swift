@@ -101,7 +101,7 @@ struct JSONSerializationTests {
 			entity: entity,
 			name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: periods, values: [60_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [60_000.0])
 		)
 
 		let original = try IncomeStatement(
@@ -131,14 +131,14 @@ struct JSONSerializationTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0])
 		)
 
 		let original = try BalanceSheet(

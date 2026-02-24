@@ -38,35 +38,35 @@ struct MultiPeriodReportTests {
 				entity: entity,
 				name: "COGS",
 				incomeStatementRole: .costOfGoodsSold,
-				timeSeries: TimeSeries(periods: [quarter], values: [40_000 * multiplier]),
+				timeSeries: TimeSeries(periods: [quarter], values: [40_000 * multiplier])
 			)
 
 			let opex = try Account(
 				entity: entity,
 				name: "Operating Expenses",
 				incomeStatementRole: .operatingExpenseOther,
-				timeSeries: TimeSeries(periods: [quarter], values: [30_000 * multiplier]),
+				timeSeries: TimeSeries(periods: [quarter], values: [30_000 * multiplier])
 			)
 
 			let da = try Account(
 				entity: entity,
 				name: "D&A",
 				incomeStatementRole: .depreciationAmortization,
-				timeSeries: TimeSeries(periods: [quarter], values: [5_000]),
+				timeSeries: TimeSeries(periods: [quarter], values: [5_000])
 			)
 
 			let interest = try Account(
 				entity: entity,
 				name: "Interest",
 				incomeStatementRole: .interestExpense,
-				timeSeries: TimeSeries(periods: [quarter], values: [1_000]),
+				timeSeries: TimeSeries(periods: [quarter], values: [1_000])
 			)
 
 			let tax = try Account(
 				entity: entity,
 				name: "Tax",
 				incomeStatementRole: .incomeTaxExpense,
-				timeSeries: TimeSeries(periods: [quarter], values: [6_000 * multiplier]),
+				timeSeries: TimeSeries(periods: [quarter], values: [6_000 * multiplier])
 			)
 
 			let incomeStatement = try IncomeStatement(
@@ -81,42 +81,42 @@ struct MultiPeriodReportTests {
 				entity: entity,
 				name: "Cash",
 				balanceSheetRole: .cashAndEquivalents,
-				timeSeries: TimeSeries(periods: [quarter], values: [50_000 + Double(index) * 5_000]),
+				timeSeries: TimeSeries(periods: [quarter], values: [50_000 + Double(index) * 5_000])
 			)
 
 			let ar = try Account(
 				entity: entity,
 				name: "AR",
 				balanceSheetRole: .accountsReceivable,
-				timeSeries: TimeSeries(periods: [quarter], values: [20_000 * multiplier]),
+				timeSeries: TimeSeries(periods: [quarter], values: [20_000 * multiplier])
 			)
 
 			let ppe = try Account(
 				entity: entity,
 				name: "PPE",
 				balanceSheetRole: .propertyPlantEquipment,
-				timeSeries: TimeSeries(periods: [quarter], values: [100_000]),
+				timeSeries: TimeSeries(periods: [quarter], values: [100_000])
 			)
 
 			let ap = try Account(
 				entity: entity,
 				name: "AP",
 				balanceSheetRole: .accountsPayable,
-				timeSeries: TimeSeries(periods: [quarter], values: [15_000]),
+				timeSeries: TimeSeries(periods: [quarter], values: [15_000])
 			)
 
 			let debt = try Account(
 				entity: entity,
 				name: "Debt",
 				balanceSheetRole: .longTermDebt,
-				timeSeries: TimeSeries(periods: [quarter], values: [50_000 - Double(index) * 2_000]),
+				timeSeries: TimeSeries(periods: [quarter], values: [50_000 - Double(index) * 2_000])
 			)
 
 			let equity = try Account(
 				entity: entity,
 				name: "Equity",
 				balanceSheetRole: .retainedEarnings,
-				timeSeries: TimeSeries(periods: [quarter], values: [100_000 + Double(index) * 10_000]),
+				timeSeries: TimeSeries(periods: [quarter], values: [100_000 + Double(index) * 10_000])
 			)
 
 			let balanceSheet = try BalanceSheet(
@@ -496,35 +496,35 @@ struct MultiPeriodReportTests {
 			entity: entity,
 			name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [184_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [184_000])
 		)
 
 		let annualOpex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [138_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [138_000])
 		)
 
 		let annualDA = try Account(
 			entity: entity,
 			name: "D&A",
 			incomeStatementRole: .depreciationAmortization,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [20_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [20_000])
 		)
 
 		let annualInterest = try Account(
 			entity: entity,
 			name: "Interest",
 			incomeStatementRole: .interestExpense,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [4_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [4_000])
 		)
 
 		let annualTax = try Account(
 			entity: entity,
 			name: "Tax",
 			incomeStatementRole: .incomeTaxExpense,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [27_600]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [27_600])
 		)
 
 		let annualIncomeStatement = try IncomeStatement(
@@ -538,42 +538,42 @@ struct MultiPeriodReportTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [65_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [65_000])
 		)
 
 		let annualAR = try Account(
 			entity: entity,
 			name: "AR",
 			balanceSheetRole: .accountsReceivable,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [26_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [26_000])
 		)
 
 		let annualEquipment = try Account(
 			entity: entity,
 			name: "Equipment",
 			balanceSheetRole: .propertyPlantEquipment,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [100_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [100_000])
 		)
 
 		let annualAP = try Account(
 			entity: entity,
 			name: "AP",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [15_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [15_000])
 		)
 
 		let annualDebt = try Account(
 			entity: entity,
 			name: "Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [46_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [46_000])
 		)
 
 		let annualEquity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: [annualPeriod], values: [130_000]),
+			timeSeries: TimeSeries(periods: [annualPeriod], values: [130_000])
 		)
 
 		let annualBalanceSheet = try BalanceSheet(

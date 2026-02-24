@@ -25,7 +25,7 @@ struct ModelValidatorTests {
 			entity: entity,
 			name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -38,14 +38,14 @@ struct ModelValidatorTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -114,7 +114,7 @@ struct ModelValidatorTests {
 			entity: entity,
 			name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: periods, values: [5_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [5_000.0])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -127,14 +127,14 @@ struct ModelValidatorTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100_000.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [100_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100_000.0])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -200,14 +200,14 @@ struct ModelValidatorTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100_000.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [90_000.0]),  // Should be 100k
+			timeSeries: TimeSeries(periods: periods, values: [90_000.0])  // Should be 100k
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -311,7 +311,7 @@ struct ModelValidatorAdditionalTests {
 			entity: entity,
 			name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0])
 		)
 		let isStmt = try IncomeStatement(
 			entity: entity,
@@ -322,13 +322,13 @@ struct ModelValidatorAdditionalTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0])
 		)
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100_000.0, 110_000.0])
 		)
 		let bs = try BalanceSheet(
 			entity: entity,

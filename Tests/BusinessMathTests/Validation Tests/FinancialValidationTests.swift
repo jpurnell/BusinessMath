@@ -30,21 +30,21 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0])
 		)
 
 		let debt = try Account(
 			entity: entity,
 			name: "Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0]),
+			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [60.0, 65.0]),
+			timeSeries: TimeSeries(periods: periods, values: [60.0, 65.0])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -72,21 +72,21 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0])
 		)
 
 		let debt = try Account(
 			entity: entity,
 			name: "Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0]),
+			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [50.0, 55.0]),  // Should be 60, 65
+			timeSeries: TimeSeries(periods: periods, values: [50.0, 55.0])  // Should be 60, 65
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -115,21 +115,21 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0])
 		)
 
 		let debt = try Account(
 			entity: entity,
 			name: "Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0]),
+			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [60.005, 65.005]),  // Within 0.01 tolerance
+			timeSeries: TimeSeries(periods: periods, values: [60.005, 65.005])  // Within 0.01 tolerance
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -220,7 +220,7 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [60_000.0, 65_000.0])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -254,7 +254,7 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: periods, values: [120_000.0, 130_000.0]),  // Higher than revenue!
+			timeSeries: TimeSeries(periods: periods, values: [120_000.0, 130_000.0])  // Higher than revenue!
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -285,14 +285,14 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -352,14 +352,14 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -403,14 +403,14 @@ struct FinancialValidationTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0])
 		)
 
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50_000.0, 60_000.0])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -463,34 +463,34 @@ struct FinancialValidationAdditionalTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100.0, 105.0, 110.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 105.0, 110.0])
 		)
 		let receivables = try Account(
 			entity: entity,
 			name: "A/R",
 			balanceSheetRole: .accountsReceivable,
-			timeSeries: TimeSeries(periods: periods, values: [50.0, 40.0, 35.0]),
+			timeSeries: TimeSeries(periods: periods, values: [50.0, 40.0, 35.0])
 		)
 			// Liabilities total: [50, 45, 45]
 		let debt = try Account(
 			entity: entity,
 			name: "Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: periods, values: [30.0, 25.0, 20.0]),
+			timeSeries: TimeSeries(periods: periods, values: [30.0, 25.0, 20.0])
 		)
 		let payables = try Account(
 			entity: entity,
 			name: "A/P",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: periods, values: [20.0, 20.0, 25.0]),
+			timeSeries: TimeSeries(periods: periods, values: [20.0, 20.0, 25.0])
 		)
 			// Equity total: [100, 100, 100]
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [100.0, 100.0, 100.0]),
-		)
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 100.0, 100.0])
+		
 		let bs = try BalanceSheet(
 			entity: entity,
 			periods: periods,
@@ -514,19 +514,19 @@ struct FinancialValidationAdditionalTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0])
 		)
 		let debt = try Account(
 			entity: entity,
 			name: "Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0]),
+			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0])
 		)
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [59.99, 64.99]),
+			timeSeries: TimeSeries(periods: periods, values: [59.99, 64.99])
 		)
 		let bs = try BalanceSheet(
 			entity: entity,
@@ -549,19 +549,19 @@ struct FinancialValidationAdditionalTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0]),
+			timeSeries: TimeSeries(periods: periods, values: [100.0, 110.0])
 		)
 		let debt = try Account(
 			entity: entity,
 			name: "Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0]),
+			timeSeries: TimeSeries(periods: periods, values: [40.0, 45.0])
 		)
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [59.988, 64.988]),
+			timeSeries: TimeSeries(periods: periods, values: [59.988, 64.988])
 		)
 		let bs = try BalanceSheet(
 			entity: entity,
@@ -586,13 +586,13 @@ struct FinancialValidationAdditionalTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: [1_000.0, 1_300.0]),
+			timeSeries: TimeSeries(periods: periods, values: [1_000.0, 1_300.0])
 		)
 		let equity = try Account(
 			entity: entity,
 			name: "Equity",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: periods, values: [1_000.0, 1_300.0]),
+			timeSeries: TimeSeries(periods: periods, values: [1_000.0, 1_300.0])
 		)
 		let bs = try BalanceSheet(
 			entity: entity,

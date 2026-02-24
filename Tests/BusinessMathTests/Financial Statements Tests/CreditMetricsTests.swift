@@ -39,35 +39,35 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cost of Goods Sold",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: quarters, values: [40_000, 45_000]), // Improving margin: 60% -> 62.5%
+			timeSeries: TimeSeries(periods: quarters, values: [40_000, 45_000]) // Improving margin: 60% -> 62.5%
 		)
 
 		let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: quarters, values: [30_000, 35_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [30_000, 35_000])
 		)
 
 		let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			incomeStatementRole: .depreciationAmortization,
-			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000])
 		)
 
 		let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			incomeStatementRole: .interestExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [2_000, 2_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [2_000, 2_000])
 		)
 
 		let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			incomeStatementRole: .incomeTaxExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [5_000, 7_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [5_000, 7_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -81,56 +81,56 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: quarters, values: [50_000, 60_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [50_000, 60_000])
 		)
 
 		let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			balanceSheetRole: .accountsReceivable,
-			timeSeries: TimeSeries(periods: quarters, values: [20_000, 24_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [20_000, 24_000])
 		)
 
 		let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			balanceSheetRole: .inventory,
-			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000])
 		)
 
 		let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			balanceSheetRole: .propertyPlantEquipment,
-			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000])
 		)
 
 		let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: quarters, values: [10_000, 12_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [10_000, 12_000])
 		)
 
 		let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: quarters, values: [30_000, 25_000]), // Paying down debt
+			timeSeries: TimeSeries(periods: quarters, values: [30_000, 25_000]) // Paying down debt
 		)
 
 		let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: quarters, values: [80_000, 98_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [80_000, 98_000])
 		)
 
 		let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: quarters, values: [65_000, 65_000]), // No new issuance
+			timeSeries: TimeSeries(periods: quarters, values: [65_000, 65_000]) // No new issuance
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -193,42 +193,42 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Revenue",
 			incomeStatementRole: .revenue,
-			timeSeries: TimeSeries(periods: quarters, values: [80_000, 70_000]), // Declining
+			timeSeries: TimeSeries(periods: quarters, values: [80_000, 70_000]) // Declining
 		)
 
 				let cogs = try Account(
 			entity: entity,
 			name: "Cost of Goods Sold",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: quarters, values: [50_000, 48_000]), // Margin worsening: 37.5% -> 31.4%
+			timeSeries: TimeSeries(periods: quarters, values: [50_000, 48_000]) // Margin worsening: 37.5% -> 31.4%
 		)
 
 				let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: quarters, values: [35_000, 35_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [35_000, 35_000])
 		)
 
 				let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			incomeStatementRole: .depreciationAmortization,
-			timeSeries: TimeSeries(periods: quarters, values: [8_000, 8_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [8_000, 8_000])
 		)
 
 				let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			incomeStatementRole: .interestExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [10_000, 12_000]), // High interest burden
+			timeSeries: TimeSeries(periods: quarters, values: [10_000, 12_000]) // High interest burden
 		)
 
 				let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			incomeStatementRole: .incomeTaxExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [0, 0]), // No taxes (unprofitable)
+			timeSeries: TimeSeries(periods: quarters, values: [0, 0]) // No taxes (unprofitable)
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -242,63 +242,63 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]), // Burning cash
+			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]) // Burning cash
 		)
 
 				let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			balanceSheetRole: .accountsReceivable,
-			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [15_000, 18_000])
 		)
 
 				let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			balanceSheetRole: .inventory,
-			timeSeries: TimeSeries(periods: quarters, values: [25_000, 30_000]), // Excess inventory
+			timeSeries: TimeSeries(periods: quarters, values: [25_000, 30_000]) // Excess inventory
 		)
 
 				let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			balanceSheetRole: .propertyPlantEquipment,
-			timeSeries: TimeSeries(periods: quarters, values: [60_000, 55_000]), // Asset impairment
+			timeSeries: TimeSeries(periods: quarters, values: [60_000, 55_000]) // Asset impairment
 		)
 
 				let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: quarters, values: [30_000, 35_000]), // Can't pay vendors
+			timeSeries: TimeSeries(periods: quarters, values: [30_000, 35_000]) // Can't pay vendors
 		)
 
 				let shortTermDebt = try Account(
 			entity: entity,
 			name: "Short-Term Debt",
 			balanceSheetRole: .shortTermDebt,
-			timeSeries: TimeSeries(periods: quarters, values: [20_000, 25_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [20_000, 25_000])
 		)
 
 				let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: quarters, values: [80_000, 85_000]), // Taking on more debt
+			timeSeries: TimeSeries(periods: quarters, values: [80_000, 85_000]) // Taking on more debt
 		)
 
 				let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: quarters, values: [-25_000, -48_000]), // Accumulated losses
+			timeSeries: TimeSeries(periods: quarters, values: [-25_000, -48_000]) // Accumulated losses
 		)
 
 				let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: quarters, values: [10_000, 15_000]), // Desperate equity raise
+			timeSeries: TimeSeries(periods: quarters, values: [10_000, 15_000]) // Desperate equity raise
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -312,21 +312,21 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cash from Operations",
 			cashFlowRole: .otherOperatingActivities,
-			timeSeries: TimeSeries(periods: quarters, values: [-15_000, -20_000]), // Negative OCF
+			timeSeries: TimeSeries(periods: quarters, values: [-15_000, -20_000]) // Negative OCF
 		)
 
 				let cfInvesting = try Account(
 			entity: entity,
 			name: "Cash from Investing",
 			cashFlowRole: .capitalExpenditures,
-			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]), // Selling assets
+			timeSeries: TimeSeries(periods: quarters, values: [5_000, 3_000]) // Selling assets
 		)
 
 				let cfFinancing = try Account(
 			entity: entity,
 			name: "Cash from Financing",
 			cashFlowRole: .proceedsFromDebt,
-			timeSeries: TimeSeries(periods: quarters, values: [8_000, 15_000]), // Raising debt/equity
+			timeSeries: TimeSeries(periods: quarters, values: [8_000, 15_000]) // Raising debt/equity
 		)
 
 		let cashFlowStatement = try CashFlowStatement(
@@ -410,35 +410,35 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cost of Goods Sold",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: quarters, values: [60_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [60_000])
 		)
 
 				let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: quarters, values: [25_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [25_000])
 		)
 
 				let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			incomeStatementRole: .depreciationAmortization,
-			timeSeries: TimeSeries(periods: quarters, values: [5_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [5_000])
 		)
 
 				let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			incomeStatementRole: .interestExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [3_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [3_000])
 		)
 
 				let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			incomeStatementRole: .incomeTaxExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [2_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [2_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -451,56 +451,56 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: quarters, values: [20_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [20_000])
 		)
 
 				let ar = try Account(
 			entity: entity,
 			name: "Accounts Receivable",
 			balanceSheetRole: .accountsReceivable,
-			timeSeries: TimeSeries(periods: quarters, values: [15_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [15_000])
 		)
 
 				let inventory = try Account(
 			entity: entity,
 			name: "Inventory",
 			balanceSheetRole: .inventory,
-			timeSeries: TimeSeries(periods: quarters, values: [20_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [20_000])
 		)
 
 				let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			balanceSheetRole: .propertyPlantEquipment,
-			timeSeries: TimeSeries(periods: quarters, values: [80_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [80_000])
 		)
 
 				let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: quarters, values: [15_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [15_000])
 		)
 
 				let debt = try Account(
 			entity: entity,
 			name: "Long-Term Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: quarters, values: [60_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [60_000])
 		)
 
 				let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: quarters, values: [30_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [30_000])
 		)
 
 				let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: quarters, values: [10_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [10_000])
 		)
 
 		let balanceSheet = try BalanceSheet(
@@ -755,35 +755,35 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cost of Goods Sold",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: quarters, values: [60_000, 65_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [60_000, 65_000])
 		)
 
 				let opex = try Account(
 			entity: entity,
 			name: "Operating Expenses",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: quarters, values: [20_000, 22_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [20_000, 22_000])
 		)
 
 				let depreciation = try Account(
 			entity: entity,
 			name: "Depreciation & Amortization",
 			incomeStatementRole: .depreciationAmortization,
-			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [5_000, 5_000])
 		)
 
 				let interest = try Account(
 			entity: entity,
 			name: "Interest Expense",
 			incomeStatementRole: .interestExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [0, 0]), // Zero debt
+			timeSeries: TimeSeries(periods: quarters, values: [0, 0]) // Zero debt
 		)
 
 				let tax = try Account(
 			entity: entity,
 			name: "Income Tax",
 			incomeStatementRole: .incomeTaxExpense,
-			timeSeries: TimeSeries(periods: quarters, values: [4_000, 5_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [4_000, 5_000])
 		)
 
 		let incomeStatement = try IncomeStatement(
@@ -796,35 +796,35 @@ struct CreditMetricsTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: quarters, values: [50_000, 55_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [50_000, 55_000])
 		)
 
 				let ppe = try Account(
 			entity: entity,
 			name: "Property Plant Equipment",
 			balanceSheetRole: .propertyPlantEquipment,
-			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [100_000, 105_000])
 		)
 
 				let ap = try Account(
 			entity: entity,
 			name: "Accounts Payable",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: quarters, values: [10_000, 11_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [10_000, 11_000])
 		)
 
 				let retainedEarnings = try Account(
 			entity: entity,
 			name: "Retained Earnings",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: quarters, values: [100_000, 111_000]),
+			timeSeries: TimeSeries(periods: quarters, values: [100_000, 111_000])
 		)
 
 				let commonStock = try Account(
 			entity: entity,
 			name: "Common Stock",
 			balanceSheetRole: .commonStock,
-			timeSeries: TimeSeries(periods: quarters, values: [40_000, 40_000]), // No new equity
+			timeSeries: TimeSeries(periods: quarters, values: [40_000, 40_000]) // No new equity
 		)
 
 		let balanceSheet = try BalanceSheet(
