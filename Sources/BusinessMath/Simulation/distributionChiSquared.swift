@@ -7,7 +7,9 @@
 
 import Foundation
 import Numerics
+#if canImport(OSLog)
 import OSLog
+#endif
 
 /// Generates a random value from a Chi-squared distribution with the specified degrees of freedom.
 ///

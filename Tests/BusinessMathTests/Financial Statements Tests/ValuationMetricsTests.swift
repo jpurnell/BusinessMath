@@ -1,6 +1,8 @@
 import Testing
 import Foundation
+#if canImport(OSLog)
 import OSLog
+#endif
 @testable import BusinessMath
 
 /// Test suite for valuation metrics (P/E, P/B, P/S, EV multiples)

@@ -7,9 +7,9 @@
 
 import Testing
 import Numerics
+#if canImport(OSLog)
 import OSLog
-@testable import BusinessMath
-
+#endif
 @testable import BusinessMath
 
 @Suite("CovarianceandCorrelationTests") struct CovarianceandCorrelationTests {

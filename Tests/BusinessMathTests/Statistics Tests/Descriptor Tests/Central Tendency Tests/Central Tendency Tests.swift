@@ -7,8 +7,9 @@
 
 import Testing
 import Numerics
+#if canImport(OSLog)
 import OSLog
-import Testing
+#endif
 @testable import BusinessMath
 
 @Suite("CentralTendencyTests") struct CentralTendencyTests {

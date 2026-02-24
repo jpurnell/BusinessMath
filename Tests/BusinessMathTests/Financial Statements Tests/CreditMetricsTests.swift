@@ -1,6 +1,8 @@
 import Testing
 import Foundation
+#if canImport(OSLog)
 import OSLog
+#endif
 @testable import BusinessMath
 
 /// Test suite for credit metrics and composite scoring systems

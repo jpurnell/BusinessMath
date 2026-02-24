@@ -1,6 +1,8 @@
 import Testing
-import OSLog
 import Numerics
+#if canImport(OSLog)
+import OSLog
+#endif
 @testable import BusinessMath
 
 @Suite("Unassorted Tests")

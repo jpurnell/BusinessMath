@@ -8,7 +8,9 @@
 import Foundation
 import Testing
 import Numerics
+#if canImport(OSLog)
 import OSLog
+#endif
 @testable import BusinessMath
 
 @Suite("MonteCarloSimulation Tests", .serialized)

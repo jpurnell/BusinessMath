@@ -7,7 +7,9 @@
 
 import Foundation
 import Numerics
+#if canImport(OSLog)
 import OSLog
+#endif
 
 /// A structure containing the complete results of a Monte Carlo simulation.
 ///

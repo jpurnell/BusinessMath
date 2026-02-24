@@ -1,6 +1,8 @@
 import Foundation
 import Numerics
+#if canImport(OSLog)
 import OSLog
+#endif
 
 /// Represents a financial covenant attached to debt agreements.
 ///
@@ -38,7 +40,7 @@ import OSLog
 /// - ``headroom(incomeStatement:balanceSheet:period:)`` for calculating cushion before violation
 @available(macOS 11.0, *)
 public struct FinancialCovenant {
-	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
+//	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
     /// Types of financial covenant requirements
     public enum Requirement {
         case minimumRatio(metric: FinancialMetric, threshold: Double, principalPayment: Double? = nil)
@@ -239,7 +241,7 @@ public struct FinancialCovenant {
 /// ```
 @available(macOS 11.0, *)
 public struct CovenantComplianceResult {
-	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
+//	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 
     /// The covenant that was evaluated.
     public let covenant: FinancialCovenant
@@ -283,7 +285,7 @@ public struct CovenantComplianceResult {
 /// ```
 @available(macOS 11.0, *)
 public struct CovenantMonitor {
-	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
+//	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
 
     /// The financial covenants to monitor for compliance.
     public let covenants: [FinancialCovenant]
