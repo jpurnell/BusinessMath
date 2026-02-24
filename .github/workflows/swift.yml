@@ -38,7 +38,7 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         uses: swift-actions/setup-swift@v2
         with:
-          swift-version: '6.0'
+          swift-version: '6.0.3'
 
       - name: Tooling versions
         run: |
@@ -70,8 +70,11 @@ jobs:
             swift test --list-tests --scratch-path "$SCRATCH" || true
           fi
 
+          # Debug build + tests (ensures library compiled with -enable-testing)
           swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
           swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
+
+          # Release tests (optimizer-on)
           swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
 
   build_and_compile:
@@ -149,17 +152,20 @@ jobs:
       - name: Install Swift (Linux)
         uses: swift-actions/setup-swift@v2
         with:
-          swift-version: '6.0'
+          swift-version: '6.0.3'
 
       - name: Tooling versions
         run: swift --version
+
+      - name: Clean
+        run: rm -rf .build
 
       - name: Release build (Linux)
         run: |
           set -euo pipefail
           swift build -c release -v
 
-      - name: Build tests (Linux)
+      - name: Compile tests (Linux, debug with enable-testing)
         run: |
           set -euo pipefail
-          swift build --build-tests -c release -v
+          swift test --no-run -v
