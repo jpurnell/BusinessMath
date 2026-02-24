@@ -249,7 +249,7 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> RunResult {
 
-		let startTime = CFAbsoluteTimeGetCurrent()
+		let startTime = Date().timeIntervalSinceReferenceDate
 
 		let result = try optimizer.optimize(
 			objective: objective,
@@ -257,7 +257,7 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 			constraints: constraints
 		)
 
-		let endTime = CFAbsoluteTimeGetCurrent()
+		let endTime = Date().timeIntervalSinceReferenceDate
 		let executionTime = endTime - startTime
 
 		return RunResult(
