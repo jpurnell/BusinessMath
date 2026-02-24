@@ -369,10 +369,6 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// }
 	/// ```
 	public func project(periods: Int) throws -> TimeSeries<T>? {
-		guard let slope = fittedSlope, let intercept = fittedIntercept else {
-			throw TrendModelError.modelNotFitted
-		}
-
 		guard let lastPeriod = lastPeriod else {
 			return nil
 		}
@@ -816,10 +812,6 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// }
 	/// ```
 	public func project(periods: Int) throws -> TimeSeries<T>? {
-		guard let logSlope = fittedLogSlope, let logIntercept = fittedLogIntercept else {
-			throw TrendModelError.modelNotFitted
-		}
-
 		guard let lastPeriod = lastPeriod else {
 			return nil
 		}
@@ -1214,10 +1206,6 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// }
 	/// ```
 	public func project(periods: Int) throws -> TimeSeries<T>? {
-		guard let k = k, let x0 = x0 else {
-			throw TrendModelError.modelNotFitted
-		}
-
 		guard let lastPeriod = lastPeriod else {
 			return nil
 		}
