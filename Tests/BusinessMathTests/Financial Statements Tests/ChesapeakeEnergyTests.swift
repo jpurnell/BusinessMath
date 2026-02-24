@@ -69,49 +69,49 @@ struct ChesapeakeEnergyTests {
 				entity: entity,
 				name: "Lease Operating Expenses",
 				incomeStatementRole: .operatingExpenseOther,
-				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.45]),
+				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.45])
 			)
 
 			let gathering = try Account(
 				entity: entity,
 				name: "Gathering & Transportation",
 				incomeStatementRole: .operatingExpenseOther,
-				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.25]),
+				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.25])
 			)
 
 			let production_taxes = try Account(
 				entity: entity,
 				name: "Production Taxes",
 				incomeStatementRole: .operatingExpenseOther,
-				timeSeries: TimeSeries(periods: [quarter], values: [data.revenue * 0.08]),
+				timeSeries: TimeSeries(periods: [quarter], values: [data.revenue * 0.08])
 			)
 
 			let ga = try Account(
 				entity: entity,
 				name: "G&A",
 				incomeStatementRole: .operatingExpenseOther,
-				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.30]),
+				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.30])
 			)
 
 			let dd_a = try Account(
 				entity: entity,
 				name: "DD&A",
 				incomeStatementRole: .depreciationAmortization,
-				timeSeries: TimeSeries(periods: [quarter], values: [data.capex * 0.40]),
+				timeSeries: TimeSeries(periods: [quarter], values: [data.capex * 0.40])
 			)
 
 			let interest = try Account(
 				entity: entity,
 				name: "Interest Expense",
 				incomeStatementRole: .interestExpense,
-				timeSeries: TimeSeries(periods: [quarter], values: [125]),
+				timeSeries: TimeSeries(periods: [quarter], values: [125])
 			)
 
 			let tax = try Account(
 				entity: entity,
 				name: "Income Tax",
 				incomeStatementRole: .incomeTaxExpense,
-				timeSeries: TimeSeries(periods: [quarter], values: [(data.revenue - data.opex - data.capex * 0.40 - 125) * 0.21]),
+				timeSeries: TimeSeries(periods: [quarter], values: [(data.revenue - data.opex - data.capex * 0.40 - 125) * 0.21])
 			)
 
 			let incomeStatement = try IncomeStatement(
@@ -130,28 +130,28 @@ struct ChesapeakeEnergyTests {
 				entity: entity,
 				name: "Cash & Equivalents",
 				balanceSheetRole: .cashAndEquivalents,
-				timeSeries: TimeSeries(periods: [quarter], values: [800 + Double(index) * 50]),
+				timeSeries: TimeSeries(periods: [quarter], values: [800 + Double(index) * 50])
 			)
 
 			let ar = try Account(
 				entity: entity,
 				name: "Accounts Receivable",
 				balanceSheetRole: .accountsReceivable,
-				timeSeries: TimeSeries(periods: [quarter], values: [data.revenue * 0.30]),
+				timeSeries: TimeSeries(periods: [quarter], values: [data.revenue * 0.30])
 			)
 
 			let inventory = try Account(
 				entity: entity,
 				name: "Inventory",
 				balanceSheetRole: .inventory,
-				timeSeries: TimeSeries(periods: [quarter], values: [150]),
+				timeSeries: TimeSeries(periods: [quarter], values: [150])
 			)
 
 			let ppe = try Account(
 				entity: entity,
 				name: "Property, Plant & Equipment",
 				balanceSheetRole: .propertyPlantEquipment,
-				timeSeries: TimeSeries(periods: [quarter], values: [baseAssets]),
+				timeSeries: TimeSeries(periods: [quarter], values: [baseAssets])
 			)
 
 			// Liabilities
@@ -159,21 +159,21 @@ struct ChesapeakeEnergyTests {
 				entity: entity,
 				name: "Accounts Payable",
 				balanceSheetRole: .accountsPayable,
-				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.40]),
+				timeSeries: TimeSeries(periods: [quarter], values: [data.opex * 0.40])
 			)
 
 			let currentDebt = try Account(
 				entity: entity,
 				name: "Current Portion of Debt",
 				balanceSheetRole: .shortTermDebt,
-				timeSeries: TimeSeries(periods: [quarter], values: [200]),
+				timeSeries: TimeSeries(periods: [quarter], values: [200])
 			)
 
 			let longTermDebt = try Account(
 				entity: entity,
 				name: "Long-Term Debt",
 				balanceSheetRole: .longTermDebt,
-				timeSeries: TimeSeries(periods: [quarter], values: [5_500 - Double(index) * 100]),  // Debt paydown
+				timeSeries: TimeSeries(periods: [quarter], values: [5_500 - Double(index) * 100])  // Debt paydown
 			)
 
 			// Equity grows with retained earnings
@@ -181,7 +181,7 @@ struct ChesapeakeEnergyTests {
 				entity: entity,
 				name: "Shareholders' Equity",
 				balanceSheetRole: .retainedEarnings,
-				timeSeries: TimeSeries(periods: [quarter], values: [10_000 + Double(index) * 200]),
+				timeSeries: TimeSeries(periods: [quarter], values: [10_000 + Double(index) * 200])
 			)
 
 			let balanceSheet = try BalanceSheet(

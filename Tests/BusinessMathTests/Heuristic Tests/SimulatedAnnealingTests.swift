@@ -39,7 +39,7 @@ struct SimulatedAnnealingTests {
         )
         let result = try optimizer.minimize(
             objective,
-            from: VectorN([5.0, 5.0]),
+            from: VectorN([5.0, 5.0])
         )
 
         #expect(result.converged)

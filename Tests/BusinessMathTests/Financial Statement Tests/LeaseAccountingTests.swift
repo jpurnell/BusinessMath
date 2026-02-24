@@ -20,7 +20,7 @@ struct LeaseAccountingTests {
 
         let lease = Lease(
             payments: payments,
-            discountRate: 0.06,
+            discountRate: 0.06
         )
 
         let rouAsset = lease.rightOfUseAsset()
@@ -704,7 +704,7 @@ struct LeaseAccountingTests {
 
         let lease = Lease(
             payments: payments,
-            discountRate: 0.08,
+            discountRate: 0.08
         )
 
         let maturityAnalysis = lease.maturityAnalysis()
