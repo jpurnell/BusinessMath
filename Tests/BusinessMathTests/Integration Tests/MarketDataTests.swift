@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import TestSupport  // Cross-platform URL types support
 @testable import BusinessMath
 
 @Suite("Market Data Tests")

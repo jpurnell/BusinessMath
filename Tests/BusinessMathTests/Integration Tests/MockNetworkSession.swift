@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TestSupport  // Cross-platform URL types support
 @testable import BusinessMath
 
 /// A mock network session for testing that doesn't make real HTTP requests.

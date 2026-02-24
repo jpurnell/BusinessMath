@@ -182,6 +182,7 @@ import RealModule
     @Test("Performance_MemoryEfficiency") func LPerformance_MemoryEfficiency() {
         // This test verifies we don't leak memory or hold unnecessary references
 
+        #if canImport(Darwin)
         autoreleasepool {
             // Create many models
             for _ in 0..<1000 {
@@ -196,11 +197,28 @@ import RealModule
                 _ = model.calculateProfit()
             }
         }
+        #else
+        do {
+            // Create many models
+            for _ in 0..<1000 {
+                let model = FinancialModel {
+                    Revenue {
+                        Product("Test").price(100).quantity(10)
+                    }
+                    Costs {
+                        Fixed("Test", 500)
+                    }
+                }
+                _ = model.calculateProfit()
+            }
+        }
+        #endif
 
         // If we made it here without running out of memory, we're good
         #expect(true)
     }
     @Test("Performance_TimeSeriesMemoryEfficiency") func LPerformance_TimeSeriesMemoryEfficiency() {
+        #if canImport(Darwin)
         autoreleasepool {
             // Create many time series
             for _ in 0..<100 {
@@ -210,6 +228,17 @@ import RealModule
                 _ = series.validate()
             }
         }
+        #else
+        do {
+            // Create many time series
+            for _ in 0..<100 {
+                let periods = (0..<1000).map { Period.year(2000 + $0) }
+                let values = (0..<1000).map { Double($0) }
+                let series = TimeSeries<Double>(periods: periods, values: values)
+                _ = series.validate()
+            }
+        }
+        #endif
 
         #expect(true)
     }
