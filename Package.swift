@@ -34,7 +34,7 @@ if !isLinux {
 
 // MARK: - Dependencies
 
-let dependencies: [Package.Dependency] = [
+var dependencies: [Package.Dependency] = [
 	.package(
 		url: "https://github.com/apple/swift-numerics",
 		from: "1.1.1"
@@ -45,7 +45,29 @@ let dependencies: [Package.Dependency] = [
 	)
 ]
 
+// Add swift-crypto on Linux (CryptoKit is built-in on Apple platforms)
+if isLinux {
+	dependencies.append(
+		.package(
+			url: "https://github.com/apple/swift-crypto.git",
+			from: "3.0.0"
+		)
+	)
+}
+
 // MARK: - Targets
+
+// Prepare BusinessMath dependencies
+var businessMathDeps: [Target.Dependency] = [
+	.product(name: "Numerics", package: "swift-numerics")
+]
+
+// Add Crypto on Linux (CryptoKit built-in on Apple platforms)
+if isLinux {
+	businessMathDeps.append(
+		.product(name: "Crypto", package: "swift-crypto")
+	)
+}
 
 var targets: [Target] = [
 
@@ -53,9 +75,7 @@ var targets: [Target] = [
 	// Macros are available separately via BusinessMathMacros product
 	.target(
 		name: "BusinessMath",
-		dependencies: [
-			.product(name: "Numerics", package: "swift-numerics")
-		],
+		dependencies: businessMathDeps,
 		exclude: [
 			// Exclude Metal shaders to avoid Metal Toolchain requirement in Playgrounds/Xcode
 			// GPU acceleration is optional - only needed for large-scale optimizations

@@ -7,7 +7,13 @@
 //
 
 import Foundation
+
+// Use CryptoKit on Apple platforms (built-in), Crypto on Linux (via swift-crypto)
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 
 // MARK: - Template Protocol
 
