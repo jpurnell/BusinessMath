@@ -12,6 +12,13 @@ import Numerics
 import OSLog
 #endif
 @testable import BusinessMath
+import Foundation
+
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
 
 
 @Suite("SimulationTests") struct SimulationTests {

@@ -13,6 +13,13 @@ import OSLog
 #endif
 @testable import BusinessMath
 
+import Foundation
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
+
 @Suite("DispersionAroundtheMeanTests") struct DispersionAroundtheMeanTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.DispersionAroundtheMeanTests", category: #function)
 	

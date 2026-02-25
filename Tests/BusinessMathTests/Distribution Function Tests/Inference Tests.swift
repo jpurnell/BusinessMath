@@ -12,6 +12,12 @@ import Numerics
 #if canImport(OSLog)
 import OSLog
 #endif
+import Foundation
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
 
 @Suite("InferenceTests") struct InferenceTests {
 	let inferenceTestLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > Distribution Tests", category: "Inference Tests: \(#function)")

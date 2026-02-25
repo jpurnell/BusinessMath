@@ -4,6 +4,15 @@ import TestSupport  // Cross-platform math functions
 #if canImport(OSLog)
 import OSLog
 #endif
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
+
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @testable import BusinessMath
 
 @Suite("Unassorted Tests")
