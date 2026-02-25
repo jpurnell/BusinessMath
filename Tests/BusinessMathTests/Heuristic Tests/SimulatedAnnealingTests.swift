@@ -108,7 +108,8 @@ struct SimulatedAnnealingTests {
                 finalTemperature: 0.1,
                 coolingRate: 0.98,
                 maxIterations: 10000,
-                perturbationScale: 1.0
+                perturbationScale: 1.0,
+				seed: 42
             ),
             searchSpace: [(-5.12, 5.12), (-5.12, 5.12)]
         )
@@ -205,7 +206,8 @@ struct SimulatedAnnealingTests {
                 finalTemperature: 0.01,
                 coolingRate: 0.95,
                 maxIterations: 500,
-                perturbationScale: 0.1 // Small perturbations
+                perturbationScale: 0.1, // Small perturbations
+				seed: 42
             ),
             searchSpace: [(-10.0, 10.0)]
         )
@@ -228,7 +230,8 @@ struct SimulatedAnnealingTests {
                 finalTemperature: 0.01,
                 coolingRate: 0.95,
                 maxIterations: 1000,
-                perturbationScale: 2.0 // Large perturbations
+                perturbationScale: 2.0, // Large perturbations
+				seed: 42
             ),
             searchSpace: [(-10.0, 10.0)]
         )
