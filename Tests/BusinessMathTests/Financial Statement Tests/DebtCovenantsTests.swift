@@ -847,11 +847,11 @@ struct DebtCovenantsTests {
             FinancialCovenant(
                 name: "Interest Coverage",
                 requirement: .minimumRatio(metric: .interestCoverage, threshold: 3.0)
-            )
+            ),
             FinancialCovenant(
                 name: "Current Ratio",
                 requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5)
-            )
+            ),
             FinancialCovenant(
                 name: "Debt-to-Equity",
                 requirement: .maximumRatio(metric: .debtToEquity, threshold: 2.0)
@@ -898,7 +898,7 @@ struct DebtCovenantsTests {
             FinancialCovenant(
                 name: "Minimum Net Worth",
                 requirement: .minimumValue(metric: "NetWorth", threshold: 100_000.0)
-            )
+            ),
             FinancialCovenant(
                 name: "Current Ratio",
                 requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2)
@@ -950,7 +950,7 @@ struct DebtCovenantsTests {
 
         let covenant = FinancialCovenant(
             name: "Current Ratio",
-            requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2)
+            requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2),
             curePeriodDays: 30
         )
 
