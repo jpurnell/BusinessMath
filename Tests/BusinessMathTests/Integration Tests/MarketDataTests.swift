@@ -2,6 +2,9 @@ import Testing
 import Foundation
 import TestSupport  // Cross-platform URL types support
 @testable import BusinessMath
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 @Suite("Market Data Tests")
 struct MarketDataTests {

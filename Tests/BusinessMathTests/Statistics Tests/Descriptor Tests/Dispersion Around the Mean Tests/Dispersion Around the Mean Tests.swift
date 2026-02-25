@@ -51,14 +51,8 @@ import Glibc
 		#expect(abs(dispersionIndex - expectedIndex) < 0.001)
 
 		// Throws the right error when mean is zero
-		let thrown = #expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "Index of Dispersion")) {
 			try indexOfDispersion([0.0, 0.0, 0.0])
-		}
-		// Verify it's a divisionByZero error
-		if case .divisionByZero = thrown {
-			// Test passes
-		} else {
-			Issue.record("Expected divisionByZero error, got \(thrown)")
 		}
 	}
 
