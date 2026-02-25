@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // Cross-platform math functions
 import Foundation
 #if canImport(Metal)
 import Metal
