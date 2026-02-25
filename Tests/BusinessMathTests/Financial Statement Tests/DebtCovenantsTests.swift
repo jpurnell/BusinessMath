@@ -36,28 +36,28 @@ struct DebtCovenantsTests {
 			entity: entity,
             name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cogs, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cogs, count: periods.count))
         )
 
         let opexAccount = try! Account(
 			entity: entity,
             name: "OpEx",
 			incomeStatementRole: .operatingExpenseOther,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: opex, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: opex, count: periods.count))
         )
 
         let interestAccount = try! Account(
 			entity: entity,
             name: "Interest",
 			incomeStatementRole: .interestExpense,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: interest, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: interest, count: periods.count))
         )
 
         let taxAccount = try! Account(
 			entity: entity,
             name: "Tax",
 			incomeStatementRole: .incomeTaxExpense,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: tax, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: tax, count: periods.count))
         )
 
         return try! IncomeStatement(
@@ -89,42 +89,42 @@ struct DebtCovenantsTests {
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cash, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cash, count: periods.count))
         )
 
         let otherCurrentAssets = try! Account(
 			entity: entity,
             name: "Other Current",
 			balanceSheetRole: .otherCurrentAssets,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentAssets - cash, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentAssets - cash, count: periods.count))
         )
 
         let fixedAssets = try! Account(
 			entity: entity,
 			name: "Fixed Assets",
 			balanceSheetRole: .propertyPlantEquipment,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: totalAssets - currentAssets, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: totalAssets - currentAssets, count: periods.count))
         )
 
         let currentLiabAccount = try! Account(
 			entity: entity,
             name: "Current Liabilities",
 			balanceSheetRole: .accountsPayable,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentLiabilities, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentLiabilities, count: periods.count))
         )
 
         let debtAccount = try! Account(
 			entity: entity,
             name: "Long-term Debt",
 			balanceSheetRole: .longTermDebt,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: debt, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: debt, count: periods.count))
         )
 
         let equityAccount = try! Account(
 			entity: entity,
             name: "Equity",
 			balanceSheetRole: .retainedEarnings,
-			timeSeries: TimeSeries(periods: periods, values: Array(repeating: equity, count: periods.count)),
+			timeSeries: TimeSeries(periods: periods, values: Array(repeating: equity, count: periods.count))
         )
 
         return try! BalanceSheet(
@@ -847,11 +847,11 @@ struct DebtCovenantsTests {
             FinancialCovenant(
                 name: "Interest Coverage",
                 requirement: .minimumRatio(metric: .interestCoverage, threshold: 3.0)
-            ),
+            )
             FinancialCovenant(
                 name: "Current Ratio",
                 requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5)
-            ),
+            )
             FinancialCovenant(
                 name: "Debt-to-Equity",
                 requirement: .maximumRatio(metric: .debtToEquity, threshold: 2.0)
@@ -898,7 +898,7 @@ struct DebtCovenantsTests {
             FinancialCovenant(
                 name: "Minimum Net Worth",
                 requirement: .minimumValue(metric: "NetWorth", threshold: 100_000.0)
-            ),
+            )
             FinancialCovenant(
                 name: "Current Ratio",
                 requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2)
@@ -950,7 +950,7 @@ struct DebtCovenantsTests {
 
         let covenant = FinancialCovenant(
             name: "Current Ratio",
-            requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2),
+            requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2)
             curePeriodDays: 30
         )
 
