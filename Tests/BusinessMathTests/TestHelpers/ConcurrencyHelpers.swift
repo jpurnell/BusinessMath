@@ -72,7 +72,7 @@ public final class ProgressCollector<T: Sendable>: @unchecked Sendable {
 }
 
 extension Trait where Self == ConditionTrait {
-	static var onlyLocal: Self {
+	static var localOnly: Self {
 		.enabled(if: ProcessInfo.processInfo.environment["CI"] == nil)
 	}
 }
