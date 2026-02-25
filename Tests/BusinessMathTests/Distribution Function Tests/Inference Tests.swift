@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // Cross-platform math functions
 import Numerics
 @testable import BusinessMath
 #if canImport(OSLog)

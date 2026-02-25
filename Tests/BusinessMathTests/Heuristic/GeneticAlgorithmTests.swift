@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // Cross-platform math functions
 import Numerics
 import Foundation
 @testable import BusinessMath

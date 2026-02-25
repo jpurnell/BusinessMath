@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import TestSupport  // Cross-platform math functions
 @testable import BusinessMath
 
 //final class NonlinearRegressionTests: XCTestCase {

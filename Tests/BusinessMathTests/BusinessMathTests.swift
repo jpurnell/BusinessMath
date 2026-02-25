@@ -1,5 +1,6 @@
 import Testing
 import Numerics
+import TestSupport  // Cross-platform math functions
 #if canImport(OSLog)
 import OSLog
 #endif

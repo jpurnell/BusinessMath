@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TestSupport  // Cross-platform math functions
 import Testing
 #if canImport(OSLog)
 import OSLog

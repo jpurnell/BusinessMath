@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // Cross-platform math functions
 @testable import BusinessMath
 
 @Suite("Nonlinear Regression Tests")

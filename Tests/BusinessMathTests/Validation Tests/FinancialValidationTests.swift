@@ -490,7 +490,8 @@ struct FinancialValidationAdditionalTests {
 			name: "Equity",
 			balanceSheetRole: .commonStock,
 			timeSeries: TimeSeries(periods: periods, values: [100.0, 100.0, 100.0])
-		
+		)
+
 		let bs = try BalanceSheet(
 			entity: entity,
 			periods: periods,
