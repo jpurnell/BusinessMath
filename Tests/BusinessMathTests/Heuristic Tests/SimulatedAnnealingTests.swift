@@ -324,7 +324,7 @@ struct SimulatedAnnealingTests {
         )
 
         let optimizer = SimulatedAnnealing<VectorN<Double>>(
-            config: .default,
+            config: .seededDefault,
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
@@ -397,7 +397,7 @@ struct SimulatedAnnealingTests {
         }
 
         let optimizer = SimulatedAnnealing<VectorN<Double>>(
-            config: .default,
+            config: .seededDefault,
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
@@ -460,7 +460,7 @@ struct SimulatedAnnealingTests {
         }
 
         let optimizer = SimulatedAnnealing<VectorN<Double>>(
-            config: .default,
+            config: .seededDefault,
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
 
@@ -483,7 +483,8 @@ struct SimulatedAnnealingTests {
                 initialTemperature: 100.0,
                 finalTemperature: 0.01,
                 coolingRate: 0.95,
-                maxIterations: 5000
+                maxIterations: 5000,
+				seed: 42
             ),
             searchSpace: bounds
         )
