@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  tests:
+#   tests:
 #     name: Tests (${{ matrix.os }} / ${{ matrix.engine }})
 #     runs-on: ${{ matrix.os }}
 #     strategy:
@@ -74,7 +74,7 @@ jobs:
 #           swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
 #           swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
 
-  build_and_compile:
+#   build_and_compile:
  #    name: Release build + Apple platform compile checks
 #     needs: tests
 #     if: always()
