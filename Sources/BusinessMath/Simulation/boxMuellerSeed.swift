@@ -28,8 +28,16 @@ import Numerics
 ///
 ///	 - Important: Ensure that `distributionUniform()` is implemented correctly to provide values within the required range.
 	public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint {
-		let u1: T = distributionUniform(u1Seed)
-		let u2: T = distributionUniform(u2Seed)
+		// Get uniform samples
+		var u1: T = distributionUniform(u1Seed)
+		var u2: T = distributionUniform(u2Seed)
+
+		// Box-Muller requires open interval (0, 1) - clamp away from endpoints
+		// to avoid log(0) = -∞ which produces infinite normal samples
+		let epsilon = T(1e-15)
+		u1 = max(epsilon, min(T(1) - epsilon, u1))
+		u2 = max(epsilon, min(T(1) - epsilon, u2))
+
 		let z1 = T.sqrt(T(-2) * T.log(u1)) * T.sin(2 * T.pi * u2)
 		let z2 = T.sqrt(T(-2) * T.log(u1)) * T.cos(2 * T.pi) * u2
 		return (z1, z2)
