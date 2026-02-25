@@ -425,7 +425,7 @@ struct ParallelOptimizerPerformanceTests {
 
 	/// Test that parallel execution uses multiple cores
 	/// This test requires exclusive CPU access to measure parallel speedup accurately
-	@Test("Verify parallel execution completes faster")
+	@Test("Verify parallel execution completes faster", .localOnly)
 	func testParallelSpeedup() async throws {
 		// Use a computationally expensive objective (but not too expensive for CI)
 		let expensive: @Sendable (VectorN<Double>) -> Double = { v in

@@ -362,7 +362,7 @@ struct DDMPerformanceTests {
 
     // MARK: - Comparison with Manual Calculation
 
-    @Test("Performance vs manual calculation")
+	@Test("Performance vs manual calculation", .localOnly)
     func performanceVsManualCalculation() {
         // Compare struct-based Gordon Growth vs manual formula calculation
         let dividend = 2.5
