@@ -110,6 +110,26 @@ public struct SimulatedAnnealingConfig: Sendable {
     /// - Perturbation scale: 0.3
     /// - No reheating
     public static let `default` = SimulatedAnnealingConfig()
+	
+	/// Default configuration suitable for most problems.
+	///
+	/// ## Parameters
+	///
+	/// - Initial temperature: 100.0
+	/// - Final temperature: 0.001
+	/// - Cooling rate: 0.95 (geometric cooling)
+	/// - Max iterations: 1000
+	/// - Perturbation scale: 0.3
+	/// - No reheating
+	/// - seed: consistentAt 42 for testsing
+	public static let `seededDefault` = SimulatedAnnealingConfig(
+		initialTemperature: 100.0,
+		finalTemperature: 0.001,
+		coolingRate: 0.95,
+		maxIterations: 1000,
+		perturbationScale: 0.3,
+		seed: 42
+)
 
     /// Fast cooling configuration for quick exploration.
     ///
