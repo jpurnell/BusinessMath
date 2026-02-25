@@ -14,8 +14,133 @@ permissions:
   contents: read
 
 jobs:
+  tests:
+    name: Tests (${{ matrix.os }} / ${{ matrix.engine }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+        engine: [swift-testing]
+    env:
+      PACKAGE_NAME: BusinessMath
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.x (Swift 6)
+        if: matrix.os == 'macos-15'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+
+      - name: Install Swift (Linux)
+        if: matrix.os == 'ubuntu-24.04'
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0.3'
+
+      - name: Tooling versions
+        run: |
+          swift --version
+          if command -v xcodebuild >/dev/null 2>&1; then
+            xcodebuild -version
+          fi
+
+      - name: Select test engine and scratch path
+        run: |
+          if [ "${{ matrix.engine }}" = "swift-testing" ]; then
+            echo "SWIFT_TEST_FLAGS=--enable-swift-testing" >> $GITHUB_ENV
+            echo "SCRATCH=.build-swift-testing" >> $GITHUB_ENV
+          else
+            echo "SWIFT_TEST_FLAGS=" >> $GITHUB_ENV
+            echo "SCRATCH=.build-xctest" >> $GITHUB_ENV
+          fi
+
+      - name: Build + Test (Debug and Release)
+        run: |
+          set -euo pipefail
+
+          if [ "${{ matrix.engine }}" = "swift-testing" ]; then
+            if ! swift test --enable-swift-testing --list-tests --scratch-path "$SCRATCH" | grep -q .; then
+              echo "No Swift Testing (@Test) tests found; skipping swift-testing leg."
+              exit 0
+            fi
+          else
+            swift test --list-tests --scratch-path "$SCRATCH" || true
+          fi
+
+          swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
+          swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
+          swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
+
+  build_and_compile:
+    name: Release build + Apple platform compile checks
+    needs: tests
+    if: always()
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.x (Swift 6)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+
+      - name: Tooling versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Release build (SPM)
+        run: swift build -c release
+
+      - name: Prepare ephemeral Xcode workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG_SCHEME="BusinessMath-Package"
+          xcodebuild -scheme "$PKG_SCHEME" -resolvePackageDependencies -quiet || true
+          xcodebuild -scheme "$PKG_SCHEME" -showBuildSettings >/dev/null
+          echo "Schemes in workspace:"
+          xcodebuild -list -workspace .swiftpm/xcode/package.xcworkspace || true
+
+      - name: Apple platform compile checks (BusinessMath via archive; no tests)
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKSPACE=".swiftpm/xcode/package.xcworkspace"
+          SCHEME_LIB="BusinessMath"
+
+          for plat in iOS tvOS watchOS; do
+            echo "Archiving $SCHEME_LIB for $plat"
+            OUTDIR="$(mktemp -d)"
+            xcodebuild -workspace "$WORKSPACE" \
+              -scheme "$SCHEME_LIB" \
+              -destination "generic/platform=${plat}" \
+              -configuration Release \
+              -skipPackagePluginValidation \
+              -archivePath "$OUTDIR/BM-${plat}.xcarchive" \
+              archive
+          done
+
+          if xcodebuild -showsdks | grep -q "visionOS"; then
+            echo "Archiving $SCHEME_LIB for visionOS"
+            OUTDIR="$(mktemp -d)"
+            xcodebuild -workspace "$WORKSPACE" \
+              -scheme "$SCHEME_LIB" \
+              -destination "generic/platform=visionOS" \
+              -configuration Release \
+              -skipPackagePluginValidation \
+              -archivePath "$OUTDIR/BM-visionOS.xcarchive" \
+              archive
+          fi
+
   linux_compile:
     name: Linux release compile check
+    needs: tests
+    if: always()
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
