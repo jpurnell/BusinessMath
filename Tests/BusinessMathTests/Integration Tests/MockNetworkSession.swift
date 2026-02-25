@@ -9,6 +9,10 @@ import Foundation
 import TestSupport  // Cross-platform URL types support
 @testable import BusinessMath
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// A mock network session for testing that doesn't make real HTTP requests.
 ///
 /// `MockNetworkSession` allows tests to control exactly what data is returned
