@@ -105,7 +105,7 @@ struct MultiStartOptimizerTests {
     }
 
     // MARK: - Parallel Execution Tests - These tests may fail when run as part of a suite as they are forced to run sequentially
-    @Test("MultiStartOptimizer runs optimizations in parallel")
+	@Test("MultiStartOptimizer runs optimizations in parallel", .onlyLocal)
     func runsInParallel() async throws {
         let baseOptimizer = AsyncGradientDescentOptimizer<Double>(
             learningRate: 0.1,

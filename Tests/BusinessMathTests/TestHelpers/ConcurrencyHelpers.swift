@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Testing
 
 /// Thread-safe collector for accumulating values in concurrent contexts (Swift 6 compatible).
 ///
@@ -70,3 +71,8 @@ public final class ProgressCollector<T: Sendable>: @unchecked Sendable {
     }
 }
 
+extension Trait where Self == ConditionTrait {
+	static var onlyLocal: Self {
+		.enabled(if: ProcessInfo.processInfo.environment["CI"] == nil)
+	}
+}

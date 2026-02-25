@@ -371,21 +371,25 @@ struct DDMPerformanceTests {
 
         // Struct-based calculation
         let startStruct = Date()
+		var sumStruct = 0.0
         for _ in 0..<10000 {
             let model = GordonGrowthModel(
                 dividendPerShare: dividend,
                 growthRate: growth,
                 requiredReturn: required
             )
-            let _ = model.valuePerShare()
+            sumStruct += model.valuePerShare()
         }
+		#expect(sumStruct > 0)
         let elapsedStruct = Date().timeIntervalSince(startStruct)
 
         // Manual calculation
         let startManual = Date()
+		var sum  = 0.0
         for _ in 0..<10000 {
-            let _ = dividend / (required - growth)
+            sum += dividend / (required - growth)
         }
+		#expect(sum > 0)
         let elapsedManual = Date().timeIntervalSince(startManual)
 
         // Struct-based should be comparable to manual (within 4x is acceptable)
