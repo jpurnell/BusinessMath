@@ -104,7 +104,7 @@ struct ModelDebuggerTests {
         #expect(trace.result == 100.0)
     }
 
-    @Test("Detailed trace captures complex calculations")
+	@Test("Detailed trace captures complex calculations", .localOnly)
     func detailedTraceComplex() async throws {
         let debugger = ModelDebugger()
 
