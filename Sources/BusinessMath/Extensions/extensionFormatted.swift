@@ -236,3 +236,12 @@ extension BinaryFloatingPoint {
 		}
 	}
 }
+
+extension Int {
+	public func width(_ width: Int = 1) -> String {
+		let numberString = String(self)
+		
+		let formattedString = String(repeating: " ", count: width - numberString.count) + numberString
+		return formattedString
+	}
+}
