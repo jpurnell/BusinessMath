@@ -67,11 +67,11 @@ struct IntegrationTests {
 		try trendModel.fit(to: historical)
 
 		// Project next 4 quarters
-		let forecast = try trendModel.project(periods: 4)!
+		let forecast = try #require(try trendModel.project(periods: 4))
 
 		// Calculate growth rate
-		let firstForecast = forecast.valuesArray.first!
-		let lastForecast = forecast.valuesArray.last!
+		let firstForecast = try #require(forecast.valuesArray.first)
+		let lastForecast = try #require(forecast.valuesArray.last)
 		let forecastGrowth = try growthRate(from: firstForecast, to: lastForecast)
 
 		// Should project continued growth
@@ -120,7 +120,7 @@ struct IntegrationTests {
 		try trend.fit(to: deseasonalized)
 
 		// Step 4: Project trend forward
-		let trendForecast = try trend.project(periods: 4)!
+		let trendForecast = try #require(try trend.project(periods: 4))
 
 		// Step 5: Reapply seasonality
 		let seasonalForecast = try applySeasonal(timeSeries: trendForecast, indices: seasonalIndices)
@@ -298,12 +298,13 @@ struct IntegrationTests {
 		}
 
 		// After 1 year
-		#expect(totalInterest + totalPrincipal - monthlyPayment * 12 < 0.01)
-		#expect(balance < principal)  // Some principal paid down
+		// Check the loan balance decreased by the correct amount
+		let expectedBalance = principal - totalPrincipal
+		#expect(abs(balance - expectedBalance) < 0.01, "Balance should match expected value after principal payments")
+		#expect(balance < principal, "Some principal should be paid down")
 
-		// Verify the payment amount is reasonable for a $200k, 30-year loan at 6%
-		#expect(monthlyPayment > 1000.0)  // Should be >$1k payment
-		#expect(monthlyPayment < 1500.0)  // But not too high (actual is ~$1,199)
+		// Verify monthly payment is the well-known $1,199.10 for $200k at 6%, 30yr
+		#expect(abs(monthlyPayment - 1199.10) < 1.0, "Payment should match standard amortization formula result")
 	}
 
 	// MARK: - Growth Analysis Workflows
@@ -411,7 +412,7 @@ struct IntegrationTests {
 		try trendModel.fit(to: deseasonalized)
 
 		// Project trend for next year
-		let trendForecast = try trendModel.project(periods: 4)!
+		let trendForecast = try #require(try trendModel.project(periods: 4))
 
 		// Apply seasonality to forecast
 		let seasonalForecast = try applySeasonal(timeSeries: trendForecast, indices: indices)

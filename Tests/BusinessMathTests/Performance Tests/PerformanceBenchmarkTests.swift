@@ -8,7 +8,8 @@
 import Testing
 @testable import BusinessMath
 
-@Suite struct PerformanceBenchmarkTests {
+@Suite("Performance Benchmark Tests", .serialized)
+struct PerformanceBenchmarkTests {
 
 	// MARK: - Basic Profiling Tests
 
@@ -61,6 +62,15 @@ import Testing
 		#expect(result2.executionTime > 0.0)
 		#expect(result1.executionTime < 1.0)  // Should be fast
 		#expect(result2.executionTime < 1.0)
+
+		// Two runs of the same problem should have similar execution times
+		// Check coefficient of variation: σ/μ should be < 50% (allows for 2× variation)
+		let mean = (result1.executionTime + result2.executionTime) / 2.0
+		let variance = ((result1.executionTime - mean) * (result1.executionTime - mean) +
+					   (result2.executionTime - mean) * (result2.executionTime - mean)) / 2.0
+		let stdDev = variance.squareRoot()
+		let coefficientOfVariation = stdDev / mean
+		#expect(coefficientOfVariation < 0.5, "Execution times should be consistent (CV = \(coefficientOfVariation.number(2)))")
 	}
 
 	// MARK: - Comparison Tests
@@ -84,7 +94,6 @@ import Testing
 
 		// Verify report structure
 		#expect(report.results.count == 3)
-//		#expect(report.winner != nil)
 
 		// Verify each optimizer result
 		for result in report.results {

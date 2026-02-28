@@ -12,32 +12,33 @@ import Numerics
 
 @Suite("LinearRegressionTests") struct LinearRegressionTests {
 
-	func testlinearRegression() {
+	@Test("Linear regression car age/price prediction")
+	func testlinearRegression() throws {
 		let carAge: [Double] = [10, 8, 3, 3, 2, 1]
 		let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
-		let linearRegressionFunction = try! linearRegression(carAge, carPrice)
+		let linearRegressionFunction = try linearRegression(carAge, carPrice)
 		let result = (linearRegressionFunction(4) * 1000).rounded(.up) / 1000
-		#expect(result == 6952.927)
+		#expect(abs(result - 6952.927) < 0.001)
 	}
 	
-    @Test("MultiplyVectors") func LMultiplyVectors() {
+    @Test("MultiplyVectors") func LMultiplyVectors() throws {
         let values: [Double] = [1, 2, 3, 4, 5]
         let multipliers: [Double] = [10, 10, 10, 10, 10]
-        let result = try! multiplyVectors(values, multipliers)
+        let result = try multiplyVectors(values, multipliers)
         #expect(result == [10, 20, 30, 40, 50])
     }
 
-    @Test("Slope") func LSlope() {
+    @Test("Slope") func LSlope() throws {
         let carAge: [Double] = [10, 8, 3, 3, 2, 1]
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
-        let result = (try! slope(carAge, carPrice) * 1000).rounded(.up) / 1000
+        let result = (try slope(carAge, carPrice) * 1000).rounded(.up) / 1000
         #expect(result == -1272.519)
     }
     
-    @Test("Intercept") func LIntercept() {
+    @Test("Intercept") func LIntercept() throws {
         let carAge: [Double] = [10, 8, 3, 3, 2, 1]
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
-        let result = (try! intercept(carAge, carPrice) * 1000).rounded(.up) / 1000
+        let result = (try intercept(carAge, carPrice) * 1000).rounded(.up) / 1000
         #expect(result == 12043.003)
     }
        
@@ -117,5 +118,136 @@ struct RegressionProperties {
 			} catch {
 				Issue.record("Expected ArrayError.mismatchedLengths, got \(error)")
 			}
+	}
+}
+
+@Suite("Linear Regression - NaN and Infinity Input Rejection")
+struct LinearRegressionNaNInfinityTests {
+
+	@Test("slope propagates NaN from x values")
+	func slope_propagates_nan_from_x() throws {
+		let x = [1.0, Double.nan, 3.0]
+		let y = [2.0, 4.0, 6.0]
+		let result = try? slope(x, y)
+		#expect(result == nil || result!.isNaN)
+	}
+
+	@Test("slope propagates NaN from y values")
+	func slope_propagates_nan_from_y() throws {
+		let x = [1.0, 2.0, 3.0]
+		let y = [2.0, Double.nan, 6.0]
+		let result = try? slope(x, y)
+		#expect(result == nil || result!.isNaN)
+	}
+
+	@Test("intercept propagates NaN from x values")
+	func intercept_propagates_nan_from_x() throws {
+		let x = [1.0, Double.nan, 3.0]
+		let y = [2.0, 4.0, 6.0]
+		let result = try? intercept(x, y)
+		#expect(result == nil || result!.isNaN)
+	}
+
+	@Test("intercept propagates NaN from y values")
+	func intercept_propagates_nan_from_y() throws {
+		let x = [1.0, 2.0, 3.0]
+		let y = [2.0, Double.nan, 6.0]
+		let result = try? intercept(x, y)
+		#expect(result == nil || result!.isNaN)
+	}
+
+	@Test("rSquared handles NaN inputs")
+	func rSquared_handles_nan() {
+		let x1 = [1.0, Double.nan, 3.0]
+		let y1 = [2.0, 4.0, 6.0]
+		let result1 = rSquared(x1, y1)
+		#expect(result1.isNaN)
+
+		let x2 = [1.0, 2.0, 3.0]
+		let y2 = [2.0, Double.nan, 6.0]
+		let result2 = rSquared(x2, y2)
+		#expect(result2.isNaN)
+	}
+
+	@Test("linearRegression propagates NaN")
+	func linearRegression_propagates_nan() throws {
+		let x = [1.0, Double.nan, 3.0]
+		let y = [2.0, 4.0, 6.0]
+
+		do {
+			let f = try linearRegression(x, y)
+			let result = f(1.0)
+			#expect(result.isNaN)
+		} catch {
+			// Function might throw on NaN input, which is also acceptable
+		}
+	}
+
+	@Test("slope handles infinity")
+	func slope_handles_infinity() throws {
+		let x = [1.0, Double.infinity, 3.0]
+		let y = [2.0, 4.0, 6.0]
+		let result = try? slope(x, y)
+		#expect(result == nil || result!.isInfinite || result!.isNaN)
+	}
+
+	@Test("intercept handles infinity")
+	func intercept_handles_infinity() throws {
+		let x = [1.0, 2.0, 3.0]
+		let y = [2.0, Double.infinity, 6.0]
+		let result = try? intercept(x, y)
+		#expect(result == nil || result!.isInfinite || result!.isNaN)
+	}
+
+	@Test("rSquared handles infinity")
+	func rSquared_handles_infinity() {
+		let x = [1.0, Double.infinity, 3.0]
+		let y = [2.0, 4.0, 6.0]
+		let result = rSquared(x, y)
+		#expect(result.isNaN || result.isInfinite)
+	}
+}
+
+@Suite("Linear Regression - Stress Tests")
+struct LinearRegressionStressTests {
+
+	@Test("slope handles large datasets", .timeLimit(.minutes(1)))
+	func slope_large_datasets() throws {
+		let x = (1...100_000).map { Double($0) }
+		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
+		let result = try slope(x, y)
+		#expect(result.isFinite)
+		#expect(abs(result - 2.0) < 1e-6)
+	}
+
+	@Test("intercept handles large datasets", .timeLimit(.minutes(1)))
+	func intercept_large_datasets() throws {
+		let x = (1...100_000).map { Double($0) }
+		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
+		let result = try intercept(x, y)
+		#expect(result.isFinite)
+		#expect(abs(result - 3.0) < 1e-6)
+	}
+
+	@Test("rSquared handles large datasets", .timeLimit(.minutes(1)))
+	func rSquared_large_datasets() {
+		let x = (1...100_000).map { Double($0) }
+		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
+		let result = rSquared(x, y)
+		#expect(result.isFinite)
+		// Perfect linear relationship
+		#expect(abs(result - 1.0) < 1e-10)
+	}
+
+	@Test("linearRegression handles large datasets", .timeLimit(.minutes(1)))
+	func linearRegression_large_datasets() throws {
+		let x = (1...100_000).map { Double($0) }
+		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
+		let f = try linearRegression(x, y)
+
+		// Test prediction
+		let prediction = f(50_000)
+		let expected = 50_000.0 * 2.0 + 3.0
+		#expect(abs(prediction - expected) < 1e-6)
 	}
 }

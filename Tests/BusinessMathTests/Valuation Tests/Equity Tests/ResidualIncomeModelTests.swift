@@ -16,7 +16,7 @@ struct ResidualIncomeModelTests {
     // MARK: - Basic Residual Income Calculation Tests
 
     @Test("Calculate residual income - positive economic profit")
-    func residualIncomePositive() {
+    func residualIncomePositive() throws {
         // Given: Company earning above cost of equity
         // Net Income = $120M, Book Value = $1000M, Cost of Equity = 10%
         // Equity Charge = 1000 * 0.10 = $100M
@@ -41,7 +41,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Calculate residual income - negative economic profit")
-    func residualIncomeNegative() {
+    func residualIncomeNegative() throws {
         // Given: Company earning below cost of equity
         // Net Income = $80M, Book Value = $1000M, Cost of Equity = 10%
         // Equity Charge = 1000 * 0.10 = $100M
@@ -66,7 +66,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Calculate residual income - zero economic profit")
-    func residualIncomeZero() {
+    func residualIncomeZero() throws {
         // Given: Company earning exactly cost of equity
         // Net Income = $100M, Book Value = $1000M, Cost of Equity = 10%
         let periods = [Period.year(2024)]
@@ -89,7 +89,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Residual income - multi-period projection")
-    func residualIncomeMultiPeriod() {
+    func residualIncomeMultiPeriod() throws {
         // Given: 3-year projection
         let periods = [Period.year(2024), Period.year(2025), Period.year(2026)]
         let netIncome = TimeSeries(periods: periods, values: [120.0, 132.0, 145.0])
@@ -118,7 +118,7 @@ struct ResidualIncomeModelTests {
     // MARK: - Equity Value Tests
 
     @Test("Equity value - single period with positive RI")
-    func equityValueSinglePeriodPositive() {
+    func equityValueSinglePeriodPositive() throws {
         // Given: Company with positive residual income
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [150.0])
@@ -133,7 +133,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should be > book value
         // RI = 150 - 100 = 50
@@ -146,7 +146,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Equity value - single period with negative RI")
-    func equityValueSinglePeriodNegative() {
+    func equityValueSinglePeriodNegative() throws {
         // Given: Company destroying value
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [60.0])
@@ -161,7 +161,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should be < book value
         // RI = 60 - 100 = -40
@@ -169,7 +169,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Equity value - zero RI equals book value")
-    func equityValueZeroRI() {
+    func equityValueZeroRI() throws {
         // Given: Company earning exactly cost of equity
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [100.0])
@@ -184,7 +184,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should equal book value (plus minor discounting effects)
         // RI = 100 - 100 = 0, so value should be close to book value
@@ -192,7 +192,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Equity value - multi-period projection")
-    func equityValueMultiPeriod() {
+    func equityValueMultiPeriod() throws {
         // Given: 5-year projection with growing RI
         let periods = (2024...2028).map { Period.year($0) }
         let netIncome = TimeSeries(
@@ -213,7 +213,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should be > book value due to positive RI
         #expect(value > 1000.0)
@@ -223,7 +223,7 @@ struct ResidualIncomeModelTests {
     // MARK: - Value Per Share Tests
 
     @Test("Value per share calculation")
-    func valuePerShare() {
+    func valuePerShare() throws {
         // Given: Equity value and shares
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [150.0])
@@ -238,17 +238,17 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate value per share with 100M shares
-        let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
+        let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
 
         // Then: Should be equity value / shares
-        let equityValue = model.equityValue()
+        let equityValue = try model.equityValue()
         #expect(abs(sharePrice - (equityValue / 100.0)) < 0.01)
     }
 
     // MARK: - ROE and Clean Surplus Tests
 
     @Test("ROE calculation from model inputs")
-    func roeCalculation() {
+    func roeCalculation() throws {
         // Given: Company with known net income and book value
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [120.0])
@@ -268,7 +268,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Spread: ROE minus cost of equity")
-    func roeSpread() {
+    func roeSpread() throws {
         // Given: Company with ROE > Cost of Equity (value creation)
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [150.0])  // ROE = 15%
@@ -294,7 +294,7 @@ struct ResidualIncomeModelTests {
     // MARK: - Edge Cases
 
     @Test("Invalid when terminal growth >= cost of equity")
-    func invalidTerminalGrowth() {
+    func invalidTerminalGrowth() throws {
         // Given: Invalid terminal growth rate
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [120.0])
@@ -308,15 +308,14 @@ struct ResidualIncomeModelTests {
             terminalGrowthRate: 0.10  // Equal to cost of equity
         )
 
-        // When: Calculate equity value
-        let value = model.equityValue()
-
-        // Then: Should return NaN or infinity
-        #expect(value.isNaN || value.isInfinite)
+        // When/Then: Should throw ValuationError for invalid model assumptions
+        #expect(throws: ValuationError.self) {
+            try model.equityValue()
+        }
     }
 
     @Test("Zero book value edge case")
-    func zeroBookValue() {
+    func zeroBookValue() throws {
         // Given: Company with zero/negligible book value
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [50.0])
@@ -331,7 +330,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should be dominated by residual income, not book value
         #expect(value > 0.1)
@@ -339,7 +338,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("High ROE company")
-    func highROECompany() {
+    func highROECompany() throws {
         // Given: Technology company with 30% ROE
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [300.0])
@@ -354,7 +353,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should have large premium over book value
         // ROE = 30%, Cost = 12%, Spread = 18% (huge value creation)
@@ -362,7 +361,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("Low ROE company (value destroyer)")
-    func lowROECompany() {
+    func lowROECompany() throws {
         // Given: Struggling company with 5% ROE
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [50.0])
@@ -377,7 +376,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should trade at discount to book value
         // ROE = 5%, Cost = 10%, Spread = -5% (value destruction)
@@ -387,7 +386,7 @@ struct ResidualIncomeModelTests {
     // MARK: - Generic Type Tests
 
     @Test("Model with Float type")
-    func modelWithFloat() {
+    func modelWithFloat() throws {
         // Given: Model using Float
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries<Float>(periods: periods, values: [120.0])
@@ -402,7 +401,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should work with Float
         #expect(value > 1000.0)
@@ -412,7 +411,7 @@ struct ResidualIncomeModelTests {
     // MARK: - Comparison Tests
 
     @Test("RI Model vs Gordon Growth - consistency check")
-    func compareRIWithGordonGrowth() {
+    func compareRIWithGordonGrowth() throws {
         // Given: Stable company with constant payout and growth
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [100.0])
@@ -426,7 +425,7 @@ struct ResidualIncomeModelTests {
             costOfEquity: 0.10,
             terminalGrowthRate: 0.03
         )
-        let riValue = riModel.equityValue()
+        let riValue = try riModel.equityValue()
 
         // Gordon Growth Model (assuming 100% payout ratio)
         let ggModel = GordonGrowthModel(
@@ -434,7 +433,7 @@ struct ResidualIncomeModelTests {
             growthRate: 0.03,
             requiredReturn: 0.10
         )
-        let ggValue = ggModel.valuePerShare()
+        let ggValue = try ggModel.valuePerShare()
 
         // Then: Both should be reasonable (RI might be higher if book value is low)
         #expect(riValue > 900.0)
@@ -442,7 +441,7 @@ struct ResidualIncomeModelTests {
     }
 
     @Test("RI Model - book value convergence")
-    func bookValueConvergence() {
+    func bookValueConvergence() throws {
         // Given: Company expected to earn exactly cost of equity forever
         let periods = [Period.year(2024)]
         let netIncome = TimeSeries(periods: periods, values: [100.0])
@@ -457,7 +456,7 @@ struct ResidualIncomeModelTests {
         )
 
         // When: Calculate equity value
-        let value = model.equityValue()
+        let value = try model.equityValue()
 
         // Then: Should converge to book value (within tolerance)
         // RI = 0 forever, so value = book value

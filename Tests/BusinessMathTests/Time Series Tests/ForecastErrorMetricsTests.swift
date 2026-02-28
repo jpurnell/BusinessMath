@@ -168,7 +168,7 @@ struct ForecastErrorMetricsTests {
 		let metrics = actual.forecastError(against: forecast)
 
 		// Good forecast should have relatively low error
-		#expect(metrics.mape < 10.0)  // Less than 10% MAPE
+		#expect(metrics.mape < 0.10)  // Less than 10% MAPE (stored as ratio, not percentage)
 		#expect(metrics.count == 12)
 	}
 

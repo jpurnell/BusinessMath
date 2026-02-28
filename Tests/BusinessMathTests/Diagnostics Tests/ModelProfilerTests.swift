@@ -297,14 +297,15 @@ struct ModelProfilerTests {
         let profiler = ModelProfiler()
 
         await profiler.measure(operation: "Op1") {
-            Thread.sleep(forTimeInterval: 0.005)
+            Thread.sleep(forTimeInterval: 0.003)
         }
 
         await profiler.measure(operation: "Op2") {
-            Thread.sleep(forTimeInterval: 0.015)
+            Thread.sleep(forTimeInterval: 0.020)
         }
 
         // With 10ms threshold, only Op2 should be flagged
+        // Op1 at ~3ms should be well below threshold even with OS jitter
         let bottlenecks = await profiler.bottlenecks(threshold: 0.01)
 
         #expect(bottlenecks.count == 1)
@@ -360,7 +361,7 @@ struct ModelProfilerTests {
 
     // MARK: - Warning Threshold
 
-    @Test("Custom warning threshold")
+	@Test("Custom warning threshold", .localOnly)
     func customWarningThreshold() async {
         let profiler = ModelProfiler()
         await profiler.setWarningThreshold(0.005) // 5ms

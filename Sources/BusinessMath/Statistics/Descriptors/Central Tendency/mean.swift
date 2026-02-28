@@ -15,10 +15,23 @@ import Numerics
 /// - Returns: Provides the mean of a set of numbers.
 /// - Parameter x: An array of values of a single type
 public func mean<T: Real>(_ x: [T]) -> T {
+    // Empty array returns NaN
     guard x.count > 0 else {
-        return T(0)
+        return T.nan
     }
-    // Use Kahan summation to prevent overflow with large datasets
+
+    // NaN propagates - if any value is NaN, result is NaN
+    if x.contains(where: { $0.isNaN }) {
+        return T.nan
+    }
+
+    // If array contains infinity, use simple sum (Kahan summation breaks with infinity)
+    if x.contains(where: { $0.isInfinite }) {
+        let simpleSum = x.reduce(T(0), +)
+        return simpleSum / T(x.count)
+    }
+
+    // Use Kahan summation for numerical stability with large finite datasets
     return (kahanSum(x) / T(x.count))
 }
 

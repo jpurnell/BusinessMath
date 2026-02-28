@@ -61,8 +61,9 @@ import Numerics
 /// print("Customer value: $\(sales)")
 /// ```
 public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
-	precondition(scale > T(0), "Pareto scale parameter must be positive")
-	precondition(shape > T(0), "Pareto shape parameter must be positive")
+	// Validate parameters - return NaN for invalid inputs
+	guard scale > T(0), !scale.isNaN, scale.isFinite else { return T.nan }
+	guard shape > T(0), !shape.isNaN, shape.isFinite else { return T.nan }
 
 	// Use inverse transform method: X = xₘ / U^(1/α)
 	// where U ~ Uniform(0,1)

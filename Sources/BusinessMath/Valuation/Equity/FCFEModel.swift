@@ -200,22 +200,22 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// - n = Number of projection periods
     ///
     /// - Returns: Total equity value in the same units as FCFE (e.g., millions of dollars)
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if `terminalGrowthRate >= costOfEquity`
     ///
     /// ## Important Notes
     ///
-    /// - Returns `NaN` if `terminalGrowthRate >= costOfEquity` (invalid model)
     /// - Terminal value typically represents 60-80% of total value
     /// - Highly sensitive to terminal growth rate assumption
     ///
     /// ## Example
     ///
     /// ```swift
-    /// let equityValue = model.equityValue()
+    /// let equityValue = try model.equityValue()
     /// print("Total equity value: $\(equityValue)M")
     /// ```
     ///
     /// - Complexity: O(n) where n is the number of projection periods
-    public func equityValue() -> T {
+    public func equityValue() throws -> T {
         let fcfeTimeSeries = fcfe()
         let fcfeArray = fcfeTimeSeries.valuesArray
         var presentValue = T(0)
@@ -238,7 +238,10 @@ public struct FCFEModel<T: Real> where T: Sendable {
 
         // Guard against invalid terminal growth rate
         guard denominator > T(0) else {
-            return T.nan
+            throw ValuationError.invalidModelAssumptions(
+                "Terminal growth rate (\(terminalGrowthRate)) must be less than cost of equity (\(costOfEquity)). " +
+                "FCFE model requires g < r for terminal value calculation."
+            )
         }
 
         let terminalValue = terminalFCFE / denominator
@@ -259,12 +262,13 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// - Parameter sharesOutstanding: Number of shares outstanding (in millions if equity value is in millions)
     ///
     /// - Returns: Intrinsic value per share
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if terminal growth rate >= cost of equity
     ///
     /// ## Example
     ///
     /// ```swift
     /// // If equity value is $5,000M and 100M shares outstanding
-    /// let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
+    /// let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
     /// // Returns: $50 per share
     /// ```
     ///
@@ -281,8 +285,8 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// - Market price reflects expectations; intrinsic value reflects fundamentals
     ///
     /// - Complexity: O(1) after equity value calculation
-    public func valuePerShare(sharesOutstanding: T) -> T {
-        let totalEquityValue = equityValue()
+    public func valuePerShare(sharesOutstanding: T) throws -> T {
+        let totalEquityValue = try equityValue()
         return totalEquityValue / sharesOutstanding
     }
 }

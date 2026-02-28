@@ -31,6 +31,14 @@ import Numerics
 /// - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
 
 public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
+	// Validate parameters - return NaN for invalid inputs
+	guard !stdDev.isNaN, stdDev.isFinite else { return T.nan }
+	guard stdDev >= T(0) else { return T.nan }  // Negative stdDev is invalid
+	guard !mean.isNaN, mean.isFinite else { return T.nan }
+
+	// Handle degenerate case: stdDev = 0 means deterministic (always returns mean)
+	if stdDev == T(0) { return mean }
+
 	return (stdDev * boxMullerSeed(u1Seed, u2Seed).z1) + mean
 }
 
@@ -56,5 +64,12 @@ public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Doubl
 ///
 /// - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
 public func boxMuller<T: Real>(mean: T, variance: T, _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
+	// Validate parameters - return NaN for invalid inputs
+	guard !variance.isNaN, variance.isFinite else { return T.nan }
+	guard variance >= T(0) else { return T.nan }  // Negative variance is invalid
+
+	// Handle degenerate case: variance = 0 means stdDev = 0 (deterministic)
+	if variance == T(0) { return mean }
+
 	return boxMuller(mean: mean, stdDev: T.sqrt(variance), u1Seed, u2Seed)
 }

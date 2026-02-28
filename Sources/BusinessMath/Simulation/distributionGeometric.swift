@@ -30,6 +30,9 @@ import Numerics
 ///   let randomValue: Double = distributionGeometric(probabilityOfSuccess)
 ///   // randomValue will be a random number generated from the geometric distribution with parameter p = 0.5
 public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
+	// Validate parameters - return NaN for invalid inputs
+	guard p > T(0), p <= T(1), !p.isNaN, p.isFinite else { return T.nan }
+
 	var x: T = T(0)
 	var seedIndex = 0
 

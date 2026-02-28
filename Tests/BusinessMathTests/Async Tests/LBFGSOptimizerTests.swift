@@ -39,11 +39,10 @@ struct LBFGSOptimizerTests {
         #expect(result.objectiveValue < 0.01)
     }
 
-    @Test("L-BFGS optimizes Rosenbrock function")
-    func rosenbrockFunction() async throws {
-        // Rosenbrock: f(x,y) = (1-x)^2 + 100(y-x^2)^2
-        // Represented as f(t) where t encodes both x and y
-        // For 1D test: f(x) = (1-x)^2 + 100(2-x^2)^2, minimum near x ≈ 1
+    @Test("L-BFGS optimizes nonlinear function with multiple terms")
+    func nonlinearOptimization() async throws {
+        // Non-quadratic function: f(x) = (1-x)² + 100(2-x²)²
+        // Has both quadratic and quartic terms, creating complex curvature
         let objective: @Sendable (Double) -> Double = { x in
             let term1 = (1.0 - x) * (1.0 - x)
             let term2 = 100.0 * (2.0 - x * x) * (2.0 - x * x)
@@ -64,8 +63,8 @@ struct LBFGSOptimizerTests {
         )
 
         #expect(result.converged)
-        // Should find a local minimum
-        #expect(result.iterations > 10) // Not trivial
+        // Verify we found a local minimum (exact value depends on the complex landscape)
+        #expect(result.objectiveValue < 50.0)
     }
 
     @Test("L-BFGS with tight tolerance")
@@ -170,10 +169,10 @@ struct LBFGSOptimizerTests {
         let progressUpdates = collector.getItems()
         #expect(progressUpdates.count > 0)
 
-        // Verify fixed interval reporting
-        if progressUpdates.count >= 2 {
-            let interval = progressUpdates[1] - progressUpdates[0]
-            #expect(interval == 5)
+        // Verify fixed interval reporting - check all consecutive pairs
+        for i in 1..<progressUpdates.count {
+            let interval = progressUpdates[i] - progressUpdates[i - 1]
+            #expect(interval == 5, "Expected interval of 5 between progress updates \(i-1) and \(i), got \(interval)")
         }
     }
 

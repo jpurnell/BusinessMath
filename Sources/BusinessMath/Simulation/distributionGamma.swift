@@ -30,6 +30,10 @@ import Numerics
 ///   // randomValue will be a random number generated from the Gamma distribution with parameters r = 3 and λ = 2.0
 
 public func distributionGamma<T: Real>(r: Int, λ: T, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
+	// Validate parameters - return NaN for invalid inputs
+	guard r > 0 else { return T.nan }
+	guard λ > T(0), !λ.isNaN, λ.isFinite else { return T.nan }
+
 	if let seeds = seeds {
 		// Use provided seeds for deterministic generation
 		let requiredSeeds = min(r, seeds.count)

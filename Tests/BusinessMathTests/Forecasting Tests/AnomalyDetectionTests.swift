@@ -7,19 +7,6 @@ struct AnomalyDetectionTests {
 
 	// MARK: - Helper Functions
 
-	func makeNormalData() -> TimeSeries<Double> {
-		// Data centered around 100 with small variation
-		let periods = (0..<100).map { Period.day( Date(timeIntervalSince1970: Double($0 * 86400))) }
-		var values: [Double] = []
-
-		for _ in 0..<100 {
-			// Normal variation ±5 around 100
-			values.append(100.0 + Double.random(in: -5.0...5.0))
-		}
-
-		return TimeSeries(periods: periods, values: values)
-	}
-	
 	private struct Deterministic01 {
 		// seed must be in [0, 1)
 		private var u: Double
@@ -131,12 +118,15 @@ struct AnomalyDetectionTests {
 		// Severe anomalies should have higher deviation scores than mild ones
 		let severeAnomalies = anomalies.filter { $0.severity == .severe }
 		let mildAnomalies = anomalies.filter { $0.severity == .mild }
-		
+
 		if !severeAnomalies.isEmpty && !mildAnomalies.isEmpty {
-			let minSevereScore = severeAnomalies.map { $0.deviationScore }.min()!
-			let maxMildScore = mildAnomalies.map { $0.deviationScore }.max()!
-			
-			#expect(minSevereScore > maxMildScore, 
+			guard let minSevereScore = severeAnomalies.map({ $0.deviationScore }).min(),
+			      let maxMildScore = mildAnomalies.map({ $0.deviationScore }).max() else {
+				Issue.record("Failed to compute min/max deviation scores")
+				return
+			}
+
+			#expect(minSevereScore > maxMildScore,
 					"Severe anomalies should have higher deviation scores than mild ones")
 		}
 	}
@@ -225,7 +215,11 @@ struct AnomalyDetectionTests {
 	}
 }
 
-	// Helpers
+@Suite("Additional Anomaly Detection – Deterministic")
+struct AdditionalAnomalyDetectionTests {
+
+	// MARK: - Helper Functions
+
 	private func dayPeriods(count: Int, start: TimeInterval = 0) -> [Period] {
 		(0..<count).map { Period.day(Date(timeIntervalSince1970: start + Double($0 * 86400))) }
 	}
@@ -241,9 +235,6 @@ struct AnomalyDetectionTests {
 		}
 		return periods
 	}
-
-	@Suite("Additional Anomaly Detection – Deterministic")
-	struct AdditionalAnomalyDetectionTests {
 
 		private func flatWithAnomalies() -> TimeSeries<Double> {
 			let periods = dayPeriods(count: 100)
@@ -303,8 +294,11 @@ struct AnomalyDetectionTests {
 			let anomalies = detector.detect(in: data, threshold: 2.0)
 //			print(anomalies.map({$0.description}).joined(separator: "\n"))
 
-			let aSmall = anomalies.first { $0.period == periods[40] }!
-			let aLarge = anomalies.first { $0.period == periods[60] }!
+			guard let aSmall = anomalies.first(where: { $0.period == periods[40] }),
+			      let aLarge = anomalies.first(where: { $0.period == periods[60] }) else {
+				Issue.record("Expected anomalies at positions 40 and 60 were not detected")
+				return
+			}
 
 			#expect(aLarge.deviationScore > aSmall.deviationScore)
 			// If severities are categorized, larger deviation should not be a lower severity

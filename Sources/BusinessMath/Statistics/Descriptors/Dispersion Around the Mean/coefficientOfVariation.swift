@@ -35,7 +35,20 @@ import Numerics
 /// - Important:
 ///   - Ensure that the mean is not zero to avoid division by zero errors.
 public func coefficientOfVariation<T: Real>(_ stdDev: T, mean: T) throws -> T {
-	guard mean != 0 else { throw BusinessMathError.divisionByZero(context: "Coefficient of Variation") }
+    // Validate mean is not NaN
+    guard !mean.isNaN else {
+        throw BusinessMathError.invalidInput(
+            message: "Coefficient of Variation requires finite mean",
+            value: "NaN"
+        )
+    }
+
+    // Validate mean is not zero
+    guard mean != 0 else {
+        throw BusinessMathError.divisionByZero(context: "Coefficient of Variation")
+    }
+
+    // If stdDev is NaN, return NaN (propagate through calculation)
     return (stdDev / mean) * T(100)
 }
 

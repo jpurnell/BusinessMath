@@ -102,3 +102,160 @@ struct CovarianceCorrelationProperties {
 		#expect(abs(correlationCoefficient(x, [5,4,3,2,1].map(Double.init), .sample)) <= 1.0 + 1e-12)
 	}
 }
+
+@Suite("Covariance and Correlation - NaN and Infinity Input Rejection")
+struct CovarianceCorrelationNaNInfinityTests {
+
+	@Test("covarianceS propagates NaN from x")
+	func covarianceS_propagates_nan_from_x() {
+		let x = [1.0, Double.nan, 3.0]
+		let y = [2.0, 4.0, 6.0]
+		let result = covarianceS(x, y)
+		#expect(result.isNaN)
+	}
+
+	@Test("covarianceS propagates NaN from y")
+	func covarianceS_propagates_nan_from_y() {
+		let x = [1.0, 2.0, 3.0]
+		let y = [2.0, Double.nan, 6.0]
+		let result = covarianceS(x, y)
+		#expect(result.isNaN)
+	}
+
+	@Test("covarianceP propagates NaN from x")
+	func covarianceP_propagates_nan_from_x() {
+		let x = [1.0, Double.nan, 3.0]
+		let y = [2.0, 4.0, 6.0]
+		let result = covarianceP(x, y)
+		#expect(result.isNaN)
+	}
+
+	@Test("covarianceP propagates NaN from y")
+	func covarianceP_propagates_nan_from_y() {
+		let x = [1.0, 2.0, 3.0]
+		let y = [2.0, Double.nan, 6.0]
+		let result = covarianceP(x, y)
+		#expect(result.isNaN)
+	}
+
+	@Test("correlationCoefficient propagates NaN")
+	func correlation_propagates_nan() {
+		let x1 = [1.0, Double.nan, 3.0]
+		let y1 = [2.0, 4.0, 6.0]
+		let result1 = correlationCoefficient(x1, y1, .sample)
+		#expect(result1.isNaN)
+
+		let x2 = [1.0, 2.0, 3.0]
+		let y2 = [2.0, Double.nan, 6.0]
+		let result2 = correlationCoefficient(x2, y2, .population)
+		#expect(result2.isNaN)
+	}
+
+	@Test("covariance handles infinity")
+	func covariance_handles_infinity() {
+		let x = [1.0, Double.infinity, 3.0]
+		let y = [2.0, 4.0, 6.0]
+		let resultS = covarianceS(x, y)
+		let resultP = covarianceP(x, y)
+		#expect(resultS.isInfinite || resultS.isNaN)
+		#expect(resultP.isInfinite || resultP.isNaN)
+	}
+
+	@Test("correlationCoefficient handles infinity")
+	func correlation_handles_infinity() {
+		let x = [1.0, Double.infinity, 3.0, 4.0]
+		let y = [2.0, 4.0, 6.0, 8.0]
+		let result = correlationCoefficient(x, y, .sample)
+		#expect(result.isNaN || result.isInfinite)
+	}
+}
+
+@Suite("Covariance and Correlation - Empty Array Rejection")
+struct CovarianceCorrelationEmptyArrayTests {
+
+	@Test("covarianceS handles empty arrays")
+	func covarianceS_empty_arrays() {
+		let x: [Double] = []
+		let y: [Double] = []
+		let result = covarianceS(x, y)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("covarianceP handles empty arrays")
+	func covarianceP_empty_arrays() {
+		let x: [Double] = []
+		let y: [Double] = []
+		let result = covarianceP(x, y)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("covariance handles empty arrays")
+	func covariance_empty_arrays() {
+		let x: [Double] = []
+		let y: [Double] = []
+		let result = covariance(x, y)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("correlationCoefficient handles empty arrays")
+	func correlation_empty_arrays() {
+		let x: [Double] = []
+		let y: [Double] = []
+		let resultS = correlationCoefficient(x, y, .sample)
+		let resultP = correlationCoefficient(x, y, .population)
+		#expect(resultS.isNaN || resultS == 0.0)
+		#expect(resultP.isNaN || resultP == 0.0)
+	}
+
+	@Test("covariance handles single-element arrays")
+	func covariance_single_element() {
+		let x = [5.0]
+		let y = [10.0]
+		let result = covarianceS(x, y)
+		// Single element has undefined sample covariance (division by n-1 = 0)
+		#expect(result.isNaN || result.isInfinite || result == 0.0)
+	}
+
+	@Test("correlationCoefficient handles single-element arrays")
+	func correlation_single_element() {
+		let x = [5.0]
+		let y = [10.0]
+		let result = correlationCoefficient(x, y, .sample)
+		#expect(result.isNaN || result == 0.0)
+	}
+}
+
+@Suite("Covariance and Correlation - Stress Tests")
+struct CovarianceCorrelationStressTests {
+
+	@Test("covarianceS handles large datasets", .timeLimit(.minutes(1)))
+	func covarianceS_large_datasets() {
+		let x = (1...100_000).map { Double($0) }
+		let y = (1...100_000).map { Double($0) * 2.0 }
+		let result = covarianceS(x, y)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("covarianceP handles large datasets", .timeLimit(.minutes(1)))
+	func covarianceP_large_datasets() {
+		let x = (1...100_000).map { Double($0) }
+		let y = (1...100_000).map { Double($0) * 2.0 }
+		let result = covarianceP(x, y)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("correlationCoefficient handles large datasets", .timeLimit(.minutes(1)))
+	func correlation_large_datasets() {
+		let x = (1...100_000).map { Double($0) }
+		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
+		let resultS = correlationCoefficient(x, y, .sample)
+		let resultP = correlationCoefficient(x, y, .population)
+		#expect(resultS.isFinite)
+		#expect(resultP.isFinite)
+		// Perfect linear relationship
+		#expect(abs(resultS - 1.0) < 1e-10)
+		#expect(abs(resultP - 1.0) < 1e-10)
+	}
+}

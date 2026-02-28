@@ -10,7 +10,7 @@ import Foundation
 import Testing
 @testable import BusinessMath
 
-@Suite("Parallel Multi-Start Optimizer Tests")
+@Suite("Parallel Multi-Start Optimizer Tests", .serialized)
 struct ParallelOptimizerTests {
 
 	// MARK: - Basic Functionality Tests
@@ -53,12 +53,13 @@ struct ParallelOptimizerTests {
 	/// Test that multi-start finds global optimum better than single start
 	@Test("Multi-start finds better solution than single start")
 	func testMultiStartImprovement() async throws {
-		// Problem with multiple local minima: f(x) = x⁴ - 3x³ + 2x
-		// Has local minima but global optimum around x ≈ 2.25
+		// Multi-modal function: f(x) = sin(5x) + 0.1x²
+		// Has multiple local minima (from sin oscillations) with global minimum near x ≈ -π/2
+		// This genuinely requires multi-start to avoid getting trapped in local minima
 
 		let objective: @Sendable (VectorN<Double>) -> Double = { v in
 			let x = v[0]
-			return x*x*x*x - 3.0*x*x*x + 2.0*x
+			return sin(5.0 * x) + 0.1 * x * x
 		}
 
 		// Single-start optimizer
@@ -71,8 +72,8 @@ struct ParallelOptimizerTests {
 		let singleResult = try await singleStart.optimize(
 			objective: objective,
 			searchRegion: (
-				lower: VectorN([0.0]),
-				upper: VectorN([3.0])
+				lower: VectorN([-5.0]),
+				upper: VectorN([5.0])
 			),
 			constraints: []
 		)
@@ -87,15 +88,16 @@ struct ParallelOptimizerTests {
 		let multiResult = try await multiStart.optimize(
 			objective: objective,
 			searchRegion: (
-				lower: VectorN([0.0]),
-				upper: VectorN([3.0])
+				lower: VectorN([-5.0]),
+				upper: VectorN([5.0])
 			),
 			constraints: []
 		)
 
-		// Multi-start should find a better (lower) objective value
-		#expect(multiResult.objectiveValue <= singleResult.objectiveValue + 0.1,
-				"Multi-start should find at least as good a solution")
+		// Multi-start should find a significantly better solution on multi-modal function
+		// Single start often gets trapped in local minimum, multi-start explores more
+		#expect(multiResult.objectiveValue <= singleResult.objectiveValue,
+				"Multi-start should find at least as good a solution (single: \(singleResult.objectiveValue.number(3)), multi: \(multiResult.objectiveValue.number(3)))")
 		#expect(multiResult.success, "Multi-start should succeed")
 	}
 
@@ -425,7 +427,7 @@ struct ParallelOptimizerPerformanceTests {
 
 	/// Test that parallel execution uses multiple cores
 	/// This test requires exclusive CPU access to measure parallel speedup accurately
-	@Test("Verify parallel execution completes faster", .localOnly)
+	@Test("Verify parallel execution completes faster", .requiresParallelHardware)
 	func testParallelSpeedup() async throws {
 		// Use a computationally expensive objective (but not too expensive for CI)
 		let expensive: @Sendable (VectorN<Double>) -> Double = { v in
@@ -455,8 +457,9 @@ struct ParallelOptimizerPerformanceTests {
 		// Uncomment below for single run testing
 //		print("Elapsed: \(elapsed.number(3))")
 		#expect(result.success, "Should complete successfully")
-		// With serialized execution, should have full CPU access and complete quickly
-		// Threshold set to 60s to account for system variance under full test suite load (4× margin)
-		#expect(elapsed < 60.0, "Should complete in reasonable time with full CPU access")
+		// With serialized execution and dedicated hardware, should complete in < 5s
+		// (8 starts × 50 iterations on simple 1D objective with parallel execution)
+		// Threshold accounts for system variance while catching real performance regressions
+		#expect(elapsed < 5.0, "Should complete within 5 seconds (got \(elapsed.number(2))s)")
 	}
 }

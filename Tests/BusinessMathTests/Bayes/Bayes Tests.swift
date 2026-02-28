@@ -24,11 +24,8 @@ struct BayesTests {
 
 		let result = bayes(probabilityD, probabilityTrueGivenD, probabilityTrueGivenNotD)
 
-		// Round to 6 decimal places for comparison
-		let roundedResult = (result * 1000000).rounded() / 1000000.0
-		let expectedResult = 0.333333
-
-		#expect(roundedResult == expectedResult)
+		// Expected value is 1/3 ≈ 0.333333...
+		#expect(abs(result - 1.0 / 3.0) < 1e-6)
 	}
 
 	@Test("High prior probability")
@@ -81,7 +78,6 @@ struct BayesTests {
 		let result = bayes(probabilityD, probabilityTrueGivenD, probabilityTrueGivenNotD)
 
 		// With equal prior and symmetric test, posterior should be 0.8
-		let roundedResult = (result * 100).rounded() / 100
-		#expect(roundedResult == 0.80)
+		#expect(abs(result - 0.80) < 1e-9)
 	}
 }

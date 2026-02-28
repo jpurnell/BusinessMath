@@ -846,12 +846,11 @@ struct BranchAndBoundTests {
 
         let vars = result.solution.toArray()
 
-        print("Production Scheduling Test Results:")
+
         for i in 0..<4 {
             let production = vars[i]
             let productionRounded = Int(round(vars[i]))  // Properly round for display
             let demand = demands[i]
-            print("  Product \(i): Production=\(productionRounded) (\(production)), Demand=\(demand)")
 
             // CRITICAL TEST: Production must meet or exceed demand within tolerance
             #expect(production >= demand - 1e-6,

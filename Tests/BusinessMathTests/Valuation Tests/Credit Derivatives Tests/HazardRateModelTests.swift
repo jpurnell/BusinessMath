@@ -189,19 +189,21 @@ struct HazardRateModelTests {
         #expect(defaultTime > 0)
     }
 
-    @Test("Cox process default times vary with different seeds")
+    @Test("Cox process is deterministic with same seeds and varies with different seeds")
     func coxProcessVariability() {
         let cox = CoxProcess(
             meanHazardRate: 0.02,
             volatility: 0.30
         )
 
-        let defaultTime1 = cox.simulateDefaultTime(seeds: [0.1, 0.2, 0.3])
-        let defaultTime2 = cox.simulateDefaultTime(seeds: [0.8, 0.9, 0.95])
+        // Determinism: same seeds produce same result
+        let time1a = cox.simulateDefaultTime(seeds: [0.1, 0.2, 0.3])
+        let time1b = cox.simulateDefaultTime(seeds: [0.1, 0.2, 0.3])
+        #expect(time1a == time1b, "Same seeds should produce identical results")
 
-        // Different seeds should generally produce different default times
-        // (Not guaranteed to be different, but very likely)
-        #expect(defaultTime1 != defaultTime2 || defaultTime1 == defaultTime2)  // Always passes but documents expectation
+        // Sensitivity: different seeds produce different results
+        let time2 = cox.simulateDefaultTime(seeds: [0.8, 0.9, 0.95])
+        #expect(time1a != time2, "Different seeds should produce different results")
     }
 
     @Test("Cox process higher volatility increases spread of outcomes")

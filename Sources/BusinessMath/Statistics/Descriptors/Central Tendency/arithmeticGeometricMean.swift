@@ -29,13 +29,30 @@ import Numerics
 ///   // result should be the arithmetic-geometric mean of the dataset `values`
 
 public func arithmeticGeometricMean<T: Real>(_ x: [T], _ tolerance: Int = 10000) -> T {
+    // Empty array returns NaN
+    guard !x.isEmpty else {
+        return T.nan
+    }
+
+    // NaN propagates - if any value is NaN, result is NaN
+    if x.contains(where: { $0.isNaN }) {
+        return T.nan
+    }
+
+    // Infinity propagates - if any value is infinite, result is infinite
+    if x.contains(where: { $0.isInfinite }) {
+        return T.infinity
+    }
+
     var tempX = mean(x)
     var tempY = geometricMean(x)
+
     while abs(tempX - tempY) > (T(1) / T(tolerance)) {
         let newTempX = mean([tempX, tempY])
         tempY = geometricMean([tempX, tempY])
         tempX = newTempX
     }
+
     return tempX
 }
 

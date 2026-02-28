@@ -70,10 +70,3 @@ public final class ProgressCollector<T: Sendable>: @unchecked Sendable {
         items.removeAll()
     }
 }
-
-extension Trait where Self == ConditionTrait {
-	static var localOnly: Self {
-		.enabled(if: ProcessInfo.processInfo.environment["CI"] == nil || ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != "true")
-		
-	}
-}

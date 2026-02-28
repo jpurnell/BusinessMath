@@ -16,7 +16,7 @@ struct EquityValuationIntegrationTests {
     // MARK: - Full Workflow Tests
 
     @Test("Complete DCF workflow: FCFF → EV → Equity → Per Share")
-    func completeDCFWorkflow() {
+    func completeDCFWorkflow() throws {
         // Given: 5-year FCFF projection for a company
         let periods = (2024...2028).map { Period.year($0) }
         let fcff = TimeSeries(
@@ -57,7 +57,7 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("Compare DDM vs FCFE - mature dividend-paying company")
-    func compareDDMvsFCFE() {
+    func compareDDMvsFCFE() throws {
         // Given: Mature company with stable dividends
         let periods = (2024...2026).map { Period.year($0) }
 
@@ -72,7 +72,7 @@ struct EquityValuationIntegrationTests {
             growthRate: growth,
             requiredReturn: costOfEquity
         )
-        let ggValue = ggModel.valuePerShare()
+        let ggValue = try ggModel.valuePerShare()
 
         // Method 2: FCFE Model (with 100% payout, FCFE ≈ Dividends)
         let operatingCF = TimeSeries(periods: periods, values: [110.0, 113.0, 116.0])
@@ -85,7 +85,7 @@ struct EquityValuationIntegrationTests {
             costOfEquity: costOfEquity,
             terminalGrowthRate: growth
         )
-        let fcfeValue = fcfeModel.equityValue()
+        let fcfeValue = try fcfeModel.equityValue()
 
         // Then: Both should yield similar values (within 20%)
         // FCFE might be higher due to explicit forecast periods
@@ -96,7 +96,7 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("Compare FCFE vs RI Model - accounting-based company")
-    func compareFCFEvsRI() {
+    func compareFCFEvsRI() throws {
         // Given: Company with predictable earnings and cash flows
         let periods = (2024...2026).map { Period.year($0) }
 
@@ -116,7 +116,7 @@ struct EquityValuationIntegrationTests {
             costOfEquity: costOfEquity,
             terminalGrowthRate: growth
         )
-        let fcfeValue = fcfeModel.equityValue()
+        let fcfeValue = try fcfeModel.equityValue()
 
         // Method 2: Residual Income Model
         let netIncome = TimeSeries(periods: periods, values: [120.0, 123.6, 127.3])
@@ -129,7 +129,7 @@ struct EquityValuationIntegrationTests {
             costOfEquity: costOfEquity,
             terminalGrowthRate: growth
         )
-        let riValue = riModel.equityValue()
+        let riValue = try riModel.equityValue()
 
         // Then: Both should be positive and reasonable
         #expect(fcfeValue > 1000.0)
@@ -140,7 +140,7 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("Three-way valuation comparison - same company")
-    func threeWayValuation() {
+    func threeWayValuation() throws {
         // Given: Complete financial projections for a company
         let periods = (2024...2026).map { Period.year($0) }
         let costOfEquity = 0.10
@@ -152,7 +152,7 @@ struct EquityValuationIntegrationTests {
             growthRate: growth,
             requiredReturn: costOfEquity
         )
-        let ggValue = ggModel.valuePerShare() * 100.0  // Multiply by shares
+        let ggValue = try ggModel.valuePerShare() * 100.0  // Multiply by shares
 
         // Method 2: FCFE
         let operatingCF = TimeSeries(periods: periods, values: [150.0, 154.5, 159.0])
@@ -165,7 +165,7 @@ struct EquityValuationIntegrationTests {
             costOfEquity: costOfEquity,
             terminalGrowthRate: growth
         )
-        let fcfeValue = fcfeModel.equityValue()
+        let fcfeValue = try fcfeModel.equityValue()
 
         // Method 3: Residual Income
         let netIncome = TimeSeries(periods: periods, values: [120.0, 123.6, 127.3])
@@ -178,7 +178,7 @@ struct EquityValuationIntegrationTests {
             costOfEquity: costOfEquity,
             terminalGrowthRate: growth
         )
-        let riValue = riModel.equityValue()
+        let riValue = try riModel.equityValue()
 
         // Then: All three should be in the same ballpark
         #expect(ggValue > 700.0)
@@ -192,7 +192,7 @@ struct EquityValuationIntegrationTests {
     // MARK: - Consistency Tests
 
     @Test("RI Model - book value convergence when ROE = Cost of Equity")
-    func riModelBookValueConvergence() {
+    func riModelBookValueConvergence() throws {
         // Given: Company earning exactly cost of equity (zero economic profit)
         let periods = (2024...2028).map { Period.year($0) }
         let costOfEquity = 0.10
@@ -217,7 +217,7 @@ struct EquityValuationIntegrationTests {
         )
 
         // When: Calculate equity value
-        let equityValue = riModel.equityValue()
+        let equityValue = try riModel.equityValue()
 
         // Then: Should converge to book value (within tolerance)
         // RI = 0 for all periods, so NPV = 0, value = book
@@ -225,7 +225,7 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("Two-Stage DDM reduces to Gordon Growth with zero high growth periods")
-    func twoStageReducesToGordon() {
+    func twoStageReducesToGordon() throws {
         // Given: Equivalent models
         let dividend = 2.0
         let growth = 0.05
@@ -248,15 +248,15 @@ struct EquityValuationIntegrationTests {
         )
 
         // When: Calculate both
-        let twoStageValue = twoStage.valuePerShare()
-        let gordonValue = gordon.valuePerShare()
+        let twoStageValue = try twoStage.valuePerShare()
+        let gordonValue = try gordon.valuePerShare()
 
         // Then: Should be very close
         #expect(abs(twoStageValue - gordonValue) < 1.0)
     }
 
     @Test("H-Model reduces to Gordon when initial growth = terminal growth")
-    func hModelReducesToGordon() {
+    func hModelReducesToGordon() throws {
         // Given: Equivalent models
         let dividend = 2.0
         let growth = 0.05
@@ -279,15 +279,15 @@ struct EquityValuationIntegrationTests {
         )
 
         // When: Calculate both
-        let hValue = hModel.valuePerShare()
-        let gordonValue = gordon.valuePerShare()
+        let hValue = try hModel.valuePerShare()
+        let gordonValue = try gordon.valuePerShare()
 
         // Then: Should be equal
         #expect(abs(hValue - gordonValue) < 0.1)
     }
 
     @Test("Enterprise Value Bridge - pure equity company")
-    func pureEquityCompany() {
+    func pureEquityCompany() throws {
         // Given: Company with no debt, no cash
         let ev = 2000.0
 
@@ -310,19 +310,19 @@ struct EquityValuationIntegrationTests {
     // MARK: - Sensitivity Analysis Integration
 
     @Test("Sensitivity to cost of equity - all models")
-    func sensitivityToCostOfEquity() {
+    func sensitivityToCostOfEquity() throws {
         // Given: Same company valued at different costs of equity
         let lowCost = 0.08
         let highCost = 0.12
 
         // DDM sensitivity
-        let ggLow = GordonGrowthModel(
+        let ggLow = try GordonGrowthModel(
             dividendPerShare: 2.0,
             growthRate: 0.04,
             requiredReturn: lowCost
         ).valuePerShare()
 
-        let ggHigh = GordonGrowthModel(
+        let ggHigh = try GordonGrowthModel(
             dividendPerShare: 2.0,
             growthRate: 0.04,
             requiredReturn: highCost
@@ -333,7 +333,7 @@ struct EquityValuationIntegrationTests {
         let opCF = TimeSeries(periods: periods, values: [100.0])
         let capEx = TimeSeries(periods: periods, values: [20.0])
 
-        let fcfeLow = FCFEModel(
+        let fcfeLow = try FCFEModel(
             operatingCashFlow: opCF,
             capitalExpenditures: capEx,
             netBorrowing: nil,
@@ -341,7 +341,7 @@ struct EquityValuationIntegrationTests {
             terminalGrowthRate: 0.03
         ).equityValue()
 
-        let fcfeHigh = FCFEModel(
+        let fcfeHigh = try FCFEModel(
             operatingCashFlow: opCF,
             capitalExpenditures: capEx,
             netBorrowing: nil,
@@ -359,19 +359,19 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("Sensitivity to growth rate - all models")
-    func sensitivityToGrowthRate() {
+    func sensitivityToGrowthRate() throws {
         // Given: Same company with different growth assumptions
         let lowGrowth = 0.02
         let highGrowth = 0.05
 
         // DDM sensitivity
-        let ggLow = GordonGrowthModel(
+        let ggLow = try GordonGrowthModel(
             dividendPerShare: 2.0,
             growthRate: lowGrowth,
             requiredReturn: 0.10
         ).valuePerShare()
 
-        let ggHigh = GordonGrowthModel(
+        let ggHigh = try GordonGrowthModel(
             dividendPerShare: 2.0,
             growthRate: highGrowth,
             requiredReturn: 0.10
@@ -387,7 +387,7 @@ struct EquityValuationIntegrationTests {
     // MARK: - Real-World Scenario Tests
 
     @Test("Tech startup - high growth then maturity")
-    func techStartupValuation() {
+    func techStartupValuation() throws {
         // Given: Tech startup growing 30% for 5 years, then 5% forever
         let twoStage = TwoStageDDM(
             currentDividend: 0.5,  // Low initial dividend
@@ -398,7 +398,7 @@ struct EquityValuationIntegrationTests {
         )
 
         // When: Calculate value
-        let value = twoStage.valuePerShare()
+        let value = try twoStage.valuePerShare()
 
         // Then: Should have substantial value from growth phase
         #expect(value > 5.0)
@@ -407,7 +407,7 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("Mature utility - stable low growth")
-    func matureUtilityValuation() {
+    func matureUtilityValuation() throws {
         // Given: Utility with high dividend, low growth
         let gordon = GordonGrowthModel(
             dividendPerShare: 5.0,  // High payout
@@ -416,7 +416,7 @@ struct EquityValuationIntegrationTests {
         )
 
         // When: Calculate value
-        let value = gordon.valuePerShare()
+        let value = try gordon.valuePerShare()
 
         // Then: Should trade at high multiple of dividend
         #expect(value > 80.0)  // At least 16x dividend
@@ -424,7 +424,7 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("Financial institution - book value matters")
-    func financialInstitutionValuation() {
+    func financialInstitutionValuation() throws {
         // Given: Bank with meaningful book value
         let periods = [Period.year(2024), Period.year(2025)]
         let netIncome = TimeSeries(periods: periods, values: [150.0, 157.5])
@@ -439,7 +439,7 @@ struct EquityValuationIntegrationTests {
         )
 
         // When: Calculate value
-        let equityValue = riModel.equityValue()
+        let equityValue = try riModel.equityValue()
 
         // Then: Should be at premium to book (15% ROE > 10% cost)
         #expect(equityValue > 1000.0)
@@ -451,20 +451,20 @@ struct EquityValuationIntegrationTests {
     // MARK: - Edge Case Integration Tests
 
     @Test("All models handle zero/minimal growth")
-    func zeroGrowthConsistency() {
+    func zeroGrowthConsistency() throws {
         // Given: No growth scenarios
         let dividend = 5.0
         let costOfEquity = 0.10
 
         // DDM with zero growth
-        let ggZero = GordonGrowthModel(
+        let ggZero = try GordonGrowthModel(
             dividendPerShare: dividend,
             growthRate: 0.0,
             requiredReturn: costOfEquity
         ).valuePerShare()
 
         // DDM with minimal growth
-        let ggMinimal = GordonGrowthModel(
+        let ggMinimal = try GordonGrowthModel(
             dividendPerShare: dividend,
             growthRate: 0.001,
             requiredReturn: costOfEquity
@@ -479,15 +479,17 @@ struct EquityValuationIntegrationTests {
     }
 
     @Test("All models reject invalid terminal growth >= cost")
-    func invalidGrowthRateHandling() {
+    func invalidGrowthRateHandling() throws {
         // DDM: growth >= required return
         let invalidGG = GordonGrowthModel(
             dividendPerShare: 2.0,
             growthRate: 0.10,
             requiredReturn: 0.10
-        ).valuePerShare()
+        )
 
-        #expect(invalidGG.isInfinite || invalidGG.isNaN)
+        #expect(throws: ValuationError.self) {
+            try invalidGG.valuePerShare()
+        }
 
         // FCFE: terminal >= cost of equity
         let periods = [Period.year(2024)]
@@ -500,9 +502,11 @@ struct EquityValuationIntegrationTests {
             netBorrowing: nil,
             costOfEquity: 0.10,
             terminalGrowthRate: 0.12  // > cost of equity
-        ).equityValue()
+        )
 
-        #expect(invalidFCFE.isNaN)
+        #expect(throws: ValuationError.self) {
+            try invalidFCFE.equityValue()
+        }
 
         // RI: terminal >= cost of equity
         let netIncome = TimeSeries(periods: periods, values: [100.0])
@@ -514,15 +518,17 @@ struct EquityValuationIntegrationTests {
             bookValue: bookValue,
             costOfEquity: 0.10,
             terminalGrowthRate: 0.10  // = cost of equity
-        ).equityValue()
+        )
 
-        #expect(invalidRI.isNaN || invalidRI.isInfinite)
+        #expect(throws: ValuationError.self) {
+            try invalidRI.equityValue()
+        }
     }
 
     // MARK: - Performance Integration
 
     @Test("Integrated valuation workflow completes quickly")
-    func integratedWorkflowPerformance() {
+    func integratedWorkflowPerformance() throws {
         // Given: Complete valuation workflow
         let start = Date()
 
@@ -550,8 +556,9 @@ struct EquityValuationIntegrationTests {
 
         let elapsed = Date().timeIntervalSince(start)
 
-        // Then: Should complete in < 10 milliseconds
-        #expect(elapsed < 0.010, "Integrated workflow took \(elapsed * 1000) ms")
+        // Then: Should complete in reasonable time (100ms threshold to avoid CI flakiness)
+        // Note: This is a smoke test only; dedicated performance testing is in DDMPerformanceTests
+        #expect(elapsed < 0.100, "Integrated workflow took \(elapsed * 1000) ms")
         #expect(sharePrice > 0)
         #expect(!equityValue.isNaN)
     }

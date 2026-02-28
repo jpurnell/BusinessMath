@@ -251,23 +251,15 @@ struct TrendModelTests {
 
 	// MARK: - Edge Cases
 
-	@Test("Fit with single data point")
-	func fitSinglePoint() throws {
+	@Test("Fit with single data point throws insufficientData")
+	func fitSinglePoint() {
 		let data = createTimeSeries(values: [100.0])
 
 		var model = LinearTrend<Double>()
 
-		// Should either throw or handle gracefully
-		do {
+		// Linear trend requires at least 2 points to calculate slope
+		#expect(throws: TrendModelError.self) {
 			try model.fit(to: data)
-			// If it doesn't throw, projections should be constant
-			let projection = try model.project(periods: 3)!
-			for value in projection.valuesArray {
-				#expect(abs(value - 100.0) < tolerance)
-			}
-		} catch {
-			// Expected to throw with insufficient data
-			#expect(true)
 		}
 	}
 
@@ -300,22 +292,16 @@ struct TrendModelTests {
 		}
 	}
 
-	@Test("ExponentialTrend with zero or negative values should handle gracefully")
-	func exponentialTrendZeroValues() throws {
-		// Exponential trend requires positive values (uses log)
+	@Test("ExponentialTrend with zero values throws error")
+	func exponentialTrendZeroValues() {
+		// Exponential trend requires positive values (uses log of values)
 		let data = createTimeSeries(values: [0.0, 1.0, 2.0, 3.0])
 
 		var model = ExponentialTrend<Double>()
 
-		// Should either throw or handle the zero value
-		do {
+		// Should throw because log(0) is undefined
+		#expect(throws: (any Error).self) {
 			try model.fit(to: data)
-			// If it succeeds, projections should be reasonable
-			let projection = try model.project(periods: 1)!
-			#expect(!projection.valuesArray[0].isNaN)
-		} catch {
-			// Expected to fail with zero/negative values
-			#expect(true)
 		}
 	}
 

@@ -35,10 +35,14 @@ import RealModule
             )
         }
         // When/Then: Should calculate profit in under 5ms
+        let start = Date()
+        let profit = model.calculateProfit()
+        let elapsed = Date().timeIntervalSince(start)
 
         // Verify correctness
-        let profit = model.calculateProfit()
         #expect(profit > 0)
+        // Verify performance
+        #expect(elapsed < 0.005, "Should complete in < 5ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_RepeatedCalculations") func LPerformance_RepeatedCalculations() {
         // Given: A model that will be calculated many times
@@ -53,12 +57,14 @@ import RealModule
             }
         }
 
-        // When/Then: 1000 calculations should complete quickly
+        // When/Then: 1000 calculations should complete in < 100ms
+        let start = Date()
         for _ in 0..<1000 {
             let profit = model.calculateProfit()
             #expect(profit != 0)
         }
-        // Test passes if we complete 1000 calculations without timeout
+        let elapsed = Date().timeIntervalSince(start)
+        #expect(elapsed < 0.1, "Should complete 1000 calculations in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
 
     @Test("Performance_ModelInspectionOnLargeModel") func LPerformance_ModelInspectionOnLargeModel() {
@@ -70,11 +76,15 @@ import RealModule
                 RevenueComponent(name: "Revenue \(i)", amount: Double(i * 1000))
             )
         }
-        // When/Then: Inspection should be fast
+        // When/Then: Inspection should complete in < 10ms
         let inspector = ModelInspector(model: model)
+        let start = Date()
         let summary = inspector.generateSummary()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(!summary.isEmpty)
         #expect(summary.contains("Revenue"))
+        #expect(elapsed < 0.01, "Should complete in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Export Performance
 
@@ -89,10 +99,13 @@ import RealModule
         }
         let exporter = DataExporter(model: model)
 
-        // When/Then: CSV export should be efficient
-
+        // When/Then: CSV export should complete in < 50ms
+        let start = Date()
         let csv = exporter.exportToCSV()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(csv.count > 1000)
+        #expect(elapsed < 0.05, "Should complete in < 50ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_JSONExportLargeModel") func LPerformance_JSONExportLargeModel() {
         // Given: A large model
@@ -105,10 +118,14 @@ import RealModule
         }
         let exporter = DataExporter(model: model)
 
-        // When/Then: JSON export should be efficient
+        // When/Then: JSON export should complete in < 50ms
+        let start = Date()
         let json = exporter.exportToJSON()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(json.count > 1000)
         #expect(json.contains("revenue"))
+        #expect(elapsed < 0.05, "Should complete in < 50ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_TimeSeriesExport") func LPerformance_TimeSeriesExport() {
         // Given: Large time series (1000 years of data)
@@ -118,10 +135,13 @@ import RealModule
 
         let exporter = TimeSeriesExporter<Double>(series: series)
 
-        // When/Then: Should export efficiently
-
+        // When/Then: Should export in < 50ms
+        let start = Date()
         let csv = exporter.exportToCSV()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(csv.count > 10000)
+        #expect(elapsed < 0.05, "Should complete in < 50ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Validation Performance
 
@@ -131,10 +151,13 @@ import RealModule
         let values = (0..<101).map { Double($0 * 1000) }
         let series = TimeSeries<Double>(periods: periods, values: values)
 
-        // When/Then: Validation should be fast
-
+        // When/Then: Validation should complete in < 5ms
+        let start = Date()
         let validation = series.validate()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(validation.isValid)
+        #expect(elapsed < 0.005, "Should complete in < 5ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_ModelValidation") func LPerformance_ModelValidation() {
         // Given: Complex model
@@ -150,9 +173,13 @@ import RealModule
         }
         let inspector = ModelInspector(model: model)
 
-        // When/Then: Validation should be efficient
+        // When/Then: Validation should complete in < 10ms
+        let start = Date()
         let summary = inspector.generateSummary()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(!summary.isEmpty)
+        #expect(elapsed < 0.01, "Should complete in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Calculation Trace Performance
 
@@ -171,17 +198,21 @@ import RealModule
             )
         }
         // When/Then: Tracing should not significantly impact performance
+        let start = Date()
         let trace = CalculationTrace(model: model)
         let revenue = trace.calculateRevenue()
         _ = trace.calculateCosts(revenue: revenue)
+        let elapsed = Date().timeIntervalSince(start)
 
         #expect(trace.steps.count > 0)
+        #expect(elapsed < 0.01, "Should complete in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Memory Efficiency
 
     @Test("Performance_MemoryEfficiency") func LPerformance_MemoryEfficiency() {
         // This test verifies we don't leak memory or hold unnecessary references
 
+        let start = Date()
         #if canImport(Darwin)
         autoreleasepool {
             // Create many models
@@ -213,11 +244,14 @@ import RealModule
             }
         }
         #endif
+        let elapsed = Date().timeIntervalSince(start)
 
         // If we made it here without running out of memory, we're good
-        #expect(true)
+        #expect(elapsed < 1.0, "Should complete 1000 model creations in < 1s (got \((elapsed * 1000).number(2))ms)")
     }
-    @Test("Performance_TimeSeriesMemoryEfficiency") func LPerformance_TimeSeriesMemoryEfficiency() {
+    @Test("Performance_TimeSeriesMemoryEfficiency")
+	func LPerformance_TimeSeriesMemoryEfficiency() {
+        let start = Date()
         #if canImport(Darwin)
         autoreleasepool {
             // Create many time series
@@ -239,8 +273,9 @@ import RealModule
             }
         }
         #endif
+        let elapsed = Date().timeIntervalSince(start)
 
-        #expect(true)
+        #expect(elapsed < 2.0, "Should complete 100 time series creations in < 2s (got \(elapsed.number(3))s)")
     }
     // MARK: - Batch Operations
 
@@ -259,11 +294,15 @@ import RealModule
             models.append(model)
         }
         // When/Then: Batch processing should be efficient
+        let start = Date()
         var totalProfit = 0.0
         for model in models {
             totalProfit += model.calculateProfit()
         }
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(totalProfit != 0)
+        #expect(elapsed < 0.01, "Should complete 100 calculations in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Summary Generation Performance
 
@@ -287,9 +326,12 @@ import RealModule
         let inspector = ModelInspector(model: model)
 
         // When/Then: Summary generation should be fast
-
+        let start = Date()
         let summary = inspector.generateSummary()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(!summary.isEmpty)
+        #expect(elapsed < 0.005, "Should complete in < 5ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Dependency Graph Performance
 
@@ -311,9 +353,12 @@ import RealModule
         let inspector = ModelInspector(model: model)
 
         // When/Then: Graph construction should be efficient
-
+        let start = Date()
         let graph = inspector.buildDependencyGraph()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(graph.count > 0)
+        #expect(elapsed < 0.01, "Should complete in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Investment Calculation Performance
 
@@ -323,13 +368,18 @@ import RealModule
         for i in 1...120 {  // 10 years monthly
             cashFlows.append(CashFlow(period: i, amount: Double(i * 1000)))
         }
+        let start = Date()
         let investment = Investment {
             InitialCost(500_000)
             CashFlows { cashFlows }
             DiscountRate(0.10)
         }
         // When/Then: NPV and IRR calculations should be efficient
-        #expect(!investment.npv.isNaN)
+        let npv = investment.npv
+        let elapsed = Date().timeIntervalSince(start)
+
+        #expect(!npv.isNaN)
+        #expect(elapsed < 0.01, "Should complete in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Export Format Performance
 
@@ -346,9 +396,12 @@ import RealModule
         _ = trace.calculateRevenue()
 
         // When/Then: Formatting should be efficient
-
+        let start = Date()
         let formatted = trace.formatTrace()
+        let elapsed = Date().timeIntervalSince(start)
+
         #expect(formatted.count > 100)
+        #expect(elapsed < 0.01, "Should complete in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
 }
 

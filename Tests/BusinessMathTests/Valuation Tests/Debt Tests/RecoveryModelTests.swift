@@ -133,7 +133,7 @@ struct RecoveryModelTests {
         let lgd = model.lossGivenDefault(recoveryRate: 0.0)
 
         // No recovery → 100% loss
-        #expect(lgd == 1.0)
+        #expect(abs(lgd - 1.0) < 0.0001, "LGD should be 100% with zero recovery")
     }
 
     @Test("LGD for full recovery")
@@ -143,7 +143,7 @@ struct RecoveryModelTests {
         let lgd = model.lossGivenDefault(recoveryRate: 1.0)
 
         // Full recovery → 0% loss
-        #expect(lgd == 0.0)
+        #expect(abs(lgd - 0.0) < 0.0001, "LGD should be 0% with full recovery")
     }
 
     @Test("Expected loss calculation")
@@ -246,7 +246,7 @@ struct RecoveryModelTests {
         )
 
         // No default probability → No expected loss
-        #expect(el == 0.0)
+        #expect(abs(el - 0.0) < 0.0001, "Expected loss should be zero with zero default probability")
     }
 
     @Test("Expected loss is zero with full recovery")
@@ -260,7 +260,7 @@ struct RecoveryModelTests {
         )
 
         // Full recovery → No loss even if default occurs
-        #expect(el == 0.0)
+        #expect(abs(el - 0.0) < 0.0001, "Expected loss should be zero with full recovery")
     }
 
     @Test("Recovery model with Float type")

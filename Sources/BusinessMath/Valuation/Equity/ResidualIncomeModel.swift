@@ -282,10 +282,10 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// - n = Number of projection periods
     ///
     /// - Returns: Total equity value
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if `terminalGrowthRate >= costOfEquity`
     ///
     /// ## Important Notes
     ///
-    /// - Returns `NaN` if `terminalGrowthRate >= costOfEquity` (invalid model)
     /// - Less sensitive to terminal value than DCF models (due to book value anchor)
     /// - Value > Book means positive NPV projects expected
     /// - Value < Book means value destruction expected
@@ -302,7 +302,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let equityValue = model.equityValue()
+    /// let equityValue = try model.equityValue()
     /// let bookValue = model.currentBookValue
     /// let mva = equityValue - bookValue
     ///
@@ -313,7 +313,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ```
     ///
     /// - Complexity: O(n) where n is the number of projection periods
-    public func equityValue() -> T {
+    public func equityValue() throws -> T {
         let riTimeSeries = residualIncome()
         let riArray = riTimeSeries.valuesArray
 
@@ -338,7 +338,10 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
 
         // Guard against invalid terminal growth rate
         guard denominator > T(0) else {
-            return T.nan
+            throw ValuationError.invalidModelAssumptions(
+                "Terminal growth rate (\(terminalGrowthRate)) must be less than cost of equity (\(costOfEquity)). " +
+                "Residual income model requires g < r for terminal value calculation."
+            )
         }
 
         let terminalValue = terminalRI / denominator
@@ -359,6 +362,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// - Parameter sharesOutstanding: Number of shares outstanding (in millions if values are in millions)
     ///
     /// - Returns: Intrinsic value per share
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if terminal growth rate >= cost of equity
     ///
     /// ## Example
     ///
@@ -373,7 +377,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// Compare intrinsic value per share to book value per share:
     /// ```swift
     /// let bookValuePerShare = model.currentBookValue / sharesOutstanding
-    /// let intrinsicValuePerShare = model.valuePerShare(sharesOutstanding: sharesOutstanding)
+    /// let intrinsicValuePerShare = try model.valuePerShare(sharesOutstanding: sharesOutstanding)
     /// let priceToBook = intrinsicValuePerShare / bookValuePerShare
     ///
     /// // P/B > 1.0: Market expects value creation
@@ -388,8 +392,8 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// - Compare to book value per share to assess valuation
     ///
     /// - Complexity: O(1) after equity value calculation
-    public func valuePerShare(sharesOutstanding: T) -> T {
-        let totalEquityValue = equityValue()
+    public func valuePerShare(sharesOutstanding: T) throws -> T {
+        let totalEquityValue = try equityValue()
         return totalEquityValue / sharesOutstanding
     }
 }

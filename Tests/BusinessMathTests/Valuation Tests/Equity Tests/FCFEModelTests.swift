@@ -120,7 +120,7 @@ struct FCFEModelTests {
         )
 
         // When: Calculate equity value
-        let equityValue = model.equityValue()
+        let equityValue = try model.equityValue()
 
         // Then: Terminal value = FCFE * (1 + g) / (r - g)
         // = 70 * 1.03 / (0.10 - 0.03) = 72.1 / 0.07 = 1030
@@ -158,7 +158,7 @@ struct FCFEModelTests {
         )
 
         // When: Calculate equity value
-        let equityValue = model.equityValue()
+        let equityValue = try model.equityValue()
 
         // Then: Sum of PV of 3-year FCFE + PV of terminal value
         // FCFE: [70, 78, 87]
@@ -189,7 +189,7 @@ struct FCFEModelTests {
         )
 
         // When: Calculate value per share with 100M shares
-        let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
+        let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
 
         // Then: Share price = Equity Value / Shares
         // Equity value ≈ 1000, so price ≈ 10.00
@@ -223,8 +223,8 @@ struct FCFEModelTests {
         )
 
         // When: Calculate values
-        let valueLowCOE = modelLowCOE.equityValue()
-        let valueHighCOE = modelHighCOE.equityValue()
+        let valueLowCOE = try modelLowCOE.equityValue()
+        let valueHighCOE = try modelHighCOE.equityValue()
 
         // Then: Lower cost of equity → Higher value
         #expect(valueLowCOE > valueHighCOE)
@@ -257,8 +257,8 @@ struct FCFEModelTests {
         )
 
         // When: Calculate values
-        let valueLowGrowth = modelLowGrowth.equityValue()
-        let valueHighGrowth = modelHighGrowth.equityValue()
+        let valueLowGrowth = try modelLowGrowth.equityValue()
+        let valueHighGrowth = try modelHighGrowth.equityValue()
 
         // Then: Higher growth → Higher value
         #expect(valueHighGrowth > valueLowGrowth)
@@ -306,7 +306,7 @@ struct FCFEModelTests {
         )
 
         // When: Calculate equity value
-        let equityValue = model.equityValue()
+        let equityValue = try model.equityValue()
 
         // Then: Terminal value = FCFE / r = 70 / 0.10 = 700
         // Discounted: 700 / 1.10 = 636.36
@@ -330,11 +330,10 @@ struct FCFEModelTests {
             terminalGrowthRate: 0.10  // g = r (invalid)
         )
 
-        // When: Calculate equity value
-        let equityValue = model.equityValue()
-
-        // Then: Should return NaN or infinity
-        #expect(equityValue.isNaN || equityValue.isInfinite)
+        // When/Then: Should throw ValuationError for invalid model assumptions
+        #expect(throws: ValuationError.self) {
+            try model.equityValue()
+        }
     }
 
     // MARK: - Quarterly Periods Test
@@ -394,7 +393,7 @@ struct FCFEModelTests {
         )
 
         // When: Calculate equity value
-        let equityValue = model.equityValue()
+        let equityValue = try model.equityValue()
 
         // Then: Should work with Float type
         #expect(equityValue > 900.0)
@@ -427,8 +426,8 @@ struct FCFEModelTests {
         )
 
         // When: Calculate both values
-        let fcfeValue = fcfeModel.equityValue()
-        let gordonValue = gordonModel.valuePerShare()
+        let fcfeValue = try fcfeModel.equityValue()
+        let gordonValue = try gordonModel.valuePerShare()
 
         // Then: Should be approximately equal (within rounding)
         #expect(abs(fcfeValue - gordonValue) < 50.0)
@@ -461,7 +460,7 @@ struct FCFEModelTests {
         )
 
         // When: Calculate valuation
-        let equityValue = model.equityValue()
+        let equityValue = try model.equityValue()
         let fcfe = model.fcfe()
 
         // Then: Should generate reasonable valuation
@@ -470,7 +469,7 @@ struct FCFEModelTests {
         #expect(fcfe.valuesArray.allSatisfy { $0 > 0 })  // All positive FCFE
 
         // Value per share with 100M shares
-        let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
+        let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
         #expect(sharePrice > 50.0)  // Reasonable tech stock price
     }
 }

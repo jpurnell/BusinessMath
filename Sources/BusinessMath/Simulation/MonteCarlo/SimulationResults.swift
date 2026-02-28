@@ -145,12 +145,10 @@ public struct SimulationResults: Sendable {
 	/// print("Risk of loss: \(probLoss * 100)%")
 	/// ```
 	public func probabilityBelow(_ threshold: Double) -> Double {
-		// Note: We want strictly less than (<), but empiricalCDF uses ≤
-		// So we need to subtract the exact matches
-		let cdfValue = empiricalCDF(threshold, data: values)
-		let exactMatches = values.filter { $0 == threshold }.count
-		let proportionExact = Double(exactMatches) / Double(values.count)
-		return cdfValue - proportionExact
+		guard !values.isEmpty else { return 0.0 }
+		// Direct count avoids floating-point error from subtraction
+		let countBelow = values.filter { $0 < threshold }.count
+		return Double(countBelow) / Double(values.count)
 	}
 
 	/// Generate a formatted risk analysis summary with probability calculations at key thresholds.

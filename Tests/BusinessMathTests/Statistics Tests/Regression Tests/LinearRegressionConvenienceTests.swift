@@ -151,20 +151,32 @@ struct LinearRegressionConvenienceTests {
 
     @Test("Polynomial regression with noise")
     func polynomialWithNoise() throws {
+        // Seeded RNG for deterministic noise
+        struct SeededRNG {
+            var state: UInt64
+            mutating func next() -> Double {
+                state = state &* 6364136223846793005 &+ 1
+                let upper = Double((state >> 32) & 0xFFFFFFFF)
+                return upper / Double(UInt32.max)
+            }
+        }
+
+        var rng = SeededRNG(state: 42)
         let x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
         var y: [Double] = []
 
-        // y = x² + noise
+        // y = x² + noise (deterministic)
         for xi in x {
-            y.append(xi * xi + Double.random(in: -0.5...0.5))
+            let noise = (rng.next() - 0.5) // Map [0,1] to [-0.5, 0.5]
+            y.append(xi * xi + noise)
         }
 
         let result = try polynomialRegression(x: x, y: y, degree: 2)
 
         #expect(result.coefficients.count == 2)
-        #expect(result.rSquared > 0.95)
-        // Coefficient for x² should be close to 1
-        #expect(abs(result.coefficients[1] - 1.0) < 0.2)
+        #expect(result.rSquared > 0.99)
+        // Coefficient for x² should be close to 1 (tightened tolerance)
+        #expect(abs(result.coefficients[1] - 1.0) < 0.1)
     }
 
     @Test("Polynomial regression prediction")

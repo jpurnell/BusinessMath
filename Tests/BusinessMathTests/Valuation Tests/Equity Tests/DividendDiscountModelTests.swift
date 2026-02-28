@@ -15,7 +15,7 @@ struct DividendDiscountModelTests {
     // MARK: - Gordon Growth Model Tests
 
     @Test("Gordon Growth Model - basic calculation")
-    func gordonGrowthBasic() {
+    func gordonGrowthBasic() throws {
         // Given: Stock with $2 dividend, 5% growth, 10% required return
         let model = GordonGrowthModel(
             dividendPerShare: 2.0,
@@ -24,14 +24,14 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate intrinsic value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Value = D₁ / (r - g) = 2 / (0.10 - 0.05) = $40
         #expect(abs(value - 40.0) < 0.01)
     }
 
     @Test("Gordon Growth Model - high dividend yield")
-    func gordonGrowthHighDividend() {
+    func gordonGrowthHighDividend() throws {
         // Given: Mature utility stock with $5 dividend, 2% growth, 8% required return
         let model = GordonGrowthModel(
             dividendPerShare: 5.0,
@@ -40,14 +40,14 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Value = 5 / (0.08 - 0.02) = $83.33
         #expect(abs(value - 83.33) < 0.01)
     }
 
     @Test("Gordon Growth Model - low growth rate")
-    func gordonGrowthLowGrowth() {
+    func gordonGrowthLowGrowth() throws {
         // Given: Stable company with minimal growth
         let model = GordonGrowthModel(
             dividendPerShare: 3.0,
@@ -56,14 +56,14 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Value = 3 / (0.09 - 0.01) = $37.50
         #expect(abs(value - 37.50) < 0.01)
     }
 
     @Test("Gordon Growth Model - invalid when g >= r")
-    func gordonGrowthInvalidWhenGrowthExceedsReturn() {
+    func gordonGrowthInvalidWhenGrowthExceedsReturn() throws {
         // Given: Growth rate equal to required return (mathematically undefined)
         let model = GordonGrowthModel(
             dividendPerShare: 2.0,
@@ -71,15 +71,14 @@ struct DividendDiscountModelTests {
             requiredReturn: 0.10
         )
 
-        // When: Calculate value
-        let value = model.valuePerShare()
-
-        // Then: Should return infinity or NaN
-        #expect(value.isInfinite || value.isNaN)
+        // When/Then: Should throw ValuationError for invalid model assumptions
+        #expect(throws: ValuationError.self) {
+            try model.valuePerShare()
+        }
     }
 
     @Test("Gordon Growth Model - invalid when g > r")
-    func gordonGrowthInvalidWhenGrowthGreaterThanReturn() {
+    func gordonGrowthInvalidWhenGrowthGreaterThanReturn() throws {
         // Given: Growth rate exceeds required return (impossible to sustain)
         let model = GordonGrowthModel(
             dividendPerShare: 2.0,
@@ -87,15 +86,14 @@ struct DividendDiscountModelTests {
             requiredReturn: 0.10
         )
 
-        // When: Calculate value
-        let value = model.valuePerShare()
-
-        // Then: Should return negative or NaN (invalid model)
-        #expect(value < 0 || value.isNaN)
+        // When/Then: Should throw ValuationError for invalid model assumptions
+        #expect(throws: ValuationError.self) {
+            try model.valuePerShare()
+        }
     }
 
     @Test("Gordon Growth Model - zero growth")
-    func gordonGrowthZeroGrowth() {
+    func gordonGrowthZeroGrowth() throws {
         // Given: Perpetual dividend with no growth (perpetuity)
         let model = GordonGrowthModel(
             dividendPerShare: 4.0,
@@ -104,14 +102,14 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Value = 4 / 0.10 = $40 (simple perpetuity formula)
         #expect(abs(value - 40.0) < 0.01)
     }
 
     @Test("Gordon Growth Model - sensitivity to required return")
-    func gordonGrowthSensitivityToRequiredReturn() {
+    func gordonGrowthSensitivityToRequiredReturn() throws {
         // Given: Same dividend and growth, different required returns
         let baseModel = GordonGrowthModel(
             dividendPerShare: 2.0,
@@ -126,8 +124,8 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate values
-        let baseValue = baseModel.valuePerShare()
-        let higherReturnValue = higherReturnModel.valuePerShare()
+        let baseValue = try baseModel.valuePerShare()
+        let higherReturnValue = try higherReturnModel.valuePerShare()
 
         // Then: Higher required return should result in lower value
         #expect(higherReturnValue < baseValue)
@@ -136,7 +134,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("Gordon Growth Model - generic over Real types")
-    func gordonGrowthGenericTypes() {
+    func gordonGrowthGenericTypes() throws {
         // Given: Model using Float instead of Double
         let modelFloat = GordonGrowthModel<Float>(
             dividendPerShare: 2.0,
@@ -145,7 +143,7 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let valueFloat = modelFloat.valuePerShare()
+        let valueFloat = try modelFloat.valuePerShare()
 
         // Then: Should work with Float type
         #expect(abs(valueFloat - 40.0) < 0.01)
@@ -154,7 +152,7 @@ struct DividendDiscountModelTests {
     // MARK: - Two-Stage DDM Tests
 
     @Test("Two-Stage DDM - growth then mature phase")
-    func twoStageBasic() {
+    func twoStageBasic() throws {
         // Given: Tech company with $1 dividend, 15% growth for 5 years, then 5% stable
         let model = TwoStageDDM(
             currentDividend: 1.0,
@@ -165,7 +163,7 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate intrinsic value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Should be higher than simple Gordon Growth at 5%
         // Manual calculation:
@@ -182,7 +180,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("Two-Stage DDM - reduces to Gordon Growth with zero high growth periods")
-    func twoStageReducesToGordon() {
+    func twoStageReducesToGordon() throws {
         // Given: Two-stage with 0 high growth periods
         let twoStage = TwoStageDDM(
             currentDividend: 2.0,
@@ -200,15 +198,15 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate both values
-        let twoStageValue = twoStage.valuePerShare()
-        let gordonValue = gordon.valuePerShare()
+        let twoStageValue = try twoStage.valuePerShare()
+        let gordonValue = try gordon.valuePerShare()
 
         // Then: Should be very close
         #expect(abs(twoStageValue - gordonValue) < 0.01)
     }
 
     @Test("Two-Stage DDM - high growth company")
-    func twoStageHighGrowth() {
+    func twoStageHighGrowth() throws {
         // Given: Startup with aggressive growth, no current dividend but will start
         let model = TwoStageDDM(
             currentDividend: 0.5,  // Small initial dividend
@@ -219,14 +217,14 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Should have significant value from growth phase
         #expect(value > 20.0)  // Rough sanity check
     }
 
     @Test("Two-Stage DDM - invalid when stable g >= r")
-    func twoStageInvalidStableGrowth() {
+    func twoStageInvalidStableGrowth() throws {
         // Given: Invalid stable growth rate
         let model = TwoStageDDM(
             currentDividend: 1.0,
@@ -236,15 +234,14 @@ struct DividendDiscountModelTests {
             requiredReturn: 0.10
         )
 
-        // When: Calculate value
-        let value = model.valuePerShare()
-
-        // Then: Terminal value will be infinite/NaN
-        #expect(value.isInfinite || value.isNaN)
+        // When/Then: Should throw ValuationError for invalid stable growth rate
+        #expect(throws: ValuationError.self) {
+            try model.valuePerShare()
+        }
     }
 
     @Test("Two-Stage DDM - high growth phase value decomposition")
-    func twoStageHighGrowthPhaseValue() {
+    func twoStageHighGrowthPhaseValue() throws {
         // Given: Tech stock from blog post example
         // - Current dividend: $1.00/share
         // - High growth: 20% for 5 years
@@ -274,7 +271,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("Two-Stage DDM - terminal value decomposition")
-    func twoStageTerminalValue() {
+    func twoStageTerminalValue() throws {
         // Given: Same tech stock from blog post
         let model = TwoStageDDM(
             currentDividend: 1.00,
@@ -285,7 +282,7 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate terminal value (present value)
-        let terminalValue = model.terminalValue()
+        let terminalValue = try model.terminalValue()
 
         // Then: Should match calculated value decomposition
         // Expected: $21.18 (PV of perpetuity starting year 6)
@@ -298,7 +295,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("Two-Stage DDM - components sum to total value")
-    func twoStageComponentsSumToTotal() {
+    func twoStageComponentsSumToTotal() throws {
         // Given: Tech stock from blog post
         let model = TwoStageDDM(
             currentDividend: 1.00,
@@ -310,8 +307,8 @@ struct DividendDiscountModelTests {
 
         // When: Calculate components and total
         let highGrowthValue = model.highGrowthPhaseValue()
-        let terminalValue = model.terminalValue()
-        let totalValue = model.valuePerShare()
+        let terminalValue = try model.terminalValue()
+        let totalValue = try model.valuePerShare()
 
         // Then: Components should sum to total
         let sumOfComponents = highGrowthValue + terminalValue
@@ -323,7 +320,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("Two-Stage DDM - terminal value dominates in growth stocks")
-    func twoStageTerminalValueDominates() {
+    func twoStageTerminalValueDominates() throws {
         // Given: Tech stock from blog post
         let model = TwoStageDDM(
             currentDividend: 1.00,
@@ -335,7 +332,7 @@ struct DividendDiscountModelTests {
 
         // When: Calculate components
         let highGrowthValue = model.highGrowthPhaseValue()
-        let terminalValue = model.terminalValue()
+        let terminalValue = try model.terminalValue()
 
         // Then: Terminal value should be ~77% of total (demonstrating most value is in perpetuity)
         let totalValue = highGrowthValue + terminalValue
@@ -346,7 +343,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("Two-Stage DDM - zero high growth periods gives zero high growth value")
-    func twoStageZeroHighGrowthPeriods() {
+    func twoStageZeroHighGrowthPeriods() throws {
         // Given: Model with no high growth period
         let model = TwoStageDDM(
             currentDividend: 2.0,
@@ -363,15 +360,15 @@ struct DividendDiscountModelTests {
         #expect(abs(highGrowthValue) < 0.01)
 
         // And terminal value should equal total value
-        let terminalValue = model.terminalValue()
-        let totalValue = model.valuePerShare()
+        let terminalValue = try model.terminalValue()
+        let totalValue = try model.valuePerShare()
         #expect(abs(terminalValue - totalValue) < 0.01)
     }
 
     // MARK: - H-Model Tests
 
     @Test("H-Model - linearly declining growth")
-    func hModelBasic() {
+    func hModelBasic() throws {
         // Given: Company with growth declining from 12% to 4% over 10 years
         let model = HModel(
             currentDividend: 2.0,
@@ -382,7 +379,7 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Should be between Gordon Growth at 12% and 4%
         // Gordon at 4%: 2 * 1.04 / (0.10 - 0.04) = 34.67
@@ -396,7 +393,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("H-Model - reduces to Gordon Growth when initial = terminal")
-    func hModelReducesToGordon() {
+    func hModelReducesToGordon() throws {
         // Given: H-Model with same initial and terminal growth
         let hModel = HModel(
             currentDividend: 2.0,
@@ -414,15 +411,15 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate both values
-        let hValue = hModel.valuePerShare()
-        let gordonValue = gordon.valuePerShare()
+        let hValue = try hModel.valuePerShare()
+        let gordonValue = try gordon.valuePerShare()
 
         // Then: Should be equal
         #expect(abs(hValue - gordonValue) < 0.01)
     }
 
     @Test("H-Model - short half-life")
-    func hModelShortHalfLife() {
+    func hModelShortHalfLife() throws {
         // Given: Growth declines quickly (2 years)
         let model = HModel(
             currentDividend: 1.5,
@@ -433,7 +430,7 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Should be closer to terminal growth model
         #expect(value > 20.0)
@@ -441,7 +438,7 @@ struct DividendDiscountModelTests {
     }
 
     @Test("H-Model - generic over Real types")
-    func hModelGenericTypes() {
+    func hModelGenericTypes() throws {
         // Given: H-Model using Float
         let model = HModel<Float>(
             currentDividend: 2.0,
@@ -452,7 +449,7 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate value
-        let value = model.valuePerShare()
+        let value = try model.valuePerShare()
 
         // Then: Should work with Float
         #expect(value > 0)
@@ -462,7 +459,7 @@ struct DividendDiscountModelTests {
     // MARK: - Comparison Tests
 
     @Test("Compare all three DDM models")
-    func compareAllModels() {
+    func compareAllModels() throws {
         // Given: Same parameters adapted for each model
         let dividend = 2.0
         let stableGrowth = 0.05
@@ -494,9 +491,9 @@ struct DividendDiscountModelTests {
         )
 
         // When: Calculate all values
-        let gordonValue = gordon.valuePerShare()
-        let twoStageValue = twoStage.valuePerShare()
-        let hValue = hModel.valuePerShare()
+        let gordonValue = try gordon.valuePerShare()
+        let twoStageValue = try twoStage.valuePerShare()
+        let hValue = try hModel.valuePerShare()
 
         // Then: All should be approximately equal
         #expect(abs(gordonValue - 40.0) < 0.01)

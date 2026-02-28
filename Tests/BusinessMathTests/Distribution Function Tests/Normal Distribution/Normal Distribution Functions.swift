@@ -14,60 +14,60 @@ struct NormalDistributionFunctionTests {
 
 	@Test("standardize")
 	func standardizeTest() throws {
-		let result = (standardize(x: 11.96, mean: 10, stdev: 1) * 1000).rounded() / 1000
-		#expect(result == 1.96)
+		let result = standardize(x: 11.96, mean: 10, stdev: 1)
+		#expect(abs(result - 1.96) < 0.001)
 	}
 
 	@Test("normSInv")
 	func normSInvTest() throws {
-		let result = (normSInv(probability: 0.975) * 1_000_000).rounded(.up) / 1_000_000
-		#expect(result == 1.959964)
+		let result = normSInv(probability: 0.975)
+		#expect(abs(result - 1.959964) < 0.000001)
 	}
 
 	@Test("normInv")
 	func normInvTest() throws {
 		let resultZero = normInv(probability: 0.5, mean: 0, stdev: 1)
-		#expect(resultZero == 0)
+		#expect(abs(resultZero - 0.0) < 1e-10)
 
-		let result = (normInv(probability: 0.975, mean: 10, stdev: 1) * 1000).rounded(.up) / 1000
-		#expect(result == 11.96)
+		let result = normInv(probability: 0.975, mean: 10, stdev: 1)
+		#expect(abs(result - 11.96) < 0.001)
 	}
 
 	@Test("zScore")
 	func zScoreTest() throws {
-		let result = (zScore(percentile: 0.975) * 1_000_000).rounded(.up) / 1_000_000
-		#expect(result == 1.959964)
+		let result = zScore(percentile: 0.975)
+		#expect(abs(result - 1.959964) < 0.000001)
 	}
 
 	@Test("normDist")
 	func normDistTest() throws {
 		let result = normDist(x: 0, mean: 0, stdev: 1)
-		let resultNotes = (normDist(x: 10, mean: 10.1, stdev: 0.04) * 1_000_000).rounded(.up) / 1_000_000
+		let resultNotes = normDist(x: 10, mean: 10.1, stdev: 0.04)
 
-		#expect(result == 0.5)
-		#expect(resultNotes == 0.00621)
+		#expect(abs(result - 0.5) < 1e-10)
+		#expect(abs(resultNotes - 0.00621) < 0.000001)
 	}
 
 	@Test("normSDist")
 	func normSDistTest() throws {
-		let result = (normSDist(zScore: 1.95996398454) * 1000).rounded(.up) / 1000
-		let resultNeg = (normSDist(zScore: -1.95996398454) * 1000).rounded() / 1000
-		let resultZero = (normSDist(zScore: 0.0) * 1000).rounded() / 1000
+		let result = normSDist(zScore: 1.95996398454)
+		let resultNeg = normSDist(zScore: -1.95996398454)
+		let resultZero = normSDist(zScore: 0.0)
 
-		#expect(result == 0.975)
-		#expect(resultNeg == 0.025)
-		#expect(resultZero == 0.5)
+		#expect(abs(result - 0.975) < 0.001)
+		#expect(abs(resultNeg - 0.025) < 0.001)
+		#expect(abs(resultZero - 0.5) < 1e-10)
 	}
 
 	@Test("percentile")
 	func percentileTest() throws {
-		let result = (percentile(zScore: 1.95996398454) * 1000).rounded() / 1000
-		#expect(result == 0.975)
+		let result = percentile(zScore: 1.95996398454)
+		#expect(abs(result - 0.975) < 0.001)
 	}
 
 	@Test("normalCDF")
 	func normalCDFTest() throws {
-		let result = (normalCDF(x: 1.96, mean: 0, stdDev: 1) * 1000.0).rounded(.down) / 1000
-		#expect(result == 0.975)
+		let result = normalCDF(x: 1.96, mean: 0, stdDev: 1)
+		#expect(abs(result - 0.975) < 0.001)
 	}
 }
