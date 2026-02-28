@@ -54,6 +54,10 @@ import Numerics
 /// let constantRate: Double = distributionWeibull(shape: 1.0, scale: 500.0)
 /// ```
 public func distributionWeibull<T: Real>(shape: T, scale: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+	// Validate parameters - return NaN for invalid inputs
+	guard shape > T(0), !shape.isNaN, shape.isFinite else { return T.nan }
+	guard scale > T(0), !scale.isNaN, scale.isFinite else { return T.nan }
+
 	// Generate U ~ Uniform(0, 1)
 	let u: T
 	if let seed = seed {

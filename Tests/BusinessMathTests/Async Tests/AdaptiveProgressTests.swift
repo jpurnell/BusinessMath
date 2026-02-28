@@ -265,7 +265,7 @@ struct AdaptiveProgressTests {
 
         // Should report more during interesting phases
         #expect(earlyReports > 0)
-        #expect(lateReports >= 0)
+        #expect(lateReports > 0)
     }
 
     @Test("Multiple strategies can coexist")

@@ -237,7 +237,7 @@ public struct CDS<T: Real & Sendable>: Sendable where T: Sendable {
         }
         let survivalCurve = TimeSeries<T>(periods: periods, values: survivalProbs)
 
-        // Calculate protection leg with spread = 1.0
+        // Calculate protection leg
         let protectionPV = protectionLegPV(
             discountCurve: discountCurve,
             survivalProbabilities: survivalCurve

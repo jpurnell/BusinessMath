@@ -13,8 +13,8 @@ struct BranchAndCutTier2Tests {
     func mirCutsGeneration() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 3
-            // TODO: Add enableMIRCuts parameter
+            maxCuttingRounds: 3,
+            enableMIRCuts: true
         )
 
         // Mixed problem: max 2x + 3y s.t. 1.5x + 2.3y ≤ 7.8, x ∈ Z, y continuous
@@ -57,15 +57,15 @@ struct BranchAndCutTier2Tests {
         // Solver with MIR enabled
         let solverMIR = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 2
-            // TODO: Add enableMIRCuts: true
+            maxCuttingRounds: 2,
+            enableMIRCuts: true
         )
 
         // Solver with only Gomory
         let solverGomory = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 2
-            // TODO: Add enableMIRCuts: false
+            maxCuttingRounds: 2,
+            enableMIRCuts: false
         )
 
         let objective: @Sendable (VectorN<Double>) -> Double = { v in
@@ -111,8 +111,8 @@ struct BranchAndCutTier2Tests {
     func coverCutsForKnapsack() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 3
-            // TODO: Add enableCoverCuts: true
+            maxCuttingRounds: 3,
+            enableCoverCuts: true
         )
 
         // Classic 0-1 knapsack: max 5x₁ + 4x₂ + 3x₃ s.t. 3x₁ + 2x₂ + 2x₃ ≤ 4
@@ -149,8 +149,9 @@ struct BranchAndCutTier2Tests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 3
-            // TODO: Add enableCoverCuts: true, liftCoverCuts: true
+            maxCuttingRounds: 3,
+            enableCoverCuts: true,
+            liftCoverCuts: true
         )
 
         // Knapsack with good lifting potential
@@ -181,8 +182,8 @@ struct BranchAndCutTier2Tests {
     func dominatedCutsFiltered() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 5
-            // TODO: Add filterDominatedCuts: true
+            maxCuttingRounds: 5,
+            filterDominatedCuts: true
         )
 
         let objective: @Sendable (VectorN<Double>) -> Double = { v in
@@ -219,8 +220,8 @@ struct BranchAndCutTier2Tests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 3
-            // TODO: Add filterDominatedCuts: true
+            maxCuttingRounds: 3,
+            filterDominatedCuts: true
         )
 
         let objective: @Sendable (VectorN<Double>) -> Double = { v in
@@ -248,8 +249,9 @@ struct BranchAndCutTier2Tests {
     func cutAgingMechanism() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 5
-            // TODO: Add enableCutAging: true, cutAgingLimit: 3
+            maxCuttingRounds: 5,
+            enableCutAging: true,
+            cutAgingLimit: 3
         )
 
         // Problem requiring significant branching
@@ -280,8 +282,9 @@ struct BranchAndCutTier2Tests {
     func cutPoolSizeManagement() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             enableCuttingPlanes: true,
-            maxCuttingRounds: 10
-            // TODO: Add enableCutAging: true, maxCutPoolSize: 50
+            maxCuttingRounds: 10,
+            enableCutAging: true,
+            maxCutPoolSize: 50
         )
 
         let objective: @Sendable (VectorN<Double>) -> Double = { v in

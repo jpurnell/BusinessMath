@@ -142,17 +142,22 @@ struct PeriodTests {
 	}
 
 	@Test("Monthly period invalid month causes precondition failure",
-		  .bug("https://github.com/user/repo/issues/000", "Placeholder for tracking"))
+	      .disabled("Test crashes the test runner - precondition() failures cannot be caught in Swift Testing"))
 	func monthlyPeriodInvalidMonth() {
 		// Month must be 1-12, otherwise precondition failure
-		// Commenting out actual test since precondition failures can't be caught in Swift Testing
-		// In production, this would trigger: precondition(month >= 1 && month <= 12)
+		// Swift Testing cannot catch precondition failures, so this test is disabled
+		// to prevent crashing the entire test suite.
 
-		// Invalid cases that should fail:
-		// Period.month(year: 2025, month: 0)   // Would fail
-		// Period.month(year: 2025, month: 13)  // Would fail
+		// NOTE: This test documents that Period.month() validates input with precondition(),
+		// which is intentional API design for programmer errors (not runtime errors).
 
-		#expect(Bool(true)) // Placeholder - actual precondition tests require different approach
+		withKnownIssue("precondition() cannot be caught in Swift Testing") {
+			_ = Period.month(year: 2025, month: 0)  // Should trigger precondition failure
+		}
+
+		withKnownIssue("precondition() cannot be caught in Swift Testing") {
+			_ = Period.month(year: 2025, month: 13)  // Should trigger precondition failure
+		}
 	}
 
 	// MARK: - Factory Methods: Quarterly
@@ -172,17 +177,22 @@ struct PeriodTests {
 	}
 
 	@Test("Quarterly period invalid quarter causes precondition failure",
-		  .bug("https://github.com/user/repo/issues/000", "Placeholder for tracking"))
+	      .disabled("Test crashes the test runner - precondition() failures cannot be caught in Swift Testing"))
 	func quarterlyPeriodInvalidQuarter() {
 		// Quarter must be 1-4, otherwise precondition failure
-		// Commenting out actual test since precondition failures can't be caught in Swift Testing
-		// In production, this would trigger: precondition(quarter >= 1 && quarter <= 4)
+		// Swift Testing cannot catch precondition failures, so this test is disabled
+		// to prevent crashing the entire test suite.
 
-		// Invalid cases that should fail:
-		// Period.quarter(year: 2025, quarter: 0)   // Would fail
-		// Period.quarter(year: 2025, quarter: 5)   // Would fail
+		// NOTE: This test documents that Period.quarter() validates input with precondition(),
+		// which is intentional API design for programmer errors (not runtime errors).
 
-		#expect(Bool(true)) // Placeholder - actual precondition tests require different approach
+		withKnownIssue("precondition() cannot be caught in Swift Testing") {
+			_ = Period.quarter(year: 2025, quarter: 0)  // Should trigger precondition failure
+		}
+
+		withKnownIssue("precondition() cannot be caught in Swift Testing") {
+			_ = Period.quarter(year: 2025, quarter: 5)  // Should trigger precondition failure
+		}
 	}
 
 	// MARK: - Factory Methods: Annual

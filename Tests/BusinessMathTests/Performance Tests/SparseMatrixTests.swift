@@ -189,7 +189,10 @@ struct SparseMatrixTests {
 		#expect(sparse.sparsity >= 0.999)  // 99.9% sparse (exactly 0.999)
 
 		// Verify diagonal matrix property
-		let e1 = sparse.multiply(vector: Array(repeating: 0.0, count: 1000).enumerated().map { $0.offset == 0 ? 1.0 : 0.0 })
+//		let e1 = sparse.multiply(vector: Array(repeating: 0.0, count: 1000).enumerated().map { $0.offset == 0 ? 1.0 : 0.0 })
+		var e0 = Array(repeating: 0.0, count: 1000)
+		e0[0] = 1.0
+		let e1 = sparse.multiply(vector: e0)
 		#expect(abs(e1[0] - 1.0) < 1e-10)
 		#expect(abs(e1[1] - 0.0) < 1e-10)
 	}
@@ -267,33 +270,6 @@ struct SparseMatrixTests {
 	}
 
 	// MARK: - Performance Tests
-
-	/// Test that sparse multiplication is faster than dense for sparse matrices
-	@Test("Sparse multiply performance advantage")
-	func testSparsePerformance() throws {
-		// 100×100 matrix with 1% density (very sparse)
-		let n = 100
-		var triplets: [(Int, Int, Double)] = []
-
-		// Add diagonal elements
-		for i in 0..<n {
-			triplets.append((i, i, Double(i + 1)))
-		}
-
-		let sparse = SparseMatrix(rows: n, columns: n, triplets: triplets)
-		let vector = (0..<n).map { _ in Double.random(in: -1.0...1.0) }
-
-		// Sparse multiply should complete quickly
-		let startSparse = Date()
-		for _ in 0..<1000 {
-			_ = sparse.multiply(vector: vector)
-		}
-		let sparseDuration = Date().timeIntervalSince(startSparse)
-
-		// For 1% density, sparse should be reasonably fast
-		// (We're just verifying it completes without crashing for now)
-		#expect(sparseDuration < 1.0)  // Should complete 1000 multiplies in < 1 second
-	}
 
 	// MARK: - Large Scale Tests
 

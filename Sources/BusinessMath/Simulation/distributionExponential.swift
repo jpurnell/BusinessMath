@@ -23,6 +23,9 @@ import Numerics
 ///   \[ X = -\frac{1}{\lambda} \
 ///
 public func distributionExponential<T: Real>(λ: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+	// Validate parameters - return NaN for invalid inputs
+	guard λ > T(0), !λ.isNaN, λ.isFinite else { return T.nan }
+
 	let u: T
 	if let seed = seed {
 		u = distributionUniform(min: T(0), max: T(1), seed)

@@ -439,13 +439,24 @@ struct DenseMatrixTests {
 
     @Test("Large matrix-vector multiplication", .timeLimit(.minutes(1)))
     func largeMatrixVectorMultiplication() throws {
+        // Seeded RNG for deterministic test
+        struct SeededRNG {
+            var state: UInt64
+            mutating func next() -> Double {
+                state = state &* 6364136223846793005 &+ 1
+                let upper = Double((state >> 32) & 0xFFFFFFFF)
+                return (upper / Double(UInt32.max)) * 2.0 - 1.0  // Map to [-1, 1]
+            }
+        }
+
+        var rng = SeededRNG(state: 12345)
         let size = 1000
         let data = (0..<size).map { _ in
-            (0..<size).map { _ in Double.random(in: -1...1) }
+            (0..<size).map { _ in rng.next() }
         }
 
         let matrix = try DenseMatrix(data)
-        let vector = (0..<size).map { _ in Double.random(in: -1...1) }
+        let vector = (0..<size).map { _ in rng.next() }
 
         let result = try matrix.multiplied(by: vector)
 

@@ -1,9 +1,6 @@
 import Testing
 import Numerics
 import TestSupport  // Cross-platform math functions
-#if canImport(OSLog)
-import OSLog
-#endif
 #if canImport(Darwin)
 import Darwin
 #else
@@ -18,8 +15,6 @@ import FoundationNetworking
 @Suite("Unassorted Tests")
 struct UnassortedTests {
 
-	let unassortedTestsLogger = Logger(subsystem: "Business Math > Tests > BusinessMathTests > BusinessMathTests.swift", category: "UnassortedTests")
-	
 	@Test("Mean of discrete distribution")
 	func testMeanDiscrete() {
 		let prob: Double = 1/6
@@ -36,31 +31,30 @@ struct UnassortedTests {
 		#expect(result == (35.0 / 12.0))
 	}
 
-	@Test("Spearman's rho correlation")
-	func testSpearmansRho() {
-		let result = try! spearmansRho([1, 2, 2, 2, 5], vs: [1, 2, 3, 4, 5])
-		#expect(result == 0.8944271909999159)
-	}
-
 	@Test("Z-statistic calculation")
 	func testZStatistic() {
 		let array: [Double] = [0, 1, 2, 3, 4]
 		let mean = mean(array)
 		let stdDev = stdDev(array)
-		let result = (zStatistic(x: 1, mean: mean, stdDev: stdDev) * 1000000).rounded() / 1000000
-		#expect(result == -0.632456)
+		let result = zStatistic(x: 1, mean: mean, stdDev: stdDev)
+		#expect(abs(result - (-0.632456)) < 0.000001)
 	}
 
 	@Test("Error function inverse")
 	func testErfInv() {
-		let result = (erfInv(y: 0.95) * 1000000000000000).rounded() / 1000000000000000
-		#expect(result == 1.385903824349678)
+		let result = erfInv(y: 0.95)
+		#expect(abs(result - 1.385903824349678) < 1e-14)
 	}
 
 	@Test("Z-score for confidence interval")
 	func testZScoreCI() {
-		let result = (zScore(ci: 0.95) * 1000000).rounded(.up) / 1000000
-		#expect(result == 1.959964)
+		let result = zScore(ci: 0.95)
+		#expect(abs(result - 1.959964) < 0.000001)
+
+		// Test for 99% confidence
+		let result99 = zScore(ci: 0.99)
+		#expect(result99 > 2.5) // Should be ~2.576
+		#expect(result99 < 2.6)
 	}
 
 	@Test("Percentile from formal parameters")
@@ -89,11 +83,7 @@ struct UnassortedTests {
 	@Test("Bernoulli trial")
 	func testBernoulliTrial() {
 		let result = bernoulliTrial(p: 0.5)
-		var goodResult: Bool = false
-		if result == 0 || result == 1 {
-			goodResult = true
-		}
-		#expect(goodResult == true)
+		#expect(result == 0 || result == 1)
 	}
 
 	@Test("Confidence interval calculation")
@@ -112,10 +102,10 @@ struct UnassortedTests {
 
 	@Test("Normal PDF")
 	func testNormalPDF() {
-		let result = (normalPDF(x: 1.96, mean: 0, stdDev: 1) * 100).rounded(.down) / 100
-		let resultOne = (normalPDF(x: 1.64, mean: 0, stdDev: 1) * 100).rounded() / 100
-		#expect(result == 0.05)
-		#expect(resultOne == 0.10)
+		let result = normalPDF(x: 1.96, mean: 0, stdDev: 1)
+		let resultOne = normalPDF(x: 1.64, mean: 0, stdDev: 1)
+		#expect(abs(result - 0.05) < 0.01)
+		#expect(abs(resultOne - 0.10) < 0.01)
 	}
 
 
@@ -164,8 +154,9 @@ struct UnassortedTests {
 		// CDF should be monotonically increasing with x
 		let small = chi2cdf(x: 1.0, dF: 3)
 		let large = chi2cdf(x: 10.0, dF: 3)
-		// Note: Due to implementation as 1-pdf, this may not always hold
-		#expect(small != large)
+		// Note: Implementation as 1-pdf is incorrect and produces non-monotonic results
+		// This test documents the known defect rather than asserting correct behavior
+		#expect(small != large)  // Weak assertion until implementation is fixed
 	}
 
 	@Test("Corrected standard error for finite population")
@@ -236,30 +227,38 @@ struct UnassortedTests {
     
     @Test("Error function inverse - alternate") func testErfInverse() {
 		let y = 0.5
-		let result = (erfInv(y: y)  * 10000).rounded(.down) / 10000
-		#expect(result == 0.4769)
+		let result = erfInv(y: y)
+		#expect(abs(result - 0.4769) < 0.0001)
     }
     
     @Test("Estimated mean from probabilities") func testEstMean() {
 		let probabilities = [0.1, 0.2, 0.7]
-		let result = (estMean(probabilities: probabilities) * 10000).rounded(.down) / 10000
-		#expect(result == 0.3333)
+		let result = estMean(probabilities: probabilities)
+		#expect(abs(result - 0.3333) < 0.0001)
     }
     
 	@Test("Exponential CDF") func testExponentialCDF() {
-		let result = (exponentialCDF(12, λ: 1/12) * 10000.0).rounded(.down) / 10000.0
-		#expect(result == 0.6321)
+		let result = exponentialCDF(12, λ: 1.0/12.0)
+		#expect(abs(result - 0.6321) < 0.0001)
 	}
 	
     @Test("Fisher r-to-z transformation") func testFisherR() {
-		let result = (fisher(0.5) * 10000).rounded(.down) / 10000
-		#expect(result == 0.5493)
+		let result = fisher(0.5)
+		#expect(abs(result - 0.5493) < 0.0001)
+
+		// Test that Fisher transformation is monotonic
+		let r1 = fisher(0.3)
+		let r2 = fisher(0.7)
+		#expect(r1 < r2) // Higher correlation should give higher Fisher z
+
+		// Test extreme values
+		let r_near_zero = fisher(0.0)
+		#expect(abs(r_near_zero - 0.0) < 0.0001)
     }
     
     @Test("Hypergeometric distribution") func testHyperGeometric() {
 		let result: Double = hypergeometric(total: 10, r: 4, n: 3, x: 2)
-		let resultRounded = (result * 100.0).rounded() / 100.0
-		#expect(resultRounded == 0.30)
+		#expect(abs(result - 0.30) < 0.01)
     }
     
     @Test("Interesting observation detection") func testInterestingObservation() {
@@ -284,15 +283,15 @@ struct UnassortedTests {
     }
     
     @Test("Poisson distribution") func testPoissonDistribution() {
-		let result = (poisson(5, µ: 10) * 10000.0).rounded(.down) / 10000.0
-		#expect(result == 0.0378)
+		let result = poisson(5, µ: 10)
+		#expect(abs(result - 0.0378) < 0.0001)
     }
     
     @Test("Probability distribution function") func testProbabilityDistributionFunction() {
 		// Test normal PDF values at key points
-		let result = (normalPDF(x: 0, mean: 0, stdDev: 1) * 10000.0).rounded() / 10000
-		let resultAtOne = (normalPDF(x: 1, mean: 0, stdDev: 1) * 10000.0).rounded() / 10000
-		let resultAtTwo = (normalPDF(x: 2, mean: 0, stdDev: 1) * 10000.0).rounded() / 10000
+		let result = normalPDF(x: 0, mean: 0, stdDev: 1)
+		let resultAtOne = normalPDF(x: 1, mean: 0, stdDev: 1)
+		let resultAtTwo = normalPDF(x: 2, mean: 0, stdDev: 1)
 		
 		// At mean (x=0), standard normal should be approximately 0.3989
 		#expect(abs(result - 0.3989) < 0.0001)
@@ -302,60 +301,33 @@ struct UnassortedTests {
 		#expect(abs(resultAtTwo - 0.0540) < 0.0001)
     }
     
-    @Test("P-value calculation") func testPValue() {
-		// This test is already implemented below as testpValue()
-		// Testing A/B test p-value calculation
-		let obs = 500
-		let convA = 80
-		let convB = 100
-		let result: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convB) * 10000).rounded() / 10000
-		#expect(result == 0.9504)
-    }
-    
-    @Test("P-value calculation") func testPValueStudent() {
+    @Test("P-value Student's t-distribution") func testPValueStudent() {
 		// Test p-value calculation using Student's t-distribution
 		// Example: t-value of 2.0 with 10 degrees of freedom
 		let tValue = 2.0
 		let degreesOfFreedom = 10.0
-		let result = (pValueStudent(tValue, dFr: degreesOfFreedom) * 10000).rounded() / 10000
-		
+		let result = pValueStudent(tValue, dFr: degreesOfFreedom)
+
 		// The PDF value at t=2.0 with df=10 should be approximately 0.0611
 		#expect(abs(result - 0.0611) < 0.001)
-		
+
 		// Test at t=0 (center of distribution)
-		let resultAtZero = (pValueStudent(0.0, dFr: degreesOfFreedom) * 10000).rounded() / 10000
+		let resultAtZero = pValueStudent(0.0, dFr: degreesOfFreedom)
 		#expect(resultAtZero > 0.35) // Should be high at center
     }
     
-    @Test("Required sample size") func testRequiredSampleSize() {
-		// Test sample size calculation for confidence intervals
-		// Given: 95% CI, 50% proportion, population of 950, 5% margin of error
-		let ci = 0.95
-		let proportion = 0.5
-		let population = 950.0
-		let error = 0.05
-		let result = (sampleSize(ci: ci, proportion: proportion, n: population, error: error) * 10000).rounded() / 10000
-		
-		// Should be approximately 273.5372 (matches existing testSampleSize)
-		#expect(result == 273.5372)
-		
-		// Test with different confidence level (90%)
-		let result90 = sampleSize(ci: 0.90, proportion: proportion, n: population, error: error)
-		#expect(result90 < result) // Lower confidence requires smaller sample
-    }
-    
-    @Test("Rho correlation tests") func testRho() {
+    @Test("Rho correlation tests") func testRho() throws {
 		// Test Spearman's rho correlation coefficient
 		// Perfect positive correlation
-		let perfectPositive = try! spearmansRho([1, 2, 3, 4, 5], vs: [1, 2, 3, 4, 5])
+		let perfectPositive = try spearmansRho([1, 2, 3, 4, 5], vs: [1, 2, 3, 4, 5])
 		#expect(abs(perfectPositive - 1.0) < 0.0001)
 		
 		// Perfect negative correlation
-		let perfectNegative = try! spearmansRho([1, 2, 3, 4, 5], vs: [5, 4, 3, 2, 1])
+		let perfectNegative = try spearmansRho([1, 2, 3, 4, 5], vs: [5, 4, 3, 2, 1])
 		#expect(abs(perfectNegative - -1.0) < 0.0001)
 		
 		// Test with tied ranks (existing test case)
-		let result = try! spearmansRho([1, 2, 2, 2, 5], vs: [1, 2, 3, 4, 5])
+		let result = try spearmansRho([1, 2, 2, 2, 5], vs: [1, 2, 3, 4, 5])
 		#expect(abs(result - 0.8944271909999159) < 0.0001)
     }
     
@@ -365,10 +337,9 @@ struct UnassortedTests {
 		let x = [20.0, 23, 45, 78, 21]
 		let y = [200.0, 300, 500, 700, 100]
 		let result = correlationCoefficient(x, y, .sample)
-		let rounded = (result * 10000).rounded() / 10000
-		
+
 		// Should be approximately 0.9487 (matches existing test)
-		#expect(rounded == 0.9487)
+		#expect(abs(result - 0.9487) < 0.0001)
 		
 		// Test perfect correlation
 		let perfectCorr = correlationCoefficient([1.0, 2, 3, 4, 5], [2.0, 4, 6, 8, 10], .sample)
@@ -379,21 +350,21 @@ struct UnassortedTests {
 		#expect(abs(noCorr) < 0.5) // Weak or no correlation
     }
     
-    @Test("Standard error calculation") func testStandardError() {
+    @Test("Standard error from std dev and n") func testStandardError() {
 		// Test standard error calculation from standard deviation
 		let sampleStdDev = 1.5
 		let observations = 100
-		let result = (standardError(sampleStdDev, observations: observations) * 10000).rounded() / 10000
-		
+		let result = standardError(sampleStdDev, observations: observations)
+
 		// SE = stdDev / sqrt(n) = 1.5 / sqrt(100) = 1.5 / 10 = 0.15
-		#expect(result == 0.15)
+		#expect(abs(result - 0.15) < 0.0001)
 		
 		// Test standard error from array
 		let values: [Double] = [0, 1, 2, 3, 4]
-		let resultFromArray = (standardError(values) * 10000).rounded() / 10000
+		let resultFromArray = standardError(values)
 		let expectedStdDev = stdDev(values)
-		let expectedSE = (expectedStdDev / Double.sqrt(5.0) * 10000).rounded() / 10000
-		#expect(resultFromArray == expectedSE)
+		let expectedSE = expectedStdDev / Double.sqrt(5.0)
+		#expect(abs(resultFromArray - expectedSE) < 0.0001)
 		
 		// Test with larger sample size
 		let largerSample = Array(repeating: 2.0, count: 400)
@@ -401,20 +372,20 @@ struct UnassortedTests {
 		#expect(seOfConstant == 0.0) // No variance means SE is 0
     }
     
-    @Test("Standard error calculation") func testStandardErrorProbabilistic() {
+    @Test("Standard error probabilistic") func testStandardErrorProbabilistic() {
 		let observations = 25.0
 		let conversions = 8.0
-		let result = (standardErrorProbabilistic((conversions) / observations, observations: Int(observations)) * 10000).rounded() / 10000
-		#expect(result == 0.0933)
+		let result = standardErrorProbabilistic((conversions) / observations, observations: Int(observations))
+		#expect(abs(result - 0.0933) < 0.0001)
     }
     
-    @Test("T-statistic from rho") func testTStatisticRho() {
+    @Test("T-statistic from rho") func testTStatisticRho() throws {
 		// Test t-statistic calculation from correlation coefficient
 		// Example: rho = 0.8, degrees of freedom = 10
 		let rho = 0.8
 		let degreesOfFreedom = 10.0
-		let result = (tStatistic(rho, dFr: degreesOfFreedom) * 10000).rounded() / 10000
-		
+		let result = tStatistic(rho, dFr: degreesOfFreedom)
+
 		// t = rho * sqrt(df / (1 - rho^2))
 		// t = 0.8 * sqrt(10 / (1 - 0.64)) = 0.8 * sqrt(10 / 0.36) = 0.8 * sqrt(27.778) = 0.8 * 5.27 = 4.216
 		#expect(abs(result - 4.2164) < 0.001)
@@ -422,19 +393,10 @@ struct UnassortedTests {
 		// Test with array inputs using Spearman's rho
 		let independent: [Double] = [8.0, 2.0, 11.0, 6.0, 5.0]
 		let variable: [Double] = [3.0, 10.0, 3.0, 6.0, 8.0]
-		let resultFromArrays = try! tStatistic(independent, variable)
-		
-		// Should return a valid t-statistic
-		#expect(resultFromArrays != 0.0)
-    }
-    
-    @Test("Variance discrete - alternate") func testVarianceDiscrete() {
-		// This is already implemented as testVarDiscrete() above
-		// Testing discrete probability distribution variance
-		let prob: Double = 1/6
-		let distribution = [(1.0, prob), (2, prob), (3, prob), (4, prob), (5, prob), (6, prob)]
-		let result = varianceDiscrete(distribution)
-		#expect(result == (35.0 / 12.0))
+		let resultFromArrays = try tStatistic(independent, variable)
+
+		// T-statistic should be in reasonable range for these inputs (df=3)
+		#expect(abs(resultFromArrays) < 10.0)  // Reasonable bound for n=5 sample
     }
     
     @Test("Mean of binomial distribution") func testMeanBinomial() {
@@ -457,13 +419,13 @@ struct UnassortedTests {
 		// StdDev = sqrt(n * p * (1 - p))
 		let n = 100
 		let p = 0.5
-		let result = (stdDevBinomial(n: n, prob: p) * 10000).rounded() / 10000
-		
+		let result = stdDevBinomial(n: n, prob: p)
+
 		// sqrt(100 * 0.5 * 0.5) = sqrt(25) = 5
-		#expect(result == 5.0)
+		#expect(abs(result - 5.0) < 0.0001)
 		
 		// Test with different values
-		let result2 = (stdDevBinomial(n: 50, prob: 0.3) * 10000).rounded() / 10000
+		let result2 = stdDevBinomial(n: 50, prob: 0.3)
 		// sqrt(50 * 0.3 * 0.7) = sqrt(10.5) = 3.24
 		#expect(abs(result2 - 3.2404) < 0.001)
     }
@@ -490,17 +452,17 @@ struct UnassortedTests {
 		
 		// Test 25th percentile - should return approximately 25
 		let result25 = PercentileLocation(25, values: values)
-		unassortedTestsLogger.info("25th percentile result: \(result25)")
+		// Result:("25th percentile result: \(result25)")
 		#expect(abs(result25 - 25.0) <= 1.0)
 		
 		// Test 50th percentile (median) - should return approximately 50
 		let result50 = PercentileLocation(50, values: values)
-		unassortedTestsLogger.info("50th percentile result: \(result50)")
+		// Result:("50th percentile result: \(result50)")
 		#expect(abs(result50 - 50.0) <= 1.0)
 		
 		// Test 75th percentile - should return approximately 75
 		let result75 = PercentileLocation(75, values: values)
-		unassortedTestsLogger.info("75th percentile result: \(result75)")
+		// Result:("75th percentile result: \(result75)")
 		#expect(abs(result75 - 75.0) <= 1.0)
 		
 		// Test edge cases
@@ -513,16 +475,12 @@ struct UnassortedTests {
 		// Test with smaller dataset
 		let smallValues: [Double] = [1, 2, 3, 4, 5]
 		let smallResult50 = PercentileLocation(50, values: smallValues)
-		unassortedTestsLogger.info("Small result 50: \(smallResult50)")
+		// Result:("Small result 50: \(smallResult50)")
 		#expect(abs(smallResult50 - 3.0) <= 1.0) // Median of 5 elements
     }
     
     @Test("Percentile from mean and standard deviation") func testPercentileMeanStdDev() {
 		// Test percentile calculation using mean and standard deviation
-		// This is the same as the existing testPercentileFormal
-		let result = percentile(x: 1.959963984540054, mean: 0, stdDev: 1)
-		#expect(abs(result - 0.975) < 0.001)
-		
 		// Test with different values
 		let result2 = percentile(x: 0, mean: 0, stdDev: 1)
 		#expect(abs(result2 - 0.5) < 0.001) // At mean, percentile is 50%
@@ -532,51 +490,18 @@ struct UnassortedTests {
 		#expect(abs(result3 - 0.025) < 0.001) // 2.5th percentile
     }
     
-    @Test("Z-score from rho") func testZScoreRho() {
+    @Test("Z-score from rho") func testZScoreRho() throws {
 		// Test z-score calculation for correlation coefficient testing
 		// This uses Fisher's r-to-z transformation
 		let x = [1.0, 2.0, 3.0, 4.0, 5.0]
 		let y = [2.0, 4.0, 5.0, 4.0, 5.0]
 		
-		let result = try! zScore(x, vs: y)
-		
-		// Z-score should be a reasonable value for this correlation
-		#expect(result != 0.0)
-		#expect(abs(result) > 0.0)
-    }
-    
-    @Test("Z-score for percentile") func testZScorePercentile() {
-		// Test z-score for a given percentile (inverse normal)
-		// This is similar to testZScoreCI
-		let result = (zScore(ci: 0.95) * 1000000).rounded(.up) / 1000000
-		
-		// For 95% confidence interval, z-score should be ~1.96
-		#expect(result == 1.959964)
-		
-		// Test for 99% confidence
-		let result99 = (zScore(ci: 0.99) * 1000000).rounded(.down) / 1000000
-		#expect(result99 > 2.5) // Should be ~2.576
-		#expect(result99 < 2.6)
-    }
-    
-    @Test("Z-score Fisher r transformation") func testZScoreFisherR() {
-		// Test Fisher's r-to-z transformation
-		let r = 0.5
-		let fisherZ = (fisher(r) * 10000).rounded(.down) / 10000
-		
-		// Fisher's z for r=0.5 should be ~0.5493
-		#expect(fisherZ == 0.5493)
-		
-		// Test that Fisher transformation is monotonic
-		let r1 = fisher(0.3)
-		let r2 = fisher(0.7)
-		#expect(r1 < r2) // Higher correlation should give higher Fisher z
-		
-		// Test extreme values
-		let r_near_zero = fisher(0.0)
-		#expect(abs(r_near_zero - 0.0) < 0.0001)
-    }
+		let result = try zScore(x, vs: y)
 
+		// Fisher's z for these inputs
+		#expect(abs(result - 1.357) < 0.1)
+    }
+    
     @Test("Monte Carlo integration") func testMonteCarloIntegration() {
         func f(_ x: Double) -> Double {
             return 2 * pow(x, 5)
@@ -585,9 +510,7 @@ struct UnassortedTests {
         func e(_ x: Double) -> Double {
             return Double.exp(pow(x, 2))
         }
-        
-//        let result = (integrate(f, iterations: 10000) * 100).rounded() / 100
-//        let resultE = (integrate(e, iterations: 20000) * 100).rounded() / 100
+
 		let result = integrate(f, iterations: 10000, seed: 42)
 		let resultE = integrate(e, iterations: 20000, seed: 42)
 
@@ -603,12 +526,12 @@ struct UnassortedTests {
 		let convSig = 100
 		let convUnl = 96
 		let convIns = 80
-		let resultSignificant: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convSig) * 10000).rounded() / 10000
-		let resultUnlikely: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convUnl) * 10000).rounded() / 10000
-		let resultNotSignificant: Double = (pValue(obsA: obs, convA: convA, obsB: obs, convB: convIns) * 10000).rounded() / 10000
-		#expect(resultSignificant == 0.9504)
-		#expect(resultUnlikely == 0.9082)
-		#expect(resultNotSignificant == 0.500)
+		let resultSignificant: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convSig)
+		let resultUnlikely: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convUnl)
+		let resultNotSignificant: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convIns)
+		#expect(abs(resultSignificant - 0.9504) < 0.0001)
+		#expect(abs(resultUnlikely - 0.9082) < 0.0001)
+		#expect(abs(resultNotSignificant - 0.500) < 0.0001)
 	}
 	
 	@Test("Sample size calculation") func testSampleSizeCalculation() {
@@ -617,13 +540,13 @@ struct UnassortedTests {
 		let p = 0.5
 		let n = 950.0
 		let e = 0.05
-		let result = (sampleSize(ci: ci, proportion: p, n: n, error: e) * 10000).rounded() / 10000
-		#expect(result == 273.5372)
+		let result = sampleSize(ci: ci, proportion: p, n: n, error: e)
+		#expect(abs(result - 273.5372) < 0.0001)
 	}
 	
 	@Test("Margin of error") func testMarginOfError() {
-		let result = (marginOfError(0.95, sampleProportion: 0.5, sampleSize: 274, totalPopulation: 950) * 100000).rounded() / 100000
-		#expect(result == 0.04997)
+		let result = marginOfError(0.95, sampleProportion: 0.5, sampleSize: 274, totalPopulation: 950)
+		#expect(abs(result - 0.04997) < 0.00001)
 	}
 }
 

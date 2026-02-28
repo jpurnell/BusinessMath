@@ -12,10 +12,19 @@ import Foundation
 @Suite("Callable Bond Tests")
 struct CallableBondTests {
 
+    // Use a fixed reference date to avoid wall-clock dependencies in bond calculations
+    private static let referenceDate: Date = {
+        var components = DateComponents()
+        components.year = 2025
+        components.month = 1
+        components.day = 1
+        return Calendar.current.date(from: components)!
+    }()
+
     @Test("Callable bond prices less than non-callable")
     func callablePriceLessThanNonCallable() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         // Create underlying bond
@@ -53,7 +62,7 @@ struct CallableBondTests {
     @Test("Call option value is positive")
     func callOptionValuePositive() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(
@@ -86,7 +95,7 @@ struct CallableBondTests {
     @Test("Higher volatility increases call option value")
     func volatilityImpactOnCallValue() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(
@@ -126,7 +135,7 @@ struct CallableBondTests {
     @Test("Call option value with zero volatility is lower")
     func zeroVolatilityCallValue() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(
@@ -166,7 +175,7 @@ struct CallableBondTests {
     @Test("Multiple call dates in schedule")
     func multipleCallDates() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(
@@ -208,7 +217,7 @@ struct CallableBondTests {
     @Test("OAS calculation")
     func oasCalculation() throws {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(
@@ -250,7 +259,7 @@ struct CallableBondTests {
     @Test("OAS is positive for credit risk")
     func oasPositiveForCredit() throws {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(
@@ -291,7 +300,7 @@ struct CallableBondTests {
     @Test("Callable bond with Float type")
     func callableBondFloat() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(
@@ -323,7 +332,7 @@ struct CallableBondTests {
     @Test("Callable bond effective duration")
     func effectiveDuration() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Self.referenceDate
         let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
 
         let bond = Bond(

@@ -1,5 +1,13 @@
 import Foundation
 
+/// Norm used for cut coefficient scaling and normalization
+public enum VectorNorm: Sendable {
+    /// Euclidean norm (L2): √(∑a²)
+    case euclidean
+    /// Infinity norm (L∞): max(|a|)
+    case infinity
+}
+
 /// Branch and Bound solver for Mixed-Integer Linear/Nonlinear Programs
 public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: Sendable {
 
@@ -91,6 +99,67 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     /// Typical values: 3-10.
     public let cyclingWindowSize: Int
 
+    // MARK: - Tier 2: Advanced Cutting Plane Features
+
+    /// Whether to enable Mixed-Integer Rounding (MIR) cuts
+    ///
+    /// MIR cuts are stronger than Gomory cuts for mixed-integer problems
+    /// where some variables are continuous. Only generated when both integer
+    /// and continuous variables are present.
+    public let enableMIRCuts: Bool
+
+    /// Whether to enable cover cuts for knapsack constraints
+    ///
+    /// Cover cuts exploit the combinatorial structure of knapsack-type constraints
+    /// (binary variables with positive coefficients). Effective for 0-1 knapsack problems.
+    public let enableCoverCuts: Bool
+
+    /// Whether to lift cover cuts
+    ///
+    /// Lifting strengthens cover cuts by including additional variables.
+    /// Only applies when `enableCoverCuts` is true. More expensive but produces tighter cuts.
+    public let liftCoverCuts: Bool
+
+    /// Whether to filter dominated cuts before adding to LP
+    ///
+    /// Checks if a new cut is weaker than existing constraints/cuts and skips it.
+    /// Reduces LP size and improves numerical stability.
+    public let filterDominatedCuts: Bool
+
+    /// Whether to enable cut aging mechanism
+    ///
+    /// Inactive cuts (not binding at optimal LP solution) accumulate an "age".
+    /// Cuts exceeding `cutAgingLimit` are removed from the LP to prevent bloat.
+    public let enableCutAging: Bool
+
+    /// Number of iterations a cut can be inactive before removal
+    ///
+    /// Only applies when `enableCutAging` is true. Typical values: 3-10.
+    /// Lower values keep LP smaller; higher values preserve potentially useful cuts.
+    public let cutAgingLimit: Int
+
+    /// Maximum size of the cut pool
+    ///
+    /// Limits total number of cuts generated across all nodes.
+    /// When exceeded, oldest or weakest cuts are pruned. Set to 0 for unlimited.
+    public let maxCutPoolSize: Int
+
+    // MARK: - Tier 3: Numerical Robustness Features
+
+    /// Norm used for cut scaling/normalization
+    ///
+    /// - `.euclidean` (L2): Standard normalization, divides by √(∑a²)
+    /// - `.infinity` (L∞): Divides by max(|a|), keeps largest coefficient at 1.0
+    ///
+    /// Infinity norm is recommended for problems with widely varying coefficient scales.
+    public let cutScalingNorm: VectorNorm
+
+    /// Whether to enable warm starting of simplex basis
+    ///
+    /// When true, reuses the previous LP basis when re-solving after adding cuts.
+    /// Significantly reduces simplex iterations but requires basis tracking.
+    public let enableWarmStart: Bool
+
     /// Solver for continuous relaxations
     ///
     /// Used at each node to compute LP/NLP bounds for pruning.
@@ -118,6 +187,15 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///   - stagnationTolerance: Minimum bound improvement to continue cutting (default: 1e-8)
     ///   - detectCycling: Detect repeated LP solutions and terminate early (default: true)
     ///   - cyclingWindowSize: Number of recent solutions to check for cycles (default: 5)
+    ///   - enableMIRCuts: Enable Mixed-Integer Rounding cuts for mixed-integer problems (default: false)
+    ///   - enableCoverCuts: Enable cover cuts for knapsack constraints (default: false)
+    ///   - liftCoverCuts: Lift cover cuts for stronger bounds (default: false)
+    ///   - filterDominatedCuts: Filter dominated cuts before adding to LP (default: true)
+    ///   - enableCutAging: Enable aging mechanism to remove inactive cuts (default: true)
+    ///   - cutAgingLimit: Iterations before removing inactive cuts (default: 5)
+    ///   - maxCutPoolSize: Maximum total cuts across all nodes, 0 for unlimited (default: 1000)
+    ///   - cutScalingNorm: Norm used for cut normalization (default: `.euclidean`)
+    ///   - enableWarmStart: Reuse simplex basis when re-solving with cuts (default: true)
     ///   - relaxationSolver: Custom relaxation solver, or `nil` for default `SimplexRelaxationSolver`
     public init(
         maxNodes: Int = 10_000,
@@ -138,6 +216,15 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         stagnationTolerance: Double = 1e-8,
         detectCycling: Bool = true,
         cyclingWindowSize: Int = 5,
+        enableMIRCuts: Bool = false,
+        enableCoverCuts: Bool = false,
+        liftCoverCuts: Bool = false,
+        filterDominatedCuts: Bool = true,
+        enableCutAging: Bool = true,
+        cutAgingLimit: Int = 5,
+        maxCutPoolSize: Int = 1000,
+        cutScalingNorm: VectorNorm = .euclidean,
+        enableWarmStart: Bool = true,
         relaxationSolver: (any RelaxationSolver)? = nil
     ) {
         // Validate tolerance hierarchy
@@ -172,6 +259,15 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         self.stagnationTolerance = stagnationTolerance
         self.detectCycling = detectCycling
         self.cyclingWindowSize = cyclingWindowSize
+        self.enableMIRCuts = enableMIRCuts
+        self.enableCoverCuts = enableCoverCuts
+        self.liftCoverCuts = liftCoverCuts
+        self.filterDominatedCuts = filterDominatedCuts
+        self.enableCutAging = enableCutAging
+        self.cutAgingLimit = cutAgingLimit
+        self.maxCutPoolSize = maxCutPoolSize
+        self.cutScalingNorm = cutScalingNorm
+        self.enableWarmStart = enableWarmStart
 
         // Default to SimplexRelaxationSolver for backward compatibility
         self.relaxationSolver = relaxationSolver ?? SimplexRelaxationSolver(lpTolerance: lpTolerance)
@@ -734,6 +830,9 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 var roundsPerformed = 0
                 var generatedCuts: Set<String> = []  // For deduplication
 
+                // Cut aging tracking: map from cut index to (roundAdded, lastActiveRound)
+                var cutAges: [(constraintIndex: Int, roundAdded: Int, lastActiveRound: Int)] = []
+
                 // Stagnation and cycling detection
                 var boundHistory: [Double] = []
                 var solutionHistory: [[Double]] = []
@@ -833,19 +932,63 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                         simplexRows.append(simplexRow)
                     }
 
-                    // Generate cuts using new API
-                    let generatedCutList = try cutGenerator.generateCuts(
+                    // Generate cuts using new API with configuration
+                    var generatedCutList = try cutGenerator.generateCuts(
                         from: simplexRows,
                         currentSolution: solutionArray,
-                        totalVariableCount: totalVariableCount
+                        totalVariableCount: totalVariableCount,
+                        integerVariables: integerSpec.integerVariables.union(integerSpec.binaryVariables),
+                        enableGomory: true,
+                        enableMIR: enableMIRCuts
                     )
+
+                    // Generate cover cuts if enabled
+                    if enableCoverCuts {
+                        // Try to generate cover cuts from knapsack-like constraints
+                        for constraint in constraints {
+                            // Cover cuts only work on linear inequality constraints with binary variables
+                            if case .linearInequality(let coefficients, let rhs, let sense) = constraint,
+                               sense == .lessOrEqual {
+                                // Check if all variables in this constraint are binary
+                                var isBinaryKnapsack = true
+                                for i in 0..<min(coefficients.count, dimension) {
+                                    if coefficients[i] != 0.0 {
+                                        // Check if variable should be binary
+                                        if !integerSpec.binaryVariables.contains(i) {
+                                            isBinaryKnapsack = false
+                                            break
+                                        }
+                                    }
+                                }
+
+                                // Generate cover cut for binary knapsack constraints
+                                if isBinaryKnapsack && coefficients.count <= dimension {
+                                    if let coverCut = try cutGenerator.generateCoverCut(
+                                        weights: coefficients,
+                                        capacity: rhs,
+                                        solution: solutionArray
+                                    ) {
+                                        generatedCutList.append(coverCut)
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     // Process generated cuts
                     for var cut in generatedCutList {
                         // Normalize cut if enabled
                         if normalizeCuts {
-                            // Compute Euclidean norm of coefficients
-                            let norm = sqrt(cut.coefficients.reduce(0.0) { $0 + $1 * $1 })
+                            // Compute norm of coefficients based on cutScalingNorm parameter
+                            let norm: Double
+                            switch cutScalingNorm {
+                            case .euclidean:
+                                // L2 norm: sqrt(sum of squares)
+                                norm = sqrt(cut.coefficients.reduce(0.0) { $0 + $1 * $1 })
+                            case .infinity:
+                                // L∞ norm: max absolute value
+                                norm = cut.coefficients.map { abs($0) }.max() ?? 0.0
+                            }
 
                             // Check if cut has meaningful coefficients
                             guard norm > cutCoefficientThreshold else {
@@ -879,8 +1022,90 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                         break
                     }
 
+                    // Filter dominated cuts if enabled
+                    var filteredCuts = cutsThisRound
+                    if filterDominatedCuts {
+                        filteredCuts = []
+
+                        for cut in cutsThisRound {
+                            var isDominated = false
+
+                            // Check against existing cuts this round
+                            for existingCut in filteredCuts {
+                                if isCutDominated(cut, by: existingCut, tolerance: 1e-8) {
+                                    isDominated = true
+                                    break
+                                }
+                            }
+
+                            // Also check if cut is parallel to existing ones (same coefficients, weaker RHS)
+                            if !isDominated {
+                                for existingCut in filteredCuts {
+                                    if areCutsParallel(cut, existingCut, tolerance: 1e-8) {
+                                        // Keep the stronger cut (smaller RHS for <= constraints)
+                                        if cut.rhs >= existingCut.rhs {
+                                            isDominated = true
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+
+                            if !isDominated {
+                                filteredCuts.append(cut)
+                            }
+                        }
+                    }
+
+                    // Check pool size limit if enabled
+                    var cutsToAdd = filteredCuts
+                    if maxCutPoolSize > 0 && stats.totalCutsGenerated >= maxCutPoolSize {
+                        // Pool is full - don't add more cuts
+                        break
+                    } else if maxCutPoolSize > 0 {
+                        // Limit how many cuts we add to not exceed pool size
+                        let remaining = maxCutPoolSize - stats.totalCutsGenerated
+                        if filteredCuts.count > remaining {
+                            cutsToAdd = Array(filteredCuts.prefix(remaining))
+                        }
+                    }
+
+                    // Remove aged cuts if aging is enabled
+                    if enableCutAging && roundsPerformed > 0 {
+                        // Find cuts that have exceeded their age limit
+                        var indicesToRemove: Set<Int> = []
+                        for (_, cutAge) in cutAges.enumerated() {
+                            let age = roundsPerformed - cutAge.lastActiveRound
+                            if age >= cutAgingLimit {
+                                indicesToRemove.insert(cutAge.constraintIndex)
+                            }
+                        }
+
+                        // Remove aged cuts from constraints (in reverse order to maintain indices)
+                        if !indicesToRemove.isEmpty {
+                            let sortedIndices = indicesToRemove.sorted(by: >)
+                            for index in sortedIndices {
+                                if index < currentConstraints.count {
+                                    currentConstraints.remove(at: index)
+                                }
+                            }
+
+                            // Update cutAges array to reflect removed constraints
+                            cutAges.removeAll { indicesToRemove.contains($0.constraintIndex) }
+
+                            // Adjust remaining indices
+                            for removedIndex in sortedIndices {
+                                for i in 0..<cutAges.count {
+                                    if cutAges[i].constraintIndex > removedIndex {
+                                        cutAges[i].constraintIndex -= 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Add cuts as new constraints
-                    for cut in cutsThisRound {
+                    for cut in cutsToAdd {
                         // Convert CuttingPlane to MultivariateConstraint
                         // Cut is: sum(cut.coefficients[i] * x[i]) <= cut.rhs
                         let cutConstraint = MultivariateConstraint<V>.linearInequality(
@@ -889,6 +1114,16 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             sense: .lessOrEqual
                         )
                         currentConstraints.append(cutConstraint)
+
+                        // Track this cut for aging if enabled
+                        if enableCutAging {
+                            let constraintIndex = currentConstraints.count - 1
+                            cutAges.append((
+                                constraintIndex: constraintIndex,
+                                roundAdded: roundsPerformed,
+                                lastActiveRound: roundsPerformed
+                            ))
+                        }
 
                         // Update statistics by type
                         stats.totalCutsGenerated += 1
@@ -906,10 +1141,19 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
                     // Re-solve LP with augmented constraints
                     do {
+                        // Use warm start if enabled: use previous solution as initial guess
+                        let nextInitialGuess: V
+                        if enableWarmStart {
+                            // Convert VectorN<Double> to V for warm start
+                            nextInitialGuess = V.fromArray(currentSolution.toArray())!
+                        } else {
+                            nextInitialGuess = initialGuess
+                        }
+
                         let resolvedResult = try relaxationSolver.solveRelaxation(
                             objective: objective,
                             constraints: currentConstraints,
-                            initialGuess: initialGuess,
+                            initialGuess: nextInitialGuess,
                             minimize: minimize
                         )
 
@@ -1431,6 +1675,70 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             isValid: violations.isEmpty,
             violations: violations
         )
+    }
+
+    /// Check if one cut is dominated by another.
+    ///
+    /// For <= constraints, cut1 is dominated by cut2 if:
+    /// - All coefficients of cut1 are >= corresponding coefficients of cut2
+    /// - RHS of cut1 is >= RHS of cut2
+    /// This means cut2 is at least as restrictive as cut1.
+    ///
+    /// - Parameters:
+    ///   - cut1: The potentially dominated cut
+    ///   - cut2: The potentially dominating cut
+    ///   - tolerance: Numerical tolerance for comparisons
+    /// - Returns: true if cut1 is dominated by cut2
+    private func isCutDominated(_ cut1: CuttingPlane, by cut2: CuttingPlane, tolerance: Double) -> Bool {
+        guard cut1.coefficients.count == cut2.coefficients.count else {
+            return false
+        }
+
+        // Check if cut2 dominates cut1
+        // For <= constraints: if all a2[i] <= a1[i] and b2 <= b1, then cut2 dominates cut1
+        var allCoeffsDominate = true
+        for i in 0..<cut1.coefficients.count {
+            if cut2.coefficients[i] > cut1.coefficients[i] + tolerance {
+                allCoeffsDominate = false
+                break
+            }
+        }
+
+        return allCoeffsDominate && cut2.rhs <= cut1.rhs + tolerance
+    }
+
+    /// Check if two cuts are parallel (same coefficients, different RHS).
+    ///
+    /// - Parameters:
+    ///   - cut1: First cut
+    ///   - cut2: Second cut
+    ///   - tolerance: Numerical tolerance for comparisons
+    /// - Returns: true if cuts are parallel
+    private func areCutsParallel(_ cut1: CuttingPlane, _ cut2: CuttingPlane, tolerance: Double) -> Bool {
+        guard cut1.coefficients.count == cut2.coefficients.count else {
+            return false
+        }
+
+        // Compute norms to normalize for comparison
+        let norm1 = sqrt(cut1.coefficients.reduce(0.0) { $0 + $1 * $1 })
+        let norm2 = sqrt(cut2.coefficients.reduce(0.0) { $0 + $1 * $1 })
+
+        guard norm1 > tolerance && norm2 > tolerance else {
+            return false  // Degenerate cut
+        }
+
+        // Normalize coefficients
+        let normalized1 = cut1.coefficients.map { $0 / norm1 }
+        let normalized2 = cut2.coefficients.map { $0 / norm2 }
+
+        // Check if normalized coefficients are equal
+        for i in 0..<normalized1.count {
+            if abs(normalized1[i] - normalized2[i]) > tolerance {
+                return false
+            }
+        }
+
+        return true
     }
 }
 

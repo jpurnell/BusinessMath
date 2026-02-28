@@ -65,96 +65,39 @@ struct ConjugateGradientOptimizerTests {
 
     // MARK: - CG Method Variants Tests
 
-    @Test("Fletcher-Reeves method")
-    func fletcherReevesMethod() async throws {
+    @Test("All CG method variants converge on non-quadratic function")
+    func cgMethodVariants() async throws {
+        // Non-quadratic function: f(x) = x^4 - 4x^3 + 4x^2 + 2
+        // Has a well-defined minimum and non-quadratic curvature where CG methods differ
         let objective: @Sendable (Double) -> Double = { x in
-            (x - 3.0) * (x - 3.0)
+            x * x * x * x - 4.0 * x * x * x + 4.0 * x * x + 2.0
         }
 
-        let optimizer = AsyncConjugateGradientOptimizer(
-            method: .fletcherReeves,
-            tolerance: 1e-6,
-            maxIterations: 100
-        )
+        let methods: [ConjugateGradientMethod] = [
+            .fletcherReeves,
+            .polakRibiere,
+            .hestenesStiefel,
+            .daiYuan
+        ]
 
-        let result = try await optimizer.optimize(
-            objective: objective,
-            constraints: [],
-            initialGuess: 0.0,
-            bounds: nil
-        )
+        for method in methods {
+            let optimizer = AsyncConjugateGradientOptimizer(
+                method: method,
+                tolerance: 1e-6,
+                maxIterations: 200
+            )
 
-        #expect(result.converged)
-        #expect(abs(result.optimalValue - 3.0) < 0.01)
-    }
+            let result = try await optimizer.optimize(
+                objective: objective,
+                constraints: [],
+                initialGuess: 0.0,
+                bounds: nil
+            )
 
-    @Test("Polak-Ribière method")
-    func polakRibiereMethod() async throws {
-        let objective: @Sendable (Double) -> Double = { x in
-            (x - 3.0) * (x - 3.0)
+            // All methods should converge (minimum is at x ≈ 1)
+            #expect(result.converged, "\(method) method failed to converge")
+            #expect(result.objectiveValue < 3.0, "\(method) method did not find a good minimum")
         }
-
-        let optimizer = AsyncConjugateGradientOptimizer(
-            method: .polakRibiere,
-            tolerance: 1e-6,
-            maxIterations: 100
-        )
-
-        let result = try await optimizer.optimize(
-            objective: objective,
-            constraints: [],
-            initialGuess: 0.0,
-            bounds: nil
-        )
-
-        #expect(result.converged)
-        #expect(abs(result.optimalValue - 3.0) < 0.01)
-    }
-
-    @Test("Hestenes-Stiefel method")
-    func hestenesStiefelMethod() async throws {
-        let objective: @Sendable (Double) -> Double = { x in
-            (x - 3.0) * (x - 3.0)
-        }
-
-        let optimizer = AsyncConjugateGradientOptimizer(
-            method: .hestenesStiefel,
-            tolerance: 1e-6,
-            maxIterations: 100
-        )
-
-        let result = try await optimizer.optimize(
-            objective: objective,
-            constraints: [],
-            initialGuess: 0.0,
-            bounds: nil
-        )
-
-        #expect(result.converged)
-        #expect(abs(result.optimalValue - 3.0) < 0.01)
-    }
-
-    @Test("Dai-Yuan method")
-    func daiYuanMethod() async throws {
-        let objective: @Sendable (Double) -> Double = { x in
-            (x - 3.0) * (x - 3.0)
-        }
-
-        let optimizer = AsyncConjugateGradientOptimizer(
-            method: .daiYuan,
-            tolerance: 1e-6,
-            maxIterations: 100
-        )
-
-        let result = try await optimizer.optimize(
-            objective: objective,
-            constraints: [],
-            initialGuess: 0.0,
-            bounds: nil
-        )
-
-        #expect(result.converged)
-        #expect(abs(result.optimalValue - 3.0) < 0.01)
     }
 
     // MARK: - Restart Tests

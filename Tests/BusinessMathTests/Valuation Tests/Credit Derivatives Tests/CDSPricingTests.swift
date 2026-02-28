@@ -50,16 +50,21 @@ struct CDSPricingTests {
         )
 
         // Flat discount curve at 5%
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
 
         // Constant 2% hazard rate → survival = exp(-0.02*t)
-        let survivalProbs = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let survivalProbs = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.02 * t)
         }
         let survivalCurve = TimeSeries(periods: periods, values: survivalProbs)
@@ -85,23 +90,28 @@ struct CDSPricingTests {
             paymentFrequency: .quarterly
         )
 
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
 
         // Low hazard: 1%
-        let lowHazardSurvival = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let lowHazardSurvival = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.01 * t)
         }
         let lowHazardCurve = TimeSeries(periods: periods, values: lowHazardSurvival)
 
         // High hazard: 5%
-        let highHazardSurvival = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let highHazardSurvival = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let highHazardCurve = TimeSeries(periods: periods, values: highHazardSurvival)
@@ -132,15 +142,20 @@ struct CDSPricingTests {
             paymentFrequency: .quarterly
         )
 
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
 
-        let survivalProbs = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let survivalProbs = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.02 * t)
         }
         let survivalCurve = TimeSeries(periods: periods, values: survivalProbs)
@@ -166,23 +181,28 @@ struct CDSPricingTests {
             paymentFrequency: .quarterly
         )
 
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
 
         // Low hazard: 1%
-        let lowHazardSurvival = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let lowHazardSurvival = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.01 * t)
         }
         let lowHazardCurve = TimeSeries(periods: periods, values: lowHazardSurvival)
 
         // High hazard: 5%
-        let highHazardSurvival = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let highHazardSurvival = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let highHazardCurve = TimeSeries(periods: periods, values: highHazardSurvival)
@@ -203,15 +223,20 @@ struct CDSPricingTests {
 
     @Test("Protection leg sensitive to recovery rate")
     func protectionLegRecoveryRate() {
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
 
-        let survivalProbs = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let survivalProbs = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.02 * t)
         }
         let survivalCurve = TimeSeries(periods: periods, values: survivalProbs)
@@ -260,9 +285,14 @@ struct CDSPricingTests {
             paymentFrequency: .quarterly
         )
 
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
@@ -287,8 +317,8 @@ struct CDSPricingTests {
             paymentFrequency: cds.paymentFrequency
         )
 
-        let survivalProbs = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        let survivalProbs = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-hazardRate * t)
         }
         let survivalCurve = TimeSeries(periods: periods, values: survivalProbs)
@@ -302,8 +332,13 @@ struct CDSPricingTests {
             survivalProbabilities: survivalCurve
         )
 
-        // Premium and protection should be approximately equal
-        #expect(abs(premium - protection) / premium < 0.01)
+        // Fair spread should be positive and reasonable
+        #expect(fairSpread > 0, "Fair spread should be positive")
+        #expect(fairSpread < 0.10, "Fair spread should be less than 1000 bps")
+
+        // At fair spread, premium leg should equal protection leg
+        let relativeDiff = abs(premium - protection) / protection
+        #expect(relativeDiff < 0.0001, "Premium and protection legs should be equal at fair spread (relative diff: \(relativeDiff))")
     }
 
     @Test("Fair spread increases with higher hazard rate")
@@ -316,9 +351,14 @@ struct CDSPricingTests {
             paymentFrequency: .quarterly
         )
 
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
@@ -347,9 +387,14 @@ struct CDSPricingTests {
             paymentFrequency: .quarterly
         )
 
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)
@@ -380,9 +425,14 @@ struct CDSPricingTests {
             paymentFrequency: .quarterly
         )
 
-        let periods = (1...20).map { Period.quarter(year: 2024, quarter: ($0 - 1) % 4 + 1) }
-        let discountFactors = periods.map { i in
-            let t = Double(periods.firstIndex(of: i)! + 1) * 0.25
+        // Create 20 unique quarterly periods (5 years)
+        let periods = (0..<20).map { i in
+            let year = 2024 + i / 4
+            let quarter = (i % 4) + 1
+            return Period.quarter(year: year, quarter: quarter)
+        }
+        let discountFactors = periods.enumerated().map { (idx, _) in
+            let t = Double(idx + 1) * 0.25
             return exp(-0.05 * t)
         }
         let discountCurve = TimeSeries(periods: periods, values: discountFactors)

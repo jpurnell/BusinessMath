@@ -48,13 +48,6 @@ struct SimulatedAnnealingTests {
         // SA is stochastic but with fixed seed should be reproducible
         // From [5,5] (value=50), we expect significant improvement
         #expect(result.value < 5.0, "Should achieve significant improvement from initial value of 50")
-
-        // Most seeded runs should converge reasonably well for this simple problem
-        if result.value < 1.0 {
-            print("✓ SA found excellent solution: \(result.value)")
-        } else {
-            print("⚠ SA found acceptable solution: \(result.value) (seeded run)")
-        }
     }
 
     @Test("Simulated Annealing minimizes Rosenbrock function")
@@ -72,7 +65,8 @@ struct SimulatedAnnealingTests {
                 finalTemperature: 0.01,
                 coolingRate: 0.95,
                 maxIterations: 5000,
-                perturbationScale: 0.5
+                perturbationScale: 0.5,
+                seed: 42
             ),
             searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
         )
@@ -121,7 +115,7 @@ struct SimulatedAnnealingTests {
 
         // Rastrigin is very difficult with many local minima
         // SA should improve from initial but may not reach global optimum
-        #expect(result.value < 30.0) // Better than starting point (~36)
+        #expect(result.value < 30.0) // Better than starting point (18.0)
     }
 
     // MARK: - Cooling Schedule Tests
@@ -237,7 +231,6 @@ struct SimulatedAnnealingTests {
         )
 
         let result = try optimizer.minimize(objective, from: VectorN([0.0]))
-		print("Result:\n\(result.formattedDescription)")
         #expect(result.converged)
         #expect(abs(result.solution[0] - 3.0) < 1.0)
     }
@@ -363,7 +356,6 @@ struct SimulatedAnnealingTests {
 
         #expect(result.converged)
         // Should stop before maxIterations due to temperature
-        #expect(result.iterations < 10000)
         #expect(result.iterations < 100)
     }
 
@@ -409,14 +401,6 @@ struct SimulatedAnnealingTests {
         // Starting from [5, 5] with objective value 50, we expect significant improvement
         // but not necessarily convergence to the global minimum at [0, 0]
         #expect(result.value < 10.0, "Should achieve significant improvement from initial value of 50")
-
-        // Most runs should get reasonably close to the optimum
-        // (typically within 2.0, but allowing some variance for stochastic nature)
-        if result.value < 2.0 {
-            print("✓ Default config found good solution: \(result.value)")
-        } else {
-            print("⚠ Default config found acceptable solution: \(result.value) (within tolerance)")
-        }
     }
 
     @Test("Custom seed provides deterministic results")

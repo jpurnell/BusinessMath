@@ -24,18 +24,9 @@ import Glibc
 @Suite("SimulationTests") struct SimulationTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.SimulationTests", category: #function)
 	
-	@Test("DistributionNormal") func LDistributionNormal() {
-		var array: [Double] = []
-		for _ in 0..<1000 {
-			array.append(distributionNormal(mean: 0, stdDev: 1))
-		}
-		let mu = (mean(array) * 10).rounded() / 10
-		let sd = (stdDev(array) * 10).rounded() / 10
-		#expect(mu < 0.125)
-		#expect(mu > -0.125)
-		#expect(sd > 0.975)
-		#expect(sd < 1.025)
-	}
+	// RETIRED: Legacy test with rounding hacks and arbitrary tolerances.
+	// Superseded by standardNormalMoments() in NormalDistributionTests_SwiftTesting
+	// which uses proper 3σ bounds and larger sample size (5000 vs 1000).
 
 	@Test("TriangularZero") func LTriangularZero() {
 		let a = 0.6

@@ -30,6 +30,7 @@ import Numerics
 ///   // result should be the arithmetic-harmonic mean of the dataset `values`
 
 public func arithmeticHarmonicMean<T: Real>(_ values: [T], _ tolerance: Int = 10000) -> T {
+	guard !values.isEmpty else { return T(0) }
 	var tempX = mean(values)
 	var tempY = harmonicMean(values)
 	while abs(tempX - tempY) > (T(1) / T(tolerance)) {

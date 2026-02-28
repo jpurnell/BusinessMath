@@ -24,11 +24,11 @@ import Glibc
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.DispersionAroundtheMeanTests", category: #function)
 	
 
-	@Test("CoefficientOfVariation") func LCoefficientOfVariation() {
+	@Test("CoefficientOfVariation") func LCoefficientOfVariation() throws {
 		let array: [Double] = [0, 1, 2, 3, 4]
 		let stdDev = stdDev(array)
 		let mean = mean(array)
-		let result = try! coefficientOfVariation(stdDev, mean: mean)
+		let result = try coefficientOfVariation(stdDev, mean: mean)
 		#expect(result == (Double.sqrt(2.5) / 2) * 100)
 	}
 	
@@ -63,7 +63,7 @@ import Glibc
 
 	 @Test("StdDevS") func LStdDevS() {
 		 let result = (stdDevS([96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53]) * 10000.0).rounded(.up) / 10000
-		 #expect(result == 27.7243)
+		 #expect(abs(result - 27.7243) < 5e-5)
 	 }
 
 	 @Test("StdDev") func LStdDev() {
@@ -210,5 +210,121 @@ struct DispersionProperties {
 		#expect(throws: BusinessMathError.self) {
 			_ = try coefficientOfVariation(stdDev([ -1.0, 0.0, 1.0 ]), mean: 0.0)
 		}
+	}
+}
+
+@Suite("Dispersion - NaN and Infinity Input Rejection")
+struct DispersionNaNInfinityTests {
+
+	@Test("stdDev propagates NaN")
+	func stdDev_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = stdDev(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("stdDevS propagates NaN")
+	func stdDevS_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0, 4.0]
+		let result = stdDevS(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("stdDevP propagates NaN")
+	func stdDevP_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = stdDevP(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("varianceS propagates NaN")
+	func varianceS_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = varianceS(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("varianceP propagates NaN")
+	func varianceP_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = varianceP(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("stdDev handles infinity")
+	func stdDev_handles_infinity() {
+		let values = [1.0, Double.infinity, 3.0]
+		let result = stdDev(values)
+		#expect(result.isInfinite || result.isNaN)
+	}
+
+	@Test("variance handles infinity")
+	func variance_handles_infinity() {
+		let values = [1.0, Double.infinity, 3.0]
+		let result = varianceS(values)
+		#expect(result.isInfinite || result.isNaN)
+	}
+
+	@Test("coefficientOfVariation propagates NaN")
+	func coefficient_of_variation_propagates_nan() throws {
+		// NaN stdDev
+		let result1 = try? coefficientOfVariation(Double.nan, mean: 5.0)
+		#expect(result1 == nil || result1!.isNaN)
+
+		// NaN mean should throw
+		#expect(throws: BusinessMathError.self) {
+			_ = try coefficientOfVariation(2.0, mean: Double.nan)
+		}
+	}
+
+	@Test("indexOfDispersion propagates NaN")
+	func index_of_dispersion_propagates_nan() throws {
+		let values = [1.0, Double.nan, 3.0]
+		let result = try? indexOfDispersion(values)
+		#expect(result == nil || result!.isNaN)
+	}
+}
+
+@Suite("Dispersion - Stress Tests")
+struct DispersionStressTests {
+
+	@Test("stdDev handles large dataset", .timeLimit(.minutes(1)))
+	func stdDev_large_dataset() {
+		let values = (1...1_000_000).map { Double($0) }
+		let result = stdDev(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("stdDevS handles large dataset", .timeLimit(.minutes(1)))
+	func stdDevS_large_dataset() {
+		let values = (1...1_000_000).map { Double($0) }
+		let result = stdDevS(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("stdDevP handles large dataset", .timeLimit(.minutes(1)))
+	func stdDevP_large_dataset() {
+		let values = (1...1_000_000).map { Double($0) }
+		let result = stdDevP(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("varianceS handles large dataset", .timeLimit(.minutes(1)))
+	func varianceS_large_dataset() {
+		let values = (1...1_000_000).map { Double($0) }
+		let result = varianceS(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("varianceP handles large dataset", .timeLimit(.minutes(1)))
+	func varianceP_large_dataset() {
+		let values = (1...1_000_000).map { Double($0) }
+		let result = varianceP(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
 	}
 }

@@ -262,6 +262,77 @@ public struct CuttingPlaneGenerator: Sendable {
         return cut.isWeak ? nil : cut
     }
 
+    /// Generate a mixed-integer rounding (MIR) cut from a simplex row.
+    ///
+    /// MIR cuts are stronger than Gomory cuts for mixed-integer problems where
+    /// some variables are continuous. The MIR formula treats integer and continuous
+    /// variables differently based on the fractional part of the RHS.
+    ///
+    /// Given a simplex row: x_B = b + Σ a_j x_j, the MIR cut is:
+    /// - For integer x_j: coefficient is -frac(a_j)
+    /// - For continuous x_j: coefficient depends on sign and uses division by frac(b)
+    ///
+    /// - Parameters:
+    ///   - row: Simplex row with variable index mapping
+    ///   - totalVariableCount: Total number of variables in original problem space
+    ///   - integerVariables: Set of variable indices that must be integer
+    /// - Returns: MIR cutting plane in original variable space, or nil if no valid cut
+    /// - Throws: `CuttingPlaneError.invalidTableau` if row structure is invalid
+    public func generateMIRCut(
+        from row: SimplexRow,
+        totalVariableCount: Int,
+        integerVariables: Set<Int>
+    ) throws -> CuttingPlane? {
+        // Check if RHS is fractional
+        let rhsFractional = fractionalPart(row.rhs)
+
+        if rhsFractional < fractionalTolerance {
+            return nil  // No cut needed for integer RHS
+        }
+
+        // Validate row structure
+        guard row.coefficients.count == row.nonBasicVariableIndices.count else {
+            throw CuttingPlaneError.invalidTableau
+        }
+
+        // Build coefficient vector in ORIGINAL VARIABLE SPACE
+        var fullCoefficients = Array(repeating: 0.0, count: totalVariableCount)
+
+        for (colIndex, originalIndex) in row.nonBasicVariableIndices.enumerated() {
+            guard originalIndex < totalVariableCount else {
+                throw CuttingPlaneError.invalidTableau
+            }
+
+            let canonicalCoeff = row.coefficients[colIndex]
+
+            // Apply MIR formula based on whether variable is integer or continuous
+            if integerVariables.contains(originalIndex) {
+                // Integer variable: use fractional part (same as Gomory)
+                let frac = fractionalPart(canonicalCoeff)
+                fullCoefficients[originalIndex] = -frac
+            } else {
+                // Continuous variable: use MIR formula
+                // If a_j >= 0: coefficient = -a_j / (1 - f_0)
+                // If a_j < 0: coefficient = -a_j / f_0
+                // where f_0 = frac(b)
+                if canonicalCoeff >= 0 {
+                    fullCoefficients[originalIndex] = -canonicalCoeff / (1.0 - rhsFractional)
+                } else {
+                    fullCoefficients[originalIndex] = -canonicalCoeff / rhsFractional
+                }
+            }
+        }
+
+        let cut = CuttingPlane(
+            coefficients: fullCoefficients,
+            rhs: -rhsFractional,
+            type: .mixedIntegerRounding,
+            sourceIndex: row.basicVariableIndex
+        )
+
+        return cut.isWeak ? nil : cut
+    }
+
     // MARK: - Multiple Cut Generation
 
     /// Generate Gomory cuts from multiple simplex rows.
@@ -309,6 +380,77 @@ public struct CuttingPlaneGenerator: Sendable {
                 totalVariableCount: totalVariableCount
             ) {
                 cuts.append(cut)
+            }
+        }
+
+        return cuts
+    }
+
+    /// Generate cuts from multiple simplex rows with configurable cut types.
+    ///
+    /// Generates different types of cuts based on configuration, including Gomory,
+    /// MIR (mixed-integer rounding), and cover cuts.
+    ///
+    /// - Parameters:
+    ///   - rows: Array of simplex rows with variable mappings
+    ///   - currentSolution: Current LP solution in original variable space
+    ///   - totalVariableCount: Total number of variables in problem
+    ///   - integerVariables: Set of variable indices that must be integer
+    ///   - enableGomory: Whether to generate Gomory fractional cuts (default: true)
+    ///   - enableMIR: Whether to generate mixed-integer rounding cuts (default: false)
+    /// - Returns: Array of generated cutting planes in original variable space
+    /// - Throws: `CuttingPlaneError` if row structures are invalid
+    public func generateCuts(
+        from rows: [SimplexRow],
+        currentSolution: [Double],
+        totalVariableCount: Int,
+        integerVariables: Set<Int>,
+        enableGomory: Bool = true,
+        enableMIR: Bool = false
+    ) throws -> [CuttingPlane] {
+        var cuts: [CuttingPlane] = []
+
+        for row in rows {
+            // Verify basic variable index is valid
+            guard row.basicVariableIndex < currentSolution.count else {
+                continue
+            }
+
+            let basicValue = currentSolution[row.basicVariableIndex]
+            let frac = fractionalPart(basicValue)
+
+            // Only generate cut if basic value is fractional
+            guard frac >= fractionalTolerance else {
+                continue
+            }
+
+            // Create adjusted row with actual basic value as RHS
+            let adjustedRow = SimplexRow(
+                rhs: basicValue,
+                coefficients: row.coefficients,
+                nonBasicVariableIndices: row.nonBasicVariableIndices,
+                basicVariableIndex: row.basicVariableIndex
+            )
+
+            // Generate Gomory cuts
+            if enableGomory {
+                if let cut = try generateGomoryCut(
+                    from: adjustedRow,
+                    totalVariableCount: totalVariableCount
+                ) {
+                    cuts.append(cut)
+                }
+            }
+
+            // Generate MIR cuts if enabled
+            if enableMIR {
+                if let cut = try generateMIRCut(
+                    from: adjustedRow,
+                    totalVariableCount: totalVariableCount,
+                    integerVariables: integerVariables
+                ) {
+                    cuts.append(cut)
+                }
             }
         }
 

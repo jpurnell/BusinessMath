@@ -233,8 +233,7 @@ struct MonteCarloGPUIntegrationTests {
         #endif
     }
 
-    // DISABLED: Same Metal initialization issue as testReproducibility
-    // @Test("Edge case: constant distribution")
+	@Test("Edge case: constant distribution", .disabled("Metal initialization quirk in test environment"))
     func disabledTestConstantDistribution() throws {
         #if canImport(Metal)
         guard let gpuDevice = MonteCarloGPUDevice() else {
@@ -688,7 +687,7 @@ struct MonteCarloGPUIntegrationTests {
     // calls produce incorrect results on initial runs. However, production code via
     // MonteCarloSimulation works correctly (see other passing GPU tests). This appears
     // to be a Metal shader caching/initialization issue specific to test environments.
-    // @Test("Reproducibility with seed")
+    @Test("Reproducibility with seed", .disabled("Metal initialization quirk in test environment - GPU device calls produce incorrect results on initial runs, but production code via MonteCarloSimulation works correctly"))
     func disabledTestReproducibility() throws {
         #if canImport(Metal)
         guard let gpuDevice = MonteCarloGPUDevice() else {

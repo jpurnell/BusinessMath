@@ -27,6 +27,7 @@ import Glibc
         #expect(result == 0.692952)
     }
 
+    @Test("Z-test p-value is non-significant for near-population sample")
     func testpValueOfZTest() {
         // Example: Test if a sample mean differs significantly from a known population mean
         // Scenario: Testing if average customer spending differs from historical $50

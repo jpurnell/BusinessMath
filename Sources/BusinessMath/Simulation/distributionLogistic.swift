@@ -26,6 +26,14 @@ import Numerics
 /// - Requires: The use of appropriate `Real` compatible number types for accurate results.
 
 public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+	// Validate parameters - return NaN for invalid inputs
+	guard !stdDev.isNaN, stdDev.isFinite else { return T.nan }
+	guard stdDev >= T(0) else { return T.nan }  // Negative stdDev is invalid
+	guard !mean.isNaN, mean.isFinite else { return T.nan }
+
+	// Handle degenerate case: stdDev = 0 means deterministic (always returns mean)
+	if stdDev == T(0) { return mean }
+
 	let p: T
 	if let seed = seed {
 		p = distributionUniform(min: T(0), max: T(1), seed)

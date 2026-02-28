@@ -8,7 +8,15 @@
 import Testing
 @testable import BusinessMath
 
-@Suite struct AdaptiveOptimizerTests {
+@Suite("Adaptive Optimizer Tests", .serialized)
+struct AdaptiveOptimizerTests {
+
+	// MARK: - Expected Algorithm Names (from AdaptiveOptimizer.AlgorithmChoice)
+
+	private let expectedGradientDescent = "Gradient Descent"
+	private let expectedNewtonRaphson = "Newton-Raphson"
+	private let expectedConstrained = "Constrained Optimizer"
+	private let expectedInequality = "Inequality Optimizer"
 
 	// MARK: - Algorithm Selection Tests
 
@@ -25,7 +33,7 @@ import Testing
 			]
 		)
 
-		#expect(result.algorithmUsed == "Inequality Optimizer")
+		#expect(result.algorithmUsed == expectedInequality)
 		#expect(result.selectionReason.contains("inequality"))
 		#expect(result.converged)
 	}
@@ -42,7 +50,7 @@ import Testing
 			]
 		)
 
-		#expect(result.algorithmUsed == "Constrained Optimizer")
+		#expect(result.algorithmUsed == expectedConstrained)
 		#expect(result.selectionReason.contains("equality"))
 		#expect(result.converged)
 	}
@@ -64,7 +72,7 @@ import Testing
 			constraints: []
 		)
 
-		#expect(result.algorithmUsed == "Gradient Descent")
+		#expect(result.algorithmUsed == expectedGradientDescent)
 		#expect(result.selectionReason.contains("Large problem"))
 		#expect(result.converged)
 	}
@@ -78,7 +86,7 @@ import Testing
 			initialGuess: VectorN([0.0, 0.0])
 		)
 
-		#expect(result.algorithmUsed == "Newton-Raphson")
+		#expect(result.algorithmUsed == expectedNewtonRaphson)
 		#expect(result.selectionReason.contains("Small problem"))
 		#expect(result.converged)
 
@@ -98,7 +106,7 @@ import Testing
 			constraints: []
 		)
 
-		#expect(result.algorithmUsed == "Gradient Descent")
+		#expect(result.algorithmUsed == expectedGradientDescent)
 		#expect(result.converged)
 	}
 
@@ -112,7 +120,7 @@ import Testing
 			constraints: []
 		)
 
-		#expect(result.algorithmUsed == "Newton-Raphson")
+		#expect(result.algorithmUsed == expectedNewtonRaphson)
 		#expect(result.selectionReason.contains("Accuracy preference"))
 	}
 
@@ -190,7 +198,7 @@ import Testing
 			]
 		)
 
-		#expect(result.algorithmUsed == "Inequality Optimizer")
+		#expect(result.algorithmUsed == expectedInequality)
 		#expect(result.converged)
 
 		// Check budget constraint

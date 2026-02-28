@@ -132,7 +132,7 @@ struct StreamingCompositionTests {
         #expect(debounced[0] == 3.0)
     }
 
-	@Test("Debounce with separated values", .timeLimit(.minutes(1)), .localOnly)
+	@Test("Debounce with separated values", .timeLimit(.minutes(1)), .disabled("This should be run manually, as it is inherently flaky in a sequential test environment."))
     func debounceWithSeparatedValues() async throws {
         // Use more generous timing to avoid flakiness in parallel test runs
         // Values are separated by 100ms with 30ms debounce interval

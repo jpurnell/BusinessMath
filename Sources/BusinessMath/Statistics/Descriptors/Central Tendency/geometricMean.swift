@@ -14,12 +14,11 @@ import Numerics
 ///
 /// - Parameters:
 ///   - values: An array of values for which to compute the geometric mean.
-/// - Returns: The geometric mean of the dataset. If the dataset is empty, returns 1.
+/// - Returns: The geometric mean of the dataset. If the dataset is empty, returns NaN.
 ///
-/// - Note: The function computes the geometric mean using the formula:
-///   \[ G = \left(\prod_{i=1}^{n} x_i\right)^{\frac{1}{n}} \]
-///   where \( x_i \) are the values in the dataset and \( n \) is the number of values.
-///   The product of the values is computed using `reduce(T(1), *)` and then raised to the power of \(\frac{1}{n}\).
+/// - Note: The function computes the geometric mean using the logarithmic formula for numerical stability:
+///   \[ G = \exp\left(\frac{1}{n}\sum_{i=1}^{n} \ln(x_i)\right) \]
+///   This avoids overflow/underflow that would occur with direct multiplication of large datasets.
 ///
 /// - Example:
 ///   ```swift
@@ -29,5 +28,38 @@ import Numerics
 ///   // result should be approximately 2.605171
 
 public func geometricMean<T: Real>(_ values: [T]) -> T {
-    return T.pow(values.reduce(T(1), *), T(1) / T(values.count))
+    // Empty array returns NaN
+    guard !values.isEmpty else {
+        return T.nan
+    }
+
+    // Single element returns itself (avoids log/exp precision loss)
+    if values.count == 1 {
+        return values[0]
+    }
+
+    // NaN propagates
+    if values.contains(where: { $0.isNaN }) {
+        return T.nan
+    }
+
+    // Infinity propagates
+    if values.contains(where: { $0.isInfinite }) {
+        return T.infinity
+    }
+
+    // Zero in the dataset makes geometric mean zero
+    if values.contains(where: { $0 == T(0) }) {
+        return T(0)
+    }
+
+    // Negative values make geometric mean undefined (NaN)
+    if values.contains(where: { $0 < T(0) }) {
+        return T.nan
+    }
+
+    // Use logarithmic formula to avoid overflow: exp(mean(log(values)))
+    let logValues = values.map { T.log($0) }
+    let meanLog = mean(logValues)
+    return T.exp(meanLog)
 }

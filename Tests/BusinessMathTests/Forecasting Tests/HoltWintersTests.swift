@@ -170,7 +170,7 @@ struct HoltWintersTests {
 		let forecast = model.predict(periods: 24)!  // 2 years
 		// Q4 months (10, 11, 12), positions (9, 10, 11) should be higher than others
 		// Check second year of forecast
-		let q4Months = [9, 10, 11].map { /*print("getting \(forecast.valuesArray[$0 + 12])");*/ return forecast.valuesArray[$0 + 12] }
+		let q4Months = [9, 10, 11].map { forecast.valuesArray[$0 + 12] }
 		let otherMonths = [1, 2, 3, 4, 5, 6].map { forecast.valuesArray[$0 + 12] }
 
 		let avgQ4 = q4Months.reduce(0, +) / Double(q4Months.count)
@@ -195,7 +195,7 @@ struct HoltWintersTests {
 
 		// Forecast should be close to 100
 		for value in forecast.valuesArray {
-			#expect(abs(value - 100.0) < 10.0)
+			#expect(abs(value - 100.0) < 1.0)
 		}
 	}
 }
@@ -288,26 +288,35 @@ struct AdditionalHoltWintersTests {
 		let widths = zip(fc.lowerBound.valuesArray, fc.upperBound.valuesArray).map { $1 - $0 }
 
 		// Width should not shrink sharply with horizon; allow minor noise but enforce non-decreasing in aggregate
-		#expect(widths.first! <= widths.last!)
+		guard let firstWidth = widths.first, let lastWidth = widths.last else {
+			Issue.record("CI widths array is empty")
+			return
+		}
+		#expect(firstWidth <= lastWidth)
 	}
 
 	@Test("Invalid confidence level throws")
 	func invalidConfidenceLevel() throws {
 		var model = HoltWintersModel<Double>(seasonalPeriods: 12)
 		let data = makeTrendSeasonalData()
-		let confidenceLevel = 1.5
 		try model.train(on: data)
 
+		var didThrow = false
+		var threwCorrectError = false
+
 		do {
-			_ = try model.predictWithConfidence(periods: 6, confidenceLevel: confidenceLevel)
+			_ = try model.predictWithConfidence(periods: 6, confidenceLevel: 1.5)
 		} catch let error as ForecastError {
-			switch error {
-				case .invalidConfidenceLevel:
-					#expect(true)
-				default:
-					Issue.record("Should have thrown for invalid confidenceLevel > 1")
+			didThrow = true
+			if case .invalidConfidenceLevel = error {
+				threwCorrectError = true
 			}
+		} catch {
+			didThrow = true
 		}
+
+		#expect(didThrow, "Should have thrown an error for confidence level > 1")
+		#expect(threwCorrectError, "Should have thrown ForecastError.invalidConfidenceLevel")
 	}
 }
 

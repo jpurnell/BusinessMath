@@ -32,12 +32,12 @@ import OSLog
 	@Test("ContraHarmonicMean") func LContraHarmonicMean() {
 		let values: [Double] = [1, 2, 3, 4, 5]
 		let result = (contraharmonicMean(values) * 10000).rounded() / 10000
-		#expect(result == 3.6667)
-		
+		#expect(abs(result - 3.6667) < 5e-5)
+
 		let x: Double = 4
 		let y: Double = 9
 		let specializedResult = (contraharmonicMean([x, y]) * 10000).rounded() / 10000
-		#expect(specializedResult == 7.4615)
+		#expect(abs(specializedResult - 7.4615) < 5e-5)
 	}
 
 	@Test("GeometricMean") func LGeometricMean() {
@@ -51,11 +51,11 @@ import OSLog
 		let values = [1.0, 4.0, 4.0]
 		let result = harmonicMean(values)
 		#expect(result == 2)
-		
+
         let x: Double = 4
         let y: Double = 9
         let specializedResult = (harmonicMean([x, y]) * 10000).rounded() / 10000
-        #expect(specializedResult == 5.5385)
+        #expect(abs(specializedResult - 5.5385) < 5e-5)
     }
 	
 	@Test("IdentricMean") func LIdentricMean() {
@@ -194,3 +194,207 @@ import OSLog
 			// For logarithmic/identric means (binary), this is not applicable
 		}
 	}
+
+@Suite("Central Tendency - NaN and Infinity Input Rejection")
+struct CentralTendencyNaNInfinityTests {
+
+	@Test("mean propagates NaN")
+	func mean_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = mean(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("mean propagates positive infinity")
+	func mean_propagates_positive_infinity() {
+		let values = [1.0, Double.infinity, 3.0]
+		let result = mean(values)
+		#expect(result.isInfinite)
+	}
+
+	@Test("mean propagates negative infinity")
+	func mean_propagates_negative_infinity() {
+		let values = [1.0, -Double.infinity, 3.0]
+		let result = mean(values)
+		#expect(result.isInfinite)
+	}
+
+	@Test("median propagates NaN")
+	func median_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0, 4.0, 5.0]
+		let result = median(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("median handles infinity")
+	func median_handles_infinity() {
+		let values = [1.0, 2.0, Double.infinity]
+		let result = median(values)
+		// Median of [1, 2, inf] should be 2
+		#expect(result == 2.0)
+	}
+
+	@Test("harmonicMean propagates NaN")
+	func harmonic_mean_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = harmonicMean(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("harmonicMean handles infinity")
+	func harmonic_mean_handles_infinity() {
+		let values = [1.0, Double.infinity, 3.0]
+		let result = harmonicMean(values)
+		// 1/inf = 0, so harmonic mean should still be computable
+		#expect(result.isNaN || result.isFinite)
+	}
+
+	@Test("geometricMean propagates NaN")
+	func geometric_mean_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = geometricMean(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("geometricMean handles infinity")
+	func geometric_mean_handles_infinity() {
+		let values = [1.0, Double.infinity, 3.0]
+		let result = geometricMean(values)
+		#expect(result.isInfinite)
+	}
+
+	@Test("contraharmonicMean propagates NaN")
+	func contraharmonic_mean_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = contraharmonicMean(values)
+		#expect(result.isNaN)
+	}
+
+	@Test("logarithmicMean propagates NaN")
+	func logarithmic_mean_propagates_nan() {
+		let result1 = logarithmicMean(Double.nan, 3.0)
+		let result2 = logarithmicMean(2.0, Double.nan)
+		#expect(result1.isNaN)
+		#expect(result2.isNaN)
+	}
+
+	@Test("identricMean propagates NaN")
+	func identric_mean_propagates_nan() {
+		let result1 = identricMean(Double.nan, 3.0)
+		let result2 = identricMean(2.0, Double.nan)
+		#expect(result1.isNaN)
+		#expect(result2.isNaN)
+	}
+
+	@Test("arithmeticGeometricMean propagates NaN")
+	func arithmetic_geometric_mean_propagates_nan() {
+		let values = [1.0, Double.nan, 3.0]
+		let result = arithmeticGeometricMean(values)
+		#expect(result.isNaN)
+	}
+}
+
+@Suite("Central Tendency - Empty Array Rejection")
+struct CentralTendencyEmptyArrayTests {
+
+	@Test("mean handles empty array")
+	func mean_empty_array() {
+		let values: [Double] = []
+		let result = mean(values)
+		// Empty array should return NaN or 0 depending on implementation
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("median handles empty array")
+	func median_empty_array() {
+		let values: [Double] = []
+		let result = median(values)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("mode handles empty array")
+	func mode_empty_array() {
+		let values: [Double] = []
+		let result = mode(values)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("harmonicMean handles empty array")
+	func harmonic_mean_empty_array() {
+		let values: [Double] = []
+		let result = harmonicMean(values)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("geometricMean handles empty array")
+	func geometric_mean_empty_array() {
+		let values: [Double] = []
+		let result = geometricMean(values)
+		#expect(result.isNaN || result == 0.0 || result == 1.0)
+	}
+
+	@Test("contraharmonicMean handles empty array")
+	func contraharmonic_mean_empty_array() {
+		let values: [Double] = []
+		let result = contraharmonicMean(values)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("arithmeticGeometricMean handles empty array")
+	func arithmetic_geometric_mean_empty_array() {
+		let values: [Double] = []
+		let result = arithmeticGeometricMean(values)
+		#expect(result.isNaN || result == 0.0)
+	}
+
+	@Test("arithmeticHarmonicMean handles empty array")
+	func arithmetic_harmonic_mean_empty_array() {
+		let values: [Double] = []
+		let result = arithmeticHarmonicMean(values)
+		#expect(result.isNaN || result == 0.0)
+	}
+}
+
+@Suite("Central Tendency - Stress Tests")
+struct CentralTendencyStressTests {
+
+	@Test("mean handles large dataset", .timeLimit(.minutes(1)))
+	func mean_large_dataset() {
+		let values = (1...1_000_000).map { Double($0) }
+		let result = mean(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("median handles large dataset", .timeLimit(.minutes(1)))
+	func median_large_dataset() {
+		let values = (1...1_000_000).map { Double($0) }
+		let result = median(values)
+		#expect(result.isFinite)
+		#expect(result == 500_000.5)
+	}
+
+	@Test("harmonicMean handles large dataset", .timeLimit(.minutes(1)))
+	func harmonic_mean_large_dataset() {
+		let values = (1...100_000).map { Double($0) }
+		let result = harmonicMean(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+
+	@Test("geometricMean handles large dataset", .timeLimit(.minutes(1)))
+	func geometric_mean_large_dataset() {
+		let values = Array(repeating: 2.0, count: 1_000_000)
+		let result = geometricMean(values)
+		#expect(result.isFinite)
+		#expect(abs(result - 2.0) < 1e-6)
+	}
+
+	@Test("contraharmonicMean handles large dataset", .timeLimit(.minutes(1)))
+	func contraharmonic_mean_large_dataset() {
+		let values = (1...100_000).map { Double($0) }
+		let result = contraharmonicMean(values)
+		#expect(result.isFinite)
+		#expect(result > 0)
+	}
+}

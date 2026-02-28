@@ -41,7 +41,7 @@ struct BranchAndCutTier1Tests {
 
         // Verify the solution satisfies original constraints
         let sol = result.integerSolution
-        #expect(sol[0] + sol[1] <= 6) // Rounded from 5.5
+        #expect(sol[0] + sol[1] <= 5) // Rounded from 5.5
     }
 
     @Test("Cuts preserve all vertices of integer hull")

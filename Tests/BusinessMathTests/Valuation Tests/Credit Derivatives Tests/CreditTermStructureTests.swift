@@ -56,8 +56,10 @@ struct CreditTermStructureTests {
             let marketSpread = marketSpreads[i]
             let impliedSpread = creditCurve.cdsSpread(maturity: tenor, recoveryRate: recovery)
 
-            // Should match within reasonable tolerance (bootstrapping is numerically challenging)
-            #expect(abs(impliedSpread - marketSpread) / marketSpread < 0.20)  // 20% tolerance
+            // Bootstrapping should reproduce market quotes within numerical precision limits
+            // Note: 15% tolerance reflects actual numerical characteristics of the bootstrapping algorithm
+            #expect(abs(impliedSpread - marketSpread) / marketSpread < 0.15,
+                "Bootstrapped spread at \(tenor)Y should match market spread within 15%")
         }
     }
 

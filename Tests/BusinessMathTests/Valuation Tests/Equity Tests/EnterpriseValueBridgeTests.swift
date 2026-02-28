@@ -16,7 +16,7 @@ struct EnterpriseValueBridgeTests {
     // MARK: - Basic Bridge Tests
 
     @Test("EV to Equity - simple case with net debt")
-    func evToEquitySimpleNetDebt() {
+    func evToEquitySimpleNetDebt() throws {
         // Given: Company with $1000M EV, $200M debt, $50M cash
         // Net Debt = $150M
         let bridge = EnterpriseValueBridge(
@@ -37,7 +37,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("EV to Equity - with net cash (negative net debt)")
-    func evToEquityNetCash() {
+    func evToEquityNetCash() throws {
         // Given: Tech company with $2000M EV, $100M debt, $500M cash
         // Net Debt = -$400M (net cash position)
         let bridge = EnterpriseValueBridge(
@@ -57,7 +57,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("EV to Equity - with non-operating assets")
-    func evToEquityWithNonOperatingAssets() {
+    func evToEquityWithNonOperatingAssets() throws {
         // Given: Company with investments not included in operations
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 1000.0,
@@ -77,7 +77,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("EV to Equity - with minority interest")
-    func evToEquityWithMinorityInterest() {
+    func evToEquityWithMinorityInterest() throws {
         // Given: Company with subsidiaries (minority shareholders)
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 1000.0,
@@ -97,7 +97,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("EV to Equity - with preferred stock")
-    func evToEquityWithPreferredStock() {
+    func evToEquityWithPreferredStock() throws {
         // Given: Company with preferred equity
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 1000.0,
@@ -117,7 +117,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("EV to Equity - comprehensive with all adjustments")
-    func evToEquityComprehensive() {
+    func evToEquityComprehensive() throws {
         // Given: Complex capital structure
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 5000.0,
@@ -140,7 +140,7 @@ struct EnterpriseValueBridgeTests {
     // MARK: - Breakdown Tests
 
     @Test("Bridge breakdown - detailed waterfall")
-    func bridgeBreakdown() {
+    func bridgeBreakdown() throws {
         // Given: Company with complex capital structure
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 5000.0,
@@ -168,7 +168,7 @@ struct EnterpriseValueBridgeTests {
     // MARK: - Value Per Share Tests
 
     @Test("Value per share calculation")
-    func valuePerShare() {
+    func valuePerShare() throws {
         // Given: Enterprise value and shares
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 1000.0,
@@ -189,7 +189,7 @@ struct EnterpriseValueBridgeTests {
     // MARK: - Enterprise Value Calculation from FCFF
 
     @Test("Calculate EV from FCFF - single period")
-    func calculateEVFromFCFFSinglePeriod() {
+    func calculateEVFromFCFFSinglePeriod() throws {
         // Given: Single period FCFF of $100M, 10% WACC, 3% growth
         let periods = [Period.year(2024)]
         let fcff = TimeSeries(periods: periods, values: [100.0])
@@ -209,7 +209,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("Calculate EV from FCFF - multi-period")
-    func calculateEVFromFCFFMultiPeriod() {
+    func calculateEVFromFCFFMultiPeriod() throws {
         // Given: 3-year FCFF projection
         let periods = [Period.year(2024), Period.year(2025), Period.year(2026)]
         let fcff = TimeSeries(periods: periods, values: [100.0, 110.0, 121.0])
@@ -227,7 +227,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("Round-trip: FCFF → EV → Equity → Per Share")
-    func roundTripValuation() {
+    func roundTripValuation() throws {
         // Given: Complete valuation scenario
         let periods = [Period.year(2024), Period.year(2025)]
         let fcff = TimeSeries(periods: periods, values: [150.0, 165.0])
@@ -263,7 +263,7 @@ struct EnterpriseValueBridgeTests {
     // MARK: - Edge Cases
 
     @Test("Zero enterprise value")
-    func zeroEnterpriseValue() {
+    func zeroEnterpriseValue() throws {
         // Given: Company with zero/negative operating value
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 0.0,
@@ -284,7 +284,7 @@ struct EnterpriseValueBridgeTests {
     }
 
     @Test("No debt, no cash - pure EV = Equity")
-    func pureEquityCompany() {
+    func pureEquityCompany() throws {
         // Given: All-equity company
         let bridge = EnterpriseValueBridge(
             enterpriseValue: 1000.0,
@@ -305,7 +305,7 @@ struct EnterpriseValueBridgeTests {
     // MARK: - Generic Type Tests
 
     @Test("Bridge with Float type")
-    func bridgeWithFloat() {
+    func bridgeWithFloat() throws {
         // Given: Bridge using Float
         let bridge = EnterpriseValueBridge<Float>(
             enterpriseValue: 1000.0,
@@ -326,7 +326,7 @@ struct EnterpriseValueBridgeTests {
     // MARK: - Comparison with FCFE
 
     @Test("Compare EV bridge with direct FCFE valuation")
-    func compareEVBridgeWithFCFE() {
+    func compareEVBridgeWithFCFE() throws {
         // Given: Same company valued two ways
 
         // Method 1: FCFF → EV → Equity
@@ -361,7 +361,7 @@ struct EnterpriseValueBridgeTests {
             costOfEquity: 0.11,
             terminalGrowthRate: 0.03
         )
-        let equityFromFCFE = fcfeModel.equityValue()
+        let equityFromFCFE = try fcfeModel.equityValue()
 
         // Then: Both methods should yield reasonable equity values
         // (May differ due to different assumptions, but both should be positive)

@@ -8,6 +8,20 @@
 import Foundation
 import Numerics
 
+// MARK: - Valuation Errors
+
+/// Errors that can occur during equity valuation
+public enum ValuationError: Error, Equatable {
+    /// Invalid parameters were provided to the model
+    case invalidParameters(String)
+
+    /// Model assumptions are violated (e.g., growth rate >= discount rate)
+    case invalidModelAssumptions(String)
+
+    /// Missing required data for valuation
+    case insufficientData(String)
+}
+
 // MARK: - Gordon Growth Model
 
 /// Gordon Growth Model for equity valuation using constant dividend growth.
@@ -54,8 +68,7 @@ import Numerics
 ///
 /// ## Important Notes
 ///
-/// - Returns `NaN` or `Infinity` if `growthRate >= requiredReturn` (mathematically undefined)
-/// - Returns negative value if `growthRate > requiredReturn` (invalid model)
+/// - Throws ``ValuationError/invalidModelAssumptions(_:)`` if `growthRate >= requiredReturn`
 /// - For zero growth (perpetuity), use `growthRate = 0`
 /// - Model is highly sensitive to growth rate assumptions
 ///
@@ -93,8 +106,8 @@ public struct GordonGrowthModel<T: Real> where T: Sendable {
     ///
     /// Formula: `Value = D₁ / (r - g)`
     ///
-    /// - Returns: Intrinsic value per share. Returns `NaN`, `Infinity`, or negative value
-    ///   if `growthRate >= requiredReturn` (invalid model assumptions).
+    /// - Returns: Intrinsic value per share
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if `growthRate >= requiredReturn`
     ///
     /// - Note: The model is invalid when growth rate equals or exceeds required return,
     ///   as this implies unsustainable growth. In practice, stable companies typically
@@ -108,16 +121,19 @@ public struct GordonGrowthModel<T: Real> where T: Sendable {
     ///     growthRate: 0.04,
     ///     requiredReturn: 0.09
     /// )
-    /// let value = model.valuePerShare()  // $60.00
+    /// let value = try model.valuePerShare()  // $60.00
     /// ```
-    public func valuePerShare() -> T {
+    public func valuePerShare() throws -> T {
         // Formula: V = D / (r - g)
         let denominator = requiredReturn - growthRate
 
         // Guard against invalid inputs (g >= r)
         guard denominator > T(0) else {
-            // Return NaN for invalid inputs (mathematically undefined)
-            return T.nan
+            throw ValuationError.invalidModelAssumptions(
+                "Growth rate (\(growthRate)) must be less than required return (\(requiredReturn)). " +
+                "A perpetual growth rate equal to or greater than the discount rate is mathematically undefined " +
+                "and economically nonsensical."
+            )
         }
 
         return dividendPerShare / denominator
@@ -163,7 +179,7 @@ public struct GordonGrowthModel<T: Real> where T: Sendable {
 /// print("Intrinsic value: $\(value)")
 /// ```
 ///
-/// - Important: `stableGrowthRate` must be less than `requiredReturn` for terminal value to be valid
+/// - Important: `stableGrowthRate` must be less than `requiredReturn` or the method will throw ``ValuationError/invalidModelAssumptions(_:)``
 ///
 /// - SeeAlso:
 ///   - ``GordonGrowthModel`` for the terminal value calculation
@@ -210,8 +226,8 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
     ///
     /// Calculates present value of high growth dividends plus terminal value.
     ///
-    /// - Returns: Intrinsic value per share. Returns `NaN` or `Infinity` if
-    ///   `stableGrowthRate >= requiredReturn` (invalid terminal value).
+    /// - Returns: Intrinsic value per share
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if `stableGrowthRate >= requiredReturn`
     ///
     /// ## Calculation Steps
     ///
@@ -222,9 +238,9 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
     /// 5. Sum all present values
     ///
     /// - Complexity: O(n) where n is `highGrowthPeriods`
-    public func valuePerShare() -> T {
+    public func valuePerShare() throws -> T {
         let highGrowthValue = highGrowthPhaseValue()
-        let termValue = terminalValue()
+        let termValue = try terminalValue()
         return highGrowthValue + termValue
     }
 
@@ -286,8 +302,8 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
     /// growth period, then discounts it back to present value. The terminal value typically
     /// represents the majority of value in two-stage models.
     ///
-    /// - Returns: Present value of terminal perpetuity. Returns `NaN` if
-    ///   `stableGrowthRate >= requiredReturn` (invalid model).
+    /// - Returns: Present value of terminal perpetuity
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if `stableGrowthRate >= requiredReturn`
     ///
     /// ## Formula
     ///
@@ -313,13 +329,13 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
     ///     requiredReturn: 0.12
     /// )
     ///
-    /// let terminalValue = model.terminalValue()  // ~$19.27
-    /// let totalValue = model.valuePerShare()     // ~$28.45
+    /// let terminalValue = try model.terminalValue()  // ~$19.27
+    /// let totalValue = try model.valuePerShare()     // ~$28.45
     /// let terminalPercentage = terminalValue / totalValue  // ~68%
     /// ```
     ///
     /// - Complexity: O(1) if `highGrowthPeriods` is already known, otherwise O(n)
-    public func terminalValue() -> T {
+    public func terminalValue() throws -> T {
         // Calculate the dividend at end of high growth period
         var dividend = currentDividend
         if highGrowthPeriods > 0 {
@@ -331,13 +347,17 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
         // First dividend in stable stage
         let firstStableDividend = dividend * (T(1) + stableGrowthRate)
 
-        // Terminal value using Gordon Growth Model
-        let terminalValueAtEnd = firstStableDividend / (requiredReturn - stableGrowthRate)
-
-        // Guard against invalid terminal value
-        guard !terminalValueAtEnd.isNaN && !terminalValueAtEnd.isInfinite else {
-            return T.nan
+        // Check denominator before dividing
+        let denominator = requiredReturn - stableGrowthRate
+        guard denominator > T(0) else {
+            throw ValuationError.invalidModelAssumptions(
+                "Stable growth rate (\(stableGrowthRate)) must be less than required return (\(requiredReturn)). " +
+                "Terminal value calculation requires g < r for mathematical validity."
+            )
         }
+
+        // Terminal value using Gordon Growth Model
+        let terminalValueAtEnd = firstStableDividend / denominator
 
         // Discount terminal value to present
         let terminalDiscountFactor = T.pow(T(1) + requiredReturn, T(highGrowthPeriods))
@@ -434,8 +454,8 @@ public struct HModel<T: Real> where T: Sendable {
     ///
     /// Uses the Fuller-Hsia H-Model formula with linearly declining growth.
     ///
-    /// - Returns: Intrinsic value per share. Returns `NaN` if
-    ///   `terminalGrowthRate >= requiredReturn` (invalid model).
+    /// - Returns: Intrinsic value per share
+    /// - Throws: ``ValuationError/invalidModelAssumptions(_:)`` if `terminalGrowthRate >= requiredReturn`
     ///
     /// ## Formula Derivation
     ///
@@ -447,12 +467,15 @@ public struct HModel<T: Real> where T: Sendable {
     ///
     /// - Note: The model assumes linear growth decline over 2H years, which is often
     ///   more realistic than the abrupt transition in the Two-Stage model.
-    public func valuePerShare() -> T {
+    public func valuePerShare() throws -> T {
         let denominator = requiredReturn - terminalGrowthRate
 
         // Guard against invalid inputs
         guard denominator > T(0) else {
-            return T.nan
+            throw ValuationError.invalidModelAssumptions(
+                "Terminal growth rate (\(terminalGrowthRate)) must be less than required return (\(requiredReturn)). " +
+                "H-Model requires g < r for mathematical validity."
+            )
         }
 
         // First component: Terminal value (Gordon Growth at terminal growth rate)
