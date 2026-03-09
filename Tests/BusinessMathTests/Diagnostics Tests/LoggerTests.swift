@@ -263,13 +263,16 @@ struct LoggerTests {
     func linuxFallbackConvenienceMethods() {
         let logger = Logger.calculations
 
+        // Verify logger is properly configured before calling methods
+        #expect(logger.category == "calculations")
+
         // These should use print statements on Linux
         logger.calculationStarted("Test")
         logger.calculationCompleted("Test", result: 42.0)
         logger.performance("Test", duration: 1.0)
 
-        // Test passes if no crashes occur
-        #expect(true)
+        // Verify logger remains valid after method calls
+        #expect(logger.subsystem == "com.justinpurnell.BusinessMath")
     }
 
     #endif

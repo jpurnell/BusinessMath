@@ -228,14 +228,16 @@ struct MultivariateOptimizerPerformanceTests {
         let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
 
         // Run many optimizations to check for memory leaks
+        var completedIterations = 0
         for i in 0..<100 {
             let initialGuess = VectorN([Double(i % 10), Double(i % 10)])
             let result = try optimizer.minimize(objective, from: initialGuess)
             #expect(result.objectiveValue >= 0)
+            completedIterations += 1
         }
 
-        // If we got here without crashes, memory management is working
-        #expect(true)
+        // Verify all iterations completed successfully
+        #expect(completedIterations == 100, "All 100 optimization iterations should complete")
     }
 
     // MARK: - Convergence Rate Tests

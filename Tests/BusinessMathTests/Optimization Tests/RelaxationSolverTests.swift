@@ -88,9 +88,10 @@ struct RelaxationSolverTests {
             status: .optimal
         )
 
-        // If this compiles, Sendable conformance works
-        let _: any Sendable = result
-        #expect(true)  // Compilation is the test
+        // Type annotation verifies Sendable conformance at compile time
+        let sendableResult: any Sendable = result
+        // Verify the result maintains its values when accessed as Sendable
+        #expect((sendableResult as? RelaxationResult)?.status == .optimal)
     }
 
     // MARK: - RelaxationStatus Tests

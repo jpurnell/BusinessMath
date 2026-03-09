@@ -180,7 +180,7 @@ import Testing
 		#expect(result.converged)
 
 		// Check terminal constraint is satisfied
-		let finalWeights = result.terminalState.toArray()
+		let finalWeights = try #require(result.terminalState).toArray()
 		#expect(finalWeights[0] >= 0.39, "Terminal weight should be ≥ 40%")
 
 //		print("Final weights: \(finalWeights.map { $0.number(2) })")

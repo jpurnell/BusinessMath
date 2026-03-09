@@ -454,36 +454,32 @@ struct UnassortedTests {
 		#expect(result2 == 10.5)
     }
     
-    @Test("Percentile location") func testPercentileLocation() {
+    @Test("Percentile location") func testPercentileLocation() throws {
 		// Test finding value at a given percentile using nearest-rank method
 		let values = Array(1...100).map { Double($0) }
-		
+
 		// Test 25th percentile - should return approximately 25
-		let result25 = PercentileLocation(25, values: values)
-		// Result:("25th percentile result: \(result25)")
+		let result25 = try PercentileLocation(25, values: values)
 		#expect(abs(result25 - 25.0) <= 1.0)
-		
+
 		// Test 50th percentile (median) - should return approximately 50
-		let result50 = PercentileLocation(50, values: values)
-		// Result:("50th percentile result: \(result50)")
+		let result50 = try PercentileLocation(50, values: values)
 		#expect(abs(result50 - 50.0) <= 1.0)
-		
+
 		// Test 75th percentile - should return approximately 75
-		let result75 = PercentileLocation(75, values: values)
-		// Result:("75th percentile result: \(result75)")
+		let result75 = try PercentileLocation(75, values: values)
 		#expect(abs(result75 - 75.0) <= 1.0)
-		
+
 		// Test edge cases
-		let result0 = PercentileLocation(0, values: values)
+		let result0 = try PercentileLocation(0, values: values)
 		#expect(result0 == 1.0) // Should return first element
-		
-		let result100 = PercentileLocation(100, values: values)
+
+		let result100 = try PercentileLocation(100, values: values)
 		#expect(result100 == 100.0) // Should return last element
-		
+
 		// Test with smaller dataset
 		let smallValues: [Double] = [1, 2, 3, 4, 5]
-		let smallResult50 = PercentileLocation(50, values: smallValues)
-		// Result:("Small result 50: \(smallResult50)")
+		let smallResult50 = try PercentileLocation(50, values: smallValues)
 		#expect(abs(smallResult50 - 3.0) <= 1.0) // Median of 5 elements
     }
     

@@ -69,14 +69,14 @@ import Testing
 	}
 
 	/// Test discrete uncertainty set.
-	@Test func discreteUncertaintySet() {
+	@Test func discreteUncertaintySet() throws {
 		let points = [
 			[0.05, 0.08, 0.03],  // Low returns
 			[0.10, 0.12, 0.08],  // Nominal
 			[0.15, 0.18, 0.12]   // High returns
 		]
 
-		let discrete = DiscreteUncertaintySet(points: points)
+		let discrete = try DiscreteUncertaintySet(points: points)
 
 		#expect(discrete.dimension == 3)
 		#expect(discrete.contains([0.10, 0.12, 0.08]))

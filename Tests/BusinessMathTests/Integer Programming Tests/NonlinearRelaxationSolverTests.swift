@@ -22,8 +22,10 @@ struct NonlinearRelaxationSolverTests {
     @Test("NonlinearRelaxationSolver conforms to RelaxationSolver")
     func testProtocolConformance() {
         let solver = NonlinearRelaxationSolver()
+        // Type annotation verifies protocol conformance at compile time
         let _: any RelaxationSolver = solver
-        #expect(true)  // Compilation is the test
+        // Verify the concrete solver has valid default configuration
+        #expect(solver.maxIterations > 0)
     }
 
     @Test("NonlinearRelaxationSolver has configurable parameters")

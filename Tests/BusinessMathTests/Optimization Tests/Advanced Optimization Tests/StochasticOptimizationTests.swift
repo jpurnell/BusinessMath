@@ -253,7 +253,7 @@ import Testing
 	}
 
 	/// Test bootstrap scenario generation.
-	@Test func bootstrapScenarioGeneration() {
+	@Test func bootstrapScenarioGeneration() throws {
 		// Historical data: 10 observations of 2 variables
 		let historicalData: [[Double]] = [
 			[0.05, 0.03],
@@ -268,7 +268,7 @@ import Testing
 			[0.07, 0.04]
 		]
 
-		let scenarios = ScenarioGenerator.bootstrap(
+		let scenarios = try ScenarioGenerator.bootstrap(
 			historicalData: historicalData,
 			numberOfScenarios: 500,
 			seed: 42

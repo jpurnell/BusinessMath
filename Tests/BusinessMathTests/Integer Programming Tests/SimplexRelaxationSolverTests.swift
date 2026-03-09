@@ -21,8 +21,10 @@ struct SimplexRelaxationSolverTests {
     @Test("SimplexRelaxationSolver conforms to RelaxationSolver")
     func testProtocolConformance() {
         let solver = SimplexRelaxationSolver(lpTolerance: 1e-8)
+        // Type annotation verifies protocol conformance at compile time
         let _: any RelaxationSolver = solver
-        #expect(true)  // Compilation is the test
+        // Verify the solver was configured with the specified tolerance
+        #expect(solver.lpTolerance == 1e-8)
     }
 
     @Test("SimplexRelaxationSolver solves simple LP minimization")
