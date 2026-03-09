@@ -249,11 +249,12 @@ struct CentralTendencyNaNInfinityTests {
 		#expect(result == 2.0)
 	}
 
-	@Test("harmonicMean propagates NaN")
-	func harmonic_mean_propagates_nan() throws {
+	@Test("harmonicMean rejects NaN input")
+	func harmonic_mean_rejects_nan() {
 		let values = [1.0, Double.nan, 3.0]
-		let result = try harmonicMean(values)
-		#expect(result.isNaN)
+		#expect(throws: BusinessMathError.self) {
+			_ = try harmonicMean(values)
+		}
 	}
 
 	@Test("harmonicMean handles infinity")
@@ -286,11 +287,12 @@ struct CentralTendencyNaNInfinityTests {
 		#expect(result.isInfinite)
 	}
 
-	@Test("contraharmonicMean propagates NaN")
-	func contraharmonic_mean_propagates_nan() throws {
+	@Test("contraharmonicMean rejects NaN input")
+	func contraharmonic_mean_rejects_nan() {
 		let values = [1.0, Double.nan, 3.0]
-		let result = try contraharmonicMean(values)
-		#expect(result.isNaN)
+		#expect(throws: BusinessMathError.self) {
+			_ = try contraharmonicMean(values)
+		}
 	}
 
 	@Test("contraharmonicMean throws when sum is zero")
@@ -301,12 +303,14 @@ struct CentralTendencyNaNInfinityTests {
 		}
 	}
 
-	@Test("logarithmicMean propagates NaN")
-	func logarithmic_mean_propagates_nan() throws {
-		let result1 = try logarithmicMean(Double.nan, 3.0)
-		let result2 = try logarithmicMean(2.0, Double.nan)
-		#expect(result1.isNaN)
-		#expect(result2.isNaN)
+	@Test("logarithmicMean rejects NaN input")
+	func logarithmic_mean_rejects_nan() {
+		#expect(throws: BusinessMathError.self) {
+			_ = try logarithmicMean(Double.nan, 3.0)
+		}
+		#expect(throws: BusinessMathError.self) {
+			_ = try logarithmicMean(2.0, Double.nan)
+		}
 	}
 
 	@Test("identricMean propagates NaN")

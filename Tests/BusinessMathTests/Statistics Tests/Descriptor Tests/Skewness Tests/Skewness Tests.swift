@@ -69,10 +69,12 @@ struct SkewnessNaNInfinityTests {
 		#expect(result.isNaN)
 	}
 
-	@Test("coefficientOfSkew propagates NaN from stdDev")
-	func coefficient_of_skew_propagates_nan_from_stdDev() throws {
-		let result = try coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.nan)
-		#expect(result.isNaN)
+	@Test("coefficientOfSkew rejects NaN stdDev")
+	func coefficient_of_skew_rejects_nan_stdDev() {
+		// NaN stdDev is treated as invalid (zero-like) and throws divisionByZero
+		#expect(throws: BusinessMathError.self) {
+			_ = try coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.nan)
+		}
 	}
 
 	@Test("coefficientOfSkew handles infinity")

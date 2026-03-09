@@ -156,17 +156,19 @@ struct LinearRegressionNaNInfinityTests {
 		#expect(result == nil || result!.isNaN)
 	}
 
-	@Test("rSquared handles NaN inputs")
-	func rSquared_handles_nan() throws {
+	@Test("rSquared rejects NaN inputs")
+	func rSquared_rejects_nan() {
 		let x1 = [1.0, Double.nan, 3.0]
 		let y1 = [2.0, 4.0, 6.0]
-		let result1 = try rSquared(x1, y1)
-		#expect(result1.isNaN)
+		#expect(throws: BusinessMathError.self) {
+			_ = try rSquared(x1, y1)
+		}
 
 		let x2 = [1.0, 2.0, 3.0]
 		let y2 = [2.0, Double.nan, 6.0]
-		let result2 = try rSquared(x2, y2)
-		#expect(result2.isNaN)
+		#expect(throws: BusinessMathError.self) {
+			_ = try rSquared(x2, y2)
+		}
 	}
 
 	@Test("linearRegression propagates NaN")
@@ -199,12 +201,13 @@ struct LinearRegressionNaNInfinityTests {
 		#expect(result == nil || result!.isInfinite || result!.isNaN)
 	}
 
-	@Test("rSquared handles infinity")
-	func rSquared_handles_infinity() throws {
+	@Test("rSquared rejects infinity inputs")
+	func rSquared_rejects_infinity() {
 		let x = [1.0, Double.infinity, 3.0]
 		let y = [2.0, 4.0, 6.0]
-		let result = try rSquared(x, y)
-		#expect(result.isNaN || result.isInfinite)
+		#expect(throws: BusinessMathError.self) {
+			_ = try rSquared(x, y)
+		}
 	}
 }
 
