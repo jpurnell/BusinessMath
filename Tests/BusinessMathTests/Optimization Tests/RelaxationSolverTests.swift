@@ -129,7 +129,7 @@ struct RelaxationSolverTests {
     func testRelaxationStatusSendable() {
         let status = RelaxationStatus.optimal
         let _: any Sendable = status
-        #expect(true)  // Compilation is the test
+        // Compilation is the test - if this compiles, RelaxationStatus is Sendable
     }
 
     // MARK: - RelaxationSolver Protocol Tests
@@ -207,15 +207,15 @@ struct RelaxationSolverTests {
                 initialGuess: V,
                 minimize: Bool
             ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable {
-                // Verify we can call the objective
+                // Verify we can call the objective and get a valid Double
                 let objValue = objective(initialGuess)
-                #expect(objValue.isFinite || objValue.isInfinite)
+                #expect(!objValue.isNaN)
 
-                // Verify we can access constraints
-                #expect(constraints.isEmpty || !constraints.isEmpty)
+                // Verify constraints array is accessible (one constraint expected)
+                #expect(constraints.count == 1)
 
-                // Verify minimize flag
-                #expect(minimize == true || minimize == false)
+                // Verify minimize flag has expected value
+                #expect(minimize == true)
 
                 return RelaxationResult(
                     solution: initialGuess as? VectorN<Double>,
