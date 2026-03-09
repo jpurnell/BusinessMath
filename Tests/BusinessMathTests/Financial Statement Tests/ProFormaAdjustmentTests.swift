@@ -36,7 +36,7 @@ struct ProFormaAdjustmentTests {
 			description: "One-time litigation settlement"
 		)
 
-		let adjustedLegal = legalExpense.applying(adjustment: settlement)
+		let adjustedLegal = try legalExpense.applying(adjustment: settlement)
 
 		// Q1 should be reduced by $250K (addback reduces expense)
 		#expect(adjustedLegal.timeSeries[periods[0]]! == 750_000.0)
@@ -86,7 +86,7 @@ struct ProFormaAdjustmentTests {
 			)
 		]
 
-		let adjustedGNA = gnaExpense.applying(adjustments: adjustments)
+		let adjustedGNA = try gnaExpense.applying(adjustments: adjustments)
 
 		// Q1: $800K + $100K (relocation) + $25K (comp) = $925K
 		#expect(adjustedGNA.timeSeries[periods[0]]! == 925_000.0)
@@ -110,7 +110,7 @@ struct ProFormaAdjustmentTests {
 			timeSeries: TimeSeries(periods: periods, values: [100_000.0])
 		)
 
-		let adjusted = expense.applying(adjustments: [])
+		let adjusted = try expense.applying(adjustments: [])
 
 		#expect(adjusted.timeSeries[periods[0]]! == 100_000.0)
 	}

@@ -148,7 +148,8 @@ public enum MultiPeriodConstraint<V: VectorSpace>: Sendable where V.Scalar == Do
 
 		case .terminal(let function, _):
 			// Evaluate only for final period
-			return [function(trajectory.last!)]
+			guard let terminal = trajectory.last else { return [] }
+			return [function(terminal)]
 
 		case .trajectory(let function, _):
 			// Evaluate once for entire trajectory

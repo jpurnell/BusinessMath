@@ -27,15 +27,24 @@ import Numerics
 ///     let result = percentileLocation(percentile, values: values)
 ///     print(result)
 
-public func PercentileLocation<T: Comparable>(_ percentile: Int, values: [T]) -> T {
-	precondition(!values.isEmpty, "values must not be empty")
-	precondition(percentile >= 0 && percentile <= 100, "percentile must be between 0 and 100")
+public func PercentileLocation<T: Comparable>(_ percentile: Int, values: [T]) throws -> T {
+	guard !values.isEmpty else {
+		throw ArrayError.emptyArray
+	}
+	guard percentile >= 0 && percentile <= 100 else {
+		throw BusinessMathError.invalidInput(
+			message: "Percentile must be between 0 and 100",
+			value: String(percentile),
+			expectedRange: "0 to 100"
+		)
+	}
 
 	let sorted = values.sorted()
 	let n = sorted.count
 
-	if percentile <= 0 { return sorted.first! }
-	if percentile >= 100 { return sorted.last! }
+	// Safe: guard ensures at least one element
+	if percentile <= 0 { return sorted[0] }
+	if percentile >= 100 { return sorted[n - 1] }
 
 	let r = Int(ceil(Double(percentile) / 100.0 * Double(n))) // 1-based rank
 	return sorted[r - 1] // convert to 0-based index

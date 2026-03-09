@@ -33,11 +33,11 @@ public struct MultiPeriodResult<V: VectorSpace>: Sendable where V.Scalar == Doub
 	/// Number of periods
 	public var numberOfPeriods: Int { trajectory.count }
 
-	/// Initial state (first period decision)
-	public var initialState: V { trajectory.first! }
+	/// Initial state (first period decision), or nil if trajectory is empty
+	public var initialState: V? { trajectory.first }
 
-	/// Terminal state (final period decision)
-	public var terminalState: V { trajectory.last! }
+	/// Terminal state (final period decision), or nil if trajectory is empty
+	public var terminalState: V? { trajectory.last }
 }
 
 // MARK: - Multi-Period Optimizer
@@ -371,7 +371,11 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 
 		let constraintFunction: @Sendable (VectorN<Double>) -> Double = { flat in
 			let trajectory = self.unflattenTrajectory(flat, dimension: dimension)
-			return function(trajectory.last!)
+			guard let terminal = trajectory.last else {
+				// Return large constraint violation if trajectory is empty
+				return Double.greatestFiniteMagnitude
+			}
+			return function(terminal)
 		}
 
 		if isEquality {

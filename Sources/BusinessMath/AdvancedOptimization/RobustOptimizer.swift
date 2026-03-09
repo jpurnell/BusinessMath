@@ -299,10 +299,15 @@ extension RobustOptimizer {
 		tolerance: Double = 1e-6
 	) throws -> RobustResult<V> {
 
-		precondition(nominalIndex >= 0 && nominalIndex < uncertainPoints.count,
-					 "Nominal index out of bounds")
+		guard nominalIndex >= 0 && nominalIndex < uncertainPoints.count else {
+			throw BusinessMathError.invalidInput(
+				message: "Nominal index out of bounds",
+				value: String(nominalIndex),
+				expectedRange: "0 to \(uncertainPoints.count - 1)"
+			)
+		}
 
-		let uncertaintySet = DiscreteUncertaintySet(points: uncertainPoints)
+		let uncertaintySet = try DiscreteUncertaintySet(points: uncertainPoints)
 
 		let optimizer = RobustOptimizer<V>(
 			uncertaintySet: uncertaintySet,

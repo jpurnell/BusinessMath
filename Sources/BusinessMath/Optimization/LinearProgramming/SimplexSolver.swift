@@ -536,7 +536,11 @@ public struct SimplexSolver: Sendable {
         // Extract solution (only original variables)
         let solution = extractSolution(from: phaseIIResult.tableau, numVars: numOriginalVars)
         // Objective value is in RHS of objective row (already correct sign)
-        let objectiveValue = phaseIIResult.tableau.table.last![phaseIIResult.tableau.table[0].count - 1]
+        guard let lastRow = phaseIIResult.tableau.table.last,
+              let firstRow = phaseIIResult.tableau.table.first else {
+            throw OptimizationError.invalidInput(message: "Tableau is empty after phase II")  // Should never happen
+        }
+        let objectiveValue = lastRow[firstRow.count - 1]
 
         // Create public tableau for cutting plane generation
         let publicTableau = SimplexTableau(
@@ -551,8 +555,7 @@ public struct SimplexSolver: Sendable {
         // Dual values correspond to slack variables (constraints)
         let numConstraints = phaseIIResult.tableau.table.count - 1
         var dualValues: [Double] = []
-        if phaseIIResult.status == .optimal {
-            let objectiveRow = phaseIIResult.tableau.table.last!
+        if phaseIIResult.status == .optimal, let objectiveRow = phaseIIResult.tableau.table.last {
             // Dual values are negatives of slack variable coefficients in objective row
             for i in 0..<numConstraints {
                 let slackIndex = numOriginalVars + i
@@ -564,8 +567,7 @@ public struct SimplexSolver: Sendable {
 
         // Extract reduced costs (objective row coefficients for non-basic variables)
         var reducedCosts: [Double] = []
-        if phaseIIResult.status == .optimal {
-            let objectiveRow = phaseIIResult.tableau.table.last!
+        if phaseIIResult.status == .optimal, let objectiveRow = phaseIIResult.tableau.table.last {
             for i in 0..<numOriginalVars {
                 reducedCosts.append(objectiveRow[i])
             }
@@ -770,7 +772,9 @@ public struct SimplexSolver: Sendable {
 
     /// Select entering variable using Bland's rule (smallest index with negative cost)
     private func selectEnteringVariable(tableau: InternalSimplexTableau) -> Int {
-        let objectiveRow = tableau.table.last!
+        guard let objectiveRow = tableau.table.last else {
+            return -1  // No objective row means optimal (or error state)
+        }
         let numCols = objectiveRow.count - 1
 
         for col in 0..<numCols {

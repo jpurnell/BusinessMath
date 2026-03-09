@@ -181,9 +181,21 @@ public struct ScenarioGenerator {
 		historicalData: [[Double]],
 		numberOfScenarios: Int,
 		seed: UInt64? = nil
-	) -> [MonteCarloScenario] {
-		precondition(!historicalData.isEmpty, "Historical data cannot be empty")
-		precondition(numberOfScenarios > 0, "Number of scenarios must be positive")
+	) throws -> [MonteCarloScenario] {
+		guard !historicalData.isEmpty else {
+			throw BusinessMathError.insufficientData(
+				required: 1,
+				actual: 0,
+				context: "Historical data cannot be empty for scenario generation"
+			)
+		}
+		guard numberOfScenarios > 0 else {
+			throw BusinessMathError.invalidInput(
+				message: "Number of scenarios must be positive",
+				value: String(numberOfScenarios),
+				expectedRange: "> 0"
+			)
+		}
 
 		// Set seed if provided
 		if let seed = seed {
@@ -191,7 +203,8 @@ public struct ScenarioGenerator {
 		}
 
 		var scenarios: [MonteCarloScenario] = []
-		let dimension = historicalData.first!.count
+		// Safe: guard above ensures at least one element
+		let dimension = historicalData[0].count
 
 		for _ in 0..<numberOfScenarios {
 			// Random sample from historical data

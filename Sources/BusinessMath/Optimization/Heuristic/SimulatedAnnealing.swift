@@ -265,11 +265,14 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
             // Check for convergence (no improvement for many iterations)
             if convergenceHistory.count >= 100 {
                 let recentHistory = convergenceHistory.suffix(100)
-                let improvement = recentHistory.first! - recentHistory.last!
-                if improvement < V.Scalar(1) / V.Scalar(1_000_000) {  // 1e-6
-                    converged = true
-                    convergenceReason = "No significant improvement in last 100 iterations"
-                    break
+                // Safe: count check above guarantees at least 100 elements
+                if let first = recentHistory.first, let last = recentHistory.last {
+                    let improvement = first - last
+                    if improvement < V.Scalar(1) / V.Scalar(1_000_000) {  // 1e-6
+                        converged = true
+                        convergenceReason = "No significant improvement in last 100 iterations"
+                        break
+                    }
                 }
             }
         }

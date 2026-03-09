@@ -1174,7 +1174,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             // Need at least 2 bounds to compare
                             if boundHistory.count >= 2 {
                                 let previousBound = boundHistory[boundHistory.count - 2]
-                                let currentBound = boundHistory.last!
+                                // Safe: count check above guarantees at least 2 elements
+                                let currentBound = boundHistory[boundHistory.count - 1]
                                 let improvement = abs(currentBound - previousBound)
 
                                 // If improvement is negligible, terminate
@@ -1192,7 +1193,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             // Only check if we have enough history
                             if solutionHistory.count > cyclingWindowSize {
                                 let recent = Array(solutionHistory.suffix(cyclingWindowSize))
-                                let current = recent.last!
+                                // Safe: cyclingWindowSize > 0 and count check ensures non-empty
+                                guard let current = recent.last else { continue }
 
                                 // Check if current solution matches any recent solution
                                 for i in 0..<(recent.count - 1) {

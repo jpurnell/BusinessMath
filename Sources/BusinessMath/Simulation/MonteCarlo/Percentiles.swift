@@ -143,8 +143,9 @@ public struct Percentiles: Sendable {
 					self.values = values
 					let sorted = values.sorted()
 					self.sortedValues = sorted
-					self.min = sorted.first!
-					self.max = sorted.last!
+					// Safe: guard above ensures at least one element
+					self.min = sorted[0]
+					self.max = sorted[sorted.count - 1]
 
 					// Precompute commonly used percentiles
 					self.p025 = Self.quantileR7(sorted, 0.025)
@@ -198,11 +199,11 @@ public struct Percentiles: Sendable {
 		}
 
 		if percentile <= 0.0 {
-			return sortedValues.first!
+			return sortedValues[0]  // Safe: guard above ensures non-empty
 		}
 
 		if percentile >= 1.0 {
-			return sortedValues.last!
+			return sortedValues[sortedValues.count - 1]  // Safe: guard above ensures non-empty
 		}
 
 		// Linear interpolation (R-7 / Type 7 method)

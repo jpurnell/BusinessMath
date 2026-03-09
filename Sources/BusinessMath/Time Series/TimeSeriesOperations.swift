@@ -328,6 +328,7 @@ extension TimeSeries {
 
 			let aggregated: T
 
+			// Safe: guard above ensures values is non-empty
 			switch method {
 			case .sum:
 				aggregated = values.reduce(T.zero, +)
@@ -337,16 +338,16 @@ extension TimeSeries {
 				aggregated = sum / T(values.count)
 
 			case .first:
-				aggregated = values.first!
+				aggregated = values[0]
 
 			case .last:
-				aggregated = values.last!
+				aggregated = values[values.count - 1]
 
 			case .min:
-				aggregated = values.min()!
+				aggregated = values.min() ?? values[0]
 
 			case .max:
-				aggregated = values.max()!
+				aggregated = values.max() ?? values[0]
 			}
 
 			resultPeriods.append(targetPeriod)

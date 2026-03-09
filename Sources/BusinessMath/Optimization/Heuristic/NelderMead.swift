@@ -261,11 +261,14 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
             // Check for stagnation
             if convergenceHistory.count >= 50 {
                 let recent = convergenceHistory.suffix(50)
-                let improvement = recent.first! - recent.last!
-                if improvement < V.Scalar(1) / V.Scalar(1_000_000) {  // 1e-6
-                    converged = true
-                    convergenceReason = "No improvement in last 50 iterations"
-                    break
+                // Safe: count check above guarantees at least 50 elements
+                if let first = recent.first, let last = recent.last {
+                    let improvement = first - last
+                    if improvement < V.Scalar(1) / V.Scalar(1_000_000) {  // 1e-6
+                        converged = true
+                        convergenceReason = "No improvement in last 50 iterations"
+                        break
+                    }
                 }
             }
         }

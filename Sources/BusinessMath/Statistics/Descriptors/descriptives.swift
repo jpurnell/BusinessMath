@@ -59,6 +59,18 @@ public func descriptives<T: Real>(_ values: [T]) throws -> (mean: T, stdDev: T, 
 }
 
 extension Array where Element: Real {
-	/// Returns a human-readble version of the descriptives above
-    public var descriptiveStatistics: String {  let desc = try! descriptives(self.map({$0 as! Double})); return "µ:\(desc.mean)\tσ:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"}
+	/// Returns a human-readable version of the descriptive statistics, or an error message if calculation fails
+    public var descriptiveStatistics: String {
+		// Convert elements to Double using conditional cast
+		let doubles = self.compactMap { element -> Double? in
+			if let d = element as? Double { return d }
+			if let f = element as? Float { return Double(f) }
+			// For other Real types, try converting via description
+			return Double("\(element)")
+		}
+		guard let desc = try? descriptives(doubles) else {
+			return "Unable to calculate descriptive statistics"
+		}
+		return "µ:\(desc.mean)\tσ:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"
+	}
 }

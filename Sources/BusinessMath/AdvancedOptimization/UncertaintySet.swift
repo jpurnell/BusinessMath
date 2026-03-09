@@ -325,10 +325,23 @@ public struct DiscreteUncertaintySet: UncertaintySet {
 	/// Creates a discrete uncertainty set.
 	///
 	/// - Parameter points: Array of possible parameter vectors
-	public init(points: [[Double]]) {
-		precondition(!points.isEmpty, "Must provide at least one point")
-		let dim = points.first!.count
-		precondition(points.allSatisfy { $0.count == dim }, "All points must have same dimension")
+	/// - Throws: `BusinessMathError.insufficientData` if points is empty
+	public init(points: [[Double]]) throws {
+		guard let first = points.first else {
+			throw BusinessMathError.insufficientData(
+				required: 1,
+				actual: 0,
+				context: "DiscreteUncertaintySet requires at least one point"
+			)
+		}
+		let dim = first.count
+		guard points.allSatisfy({ $0.count == dim }) else {
+			throw BusinessMathError.mismatchedDimensions(
+				message: "All points must have same dimension",
+				expected: String(dim),
+				actual: "mixed"
+			)
+		}
 		self.points = points
 	}
 

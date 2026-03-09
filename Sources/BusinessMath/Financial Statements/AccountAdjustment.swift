@@ -221,11 +221,12 @@ extension Account {
 	///
 	/// - Parameter adjustment: The adjustment to apply
 	/// - Returns: New account with adjusted time series values
+	/// - Throws: If account creation fails
 	/// - Note: Original account is unchanged (immutable operation)
-	public func applying(adjustment: AccountAdjustment<T>) -> Account<T> {
+	public func applying(adjustment: AccountAdjustment<T>) throws -> Account<T> {
 		// Build adjusted values period by period
 		let adjustedValues = self.timeSeries.periods.map { period -> T in
-			let baseValue = self.timeSeries[period]!
+			let baseValue = self.timeSeries[period] ?? T(0)
 			let adjustmentValue = adjustment.amount[period] ?? T(0)
 			return baseValue + adjustmentValue
 		}
@@ -237,7 +238,7 @@ extension Account {
 
 		// Create new account with adjusted values
 		// All other properties (name, role, metadata) remain the same
-		return try! Account(
+		return try Account(
 			entity: self.entity,
 			name: self.name,
 			incomeStatementRole: self.incomeStatementRole,
@@ -287,12 +288,13 @@ extension Account {
 	///
 	/// - Parameter adjustments: Array of adjustments to apply
 	/// - Returns: New account with all adjustments applied
-	public func applying(adjustments: [AccountAdjustment<T>]) -> Account<T> {
+	/// - Throws: If account creation fails
+	public func applying(adjustments: [AccountAdjustment<T>]) throws -> Account<T> {
 		guard !adjustments.isEmpty else { return self }
 
 		// Build adjusted values period by period
 		let adjustedValues = self.timeSeries.periods.map { period -> T in
-			let baseValue = self.timeSeries[period]!
+			let baseValue = self.timeSeries[period] ?? T(0)
 
 			// Sum all adjustment values for this period
 			let totalAdjustmentForPeriod = adjustments.reduce(T(0)) { sum, adj in
@@ -308,7 +310,7 @@ extension Account {
 			values: adjustedValues
 		)
 
-		return try! Account(
+		return try Account(
 			entity: self.entity,
 			name: self.name,
 			incomeStatementRole: self.incomeStatementRole,

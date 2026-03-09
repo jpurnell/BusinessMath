@@ -385,8 +385,9 @@ public struct AsyncLBFGSOptimizer: Sendable {
         }
 
         // Scale by approximate Hessian
-        let lastS = sHistory.last!
-        let lastY = yHistory.last!
+        // Safe: LBFGS only calls this when history is non-empty
+        let lastS = sHistory[sHistory.count - 1]
+        let lastY = yHistory[yHistory.count - 1]
         let gamma = (lastS * lastY) / max(abs(lastY * lastY), 1e-10)
         var r = gamma * q
 

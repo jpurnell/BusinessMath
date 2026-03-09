@@ -50,7 +50,7 @@ public func linearRegression<T: Real>(_ xValues: [T], _ yValues: [T]) throws -> 
 	guard xValues.count > 1 && yValues.count > 1 else { throw BusinessMathError.insufficientData(required: 2, actual: xValues.count, context: "Insufficient data points for calculation")}
 	
 	let slope = try slope(xValues, yValues)
-    let intercept = try! intercept(xValues, yValues)
+    let intercept = try intercept(xValues, yValues)
 		///    print("Slope:\t\(slope)")
 		///    print("Intercept:\t\(intercept)")
     return { x in intercept + slope * x}

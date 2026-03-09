@@ -193,8 +193,9 @@ extension SimulationResults {
 		let sortedValues = values.sorted()
 
 		// Handle boundary cases
-		if alpha <= 0.0 { return sortedValues.first! }
-		if alpha >= 1.0 { return sortedValues.last! }
+		// Safe: guard and count check above ensure at least 2 elements
+		if alpha <= 0.0 { return sortedValues[0] }
+		if alpha >= 1.0 { return sortedValues[sortedValues.count - 1] }
 
 		// Linear interpolation (R-7 / Type 7 method)
 		let n = Double(sortedValues.count)

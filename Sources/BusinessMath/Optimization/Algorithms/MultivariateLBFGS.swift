@@ -306,8 +306,9 @@ public struct MultivariateLBFGS<V: VectorSpace> where V.Scalar: Real {
 
 		// Initial Hessian approximation scaling: H₀ = γI
 		// γ = (s_{m-1} · y_{m-1}) / (y_{m-1} · y_{m-1})
-		let lastS = sHistory.last!
-		let lastY = yHistory.last!
+		// Safe: guard above ensures sHistory is non-empty
+		let lastS = sHistory[sHistory.count - 1]
+		let lastY = yHistory[yHistory.count - 1]
 		let gamma = lastS.dot(lastY) / max(lastY.dot(lastY), V.Scalar(1) / V.Scalar(1_000_000_000))
 
 		// r = H₀ * q = γq

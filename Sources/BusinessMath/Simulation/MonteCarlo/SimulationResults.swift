@@ -98,11 +98,20 @@ public struct SimulationResults: Sendable {
 		let simStats = SimulationStatistics(values: values)
 //		logger.debug("simStats set with \(simStats.values.count) values, mean of \(simStats.mean)")
 		self.statistics = simStats
-		guard let _percentiles = try? Percentiles(values: values) else {
-			self.percentiles = try! Percentiles(values: [0])
-			return
+		// Try to create percentiles from values, fall back to single zero value
+		// Note: Percentiles([0]) should never fail (non-empty, finite), but we use
+		// do-catch for safety rather than try!
+		do {
+			self.percentiles = try Percentiles(values: values)
+		} catch {
+			// Fallback: create with single zero value (this should always succeed)
+			do {
+				self.percentiles = try Percentiles(values: [0])
+			} catch {
+				// Absolute fallback - should never reach here but avoids crash
+				fatalError("Failed to create Percentiles with fallback value [0]: \(error)")
+			}
 		}
-		self.percentiles = _percentiles
 	}
 
 	// MARK: - Probability Calculations
