@@ -236,7 +236,9 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
                 let deltaEInt = Int((deltaE as! Double) * 1_000_000)
                 let deltaEDouble = Double(deltaEInt) / 1_000_000.0
                 let probability = exp(-deltaEDouble / temperature)
-                let randomValue = Double(rng.next() >> 32) / Double(UInt32.max)
+                // Fixed: UInt32.max is 2^32 - 1, but shifted value ranges 0 to 2^32 - 1
+                // Divide by 2^32 (1 << 32) to get proper [0, 1) range
+                let randomValue = Double(rng.next() >> 32) / Double(1 << 32)
                 accepted = randomValue < probability
             }
 

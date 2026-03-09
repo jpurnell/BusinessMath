@@ -6,6 +6,7 @@
 	//
 
 import Foundation
+import Collections  // For Deque with O(1) removeFirst
 
 // MARK: - Calculation Cache
 
@@ -172,7 +173,8 @@ public final class CalculationCache: @unchecked Sendable {
 	
 	// Admission memory: bounds and order
 	private var seenKeys: Set<String> = []
-	private var seenOrder: [String] = []
+	// Use Deque instead of Array for O(1) removeFirst (was O(n))
+	private var seenOrder: Deque<String> = []
 	private let seenKeysCap: Int
 	
 	private let lock = NSLock()
@@ -205,9 +207,9 @@ public final class CalculationCache: @unchecked Sendable {
 	}
 	
 	private func trimSeenIfNeeded() {
+		// O(1) per removal thanks to Deque (was O(n) with Array)
 		while seenKeys.count > seenKeysCap {
-			guard let oldest = seenOrder.first else { break }
-			seenOrder.removeFirst()
+			guard let oldest = seenOrder.popFirst() else { break }
 			// May already be gone if removed explicitly
 			seenKeys.remove(oldest)
 		}

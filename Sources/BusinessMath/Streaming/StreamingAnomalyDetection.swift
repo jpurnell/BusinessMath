@@ -867,17 +867,23 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
 
     private let base: Base
     private let method: BreakpointMethod
+    private let maxBufferSize: Int
 
-    init(base: Base, method: BreakpointMethod) {
+    /// Default maximum buffer size (1 million values ≈ 8MB for Double)
+    /// Binary segmentation is O(n²) so larger streams should use online algorithms.
+    public static var defaultMaxBufferSize: Int { 1_000_000 }
+
+    init(base: Base, method: BreakpointMethod, maxBufferSize: Int = 1_000_000) {
         self.base = base
         self.method = method
+        self.maxBufferSize = maxBufferSize
     }
 
     /// Creates the async iterator for this sequence.
     ///
     /// - Returns: An iterator that yields detected breakpoints.
     public func makeAsyncIterator() -> Iterator {
-        Iterator(base: base, method: method)
+        Iterator(base: base, method: method, maxBufferSize: maxBufferSize)
     }
 
     /// Iterator for the breakpoint detection sequence.
@@ -886,6 +892,10 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
     /// segmentation to find change points, then yields breakpoints one at a time. This
     /// batch-collect-then-yield pattern is necessary because binary segmentation requires
     /// the complete series to evaluate split points.
+    ///
+    /// - Note: A maximum buffer size is enforced to prevent unbounded memory growth.
+    ///   For very long streams, consider using online change point detection algorithms
+    ///   (see `onlineAnomalyDetectionPlan.md` for future implementation).
     public struct Iterator: AsyncIteratorProtocol {
         private let base: Base
         private let method: BreakpointMethod
@@ -894,9 +904,14 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
         private var breakpoints: [Breakpoint] = []
         private var currentIndex = 0
 
-        init(base: Base, method: BreakpointMethod) {
+        /// Maximum number of values to buffer before throwing an error.
+        /// Binary segmentation is O(n²) so large streams should use online algorithms.
+        private let maxBufferSize: Int
+
+        init(base: Base, method: BreakpointMethod, maxBufferSize: Int) {
             self.base = base
             self.method = method
+            self.maxBufferSize = maxBufferSize
         }
 
         /// Advances to the next detected breakpoint.
@@ -913,6 +928,15 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
                 var iterator = base.makeAsyncIterator()
                 while let value = try await iterator.next() {
                     allValues.append(value)
+
+                    // Enforce buffer limit to prevent unbounded memory growth
+                    if allValues.count > maxBufferSize {
+                        throw BusinessMathError.collectionLimitExceeded(
+                            collection: "StreamingBreakpointDetection buffer",
+                            limit: maxBufferSize,
+                            context: "Binary segmentation requires buffering the entire stream. For streams larger than \(maxBufferSize) values, consider using online change point detection algorithms."
+                        )
+                    }
                 }
                 hasCollected = true
 

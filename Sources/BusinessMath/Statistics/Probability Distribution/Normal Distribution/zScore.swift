@@ -25,7 +25,7 @@ public func zScore<T: Real>(_ independent: [T], vs variable: [T]) throws -> T {
 	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
     let n = independent.count
     let r = try spearmansRho(independent, vs: variable)
-    return T.sqrt( T(n - 3) / (T(106) / T(100)) ) * fisher(r)
+    return T.sqrt( T(n - 3) / (T(106) / T(100)) ) * (try fisher(r))
 }
 
 /// Computes the Z-Score given the rank correlation of an independent set.
@@ -40,7 +40,9 @@ public func zScore<T: Real>(_ independent: [T], vs variable: [T]) throws -> T {
 /// - Returns: The Z-Score for the given correlation `r` and distribution in `independent`.
 /// - Precondition: The input array `independent` must have at least 3 elements.
 ///
-///     let z = zScore([1, 2, 3], r: 0.5)
-public func zScore<T: Real>(_ independent: [T], r: T) -> T {
-        return T.sqrt( (T(independent.count - 3) / (T(106) / T(100))) ) * fisher(r)
+///     let z = try zScore([1, 2, 3], r: 0.5)
+///
+/// - Throws: `BusinessMathError.invalidInput` if r is exactly ±1
+public func zScore<T: Real>(_ independent: [T], r: T) throws -> T {
+        return T.sqrt( (T(independent.count - 3) / (T(106) / T(100))) ) * (try fisher(r))
 }

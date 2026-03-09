@@ -242,18 +242,26 @@ struct UnassortedTests {
 		#expect(abs(result - 0.6321) < 0.0001)
 	}
 	
-    @Test("Fisher r-to-z transformation") func testFisherR() {
-		let result = fisher(0.5)
+    @Test("Fisher r-to-z transformation") func testFisherR() throws {
+		let result = try fisher(0.5)
 		#expect(abs(result - 0.5493) < 0.0001)
 
 		// Test that Fisher transformation is monotonic
-		let r1 = fisher(0.3)
-		let r2 = fisher(0.7)
+		let r1 = try fisher(0.3)
+		let r2 = try fisher(0.7)
 		#expect(r1 < r2) // Higher correlation should give higher Fisher z
 
 		// Test extreme values
-		let r_near_zero = fisher(0.0)
+		let r_near_zero = try fisher(0.0)
 		#expect(abs(r_near_zero - 0.0) < 0.0001)
+
+		// Test boundary behavior - should throw at ±1
+		#expect(throws: BusinessMathError.self) {
+			_ = try fisher(1.0)
+		}
+		#expect(throws: BusinessMathError.self) {
+			_ = try fisher(-1.0)
+		}
     }
     
     @Test("Hypergeometric distribution") func testHyperGeometric() {

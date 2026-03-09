@@ -55,7 +55,9 @@ public func standardErrorProbabilistic<T: Real>(_ prob: T, observations n: Int) 
 ///
 /// Use this function when you want to find out how accurately a sample represents a population based on a given probability and the number of observations.
 public func standardErrorProbabilistic<T: Real>(_ prob: T, observation n: Int, totalObservations total: Int) -> T {
-    if T(n/total) <= T(Int(5) / Int(100)) {
+    // Fixed: Integer division T(Int(5) / Int(100)) was always 0.
+    // Now performs floating-point division: T(n) / T(total) <= 0.05
+    if T(n) / T(total) <= T(5) / T(100) {
         return standardErrorProbabilistic(prob, observations: n)
     } else {
         return standardErrorProbabilistic(prob, observations: n) * (T.sqrt(T ((total - n)/(total - 1))))

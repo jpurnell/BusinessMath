@@ -434,7 +434,8 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             let (lower, upper) = searchSpace[i]
             // Generate random number in [0, 1]
             let randomU64 = rng.next()
-            let randomFraction = V.Scalar(Int(randomU64 >> 32)) / V.Scalar(Int(UInt32.max))
+            // Fixed: Divide by 2^32 for proper [0, 1) range (was UInt32.max = 2^32-1)
+            let randomFraction = V.Scalar(Int(randomU64 >> 32)) / V.Scalar(Int(1 << 32))
             let value = lower + randomFraction * (upper -  lower)
             values.append(value)
         }
@@ -729,8 +730,9 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
                 // Box-Muller transform for Gaussian mutation
                 let u1Raw = rng.next()
                 let u2Raw = rng.next()
-                let u1 = V.Scalar(Int(u1Raw >> 32)) / V.Scalar(Int(UInt32.max))
-                let u2 = V.Scalar(Int(u2Raw >> 32)) / V.Scalar(Int(UInt32.max))
+                // Fixed: Divide by 2^32 for proper [0, 1) range (was UInt32.max = 2^32-1)
+                let u1 = V.Scalar(Int(u1Raw >> 32)) / V.Scalar(Int(1 << 32))
+                let u2 = V.Scalar(Int(u2Raw >> 32)) / V.Scalar(Int(1 << 32))
                 let gaussian = V.Scalar.sqrt(-V.Scalar(2) * V.Scalar.log(u1)) * V.Scalar.cos(V.Scalar(2) * V.Scalar.pi * u2)
 
                 // Convert mutation strength from Double to V.Scalar
@@ -785,6 +787,11 @@ internal final class RNGWrapper {
 /// Seeded random number generator for deterministic testing.
 ///
 /// Uses a simple Linear Congruential Generator (LCG) for reproducibility.
+///
+/// - Warning: This RNG is NOT cryptographically secure and should only be used
+///   for testing and reproducible benchmarks. For production use, prefer
+///   `SystemRandomNumberGenerator` or a cryptographically secure generator.
+@available(*, deprecated, message: "For testing only - not suitable for production Monte Carlo simulations")
 internal struct SeededRandomNumberGenerator: RandomNumberGenerator {
     private var state: UInt64
 

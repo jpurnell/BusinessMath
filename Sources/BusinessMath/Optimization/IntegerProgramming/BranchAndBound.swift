@@ -2032,15 +2032,56 @@ struct NodeQueue<V: VectorSpace>: Sendable where V.Scalar == Double {
     private let strategy: NodeSelectionStrategy
     private let minimize: Bool
 
-    init(strategy: NodeSelectionStrategy, minimize: Bool) {
+    /// Maximum nodes to retain in the queue. Excess nodes with worst bounds are pruned.
+    private let maxNodes: Int
+
+    /// Default maximum node count
+    static var defaultMaxNodes: Int { 100_000 }
+
+    init(strategy: NodeSelectionStrategy, minimize: Bool, maxNodes: Int = 100_000) {
         self.strategy = strategy
         self.minimize = minimize
+        self.maxNodes = maxNodes
     }
 
-    /// Insert node into queue - O(log n)
+    /// Insert node into queue - O(log n), with pruning if over capacity
     mutating func insert(_ node: BranchNode<V>) {
         heap.append(node)
         siftUp(from: heap.count - 1)
+
+        // Prune worst nodes if over capacity to prevent unbounded memory growth
+        if heap.count > maxNodes {
+            pruneWorstNodes()
+        }
+    }
+
+    /// Remove excess nodes with worst bounds
+    private mutating func pruneWorstNodes() {
+        // Sort by relaxation bound (keep better bounds)
+        // For minimization: lower bound is better
+        // For maximization: higher bound is better
+        heap.sort { (node1: BranchNode<V>, node2: BranchNode<V>) -> Bool in
+            if minimize {
+                return node1.relaxationBound < node2.relaxationBound
+            } else {
+                return node1.relaxationBound > node2.relaxationBound
+            }
+        }
+        // Keep only the best maxNodes/2 to amortize pruning cost
+        let keepCount = maxNodes / 2
+        if heap.count > keepCount {
+            heap.removeLast(heap.count - keepCount)
+        }
+        // Rebuild heap after sorting/truncation
+        buildHeap()
+    }
+
+    /// Rebuild heap from scratch - O(n)
+    private mutating func buildHeap() {
+        guard heap.count > 1 else { return }
+        for i in stride(from: heap.count / 2 - 1, through: 0, by: -1) {
+            siftDown(from: i)
+        }
     }
 
     /// Extract best node according to strategy - O(log n)

@@ -83,7 +83,15 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
 
     /// Value outside acceptable range
     case outOfRange(value: Double, min: Double, max: Double, context: String)
-	
+
+    // MARK: - Resource Errors (E400-E499)
+
+    /// Resource limit exceeded (iterations, memory, time, etc.)
+    case resourceExhausted(resource: String, limit: Int, context: String)
+
+    /// Collection has grown beyond its maximum allowed size
+    case collectionLimitExceeded(collection: String, limit: Int, context: String)
+
     // MARK: - LocalizedError Conformance
 
     /// A localized human-readable description of the error.
@@ -164,6 +172,12 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
 
         case .outOfRange(let value, let min, let max, let context):
             return "Value \(value) out of range [\(min), \(max)] in \(context)"
+
+        case .resourceExhausted(let resource, let limit, let context):
+            return "\(resource) limit exceeded (\(limit)) in \(context)"
+
+        case .collectionLimitExceeded(let collection, let limit, let context):
+            return "\(collection) exceeded maximum size (\(limit)) in \(context)"
         }
     }
 
@@ -259,6 +273,12 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
 
         case .outOfRange(_, let min, let max, _):
             return "Adjust the value to fall within the valid range [\(min), \(max)]"
+
+        case .resourceExhausted:
+            return "Consider using smaller problem sizes or adjusting algorithm parameters"
+
+        case .collectionLimitExceeded:
+            return "The collection has grown too large. Consider clearing old data or using streaming processing."
         }
     }
 
@@ -305,6 +325,10 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
         case .validationFailed: return "E300"
         case .negativeValue: return "E301"
         case .outOfRange: return "E302"
+
+        // Resource Errors (E400-E499)
+        case .resourceExhausted: return "E400"
+        case .collectionLimitExceeded: return "E401"
         }
     }
 }

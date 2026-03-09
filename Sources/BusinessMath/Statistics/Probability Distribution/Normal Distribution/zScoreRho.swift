@@ -18,8 +18,11 @@ import Numerics
 /// - Returns: The Z-Score associated with the given rank correlation `rho` and item count.
 /// - Precondition: The `items` count must be an integer greater than 3.
 ///
-///     let z = zScore(rho: 0.68, items: 7)
-public func zScore<T: Real>(rho: T, items: Int) -> T {
-    return T.sqrt(T(items - 3)/T(Int(106) / 100)) * fisher(rho)
+///     let z = try zScore(rho: 0.68, items: 7)
+///
+/// - Throws: `BusinessMathError.invalidInput` if rho is exactly ±1
+public func zScore<T: Real>(rho: T, items: Int) throws -> T {
+    // Fixed: Integer division T(Int(106) / 100) was always T(1)
+    return T.sqrt(T(items - 3) / (T(106) / T(100))) * (try fisher(rho))
 }
 

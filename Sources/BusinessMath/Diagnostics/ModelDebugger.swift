@@ -19,6 +19,9 @@ final class DebugContext: @unchecked Sendable {
     private var steps: [CalculationStep] = []
     private var isEnabled = false
 
+    /// Maximum steps to retain (prevents unbounded memory growth)
+    private let maxSteps: Int = 10_000
+
     static let shared = DebugContext()
 
     private init() {}
@@ -40,6 +43,12 @@ final class DebugContext: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         guard isEnabled else { return }
+
+        // Enforce maximum steps to prevent unbounded memory growth
+        if steps.count >= maxSteps {
+            steps.removeFirst()
+        }
+
         steps.append(CalculationStep(
             operation: operation,
             input: input,

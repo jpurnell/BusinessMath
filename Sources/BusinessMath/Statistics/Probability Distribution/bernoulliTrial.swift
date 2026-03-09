@@ -26,7 +26,17 @@ import Numerics
 ///
 /// Use this function when you're dealing with events that only have two possible outcomes, like tossing a coin, answering a true-or-false question, etc.
 public func bernoulliTrial<T: Real>(p: T) -> Int {
-	if T(Int(Double.random(in: 0...1) * 1000000000 / 1000000000)) < p {
+    // Fixed: Previous code `T(Int(Double.random(...) * 1e9 / 1e9))` always truncated to 0
+    // because Int() truncates decimals. Now correctly compares random value to probability.
+    //
+    // Generate random integer in large range and compare scaled values.
+    // This avoids floating-point precision issues and type conversion problems.
+    let scale = 1_000_000_000
+    let randomInt = Int.random(in: 0..<scale)
+    let threshold = T(scale)  // Real has init from Int
+    // p * scale compared to randomInt
+    // If p * scale > randomInt, return success
+    if p * threshold > T(randomInt) {
         return 1
     }
     return 0

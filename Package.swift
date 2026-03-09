@@ -38,6 +38,12 @@ var dependencies: [Package.Dependency] = [
 	.package(
 		url: "https://github.com/apple/swift-syntax.git",
 		from: "509.0.0"
+	),
+	// Swift Collections provides Deque for O(1) removeFirst operations
+	// Cross-platform: works on macOS, iOS, Linux, and all other Swift platforms
+	.package(
+		url: "https://github.com/apple/swift-collections.git",
+		from: "1.1.0"
 	)
 ]
 
@@ -55,7 +61,8 @@ var dependencies: [Package.Dependency] = [
 
 // Prepare BusinessMath dependencies
 var businessMathDeps: [Target.Dependency] = [
-	.product(name: "Numerics", package: "swift-numerics")
+	.product(name: "Numerics", package: "swift-numerics"),
+	.product(name: "Collections", package: "swift-collections")
 ]
 
 // Add Crypto on Linux (CryptoKit built-in on Apple platforms)

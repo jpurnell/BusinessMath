@@ -187,13 +187,24 @@ public final class AuditTrailManager {
 	private var entries: [AuditEntry] = []
 	private let storageURL: URL?
 
+	/// Maximum number of entries to keep in memory.
+	/// Oldest entries are removed when this limit is exceeded.
+	public let maxEntries: Int
+
+	/// Default maximum entries if not specified.
+	public static let defaultMaxEntries: Int = 100_000
+
 	// MARK: - Initialization
 
 	/// Creates an audit trail manager.
 	///
-	/// - Parameter storageURL: Optional URL to persist audit trail to disk.
-	public init(storageURL: URL? = nil) {
+	/// - Parameters:
+	///   - storageURL: Optional URL to persist audit trail to disk.
+	///   - maxEntries: Maximum entries to keep in memory (default: 100,000).
+	///     When exceeded, oldest entries are removed.
+	public init(storageURL: URL? = nil, maxEntries: Int = AuditTrailManager.defaultMaxEntries) {
 		self.storageURL = storageURL
+		self.maxEntries = maxEntries
 
 		// Load from disk if available
 		if let url = storageURL {
@@ -206,11 +217,19 @@ public final class AuditTrailManager {
 	/// Records an audit entry.
 	///
 	/// - Parameter entry: The audit entry to record.
+	///
+	/// If the number of entries exceeds `maxEntries`, the oldest entries are removed.
 	public func record(_ entry: AuditEntry) {
 		lock.lock()
 		defer { lock.unlock() }
 
 		entries.append(entry)
+
+		// Enforce maximum entry limit to prevent unbounded memory growth
+		if entries.count > maxEntries {
+			let excess = entries.count - maxEntries
+			entries.removeFirst(excess)
+		}
 
 		// Save to disk if URL is set
 		if let url = storageURL {
