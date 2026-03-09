@@ -50,9 +50,7 @@ struct LoggerTests {
         // This should not crash and should log appropriately
         logger.calculationStarted("Test Calculation")
         logger.calculationStarted("Test Calculation", context: ["rate": "0.08", "periods": "10"])
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @Test("Calculation completed logging")
@@ -64,9 +62,7 @@ struct LoggerTests {
 
         // Test with duration
         logger.calculationCompleted("Test Calculation", result: 42.0, duration: 0.123)
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @Test("Calculation failed logging")
@@ -79,9 +75,7 @@ struct LoggerTests {
 
         let error = TestError(message: "Test error")
         logger.calculationFailed("Test Calculation", error: error)
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @Test("Validation warning logging")
@@ -93,9 +87,7 @@ struct LoggerTests {
 
         // Test with field
         logger.validationWarning("Value out of range", field: "discountRate")
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @Test("Validation error logging")
@@ -107,9 +99,7 @@ struct LoggerTests {
 
         // Test with field
         logger.validationError("Negative value not allowed", field: "revenue")
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @Test("Performance logging")
@@ -121,9 +111,7 @@ struct LoggerTests {
 
         // Test with context
         logger.performance("Monte Carlo", duration: 2.5, context: "10,000 iterations")
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @Test("Performance warning logging")
@@ -131,9 +119,7 @@ struct LoggerTests {
         let logger = Logger.performance
 
         logger.performanceWarning("Performance Logging Test – Slow Operation", duration: 5.2, threshold: 1.0)
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @Test("Model building logging")
@@ -151,9 +137,7 @@ struct LoggerTests {
 
         // Test completion with duration
         logger.modelBuildingCompleted("Financial Model", duration: 0.156)
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     // MARK: - Signpost Tests
@@ -171,9 +155,7 @@ struct LoggerTests {
 
         // End signpost
         logger.endSignpost("Test Interval")
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
@@ -186,9 +168,7 @@ struct LoggerTests {
 
         // Event with message
         logger.signpostEvent("Cache Miss", message: "Key: revenue_2024")
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
@@ -200,9 +180,7 @@ struct LoggerTests {
         logger.beginSignpost("Custom ID Test", id: signpostID)
         Thread.sleep(forTimeInterval: 0.001)
         logger.endSignpost("Custom ID Test", id: signpostID)
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     // MARK: - Integration Tests
@@ -226,9 +204,7 @@ struct LoggerTests {
 
         // Complete model building
         modelLogger.modelBuildingCompleted("SaaS Model", duration: 0.020)
-
-        // Test passes if workflow completes without crashes
-        #expect(true)
+        // Test passes if workflow completes without crashes (completion is verification)
     }
 
     @Test("Concurrent logging safety")
@@ -241,9 +217,7 @@ struct LoggerTests {
             Thread.sleep(forTimeInterval: 0.0001)
             logger.calculationCompleted("Concurrent Calc \(index)", result: index)
         }
-
-        // Test passes if no crashes occur
-        #expect(true)
+        // Test passes if no crashes occur (completion is verification)
     }
 
     #else
