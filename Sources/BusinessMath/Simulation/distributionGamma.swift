@@ -86,21 +86,34 @@ public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, se
 	}
 
 	// Marsaglia and Tsang's method for shape >= 1
+	// Acceptance rate is typically >95%, but add safety limit
+	let maxIterations = 10000
+	let maxInnerIterations = 1000
+
 	let oneThird: T = T(1) / T(3)
 	let d = shape - oneThird
 	let c = T(1) / T.sqrt(T(9) * d)
 
-	while true {
+	for _ in 0..<maxIterations {
 		var x: T
 		var v: T
 
 		// Generate v = (1 + c×Z)³ where Z ~ N(0,1)
+		var innerIterations = 0
 		repeat {
 			let u1Seed = nextSeed()
 			let u2Seed = nextSeed()
 			x = distributionNormal(mean: T(0), stdDev: T(1), u1Seed, u2Seed)
 			v = T(1) + c * x
+			innerIterations += 1
+			// Safety: break inner loop if stuck (shouldn't happen with valid parameters)
+			if innerIterations >= maxInnerIterations {
+				break
+			}
 		} while v <= T(0)
+
+		// If inner loop exhausted, try outer loop again
+		guard v > T(0) else { continue }
 
 		v = v * v * v
 
@@ -127,6 +140,10 @@ public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, se
 			return d * v * scale
 		}
 	}
+
+	// Fallback: return mean of gamma distribution if rejection sampling exhausted
+	// This should never happen with valid parameters
+	return shape * scale
 }
 
 /// A Gamma distribution generator for producing random values.

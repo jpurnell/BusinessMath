@@ -32,47 +32,13 @@ public func hypergeometric<T: BinaryFloatingPoint>(total: Int, r: Int, n: Int, x
     guard x <= r else { return 0 }
     guard x <= n else { return 0 }
     guard (n - x) <= (total - r) else { return 0 }
-    
+
     // Use log-space computation to avoid overflow
+    // Uses the public logCombination from combination.swift
     let logNumerator = logCombination(r, c: x) + logCombination(total - r, c: n - x)
     let logDenominator = logCombination(total, c: n)
-    
+
     let logResult = logNumerator - logDenominator
     let result = exp(logResult)
-	return T(result)
-}
-
-/// Computes the natural logarithm of the combination (n choose r).
-///
-/// This function uses logarithms to avoid integer overflow when computing large factorials.
-///
-/// - Parameters:
-///   - n: The total number of elements
-///   - r: The number of elements to choose
-/// - Returns: The natural logarithm of C(n, r)
-
-private func logCombination(_ n: Int, c r: Int) -> Double {
-    guard n >= 0, r >= 0, r <= n else { return 0 }
-    if r == 0 || r == n { return 0 } // ln(1) = 0
-    
-    return logFactorial(n) - logFactorial(r) - logFactorial(n - r)
-}
-
-/// Computes the natural logarithm of n!
-///
-/// - Parameter n: A non-negative integer
-/// - Returns: The natural logarithm of n!
-
-private func logFactorial(_ n: Int) -> Double {
-    guard n >= 0 else { return 0 }
-    if n <= 1 { return 0 } // ln(1) = 0
-    
-    // Use Stirling's approximation for large values
-    if n > 20 {
-        let nDouble = Double(n)
-        return nDouble * log(nDouble) - nDouble + 0.5 * log(2.0 * .pi * nDouble)
-    }
-    
-    // For smaller values, compute directly
-    return (1...n).map { log(Double($0)) }.reduce(0, +)
+    return T(result)
 }

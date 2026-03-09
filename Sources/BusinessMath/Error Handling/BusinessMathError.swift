@@ -48,6 +48,9 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
     /// Numerical instability detected
     case numericalInstability(message: String, suggestions: [String] = [])
 
+    /// Integer or floating-point overflow occurred
+    case overflow(operation: String, value: String, limit: String)
+
     // MARK: - Data Errors (E100-E199)
 
     /// Dimensions or sizes don't match
@@ -133,6 +136,9 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
             }
             return description
 
+        case .overflow(let operation, let value, let limit):
+            return "Overflow in \(operation): \(value) exceeds \(limit)"
+
         case .mismatchedDimensions(let message, let expected, let actual):
             var description = "Mismatched dimensions: \(message)"
             if let expected = expected, let actual = actual {
@@ -216,6 +222,15 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
                 return "Try using more precise input values or a more stable calculation method"
             }
             return "Possible solutions:\n" + suggestions.map { "• \($0)" }.joined(separator: "\n")
+
+        case .overflow(let operation, _, _):
+            return """
+            The \(operation) result exceeded the maximum representable value.
+            Consider:
+            • Using a Double-based variant (e.g., factorialDouble instead of factorial)
+            • Working in log-space (e.g., logFactorial for probability calculations)
+            • Breaking calculations into smaller steps
+            """
 
         case .mismatchedDimensions:
             return "Ensure all time series have matching periods before combining them"
@@ -309,6 +324,7 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
         case .calculationFailed: return "E002"
         case .divisionByZero: return "E003"
         case .numericalInstability: return "E004"
+        case .overflow: return "E005"
 
         // Data Errors (E100-E199)
         case .mismatchedDimensions: return "E100"

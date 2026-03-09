@@ -177,6 +177,12 @@ public struct RingBuffer<Element>: Sendable where Element: Sendable {
 // MARK: - Sequence Conformance
 
 extension RingBuffer: Sequence {
+    /// Creates an iterator that traverses elements from oldest to newest.
+    ///
+    /// The iterator yields elements in the order they were added, starting
+    /// with the oldest element still in the buffer.
+    ///
+    /// - Returns: A `RingBufferIterator` for traversing this buffer.
     public func makeIterator() -> RingBufferIterator<Element> {
         RingBufferIterator(buffer: self)
     }
@@ -191,6 +197,9 @@ public struct RingBufferIterator<Element: Sendable>: IteratorProtocol {
         self.buffer = buffer
     }
 
+    /// Advances to the next element and returns it, or `nil` if no next element exists.
+    ///
+    /// - Returns: The next element in the buffer, or `nil` if iteration is complete.
     public mutating func next() -> Element? {
         guard currentIndex < buffer.count else { return nil }
         let element = buffer[currentIndex]
@@ -202,9 +211,16 @@ public struct RingBufferIterator<Element: Sendable>: IteratorProtocol {
 // MARK: - Collection Conformance
 
 extension RingBuffer: Collection {
+    /// The position of the first element (always 0 for non-empty buffers).
     public var startIndex: Int { 0 }
+
+    /// The position one past the last valid element.
     public var endIndex: Int { elementCount }
 
+    /// Returns the position immediately after the given index.
+    ///
+    /// - Parameter i: A valid index of the collection.
+    /// - Returns: The index value immediately after `i`.
     public func index(after i: Int) -> Int {
         i + 1
     }
@@ -213,6 +229,12 @@ extension RingBuffer: Collection {
 // MARK: - CustomStringConvertible
 
 extension RingBuffer: CustomStringConvertible {
+    /// A textual representation of the ring buffer.
+    ///
+    /// Returns a string showing the current count, capacity, and elements
+    /// in order from oldest to newest.
+    ///
+    /// Example: `"RingBuffer(count: 3/5, [1, 2, 3])"`
     public var description: String {
         let elements = toArray().map { "\($0)" }.joined(separator: ", ")
         return "RingBuffer(count: \(count)/\(capacity), [\(elements)])"
@@ -222,6 +244,15 @@ extension RingBuffer: CustomStringConvertible {
 // MARK: - Equatable (when Element is Equatable)
 
 extension RingBuffer: Equatable where Element: Equatable {
+    /// Returns a Boolean value indicating whether two ring buffers are equal.
+    ///
+    /// Two ring buffers are equal if they contain the same number of elements
+    /// and all corresponding elements are equal in order from oldest to newest.
+    ///
+    /// - Parameters:
+    ///   - lhs: A ring buffer to compare.
+    ///   - rhs: Another ring buffer to compare.
+    /// - Returns: `true` if the buffers are equal; otherwise, `false`.
     public static func == (lhs: RingBuffer<Element>, rhs: RingBuffer<Element>) -> Bool {
         guard lhs.count == rhs.count else { return false }
         for i in 0..<lhs.count {
@@ -236,6 +267,12 @@ extension RingBuffer: Equatable where Element: Equatable {
 // MARK: - Hashable (when Element is Hashable)
 
 extension RingBuffer: Hashable where Element: Hashable {
+    /// Hashes the essential components of this ring buffer.
+    ///
+    /// The hash incorporates the element count and all elements in order,
+    /// ensuring equal buffers produce equal hash values.
+    ///
+    /// - Parameter hasher: The hasher to use when combining the components.
     public func hash(into hasher: inout Hasher) {
         hasher.combine(count)
         for element in self {

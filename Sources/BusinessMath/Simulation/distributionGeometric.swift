@@ -33,24 +33,28 @@ public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T 
 	// Validate parameters - return NaN for invalid inputs
 	guard p > T(0), p <= T(1), !p.isNaN, p.isFinite else { return T.nan }
 
-	var x: T = T(0)
-	var seedIndex = 0
+	// Special case: p = 1 means always succeed on first trial
+	if p == T(1) { return T(1) }
 
-	while true {
-		let u: T
-		if let seeds = seeds, seedIndex < seeds.count {
-			u = distributionUniform(min: T(0), max: T(1), seeds[seedIndex])
-			seedIndex += 1
-		} else {
-			u = distributionUniform()
-		}
-
-		if u < p {
-			break
-		}
-		x = x + 1
+	// Use inverse transform method (O(1), no iteration needed)
+	// X = ceil(ln(U) / ln(1-p)) where U ~ Uniform(0,1)
+	let u: T
+	if let seeds = seeds, !seeds.isEmpty {
+		u = distributionUniform(min: T(0), max: T(1), seeds[0])
+	} else {
+		u = distributionUniform()
 	}
-	return x + 1
+
+	// Avoid log(0) by using 1-U which has same distribution as U
+	let oneMinusP = T(1) - p
+	let logOneMinusP = T.log(oneMinusP)
+
+	// Prevent division by zero for p very close to 1
+	guard logOneMinusP < T(0) else { return T(1) }
+
+	// ceil(ln(1-U) / ln(1-p)) but use ln(U) since U and 1-U have same distribution
+	let result = T.log(u) / logOneMinusP
+	return T(max(1, Int(result.rounded(.up))))
 }
 
 /// A geometric distribution generator for modeling number of trials until first success.

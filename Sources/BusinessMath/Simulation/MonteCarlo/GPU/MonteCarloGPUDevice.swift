@@ -427,11 +427,15 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
     }
 
     private func downloadResults(from buffer: MTLBuffer, count: Int) -> [Float] {
+        guard count > 0 else { return [] }
+
         // OPTIMIZATION: Use bulk memcpy instead of element-wise copy
         let pointer = buffer.contents().bindMemory(to: Float.self, capacity: count)
         var results = [Float](repeating: 0, count: count)
         results.withUnsafeMutableBufferPointer { dest in
-            dest.baseAddress!.update(from: pointer, count: count)
+            // Safe: baseAddress is non-nil for non-empty arrays
+            guard let baseAddr = dest.baseAddress else { return }
+            baseAddr.update(from: pointer, count: count)
         }
         return results
     }

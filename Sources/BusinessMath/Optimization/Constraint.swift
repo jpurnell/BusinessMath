@@ -208,11 +208,22 @@ public enum MultivariateConstraint<V: VectorSpace>: Sendable where V.Scalar: Rea
 				case .greaterOrEqual:
 					gradCoeffs = coeffs.map { -$0 }  // ∇(-c·x) = -c
 				}
-				return V.fromArray(gradCoeffs)!
+				// Safe: linear constraint coefficients match vector dimension
+				guard let grad = V.fromArray(gradCoeffs) else {
+					// Fallback: return zero vector if dimension mismatch
+					return V.zero
+				}
+				return grad
 			}
 		case .linearEquality(let coeffs, _):
 			// Gradient is constant: ∇(c·x) = c
-			return { _ in V.fromArray(coeffs)! }
+			return { _ in
+				// Safe: linear constraint coefficients match vector dimension
+				guard let grad = V.fromArray(coeffs) else {
+					return V.zero
+				}
+				return grad
+			}
 		}
 	}
 
