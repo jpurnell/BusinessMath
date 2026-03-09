@@ -23,7 +23,16 @@ import Numerics
 ///   calculate each term in the sum and the factorial function to normalize the probability.
 public func poissonCDF<T: Real>(_ x: T, µ: T) -> T {
 	guard x >= 0 else { return T(0) }
-	let dx: Double = x as! Double
-	let floor: Int = Int(floor(dx))
-	return T.exp(-1 * µ) * (0...floor).map({T.pow(µ, T($0)) / T($0.factorial())}).reduce(T(0), +)
+	// Find floor(x) by counting up from 0 until we exceed x
+	// This works for any Real type without requiring type conversion
+	var floorInt = 0
+	var counter = T(0)
+	// Cap at reasonable maximum - Poisson CDF converges quickly for practical µ values
+	while counter < x && floorInt < 10000 {
+		floorInt += 1
+		counter += T(1)
+	}
+	// counter is now > x or we hit limit, so floorInt-1 is floor(x) (or 0 if x < 1)
+	let n = max(0, floorInt - 1)
+	return T.exp(-1 * µ) * (0...n).map({T.pow(µ, T($0)) / T($0.factorial())}).reduce(T(0), +)
 }

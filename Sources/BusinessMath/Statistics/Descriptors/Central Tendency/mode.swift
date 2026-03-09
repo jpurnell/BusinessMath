@@ -10,10 +10,12 @@ import Numerics
 
 /// Equivalent of Excel MODE(xx:xx)
 /// - Parameter x: An array of values.
-/// - Returns: Mode is the number that appears most frequently in a given set of samples
+/// - Returns: Mode is the number that appears most frequently in a given set of samples, or NaN if array is empty
 public func mode<T: Real>(_ x: [T]) -> T {
 	guard !x.isEmpty else { return T.nan }
     let counted = NSCountedSet(array: x)
     let max = counted.max { counted.count(for: $0) < counted.count(for: $1)}
-    return max as! T
+    // Safe cast: NSCountedSet was created from [T], so max element is guaranteed to be T
+    guard let result = max as? T else { return T.nan }
+    return result
 }

@@ -699,8 +699,12 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 			self.marketCap = marketCapSeries[period]
 			self.ev = evSeries[period]
 
-			let peValue = peSeries[period]
-			self.peRatio = (peValue != nil && peValue! > T(0)) ? peValue : nil
+			// Only set P/E ratio if positive (negative P/E is meaningless)
+			if let peValue = peSeries[period], peValue > T(0) {
+				self.peRatio = peValue
+			} else {
+				self.peRatio = nil
+			}
 
 			self.pbRatio = pbSeries[period]
 			self.psRatio = psSeries[period]

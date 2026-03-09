@@ -916,9 +916,17 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 			let difference = abs(assetValue - liabilitiesAndEquity)
 
 			if difference > tolerance {
-				// Convert to Double for error message
-				let assetsDouble = Double(exactly: assetValue as! NSNumber) ?? 0.0
-				let laeDouble = Double(exactly: liabilitiesAndEquity as! NSNumber) ?? 0.0
+				// Convert to Double for error message using safe conversion
+				let assetsDouble: Double
+				let laeDouble: Double
+				if let d = assetValue as? Double { assetsDouble = d }
+				else if let f = assetValue as? Float { assetsDouble = Double(f) }
+				else { assetsDouble = Double("\(assetValue)") ?? 0.0 }
+
+				if let d = liabilitiesAndEquity as? Double { laeDouble = d }
+				else if let f = liabilitiesAndEquity as? Float { laeDouble = Double(f) }
+				else { laeDouble = Double("\(liabilitiesAndEquity)") ?? 0.0 }
+
 				throw BalanceSheetError.accountingEquationViolation(
 					period: period,
 					assets: assetsDouble,

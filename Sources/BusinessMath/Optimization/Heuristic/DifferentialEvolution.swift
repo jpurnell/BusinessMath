@@ -517,9 +517,18 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         var populationFlat = [Float]()
         populationFlat.reserveCapacity(popSize * dimension)
         for individual in population {
-            let vec = individual as! VectorN<Double>
-            for value in vec.toArray() {
-                populationFlat.append(Float(value))
+            // Safe cast: try VectorN<Double> first, then use toArray with conversion
+            if let vec = individual as? VectorN<Double> {
+                for value in vec.toArray() {
+                    populationFlat.append(Float(value))
+                }
+            } else {
+                // Fallback: convert via toArray and string parsing
+                for value in individual.toArray() {
+                    if let d = value as? Double { populationFlat.append(Float(d)) }
+                    else if let f = value as? Float { populationFlat.append(f) }
+                    else { populationFlat.append(Float(Double("\(value)") ?? 0.0)) }
+                }
             }
         }
 
@@ -584,9 +593,15 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         // Prepare search space bounds
         var searchSpaceFlat = [SIMD2<Float>]()
         for (lower, upper) in searchSpace {
-            // Convert V.Scalar to Float (safe because we verified V.self == VectorN<Double>.self)
-            let lowerDouble = lower as! Double
-            let upperDouble = upper as! Double
+            // Safe conversion: try Double, Float, then string representation
+            let lowerDouble: Double
+            if let d = lower as? Double { lowerDouble = d }
+            else if let f = lower as? Float { lowerDouble = Double(f) }
+            else { lowerDouble = Double("\(lower)") ?? 0.0 }
+            let upperDouble: Double
+            if let d = upper as? Double { upperDouble = d }
+            else if let f = upper as? Float { upperDouble = Double(f) }
+            else { upperDouble = Double("\(upper)") ?? 1.0 }
             searchSpaceFlat.append(SIMD2(x: Float(lowerDouble), y: Float(upperDouble)))
         }
 
@@ -660,11 +675,17 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             components.reserveCapacity(dimension)
             for d in 0..<dimension {
                 let floatValue = trialsPtr[i * dimension + d]
-                // Safe cast because we already verified V.self == VectorN<Double>.self
                 let doubleValue = Double(floatValue)
-                components.append(doubleValue as! V.Scalar)
+                // Safe cast: try direct conversion, fallback to integer approximation
+                if let scalar = doubleValue as? V.Scalar {
+                    components.append(scalar)
+                } else {
+                    components.append(V.Scalar(Int(doubleValue)))
+                }
             }
-            trialPopulation.append(V.fromArray(components)!)
+            if let vec = V.fromArray(components) {
+                trialPopulation.append(vec)
+            }
         }
 
         // Evaluate trial fitness on CPU (can't run Swift closures on GPU)

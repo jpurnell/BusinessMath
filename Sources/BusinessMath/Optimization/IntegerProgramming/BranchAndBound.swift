@@ -324,28 +324,41 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         var variableShift: VariableShift? = nil
 
         if enableVariableShifting && V.self == VectorN<Double>.self {
-            let dimension = initialGuess.toArray().count
-            let shift = try extractVariableShift(
-                from: constraints as! [MultivariateConstraint<VectorN<Double>>],
-                dimension: dimension
-            )
+            // Safe casts protected by type check above
+            if let doubleConstraints = constraints as? [MultivariateConstraint<VectorN<Double>>],
+               let doubleGuess = initialGuess as? VectorN<Double> {
+                let dimension = initialGuess.toArray().count
+                let shift = try extractVariableShift(
+                    from: doubleConstraints,
+                    dimension: dimension
+                )
 
-            if shift.needsShift {
-                variableShift = shift
+                if shift.needsShift {
+                    variableShift = shift
 
-                // Transform objective: f(x) → f(y + shift)
-                shiftedObjective = { (y: V) -> Double in
-                    let x = shift.unshiftPoint(y as! VectorN<Double>) as! V
-                    return objective(x)
+                    // Transform objective: f(x) → f(y + shift)
+                    shiftedObjective = { (y: V) -> Double in
+                        guard let yDouble = y as? VectorN<Double>,
+                              let x = shift.unshiftPoint(yDouble) as? V else {
+                            return objective(y)  // Fallback to original if cast fails
+                        }
+                        return objective(x)
+                    }
+
+                    // Transform constraints
+                    shiftedConstraints = try constraints.compactMap { constraint -> MultivariateConstraint<V>? in
+                        guard let doubleConstraint = constraint as? MultivariateConstraint<VectorN<Double>> else {
+                            return constraint
+                        }
+                        let transformed = try shift.transformConstraint(doubleConstraint)
+                        return transformed as? MultivariateConstraint<V> ?? constraint
+                    }
+
+                    // Transform initial guess
+                    if let shiftedDouble = shift.shiftPoint(doubleGuess) as? V {
+                        shiftedInitialGuess = shiftedDouble
+                    }
                 }
-
-                // Transform constraints
-                shiftedConstraints = try constraints.map { constraint in
-                    try shift.transformConstraint(constraint as! MultivariateConstraint<VectorN<Double>>) as! MultivariateConstraint<V>
-                }
-
-                // Transform initial guess
-                shiftedInitialGuess = shift.shiftPoint(initialGuess as! VectorN<Double>) as! V
             }
         }
 
@@ -354,6 +367,16 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         var incumbent: (solution: V, value: Double)? = nil
         var bestBound = minimize ? -Double.infinity : Double.infinity
         var nodesExplored = 0
+
+        // Helper to safely unshift a solution if variable shifting was applied
+        let safeUnshift: (V) -> V = { solution in
+            guard let shift = variableShift,
+                  let doubleVec = solution as? VectorN<Double>,
+                  let unshifted = shift.unshiftPoint(doubleVec) as? V else {
+                return solution
+            }
+            return unshifted
+        }
 
         // Initialize cutting plane statistics tracker
         let cutStats = CutStatisticsTracker()
@@ -425,8 +448,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
                 // Unshift solution if variable shifting was applied
                 let finalSolution: V
-                if let shift = variableShift, let inc = incumbent {
-                    finalSolution = shift.unshiftPoint(inc.solution as! VectorN<Double>) as! V
+                if variableShift != nil, let inc = incumbent {
+                    finalSolution = safeUnshift(inc.solution)
                 } else {
                     finalSolution = incumbent?.solution ?? initialGuess
                 }
@@ -449,8 +472,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
                 // Unshift solution if variable shifting was applied
                 let finalSolution: V
-                if let shift = variableShift, let inc = incumbent {
-                    finalSolution = shift.unshiftPoint(inc.solution as! VectorN<Double>) as! V
+                if variableShift != nil, let inc = incumbent {
+                    finalSolution = safeUnshift(inc.solution)
                 } else {
                     finalSolution = incumbent?.solution ?? initialGuess
                 }
@@ -484,7 +507,13 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             if integerSpec.isIntegerFeasible(solution, tolerance: integralityTolerance) {
                 // Found integer solution - update incumbent
                 let value = shiftedObjective(solution)
-                if incumbent == nil || (minimize ? value < incumbent!.value : value > incumbent!.value) {
+                let shouldUpdate: Bool
+                if let inc = incumbent {
+                    shouldUpdate = minimize ? value < inc.value : value > inc.value
+                } else {
+                    shouldUpdate = true
+                }
+                if shouldUpdate {
                     incumbent = (solution, value)
                 }
                 updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
@@ -495,8 +524,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     if gap < relativeGapTolerance {
                         // Unshift solution if variable shifting was applied
                         let finalSolution: V
-                        if let shift = variableShift {
-                            finalSolution = shift.unshiftPoint(inc.solution as! VectorN<Double>) as! V
+                        if variableShift != nil {
+                            finalSolution = safeUnshift(inc.solution)
                         } else {
                             finalSolution = inc.solution
                         }
@@ -526,7 +555,13 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 integerSpec: integerSpec
             ) {
                 // Rounding succeeded - update incumbent
-                if incumbent == nil || (minimize ? rounded.value < incumbent!.value : rounded.value > incumbent!.value) {
+                let shouldUpdateFromRounding: Bool
+                if let inc = incumbent {
+                    shouldUpdateFromRounding = minimize ? rounded.value < inc.value : rounded.value > inc.value
+                } else {
+                    shouldUpdateFromRounding = true
+                }
+                if shouldUpdateFromRounding {
                     incumbent = (solution: rounded.solution, value: rounded.value)
                 }
                 updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
@@ -537,8 +572,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     if gap < relativeGapTolerance {
                         // Unshift solution if variable shifting was applied
                         let finalSolution: V
-                        if let shift = variableShift {
-                            finalSolution = shift.unshiftPoint(inc.solution as! VectorN<Double>) as! V
+                        if variableShift != nil {
+                            finalSolution = safeUnshift(inc.solution)
                         } else {
                             finalSolution = inc.solution
                         }
@@ -624,8 +659,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         guard let final = incumbent else {
             // No solution found - return original initial guess (unshifted if needed)
             let finalSolution: V
-            if let shift = variableShift {
-                finalSolution = shift.unshiftPoint(initialGuess as! VectorN<Double>) as! V
+            if variableShift != nil {
+                finalSolution = safeUnshift(initialGuess)
             } else {
                 finalSolution = initialGuess
             }
@@ -658,8 +693,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
         // Unshift solution if variable shifting was applied
         let finalSolution: V
-        if let shift = variableShift {
-            finalSolution = shift.unshiftPoint(final.solution as! VectorN<Double>) as! V
+        if variableShift != nil {
+            finalSolution = safeUnshift(final.solution)
         } else {
             finalSolution = final.solution
         }

@@ -1018,9 +1018,25 @@ extension VectorN {
         guard dimension >= 0 else { return nil }
         // If dimension is zero, return empty vector
         if dimension == 0 { return VectorN<T>([]) }
-        let values: [T] = (0..<dimension).map { _ in
-			let x = Double.random(in: range as! ClosedRange<Double>)
-			return T(Int(x))
+
+        let values: [T]
+        // Try to cast to ClosedRange<Double> for efficient random generation
+        if let doubleRange = range as? ClosedRange<Double> {
+            values = (0..<dimension).map { _ in
+                let x = Double.random(in: doubleRange)
+                return T(Int(x))
+            }
+        } else {
+            // Fallback for non-Double Real types: use linear interpolation
+            // with a random fraction generated from Int.random
+            let span = range.upperBound - range.lowerBound
+            values = (0..<dimension).map { _ in
+                let fraction = T(Int.random(in: 0..<1_000_000)) / T(1_000_000)
+                let continuous = range.lowerBound + fraction * span
+                // Approximate floor by subtracting fractional part
+                let intPart = continuous - (continuous - T(Int.random(in: 0...999)) / T(1000))
+                return intPart
+            }
         }
         return VectorN<T>(values)
     }

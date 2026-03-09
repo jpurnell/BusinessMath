@@ -102,7 +102,12 @@ public struct HazardRateCurve<T: Real & Sendable>: Sendable {
     public func cdsSpread(maturity: T, recoveryRate: T = T(40) / T(100)) -> T {
         // Build discount curve (assume flat at 5% for simplicity)
         let riskFreeRate = T(5) / T(100)
-        let numPeriods = Int(Double(exactly: maturity as! Double) ?? 5.0) * 4  // Quarterly
+        // Safe conversion: try Double, Float, or string representation
+        let maturityDouble: Double
+        if let d = maturity as? Double { maturityDouble = d }
+        else if let f = maturity as? Float { maturityDouble = Double(f) }
+        else { maturityDouble = Double("\(maturity)") ?? 5.0 }
+        let numPeriods = Int(maturityDouble) * 4  // Quarterly
         var discountTimes: [T] = []
         var discountFactors: [T] = []
 
@@ -116,7 +121,13 @@ public struct HazardRateCurve<T: Real & Sendable>: Sendable {
 
         guard !discountTimes.isEmpty else { return T.zero }
 
-        let periods = discountTimes.map { Period.year(Int(Double(exactly: $0 as! Double) ?? 0) + 2024) }
+        let periods = discountTimes.map { time -> Period in
+            let timeDouble: Double
+            if let d = time as? Double { timeDouble = d }
+            else if let f = time as? Float { timeDouble = Double(f) }
+            else { timeDouble = Double("\(time)") ?? 0.0 }
+            return Period.year(Int(timeDouble) + 2024)
+        }
         _ = TimeSeries<T>(periods: periods, values: discountFactors)  // Discount curve (for reference)
 
         // Calculate premium leg (risky annuity)

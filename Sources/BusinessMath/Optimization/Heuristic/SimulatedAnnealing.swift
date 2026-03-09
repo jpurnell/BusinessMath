@@ -232,9 +232,11 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
                 accepted = true
             } else {
                 // Probabilistically accept worse solutions
-                // Convert deltaE to Double for exp calculation
-                let deltaEInt = Int((deltaE as! Double) * 1_000_000)
-                let deltaEDouble = Double(deltaEInt) / 1_000_000.0
+                // Convert deltaE to Double for exp calculation using safe conversion
+                let deltaEDouble: Double
+                if let d = deltaE as? Double { deltaEDouble = d }
+                else if let f = deltaE as? Float { deltaEDouble = Double(f) }
+                else { deltaEDouble = Double("\(deltaE)") ?? 0.0 }
                 let probability = exp(-deltaEDouble / temperature)
                 // Fixed: UInt32.max is 2^32 - 1, but shifted value ranges 0 to 2^32 - 1
                 // Divide by 2^32 (1 << 32) to get proper [0, 1) range

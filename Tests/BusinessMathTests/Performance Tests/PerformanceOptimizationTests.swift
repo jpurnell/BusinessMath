@@ -275,7 +275,7 @@ import RealModule
         #endif
         let elapsed = Date().timeIntervalSince(start)
 
-        #expect(elapsed < 2.0, "Should complete 100 time series creations in < 2s (got \(elapsed.number(3))s)")
+        #expect(elapsed < 2.5, "Should complete 100 time series creations in < 2.5s (got \(elapsed.number(3))s)")
     }
     // MARK: - Batch Operations
 

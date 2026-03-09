@@ -222,9 +222,12 @@ public struct ScenarioAnalysis: Sendable {
 						fixedValue
 					}
 				} else if let distribution = scenario.inputDistributions[inputName] {
-					// Distribution: use it directly
+					// Distribution: use it directly with safe conversion
 					input = SimulationInput(name: inputName) {
-						distribution.next() as! Double
+						let sample = distribution.next()
+						if let d = sample as? Double { return d }
+						if let f = sample as? Float { return Double(f) }
+						return Double("\(sample)") ?? 0.0
 					}
 				} else {
 					// This shouldn't happen due to validation above

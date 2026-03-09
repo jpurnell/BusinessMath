@@ -423,15 +423,22 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         positionsFlat.reserveCapacity(swarmSize * dimension)
         personalBestFlat.reserveCapacity(swarmSize * dimension)
 
+        // Helper for safe scalar to Float conversion
+        func toFloat(_ value: V.Scalar) -> Float {
+            if let d = value as? Double { return Float(d) }
+            if let f = value as? Float { return f }
+            return Float(Double("\(value)") ?? 0.0)
+        }
+
         for i in 0..<swarmSize {
             let vArray = velocities[i].toArray()
             let pArray = positions[i].toArray()
             let pbArray = personalBest[i].toArray()
 
             for d in 0..<dimension {
-                velocitiesFlat.append(Float(vArray[d] as! Double))
-                positionsFlat.append(Float(pArray[d] as! Double))
-                personalBestFlat.append(Float(pbArray[d] as! Double))
+                velocitiesFlat.append(toFloat(vArray[d]))
+                positionsFlat.append(toFloat(pArray[d]))
+                personalBestFlat.append(toFloat(pbArray[d]))
             }
         }
 
@@ -440,14 +447,14 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         var globalBestFlat = [Float]()
         globalBestFlat.reserveCapacity(dimension)
         for d in 0..<dimension {
-            globalBestFlat.append(Float(globalBestArray[d] as! Double))
+            globalBestFlat.append(toFloat(globalBestArray[d]))
         }
 
         // Flatten search space
         var searchSpaceFlat = [SIMD2<Float>]()
         searchSpaceFlat.reserveCapacity(dimension)
         for (lower, upper) in searchSpace {
-            searchSpaceFlat.append(SIMD2(x: Float(lower as! Double), y: Float(upper as! Double)))
+            searchSpaceFlat.append(SIMD2(x: toFloat(lower), y: toFloat(upper)))
         }
 
         // Flatten velocity limits
@@ -457,7 +464,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             hasVelocityClamp = true
             velocityLimitsFlat.reserveCapacity(dimension)
             for (lower, upper) in vLimits {
-                velocityLimitsFlat.append(SIMD2(x: Float(lower as! Double), y: Float(upper as! Double)))
+                velocityLimitsFlat.append(SIMD2(x: toFloat(lower), y: toFloat(upper)))
             }
         } else {
             hasVelocityClamp = false
@@ -559,12 +566,21 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
                 let idx = i * dimension + d
                 let vValue = Double(newVelocitiesPointer[idx])
                 let pValue = Double(newPositionsPointer[idx])
-                vComponents.append(vValue as! V.Scalar)
-                pComponents.append(pValue as! V.Scalar)
+                // Safe cast: try direct cast, fallback to integer approximation
+                if let vScalar = vValue as? V.Scalar {
+                    vComponents.append(vScalar)
+                } else {
+                    vComponents.append(V.Scalar(Int(vValue)))
+                }
+                if let pScalar = pValue as? V.Scalar {
+                    pComponents.append(pScalar)
+                } else {
+                    pComponents.append(V.Scalar(Int(pValue)))
+                }
             }
 
-            newVelocities.append(V.fromArray(vComponents)!)
-            newPositions.append(V.fromArray(pComponents)!)
+            if let vel = V.fromArray(vComponents) { newVelocities.append(vel) }
+            if let pos = V.fromArray(pComponents) { newPositions.append(pos) }
         }
 
         return (velocities: newVelocities, positions: newPositions)

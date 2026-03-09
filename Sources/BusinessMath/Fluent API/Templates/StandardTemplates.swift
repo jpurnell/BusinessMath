@@ -7,6 +7,28 @@
 
 import Foundation
 
+// MARK: - Safe Parameter Extraction Helper
+
+/// Internal helper for safe parameter extraction from template dictionaries.
+/// Used by all template create methods to safely extract validated parameters.
+private func extractDouble(from parameters: [String: Any], key: String) throws -> Double {
+    guard let value = parameters[key] else {
+        throw BusinessMathError.invalidInput(
+            message: "Missing required parameter: \(key)",
+            value: "nil",
+            expectedRange: "Double value"
+        )
+    }
+    if let d = value as? Double { return d }
+    if let i = value as? Int { return Double(i) }
+    if let f = value as? Float { return Double(f) }
+    throw BusinessMathError.invalidInput(
+        message: "Invalid type for parameter: \(key)",
+        value: "\(type(of: value))",
+        expectedRange: "Double"
+    )
+}
+
 // MARK: - SaaS Template
 
 /// Template wrapper for SaaS business model.
@@ -304,10 +326,10 @@ public struct SaaSTemplate: TemplateProtocol {
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
-        let initialMRR = parameters["initialMRR"] as! Double
-        let churnRate = parameters["churnRate"] as! Double
-        let newCustomersPerMonth = parameters["newCustomersPerMonth"] as! Double
-        let arpu = parameters["averageRevenuePerUser"] as! Double
+        let initialMRR = try extractDouble(from: parameters, key: "initialMRR")
+        let churnRate = try extractDouble(from: parameters, key: "churnRate")
+        let newCustomersPerMonth = try extractDouble(from: parameters, key: "newCustomersPerMonth")
+        let arpu = try extractDouble(from: parameters, key: "averageRevenuePerUser")
         let grossMargin = parameters["grossMargin"] as? Double
         let cac = parameters["customerAcquisitionCost"] as? Double
 
@@ -441,10 +463,10 @@ public struct RetailTemplate: TemplateProtocol {
         try validate(parameters: parameters)
 
         return RetailModel(
-            initialInventoryValue: parameters["initialInventoryValue"] as! Double,
-            monthlyRevenue: parameters["monthlyRevenue"] as! Double,
-            costOfGoodsSoldPercentage: parameters["costOfGoodsSoldPercentage"] as! Double,
-            operatingExpenses: parameters["operatingExpenses"] as! Double
+            initialInventoryValue: try extractDouble(from: parameters, key: "initialInventoryValue"),
+            monthlyRevenue: try extractDouble(from: parameters, key: "monthlyRevenue"),
+            costOfGoodsSoldPercentage: try extractDouble(from: parameters, key: "costOfGoodsSoldPercentage"),
+            operatingExpenses: try extractDouble(from: parameters, key: "operatingExpenses")
         )
     }
 }
@@ -561,11 +583,11 @@ public struct ManufacturingTemplate: TemplateProtocol {
         try validate(parameters: parameters)
 
         return ManufacturingModel(
-            productionCapacity: parameters["productionCapacity"] as! Double,
-            sellingPricePerUnit: parameters["sellingPricePerUnit"] as! Double,
-            directMaterialCostPerUnit: parameters["directMaterialCostPerUnit"] as! Double,
-            directLaborCostPerUnit: parameters["directLaborCostPerUnit"] as! Double,
-            monthlyOverhead: parameters["monthlyOverhead"] as! Double
+            productionCapacity: try extractDouble(from: parameters, key: "productionCapacity"),
+            sellingPricePerUnit: try extractDouble(from: parameters, key: "sellingPricePerUnit"),
+            directMaterialCostPerUnit: try extractDouble(from: parameters, key: "directMaterialCostPerUnit"),
+            directLaborCostPerUnit: try extractDouble(from: parameters, key: "directLaborCostPerUnit"),
+            monthlyOverhead: try extractDouble(from: parameters, key: "monthlyOverhead")
         )
     }
 }
@@ -739,15 +761,15 @@ public struct MarketplaceTemplate: TemplateProtocol {
         try validate(parameters: parameters)
 
         return MarketplaceModel(
-            initialBuyers: parameters["initialBuyers"] as! Double,
-            initialSellers: parameters["initialSellers"] as! Double,
-            monthlyTransactionsPerBuyer: parameters["monthlyTransactionsPerBuyer"] as! Double,
-            averageOrderValue: parameters["averageOrderValue"] as! Double,
-            takeRate: parameters["takeRate"] as! Double,
-            newBuyersPerMonth: parameters["newBuyersPerMonth"] as! Double,
-            newSellersPerMonth: parameters["newSellersPerMonth"] as! Double,
-            buyerChurnRate: parameters["buyerChurnRate"] as! Double,
-            sellerChurnRate: parameters["sellerChurnRate"] as! Double
+            initialBuyers: try extractDouble(from: parameters, key: "initialBuyers"),
+            initialSellers: try extractDouble(from: parameters, key: "initialSellers"),
+            monthlyTransactionsPerBuyer: try extractDouble(from: parameters, key: "monthlyTransactionsPerBuyer"),
+            averageOrderValue: try extractDouble(from: parameters, key: "averageOrderValue"),
+            takeRate: try extractDouble(from: parameters, key: "takeRate"),
+            newBuyersPerMonth: try extractDouble(from: parameters, key: "newBuyersPerMonth"),
+            newSellersPerMonth: try extractDouble(from: parameters, key: "newSellersPerMonth"),
+            buyerChurnRate: try extractDouble(from: parameters, key: "buyerChurnRate"),
+            sellerChurnRate: try extractDouble(from: parameters, key: "sellerChurnRate")
         )
     }
 }
@@ -893,13 +915,13 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
         try validate(parameters: parameters)
 
         return SubscriptionBoxModel(
-            initialSubscribers: parameters["initialSubscribers"] as! Double,
-            monthlyBoxPrice: parameters["monthlyBoxPrice"] as! Double,
-            costOfGoodsPerBox: parameters["costOfGoodsPerBox"] as! Double,
-            shippingCostPerBox: parameters["shippingCostPerBox"] as! Double,
-            monthlyChurnRate: parameters["monthlyChurnRate"] as! Double,
-            newSubscribersPerMonth: parameters["newSubscribersPerMonth"] as! Double,
-            customerAcquisitionCost: parameters["customerAcquisitionCost"] as! Double
+            initialSubscribers: try extractDouble(from: parameters, key: "initialSubscribers"),
+            monthlyBoxPrice: try extractDouble(from: parameters, key: "monthlyBoxPrice"),
+            costOfGoodsPerBox: try extractDouble(from: parameters, key: "costOfGoodsPerBox"),
+            shippingCostPerBox: try extractDouble(from: parameters, key: "shippingCostPerBox"),
+            monthlyChurnRate: try extractDouble(from: parameters, key: "monthlyChurnRate"),
+            newSubscribersPerMonth: try extractDouble(from: parameters, key: "newSubscribersPerMonth"),
+            customerAcquisitionCost: try extractDouble(from: parameters, key: "customerAcquisitionCost")
         )
     }
 }
@@ -1152,14 +1174,14 @@ public struct RealEstateTemplate: TemplateProtocol {
         try validate(parameters: parameters)
 
         return RealEstateModel(
-            purchasePrice: parameters["purchasePrice"] as! Double,
-            downPaymentPercentage: parameters["downPaymentPercentage"] as! Double,
-            interestRate: parameters["interestRate"] as! Double,
-            loanTermYears: Int(parameters["loanTermYears"] as! Double),
-            annualRent: parameters["annualRent"] as! Double,
+            purchasePrice: try extractDouble(from: parameters, key: "purchasePrice"),
+            downPaymentPercentage: try extractDouble(from: parameters, key: "downPaymentPercentage"),
+            interestRate: try extractDouble(from: parameters, key: "interestRate"),
+            loanTermYears: Int(try extractDouble(from: parameters, key: "loanTermYears")),
+            annualRent: try extractDouble(from: parameters, key: "annualRent"),
             vacancyRate: parameters["vacancyRate"] as? Double ?? 0.05,
-            annualOperatingExpenses: parameters["annualOperatingExpenses"] as! Double,
-            annualAppreciationRate: parameters["annualAppreciationRate"] as! Double,
+            annualOperatingExpenses: try extractDouble(from: parameters, key: "annualOperatingExpenses"),
+            annualAppreciationRate: try extractDouble(from: parameters, key: "annualAppreciationRate"),
             closingCostsPercentage: parameters["closingCostsPercentage"] as? Double ?? 0.03,
             rentGrowthRate: parameters["rentGrowthRate"] as? Double ?? 0.025,
             depreciationPeriodYears: parameters["depreciationPeriodYears"] as? Double ?? 27.5,

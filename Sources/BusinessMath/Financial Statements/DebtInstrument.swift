@@ -222,37 +222,49 @@ public struct DebtInstrument {
 
         while currentDate < maturityDate && periods.count < expectedPeriods {
             // Create a period based on payment frequency
-            let period: Period
+            let period: Period?
+            let nextDate: Date?
             switch paymentFrequency {
             case .monthly:
                 let components = calendar.dateComponents([.year, .month], from: currentDate)
-                period = Period.month(year: components.year!, month: components.month!)
+                if let year = components.year, let month = components.month {
+                    period = Period.month(year: year, month: month)
+                } else {
+                    period = nil
+                }
+                nextDate = calendar.date(byAdding: .month, value: 1, to: currentDate)
             case .quarterly:
                 let components = calendar.dateComponents([.year, .month], from: currentDate)
-                let quarter = ((components.month! - 1) / 3) + 1
-                period = Period.quarter(year: components.year!, quarter: quarter)
+                if let year = components.year, let month = components.month {
+                    let quarter = ((month - 1) / 3) + 1
+                    period = Period.quarter(year: year, quarter: quarter)
+                } else {
+                    period = nil
+                }
+                nextDate = calendar.date(byAdding: .month, value: 3, to: currentDate)
             case .semiAnnual:
                 // Use monthly periods for semi-annual, treated as 6-month intervals
                 let components = calendar.dateComponents([.year, .month], from: currentDate)
-                period = Period.month(year: components.year!, month: components.month!)
+                if let year = components.year, let month = components.month {
+                    period = Period.month(year: year, month: month)
+                } else {
+                    period = nil
+                }
+                nextDate = calendar.date(byAdding: .month, value: 6, to: currentDate)
             case .annual:
                 let components = calendar.dateComponents([.year], from: currentDate)
-                period = Period.year(components.year!)
+                if let year = components.year {
+                    period = Period.year(year)
+                } else {
+                    period = nil
+                }
+                nextDate = calendar.date(byAdding: .year, value: 1, to: currentDate)
             }
 
-            periods.append(period)
-
-            // Advance to next payment date
-            switch paymentFrequency {
-            case .monthly:
-                currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate)!
-            case .quarterly:
-                currentDate = calendar.date(byAdding: .month, value: 3, to: currentDate)!
-            case .semiAnnual:
-                currentDate = calendar.date(byAdding: .month, value: 6, to: currentDate)!
-            case .annual:
-                currentDate = calendar.date(byAdding: .year, value: 1, to: currentDate)!
-            }
+            // Only add valid periods and continue if we can advance the date
+            guard let validPeriod = period, let validNextDate = nextDate else { break }
+            periods.append(validPeriod)
+            currentDate = validNextDate
         }
 
         return periods

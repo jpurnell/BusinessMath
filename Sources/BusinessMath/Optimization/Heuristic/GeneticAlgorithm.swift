@@ -364,12 +364,12 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
                 }
             }
 
-            // Track best individual
-            if let best = population.min(by: { $0.fitness! < $1.fitness! }) {
-                if best.fitness! < bestFitness {
-                    bestFitness = best.fitness!
-                    bestIndividual = best
-                }
+            // Track best individual - safe comparison with nil handling
+            if let best = population.min(by: { ($0.fitness ?? .infinity) < ($1.fitness ?? .infinity) }),
+               let fitness = best.fitness,
+               fitness < bestFitness {
+                bestFitness = fitness
+                bestIndividual = best
             }
 
             // Record history
@@ -377,12 +377,12 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             diversityHistory.append(calculateDiversity(population))
 
             // Check convergence (fitness improvement < threshold for 10 generations)
-            if generation >= 10 {
+            if generation >= 10, let bestInd = bestIndividual {
                 let recentImprovement = convergenceHistory[generation - 10] - bestFitness
                 let threshold = V.Scalar(1) / V.Scalar(1_000_000)  // 1e-6
                 if recentImprovement < threshold {
                     return GeneticAlgorithmResult(
-                        solution: bestIndividual!.genes,
+                        solution: bestInd.genes,
                         fitness: bestFitness,
                         generations: generation + 1,
                         evaluations: evaluationCount,
@@ -398,9 +398,16 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             population = evolvePopulation(population)
         }
 
-        // Return final result
+        // Return final result - use best individual if found, else first population member
+        // Note: This should never fail since population is always non-empty after initializePopulation()
+        guard let finalIndividual = bestIndividual ?? population.first else {
+            // This should never happen with a valid population
+            throw OptimizationError.invalidInput(message: "Genetic algorithm failed: empty population")
+        }
+        let finalSolution = finalIndividual.genes
+
         return GeneticAlgorithmResult(
-            solution: bestIndividual!.genes,
+            solution: finalSolution,
             fitness: bestFitness,
             generations: config.generations,
             evaluations: evaluationCount,
@@ -491,7 +498,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         var newPopulation: [Individual<V>] = []
 
         // Sort by fitness (best first)
-        let sorted = population.sorted { $0.fitness! < $1.fitness! }
+        let sorted = population.sorted { ($0.fitness ?? .infinity) < ($1.fitness ?? .infinity) }
 
         // Elitism: preserve best individuals
         newPopulation.append(contentsOf: sorted.prefix(config.eliteCount))
@@ -557,7 +564,11 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         for individual in population {
             let genes = individual.genes.toArray()
             for gene in genes {
-                let doubleValue = gene as! Double
+                // Safe conversion: try Double, Float, then string representation
+                let doubleValue: Double
+                if let d = gene as? Double { doubleValue = d }
+                else if let f = gene as? Float { doubleValue = Double(f) }
+                else { doubleValue = Double("\(gene)") ?? 0.0 }
                 populationData.append(Float(doubleValue))
             }
         }
@@ -566,8 +577,12 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         buffers.uploadPopulation(populationData, to: buffers.populationA)
 
         // Upload fitness to GPU
-        let fitnessData: [Float] = population.map {
-            let doubleFitness = $0.fitness! as! Double
+        let fitnessData: [Float] = population.compactMap { individual -> Float? in
+            guard let fitness = individual.fitness else { return nil }
+            let doubleFitness: Double
+            if let d = fitness as? Double { doubleFitness = d }
+            else if let f = fitness as? Float { doubleFitness = Double(f) }
+            else { doubleFitness = Double("\(fitness)") ?? 0.0 }
             return Float(doubleFitness)
         }
         buffers.uploadFitness(fitnessData)
@@ -627,10 +642,16 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         encoder.setBytes(&mutStrength, length: MemoryLayout<Float>.stride, index: 4)
 
         // Convert search space to float2 array for GPU
-        // Cast V.Scalar to Double first (safe because we checked V == VectorN<Double>)
+        // V.Scalar should be Double (GPU path requires VectorN<Double>)
         var searchSpaceGPU: [SIMD2<Float>] = searchSpace.map { bounds in
-            let lower = bounds.lower as! Double
-            let upper = bounds.upper as! Double
+            let lower: Double
+            if let d = bounds.lower as? Double { lower = d }
+            else if let f = bounds.lower as? Float { lower = Double(f) }
+            else { lower = Double("\(bounds.lower)") ?? 0.0 }
+            let upper: Double
+            if let d = bounds.upper as? Double { upper = d }
+            else if let f = bounds.upper as? Float { upper = Double(f) }
+            else { upper = Double("\(bounds.upper)") ?? 1.0 }
             return SIMD2<Float>(Float(lower), Float(upper))
         }
         encoder.setBytes(&searchSpaceGPU, length: searchSpaceGPU.count * MemoryLayout<SIMD2<Float>>.stride, index: 5)
@@ -645,22 +666,28 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         let resultData = buffers.downloadPopulation(from: buffers.populationA)
 
         // Convert back to population
-        // V.Scalar is Double (safe because we checked V == VectorN<Double>)
+        // V.Scalar should be Double for GPU path
         var newPopulation: [Individual<V>] = []
         for i in 0..<config.populationSize {
             let offset = i * dimension
             var genes: [V.Scalar] = []
             for j in 0..<dimension {
                 let doubleValue = Double(resultData[offset + j])
-                genes.append(doubleValue as! V.Scalar)  // Safe cast
+                // Safe cast: if V.Scalar is Double, this will succeed
+                if let scalar = doubleValue as? V.Scalar {
+                    genes.append(scalar)
+                } else {
+                    // Fallback: try to construct from integer approximation
+                    genes.append(V.Scalar(Int(doubleValue)))
+                }
             }
 
-            let vector = V.fromArray(genes)!
+            guard let vector = V.fromArray(genes) else { continue }
             newPopulation.append(Individual(genes: vector))
         }
 
         // Handle elitism on CPU (simpler than GPU sort)
-        let sorted = population.sorted { $0.fitness! < $1.fitness! }
+        let sorted = population.sorted { ($0.fitness ?? .infinity) < ($1.fitness ?? .infinity) }
         for i in 0..<min(config.eliteCount, newPopulation.count) {
             newPopulation[i] = sorted[i]
         }
@@ -681,12 +708,16 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             let randomIndex = Int(rng.next() % UInt64(population.count))
             let candidate = population[randomIndex]
 
-            if best == nil || candidate.fitness! < best!.fitness! {
+            // Compare fitness safely
+            let candidateFitness = candidate.fitness ?? .infinity
+            let bestFitness = best?.fitness ?? .infinity
+            if candidateFitness < bestFitness {
                 best = candidate
             }
         }
 
-        return best!
+        // Return best or first population member as fallback
+        return best ?? population[0]
     }
 
     /// Uniform crossover: each gene randomly from parent1 or parent2.
@@ -791,7 +822,7 @@ internal final class RNGWrapper {
 /// - Warning: This RNG is NOT cryptographically secure and should only be used
 ///   for testing and reproducible benchmarks. For production use, prefer
 ///   `SystemRandomNumberGenerator` or a cryptographically secure generator.
-@available(*, deprecated, message: "For testing only - not suitable for production Monte Carlo simulations")
+//@available(*, deprecated, message: "Seeded RNG is for testing only - not suitable for production")
 internal struct SeededRandomNumberGenerator: RandomNumberGenerator {
     private var state: UInt64
 

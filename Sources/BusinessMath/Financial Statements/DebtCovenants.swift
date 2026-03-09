@@ -405,8 +405,12 @@ public struct CovenantMonitor {
         principalPayment: Double?
     ) -> Double where T: Codable {
         func toDouble(_ value: T?) -> Double {
-            guard value != nil else { return 0.0 }
-			return value as! Double
+            guard let val = value else { return 0.0 }
+            // Safe conversion: try Double first, then Float, then parse from string representation
+            if let d = val as? Double { return d }
+            if let f = val as? Float { return Double(f) }
+            // Fallback: use string representation for other Real types
+            return Double("\(val)") ?? 0.0
         }
 
         switch metric {
@@ -480,13 +484,22 @@ public struct CovenantMonitor {
 
     // Helper methods to convert generic financial statements to Double-based ones
     private func convertToDoubleIncomeStatement<T: Real & Sendable>(_ incomeStatement: IncomeStatement<T>) -> IncomeStatement<Double> where T: Codable {
-        // Since the test already provides IncomeStatement<Double>, we can just cast
-        return incomeStatement as! IncomeStatement<Double>
+        // Safe cast: if T is already Double, return directly; otherwise this custom check requires Double
+        if let doubleStatement = incomeStatement as? IncomeStatement<Double> {
+            return doubleStatement
+        }
+        // For non-Double types, custom covenants may not work correctly
+        // Return a minimal placeholder - custom covenants should use Double types
+        fatalError("Custom covenants require IncomeStatement<Double>. Use Double-typed financial statements for custom covenant checks.")
     }
 
     private func convertToDoubleBalanceSheet<T: Real & Sendable>(_ balanceSheet: BalanceSheet<T>) -> BalanceSheet<Double> where T: Codable {
-        // Since the test already provides BalanceSheet<Double>, we can just cast
-        return balanceSheet as! BalanceSheet<Double>
+        // Safe cast: if T is already Double, return directly
+        if let doubleSheet = balanceSheet as? BalanceSheet<Double> {
+            return doubleSheet
+        }
+        // For non-Double types, custom covenants may not work correctly
+        fatalError("Custom covenants require BalanceSheet<Double>. Use Double-typed financial statements for custom covenant checks.")
     }
 }
 
@@ -498,7 +511,11 @@ public func calculateInterestCoverage<T: Real & Sendable>(
 ) -> Double where T: Codable {
     func toDouble(_ value: T?) -> Double {
         guard let val = value else { return 0.0 }
-        return Double(exactly: val as! Double) ?? Double(val as! Float)
+        // Safe conversion: try Double first, then Float, then parse from string representation
+        if let d = val as? Double { return d }
+        if let f = val as? Float { return Double(f) }
+        // Fallback: use string representation for other Real types
+        return Double("\(val)") ?? 0.0
     }
 
     let operatingIncome = toDouble(incomeStatement.operatingIncome[period])
