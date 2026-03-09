@@ -21,7 +21,12 @@ import Numerics
 ///   divided by average inventory.
 ///
 /// - Complexity: O(1).
-public func inventoryTurnover<T: Real>(costOfGoodsSold: T, averageInventory: T) -> T {
-    guard averageInventory > T(0) else { return T(0) } // Handle division by zero
+/// - Throws: `BusinessMathError.divisionByZero` if average inventory is zero or negative.
+public func inventoryTurnover<T: Real>(costOfGoodsSold: T, averageInventory: T) throws -> T {
+    guard averageInventory > T(0) else {
+		throw BusinessMathError.divisionByZero(
+			context: "Inventory turnover: average inventory must be positive"
+		)
+	}
     return costOfGoodsSold / averageInventory
 }

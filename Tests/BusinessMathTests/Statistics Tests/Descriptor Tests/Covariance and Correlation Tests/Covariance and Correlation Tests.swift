@@ -42,15 +42,15 @@ import OSLog
         #expect(result == resultS)
     }
 
-    @Test("CorrelationCoefficient") func LCorrelationCoefficient() {
+    @Test("CorrelationCoefficient") func LCorrelationCoefficient() throws {
         let x = [20.0, 23, 45, 78, 21]
         let y = [200.0, 300, 500, 700, 100]
-        
-		let result = correlationCoefficient(x, y, .sample)
+
+		let result = try correlationCoefficient(x, y, .sample)
         let s = (result * 10000).rounded() / 10000
         #expect(s == 0.9487)
-		
-        let resultP = correlationCoefficient(x, y, .population)
+
+        let resultP = try correlationCoefficient(x, y, .population)
         let sP = (resultP * 10000).rounded() / 10000
         #expect(sP == 0.9487)
     }
@@ -84,22 +84,22 @@ struct CovarianceCorrelationProperties {
 	}
 
 	@Test("Correlation bounds and linear relationships")
-	func correlation_bounds_and_linearity() {
+	func correlation_bounds_and_linearity() throws {
 		let x = [1.0, 2.0, 3.0, 4.0, 5.0]
 		let y = x.map { 2.0 * $0 + 10.0 } // perfect positive linear
 		let yNeg = x.map { -3.0 * $0 + 5.0 } // perfect negative linear
 
-		let r1 = correlationCoefficient(x, y, .sample)
+		let r1 = try correlationCoefficient(x, y, .sample)
 		#expect(close(r1, 1.0, accuracy: 1e-12))
 
-		let r2 = correlationCoefficient(x, yNeg, .sample)
+		let r2 = try correlationCoefficient(x, yNeg, .sample)
 		#expect(close(r2, -1.0, accuracy: 1e-12))
 
-		let rSelf = correlationCoefficient(x, x, .sample)
+		let rSelf = try correlationCoefficient(x, x, .sample)
 		#expect(close(rSelf, 1.0, accuracy: 1e-12))
 
 		// Bounds
-		#expect(abs(correlationCoefficient(x, [5,4,3,2,1].map(Double.init), .sample)) <= 1.0 + 1e-12)
+		#expect(try abs(correlationCoefficient(x, [5,4,3,2,1].map(Double.init), .sample)) <= 1.0 + 1e-12)
 	}
 }
 
@@ -139,15 +139,15 @@ struct CovarianceCorrelationNaNInfinityTests {
 	}
 
 	@Test("correlationCoefficient propagates NaN")
-	func correlation_propagates_nan() {
+	func correlation_propagates_nan() throws {
 		let x1 = [1.0, Double.nan, 3.0]
 		let y1 = [2.0, 4.0, 6.0]
-		let result1 = correlationCoefficient(x1, y1, .sample)
+		let result1 = try correlationCoefficient(x1, y1, .sample)
 		#expect(result1.isNaN)
 
 		let x2 = [1.0, 2.0, 3.0]
 		let y2 = [2.0, Double.nan, 6.0]
-		let result2 = correlationCoefficient(x2, y2, .population)
+		let result2 = try correlationCoefficient(x2, y2, .population)
 		#expect(result2.isNaN)
 	}
 
@@ -162,10 +162,10 @@ struct CovarianceCorrelationNaNInfinityTests {
 	}
 
 	@Test("correlationCoefficient handles infinity")
-	func correlation_handles_infinity() {
+	func correlation_handles_infinity() throws {
 		let x = [1.0, Double.infinity, 3.0, 4.0]
 		let y = [2.0, 4.0, 6.0, 8.0]
-		let result = correlationCoefficient(x, y, .sample)
+		let result = try correlationCoefficient(x, y, .sample)
 		#expect(result.isNaN || result.isInfinite)
 	}
 }
@@ -197,14 +197,11 @@ struct CovarianceCorrelationEmptyArrayTests {
 		#expect(result.isNaN || result == 0.0)
 	}
 
-	@Test("correlationCoefficient handles empty arrays")
+	@Test("correlationCoefficient throws for empty arrays")
 	func correlation_empty_arrays() {
-		let x: [Double] = []
-		let y: [Double] = []
-		let resultS = correlationCoefficient(x, y, .sample)
-		let resultP = correlationCoefficient(x, y, .population)
-		#expect(resultS.isNaN || resultS == 0.0)
-		#expect(resultP.isNaN || resultP == 0.0)
+		#expect(throws: BusinessMathError.self) {
+			_ = try correlationCoefficient([Double](), [Double](), .sample)
+		}
 	}
 
 	@Test("covariance handles single-element arrays")
@@ -216,12 +213,12 @@ struct CovarianceCorrelationEmptyArrayTests {
 		#expect(result.isNaN || result.isInfinite || result == 0.0)
 	}
 
-	@Test("correlationCoefficient handles single-element arrays")
+	@Test("correlationCoefficient throws for single-element arrays")
 	func correlation_single_element() {
-		let x = [5.0]
-		let y = [10.0]
-		let result = correlationCoefficient(x, y, .sample)
-		#expect(result.isNaN || result == 0.0)
+		// Single element has zero variance, so correlation throws
+		#expect(throws: BusinessMathError.self) {
+			_ = try correlationCoefficient([5.0], [10.0], .sample)
+		}
 	}
 }
 
@@ -247,11 +244,11 @@ struct CovarianceCorrelationStressTests {
 	}
 
 	@Test("correlationCoefficient handles large datasets", .timeLimit(.minutes(1)))
-	func correlation_large_datasets() {
+	func correlation_large_datasets() throws {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
-		let resultS = correlationCoefficient(x, y, .sample)
-		let resultP = correlationCoefficient(x, y, .population)
+		let resultS = try correlationCoefficient(x, y, .sample)
+		let resultP = try correlationCoefficient(x, y, .population)
 		#expect(resultS.isFinite)
 		#expect(resultP.isFinite)
 		// Perfect linear relationship

@@ -11,9 +11,15 @@ import Numerics
 
 @Suite("SkewnessTests") struct SkewnessTests {
 
-	@Test("CoefficientOfSkew") func LCoefficientOfSkew() {
-		let result = coefficientOfSkew(mean: 1, median: 0, stdDev: 3)
+	@Test("CoefficientOfSkew") func LCoefficientOfSkew() throws {
+		let result = try coefficientOfSkew(mean: 1, median: 0, stdDev: 3)
 		#expect(result == 1)
+	}
+
+	@Test("CoefficientOfSkew throws on zero stdDev") func LCoefficientOfSkewThrowsOnZeroStdDev() {
+		#expect(throws: BusinessMathError.self) {
+			_ = try coefficientOfSkew(mean: 1.0, median: 0.0, stdDev: 0.0)
+		}
 	}
 	
     @Test("SkewS") func LSkewS() {
@@ -52,29 +58,29 @@ struct SkewnessNaNInfinityTests {
 	}
 
 	@Test("coefficientOfSkew propagates NaN from mean")
-	func coefficient_of_skew_propagates_nan_from_mean() {
-		let result = coefficientOfSkew(mean: Double.nan, median: 2.0, stdDev: 1.0)
+	func coefficient_of_skew_propagates_nan_from_mean() throws {
+		let result = try coefficientOfSkew(mean: Double.nan, median: 2.0, stdDev: 1.0)
 		#expect(result.isNaN)
 	}
 
 	@Test("coefficientOfSkew propagates NaN from median")
-	func coefficient_of_skew_propagates_nan_from_median() {
-		let result = coefficientOfSkew(mean: 2.0, median: Double.nan, stdDev: 1.0)
+	func coefficient_of_skew_propagates_nan_from_median() throws {
+		let result = try coefficientOfSkew(mean: 2.0, median: Double.nan, stdDev: 1.0)
 		#expect(result.isNaN)
 	}
 
 	@Test("coefficientOfSkew propagates NaN from stdDev")
-	func coefficient_of_skew_propagates_nan_from_stdDev() {
-		let result = coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.nan)
+	func coefficient_of_skew_propagates_nan_from_stdDev() throws {
+		let result = try coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.nan)
 		#expect(result.isNaN)
 	}
 
 	@Test("coefficientOfSkew handles infinity")
-	func coefficient_of_skew_handles_infinity() {
-		let result1 = coefficientOfSkew(mean: Double.infinity, median: 1.0, stdDev: 1.0)
+	func coefficient_of_skew_handles_infinity() throws {
+		let result1 = try coefficientOfSkew(mean: Double.infinity, median: 1.0, stdDev: 1.0)
 		#expect(result1.isInfinite || result1.isNaN)
 
-		let result2 = coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.infinity)
+		let result2 = try coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.infinity)
 		#expect(result2.isFinite && result2 == 0.0)  // (2-1) / infinity = 0
 	}
 }

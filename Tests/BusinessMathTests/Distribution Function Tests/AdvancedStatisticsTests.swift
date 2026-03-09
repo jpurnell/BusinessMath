@@ -178,10 +178,10 @@ import Glibc
         #expect(result2 < 2.61)
     }
 
-    @Test("HarmonicMean") func LHarmonicMean() {
+    @Test("HarmonicMean") func LHarmonicMean() throws {
         // Test: Harmonic mean of [1,2,4] = 3 / (1/1 + 1/2 + 1/4) = 3 / 1.75 ≈ 1.714
         let values = [1.0, 2.0, 4.0]
-        let result: Double = harmonicMean(values)
+        let result: Double = try harmonicMean(values)
         #expect(result > 1.71)
         #expect(result < 1.72)
     }

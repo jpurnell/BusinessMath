@@ -271,18 +271,20 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
             let secondIterator = second.makeAsyncIterator()
 
             // Start tasks to consume both streams
+            // Note: Task continues until streams complete. Check Task.isCancelled
+            // for cooperative cancellation when the outer context is cancelled.
             Task { @Sendable in
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @Sendable in
                         var iter = firstIterator
-                        while let value = try? await iter.next() {
+                        while !Task.isCancelled, let value = try? await iter.next() {
                             continuationBox.yield(value)
                         }
                     }
 
                     group.addTask { @Sendable in
                         var iter = secondIterator
-                        while let value = try? await iter.next() {
+                        while !Task.isCancelled, let value = try? await iter.next() {
                             continuationBox.yield(value)
                         }
                     }
@@ -590,6 +592,8 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
             self.channel = channel
             iterator = channel.makeAsyncIterator()
 
+            // Note: Task continues until streams complete. Check Task.isCancelled
+            // for cooperative cancellation when the outer context is cancelled.
             Task { @Sendable in
                 let firstLatest = ThreadSafeBox<First.Element?>(nil)
                 let secondLatest = ThreadSafeBox<Second.Element?>(nil)
@@ -597,7 +601,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @Sendable in
                         var iter = first.makeAsyncIterator()
-                        while let value = try? await iter.next() {
+                        while !Task.isCancelled, let value = try? await iter.next() {
                             await firstLatest.setValue(value)
                             if let second = await secondLatest.getValue() {
                                 continuationBox.yield((value, second))
@@ -607,7 +611,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
 
                     group.addTask { @Sendable in
                         var iter = second.makeAsyncIterator()
-                        while let value = try? await iter.next() {
+                        while !Task.isCancelled, let value = try? await iter.next() {
                             await secondLatest.setValue(value)
                             if let first = await firstLatest.getValue() {
                                 continuationBox.yield((first, value))
@@ -714,13 +718,15 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
             let triggerIterator = trigger.makeAsyncIterator()
             let sampledIterator = sampled.makeAsyncIterator()
 
+            // Note: Task continues until streams complete. Check Task.isCancelled
+            // for cooperative cancellation when the outer context is cancelled.
             Task { @Sendable in
                 let latestSampled = ThreadSafeBox<Sampled.Element?>(nil)
 
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @Sendable in
                         var iter = triggerIterator
-                        while let _ = try? await iter.next() {
+                        while !Task.isCancelled, let _ = try? await iter.next() {
                             if let value = await latestSampled.getValue() {
                                 continuationBox.yield(value)
                             }
@@ -729,7 +735,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
 
                     group.addTask { @Sendable in
                         var iter = sampledIterator
-                        while let value = try? await iter.next() {
+                        while !Task.isCancelled, let value = try? await iter.next() {
                             await latestSampled.setValue(value)
                         }
                     }
@@ -1100,6 +1106,8 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
             // Create iterator before Task to avoid capturing metatype
             let baseIterator = base.makeAsyncIterator()
 
+            // Note: Task continues until stream completes. Check Task.isCancelled
+            // for cooperative cancellation when the outer context is cancelled.
             Task { @Sendable in
                 let latestValue = ThreadSafeBox<Element?>(nil)
 
@@ -1107,7 +1115,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
                     // Consume base stream
                     group.addTask { @Sendable in
                         var iter = baseIterator
-                        while let value = try? await iter.next() {
+                        while !Task.isCancelled, let value = try? await iter.next() {
                             await latestValue.setValue(value)
                         }
                     }

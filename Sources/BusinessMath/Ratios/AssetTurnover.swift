@@ -21,7 +21,12 @@ import Numerics
 ///   average total assets.
 ///
 /// - Complexity: O(1).
-public func assetTurnover<T: Real>(netSales: T, averageTotalAssets: T) -> T {
-    guard averageTotalAssets > T(0) else { return T(0) } // Handle division by zero
+/// - Throws: `BusinessMathError.divisionByZero` if average total assets is zero or negative.
+public func assetTurnover<T: Real>(netSales: T, averageTotalAssets: T) throws -> T {
+    guard averageTotalAssets > T(0) else {
+		throw BusinessMathError.divisionByZero(
+			context: "Asset turnover: average total assets must be positive"
+		)
+	}
     return netSales / averageTotalAssets
 }

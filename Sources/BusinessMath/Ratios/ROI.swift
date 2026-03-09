@@ -20,9 +20,12 @@ import Numerics
 ///   divided by the cost of investment.
 ///
 /// - Complexity: O(1).
-public func roi<T: Real>(gainFromInvestment: T, costOfInvestment: T) -> T {
+/// - Throws: `BusinessMathError.divisionByZero` if cost of investment is zero or negative.
+public func roi<T: Real>(gainFromInvestment: T, costOfInvestment: T) throws -> T {
 	guard costOfInvestment > T(0) else {
-		return T(0) // Return 0 if cost of investment is zero or negative
+		throw BusinessMathError.divisionByZero(
+			context: "Return on investment: cost of investment must be positive"
+		)
 	}
 	return gainFromInvestment / costOfInvestment
 }

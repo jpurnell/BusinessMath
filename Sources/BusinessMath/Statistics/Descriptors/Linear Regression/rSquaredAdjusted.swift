@@ -29,12 +29,26 @@ import Numerics
 ///   let yValues: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
 ///   let result = rSquaredAdjusted(xValues, yValues, .sample, 1)
 ///   // result should be the adjusted R² value for the datasets `xValues` and `yValues`
-public func rSquaredAdjusted<T: Real>(_ x: [T], _ y: [T], _ population: Population = .population, _ descriptors: T = T(1)) -> T {
-    if (x.count == y.count) == false { return T(0) }
+/// - Throws: `BusinessMathError.mismatchedDimensions` if arrays have different lengths.
+/// - Throws: `BusinessMathError.divisionByZero` if observations ≤ descriptors + 1 or zero variance.
+public func rSquaredAdjusted<T: Real>(_ x: [T], _ y: [T], _ population: Population = .population, _ descriptors: T = T(1)) throws -> T {
+	guard x.count == y.count else {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "Adjusted R² requires equal-length arrays",
+			expected: "\(x.count)",
+			actual: "\(y.count)"
+		)
+	}
     let observations = T(x.count)
-    let baseL = T(1) - rSquared(x, y, population)
+    let r2 = try rSquared(x, y, population)
+    let baseL = T(1) - r2
     let baseC = observations - T(1)
     let baseR = observations - descriptors - T(1)
+	guard baseR.magnitude > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Adjusted R²: need more observations than descriptors + 1"
+		)
+	}
     let base = (baseL * baseC) / baseR
     return T(1) - base
 }

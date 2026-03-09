@@ -30,6 +30,21 @@ import Numerics
 ///   let result = logarithmicMean(x, y)
 ///   // result should be the logarithmic mean of x and y
 
-public func logarithmicMean<T: Real>(_ x: T, _ y: T) -> T {
-	return (y - x) / (T.log(y) - T.log(x))
+/// - Returns: When x equals y, returns x (the limit of the formula).
+/// - Throws: `BusinessMathError.invalidInput` if x or y is not positive.
+public func logarithmicMean<T: Real>(_ x: T, _ y: T) throws -> T {
+	// Logarithm requires positive values
+	guard x > T(0) && y > T(0) else {
+		throw BusinessMathError.invalidInput(
+			message: "Logarithmic mean requires positive values",
+			value: "x=\(x), y=\(y)",
+			expectedRange: "(0, ∞)"
+		)
+	}
+	// When x ≈ y, the formula is undefined (0/0), but the limit is x
+	let logDiff = T.log(y) - T.log(x)
+	guard logDiff.magnitude > T.ulpOfOne else {
+		return x
+	}
+	return (y - x) / logDiff
 }

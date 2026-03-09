@@ -21,9 +21,12 @@ import Numerics
 ///   shareholder equity.
 ///
 /// - Complexity: O(1).
-public func debtToEquity<T: Real>(totalLiabilities: T, shareholderEquity: T) -> T {
+/// - Throws: `BusinessMathError.divisionByZero` if shareholder equity is zero or negative.
+public func debtToEquity<T: Real>(totalLiabilities: T, shareholderEquity: T) throws -> T {
     guard shareholderEquity > T(0) else {
-        return T(0) // Return 0 if shareholder equity is zero or negative
+		throw BusinessMathError.divisionByZero(
+			context: "Debt to equity: shareholder equity must be positive"
+		)
     }
     return totalLiabilities / shareholderEquity
 }

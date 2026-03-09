@@ -20,9 +20,12 @@ import Numerics
 /// - Returns: The ROE, defined as net income divided by shareholder equity.
 ///
 /// - Complexity: O(1).
-public func roe<T: Real>(netIncome: T, shareholderEquity: T) -> T {
+/// - Throws: `BusinessMathError.divisionByZero` if shareholder equity is zero or negative.
+public func roe<T: Real>(netIncome: T, shareholderEquity: T) throws -> T {
 	guard shareholderEquity > T(0) else {
-		return T(0) // Return 0 if shareholder equity is zero or negative
+		throw BusinessMathError.divisionByZero(
+			context: "Return on equity: shareholder equity must be positive"
+		)
 	}
 	return netIncome / shareholderEquity
 }

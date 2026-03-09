@@ -37,10 +37,23 @@ import Numerics
 /// - Important:
 ///   - Ensure that `x` and `y` arrays have the same length.
 ///   - Ensure that both arrays are not empty to perform meaningful calculations.
-public func correlationCoefficientP<T: Real>(_ x: [T], _ y: [T]) -> T {
+/// - Throws: `BusinessMathError.mismatchedDimensions` if arrays have different lengths.
+/// - Throws: `BusinessMathError.divisionByZero` if either variable has zero variance.
+public func correlationCoefficientP<T: Real>(_ x: [T], _ y: [T]) throws -> T {
+	guard x.count == y.count else {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "Correlation requires equal-length arrays",
+			expected: "\(x.count)",
+			actual: "\(y.count)"
+		)
+	}
 	let numerator = covarianceP(x, y)
 	let denominator = (stdDev(x, .population) * stdDev(y, .population))
-	let r = numerator / denominator
-	return r
+	guard denominator > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Population correlation coefficient: one or both variables have zero variance"
+		)
+	}
+	return numerator / denominator
 }
 

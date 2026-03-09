@@ -42,22 +42,22 @@ import Numerics
         #expect(result == 12043.003)
     }
        
-    @Test("RSquared") func LRSquared() {
+    @Test("RSquared") func LRSquared() throws {
         // Example from https://www.wallstreetmojo.com/r-squared-formula/
         let x: [Double] = [35.56, 43.44, 73.17, 113.0]
         let y: [Double] = [44.783, 53.982, 92.141, 135.986]
         let carAge: [Double] = [10, 8, 3, 3, 2, 1]
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
-        let carResult = (rSquared(carAge, carPrice) * 100000).rounded(.up) / 100000
-        let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
+        let carResult = (try rSquared(carAge, carPrice) * 100000).rounded(.up) / 100000
+        let result = (try rSquared(x, y) * 100000).rounded(.up) / 100000
         #expect(result == 0.99865)
         #expect(carResult == 0.93443)
     }
-    
-    @Test("RSquaredAdjusted") func LRSquaredAdjusted() {
+
+    @Test("RSquaredAdjusted") func LRSquaredAdjusted() throws {
         let x: [Double] = [58, 61, 62, 65, 65, 68, 72, 74, 78, 85, 90, 95]
         let y: [Double] = [1, 1, 2, 2, 1, 2, 2, 3, 3, 4, 4, 5]
-        let result = (rSquared(x, y) * 100000).rounded(.up) / 100000
+        let result = (try rSquared(x, y) * 100000).rounded(.up) / 100000
         #expect(result == 0.91983)
     }
 }
@@ -77,20 +77,20 @@ struct RegressionProperties {
 	}
 
 	@Test("R^2 equals squared correlation for simple linear regression")
-	func rSquared_equals_corr_squared() {
+	func rSquared_equals_corr_squared() throws {
 		let x = [1.0, 2.0, 3.0, 4.0, 5.0]
 		let y = x.map { 2.0 * $0 + 1.0 } // perfect linear
-		let r2 = rSquared(x, y)
-		let r = correlationCoefficient(x, y, .sample)
+		let r2 = try rSquared(x, y)
+		let r = try correlationCoefficient(x, y, .sample)
 		#expect(close(r2, r * r, accuracy: 1e-12))
 		#expect(close(r2, 1.0, accuracy: 1e-12))
 	}
 
 	@Test("rSquared is within [0, 1]")
-	func rSquared_bounds() {
+	func rSquared_bounds() throws {
 		let x = [35.56, 43.44, 73.17, 113.0]
 		let y = [44.783, 53.982, 92.141, 135.986]
-		let r2 = rSquared(x, y)
+		let r2 = try rSquared(x, y)
 		#expect(r2 >= -1e-12 && r2 <= 1.0 + 1e-12)
 	}
 
@@ -157,15 +157,15 @@ struct LinearRegressionNaNInfinityTests {
 	}
 
 	@Test("rSquared handles NaN inputs")
-	func rSquared_handles_nan() {
+	func rSquared_handles_nan() throws {
 		let x1 = [1.0, Double.nan, 3.0]
 		let y1 = [2.0, 4.0, 6.0]
-		let result1 = rSquared(x1, y1)
+		let result1 = try rSquared(x1, y1)
 		#expect(result1.isNaN)
 
 		let x2 = [1.0, 2.0, 3.0]
 		let y2 = [2.0, Double.nan, 6.0]
-		let result2 = rSquared(x2, y2)
+		let result2 = try rSquared(x2, y2)
 		#expect(result2.isNaN)
 	}
 
@@ -200,10 +200,10 @@ struct LinearRegressionNaNInfinityTests {
 	}
 
 	@Test("rSquared handles infinity")
-	func rSquared_handles_infinity() {
+	func rSquared_handles_infinity() throws {
 		let x = [1.0, Double.infinity, 3.0]
 		let y = [2.0, 4.0, 6.0]
-		let result = rSquared(x, y)
+		let result = try rSquared(x, y)
 		#expect(result.isNaN || result.isInfinite)
 	}
 }
@@ -230,10 +230,10 @@ struct LinearRegressionStressTests {
 	}
 
 	@Test("rSquared handles large datasets", .timeLimit(.minutes(1)))
-	func rSquared_large_datasets() {
+	func rSquared_large_datasets() throws {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
-		let result = rSquared(x, y)
+		let result = try rSquared(x, y)
 		#expect(result.isFinite)
 		// Perfect linear relationship
 		#expect(abs(result - 1.0) < 1e-10)

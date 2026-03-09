@@ -339,22 +339,22 @@ struct UnassortedTests {
 		#expect(abs(result - 0.8944271909999159) < 0.0001)
     }
     
-    @Test("Sample correlation coefficient") func testSampleCorrelationCoefficient() {
+    @Test("Sample correlation coefficient") func testSampleCorrelationCoefficient() throws {
 		// Test Pearson correlation coefficient (sample)
 		// Test case from existing tests with known relationship
 		let x = [20.0, 23, 45, 78, 21]
 		let y = [200.0, 300, 500, 700, 100]
-		let result = correlationCoefficient(x, y, .sample)
+		let result = try correlationCoefficient(x, y, .sample)
 
 		// Should be approximately 0.9487 (matches existing test)
 		#expect(abs(result - 0.9487) < 0.0001)
-		
+
 		// Test perfect correlation
-		let perfectCorr = correlationCoefficient([1.0, 2, 3, 4, 5], [2.0, 4, 6, 8, 10], .sample)
+		let perfectCorr = try correlationCoefficient([1.0, 2, 3, 4, 5], [2.0, 4, 6, 8, 10], .sample)
 		#expect(abs(perfectCorr - 1.0) < 0.0001)
-		
+
 		// Test no correlation
-		let noCorr = correlationCoefficient([1.0, 2, 3, 4, 5], [5.0, 3, 1, 4, 2], .sample)
+		let noCorr = try correlationCoefficient([1.0, 2, 3, 4, 5], [5.0, 3, 1, 4, 2], .sample)
 		#expect(abs(noCorr) < 0.5) // Weak or no correlation
     }
     

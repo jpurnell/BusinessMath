@@ -28,6 +28,25 @@ import Numerics
 ///   // result should be the harmonic mean of the dataset `values`
 ///   // result should be 1.7142857142857142
 
-public func harmonicMean<T: Real>(_ values: [T]) -> T {
-	T(values.count) / (values.map({T.pow($0, T(-1))}).reduce(0, +))
+/// - Throws: `BusinessMathError.divisionByZero` if any value is zero.
+/// - Throws: `ArrayError.emptyArray` if the array is empty.
+public func harmonicMean<T: Real>(_ values: [T]) throws -> T {
+	guard !values.isEmpty else {
+		throw ArrayError.emptyArray
+	}
+	// Harmonic mean requires all values to be non-zero (we compute 1/x)
+	for (index, value) in values.enumerated() {
+		guard value.magnitude > T.ulpOfOne else {
+			throw BusinessMathError.divisionByZero(
+				context: "Harmonic mean: value at index \(index) is zero"
+			)
+		}
+	}
+	let reciprocalSum = values.map({ T(1) / $0 }).reduce(T(0), +)
+	guard reciprocalSum.magnitude > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Harmonic mean: sum of reciprocals is zero"
+		)
+	}
+	return T(values.count) / reciprocalSum
 }

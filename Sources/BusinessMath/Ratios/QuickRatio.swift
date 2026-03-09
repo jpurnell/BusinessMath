@@ -25,9 +25,12 @@ import Numerics
 ///   divided by current liabilities.
 ///
 /// - Complexity: O(1).
-public func quickRatio<T: Real>(currentAssets: T, inventory: T, currentLiabilities: T) -> T {
+/// - Throws: `BusinessMathError.divisionByZero` if current liabilities is zero or negative.
+public func quickRatio<T: Real>(currentAssets: T, inventory: T, currentLiabilities: T) throws -> T {
 	guard currentLiabilities > T(0) else {
-		return T(0) // Return 0 if current liabilities are zero or negative
+		throw BusinessMathError.divisionByZero(
+			context: "Quick ratio: current liabilities must be positive"
+		)
 	}
 	return (currentAssets - inventory) / currentLiabilities
 }

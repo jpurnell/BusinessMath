@@ -36,8 +36,17 @@ import Numerics
 /// - Important:
 ///   - Ensure that `x` and `y` arrays have the same length.
 ///   - Ensure that both arrays are not empty to perform meaningful calculations.
-public func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) -> T {
-	if (x.count == y.count) == false { return T(0) }
+///
+/// - Throws: `BusinessMathError.mismatchedDimensions` if arrays have different lengths.
+/// - Throws: `BusinessMathError.divisionByZero` if either variable has zero variance.
+public func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) throws -> T {
+	guard x.count == y.count else {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "Correlation requires equal-length arrays",
+			expected: "\(x.count)",
+			actual: "\(y.count)"
+		)
+	}
 	var numerator = T(0)
 	var xDenom = T(0)
 	var yDenom = T(0)
@@ -50,7 +59,13 @@ public func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) -> T {
 		xDenom += T.pow(xSide, 2)
 		yDenom += T.pow(ySide, 2)
 	}
-	return numerator / (T.sqrt(xDenom) * T.sqrt(yDenom))
+	let denominator = T.sqrt(xDenom) * T.sqrt(yDenom)
+	guard denominator > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Correlation coefficient: one or both variables have zero variance"
+		)
+	}
+	return numerator / denominator
 }
 
 

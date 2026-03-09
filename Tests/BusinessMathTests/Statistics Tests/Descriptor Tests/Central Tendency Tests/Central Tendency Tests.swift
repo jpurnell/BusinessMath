@@ -22,21 +22,21 @@ import OSLog
         #expect(result == 6.2475)
     }
 	
-	@Test("ArithmeticHarmonicMean") func LArithmeticHarmonicMean() {
+	@Test("ArithmeticHarmonicMean") func LArithmeticHarmonicMean() throws {
 		let x: Double = 4
 		let y: Double = 9
-		let result = (arithmeticHarmonicMean([x, y]) * 10000).rounded() / 10000
+		let result = (try arithmeticHarmonicMean([x, y]) * 10000).rounded() / 10000
 		#expect(result == 6.0)
 	}
 	
-	@Test("ContraHarmonicMean") func LContraHarmonicMean() {
+	@Test("ContraHarmonicMean") func LContraHarmonicMean() throws {
 		let values: [Double] = [1, 2, 3, 4, 5]
-		let result = (contraharmonicMean(values) * 10000).rounded() / 10000
+		let result = (try contraharmonicMean(values) * 10000).rounded() / 10000
 		#expect(abs(result - 3.6667) < 5e-5)
 
 		let x: Double = 4
 		let y: Double = 9
-		let specializedResult = (contraharmonicMean([x, y]) * 10000).rounded() / 10000
+		let specializedResult = (try contraharmonicMean([x, y]) * 10000).rounded() / 10000
 		#expect(abs(specializedResult - 7.4615) < 5e-5)
 	}
 
@@ -47,14 +47,14 @@ import OSLog
 		#expect(result == 6.0)
 	}
 	
-    @Test("HarmonicMean") func LHarmonicMean() {
+    @Test("HarmonicMean") func LHarmonicMean() throws {
 		let values = [1.0, 4.0, 4.0]
-		let result = harmonicMean(values)
+		let result = try harmonicMean(values)
 		#expect(result == 2)
 
         let x: Double = 4
         let y: Double = 9
-        let specializedResult = (harmonicMean([x, y]) * 10000).rounded() / 10000
+        let specializedResult = (try harmonicMean([x, y]) * 10000).rounded() / 10000
         #expect(abs(specializedResult - 5.5385) < 5e-5)
     }
 	
@@ -77,27 +77,42 @@ import OSLog
 		#expect(abs(result2 - 4.6718) < 0.0001)
 	}
 	
-	@Test("LogarithmicMean") func LLogarithmicMean() {
+	@Test("LogarithmicMean") func LLogarithmicMean() throws {
 		// Test with standard values
 		let x: Double = 3.0
 		let y: Double = 4.0
-		let result = (logarithmicMean(x, y) * 10000).rounded() / 10000
+		let result = (try logarithmicMean(x, y) * 10000).rounded() / 10000
 		#expect(abs(result - 3.4761) < 0.0001)
-		
+
 		// Test that logarithmic mean is symmetric
-		let reversed = (logarithmicMean(y, x) * 10000).rounded() / 10000
+		let reversed = (try logarithmicMean(y, x) * 10000).rounded() / 10000
 		#expect(abs(result - reversed) < 0.0001)
-		
+
 		// Test with values where logarithmic mean is between geometric and arithmetic means
 		let a: Double = 2.0
 		let b: Double = 8.0
-		let logMean = logarithmicMean(a, b)
+		let logMean = try logarithmicMean(a, b)
 		let geoMean = geometricMean([a, b])
 		let arithMean = mean([a, b])
-		
+
 		// Logarithmic mean should be between geometric and arithmetic means
 		#expect(logMean > geoMean, "Logarithmic mean (\(logMean)) should be greater than geometric mean (\(geoMean))")
 		#expect(logMean < arithMean, "Logarithmic mean (\(logMean)) should be less than arithmetic mean (\(arithMean))")
+	}
+
+	@Test("LogarithmicMean returns x when x equals y") func LLogarithmicMeanEqualValues() throws {
+		let x: Double = 5.0
+		let result = try logarithmicMean(x, x)
+		#expect(abs(result - x) < 1e-10)
+	}
+
+	@Test("LogarithmicMean throws for non-positive values") func LLogarithmicMeanNonPositive() {
+		#expect(throws: BusinessMathError.self) {
+			_ = try logarithmicMean(-1.0, 3.0)
+		}
+		#expect(throws: BusinessMathError.self) {
+			_ = try logarithmicMean(2.0, 0.0)
+		}
 	}
 	
 	@Test("Mean") func LMean() {
@@ -135,13 +150,13 @@ import OSLog
 	struct CentralTendencyProperties {
 
 		@Test("Inequality chain: H ≤ G ≤ L ≤ A ≤ C for positive values")
-		func means_inequality_chain() {
+		func means_inequality_chain() throws {
 			let x = [1.0, 2.0, 3.0, 4.0, 5.0]
-			let h = harmonicMean(x)
+			let h = try harmonicMean(x)
 			let g = geometricMean(x)
 			let a = mean(x)
-			let l = logarithmicMean(x.first!, x.last!)
-			let c = contraharmonicMean(x)
+			let l = try logarithmicMean(x.first!, x.last!)
+			let c = try contraharmonicMean(x)
 
 			#expect(h <= g)
 			#expect(g <= a)
@@ -185,12 +200,12 @@ import OSLog
 		}
 
 		@Test("Single-element means return the element")
-		func single_element_means() {
+		func single_element_means() throws {
 			let x = [42.0]
 			#expect(mean(x) == 42.0)
-			#expect(harmonicMean(x) == 42.0)
+			#expect(try harmonicMean(x) == 42.0)
 			#expect(geometricMean(x) == 42.0)
-			#expect(contraharmonicMean(x) == 42.0)
+			#expect(try contraharmonicMean(x) == 42.0)
 			// For logarithmic/identric means (binary), this is not applicable
 		}
 	}
@@ -235,18 +250,26 @@ struct CentralTendencyNaNInfinityTests {
 	}
 
 	@Test("harmonicMean propagates NaN")
-	func harmonic_mean_propagates_nan() {
+	func harmonic_mean_propagates_nan() throws {
 		let values = [1.0, Double.nan, 3.0]
-		let result = harmonicMean(values)
+		let result = try harmonicMean(values)
 		#expect(result.isNaN)
 	}
 
 	@Test("harmonicMean handles infinity")
-	func harmonic_mean_handles_infinity() {
+	func harmonic_mean_handles_infinity() throws {
 		let values = [1.0, Double.infinity, 3.0]
-		let result = harmonicMean(values)
+		let result = try harmonicMean(values)
 		// 1/inf = 0, so harmonic mean should still be computable
 		#expect(result.isNaN || result.isFinite)
+	}
+
+	@Test("harmonicMean throws for zero values")
+	func harmonic_mean_throws_for_zero() {
+		let values = [1.0, 0.0, 3.0]
+		#expect(throws: BusinessMathError.self) {
+			_ = try harmonicMean(values)
+		}
 	}
 
 	@Test("geometricMean propagates NaN")
@@ -264,16 +287,24 @@ struct CentralTendencyNaNInfinityTests {
 	}
 
 	@Test("contraharmonicMean propagates NaN")
-	func contraharmonic_mean_propagates_nan() {
+	func contraharmonic_mean_propagates_nan() throws {
 		let values = [1.0, Double.nan, 3.0]
-		let result = contraharmonicMean(values)
+		let result = try contraharmonicMean(values)
 		#expect(result.isNaN)
 	}
 
+	@Test("contraharmonicMean throws when sum is zero")
+	func contraharmonic_mean_throws_for_zero_sum() {
+		// When values sum to zero (e.g., x = -y), denominator is 0
+		#expect(throws: BusinessMathError.self) {
+			_ = try contraharmonicMean(3.0, -3.0)
+		}
+	}
+
 	@Test("logarithmicMean propagates NaN")
-	func logarithmic_mean_propagates_nan() {
-		let result1 = logarithmicMean(Double.nan, 3.0)
-		let result2 = logarithmicMean(2.0, Double.nan)
+	func logarithmic_mean_propagates_nan() throws {
+		let result1 = try logarithmicMean(Double.nan, 3.0)
+		let result2 = try logarithmicMean(2.0, Double.nan)
 		#expect(result1.isNaN)
 		#expect(result2.isNaN)
 	}
@@ -319,11 +350,12 @@ struct CentralTendencyEmptyArrayTests {
 		#expect(result.isNaN || result == 0.0)
 	}
 
-	@Test("harmonicMean handles empty array")
+	@Test("harmonicMean throws on empty array")
 	func harmonic_mean_empty_array() {
 		let values: [Double] = []
-		let result = harmonicMean(values)
-		#expect(result.isNaN || result == 0.0)
+		#expect(throws: ArrayError.self) {
+			_ = try harmonicMean(values)
+		}
 	}
 
 	@Test("geometricMean handles empty array")
@@ -333,11 +365,12 @@ struct CentralTendencyEmptyArrayTests {
 		#expect(result.isNaN || result == 0.0 || result == 1.0)
 	}
 
-	@Test("contraharmonicMean handles empty array")
+	@Test("contraharmonicMean throws on empty array")
 	func contraharmonic_mean_empty_array() {
 		let values: [Double] = []
-		let result = contraharmonicMean(values)
-		#expect(result.isNaN || result == 0.0)
+		#expect(throws: ArrayError.self) {
+			_ = try contraharmonicMean(values)
+		}
 	}
 
 	@Test("arithmeticGeometricMean handles empty array")
@@ -347,11 +380,12 @@ struct CentralTendencyEmptyArrayTests {
 		#expect(result.isNaN || result == 0.0)
 	}
 
-	@Test("arithmeticHarmonicMean handles empty array")
+	@Test("arithmeticHarmonicMean throws on empty array")
 	func arithmetic_harmonic_mean_empty_array() {
 		let values: [Double] = []
-		let result = arithmeticHarmonicMean(values)
-		#expect(result.isNaN || result == 0.0)
+		#expect(throws: ArrayError.self) {
+			_ = try arithmeticHarmonicMean(values)
+		}
 	}
 }
 
@@ -375,9 +409,9 @@ struct CentralTendencyStressTests {
 	}
 
 	@Test("harmonicMean handles large dataset", .timeLimit(.minutes(1)))
-	func harmonic_mean_large_dataset() {
+	func harmonic_mean_large_dataset() throws {
 		let values = (1...100_000).map { Double($0) }
-		let result = harmonicMean(values)
+		let result = try harmonicMean(values)
 		#expect(result.isFinite)
 		#expect(result > 0)
 	}
@@ -391,9 +425,9 @@ struct CentralTendencyStressTests {
 	}
 
 	@Test("contraharmonicMean handles large dataset", .timeLimit(.minutes(1)))
-	func contraharmonic_mean_large_dataset() {
+	func contraharmonic_mean_large_dataset() throws {
 		let values = (1...100_000).map { Double($0) }
-		let result = contraharmonicMean(values)
+		let result = try contraharmonicMean(values)
 		#expect(result.isFinite)
 		#expect(result > 0)
 	}

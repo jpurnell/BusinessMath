@@ -20,9 +20,12 @@ import Numerics
 /// - Returns: The profit margin, defined as net income divided by revenue.
 ///
 /// - Complexity: O(1).
-public func profitMargin<T: Real>(netIncome: T, revenue: T) -> T {
+/// - Throws: `BusinessMathError.divisionByZero` if revenue is zero or negative.
+public func profitMargin<T: Real>(netIncome: T, revenue: T) throws -> T {
 	guard revenue > T(0) else {
-		return T(0) // Return 0 if revenue is zero or negative
+		throw BusinessMathError.divisionByZero(
+			context: "Profit margin: revenue must be positive"
+		)
 	}
 	return netIncome / revenue
 }

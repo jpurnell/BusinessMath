@@ -29,13 +29,15 @@ import Numerics
 ///   let result = arithmeticHarmonicMean(values)
 ///   // result should be the arithmetic-harmonic mean of the dataset `values`
 
-public func arithmeticHarmonicMean<T: Real>(_ values: [T], _ tolerance: Int = 10000) -> T {
-	guard !values.isEmpty else { return T(0) }
+/// - Throws: `ArrayError.emptyArray` if the array is empty.
+/// - Throws: `BusinessMathError.divisionByZero` if any value is zero (harmonic mean requires all non-zero values).
+public func arithmeticHarmonicMean<T: Real>(_ values: [T], _ tolerance: Int = 10000) throws -> T {
+	guard !values.isEmpty else { throw ArrayError.emptyArray }
 	var tempX = mean(values)
-	var tempY = harmonicMean(values)
+	var tempY = try harmonicMean(values)
 	while abs(tempX - tempY) > (T(1) / T(tolerance)) {
 		let newTempX = mean([tempX, tempY])
-		tempY = harmonicMean([tempX, tempY])
+		tempY = try harmonicMean([tempX, tempY])
 		tempX = newTempX
 	}
 	return tempX

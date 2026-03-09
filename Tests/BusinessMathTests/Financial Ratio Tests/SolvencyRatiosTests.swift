@@ -8,19 +8,33 @@ import OSLog
 @Suite("Solvency Ratios Tests")
 struct SolvencyRatiosTests {
     @Test("Calculate debt to equity ratio correctly")
-    func testDebtToEquityRatio() {
+    func testDebtToEquityRatio() throws {
         let totalLiabilities: Double = 40000.0
         let shareholderEquity: Double = 100000.0
-        let result = debtToEquity(totalLiabilities: totalLiabilities, shareholderEquity: shareholderEquity)
+        let result = try debtToEquity(totalLiabilities: totalLiabilities, shareholderEquity: shareholderEquity)
         #expect(result == 0.4) // Expected: 0.4
     }
 
     @Test("Calculate interest coverage ratio correctly")
-    func testInterestCoverageRatio() {
+    func testInterestCoverageRatio() throws {
         let earningsBeforeInterestAndTax: Double = 6000.0
         let interestExpense: Double = 2000.0
-        let result = interestCoverage(earningsBeforeInterestAndTax: earningsBeforeInterestAndTax, interestExpense: interestExpense)
+        let result = try interestCoverage(earningsBeforeInterestAndTax: earningsBeforeInterestAndTax, interestExpense: interestExpense)
         #expect(result == 3.0) // Expected: 3.0
+    }
+
+    @Test("Debt to equity throws on zero equity")
+    func testDebtToEquityThrows() {
+        #expect(throws: BusinessMathError.self) {
+            _ = try debtToEquity(totalLiabilities: 40000.0, shareholderEquity: 0.0)
+        }
+    }
+
+    @Test("Interest coverage throws on zero interest")
+    func testInterestCoverageThrows() {
+        #expect(throws: BusinessMathError.self) {
+            _ = try interestCoverage(earningsBeforeInterestAndTax: 6000.0, interestExpense: 0.0)
+        }
     }
 
     @Test("Solvency ratios with automatic principal payment derivation")

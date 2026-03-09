@@ -29,8 +29,15 @@ import Numerics
 	///   let result = contraharmonicMean(values)
 	///   // result should be the contraharmonic mean of the dataset `values`
 
-public func contraharmonicMean<T: Real>(_ x: T, _ y: T) -> T {
-	return (T.pow(x, T(2)) + T.pow(y, T(2))) / (x + y)
+/// - Throws: `BusinessMathError.divisionByZero` if x + y = 0 (when x = -y).
+public func contraharmonicMean<T: Real>(_ x: T, _ y: T) throws -> T {
+	let denominator = x + y
+	guard denominator.magnitude > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Contraharmonic mean: sum of values is zero (x = -y)"
+		)
+	}
+	return (T.pow(x, T(2)) + T.pow(y, T(2))) / denominator
 }
 
 /// Computes the contraharmonic mean of a dataset.
@@ -51,7 +58,18 @@ public func contraharmonicMean<T: Real>(_ x: T, _ y: T) -> T {
 ///   let result = contraharmonicMean(values)
 ///   // result should be the contraharmonic mean of the dataset `values`
 
-public func contraharmonicMean<T: Real>(_ values: [T]) -> T {
-	return values.map({T.pow($0, T(2))}).reduce(0, +) / values.reduce(0, +)
+/// - Throws: `BusinessMathError.divisionByZero` if the sum of values is zero.
+/// - Throws: `ArrayError.emptyArray` if the array is empty.
+public func contraharmonicMean<T: Real>(_ values: [T]) throws -> T {
+	guard !values.isEmpty else {
+		throw ArrayError.emptyArray
+	}
+	let denominator = values.reduce(T(0), +)
+	guard denominator.magnitude > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Contraharmonic mean: sum of values is zero"
+		)
+	}
+	return values.map({T.pow($0, T(2))}).reduce(T(0), +) / denominator
 }
 

@@ -101,7 +101,7 @@ struct CorrelatedNormalsTests {
 		#expect(abs(mean2 - 200.0) < 2.0, "Mean of second variable should be close to 200")
 
 		// Check correlation (should be near 0)
-		let empiricalCorr = correlationCoefficient(samples1, samples2)
+		let empiricalCorr = try correlationCoefficient(samples1, samples2)
 		#expect(abs(empiricalCorr) < 0.1, "Correlation should be close to 0")
 	}
 
@@ -127,7 +127,7 @@ struct CorrelatedNormalsTests {
 		}
 
 		// Check empirical correlation
-		let empiricalCorr = correlationCoefficient(samples1, samples2)
+		let empiricalCorr = try correlationCoefficient(samples1, samples2)
 		let tolerance = 0.05
 
 		#expect(abs(empiricalCorr - targetCorr) < tolerance, "Empirical correlation should match target")
@@ -155,7 +155,7 @@ struct CorrelatedNormalsTests {
 		}
 
 		// Check empirical correlation
-		let empiricalCorr = correlationCoefficient(samples1, samples2)
+		let empiricalCorr = try correlationCoefficient(samples1, samples2)
 		let tolerance = 0.05
 
 		#expect(abs(empiricalCorr - targetCorr) < tolerance, "Empirical negative correlation should match target")
@@ -194,11 +194,11 @@ struct CorrelatedNormalsTests {
 		#expect(abs(mean3 - 30.0) < 1.0, "Mean 3 should be close to 30")
 
 		// Check correlation between variables 1 and 2
-		let corr12 = correlationCoefficient(samples1, samples2)
+		let corr12 = try correlationCoefficient(samples1, samples2)
 		#expect(abs(corr12 - 0.5) < 0.05, "Correlation 1-2 should be close to 0.5")
 
 		// Check correlation between variables 2 and 3
-		let corr23 = correlationCoefficient(samples2, samples3)
+		let corr23 = try correlationCoefficient(samples2, samples3)
 		#expect(abs(corr23 - 0.4) < 0.05, "Correlation 2-3 should be close to 0.4")
 	}
 
@@ -314,7 +314,7 @@ struct CorrelatedNormalsAdditionalTests {
 			s1.append(s[0]); s2.append(s[1]); s3.append(s[2])
 		}
 
-		let c13 = correlationCoefficient(s1, s3)
+		let c13 = try correlationCoefficient(s1, s3)
 		#expect(abs(c13 - 0.25) < 0.06, "Correlation 1–3 should be close to 0.25")
 	}
 }

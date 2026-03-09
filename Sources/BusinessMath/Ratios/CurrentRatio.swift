@@ -20,9 +20,12 @@ import Numerics
 /// - Returns: The current ratio, defined as current assets divided by current liabilities.
 ///
 /// - Complexity: O(1).
-public func currentRatio<T: Real>(currentAssets: T, currentLiabilities: T) -> T {
+/// - Throws: `BusinessMathError.divisionByZero` if current liabilities is zero or negative.
+public func currentRatio<T: Real>(currentAssets: T, currentLiabilities: T) throws -> T {
 	guard currentLiabilities > T(0) else {
-		return T(0) // Return 0 if current liabilities are zero or negative
+		throw BusinessMathError.divisionByZero(
+			context: "Current ratio: current liabilities must be positive"
+		)
 	}
 	return currentAssets / currentLiabilities
 }

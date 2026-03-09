@@ -33,19 +33,28 @@ import Numerics
 ///   // finalGrade ≈ 86.1
 ///   ```
 ///
-public func weightedAverage<T: Real>(_ values: [T], weights: [T]) -> T {
+/// - Throws: `BusinessMathError.mismatchedDimensions` if values and weights have different lengths.
+/// - Throws: `ArrayError.emptyArray` if weights array is empty.
+/// - Throws: `BusinessMathError.divisionByZero` if sum of weights is zero.
+public func weightedAverage<T: Real>(_ values: [T], weights: [T]) throws -> T {
     guard values.count == weights.count else {
-        fatalError("Values and weights arrays must have the same length")
+		throw BusinessMathError.mismatchedDimensions(
+			message: "Weighted average requires equal-length arrays",
+			expected: "\(values.count)",
+			actual: "\(weights.count)"
+		)
     }
     guard !weights.isEmpty else {
-        return T(0)
+		throw ArrayError.emptyArray
     }
 
     let weightedSum = zip(values, weights).map(*).reduce(T(0), +)
     let totalWeight = weights.reduce(T(0), +)
 
-    guard totalWeight != 0 else {
-        fatalError("Sum of weights must be non-zero")
+    guard totalWeight.magnitude > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Weighted average: sum of weights must be non-zero"
+		)
     }
 
     return weightedSum / totalWeight

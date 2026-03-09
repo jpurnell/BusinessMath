@@ -21,9 +21,12 @@ import Numerics
 /// - Returns: The interest coverage ratio, defined as EBIT divided by interest expense.
 ///
 /// - Complexity: O(1).
-public func interestCoverage<T: Real>(earningsBeforeInterestAndTax: T, interestExpense: T) -> T {
+/// - Throws: `BusinessMathError.divisionByZero` if interest expense is zero or negative.
+public func interestCoverage<T: Real>(earningsBeforeInterestAndTax: T, interestExpense: T) throws -> T {
     guard interestExpense > T(0) else {
-        return T(0) // Return 0 if interest expense is zero or negative
+		throw BusinessMathError.divisionByZero(
+			context: "Interest coverage: interest expense must be positive"
+		)
     }
     return earningsBeforeInterestAndTax / interestExpense
 }

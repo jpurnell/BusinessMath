@@ -28,7 +28,9 @@ import Numerics
 ///   let result = rSquared(xValues, yValues)
 ///   // result should be the R² value for the datasets `xValues` and `yValues`
 
-public func rSquared<T: Real>(_ x: [T], _ y: [T], _ population: Population = .sample) -> T {
-    let correlation = correlationCoefficient(x, y, population)
+/// - Throws: `BusinessMathError.mismatchedDimensions` if arrays have different lengths.
+/// - Throws: `BusinessMathError.divisionByZero` if either variable has zero variance.
+public func rSquared<T: Real>(_ x: [T], _ y: [T], _ population: Population = .sample) throws -> T {
+    let correlation = try correlationCoefficient(x, y, population)
     return correlation * correlation
 }

@@ -32,8 +32,14 @@ import Numerics
 ///   let result = coefficientOfSkew(mean: mean, median: median, stdDev: stdDev)
 ///   // result should be the coefficient of skewness given the mean, median, and standard deviation
 
-public func coefficientOfSkew<T: Real>(mean: T, median: T, stdDev: T) -> T {
-    return (T(3) * (mean - median))/stdDev
+/// - Throws: `BusinessMathError.divisionByZero` if standard deviation is zero.
+public func coefficientOfSkew<T: Real>(mean: T, median: T, stdDev: T) throws -> T {
+	guard stdDev.magnitude > T.ulpOfOne else {
+		throw BusinessMathError.divisionByZero(
+			context: "Coefficient of skewness: standard deviation is zero (all values identical)"
+		)
+	}
+    return (T(3) * (mean - median)) / stdDev
 }
 
 /// Computes the coefficient of skewness for a given set of values.
@@ -61,5 +67,5 @@ public func coefficientOfSkew<T: Real>(mean: T, median: T, stdDev: T) -> T {
 ///   - Ensure that the provided `values` array is not empty to avoid division by zero errors in the underlying statistical computations.
 public func coefficientOfSkew<T: Real>(_ values: [T]) throws -> T {
 	guard !values.isEmpty else { throw ArrayError.emptyArray }
-    return coefficientOfSkew(mean: mean(values), median: median(values), stdDev: stdDev(values))
+    return try coefficientOfSkew(mean: mean(values), median: median(values), stdDev: stdDev(values))
 }
