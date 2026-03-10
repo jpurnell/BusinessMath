@@ -71,11 +71,18 @@ import Numerics
 
 // MARK: - Parameter
 
-/// A named parameter with a value for scenario analysis
+/// A named parameter with a value for scenario analysis.
 public struct Parameter {
+    /// The parameter name used as a key in scenario lookups.
     public let name: String
+    /// The parameter value.
     public let value: Double
 
+    /// Creates a named parameter with the specified value.
+    ///
+    /// - Parameters:
+    ///   - name: The parameter name.
+    ///   - value: The parameter value.
     public init(_ name: String, value: Double) {
         self.name = name
         self.value = value
@@ -84,11 +91,18 @@ public struct Parameter {
 
 // MARK: - Scenario
 
-/// A scenario with named parameters for what-if analysis
+/// A scenario with named parameters for what-if analysis.
 public struct Scenario {
+    /// The scenario name (e.g., "Base Case", "Optimistic").
     public let name: String
+    /// Dictionary of parameter names to values.
     public let parameters: [String: Double]
 
+    /// Creates a scenario with explicit parameters dictionary.
+    ///
+    /// - Parameters:
+    ///   - name: The scenario name.
+    ///   - parameters: Dictionary mapping parameter names to values.
     public init(name: String, parameters: [String: Double]) {
         self.name = name
         self.parameters = parameters
@@ -104,8 +118,15 @@ public struct Scenario {
 
 // MARK: - Scenario Result Builder
 
+/// Result builder for constructing `Scenario` instances declaratively.
+///
+/// Allows composing parameters using Swift's result builder syntax.
 @resultBuilder
 public struct ScenarioBuilder {
+    /// Builds a scenario from the provided parameter components.
+    ///
+    /// - Parameter components: The parameters to include in the scenario.
+    /// - Returns: A scenario containing all parameters.
     public static func buildBlock(_ components: Parameter...) -> Scenario {
         var parameters: [String: Double] = [:]
         for param in components {
@@ -114,6 +135,7 @@ public struct ScenarioBuilder {
         return Scenario(name: "", parameters: parameters)
     }
 
+    /// Passes a parameter expression through to the builder.
     public static func buildExpression(_ expression: Parameter) -> Parameter {
         expression
     }
@@ -129,6 +151,9 @@ public struct BaseScenario {
         self.parameters = parameters
     }
 
+    /// Creates a base scenario using the result builder DSL.
+    ///
+    /// - Parameter content: A closure that builds the scenario parameters.
     public init(@ScenarioBuilder content: () -> Scenario) {
         let scenario = content()
         self.parameters = scenario.parameters
@@ -196,12 +221,21 @@ public struct Vary {
 
 // MARK: - Sensitivity Component
 
-/// Sensitivity analysis on a single parameter
+/// Sensitivity analysis on a single parameter.
 public struct Sensitivity {
+    /// The name of the parameter to vary.
     public let parameterName: String
+    /// The range of multipliers to apply (e.g., 0.8...1.2 for ±20%).
     public let range: ClosedRange<Double>
+    /// The number of steps to generate within the range.
     public let steps: Int
 
+    /// Creates a sensitivity analysis configuration.
+    ///
+    /// - Parameters:
+    ///   - parameter: The name of the parameter to vary.
+    ///   - range: The range of multipliers to apply to the base value.
+    ///   - steps: The number of evenly-spaced steps within the range.
     public init(on parameter: String, range: ClosedRange<Double>, steps: Int) {
         self.parameterName = parameter
         self.range = range
@@ -211,21 +245,28 @@ public struct Sensitivity {
 
 // MARK: - TornadoChart Component
 
-/// Tornado chart sensitivity analysis
+/// Tornado chart sensitivity analysis.
 public struct TornadoChart {
+    /// The parameter variations to analyze.
     public let variations: [Vary]
 
+    /// Creates a tornado chart configuration using the result builder DSL.
+    ///
+    /// - Parameter content: A closure that builds the parameter variations.
     public init(@TornadoChartBuilder content: () -> [Vary]) {
         self.variations = content()
     }
 }
 
+/// Result builder for constructing tornado chart variations.
 @resultBuilder
 public struct TornadoChartBuilder {
+    /// Collects the `Vary` components into an array.
     public static func buildBlock(_ components: Vary...) -> [Vary] {
         Array(components)
     }
 
+    /// Passes a `Vary` expression through to the builder.
     public static func buildExpression(_ expression: Vary) -> Vary {
         expression
     }
@@ -233,23 +274,33 @@ public struct TornadoChartBuilder {
 
 // MARK: - MonteCarlo Component
 
-/// Monte Carlo random scenario generation
+/// Monte Carlo random scenario generation.
 public struct MonteCarlo {
+    /// The number of simulation trials to run.
     public let trials: Int
+    /// The random parameters with their probability distributions.
     public let randomParameters: [RandomParameter]
 
+    /// Creates a Monte Carlo simulation configuration.
+    ///
+    /// - Parameters:
+    ///   - trials: The number of random scenarios to generate.
+    ///   - content: A closure that builds the random parameter definitions.
     public init(trials: Int, @MonteCarloBuilder content: () -> [RandomParameter]) {
         self.trials = trials
         self.randomParameters = content()
     }
 }
 
+/// Result builder for constructing Monte Carlo parameter definitions.
 @resultBuilder
 public struct MonteCarloBuilder {
+    /// Collects the `RandomParameter` components into an array.
     public static func buildBlock(_ components: RandomParameter...) -> [RandomParameter] {
         Array(components)
     }
 
+    /// Passes a `RandomParameter` expression through to the builder.
     public static func buildExpression(_ expression: RandomParameter) -> RandomParameter {
         expression
     }
@@ -257,11 +308,18 @@ public struct MonteCarloBuilder {
 
 // MARK: - RandomParameter
 
-/// Random parameter with distribution
+/// Random parameter with a probability distribution for Monte Carlo simulation.
 public struct RandomParameter {
+    /// The parameter name.
     public let name: String
+    /// The probability distribution to sample from.
     public let distribution: Distribution
 
+    /// Creates a random parameter with the specified distribution.
+    ///
+    /// - Parameters:
+    ///   - name: The parameter name.
+    ///   - distribution: The probability distribution for sampling values.
     public init(_ name: String, distribution: Distribution) {
         self.name = name
         self.distribution = distribution

@@ -469,7 +469,9 @@ public struct AsyncCUSUMSequence<Base: AsyncSequence>: AsyncSequence where Base.
         private var cPlusIndex: Double = 0.0
         private var cMinusIndex: Double = 0.0
         private var index = 0
+		/// The current upper CUSUM index value for detecting positive shifts.
 		public var cPlusIndexValue: Double { cPlusIndex }
+		/// The current lower CUSUM index value for detecting negative shifts.
 		public var cMinusIndexValue: Double { cMinusIndex }
 
         init(base: Base.AsyncIterator, target: Double, drift: Double, threshold: Double) {

@@ -61,10 +61,14 @@ import Numerics
 
 // MARK: - Revenue Components
 
-/// Base revenue amount for cash flow projections
+/// Base revenue amount for cash flow projections.
 public struct Base {
+    /// The base revenue amount.
     public let amount: Double
 
+    /// Creates a base revenue amount.
+    ///
+    /// - Parameter amount: The base revenue (must be non-negative).
     public init(_ amount: Double) {
         guard amount >= 0 else {
             fatalError("Base revenue cannot be negative: \(amount)")
@@ -73,10 +77,14 @@ public struct Base {
     }
 }
 
-/// Annual growth rate for revenue projections
+/// Annual growth rate for revenue projections.
 public struct GrowthRate {
+    /// The annual growth rate as a decimal (e.g., 0.15 for 15%).
     public let rate: Double
 
+    /// Creates a growth rate configuration.
+    ///
+    /// - Parameter rate: The annual growth rate (must be > -100%).
     public init(_ rate: Double) {
         guard rate > -1.0 else {
             fatalError("Growth rate cannot be less than -100%: \(rate)")
@@ -85,10 +93,14 @@ public struct GrowthRate {
     }
 }
 
-/// Quarterly seasonality factors for revenue
+/// Quarterly seasonality factors for revenue.
 public struct Seasonality {
+    /// The four quarterly factors (must sum to 4.0).
     public let factors: [Double]
 
+    /// Creates a seasonality configuration with quarterly factors.
+    ///
+    /// - Parameter factors: Array of exactly 4 factors that sum to 4.0.
     public init(_ factors: [Double]) {
         guard factors.count == 4 else {
             fatalError("Seasonality must have exactly 4 quarterly factors")
@@ -105,10 +117,13 @@ public struct Seasonality {
 
 // MARK: - Revenue Model
 
-/// Revenue model with base, growth, and optional seasonality for cash flow projections
+/// Revenue model with base, growth, and optional seasonality for cash flow projections.
 public struct Revenue {
+    /// The base annual revenue.
     public let baseValue: Double
+    /// The annual growth rate as a decimal.
     public let growthRate: Double
+    /// The four quarterly seasonality factors.
     public let seasonalityFactors: [Double]
 
     internal init(
@@ -155,8 +170,13 @@ public struct Revenue {
 
 // MARK: - Revenue Result Builder
 
+/// Result builder for constructing `Revenue` instances declaratively.
 @resultBuilder
 public struct RevenueBuilder {
+    /// Builds a revenue model from the provided components.
+    ///
+    /// - Parameter components: The base, growth rate, and seasonality components.
+    /// - Returns: A configured `Revenue` model.
     public static func buildBlock(_ components: RevenueComponent...) -> Revenue {
         var baseValue: Double = 0
         var growthRate: Double = 0
@@ -183,6 +203,7 @@ public struct RevenueBuilder {
 
 // MARK: - Revenue Component Protocol
 
+/// Represents a revenue component that can be used in the builder.
 public enum RevenueComponent {
     case base(Base)
     case growthRate(GrowthRate)
@@ -190,22 +211,28 @@ public enum RevenueComponent {
 }
 
 extension Base: RevenueComponentConvertible {
+    /// Converts this base amount to a revenue component.
     public var revenueComponent: RevenueComponent { .base(self) }
 }
 
 extension GrowthRate: RevenueComponentConvertible {
+    /// Converts this growth rate to a revenue component.
     public var revenueComponent: RevenueComponent { .growthRate(self) }
 }
 
 extension Seasonality: RevenueComponentConvertible {
+    /// Converts this seasonality to a revenue component.
     public var revenueComponent: RevenueComponent { .seasonality(self) }
 }
 
+/// Protocol for types that can be converted to a `RevenueComponent`.
 public protocol RevenueComponentConvertible {
+    /// The revenue component representation of this type.
     var revenueComponent: RevenueComponent { get }
 }
 
 extension RevenueBuilder {
+    /// Converts a conforming expression to a revenue component.
     public static func buildExpression(_ expression: RevenueComponentConvertible) -> RevenueComponent {
         expression.revenueComponent
     }

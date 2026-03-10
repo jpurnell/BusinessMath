@@ -9,11 +9,16 @@ import Foundation
 
 // MARK: - Terminal Value Methods
 
-/// Perpetual growth method for terminal value calculation
-/// TV = FCF_final * (1 + g) / (WACC - g)
+/// Perpetual growth method for terminal value calculation.
+///
+/// TV = FCF_final × (1 + g) / (WACC - g)
 public struct PerpetualGrowth {
+    /// The perpetual growth rate as a decimal.
     public let rate: Double
 
+    /// Creates a perpetual growth configuration.
+    ///
+    /// - Parameter rate: The growth rate (must be between 0 and 1).
     public init(rate: Double) {
         guard rate >= 0 && rate < 1.0 else {
             fatalError("Perpetual growth rate must be between 0 and 1: \(rate)")
@@ -22,11 +27,16 @@ public struct PerpetualGrowth {
     }
 }
 
-/// Exit multiple method for terminal value calculation
-/// TV = Final EBITDA * Multiple
+/// Exit multiple method for terminal value calculation.
+///
+/// TV = Final EBITDA × Multiple
 public struct ExitMultiple {
+    /// The EV/EBITDA exit multiple.
     public let evEbitda: Double
 
+    /// Creates an exit multiple configuration.
+    ///
+    /// - Parameter evEbitda: The EV/EBITDA multiple (must be positive).
     public init(evEbitda: Double) {
         guard evEbitda > 0 else {
             fatalError("EV/EBITDA multiple must be positive: \(evEbitda)")
@@ -81,8 +91,13 @@ public struct TerminalValue {
 
 // MARK: - Terminal Value Result Builder
 
+/// Result builder for constructing `TerminalValue` instances declaratively.
 @resultBuilder
 public struct TerminalValueBuilder {
+    /// Builds a terminal value from the provided method component.
+    ///
+    /// - Parameter component: The perpetual growth or exit multiple component.
+    /// - Returns: A configured `TerminalValue`.
     public static func buildBlock(_ component: TerminalValueMethodComponent) -> TerminalValue {
         switch component {
         case .perpetualGrowth(let growth):
@@ -92,10 +107,12 @@ public struct TerminalValueBuilder {
         }
     }
 
+    /// Converts a `PerpetualGrowth` to a terminal value method component.
     public static func buildExpression(_ expression: PerpetualGrowth) -> TerminalValueMethodComponent {
         .perpetualGrowth(expression)
     }
 
+    /// Converts an `ExitMultiple` to a terminal value method component.
     public static func buildExpression(_ expression: ExitMultiple) -> TerminalValueMethodComponent {
         .exitMultiple(expression)
     }
@@ -103,11 +120,13 @@ public struct TerminalValueBuilder {
 
 // MARK: - Terminal Value Method
 
+/// The method used to calculate terminal value.
 public enum TerminalValueMethod {
     case perpetualGrowth(PerpetualGrowth)
     case exitMultiple(ExitMultiple)
 }
 
+/// Represents a terminal value method component in the builder.
 public enum TerminalValueMethodComponent {
     case perpetualGrowth(PerpetualGrowth)
     case exitMultiple(ExitMultiple)

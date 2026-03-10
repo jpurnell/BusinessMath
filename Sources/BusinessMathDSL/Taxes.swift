@@ -89,10 +89,14 @@ import Numerics
 
 // MARK: - Tax Components
 
-/// Corporate tax rate
+/// Corporate tax rate.
 public struct CorporateRate {
+    /// The federal corporate tax rate as a decimal (e.g., 0.21 for 21%).
     public let rate: Double
 
+    /// Creates a corporate tax rate.
+    ///
+    /// - Parameter rate: The tax rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0, rate <= 1.0 else {
             fatalError("Corporate tax rate must be between 0 and 1: \(rate)")
@@ -101,10 +105,14 @@ public struct CorporateRate {
     }
 }
 
-/// State tax rate
+/// State tax rate.
 public struct StateRate {
+    /// The state tax rate as a decimal (e.g., 0.06 for 6%).
     public let rate: Double
 
+    /// Creates a state tax rate.
+    ///
+    /// - Parameter rate: The tax rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0, rate <= 1.0 else {
             fatalError("State tax rate must be between 0 and 1: \(rate)")
@@ -149,8 +157,13 @@ public struct Taxes {
 
 // MARK: - Taxes Result Builder
 
+/// Result builder for constructing `Taxes` instances declaratively.
 @resultBuilder
 public struct CashFlowTaxesBuilder {
+    /// Builds a taxes model from the provided components.
+    ///
+    /// - Parameter components: The corporate and state tax rate components.
+    /// - Returns: A configured `Taxes` model.
     public static func buildBlock(_ components: CashFlowTaxComponent...) -> Taxes {
         var corporateRate: Double = 0
         var stateRate: Double = 0
@@ -173,24 +186,30 @@ public struct CashFlowTaxesBuilder {
 
 // MARK: - Tax Component Protocol
 
+/// Represents a tax component that can be used in the builder.
 public enum CashFlowTaxComponent {
     case corporateRate(CorporateRate)
     case stateRate(StateRate)
 }
 
 extension CorporateRate: CashFlowTaxComponentConvertible {
+    /// Converts this corporate rate to a tax component.
     public var cashFlowTaxComponent: CashFlowTaxComponent { .corporateRate(self) }
 }
 
 extension StateRate: CashFlowTaxComponentConvertible {
+    /// Converts this state rate to a tax component.
     public var cashFlowTaxComponent: CashFlowTaxComponent { .stateRate(self) }
 }
 
+/// Protocol for types that can be converted to a `CashFlowTaxComponent`.
 public protocol CashFlowTaxComponentConvertible {
+    /// The tax component representation of this type.
     var cashFlowTaxComponent: CashFlowTaxComponent { get }
 }
 
 extension CashFlowTaxesBuilder {
+    /// Converts a conforming expression to a tax component.
     public static func buildExpression(_ expression: CashFlowTaxComponentConvertible) -> CashFlowTaxComponent {
         expression.cashFlowTaxComponent
     }

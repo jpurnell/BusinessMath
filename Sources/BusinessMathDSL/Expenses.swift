@@ -76,10 +76,14 @@ import Numerics
 
 // MARK: - Expense Components
 
-/// Fixed expense amount (constant each year)
+/// Fixed expense amount (constant each year).
 public struct Fixed {
+    /// The fixed expense amount per period.
     public let amount: Double
 
+    /// Creates a fixed expense with the specified amount.
+    ///
+    /// - Parameter amount: The fixed expense amount (must be non-negative).
     public init(_ amount: Double) {
         guard amount >= 0 else {
             fatalError("Fixed expenses cannot be negative: \(amount)")
@@ -88,10 +92,14 @@ public struct Fixed {
     }
 }
 
-/// Variable expense as percentage of revenue
+/// Variable expense as a percentage of revenue.
 public struct Variable {
+    /// The variable expense percentage (e.g., 0.40 for 40% of revenue).
     public let percentage: Double
 
+    /// Creates a variable expense as a percentage of revenue.
+    ///
+    /// - Parameter percentage: The percentage of revenue (must be between 0 and 1).
     public init(percentage: Double) {
         guard percentage >= 0, percentage <= 1.0 else {
             fatalError("Variable expense percentage must be between 0 and 1: \(percentage)")
@@ -100,11 +108,18 @@ public struct Variable {
     }
 }
 
-/// One-time expense in a specific year
+/// One-time expense in a specific year.
 public struct OneTime {
+    /// The one-time expense amount.
     public let amount: Double
+    /// The year in which the expense occurs.
     public let year: Int
 
+    /// Creates a one-time expense for a specific year.
+    ///
+    /// - Parameters:
+    ///   - amount: The expense amount (must be non-negative).
+    ///   - year: The year in which the expense occurs (must be positive).
     public init(_ amount: Double, in year: Int) {
         guard amount >= 0 else {
             fatalError("One-time expense cannot be negative: \(amount)")
@@ -119,10 +134,13 @@ public struct OneTime {
 
 // MARK: - Expenses Model
 
-/// Expense model with fixed, variable, and one-time components
+/// Expense model with fixed, variable, and one-time components.
 public struct Expenses {
+    /// Total fixed expenses per period.
     public let fixedAmount: Double
+    /// Total variable expense as a percentage of revenue.
     public let variablePercentage: Double
+    /// Array of one-time expenses with their amounts and years.
     public let oneTimeExpenses: [(amount: Double, year: Int)]
 
     internal init(
@@ -167,8 +185,13 @@ public struct Expenses {
 
 // MARK: - Expenses Result Builder
 
+/// Result builder for constructing `Expenses` instances declaratively.
 @resultBuilder
 public struct ExpensesBuilder {
+    /// Builds an expense model from the provided components.
+    ///
+    /// - Parameter components: The fixed, variable, and one-time expense components.
+    /// - Returns: A configured `Expenses` model.
     public static func buildBlock(_ components: ExpenseComponent...) -> Expenses {
         var fixedAmount: Double = 0
         var variablePercentage: Double = 0
@@ -195,6 +218,7 @@ public struct ExpensesBuilder {
 
 // MARK: - Expense Component Protocol
 
+/// Represents an expense component that can be used in the builder.
 public enum ExpenseComponent {
     case fixed(Fixed)
     case variable(Variable)
@@ -202,22 +226,28 @@ public enum ExpenseComponent {
 }
 
 extension Fixed: ExpenseComponentConvertible {
+    /// Converts this fixed expense to an expense component.
     public var expenseComponent: ExpenseComponent { .fixed(self) }
 }
 
 extension Variable: ExpenseComponentConvertible {
+    /// Converts this variable expense to an expense component.
     public var expenseComponent: ExpenseComponent { .variable(self) }
 }
 
 extension OneTime: ExpenseComponentConvertible {
+    /// Converts this one-time expense to an expense component.
     public var expenseComponent: ExpenseComponent { .oneTime(self) }
 }
 
+/// Protocol for types that can be converted to an `ExpenseComponent`.
 public protocol ExpenseComponentConvertible {
+    /// The expense component representation of this type.
     var expenseComponent: ExpenseComponent { get }
 }
 
 extension ExpensesBuilder {
+    /// Converts a conforming expression to an expense component.
     public static func buildExpression(_ expression: ExpenseComponentConvertible) -> ExpenseComponent {
         expression.expenseComponent
     }

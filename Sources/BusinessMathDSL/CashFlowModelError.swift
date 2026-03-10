@@ -23,6 +23,7 @@ public enum CashFlowModelError: Error, Equatable {
 }
 
 extension CashFlowModelError: LocalizedError {
+    /// A localized description of the cash flow model error.
     public var errorDescription: String? {
         switch self {
         case .invalidParameter(let message):

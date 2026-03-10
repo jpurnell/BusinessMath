@@ -188,13 +188,19 @@ public struct ScenarioAnalysis {
 
     // MARK: - Statistics
 
-    /// Calculate statistics for scenario outcomes
+    /// Calculate statistics for scenario outcomes.
     public struct Statistics {
+        /// The arithmetic mean of all scenario outcomes.
         public let mean: Double
+        /// The median (middle value) of scenario outcomes.
         public let median: Double
+        /// The standard deviation of scenario outcomes.
         public let stdDev: Double
+        /// The minimum scenario outcome.
         public let min: Double
+        /// The maximum scenario outcome.
         public let max: Double
+        /// The number of scenarios evaluated.
         public let count: Int
     }
 
@@ -248,8 +254,13 @@ public struct ScenarioAnalysis {
 
 // MARK: - Scenario Analysis Result Builder
 
+/// Result builder for constructing `ScenarioAnalysis` instances declaratively.
 @resultBuilder
 public struct ScenarioAnalysisBuilder {
+    /// Builds a scenario analysis from the provided components.
+    ///
+    /// - Parameter components: The scenarios, base scenarios, variations, and Monte Carlo components.
+    /// - Returns: A configured `ScenarioAnalysis`.
     public static func buildBlock(_ components: ScenarioAnalysisComponent...) -> ScenarioAnalysis {
         var scenarios: [Scenario] = []
         var baseScenario: [String: Double]? = nil
@@ -357,26 +368,32 @@ public struct ScenarioAnalysisBuilder {
         return ScenarioAnalysis(scenarios: scenarios)
     }
 
+    /// Converts a `Scenario` to a scenario analysis component.
     public static func buildExpression(_ expression: Scenario) -> ScenarioAnalysisComponent {
         .scenario(expression)
     }
 
+    /// Converts a `BaseScenario` to a scenario analysis component.
     public static func buildExpression(_ expression: BaseScenario) -> ScenarioAnalysisComponent {
         .baseScenario(expression)
     }
 
+    /// Converts a `Vary` to a scenario analysis component.
     public static func buildExpression(_ expression: Vary) -> ScenarioAnalysisComponent {
         .vary(expression)
     }
 
+    /// Converts a `Sensitivity` to a scenario analysis component.
     public static func buildExpression(_ expression: Sensitivity) -> ScenarioAnalysisComponent {
         .sensitivity(expression)
     }
 
+    /// Converts a `TornadoChart` to a scenario analysis component.
     public static func buildExpression(_ expression: TornadoChart) -> ScenarioAnalysisComponent {
         .tornadoChart(expression)
     }
 
+    /// Converts a `MonteCarlo` to a scenario analysis component.
     public static func buildExpression(_ expression: MonteCarlo) -> ScenarioAnalysisComponent {
         .monteCarlo(expression)
     }
@@ -384,6 +401,7 @@ public struct ScenarioAnalysisBuilder {
 
 // MARK: - Scenario Analysis Component
 
+/// Represents a component that can be used in a scenario analysis builder.
 public enum ScenarioAnalysisComponent {
     case scenario(Scenario)
     case baseScenario(BaseScenario)

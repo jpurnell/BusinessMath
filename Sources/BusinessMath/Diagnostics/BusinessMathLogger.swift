@@ -103,6 +103,10 @@ public extension Logger {
 
 // MARK: - Convenience Logging Methods
 
+/// Convenience logging methods for BusinessMath calculation, validation, and performance tracking.
+///
+/// These extensions provide domain-specific logging patterns for financial calculations,
+/// model building, and performance monitoring with appropriate privacy controls.
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 public extension Logger {
 

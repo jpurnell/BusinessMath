@@ -92,16 +92,35 @@ import Numerics
 
 // MARK: - Cash Flow Calculation Result
 
-/// Result of cash flow calculation for a period
+/// Result of cash flow calculation for a period.
+///
+/// Contains all key financial metrics computed from revenue through net income.
 public struct CashFlowResult {
+    /// Total revenue for the period.
     public let revenue: Double
+    /// Total expenses (fixed and variable) for the period.
     public let expenses: Double
+    /// Earnings Before Interest, Taxes, Depreciation, and Amortization.
     public let ebitda: Double
+    /// Depreciation expense for the period.
     public let depreciation: Double
+    /// Earnings Before Interest and Taxes (EBITDA minus depreciation).
     public let ebit: Double
+    /// Tax expense computed on EBIT.
     public let taxes: Double
+    /// Final net income after all expenses and taxes.
     public let netIncome: Double
 
+    /// Creates a new cash flow result with all computed metrics.
+    ///
+    /// - Parameters:
+    ///   - revenue: Total revenue for the period.
+    ///   - expenses: Total expenses for the period.
+    ///   - ebitda: Earnings before interest, taxes, depreciation, and amortization.
+    ///   - depreciation: Depreciation expense.
+    ///   - ebit: Earnings before interest and taxes.
+    ///   - taxes: Tax expense.
+    ///   - netIncome: Final net income.
     public init(
         revenue: Double,
         expenses: Double,
@@ -123,13 +142,26 @@ public struct CashFlowResult {
 
 // MARK: - Cash Flow Model
 
-/// Complete financial model combining revenue, expenses, depreciation, and taxes
+/// Complete financial model combining revenue, expenses, depreciation, and taxes.
+///
+/// Use the DSL builder syntax to create models declaratively.
 public struct CashFlowModel {
+    /// The revenue configuration for the model.
     public let revenue: Revenue?
+    /// The expense configuration for the model.
     public let expenses: Expenses?
+    /// The depreciation schedule for the model.
     public let depreciation: Depreciation?
+    /// The tax rates applied to earnings.
     public let taxes: Taxes?
 
+    /// Creates a new cash flow model with the specified components.
+    ///
+    /// - Parameters:
+    ///   - revenue: Revenue configuration with base amount and growth rate.
+    ///   - expenses: Expense configuration with fixed and variable costs.
+    ///   - depreciation: Depreciation schedule for capital assets.
+    ///   - taxes: Tax rate configuration.
     public init(
         revenue: Revenue? = nil,
         expenses: Expenses? = nil,
@@ -233,8 +265,16 @@ public struct CashFlowModel {
 
 // MARK: - Cash Flow Model Result Builder
 
+/// Result builder for constructing `CashFlowModel` instances declaratively.
+///
+/// Allows composing revenue, expenses, depreciation, and tax components
+/// using Swift's result builder syntax.
 @resultBuilder
 public struct CashFlowModelBuilder {
+    /// Builds a cash flow model from the provided components.
+    ///
+    /// - Parameter components: The revenue, expense, depreciation, and tax components.
+    /// - Returns: A configured `CashFlowModel`.
     public static func buildBlock(_ components: CashFlowModelComponent...) -> CashFlowModel {
         var revenue: Revenue?
         var expenses: Expenses?
@@ -262,18 +302,22 @@ public struct CashFlowModelBuilder {
         )
     }
 
+    /// Handles optional components in `if` statements without an `else`.
     public static func buildOptional(_ component: CashFlowModelComponent?) -> CashFlowModelComponent? {
         component
     }
 
+    /// Handles the first branch of an `if-else` statement.
     public static func buildEither(first component: CashFlowModelComponent) -> CashFlowModelComponent {
         component
     }
 
+    /// Handles the second branch of an `if-else` statement.
     public static func buildEither(second component: CashFlowModelComponent) -> CashFlowModelComponent {
         component
     }
 
+    /// Handles `for` loops by collecting components into an array.
     public static func buildArray(_ components: [CashFlowModelComponent]) -> CashFlowModelComponent {
         // For array support, just take first component
         components.first ?? .revenue(Revenue(baseValue: 0))
@@ -282,6 +326,10 @@ public struct CashFlowModelBuilder {
 
 // MARK: - Cash Flow Model Component Protocol
 
+/// Represents a component that can be used in a cash flow model builder.
+///
+/// Cases correspond to the four major financial model components:
+/// revenue, expenses, depreciation, and taxes.
 public enum CashFlowModelComponent {
     case revenue(Revenue)
     case expenses(Expenses)
@@ -290,26 +338,35 @@ public enum CashFlowModelComponent {
 }
 
 extension Revenue: CashFlowModelComponentConvertible {
+    /// Converts this revenue configuration to a cash flow model component.
     public var cashFlowModelComponent: CashFlowModelComponent { .revenue(self) }
 }
 
 extension Expenses: CashFlowModelComponentConvertible {
+    /// Converts this expense configuration to a cash flow model component.
     public var cashFlowModelComponent: CashFlowModelComponent { .expenses(self) }
 }
 
 extension Depreciation: CashFlowModelComponentConvertible {
+    /// Converts this depreciation schedule to a cash flow model component.
     public var cashFlowModelComponent: CashFlowModelComponent { .depreciation(self) }
 }
 
 extension Taxes: CashFlowModelComponentConvertible {
+    /// Converts this tax configuration to a cash flow model component.
     public var cashFlowModelComponent: CashFlowModelComponent { .taxes(self) }
 }
 
+/// Protocol for types that can be converted to a `CashFlowModelComponent`.
+///
+/// Conforming types can be used directly within the `CashFlowModelBuilder` DSL.
 public protocol CashFlowModelComponentConvertible {
+    /// The cash flow model component representation of this type.
     var cashFlowModelComponent: CashFlowModelComponent { get }
 }
 
 extension CashFlowModelBuilder {
+    /// Converts a conforming expression to a cash flow model component.
     public static func buildExpression(_ expression: CashFlowModelComponentConvertible) -> CashFlowModelComponent {
         expression.cashFlowModelComponent
     }
@@ -336,12 +393,19 @@ extension CashFlowModelBuilder {
 /// ```
 @propertyWrapper
 public struct CashFlowProjection {
+    /// The underlying cash flow model.
     public var wrappedValue: CashFlowModel
 
+    /// Creates a projection from an existing cash flow model.
+    ///
+    /// - Parameter wrappedValue: The cash flow model to wrap.
     public init(wrappedValue: CashFlowModel) {
         self.wrappedValue = wrappedValue
     }
 
+    /// Creates a projection using the result builder DSL.
+    ///
+    /// - Parameter builder: A closure that builds the cash flow model.
     public init(@CashFlowModelBuilder builder: () -> CashFlowModel) {
         self.wrappedValue = builder()
     }

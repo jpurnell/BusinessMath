@@ -10,14 +10,21 @@ import Numerics
 
 // MARK: - Tier Model
 
-/// A single tier in the liquidation waterfall with priority and distribution rules
+/// A single tier in the liquidation waterfall with priority and distribution rules.
 public struct Tier {
+    /// The tier name used in distribution reporting.
     public let name: String
+    /// The priority order (lower numbers distribute first).
     public let priority: Int
+    /// The amount of capital to return before profits.
     public let capitalReturn: Double
+    /// The preferred return (hurdle rate) requirement.
     public let preferredReturn: PreferredReturn?
+    /// The catch-up provision for achieving target profit split.
     public let catchUp: CatchUp?
+    /// Whether this tier captures all remaining proceeds.
     public let residual: Bool
+    /// The pro-rata distribution among multiple participants.
     public let proRata: ProRata?
 
     internal init(
@@ -148,8 +155,13 @@ public struct Tier {
 
 // MARK: - Tier Result Builder
 
+/// Result builder for constructing `Tier` instances declaratively.
 @resultBuilder
 public struct TierBuilder {
+    /// Builds a tier from the provided components.
+    ///
+    /// - Parameter components: The capital return, preferred return, catch-up, residual, and pro-rata components.
+    /// - Returns: A configured `Tier`.
     public static func buildBlock(_ components: TierComponent...) -> Tier {
         var capitalReturn: Double = 0
         var preferredReturn: PreferredReturn? = nil
@@ -185,6 +197,7 @@ public struct TierBuilder {
 }
 
 extension TierBuilder {
+    /// Converts a conforming expression to a tier component.
     public static func buildExpression(_ expression: TierComponentConvertible) -> TierComponent {
         expression.tierComponent
     }
@@ -192,12 +205,21 @@ extension TierBuilder {
 
 // MARK: - Waterfall Context
 
-/// Context for waterfall distribution calculations
+/// Context for waterfall distribution calculations.
 public struct WaterfallContext {
+    /// Total capital invested across all tiers.
     public let totalCapitalInvested: Double
+    /// Total proceeds being distributed.
     public let totalProceeds: Double
+    /// Running tally of distributions by participant name.
     public var currentDistributions: [String: Double]
 
+    /// Creates a waterfall context for distribution calculations.
+    ///
+    /// - Parameters:
+    ///   - totalCapitalInvested: Total capital invested.
+    ///   - totalProceeds: Total proceeds to distribute.
+    ///   - currentDistributions: Current distribution state.
     public init(
         totalCapitalInvested: Double,
         totalProceeds: Double,

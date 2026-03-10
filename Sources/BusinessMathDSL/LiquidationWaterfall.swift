@@ -60,11 +60,18 @@ import Numerics
 
 // MARK: - Waterfall Result
 
-/// Result of waterfall distribution
+/// Result of waterfall distribution.
 public struct WaterfallResult {
+    /// Dictionary mapping participant names to their distributed amounts.
     public let distributions: [String: Double]
+    /// Any remaining proceeds after all distributions.
     public let remaining: Double
 
+    /// Creates a waterfall result with distributions and remaining proceeds.
+    ///
+    /// - Parameters:
+    ///   - distributions: Dictionary of participant names to amounts.
+    ///   - remaining: Amount remaining after all distributions.
     public init(distributions: [String: Double], remaining: Double) {
         self.distributions = distributions
         self.remaining = remaining
@@ -145,28 +152,35 @@ public struct LiquidationWaterfall {
 
 // MARK: - Liquidation Waterfall Result Builder
 
+/// Result builder for constructing `LiquidationWaterfall` instances declaratively.
 @resultBuilder
 public struct LiquidationWaterfallBuilder {
+    /// Builds a waterfall from the provided tier components.
     public static func buildBlock(_ components: Tier...) -> LiquidationWaterfall {
         LiquidationWaterfall(tiers: Array(components))
     }
 
+    /// Handles optional tiers in `if` statements.
     public static func buildOptional(_ component: Tier?) -> Tier? {
         component
     }
 
+    /// Handles the first branch of an `if-else` statement.
     public static func buildEither(first component: Tier) -> Tier {
         component
     }
 
+    /// Handles the second branch of an `if-else` statement.
     public static func buildEither(second component: Tier) -> Tier {
         component
     }
 
+    /// Handles `for` loops by collecting tiers.
     public static func buildArray(_ components: [Tier]) -> LiquidationWaterfall {
         LiquidationWaterfall(tiers: components)
     }
 
+    /// Passes a tier expression through to the builder.
     public static func buildExpression(_ expression: Tier) -> Tier {
         expression
     }
@@ -174,15 +188,22 @@ public struct LiquidationWaterfallBuilder {
 
 // MARK: - @WaterfallDistribution Property Wrapper
 
-/// Property wrapper for declarative waterfall creation
+/// Property wrapper for declarative waterfall creation.
 @propertyWrapper
 public struct WaterfallDistribution {
+    /// The underlying liquidation waterfall.
     public var wrappedValue: LiquidationWaterfall
 
+    /// Creates a waterfall distribution from an existing waterfall.
+    ///
+    /// - Parameter wrappedValue: The liquidation waterfall to wrap.
     public init(wrappedValue: LiquidationWaterfall) {
         self.wrappedValue = wrappedValue
     }
 
+    /// Creates a waterfall distribution using the result builder DSL.
+    ///
+    /// - Parameter builder: A closure that builds the liquidation waterfall.
     public init(@LiquidationWaterfallBuilder builder: () -> LiquidationWaterfall) {
         self.wrappedValue = builder()
     }

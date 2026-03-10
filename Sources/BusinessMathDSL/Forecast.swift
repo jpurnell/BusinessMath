@@ -9,12 +9,20 @@ import Foundation
 
 // MARK: - Forecast Components
 
-/// Revenue forecast with base amount and compound annual growth rate
-/// Use in DCF forecasts: ForecastRevenue(base: 1_000_000, cagr: 0.15)
+/// Revenue forecast with base amount and compound annual growth rate.
+///
+/// Use in DCF forecasts: `ForecastRevenue(base: 1_000_000, cagr: 0.15)`
 public struct ForecastRevenue {
+    /// The base revenue amount for year 1.
     public let base: Double
+    /// The compound annual growth rate (e.g., 0.15 for 15% growth).
     public let cagr: Double
 
+    /// Creates a revenue forecast with a base amount and growth rate.
+    ///
+    /// - Parameters:
+    ///   - base: The base revenue (must be non-negative).
+    ///   - cagr: The compound annual growth rate (must be > -100%).
     public init(base: Double, cagr: Double) {
         guard base >= 0 else {
             fatalError("Base revenue cannot be negative: \(base)")
@@ -33,10 +41,14 @@ public struct ForecastRevenue {
     }
 }
 
-/// EBITDA as a percentage margin of revenue
+/// EBITDA as a percentage margin of revenue.
 public struct EBITDA {
+    /// The EBITDA margin as a decimal (e.g., 0.25 for 25%).
     public let margin: Double
 
+    /// Creates an EBITDA configuration with the specified margin.
+    ///
+    /// - Parameter margin: The EBITDA margin (must be between 0 and 1).
     public init(margin: Double) {
         guard margin >= 0 && margin <= 1.0 else {
             fatalError("EBITDA margin must be between 0 and 1: \(margin)")
@@ -45,11 +57,16 @@ public struct EBITDA {
     }
 }
 
-/// Depreciation as a percentage of revenue
-/// Use in DCF forecasts: ForecastDepreciation(percentage: 0.05)
+/// Depreciation as a percentage of revenue.
+///
+/// Use in DCF forecasts: `ForecastDepreciation(percentage: 0.05)`
 public struct ForecastDepreciation {
+    /// The depreciation percentage as a decimal (e.g., 0.05 for 5%).
     public let percentage: Double
 
+    /// Creates a depreciation configuration as a percentage of revenue.
+    ///
+    /// - Parameter percentage: The depreciation percentage (must be between 0 and 1).
     public init(percentage: Double) {
         guard percentage >= 0 && percentage <= 1.0 else {
             fatalError("Depreciation percentage must be between 0 and 1: \(percentage)")
@@ -58,10 +75,14 @@ public struct ForecastDepreciation {
     }
 }
 
-/// Capital expenditures as a percentage of revenue
+/// Capital expenditures as a percentage of revenue.
 public struct CapEx {
+    /// The CapEx percentage as a decimal (e.g., 0.08 for 8%).
     public let percentage: Double
 
+    /// Creates a CapEx configuration as a percentage of revenue.
+    ///
+    /// - Parameter percentage: The CapEx percentage (must be between 0 and 1).
     public init(percentage: Double) {
         guard percentage >= 0 && percentage <= 1.0 else {
             fatalError("CapEx percentage must be between 0 and 1: \(percentage)")
@@ -70,10 +91,14 @@ public struct CapEx {
     }
 }
 
-/// Working capital requirements based on days of sales
+/// Working capital requirements based on days of sales.
 public struct WorkingCapital {
+    /// The number of days of sales to hold as working capital.
     public let daysOfSales: Double
 
+    /// Creates a working capital configuration based on days of sales.
+    ///
+    /// - Parameter daysOfSales: The number of days of sales (must be non-negative).
     public init(daysOfSales: Double) {
         guard daysOfSales >= 0 else {
             fatalError("Days of sales cannot be negative: \(daysOfSales)")
@@ -84,13 +109,21 @@ public struct WorkingCapital {
 
 // MARK: - Forecast Model
 
-/// Multi-year financial forecast for DCF valuation
+/// Multi-year financial forecast for DCF valuation.
+///
+/// Combines revenue, EBITDA margin, depreciation, CapEx, and working capital assumptions.
 public struct Forecast {
+    /// The number of years in the forecast period.
     public let years: Int
+    /// The revenue forecast with base amount and growth rate.
     public let revenue: ForecastRevenue?
+    /// The EBITDA margin as a percentage of revenue.
     public let ebitda: EBITDA?
+    /// The depreciation as a percentage of revenue.
     public let depreciation: ForecastDepreciation?
+    /// The capital expenditure as a percentage of revenue.
     public let capex: CapEx?
+    /// The working capital requirement in days of sales.
     public let workingCapital: WorkingCapital?
 
     internal init(
@@ -202,19 +235,31 @@ public struct Forecast {
 
 // MARK: - Forecast Components Container
 
-/// Container for forecast components (used by result builder)
+/// Container for forecast components (used by result builder).
 public struct ForecastComponents {
+    /// The revenue forecast configuration.
     public let revenue: ForecastRevenue?
+    /// The EBITDA margin configuration.
     public let ebitda: EBITDA?
+    /// The depreciation configuration.
     public let depreciation: ForecastDepreciation?
+    /// The capital expenditure configuration.
     public let capex: CapEx?
+    /// The working capital configuration.
     public let workingCapital: WorkingCapital?
 }
 
 // MARK: - Forecast Result Builder
 
+/// Result builder for constructing `Forecast` instances declaratively.
+///
+/// Allows composing revenue, EBITDA, depreciation, CapEx, and working capital components.
 @resultBuilder
 public struct ForecastBuilder {
+    /// Builds a forecast components container from the provided components.
+    ///
+    /// - Parameter components: The revenue, EBITDA, depreciation, CapEx, and working capital components.
+    /// - Returns: A `ForecastComponents` container.
     public static func buildBlock(_ components: ForecastComponent...) -> ForecastComponents {
         var revenue: ForecastRevenue? = nil
         var ebitda: EBITDA? = nil
@@ -246,22 +291,27 @@ public struct ForecastBuilder {
         )
     }
 
+    /// Converts a `ForecastRevenue` to a forecast component.
     public static func buildExpression(_ expression: ForecastRevenue) -> ForecastComponent {
         .revenue(expression)
     }
 
+    /// Converts an `EBITDA` to a forecast component.
     public static func buildExpression(_ expression: EBITDA) -> ForecastComponent {
         .ebitda(expression)
     }
 
+    /// Converts a `ForecastDepreciation` to a forecast component.
     public static func buildExpression(_ expression: ForecastDepreciation) -> ForecastComponent {
         .depreciation(expression)
     }
 
+    /// Converts a `CapEx` to a forecast component.
     public static func buildExpression(_ expression: CapEx) -> ForecastComponent {
         .capex(expression)
     }
 
+    /// Converts a `WorkingCapital` to a forecast component.
     public static func buildExpression(_ expression: WorkingCapital) -> ForecastComponent {
         .workingCapital(expression)
     }
@@ -269,6 +319,9 @@ public struct ForecastBuilder {
 
 // MARK: - Forecast Component Protocol
 
+/// Represents a component that can be used in a forecast builder.
+///
+/// Cases correspond to revenue, EBITDA, depreciation, CapEx, and working capital.
 public enum ForecastComponent {
     case revenue(ForecastRevenue)
     case ebitda(EBITDA)

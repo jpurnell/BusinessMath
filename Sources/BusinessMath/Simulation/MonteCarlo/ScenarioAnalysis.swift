@@ -27,6 +27,10 @@ public enum ScenarioError: Error, Sendable {
     /// Provides context-specific error messages with relevant details like
     /// values, ranges, and suggestions.
 extension ScenarioError: LocalizedError {
+	/// A localized description of the scenario error.
+	///
+	/// Provides context-specific error messages including scenario names,
+	/// missing configuration details, and unknown input references.
 	public var errorDescription: String? {
 		switch self {
 		case .missingInputConfiguration(let scenario, let missing):

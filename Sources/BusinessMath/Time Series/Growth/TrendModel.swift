@@ -189,6 +189,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	private var metadata: TimeSeriesMetadata?
 	private var fittedDataCount: Int = 0
 	private var residuals: [T] = []
+	/// The residuals from the fitted trend model (actual minus predicted values).
 	public var  trendResiduals : [T] { residuals }
 
 	/// Creates a new linear trend model.

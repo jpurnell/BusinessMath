@@ -68,11 +68,18 @@ import Numerics
 
 // MARK: - Depreciation Components
 
-/// Straight-line depreciation schedule
+/// Straight-line depreciation schedule.
 public struct StraightLine {
+    /// The original asset value to depreciate.
     public let assetValue: Double
+    /// The number of years over which to depreciate the asset.
     public let years: Int
 
+    /// Creates a straight-line depreciation schedule.
+    ///
+    /// - Parameters:
+    ///   - asset: The original asset value (must be non-negative).
+    ///   - years: The depreciation period in years (must be positive).
     public init(asset: Double, years: Int) {
         guard asset >= 0 else {
             fatalError("Asset value cannot be negative: \(asset)")
@@ -127,8 +134,13 @@ public struct Depreciation {
 
 // MARK: - Depreciation Result Builder
 
+/// Result builder for constructing `Depreciation` instances declaratively.
 @resultBuilder
 public struct CashFlowDepreciationBuilder {
+    /// Builds a depreciation model from the provided schedules.
+    ///
+    /// - Parameter components: The depreciation schedules to combine.
+    /// - Returns: A configured `Depreciation` model.
     public static func buildBlock(_ components: CashFlowDepreciationComponent...) -> Depreciation {
         var schedules: [StraightLine] = []
 
@@ -145,19 +157,24 @@ public struct CashFlowDepreciationBuilder {
 
 // MARK: - Depreciation Component Protocol
 
+/// Represents a depreciation component that can be used in the builder.
 public enum CashFlowDepreciationComponent {
     case straightLine(StraightLine)
 }
 
 extension StraightLine: CashFlowDepreciationComponentConvertible {
+    /// Converts this straight-line schedule to a depreciation component.
     public var cashFlowDepreciationComponent: CashFlowDepreciationComponent { .straightLine(self) }
 }
 
+/// Protocol for types that can be converted to a `CashFlowDepreciationComponent`.
 public protocol CashFlowDepreciationComponentConvertible {
+    /// The depreciation component representation of this type.
     var cashFlowDepreciationComponent: CashFlowDepreciationComponent { get }
 }
 
 extension CashFlowDepreciationBuilder {
+    /// Converts a conforming expression to a depreciation component.
     public static func buildExpression(_ expression: CashFlowDepreciationComponentConvertible) -> CashFlowDepreciationComponent {
         expression.cashFlowDepreciationComponent
     }
