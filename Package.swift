@@ -85,7 +85,8 @@ var targets: [Target] = [
 			"Optimization/Heuristic/GPU/Shaders.metal",
 			"Simulation/MonteCarlo/GPU/MonteCarloKernel.metal",
 			"Simulation/MonteCarlo/GPU/MonteCarloRNG.metal",
-			"Simulation/MonteCarlo/GPU/MonteCarloDistributions.metal"
+			"Simulation/MonteCarlo/GPU/MonteCarloDistributions.metal",
+			"Statistics/Regression/MatrixOperations/MatrixOperations.metal"
 		],
 		swiftSettings: [
 			.enableUpcomingFeature("StrictConcurrency")
@@ -98,6 +99,9 @@ var targets: [Target] = [
 		dependencies: [
 			"BusinessMath",
 			.product(name: "Numerics", package: "swift-numerics")
+		],
+		exclude: [
+			"README.md"
 		],
 		swiftSettings: [
 			.enableUpcomingFeature("StrictConcurrency")
@@ -119,6 +123,9 @@ var targets: [Target] = [
 			"BusinessMath",
 			"BusinessMathDSL",
 			"TestSupport"
+		],
+		exclude: [
+			"DocumentationExamples/README.md"
 		],
 		swiftSettings: [
 			.enableUpcomingFeature("StrictConcurrency")
@@ -148,6 +155,10 @@ var targets: [Target] = [
 		.target(
 			name: "BusinessMathMacros",
 			dependencies: ["BusinessMathMacrosImpl"],
+			exclude: [
+				"README.md",
+				"ValidationMacros-README.md"
+			],
 			swiftSettings: [
 				.enableUpcomingFeature("StrictConcurrency")
 			]
