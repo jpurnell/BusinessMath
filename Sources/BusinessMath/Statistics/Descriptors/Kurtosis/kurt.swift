@@ -2,7 +2,7 @@
 //  kurtosis.swift
 //  BusinessMath
 //
-//  Created by Claude on 2026-02-20.
+//  Created by Justin Purnell on 2026-02-20.
 //
 
 import Foundation

@@ -775,8 +775,8 @@ public func debtServiceCoverage<T: Real & Sendable>(
 ///
 /// ## See Also
 ///
-/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)`` - Manual specification
-/// - ``debtServiceCoverage(incomeStatement:balanceSheet:debtAccount:interestAccount:)`` - Custom accounts
+/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
+/// - ``debtServiceCoverage(incomeStatement:balanceSheet:debtAccount:interestAccount:)``
 ///
 /// - Parameters:
 ///   - incomeStatement: Income statement containing operating income and interest expense

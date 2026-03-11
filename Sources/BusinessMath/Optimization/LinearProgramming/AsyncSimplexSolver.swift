@@ -109,10 +109,10 @@ public struct SimplexProgress: Sendable {
 /// ```
 ///
 /// ## See Also
-/// - ``SimplexSolver`` - Synchronous version
-/// - ``SimplexConstraint`` - Constraint specification
-/// - ``SimplexResult`` - Result type
-/// - ``SimplexProgress`` - Progress update type
+/// - ``SimplexSolver``
+/// - ``SimplexConstraint``
+/// - ``SimplexResult``
+/// - ``SimplexProgress``
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncSimplexSolver: Sendable {
 

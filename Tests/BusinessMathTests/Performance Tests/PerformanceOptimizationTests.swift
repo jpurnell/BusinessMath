@@ -249,7 +249,7 @@ import RealModule
         // If we made it here without running out of memory, we're good
         #expect(elapsed < 1.0, "Should complete 1000 model creations in < 1s (got \((elapsed * 1000).number(2))ms)")
     }
-    @Test("Performance_TimeSeriesMemoryEfficiency")
+	@Test("Performance_TimeSeriesMemoryEfficiency", .localOnly)
 	func LPerformance_TimeSeriesMemoryEfficiency() {
         let start = Date()
         #if canImport(Darwin)

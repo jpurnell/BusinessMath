@@ -2,7 +2,7 @@
 //  ConsolidatedStatements.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 02/15/26.
+//  Created by Justin Purnell on 02/15/26.
 //
 
 import Foundation

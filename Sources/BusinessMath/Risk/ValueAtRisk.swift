@@ -2,7 +2,7 @@
 //  ValueAtRisk.swift
 //  BusinessMath
 //
-//  Created by Claude on 2026-02-20.
+//  Created by Justin Purnell on 2026-02-20.
 //
 
 import Foundation
@@ -45,8 +45,8 @@ import Numerics
 ///
 /// ## See Also
 ///
-/// - ``ConditionalValueAtRisk`` - Expected loss beyond VaR threshold
-/// - ``TailRisk`` - Ratio of CVaR to VaR measuring tail severity
+/// - ``ConditionalValueAtRisk``
+/// - ``TailRisk``
 public struct ValueAtRisk {
 
 	/// Calculate Value at Risk at a specified confidence level.

@@ -21,68 +21,62 @@ Financial modeling is both art and science. The science is in the mathematical r
 ## Chapters in This Part
 
 ### General Modeling
-- <doc:3.1-GrowthModeling> - CAGR, trend fitting (linear, exponential, logistic)
-- <doc:3.2-ForecastingGuide> - Complete forecasting workflows and techniques
+- <doc:3.1-GrowthModeling>
+- <doc:3.2-ForecastingGuide>
 
 ### Financial Modeling & Reporting
-- <doc:3.3-BuildingRevenueModel> - Step-by-step revenue model construction
-- <doc:3.4-BuildingFinancialReports> - Creating income statements, balance sheets, and cash flow reports
-- <doc:3.5-FinancialStatementsGuide> - Comprehensive financial statement modeling framework
-- <doc:3.6-LeaseAccountingGuide> - IFRS 16 / ASC 842 lease accounting and modeling
-- <doc:3.7-LoanAmortization> - Loan payment schedules and analysis
+- <doc:3.3-BuildingRevenueModel>
+- <doc:3.4-BuildingFinancialReports>
+- <doc:3.5-FinancialStatementsGuide>
+- <doc:3.6-LeaseAccountingGuide>
+- <doc:3.7-LoanAmortization>
 
 ### Valuation & Investment Analysis
-- <doc:3.8-InvestmentAnalysis> - NPV, IRR, payback periods, and profitability analysis
-- <doc:3.9-EquityValuationGuide> - Dividend discount models (DDM), FCFE, residual income
-- <doc:3.10-BondValuationGuide> - Bond pricing, duration, convexity, and credit spreads
-- <doc:3.11-CreditDerivativesGuide> - CDS pricing, Merton model, hazard rates
-- <doc:3.12-RealOptionsGuide> - Real options valuation and flexibility analysis
+- <doc:3.8-InvestmentAnalysis>
+- <doc:3.9-EquityValuationGuide>
+- <doc:3.10-BondValuationGuide>
+- <doc:3.11-CreditDerivativesGuide>
+- <doc:3.12-RealOptionsGuide>
 
 ### Capital Structure
-- <doc:3.13-EquityFinancingGuide> - Stock-based financing and equity dilution
-- <doc:3.14-DebtAndFinancingGuide> - Loan analysis, debt structure, and WACC
+- <doc:3.13-EquityFinancingGuide>
+- <doc:3.14-DebtAndFinancingGuide>
 
 ## Prerequisites
 
-Before tackling financial modeling, ensure you're comfortable with:
-
-- Time series operations (<doc:1.2-TimeSeries>)
-- Time value of money (<doc:1.3-TimeValueOfMoney>)
-- Basic analytical techniques (<doc:Part2-Analysis>)
-
-For valuation topics (chapters 3.8-3.12), you should also understand financial ratios and risk measurement.
+Before tackling financial modeling, ensure you're comfortable with time series operations, time value of money calculations, and basic analytical techniques from Part II. For valuation topics (chapters 3.8-3.12), you should also understand financial ratios and risk measurement.
 
 ## Suggested Reading Order
 
 The reading path depends on your goals:
 
-### For Operations/FP&A Professionals:
-1. <doc:3.1-GrowthModeling> - Understand growth patterns
-2. <doc:3.2-ForecastingGuide> - Build forecasts
-3. <doc:3.3-BuildingRevenueModel> - Complete revenue model workflow
-4. <doc:3.4-BuildingFinancialReports> - Generate financial reports
-5. <doc:3.5-FinancialStatementsGuide> - Full financial statement modeling
+**For Operations/FP&A Professionals:**
+1. <doc:3.1-GrowthModeling>
+2. <doc:3.2-ForecastingGuide>
+3. <doc:3.3-BuildingRevenueModel>
+4. <doc:3.4-BuildingFinancialReports>
+5. <doc:3.5-FinancialStatementsGuide>
 
-### For Investment Analysts:
-1. <doc:3.8-InvestmentAnalysis> - Core valuation metrics
-2. <doc:3.9-EquityValuationGuide> - Equity valuation methods
-3. <doc:3.10-BondValuationGuide> - Fixed income analysis
-4. <doc:3.1-GrowthModeling> - Growth projection techniques
-5. <doc:3.12-RealOptionsGuide> - Optionality and flexibility
+**For Investment Analysts:**
+1. <doc:3.8-InvestmentAnalysis>
+2. <doc:3.9-EquityValuationGuide>
+3. <doc:3.10-BondValuationGuide>
+4. <doc:3.1-GrowthModeling>
+5. <doc:3.12-RealOptionsGuide>
 
-### For Corporate Finance:
-1. <doc:3.13-EquityFinancingGuide> - Equity capital structure
-2. <doc:3.14-DebtAndFinancingGuide> - Debt financing and WACC
-3. <doc:3.7-LoanAmortization> - Debt schedules
-4. <doc:3.6-LeaseAccountingGuide> - Lease obligations
-5. <doc:3.5-FinancialStatementsGuide> - Integrated financial models
+**For Corporate Finance:**
+1. <doc:3.13-EquityFinancingGuide>
+2. <doc:3.14-DebtAndFinancingGuide>
+3. <doc:3.7-LoanAmortization>
+4. <doc:3.6-LeaseAccountingGuide>
+5. <doc:3.5-FinancialStatementsGuide>
 
-### For Quantitative Finance:
-1. <doc:3.10-BondValuationGuide> - Fixed income mathematics
-2. <doc:3.11-CreditDerivativesGuide> - Credit modeling
-3. <doc:3.12-RealOptionsGuide> - Options mathematics
-4. <doc:3.9-EquityValuationGuide> - Equity valuation theory
-5. <doc:3.2-ForecastingGuide> - Time series forecasting
+**For Quantitative Finance:**
+1. <doc:3.10-BondValuationGuide>
+2. <doc:3.11-CreditDerivativesGuide>
+3. <doc:3.12-RealOptionsGuide>
+4. <doc:3.9-EquityValuationGuide>
+5. <doc:3.2-ForecastingGuide>
 
 ## Key Concepts
 
@@ -188,9 +182,9 @@ Create integrated financial models for strategic planning. Model different growt
 
 After mastering financial modeling:
 
-- **Add Uncertainty** (<doc:Part4-Simulation>) - Model risk and uncertainty with Monte Carlo simulation
-- **Optimize Decisions** (<doc:Part5-Optimization>) - Find optimal strategies using mathematical optimization
-- **Analyze Scenarios** (<doc:4.2-ScenarioAnalysisGuide>) - Structured scenario planning and stress testing
+- **Add Uncertainty** (<doc:Part4-Simulation>): Model risk and uncertainty with Monte Carlo simulation
+- **Optimize Decisions** (<doc:Part5-Optimization>): Find optimal strategies using mathematical optimization
+- **Analyze Scenarios** (<doc:4.2-ScenarioAnalysisGuide>): Structured scenario planning and stress testing
 
 ## Common Questions
 
@@ -212,7 +206,7 @@ Use multiple methods and triangulate. DCF is powerful but assumption-heavy. Comp
 
 ## Related Topics
 
-- <doc:Part2-Analysis> - Analytical techniques for model validation
-- <doc:Part4-Simulation> - Monte Carlo simulation for uncertainty quantification
-- <doc:Part5-Optimization> - Portfolio optimization and constrained optimization
-- <doc:2.1-DataTableAnalysis> - Sensitivity analysis for your models
+- <doc:Part2-Analysis>
+- <doc:Part4-Simulation>
+- <doc:Part5-Optimization>
+- <doc:2.1-DataTableAnalysis>

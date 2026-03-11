@@ -124,7 +124,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// assert(salesTaxCF.cashFlowRole?.usesChangeInBalance == true)
     /// ```
     ///
-    /// - SeeAlso: ``BalanceSheetRole/salesTaxPayable`` for the corresponding balance sheet role
+    /// - SeeAlso: ``BalanceSheetRole/salesTaxPayable``
     case changeInSalesTaxPayable
 
     /// Change in payroll liabilities (working capital)
@@ -159,7 +159,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// )
     /// ```
     ///
-    /// - SeeAlso: ``BalanceSheetRole/payrollLiabilities`` for the corresponding balance sheet role
+    /// - SeeAlso: ``BalanceSheetRole/payrollLiabilities``
     case changeInPayrollLiabilities
 
     /// Change in customer deposits (working capital)
@@ -193,7 +193,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// )
     /// ```
     ///
-    /// - SeeAlso: ``BalanceSheetRole/customerDeposits`` for the corresponding balance sheet role
+    /// - SeeAlso: ``BalanceSheetRole/customerDeposits``
     case changeInCustomerDeposits
 
     /// Change in accrued expenses (working capital)
@@ -362,8 +362,8 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// assert(locDraw.cashFlowRole?.isFinancingActivity == true)
     /// ```
     ///
-    /// - SeeAlso: ``BalanceSheetRole/lineOfCredit`` for the corresponding balance sheet role
-    /// - SeeAlso: ``repaymentOfLineOfCredit`` for the opposite cash flow
+    /// - SeeAlso: ``BalanceSheetRole/lineOfCredit``
+    /// - SeeAlso: ``repaymentOfLineOfCredit``
     case drawOnLineOfCredit
 
     /// Repayment of line of credit
@@ -390,8 +390,8 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// assert(locRepay.cashFlowRole?.isFinancingActivity == true)
     /// ```
     ///
-    /// - SeeAlso: ``BalanceSheetRole/lineOfCredit`` for the corresponding balance sheet role
-    /// - SeeAlso: ``drawOnLineOfCredit`` for the opposite cash flow
+    /// - SeeAlso: ``BalanceSheetRole/lineOfCredit``
+    /// - SeeAlso: ``drawOnLineOfCredit``
     case repaymentOfLineOfCredit
 
     // ═══════════════════════════════════════════════════════════

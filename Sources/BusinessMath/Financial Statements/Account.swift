@@ -190,8 +190,8 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	///
 	/// Setting `isFixedCost = true` automatically sets `isVariableCost = false`.
 	///
-	/// - SeeAlso: ``isVariableCost`` for the complementary classification
-	/// - SeeAlso: ``IncomeStatement/contributionMargin`` for usage in analysis
+	/// - SeeAlso: ``isVariableCost``
+	/// - SeeAlso: ``IncomeStatement/contributionMargin``
 	public var isFixedCost: Bool? {
 		didSet {
 			if isFixedCost == true {
@@ -233,8 +233,8 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	///
 	/// Setting `isVariableCost = true` automatically sets `isFixedCost = false`.
 	///
-	/// - SeeAlso: ``isFixedCost`` for the complementary classification
-	/// - SeeAlso: ``IncomeStatement/contributionMargin`` for usage in analysis
+	/// - SeeAlso: ``isFixedCost``
+	/// - SeeAlso: ``IncomeStatement/contributionMargin``
 	public var isVariableCost: Bool? {
 		didSet {
 			if isVariableCost == true {

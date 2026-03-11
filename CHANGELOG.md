@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [2.0.0] - 2026-03-10
+
+**Version 2.0.0** is a major release featuring a complete redesign of the financial statement architecture, extensive new optimization capabilities, GPU acceleration, comprehensive documentation reorganization, and significant test suite expansion.
 
 #### 📊 Additional Operator Helpers (v2.0.0-beta.6)
 
@@ -924,10 +926,6 @@ This release includes **9 comprehensive commits** implementing Topic 10 developm
 - Phase 4: Developer Tools (1 commit, 29 tests)
 - Phase 5: Performance Optimization (1 commit, 29 tests)
 - Phase 7: Documentation & Examples (1 commit, 12 tests)
-
-**🤖 Generated with [Claude Code](https://claude.com/claude-code)**
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 
 ---
 
@@ -3997,18 +3995,20 @@ This is the initial production release of BusinessMath, featuring comprehensive 
 
 This is the initial release. No migration required.
 
-## [Unreleased]
+## Future Enhancements
 
-### Planned Enhancements
+### Completed in v2.0.0
+- ✅ Additional statistical functions (correlation, covariance)
+- ✅ Polynomial trend models
+- ✅ Monte Carlo simulation framework (with GPU acceleration)
+- ✅ CSV/JSON import/export for time series
+
+### Remaining Opportunities
 - Optimize time series initialization (O(n²) → O(n))
 - Optimize Period.next() with caching
 - Moving average circular buffer implementation
 - Hero images for documentation
 - Web-hosted documentation export
-- Additional statistical functions (correlation, covariance)
-- Polynomial trend models
-- Monte Carlo simulation framework
-- CSV/JSON import/export for time series
 
 ---
 

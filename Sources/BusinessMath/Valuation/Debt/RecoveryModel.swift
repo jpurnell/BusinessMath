@@ -32,7 +32,7 @@ import Numerics
 /// - Jurisdiction (bankruptcy laws)
 /// - Company-specific factors (asset quality, going concern value)
 ///
-/// - SeeAlso: ``RecoveryModel`` for recovery rate calculations
+/// - SeeAlso: ``RecoveryModel``
 public enum Seniority: Sendable, CaseIterable {
     /// Senior secured debt - highest priority, backed by collateral
     ///

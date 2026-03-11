@@ -1108,7 +1108,7 @@ extension VectorN {
 /// - The dot product is multiplication
 ///
 /// ## See Also
-/// - ``Float`` for single-precision scalar vector space
+/// - ``Float``
 extension Double: VectorSpace {
 	/// The scalar type is Double itself.
 	public typealias Scalar = Double

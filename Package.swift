@@ -88,6 +88,11 @@ var targets: [Target] = [
 			"Simulation/MonteCarlo/GPU/MonteCarloDistributions.metal",
 			"Statistics/Regression/MatrixOperations/MatrixOperations.metal"
 		],
+		cSettings: [
+			// Use new Accelerate LAPACK interface (macOS 13.3+) to silence deprecation warnings
+			.define("ACCELERATE_NEW_LAPACK"),
+			.define("ACCELERATE_LAPACK_ILP64")
+		],
 		swiftSettings: [
 			.enableUpcomingFeature("StrictConcurrency")
 		]
@@ -116,7 +121,6 @@ var targets: [Target] = [
 	),
 
 	// Tests (core)
-	// Swift Testing requires iOS 16+, macOS 13+, tvOS 16+, watchOS 9+
 	.testTarget(
 		name: "BusinessMathTests",
 		dependencies: [
@@ -173,11 +177,10 @@ var targets: [Target] = [
 let package = Package(
 	name: "BusinessMath",
 	platforms: [
-		// Swift Testing requires iOS 16+, macOS 13+, tvOS 16+, watchOS 9+
-		.iOS(.v16),
-		.macOS(.v13),
-		.tvOS(.v16),
-		.watchOS(.v9),
+		.iOS(.v17),
+		.macOS(.v14),
+		.tvOS(.v17),
+		.watchOS(.v10),
 		.visionOS(.v1)
 	],
 	products: products,

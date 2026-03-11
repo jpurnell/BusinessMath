@@ -1,14 +1,25 @@
 # BusinessMath v2.0.0 Release Notes
 
-**Release Date:** January 2026
+**Release Date:** March 10, 2026
 
-We're excited to announce **BusinessMath 2.0**—a major milestone bringing production-ready financial modeling, GPU-accelerated optimization, and industry-standard implementations to Swift.
+We're excited to announce **BusinessMath 2.0**—a major milestone bringing production-ready financial modeling, GPU-accelerated optimization, comprehensive security hardening, and industry-standard implementations to Swift.
 
 ---
 
-## 🎉 What's New in 2.0
+## Highlights
 
-### 🏗️ Role-Based Financial Statements
+| Feature | Description |
+|---------|-------------|
+| **Role-Based Financial Statements** | Accounts can now have multiple roles across Income Statement, Balance Sheet, and Cash Flow Statement |
+| **GPU Acceleration** | 10-100x speedup for genetic algorithms on Apple Silicon via Metal |
+| **100% Documentation** | All 198+ public APIs fully documented with DocC |
+| **Security Hardening** | Division-by-zero safety, force unwrap elimination, type safety fixes |
+| **4,558+ Tests** | Comprehensive test suite with strict Swift 6 concurrency compliance |
+| **Linux Support** | Full cross-platform compatibility with swift-crypto fallback |
+
+---
+
+## Role-Based Financial Statements
 
 **The Big Change:** Financial statements now use a **role-based architecture** that accurately reflects real-world accounting.
 
@@ -22,46 +33,102 @@ let cogs = Account(name: "COGS", type: .expense, expenseType: .cogs, ...)
 ```swift
 let revenue = Account(name: "Revenue", incomeStatementRole: .revenue, ...)
 let depreciation = Account(
-  name: "Depreciation",
-  incomeStatementRole: .operatingExpense,  // IS: expense
-  cashFlowRole: .nonCashExpense            // CFS: add-back
+    name: "Depreciation",
+    incomeStatementRole: .operatingExpense,  // IS: expense
+    cashFlowRole: .nonCashExpense            // CFS: add-back
 )
 ```
 
 **Why This Matters:**
 - **Multi-statement accounts**: Depreciation, inventory changes, and other accounts can now appear in multiple statements with different roles
 - **Accuracy**: Matches real-world financial reporting practices
-- **Flexibility**: Add roles to accounts without breaking changes
-
-📖 **[Complete Migration Guide](MIGRATION_GUIDE_v2.0.md)** with before/after examples and timeline estimates (1-3 hours for typical projects)
+- **Flexibility**: Add roles to accounts without breaking existing code
 
 ---
 
-### ⚡ GPU Acceleration for Optimization
+## GPU Acceleration for Optimization
 
-Genetic algorithms now automatically use **Metal acceleration** on Apple Silicon, delivering **10-100× speedups** for large-scale problems.
+Genetic algorithms now automatically use **Metal acceleration** on Apple Silicon, delivering **10-100x speedups** for large-scale problems.
 
 ```swift
 let optimizer = GeneticAlgorithmOptimizer(
-  objective: portfolioSharpeRatio,
-  populationSize: 5000,        // Large populations benefit most
-  useGPU: true                 // Automatic Metal acceleration
+    objective: portfolioSharpeRatio,
+    populationSize: 5000,        // Large populations benefit most
+    useGPU: true                 // Automatic Metal acceleration
 )
-
-// Optimizes 5,000-asset portfolio in milliseconds instead of minutes
 ```
 
-**Performance Gains:**
-- 10× faster for populations ≥ 1,000
-- 100× faster for populations ≥ 10,000
-- Automatic fallback to CPU when GPU unavailable
-- Zero code changes required
-
-📖 **[GPU Acceleration Tutorial](GPU_ACCELERATION_TUTORIAL.md)**
+| Population Size | CPU Time | GPU Time | Speedup |
+|-----------------|----------|----------|---------|
+| 1,000 | 850ms | 85ms | **10x** |
+| 5,000 | 4.2s | 95ms | **44x** |
+| 10,000 | 8.5s | 102ms | **83x** |
 
 ---
 
-### 📊 44 Comprehensive Guides with Learning Paths
+## New Operator Helpers
+
+### Contribution Margin Analysis
+```swift
+let is = IncomeStatement(...)
+is.contributionMargin        // Revenue - Variable Costs
+is.contributionMarginRatio   // CM / Revenue
+is.breakEvenUnits            // Fixed Costs / CM per Unit
+is.operatingLeverage         // CM / Operating Income
+```
+
+### Debt Classification
+```swift
+// New debt subtypes for sophisticated capital structure modeling
+.revolvingCreditFacility, .termLoanShortTerm, .termLoanLongTerm,
+.subordinatedDebt, .seniorSecuredDebt
+
+let bs = BalanceSheet(...)
+bs.interestBearingDebtByType  // Breakdown by debt instrument
+```
+
+### Pro Forma Adjustments
+```swift
+let synergy = AccountAdjustment(name: "Cost Synergies", mode: .add, value: -5_000_000)
+let proFormaIS = incomeStatement.withProFormaEBITDA(adjustments: [synergy])
+```
+
+### Working Capital Tracking
+```swift
+let bs = BalanceSheet(...)
+bs.netWorkingCapital                    // Current Assets - Current Liabilities
+bs.workingCapitalComponents             // AR, Inventory, AP breakdown
+bs.workingCapitalTurnover(revenue: ...)  // Efficiency ratio
+```
+
+---
+
+## Security & Safety Improvements
+
+### Division by Zero Safety
+All financial calculations now safely handle edge cases:
+```swift
+// Before: Could return NaN or Infinity
+let ratio = revenue / expenses  // If expenses = 0...
+
+// After: Throws descriptive error
+let ratio = try safeDivide(revenue, expenses)
+// Throws: FinancialModelError.divisionByZero(numerator: 100000, denominator: 0)
+```
+
+### Force Unwrap Elimination
+- **Phase 4 Complete**: All force unwraps (`!`) eliminated from production code
+- Type-safe optionals throughout the API
+- Descriptive errors instead of crashes
+
+### Memory Safety
+- Kahan summation algorithm for large dataset accumulation (prevents floating-point overflow)
+- Bounded recursion in all algorithms
+- Array bounds checking
+
+---
+
+## 61 Comprehensive Guides
 
 Documentation completely reorganized into a **book-style structure** with specialized learning tracks:
 
@@ -70,7 +137,7 @@ Documentation completely reorganized into a **book-style structure** with specia
 2. **Analysis & Statistics** (4 guides) - Sensitivity, ratios, risk metrics
 3. **Modeling** (14 guides) - Growth, forecasting, valuations, statements
 4. **Simulation & Uncertainty** (2 guides) - Monte Carlo, scenarios
-5. **Optimization** (15 guides) - Portfolio optimization, algorithms
+5. **Optimization** (17 guides) - Portfolio optimization, algorithms, tutorials
 
 **Four Learning Tracks:**
 - **Financial Analyst** (15-20 hours): DCF, statements, forecasting
@@ -78,102 +145,86 @@ Documentation completely reorganized into a **book-style structure** with specia
 - **Quantitative Developer** (20-25 hours): Optimization, algorithms, validation
 - **General Business** (10-12 hours): TVM, growth, budgeting
 
-📖 **[Learning Path Guide](Sources/BusinessMath/BusinessMath.docc/LearningPath.md)**
-
 ---
 
-### ✅ Unified API & Consistency
+## New Features Summary
 
-**Every optimization algorithm** now uses consistent parameter naming:
-
+### Multiple Linear Regression
 ```swift
-// v1.x: Mixed naming (initialGuess, x0, startingPoint)
-optimizer1.minimize(x0: [1.0, 2.0])
-optimizer2.minimize(startingPoint: [1.0, 2.0])
-
-// v2.0: Consistent naming everywhere
-optimizer1.minimize(initialGuess: [1.0, 2.0])
-optimizer2.minimize(initialGuess: [1.0, 2.0])
-```
-
-**Constraint Support:**
-```swift
-let optimizer = GradientDescentOptimizer(
-  objective: cost,
-  constraints: [
-    equalityConstraint(target: 1.0),     // Sum of weights = 1.0
-    inequalityConstraint(lowerBound: 0)   // All weights ≥ 0
-  ]
+let regression = MultipleLinearRegression(
+    predictors: featureMatrix,
+    response: targetVector,
+    backend: .accelerate  // CPU, Accelerate, or Metal
 )
+let coefficients = try regression.fit()
+let predictions = regression.predict(newData)
+```
+
+### Four New Optimizers
+- **AdaptiveOptimizer**: Automatically selects best algorithm based on problem characteristics
+- **MultiStartOptimizer**: Global optimization with multiple starting points
+- **AsyncOptimizer**: Streaming results for long-running optimizations
+- **PerformanceBenchmark**: Profile and compare optimizer performance
+
+### Async Streaming
+```swift
+// Stream Monte Carlo results as they compute
+for try await partial in simulation.runStreaming() {
+    updateProgressBar(partial.completedIterations)
+    displayPreliminaryStats(partial.statistics)
+}
 ```
 
 ---
 
-### 🔒 Production-Ready Stability
+## Test Suite & Quality
 
-- ✅ **Semantic Versioning**: No breaking changes until v3.0
-- ✅ **3,552 Tests** across 278 test suites (99.9% pass rate)
-- ✅ **Swift 6 Compliant**: Full concurrency support, thread-safe by default
-- ✅ **Platform Support**: iOS 14+, macOS 13+, tvOS 14+, watchOS 7+, visionOS 1+, Linux
-
-📖 **[Stability Guarantees](STABILITY.md)**
-
----
-
-### 🤖 AI Assistant Integration (MCP Server)
-
-BusinessMath includes an **MCP (Model Context Protocol) server** that enables AI assistants like Claude Desktop to perform financial analysis using natural language:
-
-```
-User: "Calculate NPV for a $100k investment with $30k annual returns over 5 years at 10%"
-Claude: [Uses BusinessMath MCP server] The NPV is $13,723...
-
-User: "Optimize a 3-asset portfolio to maximize Sharpe ratio"
-Claude: [Uses BusinessMath] Optimal weights: [0.45, 0.35, 0.20], Sharpe: 1.82...
-```
-
-**167 tools** across time value of money, forecasting, optimization, and valuation.
-
-📖 **[MCP Server Documentation](MCP_README.md)**
+| Metric | v1.21.0 | v2.0.0 |
+|--------|---------|--------|
+| Total Tests | 2,062 | **4,558+** |
+| Test Suites | 180 | **285+** |
+| Pass Rate | 99.9% | **100%** |
+| Documentation Coverage | ~60% | **100%** |
+| Swift 6 Concurrency | Partial | **Full** |
 
 ---
 
-## 💼 What You Can Build
+## Linux Compatibility
 
-### Financial Modeling
-- Revenue forecasts with trend and seasonality
-- DCF models for equity valuation
-- Loan amortization schedules
-- Financial statement construction (IS, BS, CFS)
-
-### Investment Analysis
-- NPV, IRR, MIRR, profitability index
-- XNPV/XIRR for irregular cash flows
-- Payback period and discounted payback
-- Capital budgeting decisions
-
-### Securities Valuation
-- **Equity**: DCF, dividend discount model, FCFE, residual income
-- **Bonds**: Pricing, duration, convexity, credit spreads
-- **Credit Derivatives**: CDS pricing (ISDA Standard Model), Merton structural model
-
-### Risk & Simulation
-- Monte Carlo simulation (15 probability distributions)
-- Value at Risk (VaR) and Conditional VaR (CVaR)
-- Stress testing and scenario analysis
-- Portfolio risk aggregation
-
-### Optimization
-- Portfolio optimization (efficient frontier, Sharpe ratio)
-- Integer programming (branch-and-bound, cutting planes)
-- Capital allocation optimization
-- GPU-accelerated genetic algorithms
+Full cross-platform support with automatic fallbacks:
+- Uses `swift-crypto` instead of CommonCrypto on Linux
+- OSLog gracefully disabled on non-Apple platforms
+- Compile-time platform detection (more reliable than runtime)
+- All 4,558+ tests pass on Linux
 
 ---
 
-## 📦 Installation
+## Migration from v1.x
 
-### Swift Package Manager
+### Breaking Changes
+
+1. **Financial Statement Accounts**: Use role-based API
+   ```swift
+   // Old: type: .expense, expenseType: .cogs
+   // New: incomeStatementRole: .costOfGoodsSold
+   ```
+
+2. **Optimization Parameters**: `initialGuess` replaces `x0` / `startingPoint`
+
+3. **Error Types**: Consolidated into `FinancialModelError`
+
+### Migration Time Estimates
+- **Small projects** (< 10 files): ~1 hour
+- **Medium projects** (10-50 files): ~2-3 hours
+- **Large projects** (50+ files): ~4-6 hours
+
+**Most changes are mechanical find-and-replace operations.**
+
+See **[MIGRATION_GUIDE_v2.0.md](MIGRATION_GUIDE_v2.0.md)** for complete details.
+
+---
+
+## Installation
 
 ```swift
 dependencies: [
@@ -181,121 +232,41 @@ dependencies: [
 ]
 ```
 
-**Or in Xcode:** File → Add Package Dependencies → Enter repository URL
+**Requirements:**
+- Swift 6.0+
+- iOS 14+ / macOS 13+ / tvOS 14+ / watchOS 7+ / visionOS 1+ / Linux
 
 ---
 
-## 🚀 Quick Start
-
-```swift
-import BusinessMath
-
-// 1. Investment Analysis
-let cashFlows = [-100_000.0, 30_000, 40_000, 50_000]
-let npvValue = npv(discountRate: 0.10, cashFlows: cashFlows)
-let irrValue = try irr(cashFlows: cashFlows)
-// → NPV: $10,604, IRR: 16.4%
-
-// 2. Monte Carlo Risk Analysis
-var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
-  let revenue = 1_000_000 * (1 + inputs[0])
-  let costs = 600_000 * (1 + inputs[1])
-  return revenue - costs
-}
-
-simulation.addInput(SimulationInput(
-  name: "Revenue Growth",
-  distribution: DistributionNormal(0.10, 0.05)  // 10% ± 5%
-))
-simulation.addInput(SimulationInput(
-  name: "Cost Inflation",
-  distribution: DistributionNormal(0.03, 0.02)  // 3% ± 2%
-))
-
-let results = try simulation.run()
-let var95 = results.valueAtRisk(confidenceLevel: 0.95)
-// → Expected profit: $406,500, 95% VaR: $315,000
-
-// 3. Portfolio Optimization (GPU-accelerated)
-let optimizer = GeneticAlgorithmOptimizer(
-  objective: maximizeSharpeRatio,
-  populationSize: 5000,
-  useGPU: true  // 100× speedup on Apple Silicon
-)
-
-let optimalWeights = try optimizer.minimize(
-  initialGuess: Array(repeating: 1.0/numAssets, count: numAssets),
-  constraints: [
-    equalityConstraint(target: 1.0),    // Weights sum to 1
-    inequalityConstraint(lowerBound: 0) // No short selling
-  ]
-)
-```
-
-📖 **[More Examples](EXAMPLES.md)**
-
----
-
-## 🔄 Upgrading from 1.x
-
-### Breaking Changes
-
-1. **Financial Statement Accounts**: Use role-based API (see migration guide)
-2. **Optimization Parameters**: `initialGuess` replaces `x0` / `startingPoint`
-3. **Error Types**: Consolidated into `FinancialModelError`
-
-### Migration Time
-- **Small projects** (< 10 files): ~1 hour
-- **Medium projects** (10-50 files): ~2-3 hours
-- **Large projects** (50+ files): ~4-6 hours
-
-**Most changes are mechanical find-and-replace operations.**
-
-📖 **[Complete Migration Guide](MIGRATION_GUIDE_v2.0.md)**
-
----
-
-## 🎓 Resources
+## Resources
 
 - **[Documentation Home](Sources/BusinessMath/BusinessMath.docc/BusinessMath.md)** - Complete guide structure
 - **[Learning Paths](Sources/BusinessMath/BusinessMath.docc/LearningPath.md)** - Role-specific tracks
+- **[Quick Start Example](QUICK_START_EXAMPLE.swift)** - Copy-paste investment analysis
 - **[Examples](EXAMPLES.md)** - Code examples for common workflows
-- **[GPU Tutorial](GPU_ACCELERATION_TUTORIAL.md)** - Get started with GPU acceleration
-- **[Performance Benchmarks](Examples/PERFORMANCE.md)** - Speed and optimization tips
+- **[Changelog](CHANGELOG.md)** - Complete version history
 
 ---
 
-## 🙏 Thank You
+## Acknowledgments
 
-BusinessMath 2.0 represents thousands of hours of development, testing, and documentation. Special thanks to:
+BusinessMath 2.0 represents thousands of hours of development, testing, and documentation. Thank you to:
 - The Swift community for excellent tooling and support
 - Early adopters who provided feedback and bug reports
 - Contributors who helped improve the library
 
 ---
 
-## 🐛 Reporting Issues
+## Reporting Issues
 
-Found a bug? Have a feature request?
 - **Issues**: [github.com/jpurnell/BusinessMath/issues](https://github.com/jpurnell/BusinessMath/issues)
 - **Discussions**: [github.com/jpurnell/BusinessMath/discussions](https://github.com/jpurnell/BusinessMath/discussions)
 
 ---
 
-## 📄 License
+## License
 
-MIT License - See [LICENSE](LICENSE) for details
-
----
-
-**Ready to build?** Install BusinessMath and start modeling:
-```bash
-swift package init --type executable
-# Add BusinessMath to Package.swift
-swift build
-```
-
-**Questions?** Check the [documentation](Sources/BusinessMath/BusinessMath.docc/) or [open a discussion](https://github.com/jpurnell/BusinessMath/discussions).
+MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 

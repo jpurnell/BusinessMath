@@ -155,7 +155,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// assert(salesTax.balanceSheetRole?.isWorkingCapital == true)
     /// ```
     ///
-    /// - SeeAlso: ``CashFlowRole/changeInSalesTaxPayable`` for cash flow statement impact
+    /// - SeeAlso: ``CashFlowRole/changeInSalesTaxPayable``
     case salesTaxPayable
 
     /// Payroll liabilities (wages payable, payroll taxes withheld)
@@ -184,7 +184,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ```
     ///
     ///
-    /// - SeeAlso: ``CashFlowRole/changeInPayrollLiabilities`` for cash flow impact
+    /// - SeeAlso: ``CashFlowRole/changeInPayrollLiabilities``
     case payrollLiabilities
 
     /// Line of credit (revolving credit facility)
@@ -215,7 +215,8 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ```
     ///
     ///
-    /// - SeeAlso: ``CashFlowRole/drawOnLineOfCredit``, ``CashFlowRole/repaymentOfLineOfCredit`` for cash flow impacts
+    /// - SeeAlso: ``CashFlowRole/drawOnLineOfCredit``
+    /// - SeeAlso: ``CashFlowRole/repaymentOfLineOfCredit``
     case lineOfCredit
 
     /// Customer deposits and prepayments
@@ -246,7 +247,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ```
     ///
     ///
-    /// - SeeAlso: ``CashFlowRole/changeInCustomerDeposits`` for cash flow impact
+    /// - SeeAlso: ``CashFlowRole/changeInCustomerDeposits``
     case customerDeposits
 
     /// Loans from business owners
@@ -321,7 +322,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// assert(revolver.balanceSheetRole?.isDebt == true)
     /// ```
     ///
-    /// - SeeAlso: ``lineOfCredit`` for SMB-specific revolvers
+    /// - SeeAlso: ``lineOfCredit``
     case revolvingCreditFacility
 
     /// Term loan - short term (maturity < 1 year)

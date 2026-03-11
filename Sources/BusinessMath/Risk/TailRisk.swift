@@ -2,7 +2,7 @@
 //  TailRisk.swift
 //  BusinessMath
 //
-//  Created by Claude on 2026-02-20.
+//  Created by Justin Purnell on 2026-02-20.
 //
 
 import Foundation
@@ -42,9 +42,9 @@ import Numerics
 ///
 /// ## See Also
 ///
-/// - ``ValueAtRisk`` - Loss threshold at confidence level
-/// - ``ConditionalValueAtRisk`` - Average loss beyond VaR
-/// - ``Kurtosis`` - Measures tail thickness of distribution
+/// - ``ValueAtRisk``
+/// - ``ConditionalValueAtRisk``
+/// - ``Kurtosis``
 public struct TailRisk {
 
 	/// Calculate tail risk ratio (CVaR / VaR).

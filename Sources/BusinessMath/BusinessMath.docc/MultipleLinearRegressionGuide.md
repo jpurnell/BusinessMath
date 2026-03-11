@@ -530,9 +530,9 @@ BusinessMath automatically selects the fastest backend based on matrix size:
 - **Diagnostics**: Understanding regression diagnostics and residual analysis
 - **Advanced Topics**: Regularization (Ridge/Lasso), polynomial features, interaction terms
 - **Related Topics**:
-  - <doc:2.1-DataTableAnalysis> - Sensitivity analysis for exploring model assumptions
-  - <doc:3.1-GrowthModeling> - Trend fitting with exponential and logistic models
-  - <doc:4.1-MonteCarloTimeSeriesGuide> - Uncertainty quantification for predictions
+  - <doc:2.1-DataTableAnalysis>
+  - <doc:3.1-GrowthModeling>
+  - <doc:4.1-MonteCarloTimeSeriesGuide>
 
 ## Summary
 

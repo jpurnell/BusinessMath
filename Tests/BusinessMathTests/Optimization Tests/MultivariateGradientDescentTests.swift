@@ -2,7 +2,7 @@
 //  MultivariateGradientDescentTests.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 12/03/25.
+//  Created by Justin Purnell on 12/03/25.
 //
 
 import Foundation

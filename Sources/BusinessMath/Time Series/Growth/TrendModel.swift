@@ -31,10 +31,10 @@ import Numerics
 ///
 /// ## Available Trend Models
 ///
-/// - ``LinearTrend``: Constant rate of change (straight line)
-/// - ``ExponentialTrend``: Accelerating or decelerating growth (exponential curve)
-/// - ``LogisticTrend``: S-curve approaching a maximum capacity
-/// - ``CustomTrend``: User-defined trend function
+/// - ``LinearTrend``
+/// - ``ExponentialTrend``
+/// - ``LogisticTrend``
+/// - ``CustomTrend``
 ///
 /// ## When to Use Each Model
 ///
@@ -238,21 +238,6 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 		return "LinearTrend: y = \(slope)x + \(intercept) (fitted on \(fittedDataCount) data points)"
 	}
 
-	/// Fit the linear trend model to historical time series data.
-	///
-	/// Uses least-squares linear regression to find the best-fit line through the data.
-	/// The model equation is: y = mx + b, where m is slope and b is intercept.
-	///
-	/// - Parameter timeSeries: Historical data to fit (requires at least 2 points)
-	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points
-	///
-	/// ## Example
-	/// ```swift
-	/// var model = LinearTrend<Double>()
-	/// let revenue = TimeSeries(periods: [...], values: [100000, 110000, 121000])
-	/// try model.fit(to: revenue)
-	/// print("Slope: \(model.slopeValue ?? 0)")  // Growth per period
-	/// ```
 	/// Fit the linear trend model to a generic array of values.
 	///
 	/// This method performs linear regression using array indices as x-values.

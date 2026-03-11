@@ -49,8 +49,7 @@ public protocol TimeSeriesEntry<Value>: Sendable {
 /// - API availability: `buildLimitedAvailability`
 ///
 /// ## See Also
-/// - ``TimeSeries/init(builder:)`` for using this builder
-/// - `=>` operator for creating entries with arrow syntax (e.g., `Period.year(2023) => 1000`)
+/// - ``TimeSeries/init(builder:)``
 @resultBuilder
 public struct TimeSeriesBuilder<T: Real & Sendable> {
     /// Build a block of time series entries.
@@ -107,8 +106,8 @@ public struct TimeSeriesBuilder<T: Real & Sendable> {
 /// ```
 ///
 /// ## See Also
-/// - ``init(period:value:)`` for arrow operator syntax
-/// - ``TimeSeriesEntry`` protocol
+/// - ``init(period:value:)``
+/// - ``TimeSeriesEntry``
 public struct TimeSeriesEntryImpl<T: Real & Sendable>: TimeSeriesEntry, Sendable {
     /// The time period for this entry (year, quarter, month, etc.).
     public let period: Period
@@ -221,9 +220,9 @@ public struct TimeSeriesProjection<T: Real & Sendable>: Sendable {
 /// ```
 ///
 /// ## See Also
-/// - ``starting(at:)`` for setting initial value
-/// - ``growing(by:)`` for setting growth rate
-/// - ``custom(generator:)`` for custom generation logic
+/// - ``starting(at:)``
+/// - ``growing(by:)``
+/// - ``custom(generator:)``
 @resultBuilder
 public struct ProjectionBuilder<T: Real & Sendable> {
     /// Build a projection from components.
@@ -375,7 +374,7 @@ extension TimeSeries where T: Real & Sendable {
 /// ```
 ///
 /// ## See Also
-/// - ``Entry(_:)`` for creating entries in a builder context
+/// - ``Entry(_:)``
 /// - ``buildTimeSeries(startingAt:builder:)``
 public struct SimpleEntry<T: Real & Sendable>: Sendable {
     /// The numeric value for this entry.

@@ -2,7 +2,7 @@
 //  PlatformSupport.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 2025-02-24.
+//  Created by Justin Purnell on 2025-02-24.
 //
 
 import Foundation

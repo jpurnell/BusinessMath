@@ -82,8 +82,8 @@ public struct CapTable {
         ///
         /// Anti-dilution provisions protect investors from dilution in down rounds.
         /// Common types:
-        /// - ``AntiDilutionType/fullRatchet``: Full protection (more favorable to investor)
-        /// - ``AntiDilutionType/weightedAverage``: Partial protection (more balanced)
+        /// - ``AntiDilutionType/fullRatchet``
+        /// - ``AntiDilutionType/weightedAverage``
         ///
         /// Typically only present for preferred shares. Common shares don't have anti-dilution rights.
         public let antiDilution: AntiDilutionType?
@@ -469,8 +469,8 @@ public struct OptionGrant {
     /// Vesting schedule defining how options vest over time.
     ///
     /// Common schedules:
-    /// - ``VestingSchedule/standard``: 4 years with 1 year cliff (25% after year 1, then monthly)
-    /// - ``VestingSchedule/custom(years:cliffYears:)``: Custom vesting period and cliff
+    /// - ``VestingSchedule/standard``
+    /// - ``VestingSchedule/custom(years:cliffYears:)``
     ///
     /// If nil, uses simple linear vesting based on ``vestingYears``.
     public let vestingSchedule: VestingSchedule?
@@ -815,8 +815,8 @@ public struct SAFEConversion {
     /// more shares (lower price per share).
     ///
     /// ## Cases
-    /// - ``cap``: Valuation cap was lower, so SAFE used cap price
-    /// - ``seriesAPrice``: Series A price was lower (rare), so SAFE used that
+    /// - ``cap``
+    /// - ``seriesAPrice``
     ///
     /// ## Example
     /// ```swift

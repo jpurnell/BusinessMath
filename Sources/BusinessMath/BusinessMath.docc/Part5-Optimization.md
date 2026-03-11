@@ -22,70 +22,54 @@ This part takes you from simple goal-seeking (find the growth rate that achieves
 ## Chapters in This Part
 
 ### Fundamentals
-- <doc:5.1-OptimizationGuide> - Comprehensive guide from goal-seeking through business optimization
-- <doc:5.2-PortfolioOptimizationGuide> - Modern Portfolio Theory and efficient portfolios
+- <doc:5.1-OptimizationGuide>
+- <doc:5.2-PortfolioOptimizationGuide>
 
 ### Deep Dive: Optimization Phases
-This progressive tutorial series builds optimization capabilities from first principles:
-
-**Phase 1-2: Foundations**
-- <doc:5.3-CoreOptimization> - Goal-seeking API, root-finding, and constraint builders
-- <doc:5.4-VectorOperations> - Vector mathematics for multivariate problems
-
-**Phase 3-5: Core Algorithms**
-- <doc:5.5-MultivariateOptimization> - Gradient descent and Newton-Raphson methods
-- <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints
-- <doc:5.7-BusinessOptimization> - Resource allocation, production planning, financial model drivers
-
-**Phase 6-7: Advanced Techniques**
-- <doc:5.8-IntegerProgramming> - Branch-and-bound, branch-and-cut with cutting planes
-- <doc:5.9-AdaptiveSelection> - Automatic algorithm selection based on problem characteristics
-- <doc:5.10-ParallelOptimization> - Parallel multi-start for global optimum finding
-- <doc:5.11-PerformanceBenchmarking> - Performance testing and optimization
-
-**Phase 8: Specialized Applications**
-- <doc:5.12-SparseMatrix> - Efficient sparse matrix operations for large-scale problems
-- <doc:5.13-MultiPeriod> - Stochastic multi-period optimization
-- <doc:5.14-RobustOptimization> - Optimization under uncertainty
+- <doc:5.3-CoreOptimization>
+- <doc:5.4-VectorOperations>
+- <doc:5.5-MultivariateOptimization>
+- <doc:5.6-ConstrainedOptimization>
+- <doc:5.7-BusinessOptimization>
+- <doc:5.8-IntegerProgramming>
+- <doc:5.9-AdaptiveSelection>
+- <doc:5.10-ParallelOptimization>
+- <doc:5.11-PerformanceBenchmarking>
+- <doc:5.12-SparseMatrix>
+- <doc:5.13-MultiPeriod>
+- <doc:5.14-RobustOptimization>
 
 ### Specialized Topics
-- <doc:5.15-InequalityConstraints> - Detailed treatment of inequality constraint handling
+- <doc:5.15-InequalityConstraints>
 
 ## Prerequisites
 
-Optimization builds on everything you've learned:
-
-- **Essential**: Time series (<doc:1.2-TimeSeries>), financial calculations (<doc:1.3-TimeValueOfMoney>)
-- **Important**: Financial modeling (<doc:Part3-Modeling>) - You need models to optimize
-- **Helpful**: Risk analytics (<doc:2.3-RiskAnalyticsGuide>) - For risk-aware optimization
-- **For Advanced Topics**: Simulation (<doc:Part4-Simulation>) - For robust optimization
+Optimization builds on everything you've learned. Essential prerequisites include time series operations and financial calculations from Part I. Financial modeling from Part III is important since you need models to optimize. Risk analytics is helpful for risk-aware optimization, and simulation knowledge from Part IV is useful for advanced topics like robust optimization.
 
 Basic calculus (derivatives) helps for understanding gradient-based methods, but isn't strictly required—the library handles the mathematics.
 
 ## Suggested Reading Order
 
-### For Business Users (FP&A, Finance):
-1. <doc:5.1-OptimizationGuide> - Start with business optimization section (Phase 5)
-2. <doc:5.2-PortfolioOptimizationGuide> - Portfolio applications
-3. <doc:5.3-CoreOptimization> - Goal-seeking for financial models
-4. Stop here unless you need advanced techniques
+**For Business Users (FP&A, Finance):**
+1. <doc:5.1-OptimizationGuide>
+2. <doc:5.2-PortfolioOptimizationGuide>
+3. <doc:5.3-CoreOptimization>
 
-### For Quantitative Analysts:
-1. <doc:5.1-OptimizationGuide> - Complete overview
-2. <doc:5.3-CoreOptimization> through <doc:5.7-BusinessOptimization> - Core sequence
-3. <doc:5.2-PortfolioOptimizationGuide> - Portfolio applications
-4. Advanced phases as needed
+**For Quantitative Analysts:**
+1. <doc:5.1-OptimizationGuide>
+2. <doc:5.3-CoreOptimization>
+3. <doc:5.2-PortfolioOptimizationGuide>
 
-### For Optimization Specialists:
-- Read the Phase tutorials sequentially from 5.3 through 5.14
-- Each phase builds on previous phases
-- Complete all phases for comprehensive understanding
+**For Optimization Specialists:**
+1. <doc:5.3-CoreOptimization>
+2. <doc:5.4-VectorOperations>
+3. <doc:5.14-RobustOptimization>
 
-### For Portfolio Managers:
-1. <doc:5.2-PortfolioOptimizationGuide> - Start here
-2. <doc:5.1-OptimizationGuide> - Understand the optimization framework
-3. <doc:5.14-RobustOptimization> - Robustness under uncertainty
-4. <doc:2.3-RiskAnalyticsGuide> - Risk measurement
+**For Portfolio Managers:**
+1. <doc:5.2-PortfolioOptimizationGuide>
+2. <doc:5.1-OptimizationGuide>
+3. <doc:5.14-RobustOptimization>
+4. <doc:2.3-RiskAnalyticsGuide>
 
 ## Key Concepts
 
@@ -351,9 +335,9 @@ The adaptive selection system (<doc:5.9-AdaptiveSelection>) chooses algorithms b
 After mastering optimization:
 
 - **Apply to Real Problems**: Use optimization in your financial models and business decisions
-- **Combine with Simulation** (<doc:Part4-Simulation>) - Robust optimization under uncertainty
-- **Build Applications** - Create decision support tools using optimization
-- **Explore Case Studies** (<doc:Appendix-A-ReidsRaisinsExample>) - Real-world examples
+- **Combine with Simulation** (<doc:Part4-Simulation>): Robust optimization under uncertainty
+- **Build Applications**: Create decision support tools using optimization
+- **Explore Case Studies** (<doc:Appendix-A-ReidsRaisinsExample>): Real-world examples
 
 ## Common Questions
 
@@ -381,7 +365,7 @@ Yes! Use integer programming (<doc:5.8-IntegerProgramming>) with binary variable
 
 ## Related Topics
 
-- <doc:Part3-Modeling> - Models to optimize
-- <doc:Part4-Simulation> - Combine with robust optimization
-- <doc:2.3-RiskAnalyticsGuide> - Risk metrics for risk-aware optimization
-- <doc:2.1-DataTableAnalysis> - Sensitivity analysis complements optimization
+- <doc:Part3-Modeling>
+- <doc:Part4-Simulation>
+- <doc:2.3-RiskAnalyticsGuide>
+- <doc:2.1-DataTableAnalysis>

@@ -313,10 +313,10 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Error Handling
 	/// The runner itself does not throw errors, but the builder function may throw:
-	/// - ``AccountError``: If account creation fails (e.g., entity mismatch)
-	/// - ``IncomeStatementError``: If income statement validation fails
-	/// - ``BalanceSheetError``: If balance sheet doesn't balance
-	/// - ``CashFlowStatementError``: If cash flow statement validation fails
+	/// - ``AccountError``
+	/// - ``IncomeStatementError``
+	/// - ``BalanceSheetError``
+	/// - ``CashFlowStatementError``
 	public func run(
 		scenario: FinancialScenario,
 		entity: Entity,

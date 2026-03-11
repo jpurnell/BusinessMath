@@ -2,7 +2,7 @@
 //  Kurtosis.swift
 //  BusinessMath
 //
-//  Created by Claude on 2026-02-20.
+//  Created by Justin Purnell on 2026-02-20.
 //
 
 import Foundation
@@ -50,10 +50,10 @@ import Numerics
 ///
 /// ## See Also
 ///
-/// - ``kurtosisP(_:)`` - Canonical population kurtosis implementation
-/// - ``Skewness`` - Measures distribution asymmetry
-/// - ``TailRisk`` - Measures severity beyond VaR threshold
-/// - ``ConditionalValueAtRisk`` - Average loss in extreme tail
+/// - ``kurtosisP(_:)``
+/// - ``Skewness``
+/// - ``TailRisk``
+/// - ``ConditionalValueAtRisk``
 public struct Kurtosis {
 
 	/// Calculate excess kurtosis of a return distribution (delegates to canonical ``kurtosisP(_:)``).

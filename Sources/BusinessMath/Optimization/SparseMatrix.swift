@@ -2,7 +2,7 @@
 //  SparseMatrix.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 12/11/25.
+//  Created by Justin Purnell on 12/11/25.
 //  Phase 8.1: Sparse Matrix Infrastructure with CSR format
 //
 

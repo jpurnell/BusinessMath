@@ -77,7 +77,6 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 	///
 	/// Requires at least 2 * seasonalPeriods of data.
 	///
-	/// - Parameter data: The historical time series data.
 	/// - Throws: `ForecastError.insufficientData` if not enough data.
 	/// Train the Holt-Winters model on a generic array of values.
 	///

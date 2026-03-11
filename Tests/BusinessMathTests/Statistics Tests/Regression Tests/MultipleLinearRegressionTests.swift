@@ -2,7 +2,7 @@
 //  MultipleLinearRegressionTests.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 2026-02-15.
+//  Created by Justin Purnell on 2026-02-15.
 //
 
 import Testing

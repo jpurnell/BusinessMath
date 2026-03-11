@@ -2,7 +2,7 @@
 //  MaxDrawdown.swift
 //  BusinessMath
 //
-//  Created by Claude on 2026-02-20.
+//  Created by Justin Purnell on 2026-02-20.
 //
 
 import Foundation
@@ -38,8 +38,8 @@ import Numerics
 ///
 /// ## See Also
 ///
-/// - ``SharpeRatio`` - Risk-adjusted return metric
-/// - ``SortinoRatio`` - Downside risk-adjusted return metric
+/// - ``SharpeRatio``
+/// - ``SortinoRatio``
 public struct MaxDrawdown {
 
 	/// Calculate maximum drawdown from a series of returns.

@@ -2,7 +2,7 @@
 //  SparseMatrixTests.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 12/11/25.
+//  Created by Justin Purnell on 12/11/25.
 //  TDD: Tests written FIRST, implementation comes after
 //
 

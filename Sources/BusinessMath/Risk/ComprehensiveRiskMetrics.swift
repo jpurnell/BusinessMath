@@ -3,7 +3,6 @@
 //  BusinessMath
 //
 //  Created by Justin Purnell on 10/31/25.
-//  Refactored by Claude on 2026-02-20.
 //
 
 import Foundation
@@ -15,14 +14,14 @@ import Numerics
 ///
 /// `ComprehensiveRiskMetrics` provides a convenient way to calculate all risk measures
 /// at once. For individual metrics, use the focused types:
-/// - ``ValueAtRisk`` - VaR at various confidence levels
-/// - ``ConditionalValueAtRisk`` - CVaR / Expected Shortfall
-/// - ``MaxDrawdown`` - Peak-to-trough decline
-/// - ``SharpeRatio`` - Risk-adjusted returns
-/// - ``SortinoRatio`` - Downside risk-adjusted returns
-/// - ``TailRisk`` - Tail severity measure
-/// - ``Skewness`` - Distribution asymmetry
-/// - ``Kurtosis`` - Tail thickness
+/// - ``ValueAtRisk``
+/// - ``ConditionalValueAtRisk``
+/// - ``MaxDrawdown``
+/// - ``SharpeRatio``
+/// - ``SortinoRatio``
+/// - ``TailRisk``
+/// - ``Skewness``
+/// - ``Kurtosis``
 ///
 /// ## Usage
 ///

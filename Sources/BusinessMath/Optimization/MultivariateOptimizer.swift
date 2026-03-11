@@ -56,18 +56,18 @@ import Numerics
 /// BusinessMath provides eight optimizer types that conform to this protocol:
 ///
 /// **Unconstrained Optimizers:**
-/// - ``MultivariateGradientDescent`` - First-order gradient methods (basic, momentum, Adam)
-/// - ``MultivariateNewtonRaphson`` - Second-order Newton methods (Newton, BFGS, L-BFGS)
+/// - ``MultivariateGradientDescent``
+/// - ``MultivariateNewtonRaphson``
 ///
 /// **Constrained Optimizers:**
-/// - ``ConstrainedOptimizer`` - Equality constraints only (Lagrange multipliers)
-/// - ``InequalityOptimizer`` - Mixed equality/inequality constraints (KKT conditions)
+/// - ``ConstrainedOptimizer``
+/// - ``InequalityOptimizer``
 ///
 /// **Advanced Optimizers:**
-/// - ``AdaptiveOptimizer`` - Automatic algorithm selection based on problem characteristics
-/// - ``ParallelOptimizer`` - Multi-start parallel optimization for global minimum
-/// - ``StochasticOptimizer`` - Scenario-based optimization under uncertainty
-/// - ``RobustOptimizer`` - Optimization with uncertain parameters
+/// - ``AdaptiveOptimizer``
+/// - ``ParallelOptimizer``
+/// - ``StochasticOptimizer``
+/// - ``RobustOptimizer``
 ///
 /// ## When to Use the Protocol vs Concrete Types
 ///
@@ -230,7 +230,7 @@ extension MultivariateOptimizer {
     /// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
     /// ```
     ///
-    /// - SeeAlso: ``minimize(_:from:constraints:)`` for constrained optimization
+    /// - SeeAlso: ``minimize(_:from:constraints:)``
     public func minimize(
         _ objective: @escaping @Sendable (V) -> V.Scalar,
         from initialGuess: V

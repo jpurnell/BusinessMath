@@ -2,7 +2,7 @@
 //  AccelerateMatrixBackend.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 2026-02-15.
+//  Created by Justin Purnell on 2026-02-15.
 //
 
 import Foundation
@@ -33,10 +33,11 @@ import Accelerate
 /// ```
 ///
 /// - Note: Only available on Apple platforms (macOS, iOS, tvOS, watchOS, visionOS).
+/// - Note: Uses the new LAPACK interface (ILP64) introduced in macOS 13.3.
 public struct AccelerateMatrixBackend: MatrixBackend {
 
-    /// LAPACK integer type (platform-dependent: Int32 on some platforms, Int on watchOS)
-    private typealias LapackInt = __CLPK_integer
+    /// LAPACK integer type - uses new ILP64 interface for large matrix support (macOS 13.3+)
+    private typealias LapackInt = __LAPACK_int
 
     /// Creates a new Accelerate backend instance.
     public init() {}
@@ -70,21 +71,22 @@ public struct AccelerateMatrixBackend: MatrixBackend {
 
         // cblas_dgemm computes: C = alpha * A * B + beta * C
         // Parameters: Order, TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc
+        // Using ILP64 interface (Int instead of Int32) for large matrix support
         cblas_dgemm(
-            CblasRowMajor,          // Row-major order
+            CblasRowMajor,           // Row-major order
             CblasNoTrans,            // Don't transpose A
             CblasNoTrans,            // Don't transpose B
-            Int32(m),        // Rows of A and C
-            Int32(p),        // Columns of B and C
-            Int32(n),        // Columns of A, rows of B
+            m,                       // Rows of A and C
+            p,                       // Columns of B and C
+            n,                       // Columns of A, rows of B
             1.0,                     // alpha = 1.0
             &flatA,                  // Matrix A
-            Int32(n),        // Leading dimension of A
+            n,                       // Leading dimension of A
             &flatB,                  // Matrix B
-            Int32(p),        // Leading dimension of B
+            p,                       // Leading dimension of B
             0.0,                     // beta = 0.0
             &flatC,                  // Matrix C (result)
-            Int32(p)         // Leading dimension of C
+            p                        // Leading dimension of C
         )
 
         // Convert flat result back to 2D array
