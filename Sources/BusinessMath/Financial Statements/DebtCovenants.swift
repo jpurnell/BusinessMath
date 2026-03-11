@@ -36,8 +36,8 @@ import OSLog
 /// ```
 ///
 /// ## See Also
-/// - ``CovenantMonitor`` for checking multiple covenants
-/// - ``headroom(incomeStatement:balanceSheet:period:)`` for calculating cushion before violation
+/// - ``CovenantMonitor``
+/// - ``headroom(incomeStatement:balanceSheet:period:)``
 @available(macOS 11.0, *)
 public struct FinancialCovenant {
 //	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
@@ -116,7 +116,7 @@ public struct FinancialCovenant {
     /// The specific requirement this covenant enforces.
     ///
     /// ## See Also
-    /// - ``Requirement`` for available covenant types
+    /// - ``Requirement``
     public let requirement: Requirement
 
     /// Number of days borrower has to cure (fix) a covenant violation.

@@ -128,8 +128,8 @@ public struct Lease {
     /// Type of discount rate used.
     ///
     /// Indicates whether the rate is:
-    /// - ``DiscountRateType/implicitRate``: Rate implicit in the lease
-    /// - ``DiscountRateType/incrementalBorrowingRate``: Lessee's IBR
+    /// - ``DiscountRateType/implicitRate``
+    /// - ``DiscountRateType/incrementalBorrowingRate``
     ///
     /// Documentation purposes; doesn't affect calculations.
     public let discountRateType: DiscountRateType

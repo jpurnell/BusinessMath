@@ -22,55 +22,49 @@ This section bridges the gap between calculation and insight. Whether you're eva
 ## Chapters in This Part
 
 ### Analytical Techniques
-- <doc:2.1-DataTableAnalysis> - Excel-style data tables for sensitivity and scenario analysis
-- <doc:MultipleLinearRegressionGuide> - Multiple linear regression with GPU acceleration and comprehensive diagnostics
+- <doc:2.1-DataTableAnalysis>
+- <doc:MultipleLinearRegressionGuide>
 
 ### Financial Metrics
-- <doc:2.2-FinancialRatiosGuide> - Profitability, leverage, efficiency, and other key ratios
+- <doc:2.2-FinancialRatiosGuide>
 
 ### Risk Measurement
-- <doc:2.3-RiskAnalyticsGuide> - VaR, CVaR, stress testing, and portfolio risk metrics
+- <doc:2.3-RiskAnalyticsGuide>
 
 ### Communication
-- <doc:2.4-VisualizationGuide> - Creating charts, diagrams, and visual analytics
+- <doc:2.4-VisualizationGuide>
 
 ### Model Validation
-- <doc:2.5-ModelValidationGuide> - Fake-data simulation and parameter recovery validation
+- <doc:2.5-ModelValidationGuide>
 
 ## Prerequisites
 
-Before diving into Part II, you should be comfortable with:
-
-- Time series operations (<doc:1.2-TimeSeries>)
-- Basic financial calculations (<doc:1.3-TimeValueOfMoney>)
-- The fluent API patterns (<doc:1.4-FluentAPIGuide>)
-
-If you skipped Part I, at minimum review chapters 1.1-1.3 before proceeding.
+Before diving into Part II, you should be comfortable with time series operations, basic financial calculations, and the fluent API patterns from Part I. If you skipped Part I, at minimum review chapters 1.1-1.3 before proceeding.
 
 ## Suggested Reading Order
 
 The chapters in this part can be read in any order based on your needs:
 
 **For Financial Analysts:**
-1. <doc:2.2-FinancialRatiosGuide> - Start with familiar territory
-2. <doc:MultipleLinearRegressionGuide> - Predictive modeling with regression
-3. <doc:2.1-DataTableAnalysis> - Excel-like sensitivity analysis
-4. <doc:2.3-RiskAnalyticsGuide> - Risk measurement techniques
-5. <doc:2.4-VisualizationGuide> - Presentation and reporting
+1. <doc:2.2-FinancialRatiosGuide>
+2. <doc:MultipleLinearRegressionGuide>
+3. <doc:2.1-DataTableAnalysis>
+4. <doc:2.3-RiskAnalyticsGuide>
+5. <doc:2.4-VisualizationGuide>
 
 **For Risk Managers:**
-1. <doc:2.3-RiskAnalyticsGuide> - Core risk metrics
-2. <doc:2.1-DataTableAnalysis> - Sensitivity and stress testing
-3. <doc:2.2-FinancialRatiosGuide> - Performance metrics
-4. <doc:2.4-VisualizationGuide> - Risk dashboards
+1. <doc:2.3-RiskAnalyticsGuide>
+2. <doc:2.1-DataTableAnalysis>
+3. <doc:2.2-FinancialRatiosGuide>
+4. <doc:2.4-VisualizationGuide>
 
 **For Quantitative Developers:**
-1. <doc:MultipleLinearRegressionGuide> - GPU-accelerated regression with numerical stability
-2. <doc:2.5-ModelValidationGuide> - Essential for verifying implementations
-3. <doc:2.1-DataTableAnalysis> - Systematic sensitivity analysis
-4. <doc:2.3-RiskAnalyticsGuide> - Statistical risk measures
-5. <doc:2.4-VisualizationGuide> - Programmatic visualization
-6. <doc:2.2-FinancialRatiosGuide> - Metrics for validation
+1. <doc:MultipleLinearRegressionGuide>
+2. <doc:2.5-ModelValidationGuide>
+3. <doc:2.1-DataTableAnalysis>
+4. <doc:2.3-RiskAnalyticsGuide>
+5. <doc:2.4-VisualizationGuide>
+6. <doc:2.2-FinancialRatiosGuide>
 
 ## Key Concepts
 
@@ -227,14 +221,14 @@ Track financial ratios over time to monitor business health. Create dashboards t
 
 After completing Part II, consider:
 
-- **Building Models** (<doc:Part3-Modeling>) - Apply your analytical skills to forecasting and valuation
-- **Running Simulations** (<doc:Part4-Simulation>) - Model uncertainty with Monte Carlo methods
-- **Optimizing Decisions** (<doc:Part5-Optimization>) - Find optimal solutions using mathematical optimization
+- **Building Models** (<doc:Part3-Modeling>): Apply your analytical skills to forecasting and valuation
+- **Running Simulations** (<doc:Part4-Simulation>): Model uncertainty with Monte Carlo methods
+- **Optimizing Decisions** (<doc:Part5-Optimization>): Find optimal solutions using mathematical optimization
 
 Or explore specific modeling topics:
-- <doc:3.3-BuildingRevenueModel> - Revenue forecasting with sensitivity analysis
-- <doc:3.5-FinancialStatementsGuide> - Complete financial statement modeling
-- <doc:3.8-InvestmentAnalysis> - Investment evaluation and valuation
+- <doc:3.3-BuildingRevenueModel>
+- <doc:3.5-FinancialStatementsGuide>
+- <doc:3.8-InvestmentAnalysis>
 
 ## Common Questions
 
@@ -252,6 +246,6 @@ Yes! The real power comes from combining techniques. For example: use data table
 
 ## Related Topics
 
-- <doc:Part1-Basics> - Foundation concepts and time series operations
-- <doc:Part3-Modeling> - Building revenue models and financial forecasts
-- <doc:Part4-Simulation> - Monte Carlo simulation and uncertainty quantification
+- <doc:Part1-Basics>
+- <doc:Part3-Modeling>
+- <doc:Part4-Simulation>

@@ -26,6 +26,8 @@ scripts/
 # Temporary and backup files
 *~
 \#*\#
+*.bundle
+*.bak
 howToResume.md
 overallRules
 codingRules.md~

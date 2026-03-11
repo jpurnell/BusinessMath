@@ -2,7 +2,7 @@
 //  MatrixBackend.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 2026-02-15.
+//  Created by Justin Purnell on 2026-02-15.
 //
 
 import Foundation
@@ -15,9 +15,9 @@ import Foundation
 ///
 /// ## Available Backends
 ///
-/// - ``CPUMatrixBackend``: Pure Swift implementation (all platforms)
-/// - ``AccelerateMatrixBackend``: BLAS/LAPACK optimized (Apple platforms)
-/// - ``MetalMatrixBackend``: GPU-accelerated (Apple Silicon)
+/// - ``CPUMatrixBackend``
+/// - ``AccelerateMatrixBackend``
+/// - ``MetalMatrixBackend``
 ///
 /// ## Performance Characteristics
 ///

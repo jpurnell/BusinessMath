@@ -98,9 +98,9 @@ import Numerics
 ///
 /// ## Related Functions
 ///
-/// - ``logNormalPDF(_:mean:stdDev:)`` - Probability density function
-/// - ``distributionLogNormal(mean:stdDev:_:_:)`` - Random sampling
-/// - ``normalCDF(x:mean:stdDev:)`` - Normal CDF (used internally)
+/// - ``logNormalPDF(_:mean:stdDev:)``
+/// - ``distributionLogNormal(mean:stdDev:_:_:)``
+/// - ``normalCDF(x:mean:stdDev:)``
 ///
 /// ## See Also
 ///

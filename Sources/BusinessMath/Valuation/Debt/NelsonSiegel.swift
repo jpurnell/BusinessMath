@@ -4,7 +4,7 @@
 //
 //  Nelson-Siegel yield curve model for term structure of interest rates
 //
-//  Created by Claude Code on 2026-02-05.
+//  Created by Justin Purnell on 2026-02-05.
 //
 
 import Foundation

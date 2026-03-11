@@ -169,7 +169,7 @@ public struct StreamingForecastError {
 /// let tenStepsAhead = forecast.forecast(steps: 10) // 125.0
 /// ```
 ///
-/// - SeeAlso: ``TripleExponentialForecast`` for seasonal data
+/// - SeeAlso: ``TripleExponentialForecast``
 public struct DoubleExponentialForecast {
     /// The current level (baseline value) of the time series.
     public let level: Double
@@ -217,7 +217,7 @@ public struct DoubleExponentialForecast {
 /// let sixthPeriod = forecast.forecast(steps: 6) // Cycles back to second factor
 /// ```
 ///
-/// - SeeAlso: ``DoubleExponentialForecast`` for non-seasonal data
+/// - SeeAlso: ``DoubleExponentialForecast``
 public struct TripleExponentialForecast {
     /// The current level (deseasonalized baseline value) of the time series.
     public let level: Double
@@ -378,7 +378,7 @@ extension AsyncSequence where Element == ForecastPair {
 /// - **alpha = 0.5**: Balanced smoothing
 /// - **alpha = 0.7 to 0.9**: Fast response, less smooth, good for volatile data
 ///
-/// - SeeAlso: ``AsyncDoubleExponentialSmoothingSequence`` for data with trends
+/// - SeeAlso: ``AsyncDoubleExponentialSmoothingSequence``
 public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields smoothed forecast values.
     public typealias Element = Double
@@ -458,7 +458,7 @@ public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 /// - **alpha**: Level smoothing (0.1-0.3 for stable data, 0.5-0.9 for volatile data)
 /// - **beta**: Trend smoothing (typically 0.1-0.2 for slow trend changes)
 ///
-/// - SeeAlso: ``AsyncTripleExponentialSmoothingSequence`` for seasonal data
+/// - SeeAlso: ``AsyncTripleExponentialSmoothingSequence``
 public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields forecast objects containing level and trend components.
     public typealias Element = DoubleExponentialForecast

@@ -405,7 +405,7 @@ extension IncomeStatement {
 	///
 	/// - Parameter adjustments: Array of pro forma adjustments to apply
 	/// - Returns: Time series of adjusted EBITDA values
-	/// - SeeAlso: ``ebitda`` for unadjusted EBITDA
+	/// - SeeAlso: ``ebitda``
 	/// - SeeAlso: ``AccountAdjustment``
 	public func adjustedEBITDA(adjustments: [AccountAdjustment<T>]) -> TimeSeries<T> {
 		guard !adjustments.isEmpty else {

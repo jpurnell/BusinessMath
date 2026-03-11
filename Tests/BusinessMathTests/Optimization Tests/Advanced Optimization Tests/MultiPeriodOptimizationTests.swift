@@ -2,7 +2,7 @@
 //  MultiPeriodOptimizationTests.swift
 //  BusinessMathTests
 //
-//  Created by Claude Code on 12/04/25.
+//  Created by Justin Purnell on 12/04/25.
 //
 
 import Foundation

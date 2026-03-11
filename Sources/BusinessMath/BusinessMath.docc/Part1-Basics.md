@@ -22,24 +22,24 @@ By the end of this part, you'll be comfortable creating time series, performing 
 ## Chapters in This Part
 
 ### Getting Started
-- <doc:1.1-GettingStarted> - Quick introduction to BusinessMath with your first calculations
+- <doc:1.1-GettingStarted>
 
 ### Core Data Structures
-- <doc:1.2-TimeSeries> - The foundation of temporal data handling in BusinessMath
+- <doc:1.2-TimeSeries>
 
 ### Fundamental Financial Concepts
-- <doc:1.3-TimeValueOfMoney> - Present value, future value, and the time value of money
+- <doc:1.3-TimeValueOfMoney>
 
 ### Statistical Foundations
-- <doc:1.8-StatisticalDistributionsGuide> - Descriptive statistics and probability distributions
+- <doc:1.8-StatisticalDistributionsGuide>
 
 ### API Patterns & Developer Tools
-- <doc:1.4-FluentAPIGuide> - Declarative APIs for building readable models
-- <doc:1.5-TemplateGuide> - Pre-built patterns for common scenarios
+- <doc:1.4-FluentAPIGuide>
+- <doc:1.5-TemplateGuide>
 
 ### Troubleshooting & Development
-- <doc:1.6-DebuggingGuide> - Diagnosing and fixing issues in your models
-- <doc:1.7-ErrorHandlingGuide> - Handling errors gracefully in production code
+- <doc:1.6-DebuggingGuide>
+- <doc:1.7-ErrorHandlingGuide>
 
 ## Prerequisites
 
@@ -165,6 +165,6 @@ Feel free to skim or skip the financial theory explanations and focus on how tho
 
 ## Related Topics
 
-- <doc:LearningPath> - Recommended learning paths for different roles
-- <doc:Part2-Analysis> - Statistical analysis and risk metrics
-- <doc:Part3-Modeling> - Building financial models and forecasts
+- <doc:LearningPath>
+- <doc:Part2-Analysis>
+- <doc:Part3-Modeling>

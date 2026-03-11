@@ -21,33 +21,28 @@ Uncertainty isn't something to fear or ignore—it's information. By quantifying
 ## Chapters in This Part
 
 ### Probabilistic Methods
-- <doc:4.1-MonteCarloTimeSeriesGuide> - Monte Carlo simulation for time series forecasting and risk analysis
+- <doc:4.1-MonteCarloTimeSeriesGuide>
 
 ### Structured Scenarios
-- <doc:4.2-ScenarioAnalysisGuide> - Building and analyzing discrete scenarios with stress testing
+- <doc:4.2-ScenarioAnalysisGuide>
 
 ## Prerequisites
 
-Before diving into simulation and uncertainty quantification:
-
-- Complete Part I (<doc:Part1-Basics>) - Especially time series (<doc:1.2-TimeSeries>)
-- Understand financial modeling (<doc:Part3-Modeling>) - You need models to simulate
-- Review risk analytics (<doc:2.3-RiskAnalyticsGuide>) - Risk measurement concepts
-- Familiarity with basic probability and statistics is helpful but not required
+Before diving into simulation and uncertainty quantification, you should complete Part I (especially time series), understand financial modeling from Part III (you need models to simulate), and review risk analytics for risk measurement concepts. Familiarity with basic probability and statistics is helpful but not required.
 
 ## Suggested Reading Order
 
 **For Most Users:**
-1. <doc:4.2-ScenarioAnalysisGuide> - Start with discrete scenarios (easier conceptually)
-2. <doc:4.1-MonteCarloTimeSeriesGuide> - Progress to continuous probability distributions
+1. <doc:4.2-ScenarioAnalysisGuide>
+2. <doc:4.1-MonteCarloTimeSeriesGuide>
 
 **For Risk Managers:**
-1. <doc:4.1-MonteCarloTimeSeriesGuide> - Monte Carlo for VaR and tail risk
-2. <doc:4.2-ScenarioAnalysisGuide> - Stress testing and scenario planning
+1. <doc:4.1-MonteCarloTimeSeriesGuide>
+2. <doc:4.2-ScenarioAnalysisGuide>
 
 **For Financial Modelers:**
-1. <doc:4.2-ScenarioAnalysisGuide> - Three-scenario analysis (base/upside/downside)
-2. <doc:4.1-MonteCarloTimeSeriesGuide> - Full probability distributions when needed
+1. <doc:4.2-ScenarioAnalysisGuide>
+2. <doc:4.1-MonteCarloTimeSeriesGuide>
 
 ## Key Concepts
 
@@ -447,10 +442,10 @@ Create multiple strategic scenarios (digital disruption, market consolidation, r
 
 After mastering simulation and uncertainty:
 
-- **Optimize Under Uncertainty** (<doc:Part5-Optimization>) - Find optimal decisions considering risk
-- **Apply to Models** (<doc:Part3-Modeling>) - Add probabilistic thinking to valuation and forecasting
-- **Measure Risk** (<doc:2.3-RiskAnalyticsGuide>) - Calculate VaR, CVaR, and other risk metrics
-- **Analyze Sensitivity** (<doc:2.1-DataTableAnalysis>) - Identify which uncertainties matter most
+- **Optimize Under Uncertainty** (<doc:Part5-Optimization>): Find optimal decisions considering risk
+- **Apply to Models** (<doc:Part3-Modeling>): Add probabilistic thinking to valuation and forecasting
+- **Measure Risk** (<doc:2.3-RiskAnalyticsGuide>): Calculate VaR, CVaR, and other risk metrics
+- **Analyze Sensitivity** (<doc:2.1-DataTableAnalysis>): Identify which uncertainties matter most
 
 ## Common Questions
 
@@ -472,7 +467,7 @@ Use correlation matrices or copulas to model dependencies. Don't assume independ
 
 ## Related Topics
 
-- <doc:Part3-Modeling> - Financial models that can be simulated
-- <doc:2.3-RiskAnalyticsGuide> - Risk metrics (VaR, CVaR) calculated from simulations
-- <doc:2.1-DataTableAnalysis> - Sensitivity analysis complements uncertainty modeling
-- <doc:5.2-PortfolioOptimizationGuide> - Optimization considering risk and uncertainty
+- <doc:Part3-Modeling>
+- <doc:2.3-RiskAnalyticsGuide>
+- <doc:2.1-DataTableAnalysis>
+- <doc:5.2-PortfolioOptimizationGuide>

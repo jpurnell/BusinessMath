@@ -2,7 +2,7 @@
 //  Skewness.swift
 //  BusinessMath
 //
-//  Created by Claude on 2026-02-20.
+//  Created by Justin Purnell on 2026-02-20.
 //
 
 import Foundation
@@ -45,9 +45,9 @@ import Numerics
 ///
 /// ## See Also
 ///
-/// - ``skewP(_:)`` - Canonical population skewness implementation
-/// - ``Kurtosis`` - Measures tail thickness (fat tails vs thin tails)
-/// - ``SortinoRatio`` - Prefers positive skew (limited downside)
+/// - ``skewP(_:)``
+/// - ``Kurtosis``
+/// - ``SortinoRatio``
 public struct Skewness {
 
 	/// Calculate skewness of a return distribution (delegates to canonical ``skewP(_:)``).

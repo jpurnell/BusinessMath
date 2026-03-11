@@ -16,7 +16,7 @@ import Numerics
 /// - Parameters:
 ///	- f: The function to be integrated. The function should take a single parameter of type `T` and return a value of type `T`.
 ///	- n: The number of iterations to perform for the Monte Carlo estimation. A higher number of iterations generally leads to a more accurate estimate. Defaults to 10,000
-///
+///	- seed: An optional seed value for the random number generator. Defaults to a random value in the range [0, 1].
 /// - Returns: The estimated value of the integral.
 ///
 /// - Note:

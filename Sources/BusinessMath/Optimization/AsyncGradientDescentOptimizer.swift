@@ -88,9 +88,9 @@ import Numerics
 /// when cancelled, throwing a `CancellationError`.
 ///
 /// ## See Also
-/// - ``GradientDescentOptimizer`` - Synchronous version
-/// - ``AsyncOptimizer`` - Protocol conformance
-/// - ``AsyncOptimizationProgress`` - Progress update type
+/// - ``GradientDescentOptimizer``
+/// - ``AsyncOptimizer``
+/// - ``AsyncOptimizationProgress``
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T: Real & Sendable & Codable {
 

@@ -2,7 +2,7 @@
 //  PortfolioUtilitiesTests.swift
 //  BusinessMath
 //
-//  Created by Claude Code on 02/04/26.
+//  Created by Justin Purnell on 02/04/26.
 //
 
 import Foundation

@@ -34,41 +34,41 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 **Time Commitment**: 15-20 hours for core content
 
 ### Phase 1: Foundations (4-5 hours)
-1. <doc:1.1-GettingStarted> - Quick introduction (30 min)
-2. <doc:1.2-TimeSeries> - Core data structure (1 hour)
-3. <doc:1.3-TimeValueOfMoney> - Financial calculations (1.5 hours)
-4. <doc:1.4-FluentAPIGuide> - Readable model building (1 hour)
+1. <doc:1.1-GettingStarted>
+2. <doc:1.2-TimeSeries>
+3. <doc:1.3-TimeValueOfMoney>
+4. <doc:1.4-FluentAPIGuide>
 
 **Checkpoint**: Build a simple NPV calculation with time series data
 
 ### Phase 2: Financial Modeling (5-6 hours)
-5. <doc:3.1-GrowthModeling> - Growth patterns (1 hour)
-6. <doc:3.2-ForecastingGuide> - Revenue forecasting (1 hour)
-7. <doc:3.3-BuildingRevenueModel> - Complete revenue model (1.5 hours)
-8. <doc:3.4-BuildingFinancialReports> - Financial statements (1 hour)
-9. <doc:3.5-FinancialStatementsGuide> - Integrated models (1.5 hours)
+5. <doc:3.1-GrowthModeling>
+6. <doc:3.2-ForecastingGuide>
+7. <doc:3.3-BuildingRevenueModel>
+8. <doc:3.4-BuildingFinancialReports>
+9. <doc:3.5-FinancialStatementsGuide>
 
 **Checkpoint**: Build a three-statement financial model
 
 ### Phase 3: Valuation (4-5 hours)
-10. <doc:3.8-InvestmentAnalysis> - NPV, IRR, payback (1 hour)
-11. <doc:3.9-EquityValuationGuide> - DCF, DDM, residual income (1.5 hours)
-12. <doc:3.10-BondValuationGuide> - Fixed income (1.5 hours)
-13. <doc:2.2-FinancialRatiosGuide> - Performance metrics (1 hour)
+10. <doc:3.8-InvestmentAnalysis>
+11. <doc:3.9-EquityValuationGuide>
+12. <doc:3.10-BondValuationGuide>
+13. <doc:2.2-FinancialRatiosGuide>
 
 **Checkpoint**: Value a company using multiple methods
 
 ### Phase 4: Analysis & Sensitivity (3-4 hours)
-14. <doc:2.1-DataTableAnalysis> - Sensitivity analysis (1.5 hours)
-15. <doc:4.2-ScenarioAnalysisGuide> - Scenario modeling (1 hour)
-16. <doc:2.4-VisualizationGuide> - Charts and dashboards (1 hour)
+14. <doc:2.1-DataTableAnalysis>
+15. <doc:4.2-ScenarioAnalysisGuide>
+16. <doc:2.4-VisualizationGuide>
 
 **Checkpoint**: Analyze which assumptions drive your valuation
 
 ### Optional Advanced Topics
-- <doc:3.11-CreditDerivativesGuide> - CDS pricing and credit risk
-- <doc:3.12-RealOptionsGuide> - Real options valuation
-- <doc:4.1-MonteCarloTimeSeriesGuide> - Probabilistic forecasting
+- <doc:3.11-CreditDerivativesGuide>
+- <doc:3.12-RealOptionsGuide>
+- <doc:4.1-MonteCarloTimeSeriesGuide>
 
 ## Track 2: Risk Manager
 
@@ -77,37 +77,37 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 **Time Commitment**: 12-15 hours for core content
 
 ### Phase 1: Foundations (3-4 hours)
-1. <doc:1.1-GettingStarted> - Quick introduction (30 min)
-2. <doc:1.2-TimeSeries> - Core data structure (1 hour)
-3. <doc:1.3-TimeValueOfMoney> - Financial calculations (1 hour)
-4. <doc:2.3-RiskAnalyticsGuide> - Risk metrics (VaR, CVaR) (1.5 hours)
+1. <doc:1.1-GettingStarted>
+2. <doc:1.2-TimeSeries>
+3. <doc:1.3-TimeValueOfMoney>
+4. <doc:2.3-RiskAnalyticsGuide>
 
 **Checkpoint**: Calculate VaR for a portfolio
 
 ### Phase 2: Simulation & Uncertainty (4-5 hours)
-5. <doc:4.1-MonteCarloTimeSeriesGuide> - Monte Carlo simulation (2 hours)
-6. <doc:4.2-ScenarioAnalysisGuide> - Scenario planning (1 hour)
-7. <doc:2.1-DataTableAnalysis> - Sensitivity and stress testing (1.5 hours)
+5. <doc:4.1-MonteCarloTimeSeriesGuide>
+6. <doc:4.2-ScenarioAnalysisGuide>
+7. <doc:2.1-DataTableAnalysis>
 
 **Checkpoint**: Run Monte Carlo simulation with confidence intervals
 
 ### Phase 3: Portfolio Risk (3-4 hours)
-8. <doc:5.2-PortfolioOptimizationGuide> - Efficient frontier, risk parity (2 hours)
-9. <doc:3.10-BondValuationGuide> - Duration, convexity, credit spreads (1.5 hours)
-10. <doc:3.11-CreditDerivativesGuide> - CDS and credit risk (1 hour)
+8. <doc:5.2-PortfolioOptimizationGuide>
+9. <doc:3.10-BondValuationGuide>
+10. <doc:3.11-CreditDerivativesGuide>
 
 **Checkpoint**: Build an efficient portfolio with risk constraints
 
 ### Phase 4: Advanced Risk Techniques (2-3 hours)
-11. <doc:5.14-RobustOptimization> - Optimization under uncertainty (1 hour)
-12. <doc:3.12-RealOptionsGuide> - Optionality and downside protection (1 hour)
-13. <doc:2.4-VisualizationGuide> - Risk dashboards (30 min)
+11. <doc:5.14-RobustOptimization>
+12. <doc:3.12-RealOptionsGuide>
+13. <doc:2.4-VisualizationGuide>
 
 **Checkpoint**: Create a comprehensive risk report
 
 ### Optional Topics
-- <doc:3.8-InvestmentAnalysis> - Investment evaluation
-- <doc:3.9-EquityValuationGuide> - Equity risk factors
+- <doc:3.8-InvestmentAnalysis>
+- <doc:3.9-EquityValuationGuide>
 
 ## Track 3: Quantitative Developer
 
@@ -116,45 +116,45 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 **Time Commitment**: 20-25 hours for complete content
 
 ### Phase 1: Foundations (3-4 hours)
-1. <doc:1.1-GettingStarted> - Quick introduction (30 min)
-2. <doc:1.2-TimeSeries> - Core data structure (1 hour)
-3. <doc:1.4-FluentAPIGuide> - API patterns (1 hour)
-4. <doc:1.7-ErrorHandlingGuide> - Error handling (30 min)
-5. <doc:1.6-DebuggingGuide> - Debugging techniques (30 min)
+1. <doc:1.1-GettingStarted>
+2. <doc:1.2-TimeSeries>
+3. <doc:1.4-FluentAPIGuide>
+4. <doc:1.7-ErrorHandlingGuide>
+5. <doc:1.6-DebuggingGuide>
 
 **Checkpoint**: Implement a custom time series operation
 
 ### Phase 2: Optimization Fundamentals (6-8 hours)
-6. <doc:5.1-OptimizationGuide> - Optimization overview (1.5 hours)
-7. <doc:5.3-CoreOptimization> - Goal-seeking and constraints (1 hour)
-8. <doc:5.4-VectorOperations> - Vector mathematics (1 hour)
-9. <doc:5.5-MultivariateOptimization> - Gradient descent, Newton (1.5 hours)
-10. <doc:5.6-ConstrainedOptimization> - Equality and inequality constraints (1.5 hours)
-11. <doc:5.7-BusinessOptimization> - Business applications (1.5 hours)
+6. <doc:5.1-OptimizationGuide>
+7. <doc:5.3-CoreOptimization>
+8. <doc:5.4-VectorOperations>
+9. <doc:5.5-MultivariateOptimization>
+10. <doc:5.6-ConstrainedOptimization>
+11. <doc:5.7-BusinessOptimization>
 
 **Checkpoint**: Implement constrained optimization for a business problem
 
 ### Phase 3: Advanced Optimization (6-8 hours)
-12. <doc:5.8-IntegerProgramming> - Branch-and-bound (1.5 hours)
-13. <doc:5.9-AdaptiveSelection> - Algorithm selection (1 hour)
-14. <doc:5.10-ParallelOptimization> - Parallel multi-start (1.5 hours)
-15. <doc:5.11-PerformanceBenchmarking> - Performance optimization (1 hour)
-16. <doc:5.12-SparseMatrix> - Large-scale problems (1.5 hours)
-17. <doc:5.13-MultiPeriod> - Stochastic optimization (1.5 hours)
+12. <doc:5.8-IntegerProgramming>
+13. <doc:5.9-AdaptiveSelection>
+14. <doc:5.10-ParallelOptimization>
+15. <doc:5.11-PerformanceBenchmarking>
+16. <doc:5.12-SparseMatrix>
+17. <doc:5.13-MultiPeriod>
 
 **Checkpoint**: Build a high-performance optimization system
 
 ### Phase 4: Financial Applications (4-5 hours)
-18. <doc:5.2-PortfolioOptimizationGuide> - Modern Portfolio Theory (2 hours)
-19. <doc:3.10-BondValuationGuide> - Fixed income mathematics (1.5 hours)
-20. <doc:4.1-MonteCarloTimeSeriesGuide> - Monte Carlo implementation (1.5 hours)
+18. <doc:5.2-PortfolioOptimizationGuide>
+19. <doc:3.10-BondValuationGuide>
+20. <doc:4.1-MonteCarloTimeSeriesGuide>
 
 **Checkpoint**: Implement a complete portfolio optimization system
 
 ### Optional Advanced Topics
-- <doc:5.14-RobustOptimization> - Robust optimization
-- <doc:5.15-InequalityConstraints> - Deep dive on constraints
-- <doc:3.11-CreditDerivativesGuide> - Credit derivatives mathematics
+- <doc:5.14-RobustOptimization>
+- <doc:5.15-InequalityConstraints>
+- <doc:3.11-CreditDerivativesGuide>
 
 ## Track 4: General Business (FP&A / Corporate Finance)
 
@@ -163,35 +163,35 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 **Time Commitment**: 10-12 hours for core content
 
 ### Phase 1: Quick Start (2-3 hours)
-1. <doc:1.1-GettingStarted> - Introduction (30 min)
-2. <doc:1.2-TimeSeries> - Working with data (1 hour)
-3. <doc:1.3-TimeValueOfMoney> - NPV, IRR basics (1 hour)
+1. <doc:1.1-GettingStarted>
+2. <doc:1.2-TimeSeries>
+3. <doc:1.3-TimeValueOfMoney>
 
 **Checkpoint**: Calculate ROI for a project
 
 ### Phase 2: Financial Modeling (4-5 hours)
-4. <doc:3.1-GrowthModeling> - Growth analysis (45 min)
-5. <doc:3.2-ForecastingGuide> - Forecasting techniques (1 hour)
-6. <doc:3.3-BuildingRevenueModel> - Revenue models (1.5 hours)
-7. <doc:3.4-BuildingFinancialReports> - Financial reports (1 hour)
-8. <doc:2.2-FinancialRatiosGuide> - Key metrics (45 min)
+4. <doc:3.1-GrowthModeling>
+5. <doc:3.2-ForecastingGuide>
+6. <doc:3.3-BuildingRevenueModel>
+7. <doc:3.4-BuildingFinancialReports>
+8. <doc:2.2-FinancialRatiosGuide>
 
 **Checkpoint**: Build a revenue forecast model
 
 ### Phase 3: Analysis & Decisions (3-4 hours)
-9. <doc:2.1-DataTableAnalysis> - Sensitivity analysis (1.5 hours)
-10. <doc:4.2-ScenarioAnalysisGuide> - Base/upside/downside scenarios (1 hour)
-11. <doc:3.8-InvestmentAnalysis> - Project evaluation (1 hour)
-12. <doc:5.1-OptimizationGuide> - Resource allocation (focus on Phase 5 section) (1 hour)
+9. <doc:2.1-DataTableAnalysis>
+10. <doc:4.2-ScenarioAnalysisGuide>
+11. <doc:3.8-InvestmentAnalysis>
+12. <doc:5.1-OptimizationGuide>
 
 **Checkpoint**: Evaluate capital allocation across projects
 
 ### Optional Topics Based on Needs
-- <doc:3.6-LeaseAccountingGuide> - Lease accounting (IFRS 16 / ASC 842)
-- <doc:3.7-LoanAmortization> - Debt schedules
-- <doc:3.13-EquityFinancingGuide> - Equity financing
-- <doc:3.14-DebtAndFinancingGuide> - Debt and WACC
-- <doc:2.4-VisualizationGuide> - Charts for presentations
+- <doc:3.6-LeaseAccountingGuide>
+- <doc:3.7-LoanAmortization>
+- <doc:3.13-EquityFinancingGuide>
+- <doc:3.14-DebtAndFinancingGuide>
+- <doc:2.4-VisualizationGuide>
 
 ## Essential vs. Optional Content
 

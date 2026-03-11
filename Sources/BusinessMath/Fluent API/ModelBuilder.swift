@@ -1178,9 +1178,9 @@ extension CostComponent: ModelComponent {
 /// in a scenario analysis.
 ///
 /// ## Cases
-/// - ``revenue``: Adjust all revenue components
-/// - ``costs``: Adjust all cost components
-/// - ``specific(_:)``: Adjust a specific component by name
+/// - ``revenue``
+/// - ``costs``
+/// - ``specific(_:)``
 ///
 /// ## Usage Example
 /// ```swift

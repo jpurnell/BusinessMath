@@ -17,18 +17,18 @@ import Foundation
 /// ## Account Categories
 ///
 /// **Income Statement Accounts**
-/// - ``revenue``: Income from business operations
-/// - ``expense``: Costs of doing business
+/// - ``revenue``
+/// - ``expense``
 ///
 /// **Balance Sheet Accounts**
-/// - ``asset``: Resources owned by the business
-/// - ``liability``: Obligations owed to others
-/// - ``equity``: Owner's stake in the business
+/// - ``asset``
+/// - ``liability``
+/// - ``equity``
 ///
 /// **Cash Flow Statement Accounts**
-/// - ``operating``: Cash from core business activities
-/// - ``investing``: Cash from buying/selling assets
-/// - ``financing``: Cash from debt and equity
+/// - ``operating``
+/// - ``investing``
+/// - ``financing``
 ///
 /// ## Example
 /// ```swift

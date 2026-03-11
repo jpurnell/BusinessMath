@@ -4,7 +4,7 @@
 //
 //  Comprehensive tests for Nelson-Siegel yield curve model
 //
-//  Created by Claude Code on 2026-02-05.
+//  Created by Justin Purnell on 2026-02-05.
 //
 
 import Testing

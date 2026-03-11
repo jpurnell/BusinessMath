@@ -16,16 +16,16 @@ import Foundation
 /// ## Supported Period Types
 ///
 /// **Sub-Daily Periods** (for high-frequency data analysis):
-/// - ``millisecond``: Millisecond periods (0.001 seconds)
-/// - ``second``: Second periods
-/// - ``minute``: Minute periods (60 seconds)
-/// - ``hourly``: Hourly periods (3600 seconds)
+/// - ``millisecond``
+/// - ``second``
+/// - ``minute``
+/// - ``hourly``
 ///
 /// **Standard Periods** (for financial analysis):
-/// - ``daily``: Single day periods (86,400 seconds)
-/// - ``monthly``: Monthly periods (30.4375 days average)
-/// - ``quarterly``: Quarterly periods (91.3125 days average)
-/// - ``annual``: Annual periods (365.25 days accounting for leap years)
+/// - ``daily``
+/// - ``monthly``
+/// - ``quarterly``
+/// - ``annual``
 ///
 /// ## Usage Examples
 ///

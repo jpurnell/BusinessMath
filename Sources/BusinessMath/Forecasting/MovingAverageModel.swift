@@ -51,7 +51,6 @@ public struct MovingAverageModel<T: Real & Sendable & Codable> {
 	///
 	/// Requires at least `window` periods of data.
 	///
-	/// - Parameter data: The historical time series data.
 	/// - Throws: `ForecastError.insufficientData` if not enough data.
 	/// Train the moving average model on a generic array of values.
 	///

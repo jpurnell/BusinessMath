@@ -2,7 +2,7 @@
 //  SharpeRatio.swift
 //  BusinessMath
 //
-//  Created by Claude on 2026-02-20.
+//  Created by Justin Purnell on 2026-02-20.
 //
 
 import Foundation
@@ -41,8 +41,8 @@ import Numerics
 ///
 /// ## See Also
 ///
-/// - ``SortinoRatio`` - Only penalizes downside volatility
-/// - ``MaxDrawdown`` - Maximum peak-to-trough decline
+/// - ``SortinoRatio``
+/// - ``MaxDrawdown``
 public struct SharpeRatio {
 
 	/// Calculate Sharpe ratio for a series of returns.
