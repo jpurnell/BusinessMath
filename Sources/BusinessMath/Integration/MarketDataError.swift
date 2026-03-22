@@ -31,4 +31,7 @@ public enum MarketDataError: Error, Sendable {
 
 	/// Authentication or API key is missing or invalid.
 	case authenticationRequired
+
+	/// A configuration parameter is invalid (e.g., negative timeout, zero max requests).
+	case configurationError(String)
 }
