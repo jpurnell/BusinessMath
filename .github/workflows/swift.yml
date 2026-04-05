@@ -76,7 +76,7 @@ jobs:
             echo "SCRATCH=.build-xctest" >> $GITHUB_ENV
           fi
 
-      - name: Build + Test (Debug and Release)
+      - name: Build + Test (Debug)
         run: |
           set -euo pipefail
 
@@ -91,12 +91,9 @@ jobs:
 
           swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
           swift test  $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
-          swift test -c release $SWIFT_TEST_FLAGS --parallel --scratch-path "$SCRATCH" -v
 
   build_and_compile:
     name: Release build + Apple platform compile checks
-    needs: tests
-    if: always()
     runs-on: macos-15
     steps:
       - name: Checkout
@@ -163,8 +160,6 @@ jobs:
 
   linux_compile:
     name: Linux release compile check
-    needs: tests
-    if: always()
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout

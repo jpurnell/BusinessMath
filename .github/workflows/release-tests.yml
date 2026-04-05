@@ -1,0 +1,102 @@
+name: Release Tests
+
+on:
+  schedule:
+    # Run twice daily at 06:00 and 18:00 UTC
+    - cron: '0 6,18 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  check_changes:
+    name: Check for recent changes
+    runs-on: ubuntu-24.04
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes in last 12 hours
+        id: check
+        run: |
+          SINCE=$(date -u -d '12 hours ago' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
+              || date -u -v-12H '+%Y-%m-%dT%H:%M:%SZ')
+          COMMITS=$(git log --oneline --since="$SINCE" | wc -l | tr -d ' ')
+          echo "Commits in last 12 hours: $COMMITS"
+          if [ "$COMMITS" -gt "0" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+  release_tests:
+    name: Release Tests (${{ matrix.os }})
+    needs: check_changes
+    if: needs.check_changes.outputs.has_changes == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+    env:
+      PACKAGE_NAME: BusinessMath
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.x (Swift 6)
+        if: matrix.os == 'macos-15'
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode_16* 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then
+            echo "No Xcode 16.x found, using default"
+            xcodebuild -version
+          else
+            sudo xcode-select -s "$XCODE_PATH"
+            echo "Selected: $XCODE_PATH"
+            xcodebuild -version
+          fi
+
+      - name: Install Swift (Linux)
+        if: matrix.os == 'ubuntu-24.04'
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0.3'
+
+      - name: Cache Swift build (Linux)
+        if: matrix.os == 'ubuntu-24.04'
+        uses: actions/cache@v4
+        with:
+          path: .build-release-tests
+          key: ${{ runner.os }}-swift-release-${{ hashFiles('Package.swift', 'Package.resolved', 'Sources/**/*.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-swift-release-
+            ${{ runner.os }}-swift-
+
+      - name: Tooling versions
+        run: |
+          swift --version
+          if command -v xcodebuild >/dev/null 2>&1; then
+            xcodebuild -version
+          fi
+
+      - name: Build + Test (Release)
+        run: |
+          set -euo pipefail
+          swift test -c release \
+            --enable-swift-testing \
+            --parallel \
+            --scratch-path .build-release-tests \
+            -v
