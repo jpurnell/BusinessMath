@@ -303,4 +303,152 @@ struct StreamingStatisticsTests {
             #expect(abs(variance - 1.0) < 0.001)
         }
     }
+
+    // MARK: - Regression Tests (O(1) Incremental Correctness)
+
+    @Test("Rolling mean with window=1 returns each element")
+    func rollingMeanWindowOne() async throws {
+        let values = [3.0, 7.0, 1.0, 9.0, 5.0]
+        let stream = AsyncValueStream(values)
+
+        var means: [Double] = []
+        for try await mean in stream.rollingMean(window: 1) {
+            means.append(mean)
+        }
+
+        #expect(means.count == 5)
+        for i in 0..<values.count {
+            #expect(abs(means[i] - values[i]) < 1e-10)
+        }
+    }
+
+    @Test("Rolling variance with window=2 minimal case")
+    func rollingVarianceWindowTwo() async throws {
+        let values = [2.0, 8.0, 4.0, 6.0]
+        let stream = AsyncValueStream(values)
+
+        var variances: [Double] = []
+        for try await variance in stream.rollingVariance(window: 2) {
+            variances.append(variance)
+        }
+
+        // Window [2,8]: mean=5, var = ((2-5)^2 + (8-5)^2)/1 = 18 (sample variance)
+        // Window [8,4]: mean=6, var = ((8-6)^2 + (4-6)^2)/1 = 8
+        // Window [4,6]: mean=5, var = ((4-5)^2 + (6-5)^2)/1 = 2
+        #expect(variances.count == 3)
+        #expect(abs(variances[0] - 18.0) < 0.001)
+        #expect(abs(variances[1] - 8.0) < 0.001)
+        #expect(abs(variances[2] - 2.0) < 0.001)
+    }
+
+    @Test("Rolling sum correctness with window=5 and known values")
+    func rollingSumWindowFive() async throws {
+        let values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        let stream = AsyncValueStream(values)
+
+        var sums: [Double] = []
+        for try await sum in stream.rollingSum(window: 5) {
+            sums.append(sum)
+        }
+
+        // Window [1,2,3,4,5] = 15
+        // Window [2,3,4,5,6] = 20
+        // Window [3,4,5,6,7] = 25
+        #expect(sums.count == 3)
+        #expect(abs(sums[0] - 15.0) < 1e-10)
+        #expect(abs(sums[1] - 20.0) < 1e-10)
+        #expect(abs(sums[2] - 25.0) < 1e-10)
+    }
+
+    // MARK: - Additional Numerical Stability Tests
+
+    @Test("Rolling mean with catastrophic cancellation scenario")
+    func rollingMeanCatastrophicCancellation() async throws {
+        // Values near 1e12 where the mean differences are tiny
+        let base = 1e12
+        let values = (0..<10).map { base + Double($0) }
+        let stream = AsyncValueStream(values)
+
+        var means: [Double] = []
+        for try await mean in stream.rollingMean(window: 5) {
+            means.append(mean)
+        }
+
+        // Window [0..4]: mean = base + 2.0
+        // Window [1..5]: mean = base + 3.0
+        // etc.
+        #expect(means.count == 6)
+        for i in 0..<means.count {
+            let expected = base + Double(i) + 2.0
+            #expect(abs(means[i] - expected) < 1e-3)
+        }
+    }
+
+    @Test("Rolling variance with near-constant large values tests Welford stability")
+    func rollingVarianceWelfordStability() async throws {
+        // All values are base + small offset; variance should reflect only the offsets
+        let base = 1e12
+        let values = [base + 1.0, base + 2.0, base + 3.0, base + 4.0, base + 5.0]
+        let stream = AsyncValueStream(values)
+
+        var variances: [Double] = []
+        for try await variance in stream.rollingVariance(window: 3) {
+            variances.append(variance)
+        }
+
+        // Each window of 3 consecutive integers has sample variance = 1.0
+        #expect(variances.count == 3)
+        for variance in variances {
+            #expect(abs(variance - 1.0) < 0.001)
+        }
+    }
+
+    // MARK: - Property-Based Tests
+
+    @Test("Rolling mean is always between min and max of window elements")
+    func rollingMeanBoundedByMinMax() async throws {
+        let values = [10.0, 3.0, 15.0, 7.0, 22.0, 1.0, 18.0, 9.0]
+        let window = 3
+        let stream = AsyncValueStream(values)
+
+        var means: [Double] = []
+        for try await mean in stream.rollingMean(window: window) {
+            means.append(mean)
+        }
+
+        // Verify each mean is bounded by its window's min and max
+        for i in 0..<means.count {
+            let windowSlice = Array(values[(i)..<(i + window)])
+            let windowMin = windowSlice.min()!
+            let windowMax = windowSlice.max()!
+            #expect(means[i] >= windowMin - 1e-10)
+            #expect(means[i] <= windowMax + 1e-10)
+        }
+    }
+
+    @Test("Rolling variance is always non-negative")
+    func rollingVarianceAlwaysNonNegative() async throws {
+        let values = [100.0, 1.0, 50.0, 99.0, 2.0, 48.0, 97.0, 3.0]
+        let stream = AsyncValueStream(values)
+
+        for try await variance in stream.rollingVariance(window: 4) {
+            #expect(variance >= 0.0)
+        }
+    }
+
+    // MARK: - Stress Tests
+
+    @Test("Rolling mean over 100_000 elements completes in time",
+          .timeLimit(.minutes(1)))
+    func rollingMeanStress() async throws {
+        let values = (0..<100_000).map { Double($0) }
+        let stream = AsyncValueStream(values)
+
+        var count = 0
+        for try await _ in stream.rollingMean(window: 100) {
+            count += 1
+        }
+
+        #expect(count == 99_901)
+    }
 }

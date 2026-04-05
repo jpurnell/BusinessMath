@@ -319,11 +319,14 @@ struct DDMPerformanceTests {
         }
 
         let universe = (0..<500).map { i -> Stock in
-            Stock(
+            let div: Double = 1.0 + Double(i % 50) * 0.1
+            let growth: Double = 0.02 + Double(i % 30) * 0.001
+            let reqReturn: Double = 0.08 + Double(i % 25) * 0.002
+            return Stock(
                 ticker: "STOCK\(i)",
-                dividend: Double(1.0 + Double(i % 50) * 0.1),
-                growthRate: Double(0.02 + Double(i % 30) * 0.001),
-                requiredReturn: Double(0.08 + Double(i % 25) * 0.002),
+                dividend: div,
+                growthRate: growth,
+                requiredReturn: reqReturn,
                 useHighGrowth: i % 5 == 0  // 20% are growth stocks
             )
         }

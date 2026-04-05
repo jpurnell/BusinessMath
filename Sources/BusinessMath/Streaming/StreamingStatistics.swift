@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Collections
 
 // MARK: - Statistics Result Types
 
@@ -253,13 +254,16 @@ public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where
 
     /// Iterator for the rolling mean sequence.
     ///
-    /// Maintains a circular buffer of the most recent values. Fills the buffer to window
-    /// size before emitting the first mean, then slides the window forward one value at
-    /// a time.
+    /// Uses an incremental accumulator for O(1) per-step computation. Maintains a running
+    /// sum and updates it by adding the new value and subtracting the evicted value on each
+    /// slide, rather than recomputing from the full buffer.
+    ///
+    /// - Complexity: O(1) per element after initial window fill.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
-        private var buffer: [Double] = []
+        private var buffer: Deque<Double> = []
+        private var runningSum: Double = 0.0
         private var isComplete = false
 
         init(base: Base.AsyncIterator, window: Int) {
@@ -269,8 +273,8 @@ public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where
 
         /// Advances to the next rolling mean value.
         ///
-        /// Fills the buffer to window size, computes the mean, then attempts to slide
-        /// the window forward. Returns `nil` when the stream is exhausted.
+        /// Fills the buffer to window size, computes the mean from the running sum,
+        /// then slides the window forward using incremental sum updates.
         ///
         /// - Returns: The next rolling mean, or `nil` if the base sequence is exhausted.
         /// - Throws: Rethrows any error from the base sequence.
@@ -284,18 +288,23 @@ public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where
                     return nil
                 }
                 buffer.append(value)
+                runningSum += value
             }
 
-            // Calculate mean for current window
-            let sum = buffer.reduce(0.0, +)
-            let mean = sum / Double(buffer.count)
+            // Calculate mean from running sum — O(1)
+            guard buffer.count > 0 else {
+                isComplete = true
+                return nil
+            }
+            let mean = runningSum / Double(buffer.count)
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
-                buffer.removeFirst()
+                let evicted = buffer.removeFirst()
+                runningSum -= evicted
                 buffer.append(nextValue)
+                runningSum += nextValue
             } else {
-                // No more values - mark complete so next call returns nil
                 isComplete = true
             }
 
@@ -432,13 +441,17 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
 
     /// Iterator for the rolling variance sequence.
     ///
-    /// Maintains a buffer of recent values and computes variance using Welford's
-    /// numerically stable algorithm, which avoids precision loss from large intermediate
-    /// values.
+    /// Uses incremental Welford's algorithm with eviction for O(1) per-step computation.
+    /// Maintains running mean and M2 (sum of squared deviations) and updates them
+    /// incrementally when adding or removing a value from the window.
+    ///
+    /// - Complexity: O(1) per element after initial window fill.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
-        private var buffer: [Double] = []
+        private var buffer: Deque<Double> = []
+        private var runningMean: Double = 0.0
+        private var runningM2: Double = 0.0
         private var isComplete = false
 
         init(base: Base.AsyncIterator, window: Int) {
@@ -448,51 +461,62 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
 
         /// Advances to the next rolling variance value.
         ///
-        /// Fills buffer, computes variance with Welford's algorithm, then slides window.
+        /// Fills buffer, computes variance from incremental Welford state, then slides
+        /// the window using add/evict updates.
         ///
         /// - Returns: The next rolling variance, or `nil` if the base sequence is exhausted.
         /// - Throws: Rethrows any error from the base sequence.
         public mutating func next() async throws -> Double? {
             guard !isComplete else { return nil }
 
-            // Fill buffer to window size
+            // Fill buffer to window size using Welford's online add
             while buffer.count < window {
                 guard let value = try await baseIterator.next() else {
                     isComplete = true
                     return nil
                 }
                 buffer.append(value)
+                let n = Double(buffer.count)
+                let delta = value - runningMean
+                runningMean += delta / n
+                let delta2 = value - runningMean
+                runningM2 += delta * delta2
             }
 
-            // Calculate variance using Welford's online algorithm
-            let variance = calculateVariance(buffer)
+            // Compute variance — sample variance with (n-1) denominator
+            let n = buffer.count
+            let variance: Double
+            if n > 1 {
+                variance = runningM2 / Double(n - 1)
+            } else {
+                variance = 0.0
+            }
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
-                buffer.removeFirst()
+                let evicted = buffer.removeFirst()
+                let nDouble = Double(buffer.count + 1)
+
+                // Reverse Welford: remove evicted value's contribution
+                let oldMean = runningMean
+                runningMean = (oldMean * nDouble - evicted) / Double(buffer.count)
+                runningM2 -= (evicted - runningMean) * (evicted - oldMean)
+
+                // Forward Welford: add new value
                 buffer.append(nextValue)
+                let newN = Double(buffer.count)
+                let delta = nextValue - runningMean
+                runningMean += delta / newN
+                let delta2 = nextValue - runningMean
+                runningM2 += delta * delta2
+
+                // Clamp M2 to prevent negative drift from floating-point accumulation
+                if runningM2 < 0.0 { runningM2 = 0.0 }
             } else {
                 isComplete = true
             }
 
             return variance
-        }
-
-        private func calculateVariance(_ values: [Double]) -> Double {
-            guard values.count > 1 else { return 0.0 }
-
-            var mean = 0.0
-            var m2 = 0.0
-
-            for (i, value) in values.enumerated() {
-                let delta = value - mean
-                mean += delta / Double(i + 1)
-                let delta2 = value - mean
-                m2 += delta * delta2
-            }
-
-            // Sample variance: divide by (n-1)
-            return m2 / Double(values.count - 1)
         }
     }
 }
@@ -798,12 +822,16 @@ public struct AsyncRollingSumSequence<Base: AsyncSequence>: AsyncSequence where 
 
     /// Iterator for the rolling sum sequence.
     ///
-    /// Maintains a buffer of recent values and computes their sum. Slides the window
-    /// forward as new values arrive, maintaining constant memory usage.
+    /// Uses an incremental accumulator for O(1) per-step computation. Maintains a running
+    /// sum and updates it by adding the new value and subtracting the evicted value on each
+    /// slide, rather than recomputing from the full buffer.
+    ///
+    /// - Complexity: O(1) per element after initial window fill.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
-        private var buffer: [Double] = []
+        private var buffer: Deque<Double> = []
+        private var runningSum: Double = 0.0
         private var isComplete = false
 
         init(base: Base.AsyncIterator, window: Int) {
@@ -813,7 +841,8 @@ public struct AsyncRollingSumSequence<Base: AsyncSequence>: AsyncSequence where 
 
         /// Advances to the next rolling sum value.
         ///
-        /// Fills buffer to window size, computes the sum, then slides the window.
+        /// Fills buffer to window size, returns the running sum, then slides the window
+        /// using incremental add/subtract.
         ///
         /// - Returns: The next rolling sum, or `nil` if the base sequence is exhausted.
         /// - Throws: Rethrows any error from the base sequence.
@@ -827,15 +856,18 @@ public struct AsyncRollingSumSequence<Base: AsyncSequence>: AsyncSequence where 
                     return nil
                 }
                 buffer.append(value)
+                runningSum += value
             }
 
-            // Calculate sum
-            let sum = buffer.reduce(0.0, +)
+            // Return running sum — O(1)
+            let sum = runningSum
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
-                buffer.removeFirst()
+                let evicted = buffer.removeFirst()
+                runningSum -= evicted
                 buffer.append(nextValue)
+                runningSum += nextValue
             } else {
                 isComplete = true
             }
@@ -1285,5 +1317,417 @@ public struct AsyncCumulativeStatisticsSequence<Base: AsyncSequence>: AsyncSeque
                 count: count
             )
         }
+    }
+}
+
+// MARK: - Successive Difference Operators (Phase 2.5 — Gap 3)
+
+/// An async sequence that emits the difference between consecutive elements.
+///
+/// For a stream of values `[x₀, x₁, x₂, ...]`, this emits `[x₁ - x₀, x₂ - x₁, ...]`.
+/// The output sequence has one fewer element than the input.
+///
+/// ## Usage Example
+/// ```swift
+/// let values = AsyncValueStream([1.0, 3.0, 6.0, 10.0])
+/// for try await diff in values.successiveDifferences() {
+///     print(diff)  // Prints: 2.0, 3.0, 4.0
+/// }
+/// ```
+///
+/// ## Mathematical Background
+/// ```
+/// d[i] = x[i+1] - x[i]    for i = 0, 1, ..., n-2
+/// ```
+///
+/// - Note: Generalizes to day-over-day revenue changes, intraday price jitter,
+///   and any "rate of change" monitoring use case.
+public struct AsyncSuccessiveDifferencesSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields successive difference values.
+    public typealias Element = Double
+
+    /// The async iterator type for this sequence.
+    public typealias AsyncIterator = Iterator
+
+    private let base: Base
+
+    init(base: Base) {
+        self.base = base
+    }
+
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields successive differences.
+    public func makeAsyncIterator() -> Iterator {
+        Iterator(base: base.makeAsyncIterator())
+    }
+
+    /// Iterator for the successive differences sequence.
+    ///
+    /// Maintains the previous element to compute the delta with each new arrival.
+    public struct Iterator: AsyncIteratorProtocol {
+        private var baseIterator: Base.AsyncIterator
+        private var previousValue: Double?
+        private var isComplete = false
+
+        init(base: Base.AsyncIterator) {
+            self.baseIterator = base
+        }
+
+        /// Advances to the next successive difference.
+        ///
+        /// - Returns: The difference between the current and previous element,
+        ///   or `nil` when the base sequence is exhausted.
+        /// - Throws: Rethrows any error from the base sequence.
+        public mutating func next() async throws -> Double? {
+            guard !isComplete else { return nil }
+
+            // If no previous value yet, consume the first element
+            if previousValue == nil {
+                guard let first = try await baseIterator.next() else {
+                    isComplete = true
+                    return nil
+                }
+                previousValue = first
+            }
+
+            guard let current = try await baseIterator.next() else {
+                isComplete = true
+                return nil
+            }
+
+            let prev = previousValue ?? current
+            let diff = current - prev
+            previousValue = current
+            return diff
+        }
+    }
+}
+
+/// An async sequence that computes the rolling root mean square of successive differences (RMSSD).
+///
+/// RMSSD is defined as `sqrt(mean(d²))` where `d` is the vector of successive differences
+/// within the rolling window. This is the primary time-domain HRV metric.
+///
+/// Uses an O(1) incremental accumulator: tracks a running sum of squared differences
+/// and evicts the oldest squared difference when the window slides forward.
+///
+/// - Parameter window: The number of successive differences in each rolling window.
+///   Must be at least 1.
+///
+/// ## Usage Example
+/// ```swift
+/// let rrIntervals = AsyncValueStream([800.0, 810.0, 790.0, 820.0, 800.0, 830.0])
+/// for try await rmssd in rrIntervals.rollingSuccessiveDifferenceRMS(window: 5) {
+///     print(rmssd)  // ≈ 23.24 ms
+/// }
+/// ```
+///
+/// ## Mathematical Background
+/// ```
+/// RMSSD = sqrt( (1/N) * Σ(d[i]²) )    where d[i] = x[i+1] - x[i]
+/// ```
+///
+/// - Complexity: O(1) per element after initial window fill.
+public struct AsyncRollingSuccessiveDifferenceRMSSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields RMSSD values.
+    public typealias Element = Double
+
+    /// The async iterator type for this sequence.
+    public typealias AsyncIterator = Iterator
+
+    private let base: Base
+    private let window: Int
+
+    init(base: Base, window: Int) {
+        self.base = base
+        self.window = window
+    }
+
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields rolling RMSSD values.
+    public func makeAsyncIterator() -> Iterator {
+        Iterator(base: base.makeAsyncIterator(), window: window)
+    }
+
+    /// Iterator for the rolling RMSSD sequence.
+    ///
+    /// Maintains a `Deque` of squared successive differences and a running sum
+    /// for O(1) incremental computation.
+    public struct Iterator: AsyncIteratorProtocol {
+        private var baseIterator: Base.AsyncIterator
+        private let window: Int
+        private var squaredDiffs: Deque<Double> = []
+        private var sumOfSquaredDiffs: Double = 0.0
+        private var previousValue: Double?
+        private var isComplete = false
+
+        init(base: Base.AsyncIterator, window: Int) {
+            self.baseIterator = base
+            self.window = window
+        }
+
+        /// Advances to the next RMSSD value.
+        ///
+        /// Fills the window of successive differences, then slides forward one
+        /// difference at a time using incremental sum updates.
+        ///
+        /// - Returns: The next RMSSD value, or `nil` when the stream is exhausted.
+        /// - Throws: Rethrows any error from the base sequence.
+        public mutating func next() async throws -> Double? {
+            guard !isComplete else { return nil }
+
+            // Fill buffer to window size
+            while squaredDiffs.count < window {
+                if previousValue == nil {
+                    guard let first = try await baseIterator.next() else {
+                        isComplete = true
+                        return nil
+                    }
+                    previousValue = first
+                }
+
+                guard let current = try await baseIterator.next() else {
+                    isComplete = true
+                    return nil
+                }
+
+                let prev = previousValue ?? current
+                let diff = current - prev
+                let squaredDiff = diff * diff
+                squaredDiffs.append(squaredDiff)
+                sumOfSquaredDiffs += squaredDiff
+                previousValue = current
+            }
+
+            // Compute RMSSD for current window
+            guard squaredDiffs.count > 0 else {
+                isComplete = true
+                return nil
+            }
+            let meanSquaredDiff = sumOfSquaredDiffs / Double(squaredDiffs.count)
+            let rmssd = meanSquaredDiff.squareRoot()
+
+            // Try to slide window for next iteration
+            if let current = try await baseIterator.next() {
+                let prev = previousValue ?? current
+                let diff = current - prev
+                let squaredDiff = diff * diff
+
+                // Evict oldest
+                let evicted = squaredDiffs.removeFirst()
+                sumOfSquaredDiffs -= evicted
+
+                // Add new
+                squaredDiffs.append(squaredDiff)
+                sumOfSquaredDiffs += squaredDiff
+                previousValue = current
+            } else {
+                isComplete = true
+            }
+
+            return rmssd
+        }
+    }
+}
+
+/// An async sequence that computes the rolling rate of successive differences exceeding a threshold.
+///
+/// This is the streaming equivalent of pNN50 in HRV analysis: the percentage of consecutive
+/// differences whose absolute value exceeds a given threshold.
+///
+/// Uses an O(1) incremental accumulator: tracks a count of exceedances and evicts the
+/// oldest boolean flag when the window slides forward.
+///
+/// - Parameters:
+///   - window: The number of successive differences in each rolling window. Must be at least 1.
+///   - threshold: The threshold for exceedance (strict greater-than comparison on absolute difference).
+///
+/// ## Usage Example
+/// ```swift
+/// let rrIntervals = AsyncValueStream([800.0, 860.0, 810.0, 870.0, 820.0])
+/// for try await pnn50 in rrIntervals.rollingThresholdExceedanceRate(window: 4, threshold: 50.0) {
+///     print(pnn50)  // 0.5 (50% of diffs exceed 50ms)
+/// }
+/// ```
+///
+/// ## Mathematical Background
+/// ```
+/// rate = count(|d[i]| > threshold) / N    where d[i] = x[i+1] - x[i]
+/// ```
+///
+/// - Complexity: O(1) per element after initial window fill.
+public struct AsyncRollingThresholdExceedanceRateSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
+    /// Yields exceedance rate values in [0, 1].
+    public typealias Element = Double
+
+    /// The async iterator type for this sequence.
+    public typealias AsyncIterator = Iterator
+
+    private let base: Base
+    private let window: Int
+    private let threshold: Double
+
+    init(base: Base, window: Int, threshold: Double) {
+        self.base = base
+        self.window = window
+        self.threshold = threshold
+    }
+
+    /// Creates the async iterator for this sequence.
+    ///
+    /// - Returns: An iterator that yields rolling threshold exceedance rates.
+    public func makeAsyncIterator() -> Iterator {
+        Iterator(base: base.makeAsyncIterator(), window: window, threshold: threshold)
+    }
+
+    /// Iterator for the rolling threshold exceedance rate sequence.
+    ///
+    /// Maintains a `Deque` of boolean exceedance flags and a running count
+    /// for O(1) incremental computation.
+    public struct Iterator: AsyncIteratorProtocol {
+        private var baseIterator: Base.AsyncIterator
+        private let window: Int
+        private let threshold: Double
+        private var exceedanceFlags: Deque<Bool> = []
+        private var exceedCount: Int = 0
+        private var previousValue: Double?
+        private var isComplete = false
+
+        init(base: Base.AsyncIterator, window: Int, threshold: Double) {
+            self.baseIterator = base
+            self.window = window
+            self.threshold = threshold
+        }
+
+        /// Advances to the next exceedance rate value.
+        ///
+        /// Fills the window of exceedance flags, then slides forward one
+        /// difference at a time using incremental count updates.
+        ///
+        /// - Returns: The next exceedance rate, or `nil` when the stream is exhausted.
+        /// - Throws: Rethrows any error from the base sequence.
+        public mutating func next() async throws -> Double? {
+            guard !isComplete else { return nil }
+
+            // Fill buffer to window size
+            while exceedanceFlags.count < window {
+                if previousValue == nil {
+                    guard let first = try await baseIterator.next() else {
+                        isComplete = true
+                        return nil
+                    }
+                    previousValue = first
+                }
+
+                guard let current = try await baseIterator.next() else {
+                    isComplete = true
+                    return nil
+                }
+
+                let prev = previousValue ?? current
+                let absDiff = abs(current - prev)
+                let exceeds = absDiff > threshold
+                exceedanceFlags.append(exceeds)
+                if exceeds { exceedCount += 1 }
+                previousValue = current
+            }
+
+            // Compute rate for current window
+            guard exceedanceFlags.count > 0 else {
+                isComplete = true
+                return nil
+            }
+            let rate = Double(exceedCount) / Double(exceedanceFlags.count)
+
+            // Try to slide window for next iteration
+            if let current = try await baseIterator.next() {
+                let prev = previousValue ?? current
+                let absDiff = abs(current - prev)
+                let exceeds = absDiff > threshold
+
+                // Evict oldest
+                let evicted = exceedanceFlags.removeFirst()
+                if evicted { exceedCount -= 1 }
+
+                // Add new
+                exceedanceFlags.append(exceeds)
+                if exceeds { exceedCount += 1 }
+                previousValue = current
+            } else {
+                isComplete = true
+            }
+
+            return rate
+        }
+    }
+}
+
+// MARK: - Successive Difference Extensions
+
+extension AsyncSequence where Element == Double {
+    /// Emits the difference between each consecutive pair of elements.
+    ///
+    /// For a stream `[x₀, x₁, x₂, ...]`, produces `[x₁ - x₀, x₂ - x₁, ...]`.
+    /// The output has one fewer element than the input.
+    ///
+    /// - Returns: An async sequence of successive differences.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let prices = AsyncValueStream([100.0, 102.5, 101.0, 103.0])
+    /// for try await change in prices.successiveDifferences() {
+    ///     print(change)  // Prints: 2.5, -1.5, 2.0
+    /// }
+    /// ```
+    public func successiveDifferences() -> AsyncSuccessiveDifferencesSequence<Self> {
+        AsyncSuccessiveDifferencesSequence(base: self)
+    }
+
+    /// Computes the rolling root mean square of successive differences (RMSSD).
+    ///
+    /// RMSSD is a standard time-domain metric in HRV analysis. It measures the
+    /// beat-to-beat variability by computing `sqrt(mean(d²))` over a rolling window
+    /// of consecutive differences.
+    ///
+    /// Uses an O(1) incremental accumulator per step.
+    ///
+    /// - Parameter window: The number of successive differences per window. Must be ≥ 1.
+    /// - Returns: An async sequence of RMSSD values.
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let rrIntervals = AsyncValueStream([800.0, 810.0, 790.0, 820.0])
+    /// for try await rmssd in rrIntervals.rollingSuccessiveDifferenceRMS(window: 3) {
+    ///     print(rmssd)
+    /// }
+    /// ```
+    public func rollingSuccessiveDifferenceRMS(window: Int) -> AsyncRollingSuccessiveDifferenceRMSSequence<Self> {
+        AsyncRollingSuccessiveDifferenceRMSSequence(base: self, window: window)
+    }
+
+    /// Computes the rolling rate of consecutive differences exceeding a threshold.
+    ///
+    /// This is the streaming equivalent of pNN50 in HRV: the fraction of successive
+    /// differences whose absolute value exceeds the given threshold.
+    ///
+    /// Uses an O(1) incremental accumulator per step.
+    ///
+    /// - Parameters:
+    ///   - window: The number of successive differences per window. Must be ≥ 1.
+    ///   - threshold: Exceedance threshold (strict greater-than on absolute difference).
+    /// - Returns: An async sequence of exceedance rate values in [0, 1].
+    ///
+    /// ## Usage Example
+    /// ```swift
+    /// let rrIntervals = AsyncValueStream([800.0, 860.0, 810.0, 870.0, 820.0])
+    /// // pNN50: fraction of diffs > 50ms
+    /// for try await rate in rrIntervals.rollingThresholdExceedanceRate(window: 4, threshold: 50.0) {
+    ///     print(rate)  // 0.5
+    /// }
+    /// ```
+    public func rollingThresholdExceedanceRate(window: Int, threshold: Double) -> AsyncRollingThresholdExceedanceRateSequence<Self> {
+        AsyncRollingThresholdExceedanceRateSequence(base: self, window: window, threshold: threshold)
     }
 }
