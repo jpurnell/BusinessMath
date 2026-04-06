@@ -100,3 +100,41 @@ jobs:
             --parallel \
             --scratch-path .build-release-tests \
             -v
+
+  thread_sanitizer:
+    name: Thread Sanitizer (macOS)
+    needs: check_changes
+    if: needs.check_changes.outputs.has_changes == 'true'
+    runs-on: macos-15
+    env:
+      PACKAGE_NAME: BusinessMath
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.x (Swift 6)
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode_16* 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then
+            echo "No Xcode 16.x found, using default"
+            xcodebuild -version
+          else
+            sudo xcode-select -s "$XCODE_PATH"
+            echo "Selected: $XCODE_PATH"
+            xcodebuild -version
+          fi
+
+      - name: Tooling versions
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build + Test with Thread Sanitizer
+        run: |
+          set -euo pipefail
+          swift test \
+            --sanitize thread \
+            --enable-swift-testing \
+            --parallel \
+            --scratch-path .build-tsan \
+            -v

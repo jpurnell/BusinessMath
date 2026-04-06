@@ -182,7 +182,7 @@ public struct Constraint<T: Real & Sendable & Codable>: Sendable {
 		type: ConstraintType,
 		bound: T,
 		function: (@Sendable (T) -> T)? = nil,
-		tolerance: T = 0.0001
+		tolerance: T
 	) {
 		self.type = type
 		self.bound = bound
@@ -254,4 +254,27 @@ public protocol Optimizer {
 		initialGuess: T,
 		bounds: (lower: T, upper: T)?
 	) -> OptimizationResult<T>
+}
+
+// MARK: - Constraint Double Defaults
+
+extension Constraint where T == Double {
+	/// Creates a constraint with default tolerance.
+	///
+	/// - Parameters:
+	///   - type: The type of constraint.
+	///   - bound: The bound value.
+	///   - function: Optional function to apply before checking. Defaults to identity.
+	///   - tolerance: Tolerance for equality constraints. Defaults to 0.0001.
+	public init(
+		type: ConstraintType,
+		bound: Double,
+		function: (@Sendable (Double) -> Double)? = nil,
+		tolerance: Double = 0.0001
+	) {
+		self.type = type
+		self.bound = bound
+		self.function = function
+		self.tolerance = tolerance
+	}
 }

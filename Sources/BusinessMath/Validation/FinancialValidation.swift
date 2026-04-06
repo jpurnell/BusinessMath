@@ -170,9 +170,9 @@ public enum FinancialValidation {
 		/// Creates a reasonable gross margin validation rule.
 		///
 		/// - Parameters:
-		///   - minMargin: Minimum expected gross margin. Defaults to -0.20 (20% loss).
-		///   - maxMargin: Maximum expected gross margin. Defaults to 0.90 (90%).
-		public init(minMargin: T = -0.20, maxMargin: T = 0.90) {
+		///   - minMargin: Minimum expected gross margin.
+		///   - maxMargin: Maximum expected gross margin.
+		public init(minMargin: T, maxMargin: T) {
 			self.minMargin = minMargin
 			self.maxMargin = maxMargin
 		}
@@ -317,3 +317,14 @@ public enum FinancialValidation {
 		}
 	}
 }
+// MARK: - ReasonableGrossMargin Default Initializer
+
+extension FinancialValidation.ReasonableGrossMargin where T == Double {
+	/// Creates a reasonable gross margin validation rule with default thresholds.
+	///
+	/// Uses -0.20 (20% loss) as the minimum and 0.90 (90%) as the maximum.
+	public init() {
+		self.init(minMargin: -0.20, maxMargin: 0.90)
+	}
+}
+

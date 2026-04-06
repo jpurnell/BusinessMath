@@ -94,9 +94,9 @@
 		///   - maxIterations: Maximum number of iterations. Defaults to 100.
 		///   - stepSize: Step size for numerical derivatives. Defaults to 0.0001.
 		public init(
-			tolerance: T = 0.0001,
+			tolerance: T,
 			maxIterations: Int = 100,
-			stepSize: T = 0.0001
+			stepSize: T
 		) {
 			self.tolerance = tolerance
 			self.maxIterations = maxIterations
@@ -466,5 +466,25 @@
 
 			// If no feasible point found, return the projected point
 			return projectToFeasibleRegion(x, constraints: constraints, bounds: bounds)
+		}
+	}
+
+	// MARK: - NewtonRaphsonOptimizer Double Defaults
+
+	extension NewtonRaphsonOptimizer where T == Double {
+		/// Creates a Newton-Raphson optimizer with default parameters.
+		///
+		/// - Parameters:
+		///   - tolerance: Convergence tolerance. Defaults to 0.0001.
+		///   - maxIterations: Maximum number of iterations. Defaults to 100.
+		///   - stepSize: Step size for numerical derivatives. Defaults to 0.0001.
+		public init(
+			tolerance: Double = 0.0001,
+			maxIterations: Int = 100,
+			stepSize: Double = 0.0001
+		) {
+			self.tolerance = tolerance
+			self.maxIterations = maxIterations
+			self.stepSize = stepSize
 		}
 	}

@@ -241,8 +241,8 @@ public struct AccelerateFFTBackend: FFTBackend, Sendable {
                     }
                 }
 
-                // Forward FFT in-place
-                vDSP_fft_zipD(fftSetup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))
+                // Forward real-input FFT in-place
+                vDSP_fft_zripD(fftSetup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))
             }
         }
 

@@ -8,7 +8,7 @@
 import Foundation
 
 #if canImport(Metal)
-import Metal
+@preconcurrency import Metal
 
 /// Metal-accelerated matrix operations for Apple Silicon.
 ///

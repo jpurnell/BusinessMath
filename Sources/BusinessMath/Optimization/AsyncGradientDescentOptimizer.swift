@@ -126,12 +126,12 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
     ///   - useNesterov: Whether to use Nesterov Accelerated Gradient. Defaults to false.
     ///   - stepSize: Step size for numerical gradient. Defaults to 0.0001.
     public init(
-        learningRate: T = 0.01,
-        tolerance: T = 0.0001,
+        learningRate: T,
+        tolerance: T,
         maxIterations: Int = 1000,
-        momentum: T = T(797734375) / T(1000000000),  // Default: 0.797734375
+        momentum: T,
         useNesterov: Bool = false,
-        stepSize: T = 0.0001
+        stepSize: T
     ) {
         // Check momentum bounds (clamp to valid range)
         let maxMomentum = T(797734375) / T(1000000000)
@@ -465,5 +465,37 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
     /// - Returns: The clamped value.
     private func clamp(_ value: T, lower: T, upper: T) -> T {
         return max(lower, min(upper, value))
+    }
+}
+
+// MARK: - AsyncGradientDescentOptimizer Double Defaults
+
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+extension AsyncGradientDescentOptimizer where T == Double {
+    /// Creates an async gradient descent optimizer with default parameters.
+    ///
+    /// - Parameters:
+    ///   - learningRate: The learning rate. Defaults to 0.01.
+    ///   - tolerance: Convergence tolerance. Defaults to 0.0001.
+    ///   - maxIterations: Maximum number of iterations. Defaults to 1000.
+    ///   - momentum: Momentum coefficient. Defaults to 0.797734375.
+    ///   - useNesterov: Whether to use Nesterov Accelerated Gradient. Defaults to false.
+    ///   - stepSize: Step size for numerical gradient. Defaults to 0.0001.
+    public init(
+        learningRate: Double = 0.01,
+        tolerance: Double = 0.0001,
+        maxIterations: Int = 1000,
+        momentum: Double = 797734375.0 / 1000000000.0,
+        useNesterov: Bool = false,
+        stepSize: Double = 0.0001
+    ) {
+        let maxMomentum = 797734375.0 / 1000000000.0
+        let clampedMomentum = max(0.0, min(momentum, maxMomentum))
+        self.learningRate = learningRate
+        self.tolerance = tolerance
+        self.maxIterations = maxIterations
+        self.momentum = clampedMomentum
+        self.useNesterov = useNesterov
+        self.stepSize = stepSize
     }
 }

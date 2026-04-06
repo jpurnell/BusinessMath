@@ -49,8 +49,21 @@ extension ScenarioError: LocalizedError {
 ///
 /// This class provides a fluent interface for defining scenario parameters.
 public final class ScenarioConfiguration: @unchecked Sendable {
-	var values: [String: Double] = [:]
-	var distributions: [String: any DistributionRandom & Sendable] = [:]
+	private let lock = NSLock()
+	private var _values: [String: Double] = [:]
+	private var _distributions: [String: any DistributionRandom & Sendable] = [:]
+
+	var values: [String: Double] {
+		lock.lock()
+		defer { lock.unlock() }
+		return _values
+	}
+
+	var distributions: [String: any DistributionRandom & Sendable] {
+		lock.lock()
+		defer { lock.unlock() }
+		return _distributions
+	}
 
 	/// Sets a fixed value for an input variable.
 	///
@@ -58,7 +71,9 @@ public final class ScenarioConfiguration: @unchecked Sendable {
 	///   - value: The fixed value to use
 	///   - inputName: The name of the input variable
 	public func setValue(_ value: Double, forInput inputName: String) {
-		values[inputName] = value
+		lock.lock()
+		defer { lock.unlock() }
+		_values[inputName] = value
 	}
 
 	/// Sets a probability distribution for an input variable.
@@ -70,7 +85,9 @@ public final class ScenarioConfiguration: @unchecked Sendable {
 		_ distribution: D,
 		forInput inputName: String
 	) where D.T == Double {
-		distributions[inputName] = distribution
+		lock.lock()
+		defer { lock.unlock() }
+		_distributions[inputName] = distribution
 	}
 }
 

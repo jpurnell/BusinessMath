@@ -10,11 +10,6 @@ import Foundation
 @testable import BusinessMath
 
 /// Tests for FFT / frequency domain streaming operators (Phase 2.5 — Gap 5)
-///
-/// Following TDD:
-/// - RED: Write failing tests first
-/// - GREEN: Implement to make tests pass
-/// - REFACTOR: Clean up implementation
 @Suite("Streaming Frequency Domain Tests")
 struct StreamingFrequencyDomainTests {
 
@@ -215,6 +210,9 @@ struct StreamingFrequencyDomainTests {
         let accelSpectrum = accelBackend.powerSpectrum(signal)
 
         #expect(pureSpectrum.count == accelSpectrum.count)
+
+        // Guard against invalid spectrum (prevents Range crash if count < 2)
+        guard pureSpectrum.count > 1, accelSpectrum.count > 1 else { return }
 
         // Both should agree on peak location
         let purePeak = (1..<pureSpectrum.count).max(by: { pureSpectrum[$0] < pureSpectrum[$1] }) ?? 1

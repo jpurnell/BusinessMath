@@ -60,9 +60,9 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 	///   - gamma: Seasonal smoothing (0-1). Defaults to 0.1.
 	///   - seasonalPeriods: Number of periods in one seasonal cycle.
 	public init(
-		alpha: T = 0.2,
-		beta: T = 0.1,
-		gamma: T = 0.1,
+		alpha: T,
+		beta: T,
+		gamma: T,
 		seasonalPeriods: Int
 	) {
 		self.alpha = alpha
@@ -351,5 +351,28 @@ public struct HoltWintersModel<T: Real & Sendable & Codable> {
 		var mutableModel = self
 		try mutableModel.train(on: timeSeries)
 		return try mutableModel.predictWithConfidence(periods: periods, confidenceLevel: confidenceLevel)
+	}
+}
+
+// MARK: - HoltWintersModel Double Defaults
+
+extension HoltWintersModel where T == Double {
+	/// Creates a Holt-Winters forecasting model with default smoothing parameters.
+	///
+	/// - Parameters:
+	///   - alpha: Level smoothing (0-1). Defaults to 0.2.
+	///   - beta: Trend smoothing (0-1). Defaults to 0.1.
+	///   - gamma: Seasonal smoothing (0-1). Defaults to 0.1.
+	///   - seasonalPeriods: Number of periods in one seasonal cycle.
+	public init(
+		alpha: Double = 0.2,
+		beta: Double = 0.1,
+		gamma: Double = 0.1,
+		seasonalPeriods: Int
+	) {
+		self.alpha = alpha
+		self.beta = beta
+		self.gamma = gamma
+		self.seasonalPeriods = seasonalPeriods
 	}
 }

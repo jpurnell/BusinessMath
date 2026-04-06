@@ -10,7 +10,7 @@ struct SplitProtocolTests {
 	// MARK: - Mock Providers
 
 	/// A provider that only provides stock prices — no financials, no metrics.
-	final class MockStockPriceOnly: StockPriceProvider {
+	final class MockStockPriceOnly: StockPriceProvider, @unchecked Sendable {
 		var callCount = 0
 
 		func fetchStockPrice(
@@ -26,7 +26,7 @@ struct SplitProtocolTests {
 	}
 
 	/// A provider that provides financial statements.
-	final class MockFinancialsOnly: FinancialsProvider {
+	final class MockFinancialsOnly: FinancialsProvider, @unchecked Sendable {
 		var incomeCallCount = 0
 		var balanceCallCount = 0
 		var cashFlowCallCount = 0
@@ -93,7 +93,7 @@ struct SplitProtocolTests {
 	}
 
 	/// A provider that provides market metrics.
-	final class MockMetricsOnly: MarketMetricsProvider {
+	final class MockMetricsOnly: MarketMetricsProvider, @unchecked Sendable {
 		var callCount = 0
 
 		func fetchMetrics(symbol: String) async throws -> MarketMetrics {
@@ -116,7 +116,7 @@ struct SplitProtocolTests {
 	}
 
 	/// A full provider conforming to all three protocols (satisfies MarketDataProvider typealias).
-	final class MockFullProvider: StockPriceProvider, FinancialsProvider, MarketMetricsProvider {
+	final class MockFullProvider: StockPriceProvider, FinancialsProvider, MarketMetricsProvider, @unchecked Sendable {
 		private let stockProvider = MockStockPriceOnly()
 		private let financialsProvider = MockFinancialsOnly()
 		private let metricsProvider = MockMetricsOnly()

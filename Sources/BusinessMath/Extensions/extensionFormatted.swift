@@ -193,14 +193,14 @@ extension BinaryFloatingPoint {
 	/// - Returns: Formatted number string (e.g., "1,234.56")
 	public func number(_ decimals: Int = 2, _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ signStrategy: BMNumberSignDisplay = .automatic, _ grouping: BMNumberGrouping = .automatic, _ notation: BMNumberNotation = .automatic) -> String {
 		let value = Double(self)
-		
+
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 			var style = FloatingPointFormatStyle<Double>.number
 			style = style
 				.precision(.fractionLength(decimals))
 				.rounded(rule: roundingRule)
 				.locale(locale)
-			
+
 			switch signStrategy {
 				case .automatic:
 					break
@@ -209,14 +209,14 @@ extension BinaryFloatingPoint {
 				case .always(let includingZero):
 					style = style.sign(strategy: .always(includingZero: includingZero))
 			}
-			
+
 			switch grouping {
 				case .automatic:
 					style = style.grouping(.automatic)
 				case .never:
 					style = style.grouping(.never)
 			}
-			
+
 			switch notation {
 				case .automatic:
 					style = style.notation(.automatic)
@@ -225,7 +225,7 @@ extension BinaryFloatingPoint {
 				case .compactName:
 					style = style.notation(.compactName)
 			}
-			
+
 			return value.formatted(style)
 		} else {
 			let formatter = NumberFormatter()

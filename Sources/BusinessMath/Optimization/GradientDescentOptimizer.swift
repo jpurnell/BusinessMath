@@ -136,12 +136,12 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 	///   - useNesterov: Whether to use Nesterov Accelerated Gradient. Defaults to false.
 	///   - stepSize: Step size for numerical gradient. Defaults to 0.0001.
 	public init(
-		learningRate: T = 0.01,
-		tolerance: T = 0.0001,
+		learningRate: T,
+		tolerance: T,
 		maxIterations: Int = 1000,
-		momentum: T = T(797734375) / T(1000000000),
+		momentum: T,
 		useNesterov: Bool = false,
-		stepSize: T = 0.0001
+		stepSize: T
 	) {
 		// Check momentum bounds
 		guard momentum >= 0 && momentum <= T(797734375) / T(1000000000) else {
@@ -316,5 +316,43 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 	/// - Returns: The clamped value.
 	private func clamp(_ value: T, lower: T, upper: T) -> T {
 		return max(lower, min(upper, value))
+	}
+}
+
+// MARK: - GradientDescentOptimizer Double Defaults
+
+extension GradientDescentOptimizer where T == Double {
+	/// Creates a gradient descent optimizer with default parameters.
+	///
+	/// - Parameters:
+	///   - learningRate: The learning rate. Defaults to 0.01.
+	///   - tolerance: Convergence tolerance. Defaults to 0.0001.
+	///   - maxIterations: Maximum number of iterations. Defaults to 1000.
+	///   - momentum: Momentum coefficient. Defaults to 0.797734375.
+	///   - useNesterov: Whether to use Nesterov Accelerated Gradient. Defaults to false.
+	///   - stepSize: Step size for numerical gradient. Defaults to 0.0001.
+	public init(
+		learningRate: Double = 0.01,
+		tolerance: Double = 0.0001,
+		maxIterations: Int = 1000,
+		momentum: Double = 797734375.0 / 1000000000.0,
+		useNesterov: Bool = false,
+		stepSize: Double = 0.0001
+	) {
+		guard momentum >= 0 && momentum <= 797734375.0 / 1000000000.0 else {
+			self.learningRate = learningRate
+			self.tolerance = tolerance
+			self.maxIterations = maxIterations
+			self.momentum = 797734375.0 / 1000000000.0
+			self.useNesterov = useNesterov
+			self.stepSize = stepSize
+			return
+		}
+		self.learningRate = learningRate
+		self.tolerance = tolerance
+		self.maxIterations = maxIterations
+		self.momentum = momentum
+		self.useNesterov = useNesterov
+		self.stepSize = stepSize
 	}
 }

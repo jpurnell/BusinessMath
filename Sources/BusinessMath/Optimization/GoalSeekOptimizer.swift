@@ -93,10 +93,10 @@ public struct GoalSeekOptimizer<T>: Optimizer where T: Real & Sendable & Codable
     ///   - maxIterations: Maximum number of iterations. Defaults to 1000.
     ///   - stepSize: Step size for numerical derivatives. Defaults to 0.0001.
     public init(
-        target: T = 0,
-        tolerance: T = 0.0001,
+        target: T,
+        tolerance: T,
         maxIterations: Int = 1000,
-        stepSize: T = 0.0001
+        stepSize: T
     ) {
         self.target = target
         self.tolerance = tolerance
@@ -274,5 +274,28 @@ public struct GoalSeekOptimizer<T>: Optimizer where T: Real & Sendable & Codable
         }
 
         return x
+    }
+}
+
+// MARK: - GoalSeekOptimizer Double Defaults
+
+extension GoalSeekOptimizer where T == Double {
+    /// Creates a Goal Seek optimizer with default parameters.
+    ///
+    /// - Parameters:
+    ///   - target: The target value the function should equal. Defaults to 0.
+    ///   - tolerance: Convergence tolerance. Defaults to 0.0001.
+    ///   - maxIterations: Maximum number of iterations. Defaults to 1000.
+    ///   - stepSize: Step size for numerical derivatives. Defaults to 0.0001.
+    public init(
+        target: Double = 0,
+        tolerance: Double = 0.0001,
+        maxIterations: Int = 1000,
+        stepSize: Double = 0.0001
+    ) {
+        self.target = target
+        self.tolerance = tolerance
+        self.maxIterations = maxIterations
+        self.stepSize = stepSize
     }
 }
