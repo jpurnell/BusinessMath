@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.1.0] - 2026-04-06
+
+**Version 2.1.0** is a stability and quality release that fixes a CI crash (SIGABRT), eliminates all compiler warnings, hardens concurrency safety, and adds Thread Sanitizer to the CI pipeline.
+
+#### Fixed
+
+- **AccelerateFFTBackend crash (SIGABRT)**: Root cause was using `vDSP_fft_zipD` (complex-to-complex FFT) instead of `vDSP_fft_zripD` (real-input FFT). This produced incorrect spectrum sizes, causing `1..<negativeCount` Range precondition failures that crashed the test runner during parallel execution.
+- **Sendable conformance warnings**: Added `@preconcurrency import Metal` for `MetalMatrixBackend` to suppress warnings from Metal framework types that predate Swift concurrency. Added `@unchecked Sendable` to test mock classes in `SplitProtocolTests`.
+- **ScenarioConfiguration thread safety**: Added `NSLock` synchronization to `ScenarioConfiguration`, which had `@unchecked Sendable` but no actual lock protection on its mutable dictionaries.
+- **FFT test guard**: Added `count > 1` guard before Range creation in `StreamingFrequencyDomainTests` to prevent test runner crash if spectrum is empty.
+
+#### Changed
+
+- **Generic default parameter warnings eliminated**: Refactored 7 files to use `where T == Double` constrained extensions instead of default values on generic `T` parameters. Affects: `HoltWintersModel`, `NewtonRaphsonOptimizer`, `AsyncGradientDescentOptimizer`, `GoalSeekOptimizer`, `GradientDescentOptimizer`, `Optimizer`, `FinancialValidation`.
+
+#### Added
+
+- **Thread Sanitizer CI job**: New `thread_sanitizer` job in `release-tests.yml` runs `swift test --sanitize thread` on macOS as part of the scheduled release test workflow.
+
+#### Removed
+
+- **`.docc-build` artifacts**: Removed generated DocC build artifacts that were inadvertently committed to the repository.
+
+**Testing:**
+- 4,708 tests across 367 suites, all passing
+- Zero compiler warnings, zero errors
+- Thread Sanitizer and Address Sanitizer verified locally
+
+**Files Modified:**
+- `MetalMatrixBackend.swift`, `FFTBackend.swift`, `ScenarioAnalysis.swift`, `SplitProtocolTests.swift`, `StreamingFrequencyDomainTests.swift`, `HoltWintersModel.swift`, `NewtonRaphsonOptimizer.swift`, `AsyncGradientDescentOptimizer.swift`, `GoalSeekOptimizer.swift`, `GradientDescentOptimizer.swift`, `Optimizer.swift`, `FinancialValidation.swift`, `release-tests.yml`
+
+**Migration:** None required — all changes are backward compatible.
+
+---
+
 ### [2.0.0] - 2026-03-10
 
 **Version 2.0.0** is a major release featuring a complete redesign of the financial statement architecture, extensive new optimization capabilities, GPU acceleration, comprehensive documentation reorganization, and significant test suite expansion.
