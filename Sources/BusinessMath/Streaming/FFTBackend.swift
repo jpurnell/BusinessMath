@@ -246,22 +246,34 @@ public struct AccelerateFFTBackend: FFTBackend, Sendable {
             }
         }
 
-        // Compute power spectrum from results
+        // Compute power spectrum from results.
+        //
+        // **vDSP scaling correction:** `vDSP_fft_zripD` returns FFT outputs
+        // scaled by 2 vs the textbook DFT formula (vDSP convention for
+        // packed real-input FFT). Squaring magnitudes therefore yields
+        // values 4× the textbook |X[k]|². We divide by 4 to match the
+        // mathematical definition that `PureSwiftFFTBackend` produces, so
+        // both backends are interchangeable for absolute-power analysis
+        // (Parseval, PSD, band integration, etc.).
+        //
+        // Without this correction, downstream PSD computation would be
+        // off by 4× on Darwin only, breaking Parseval's theorem.
         let numBins = n / 2 + 1
         var power = [Double](repeating: 0.0, count: numBins)
+        let vdspScalingCorrection = 0.25  // = 1/4
 
         // DC component
-        power[0] = realPart[0] * realPart[0]
+        power[0] = realPart[0] * realPart[0] * vdspScalingCorrection
 
         // Nyquist component (packed in imagPart[0] for real FFT)
         if numBins > 1 {
-            power[numBins - 1] = imagPart[0] * imagPart[0]
+            power[numBins - 1] = imagPart[0] * imagPart[0] * vdspScalingCorrection
         }
 
         // Other bins
         for k in 1..<(n / 2) {
             if k < numBins {
-                power[k] = realPart[k] * realPart[k] + imagPart[k] * imagPart[k]
+                power[k] = (realPart[k] * realPart[k] + imagPart[k] * imagPart[k]) * vdspScalingCorrection
             }
         }
 
