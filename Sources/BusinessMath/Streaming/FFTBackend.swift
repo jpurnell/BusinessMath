@@ -45,6 +45,129 @@ public protocol FFTBackend: Sendable {
     /// - Returns: Power spectrum values of length `N/2 + 1` where N is the
     ///   zero-padded signal length.
     func powerSpectrum(_ signal: [Double]) -> [Double]
+
+    /// Compute the one-sided power spectral density (PSD) of a real-valued signal.
+    ///
+    /// The integral of the returned PSD over frequency equals the time-domain
+    /// variance of the input signal (Parseval's theorem). Values are in
+    /// `units²/Hz` where `units` is the unit of the input signal — for example,
+    /// HRV RR-interval data in milliseconds yields PSD in `ms²/Hz` and
+    /// integrated band power in `ms²`.
+    ///
+    /// **Normalization conventions:**
+    /// - One-sided spectrum: bins `1..<N/2` carry a factor of 2; the DC bin
+    ///   `0` and the Nyquist bin `N/2` do **not**.
+    /// - The normalization uses the **unpadded** signal length `M`, not the
+    ///   internally zero-padded length `N`. This ensures the PSD integral
+    ///   equals the time-domain variance regardless of input length.
+    /// - No window function is applied. Callers that want a tapered window
+    ///   (Hann, Hamming, etc.) must apply it before calling, and compensate
+    ///   the result by dividing by the window's noise-equivalent bandwidth
+    ///   `(1/M) · Σ w[m]²`.
+    /// - For Parseval to hold exactly, the input should be zero-mean (apply
+    ///   mean removal before calling). Otherwise the DC bin reflects the
+    ///   signal's mean and the integral exceeds the variance by `mean²`.
+    ///
+    /// ## Example
+    /// ```swift
+    /// let backend = FFTBackendSelector.selectBackend()
+    /// let mean = signal.reduce(0, +) / Double(signal.count)
+    /// let zeroMean = signal.map { $0 - mean }
+    /// let psd = backend.powerSpectralDensity(zeroMean, sampleRate: 4.0)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - signal: Real-valued input signal. Should be mean-removed (and
+    ///     optionally windowed) before calling. Internally zero-padded to
+    ///     the next power of 2 for the FFT.
+    ///   - sampleRate: Sample rate in Hz. Must be positive.
+    /// - Returns: One-sided PSD bins of length `N/2 + 1` where `N` is the
+    ///   zero-padded length. Returns an empty array for an empty signal or
+    ///   non-positive sample rate.
+    func powerSpectralDensity(_ signal: [Double], sampleRate: Double) -> [Double]
+}
+
+// MARK: - PSD Default Implementation
+
+extension FFTBackend {
+
+    /// Default one-sided PSD implementation, derived from `powerSpectrum(_:)`.
+    ///
+    /// All conforming backends inherit this for free. Backends MAY override
+    /// for performance, but the default is correct and stable.
+    public func powerSpectralDensity(
+        _ signal: [Double],
+        sampleRate: Double
+    ) -> [Double] {
+        guard signal.isEmpty == false, sampleRate > 0 else { return [] }
+
+        let unpaddedLength = signal.count
+        let raw = powerSpectrum(signal)
+        guard raw.isEmpty == false else { return [] }
+
+        let nyquistBin = raw.count - 1
+        // Typical bins: factor of 2 for the one-sided convention
+        let typicalFactor = 2.0 / (Double(unpaddedLength) * sampleRate)
+        // DC bin and Nyquist bin: no factor of 2
+        let edgeFactor = 1.0 / (Double(unpaddedLength) * sampleRate)
+
+        var psd = [Double](repeating: 0.0, count: raw.count)
+        psd[0] = raw[0] * edgeFactor
+        if nyquistBin > 0 {
+            psd[nyquistBin] = raw[nyquistBin] * edgeFactor
+        }
+        if nyquistBin > 1 {
+            for k in 1..<nyquistBin {
+                psd[k] = raw[k] * typicalFactor
+            }
+        }
+        return psd
+    }
+
+    /// One-sided PSD with each bin labeled by its center frequency in Hz.
+    ///
+    /// Convenience that pairs ``powerSpectralDensity(_:sampleRate:)`` values
+    /// with their bin frequencies, so downstream code doesn't need to
+    /// recompute `Δf = sampleRate / N_padded`.
+    ///
+    /// - Parameters:
+    ///   - signal: Real-valued input signal. See ``powerSpectralDensity(_:sampleRate:)``
+    ///     for preparation requirements.
+    ///   - sampleRate: Sample rate in Hz.
+    /// - Returns: An array of ``PSDBin`` values. Empty for empty input.
+    public func powerSpectralDensityBins(
+        _ signal: [Double],
+        sampleRate: Double
+    ) -> [PSDBin] {
+        let psd = powerSpectralDensity(signal, sampleRate: sampleRate)
+        guard psd.isEmpty == false else { return [] }
+        let paddedLength = (psd.count - 1) * 2
+        guard paddedLength > 0 else { return [] }
+        let deltaF = sampleRate / Double(paddedLength)
+        return psd.enumerated().map { idx, value in
+            PSDBin(frequency: Double(idx) * deltaF, power: value)
+        }
+    }
+}
+
+// MARK: - PSDBin
+
+/// A single power spectral density value paired with its center frequency.
+///
+/// Returned by ``FFTBackend/powerSpectralDensityBins(_:sampleRate:)``.
+public struct PSDBin: Sendable, Equatable {
+
+    /// Center frequency of the bin, in Hz.
+    public let frequency: Double
+
+    /// Power spectral density at this bin, in `units²/Hz`.
+    public let power: Double
+
+    /// Creates a PSD bin with the given frequency and power.
+    public init(frequency: Double, power: Double) {
+        self.frequency = frequency
+        self.power = power
+    }
 }
 
 // MARK: - Pure Swift FFT Backend
@@ -246,22 +369,34 @@ public struct AccelerateFFTBackend: FFTBackend, Sendable {
             }
         }
 
-        // Compute power spectrum from results
+        // Compute power spectrum from results.
+        //
+        // **vDSP scaling correction:** `vDSP_fft_zripD` returns FFT outputs
+        // scaled by 2 vs the textbook DFT formula (vDSP convention for
+        // packed real-input FFT). Squaring magnitudes therefore yields
+        // values 4× the textbook |X[k]|². We divide by 4 to match the
+        // mathematical definition that `PureSwiftFFTBackend` produces, so
+        // both backends are interchangeable for absolute-power analysis
+        // (Parseval, PSD, band integration, etc.).
+        //
+        // Without this correction, downstream PSD computation would be
+        // off by 4× on Darwin only, breaking Parseval's theorem.
         let numBins = n / 2 + 1
         var power = [Double](repeating: 0.0, count: numBins)
+        let vdspScalingCorrection = 0.25  // = 1/4
 
         // DC component
-        power[0] = realPart[0] * realPart[0]
+        power[0] = realPart[0] * realPart[0] * vdspScalingCorrection
 
         // Nyquist component (packed in imagPart[0] for real FFT)
         if numBins > 1 {
-            power[numBins - 1] = imagPart[0] * imagPart[0]
+            power[numBins - 1] = imagPart[0] * imagPart[0] * vdspScalingCorrection
         }
 
         // Other bins
         for k in 1..<(n / 2) {
             if k < numBins {
-                power[k] = realPart[k] * realPart[k] + imagPart[k] * imagPart[k]
+                power[k] = (realPart[k] * realPart[k] + imagPart[k] * imagPart[k]) * vdspScalingCorrection
             }
         }
 

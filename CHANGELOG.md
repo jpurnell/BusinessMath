@@ -9,6 +9,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.1.1] - 2026-04-06
+
+**Version 2.1.1** adds normalized power spectral density (PSD) to the FFT layer
+and fixes a pre-existing 4× scaling bug in `AccelerateFFTBackend.powerSpectrum`
+that was uncovered while implementing PSD. Driven by the BioFeedbackKit project,
+which needs physically meaningful spectral magnitudes (ms² for HRV LF/HF
+analysis) without every consumer reinventing FFT normalization.
+
+#### Added
+
+- **`FFTBackend.powerSpectralDensity(_:sampleRate:)`** — new protocol method
+  returning a one-sided PSD in `units²/Hz`. The integral over frequency
+  equals the time-domain variance of a zero-mean input (Parseval's theorem),
+  so band powers come out in physical units directly. Default implementation
+  in an extension; all conformers (`PureSwiftFFTBackend`, `AccelerateFFTBackend`)
+  inherit it for free.
+- **Normalization correctness:** the PSD method uses the **unpadded** signal
+  length `M` for normalization, not the internally zero-padded length `N`,
+  so PSD integrals remain physically meaningful regardless of input length.
+  Previously, every downstream consumer needed to know about this gotcha;
+  now BusinessMath handles it.
+- **`PSDBin` value type** — pairs each PSD value with its center frequency in
+  Hz, returned by the convenience method `powerSpectralDensityBins(_:sampleRate:)`.
+- **12 new tests** in `Tests/BusinessMathTests/StreamingTests/PowerSpectralDensityTests.swift`
+  covering Parseval's theorem on multiple fixtures, the M-vs-N normalization
+  edge case (M=50 padded to 64), DC and Nyquist edge factors, cross-backend
+  equivalence, and the `PSDBin` convenience.
+- **Validation playground** at `Tests/Validation/PSD_Validation.swift` —
+  standalone hand-rolled implementation that verifies the PSD formulas
+  against Parseval's theorem before any package code runs.
+
+#### Fixed
+
+- **`AccelerateFFTBackend.powerSpectrum` 4× scaling bug.** `vDSP_fft_zripD`
+  returns FFT outputs scaled by 2 vs the textbook DFT formula (vDSP
+  convention for packed real-input FFT). Squaring magnitudes therefore
+  produced values 4× the textbook `|X[k]|²` on Darwin only. The existing
+  cross-backend test (`Accelerate FFT: matches Pure Swift within tolerance`)
+  only checked peak bin location, not absolute values, so the discrepancy
+  was invisible to it. Fix: apply a `× 0.25` correction in the power
+  computation. Both backends now satisfy Parseval's theorem and produce
+  identical PSD values to within `1e-9` relative tolerance.
+
+#### Notes
+
+- This release is **purely additive at the public API level**. The existing
+  `powerSpectrum(_:)` method signature is unchanged. Consumers that were
+  comparing absolute spectrum magnitudes from `AccelerateFFTBackend` against
+  external references will see corrected (smaller by 4×) values — but those
+  comparisons were previously wrong, and any such consumers should update.
+
 ### [2.1.0] - 2026-04-06
 
 **Version 2.1.0** is a stability and quality release that fixes a CI crash (SIGABRT), eliminates all compiler warnings, hardens concurrency safety, and adds Thread Sanitizer to the CI pipeline.
