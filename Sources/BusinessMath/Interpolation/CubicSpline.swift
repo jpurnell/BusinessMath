@@ -133,9 +133,15 @@ public struct CubicSplineInterpolator<T: Real & Sendable & Codable>: Interpolato
         let A3 = A * A * A
         let B3 = B * B * B
         let M = secondDerivatives
-        return A * ys[lo]
-            + B * ys[hi]
-            + ((A3 - A) * M[lo] + (B3 - B) * M[hi]) * (h * h) / T(6)
+        // Broken into sub-expressions to keep the Swift compiler's type
+        // checker fast enough for release builds.
+        let yLoTerm = A * ys[lo]
+        let yHiTerm = B * ys[hi]
+        let mLoTerm = (A3 - A) * M[lo]
+        let mHiTerm = (B3 - B) * M[hi]
+        let mSum = mLoTerm + mHiTerm
+        let mScale = (h * h) / T(6)
+        return yLoTerm + yHiTerm + mSum * mScale
     }
 
     // MARK: - Coefficient computation
