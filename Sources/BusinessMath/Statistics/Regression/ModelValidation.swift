@@ -334,7 +334,7 @@ public struct ReciprocalParameterRecoveryCheck {
 		var summary = "Parameter Recovery: Multiple Replicates Summary\n"
 		summary += "===============================================\n\n"
 		summary += "Replicates: \(reports.count)\n"
-		summary += "Passed: \(passCount) (\(String(format: "%.1f%%", passRate * 100)))\n"
+		summary += "Passed: \(passCount) (\((passRate * 100).number(1))%)\n"
 		summary += "Failed: \(reports.count - passCount)\n\n"
 
 		// Average errors by parameter
@@ -345,7 +345,7 @@ public struct ReciprocalParameterRecoveryCheck {
 		for name in paramNames {
 			let avgRelError = reports.compactMap { $0.relativeErrors[name] }
 				.reduce(T(0), +) / T(reports.count)
-			summary += "\(name): \(String(format: "%.2f%%", Double(avgRelError) * 100))\n"
+			summary += "\(name): \((Double(avgRelError) * 100).number(2))%\n"
 		}
 
 		return summary

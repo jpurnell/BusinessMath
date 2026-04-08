@@ -1044,7 +1044,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                         }
 
                         // Deduplicate: check if we've seen this cut before
-                        let cutSignature = "\(cut.coefficients.map { String(format: "%.6f", $0) }.joined(separator:",")):\(String(format: "%.6f", cut.rhs))"
+                        let cutSignature = "\(cut.coefficients.map { $0.number(6) }.joined(separator:",")):\(cut.rhs.number(6))"
 
                         if !generatedCuts.contains(cutSignature) {
                             cutsThisRound.append(cut)

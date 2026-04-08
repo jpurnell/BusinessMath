@@ -317,7 +317,11 @@ public struct TemplatePackage: Codable, Sendable {
     /// Calculate SHA-256 checksum for template data
     static func calculateChecksum(_ data: String) -> String {
         let hash = SHA256.hash(data: Data(data.utf8))
-        return hash.compactMap { String(format: "%02x", $0) }.joined()
+        // Format each byte as 2-digit lowercase hex via String(_:radix:uppercase:)
+        return hash.map { byte in
+            let hex = String(byte, radix: 16, uppercase: false)
+            return hex.count == 1 ? "0\(hex)" : hex
+        }.joined()
     }
 }
 

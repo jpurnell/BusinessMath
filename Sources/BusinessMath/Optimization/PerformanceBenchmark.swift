@@ -124,8 +124,8 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 
 			output += "\n"
 			output += "Winner: \(winner.name)\n"
-			output += "  - Fastest average time: \(String(format: "%.4f", winner.avgTime))s\n"
-			output += "  - Success rate: \(String(format: "%.1f", winner.successRate * 100))%\n"
+			output += "  - Fastest average time: \(winner.avgTime.number(4))s\n"
+			output += "  - Success rate: \((winner.successRate * 100).number(1))%\n"
 
 			return output
 		}
@@ -137,19 +137,19 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 
 			for result in results {
 				output += "\(result.name):\n"
-				output += "  Average time: \(String(format: "%.4f", result.avgTime))s " +
-						 "(± \(String(format: "%.4f", result.stdTime))s)\n"
-				output += "  Average iterations: \(String(format: "%.1f", result.avgIterations))\n"
-				output += "  Success rate: \(String(format: "%.1f", result.successRate * 100))%\n"
-				output += "  Average objective: \(String(format: "%.6f", result.avgObjectiveValue))\n"
-				output += "  Best objective: \(String(format: "%.6f", result.bestObjectiveValue))\n"
+				output += "  Average time: \(result.avgTime.number(4))s " +
+						 "(± \(result.stdTime.number(4))s)\n"
+				output += "  Average iterations: \(result.avgIterations.number(1))\n"
+				output += "  Success rate: \((result.successRate * 100).number(1))%\n"
+				output += "  Average objective: \(result.avgObjectiveValue.number(6))\n"
+				output += "  Best objective: \(result.bestObjectiveValue.number(6))\n"
 
 				// Show run-by-run details
 				output += "  Runs:\n"
 				for (i, run) in result.runs.prefix(5).enumerated() {
 					let num = i + 1
-					let time = String(format: "%.4fs", run.executionTime)
-					let obj = String(format: "%.6f", run.objectiveValue)
+					let time = "\(run.executionTime.number(4))s"
+					let obj = run.objectiveValue.number(6)
 					let status = run.converged ? "✓" : "✗"
 					output += "    \(num): \(time), \(run.iterations) iter, obj=\(obj) \(status)\n"
 				}

@@ -727,7 +727,7 @@ extension DataExporter {
 				case .fixed(let amount):
 					builder.append("\(escapeCsv(component.name)),Cost,Fixed,\(amount),\n")
 				case .variable(let percentage):
-					let percentageStr = String(format: "%.2f%%", percentage * 100)
+					let percentageStr = "\((percentage * 100).number(2))%"
 					builder.append("\(escapeCsv(component.name)),Cost,Variable,,\(percentageStr)\n")
 			}
 		}
