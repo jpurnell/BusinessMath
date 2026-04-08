@@ -167,6 +167,118 @@ public extension VectorSpace {
 ///
 /// # Use Cases
 /// - 2D coordinate systems
+// MARK: - 1D Vector Implementation
+
+/// A 1-dimensional vector — a trivial wrapper around a single scalar value
+/// that conforms to ``VectorSpace``.
+///
+/// `Vector1D` completes the family of fixed-dimension vector types
+/// (``Vector1D``, ``Vector2D``, ``Vector3D``) and lets generic algorithms
+/// over `VectorSpace` include the 1D scalar case naturally instead of
+/// special-casing scalars. It is the natural `Point` type for 1D
+/// interpolation, time series, scalar fields, and any other inherently
+/// 1D domain.
+///
+/// # Use Cases
+/// - 1D interpolation (input domain for `Interpolator`)
+/// - 1D optimization problems generic over `VectorSpace`
+/// - Time-series indexing
+/// - Single-variable functions
+///
+/// # Initializer
+/// `Vector1D` uses an unnamed initializer to match `VectorN([1, 2, 3])`'s
+/// pattern rather than the named-component pattern of `Vector2D(x: y:)`.
+/// A 1D point has no spatial axis to name.
+///
+/// # Field Name
+/// The stored property is `.value` (not `.x`) — neutral and descriptive,
+/// without spatial baggage.
+///
+/// # Examples
+/// ```swift
+/// let v1 = Vector1D<Double>(2.5)
+/// let v2 = Vector1D<Double>(0.5)
+/// let sum = v1 + v2          // Vector1D(3.0)
+/// let scaled = 2.0 * v1      // Vector1D(5.0)
+/// let dot = v1.dot(v2)       // 1.25
+/// let norm = v1.norm         // 2.5  (|2.5|)
+/// ```
+public struct Vector1D<T: Real & Sendable & Codable>: VectorSpace {
+    /// The scalar type over which this 1D vector space is defined.
+    ///
+    /// Must conform to `Real`, `Sendable`, and `Codable` for mathematical
+    /// operations, concurrency safety, and serialization.
+    public typealias Scalar = T
+
+    /// The single component of this 1D vector.
+    public var value: Scalar
+
+    /// Create a 1D vector wrapping a single scalar value.
+    /// - Parameter value: The component value.
+    public init(_ value: Scalar) {
+        self.value = value
+    }
+
+    /// The zero vector: `Vector1D(0)`.
+    public static var zero: Vector1D<T> {
+        Vector1D(T(0))
+    }
+
+    /// Vector addition: `Vector1D(lhs.value + rhs.value)`.
+    public static func + (lhs: Vector1D<T>, rhs: Vector1D<T>) -> Vector1D<T> {
+        Vector1D(lhs.value + rhs.value)
+    }
+
+    /// Scalar multiplication: `Vector1D(scalar * vector.value)`.
+    public static func * (lhs: T, rhs: Vector1D<T>) -> Vector1D<T> {
+        Vector1D(lhs * rhs.value)
+    }
+
+    /// Scalar division: `Vector1D(vector.value / scalar)`.
+    public static func / (lhs: Vector1D<T>, rhs: T) -> Vector1D<T> {
+        Vector1D(lhs.value / rhs)
+    }
+
+    /// Vector negation: `Vector1D(-value)`.
+    public static prefix func - (vector: Vector1D<T>) -> Vector1D<T> {
+        Vector1D(-vector.value)
+    }
+
+    /// Euclidean norm: `|value|` (the absolute value).
+    public var norm: T {
+        value < T(0) ? -value : value
+    }
+
+    /// Dot product: `value * other.value`.
+    /// For 1D vectors this is identical to scalar multiplication of the components.
+    public func dot(_ other: Vector1D<T>) -> T {
+        value * other.value
+    }
+
+    /// Create a 1D vector from a single-element array.
+    /// - Parameter array: Must have exactly 1 element.
+    /// - Returns: `Vector1D(array[0])` if the array has exactly one element, otherwise `nil`.
+    public static func fromArray(_ array: [T]) -> Vector1D<T>? {
+        guard array.count == 1 else { return nil }
+        return Vector1D(array[0])
+    }
+
+    /// Convert to a single-element array: `[value]`.
+    public func toArray() -> [T] {
+        [value]
+    }
+
+    /// Dimension is always 1 for `Vector1D`.
+    public static var dimension: Int { 1 }
+
+    /// Whether the component is finite (not NaN or infinity).
+    public var isFinite: Bool {
+        value.isFinite
+    }
+}
+
+// MARK: - 2D Vector Implementation
+
 /// - Complex numbers (x = real, y = imaginary)
 /// - Any two-variable optimization problem
 ///
