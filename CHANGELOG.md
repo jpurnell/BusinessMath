@@ -9,6 +9,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.1.2] - 2026-04-07
+
+**Version 2.1.2** introduces the comprehensive 1D interpolation module
+designed from day one to extend cleanly to N-dimensional gridded and
+scattered interpolation in future releases. Driven by downstream HRV
+frequency-domain analysis (BioFeedbackKit) which needs accurate
+resampling of irregular RR-interval series, but the interpolation
+primitive is broadly useful far beyond HRV.
+
+#### Added
+
+- **`Vector1D<T>`** — completes the fixed-dimension vector type family
+  alongside `Vector2D`, `Vector3D`, and `VectorN`. A trivial
+  `VectorSpace`-conforming wrapper around a single scalar value, enabling
+  generic algorithms over `VectorSpace` to include the 1D scalar case
+  naturally instead of special-casing scalars. The natural `Point` type
+  for 1D interpolation, time series, scalar fields, and any other
+  inherently 1D domain. Initializer is unnamed (`Vector1D(2.5)`) and the
+  stored property is `.value`.
+
+- **`Interpolator` protocol** — single root protocol for all interpolation
+  with associated types `Point: VectorSpace` and `Value: Sendable`.
+  Concrete types pick their domain shape via `Point` (1D uses `Vector1D`,
+  future 2D uses `Vector2D`, etc.) and their codomain shape via `Value`
+  (scalar field uses `T`, vector field uses `VectorN<T>` or fixed
+  `Vector*D`). All future N-D and scattered interpolators in v2.2+ will
+  conform to this same protocol — additive, no breaking changes ever.
+
+- **`ExtrapolationPolicy<T>`** — enum with `.clamp`, `.extrapolate`, and
+  `.constant(T)` cases controlling behavior outside the input range.
+  Default is `.clamp` (matches scipy and is the safest choice).
+
+- **`InterpolationError`** — enum thrown only at construction time:
+  `insufficientPoints`, `unsortedInputs`, `duplicateXValues`,
+  `mismatchedSizes`, `invalidParameter`. After successful init, evaluation
+  never throws.
+
+- **Ten 1D scalar-output interpolation methods**, each in its own type:
+  - `NearestNeighborInterpolator`
+  - `PreviousValueInterpolator`
+  - `NextValueInterpolator`
+  - `LinearInterpolator`
+  - `CubicSplineInterpolator` with four boundary conditions:
+    `.natural` (default — Kubios HRV standard), `.notAKnot` (MATLAB
+    default), `.clamped(left:right:)`, `.periodic`
+  - `PCHIPInterpolator` (Fritsch–Carlson monotone cubic, overshoot-safe)
+  - `AkimaInterpolator` (with `modified: Bool = true` for makima default)
+  - `CatmullRomInterpolator` (with `tension: T = 0` for standard
+    Catmull-Rom; tension > 0 produces a tighter cardinal spline)
+  - `BSplineInterpolator` (with `degree: Int = 3`, supports degrees 1..5)
+  - `BarycentricLagrangeInterpolator` (numerically stable polynomial
+    interpolation, suitable for small N ≤ 20 due to Runge phenomenon)
+
+- **Ten 1D vector-output interpolation methods** (`Vector*Interpolator`)
+  with the same algorithms as their scalar counterparts. Each takes
+  `ys: [VectorN<T>]` and produces `VectorN<T>` output. Use cases include
+  3-axis sensor data, multi-channel EEG, motion capture, and any other
+  per-knot vector-valued sample data. The vector flavors run the scalar
+  algorithm once per output channel via internal channel transposition,
+  so they're correct by construction (verified by per-channel equivalence
+  tests).
+
+- **Standalone validation playground** at `Tests/Validation/Interpolation_Playground.swift`
+  hand-rolls all 10 methods with no BusinessMath dependency, runs
+  property checks (pass-through invariant, linear-data invariant,
+  monotonicity preservation), and prints the canonical reference values
+  the test suite asserts against.
+
+#### Test coverage
+
+- 97 new tests across 11 suites, all passing
+- Pass-through invariant tested on every method
+- Linear-data invariant (`a*x + b` reproduced exactly to machine
+  precision) tested on every cubic and polynomial method
+- Hand-computed reference values from the validation playground locked
+  in at `1e-12` tolerance
+- Monotonicity preservation verified for PCHIP and Akima on a sharp-
+  gradient fixture; CubicSpline correctly overshoots as expected
+- Per-channel equivalence verified for all 10 vector-output flavors
+- Cross-method consistency: BSpline degree=1 matches `LinearInterpolator`,
+  BSpline degree=3 matches `CubicSpline.notAKnot`
+- All four `CubicSplineInterpolator.BoundaryCondition` cases tested
+- Error path coverage: insufficient points, mismatched sizes, unsorted
+  xs, duplicate xs, invalid parameters
+
+#### Architecture decisions
+
+Documented in `Instruction Set/00_CORE_RULES/10_ARCHITECTURE_DECISIONS.md`:
+- **ADR-001:** Add Vector1D to complete the vector type family
+- **ADR-002:** Single Interpolator protocol with Point/Value associated types
+- **ADR-003:** Multi-version roadmap for ND interpolation (1D in v2.1.2,
+  2D in v2.2, 3D and ND gridded in v2.3, ND scattered in v2.4)
+- **ADR-004:** Ten-method set with parameter defaults
+
+#### Compatibility
+
+Purely additive at the public API level. No existing types or methods
+were changed. All 4720 tests from v2.1.1 continue to pass, and the
+v2.1.2 release brings the total to 4817.
+
 ### [2.1.1] - 2026-04-06
 
 **Version 2.1.1** adds normalized power spectral density (PSD) to the FFT layer
