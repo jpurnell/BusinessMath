@@ -137,18 +137,8 @@ struct NonlinearRegressionTests {
 			let trueB = 0.3
 			let trueSigma = 0.2
 
-			// Helper to generate deterministic seeds
-			struct SeededRNG {
-				var state: UInt64
-				mutating func next() -> Double {
-					state = state &* 6364136223846793005 &+ 1
-					let upper = Double((state >> 32) & 0xFFFFFFFF)
-					return upper / Double(UInt32.max)
-				}
-			}
-
-			// Create seeded random number generator for reproducibility
-			var rng = SeededRNG(state: 42)
+			// Seeded RNG via TestSupport's consolidated MMIX generator
+			var rng = MMIXSeededRNG(state: 42)
 
 			// Generate deterministic data points with minimal noise
 			var data: [ReciprocalRegressionModel<Double>.DataPoint] = []
