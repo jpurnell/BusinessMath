@@ -149,5 +149,11 @@ internal func cubicHermite<T: Real>(
     let h10 = s * oneMinusS * oneMinusS
     let h01 = s * s * (three - two * s)
     let h11 = s * s * (s - one)
-    return h00 * ys[lo] + h10 * h * slopes[lo] + h01 * ys[hi] + h11 * h * slopes[hi]
+    // Broken into sub-expressions to keep the Swift compiler's type
+    // checker fast enough for release builds.
+    let term0 = h00 * ys[lo]
+    let term1 = h10 * h * slopes[lo]
+    let term2 = h01 * ys[hi]
+    let term3 = h11 * h * slopes[hi]
+    return term0 + term1 + term2 + term3
 }
