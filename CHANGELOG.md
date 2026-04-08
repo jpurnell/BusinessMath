@@ -9,6 +9,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.1.3] - 2026-04-07
+
+**Version 2.1.3** is a developer-hygiene release that cleans up the
+remaining `String(format:)` violations in production source and tests
+(forbidden by `01_CODING_RULES.md`), fixes a previously-flaky test that
+violated the mandatory deterministic-randomness rule from
+`09_TEST_DRIVEN_DEVELOPMENT.md`, and tightens two pre-existing tests
+that were too loose to catch real numerical bugs.
+
+#### Fixed
+
+- **All `String(format:)` violations in `Sources/` and `Tests/` removed.**
+  13 source files and 4 test files were silently using the banned
+  C-style format ABI, which is on the Forbidden Patterns list because
+  of recurring SIGSEGV crashes when `%s` is given a Swift `String`.
+  All call sites now use the project's `value.number(N)` extension or,
+  in `FloatingPointFormatter.swift`, a private POSIX-locale
+  `NumberFormatter` helper that's a true drop-in replacement for
+  `printf` semantics.
+
+- **Flaky `PortfolioUtilitiesTests.Random returns are within reasonable range`
+  test fixed.** Previously used `Double.random(in:)` (the system RNG),
+  which violates the mandatory deterministic-randomness rule and
+  occasionally drew values 5σ+ outside the test's expected range,
+  failing CI ~once every few runs. Refactored to use the existing
+  `TestSupport.SeededRNG` (LCG with seed 42), making the test fully
+  deterministic and auditable.
+
+- **`Accelerate FFT: matches Pure Swift within tolerance`** previously
+  only checked peak bin location, which let the v2.1.0 4× scaling bug
+  in `AccelerateFFTBackend` slip through (the peak was at the right bin,
+  just 4× too large). Tightened to require absolute bin-for-bin
+  agreement at `1e-9` relative tolerance. The v2.1.1 PSD work fixed the
+  underlying scaling bug; this test now locks the fix in.
+
+- **`Parseval's theorem` test** previously used `0.5 < ratio < 2.0` as
+  its tolerance — a 2× margin in either direction so loose it would
+  have passed even with major numerical bugs. Tightened to `1e-12`
+  relative tolerance, which is what Parseval's theorem actually
+  guarantees for the discrete formulation.
+
+#### Notes
+
+- Purely a hygiene release. No public API changes, no behavior changes
+  in production code paths.
+- All 4720 tests from v2.1.1 and the 97 new interpolation tests from
+  v2.1.2 continue to pass. Total test count remains 4817.
+- `Examples/` directory still has `String(format:)` violations and will
+  be cleaned up in a separate PR. Examples are not part of the package
+  build target and don't run in CI.
+- This release unblocks the `c-style-format-string` SafetyAuditor check
+  filed for quality-gate-swift — that check can now ship without
+  generating false positives against the BusinessMath production
+  codebase.
+
 ### [2.1.2] - 2026-04-07
 
 **Version 2.1.2** introduces the comprehensive 1D interpolation module

@@ -173,7 +173,7 @@ struct MultivariateLBFGSTests {
 		// Print comparison
 		print("\nMemory Size Comparison:")
 		for (m, iters, conv, val) in results {
-			print("m=\(m): iterations=\(iters), converged=\(conv), value=\(String(format: "%.6f", val))")
+			print("m=\(m): iterations=\(iters), converged=\(conv), value=\(val.number(6))")
 		}
 
 		// All should converge or make good progress

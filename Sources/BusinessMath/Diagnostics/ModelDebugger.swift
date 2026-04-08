@@ -285,8 +285,7 @@ public actor ModelDebugger {
         if !value.isNaN && !value.isInfinite && percentDifference > tolerance {
             issues.append(DiagnosticIssue(
                 severity: .error,
-                message: String(format: "Value differs from expected by %.2f%% (tolerance: %.2f%%)",
-                              percentDifference * 100, tolerance * 100),
+                message: "Value differs from expected by \((percentDifference * 100).number(2))% (tolerance: \((tolerance * 100).number(2))%)",
                 location: context,
                 suggestion: "Review calculation logic and input values"
             ))
@@ -1087,9 +1086,9 @@ public struct Explanation: Sendable {
         if let ctx = context {
             output += "Context: \(ctx)\n"
         }
-        output += String(format: "Actual: %.2f\n", actual)
-        output += String(format: "Expected: %.2f\n", expected)
-        output += String(format: "Difference: %.2f (%.2f%%)\n\n", difference, percentageDifference)
+        output += "Actual: \(actual.number(2))\n"
+        output += "Expected: \(expected.number(2))\n"
+        output += "Difference: \(difference.number(2)) (\(percentageDifference.number(2))%)\n\n"
 
         if !possibleReasons.isEmpty {
             output += "Possible Reasons:\n"
