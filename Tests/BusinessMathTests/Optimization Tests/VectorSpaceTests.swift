@@ -13,7 +13,127 @@ import Numerics
 
 @Suite("VectorSpace Protocol")
 struct VectorSpaceTests {
-	
+
+		// MARK: - Vector1D Tests
+
+	@Test("Vector1D basic operations")
+	func vector1DBasicOperations() {
+		let v1 = Vector1D<Double>(2.5)
+		let v2 = Vector1D<Double>(0.5)
+
+		let sum = v1 + v2
+		#expect(sum.value == 3.0)
+
+		let diff = v1 - v2
+		#expect(diff.value == 2.0)
+
+		let scaled = 2.0 * v1
+		#expect(scaled.value == 5.0)
+
+		let divided = v1 / 5.0
+		#expect(divided.value == 0.5)
+
+		let negated = -v1
+		#expect(negated.value == -2.5)
+	}
+
+	@Test("Vector1D norm and dot product")
+	func vector1DNormAndDot() {
+		let v1 = Vector1D<Double>(3.0)
+		let v2 = Vector1D<Double>(4.0)
+		let vNeg = Vector1D<Double>(-7.5)
+
+		// Norm is the absolute value
+		#expect(v1.norm == 3.0)
+		#expect(vNeg.norm == 7.5)
+
+		// Dot product is just the product of components
+		#expect(v1.dot(v2) == 12.0)
+		#expect(v1.dot(v1) == 9.0)
+
+		// Squared norm via VectorSpace default
+		#expect(v1.squaredNorm == 9.0)
+	}
+
+	@Test("Vector1D array conversion")
+	func vector1DArrayConversion() {
+		let v = Vector1D<Double>(2.5)
+
+		// To array
+		#expect(v.toArray() == [2.5])
+
+		// From array (valid)
+		let fromArray = Vector1D<Double>.fromArray([3.5])
+		#expect(fromArray?.value == 3.5)
+
+		// From array (wrong size — must return nil)
+		#expect(Vector1D<Double>.fromArray([]) == nil)
+		#expect(Vector1D<Double>.fromArray([1.0, 2.0]) == nil)
+	}
+
+	@Test("Vector1D zero, dimension, and isFinite")
+	func vector1DConvenienceMembers() {
+		let zero = Vector1D<Double>.zero
+		#expect(zero.value == 0.0)
+
+		#expect(Vector1D<Double>.dimension == 1)
+
+		let finite = Vector1D<Double>(2.5)
+		#expect(finite.isFinite)
+
+		let infinite = Vector1D<Double>(.infinity)
+		#expect(!infinite.isFinite)
+
+		let nan = Vector1D<Double>(.nan)
+		#expect(!nan.isFinite)
+	}
+
+	@Test("Vector1D distance and lerp")
+	func vector1DDistanceAndLerp() {
+		let a = Vector1D<Double>(0.0)
+		let b = Vector1D<Double>(10.0)
+
+		// distance is the default extension method via VectorSpace
+		#expect(a.distance(to: b) == 10.0)
+		#expect(b.distance(to: a) == 10.0)
+		#expect(a.squaredDistance(to: b) == 100.0)
+	}
+
+	@Test("Vector1D Equatable and Hashable")
+	func vector1DEquatableAndHashable() {
+		let a = Vector1D<Double>(2.5)
+		let b = Vector1D<Double>(2.5)
+		let c = Vector1D<Double>(2.6)
+
+		#expect(a == b)
+		#expect(a != c)
+
+		// Hashable: equal vectors have equal hashes
+		#expect(a.hashValue == b.hashValue)
+	}
+
+	@Test("Vector1D Codable round-trip")
+	func vector1DCodable() throws {
+		let original = Vector1D<Double>(2.5)
+		let encoder = JSONEncoder()
+		let decoder = JSONDecoder()
+
+		let data = try encoder.encode(original)
+		let decoded = try decoder.decode(Vector1D<Double>.self, from: data)
+
+		#expect(decoded == original)
+		#expect(decoded.value == 2.5)
+	}
+
+	@Test("Vector1D Sendable conformance")
+	func vector1DSendable() async {
+		let v = Vector1D<Double>(3.14)
+		// Compile-time check: passing across actor boundary requires Sendable
+		await Task.detached {
+			#expect(v.value == 3.14)
+		}.value
+	}
+
 		// MARK: - Vector2D Tests
 	
 	@Test("Vector2D basic operations")
