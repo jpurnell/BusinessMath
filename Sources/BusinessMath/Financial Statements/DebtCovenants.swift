@@ -602,8 +602,8 @@ extension Array where Element == CovenantComplianceResult {
             report += "VIOLATIONS:\n"
             for (index, violation) in violations.enumerated() {
                 report += "  \(index + 1). \(violation.covenant.name)\n"
-                report += "     Actual: \(String(format: "%.2f", violation.actualValue))\n"
-                report += "     Required: \(String(format: "%.2f", violation.requiredValue))\n"
+                report += "     Actual: \(violation.actualValue.number(2))\n"
+                report += "     Required: \(violation.requiredValue.number(2))\n"
             }
             report += "\n"
         }
@@ -612,8 +612,8 @@ extension Array where Element == CovenantComplianceResult {
             report += "COMPLIANT:\n"
             for (index, result) in compliant.enumerated() {
                 report += "  \(index + 1). \(result.covenant.name)\n"
-                report += "     Actual: \(String(format: "%.2f", result.actualValue))\n"
-                report += "     Required: \(String(format: "%.2f", result.requiredValue))\n"
+                report += "     Actual: \(result.actualValue.number(2))\n"
+                report += "     Required: \(result.requiredValue.number(2))\n"
             }
         }
 

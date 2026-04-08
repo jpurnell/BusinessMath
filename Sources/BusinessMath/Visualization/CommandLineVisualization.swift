@@ -297,14 +297,6 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 
 		// Add value labels underneath (no grouping for alignment)
 		let valueLabels = "\(String(repeating: " ", count: maxInputNameWidth + 3))\(low.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never))\(String(repeating: " ", count: maxBarWidth - 8))\(baseCaseOutput.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never))\(String(repeating: " ", count: maxBarWidth - 8))\(high.number(decimalPlaces, .toNearestOrAwayFromZero, .autoupdatingCurrent, .automatic, .never)))"
-//		let valueLabels = String(format: "%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f%@%.\(decimalPlaces)f\n",
-//			String(repeating: " ", count: maxInputNameWidth + 3),
-//			low,
-//			String(repeating: " ", count: maxBarWidth - 8),
-//			baseCaseOutput,
-//			String(repeating: " ", count: maxBarWidth - 8),
-//			high
-//		)
 
 		output += valueLabels + "\n"
 	}

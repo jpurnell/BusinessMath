@@ -108,7 +108,7 @@ public func validateLinearModel<V: VectorSpace>(
 
         if error > tolerance {
             // Function is nonlinear - construct helpful error message
-            let pointStr = randomComponents.map { String(format: "%.4f", $0) }.joined(separator: ", ")
+            let pointStr = randomComponents.map { $0.number(4) }.joined(separator: ", ")
             let message = """
             Function is nonlinear.
             At point [\(pointStr)]:

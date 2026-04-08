@@ -87,6 +87,19 @@ public struct FloatingPointFormatter: Sendable {
     // MARK: - Private Formatting Methods
 
     /// Smart rounding: snap to integer if close, remove trailing zeros
+    /// Locale-neutral fixed-decimal formatter. Drop-in replacement for the
+    /// banned C-style format pattern (`%.Nf`). Uses POSIX locale and disables
+    /// grouping separators to match `printf` semantics exactly.
+    private func fixedDecimal(_ value: Double, decimals: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = decimals
+        formatter.maximumFractionDigits = decimals
+        formatter.usesGroupingSeparator = false
+        return formatter.string(from: NSNumber(value: value)) ?? String(value)
+    }
+
     private func formatWithSmartRounding(_ value: Double, tolerance: Double) -> String {
         // Handle edge cases
         if !value.isFinite {
@@ -101,11 +114,11 @@ public struct FloatingPointFormatter: Sendable {
         // Close to an integer?
         let nearest = value.rounded()
         if abs(value - nearest) < tolerance {
-            return String(format: "%.0f", nearest)
+            return fixedDecimal(nearest, decimals: 0)
         }
 
         // Otherwise, format with limited decimals and remove trailing zeros
-        var formatted = String(format: "%.6f", value)
+        var formatted = fixedDecimal(value, decimals: 6)
 
         // Remove trailing zeros
         if formatted.contains(".") {
@@ -136,9 +149,9 @@ public struct FloatingPointFormatter: Sendable {
         let decimals = max(0, n - Int(magnitude) - 1)
 
         if decimals <= 0 {
-            return String(format: "%.0f", rounded)
+            return fixedDecimal(rounded, decimals: 0)
         } else {
-            var formatted = String(format: "%.\(decimals)f", rounded)
+            var formatted = fixedDecimal(rounded, decimals: decimals)
             // Remove trailing zeros
             while formatted.contains(".") && (formatted.last == "0" || formatted.last == ".") {
                 formatted.removeLast()
@@ -166,7 +179,7 @@ public struct FloatingPointFormatter: Sendable {
         // 2. Check if very close to an integer
         let nearest = value.rounded()
         if abs(value - nearest) < tolerance {
-            return String(format: "%.0f", nearest)
+            return fixedDecimal(nearest, decimals: 0)
         }
 
         // 3. Use appropriate decimal places based on magnitude
@@ -184,7 +197,7 @@ public struct FloatingPointFormatter: Sendable {
             decimals = 6
         }
 
-        var formatted = String(format: "%.\(min(decimals, maxDecimals))f", value)
+        var formatted = fixedDecimal(value, decimals: min(decimals, maxDecimals))
 
         // 4. Remove trailing zeros
         if formatted.contains(".") {

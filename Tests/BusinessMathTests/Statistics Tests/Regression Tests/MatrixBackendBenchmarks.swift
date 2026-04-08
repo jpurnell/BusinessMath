@@ -66,7 +66,7 @@ struct MatrixBackendBenchmarks {
             _ = try backend.multiply(A, B)
         }
 
-        print("CPU (100×100): \(String(format: "%.3f", time * 1000))ms")
+        print("CPU (100×100): \((time * 1000).number(3))ms")
     }
 
     #if canImport(Accelerate)
@@ -81,7 +81,7 @@ struct MatrixBackendBenchmarks {
             _ = try backend.multiply(A, B)
         }
 
-        print("Accelerate (100×100): \(String(format: "%.3f", time * 1000))ms")
+        print("Accelerate (100×100): \((time * 1000).number(3))ms")
     }
     #endif
 
@@ -100,7 +100,7 @@ struct MatrixBackendBenchmarks {
             _ = try backend.multiply(A, B)
         }
 
-        print("Metal (100×100): \(String(format: "%.3f", time * 1000))ms")
+        print("Metal (100×100): \((time * 1000).number(3))ms")
     }
     #endif
 
@@ -117,7 +117,7 @@ struct MatrixBackendBenchmarks {
             _ = try backend.multiply(A, B)
         }
 
-        print("CPU (500×500): \(String(format: "%.3f", time * 1000))ms")
+        print("CPU (500×500): \((time * 1000).number(3))ms")
     }
 
     #if canImport(Accelerate)
@@ -132,7 +132,7 @@ struct MatrixBackendBenchmarks {
             _ = try backend.multiply(A, B)
         }
 
-        print("Accelerate (500×500): \(String(format: "%.3f", time * 1000))ms")
+        print("Accelerate (500×500): \((time * 1000).number(3))ms")
     }
     #endif
 
@@ -151,7 +151,7 @@ struct MatrixBackendBenchmarks {
             _ = try backend.multiply(A, B)
         }
 
-        print("Metal (500×500): \(String(format: "%.3f", time * 1000))ms")
+        print("Metal (500×500): \((time * 1000).number(3))ms")
     }
     #endif
 
