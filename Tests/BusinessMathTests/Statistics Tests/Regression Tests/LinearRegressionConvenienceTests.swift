@@ -151,17 +151,8 @@ struct LinearRegressionConvenienceTests {
 
     @Test("Polynomial regression with noise")
     func polynomialWithNoise() throws {
-        // Seeded RNG for deterministic noise
-        struct SeededRNG {
-            var state: UInt64
-            mutating func next() -> Double {
-                state = state &* 6364136223846793005 &+ 1
-                let upper = Double((state >> 32) & 0xFFFFFFFF)
-                return upper / Double(UInt32.max)
-            }
-        }
-
-        var rng = SeededRNG(state: 42)
+        // Seeded RNG via TestSupport's consolidated MMIX generator
+        var rng = MMIXSeededRNG(state: 42)
         let x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
         var y: [Double] = []
 

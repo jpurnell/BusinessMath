@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // MMIXSeededRNG
 import Numerics
 @testable import BusinessMath
 
@@ -439,24 +440,18 @@ struct DenseMatrixTests {
 
     @Test("Large matrix-vector multiplication", .timeLimit(.minutes(1)))
     func largeMatrixVectorMultiplication() throws {
-        // Seeded RNG for deterministic test
-        struct SeededRNG {
-            var state: UInt64
-            mutating func next() -> Double {
-                state = state &* 6364136223846793005 &+ 1
-                let upper = Double((state >> 32) & 0xFFFFFFFF)
-                return (upper / Double(UInt32.max)) * 2.0 - 1.0  // Map to [-1, 1]
-            }
-        }
-
-        var rng = SeededRNG(state: 12345)
+        // Seeded RNG via TestSupport. The DenseMatrix tests previously used
+        // a local SeededRNG that mapped output to [-1, 1] directly from
+        // next(); MMIXSeededRNG.nextSigned() does the same mapping with
+        // the bit-identical underlying LCG sequence.
+        var rng = MMIXSeededRNG(state: 12345)
         let size = 1000
         let data = (0..<size).map { _ in
-            (0..<size).map { _ in rng.next() }
+            (0..<size).map { _ in rng.nextSigned() }
         }
 
         let matrix = try DenseMatrix(data)
-        let vector = (0..<size).map { _ in rng.next() }
+        let vector = (0..<size).map { _ in rng.nextSigned() }
 
         let result = try matrix.multiplied(by: vector)
 
