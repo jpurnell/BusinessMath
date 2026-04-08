@@ -9,6 +9,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.1.4] - 2026-04-07
+
+**Version 2.1.4** is a follow-up developer-hygiene release that completes
+three cleanup items surfaced by the v2.1.3 work but deferred at the time:
+the `Examples/` directory format-string violations, the unseeded
+`generateRandomReturns` production function, and the duplicated local
+`SeededRNG` declarations across 5 test files.
+
+#### Fixed
+
+- **`Examples/` directory `String(format:)` cleanup.** Both
+  `MultipleLinearRegressionExample.swift` (~22 calls) and
+  `LinearRegressionConvenienceExample.swift` (~18 calls) now use the
+  project's `value.number(N)` extension instead of the banned C-style
+  format ABI. Examples are not part of the package build target, so
+  these violations didn't fail CI before — but they were user-facing
+  reference code that propagated the bad pattern. Now consistent with
+  the rest of the codebase.
+
+- **5 test files no longer declare a local `struct SeededRNG`.** The
+  duplicated MMIX-LCG generator now lives in a single canonical location
+  in `Tests/TestSupport/SeededRNG.swift` as the new `MMIXSeededRNG`
+  type. Bit-identical sequences preserved — no test assertions needed
+  re-tuning. The 5 files affected are:
+  - `Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Descriptives Tests.swift`
+  - `Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Dispersion Around the Mean Tests/Dispersion Around the Mean Tests.swift`
+  - `Tests/BusinessMathTests/Statistics Tests/Regression Tests/LinearRegressionConvenienceTests.swift`
+  - `Tests/BusinessMathTests/Statistics Tests/Regression Tests/DenseMatrixTests.swift`
+  - `Tests/BusinessMathTests/Statistics Tests/NonlinearRegressionTests.swift`
+
+  The new `TestSupport.MMIXSeededRNG` is a value type (struct) with
+  `mutating func next()` and `mutating func nextSigned()` — the latter
+  matches the `[-1, 1]` mapping that `DenseMatrixTests` previously used
+  inline.
+
+#### Added
+
+- **`generateRandomReturns(count:mean:stdDev:using:)`** — additive
+  overload of the existing `generateRandomReturns(count:mean:stdDev:)`
+  that accepts an explicit `RandomNumberGenerator`. Lets callers
+  (especially tests) supply a deterministic generator for reproducibility.
+  The unseeded original is now a thin wrapper that creates a
+  `SystemRandomNumberGenerator` and calls the seeded overload — same
+  observable behavior for existing callers, no breaking change. Also
+  fixed an edge case where `Double.random(in: 0.0...1.0)` returning
+  exactly 0 would cause `log(0) = -inf` in the Box-Muller transform;
+  guarded with `Double.leastNormalMagnitude`.
+
+- **`TestSupport.MMIXSeededRNG`** — see above.
+
+#### Notes
+
+- Purely additive at the public API level. No types renamed, no
+  signatures changed.
+- All 4817 tests from v2.1.3 continue to pass after the consolidation.
+- DocC `.md` files in `Sources/BusinessMath/BusinessMath.docc/` still
+  contain ~62 `String(format:)` instances in their Swift code samples.
+  These are documentation, not compiled, but they propagate the bad
+  pattern to users who copy from the docs. Tracked as a future v2.1.5
+  cleanup.
+
 ### [2.1.3] - 2026-04-07
 
 **Version 2.1.3** is a developer-hygiene release that cleans up the

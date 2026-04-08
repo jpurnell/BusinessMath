@@ -126,17 +126,8 @@ import Glibc
 		let sampleCount = 10000
 		let theoreticalVariance20 = Double(df20) / Double(df20 - 2) // 20/18 ≈ 1.1111
 		
-		// Helper to generate deterministic seeds (similar to StudentTDistributionTests)
-		struct SeededRNG {
-			var state: UInt64
-			mutating func next() -> Double {
-				state = state &* 6364136223846793005 &+ 1
-				let upper = Double((state >> 32) & 0xFFFFFFFF)
-				return upper / Double(UInt32.max)
-			}
-		}
-		
-		var rng = SeededRNG(state: 12345)
+		// Deterministic seeds via TestSupport's consolidated MMIX generator
+		var rng = MMIXSeededRNG(state: 12345)
 		var samples: [Double] = []
 		
 		for _ in 0..<sampleCount {

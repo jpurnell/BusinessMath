@@ -26,19 +26,19 @@ public func runLinearRegressionConvenienceExamples() {
     do {
         let result = try linearRegression(x: advertisingSpend, y: sales)
 
-        print("Model: Sales = \(String(format: "%.2f", result.intercept)) + \(String(format: "%.2f", result.coefficients[0]))×Advertising\n")
+        print("Model: Sales = \(result.intercept.number(2)) + \(result.coefficients[0].number(2))×Advertising\n")
 
         print("Diagnostics:")
-        print("  • R² = \(String(format: "%.4f", result.rSquared))")
-        print("  • F-statistic p-value = \(String(format: "%.6f", result.fStatisticPValue))")
-        print("  • Advertising coefficient: \(String(format: "%.2f", result.coefficients[0]))")
-        print("    - Standard error: \(String(format: "%.2f", result.standardErrors[1]))")
-        print("    - p-value: \(String(format: "%.6f", result.pValues[1]))")
-        print("    - 95% CI: [\(String(format: "%.2f", result.confidenceIntervals[1].lower)), \(String(format: "%.2f", result.confidenceIntervals[1].upper))]\n")
+        print("  • R² = \(result.rSquared.number(4))")
+        print("  • F-statistic p-value = \(result.fStatisticPValue.number(6))")
+        print("  • Advertising coefficient: \(result.coefficients[0].number(2))")
+        print("    - Standard error: \(result.standardErrors[1].number(2))")
+        print("    - p-value: \(result.pValues[1].number(6))")
+        print("    - 95% CI: [\(result.confidenceIntervals[1].lower.number(2)), \(result.confidenceIntervals[1].upper.number(2))]\n")
 
         print("Interpretation:")
         print("  For every $1,000 increase in advertising spend,")
-        print("  sales increase by $\(String(format: "%.2f", result.coefficients[0] * 1000)).\n")
+        print("  sales increase by $\((result.coefficients[0] * 1000).number(2)).\n")
     } catch {
         print("Error: \(error)\n")
     }
@@ -60,14 +60,14 @@ public func runLinearRegressionConvenienceExamples() {
     do {
         let result = try polynomialRegression(x: price, y: revenue, degree: 2)
 
-        print("Model: Revenue = \(String(format: "%.2f", result.intercept))")
-        print("              + \(String(format: "%.2f", result.coefficients[0]))×Price")
-        print("              + \(String(format: "%.2f", result.coefficients[1]))×Price²\n")
+        print("Model: Revenue = \(result.intercept.number(2))")
+        print("              + \(result.coefficients[0].number(2))×Price")
+        print("              + \(result.coefficients[1].number(2))×Price²\n")
 
         print("Diagnostics:")
-        print("  • R² = \(String(format: "%.4f", result.rSquared))")
-        print("  • Adjusted R² = \(String(format: "%.4f", result.adjustedRSquared))")
-        print("  • VIF: \(result.vif.map { String(format: "%.2f", $0) })\n")
+        print("  • R² = \(result.rSquared.number(4))")
+        print("  • Adjusted R² = \(result.adjustedRSquared.number(4))")
+        print("  • VIF: \(result.vif.map { $0.number(2) })\n")
 
         // Find optimal price (vertex of parabola)
         let a = result.coefficients[1]
@@ -76,12 +76,12 @@ public func runLinearRegressionConvenienceExamples() {
         let maxRevenue = result.intercept + b * optimalPrice + a * optimalPrice * optimalPrice
 
         print("Optimal Pricing:")
-        print("  • Price: $\(String(format: "%.2f", optimalPrice))")
-        print("  • Maximum Revenue: $\(String(format: "%.2f", maxRevenue))K\n")
+        print("  • Price: $\(optimalPrice.number(2))")
+        print("  • Maximum Revenue: $\(maxRevenue.number(2))K\n")
 
         print("Interpretation:")
         print("  The quadratic model captures the inverted-U relationship.")
-        print("  Revenue increases with price up to $\(String(format: "%.2f", optimalPrice)), then decreases.\n")
+        print("  Revenue increases with price up to $\(optimalPrice.number(2)), then decreases.\n")
     } catch {
         print("Error: \(error)\n")
     }
@@ -103,15 +103,15 @@ public func runLinearRegressionConvenienceExamples() {
     do {
         let result = try polynomialRegression(x: time, y: adoption, degree: 3)
 
-        print("Model: Adoption = \(String(format: "%.2f", result.intercept))")
-        print("               + \(String(format: "%.2f", result.coefficients[0]))×t")
-        print("               + \(String(format: "%.2f", result.coefficients[1]))×t²")
-        print("               + \(String(format: "%.2f", result.coefficients[2]))×t³\n")
+        print("Model: Adoption = \(result.intercept.number(2))")
+        print("               + \(result.coefficients[0].number(2))×t")
+        print("               + \(result.coefficients[1].number(2))×t²")
+        print("               + \(result.coefficients[2].number(2))×t³\n")
 
         print("Diagnostics:")
-        print("  • R² = \(String(format: "%.6f", result.rSquared))")
+        print("  • R² = \(result.rSquared.number(6))")
         print("  • All coefficients significant: \(result.pValues.allSatisfy { $0 < 0.05 } ? "✓" : "✗")")
-        print("  • VIF values: \(result.vif.map { String(format: "%.1f", $0) })")
+        print("  • VIF values: \(result.vif.map { $0.number(1) })")
 
         if result.vif.contains(where: { $0 > 10 }) {
             print("    ⚠️ High multicollinearity detected (VIF > 10)")
@@ -143,13 +143,13 @@ public func runLinearRegressionConvenienceExamples() {
         let quadraticResult = try polynomialRegression(x: x, y: y, degree: 2)
 
         print("Linear Model:")
-        print("  • R² = \(String(format: "%.4f", linearResult.rSquared))")
-        print("  • Residual SE = \(String(format: "%.2f", linearResult.residualStandardError))\n")
+        print("  • R² = \(linearResult.rSquared.number(4))")
+        print("  • Residual SE = \(linearResult.residualStandardError.number(2))\n")
 
         print("Quadratic Model:")
-        print("  • R² = \(String(format: "%.6f", quadraticResult.rSquared))")
-        print("  • Adjusted R² = \(String(format: "%.6f", quadraticResult.adjustedRSquared))")
-        print("  • Residual SE = \(String(format: "%.6f", quadraticResult.residualStandardError))\n")
+        print("  • R² = \(quadraticResult.rSquared.number(6))")
+        print("  • Adjusted R² = \(quadraticResult.adjustedRSquared.number(6))")
+        print("  • Residual SE = \(quadraticResult.residualStandardError.number(6))\n")
 
         print("Conclusion:")
         print("  The quadratic model is superior (R² closer to 1, lower residual error).")

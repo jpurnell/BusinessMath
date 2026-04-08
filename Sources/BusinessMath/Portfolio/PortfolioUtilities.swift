@@ -12,8 +12,15 @@ import Numerics
 
 /// Generates a vector of random expected returns.
 ///
-/// Creates asset returns from a normal distribution with specified mean and standard deviation.
-/// Useful for portfolio optimization examples and Monte Carlo simulations.
+/// Creates asset returns from a normal distribution with specified mean and
+/// standard deviation. Useful for portfolio optimization examples and Monte
+/// Carlo simulations.
+///
+/// This overload uses the system random number generator. Tests and any
+/// other code that requires reproducibility should use the seeded overload
+/// `generateRandomReturns(count:mean:stdDev:using:)` and supply an explicit
+/// `RandomNumberGenerator` (e.g., a `SystemRandomNumberGenerator` for
+/// production or a deterministic generator for tests).
 ///
 /// - Parameters:
 ///   - count: Number of assets
@@ -32,11 +39,44 @@ public func generateRandomReturns(
 	mean: Double,
 	stdDev: Double
 ) -> VectorN<Double> {
+	var generator = SystemRandomNumberGenerator()
+	return generateRandomReturns(count: count, mean: mean, stdDev: stdDev, using: &generator)
+}
+
+/// Generates a vector of random expected returns using a caller-supplied
+/// random number generator (additive overload, v2.1.4).
+///
+/// Use this overload when you need reproducibility — pass a deterministic
+/// generator like `TestSupport.SeededRNG` (in tests) or any conforming
+/// `RandomNumberGenerator`. The generated values are normally distributed
+/// via the Box–Muller transform.
+///
+/// - Parameters:
+///   - count: Number of assets
+///   - mean: Expected mean return
+///   - stdDev: Standard deviation of returns
+///   - generator: Random number generator to draw from
+/// - Returns: Vector of expected returns
+///
+/// ## Example
+/// ```swift
+/// // Reproducible: use a seeded generator
+/// var rng = SystemRandomNumberGenerator()
+/// let returns = generateRandomReturns(count: 100, mean: 0.10, stdDev: 0.05, using: &rng)
+/// ```
+public func generateRandomReturns<G: RandomNumberGenerator>(
+	count: Int,
+	mean: Double,
+	stdDev: Double,
+	using generator: inout G
+) -> VectorN<Double> {
 	let returns = (0..<count).map { _ in
 		// Box-Muller transform for normal distribution
-		let u1 = Double.random(in: 0.0...1.0)
-		let u2 = Double.random(in: 0.0...1.0)
-		let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2)
+		let u1 = Double.random(in: 0.0...1.0, using: &generator)
+		let u2 = Double.random(in: 0.0...1.0, using: &generator)
+		// Avoid log(0) — Double.random returns values in [0, 1) so u1 may be 0
+		let safeU1 = u1 == 0 ? Double.leastNormalMagnitude : u1
+		let z = sqrt(-2.0 * log(safeU1)) * cos(2.0 * .pi * u2)
 		return mean + stdDev * z
 	}
 	return VectorN(returns)

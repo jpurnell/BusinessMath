@@ -26,28 +26,22 @@ do {
     let result = try multipleLinearRegression(X: X1, y: sales)
 
     print("\nModel: Sales = β₀ + β₁ × Advertising")
-    print(String(format: "       Sales = %.2f + %.2f × Advertising",
-                 result.intercept, result.coefficients[0]))
-    print(String(format: "\nR² = %.4f (%.1f%% of variance explained)",
-                 result.rSquared, result.rSquared * 100))
-    print(String(format: "F-statistic = %.2f (p = %.6f)",
-                 result.fStatistic, result.fStatisticPValue))
+    print("       Sales = \(result.intercept.number(2)) + \(result.coefficients[0].number(2)) × Advertising")
+    print("\nR² = \(result.rSquared.number(4)) (\((result.rSquared * 100).number(1))% of variance explained)")
+    print("F-statistic = \(result.fStatistic.number(2)) (p = \(result.fStatisticPValue.number(6)))")
 
     if result.fStatisticPValue < 0.05 {
         print("✓ Model is statistically significant (p < 0.05)")
     }
 
     print("\nCoefficient Details:")
-    print(String(format: "  Intercept: %.2f (SE = %.2f, p = %.4f)",
-                 result.intercept, result.standardErrors[0], result.pValues[0]))
-    print(String(format: "  Advertising: %.2f (SE = %.2f, p = %.4f)",
-                 result.coefficients[0], result.standardErrors[1], result.pValues[1]))
+    print("  Intercept: \(result.intercept.number(2)) (SE = \(result.standardErrors[0].number(2)), p = \(result.pValues[0].number(4)))")
+    print("  Advertising: \(result.coefficients[0].number(2)) (SE = \(result.standardErrors[1].number(2)), p = \(result.pValues[1].number(4)))")
 
     // Make a prediction
     let newAdvertising = 55.0
     let predictedSales = result.intercept + result.coefficients[0] * newAdvertising
-    print(String(format: "\nPrediction: $%.0fk advertising → $%.0fk sales",
-                 newAdvertising, predictedSales))
+    print("\nPrediction: $\(newAdvertising.number(0))k advertising → $\(predictedSales.number(0))k sales")
 
 } catch {
     print("Error: \(error)")
@@ -70,22 +64,18 @@ do {
     let result = try multipleLinearRegression(X: X2, y: prices)
 
     print("\nModel: Price = β₀ + β₁×Size + β₂×Age")
-    print(String(format: "       Price = %.2f + %.4f×Size + %.4f×Age",
-                 result.intercept, result.coefficients[0], result.coefficients[1]))
+    print("       Price = \(result.intercept.number(2)) + \(result.coefficients[0].number(4))×Size + \(result.coefficients[1].number(4))×Age")
 
-    print(String(format: "\nModel Fit: R² = %.4f, Adjusted R² = %.4f",
-                 result.rSquared, result.adjustedRSquared))
+    print("\nModel Fit: R² = \(result.rSquared.number(4)), Adjusted R² = \(result.adjustedRSquared.number(4))")
 
     print("\nCoefficient Interpretations:")
-    print(String(format: "  Size: $%.2f per sq ft (p = %.4f)",
-                 result.coefficients[0], result.pValues[1]))
+    print("  Size: $\(result.coefficients[0].number(2)) per sq ft (p = \(result.pValues[1].number(4)))")
 
     if result.pValues[1] < 0.05 {
         print("    ✓ Size is a significant predictor")
     }
 
-    print(String(format: "  Age: $%.2f per year (p = %.4f)",
-                 result.coefficients[1], result.pValues[2]))
+    print("  Age: $\(result.coefficients[1].number(2)) per year (p = \(result.pValues[2].number(4)))")
 
     if result.pValues[2] < 0.05 {
         print("    ✓ Age is a significant predictor")
@@ -96,16 +86,14 @@ do {
     let predictorNames = ["Size", "Age"]
     for (i, vif) in result.vif.enumerated() {
         let status = vif < 5 ? "✓ Low" : vif < 10 ? "⚠️ Moderate" : "✗ High"
-        print(String(format: "  %@: VIF = %.2f (%@)",
-                     predictorNames[i], vif, status))
+        print("  \(predictorNames[i]): VIF = \(vif.number(2)) (\(status))")
     }
 
     // Confidence intervals
     print("\n95% Confidence Intervals:")
     for i in 0..<result.coefficients.count {
         let ci = result.confidenceIntervals[i + 1]
-        print(String(format: "  %@: [%.4f, %.4f]",
-                     predictorNames[i], ci.lower, ci.upper))
+        print("  \(predictorNames[i]): [\(ci.lower.number(4)), \(ci.upper.number(4))]")
     }
 
     // Predict new house
@@ -113,14 +101,13 @@ do {
     let predictedPrice = result.intercept +
                         result.coefficients[0] * newHouse[0] +
                         result.coefficients[1] * newHouse[1]
-    print(String(format: "\nPrediction: 2500 sq ft, 7 years old → $%.0fk",
-                 predictedPrice))
+    print("\nPrediction: 2500 sq ft, 7 years old → $\(predictedPrice.number(0))k")
 
     // Residual analysis
-    print(String(format: "\nResidual Analysis:"))
-    print(String(format: "  Residual Std Error: %.2f", result.residualStandardError))
+    print("\nResidual Analysis:")
+    print("  Residual Std Error: \(result.residualStandardError.number(2))")
     let meanAbsResidual = result.residuals.map(abs).reduce(0, +) / Double(result.residuals.count)
-    print(String(format: "  Mean Absolute Residual: %.2f", meanAbsResidual))
+    print("  Mean Absolute Residual: \(meanAbsResidual.number(2))")
 
     // Check for outliers
     let outliers = result.residuals.enumerated().filter {
@@ -153,8 +140,8 @@ do {
     let result = try multipleLinearRegression(X: X3, y: y3)
 
     print("\nVIF Analysis:")
-    print(String(format: "  x₁: VIF = %.2f", result.vif[0]))
-    print(String(format: "  x₂: VIF = %.2f", result.vif[1]))
+    print("  x₁: VIF = \(result.vif[0].number(2))")
+    print("  x₂: VIF = \(result.vif[1].number(2))")
 
     if result.vif.contains(where: { $0 > 10 }) {
         print("\n⚠️ SEVERE multicollinearity detected (VIF > 10)!")
@@ -169,11 +156,8 @@ do {
     // Show unstable coefficients due to multicollinearity
     print("\nCoefficient Standard Errors:")
     for i in 0..<result.coefficients.count {
-        print(String(format: "  β%d: %.4f (SE = %.4f, relative SE = %.1f%%)",
-                     i + 1,
-                     result.coefficients[i],
-                     result.standardErrors[i + 1],
-                     (result.standardErrors[i + 1] / abs(result.coefficients[i])) * 100))
+        let relSE = (result.standardErrors[i + 1] / abs(result.coefficients[i])) * 100
+        print("  β\(i + 1): \(result.coefficients[i].number(4)) (SE = \(result.standardErrors[i + 1].number(4)), relative SE = \(relSE.number(1))%)")
     }
 
 } catch {
@@ -201,14 +185,14 @@ do {
     let model2 = try multipleLinearRegression(X: X_complex, y: outcome)
 
     print("\nModel 1 (Simple):")
-    print(String(format: "  R² = %.4f", model1.rSquared))
-    print(String(format: "  Adjusted R² = %.4f", model1.adjustedRSquared))
-    print(String(format: "  Predictors: %d", model1.p))
+    print("  R² = \(model1.rSquared.number(4))")
+    print("  Adjusted R² = \(model1.adjustedRSquared.number(4))")
+    print("  Predictors: \(model1.p)")
 
     print("\nModel 2 (With Noise Predictor):")
-    print(String(format: "  R² = %.4f", model2.rSquared))
-    print(String(format: "  Adjusted R² = %.4f", model2.adjustedRSquared))
-    print(String(format: "  Predictors: %d", model2.p))
+    print("  R² = \(model2.rSquared.number(4))")
+    print("  Adjusted R² = \(model2.adjustedRSquared.number(4))")
+    print("  Predictors: \(model2.p)")
 
     print("\nModel Comparison:")
     if model2.adjustedRSquared > model1.adjustedRSquared {
@@ -220,8 +204,7 @@ do {
 
     // Check if second predictor is significant
     if model2.pValues[2] > 0.05 {
-        print(String(format: "  → Second predictor not significant (p = %.4f > 0.05)",
-                     model2.pValues[2]))
+        print("  → Second predictor not significant (p = \(model2.pValues[2].number(4)) > 0.05)")
     }
 
 } catch {
