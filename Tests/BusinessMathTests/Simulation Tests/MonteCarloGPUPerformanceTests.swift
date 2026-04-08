@@ -108,7 +108,7 @@ struct MonteCarloGPUPerformanceTests {
         print("📊 10K Iterations Benchmark:")
         print("   CPU: \(Int(cpuTime * 1000))ms (usedGPU: \(cpuResults.usedGPU))")
         print("   GPU: \(Int(gpuTime * 1000))ms (usedGPU: \(gpuResults.usedGPU))")
-        print("   Speedup: \(String(format: "%.1f", speedup))x")
+        print("   Speedup: \(speedup.number(1))x")
         print("   Expected: 5-10x speedup on M1/M2/M3")
         #endif
     }
@@ -165,9 +165,9 @@ struct MonteCarloGPUPerformanceTests {
         let speedup = cpuTime / gpuTime
 
         print("📊 100K Iterations Benchmark:")
-        print("   CPU: \(String(format: "%.2f", cpuTime))s (usedGPU: \(cpuResults.usedGPU))")
-        print("   GPU: \(String(format: "%.2f", gpuTime))s (usedGPU: \(gpuResults.usedGPU))")
-        print("   Speedup: \(String(format: "%.1f", speedup))x")
+        print("   CPU: \(cpuTime.number(2))s (usedGPU: \(cpuResults.usedGPU))")
+        print("   GPU: \(gpuTime.number(2))s (usedGPU: \(gpuResults.usedGPU))")
+        print("   Speedup: \(speedup.number(1))x")
         print("   Expected: 3-8x speedup for complex models on Apple Silicon")
         print("   Results match: \(abs(cpuResults.statistics.mean - gpuResults.statistics.mean) / cpuResults.statistics.mean < 0.01 ? "✓" : "✗")")
         #endif
@@ -218,9 +218,9 @@ struct MonteCarloGPUPerformanceTests {
         let speedup = cpuTime / gpuTime
 
         print("📊 1M Iterations Benchmark:")
-        print("   CPU: \(String(format: "%.1f", cpuTime))s (usedGPU: \(cpuResults.usedGPU))")
-        print("   GPU: \(String(format: "%.2f", gpuTime))s (usedGPU: \(gpuResults.usedGPU))")
-        print("   Speedup: \(String(format: "%.1f", speedup))x")
+        print("   CPU: \(cpuTime.number(1))s (usedGPU: \(cpuResults.usedGPU))")
+        print("   GPU: \(gpuTime.number(2))s (usedGPU: \(gpuResults.usedGPU))")
+        print("   Speedup: \(speedup.number(1))x")
         print("   Expected: 50-100x speedup on M1/M2/M3")
         print("   Results match: \(abs(cpuResults.statistics.mean - gpuResults.statistics.mean) / cpuResults.statistics.mean < 0.01 ? "✓" : "✗")")
         #endif
@@ -273,7 +273,7 @@ struct MonteCarloGPUPerformanceTests {
         print("📊 Model Complexity Benchmark (\(iterations) iterations):")
         print("   Simple (a + b): \(Int(simpleTime * 1000))ms")
         print("   Complex ((a*b) + (c*d) - (e/2)): \(Int(complexTime * 1000))ms")
-        print("   Overhead: \(String(format: "%.1f", (complexTime / simpleTime - 1) * 100))%")
+        print("   Overhead: \(((complexTime / simpleTime - 1) * 100).number(1))%")
         print("   Expected: Minimal overhead due to parallel GPU execution")
         #endif
     }

@@ -192,7 +192,7 @@ struct StreamingFrequencyDomainTests {
     // MARK: - AccelerateFFTBackend Tests (conditional)
 
     #if canImport(Accelerate)
-    @Test("Accelerate FFT: matches Pure Swift within tolerance")
+    @Test("Accelerate FFT: matches Pure Swift bin-for-bin (tightened in v2.1.3)")
     func accelerateMatchesPureSwift() {
         let pureBackend = PureSwiftFFTBackend()
         let accelBackend = AccelerateFFTBackend()
@@ -209,15 +209,21 @@ struct StreamingFrequencyDomainTests {
         let pureSpectrum = pureBackend.powerSpectrum(signal)
         let accelSpectrum = accelBackend.powerSpectrum(signal)
 
+        // Tightened in v2.1.3: assert ABSOLUTE bin-for-bin equivalence, not
+        // just peak location. The previous version only checked peak bin
+        // index, which let the v2.1.0 4× scaling bug slip through (the
+        // peak was at the right bin, just 4× too large). The PSD work in
+        // v2.1.1 fixed AccelerateFFTBackend to apply a ×0.25 scaling
+        // correction; this test locks that fix in by requiring exact
+        // bin-by-bin agreement at machine precision.
         #expect(pureSpectrum.count == accelSpectrum.count)
-
-        // Guard against invalid spectrum (prevents Range crash if count < 2)
-        guard pureSpectrum.count > 1, accelSpectrum.count > 1 else { return }
-
-        // Both should agree on peak location
-        let purePeak = (1..<pureSpectrum.count).max(by: { pureSpectrum[$0] < pureSpectrum[$1] }) ?? 1
-        let accelPeak = (1..<accelSpectrum.count).max(by: { accelSpectrum[$0] < accelSpectrum[$1] }) ?? 1
-        #expect(purePeak == accelPeak)
+        guard pureSpectrum.count == accelSpectrum.count else { return }
+        for k in 0..<pureSpectrum.count {
+            let p = pureSpectrum[k]
+            let a = accelSpectrum[k]
+            let tol = max(1e-9, max(abs(p), abs(a)) * 1e-9)
+            #expect(abs(p - a) < tol, "bin \(k): pure=\(p), accel=\(a)")
+        }
     }
     #endif
 
@@ -286,7 +292,7 @@ struct StreamingFrequencyDomainTests {
         }
     }
 
-    @Test("Parseval's theorem: time-domain energy approximates frequency-domain energy")
+    @Test("Parseval's theorem: time-domain energy equals frequency-domain energy (tightened in v2.1.3)")
     func parsevalsTheorem() {
         let backend = PureSwiftFFTBackend()
         let n = 256
@@ -317,10 +323,13 @@ struct StreamingFrequencyDomainTests {
         }
         freqDomainEnergy /= Double(n)
 
-        // Should be approximately equal within a reasonable tolerance
+        // Tightened in v2.1.3: previously this used `0.5 < ratio < 2.0`,
+        // a 2× margin in either direction so loose it would have passed
+        // even with major numerical bugs. Parseval's theorem holds at
+        // machine precision for this discrete formulation, so the assertion
+        // is now `1e-12` relative tolerance.
         let ratio = timeDomainEnergy / freqDomainEnergy
-        #expect(ratio > 0.5)
-        #expect(ratio < 2.0)
+        #expect(abs(ratio - 1.0) < 1e-12, "Parseval ratio off: \(ratio)")
     }
 
     // MARK: - Numerical Stability Tests

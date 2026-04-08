@@ -127,7 +127,7 @@ public struct FinancialModel: Sendable {
             DebugContext.shared.recordStep(
                 operation: "GetAccount(\(component.name))",
                 input: "Period(\(period.label))",
-                output: String(format: "%.0f", value)
+                output: value.number(0)
             )
 
             return sum + value
@@ -136,8 +136,8 @@ public struct FinancialModel: Sendable {
         // Record sum operation
         DebugContext.shared.recordStep(
             operation: "Sum(Revenue Accounts)",
-            input: "[\(accountValues.map { String(format: "%.0f", $0) }.joined(separator: ", "))]",
-            output: String(format: "%.0f", total)
+            input: "[\(accountValues.map { $0.number(0) }.joined(separator: ", "))]",
+            output: total.number(0)
         )
 
         return total
@@ -160,8 +160,8 @@ public struct FinancialModel: Sendable {
             // Record individual expense access
             DebugContext.shared.recordStep(
                 operation: "GetExpense(\(component.name))",
-                input: "Period(\(period.label)), Revenue(\(String(format: "%.0f", revenue)))",
-                output: String(format: "%.0f", value)
+                input: "Period(\(period.label)), Revenue(\(revenue.number(0)))",
+                output: value.number(0)
             )
 
             return sum + value
@@ -170,8 +170,8 @@ public struct FinancialModel: Sendable {
         // Record sum operation
         DebugContext.shared.recordStep(
             operation: "Sum(Expense Accounts)",
-            input: "[\(expenseValues.map { String(format: "%.0f", $0) }.joined(separator: ", "))]",
-            output: String(format: "%.0f", total)
+            input: "[\(expenseValues.map { $0.number(0) }.joined(separator: ", "))]",
+            output: total.number(0)
         )
 
         return total

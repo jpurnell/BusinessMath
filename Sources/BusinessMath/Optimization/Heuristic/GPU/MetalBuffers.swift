@@ -181,7 +181,7 @@ internal final class MetalBuffers {
     var memoryDescription: String {
         let bytes = totalMemoryAllocated
         let mb = Double(bytes) / (1024 * 1024)
-        return String(format: "%.2f MB", mb)
+        return "\(mb.number(2)) MB"
     }
 }
 #endif

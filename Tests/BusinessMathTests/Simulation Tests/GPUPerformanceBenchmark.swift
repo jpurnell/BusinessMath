@@ -71,8 +71,12 @@ struct GPUPerformanceBenchmark {
 
             let speedup = cpuTime / gpuTime
 
-            print(String(format: "%10d | %8.1f | %8.1f | %5.1f×",
-                        iterations, gpuTime, cpuTime, speedup))
+            // Manual column padding via String.padding to avoid C-style format string
+            let iterStr = String(iterations).padding(toLength: 10, withPad: " ", startingAt: 0)
+            let gpuStr = gpuTime.number(1).padding(toLength: 8, withPad: " ", startingAt: 0)
+            let cpuStr = cpuTime.number(1).padding(toLength: 8, withPad: " ", startingAt: 0)
+            let speedStr = speedup.number(1).padding(toLength: 5, withPad: " ", startingAt: 0)
+            print("\(iterStr) | \(gpuStr) | \(cpuStr) | \(speedStr)×")
 
             // Verify GPU was used
             #expect(gpuResults.usedGPU == true, "GPU should be used for \(iterations) iterations")

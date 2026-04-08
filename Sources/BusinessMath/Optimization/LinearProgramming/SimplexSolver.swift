@@ -484,7 +484,7 @@ public struct SimplexSolver: Sendable {
         //     print("Variables: \(numVars) original, \(slackCount) slack, \(surplusCount) surplus, \(artificialCount) artificial")
         //     print("Basis: \(basis)")
         //     for (row, constraint) in constraints.enumerated() {
-        //         let rowStr = tableau[row].map { String(format: "%.2f", $0) }.joined(separator: ", ")
+        //         let rowStr = tableau[row].map { $0.number(2) }.joined(separator: ", ")
         //         print("Row \(row): [\(rowStr)] (original: \(constraint.coefficients), rhs: \(constraint.rhs))")
         //     }
         // }
