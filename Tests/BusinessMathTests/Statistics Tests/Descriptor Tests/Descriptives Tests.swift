@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // MMIXSeededRNG
 import Numerics
 @testable import BusinessMath
 
@@ -36,17 +37,8 @@ struct DescriptivesTests {
 
 	@Test("Normal distribution statistical properties")
 	func distributionNormal() {
-		// Seeded RNG for deterministic test
-		struct SeededRNG {
-			var state: UInt64
-			mutating func next() -> Double {
-				state = state &* 6364136223846793005 &+ 1
-				let upper = Double((state >> 32) & 0xFFFFFFFF)
-				return upper / Double(UInt32.max)
-			}
-		}
-
-		var rng = SeededRNG(state: 54321)
+		// Seeded RNG for deterministic test (MMIX LCG via TestSupport)
+		var rng = MMIXSeededRNG(state: 54321)
 		var array: [Double] = []
 		// Increased sample size for better statistical properties
 		for _ in 0..<10000 {
