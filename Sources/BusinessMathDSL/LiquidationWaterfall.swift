@@ -119,9 +119,9 @@ public struct LiquidationWaterfall {
         for tier in tiers {
             guard remaining > 0 else {
                 // No more to distribute, but still track tier
-                if let _ = tier.proRata {
+                if let proRata = tier.proRata {
                     // ProRata participants get zero
-                    for participant in tier.proRata!.participants {
+                    for participant in proRata.participants {
                         allDistributions[participant.name] = (allDistributions[participant.name] ?? 0) + 0
                     }
                 } else {
