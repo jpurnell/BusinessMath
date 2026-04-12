@@ -232,8 +232,8 @@ public struct ScenarioAnalysis {
             mean: mean,
             median: median,
             stdDev: stdDev,
-            min: values.first!,
-            max: values.last!,
+            min: values.first ?? 0,
+            max: values.last ?? 0,
             count: count
         )
     }
