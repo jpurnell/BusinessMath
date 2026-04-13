@@ -328,7 +328,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
             }
         }
 
-        return try! DenseMatrix(result)
+        return try DenseMatrix(result)
     }
 
     /// Matrix-vector multiplication: y = A × x.
@@ -388,7 +388,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
             }
         }
 
-        return try! DenseMatrix(result)
+        return try DenseMatrix(result)
     }
 
     /// Element-wise subtraction.
@@ -418,7 +418,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
             }
         }
 
-        return try! DenseMatrix(result)
+        return try DenseMatrix(result)
     }
 
     /// Scalar multiplication.

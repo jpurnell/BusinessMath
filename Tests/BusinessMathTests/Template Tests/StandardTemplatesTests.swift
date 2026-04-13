@@ -51,7 +51,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is SaaSModel)
-        let saasModel = model as! SaaSModel
+        let saasModel = try #require(model as? SaaSModel)
         #expect(saasModel.initialMRR == 10_000.0)
         #expect(saasModel.churnRate == 0.05)
     }
@@ -132,7 +132,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is RetailModel)
-        let retailModel = model as! RetailModel
+        let retailModel = try #require(model as? RetailModel)
         #expect(retailModel.initialInventoryValue == 50_000.0)
         #expect(retailModel.monthlyRevenue == 100_000.0)
     }
@@ -174,7 +174,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is ManufacturingModel)
-        let mfgModel = model as! ManufacturingModel
+        let mfgModel = try #require(model as? ManufacturingModel)
         #expect(mfgModel.productionCapacity == 10_000.0)
         #expect(mfgModel.sellingPricePerUnit == 50.0)
     }
@@ -200,7 +200,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is MarketplaceModel)
-        let marketplaceModel = model as! MarketplaceModel
+        let marketplaceModel = try #require(model as? MarketplaceModel)
         #expect(marketplaceModel.initialBuyers == 1_000.0)
         #expect(marketplaceModel.takeRate == 0.15)
     }
@@ -224,7 +224,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is SubscriptionBoxModel)
-        let subBoxModel = model as! SubscriptionBoxModel
+        let subBoxModel = try #require(model as? SubscriptionBoxModel)
         #expect(subBoxModel.initialSubscribers == 1_000.0)
         #expect(subBoxModel.monthlyBoxPrice == 49.99)
     }
