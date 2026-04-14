@@ -50,7 +50,9 @@ public struct RingBuffer<Element>: Sendable where Element: Sendable {
     /// - Parameter capacity: Maximum number of elements. Must be positive.
     /// - Precondition: `capacity > 0`
     public init(capacity: Int) {
-        precondition(capacity > 0, "RingBuffer capacity must be positive")
+        guard capacity > 0 else {
+            preconditionFailure("RingBuffer capacity must be positive")
+        }
         self.capacity = capacity
         self.storage = Array(repeating: nil, count: capacity)
     }
@@ -97,10 +99,14 @@ public struct RingBuffer<Element>: Sendable where Element: Sendable {
     /// - Returns: The element at the specified index.
     /// - Precondition: `index >= 0 && index < count`
     public subscript(index: Int) -> Element {
-        precondition(index >= 0 && index < elementCount, "Index out of bounds")
+        guard index >= 0, index < elementCount else {
+            preconditionFailure("Index \(index) out of bounds for RingBuffer with count \(elementCount)")
+        }
         let actualIndex = (writeIndex - elementCount + index + capacity) % capacity
-        // Force unwrap safe: we only access indices we've written to
-        return storage[actualIndex]!
+        guard let element = storage[actualIndex] else {
+            preconditionFailure("Unexpected nil at index \(actualIndex) in RingBuffer storage")
+        }
+        return element
     }
 
     /// The oldest element in the buffer, or `nil` if empty.
@@ -130,8 +136,10 @@ public struct RingBuffer<Element>: Sendable where Element: Sendable {
         let startIndex = (writeIndex - elementCount + capacity) % capacity
         for i in 0..<elementCount {
             let index = (startIndex + i) % capacity
-            // Force unwrap safe: we only access indices we've written to
-            result.append(storage[index]!)
+            guard let element = storage[index] else {
+                continue
+            }
+            result.append(element)
         }
 
         return result
@@ -152,8 +160,9 @@ public struct RingBuffer<Element>: Sendable where Element: Sendable {
     /// - Returns: Array containing the elements in the specified range.
     /// - Precondition: Range must be within bounds.
     public func slice(_ range: Range<Int>) -> [Element] {
-        precondition(range.lowerBound >= 0 && range.upperBound <= elementCount,
-                     "Slice range out of bounds")
+        guard range.lowerBound >= 0, range.upperBound <= elementCount else {
+            preconditionFailure("Slice range \(range) out of bounds for RingBuffer with count \(elementCount)")
+        }
 
         var result = [Element]()
         result.reserveCapacity(range.count)

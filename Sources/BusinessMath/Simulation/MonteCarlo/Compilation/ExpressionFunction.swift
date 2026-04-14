@@ -119,7 +119,7 @@ public struct ExpressionFunction: Sendable {
     /// ```
     public func call(_ args: ExpressionProxy...) -> ExpressionProxy {
         guard args.count == inputCount else {
-            fatalError("ExpressionFunction expects \(inputCount) arguments, got \(args.count)")
+            preconditionFailure("ExpressionFunction expects \(inputCount) arguments, got \(args.count)")
         }
 
         // Substitute the arguments into the expression
@@ -135,7 +135,7 @@ public struct ExpressionFunction: Sendable {
         switch expression {
         case .input(let index):
             guard index >= 0 && index < arguments.count else {
-                fatalError("Invalid input index \(index)")
+                preconditionFailure("Invalid input index \(index)")
             }
             return arguments[index]
 

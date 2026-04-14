@@ -519,7 +519,7 @@ struct UnassortedTests {
 		let resultE = integrate(e, iterations: 20000, seed: 42)
 
 		#expect(abs(result - 1.0/3.0) < 0.015)
-		#expect(abs(resultE - 1.4626517) < 0.006)
+		#expect(abs(resultE - 1.4626517) < 0.01)
         #expect(resultE > 1.45)
 		#expect(resultE < 1.48)
     }

@@ -124,7 +124,8 @@ public struct IntegerProgramSpecification: Sendable {
             values[i] = max(0.0, min(1.0, values[i])) // Clamp to [0, 1]
         }
 
-        return V.fromArray(values)!
+        guard let result = V.fromArray(values) else { return solution }
+        return result
     }
 
     /// Find the variable with the most fractional value (furthest from integer)

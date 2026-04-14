@@ -198,9 +198,19 @@ public struct ScenarioOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 		scenarios: [NamedScenario],
 		maxIterations: Int = 500,
 		tolerance: Double = 1e-6
-	) {
-		precondition(!scenarios.isEmpty, "Must provide at least one scenario")
-		precondition(scenarios.allSatisfy { $0.probability >= 0 }, "Probabilities must be non-negative")
+	) throws {
+		guard !scenarios.isEmpty else {
+			throw BusinessMathError.insufficientData(
+				required: 1,
+				actual: 0,
+				context: "Must provide at least one scenario"
+			)
+		}
+		guard scenarios.allSatisfy({ $0.probability >= 0 }) else {
+			throw BusinessMathError.invalidInput(
+				message: "Probabilities must be non-negative"
+			)
+		}
 
 		self.scenarios = scenarios
 		self.maxIterations = maxIterations
@@ -401,7 +411,7 @@ extension ScenarioOptimizer {
 			)
 		}
 
-		let optimizer = ScenarioOptimizer<V>(
+		let optimizer = try ScenarioOptimizer<V>(
 			scenarios: scenarios,
 			maxIterations: maxIterations,
 			tolerance: tolerance

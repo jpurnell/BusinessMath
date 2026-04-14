@@ -16,7 +16,7 @@ import Testing
 	/// Test basic portfolio optimization with uncertain returns.
 	@Test func stochasticPortfolioOptimization() throws {
 		// Portfolio with 3 assets under return uncertainty
-		let optimizer = StochasticOptimizer<VectorN<Double>>(
+		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: 40,  // Reduced from 100 for performance (still statistically valid)
 			seed: 42,
 			maxIterations: 150,  // Reduced from 500 for performance
@@ -71,7 +71,7 @@ import Testing
 			DiscreteScenario(name: "Bear", probability: 0.20, parameters: ["stock_return": -0.05, "bond_return": 0.06])
 		]
 
-		let optimizer = StochasticOptimizer<VectorN<Double>>(
+		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: scenarios.count,
 			maxIterations: 500,
 			tolerance: 1e-5
@@ -111,7 +111,7 @@ import Testing
 
 	/// Test maximizing expected return minus risk penalty (mean-variance).
 	@Test func meanVarianceOptimization() throws {
-		let optimizer = StochasticOptimizer<VectorN<Double>>(
+		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: 50,  // Reduced from 200 for performance
 			seed: 42,
 			maxIterations: 100,  // Reduced from 500 for performance
@@ -175,7 +175,7 @@ import Testing
 
 	/// Test that constraints are satisfied across all scenarios.
 	@Test func constraintSatisfactionUnderUncertainty() throws {
-		let optimizer = StochasticOptimizer<VectorN<Double>>(
+		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: 30,  // Reduced from 50 for performance
 			seed: 123,
 			maxIterations: 100,  // Reduced from 500 for performance
@@ -322,7 +322,7 @@ import Testing
 	/// Test that stochastic optimization reduces to deterministic when variance is zero.
 	@Test func degenerateTowardsDeterministic() throws {
 		// Use scenarios with very low variance (almost deterministic)
-		let optimizer = StochasticOptimizer<VectorN<Double>>(
+		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: 100,
 			seed: 42,
 			maxIterations: 500,
@@ -376,7 +376,7 @@ import Testing
 		// Decide production quantity before knowing demand
 		// Objective: maximize profit = revenue - production_cost - shortage_cost - excess_cost
 
-		let optimizer = StochasticOptimizer<VectorN<Double>>(
+		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: 40,  // Reduced from 100 for performance
 			seed: 42,
 			maxIterations: 150,  // Increased from 100 for convergence
@@ -471,7 +471,7 @@ import Testing
 
 	/// Helper to run portfolio optimization with specified number of samples.
 	private func runPortfolioOptimization(numberOfSamples: Int) throws -> StochasticResult<VectorN<Double>> {
-		let optimizer = StochasticOptimizer<VectorN<Double>>(
+		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: numberOfSamples,
 			seed: 42,
 			maxIterations: 150,  // Reduced from 500 for performance

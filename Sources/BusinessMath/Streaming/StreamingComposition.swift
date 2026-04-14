@@ -257,11 +257,14 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
             // SAFETY: ContinuationBox allows safe concurrent access to continuation
             // from multiple task group children. The AsyncStream serializes yields.
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
-                var box: ContinuationBox<Element>!
+                var box: ContinuationBox<Element>?
                 let ch = AsyncStream<Element> { cont in
                     box = ContinuationBox(cont)
                 }
-                return (ch, box!)
+                guard let resolvedBox = box else {
+                    preconditionFailure("AsyncStream initializer must call its closure synchronously")
+                }
+                return (ch, resolvedBox)
             }()
             self.channel = channel
             iterator = channel.makeAsyncIterator()
@@ -462,11 +465,14 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
         init(base: Base, interval: Duration) {
             // SAFETY: ContinuationBox allows safe concurrent access from debounce tasks
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
-                var box: ContinuationBox<Element>!
+                var box: ContinuationBox<Element>?
                 let ch = AsyncStream<Element> { cont in
                     box = ContinuationBox(cont)
                 }
-                return (ch, box!)
+                guard let resolvedBox = box else {
+                    preconditionFailure("AsyncStream initializer must call its closure synchronously")
+                }
+                return (ch, resolvedBox)
             }()
             self.channel = channel
             iterator = channel.makeAsyncIterator()
@@ -583,11 +589,14 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
             // SAFETY: ContinuationBox allows safe concurrent access from task group children
             // ThreadSafeBox (actor) provides synchronized access to latest values
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
-                var box: ContinuationBox<Element>!
+                var box: ContinuationBox<Element>?
                 let ch = AsyncStream<Element> { cont in
                     box = ContinuationBox(cont)
                 }
-                return (ch, box!)
+                guard let resolvedBox = box else {
+                    preconditionFailure("AsyncStream initializer must call its closure synchronously")
+                }
+                return (ch, resolvedBox)
             }()
             self.channel = channel
             iterator = channel.makeAsyncIterator()
@@ -705,11 +714,14 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
             // SAFETY: ContinuationBox allows safe concurrent access from task group children
             // ThreadSafeBox (actor) provides synchronized access to latest sampled value
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
-                var box: ContinuationBox<Element>!
+                var box: ContinuationBox<Element>?
                 let ch = AsyncStream<Element> { cont in
                     box = ContinuationBox(cont)
                 }
-                return (ch, box!)
+                guard let resolvedBox = box else {
+                    preconditionFailure("AsyncStream initializer must call its closure synchronously")
+                }
+                return (ch, resolvedBox)
             }()
             self.channel = channel
             iterator = channel.makeAsyncIterator()
@@ -1094,11 +1106,14 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
             // SAFETY: ContinuationBox allows safe concurrent access from task group children
             // ThreadSafeBox (actor) provides synchronized access to latest value
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
-                var box: ContinuationBox<Element>!
+                var box: ContinuationBox<Element>?
                 let ch = AsyncStream<Element> { cont in
                     box = ContinuationBox(cont)
                 }
-                return (ch, box!)
+                guard let resolvedBox = box else {
+                    preconditionFailure("AsyncStream initializer must call its closure synchronously")
+                }
+                return (ch, resolvedBox)
             }()
             self.channel = channel
             iterator = channel.makeAsyncIterator()
@@ -1587,11 +1602,14 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
         init(base: Base, duration: Duration) {
             // SAFETY: ThrowingContinuationBox allows safe concurrent access from timeout tasks
             let (channel, continuationBox): (AsyncThrowingStream<Element, Error>, ThrowingContinuationBox<Element>) = {
-                var box: ThrowingContinuationBox<Element>!
+                var box: ThrowingContinuationBox<Element>?
                 let ch = AsyncThrowingStream<Element, Error> { cont in
                     box = ThrowingContinuationBox(cont)
                 }
-                return (ch, box!)
+                guard let resolvedBox = box else {
+                    preconditionFailure("AsyncThrowingStream initializer must call its closure synchronously")
+                }
+                return (ch, resolvedBox)
             }()
             self.channel = channel
             iterator = channel.makeAsyncIterator()
@@ -1601,7 +1619,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
             let wrapper = IteratorWrapper(baseIterator)
 
             Task { @Sendable in
-                while true {
+                while !Task.isCancelled {
                     // Race each element against timeout using a result enum
                     do {
                         let result = try await withThrowingTaskGroup(of: TimeoutResult.self) { group in

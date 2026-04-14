@@ -156,7 +156,9 @@ public struct SparseMatrix {
     /// - Parameter vector: Dense vector (length must equal columns)
     /// - Returns: Result vector (length = rows)
     public func multiply(vector: [Double]) -> [Double] {
-        precondition(vector.count == columns, "Vector length must equal number of columns")
+        guard vector.count == columns else {
+            preconditionFailure("Vector length must equal number of columns: expected \(columns), got \(vector.count)")
+        }
 
         var result = [Double](repeating: 0.0, count: rows)
 
@@ -243,8 +245,12 @@ public struct SparseMatrix {
     ///   - column: Column index
     /// - Returns: Value at (row, column), or 0.0 if not stored
     public subscript(row: Int, column: Int) -> Double {
-        precondition(row >= 0 && row < rows, "Row index out of bounds")
-        precondition(column >= 0 && column < columns, "Column index out of bounds")
+        guard row >= 0, row < rows else {
+            preconditionFailure("Row index out of bounds: \(row) not in 0..<\(rows)")
+        }
+        guard column >= 0, column < columns else {
+            preconditionFailure("Column index out of bounds: \(column) not in 0..<\(columns)")
+        }
 
         let startIdx = rowPointers[row]
         let endIdx = rowPointers[row + 1]

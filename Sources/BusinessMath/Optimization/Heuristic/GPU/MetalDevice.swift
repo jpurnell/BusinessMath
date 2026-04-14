@@ -72,7 +72,7 @@ internal final class MetalDevice: @unchecked Sendable {
         self.device = device
 
         guard let queue = device.makeCommandQueue() else {
-            fatalError("Failed to create Metal command queue")
+            preconditionFailure("Failed to create Metal command queue")
         }
         self.commandQueue = queue
 
@@ -85,7 +85,7 @@ internal final class MetalDevice: @unchecked Sendable {
             do {
                 self.library = try Self.compileShaderLibrary(device: device)
             } catch {
-                fatalError("Failed to load or compile Metal library: \(error)")
+                preconditionFailure("Failed to load or compile Metal library: \(error)")
             }
         }
     }

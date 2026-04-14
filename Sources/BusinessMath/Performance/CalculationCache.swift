@@ -437,7 +437,7 @@ actor CalculationCacheAsync {
 			// 2) Join an in-flight computation if present
 		if inflight[k] != nil {
 			await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-				inflight[k]!.waiters.append(cont)
+				inflight[k]?.waiters.append(cont)
 			}
 				// After leader signals, prefer cached value
 			if var entry = cache[k], Date().timeIntervalSince(entry.createdAt) < ttl, let value = entry.value as? T {
@@ -585,7 +585,7 @@ actor CalculationCacheAsync {
 		
 			// Otherwise, re-join the current leader
 		await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-			inflight[key]!.waiters.append(cont)
+			inflight[key]?.waiters.append(cont)
 		}
 		
 		if var entry = cache[key], Date().timeIntervalSince(entry.createdAt) < ttl, let value = entry.value as? T {

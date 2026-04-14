@@ -71,7 +71,7 @@ public struct Base {
     /// - Parameter amount: The base revenue (must be non-negative).
     public init(_ amount: Double) {
         guard amount >= 0 else {
-            fatalError("Base revenue cannot be negative: \(amount)")
+            preconditionFailure("Base revenue cannot be negative: \(amount)")
         }
         self.amount = amount
     }
@@ -87,7 +87,7 @@ public struct GrowthRate {
     /// - Parameter rate: The annual growth rate (must be > -100%).
     public init(_ rate: Double) {
         guard rate > -1.0 else {
-            fatalError("Growth rate cannot be less than -100%: \(rate)")
+            preconditionFailure("Growth rate cannot be less than -100%: \(rate)")
         }
         self.rate = rate
     }
@@ -103,12 +103,12 @@ public struct Seasonality {
     /// - Parameter factors: Array of exactly 4 factors that sum to 4.0.
     public init(_ factors: [Double]) {
         guard factors.count == 4 else {
-            fatalError("Seasonality must have exactly 4 quarterly factors")
+            preconditionFailure("Seasonality must have exactly 4 quarterly factors")
         }
 
         let sum = factors.reduce(0, +)
         guard abs(sum - 4.0) < 0.001 else {
-            fatalError("Seasonality factors must sum to 4.0, got \(sum)")
+            preconditionFailure("Seasonality factors must sum to 4.0, got \(sum)")
         }
 
         self.factors = factors

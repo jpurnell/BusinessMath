@@ -789,7 +789,9 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 	/// - Precondition: Vector must have at least one non-zero component
 	public func simplexProjection() -> VectorN<T> {
 		let s = self.sum
-		precondition(s != 0, "Cannot project zero vector onto simplex")
+		guard s != 0 else {
+			preconditionFailure("Cannot project zero vector onto simplex")
+		}
 		return self / s
 	}
 	
@@ -1081,7 +1083,9 @@ extension VectorN {
 	/// - Returns: Vector where all components are 1/dimension
 	/// - Precondition: dimension must be positive
 	public static func equalWeights(dimension: Int) -> VectorN<T> {
-		precondition(dimension > 0, "Dimension must be positive")
+		guard dimension > 0 else {
+			preconditionFailure("Dimension must be positive")
+		}
 		let weight = T(1) / T(dimension)
 		return VectorN(repeating: weight, count: dimension)
 	}

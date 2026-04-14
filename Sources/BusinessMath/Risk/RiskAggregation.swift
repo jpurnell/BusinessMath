@@ -138,8 +138,12 @@ public struct RiskAggregator<T: Real & Sendable> {
 		correlations: [[T]]
 	) -> T {
 		let n = individualVaRs.count
-		precondition(correlations.count == n, "Correlation matrix must be n x n")
-		precondition(correlations.allSatisfy { $0.count == n }, "Correlation matrix must be square")
+		guard correlations.count == n else {
+			preconditionFailure("Correlation matrix row count (\(correlations.count)) must equal number of entities (\(n))")
+		}
+		guard correlations.allSatisfy({ $0.count == n }) else {
+			preconditionFailure("Correlation matrix must be square (\(n) x \(n))")
+		}
 
 		var totalVariance: T = 0
 		// Compute vᵀ C v
@@ -171,8 +175,12 @@ public struct RiskAggregator<T: Real & Sendable> {
 		correlations: [[T]]
 	) -> T {
 		let n = individualVaRs.count
-		precondition(entity >= 0 && entity < n, "Entity index out of bounds")
-		precondition(correlations.count == n && correlations.allSatisfy { $0.count == n }, "Correlation matrix must be n x n")
+		guard entity >= 0, entity < n else {
+			preconditionFailure("Entity index \(entity) out of bounds for \(n) entities")
+		}
+		guard correlations.count == n, correlations.allSatisfy({ $0.count == n }) else {
+			preconditionFailure("Correlation matrix must be \(n) x \(n)")
+		}
 
 		let portfolioVaR = aggregateVaR(individualVaRs: individualVaRs, correlations: correlations)
 		// If portfolioVaR is zero, derivative is undefined; return 0 to avoid NaN.
@@ -200,8 +208,12 @@ public struct RiskAggregator<T: Real & Sendable> {
 		correlations: [[T]]
 	) -> [T] {
 		let n = individualVaRs.count
-		precondition(weights.count == n, "Weights must match number of entities")
-		precondition(correlations.count == n && correlations.allSatisfy { $0.count == n }, "Correlation matrix must be n x n")
+		guard weights.count == n else {
+			preconditionFailure("Weights count (\(weights.count)) must match number of entities (\(n))")
+		}
+		guard correlations.count == n, correlations.allSatisfy({ $0.count == n }) else {
+			preconditionFailure("Correlation matrix must be \(n) x \(n)")
+		}
 
 		// v = weights .* individualVaRs
 		var v = [T](repeating: 0, count: n)

@@ -60,7 +60,9 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 		returns: [TimeSeries<T>],
 		riskFreeRate: T = T(3) / T(100)  // 3%
 	) {
-		precondition(assets.count == returns.count, "Assets and returns must match")
+		guard assets.count == returns.count else {
+			preconditionFailure("Assets count (\(assets.count)) must match returns count (\(returns.count))")
+		}
 		self.assets = assets
 		self.returns = returns
 		self.riskFreeRate = riskFreeRate
@@ -127,7 +129,9 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 	/// - Parameter weights: Asset weights (must sum to 1).
 	/// - Returns: Expected portfolio return.
 	public func portfolioReturn(weights: [T]) -> T {
-		precondition(weights.count == assets.count)
+		guard weights.count == assets.count else {
+			preconditionFailure("Weights count (\(weights.count)) must match assets count (\(assets.count))")
+		}
 		let expectedRets = expectedReturns
 		var portfolioReturn: T = 0
 
@@ -146,7 +150,9 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 	/// - Parameter weights: Asset weights (must sum to 1).
 	/// - Returns: Portfolio volatility (standard deviation).
 	public func portfolioRisk(weights: [T]) -> T {
-		precondition(weights.count == assets.count)
+		guard weights.count == assets.count else {
+			preconditionFailure("Weights count (\(weights.count)) must match assets count (\(assets.count))")
+		}
 		let cov = covarianceMatrix
 		var variance: T = 0
 
@@ -321,7 +327,9 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 	}
 
 	private static func covariance(_ x: [T], _ y: [T]) -> T {
-		precondition(x.count == y.count)
+		guard x.count == y.count else {
+			preconditionFailure("Covariance arrays must have equal length: \(x.count) vs \(y.count)")
+		}
 		let n = T(x.count)
 		let meanX = x.reduce(T(0), +) / n
 		let meanY = y.reduce(T(0), +) / n

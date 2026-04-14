@@ -103,12 +103,18 @@ public struct EfficientFrontier {
 
 	/// Portfolio with maximum Sharpe ratio
 	public var maximumSharpePortfolio: OptimalPortfolio {
-		portfolios.max(by: { $0.sharpeRatio < $1.sharpeRatio })!
+		guard let portfolio = portfolios.max(by: { $0.sharpeRatio < $1.sharpeRatio }) else {
+			preconditionFailure("EfficientFrontier must contain at least one portfolio")
+		}
+		return portfolio
 	}
 
 	/// Portfolio with minimum variance
 	public var minimumVariancePortfolio: OptimalPortfolio {
-		portfolios.min(by: { $0.volatility < $1.volatility })!
+		guard let portfolio = portfolios.min(by: { $0.volatility < $1.volatility }) else {
+			preconditionFailure("EfficientFrontier must contain at least one portfolio")
+		}
+		return portfolio
 	}
 }
 

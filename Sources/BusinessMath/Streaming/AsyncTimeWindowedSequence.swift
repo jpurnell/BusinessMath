@@ -96,7 +96,7 @@ public struct AsyncTumblingTimeWindowSequence<Base: AsyncSequence, V: Sendable>:
                 pendingElement = nil
             }
 
-            while true {
+            while !Task.isCancelled {
                 guard let element = try await baseIterator.next() else {
                     // Stream exhausted — emit any remaining partial window
                     isComplete = true
@@ -137,6 +137,7 @@ public struct AsyncTumblingTimeWindowSequence<Base: AsyncSequence, V: Sendable>:
                     currentWindow.append(element)
                 }
             }
+            return nil
         }
     }
 }
@@ -222,7 +223,7 @@ public struct AsyncSlidingTimeWindowSequence<Base: AsyncSequence, V: Sendable>: 
                 return pending
             }
 
-            while true {
+            while !Task.isCancelled {
                 guard let element = try await baseIterator.next() else {
                     // Stream exhausted — emit final window if buffer has data
                     isComplete = true
@@ -279,6 +280,7 @@ public struct AsyncSlidingTimeWindowSequence<Base: AsyncSequence, V: Sendable>: 
                     return pending
                 }
             }
+            return nil
         }
     }
 }

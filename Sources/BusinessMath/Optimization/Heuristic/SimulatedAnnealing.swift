@@ -341,7 +341,8 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
             neighborComponents.append(clamped)
         }
 
-        return V.fromArray(neighborComponents)!
+        guard let neighbor = V.fromArray(neighborComponents) else { return current }
+        return neighbor
     }
 
     /// Clamp solution to search space bounds.
@@ -357,7 +358,8 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
             clamped.append(min(max(array[i], lower), upper))
         }
 
-        return V.fromArray(clamped)!
+        guard let result = V.fromArray(clamped) else { return solution }
+        return result
     }
 
     // MARK: - Penalty Method for Constraints

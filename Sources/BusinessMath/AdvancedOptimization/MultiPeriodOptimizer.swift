@@ -110,9 +110,21 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 		discountRate: Double = 0.0,
 		maxIterations: Int = 1000,
 		tolerance: Double = 1e-6
-	) {
-		precondition(numberOfPeriods > 0, "Number of periods must be positive")
-		precondition(discountRate >= 0.0, "Discount rate must be non-negative")
+	) throws {
+		guard numberOfPeriods > 0 else {
+			throw BusinessMathError.invalidInput(
+				message: "Number of periods must be positive",
+				value: String(numberOfPeriods),
+				expectedRange: "> 0"
+			)
+		}
+		guard discountRate >= 0.0 else {
+			throw BusinessMathError.invalidInput(
+				message: "Discount rate must be non-negative",
+				value: String(discountRate),
+				expectedRange: ">= 0.0"
+			)
+		}
 
 		self.numberOfPeriods = numberOfPeriods
 		self.discountRate = discountRate
@@ -144,7 +156,13 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 		// Total Dimension
 		let _ = dimension * numberOfPeriods
 
-		precondition(dimension > 0, "Initial state must have positive dimension")
+		guard dimension > 0 else {
+			throw BusinessMathError.invalidInput(
+				message: "Initial state must have positive dimension",
+				value: String(dimension),
+				expectedRange: "> 0"
+			)
+		}
 
 		// Create initial flattened vector (repeat initial state for all periods)
 		var flatInitial = [Double]()
@@ -244,15 +262,15 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 		var trajectory: [V] = []
 
 		guard dimension > 0 else {
-			fatalError("Dimension must be positive, got: \(dimension)")
+			return []
 		}
 
 		for t in 0..<numberOfPeriods {
 			let start = t * dimension
 			let end = start + dimension
 
-			guard start >= 0 && end <= array.count && start <= end else {
-				fatalError("Invalid range: start=\(start), end=\(end), array.count=\(array.count)")
+			guard start >= 0, end <= array.count, start <= end else {
+				continue
 			}
 
 			let periodArray = Array(array[start..<end])

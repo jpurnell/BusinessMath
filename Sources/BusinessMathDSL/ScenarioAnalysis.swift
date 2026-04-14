@@ -232,8 +232,8 @@ public struct ScenarioAnalysis {
             mean: mean,
             median: median,
             stdDev: stdDev,
-            min: values.first!,
-            max: values.last!,
+            min: values.first ?? 0,
+            max: values.last ?? 0,
             count: count
         )
     }
@@ -277,7 +277,7 @@ public struct ScenarioAnalysisBuilder {
             case .vary(let vary):
                 // Apply variation to base scenario
                 guard let base = baseScenario else {
-                    fatalError("Vary requires a BaseScenario")
+                    preconditionFailure("Vary requires a BaseScenario")
                 }
 
                 // If no existing scenarios, create them from this variation
@@ -308,7 +308,7 @@ public struct ScenarioAnalysisBuilder {
 
             case .sensitivity(let sensitivity):
                 guard let base = baseScenario else {
-                    fatalError("Sensitivity requires a BaseScenario")
+                    preconditionFailure("Sensitivity requires a BaseScenario")
                 }
 
                 let baseValue = base[sensitivity.parameterName] ?? 0
@@ -327,7 +327,7 @@ public struct ScenarioAnalysisBuilder {
 
             case .tornadoChart(let tornado):
                 guard let base = baseScenario else {
-                    fatalError("TornadoChart requires a BaseScenario")
+                    preconditionFailure("TornadoChart requires a BaseScenario")
                 }
 
                 for vary in tornado.variations {
@@ -347,7 +347,7 @@ public struct ScenarioAnalysisBuilder {
 
             case .monteCarlo(let monteCarlo):
                 guard let base = baseScenario else {
-                    fatalError("MonteCarlo requires a BaseScenario")
+                    preconditionFailure("MonteCarlo requires a BaseScenario")
                 }
 
                 for trial in 0..<monteCarlo.trials {

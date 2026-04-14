@@ -118,8 +118,14 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 		seed: UInt64? = nil,
 		maxIterations: Int = 500,
 		tolerance: Double = 1e-6
-	) {
-		precondition(numberOfSamples > 0, "Number of samples must be positive")
+	) throws {
+		guard numberOfSamples > 0 else {
+			throw BusinessMathError.invalidInput(
+				message: "Number of samples must be positive",
+				value: String(numberOfSamples),
+				expectedRange: "> 0"
+			)
+		}
 		self.numberOfSamples = numberOfSamples
 		self.seed = seed
 		self.maxIterations = maxIterations
@@ -240,7 +246,13 @@ extension StochasticOptimizer {
 		minimize: Bool = true
 	) throws -> StochasticResult<V> {
 
-		precondition(!scenarios.isEmpty, "Must provide at least one scenario")
+		guard !scenarios.isEmpty else {
+			throw BusinessMathError.insufficientData(
+				required: 1,
+				actual: 0,
+				context: "Must provide at least one scenario"
+			)
+		}
 
 		// Create SAA objective
 		// Create local copy for Sendable closure

@@ -16,7 +16,7 @@ import Testing
 
 	/// Test 1: Simple 3-period portfolio with budget constraints
 	@Test func simpleThreePeriodPortfolio() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 3,
 			discountRate: 0.0  // No discounting for simplicity
 		)
@@ -73,7 +73,7 @@ import Testing
 
 	/// Test 2: Two-period with turnover constraint
 	@Test func twoPeriodWithTurnoverConstraint() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 2,
 			discountRate: 0.0
 		)
@@ -109,7 +109,7 @@ import Testing
 
 	/// Test 3: Multi-period with discount rate
 	@Test func discountedMultiPeriod() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 4,
 			discountRate: 0.10  // 10% discount rate
 		)
@@ -149,7 +149,7 @@ import Testing
 
 	/// Test 4: Terminal constraint
 	@Test func terminalConstraint() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 3,
 			discountRate: 0.0
 		)
@@ -190,7 +190,7 @@ import Testing
 
 	/// Test 5: Each-period non-negativity constraints
 	@Test func nonNegativityConstraints() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 2,
 			discountRate: 0.0
 		)
@@ -227,7 +227,7 @@ import Testing
 	/// Test 6: Transition constraints (inventory dynamics)
 	@Test func transitionConstraint() throws {
 		// Model simple inventory problem
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 3,
 			discountRate: 0.0,
 			maxIterations: 200,
@@ -294,7 +294,7 @@ import Testing
 
 	/// Test 7: Trajectory constraint (average over periods)
 	@Test func trajectoryConstraint() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 4,
 			discountRate: 0.0
 		)
@@ -329,7 +329,7 @@ import Testing
 
 	/// Test 8: Portfolio rebalancing with transaction costs
 	@Test func portfolioRebalancingWithTransactionCosts() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 3,  // 3 periods (reduced from 6 for performance)
 			discountRate: 0.005  // 0.5% monthly discount
 		)
@@ -367,7 +367,7 @@ import Testing
 
 	/// Test 9: Production planning over time
 	@Test func multiPeriodProductionPlanning() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 3,  // 3 quarters (reduced from 4 for performance)
 			discountRate: 0.03  // 3% quarterly discount
 		)
@@ -417,7 +417,7 @@ import Testing
 
 	/// Test 10: Cumulative budget constraint
 	@Test func cumulativeBudgetConstraint() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 5,
 			discountRate: 0.0
 		)
@@ -462,7 +462,7 @@ import Testing
 
 	/// Test 11: Single period (degenerates to static optimization)
 	@Test func singlePeriod() throws {
-		let optimizer = MultiPeriodOptimizer<VectorN<Double>>(
+		let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 			numberOfPeriods: 1,
 			discountRate: 0.0
 		)

@@ -146,8 +146,12 @@ public struct DistributionF: DistributionRandom {
 	///   - df1: The first degrees of freedom (numerator, df1 > 0)
 	///   - df2: The second degrees of freedom (denominator, df2 > 0)
 	public init(df1: Int, df2: Int) {
-		precondition(df1 > 0, "First degrees of freedom must be positive")
-		precondition(df2 > 0, "Second degrees of freedom must be positive")
+		guard df1 > 0 else {
+			preconditionFailure("First degrees of freedom must be positive")
+		}
+		guard df2 > 0 else {
+			preconditionFailure("Second degrees of freedom must be positive")
+		}
 		self.df1 = df1
 		self.df2 = df2
 	}

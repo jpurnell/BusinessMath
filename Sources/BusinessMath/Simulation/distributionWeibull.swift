@@ -145,8 +145,12 @@ public struct DistributionWeibull: DistributionRandom, Sendable {
 	///
 	/// - Precondition: Both shape and scale must be positive
 	public init(shape: Double, scale: Double) {
-		precondition(shape > 0, "Weibull distribution shape parameter must be positive")
-		precondition(scale > 0, "Weibull distribution scale parameter must be positive")
+		guard shape > 0 else {
+			preconditionFailure("Weibull distribution shape parameter must be positive")
+		}
+		guard scale > 0 else {
+			preconditionFailure("Weibull distribution scale parameter must be positive")
+		}
 		self.shape = shape
 		self.scale = scale
 	}

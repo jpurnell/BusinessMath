@@ -64,7 +64,7 @@ public func distributionGamma<T: Real>(r: Int, λ: T, seeds: [Double]? = nil) ->
 /// - Returns: A random value from Gamma(shape, scale)
 public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, seedIndex: inout Int) -> T where T: BinaryFloatingPoint {
 	guard shape > T(0) && scale > T(0) else {
-		fatalError("Gamma shape and scale must be positive")
+		preconditionFailure("Gamma shape and scale must be positive")
 	}
 
 	// Helper to get next seed

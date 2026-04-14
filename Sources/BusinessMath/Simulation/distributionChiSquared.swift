@@ -142,7 +142,9 @@ public struct DistributionChiSquared: DistributionRandom {
 	/// - Parameters:
 	///   - degreesOfFreedom: The degrees of freedom parameter (df > 0)
 	public init(degreesOfFreedom: Int) {
-		precondition(degreesOfFreedom > 0, "Degrees of freedom must be positive")
+		guard degreesOfFreedom > 0 else {
+			preconditionFailure("Degrees of freedom must be positive")
+		}
 		self.degreesOfFreedom = degreesOfFreedom
 	}
 

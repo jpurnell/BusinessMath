@@ -86,7 +86,7 @@ public struct Fixed {
     /// - Parameter amount: The fixed expense amount (must be non-negative).
     public init(_ amount: Double) {
         guard amount >= 0 else {
-            fatalError("Fixed expenses cannot be negative: \(amount)")
+            preconditionFailure("Fixed expenses cannot be negative: \(amount)")
         }
         self.amount = amount
     }
@@ -102,7 +102,7 @@ public struct Variable {
     /// - Parameter percentage: The percentage of revenue (must be between 0 and 1).
     public init(percentage: Double) {
         guard percentage >= 0, percentage <= 1.0 else {
-            fatalError("Variable expense percentage must be between 0 and 1: \(percentage)")
+            preconditionFailure("Variable expense percentage must be between 0 and 1: \(percentage)")
         }
         self.percentage = percentage
     }
@@ -122,10 +122,10 @@ public struct OneTime {
     ///   - year: The year in which the expense occurs (must be positive).
     public init(_ amount: Double, in year: Int) {
         guard amount >= 0 else {
-            fatalError("One-time expense cannot be negative: \(amount)")
+            preconditionFailure("One-time expense cannot be negative: \(amount)")
         }
         guard year > 0 else {
-            fatalError("Year must be positive: \(year)")
+            preconditionFailure("Year must be positive: \(year)")
         }
         self.amount = amount
         self.year = year

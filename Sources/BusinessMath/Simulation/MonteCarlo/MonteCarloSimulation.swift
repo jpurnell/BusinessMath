@@ -455,14 +455,14 @@ public struct MonteCarloSimulation: Sendable {
 
 		#if canImport(Metal)
 		// Try GPU path if eligible (no correlation)
-		if enableGPU && iterations >= 1000 && gpuDevice != nil {
+		if enableGPU && iterations >= 1000, let gpu = gpuDevice {
 			// Check if inputs are GPU-compatible
 			if let distributionConfigs = getGPUDistributionConfigs() {
 				// Check if model can be compiled for GPU
 				if let modelBytecode = compileModelForGPU() {
 					// Attempt GPU execution
 					do {
-						let gpuResults = try gpuDevice!.runSimulation(
+						let gpuResults = try gpu.runSimulation(
 							distributions: distributionConfigs,
 							modelBytecode: modelBytecode,
 							iterations: iterations

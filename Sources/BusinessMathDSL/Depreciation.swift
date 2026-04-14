@@ -82,10 +82,10 @@ public struct StraightLine {
     ///   - years: The depreciation period in years (must be positive).
     public init(asset: Double, years: Int) {
         guard asset >= 0 else {
-            fatalError("Asset value cannot be negative: \(asset)")
+            preconditionFailure("Asset value cannot be negative: \(asset)")
         }
         guard years > 0 else {
-            fatalError("Depreciation years must be positive: \(years)")
+            preconditionFailure("Depreciation years must be positive: \(years)")
         }
         self.assetValue = asset
         self.years = years

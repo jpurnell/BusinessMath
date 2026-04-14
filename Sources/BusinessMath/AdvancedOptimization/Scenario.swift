@@ -137,8 +137,12 @@ public struct ScenarioGenerator {
 		numberOfScenarios: Int,
 		seed: UInt64? = nil
 	) -> [MonteCarloScenario] {
-		precondition(mean.count == standardDeviation.count, "Mean and std dev must have same dimension")
-		precondition(numberOfScenarios > 0, "Number of scenarios must be positive")
+		guard mean.count == standardDeviation.count else {
+			return []
+		}
+		guard numberOfScenarios > 0 else {
+			return []
+		}
 
 		// Set seed if provided
 		if let seed = seed {
@@ -239,8 +243,12 @@ public struct ScenarioGenerator {
 		numberOfScenarios: Int,
 		seed: UInt64? = nil
 	) -> [MonteCarloScenario] {
-		precondition(lowerBounds.count == upperBounds.count, "Bounds must have same dimension")
-		precondition(numberOfScenarios > 0, "Number of scenarios must be positive")
+		guard lowerBounds.count == upperBounds.count else {
+			return []
+		}
+		guard numberOfScenarios > 0 else {
+			return []
+		}
 
 		// Set seed if provided
 		if let seed = seed {

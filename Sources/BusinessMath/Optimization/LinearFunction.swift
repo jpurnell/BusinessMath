@@ -58,7 +58,7 @@ extension LinearFunction {
     public func evaluate(at point: V) -> Double {
         let components = point.toArray()
         guard components.count == coefficients.count else {
-            fatalError("Dimension mismatch: function has \(coefficients.count) coefficients, point has \(components.count) dimensions")
+            preconditionFailure("Dimension mismatch: function has \(coefficients.count) coefficients, point has \(components.count) dimensions")
         }
 
         // Compute c·x + constant
@@ -72,7 +72,7 @@ extension LinearFunction {
     /// Default gradient: coefficients (constant for linear functions)
     public func gradient(at point: V) -> V {
         guard let gradient = V.fromArray(coefficients) else {
-            fatalError("Failed to create gradient vector from coefficients")
+            preconditionFailure("Failed to create gradient vector from coefficients")
         }
         return gradient
     }

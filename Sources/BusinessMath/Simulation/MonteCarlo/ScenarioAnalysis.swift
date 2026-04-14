@@ -425,7 +425,9 @@ public struct SensitivityAnalysis: Sendable {
 			throw ScenarioError.unknownInput(scenario: "Sensitivity Analysis", inputName: inputName)
 		}
 
-		let baseValue = baseValues[inputName]!
+		guard let baseValue = baseValues[inputName] else {
+			throw ScenarioError.unknownInput(scenario: "Sensitivity Analysis", inputName: inputName)
+		}
 		var scenarios: [(multiplier: Double, result: SimulationResults)] = []
 
 		// Generate multipliers evenly spaced in range
@@ -446,14 +448,18 @@ public struct SensitivityAnalysis: Sendable {
 					if name == inputName {
 						config.setValue(baseValue * multiplier, forInput: name)
 					} else {
-						config.setValue(self.baseValues[name]!, forInput: name)
+						if let value = self.baseValues[name] {
+							config.setValue(value, forInput: name)
+						}
 					}
 				}
 			}
 
 			analysis.addScenario(scenario)
 			let results = try analysis.run()
-			scenarios.append((multiplier: multiplier, result: results[scenario.name]!))
+			if let result = results[scenario.name] {
+				scenarios.append((multiplier: multiplier, result: result))
+			}
 		}
 
 		return InputSensitivity(
@@ -478,8 +484,10 @@ public struct SensitivityAnalysis: Sendable {
 			let sensitivity = try analyzeInput(inputName, range: range, steps: 2)
 
 			// Get output range (low and high)
-			let lowScenario = sensitivity.scenarios.first { $0.multiplier == range.lowerBound }!
-			let highScenario = sensitivity.scenarios.first { $0.multiplier == range.upperBound }!
+			guard let lowScenario = sensitivity.scenarios.first(where: { $0.multiplier == range.lowerBound }),
+				  let highScenario = sensitivity.scenarios.first(where: { $0.multiplier == range.upperBound }) else {
+				continue
+			}
 
 			let lowOutput = lowScenario.result.statistics.mean
 			let highOutput = highScenario.result.statistics.mean

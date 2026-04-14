@@ -37,7 +37,7 @@ public struct Tier {
         proRata: ProRata? = nil
     ) {
         guard priority > 0 else {
-            fatalError("Tier priority must be positive: \(priority)")
+            preconditionFailure("Tier priority must be positive: \(priority)")
         }
         self.name = name
         self.priority = priority

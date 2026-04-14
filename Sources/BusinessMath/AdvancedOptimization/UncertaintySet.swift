@@ -62,9 +62,19 @@ public struct BoxUncertaintySet: UncertaintySet {
 	/// - Parameters:
 	///   - nominal: Nominal (center) parameter values
 	///   - deviations: Maximum absolute deviations from nominal
-	public init(nominal: [Double], deviations: [Double]) {
-		precondition(nominal.count == deviations.count, "Nominal and deviations must have same dimension")
-		precondition(deviations.allSatisfy { $0 >= 0 }, "Deviations must be non-negative")
+	public init(nominal: [Double], deviations: [Double]) throws {
+		guard nominal.count == deviations.count else {
+			throw BusinessMathError.mismatchedDimensions(
+				message: "Nominal and deviations must have same dimension",
+				expected: String(nominal.count),
+				actual: String(deviations.count)
+			)
+		}
+		guard deviations.allSatisfy({ $0 >= 0 }) else {
+			throw BusinessMathError.invalidInput(
+				message: "Deviations must be non-negative"
+			)
+		}
 		self.nominal = nominal
 		self.deviations = deviations
 	}
@@ -192,10 +202,26 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 	///   - nominal: Nominal (center) parameter values
 	///   - covariance: Covariance matrix (must be symmetric positive definite)
 	///   - radius: Ellipsoid radius (default: 1.0)
-	public init(nominal: [Double], covariance: [[Double]], radius: Double = 1.0) {
-		precondition(covariance.count == nominal.count, "Covariance dimension must match nominal")
-		precondition(covariance.allSatisfy { $0.count == nominal.count }, "Covariance must be square")
-		precondition(radius > 0, "Radius must be positive")
+	public init(nominal: [Double], covariance: [[Double]], radius: Double = 1.0) throws {
+		guard covariance.count == nominal.count else {
+			throw BusinessMathError.mismatchedDimensions(
+				message: "Covariance dimension must match nominal",
+				expected: String(nominal.count),
+				actual: String(covariance.count)
+			)
+		}
+		guard covariance.allSatisfy({ $0.count == nominal.count }) else {
+			throw BusinessMathError.invalidInput(
+				message: "Covariance must be square"
+			)
+		}
+		guard radius > 0 else {
+			throw BusinessMathError.invalidInput(
+				message: "Radius must be positive",
+				value: String(radius),
+				expectedRange: "> 0"
+			)
+		}
 		self.nominal = nominal
 		self.covariance = covariance
 		self.radius = radius

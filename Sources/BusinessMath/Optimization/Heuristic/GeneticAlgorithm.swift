@@ -447,7 +447,10 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             values.append(value)
         }
 
-        return V.fromArray(values)!
+        guard let result = V.fromArray(values) else {
+            return V.fromArray(Array(repeating: V.Scalar.zero, count: searchSpace.count)) ?? V.zero
+        }
+        return result
     }
 
     // MARK: - Genetic Operators
@@ -742,7 +745,8 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             }
         }
 
-        return Individual(genes: V.fromArray(childGenes)!)
+        guard let childVector = V.fromArray(childGenes) else { return parent1 }
+        return Individual(genes: childVector)
     }
 
     /// Gaussian mutation: add random perturbation to genes.
@@ -777,7 +781,8 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             }
         }
 
-        return Individual(genes: V.fromArray(genes)!)
+        guard let mutatedVector = V.fromArray(genes) else { return individual }
+        return Individual(genes: mutatedVector)
     }
 
     // MARK: - Diversity Calculation

@@ -526,7 +526,10 @@ public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
                 trend = 0.0
             }
 
-            return DoubleExponentialForecast(level: level!, trend: trend!)
+            guard let resolvedLevel = level, let resolvedTrend = trend else {
+                return nil
+            }
+            return DoubleExponentialForecast(level: resolvedLevel, trend: resolvedTrend)
         }
     }
 }
@@ -634,8 +637,10 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
                     trend = 0.0
 
                     // Initialize seasonal factors
-                    for (i, val) in initializationBuffer.enumerated() {
-                        seasonalFactors[i] = val / level!
+                    if let initialLevel = level, initialLevel != 0.0 {
+                        for (i, val) in initializationBuffer.enumerated() {
+                            seasonalFactors[i] = val / initialLevel
+                        }
                     }
                 }
 
@@ -944,7 +949,7 @@ public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSeque
         /// - Returns: A change point when a significant shift is detected, or nil when the stream ends.
         public mutating func next() async throws -> ChangePoint? {
             // Read values until we detect a change point
-            while true {
+            while !Task.isCancelled {
                 guard let value = try await baseIterator.next() else {
                     return nil
                 }
@@ -979,6 +984,7 @@ public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSeque
 
                 previousMean = currentMean
             }
+            return nil
         }
     }
 }

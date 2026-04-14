@@ -14,8 +14,8 @@ import Testing
 	// MARK: - Uncertainty Set Tests
 
 	/// Test box uncertainty set generation and containment.
-	@Test func boxUncertaintySet() {
-		let box = BoxUncertaintySet(
+	@Test func boxUncertaintySet() throws {
+		let box = try BoxUncertaintySet(
 			nominal: [0.10, 0.12, 0.08],
 			deviations: [0.02, 0.03, 0.01]
 		)
@@ -45,14 +45,14 @@ import Testing
 	}
 
 	/// Test ellipsoidal uncertainty set.
-	@Test func ellipsoidalUncertaintySet() {
+	@Test func ellipsoidalUncertaintySet() throws {
 		let covariance = [
 			[0.04, 0.00, 0.00],
 			[0.00, 0.09, 0.00],
 			[0.00, 0.00, 0.01]
 		]
 
-		let ellipsoid = EllipsoidalUncertaintySet(
+		let ellipsoid = try EllipsoidalUncertaintySet(
 			nominal: [0.10, 0.12, 0.08],
 			covariance: covariance,
 			radius: 1.0
@@ -94,7 +94,7 @@ import Testing
 		let nominalReturns = [0.10, 0.12, 0.08]
 		let deviations = [0.02, 0.03, 0.01]  // ±2%, ±3%, ±1%
 
-		let uncertaintySet = BoxUncertaintySet(
+		let uncertaintySet = try BoxUncertaintySet(
 			nominal: nominalReturns,
 			deviations: deviations
 		)
@@ -289,7 +289,7 @@ import Testing
 		let nominalReturns = [0.10, 0.12, 0.08, 0.04]
 		let deviations = [0.02, 0.03, 0.01, 0.01]
 
-		let uncertaintySet = BoxUncertaintySet(
+		let uncertaintySet = try BoxUncertaintySet(
 			nominal: nominalReturns,
 			deviations: deviations
 		)

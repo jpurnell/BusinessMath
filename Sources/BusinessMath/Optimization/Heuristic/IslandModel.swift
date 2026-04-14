@@ -246,7 +246,7 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
         // Note: True migration would require GA to expose population, which it doesn't currently.
         // This implementation maintains diversity through independent initialization.
         var islandFitnesses = [V.Scalar]()
-        var bestSolution = V.fromArray(Array(repeating: V.Scalar.zero, count: searchSpace.count))!
+        var bestSolution = V.fromArray(Array(repeating: V.Scalar.zero, count: searchSpace.count)) ?? V.zero
         var bestFitness = V.Scalar.infinity
         var bestIslandIndex = 0
         var totalEvaluations = 0
