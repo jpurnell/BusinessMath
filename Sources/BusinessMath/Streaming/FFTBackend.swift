@@ -349,14 +349,17 @@ public struct AccelerateFFTBackend: FFTBackend, Sendable {
         // nested within their withUnsafe* closures to avoid dangling references
         realPart.withUnsafeMutableBufferPointer { realBuf in
             imagPart.withUnsafeMutableBufferPointer { imagBuf in
+                guard let realBase = realBuf.baseAddress,
+                      let imagBase = imagBuf.baseAddress else { return }
                 var splitComplex = DSPDoubleSplitComplex(
-                    realp: realBuf.baseAddress!,
-                    imagp: imagBuf.baseAddress!
+                    realp: realBase,
+                    imagp: imagBase
                 )
 
                 // Convert interleaved real signal to split complex format
                 paddedSignal.withUnsafeBufferPointer { signalPtr in
-                    signalPtr.baseAddress!.withMemoryRebound(
+                    guard let signalBase = signalPtr.baseAddress else { return }
+                    signalBase.withMemoryRebound(
                         to: DSPDoubleComplex.self,
                         capacity: n / 2
                     ) { complexPtr in

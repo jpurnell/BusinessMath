@@ -116,8 +116,10 @@ internal final class MetalBuffers {
     ///
     /// - Precondition: `data.count == populationSize * dimension`
     func uploadPopulation(_ data: [Float], to buffer: MTLBuffer) {
-        precondition(data.count == populationSize * dimension,
-                     "Data size mismatch: expected \(populationSize * dimension), got \(data.count)")
+        guard data.count == populationSize * dimension else {
+            assertionFailure("Data size mismatch: expected \(populationSize * dimension), got \(data.count)")
+            return
+        }
 
         let pointer = buffer.contents().bindMemory(to: Float.self, capacity: data.count)
         for (i, value) in data.enumerated() {
@@ -141,8 +143,10 @@ internal final class MetalBuffers {
     ///
     /// - Precondition: `data.count == populationSize`
     func uploadFitness(_ data: [Float]) {
-        precondition(data.count == populationSize,
-                     "Fitness data size mismatch: expected \(populationSize), got \(data.count)")
+        guard data.count == populationSize else {
+            assertionFailure("Fitness data size mismatch: expected \(populationSize), got \(data.count)")
+            return
+        }
 
         let pointer = fitness.contents().bindMemory(to: Float.self, capacity: populationSize)
         for (i, value) in data.enumerated() {

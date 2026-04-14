@@ -73,7 +73,7 @@ public struct ExpressionMatrix: Sendable {
     /// ```
     public func multiply(_ vector: ExpressionArray) -> ExpressionArray {
         guard cols == vector.count else {
-            fatalError("Matrix columns (\(cols)) must match vector size (\(vector.count))")
+            preconditionFailure("Matrix columns (\(cols)) must match vector size (\(vector.count))")
         }
 
         let resultElements = elements.map { row in
@@ -98,7 +98,7 @@ public struct ExpressionMatrix: Sendable {
     /// ```
     public func quadraticForm(_ vector: ExpressionArray) -> ExpressionProxy {
         guard rows == cols && rows == vector.count else {
-            fatalError("Quadratic form requires square matrix matching vector size")
+            preconditionFailure("Quadratic form requires square matrix matching vector size")
         }
 
         // Compute: sum_i sum_j w_i * Σ_ij * w_j
@@ -126,7 +126,7 @@ public struct ExpressionMatrix: Sendable {
     /// ```
     public func multiply(_ other: ExpressionMatrix) -> ExpressionMatrix {
         guard cols == other.rows else {
-            fatalError("Matrix multiply: inner dimensions must match")
+            preconditionFailure("Matrix multiply: inner dimensions must match")
         }
 
         var resultElements: [[ExpressionProxy]] = []
@@ -160,7 +160,7 @@ public struct ExpressionMatrix: Sendable {
     /// ```
     public func add(_ other: ExpressionMatrix) -> ExpressionMatrix {
         guard rows == other.rows && cols == other.cols else {
-            fatalError("Matrix addition requires same dimensions")
+            preconditionFailure("Matrix addition requires same dimensions")
         }
 
         let resultElements = zip(elements, other.elements).map { row1, row2 in
@@ -203,7 +203,7 @@ public struct ExpressionMatrix: Sendable {
     /// ```
     public func trace() -> ExpressionProxy {
         guard rows == cols else {
-            fatalError("Trace requires square matrix")
+            preconditionFailure("Trace requires square matrix")
         }
 
         var sum = elements[0][0]
@@ -224,7 +224,7 @@ public struct ExpressionMatrix: Sendable {
     /// ```
     public func diagonal() -> ExpressionArray {
         guard rows == cols else {
-            fatalError("Diagonal requires square matrix")
+            preconditionFailure("Diagonal requires square matrix")
         }
 
         let diagonalElements = (0..<rows).map { elements[$0][$0] }

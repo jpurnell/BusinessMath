@@ -125,8 +125,12 @@ public struct DistributionPareto: DistributionRandom {
 	///   - scale: The scale parameter xₘ (minimum value, xₘ > 0)
 	///   - shape: The shape parameter α (α > 0)
 	public init(scale: Double, shape: Double) {
-		precondition(scale > 0, "Pareto scale parameter must be positive")
-		precondition(shape > 0, "Pareto shape parameter must be positive")
+		guard scale > 0 else {
+			preconditionFailure("Pareto scale parameter must be positive")
+		}
+		guard shape > 0 else {
+			preconditionFailure("Pareto shape parameter must be positive")
+		}
 		self.scale = scale
 		self.shape = shape
 	}

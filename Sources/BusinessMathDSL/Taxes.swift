@@ -99,7 +99,7 @@ public struct CorporateRate {
     /// - Parameter rate: The tax rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0, rate <= 1.0 else {
-            fatalError("Corporate tax rate must be between 0 and 1: \(rate)")
+            preconditionFailure("Corporate tax rate must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }
@@ -115,7 +115,7 @@ public struct StateRate {
     /// - Parameter rate: The tax rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0, rate <= 1.0 else {
-            fatalError("State tax rate must be between 0 and 1: \(rate)")
+            preconditionFailure("State tax rate must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }

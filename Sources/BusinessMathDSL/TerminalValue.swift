@@ -21,7 +21,7 @@ public struct PerpetualGrowth {
     /// - Parameter rate: The growth rate (must be between 0 and 1).
     public init(rate: Double) {
         guard rate >= 0 && rate < 1.0 else {
-            fatalError("Perpetual growth rate must be between 0 and 1: \(rate)")
+            preconditionFailure("Perpetual growth rate must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }
@@ -39,7 +39,7 @@ public struct ExitMultiple {
     /// - Parameter evEbitda: The EV/EBITDA multiple (must be positive).
     public init(evEbitda: Double) {
         guard evEbitda > 0 else {
-            fatalError("EV/EBITDA multiple must be positive: \(evEbitda)")
+            preconditionFailure("EV/EBITDA multiple must be positive: \(evEbitda)")
         }
         self.evEbitda = evEbitda
     }
@@ -67,11 +67,11 @@ public struct TerminalValue {
     /// - Returns: Terminal value
     public func calculate(finalFCF: Double, wacc: Double) -> Double {
         guard case .perpetualGrowth(let growth) = method else {
-            fatalError("Perpetual growth method required for this calculation")
+            preconditionFailure("Perpetual growth method required for this calculation")
         }
 
         guard wacc > growth.rate else {
-            fatalError("WACC must be greater than growth rate: WACC=\(wacc), g=\(growth.rate)")
+            preconditionFailure("WACC must be greater than growth rate: WACC=\(wacc), g=\(growth.rate)")
         }
 
         return finalFCF * (1.0 + growth.rate) / (wacc - growth.rate)
@@ -82,7 +82,7 @@ public struct TerminalValue {
     /// - Returns: Terminal value
     public func calculate(finalEBITDA: Double) -> Double {
         guard case .exitMultiple(let multiple) = method else {
-            fatalError("Exit multiple method required for this calculation")
+            preconditionFailure("Exit multiple method required for this calculation")
         }
 
         return finalEBITDA * multiple.evEbitda

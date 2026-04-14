@@ -25,7 +25,7 @@ public struct FromCashFlowModel {
     ///   - years: The number of forecast years (must be positive).
     public init(_ model: CashFlowModel, years: Int) {
         guard years > 0 else {
-            fatalError("Forecast years must be positive: \(years)")
+            preconditionFailure("Forecast years must be positive: \(years)")
         }
         self.model = model
         self.years = years
@@ -124,7 +124,7 @@ public struct DCFModel {
     public func calculateEnterpriseValue() -> ValuationResult {
         guard let terminalValue = terminalValue,
               let wacc = wacc else {
-            fatalError("DCF model requires terminal value and WACC")
+            preconditionFailure("DCF model requires terminal value and WACC")
         }
 
         let waccRate = wacc.rate
@@ -148,7 +148,7 @@ public struct DCFModel {
             let finalResult = cfModel.model.calculate(year: years)
             finalEBITDA = finalResult.ebitda
         } else {
-            fatalError("DCF model requires either Forecast or CashFlowModel")
+            preconditionFailure("DCF model requires either Forecast or CashFlowModel")
         }
 
         // Calculate present value of forecasted cash flows

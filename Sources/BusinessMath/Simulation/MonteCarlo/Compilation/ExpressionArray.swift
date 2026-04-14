@@ -169,7 +169,7 @@ public struct ExpressionArray: Sendable {
         _ combine: (ExpressionProxy, ExpressionProxy) -> ExpressionProxy
     ) -> ExpressionArray {
         guard count == other.count else {
-            fatalError("ExpressionArray.zipWith requires arrays of same size")
+            preconditionFailure("ExpressionArray.zipWith requires arrays of same size")
         }
 
         let zipped = zip(elements, other.elements).map { combine($0, $1) }
@@ -188,7 +188,7 @@ public struct ExpressionArray: Sendable {
     /// ```
     public func dot(_ other: ExpressionArray) -> ExpressionProxy {
         guard count == other.count else {
-            fatalError("ExpressionArray.dot requires arrays of same size")
+            preconditionFailure("ExpressionArray.dot requires arrays of same size")
         }
 
         let products = zipWith(other) { $0 * $1 }

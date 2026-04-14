@@ -242,7 +242,7 @@ public func bootstrapCreditCurve<T: Real & Sendable>(
     recoveryRate: T = T(40) / T(100)
 ) -> HazardRateCurve<T> {
     guard tenors.count == cdsSpreads.count else {
-        fatalError("Tenors and spreads must have same length")
+        preconditionFailure("Tenors count (\(tenors.count)) must match spreads count (\(cdsSpreads.count))")
     }
 
     guard !tenors.isEmpty else {

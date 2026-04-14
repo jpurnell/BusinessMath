@@ -324,7 +324,8 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
             let sizeInt = Int(size * 1_000_000)
             let displacement = V.Scalar(sizeInt) / V.Scalar(1_000_000)
             components[d] += displacement
-            simplex.append(V.fromArray(components)!)
+            guard let vertex = V.fromArray(components) else { continue }
+            simplex.append(vertex)
         }
 
         return simplex
@@ -355,7 +356,8 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
             sum[d] /= count
         }
 
-        return V.fromArray(sum)!
+        guard let centroid = V.fromArray(sum) else { return simplex[0] }
+        return centroid
     }
 
     /// Reflect a point through the centroid.
@@ -380,7 +382,8 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
             result.append(centroidArray[d] + alpha * (centroidArray[d] - pointArray[d]))
         }
 
-        return V.fromArray(result)!
+        guard let reflected = V.fromArray(result) else { return centroid }
+        return reflected
     }
 
     /// Expand a point away from the centroid.
@@ -405,7 +408,8 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
             result.append(centroidArray[d] + gamma * (pointArray[d] - centroidArray[d]))
         }
 
-        return V.fromArray(result)!
+        guard let expanded = V.fromArray(result) else { return centroid }
+        return expanded
     }
 
     /// Contract a point toward the centroid.
@@ -430,7 +434,8 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
             result.append(centroidArray[d] + rho * (pointArray[d] - centroidArray[d]))
         }
 
-        return V.fromArray(result)!
+        guard let contracted = V.fromArray(result) else { return centroid }
+        return contracted
     }
 
     /// Shrink a point toward another point.
@@ -455,7 +460,8 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
             result.append(targetArray[d] + sigma * (pointArray[d] - targetArray[d]))
         }
 
-        return V.fromArray(result)!
+        guard let shrunk = V.fromArray(result) else { return target }
+        return shrunk
     }
 
     /// Compute diameter of simplex (maximum distance between vertices).

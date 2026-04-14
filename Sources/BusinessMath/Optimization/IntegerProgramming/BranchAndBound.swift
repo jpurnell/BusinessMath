@@ -233,13 +233,21 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         // - LP must be solved more accurately than we check integrality
         // - Integrality must be stricter than cut violation threshold
         // - Otherwise, we may reject integer solutions or add useless cuts
-        precondition(lpTolerance > 0, "lpTolerance must be positive")
-        precondition(integralityTolerance > 0, "integralityTolerance must be positive")
-        precondition(cutTolerance > 0, "cutTolerance must be positive")
-        precondition(lpTolerance <= integralityTolerance,
-            "lpTolerance (\(lpTolerance)) must be ≤ integralityTolerance (\(integralityTolerance))")
-        precondition(integralityTolerance <= cutTolerance,
-            "integralityTolerance (\(integralityTolerance)) must be ≤ cutTolerance (\(cutTolerance))")
+        guard lpTolerance > 0 else {
+            preconditionFailure("lpTolerance must be positive")
+        }
+        guard integralityTolerance > 0 else {
+            preconditionFailure("integralityTolerance must be positive")
+        }
+        guard cutTolerance > 0 else {
+            preconditionFailure("cutTolerance must be positive")
+        }
+        guard lpTolerance <= integralityTolerance else {
+            preconditionFailure("lpTolerance (\(lpTolerance)) must be ≤ integralityTolerance (\(integralityTolerance))")
+        }
+        guard integralityTolerance <= cutTolerance else {
+            preconditionFailure("integralityTolerance (\(integralityTolerance)) must be ≤ cutTolerance (\(cutTolerance))")
+        }
 
         self.maxNodes = maxNodes
         self.timeLimit = timeLimit
@@ -1180,7 +1188,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                         let nextInitialGuess: V
                         if enableWarmStart {
                             // Convert VectorN<Double> to V for warm start
-                            nextInitialGuess = V.fromArray(currentSolution.toArray())!
+                            nextInitialGuess = V.fromArray(currentSolution.toArray()) ?? initialGuess
                         } else {
                             nextInitialGuess = initialGuess
                         }
@@ -2178,7 +2186,8 @@ struct NodeQueue<V: VectorSpace>: Sendable where V.Scalar == Double {
         let parent = heap[parentIndex]
         let count = heap.count
 
-        while true {
+        // Bounded by tree depth: parentIndex moves strictly downward toward leaf nodes
+        while parentIndex < count {
             let leftChildIndex = 2 * parentIndex + 1
             let rightChildIndex = 2 * parentIndex + 2
             var bestIndex = parentIndex

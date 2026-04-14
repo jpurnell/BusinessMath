@@ -25,10 +25,10 @@ public struct ForecastRevenue {
     ///   - cagr: The compound annual growth rate (must be > -100%).
     public init(base: Double, cagr: Double) {
         guard base >= 0 else {
-            fatalError("Base revenue cannot be negative: \(base)")
+            preconditionFailure("Base revenue cannot be negative: \(base)")
         }
         guard cagr > -1.0 else {
-            fatalError("CAGR cannot be less than -100%: \(cagr)")
+            preconditionFailure("CAGR cannot be less than -100%: \(cagr)")
         }
         self.base = base
         self.cagr = cagr
@@ -51,7 +51,7 @@ public struct EBITDA {
     /// - Parameter margin: The EBITDA margin (must be between 0 and 1).
     public init(margin: Double) {
         guard margin >= 0 && margin <= 1.0 else {
-            fatalError("EBITDA margin must be between 0 and 1: \(margin)")
+            preconditionFailure("EBITDA margin must be between 0 and 1: \(margin)")
         }
         self.margin = margin
     }
@@ -69,7 +69,7 @@ public struct ForecastDepreciation {
     /// - Parameter percentage: The depreciation percentage (must be between 0 and 1).
     public init(percentage: Double) {
         guard percentage >= 0 && percentage <= 1.0 else {
-            fatalError("Depreciation percentage must be between 0 and 1: \(percentage)")
+            preconditionFailure("Depreciation percentage must be between 0 and 1: \(percentage)")
         }
         self.percentage = percentage
     }
@@ -85,7 +85,7 @@ public struct CapEx {
     /// - Parameter percentage: The CapEx percentage (must be between 0 and 1).
     public init(percentage: Double) {
         guard percentage >= 0 && percentage <= 1.0 else {
-            fatalError("CapEx percentage must be between 0 and 1: \(percentage)")
+            preconditionFailure("CapEx percentage must be between 0 and 1: \(percentage)")
         }
         self.percentage = percentage
     }
@@ -101,7 +101,7 @@ public struct WorkingCapital {
     /// - Parameter daysOfSales: The number of days of sales (must be non-negative).
     public init(daysOfSales: Double) {
         guard daysOfSales >= 0 else {
-            fatalError("Days of sales cannot be negative: \(daysOfSales)")
+            preconditionFailure("Days of sales cannot be negative: \(daysOfSales)")
         }
         self.daysOfSales = daysOfSales
     }
@@ -135,7 +135,7 @@ public struct Forecast {
         workingCapital: WorkingCapital? = nil
     ) {
         guard years > 0 else {
-            fatalError("Forecast years must be positive: \(years)")
+            preconditionFailure("Forecast years must be positive: \(years)")
         }
         self.years = years
         self.revenue = revenue
@@ -148,7 +148,7 @@ public struct Forecast {
     /// Create forecast using result builder
     public init(_ years: Int, @ForecastBuilder content: () -> ForecastComponents) {
         guard years > 0 else {
-            fatalError("Forecast years must be positive: \(years)")
+            preconditionFailure("Forecast years must be positive: \(years)")
         }
         let components = content()
         self.years = years

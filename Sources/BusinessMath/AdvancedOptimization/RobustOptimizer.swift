@@ -137,10 +137,13 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 		minimize: Bool = true
 	) throws -> RobustResult<V> {
 
-		precondition(
-			nominalParameters.count == uncertaintySet.dimension,
-			"Nominal parameters dimension must match uncertainty set"
-		)
+		guard nominalParameters.count == uncertaintySet.dimension else {
+			throw BusinessMathError.mismatchedDimensions(
+				message: "Nominal parameters dimension must match uncertainty set",
+				expected: String(uncertaintySet.dimension),
+				actual: String(nominalParameters.count)
+			)
+		}
 
 		// Sample points from uncertainty set for worst-case evaluation
 		let uncertaintyPoints = uncertaintySet.samplePoints(numberOfSamples: samplesPerIteration)
@@ -255,7 +258,7 @@ extension RobustOptimizer {
 		tolerance: Double = 1e-6
 	) throws -> RobustResult<V> {
 
-		let uncertaintySet = BoxUncertaintySet(
+		let uncertaintySet = try BoxUncertaintySet(
 			nominal: nominal,
 			deviations: deviations
 		)

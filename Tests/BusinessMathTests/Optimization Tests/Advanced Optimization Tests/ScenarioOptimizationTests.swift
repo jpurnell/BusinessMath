@@ -35,7 +35,7 @@ import Testing
 			)
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(
 			scenarios: scenarios,
 			maxIterations: 300,
 			tolerance: 1e-4
@@ -91,7 +91,7 @@ import Testing
 			NamedScenario(name: "Bad", probability: 0.10, parameters: ["return": -0.50])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -152,7 +152,7 @@ import Testing
 			NamedScenario(name: "Scenario B", probability: 0.50, parameters: ["factor": 3.0])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -192,7 +192,7 @@ import Testing
 			NamedScenario(name: "High", probability: 0.33, parameters: ["multiplier": 1.5])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -224,7 +224,7 @@ import Testing
 			NamedScenario(name: "S4", probability: 0.25, parameters: ["r": 0.06])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		// Portfolio optimization with budget and non-negativity
 		var constraints: [ScenarioConstraint<VectorN<Double>>] = [
@@ -262,7 +262,7 @@ import Testing
 			NamedScenario(name: "C", probability: 1.0, parameters: ["value": 30.0])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -289,7 +289,7 @@ import Testing
 			NamedScenario(name: "Only", probability: 1.0, parameters: ["multiplier": 2.0])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -321,7 +321,7 @@ import Testing
 			NamedScenario(name: "High Cost", probability: 0.40, parameters: ["cost": 20.0])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -350,7 +350,7 @@ import Testing
 			NamedScenario(name: "S2", probability: 0.50, parameters: ["revenue": 150.0])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -384,7 +384,7 @@ import Testing
 		]
 
 		// Scenario-based optimization
-		let scenarioOptimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: namedScenarios)
+		let scenarioOptimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: namedScenarios)
 
 		var constraints: [ScenarioConstraint<VectorN<Double>>] = [
 			.all(function: { x in x.toArray().reduce(0, +) - 1.0 }, isEquality: true)
@@ -417,7 +417,7 @@ import Testing
 			NamedScenario(name: "Impossible", probability: 0.0, parameters: ["value": -1000.0])
 		]
 
-		let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+		let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 
 		let result = try optimizer.optimize(
 			objective: { x, scenario in
@@ -445,7 +445,7 @@ import Testing
 		]
 
 		for tolerance in [1e-6, 1e-4, 1e-2] {
-			let optimizer = ScenarioOptimizer<VectorN<Double>>(
+			let optimizer = try ScenarioOptimizer<VectorN<Double>>(
 				scenarios: scenarios,
 				maxIterations: 300,
 				tolerance: tolerance

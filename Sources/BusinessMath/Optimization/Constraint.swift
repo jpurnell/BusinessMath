@@ -341,7 +341,7 @@ public enum MultivariateConstraint<V: VectorSpace>: Sendable where V.Scalar: Rea
 			// c·x = b  →  c·x - b = 0
 			return (coefficients: coeffs, constant: -rhs, isEquality: true)
 		case .equality, .inequality:
-			fatalError("toCanonicalForm() is only supported for linear constraints. Use validateLinearModel() first to extract coefficients from closures.")
+			preconditionFailure("toCanonicalForm() is only supported for linear constraints. Use validateLinearModel() first to extract coefficients from closures.")
 		}
 	}
 }

@@ -634,10 +634,13 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
             let ucl = target + limitFactor
             let lcl = target - limitFactor
 
-            let isOutOfControl = ewma! < lcl || ewma! > ucl
+            guard let currentEWMAValue = ewma else {
+                return nil
+            }
+            let isOutOfControl = currentEWMAValue < lcl || currentEWMAValue > ucl
 
             let signal = EWMASignal(
-                ewma: ewma!,
+                ewma: currentEWMAValue,
                 upperControlLimit: ucl,
                 lowerControlLimit: lcl,
                 isOutOfControl: isOutOfControl,
@@ -978,7 +981,7 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
                 // Find the best breakpoint among all current segments
                 for (segIndex, segment) in segments.enumerated() {
                     if let bp = findBestBreakpoint(in: values, start: segment.start, end: segment.end, minSize: minSegmentSize) {
-                        if bestBreakpoint == nil || bp.costReduction > bestBreakpoint!.costReduction {
+                        if bestBreakpoint.map({ bp.costReduction > $0.costReduction }) ?? true {
                             bestBreakpoint = bp
                             bestSegmentIndex = segIndex
                         }

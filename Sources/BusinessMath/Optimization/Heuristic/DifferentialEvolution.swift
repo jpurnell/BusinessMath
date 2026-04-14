@@ -212,7 +212,18 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         var evaluations = config.populationSize
 
         // Track best solution
-        var bestIndex = fitness.indices.min(by: { fitness[$0] < fitness[$1] })!
+        guard let initialBestIndex = fitness.indices.min(by: { fitness[$0] < fitness[$1] }) else {
+            return DifferentialEvolutionResult(
+                solution: population[0],
+                fitness: fitness[0],
+                generations: 0,
+                evaluations: evaluations,
+                converged: false,
+                convergenceReason: "Empty population",
+                convergenceHistory: []
+            )
+        }
+        var bestIndex = initialBestIndex
         var bestSolution = population[bestIndex]
         var bestFitness = fitness[bestIndex]
 
@@ -348,7 +359,8 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
                 components.append(value)
             }
 
-            population.append(V.fromArray(components)!)
+            guard let vector = V.fromArray(components) else { continue }
+            population.append(vector)
         }
 
         return population
@@ -427,7 +439,8 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             }
         }
 
-        return V.fromArray(trial)!
+        guard let result = V.fromArray(trial) else { return target }
+        return result
     }
 
     /// Clamp a vector to search space bounds.
@@ -441,7 +454,8 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             clamped.append(min(max(value, lower), upper))
         }
 
-        return V.fromArray(clamped)!
+        guard let result = V.fromArray(clamped) else { return vector }
+        return result
     }
 
     /// Select distinct random indices, excluding a specific index.

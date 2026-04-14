@@ -243,7 +243,18 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         var personalBestFitness = fitness
 
         // Initialize global best
-        var globalBestIndex = fitness.indices.min(by: { fitness[$0] < fitness[$1] })!
+        guard let globalBestIndex_initial = fitness.indices.min(by: { fitness[$0] < fitness[$1] }) else {
+            return ParticleSwarmResult(
+                solution: positions[0],
+                fitness: fitness[0],
+                iterations: 0,
+                evaluations: evaluations,
+                converged: false,
+                convergenceReason: "Empty swarm",
+                convergenceHistory: []
+            )
+        }
+        var globalBestIndex = globalBestIndex_initial
         var globalBest = positions[globalBestIndex]
         var globalBestFitness = fitness[globalBestIndex]
 
@@ -606,7 +617,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
                 components.append(value)
             }
 
-            swarm.append(V.fromArray(components)!)
+            guard let particle = V.fromArray(components) else { continue }
+            swarm.append(particle)
         }
 
         return swarm
@@ -632,7 +644,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
                 components.append(velocity)
             }
 
-            velocities.append(V.fromArray(components)!)
+            guard let velocity = V.fromArray(components) else { continue }
+            velocities.append(velocity)
         }
 
         return velocities
@@ -682,7 +695,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             newVelocity.append(inertia + cognitive + social)
         }
 
-        return V.fromArray(newVelocity)!
+        guard let result = V.fromArray(newVelocity) else { return currentVelocity }
+        return result
     }
 
     /// Clamp velocity to limits.
@@ -695,7 +709,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             clamped.append(min(max(vArray[i], lower), upper))
         }
 
-        return V.fromArray(clamped)!
+        guard let result = V.fromArray(clamped) else { return velocity }
+        return result
     }
 
     /// Clamp position to search space bounds.
@@ -708,7 +723,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             clamped.append(min(max(pArray[i], lower), upper))
         }
 
-        return V.fromArray(clamped)!
+        guard let result = V.fromArray(clamped) else { return position }
+        return result
     }
 
     /// Calculate swarm diversity (average distance from global best).

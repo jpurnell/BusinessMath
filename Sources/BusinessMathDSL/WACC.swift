@@ -19,7 +19,7 @@ public struct CostOfEquity {
     /// - Parameter rate: The required return rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0 && rate <= 1.0 else {
-            fatalError("Cost of equity must be between 0 and 1: \(rate)")
+            preconditionFailure("Cost of equity must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }
@@ -35,7 +35,7 @@ public struct CostOfDebt {
     /// - Parameter rate: The pre-tax interest rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0 && rate <= 1.0 else {
-            fatalError("Cost of debt must be between 0 and 1: \(rate)")
+            preconditionFailure("Cost of debt must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }
@@ -51,7 +51,7 @@ public struct AfterTaxCostOfDebt {
     /// - Parameter rate: The after-tax interest rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0 && rate <= 1.0 else {
-            fatalError("After-tax cost of debt must be between 0 and 1: \(rate)")
+            preconditionFailure("After-tax cost of debt must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }
@@ -67,7 +67,7 @@ public struct TaxRate {
     /// - Parameter rate: The tax rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate >= 0 && rate <= 1.0 else {
-            fatalError("Tax rate must be between 0 and 1: \(rate)")
+            preconditionFailure("Tax rate must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }
@@ -83,7 +83,7 @@ public struct DebtToEquity {
     /// - Parameter ratio: The debt weight (must be between 0 and 1).
     public init(_ ratio: Double) {
         guard ratio >= 0 && ratio <= 1.0 else {
-            fatalError("Debt to equity ratio must be between 0 and 1: \(ratio)")
+            preconditionFailure("Debt to equity ratio must be between 0 and 1: \(ratio)")
         }
         self.ratio = ratio
     }
@@ -99,7 +99,7 @@ public struct CustomRate {
     /// - Parameter rate: The WACC rate (must be between 0 and 1).
     public init(_ rate: Double) {
         guard rate > 0 && rate <= 1.0 else {
-            fatalError("WACC rate must be between 0 and 1: \(rate)")
+            preconditionFailure("WACC rate must be between 0 and 1: \(rate)")
         }
         self.rate = rate
     }
@@ -155,7 +155,7 @@ public struct WACC {
         // Otherwise calculate from components
         guard let costOfEquity = costOfEquity,
               let debtRatio = debtToEquity else {
-            fatalError("WACC calculation requires cost of equity and debt ratio")
+            preconditionFailure("WACC calculation requires cost of equity and debt ratio")
         }
 
         let equityWeight = 1.0 - debtRatio.ratio
@@ -168,7 +168,7 @@ public struct WACC {
         } else if let costOfDebt = costOfDebt, let taxRate = taxRate {
             afterTaxDebtCost = costOfDebt.rate * (1.0 - taxRate.rate)
         } else {
-            fatalError("WACC calculation requires either after-tax cost of debt or (cost of debt + tax rate)")
+            preconditionFailure("WACC calculation requires either after-tax cost of debt or (cost of debt + tax rate)")
         }
 
         return equityWeight * costOfEquity.rate + debtWeight * afterTaxDebtCost

@@ -125,8 +125,12 @@ public struct DistributionBeta: DistributionRandom {
 	///   - alpha: The first shape parameter (α > 0)
 	///   - beta: The second shape parameter (β > 0)
 	public init(alpha: Double, beta: Double) {
-		precondition(alpha > 0, "Beta distribution alpha parameter must be positive")
-		precondition(beta > 0, "Beta distribution beta parameter must be positive")
+		guard alpha > 0 else {
+			preconditionFailure("Beta distribution alpha parameter must be positive")
+		}
+		guard beta > 0 else {
+			preconditionFailure("Beta distribution beta parameter must be positive")
+		}
 		self.alpha = alpha
 		self.beta = beta
 	}

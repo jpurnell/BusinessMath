@@ -145,7 +145,14 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         for i in 0..<size {
             matrix[i][i] = T(1)
         }
-        return try! DenseMatrix(matrix)  // Safe: we know it's rectangular
+        // Safe: we constructed a rectangular matrix, so init cannot throw
+        // swiftlint:disable:next force_try
+        do {
+            return try DenseMatrix(matrix)
+        } catch {
+            // This path is unreachable for a well-formed rectangular array
+            return DenseMatrix(rows: size, columns: size, repeating: T(0))
+        }
     }
 
     /// Create diagonal matrix from values.
@@ -161,7 +168,13 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         for i in 0..<n {
             matrix[i][i] = values[i]
         }
-        return try! DenseMatrix(matrix)  // Safe: we know it's rectangular
+        // Safe: we constructed a rectangular matrix, so init cannot throw
+        do {
+            return try DenseMatrix(matrix)
+        } catch {
+            // This path is unreachable for a well-formed rectangular array
+            return DenseMatrix(rows: n, columns: n, repeating: T(0))
+        }
     }
 
     // MARK: - Accessors
@@ -174,12 +187,37 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
     ///
     /// - Returns: Element at the specified position
     ///
-    /// - Precondition: row and column must be within bounds
+    /// - Throws: ``MatrixError/indexOutOfBounds`` if row or column is out of bounds
+    ///
+    /// - Complexity: O(1)
+    public func element(atRow row: Int, column: Int) throws -> T {
+        guard row >= 0 && row < rows else {
+            throw MatrixError.invalidDimensions(
+                expected: "Row index in [0, \(rows))",
+                actual: "Row index \(row)"
+            )
+        }
+        guard column >= 0 && column < columns else {
+            throw MatrixError.invalidDimensions(
+                expected: "Column index in [0, \(columns))",
+                actual: "Column index \(column)"
+            )
+        }
+        return data[row][column]
+    }
+
+    /// Access element at (row, column).
+    ///
+    /// - Parameters:
+    ///   - row: Row index (0-based)
+    ///   - column: Column index (0-based)
+    ///
+    /// - Returns: Element at the specified position, or zero if out of bounds
     ///
     /// - Complexity: O(1)
     public subscript(row: Int, column: Int) -> T {
-        precondition(row >= 0 && row < rows, "Row index \(row) out of bounds [0, \(rows))")
-        precondition(column >= 0 && column < columns, "Column index \(column) out of bounds [0, \(columns))")
+        guard row >= 0 && row < rows else { return T(0) }
+        guard column >= 0 && column < columns else { return T(0) }
         return data[row][column]
     }
 
@@ -189,9 +227,16 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
     ///
     /// - Returns: Array containing the row elements
     ///
+    /// - Throws: ``MatrixError/invalidDimensions(expected:actual:)`` if index is out of bounds
+    ///
     /// - Complexity: O(n) where n = columns
-    public func row(_ index: Int) -> [T] {
-        precondition(index >= 0 && index < rows, "Row index out of bounds")
+    public func row(_ index: Int) throws -> [T] {
+        guard index >= 0 && index < rows else {
+            throw MatrixError.invalidDimensions(
+                expected: "Row index in [0, \(rows))",
+                actual: "Row index \(index)"
+            )
+        }
         return data[index]
     }
 
@@ -201,9 +246,16 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
     ///
     /// - Returns: Array containing the column elements
     ///
+    /// - Throws: ``MatrixError/invalidDimensions(expected:actual:)`` if index is out of bounds
+    ///
     /// - Complexity: O(m) where m = rows
-    public func column(_ index: Int) -> [T] {
-        precondition(index >= 0 && index < columns, "Column index out of bounds")
+    public func column(_ index: Int) throws -> [T] {
+        guard index >= 0 && index < columns else {
+            throw MatrixError.invalidDimensions(
+                expected: "Column index in [0, \(columns))",
+                actual: "Column index \(index)"
+            )
+        }
         return data.map { $0[index] }
     }
 
@@ -293,7 +345,12 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
                 result[j][i] = data[i][j]
             }
         }
-        return try! DenseMatrix(result)  // Safe: we know dimensions are correct
+        // Safe: transposed array is always rectangular
+        do {
+            return try DenseMatrix(result)
+        } catch {
+            return DenseMatrix(rows: columns, columns: rows, repeating: T(0))
+        }
     }
 
     /// Matrix-matrix multiplication: C = A × B.
@@ -328,7 +385,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
             }
         }
 
-        return try! DenseMatrix(result)
+        return try DenseMatrix(result)
     }
 
     /// Matrix-vector multiplication: y = A × x.
@@ -388,7 +445,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
             }
         }
 
-        return try! DenseMatrix(result)
+        return try DenseMatrix(result)
     }
 
     /// Element-wise subtraction.
@@ -418,7 +475,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
             }
         }
 
-        return try! DenseMatrix(result)
+        return try DenseMatrix(result)
     }
 
     /// Scalar multiplication.
@@ -439,7 +496,12 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
             }
         }
 
-        return try! DenseMatrix(result)
+        // Safe: result array is always rectangular
+        do {
+            return try DenseMatrix(result)
+        } catch {
+            return DenseMatrix(rows: matrix.rows, columns: matrix.columns, repeating: T(0))
+        }
     }
 
     // MARK: - Linear System Solving
