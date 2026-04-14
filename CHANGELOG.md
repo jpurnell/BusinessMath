@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.1.5] - 2026-04-14
+
+**Version 2.1.5** applies NASA Artemis II-inspired reliability principles to
+multi-stage computation pipelines. Source code now follows a strict fail-silent
+principle (annotate degradation, never return plausible-but-wrong results), and
+the test suite gains cross-validation, fault injection, and integration stress
+tests across optimization, simulation, and financial statement modules.
+
+#### Added
+
+- **`TerminationReason` enum** for `MultivariateOptimizationResult` — distinguishes
+  `.converged`, `.maxIterations`, and `.numericalInstability` (previously only
+  `converged: Bool`). Backward-compatible: `converged` remains as a computed property.
+- **`executionNotes` and `isDegraded`** on `SimulationResults` — GPU-to-CPU fallback
+  is now recorded as structured metadata instead of `print()` statements.
+- **Optimizer cross-validation tests** — gradient descent vs Newton-Raphson BFGS on
+  quadratic bowl, Booth, Rosenbrock, and 5D sphere functions.
+- **Monte Carlo theory validation tests** — simulated statistics vs theoretical
+  distribution properties (Normal, Uniform, Exponential, sum-of-normals additivity).
+- **Financial reference validation tests** — NPV, IRR, PMT, bond Macaulay duration
+  verified against Excel and textbook values.
+- **Statistics reference validation tests** — Anscombe's quartet regression/correlation,
+  sample and population standard deviation verified against R outputs.
+- **Fault injection tests** — NaN/Inf models, zero iterations, empty inputs, extreme
+  distribution parameters, stack underflow, division by zero, ill-conditioned
+  optimization, and divergent learning rates.
+- **Integration stress tests** — randomized Monte Carlo pipelines (100 iterations),
+  optimization with random starting points on curated test functions (Sphere, Booth,
+  Beale, Matyas, Rosenbrock), and financial statement ratio consistency checks.
+
+#### Changed
+
+- **`MonteCarloExpressionModel.init`** is now `throws` — compilation failure propagates
+  to the caller instead of silently storing empty bytecode.
+- **`MonteCarloSimulation.run()`** GPU fallback path replaces `print()` statements with
+  structured `executionNotes` on the returned `SimulationResults`.
+- **`convergenceReason`** on `MultivariateOptimizationResult` now reflects all three
+  termination reasons (previously only "Converged" or "Maximum iterations reached").
+
+#### Test Suite
+
+- **4,882 tests** across 392 suites (was 4,817 in v2.1.4) — 65 new tests, zero
+  regressions.
+
 ### [2.1.4] - 2026-04-07
 
 **Version 2.1.4** is a follow-up developer-hygiene release that completes
