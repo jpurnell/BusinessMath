@@ -1,0 +1,13 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality-gate:
+    uses: jpurnell/quality-gate-swift/.github/workflows/quality-gate-reusable.yml@main
+    with:
+      checks: "safety status"
