@@ -253,8 +253,8 @@ extension TimeSeries {
 				}
 
 				if prevIndex >= firstIndex && nextIndex <= lastIndex {
-					let prevValue = self[targetPeriods[prevIndex]]!
-					let nextValue = self[targetPeriods[nextIndex]]!
+					guard let prevValue = self[targetPeriods[prevIndex]],
+						  let nextValue = self[targetPeriods[nextIndex]] else { continue }
 					let steps = T(nextIndex - prevIndex)
 					let position = T(i - prevIndex)
 					let fraction = position / steps
@@ -302,8 +302,8 @@ extension TimeSeries {
 				// Map month to quarter
 				let calendar = Calendar.current
 				let components = calendar.dateComponents([.year, .month], from: period.startDate)
-				let quarter = (components.month! - 1) / 3 + 1
-				targetPeriod = Period.quarter(year: components.year!, quarter: quarter)
+				let quarter = ((components.month ?? 1) - 1) / 3 + 1
+				targetPeriod = Period.quarter(year: components.year ?? 0, quarter: quarter)
 
 			case .annual:
 				// Map any period to year

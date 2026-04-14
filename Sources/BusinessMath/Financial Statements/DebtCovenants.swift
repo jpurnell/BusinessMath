@@ -489,8 +489,7 @@ public struct CovenantMonitor {
             return doubleStatement
         }
         // For non-Double types, custom covenants may not work correctly
-        // Return a minimal placeholder - custom covenants should use Double types
-        fatalError("Custom covenants require IncomeStatement<Double>. Use Double-typed financial statements for custom covenant checks.")
+        preconditionFailure("Custom covenants require IncomeStatement<Double>. Use Double-typed financial statements for custom covenant checks.")
     }
 
     private func convertToDoubleBalanceSheet<T: Real & Sendable>(_ balanceSheet: BalanceSheet<T>) -> BalanceSheet<Double> where T: Codable {
@@ -499,7 +498,7 @@ public struct CovenantMonitor {
             return doubleSheet
         }
         // For non-Double types, custom covenants may not work correctly
-        fatalError("Custom covenants require BalanceSheet<Double>. Use Double-typed financial statements for custom covenant checks.")
+        preconditionFailure("Custom covenants require BalanceSheet<Double>. Use Double-typed financial statements for custom covenant checks.")
     }
 }
 

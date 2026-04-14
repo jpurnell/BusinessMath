@@ -414,7 +414,7 @@ extension IncomeStatement {
 
 		// Build adjusted EBITDA period by period
 		let adjustedValues = self.periods.map { period -> T in
-			let baseEBITDA = self.ebitda[period]!
+			let baseEBITDA = self.ebitda[period] ?? T(0)
 
 			// Sum all adjustment values for this period
 			let totalAdjustmentForPeriod = adjustments.reduce(T(0)) { sum, adj in

@@ -142,12 +142,14 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// let ts = TimeSeries(periods: periods, values: values)
 	/// ```
 	public init(periods: [Period], values: [T], metadata: TimeSeriesMetadata = TimeSeriesMetadata(), labels: [String]? = nil) {
-		precondition(periods.count == values.count,
-					 "periods and values arrays must have the same count")
+		guard periods.count == values.count else {
+			preconditionFailure("periods and values arrays must have the same count")
+		}
 
 		if let labels = labels {
-			precondition(labels.count == periods.count,
-						 "labels array must have the same count as periods and values")
+			guard labels.count == periods.count else {
+				preconditionFailure("labels array must have the same count as periods and values")
+			}
 		}
 
 		// Build dictionary, handling duplicates by keeping last value

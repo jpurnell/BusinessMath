@@ -335,51 +335,65 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		switch type {
 		case .millisecond:
 			// End of millisecond: next millisecond minus 1 nanosecond
-			let nextMillisecond = calendar.date(byAdding: .nanosecond, value: 1_000_000, to: startDate)!
-			return calendar.date(byAdding: .nanosecond, value: -1, to: nextMillisecond)!
+			guard let nextMillisecond = calendar.date(byAdding: .nanosecond, value: 1_000_000, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextMillisecond) ?? startDate
 
 		case .second:
 			// End of second: next second minus 1 nanosecond
-			let nextSecond = calendar.date(byAdding: .second, value: 1, to: startDate)!
-			return calendar.date(byAdding: .nanosecond, value: -1, to: nextSecond)!
+			guard let nextSecond = calendar.date(byAdding: .second, value: 1, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextSecond) ?? startDate
 
 		case .minute:
 			// End of minute: next minute minus 1 nanosecond
-			let nextMinute = calendar.date(byAdding: .minute, value: 1, to: startDate)!
-			return calendar.date(byAdding: .nanosecond, value: -1, to: nextMinute)!
+			guard let nextMinute = calendar.date(byAdding: .minute, value: 1, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextMinute) ?? startDate
 
 		case .hourly:
 			// End of hour: next hour minus 1 nanosecond
-			let nextHour = calendar.date(byAdding: .hour, value: 1, to: startDate)!
-			return calendar.date(byAdding: .nanosecond, value: -1, to: nextHour)!
+			guard let nextHour = calendar.date(byAdding: .hour, value: 1, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .nanosecond, value: -1, to: nextHour) ?? startDate
 
 		case .daily:
 			// End of day: 23:59:59
 			var components = DateComponents()
 			components.day = 1
 			components.second = -1
-			return calendar.date(byAdding: components, to: startDate)!
+			return calendar.date(byAdding: components, to: startDate) ?? startDate
 
 		case .monthly:
 			// Start of next month, minus 1 second
 			var components = DateComponents()
 			components.month = 1
-			let nextMonthStart = calendar.date(byAdding: components, to: startDate)!
-			return calendar.date(byAdding: .second, value: -1, to: nextMonthStart)!
+			guard let nextMonthStart = calendar.date(byAdding: components, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .second, value: -1, to: nextMonthStart) ?? startDate
 
 		case .quarterly:
 			// Start of month after third month, minus 1 second
 			var components = DateComponents()
 			components.month = 3
-			let nextQuarterStart = calendar.date(byAdding: components, to: startDate)!
-			return calendar.date(byAdding: .second, value: -1, to: nextQuarterStart)!
+			guard let nextQuarterStart = calendar.date(byAdding: components, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .second, value: -1, to: nextQuarterStart) ?? startDate
 
 		case .annual:
 			// Start of next year, minus 1 second
 			var components = DateComponents()
 			components.year = 1
-			let nextYearStart = calendar.date(byAdding: components, to: startDate)!
-			return calendar.date(byAdding: .second, value: -1, to: nextYearStart)!
+			guard let nextYearStart = calendar.date(byAdding: components, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .second, value: -1, to: nextYearStart) ?? startDate
 		}
 	}
 
@@ -398,37 +412,37 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 
 		switch type {
 		case .millisecond:
-			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
-			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
-			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
-			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
-			let minuteStr = String(components.minute!).paddingLeft(toLength: 2, withPad: "0")
-			let secondStr = String(components.second!).paddingLeft(toLength: 2, withPad: "0")
-			let msStr = String(components.nanosecond! / 1_000_000).paddingLeft(toLength: 3, withPad: "0")
+			let yearStr = String(components.year ?? 0).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let minuteStr = String(components.minute ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let secondStr = String(components.second ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let msStr = String((components.nanosecond ?? 0) / 1_000_000).paddingLeft(toLength: 3, withPad: "0")
 			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr):\(minuteStr):\(secondStr).\(msStr)"
 
 		case .second:
-			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
-			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
-			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
-			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
-			let minuteStr = String(components.minute!).paddingLeft(toLength: 2, withPad: "0")
-			let secondStr = String(components.second!).paddingLeft(toLength: 2, withPad: "0")
+			let yearStr = String(components.year ?? 0).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let minuteStr = String(components.minute ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let secondStr = String(components.second ?? 0).paddingLeft(toLength: 2, withPad: "0")
 			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr):\(minuteStr):\(secondStr)"
 
 		case .minute:
-			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
-			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
-			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
-			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
-			let minuteStr = String(components.minute!).paddingLeft(toLength: 2, withPad: "0")
+			let yearStr = String(components.year ?? 0).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let minuteStr = String(components.minute ?? 0).paddingLeft(toLength: 2, withPad: "0")
 			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr):\(minuteStr)"
 
 		case .hourly:
-			let yearStr = String(components.year!).paddingLeft(toLength: 4, withPad: "0")
-			let monthStr = String(components.month!).paddingLeft(toLength: 2, withPad: "0")
-			let dayStr = String(components.day!).paddingLeft(toLength: 2, withPad: "0")
-			let hourStr = String(components.hour!).paddingLeft(toLength: 2, withPad: "0")
+			let yearStr = String(components.year ?? 0).paddingLeft(toLength: 4, withPad: "0")
+			let monthStr = String(components.month ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let dayStr = String(components.day ?? 0).paddingLeft(toLength: 2, withPad: "0")
+			let hourStr = String(components.hour ?? 0).paddingLeft(toLength: 2, withPad: "0")
 			return "\(yearStr)-\(monthStr)-\(dayStr)T\(hourStr)"
 
 		case .daily:
@@ -444,12 +458,12 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 
 		case .quarterly:
 			let yearStr = String(year).paddingLeft(toLength: 4, withPad: "0")
-			let quarter = (components.month! - 1) / 3 + 1
+			let quarter = ((components.month ?? 1) - 1) / 3 + 1
 			let quarterStr = String(quarter).paddingLeft(toLength: 2, withPad: "Q")
 			return "\(yearStr)-\(quarterStr)"
 
 		case .annual:
-			return String(components.year!)
+			return String(components.year ?? 0)
 		}
 	}
 	
@@ -506,8 +520,8 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			let startComponents = calendar.dateComponents([.year, .month], from: startDate)
 
 			return (0..<3).map { offset in
-				Period.month(year: startComponents.year!,
-							 month: startComponents.month! + offset)
+				Period.month(year: startComponents.year ?? 0,
+							 month: (startComponents.month ?? 1) + offset)
 			}
 
 		case .annual:
@@ -618,10 +632,10 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			while currentDate < end {
 				let components = calendar.dateComponents([.year, .month, .day, .hour], from: currentDate)
 				hours.append(Period.hour(
-					year: components.year!,
-					month: components.month!,
-					day: components.day!,
-					hour: components.hour!
+					year: components.year ?? 0,
+					month: components.month ?? 1,
+					day: components.day ?? 1,
+					hour: components.hour ?? 0
 				))
 
 				// Move to next hour
@@ -663,11 +677,11 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			while currentDate < end {
 				let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: currentDate)
 				minutes.append(Period.minute(
-					year: components.year!,
-					month: components.month!,
-					day: components.day!,
-					hour: components.hour!,
-					minute: components.minute!
+					year: components.year ?? 0,
+					month: components.month ?? 1,
+					day: components.day ?? 1,
+					hour: components.hour ?? 0,
+					minute: components.minute ?? 0
 				))
 
 				// Move to next minute
@@ -709,12 +723,12 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			while currentDate < end {
 				let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: currentDate)
 				seconds.append(Period.second(
-					year: components.year!,
-					month: components.month!,
-					day: components.day!,
-					hour: components.hour!,
-					minute: components.minute!,
-					second: components.second!
+					year: components.year ?? 0,
+					month: components.month ?? 1,
+					day: components.day ?? 1,
+					hour: components.hour ?? 0,
+					minute: components.minute ?? 0,
+					second: components.second ?? 0
 				))
 
 				// Move to next second
@@ -755,12 +769,12 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 				let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: currentDate)
 				let ms = (components.nanosecond ?? 0) / 1_000_000
 				milliseconds.append(Period.millisecond(
-					year: components.year!,
-					month: components.month!,
-					day: components.day!,
-					hour: components.hour!,
-					minute: components.minute!,
-					second: components.second!,
+					year: components.year ?? 0,
+					month: components.month ?? 1,
+					day: components.day ?? 1,
+					hour: components.hour ?? 0,
+					minute: components.minute ?? 0,
+					second: components.second ?? 0,
 					millisecond: ms
 				))
 
@@ -802,86 +816,86 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		switch type {
 		case .millisecond:
 			guard let nextDate = calendar.date(byAdding: .nanosecond, value: 1_000_000, to: date) else {
-				fatalError("Failed to advance millisecond")
+				return self
 			}
 			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: nextDate)
 			return Period.millisecond(
-				year: components.year!,
-				month: components.month!,
-				day: components.day!,
-				hour: components.hour!,
-				minute: components.minute!,
-				second: components.second!,
-				millisecond: components.nanosecond! / 1_000_000
+				year: components.year ?? 0,
+				month: components.month ?? 1,
+				day: components.day ?? 1,
+				hour: components.hour ?? 0,
+				minute: components.minute ?? 0,
+				second: components.second ?? 0,
+				millisecond: (components.nanosecond ?? 0) / 1_000_000
 			)
 
 		case .second:
 			guard let nextDate = calendar.date(byAdding: .second, value: 1, to: date) else {
-				fatalError("Failed to advance second")
+				return self
 			}
 			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: nextDate)
 			return Period.second(
-				year: components.year!,
-				month: components.month!,
-				day: components.day!,
-				hour: components.hour!,
-				minute: components.minute!,
-				second: components.second!
+				year: components.year ?? 0,
+				month: components.month ?? 1,
+				day: components.day ?? 1,
+				hour: components.hour ?? 0,
+				minute: components.minute ?? 0,
+				second: components.second ?? 0
 			)
 
 		case .minute:
 			guard let nextDate = calendar.date(byAdding: .minute, value: 1, to: date) else {
-				fatalError("Failed to advance minute")
+				return self
 			}
 			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: nextDate)
 			return Period.minute(
-				year: components.year!,
-				month: components.month!,
-				day: components.day!,
-				hour: components.hour!,
-				minute: components.minute!
+				year: components.year ?? 0,
+				month: components.month ?? 1,
+				day: components.day ?? 1,
+				hour: components.hour ?? 0,
+				minute: components.minute ?? 0
 			)
 
 		case .hourly:
 			guard let nextDate = calendar.date(byAdding: .hour, value: 1, to: date) else {
-				fatalError("Failed to advance hour")
+				return self
 			}
 			let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDate)
 			return Period.hour(
-				year: components.year!,
-				month: components.month!,
-				day: components.day!,
-				hour: components.hour!
+				year: components.year ?? 0,
+				month: components.month ?? 1,
+				day: components.day ?? 1,
+				hour: components.hour ?? 0
 			)
 
 		case .daily:
 			guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else {
-				fatalError("Failed to advance day")
+				return self
 			}
 			return Period.day(nextDate)
 
 		case .monthly:
 			guard let nextDate = calendar.date(byAdding: .month, value: 1, to: date) else {
-				fatalError("Failed to advance month")
+				return self
 			}
 			let components = calendar.dateComponents([.year, .month], from: nextDate)
-			return Period.month(year: components.year!, month: components.month!)
+			return Period.month(year: components.year ?? 0, month: components.month ?? 1)
 
 		case .quarterly:
 			guard let nextDate = calendar.date(byAdding: .month, value: 3, to: date) else {
-				fatalError("Failed to advance quarter")
+				return self
 			}
 			let components = calendar.dateComponents([.year, .month], from: nextDate)
-			let month = components.month!
+			let month = components.month ?? 1
 			let quarter = ((month - 1) / 3) + 1
-			return Period.quarter(year: components.year!, quarter: quarter)
+			return Period.quarter(year: components.year ?? 0, quarter: quarter)
 
 		case .annual:
 			guard let nextDate = calendar.date(byAdding: .year, value: 1, to: date) else {
-				fatalError("Failed to advance year")
+				return self
 			}
 			let components = calendar.dateComponents([.year], from: nextDate)
-			return Period.year(components.year!)
+			return Period.year(components.year ?? 0)
 		}
 	}
 
