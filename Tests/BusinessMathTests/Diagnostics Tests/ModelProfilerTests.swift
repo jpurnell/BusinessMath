@@ -297,16 +297,17 @@ struct ModelProfilerTests {
         let profiler = ModelProfiler()
 
         await profiler.measure(operation: "Op1") {
-            Thread.sleep(forTimeInterval: 0.003)
+            // Intentionally no sleep — near-zero execution time
+            let _ = (0..<100).reduce(0, +)
         }
 
         await profiler.measure(operation: "Op2") {
-            Thread.sleep(forTimeInterval: 0.020)
+            Thread.sleep(forTimeInterval: 0.100)
         }
 
-        // With 10ms threshold, only Op2 should be flagged
-        // Op1 at ~3ms should be well below threshold even with OS jitter
-        let bottlenecks = await profiler.bottlenecks(threshold: 0.01)
+        // With 50ms threshold, only Op2 (~100ms) should be flagged
+        // Op1 is compute-only (sub-millisecond) — safe from CI jitter
+        let bottlenecks = await profiler.bottlenecks(threshold: 0.05)
 
         #expect(bottlenecks.count == 1)
         #expect(bottlenecks[0].operation == "Op2")
