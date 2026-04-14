@@ -175,7 +175,7 @@ extension Period {
 		}
 
 		guard let newDate = cachedCalendar.date(byAdding: components, to: self.startDate) else {
-			fatalError("Unable to advance period \(self) by \(n)")
+			preconditionFailure("Unable to advance period \(self) by \(n)")
 		}
 
 		// Preserve the period type
@@ -193,7 +193,9 @@ public struct PeriodRange: Sequence {
 	private let end: Period
 
 	init(start: Period, end: Period) {
-		precondition(start.type == end.type, "Cannot create range between periods of different types")
+		guard start.type == end.type else {
+			preconditionFailure("Cannot create range between periods of different types")
+		}
 		self.start = start
 		self.end = end
 	}

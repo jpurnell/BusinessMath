@@ -158,7 +158,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	/// ```
 	public func projectMonteCarlo(iterations: Int) -> ProjectionResults<T> where T: BinaryFloatingPoint {
 		guard iterations > 0 else {
-			fatalError("iterations must be positive")
+			preconditionFailure("iterations must be positive")
 		}
 
 		// Store all samples: [period index][iteration]
@@ -262,8 +262,8 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	/// ```
 	public func expected() -> TimeSeries<T> where T: BinaryFloatingPoint {
 		let values = periods.map { period in
-			let meanValue = statistics[period]!.mean
-			return T(meanValue)
+			guard let stats = statistics[period] else { return T(0) }
+			return T(stats.mean)
 		}
 
 		let metadata = TimeSeriesMetadata(
@@ -287,7 +287,7 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	/// ```
 	public func percentile(_ p: Double) -> TimeSeries<T> where T: BinaryFloatingPoint {
 		let values = periods.map { period -> T in
-			let pctiles = percentiles[period]!
+			guard let pctiles = percentiles[period] else { return T(0) }
 
 			// Map percentile to closest standard percentile
 			let value: Double
@@ -338,8 +338,8 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	/// ```
 	public func standardDeviation() -> TimeSeries<T> where T: BinaryFloatingPoint {
 		let values = periods.map { period in
-			let stdDevValue = statistics[period]!.stdDev
-			return T(stdDevValue)
+			guard let stats = statistics[period] else { return T(0) }
+			return T(stats.stdDev)
 		}
 
 		let metadata = TimeSeriesMetadata(

@@ -412,7 +412,7 @@ public func runSensitivity(
 	outputExtractor: @Sendable @escaping (FinancialProjection) -> Double
 ) throws -> ScenarioSensitivityAnalysis {
 	guard steps >= 1 else {
-		fatalError("Steps must be at least 1")
+		preconditionFailure("Steps must be at least 1")
 	}
 
 	// Generate input values
@@ -524,7 +524,7 @@ public func runTwoWaySensitivity(
 	outputExtractor: @Sendable @escaping (FinancialProjection) -> Double
 ) throws -> TwoWayScenarioSensitivityAnalysis {
 	guard steps1 >= 1, steps2 >= 1 else {
-		fatalError("Steps must be at least 1 for both dimensions")
+		preconditionFailure("Steps must be at least 1 for both dimensions")
 	}
 
 	// Generate input values

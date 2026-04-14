@@ -56,7 +56,7 @@ internal func averageTimeSeries<T: Real>(_ timeSeries: TimeSeries<T>) -> TimeSer
 
 	for i in 0..<periods.count {
 		let currentPeriod = periods[i]
-		let currentValue = timeSeries[currentPeriod]!
+		let currentValue = timeSeries[currentPeriod] ?? T(0)
 
 		if i == 0 {
 			// First period: no prior period, use current value
@@ -64,7 +64,7 @@ internal func averageTimeSeries<T: Real>(_ timeSeries: TimeSeries<T>) -> TimeSer
 		} else {
 			// Subsequent periods: average of prior and current
 			let priorPeriod = periods[i - 1]
-			let priorValue = timeSeries[priorPeriod]!
+			let priorValue = timeSeries[priorPeriod] ?? T(0)
 			averagedValues[currentPeriod] = (priorValue + currentValue) / two
 		}
 	}
@@ -105,8 +105,8 @@ extension TimeSeries where T: Real {
 			let currentPeriod = periods[i]
 			let priorPeriod = periods[i - 1]
 
-			let currentValue = self[currentPeriod]!
-			let priorValue = self[priorPeriod]!
+			let currentValue = self[currentPeriod] ?? T(0)
+			let priorValue = self[priorPeriod] ?? T(0)
 
 			if priorValue != T(0) {
 				let growth = (currentValue - priorValue) / priorValue

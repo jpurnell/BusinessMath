@@ -221,25 +221,27 @@ public func altmanZScore<T: Real>(
 	sharesOutstanding: T
 ) -> T {
 	// Component A: Working Capital / Total Assets
-	let workingCapital = (balanceSheet.currentAssets - balanceSheet.currentLiabilities)[period]!
-	let totalAssets = balanceSheet.totalAssets[period]!
+	let workingCapital = (balanceSheet.currentAssets - balanceSheet.currentLiabilities)[period] ?? T(0)
+	let totalAssets = balanceSheet.totalAssets[period] ?? T(0)
+	guard totalAssets != T(0) else { return T(0) }
 	let a = workingCapital / totalAssets
 
 	// Component B: Retained Earnings / Total Assets
-	let retainedEarnings = balanceSheet.retainedEarnings[period]!
+	let retainedEarnings = balanceSheet.retainedEarnings[period] ?? T(0)
 	let b = retainedEarnings / totalAssets
 
 	// Component C: EBIT / Total Assets
-	let ebit = incomeStatement.operatingIncome[period]!
+	let ebit = incomeStatement.operatingIncome[period] ?? T(0)
 	let c = ebit / totalAssets
 
 	// Component D: Market Value of Equity / Total Liabilities
 	let marketValue = marketPrice * sharesOutstanding
-	let totalLiabilities = balanceSheet.totalLiabilities[period]!
+	let totalLiabilities = balanceSheet.totalLiabilities[period] ?? T(0)
+	guard totalLiabilities != T(0) else { return T(0) }
 	let d = marketValue / totalLiabilities
 
 	// Component E: Sales / Total Assets
-	let sales = incomeStatement.totalRevenue[period]!
+	let sales = incomeStatement.totalRevenue[period] ?? T(0)
 	let e = sales / totalAssets
 
 	// Z-Score = 1.2×A + 1.4×B + 3.3×C + 0.6×D + 1.0×E
@@ -392,19 +394,19 @@ public func piotroskiScore<T: Real>(
 	// MARK: Profitability Signals (4 points max)
 
 	// 1. Positive net income
-	let netIncome = incomeStatement.netIncome[period]!
+	let netIncome = incomeStatement.netIncome[period] ?? T(0)
 	signals["positiveNetIncome"] = netIncome > T(0)
 
 	// 2. Positive operating cash flow
-	let operatingCashFlow = cashFlowStatement.operatingCashFlow[period]!
+	let operatingCashFlow = cashFlowStatement.operatingCashFlow[period] ?? T(0)
 	signals["positiveOperatingCashFlow"] = operatingCashFlow > T(0)
 
 	// 3. Increasing ROA
-	let totalAssetsCurrent = balanceSheet.totalAssets[period]!
-	let totalAssetsPrior = balanceSheet.totalAssets[priorPeriod]!
-	let roaCurrent = netIncome / totalAssetsCurrent
-	let netIncomePrior = incomeStatement.netIncome[priorPeriod]!
-	let roaPrior = netIncomePrior / totalAssetsPrior
+	let totalAssetsCurrent = balanceSheet.totalAssets[period] ?? T(0)
+	let totalAssetsPrior = balanceSheet.totalAssets[priorPeriod] ?? T(0)
+	let roaCurrent = totalAssetsCurrent != T(0) ? netIncome / totalAssetsCurrent : T(0)
+	let netIncomePrior = incomeStatement.netIncome[priorPeriod] ?? T(0)
+	let roaPrior = totalAssetsPrior != T(0) ? netIncomePrior / totalAssetsPrior : T(0)
 	signals["increasingROA"] = roaCurrent > roaPrior
 
 	// 4. Quality of earnings (operating cash flow > net income)
@@ -420,24 +422,24 @@ public func piotroskiScore<T: Real>(
 	signals["decreasingDebt"] = ltDebtCurrent <= ltDebtPrior
 
 	// 6. Increasing current ratio
-	let currentAssetsCurrent = balanceSheet.currentAssets[period]!
-	let currentLiabilitiesCurrent = balanceSheet.currentLiabilities[period]!
-	let currentRatioCurrent = currentAssetsCurrent / currentLiabilitiesCurrent
+	let currentAssetsCurrent = balanceSheet.currentAssets[period] ?? T(0)
+	let currentLiabilitiesCurrent = balanceSheet.currentLiabilities[period] ?? T(0)
+	let currentRatioCurrent = currentLiabilitiesCurrent != T(0) ? currentAssetsCurrent / currentLiabilitiesCurrent : T(0)
 
-	let currentAssetsPrior = balanceSheet.currentAssets[priorPeriod]!
-	let currentLiabilitiesPrior = balanceSheet.currentLiabilities[priorPeriod]!
-	let currentRatioPrior = currentAssetsPrior / currentLiabilitiesPrior
+	let currentAssetsPrior = balanceSheet.currentAssets[priorPeriod] ?? T(0)
+	let currentLiabilitiesPrior = balanceSheet.currentLiabilities[priorPeriod] ?? T(0)
+	let currentRatioPrior = currentLiabilitiesPrior != T(0) ? currentAssetsPrior / currentLiabilitiesPrior : T(0)
 
 	signals["increasingCurrentRatio"] = currentRatioCurrent > currentRatioPrior
 
 	// 7. No new equity issuance
-	let totalEquityCurrent = balanceSheet.totalEquity[period]!
-	let totalEquityPrior = balanceSheet.totalEquity[priorPeriod]!
+	let totalEquityCurrent = balanceSheet.totalEquity[period] ?? T(0)
+	let totalEquityPrior = balanceSheet.totalEquity[priorPeriod] ?? T(0)
 
 	// Check if common stock increased (proxy for new issuance)
 	// More sophisticated: check if equity increased beyond retained earnings
-	let retainedEarningsCurrent = balanceSheet.retainedEarnings[period]!
-	let retainedEarningsPrior = balanceSheet.retainedEarnings[priorPeriod]!
+	let retainedEarningsCurrent = balanceSheet.retainedEarnings[period] ?? T(0)
+	let retainedEarningsPrior = balanceSheet.retainedEarnings[priorPeriod] ?? T(0)
 	let retainedEarningsChange = retainedEarningsCurrent - retainedEarningsPrior
 	let equityChange = totalEquityCurrent - totalEquityPrior
 
@@ -447,19 +449,19 @@ public func piotroskiScore<T: Real>(
 	// MARK: Operating Efficiency Signals (2 points max)
 
 	// 8. Increasing gross margin
-	let grossProfitCurrent = incomeStatement.grossProfit[period]!
-	let revenueCurrent = incomeStatement.totalRevenue[period]!
-	let grossMarginCurrent = grossProfitCurrent / revenueCurrent
+	let grossProfitCurrent = incomeStatement.grossProfit[period] ?? T(0)
+	let revenueCurrent = incomeStatement.totalRevenue[period] ?? T(0)
+	let grossMarginCurrent = revenueCurrent != T(0) ? grossProfitCurrent / revenueCurrent : T(0)
 
-	let grossProfitPrior = incomeStatement.grossProfit[priorPeriod]!
-	let revenuePrior = incomeStatement.totalRevenue[priorPeriod]!
-	let grossMarginPrior = grossProfitPrior / revenuePrior
+	let grossProfitPrior = incomeStatement.grossProfit[priorPeriod] ?? T(0)
+	let revenuePrior = incomeStatement.totalRevenue[priorPeriod] ?? T(0)
+	let grossMarginPrior = revenuePrior != T(0) ? grossProfitPrior / revenuePrior : T(0)
 
 	signals["increasingGrossMargin"] = grossMarginCurrent > grossMarginPrior
 
 	// 9. Increasing asset turnover
-	let assetTurnoverCurrent = revenueCurrent / totalAssetsCurrent
-	let assetTurnoverPrior = revenuePrior / totalAssetsPrior
+	let assetTurnoverCurrent = totalAssetsCurrent != T(0) ? revenueCurrent / totalAssetsCurrent : T(0)
+	let assetTurnoverPrior = totalAssetsPrior != T(0) ? revenuePrior / totalAssetsPrior : T(0)
 	signals["increasingAssetTurnover"] = assetTurnoverCurrent > assetTurnoverPrior
 
 	// MARK: Calculate Scores
@@ -470,20 +472,20 @@ public func piotroskiScore<T: Real>(
 		"increasingROA",
 		"qualityEarnings"
 	]
-	let profitability = profitabilitySignals.filter { signals[$0]! }.count
+	let profitability = profitabilitySignals.filter { signals[$0] ?? false }.count
 
 	let leverageSignals = [
 		"decreasingDebt",
 		"increasingCurrentRatio",
 		"noNewEquity"
 	]
-	let leverage = leverageSignals.filter { signals[$0]! }.count
+	let leverage = leverageSignals.filter { signals[$0] ?? false }.count
 
 	let efficiencySignals = [
 		"increasingGrossMargin",
 		"increasingAssetTurnover"
 	]
-	let efficiency = efficiencySignals.filter { signals[$0]! }.count
+	let efficiency = efficiencySignals.filter { signals[$0] ?? false }.count
 
 	let totalScore = profitability + leverage + efficiency
 

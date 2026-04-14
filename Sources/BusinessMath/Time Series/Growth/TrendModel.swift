@@ -273,8 +273,9 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 
 		// Calculate and store residuals for confidence intervals
 		self.residuals = []
+		guard let computedSlope = self.fittedSlope, let computedIntercept = self.fittedIntercept else { return }
 		for (i, actual) in values.enumerated() {
-			let fitted = self.fittedSlope! * T(i) + self.fittedIntercept!
+			let fitted = computedSlope * T(i) + computedIntercept
 			self.residuals.append(actual - fitted)
 		}
 	}
@@ -712,8 +713,9 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 
 		// Calculate and store residuals for confidence intervals
 		self.residuals = []
+		guard let computedLogSlope = self.fittedLogSlope, let computedLogIntercept = self.fittedLogIntercept else { return }
 		for (i, actual) in values.enumerated() {
-			let logFitted = self.fittedLogSlope! * T(i) + self.fittedLogIntercept!
+			let logFitted = computedLogSlope * T(i) + computedLogIntercept
 			let fitted = T.exp(logFitted)
 			self.residuals.append(actual - fitted)
 		}
@@ -1077,7 +1079,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.x0 = T(bestMidpointIndex)
 
 		// Estimate steepness k from the growth rate near the midpoint
-		let dataRange = values.max()! - values.min()!
+		let dataRange = (values.max() ?? T(0)) - (values.min() ?? T(0))
 		let indexRange = T(values.count - 1)
 
 		self.k = T(4) * dataRange / (capacity * indexRange)
@@ -1097,8 +1099,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 
 		// Calculate and store residuals for confidence intervals
 		self.residuals = []
-		let kValue = self.k!
-		let x0Value = self.x0!
+		guard let kValue = self.k, let x0Value = self.x0 else { return }
 		let capacityValue = self.capacity
 
 		for (i, actual) in values.enumerated() {

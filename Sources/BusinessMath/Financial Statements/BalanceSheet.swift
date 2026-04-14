@@ -623,7 +623,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 			if !accountsForRole.isEmpty {
 				// Negate to show as reduction in working capital
 				let aggregated = FinancialStatementHelpers.aggregateAccounts(accountsForRole, periods: periods)
-				let negatedValues = periods.map { period in -aggregated[period]! }
+				let negatedValues = periods.map { period in -(aggregated[period] ?? T(0)) }
 				components[role] = TimeSeries(periods: periods, values: negatedValues)
 			}
 		}
@@ -702,16 +702,17 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		let nwc = self.netWorkingCapital
 
 		let turnoverValues = periods.enumerated().map { (index, period) -> T in
-			let currentRevenue = revenue[period]!
+			let currentRevenue = revenue[period] ?? T(0)
 
 			if index == 0 {
 				// First period: use current working capital
-				let currentWC = nwc[period]!
+				let currentWC = nwc[period] ?? T(0)
+				guard currentWC != T(0) else { return T(0) }
 				return currentRevenue / currentWC
 			} else {
 				// Subsequent periods: use average working capital
-				let currentWC = nwc[period]!
-				let priorWC = nwc[periods[index - 1]]!
+				let currentWC = nwc[period] ?? T(0)
+				let priorWC = nwc[periods[index - 1]] ?? T(0)
 				let averageWC = (currentWC + priorWC) / T(2)
 				return currentRevenue / averageWC
 			}

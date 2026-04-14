@@ -42,8 +42,12 @@ public struct MonthDay: Codable, Equatable, Hashable, Sendable {
 	/// let yearEnd = MonthDay(month: 9, day: 30)  // September 30
 	/// ```
 	public init(month: Int, day: Int) {
-		precondition(month >= 1 && month <= 12, "Month must be between 1 and 12")
-		precondition(day >= 1 && day <= 31, "Day must be between 1 and 31")
+		guard month >= 1, month <= 12 else {
+			preconditionFailure("Month must be between 1 and 12")
+		}
+		guard day >= 1, day <= 31 else {
+			preconditionFailure("Day must be between 1 and 31")
+		}
 		self.month = month
 		self.day = day
 	}
@@ -148,9 +152,9 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	public func fiscalYear(for date: Date) -> Int {
 		let calendar = Calendar.current
 		let components = calendar.dateComponents([.year, .month, .day], from: date)
-		let calendarYear = components.year!
-		let month = components.month!
-		let day = components.day!
+		let calendarYear = components.year ?? 0
+		let month = components.month ?? 0
+		let day = components.day ?? 0
 
 		// If we're after the year-end in the same calendar year, we're in the next fiscal year
 		if month > yearEnd.month || (month == yearEnd.month && day > yearEnd.day) {
@@ -207,7 +211,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	public func fiscalMonth(for date: Date) -> Int {
 		let calendar = Calendar.current
 		let components = calendar.dateComponents([.month], from: date)
-		let calendarMonth = components.month!
+		let calendarMonth = components.month ?? 0
 
 		// Calculate fiscal month offset
 		// If year-end is Dec 31, fiscal month 1 = Jan (calendar month 1)
