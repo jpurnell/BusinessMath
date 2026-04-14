@@ -361,12 +361,20 @@ public final class AuditTrailManager {
 
 	// MARK: - Persistence
 
+	/// Resolves path traversal sequences (e.g. `../`) by standardizing the URL.
+	private func sanitizedFileURL(_ url: URL) -> URL? {
+		let resolved = url.standardized
+		guard resolved.isFileURL else { return nil }
+		return resolved
+	}
+
 	private func saveToDisk(_ url: URL) {
+		guard let safeURL = sanitizedFileURL(url) else { return }
 		do {
 			let encoder = JSONEncoder()
 			encoder.dateEncodingStrategy = .iso8601
 			let data = try encoder.encode(entries)
-			try data.write(to: url)
+			try data.write(to: safeURL)
 		} catch {
 			// In production, this should be logged
 			print("Failed to save audit trail: \(error)")
@@ -374,12 +382,13 @@ public final class AuditTrailManager {
 	}
 
 	private func loadFromDisk(_ url: URL) {
-		guard FileManager.default.fileExists(atPath: url.path) else {
+		guard let safeURL = sanitizedFileURL(url) else { return }
+		guard FileManager.default.fileExists(atPath: safeURL.path) else {
 			return
 		}
 
 		do {
-			let data = try Data(contentsOf: url)
+			let data = try Data(contentsOf: safeURL)
 			let decoder = JSONDecoder()
 			decoder.dateDecodingStrategy = .iso8601
 			entries = try decoder.decode([AuditEntry].self, from: data)
