@@ -21,9 +21,9 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 - ✅ **Multiple Linear Regression:** GPU-accelerated matrix backends (CPU / Accelerate / Metal) for statistical modeling
 - ✅ **Operator Helpers:** Contribution margin, debt classification, pro forma adjustments, working capital tracking
 - ✅ **100% Documentation Coverage:** All public APIs fully documented
-- ✅ **4,558+ Tests:** All passing with strict concurrency compliance
+- ✅ **4,882+ Tests:** All passing with strict concurrency compliance
 
-**Current Status:** v2.0.0 - Production-ready release
+**Current Status:** v2.1.5 - NASA-inspired reliability hardening
 
 **See what's new:** [CHANGELOG.md](CHANGELOG.md)
 
@@ -33,7 +33,7 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 **Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real>`) and strict concurrency for thread safety. All examples include `@Sendable` closures and proper `PlaygroundSupport` integration.
 
-**Complete**: 61 comprehensive guides, 4,558+ tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every tutorial example has been validated** to work correctly in Xcode Playgrounds and production code.
+**Complete**: 61 comprehensive guides, 4,882+ tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every tutorial example has been validated** to work correctly in Xcode Playgrounds and production code.
 
 **Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and validated against real-world use cases. Documentation examples reflect actual API behavior with realistic tradeoffs (mean-variance optimization, risk constraints, budget limits).
 
@@ -197,7 +197,7 @@ dependencies: [
 
 ### Documentation & Testing
 - 📚 **61 comprehensive guides** (48,000+ lines of DocC documentation)
-- ✅ **4,558+ tests** across 285+ test suites (100% pass rate)
+- ✅ **4,882+ tests** across 392+ test suites (100% pass rate)
 - 📊 **Performance benchmarks** for typical use cases
 - 🎓 **Learning paths** for different roles
 
