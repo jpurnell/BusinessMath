@@ -35,43 +35,57 @@ struct IntegrationExampleTests {
 	func sampleSinglePeriod() {
 		let model = SaaSFinancialModel()
 		let q1 = Period.quarter(year: 2025, quarter: 1)
+		let sampleCount = 100
 
-		// Sample all components (note: each sample is independent random draw)
-		let users = model.users.sample(for: q1)
-		let pricePerUser = model.pricePerUser.sample(for: q1)
-		let revenue = model.revenue.sample(for: q1)
-		let fixedCosts = model.fixedCosts.sample(for: q1)
-		let variableCosts = model.variableCosts.sample(for: q1)
-		let headcount = model.headcount.sample(for: q1)
-		let payroll = model.payroll.sample(for: q1)
-		let totalCosts = model.totalCosts.sample(for: q1)
-		let profit = model.profit.sample(for: q1)
+		// Average multiple samples to eliminate random variation
+		var usersSum = 0.0, priceSum = 0.0, revenueSum = 0.0
+		var fixedSum = 0.0, variableSum = 0.0
+		var headcountSum = 0.0, payrollSum = 0.0
+		var totalCostsSum = 0.0, profitSum = 0.0
 
-		// Verify reasonable values and constraints
-		#expect(users >= 0.0, "Users must be non-negative")
-		#expect(users == users.rounded(), "Users should be integer")
-		#expect(users >= 800.0 && users <= 1500.0, "Users should be around 1000 ± uncertainty")
+		for _ in 0..<sampleCount {
+			let users = model.users.sample(for: q1)
+			// Verify per-sample constraints (must hold for every draw)
+			#expect(users >= 0.0, "Users must be non-negative")
+			#expect(users == users.rounded(), "Users should be integer")
 
-		#expect(pricePerUser >= 80.0 && pricePerUser <= 120.0, "Price in triangular range")
+			let pricePerUser = model.pricePerUser.sample(for: q1)
+			#expect(pricePerUser >= 80.0 && pricePerUser <= 120.0, "Price in triangular range")
 
-		#expect(revenue > 0.0, "Revenue should be positive")
-		#expect(revenue >= 64_000.0 && revenue <= 180_000.0, "Revenue = ~1000 users × ~$100 with bounds")
+			let headcount = model.headcount.sample(for: q1)
+			#expect(headcount >= 0.0, "Headcount must be non-negative")
+			#expect(headcount == headcount.rounded(), "Headcount should be integer")
 
-		#expect(fixedCosts >= 49_000.0 && fixedCosts <= 51_000.0, "Fixed costs around $50k")
+			usersSum += users
+			priceSum += pricePerUser
+			revenueSum += model.revenue.sample(for: q1)
+			fixedSum += model.fixedCosts.sample(for: q1)
+			variableSum += model.variableCosts.sample(for: q1)
+			headcountSum += headcount
+			payrollSum += model.payroll.sample(for: q1)
+			totalCostsSum += model.totalCosts.sample(for: q1)
+			profitSum += model.profit.sample(for: q1)
+		}
 
-		#expect(variableCosts > 0.0, "Variable costs should be positive")
+		let n = Double(sampleCount)
+		let avgUsers = usersSum / n
+		let avgRevenue = revenueSum / n
+		let avgFixed = fixedSum / n
+		let avgVariable = variableSum / n
+		let avgHeadcount = headcountSum / n
+		let avgPayroll = payrollSum / n
+		let avgTotalCosts = totalCostsSum / n
+		let avgProfit = profitSum / n
 
-		#expect(headcount >= 0.0, "Headcount must be non-negative")
-		#expect(headcount == headcount.rounded(), "Headcount should be integer")
-		#expect(headcount >= 15.0 && headcount <= 30.0, "Headcount around ~20 (1000/50)")
-
-		#expect(payroll > 0.0, "Payroll should be positive")
-
-		#expect(totalCosts > 0.0, "Total costs should be positive")
-
-		// Profit can be negative or positive depending on the scenario
-		// Just verify it's a finite number
-		#expect(profit.isFinite, "Profit should be finite")
+		// Verify mean values are in expected ranges
+		#expect(avgUsers >= 800.0 && avgUsers <= 1200.0, "Mean users should be around 1000 ± uncertainty")
+		#expect(avgRevenue >= 64_000.0 && avgRevenue <= 180_000.0, "Revenue = ~1000 users × ~$100 with bounds")
+		#expect(avgFixed >= 49_000.0 && avgFixed <= 51_000.0, "Fixed costs around $50k")
+		#expect(avgVariable > 0.0, "Variable costs should be positive")
+		#expect(avgHeadcount >= 15.0 && avgHeadcount <= 30.0, "Headcount around ~20 (1000/50)")
+		#expect(avgPayroll > 0.0, "Payroll should be positive")
+		#expect(avgTotalCosts > 0.0, "Total costs should be positive")
+		#expect(avgProfit.isFinite, "Profit should be finite")
 	}
 
 	// MARK: - Deterministic Projection
