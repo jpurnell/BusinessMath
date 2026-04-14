@@ -82,23 +82,17 @@ public struct MonteCarloExpressionModel: Sendable {
     ///     return (a + b) * c
     /// }
     /// ```
-    public init(_ builder: (ExpressionBuilder) -> ExpressionProxy) {
+    public init(_ builder: (ExpressionBuilder) -> ExpressionProxy) throws {
         let exprBuilder = ExpressionBuilder()
         let proxy = builder(exprBuilder)
 
         self.expression = proxy.expression
 
-        // Compile and optimize at initialization
-        do {
-            let compiled = try BytecodeCompiler.compile(self.expression)
-            self.bytecode = BytecodeOptimizer.optimize(compiled)
-            self.cachedGPUBytecode = BytecodeCompiler.toGPUFormat(self.bytecode)
-        } catch {
-            // If compilation fails, store empty bytecode
-            // This should never happen with valid expressions from the builder
-            self.bytecode = []
-            self.cachedGPUBytecode = []
-        }
+        // Compile and optimize at initialization — propagate errors to caller
+        // rather than silently storing empty bytecode (fail-silent principle)
+        let compiled = try BytecodeCompiler.compile(self.expression)
+        self.bytecode = BytecodeOptimizer.optimize(compiled)
+        self.cachedGPUBytecode = BytecodeCompiler.toGPUFormat(self.bytecode)
     }
 
     // MARK: - Compilation

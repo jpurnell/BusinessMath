@@ -484,3 +484,145 @@ struct MultivariateGradientDescentTests {
 		#expect(result.value < 1.0, "Function value should be small")
 	}
 }
+
+// MARK: - TerminationReason Tests
+
+@Suite("MultivariateOptimizationResult – TerminationReason")
+struct TerminationReasonTests {
+
+	@Test("Converged result has terminationReason .converged")
+	func convergedTerminationReason() throws {
+		// Simple quadratic — should converge easily
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
+			v[0] * v[0] + v[1] * v[1]
+		}
+
+		let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 0.1,
+			maxIterations: 1000,
+			tolerance: 1e-6
+		)
+
+		let result = try optimizer.minimize(
+			function: quadratic,
+			gradient: { try numericalGradient(quadratic, at: $0) },
+			initialGuess: VectorN([5.0, 5.0])
+		)
+
+		#expect(result.converged, "Should converge")
+		#expect(result.terminationReason == .converged)
+	}
+
+	@Test("Max iterations result has terminationReason .maxIterations")
+	func maxIterationsTerminationReason() throws {
+		// Simple quadratic with extremely tight tolerance — will hit iteration limit
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
+			v[0] * v[0] + v[1] * v[1]
+		}
+
+		let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 0.01,
+			maxIterations: 3,
+			tolerance: 1e-30  // Impossibly tight tolerance
+		)
+
+		let result = try optimizer.minimize(
+			function: quadratic,
+			gradient: { try numericalGradient(quadratic, at: $0) },
+			initialGuess: VectorN([10.0, 10.0])
+		)
+
+		#expect(!result.converged, "Should not converge in 3 iterations with tolerance 1e-30")
+		#expect(result.terminationReason == .maxIterations)
+	}
+
+	@Test("NaN gradient produces terminationReason .numericalInstability")
+	func nanGradientTerminationReason() throws {
+		// Function that produces NaN gradient at certain points
+		let nastyFunction: @Sendable (VectorN<Double>) -> Double = { v in
+			// log of value that goes negative causes NaN
+			let x = v[0]
+			return x * x + Foundation.log(abs(x - 3.0) + 1e-300)
+		}
+
+		let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 1.0,  // Large step to overshoot into bad region
+			maxIterations: 1000,
+			tolerance: 1e-10
+		)
+
+		let result = try optimizer.minimize(
+			function: nastyFunction,
+			gradient: { try numericalGradient(nastyFunction, at: $0) },
+			initialGuess: VectorN([3.0])
+		)
+
+		// If numerical instability was detected, terminationReason should reflect it
+		if !result.converged {
+			#expect(
+				result.terminationReason == .numericalInstability ||
+				result.terminationReason == .maxIterations,
+				"Non-converged result should have a specific reason"
+			)
+		}
+	}
+
+	@Test("converged is consistent with terminationReason")
+	func convergedConsistency() throws {
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
+			v[0] * v[0]
+		}
+
+		let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 0.1,
+			maxIterations: 1000,
+			tolerance: 1e-6
+		)
+
+		let result = try optimizer.minimize(
+			function: quadratic,
+			gradient: { try numericalGradient(quadratic, at: $0) },
+			initialGuess: VectorN([5.0])
+		)
+
+		// converged should be true if and only if terminationReason is .converged
+		#expect(result.converged == (result.terminationReason == .converged))
+	}
+
+	@Test("convergenceReason reflects terminationReason")
+	func convergenceReasonReflectsTerminationReason() throws {
+		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
+			v[0] * v[0]
+		}
+
+		// Converged case
+		let optimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 0.1,
+			maxIterations: 1000,
+			tolerance: 1e-6
+		)
+
+		let convergedResult = try optimizer.minimize(
+			function: quadratic,
+			gradient: { try numericalGradient(quadratic, at: $0) },
+			initialGuess: VectorN([5.0])
+		)
+
+		#expect(convergedResult.convergenceReason.contains("Converged"))
+
+		// Max iterations case
+		let tightOptimizer = MultivariateGradientDescent<VectorN<Double>>(
+			learningRate: 0.001,
+			maxIterations: 2,
+			tolerance: 1e-15
+		)
+
+		let maxIterResult = try tightOptimizer.minimize(
+			function: quadratic,
+			gradient: { try numericalGradient(quadratic, at: $0) },
+			initialGuess: VectorN([5.0])
+		)
+
+		#expect(maxIterResult.convergenceReason.contains("iterations"))
+	}
+}

@@ -19,7 +19,7 @@ struct GPUDebugTests {
     @Test("Debug bytecode generation for simple profit model")
     func debugBytecodeGeneration() throws {
         // Create the same model as the playground
-        let profitModel = MonteCarloExpressionModel { builder in
+        let profitModel = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]  // First input
             let costs = builder[1]    // Second input
             return revenue - costs

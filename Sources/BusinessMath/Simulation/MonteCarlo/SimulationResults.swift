@@ -69,6 +69,35 @@ public struct SimulationResults: Sendable {
 	/// - `false`: Simulation used CPU execution
 	public let usedGPU: Bool
 
+	/// Notes describing any execution anomalies or degraded conditions
+	///
+	/// When a simulation encounters issues (e.g., GPU failure requiring CPU fallback),
+	/// the details are recorded here rather than being silently discarded. This follows
+	/// the fail-silent principle: never return plausible-but-wrong results without
+	/// annotating the degradation.
+	///
+	/// An empty array indicates nominal execution with no anomalies.
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let results = simulation.run(iterations: 10_000)
+	/// if results.isDegraded {
+	///     print("Execution notes:")
+	///     for note in results.executionNotes {
+	///         print("  - \(note)")
+	///     }
+	/// }
+	/// ```
+	public let executionNotes: [String]
+
+	/// Whether the simulation results were produced under degraded conditions
+	///
+	/// Returns `true` when any execution notes are present, indicating that
+	/// the simulation encountered anomalies during execution (e.g., GPU fallback,
+	/// precision changes).
+	public var isDegraded: Bool { !executionNotes.isEmpty }
+
 	// MARK: - Initialization
 
 	/// Creates a SimulationResults struct from an array of simulation output values.
@@ -80,6 +109,7 @@ public struct SimulationResults: Sendable {
 	/// - Parameters:
 	///   - values: An array of simulation output values
 	///   - usedGPU: Whether GPU acceleration was used (default: false)
+	///   - executionNotes: Notes describing execution anomalies (default: empty)
 	///
 	/// ## Example
 	///
@@ -91,9 +121,10 @@ public struct SimulationResults: Sendable {
 	///
 	/// let results = SimulationResults(values: simulationOutputs, usedGPU: true)
 	/// ```
-	public init(values: [Double], usedGPU: Bool = false) {
+	public init(values: [Double], usedGPU: Bool = false, executionNotes: [String] = []) {
 		self.values = values
 		self.usedGPU = usedGPU
+		self.executionNotes = executionNotes
 //		logger.debug("Set values with \(values.count) values")
 		let simStats = SimulationStatistics(values: values)
 //		logger.debug("simStats set with \(simStats.values.count) values, mean of \(simStats.mean)")

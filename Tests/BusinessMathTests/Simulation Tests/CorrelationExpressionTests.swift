@@ -14,7 +14,7 @@ struct CorrelationExpressionTests {
 
     @Test("Set correlation matrix for expression model")
     func testSetCorrelationMatrix() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] - builder[1]
         }
 
@@ -41,7 +41,7 @@ struct CorrelationExpressionTests {
 
     @Test("Correlation matrix validation - dimension mismatch")
     func testCorrelationDimensionMismatch() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 
@@ -66,7 +66,7 @@ struct CorrelationExpressionTests {
 
     @Test("Correlation matrix validation - invalid diagonal")
     func testInvalidDiagonal() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 
@@ -94,7 +94,7 @@ struct CorrelationExpressionTests {
     func testPositiveCorrelationVariance() throws {
         // Model: A + B
         // With positive correlation, variance of sum should be higher than independent case
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 
@@ -142,7 +142,7 @@ struct CorrelationExpressionTests {
     func testNegativeCorrelationVariance() throws {
         // Model: A + B
         // With negative correlation, variance of sum should be lower
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 
@@ -188,7 +188,7 @@ struct CorrelationExpressionTests {
     func testCorrelatedFinancialModel() throws {
         // Model: Profit = Revenue - Costs
         // Revenue and costs tend to move together (both high in good times, low in bad times)
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let costs = builder[1]
             return revenue - costs
@@ -232,7 +232,7 @@ struct CorrelationExpressionTests {
     func testThreeVariableCorrelation() throws {
         // Model: Production = min(Demand, min(Capacity, Materials))
         // All three variables are correlated with market conditions
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let demand = builder[0]
             let capacity = builder[1]
             let materials = builder[2]
@@ -276,7 +276,7 @@ struct CorrelationExpressionTests {
     func testCorrelationWithConditionals() throws {
         // Model: Apply bonus if revenue exceeds threshold
         // Revenue and threshold are negatively correlated (high threshold in bad times)
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let threshold = builder[1]
 
@@ -317,7 +317,7 @@ struct CorrelationExpressionTests {
     func testPerfectPositiveCorrelation() throws {
         // Model: A - B with perfect positive correlation
         // When A and B move together perfectly, variance should be minimized
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] - builder[1]
         }
 
@@ -348,7 +348,7 @@ struct CorrelationExpressionTests {
 
     @Test("Zero correlation behaves like independent")
     func testZeroCorrelation() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 

@@ -13,7 +13,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Create simple model: a + b")
     func testSimpleModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] + builder[1]
         }
 
@@ -23,7 +23,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Create model: a - b")
     func testSubtractionModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] - builder[1]
         }
 
@@ -33,7 +33,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Create model: a * b")
     func testMultiplicationModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] * builder[1]
         }
 
@@ -43,7 +43,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Create model: a / b")
     func testDivisionModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] / builder[1]
         }
 
@@ -55,7 +55,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Complex model: (a + b) * c")
     func testComplexModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return (builder[0] + builder[1]) * builder[2]
         }
 
@@ -65,7 +65,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Financial model: revenue - costs")
     func testFinancialModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let costs = builder[1]
             return revenue - costs
@@ -77,7 +77,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Profit model: (units * price) - (fixedCosts + units * variableCost)")
     func testProfitModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let units = builder[0]
             let price = builder[1]
             let fixedCosts = builder[2]
@@ -100,7 +100,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Model with constants: a * 1.5 + 100")
     func testModelWithConstants() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] * 1.5 + 100.0
         }
 
@@ -110,7 +110,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Model with constant folding: a + (5 * 2)")
     func testConstantFolding() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] + (5.0 * 2.0)
         }
 
@@ -132,7 +132,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Compile bytecode")
     func testCompileBytecode() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] + builder[1]
         }
 
@@ -146,7 +146,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("GPU bytecode format")
     func testGPUBytecode() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] * builder[1]
         }
 
@@ -162,7 +162,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Optimization: a * 1 → a")
     func testOptimizationMultiplyOne() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] * 1.0
         }
 
@@ -175,7 +175,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Optimization: a + 0 → a")
     func testOptimizationAddZero() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] + 0.0
         }
 
@@ -188,7 +188,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Multi-pass optimization: (a + 0) * 1")
     func testMultiPassOptimization() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return (builder[0] + 0.0) * 1.0
         }
 
@@ -203,7 +203,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Convert to closure")
     func testToClosure() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] * builder[1]
         }
 
@@ -215,7 +215,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Closure equivalence")
     func testClosureEquivalence() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let a = builder[0]
             let b = builder[1]
             let c = builder[2]
@@ -232,7 +232,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Max stack depth analysis")
     func testMaxStackDepth() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return ((builder[0] + builder[1]) * (builder[2] - builder[3])) / builder[4]
         }
 
@@ -242,7 +242,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Max input index analysis")
     func testMaxInputIndex() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[1] + builder[5] + builder[3]
         }
 
@@ -252,7 +252,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Instruction count")
     func testInstructionCount() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] + builder[1]
         }
 
@@ -264,7 +264,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Error: Invalid input index")
     func testInvalidInputIndex() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] + builder[1]
         }
 
@@ -276,7 +276,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Error: Division by zero")
     func testDivisionByZero() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             return builder[0] / builder[1]
         }
 
@@ -289,7 +289,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("NPV model")
     func testNPVModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let initial = builder[0]
             let cashFlow = builder[1]
             let rate = builder[2]
@@ -305,7 +305,7 @@ struct MonteCarloExpressionModelTests {
 
     @Test("Compound interest model")
     func testCompoundInterestModel() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let principal = builder[0]
             let rate = builder[1]
             let time = builder[2]
@@ -317,5 +317,38 @@ struct MonteCarloExpressionModelTests {
         // Simple linear version for testing
         let result = try model.evaluate(inputs: [1000, 0.05, 5])
         #expect(result == 5250.0)
+    }
+}
+
+// MARK: - Throwing Init Tests (Fail-Silent Principle)
+
+@Suite("MonteCarloExpressionModel – Throwing Init")
+struct MonteCarloExpressionModelThrowingInitTests {
+
+    @Test("Valid expression model init succeeds with try")
+    func validExpressionSucceeds() throws {
+        let model = try MonteCarloExpressionModel { builder in
+            builder[0] + builder[1]
+        }
+        let result = try model.evaluate(inputs: [3.0, 4.0])
+        #expect(result == 7.0)
+    }
+
+    @Test("Model with single input compiles successfully")
+    func singleInput() throws {
+        let model = try MonteCarloExpressionModel { builder in
+            builder[0]
+        }
+        let result = try model.evaluate(inputs: [42.0])
+        #expect(result == 42.0)
+    }
+
+    @Test("Bytecode is non-empty after successful init")
+    func bytecodeNonEmpty() throws {
+        let model = try MonteCarloExpressionModel { builder in
+            builder[0] * builder[1]
+        }
+        #expect(model.compile().count > 0, "Compiled bytecode should not be empty")
+        #expect(model.instructionCount() > 0)
     }
 }
