@@ -20,7 +20,7 @@ struct GPUPerformanceBenchmark {
             return
         }
 
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 

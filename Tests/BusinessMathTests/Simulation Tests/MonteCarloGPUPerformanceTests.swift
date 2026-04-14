@@ -23,7 +23,7 @@ struct MonteCarloGPUPerformanceTests {
             return
         }
 
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let a = builder[0]
             let b = builder[1]
             return a + b
@@ -70,7 +70,7 @@ struct MonteCarloGPUPerformanceTests {
             return
         }
 
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let costs = builder[1]
             let tax = builder[2]
@@ -123,7 +123,7 @@ struct MonteCarloGPUPerformanceTests {
             return
         }
 
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let units = builder[0]
             let price = builder[1]
             let fixedCosts = builder[2]
@@ -183,7 +183,7 @@ struct MonteCarloGPUPerformanceTests {
             return
         }
 
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] * builder[1] - builder[2]
         }
 
@@ -239,7 +239,7 @@ struct MonteCarloGPUPerformanceTests {
         let iterations = 50_000
 
         // Simple model: a + b
-        let simpleModel = MonteCarloExpressionModel { builder in
+        let simpleModel = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 
@@ -251,7 +251,7 @@ struct MonteCarloGPUPerformanceTests {
         let simpleTime = Date().timeIntervalSince(simpleStart)
 
         // Complex model: (a * b) + (c * d) - (e / 2)
-        let complexModel = MonteCarloExpressionModel { builder in
+        let complexModel = try MonteCarloExpressionModel { builder in
             let a = builder[0]
             let b = builder[1]
             let c = builder[2]

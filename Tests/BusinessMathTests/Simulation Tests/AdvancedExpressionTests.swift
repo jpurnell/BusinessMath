@@ -13,7 +13,7 @@ struct AdvancedExpressionTests {
 
     @Test("Less than comparison")
     func testLessThan() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let a = builder[0]
             let b = builder[1]
             return a.lessThan(b)
@@ -30,7 +30,7 @@ struct AdvancedExpressionTests {
 
     @Test("Greater than comparison")
     func testGreaterThan() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0].greaterThan(100.0)
         }
 
@@ -45,7 +45,7 @@ struct AdvancedExpressionTests {
 
     @Test("Equal comparison with epsilon")
     func testEqual() throws {
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0].equal(builder[1])
         }
 
@@ -70,7 +70,7 @@ struct AdvancedExpressionTests {
     @Test("Simple if-else conditional")
     func testSimpleConditional() throws {
         // Model: if revenue > 1000 then revenue * 1.2 else revenue
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let condition = revenue.greaterThan(1000.0)
             let bonus = revenue * 1.2
@@ -94,7 +94,7 @@ struct AdvancedExpressionTests {
         // if revenue > 2000: 30% bonus
         // else if revenue > 1000: 20% bonus
         // else: no bonus
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
 
             let tier1 = revenue.greaterThan(2000.0)
@@ -127,7 +127,7 @@ struct AdvancedExpressionTests {
     @Test("Conditional with constants")
     func testConditionalWithConstants() throws {
         // Model: max(profit, 0) using conditional
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let profit = builder[0]
             let isProfitable = profit.greaterThan(0.0)
             return isProfitable.ifElse(then: profit, else: 0.0)
@@ -149,7 +149,7 @@ struct AdvancedExpressionTests {
     @Test("Conditional in Monte Carlo simulation - CPU")
     func testConditionalInMonteCarloCPU() throws {
         // Model: Apply 20% bonus if revenue exceeds threshold
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let threshold = builder[1]
 
@@ -193,7 +193,7 @@ struct AdvancedExpressionTests {
         }
 
         // Model: Capacity-constrained production
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let demand = builder[0]
             let capacity = builder[1]
 
@@ -238,7 +238,7 @@ struct AdvancedExpressionTests {
         }
 
         // Model: Progressive tax brackets
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let income = builder[0]
 
             // 0% tax if income <= 50K
@@ -287,7 +287,7 @@ struct AdvancedExpressionTests {
     @Test("Multiple comparisons in single model")
     func testMultipleComparisons() throws {
         // Model that counts how many inputs exceed thresholds
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let a = builder[0]
             let b = builder[1]
             let c = builder[2]
@@ -316,7 +316,7 @@ struct AdvancedExpressionTests {
     @Test("Comparison with arithmetic")
     func testComparisonWithArithmetic() throws {
         // Model: Calculate bonus only if profit margin > 20%
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let costs = builder[1]
 

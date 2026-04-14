@@ -277,7 +277,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Create expression model
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let revenue = builder[0]
             let costs = builder[1]
             return revenue - costs
@@ -321,7 +321,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Create expression model
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let a = builder[0]
             let b = builder[1]
             let c = builder[2]
@@ -379,7 +379,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Create expression model
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 
@@ -411,7 +411,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Create expression model
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] * builder[1]
         }
 
@@ -472,7 +472,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Financial model: (Units × Price) - (FixedCosts + Units × VariableCost)
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let units = builder[0]
             let price = builder[1]
             let fixedCosts = builder[2]
@@ -539,7 +539,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Model: a + b (one exponential, one normal)
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]
         }
 
@@ -581,7 +581,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Model: a * b (both lognormal)
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             builder[0] * builder[1]
         }
 
@@ -624,7 +624,7 @@ struct MonteCarloGPUIntegrationTests {
         }
 
         // Model: (Normal + Uniform) × Triangular + Exponential × Lognormal
-        let model = MonteCarloExpressionModel { builder in
+        let model = try MonteCarloExpressionModel { builder in
             let normal = builder[0]
             let uniform = builder[1]
             let triangular = builder[2]

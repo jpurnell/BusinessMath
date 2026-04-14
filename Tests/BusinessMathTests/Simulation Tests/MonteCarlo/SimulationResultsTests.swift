@@ -402,6 +402,46 @@ struct SimulationResultsTests {
 	}
 }
 
+// MARK: - Execution Notes (Fail-Silent Principle)
+
+@Suite("SimulationResults – Execution Notes", .serialized)
+struct SimulationResultsExecutionNotesTests {
+
+	@Test("Default executionNotes is empty")
+	func defaultExecutionNotesEmpty() {
+		let results = SimulationResults(values: [1.0, 2.0, 3.0])
+		#expect(results.executionNotes.isEmpty, "Default should have no notes")
+		#expect(!results.isDegraded, "Default should not be degraded")
+	}
+
+	@Test("executionNotes preserves provided notes")
+	func executionNotesPreserved() {
+		let notes = ["GPU execution failed: device not available", "Fell back to CPU execution"]
+		let results = SimulationResults(values: [1.0, 2.0, 3.0], executionNotes: notes)
+		#expect(results.executionNotes.count == 2)
+		#expect(results.executionNotes[0] == "GPU execution failed: device not available")
+		#expect(results.executionNotes[1] == "Fell back to CPU execution")
+	}
+
+	@Test("isDegraded reflects non-empty executionNotes")
+	func isDegradedReflectsNotes() {
+		let clean = SimulationResults(values: [1.0, 2.0, 3.0])
+		#expect(!clean.isDegraded)
+
+		let degraded = SimulationResults(values: [1.0, 2.0, 3.0], executionNotes: ["Fallback occurred"])
+		#expect(degraded.isDegraded)
+	}
+
+	@Test("Backward compatibility: existing init without executionNotes still works")
+	func backwardCompatibility() {
+		let results = SimulationResults(values: [10.0, 20.0, 30.0], usedGPU: true)
+		#expect(results.usedGPU == true)
+		#expect(results.executionNotes.isEmpty)
+		#expect(!results.isDegraded)
+		#expect(results.statistics.mean == 20.0)
+	}
+}
+
 @Suite("SimulationResults – Additional", .serialized)
 struct SimulationResultsAdditionalTests {
 

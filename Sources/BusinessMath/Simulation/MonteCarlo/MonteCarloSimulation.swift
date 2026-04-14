@@ -451,6 +451,8 @@ public struct MonteCarloSimulation: Sendable {
 			)
 		}
 
+		var executionNotes: [String] = []
+
 		#if canImport(Metal)
 		// Try GPU path if eligible (no correlation)
 		if enableGPU && iterations >= 1000 && gpuDevice != nil {
@@ -472,23 +474,14 @@ public struct MonteCarloSimulation: Sendable {
 						// Return GPU results
 						return SimulationResults(values: outcomes, usedGPU: true)
 					} catch {
-						// GPU failed, fall back to CPU
-						print("⚠️ GPU execution failed: \(error)")
-						print("   Falling back to CPU execution")
+						// GPU failed, fall back to CPU — record the reason
+						executionNotes.append("GPU execution failed: \(error). Fell back to CPU execution.")
 					}
 				} else {
-					print("⚠️ Could not compile model for GPU (model uses unsupported operations or is closure-based)")
+					executionNotes.append("Could not compile model for GPU (unsupported operations or closure-based). Using CPU execution.")
 				}
 			} else {
-				print("⚠️ Inputs are not GPU-compatible (unsupported distributions or correlation matrix)")
-			}
-		} else {
-			if !enableGPU {
-				// Silent - user explicitly disabled
-			} else if iterations < 1000 {
-				// Silent - expected behavior for small simulations
-			} else if gpuDevice == nil {
-				print("⚠️ GPU device is unavailable (Metal not supported or initialization failed)")
+				executionNotes.append("Inputs are not GPU-compatible (unsupported distributions or correlation matrix). Using CPU execution.")
 			}
 		}
 		#endif
@@ -516,7 +509,7 @@ public struct MonteCarloSimulation: Sendable {
 		}
 
 		// Create and return results
-		return SimulationResults(values: outcomes, usedGPU: false)
+		return SimulationResults(values: outcomes, usedGPU: false, executionNotes: executionNotes)
 	}
 
 	// MARK: - Correlated Variables

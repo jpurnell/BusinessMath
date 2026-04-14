@@ -8,6 +8,37 @@
 import Foundation
 import Numerics
 
+// MARK: - Termination Reason
+
+/// Describes why an optimization algorithm stopped
+///
+/// Provides richer semantics than a simple `converged: Bool` flag, allowing callers
+/// to distinguish between normal convergence, iteration limits, and numerical failures.
+/// This follows the fail-silent principle: never return ambiguous results when the
+/// algorithm's stopping condition carries meaningful information.
+///
+/// ## Example
+///
+/// ```swift
+/// let result = try optimizer.minimize(function: f, gradient: g, initialGuess: x0)
+/// switch result.terminationReason {
+/// case .converged:
+///     print("Found optimum at \(result.solution)")
+/// case .maxIterations:
+///     print("Hit iteration limit — result may not be optimal")
+/// case .numericalInstability:
+///     print("Encountered NaN/Inf — result is best-so-far before instability")
+/// }
+/// ```
+public enum TerminationReason: Sendable, Equatable {
+	/// Algorithm converged: gradient norm fell below tolerance
+	case converged
+	/// Algorithm reached the maximum number of iterations without converging
+	case maxIterations
+	/// Algorithm encountered non-finite values (NaN or Inf) in gradient computation
+	case numericalInstability
+}
+
 // MARK: - Multivariate Optimization Result
 
 /// Result from a multivariate optimization
@@ -21,8 +52,17 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 	/// Number of iterations performed
 	public let iterations: Int
 
+	/// Why the optimization algorithm stopped
+	///
+	/// Provides richer information than ``converged`` alone, distinguishing between
+	/// normal convergence, iteration limits, and numerical instability.
+	public let terminationReason: TerminationReason
+
 	/// Whether the algorithm converged
-	public let converged: Bool
+	///
+	/// Convenience property equivalent to `terminationReason == .converged`.
+	/// Maintained for backward compatibility with existing code.
+	public var converged: Bool { terminationReason == .converged }
 
 	/// The gradient norm at the solution
 	public let gradientNorm: V.Scalar
@@ -33,6 +73,45 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 	/// Formatter used for displaying results (mutable for customization)
 	public var formatter: FloatingPointFormatter = .optimization
 
+	// MARK: - Initialization
+
+	/// Creates an optimization result with an explicit termination reason
+	public init(
+		solution: V,
+		value: V.Scalar,
+		iterations: Int,
+		terminationReason: TerminationReason,
+		gradientNorm: V.Scalar,
+		history: [(iteration: Int, point: V, value: V.Scalar, gradientNorm: V.Scalar)]? = nil
+	) {
+		self.solution = solution
+		self.value = value
+		self.iterations = iterations
+		self.terminationReason = terminationReason
+		self.gradientNorm = gradientNorm
+		self.history = history
+	}
+
+	/// Creates an optimization result using a boolean convergence flag
+	///
+	/// Maps `converged: true` to `.converged` and `converged: false` to `.maxIterations`.
+	/// For numerical instability cases, use the `terminationReason:` initializer directly.
+	public init(
+		solution: V,
+		value: V.Scalar,
+		iterations: Int,
+		converged: Bool,
+		gradientNorm: V.Scalar,
+		history: [(iteration: Int, point: V, value: V.Scalar, gradientNorm: V.Scalar)]? = nil
+	) {
+		self.solution = solution
+		self.value = value
+		self.iterations = iterations
+		self.terminationReason = converged ? .converged : .maxIterations
+		self.gradientNorm = gradientNorm
+		self.history = history
+	}
+
 	// MARK: - Protocol Compatibility
 
 	/// Convenience property for protocol compatibility (alias for `value`)
@@ -42,10 +121,13 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 
 	/// Description of why optimization stopped (for protocol compatibility)
 	public var convergenceReason: String {
-		if converged {
+		switch terminationReason {
+		case .converged:
 			return "Converged: gradient norm below tolerance"
-		} else {
+		case .maxIterations:
 			return "Maximum iterations reached"
+		case .numericalInstability:
+			return "Numerical instability: gradient became non-finite"
 		}
 	}
 }
@@ -207,7 +289,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 					solution: bestX,
 					value: bestValue,
 					iterations: iteration,
-					converged: false,  // Did not converge normally
+					terminationReason: .numericalInstability,
 					gradientNorm: gradNorm,
 					history: history
 				)
@@ -381,7 +463,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 					solution: bestX,
 					value: bestValue,
 					iterations: iteration,
-					converged: false,
+					terminationReason: .numericalInstability,
 					gradientNorm: gradNorm,
 					history: history
 				)
