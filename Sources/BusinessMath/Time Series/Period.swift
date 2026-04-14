@@ -131,7 +131,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		components.nanosecond = millisecond * 1_000_000
 
 		guard let date = cachedCalendar.date(from: components) else {
-			fatalError("Unable to create date from millisecond components")
+			preconditionFailure("Unable to create date from millisecond components")
 		}
 
 		return Period(type: .millisecond, date: date)
@@ -158,7 +158,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		components.second = second
 
 		guard let date = cachedCalendar.date(from: components) else {
-			fatalError("Unable to create date from second components")
+			preconditionFailure("Unable to create date from second components")
 		}
 
 		return Period(type: .second, date: date)
@@ -184,7 +184,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		components.second = 0
 
 		guard let date = cachedCalendar.date(from: components) else {
-			fatalError("Unable to create date from minute components")
+			preconditionFailure("Unable to create date from minute components")
 		}
 
 		return Period(type: .minute, date: date)
@@ -209,7 +209,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		components.second = 0
 
 		guard let date = cachedCalendar.date(from: components) else {
-			fatalError("Unable to create date from hour components")
+			preconditionFailure("Unable to create date from hour components")
 		}
 
 		return Period(type: .hourly, date: date)
@@ -250,7 +250,9 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// print(jan.days().count)  // 31
 	/// ```
 	public static func month(year: Int, month: Int) -> Period {
-		precondition(month >= 1 && month <= 12, "Month must be between 1 and 12")
+		guard month >= 1, month <= 12 else {
+			preconditionFailure("Month must be between 1 and 12")
+		}
 
 		var components = DateComponents()
 		components.year = year
@@ -258,7 +260,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		components.day = 1
 
 		guard let date = cachedCalendar.date(from: components) else {
-			fatalError("Unable to create date from components: year=\(year), month=\(month)")
+			preconditionFailure("Unable to create date from components: year=\(year), month=\(month)")
 		}
 
 		return Period(type: .monthly, date: date)
@@ -287,7 +289,9 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// print(q1.months().count)  // 3
 	/// ```
 	public static func quarter(year: Int, quarter: Int) -> Period {
-		precondition(quarter >= 1 && quarter <= 4, "Quarter must be between 1 and 4")
+		guard quarter >= 1, quarter <= 4 else {
+			preconditionFailure("Quarter must be between 1 and 4")
+		}
 
 		let month = (quarter - 1) * 3 + 1  // Q1=1, Q2=4, Q3=7, Q4=10
 		return Period.month(year: year, month: month).asQuarterly()
