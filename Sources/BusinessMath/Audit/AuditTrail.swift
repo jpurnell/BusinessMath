@@ -383,9 +383,6 @@ public final class AuditTrailManager {
 
 	private func loadFromDisk(_ url: URL) {
 		guard let safeURL = sanitizedFileURL(url) else { return }
-		guard FileManager.default.fileExists(atPath: safeURL.path) else {
-			return
-		}
 
 		do {
 			let data = try Data(contentsOf: safeURL)
@@ -393,8 +390,7 @@ public final class AuditTrailManager {
 			decoder.dateDecodingStrategy = .iso8601
 			entries = try decoder.decode([AuditEntry].self, from: data)
 		} catch {
-			// In production, this should be logged
-			print("Failed to load audit trail: \(error)")
+			// File doesn't exist or is unreadable — start with empty entries
 			entries = []
 		}
 	}
