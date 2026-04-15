@@ -33,7 +33,7 @@
 /// correlation handling, and Monte Carlo orchestration are handled by
 /// the simulation kernel (in BusinessMathPro), which calls `step()`
 /// repeatedly with correlated normal draws.
-public protocol StochasticProcess: Sendable {
+public protocol StochasticProcess<State>: Sendable {
     /// The state type: `Double` for scalar, `VectorN<Double>` for multi-factor.
     associatedtype State: ProcessState
 
