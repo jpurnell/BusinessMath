@@ -1,9 +1,10 @@
 name: Nightly Guideline Conformance
 
 on:
-  schedule:
-    # 09:00 UTC daily (~05:00 ET) — well after CI quiet hours
-    - cron: '0 9 * * *'
+  # Disabled: requires ANTHROPIC_API_KEY and headless claude CLI.
+  # Re-enable schedule when API key is configured and tested.
+  # schedule:
+  #   - cron: '0 9 * * *'
   workflow_dispatch:
 
 concurrency:
