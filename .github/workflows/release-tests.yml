@@ -46,6 +46,7 @@ jobs:
     needs: check_changes
     if: needs.check_changes.outputs.has_changes == 'true'
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
@@ -106,6 +107,7 @@ jobs:
     needs: check_changes
     if: needs.check_changes.outputs.has_changes == 'true'
     runs-on: macos-15
+    timeout-minutes: 180
     env:
       PACKAGE_NAME: BusinessMath
     steps:
