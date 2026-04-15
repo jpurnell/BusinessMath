@@ -25,6 +25,9 @@
 public protocol MeasureTag: Sendable {
     /// Human-readable name for logging and metadata.
     static var name: String { get }
+
+    /// Creates a measure tag instance.
+    init()
 }
 
 /// Risk-neutral measure (Q): used for derivatives pricing.

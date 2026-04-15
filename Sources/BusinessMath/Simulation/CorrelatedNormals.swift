@@ -147,6 +147,57 @@ public struct CorrelatedNormals {
 			standardNormals.append(z)
 		}
 
+		return transformAndShift(standardNormals)
+	}
+
+	/// Generates a single sample using a caller-supplied random number generator.
+	///
+	/// This overload enables **deterministic, reproducible** sampling by accepting
+	/// an explicit RNG. Given the same seed, the sequence of samples is identical
+	/// across runs and platforms.
+	///
+	/// The algorithm is identical to ``sample()``:
+	/// 1. Generate n independent standard normal variates via Box-Muller
+	/// 2. Transform using Cholesky factor: Y = L × Z
+	/// 3. Add means: X = μ + Y
+	///
+	/// ## Example
+	///
+	/// ```swift
+	/// let correlated = try CorrelatedNormals(
+	///     means: [0.0, 0.0],
+	///     correlationMatrix: [[1.0, 0.7], [0.7, 1.0]]
+	/// )
+	/// var rng = DeterministicRNG(seed: 42)
+	/// let sample = correlated.sample(using: &rng)
+	/// ```
+	///
+	/// - Parameter generator: A `RandomNumberGenerator` to use for uniform draws.
+	/// - Returns: A vector of correlated normal random values with the specified means and correlation.
+	public func sample<G: RandomNumberGenerator>(using generator: inout G) -> [Double] {
+		let n = means.count
+
+		// Generate n independent standard normals via Box-Muller
+		var standardNormals: [Double] = []
+		for _ in 0..<n {
+			let u1 = Double.random(in: Double.ulpOfOne ..< 1.0, using: &generator)
+			let u2 = Double.random(in: Double.ulpOfOne ..< 1.0, using: &generator)
+			let z: Double = distributionNormal(mean: 0.0, stdDev: 1.0, u1, u2)
+			standardNormals.append(z)
+		}
+
+		return transformAndShift(standardNormals)
+	}
+
+	/// Applies the Cholesky transform and mean shift to independent standard normals.
+	///
+	/// Shared implementation for both `sample()` and `sample(using:)`.
+	///
+	/// - Parameter standardNormals: Independent standard normal draws (length n).
+	/// - Returns: Correlated normal sample with means applied.
+	private func transformAndShift(_ standardNormals: [Double]) -> [Double] {
+		let n = means.count
+
 		// Multiply by Cholesky factor: Y = L × Z
 		var transformed: [Double] = Array(repeating: 0.0, count: n)
 		for i in 0..<n {
