@@ -1,8 +1,11 @@
+import Foundation
 import Testing
 import Numerics
 @testable import BusinessMath
 
-@Suite("MultivariateOptimizer Performance Tests", .serialized)
+@Suite("MultivariateOptimizer Performance Tests", .serialized,
+       .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
+                "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
 struct MultivariateOptimizerPerformanceTests {
 
     // MARK: - Protocol vs Concrete Type Performance

@@ -5,10 +5,13 @@
 //  Created by Justin Purnell on 12/04/25.
 //
 
+import Foundation
 import Testing
 @testable import BusinessMath
 
-@Suite("Performance Benchmark Tests", .serialized)
+@Suite("Performance Benchmark Tests", .serialized,
+       .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
+                "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
 struct PerformanceBenchmarkTests {
 
 	// MARK: - Basic Profiling Tests

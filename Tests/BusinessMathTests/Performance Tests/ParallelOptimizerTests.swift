@@ -424,7 +424,9 @@ struct ParallelOptimizerTests {
 
 /// Performance tests that need exclusive CPU access
 /// Note: Serialized to avoid CPU contention with other parallel tests
-@Suite("Parallel Optimizer Performance Tests", .serialized)
+@Suite("Parallel Optimizer Performance Tests", .serialized,
+       .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
+                "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
 struct ParallelOptimizerPerformanceTests {
 
 	/// Test that parallel execution uses multiple cores
