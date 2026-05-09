@@ -177,3 +177,8 @@ This documentation is organized like a book with five main parts:
 
 - <doc:5.24-K-MeansTutorial>
 - <doc:Appendix-A-ReidsRaisinsExample>
+
+### Inventory & Operations Management
+
+- <doc:6.1-InventoryManagementGuide>
+- <doc:6.2-ChoosingInventoryModel>
