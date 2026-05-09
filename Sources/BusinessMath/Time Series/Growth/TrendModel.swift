@@ -189,8 +189,17 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	private var metadata: TimeSeriesMetadata?
 	private var fittedDataCount: Int = 0
 	private var residuals: [T] = []
+	private var trainingValues: [T] = []
+	private var trainingFitted: [T] = []
 	/// The residuals from the fitted trend model (actual minus predicted values).
 	public var  trendResiduals : [T] { residuals }
+
+	/// Mean Absolute Error of the in-sample fit.
+	public var fitMAE: T { guard !trainingValues.isEmpty else { return T.nan }; return mae(trainingValues, trainingFitted) }
+	/// Root Mean Squared Error of the in-sample fit.
+	public var fitRMSE: T { guard !trainingValues.isEmpty else { return T.nan }; return rmse(trainingValues, trainingFitted) }
+	/// Mean Absolute Percentage Error of the in-sample fit (as a ratio).
+	public var fitMAPE: T { guard !trainingValues.isEmpty else { return T.nan }; return mape(trainingValues, trainingFitted) }
 
 	/// Creates a new linear trend model.
 	public init() {}
@@ -271,11 +280,13 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.fittedIntercept = try intercept(xValues, values)
 		self.fittedDataCount = values.count
 
-		// Calculate and store residuals for confidence intervals
 		self.residuals = []
+		self.trainingValues = values
+		self.trainingFitted = []
 		guard let computedSlope = self.fittedSlope, let computedIntercept = self.fittedIntercept else { return }
 		for (i, actual) in values.enumerated() {
 			let fitted = computedSlope * T(i) + computedIntercept
+			self.trainingFitted.append(fitted)
 			self.residuals.append(actual - fitted)
 		}
 	}
@@ -592,6 +603,15 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	private var metadata: TimeSeriesMetadata?
 	private var fittedDataCount: Int = 0
 	private var residuals: [T] = []
+	private var trainingValues: [T] = []
+	private var trainingFitted: [T] = []
+
+	/// Mean Absolute Error of the in-sample fit.
+	public var fitMAE: T { guard !trainingValues.isEmpty else { return T.nan }; return mae(trainingValues, trainingFitted) }
+	/// Root Mean Squared Error of the in-sample fit.
+	public var fitRMSE: T { guard !trainingValues.isEmpty else { return T.nan }; return rmse(trainingValues, trainingFitted) }
+	/// Mean Absolute Percentage Error of the in-sample fit (as a ratio).
+	public var fitMAPE: T { guard !trainingValues.isEmpty else { return T.nan }; return mape(trainingValues, trainingFitted) }
 
 	/// Creates a new exponential trend model.
 	public init() {}
@@ -711,12 +731,14 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 		self.fittedLogIntercept = try intercept(xValues, logValues)
 		self.fittedDataCount = values.count
 
-		// Calculate and store residuals for confidence intervals
 		self.residuals = []
+		self.trainingValues = values
+		self.trainingFitted = []
 		guard let computedLogSlope = self.fittedLogSlope, let computedLogIntercept = self.fittedLogIntercept else { return }
 		for (i, actual) in values.enumerated() {
 			let logFitted = computedLogSlope * T(i) + computedLogIntercept
 			let fitted = T.exp(logFitted)
+			self.trainingFitted.append(fitted)
 			self.residuals.append(actual - fitted)
 		}
 	}
@@ -1023,6 +1045,15 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	private var metadata: TimeSeriesMetadata?
 	private var fittedDataCount: Int = 0
 	private var residuals: [T] = []
+	private var trainingValues: [T] = []
+	private var trainingFitted: [T] = []
+
+	/// Mean Absolute Error of the in-sample fit.
+	public var fitMAE: T { guard !trainingValues.isEmpty else { return T.nan }; return mae(trainingValues, trainingFitted) }
+	/// Root Mean Squared Error of the in-sample fit.
+	public var fitRMSE: T { guard !trainingValues.isEmpty else { return T.nan }; return rmse(trainingValues, trainingFitted) }
+	/// Mean Absolute Percentage Error of the in-sample fit (as a ratio).
+	public var fitMAPE: T { guard !trainingValues.isEmpty else { return T.nan }; return mape(trainingValues, trainingFitted) }
 
 	/// Creates a new logistic trend model with the specified capacity.
 	///
@@ -1097,8 +1128,9 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 
 		self.fittedDataCount = values.count
 
-		// Calculate and store residuals for confidence intervals
 		self.residuals = []
+		self.trainingValues = values
+		self.trainingFitted = []
 		guard let kValue = self.k, let x0Value = self.x0 else { return }
 		let capacityValue = self.capacity
 
@@ -1106,6 +1138,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 			let exponent = -kValue * (T(i) - x0Value)
 			let denominator = T(1) + T.exp(exponent)
 			let fitted = capacityValue / denominator
+			self.trainingFitted.append(fitted)
 			self.residuals.append(actual - fitted)
 		}
 	}

@@ -123,6 +123,31 @@ public struct RegressionResult: Sendable {
 
     /// Number of predictors (excluding intercept)
     public let p: Int
+
+    /// Mean Absolute Error of the in-sample fit.
+    ///
+    /// Computed from ``fittedValues`` and ``residuals``.
+    public var mae: Double {
+        let actuals = zip(fittedValues, residuals).map { $0 + $1 }
+        return BusinessMath.mae(actuals, fittedValues)
+    }
+
+    /// Root Mean Squared Error of the in-sample fit.
+    ///
+    /// Computed from ``fittedValues`` and ``residuals``.
+    public var rmse: Double {
+        let actuals = zip(fittedValues, residuals).map { $0 + $1 }
+        return BusinessMath.rmse(actuals, fittedValues)
+    }
+
+    /// Mean Absolute Percentage Error of the in-sample fit (as a ratio, not percentage).
+    ///
+    /// Excludes observations where the actual value is zero.
+    /// Computed from ``fittedValues`` and ``residuals``.
+    public var mape: Double {
+        let actuals = zip(fittedValues, residuals).map { $0 + $1 }
+        return BusinessMath.mape(actuals, fittedValues)
+    }
 }
 
 // MARK: - Error Types
