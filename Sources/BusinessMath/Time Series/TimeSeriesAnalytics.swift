@@ -232,53 +232,28 @@ extension TimeSeries {
 	/// - MAPE calculation skips periods where actual value is zero to avoid division by zero
 	/// - RMSE ≥ MAE always (equality only when all errors are identical)
 	public func forecastError(against forecast: TimeSeries<T>) -> ForecastErrorMetrics<T> where T: BinaryFloatingPoint {
-		var sumSquaredError = T.zero
-		var sumAbsoluteError = T.zero
-		var sumAbsPercentError = T.zero
-		var count = 0
-		var mapeCount = 0
+		var actualValues: [T] = []
+		var forecastValues: [T] = []
 
-		// Iterate through all periods in the actual series
 		for period in periods {
 			guard let actualValue = self[period],
-				  let forecastValue = forecast[period] else {
-				continue  // Skip periods not present in both series
-			}
-
-			let error = actualValue - forecastValue
-
-			// Accumulate for RMSE and MAE
-			sumSquaredError = sumSquaredError + (error * error)
-			sumAbsoluteError = sumAbsoluteError + abs(error)
-			count += 1
-
-			// Accumulate for MAPE (only for non-zero actuals)
-			if actualValue != T.zero {
-				let percentError = abs(error / actualValue)
-				sumAbsPercentError = sumAbsPercentError + percentError
-				mapeCount += 1
-			}
+				  let forecastValue = forecast[period] else { continue }
+			actualValues.append(actualValue)
+			forecastValues.append(forecastValue)
 		}
 
-		// Calculate final metrics
-		guard count > 0 else {
-			// No overlapping periods - return zero/NaN metrics
+		guard !actualValues.isEmpty else {
 			return ForecastErrorMetrics(rmse: T.zero, mae: T.zero, mape: T.zero, count: 0)
 		}
 
-		let mse = sumSquaredError / T(count)
-		let rmse = sqrt(mse)
-		let mae = sumAbsoluteError / T(count)
+		let mapeValue = mape(actualValues, forecastValues)
 
-		// Calculate MAPE only if we had non-zero actuals
-		let mape: T
-		if mapeCount > 0 {
-			mape = (sumAbsPercentError / T(mapeCount))
-		} else {
-			mape = T.zero  // All actual values were zero
-		}
-
-		return ForecastErrorMetrics(rmse: rmse, mae: mae, mape: mape, count: count)
+		return ForecastErrorMetrics(
+			rmse: rmse(actualValues, forecastValues),
+			mae: mae(actualValues, forecastValues),
+			mape: mapeValue.isNaN ? T.zero : mapeValue,
+			count: actualValues.count
+		)
 	}
 
 	// MARK: - Moving Averages
