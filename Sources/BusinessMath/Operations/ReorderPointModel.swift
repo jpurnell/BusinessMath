@@ -68,18 +68,17 @@ public struct ReorderPointModel<T: Real & Sendable & Codable>: Sendable {
             throw OperationsError.invalidServiceLevel
         }
 
-        let n = T(demandHistory.count)
-        let mean = demandHistory.reduce(T(0), +) / n
-        let sigma = standardDeviation(demandHistory)
+        let demandMean = mean(demandHistory)
+        let sigma = stdDev(demandHistory)
 
-        let demandDuringLeadTime = mean * leadTime
+        let demandDuringLeadTime = demandMean * leadTime
 
         let z = try SafetyStockModel<T>.zScore(for: serviceLevel)
 
         let ss = try SafetyStockModel<T>.safetyStock(
             method: method,
             serviceLevel: serviceLevel,
-            averageDemand: mean,
+            averageDemand: demandMean,
             demandStdDev: sigma,
             leadTime: leadTime,
             leadTimeStdDev: leadTimeStdDev
@@ -91,7 +90,7 @@ public struct ReorderPointModel<T: Real & Sendable & Codable>: Sendable {
             reorderPoint: reorderPoint,
             safetyStock: ss,
             demandDuringLeadTime: demandDuringLeadTime,
-            averageDailyDemand: mean,
+            averageDailyDemand: demandMean,
             demandStdDev: sigma,
             zScore: z,
             serviceLevel: serviceLevel,
@@ -166,16 +165,5 @@ public struct ReorderPointModel<T: Real & Sendable & Codable>: Sendable {
 
         let z = (currentStock - demandMean) / demandStdDevDuringLT
         return T(1) - normalCDF(x: z)
-    }
-
-    // MARK: - Private helpers
-
-    /// Computes the sample standard deviation of an array of values.
-    private static func standardDeviation(_ values: [T]) -> T {
-        guard values.count > 1 else { return T(0) }
-        let n = T(values.count)
-        let mean = values.reduce(T(0), +) / n
-        let variance = values.map { ($0 - mean) * ($0 - mean) }.reduce(T(0), +) / (n - T(1))
-        return T.sqrt(variance)
     }
 }

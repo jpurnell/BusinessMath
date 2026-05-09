@@ -93,11 +93,8 @@ public struct InventorySimulator: Sendable {
             throw OperationsError.invalidServiceLevel
         }
 
-        let n = Double(demandHistory.count)
-        let demandMean = demandHistory.reduce(0.0, +) / n
-        let demandVariance = demandHistory.map { ($0 - demandMean) * ($0 - demandMean) }
-            .reduce(0.0, +) / (n - 1)
-        let demandStdDev = demandVariance > 0 ? Foundation.sqrt(demandVariance) : 0.0
+        let demandMean = mean(demandHistory)
+        let demandStdDev = stdDev(demandHistory)
 
         var ddltValues: [Double] = []
         ddltValues.reserveCapacity(iterations)
