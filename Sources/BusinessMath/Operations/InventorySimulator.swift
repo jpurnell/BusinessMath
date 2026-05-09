@@ -151,14 +151,21 @@ public struct InventorySimulator: Sendable {
 
     // MARK: - Private helpers
 
+    private static func normalSample<G: RandomNumberGenerator>(
+        mean: Double = 0.0, stdDev: Double = 1.0, using rng: inout G
+    ) -> Double {
+        let u1 = Double.random(in: Double.leastNonzeroMagnitude..<1.0, using: &rng)
+        let u2 = Double.random(in: 0.0..<1.0, using: &rng)
+        return distributionNormal(mean: mean, stdDev: stdDev, u1, u2)
+    }
+
     private static func sampleLeadTime<G: RandomNumberGenerator>(
         mean: Double, stdDev: Double, using rng: inout G
     ) -> Int {
         guard stdDev > 0 else {
             return max(1, Int(mean.rounded()))
         }
-        let z = sampleStandardNormal(using: &rng)
-        let lt = mean + stdDev * z
+        let lt = normalSample(mean: mean, stdDev: stdDev, using: &rng)
         return max(1, Int(lt.rounded()))
     }
 
@@ -177,17 +184,10 @@ public struct InventorySimulator: Sendable {
                 let idx = Int.random(in: 0..<history.count, using: &rng)
                 total += max(0, history[idx])
             case .normal:
-                let z = sampleStandardNormal(using: &rng)
-                total += max(0, mean + stdDev * z)
+                total += max(0, normalSample(mean: mean, stdDev: stdDev, using: &rng))
             }
         }
         return total
-    }
-
-    private static func sampleStandardNormal<G: RandomNumberGenerator>(using rng: inout G) -> Double {
-        let u1 = Double.random(in: Double.leastNonzeroMagnitude..<1.0, using: &rng)
-        let u2 = Double.random(in: 0.0..<1.0, using: &rng)
-        return Foundation.sqrt(-2.0 * Foundation.log(u1)) * Foundation.cos(2.0 * .pi * u2)
     }
 
     private static func strategyLabel(_ strategy: SamplingStrategy) -> String {
