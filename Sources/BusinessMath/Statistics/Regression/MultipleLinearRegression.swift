@@ -341,13 +341,14 @@ public func multipleLinearRegression(
     let tStatistics = zip(beta, standardErrors).map { $0 / $1 }
 
     // Compute p-values using t-distribution (two-tailed)
-    let pValues = tStatistics.map { t in
-        2.0 * (1.0 - tCDF(abs(t), df: degreesOfFreedom))
+    let pValues = tStatistics.map { tStat in
+        let cdf = (try? tCDF(t: abs(tStat), df: degreesOfFreedom)) ?? 0.5
+        return 2.0 * (1.0 - cdf)
     }
 
     // MARK: - Compute Confidence Intervals
 
-    let tCritical = tQuantile(1.0 - (1.0 - confidenceLevel) / 2.0, df: degreesOfFreedom)
+    let tCritical = (try? tQuantile(p: 1.0 - (1.0 - confidenceLevel) / 2.0, df: degreesOfFreedom)) ?? 1.96
     let confidenceIntervals = zip(beta, standardErrors).map { coef, se in
         // Handle perfect fit case where se ≈ 0
         if se < 1e-15 || !tCritical.isFinite {
@@ -365,7 +366,7 @@ public func multipleLinearRegression(
     let fStatistic = MSR / MSE
 
     // Compute p-value for F-statistic
-    let fStatisticPValue = 1.0 - fCDF(fStatistic, df1: p, df2: degreesOfFreedom)
+    let fStatisticPValue = 1.0 - ((try? fCDF(f: fStatistic, df1: p, df2: degreesOfFreedom)) ?? 0.0)
 
     // MARK: - Compute VIF (Variance Inflation Factors)
 
@@ -459,93 +460,6 @@ private func computeInverse(_ matrix: [[Double]], backend: any MatrixBackend) th
     return result
 }
 
-/// Cumulative distribution function for t-distribution
-///
-/// Approximation using normal distribution for large df
-private func tCDF(_ t: Double, df: Int) -> Double {
-    if df > 100 {
-        // For large df, t-distribution ≈ normal distribution
-        return normalCDF(t)
-    }
-
-    // Simple approximation for small df
-    // In production, would use proper incomplete beta function
-    let x = Double(df) / (Double(df) + t * t)
-    let p = 0.5 * (1.0 + (t > 0 ? 1.0 : -1.0) * sqrt(1.0 - pow(x, Double(df) / 2.0)))
-    return p
-}
-
-/// Quantile function for t-distribution (inverse CDF)
-private func tQuantile(_ p: Double, df: Int) -> Double {
-    if df > 100 {
-        return normalQuantile(p)
-    }
-
-    // Approximation using Newton's method
-    var t = normalQuantile(p)  // Start with normal approximation
-    for _ in 0..<5 {
-        let cdf = tCDF(t, df: df)
-        let pdf = exp(-0.5 * t * t) / sqrt(2.0 * .pi)  // Approximate
-        t = t - (cdf - p) / pdf
-    }
-    return t
-}
-
-/// Normal CDF using erf approximation
-private func normalCDF(_ x: Double) -> Double {
-    return 0.5 * (1.0 + erf(x / sqrt(2.0)))
-}
-
-/// Normal quantile (inverse CDF)
-private func normalQuantile(_ p: Double) -> Double {
-    // Beasley-Springer-Moro approximation
-    let a = [2.50662823884, -18.61500062529, 41.39119773534, -25.44106049637]
-    let b = [-8.47351093090, 23.08336743743, -21.06224101826, 3.13082909833]
-    let c = [0.3374754822726147, 0.9761690190917186, 0.1607979714918209,
-             0.0276438810333863, 0.0038405729373609, 0.0003951896511919,
-             0.0000321767881768, 0.0000002888167364, 0.0000003960315187]
-
-    let y = p - 0.5
-
-    if abs(y) < 0.42 {
-        let r = y * y
-        var x = y
-        for i in 0..<4 {
-            x = y * (a[i] + r * x) / (1.0 + r * (b[i] + r))
-        }
-        return x
-    }
-
-    var r = p
-    if y > 0 {
-        r = 1.0 - p
-    }
-    r = log(-log(r))
-
-    var x = c[0]
-    for i in 1..<c.count {
-        x = c[i] + r * x
-    }
-
-    if y < 0 {
-        x = -x
-    }
-    return x
-}
-
-/// F-distribution CDF (approximate)
-private func fCDF(_ f: Double, df1: Int, df2: Int) -> Double {
-    // Approximation: transform to beta distribution
-    let x = Double(df2) / (Double(df2) + Double(df1) * f)
-
-    // Simple beta CDF approximation
-    // In production, would use proper incomplete beta function
-    if x < 0.5 {
-        return 1.0 - pow(x, Double(df2) / 2.0)
-    } else {
-        return pow(1.0 - x, Double(df1) / 2.0)
-    }
-}
 
 // MARK: - Convenience Functions
 
