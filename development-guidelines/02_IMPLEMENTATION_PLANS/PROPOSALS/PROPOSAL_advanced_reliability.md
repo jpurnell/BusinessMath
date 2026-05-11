@@ -1447,9 +1447,78 @@ Tests/BusinessMathTests/Statistics Tests/
 13. Any empty subgroup: throws `insufficientData`
 14. Negative variance component: truncated to zero, not negative
 
-**GREEN:** Implement the balanced-case first, then extend to unbalanced with harmonic means.
+### Multi-Level Extension (3+ levels)
 
-**REFACTOR:** Extract weighted-mean-of-group-sizes calculation for reuse.
+For deeper hierarchies (e.g., students -> classrooms -> schools -> districts), use a recursive decomposition:
+
+```
+SS_total = SS_level1 + SS_level2(within level1) + SS_level3(within level2) + ... + SS_within
+```
+
+API extension:
+```swift
+/// Result of a multi-level nested ANOVA.
+public struct MultiLevelNestedANOVAResult<T: Real>: Sendable, Equatable {
+    /// Sum of squares at each nesting level, from outermost to innermost.
+    public let ssLevels: [T]
+    /// Mean squares at each level.
+    public let msLevels: [T]
+    /// Degrees of freedom at each level.
+    public let dfLevels: [Int]
+    /// F-statistics: each level tested against the level below it.
+    public let fStatistics: [T]
+    /// P-values for each F-test.
+    public let pValues: [T]
+    /// Variance components extracted from each level.
+    public let varianceComponents: [T]
+    /// Number of nesting levels (including the within-group level).
+    public let levels: Int
+}
+
+/// Multi-level nested ANOVA for arbitrarily deep hierarchies.
+///
+/// Input is a nested array where each level of nesting corresponds to
+/// a grouping factor. For example, `data[school][classroom][student]`
+/// for a three-level design.
+///
+/// - Parameter data: Nested arrays. The innermost arrays contain observations.
+/// - Returns: Multi-level ANOVA result with SS, MS, df, F, and p at each level.
+/// - Throws: `BusinessMathError.insufficientData` if fewer than 2 groups at any level.
+public func multiLevelNestedANOVA<T: Real>(_ data: [Any]) throws -> MultiLevelNestedANOVAResult<T>
+```
+
+Note: The `[Any]` signature is a placeholder — in Swift, this would need to be implemented as a recursive generic or use a tree structure:
+```swift
+/// A node in a nested data hierarchy.
+public indirect enum NestedData<T: Real>: Sendable {
+    case observations([T])
+    case group([NestedData<T>])
+}
+
+public func multiLevelNestedANOVA<T: Real>(_ data: NestedData<T>) throws -> MultiLevelNestedANOVAResult<T>
+```
+
+Algorithm (recursive):
+1. If data is `.observations(values)`: base case — return values for computing within-group SS
+2. If data is `.group(children)`:
+   - Recursively compute results for each child
+   - Compute the between-group SS at this level: n_j x Sigma(mean_j - grandMean)^2
+   - The within-group SS is the sum of total SS from all children
+   - F-test: MS_between / MS_nextLevelDown
+   - Variance component: (MS_this - MS_below) / n_effective
+
+Additional test cases for multi-level extension:
+15. Three-level hierarchy: schools[2] -> classrooms[3 each] -> students[5 each]
+16. Verify SS decomposition: sum of all level SS = total SS
+17. Verify df decomposition: sum of all level df = N - 1
+18. Single level -> equivalent to one-way ANOVA
+19. Four-level hierarchy produces correct number of variance components
+
+Estimated additional effort: ~80 lines source, ~5 test cases.
+
+**GREEN:** Implement the balanced-case first, then extend to unbalanced with harmonic means. Add recursive multi-level support after the two-level case is stable.
+
+**REFACTOR:** Extract weighted-mean-of-group-sizes calculation for reuse. Ensure the recursive `NestedData` decomposition shares the same SS/MS/df logic as the two-level implementation.
 
 ### Phase 8: REML Variance Components
 
@@ -1556,9 +1625,57 @@ Tests/BusinessMathTests/Statistics Tests/
 28. Known drift pattern: rolling bias shows trend
 29. Window < 2: throws `invalidInput`
 
-**GREEN:** Implement kernel weight computation, then compose with existing weighted CCC/B-A. Rolling functions iterate over windows.
+### Automated Bandwidth Selection
 
-**REFACTOR:** Consider shared infrastructure for rolling computations (generic rolling window function).
+Two approaches, from simple to sophisticated:
+
+**Silverman's rule of thumb (for Gaussian kernel):**
+```
+h = 0.9 * min(sigma, IQR/1.34) * n^{-1/5}
+```
+where sigma is the sample standard deviation and IQR is the interquartile range.
+
+**Leave-one-out cross-validation (LOOCV):**
+Minimize the integrated squared error by choosing h that minimizes:
+```
+CV(h) = (1/n) * Sigma_i [f_hat_{-i}(x_i)]^2 - (2/n) * Sigma_i f_hat_{-i}(x_i) + constant
+```
+where `f_hat_{-i}` is the kernel density estimate leaving out observation i.
+
+For kernel-weighted agreement specifically, the bandwidth controls the width of the "window" in measurement space. The CV criterion should be adapted: choose h that minimizes the prediction error of the kernel-weighted CCC profile.
+
+API:
+```swift
+/// Bandwidth selection method for kernel-weighted statistics.
+public enum BandwidthMethod: Sendable {
+    /// Silverman's rule of thumb (fast, assumes approximate normality).
+    case silverman
+    /// Leave-one-out cross-validation (slower, data-adaptive).
+    case crossValidation
+}
+
+/// Select an optimal bandwidth for kernel-weighted agreement statistics.
+///
+/// - Parameters:
+///   - values: The measurement values over which agreement varies.
+///   - method: The selection method (default: Silverman's rule).
+/// - Returns: The selected bandwidth.
+public func selectBandwidth<T: Real>(
+    _ values: [T], method: BandwidthMethod = .silverman
+) throws -> T
+```
+
+Additional test cases for bandwidth selection:
+30. Silverman bandwidth for N(0,1) data approximately equals 0.9 * n^{-1/5}
+31. CV bandwidth adapts to bimodal data (wider than Silverman)
+32. Larger n -> smaller bandwidth
+33. Empty/single-element -> throws `insufficientData`
+
+Estimated additional effort: ~50 lines source (Silverman is ~15, LOOCV is ~35), ~4 test cases.
+
+**GREEN:** Implement kernel weight computation, then compose with existing weighted CCC/B-A. Rolling functions iterate over windows. Add Silverman bandwidth selection first, then LOOCV.
+
+**REFACTOR:** Consider shared infrastructure for rolling computations (generic rolling window function). Ensure `selectBandwidth` is composable with `kernelWeightedCCC` and `cccProfile`.
 
 ---
 
@@ -1568,11 +1685,11 @@ Tests/BusinessMathTests/Statistics Tests/
 |-------|-----------|----------------|------------|------------------|
 | 5: ICC Missing Data | 1 source + 1 test | ~200 | ~13 | 2 sessions |
 | 6: G-Theory | 6 source + 2 test | ~300 | ~20 | 2–3 sessions |
-| 7: Nested ANOVA | 1 source + 1 test | ~150 | ~14 | 1–2 sessions |
+| 7: Nested ANOVA | 1 source + 1 test | ~230 | ~19 | 2 sessions |
 | 8: REML | 3 source + 2 test | ~250 | ~14 | 2 sessions |
 | 9: Robust Weighted | 5 source + 4 test | ~200 | ~22 | 1–2 sessions |
-| 10: Kernel/Time-Varying | 4 source + 3 test | ~250 | ~29 | 2 sessions |
-| **Total** | **20 source + 13 test** | **~1,350** | **~112** | **10–14 sessions** |
+| 10: Kernel/Time-Varying | 4 source + 3 test | ~300 | ~33 | 2–3 sessions |
+| **Total** | **20 source + 13 test** | **~1,480** | **~121** | **11–15 sessions** |
 
 ---
 
@@ -1664,8 +1781,6 @@ Tests/BusinessMathTests/Statistics Tests/
 ## Not In Scope
 
 - Mixed-effects regression with covariates (e.g., modeling agreement as a function of patient age)
-- Multi-level nested ANOVA with more than two levels of nesting
 - G-theory for more than two facets (three or more facets require automated EMS rule generation)
 - Bayesian variance component estimation (Gibbs sampling for mixed models)
 - Heterogeneous within-subject variance models (different sigma_e per subject)
-- Automated bandwidth selection for kernel-weighted agreement (e.g., cross-validation)
