@@ -32,7 +32,7 @@ import Numerics
 ///
 /// Use this function when you need to compute the p-value using Student's t-distribution in order to determine the
 /// significance of your results.
-
+@available(*, deprecated, message: "Misnamed: computes t-distribution PDF, not a p-value. Use studentTPDF(t:df:) for PDF or tPValue(t:df:) for actual p-value")
 public func pValueStudent<T: Real>(_ tValue: T, dFr: T) -> T {
     let rhoTop = T.gamma((dFr + 1) / T(2))
     let rhoBot = T.sqrt(dFr * T.pi) * T.gamma(dFr / T(2))

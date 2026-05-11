@@ -31,6 +31,7 @@ import Numerics
 ///     print(result)
 ///
 /// Use this function when you need to compute the p-value to test the statistical significance of your hypothesis.
+@available(*, deprecated, message: "Returns t-distribution PDF, not a p-value. Use tPValue(t:df:) with tStatistic for actual p-value")
 public func pValue<T: Real>(_ independent: [T], _ variable: [T]) throws -> T {
 	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
     return try pValueStudent(tStatistic(independent, variable), dFr: T(independent.count - 2))
