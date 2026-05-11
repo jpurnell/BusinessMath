@@ -21,7 +21,7 @@ import Numerics
 /// print("Dependability: \(dResult.dependabilityCoefficient)")
 /// print("SEM: \(dResult.standardErrorOfMeasurement)")
 /// ```
-public struct DStudyResult<T: Real>: Sendable, Equatable {
+public struct DStudyResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Generalizability coefficient (rho-squared) for relative decisions.
 	///
 	/// Analogous to ICC consistency; reflects reliability when ranking persons.

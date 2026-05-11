@@ -125,7 +125,7 @@ public struct WellProductionProfile: Sendable {
 /// )
 ///
 /// let prices = TimeSeries(periods: periods, values: [70.0, 72.0, 68.0])
-/// let integration = model.project(periods: periods, commodityPrices: prices)
+/// let integration = try model.project(periods: periods, commodityPrices: prices)
 /// ```
 public struct OilGasEPModel: Sendable {
 
@@ -208,7 +208,7 @@ public struct OilGasEPModel: Sendable {
     public func project(
         periods: [Period],
         commodityPrices: TimeSeries<Double>
-    ) -> StatementIntegration<Double> {
+    ) throws -> StatementIntegration<Double> {
         // Compute per-period values
         var revenueValues: [Double] = []
         var loeValues: [Double] = []
@@ -297,59 +297,18 @@ public struct OilGasEPModel: Sendable {
             retainedEarningsValues.append(runningRE)
         }
 
-        // Build accounts and statements
-        // Using do/catch to handle throwing Account inits safely
-        // Since we control all inputs, these should not fail, but we handle gracefully
-
-        let integration: StatementIntegration<Double>
-        do {
-            integration = try buildStatements(
-                periods: periods,
-                revenueValues: revenueValues,
-                loeValues: loeValues,
-                ddaValues: ddaValues,
-                gaValues: gaValues,
-                taxValues: taxValues,
-                cashValues: cashValues,
-                ppeValues: ppeValues,
-                retainedEarningsValues: retainedEarningsValues,
-                netIncomeValues: netIncomeValues
-            )
-        } catch {
-            // Fallback: return empty statements if account creation fails
-            // This should not happen with valid inputs
-            let emptyTS = TimeSeries<Double>(periods: periods, values: Array(repeating: 0.0, count: periods.count))
-            let fallbackAccount = try? Account<Double>(
-                entity: entity,
-                name: "Fallback",
-                incomeStatementRole: .revenue,
-                timeSeries: emptyTS
-            )
-            let fallbackBSAccount = try? Account<Double>(
-                entity: entity,
-                name: "Fallback Asset",
-                balanceSheetRole: .cashAndEquivalents,
-                timeSeries: emptyTS
-            )
-            let fallbackCFAccount = try? Account<Double>(
-                entity: entity,
-                name: "Fallback CF",
-                cashFlowRole: .netIncome,
-                timeSeries: emptyTS
-            )
-
-            let is_ = try? IncomeStatement(entity: entity, periods: periods, accounts: [fallbackAccount].compactMap { $0 })
-            let bs_ = try? BalanceSheet(entity: entity, periods: periods, accounts: [fallbackBSAccount].compactMap { $0 })
-            let cf_ = try? CashFlowStatement(entity: entity, periods: periods, accounts: [fallbackCFAccount].compactMap { $0 })
-
-            if let is_ = is_, let bs_ = bs_, let cf_ = cf_ {
-                return StatementIntegration(incomeStatement: is_, balanceSheet: bs_, cashFlowStatement: cf_)
-            }
-            // Last resort - this path should never be reached
-            fatalError("Failed to create fallback statements: \(error)")
-        }
-
-        return integration
+        return try buildStatements(
+            periods: periods,
+            revenueValues: revenueValues,
+            loeValues: loeValues,
+            ddaValues: ddaValues,
+            gaValues: gaValues,
+            taxValues: taxValues,
+            cashValues: cashValues,
+            ppeValues: ppeValues,
+            retainedEarningsValues: retainedEarningsValues,
+            netIncomeValues: netIncomeValues
+        )
     }
 
     // MARK: - Private Helpers

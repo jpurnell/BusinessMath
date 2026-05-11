@@ -27,7 +27,7 @@ import Numerics
 /// print(result.varianceBetween)  // sigma_u^2
 /// print(result.varianceWithin)   // sigma_e^2
 /// ```
-public struct REMLResult<T: Real>: Sendable, Equatable {
+public struct REMLResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Between-group variance component (sigma_u^2).
 	public let varianceBetween: T
 

@@ -20,7 +20,7 @@ import Numerics
 ///     meanSquare: 15.0
 /// )
 /// ```
-public struct VarianceComponent<T: Real>: Sendable, Equatable {
+public struct VarianceComponent<T: Real & Sendable>: Sendable, Equatable {
 	/// The source of variation (e.g., "p", "raters", "p x raters").
 	public let source: String
 
