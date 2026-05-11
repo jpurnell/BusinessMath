@@ -29,6 +29,7 @@ import Numerics
 ///    print(result)
 ///
 /// Use this function when you need to find the probability of a random variable from a chi-squared distribution being less than or equal to `x`.
+@available(*, deprecated, message: "Use chiSquaredCDF(x:df:) instead — this implementation is incorrect (CDF ≠ 1 - PDF)")
 public func chi2cdf<T: Real>(x: T, dF: Int) -> T {
     return 1 - chi2pdf(x: x, dF: dF)
 }
