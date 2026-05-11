@@ -19,7 +19,7 @@ import Numerics
 ///     print("\(comp.source): \(comp.variance) (\(comp.percentOfTotal)%)")
 /// }
 /// ```
-public struct GStudyResult<T: Real>: Sendable, Equatable {
+public struct GStudyResult<T: Real & Sendable>: Sendable, Equatable {
 	/// The estimated variance components, one per source of variation.
 	public let components: [VarianceComponent<T>]
 

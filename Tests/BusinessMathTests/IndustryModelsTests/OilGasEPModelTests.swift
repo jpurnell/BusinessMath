@@ -89,7 +89,7 @@ struct OilGasEPModelTests {
     }
 
     @Test("Single well fixed price revenue equals production times price times days")
-    func revenueCalculation() {
+    func revenueCalculation() throws {
         let model = makeModel()
         let fixedPrice: Double = 70.0
         let prices = TimeSeries<Double>(
@@ -97,7 +97,7 @@ struct OilGasEPModelTests {
             values: [fixedPrice, fixedPrice, fixedPrice]
         )
 
-        let integration = model.project(periods: periods, commodityPrices: prices)
+        let integration = try model.project(periods: periods, commodityPrices: prices)
         let revenue = integration.incomeStatement.totalRevenue
 
         // January: 100 BOEPD * 31 days * $70 = $217,000
@@ -112,14 +112,14 @@ struct OilGasEPModelTests {
     }
 
     @Test("LOE equals total production times per-BOE cost")
-    func loeCalculation() {
+    func loeCalculation() throws {
         let model = makeModel()
         let prices = TimeSeries<Double>(
             periods: periods,
             values: [70.0, 70.0, 70.0]
         )
 
-        let integration = model.project(periods: periods, commodityPrices: prices)
+        let integration = try model.project(periods: periods, commodityPrices: prices)
 
         // LOE is cost of goods sold in this model
         let costOfRevenue = integration.incomeStatement.costOfRevenueAccounts
@@ -137,14 +137,14 @@ struct OilGasEPModelTests {
     }
 
     @Test("DD&A equals depreciation rate times PP&E")
-    func ddaCalculation() {
+    func ddaCalculation() throws {
         let model = makeModel()
         let prices = TimeSeries<Double>(
             periods: periods,
             values: [70.0, 70.0, 70.0]
         )
 
-        let integration = model.project(periods: periods, commodityPrices: prices)
+        let integration = try model.project(periods: periods, commodityPrices: prices)
         let nonCashAccounts = integration.incomeStatement.nonCashChargeAccounts
         #expect(!nonCashAccounts.isEmpty)
 
@@ -160,14 +160,14 @@ struct OilGasEPModelTests {
     }
 
     @Test("Net income equals revenue minus all expenses minus taxes")
-    func netIncomeCalculation() {
+    func netIncomeCalculation() throws {
         let model = makeModel()
         let prices = TimeSeries<Double>(
             periods: periods,
             values: [70.0, 70.0, 70.0]
         )
 
-        let integration = model.project(periods: periods, commodityPrices: prices)
+        let integration = try model.project(periods: periods, commodityPrices: prices)
         let netIncome = integration.incomeStatement.netIncome
 
         // January calculation:
@@ -184,7 +184,7 @@ struct OilGasEPModelTests {
     }
 
     @Test("Hedging settlements integrate into revenue")
-    func hedgingIntegration() {
+    func hedgingIntegration() throws {
         var program = HedgingProgram<Double>()
         program.addSwap(CommoditySwap(
             underlier: "WTI",
@@ -202,7 +202,7 @@ struct OilGasEPModelTests {
             values: [70.0, 70.0, 70.0]
         )
 
-        let integration = model.project(periods: periods, commodityPrices: prices)
+        let integration = try model.project(periods: periods, commodityPrices: prices)
         let revenue = integration.incomeStatement.totalRevenue
 
         // January revenue with hedge: 100 * 31 * 70 + 5000 = 222,000
@@ -212,14 +212,14 @@ struct OilGasEPModelTests {
     }
 
     @Test("Three-statement output produces valid StatementIntegration")
-    func validStatementIntegration() {
+    func validStatementIntegration() throws {
         let model = makeModel()
         let prices = TimeSeries<Double>(
             periods: periods,
             values: [70.0, 70.0, 70.0]
         )
 
-        let integration = model.project(periods: periods, commodityPrices: prices)
+        let integration = try model.project(periods: periods, commodityPrices: prices)
 
         // Verify all three statements exist with correct periods
         #expect(integration.incomeStatement.periods.count == 3)
@@ -241,7 +241,7 @@ struct OilGasEPModelTests {
     }
 
     @Test("Zero production produces zero revenue and LOE")
-    func zeroProduction() {
+    func zeroProduction() throws {
         let zeroRates = TimeSeries<Double>(
             periods: periods,
             values: [0.0, 0.0, 0.0]
@@ -266,7 +266,7 @@ struct OilGasEPModelTests {
             values: [70.0, 70.0, 70.0]
         )
 
-        let integration = model.project(periods: periods, commodityPrices: prices)
+        let integration = try model.project(periods: periods, commodityPrices: prices)
         let revenue = integration.incomeStatement.totalRevenue
 
         // Zero production means zero revenue
