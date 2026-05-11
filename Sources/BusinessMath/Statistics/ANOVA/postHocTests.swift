@@ -312,7 +312,9 @@ public func tukeyHSD<T: Real>(
 				// Tukey-Kramer: SE = sqrt(MSE/2 × (1/n_i + 1/n_j))
 				let ni = T(groups[i].count)
 				let nj = T(groups[j].count)
-				se = T.sqrt(mse / T(2) * (T(1) / ni + T(1) / nj))
+				let halfMSE = mse / T(2)
+				let recipSum = T(1) / ni + T(1) / nj
+				se = T.sqrt(halfMSE * recipSum)
 			}
 
 			guard se > T.zero else {
