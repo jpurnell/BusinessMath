@@ -473,9 +473,11 @@ private func computeLogLikelihood<T: Real>(
 
 	let nT = T(nObs)
 	let twoPi = T(2) * T.pi
-	let logLikelihood = -(nT / T(2)) * T.log(twoPi)
-		- (nT / T(2)) * T.log(totalVar)
-		- (T(1) / T(2)) * sumSquared / totalVar
+	let halfN = nT / T(2)
+	let term1 = -halfN * T.log(twoPi)
+	let term2 = -halfN * T.log(totalVar)
+	let term3 = -(T(1) / T(2)) * sumSquared / totalVar
+	let logLikelihood = term1 + term2 + term3
 
 	return logLikelihood
 }
