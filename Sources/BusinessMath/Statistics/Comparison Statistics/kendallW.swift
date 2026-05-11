@@ -238,8 +238,9 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
     let df = n - 1
 
     let sigmaVal = sigma(rankSums: rankSums)
-    let friedman = max(T(0),
-        (T(12) / (mT * nT * (nT + T(1)))) * sigmaVal - T(3) * mT * (nT + T(1)))
+    let friedCoeff = T(12) / (mT * nT * (nT + T(1)))
+    let friedSub = T(3) * mT * (nT + T(1))
+    let friedman = max(T(0), friedCoeff * sigmaVal - friedSub)
 
     let pValue: T
     if chi2 > T(0) && df > 0 {
@@ -292,8 +293,9 @@ public func concordanceAnalysisFromRankSums<T: Real & Sendable>(
     let df = items - 1
 
     let sigmaVal = sigma(rankSums: rankSums)
-    let friedman = max(T(0),
-        (T(12) / (m * n * (n + T(1)))) * sigmaVal - T(3) * m * (n + T(1)))
+    let friedCoeff = T(12) / (m * n * (n + T(1)))
+    let friedSub = T(3) * m * (n + T(1))
+    let friedman = max(T(0), friedCoeff * sigmaVal - friedSub)
 
     let pValue: T
     if chi2 > T(0) && df > 0 {
