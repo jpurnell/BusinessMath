@@ -90,7 +90,9 @@ private func continuedFractionBeta<T: Real>(x: T, a: T, b: T) -> T {
 		h *= d * c
 
 		// Odd-indexed coefficient: -(a+m)*(a+b+m)*x / ((a+2m)*(a+2m+1))
-		aa = -(a + mT) * (qab + mT) * x / ((a + m2) * (qap + m2))
+		let numerOdd = -(a + mT) * (qab + mT) * x
+		let denomOdd = (a + m2) * (qap + m2)
+		aa = numerOdd / denomOdd
 
 		d = T(1) + aa * d
 		if abs(d) < tiny { d = tiny }
