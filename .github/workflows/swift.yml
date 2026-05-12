@@ -115,7 +115,7 @@ jobs:
           swift --version
 
       - name: Release build (SPM)
-        run: swift build -c release
+        run: swift build -c release -Xswiftc -Xfrontend -Xswiftc -solver-expression-time-threshold=500
 
       - name: Prepare ephemeral Xcode workspace
         shell: bash
@@ -185,7 +185,7 @@ jobs:
       - name: Release build (Linux)
         run: |
           set -euo pipefail
-          swift build -c release -v
+          swift build -c release -Xswiftc -Xfrontend -Xswiftc -solver-expression-time-threshold=500 -v
 
       - name: Compile tests (Linux, debug with enable-testing)
         run: |
