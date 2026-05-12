@@ -378,12 +378,11 @@ private func glsEstimate<T: Real>(
 
 	// REML log-likelihood
 	let Nmp = T(N - p)
-	let logLik = T(-1) / T(2) * (
-		Nmp * T.log(T(2) * T.pi)
+	let logLikBody: T = Nmp * T.log(T(2) * T.pi)
 		+ logDetV
 		+ logDetXtVinvX
 		+ quadForm
-	)
+	let logLik: T = T(-1) / T(2) * logLikBody
 
 	return GLSResult(beta: beta, remlLogLik: logLik)
 }
@@ -423,24 +422,27 @@ private func fisherScoringUpdate<T: Real>(
 
 		// Score for sigma_e²:
 		// S_e = -1/2 * [(ni-1)/sigmaE2 + 1/ai - ssWithin/sigmaE2² - sumResid²/ai²]
-		scoreE += T(-1) / T(2) * (
-			(nig - T(1)) / sigmaE2
-			+ T(1) / ai
-			- ssWithin / (sigmaE2 * sigmaE2)
-			- sumResid * sumResid / ai2
-		)
+		let termA: T = (nig - T(1)) / sigmaE2
+		let termB: T = T(1) / ai
+		let sigmaE2sq: T = sigmaE2 * sigmaE2
+		let termC: T = ssWithin / sigmaE2sq
+		let termD: T = sumResid * sumResid / ai2
+		let scoreEBody: T = termA + termB - termC - termD
+		scoreE += T(-1) / T(2) * scoreEBody
 
 		// Score for sigma_u²:
 		// S_u = -1/2 * [ni/ai - ni² * rbar² / ai²]
 		// where rbar = sumResid / ni
-		scoreU += T(-1) / T(2) * (
-			nig / ai
-			- nig * nig * (sumResid / nig) * (sumResid / nig) / ai2
-		)
+		let rbar: T = sumResid / nig
+		let scoreUterm1: T = nig / ai
+		let scoreUterm2: T = nig * nig * rbar * rbar / ai2
+		scoreU += T(-1) / T(2) * (scoreUterm1 - scoreUterm2)
 
 		// Fisher information entries
 		let e4 = sigmaE2 * sigmaE2 * sigmaE2 * sigmaE2
-		I11 += T(1) / T(2) * ((nig - T(1)) / (sigmaE2 * sigmaE2) + T(1) / ai2)
+		let i11TermA: T = (nig - T(1)) / sigmaE2sq
+		let i11TermB: T = T(1) / ai2
+		I11 += T(1) / T(2) * (i11TermA + i11TermB)
 		I22 += T(1) / T(2) * (nig * nig / ai2)
 		I12 += T(1) / T(2) * (nig / ai2)
 	}

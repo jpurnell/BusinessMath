@@ -566,12 +566,11 @@ private func generalGLSEstimate<T: Real>(
 
 	// REML log-likelihood
 	let Nmp = T(N - p)
-	let logLik = T(-1) / T(2) * (
-		Nmp * T.log(T(2) * T.pi)
+	let logLikBody: T = Nmp * T.log(T(2) * T.pi)
 		+ logDetV
 		+ logDetXtVinvX
 		+ quadForm
-	)
+	let logLik: T = T(-1) / T(2) * logLikBody
 
 	return GeneralGLSResult(beta: beta, remlLogLik: logLik)
 }
@@ -817,7 +816,9 @@ private func generalAIREMLUpdate<T: Real>(
 		for localIdx in 0..<nig { trPdV0 += pMat[localIdx][localIdx] }
 		var rPdVPr0 = T.zero
 		for localIdx in 0..<nig { rPdVPr0 += pR[localIdx] * pR[localIdx] }
-		score[0] += T(-1) / T(2) * trPdV0 + T(1) / T(2) * rPdVPr0
+		let score0term1: T = T(-1) / T(2) * trPdV0
+		let score0term2: T = T(1) / T(2) * rPdVPr0
+		score[0] += score0term1 + score0term2
 		for localIdx in 0..<nig { dvPr[0][localIdx] = pR[localIdx] }
 
 		// --- G parameters: dV/dG[a,b] = Z[:,a] Z[:,b]' + Z[:,b] Z[:,a]' (for a != b)
@@ -862,7 +863,9 @@ private func generalAIREMLUpdate<T: Real>(
 
 			var rPdVPr = T.zero
 			for localIdx in 0..<nig { rPdVPr += pR[localIdx] * dvPr[thetaIdx][localIdx] }
-			score[thetaIdx] += T(-1) / T(2) * trPdV + T(1) / T(2) * rPdVPr
+			let scoreTterm1: T = T(-1) / T(2) * trPdV
+			let scoreTterm2: T = T(1) / T(2) * rPdVPr
+			score[thetaIdx] += scoreTterm1 + scoreTterm2
 		}
 
 		// Average Information matrix
