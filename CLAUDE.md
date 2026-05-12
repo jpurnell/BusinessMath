@@ -38,6 +38,14 @@ For quick recovery (same-day, simple bug fixes), read only items 4-5.
 
 Run `swift build` and `swift test` before every commit. All checks must pass.
 
+Before pushing, verify generic expression complexity won't timeout on CI:
+```
+swift build -Xswiftc -Xfrontend -Xswiftc -solver-expression-time-threshold=500
+```
+This catches the #1 recurring CI failure: compound generic arithmetic that compiles
+locally (Swift 6.3) but times out on CI (Swift 6.0.3 / Xcode 16.x). See Section 10
+of `01_CODING_RULES.md` for the 3-operator-per-expression rule.
+
 ## References
 
 - Full guidelines: `./development-guidelines/README.md`
