@@ -74,7 +74,9 @@ public func rHatStatistic<T: Real>(_ chains: [[T]]) -> T? where T: BinaryFloatin
     }
 
     // Estimated variance
-    let varHat = ((nT - T(1)) / nT) * w + (T(1) / nT) * b
+    let withinWeight: T = (nT - T(1)) / nT
+    let betweenWeight: T = T(1) / nT
+    let varHat: T = withinWeight * w + betweenWeight * b
 
     return T.sqrt(varHat / w)
 }

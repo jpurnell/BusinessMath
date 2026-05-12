@@ -577,12 +577,11 @@ private func slopeGLSEstimate<T: Real>(
 
 	// REML log-likelihood
 	let Nmp = T(N - p)
-	let logLik = T(-1) / T(2) * (
-		Nmp * T.log(T(2) * T.pi)
+	let logLikBody: T = Nmp * T.log(T(2) * T.pi)
 		+ logDetV
 		+ logDetXtVinvX
 		+ quadForm
-	)
+	let logLik: T = T(-1) / T(2) * logLikBody
 
 	return SlopeGLSResult(beta: beta, remlLogLik: logLik)
 }
@@ -844,7 +843,9 @@ private func slopeAIREMLUpdate<T: Real>(
 		for localIdx in 0..<nig {
 			rPdVPr0 += pR[localIdx] * pR[localIdx]
 		}
-		score[0] += T(-1) / T(2) * trP + T(1) / T(2) * rPdVPr0
+		let score0term1: T = T(-1) / T(2) * trP
+		let score0term2: T = T(1) / T(2) * rPdVPr0
+		score[0] += score0term1 + score0term2
 		// dV[0] * P * r = I * pR = pR
 		for localIdx in 0..<nig {
 			dvPr[0][localIdx] = pR[localIdx]
@@ -867,7 +868,9 @@ private func slopeAIREMLUpdate<T: Real>(
 			dvPr[1][localIdx] = cache.zi[localIdx][0] * z0TpR
 			rPdVPr1 += pR[localIdx] * dvPr[1][localIdx]
 		}
-		score[1] += T(-1) / T(2) * trPdV1 + T(1) / T(2) * rPdVPr1
+		let score1term1: T = T(-1) / T(2) * trPdV1
+		let score1term2: T = T(1) / T(2) * rPdVPr1
+		score[1] += score1term1 + score1term2
 
 		// --- Parameter 2: g11, dV/d(g11) = z1 z1' ---
 		var trPdV2 = T.zero
@@ -887,7 +890,9 @@ private func slopeAIREMLUpdate<T: Real>(
 		for localIdx in 0..<nig {
 			rPdVPr2 += pR[localIdx] * dvPr[2][localIdx]
 		}
-		score[2] += T(-1) / T(2) * trPdV2 + T(1) / T(2) * rPdVPr2
+		let score2term1: T = T(-1) / T(2) * trPdV2
+		let score2term2: T = T(1) / T(2) * rPdVPr2
+		score[2] += score2term1 + score2term2
 
 		// --- Parameter 3: g01, dV/d(g01) = z0 z1' + z1 z0' ---
 		var trPdV3 = T.zero
@@ -905,7 +910,9 @@ private func slopeAIREMLUpdate<T: Real>(
 		for localIdx in 0..<nig {
 			rPdVPr3 += pR[localIdx] * dvPr[3][localIdx]
 		}
-		score[3] += T(-1) / T(2) * trPdV3 + T(1) / T(2) * rPdVPr3
+		let score3term1: T = T(-1) / T(2) * trPdV3
+		let score3term2: T = T(1) / T(2) * rPdVPr3
+		score[3] += score3term1 + score3term2
 
 		// --- Average Information matrix: AI[j,k] = 1/2 * (dV_j P r)' P (dV_k P r) ---
 		// First compute P * (dV_k * P * r) for each k
