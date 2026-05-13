@@ -36,7 +36,7 @@ var dependencies: [Package.Dependency] = [
 		from: "1.1.1"
 	),
 	.package(
-		url: "https://github.com/apple/swift-syntax.git",
+		url: "https://github.com/swiftlang/swift-syntax.git",
 		from: "600.0.0"
 	),
 	// Swift Collections provides Deque for O(1) removeFirst operations
