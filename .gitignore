@@ -30,7 +30,6 @@ scripts/
 *.bak
 howToResume.md
 overallRules
-codingRules.md~
 
 # Deprecated/internal documentation
 HTTP_MODE_README.md
