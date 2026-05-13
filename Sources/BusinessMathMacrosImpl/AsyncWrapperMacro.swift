@@ -27,7 +27,7 @@ public struct AsyncWrapperMacro: PeerMacro {
         // 2. Extract function information
         let functionName = funcDecl.name.text
         let parameters = funcDecl.signature.parameterClause.parameters
-        let isThrows = funcDecl.signature.effectSpecifiers?.throwsSpecifier != nil
+        let isThrows = funcDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier != nil
         let returnType = funcDecl.signature.returnClause?.type.description.trimmingCharacters(in: .whitespaces) ?? "Void"
 
         // 3. Generate parameter list for function call
