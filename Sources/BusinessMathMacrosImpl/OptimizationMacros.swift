@@ -45,16 +45,9 @@ public struct VariableMacro: PeerMacro {
 
         for argument in arguments {
             if argument.label?.text == "bounds",
-               let rangeExpr = argument.expression.as(SequenceExprSyntax.self) {
-                // Parse range expression like "0...1" or "-10.0...10.0"
-                let elements = rangeExpr.elements
-                if elements.count >= 3 {
-                    // First element is lower bound
-                    boundsLower = elements[elements.startIndex].description.trimmingCharacters(in: CharacterSet.whitespaces)
-                    // Third element is upper bound (middle is the ... operator)
-                    let upperIndex = elements.index(elements.startIndex, offsetBy: 2)
-                    boundsUpper = elements[upperIndex].description.trimmingCharacters(in: CharacterSet.whitespaces)
-                }
+               let rangeExpr = argument.expression.as(InfixOperatorExprSyntax.self) {
+                boundsLower = rangeExpr.leftOperand.description.trimmingCharacters(in: CharacterSet.whitespaces)
+                boundsUpper = rangeExpr.rightOperand.description.trimmingCharacters(in: CharacterSet.whitespaces)
             }
         }
 

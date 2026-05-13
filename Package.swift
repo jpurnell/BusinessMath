@@ -37,7 +37,7 @@ var dependencies: [Package.Dependency] = [
 	),
 	.package(
 		url: "https://github.com/apple/swift-syntax.git",
-		from: "509.0.0"
+		from: "600.0.0"
 	),
 	// Swift Collections provides Deque for O(1) removeFirst operations
 	// Cross-platform: works on macOS, iOS, Linux, and all other Swift platforms

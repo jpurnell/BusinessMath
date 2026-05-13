@@ -63,7 +63,7 @@ public struct MCPToolMacro: PeerMacro {
         // 3. Extract function information
         let functionName = functionDecl.name.text
         let parameters = functionDecl.signature.parameterClause.parameters
-        let isThrows = functionDecl.signature.effectSpecifiers?.throwsSpecifier != nil
+        let isThrows = functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier != nil
 
         // 4. Generate schema properties
         let schemaProperties = generateSchemaProperties(from: parameters)
