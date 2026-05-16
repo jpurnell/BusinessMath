@@ -136,6 +136,7 @@ public struct AsyncAlignedSequence<
     /// latest values are stored in an actor for thread-safe access. When the primary
     /// stream emits, the iterator reads the secondary state and applies the alignment
     /// strategy.
+    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -166,6 +167,7 @@ public struct AsyncAlignedSequence<
                                 }
                                 await state.update(value)
                             } catch {
+                                // silent: stream error treated as end-of-stream for alignment
                                 await state.markFinished()
                                 break
                             }
@@ -228,6 +230,7 @@ public struct AsyncAlignedSequence<
 
                                 continuationBox.yield((primaryElement.value, alignedValue))
                             } catch {
+                                // silent: primary stream error treated as end-of-alignment
                                 break
                             }
                         }

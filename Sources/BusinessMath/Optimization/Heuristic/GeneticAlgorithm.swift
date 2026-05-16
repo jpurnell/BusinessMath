@@ -471,7 +471,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         #if canImport(Metal)
         if shouldUseGPU() {
             // Try GPU path, fall back to CPU on error
-            if let gpuResult = try? evolvePopulationGPU(population) {
+            if let gpuResult = try? evolvePopulationGPU(population) { // silent: GPU failure falls back to CPU path
                 return gpuResult
             }
         }

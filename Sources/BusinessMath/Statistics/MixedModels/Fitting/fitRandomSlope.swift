@@ -244,7 +244,7 @@ public func fitRandomSlope<T: Real>(
 			do {
 				delta = try aiMat.choleskySolve(aiResult.score)
 			} catch {
-				// AI matrix may not be positive definite; fall back to diagonal step
+				// silent: AI matrix may not be positive definite — fall back to diagonal step
 				delta = (0..<4).map { i -> T in
 					let diag = aiResult.ai[i][i]
 					guard diag > T.ulpOfOne else { return T.zero }

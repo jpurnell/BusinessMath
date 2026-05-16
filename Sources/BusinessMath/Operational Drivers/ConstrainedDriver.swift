@@ -383,6 +383,7 @@ public struct ValidatedDriver<Base: Driver>: Sendable where Base.Value: BinaryFl
 		do {
 			return try validator(rawValue)
 		} catch {
+			// silent: validation failure — return caller-provided fallback value
 			return fallback
 		}
 	}

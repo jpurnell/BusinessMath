@@ -29,6 +29,7 @@ import Foundation
 ///
 /// let pipeline = try device.getCrossoverPipeline()
 /// ```
+// Justification: All stored properties are immutable (let) after init; pipeline caches are protected by pipelineLock (NSLock).
 internal final class MetalDevice: @unchecked Sendable {
 
     // MARK: - Singleton
@@ -85,6 +86,7 @@ internal final class MetalDevice: @unchecked Sendable {
             do {
                 self.library = try Self.compileShaderLibrary(device: device)
             } catch {
+                // silent: fatal — Metal library is required for GPU acceleration
                 preconditionFailure("Failed to load or compile Metal library: \(error)")
             }
         }

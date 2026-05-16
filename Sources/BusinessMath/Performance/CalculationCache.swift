@@ -155,6 +155,7 @@ import Collections  // For Deque with O(1) removeFirst
 /// ```
 ///
 /// - Note: Uses `@unchecked Sendable` with internal locking for thread safety
+// Justification: All mutable state (cache, inflight, seenKeys, seenOrder, nextAccessId) is protected by an NSLock; no unguarded access.
 public final class CalculationCache: @unchecked Sendable {
 	private struct CachedValue {
 		var value: Any

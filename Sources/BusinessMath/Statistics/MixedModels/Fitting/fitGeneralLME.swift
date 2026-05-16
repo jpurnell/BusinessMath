@@ -249,7 +249,7 @@ public func fitGeneralLME<T: Real>(
 			do {
 				delta = try aiMat.choleskySolve(aiResult.score)
 			} catch {
-				// Fall back to diagonal step
+				// silent: AI matrix not positive definite — fall back to diagonal step
 				delta = (0..<nTheta).map { i -> T in
 					let diag = aiResult.ai[i][i]
 					guard diag > T.ulpOfOne else { return T.zero }
@@ -961,6 +961,7 @@ private func generalIsPSD<T: Real>(_ mat: [[T]], r: Int) -> Bool {
 		_ = try m.cholesky()
 		return true
 	} catch {
+		// silent: Cholesky failure means matrix is not positive semi-definite
 		return false
 	}
 }

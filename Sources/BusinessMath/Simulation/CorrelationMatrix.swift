@@ -109,6 +109,7 @@ public func isPositiveSemiDefinite(_ matrix: [[Double]]) -> Bool {
 		_ = try choleskyDecomposition(matrix)
 		return true
 	} catch {
+		// silent: Cholesky failure means matrix is not positive definite
 		return false
 	}
 }

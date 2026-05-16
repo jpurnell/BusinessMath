@@ -87,6 +87,7 @@ public struct MetalMatrixBackend: MatrixBackend {
             return try cpuBackend.multiply(A, B)
         }
 
+        // silent: GPU pipeline creation may fail — falls back to CPU backend
         guard let pipelineState = try? device.makeComputePipelineState(function: function) else {
             let cpuBackend = CPUMatrixBackend()
             return try cpuBackend.multiply(A, B)

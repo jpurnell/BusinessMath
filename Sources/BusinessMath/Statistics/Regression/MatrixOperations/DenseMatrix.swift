@@ -150,7 +150,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         do {
             return try DenseMatrix(matrix)
         } catch {
-            // This path is unreachable for a well-formed rectangular array
+            // silent: unreachable for a well-formed identity matrix
             return DenseMatrix(rows: size, columns: size, repeating: T(0))
         }
     }
@@ -172,7 +172,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         do {
             return try DenseMatrix(matrix)
         } catch {
-            // This path is unreachable for a well-formed rectangular array
+            // silent: unreachable for a well-formed diagonal matrix
             return DenseMatrix(rows: n, columns: n, repeating: T(0))
         }
     }
@@ -349,6 +349,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         do {
             return try DenseMatrix(result)
         } catch {
+            // silent: unreachable for a well-formed transposed matrix
             return DenseMatrix(rows: columns, columns: rows, repeating: T(0))
         }
     }
@@ -500,6 +501,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         do {
             return try DenseMatrix(result)
         } catch {
+            // silent: unreachable for a well-formed rectangular result
             return DenseMatrix(rows: matrix.rows, columns: matrix.columns, repeating: T(0))
         }
     }

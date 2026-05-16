@@ -68,7 +68,7 @@ extension Array where Element: Real {
 			// For other Real types, try converting via description
 			return Double("\(element)")
 		}
-		guard let desc = try? descriptives(doubles) else {
+		guard let desc = try? descriptives(doubles) else { // silent: best-effort summary for non-numeric collections
 			return "Unable to calculate descriptive statistics"
 		}
 		return "µ:\(desc.mean)\tσ:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"

@@ -211,6 +211,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
                             }
                         }
                     } catch {
+                        // silent: error propagated to stream consumer via continuation
                         continuation.finish(throwing: error)
                         return
                     }
@@ -276,6 +277,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
                             bounds: bounds
                         )
                     } catch {
+                        // silent: individual start point failure — other starts may succeed
                         return nil
                     }
                 }

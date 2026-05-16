@@ -6,6 +6,10 @@
 //
 
 import Foundation
+#if canImport(os)
+import os
+private let logger = Logger(subsystem: "com.businessmath", category: "AsyncSimplexSolver")
+#endif
 
 // MARK: - Simplex Progress
 
@@ -270,7 +274,6 @@ public struct AsyncSimplexSolver: Sendable {
                 // We'll emit progress updates at regular intervals
                 let syncSolver = SimplexSolver(tolerance: tolerance, maxIterations: maxIterations)
 
-                var lastReportTime = ContinuousClock.now
                 var simulatedIteration = 0
 
                 do {
@@ -307,7 +310,6 @@ public struct AsyncSimplexSolver: Sendable {
                                     phase: .optimization
                                 )
                                 continuation.yield(progress)
-                                lastReportTime = ContinuousClock.now
 
                                 // Small delay for cancellation check
                                 try? await Task.sleep(for: .microseconds(100))
@@ -341,7 +343,6 @@ public struct AsyncSimplexSolver: Sendable {
                                     phase: .optimization
                                 )
                                 continuation.yield(progress)
-                                lastReportTime = ContinuousClock.now
 
                                 // Small delay for cancellation check
                                 try? await Task.sleep(for: .microseconds(100))
@@ -364,8 +365,11 @@ public struct AsyncSimplexSolver: Sendable {
                     )
                     continuation.yield(finalProgress)
                     continuation.finish()
-					print(lastReportTime)
+					#if canImport(os)
+					logger.debug("Simplex solve completed; final progress reported")
+					#endif
                 } catch {
+                    // silent: error propagated to stream consumer via continuation
                     continuation.finish(throwing: error)
                 }
             }

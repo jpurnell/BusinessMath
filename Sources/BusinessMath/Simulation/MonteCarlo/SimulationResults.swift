@@ -135,11 +135,11 @@ public struct SimulationResults: Sendable {
 		do {
 			self.percentiles = try Percentiles(values: values)
 		} catch {
-			// Fallback: create with single zero value (this should always succeed)
+			// silent: Percentiles init failed — fallback to single zero value
 			do {
 				self.percentiles = try Percentiles(values: [0])
 			} catch {
-				// Absolute fallback - should never reach here
+				// silent: absolute fallback — should never reach here
 				preconditionFailure("Failed to create Percentiles with fallback value [0]: \(error)")
 			}
 		}

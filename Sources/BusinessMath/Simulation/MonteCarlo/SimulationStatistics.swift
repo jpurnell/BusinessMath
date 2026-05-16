@@ -12,12 +12,17 @@ import OSLog
 #endif
 // Private aliases to global statistics functions to avoid namespace conflicts
 // These are explicitly typed for Double to resolve generic parameters
-// Marked nonisolated(unsafe) since these are pure functions with no mutable state
+// Justification: Immutable let bindings to pure stateless functions; assigned once at module load, never mutated.
 private nonisolated(unsafe) let globalMean: ([Double]) -> Double = mean
+// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
 private nonisolated(unsafe) let globalMedian: ([Double]) -> Double = median
+// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
 private nonisolated(unsafe) let globalVariance: ([Double], Population) -> Double = variance
+// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
 private nonisolated(unsafe) let globalStdDev: ([Double], Population) -> Double = stdDev
+// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
 private nonisolated(unsafe) let globalSkew: ([Double], Population) -> Double = skew
+// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
 private nonisolated(unsafe) let globalConfidenceInterval: (Double, [Double]) -> (low: Double, high: Double) = confidenceInterval(ci:values:)
 
 /// A structure containing comprehensive statistical measures for simulation results.

@@ -7,6 +7,10 @@
 
 import Foundation
 import Numerics
+#if canImport(os)
+import os
+private let logger = Logger(subsystem: "com.businessmath", category: "FinancialRatios")
+#endif
 
 /// # Financial Ratios
 ///
@@ -678,9 +682,13 @@ public func interestCoverage<T: Real & Sendable>(
 	}
 
 	let operatingIncome = incomeStatement.operatingIncome
-	print("Operating Income:\t\(operatingIncome.valuesArray)")
+	#if canImport(os)
+	logger.debug("Operating Income:\t\(operatingIncome.valuesArray, privacy: .private)")
+	#endif
 	let interestTimeSeries = interestExpense.timeSeries
-	print("Interest Time Series:\t\(interestTimeSeries.valuesArray)")
+	#if canImport(os)
+	logger.debug("Interest Time Series:\t\(interestTimeSeries.valuesArray, privacy: .private)")
+	#endif
 
 	// Interest Coverage = Operating Income / Interest Expense
 	return operatingIncome / interestTimeSeries
@@ -1220,6 +1228,7 @@ public func efficiencyRatios<T: Real & Sendable>(
 	balanceSheet: BalanceSheet<T>
 ) -> EfficiencyRatios<T> {
 	let assetTurnoverRatio = assetTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	// silent: efficiency ratios are optional — missing accounts yield nil rather than error
 	let inventoryTurnoverRatio = try? inventoryTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 	let receivablesTurnoverRatio = try? receivablesTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 	let dso = try? daysSalesOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
@@ -1435,6 +1444,7 @@ public func solvencyRatios<T: Real & Sendable>(
 	principalPayments: TimeSeries<T>? = nil,
 	interestPayments: TimeSeries<T>? = nil
 ) -> SolvencyRatios<T> {
+	// silent: interest coverage is optional — missing interest expense yields nil
 	let interestCoverageRatio = try? interestCoverage(incomeStatement: incomeStatement)
 
 	// Calculate debt service coverage
@@ -1448,6 +1458,7 @@ public func solvencyRatios<T: Real & Sendable>(
 		)
 	} else {
 		// No manual data - automatically derive from balance sheet
+		// silent: debt service coverage is optional — missing data yields nil
 		dscr = try? debtServiceCoverage(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet

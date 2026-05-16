@@ -275,7 +275,7 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
                 searchSpace: searchSpace
             )
 
-            let result = try? island.minimize(objectiveFn, from: bestSolution)
+            let result = try? island.minimize(objectiveFn, from: bestSolution) // silent: island failure treated as non-improvement
             let fitness = result?.value ?? V.Scalar.infinity
             islandFitnesses.append(fitness)
 

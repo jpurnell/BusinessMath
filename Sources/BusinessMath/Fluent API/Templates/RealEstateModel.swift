@@ -342,7 +342,7 @@ public struct RealEstateModel: Sendable {
             }
         }
 
-        return try? irr(cashFlows: cashFlows)
+        return try? irr(cashFlows: cashFlows) // silent: IRR may not converge for some cash flow patterns
     }
 
     /// Calculate equity multiple

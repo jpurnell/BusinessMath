@@ -7,6 +7,10 @@
 
 import Foundation
 import Numerics
+#if canImport(os)
+import os
+private let logger = Logger(subsystem: "com.businessmath", category: "BalanceSheet")
+#endif
 
 // MARK: - BalanceSheetError
 
@@ -796,10 +800,13 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 			let zeroValues = periods.map { _ in zero }
 			inventory = TimeSeries(periods: periods, values: zeroValues)
 		}
-		print("Current Assets: \(currentAssets.valuesArray)")
-		print("\tless Inventory: \(inventory.valuesArray)")
-		print("\t= Quick Assets: \(zip(currentAssets.valuesArray,inventory.valuesArray).map({$0.0 - $0.1}))")
-		print("Current Liabilities: \(currentLiabilities.valuesArray)")
+		#if canImport(os)
+		logger.debug("Current Assets: \(currentAssets.valuesArray, privacy: .private)")
+		logger.debug("\tless Inventory: \(inventory.valuesArray, privacy: .private)")
+		let quickAssetsDebug = zip(currentAssets.valuesArray, inventory.valuesArray).map { $0.0 - $0.1 }
+		logger.debug("\t= Quick Assets: \(quickAssetsDebug, privacy: .private)")
+		logger.debug("Current Liabilities: \(currentLiabilities.valuesArray, privacy: .private)")
+		#endif
 		// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
 		let quickAssets = currentAssets - inventory
 		return quickAssets / currentLiabilities

@@ -6,6 +6,10 @@
 //
 
 import Foundation
+#if canImport(os)
+import os
+private let logger = Logger(subsystem: "com.businessmath", category: "AuditTrail")
+#endif
 
 // MARK: - AuditAction
 
@@ -376,8 +380,9 @@ public final class AuditTrailManager {
 			let data = try encoder.encode(entries)
 			try data.write(to: safeURL)
 		} catch {
-			// In production, this should be logged
-			print("Failed to save audit trail: \(error)")
+			#if canImport(os)
+			logger.error("Failed to save audit trail: \(error, privacy: .public)")
+			#endif
 		}
 	}
 
@@ -390,7 +395,7 @@ public final class AuditTrailManager {
 			decoder.dateDecodingStrategy = .iso8601
 			entries = try decoder.decode([AuditEntry].self, from: data)
 		} catch {
-			// File doesn't exist or is unreadable — start with empty entries
+			// silent: file doesn't exist or is unreadable — start with empty entries
 			entries = []
 		}
 	}

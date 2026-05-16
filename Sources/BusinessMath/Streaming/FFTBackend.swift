@@ -345,8 +345,19 @@ public struct AccelerateFFTBackend: FFTBackend, Sendable {
         var realPart = [Double](repeating: 0.0, count: n / 2)
         var imagPart = [Double](repeating: 0.0, count: n / 2)
 
-        // Convert to split complex and perform FFT — all unsafe pointers must be
-        // nested within their withUnsafe* closures to avoid dangling references
+        // Deinterleave the padded signal into split-complex form manually,
+        // avoiding withMemoryRebound and the pointer-escape hazards that come
+        // with passing &splitComplex through nested withUnsafe* closures.
+        let halfN = n / 2
+        for i in 0..<halfN {
+            let evenIdx = 2 * i
+            let oddIdx = evenIdx + 1
+            realPart[i] = paddedSignal[evenIdx]
+            imagPart[i] = oddIdx < n ? paddedSignal[oddIdx] : 0.0
+        }
+
+        // Perform the FFT in a single withUnsafeMutableBufferPointer scope
+        // so splitComplex and all pointer usage stay at one nesting level.
         realPart.withUnsafeMutableBufferPointer { realBuf in
             imagPart.withUnsafeMutableBufferPointer { imagBuf in
                 guard let realBase = realBuf.baseAddress,
@@ -355,17 +366,6 @@ public struct AccelerateFFTBackend: FFTBackend, Sendable {
                     realp: realBase,
                     imagp: imagBase
                 )
-
-                // Convert interleaved real signal to split complex format
-                paddedSignal.withUnsafeBufferPointer { signalPtr in
-                    guard let signalBase = signalPtr.baseAddress else { return }
-                    signalBase.withMemoryRebound(
-                        to: DSPDoubleComplex.self,
-                        capacity: n / 2
-                    ) { complexPtr in
-                        vDSP_ctozD(complexPtr, 2, &splitComplex, 1, vDSP_Length(n / 2))
-                    }
-                }
 
                 // Forward real-input FFT in-place
                 vDSP_fft_zripD(fftSetup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))

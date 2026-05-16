@@ -21,6 +21,7 @@ import Foundation
 ///     print(value)
 /// }
 /// ```
+// Justification: All stored state (values array) is immutable after init; no mutable fields.
 public struct AsyncValueStream<Element: Sendable>: AsyncSequence, @unchecked Sendable {
     /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
@@ -42,6 +43,7 @@ public struct AsyncValueStream<Element: Sendable>: AsyncSequence, @unchecked Sen
     }
 
     /// Iterator that yields values from an array asynchronously.
+    // Justification: Mutable index is only advanced by next() which is called serially by the async for-in protocol; values array is immutable.
 	public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private var index: Int = 0
         private let values: [Element]
@@ -78,6 +80,7 @@ public struct AsyncValueStream<Element: Sendable>: AsyncSequence, @unchecked Sen
 ///     print(value)  // Prints 1 through 10
 /// }
 /// ```
+// Justification: The only stored state is an immutable Sendable closure captured at init; no mutable fields.
 public struct AsyncGeneratorStream<Element: Sendable>: AsyncSequence, @unchecked Sendable {
     /// The async iterator type for this sequence.
     public typealias AsyncIterator = Iterator
@@ -99,6 +102,7 @@ public struct AsyncGeneratorStream<Element: Sendable>: AsyncSequence, @unchecked
     }
 
     /// Iterator that yields generated values asynchronously.
+    // Justification: The only stored state is an immutable Sendable closure; next() is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let generator: () async throws -> Element
 
@@ -572,6 +576,7 @@ public struct AsyncCatchErrorsSequence<Base: AsyncSequence>: AsyncSequence {
             do {
                 return try await baseIterator.next()
             } catch {
+                // silent: error handled by user-provided recovery handler
                 return handler(error)
             }
         }
