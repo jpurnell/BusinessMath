@@ -120,8 +120,11 @@ public struct TemplateSchema: Codable, Sendable {
     public enum ParameterType: String, Codable, Sendable {
         case string
         case number
+        // LIVE: public API enum case for template parameter type
         case boolean
+        // LIVE: public API enum case for template parameter type
         case array
+        // LIVE: public API enum case for template parameter type
         case object
     }
 

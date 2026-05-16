@@ -45,6 +45,7 @@ public enum MigrationTopology: Sendable, Equatable {
     /// Fully connected: all islands connect to each other
     case fullyConnected
 
+    // LIVE: topology variant for stochastic island model connectivity
     /// Random topology: random connections each migration
     case random
 }

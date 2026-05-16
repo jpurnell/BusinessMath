@@ -121,6 +121,7 @@ public struct AccountAdjustment<T: Real & Sendable>: Codable, Sendable where T: 
 		/// - Asset impairments
 		/// - Acquisition-related costs
 		/// - COVID-related expenses
+		// LIVE: public API enum case for consumer adjustment classification
 		case addback
 
 		/// Normalized expense adjustment.
@@ -132,6 +133,7 @@ public struct AccountAdjustment<T: Real & Sendable>: Codable, Sendable where T: 
 		/// - Normalizing temporarily inflated costs
 		/// - Adjusting for partial-period costs
 		/// - Pro-rating seasonal variations
+		// LIVE: public API enum case for consumer adjustment classification
 		case normalizedExpense
 
 		/// One-time charge or revenue.
@@ -144,6 +146,7 @@ public struct AccountAdjustment<T: Real & Sendable>: Codable, Sendable where T: 
 		/// - Facility closure costs
 		/// - Product discontinuation charges
 		/// - Insurance recoveries
+		// LIVE: public API enum case for consumer adjustment classification
 		case oneTimeCharge
 
 		/// Owner/related-party compensation normalization.
@@ -155,12 +158,14 @@ public struct AccountAdjustment<T: Real & Sendable>: Codable, Sendable where T: 
 		/// - Excess owner salary above market rate
 		/// - Below-market rent paid to owner-controlled entity
 		/// - Family member payroll normalization
+		// LIVE: public API enum case for consumer adjustment classification
 		case ownerCompensation
 
 		/// Other adjustment types.
 		///
 		/// Catch-all for adjustments that don't fit standard categories.
 		/// Use sparingly and document thoroughly in description.
+		// LIVE: public API enum case for consumer adjustment classification
 		case other
 	}
 

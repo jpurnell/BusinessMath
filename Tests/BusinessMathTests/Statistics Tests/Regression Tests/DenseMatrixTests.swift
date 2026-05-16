@@ -31,14 +31,6 @@ struct DenseMatrixTests {
         ]
     }
 
-    private func identityMatrix(_ size: Int) -> [[Double]] {
-        var matrix = Array(repeating: Array(repeating: 0.0, count: size), count: size)
-        for i in 0..<size {
-            matrix[i][i] = 1.0
-        }
-        return matrix
-    }
-
     // MARK: - 1️⃣ Golden Path Tests
 
     @Test("Create matrix from 2D array")

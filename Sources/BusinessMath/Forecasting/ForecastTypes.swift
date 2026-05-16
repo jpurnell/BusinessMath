@@ -19,7 +19,7 @@ public enum ForecastError: Error {
 	case modelNotTrained
 
 	/// Invalid parameter value.
-	case invalidParameter(String)
+	case invalidParameter(String) // LIVE: public error case for forecast configuration
 	
 	case invalidConfidenceLevel
 }

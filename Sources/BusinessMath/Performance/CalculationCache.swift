@@ -237,6 +237,7 @@ public final class CalculationCache: @unchecked Sendable {
 	///     expensiveCalculation()
 	/// }
 	/// ```
+	// LIVE: core cache API used by financial model computation pipelines
 	public func getOrCalculate<T: Sendable>(key: String, calculation: () -> T) -> T {
 		lock.lock()
 		let now = Date()
@@ -327,6 +328,7 @@ public final class CalculationCache: @unchecked Sendable {
 		return computed
 	}
 	
+	// LIVE: cache management used by financial model reset paths
 	/// Clears all cached entries and admission history.
 	///
 	/// Removes all cached values and resets the seen keys tracking.
@@ -340,6 +342,7 @@ public final class CalculationCache: @unchecked Sendable {
 		lock.unlock()
 	}
 	
+	// LIVE: cache management used by financial model invalidation
 	/// Removes a specific entry from the cache.
 	///
 	/// Explicitly deletes the cached value for the given key and "forgets" it
@@ -489,6 +492,7 @@ actor CalculationCacheAsync {
 		})
 	}
 	
+	// LIVE: async cache management used by concurrent computation pipelines
 	func clear() {
 		cache.removeAll()
 		inflight.removeAll()

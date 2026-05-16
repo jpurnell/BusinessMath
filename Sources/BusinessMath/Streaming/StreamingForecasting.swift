@@ -63,7 +63,9 @@ public struct TrendDetection {
 /// Type of change point
 public enum ChangePointType {
     case levelShift
+    // LIVE: change point variant detected by streaming trend analysis
     case trendChange
+    // LIVE: change point variant detected by streaming variance analysis
     case varianceChange
 }
 

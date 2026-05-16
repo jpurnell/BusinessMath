@@ -24,14 +24,6 @@ public enum FinancialValidation {
 			public typealias Value = BalanceSheet<T>
 			
 			@inline(__always)
-			private func total(_ accounts: [Account<T>], _ period: Period) -> T {
-				accounts.reduce(T.zero) { sum, account in
-					let v: T = account.timeSeries[period] ?? T.zero
-					return sum + v
-				}
-			}
-			
-			@inline(__always)
 			private func withinTolerance(_ diff: T, tolerance tol: T, scale: T) -> Bool {
 				// Epsilon is at least one ulp at the current scale, or a tiny fraction of tol
 				// Avoid Double literal conversion: compute 1e-12 as 1 / 1_000_000_000 in T

@@ -152,6 +152,7 @@ internal final class MetalBuffers {
         }
     }
 
+    // LIVE: GPU result retrieval for fitness evaluation pipeline
     /// Download fitness values from GPU to CPU.
     ///
     /// - Returns: Fitness values (one per individual)
@@ -162,6 +163,7 @@ internal final class MetalBuffers {
 
     // MARK: - Buffer Swapping
 
+    // LIVE: ping-pong buffer management for GPU evolution pipeline
     /// Swap population buffers for ping-pong update pattern.
     ///
     /// After evolving population from A → B, swap so B becomes the new A.
@@ -179,6 +181,7 @@ internal final class MetalBuffers {
         return populationBytes + fitnessBytes + seedBytes
     }
 
+    // LIVE: diagnostic output for GPU memory monitoring
     /// Total GPU memory allocated (formatted string).
     var memoryDescription: String {
         let bytes = totalMemoryAllocated

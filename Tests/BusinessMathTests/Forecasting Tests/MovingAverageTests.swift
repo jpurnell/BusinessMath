@@ -196,10 +196,6 @@ struct MovingAverageTests {
 struct AdditionalMovingAverageTests {
 	
 		// Helpers
-		private func dayPeriods(count: Int, start: TimeInterval = 0) -> [Period] {
-			(0..<count).map { Period.day(Date(timeIntervalSince1970: start + Double($0 * 86400))) }
-		}
-
 		private func monthPeriods(yearStart: Int, monthCount: Int) -> [Period] {
 			var periods = [Period]()
 			var y = yearStart

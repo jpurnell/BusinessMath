@@ -489,6 +489,7 @@ internal final class MetalDevice: @unchecked Sendable {
         return pipeline
     }
 
+    // LIVE: used by GPU-accelerated differential evolution optimizer
     /// Get or create DE selection compute pipeline.
     ///
     /// - Returns: Compute pipeline for DE selection kernel
@@ -559,6 +560,7 @@ internal final class MetalDevice: @unchecked Sendable {
 
     // MARK: - Device Information
 
+    // LIVE: used for compute kernel dispatch configuration
     /// Maximum threads per threadgroup supported by device.
     var maxThreadsPerThreadgroup: Int {
         device.maxThreadsPerThreadgroup.width
@@ -569,6 +571,7 @@ internal final class MetalDevice: @unchecked Sendable {
         device.name
     }
 
+    // LIVE: capability detection for buffer allocation strategy
     /// Whether device supports unified memory (macOS typically does).
     var supportsUnifiedMemory: Bool {
         #if os(macOS)

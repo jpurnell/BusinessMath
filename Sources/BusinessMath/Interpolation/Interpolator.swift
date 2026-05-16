@@ -61,9 +61,11 @@ public protocol Interpolator: Sendable {
     /// can use the bare numeric type without wrapping.
     associatedtype Value: Sendable
 
+    // LIVE: protocol requirement for dimension validation in interpolation
     /// Number of independent variables in the input domain.
     var inputDimension: Int { get }
 
+    // LIVE: protocol requirement for output shape validation
     /// Number of dependent variables in the output. 1 for scalar fields,
     /// N for vector fields with N components.
     var outputDimension: Int { get }

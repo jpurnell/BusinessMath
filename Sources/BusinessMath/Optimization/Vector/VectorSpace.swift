@@ -79,6 +79,7 @@ public protocol VectorSpace: AdditiveArithmetic, Hashable, Codable, Sendable {
 	/// - Returns: Array representation of the vector's components.
 	func toArray() -> [Scalar]
 	
+	// LIVE: protocol requirement used by generic algorithms and interpolation
 	/// The dimension of the vector space.
 	/// For fixed-dimension vectors (like Vector2D), this is constant.
 	/// For variable-dimension vectors (like VectorN), this may be variable.
@@ -115,6 +116,7 @@ public extension VectorSpace {
 		return (self - other).norm
 	}
 	
+	// LIVE: used by clustering and optimization algorithms for fast distance checks
 	/// Squared distance between two vectors (faster than distance for comparisons).
 	/// - Parameter other: Another vector
 	/// - Returns: Squared Euclidean distance: ‖self - other‖²
@@ -149,6 +151,7 @@ public extension VectorSpace {
 		return dotProduct / norms
 	}
 	
+	// LIVE: used by interpolation and animation subsystems
 	/// Linear interpolation between two vectors.
 	/// - Parameters:
 	///   - from: Starting vector

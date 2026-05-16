@@ -25,21 +25,26 @@ public enum EntityIdentifierType: Hashable, Codable, Sendable {
 	case ticker
 
 	/// CUSIP number (Committee on Uniform Securities Identification Procedures)
+	// LIVE: public API enum case for securities identification
 	case cusip
 
 	/// ISIN (International Securities Identification Number)
+	// LIVE: public API enum case for securities identification
 	case isin
 
 	/// LEI (Legal Entity Identifier) - ISO 17442
+	// LIVE: public API enum case for regulatory identification
 	case lei
 
 	/// Internal company/system identifier
 	case `internal`
 
 	/// Tax identification number (EIN, VAT, etc.)
+	// LIVE: public API enum case for tax identification
 	case taxId
 
 	/// Custom identifier type with a string label
+	// LIVE: public API enum case for extensible identification
 	case custom(String)
 }
 

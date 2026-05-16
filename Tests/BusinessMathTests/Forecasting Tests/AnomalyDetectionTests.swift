@@ -224,18 +224,6 @@ struct AdditionalAnomalyDetectionTests {
 		(0..<count).map { Period.day(Date(timeIntervalSince1970: start + Double($0 * 86400))) }
 	}
 
-	private func monthPeriods(yearStart: Int, monthCount: Int) -> [Period] {
-		var periods = [Period]()
-		var y = yearStart
-		var m = 1
-		for _ in 0..<monthCount {
-			periods.append(Period.month(year: y, month: m))
-			m += 1
-			if m == 13 { m = 1; y += 1 }
-		}
-		return periods
-	}
-
 		private func flatWithAnomalies() -> TimeSeries<Double> {
 			let periods = dayPeriods(count: 100)
 			var values = Array(repeating: 100.0, count: 100)

@@ -308,12 +308,15 @@ public struct BytecodeCompiler {
 
 /// Errors that can occur during bytecode compilation
 public enum CompilationError: Error {
+    // LIVE: thrown during compilation when expression nesting exceeds GPU stack limit
     /// Expression tree is too deep (stack overflow risk)
     case expressionTooDeep
 
+    // LIVE: thrown during compilation when expression references out-of-range input
     /// Expression references invalid input index
     case invalidInputIndex(Int)
 
+    // LIVE: thrown during compilation for unrecognized expression nodes
     /// Expression contains unsupported operation
     case unsupportedOperation(String)
 }

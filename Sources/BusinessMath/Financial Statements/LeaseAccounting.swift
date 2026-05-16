@@ -4,6 +4,7 @@ import Numerics
 /// Depreciation method for right-of-use asset
 public enum DepreciationMethod {
     case straightLine
+    // LIVE: public API enum case for depreciation method selection
     case decliningBalance
 }
 
@@ -15,6 +16,7 @@ public enum LeaseTerm {
 
 /// Type of discount rate used for lease
 public enum DiscountRateType {
+    // LIVE: public API enum case for discount rate type classification
     case implicitRate
     case incrementalBorrowingRate
 }

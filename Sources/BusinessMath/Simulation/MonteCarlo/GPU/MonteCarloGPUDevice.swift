@@ -73,6 +73,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
     private var initRNGPipeline: MTLComputePipelineState?
     private var monteCarloIterationPipeline: MTLComputePipelineState?
 
+    // LIVE: buffer pool for GPU memory reuse (re-enable pending data clearing)
     // PERFORMANCE: Buffer pool to avoid repeated allocations
     private var bufferCache: [Int: Buffers] = [:]
     private let bufferCacheLock = NSLock()

@@ -47,6 +47,7 @@ import Foundation
 /// }
 /// ```
 protocol StatementRole {
+	// LIVE: protocol requirement for statement role identification
 	var roleStatements: String { get }
 	var description: String { get }
 }

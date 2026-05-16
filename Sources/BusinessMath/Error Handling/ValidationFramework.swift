@@ -24,7 +24,7 @@ public enum WarningType: Sendable {
     case missingData
     case outlier
     case numericalIssue
-    case dimensionMismatch
+    case dimensionMismatch // LIVE: public warning type for matrix/vector validation
     case invalidValue
     case other
 }

@@ -337,27 +337,6 @@ public struct CoxProcess<T: Real & Sendable>: Sendable {
         return T(Int(time * 10.0)) / T(10)  // Convert back to T with rounding
     }
 
-    /// Approximate inverse normal CDF using Beasley-Springer-Moro algorithm
-    private func inverseNormalCDF(_ u: T) -> T {
-        guard u > T.zero && u < T(1) else {
-            return T.zero
-        }
-
-        // Use Box-Muller-like transformation for simplicity
-        let y = u - T(1)/T(2)
-
-        if y > -T(1)/T(10) && y < T(1)/T(10) {
-            // For values near 0.5, use linear approximation
-            return y * T(3)
-        } else {
-            // For other values, use log-based approximation
-            let sign = y < T.zero ? -T(1) : T(1)
-            let absU = u < T(1)/T(2) ? u : (T(1) - u)
-            let logVal = -T.log(absU)
-            return sign * T.sqrt(T(2) * logVal)
-        }
-    }
-
     /// Double version of inverse normal CDF for simulation
     private func inverseNormalCDFDouble(_ u: Double) -> Double {
         guard u > 0.0 && u < 1.0 else {

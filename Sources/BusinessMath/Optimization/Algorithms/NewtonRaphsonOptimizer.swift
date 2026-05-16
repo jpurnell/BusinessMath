@@ -308,34 +308,6 @@
 
 		// MARK: - Helper Methods
 
-		/// Computes the numerical first derivative using central differences.
-		///
-		/// - Parameters:
-		///   - f: The function.
-		///   - x: The point at which to evaluate the derivative.
-		/// - Returns: The approximate first derivative.
-		private func numericalFirstDerivative(
-			_ f: (T) -> T,
-			at x: T
-		) -> T {
-			let h = stepSize
-			return (f(x + h) - f(x - h)) / (2 * h)
-		}
-
-		/// Computes the numerical second derivative using finite differences.
-		///
-		/// - Parameters:
-		///   - f: The function.
-		///   - x: The point at which to evaluate the derivative.
-		/// - Returns: The approximate second derivative.
-		private func numericalSecondDerivative(
-			_ f: (T) -> T,
-			at x: T
-		) -> T {
-			let h = stepSize
-			return (f(x + h) - 2 * f(x) + f(x - h)) / (h * h)
-		}
-
 		/// Clamps a value to be within bounds.
 		///
 		/// - Parameters:
@@ -422,51 +394,6 @@
 			return x
 		}
 
-		/// Finds a feasible point when projection fails.
-		///
-		/// This method searches for a point that satisfies constraints by moving
-		/// in the direction that improves feasibility while considering the objective.
-		///
-		/// - Parameters:
-		///   - start: The starting value.
-		///   - constraints: The constraints to satisfy.
-		///   - bounds: Optional bounds.
-		///   - objective: The objective function.
-		/// - Returns: A feasible value.
-		private func findFeasiblePoint(
-			from start: T,
-			constraints: [Constraint<T>],
-			bounds: (lower: T, upper: T)?,
-			objective: @escaping (T) -> T
-		) -> T {
-			let x = start
-
-			// Try small steps in both directions to find feasible region
-			let directions: [T] = [1, -1]
-			let stepSizes: [T] = [
-				stepSize * 10,
-				stepSize * 100,
-				stepSize * 1000
-			]
-
-			for stepMagnitude in stepSizes {
-				for direction in directions {
-					let candidate = x + direction * stepMagnitude
-
-					var feasibleCandidate = candidate
-					if let bounds = bounds {
-						feasibleCandidate = clamp(candidate, lower: bounds.lower, upper: bounds.upper)
-					}
-
-					if allConstraintsSatisfied(feasibleCandidate, constraints: constraints) {
-						return feasibleCandidate
-					}
-				}
-			}
-
-			// If no feasible point found, return the projected point
-			return projectToFeasibleRegion(x, constraints: constraints, bounds: bounds)
-		}
 	}
 
 	// MARK: - NewtonRaphsonOptimizer Double Defaults

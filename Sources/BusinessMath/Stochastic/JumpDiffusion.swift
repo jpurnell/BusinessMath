@@ -78,7 +78,7 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
     /// Jump-diffusion is driven by a single Brownian motion (plus Poisson jumps).
     public let factors: Int = 1
 
-    // Internal state for deterministic jump generation
+    // LIVE: reserved for future seeded jump generation
     private var jumpRNGState: UInt64 = 0
 
     /// Creates a Merton jump-diffusion process.

@@ -216,18 +216,23 @@ public enum ExpenseType: String, Codable, Equatable, Sendable {
 /// ```
 public enum EquityType: String, Codable, Equatable, Sendable {
 	/// Common stock (par value + additional paid-in capital).
+	// LIVE: public API enum case for equity account classification
 	case commonStock
 
 	/// Retained earnings (accumulated profits).
+	// LIVE: public API enum case for equity account classification
 	case retainedEarnings
 
 	/// Additional paid-in capital (APIC).
+	// LIVE: public API enum case for equity account classification
 	case additionalPaidInCapital
 
 	/// Treasury stock (repurchased shares).
+	// LIVE: public API enum case for equity account classification
 	case treasuryStock
 
 	/// Accumulated other comprehensive income (AOCI).
+	// LIVE: public API enum case for equity account classification
 	case accumulatedOtherComprehensiveIncome
 }
 
