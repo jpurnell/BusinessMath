@@ -365,7 +365,7 @@ struct RiskMetricsAdditionalTests {
 		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
 
 		// Should return exactly 1.0 (100% drawdown) for bankruptcy
-		#expect(metrics.maxDrawdown == 1.0)
+		#expect(abs(metrics.maxDrawdown - 1.0) < 1e-6)
 	}
 
 	@Test("Max drawdown handles extreme negative return (>100% loss)")
@@ -377,7 +377,7 @@ struct RiskMetricsAdditionalTests {
 		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
 
 		// Should cap at 1.0 (100% drawdown) even for super-bankruptcy
-		#expect(metrics.maxDrawdown == 1.0)
+		#expect(abs(metrics.maxDrawdown - 1.0) < 1e-6)
 	}
 
 	@Test("Max drawdown handles N(0,1) extreme values")
@@ -400,12 +400,12 @@ struct RiskMetricsAdditionalTests {
 		// Empty array
 		let empty: [Double] = []
 		let emptyDrawdown = MaxDrawdown.calculate(values: empty)
-		#expect(emptyDrawdown == 0.0)
+		#expect(abs(emptyDrawdown - 0.0) < 1e-6)
 
 		// Single value
 		let single = [0.05]
 		let singleDrawdown = MaxDrawdown.calculate(values: single)
-		#expect(singleDrawdown == 0.0)
+		#expect(abs(singleDrawdown - 0.0) < 1e-6)
 	}
 
 	@Test("Max drawdown handles sequence that recovers after bankruptcy")
@@ -418,7 +418,7 @@ struct RiskMetricsAdditionalTests {
 		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
 
 		// Once bankrupt, max drawdown is 100% regardless of subsequent returns
-		#expect(metrics.maxDrawdown == 1.0)
+		#expect(abs(metrics.maxDrawdown - 1.0) < 1e-6)
 	}
 
 	@Test("Max drawdown never exceeds 100%")

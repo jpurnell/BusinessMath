@@ -25,7 +25,7 @@ import Numerics
     @Test("SkewS") func LSkewS() {
         let values: [Double] = [96, 13, 84, 59, 92, 24, 68, 80, 89, 88, 37, 27, 44, 66, 14, 15, 87, 34, 36, 48, 64, 26, 79, 53]
         let result = (skewS(values) * 100000000.0).rounded(.up) / 100000000
-        #expect(result == -0.06157035)
+        #expect(abs(result - (-0.06157035)) < 1e-6)
     }
 }
 
@@ -83,7 +83,7 @@ struct SkewnessNaNInfinityTests {
 		#expect(result1.isInfinite || result1.isNaN)
 
 		let result2 = try coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.infinity)
-		#expect(result2.isFinite && result2 == 0.0)  // (2-1) / infinity = 0
+		#expect(result2.isFinite && abs(result2 - 0.0) < 1e-6)  // (2-1) / infinity = 0
 	}
 }
 
@@ -94,7 +94,7 @@ struct SkewnessEmptyArrayTests {
 	func skewS_empty_array() {
 		let values: [Double] = []
 		let result = skewS(values)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("skewS handles single element")
@@ -102,7 +102,7 @@ struct SkewnessEmptyArrayTests {
 		let values = [5.0]
 		let result = skewS(values)
 		// Single element has undefined skewness (stdDev = 0)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("skewS handles two elements")

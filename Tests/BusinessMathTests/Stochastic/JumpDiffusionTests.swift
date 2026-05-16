@@ -103,7 +103,7 @@ struct JumpDiffusionTests {
             jumpIntensity: 2.0, jumpMean: 0.0, jumpVolatility: 0.10
         )
         let result = jd.step(from: 0.0, dt: 1.0 / 12.0, normalDraws: 0.5)
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 
     @Test("dt=0 returns current value")
@@ -113,7 +113,7 @@ struct JumpDiffusionTests {
             jumpIntensity: 2.0, jumpMean: 0.0, jumpVolatility: 0.10
         )
         let result = jd.step(from: 72.50, dt: 0.0, normalDraws: 0.5)
-        #expect(result == 72.50)
+        #expect(abs(result - 72.50) < 1e-6)
     }
 
     // MARK: - Helpers

@@ -18,19 +18,19 @@ struct CrossedDesignDataTests {
         #expect(data.count == 24)
 
         // value at [0, 0, 0] = index 0
-        #expect(data.value(at: [0, 0, 0]) == 0.0)
+        #expect(abs(data.value(at: [0, 0, 0]) - 0.0) < 1e-6)
 
         // value at [0, 0, 1] = index 1
-        #expect(data.value(at: [0, 0, 1]) == 1.0)
+        #expect(abs(data.value(at: [0, 0, 1]) - 1.0) < 1e-6)
 
         // value at [0, 1, 0] = index 4
-        #expect(data.value(at: [0, 1, 0]) == 4.0)
+        #expect(abs(data.value(at: [0, 1, 0]) - 4.0) < 1e-6)
 
         // value at [1, 0, 0] = index 12 (1 * 3 * 4)
-        #expect(data.value(at: [1, 0, 0]) == 12.0)
+        #expect(abs(data.value(at: [1, 0, 0]) - 12.0) < 1e-6)
 
         // value at [1, 2, 3] = 1*12 + 2*4 + 3 = 23
-        #expect(data.value(at: [1, 2, 3]) == 23.0)
+        #expect(abs(data.value(at: [1, 2, 3]) - 23.0) < 1e-6)
     }
 
     @Test("Row-major index verification: i*n2*n3 + j*n3 + k")
@@ -107,9 +107,9 @@ struct CrossedDesignDataTests {
         )
 
         #expect(data.count == 3)
-        #expect(data.value(at: [0]) == 10.0)
-        #expect(data.value(at: [1]) == 20.0)
-        #expect(data.value(at: [2]) == 30.0)
+        #expect(abs(data.value(at: [0]) - 10.0) < 1e-6)
+        #expect(abs(data.value(at: [1]) - 20.0) < 1e-6)
+        #expect(abs(data.value(at: [2]) - 30.0) < 1e-6)
     }
 
     @Test("Two facets: 2×3 matrix")
@@ -120,10 +120,10 @@ struct CrossedDesignDataTests {
             dimensions: [2, 3]
         )
 
-        #expect(data.value(at: [0, 0]) == 1.0)
-        #expect(data.value(at: [0, 2]) == 3.0)
-        #expect(data.value(at: [1, 0]) == 4.0)
-        #expect(data.value(at: [1, 2]) == 6.0)
+        #expect(abs(data.value(at: [0, 0]) - 1.0) < 1e-6)
+        #expect(abs(data.value(at: [0, 2]) - 3.0) < 1e-6)
+        #expect(abs(data.value(at: [1, 0]) - 4.0) < 1e-6)
+        #expect(abs(data.value(at: [1, 2]) - 6.0) < 1e-6)
     }
 
     @Test("Equatable conformance")

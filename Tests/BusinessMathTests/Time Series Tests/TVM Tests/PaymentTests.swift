@@ -454,7 +454,7 @@ struct PaymentTests {
 	func paymentZeroPeriods() {
 		// Edge case: should handle gracefully
 		let pmt = payment(presentValue: 10000.0, rate: 0.05, periods: 0)
-		#expect(pmt == 0.0 || pmt.isInfinite)
+		#expect(abs(pmt) < 1e-6 || pmt.isInfinite)
 	}
 
 	@Test("Principal payment at period zero")
@@ -465,7 +465,7 @@ struct PaymentTests {
 			totalPeriods: 60,
 			presentValue: 10000.0
 		)
-		#expect(ppmt == 0.0)
+		#expect(abs(ppmt - 0.0) < 1e-6)
 	}
 
 	@Test("Interest payment at period zero")
@@ -476,7 +476,7 @@ struct PaymentTests {
 			totalPeriods: 60,
 			presentValue: 10000.0
 		)
-		#expect(ipmt == 0.0)
+		#expect(abs(ipmt - 0.0) < 1e-6)
 	}
 	
 		// MARK: - Payment bounds

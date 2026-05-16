@@ -131,8 +131,8 @@ struct BalanceSheetAggregationTests {
 		)
 
 		// Total current assets = sum of all current assets
-		#expect(bs.currentAssets[testPeriods[0]]! == 1800.0)  // 1000 + 500 + 300
-		#expect(bs.currentAssets[testPeriods[1]]! == 1970.0)  // 1100 + 550 + 320
+		#expect(abs(bs.currentAssets[testPeriods[0]]! - 1800.0) < 1e-2)  // 1000 + 500 + 300
+		#expect(abs(bs.currentAssets[testPeriods[1]]! - 1970.0) < 1e-2)  // 1100 + 550 + 320
 	}
 
 	@Test("BalanceSheet aggregates non-current assets correctly")
@@ -165,8 +165,8 @@ struct BalanceSheetAggregationTests {
 		)
 
 		// Total non-current assets = sum of all non-current assets
-		#expect(bs.nonCurrentAssets[testPeriods[0]]! == 8000.0)  // 5000 + 1000 + 2000
-		#expect(bs.nonCurrentAssets[testPeriods[1]]! == 8180.0)  // 5200 + 980 + 2000
+		#expect(abs(bs.nonCurrentAssets[testPeriods[0]]! - 8000.0) < 1e-2)  // 5000 + 1000 + 2000
+		#expect(abs(bs.nonCurrentAssets[testPeriods[1]]! - 8180.0) < 1e-2)  // 5200 + 980 + 2000
 	}
 
 	// MARK: - Liability Aggregation Tests
@@ -201,8 +201,8 @@ struct BalanceSheetAggregationTests {
 		)
 
 		// Total current liabilities = sum of all current liabilities
-		#expect(bs.currentLiabilities[testPeriods[0]]! == 700.0)  // 400 + 200 + 100
-		#expect(bs.currentLiabilities[testPeriods[1]]! == 720.0)  // 420 + 210 + 90
+		#expect(abs(bs.currentLiabilities[testPeriods[0]]! - 700.0) < 1e-2)  // 400 + 200 + 100
+		#expect(abs(bs.currentLiabilities[testPeriods[1]]! - 720.0) < 1e-2)  // 420 + 210 + 90
 	}
 
 	@Test("BalanceSheet aggregates non-current liabilities correctly")
@@ -228,8 +228,8 @@ struct BalanceSheetAggregationTests {
 		)
 
 		// Total non-current liabilities = sum of all non-current liabilities
-		#expect(bs.nonCurrentLiabilities[testPeriods[0]]! == 2300.0)  // 2000 + 300
-		#expect(bs.nonCurrentLiabilities[testPeriods[1]]! == 2210.0)  // 1900 + 310
+		#expect(abs(bs.nonCurrentLiabilities[testPeriods[0]]! - 2300.0) < 1e-2)  // 2000 + 300
+		#expect(abs(bs.nonCurrentLiabilities[testPeriods[1]]! - 2210.0) < 1e-2)  // 1900 + 310
 	}
 
 	// MARK: - Equity Aggregation Tests
@@ -264,8 +264,8 @@ struct BalanceSheetAggregationTests {
 		)
 
 		// Total equity = sum of all equity accounts
-		#expect(bs.totalEquity[testPeriods[0]]! == 8000.0)  // 1000 + 5000 + 2000
-		#expect(bs.totalEquity[testPeriods[1]]! == 8300.0)  // 1000 + 5300 + 2000
+		#expect(abs(bs.totalEquity[testPeriods[0]]! - 8000.0) < 1e-2)  // 1000 + 5000 + 2000
+		#expect(abs(bs.totalEquity[testPeriods[1]]! - 8300.0) < 1e-2)  // 1000 + 5300 + 2000
 	}
 
 	// MARK: - Role-Based Accessor Tests
@@ -357,8 +357,8 @@ struct BalanceSheetAggregationTests {
 		)
 
 		// Total assets = current + non-current
-		#expect(bs.totalAssets[testPeriods[0]]! == 6000.0)  // 1000 + 5000
-		#expect(bs.totalAssets[testPeriods[1]]! == 6300.0)  // 1100 + 5200
+		#expect(abs(bs.totalAssets[testPeriods[0]]! - 6000.0) < 1e-2)  // 1000 + 5000
+		#expect(abs(bs.totalAssets[testPeriods[1]]! - 6300.0) < 1e-2)  // 1100 + 5200
 	}
 
 	@Test("BalanceSheet computes total liabilities correctly")
@@ -384,8 +384,8 @@ struct BalanceSheetAggregationTests {
 		)
 
 		// Total liabilities = current + non-current
-		#expect(bs.totalLiabilities[testPeriods[0]]! == 2400.0)  // 400 + 2000
-		#expect(bs.totalLiabilities[testPeriods[1]]! == 2320.0)  // 420 + 1900
+		#expect(abs(bs.totalLiabilities[testPeriods[0]]! - 2400.0) < 1e-2)  // 400 + 2000
+		#expect(abs(bs.totalLiabilities[testPeriods[1]]! - 2320.0) < 1e-2)  // 420 + 1900
 	}
 
 	@Test("BalanceSheet validates accounting equation")
@@ -459,7 +459,7 @@ struct BalanceSheetAggregationTests {
 
 		// Working Capital = Current Assets - Current Liabilities
 		// Q1: 1500 - 300 = 1200
-		#expect(bs.workingCapital[testPeriods[0]]! == 1200.0)
-		#expect(bs.workingCapital[testPeriods[1]]! == 1330.0)  // 1650 - 320
+		#expect(abs(bs.workingCapital[testPeriods[0]]! - 1200.0) < 1e-2)
+		#expect(abs(bs.workingCapital[testPeriods[1]]! - 1330.0) < 1e-2)  // 1650 - 320
 	}
 }

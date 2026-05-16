@@ -369,7 +369,7 @@ struct FinancialStatementIntegrationStressTests {
 
             for margin in stmt.grossMargin.valuesArray {
                 #expect(margin.isFinite, "Non-finite gross margin in declining scenario")
-                #expect(margin == 0.5, "Gross margin should be 50% (COGS = 50% of revenue)")
+                #expect(abs(margin - 0.5) < 1e-6, "Gross margin should be 50% (COGS = 50% of revenue)")
             }
         }
     }

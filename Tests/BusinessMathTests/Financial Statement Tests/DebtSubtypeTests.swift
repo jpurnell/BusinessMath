@@ -116,9 +116,9 @@ struct DebtSubtypeTests {
 		#expect(debtByType[.mezzanineDebt] != nil)
 
 		// Verify values for Q1
-		#expect(debtByType[.revolvingCreditFacility]![periods[0]]! == 50_000.0)
-		#expect(debtByType[.termLoanLongTerm]![periods[0]]! == 100_000.0)
-		#expect(debtByType[.mezzanineDebt]![periods[0]]! == 30_000.0)
+		#expect(abs(debtByType[.revolvingCreditFacility]![periods[0]]! - 50_000.0) < 1e-2)
+		#expect(abs(debtByType[.termLoanLongTerm]![periods[0]]! - 100_000.0) < 1e-2)
+		#expect(abs(debtByType[.mezzanineDebt]![periods[0]]! - 30_000.0) < 1e-2)
 	}
 
 	@Test("Total debt equals sum of debt breakdown")
@@ -152,8 +152,8 @@ struct DebtSubtypeTests {
 
 		let sumOfBreakdown = debtByType.values.reduce(TimeSeries(periods: periods, values: [0.0])) { $0 + $1 }
 
-		#expect(totalDebt[periods[0]]! == 100_000.0)
-		#expect(sumOfBreakdown[periods[0]]! == 100_000.0)
+		#expect(abs(totalDebt[periods[0]]! - 100_000.0) < 1e-2)
+		#expect(abs(sumOfBreakdown[periods[0]]! - 100_000.0) < 1e-2)
 		#expect(totalDebt[periods[0]]! == sumOfBreakdown[periods[0]]!)
 	}
 
@@ -187,7 +187,7 @@ struct DebtSubtypeTests {
 
 		// Should aggregate both term loans into single entry
 		#expect(debtByType.count == 1)
-		#expect(debtByType[.termLoanLongTerm]![periods[0]]! == 80_000.0)
+		#expect(abs(debtByType[.termLoanLongTerm]![periods[0]]! - 80_000.0) < 1e-2)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -237,12 +237,12 @@ struct DebtSubtypeTests {
 						   debtByType[.termLoanLongTerm]![periods[0]]!)
 		let subDebt = debtByType[.mezzanineDebt]![periods[0]]!
 
-		#expect(seniorDebt == 225_000_000.0)
-		#expect(subDebt == 50_000_000.0)
+		#expect(abs(seniorDebt - 225_000_000.0) < 1e-2)
+		#expect(abs(subDebt - 50_000_000.0) < 1e-2)
 
 		// Total debt
 		let totalDebt = balanceSheet.interestBearingDebt
-		#expect(totalDebt[periods[0]]! == 275_000_000.0)
+		#expect(abs(totalDebt[periods[0]]! - 275_000_000.0) < 1e-2)
 	}
 
 	@Test("Covenant compliance tracking by debt type")
@@ -281,13 +281,13 @@ struct DebtSubtypeTests {
 
 		// Track revolver utilization over time
 		let revolverBalance = debtByType[.revolvingCreditFacility]!
-		#expect(revolverBalance[periods[0]]! == 30_000.0)
-		#expect(revolverBalance[periods[3]]! == 5_000.0)  // Paid down as required
+		#expect(abs(revolverBalance[periods[0]]! - 30_000.0) < 1e-2)
+		#expect(abs(revolverBalance[periods[3]]! - 5_000.0) < 1e-2)  // Paid down as required
 
 		// Track term loan amortization
 		let termLoanBalance = debtByType[.termLoanLongTerm]!
-		#expect(termLoanBalance[periods[0]]! == 100_000.0)
-		#expect(termLoanBalance[periods[3]]! == 94_000.0)  // Amortizing down
+		#expect(abs(termLoanBalance[periods[0]]! - 100_000.0) < 1e-2)
+		#expect(abs(termLoanBalance[periods[3]]! - 94_000.0) < 1e-2)  // Amortizing down
 	}
 
 	@Test("Empty debt breakdown for debt-free company")
@@ -316,6 +316,6 @@ struct DebtSubtypeTests {
 
 		// Total debt should be zero
 		let totalDebt = balanceSheet.interestBearingDebt
-		#expect(totalDebt[periods[0]]! == 0.0)
+		#expect(abs(totalDebt[periods[0]]! - 0.0) < 1e-6)
 	}
 }

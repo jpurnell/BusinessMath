@@ -47,7 +47,7 @@ struct GPUDebugTests {
         print("  Result: \(cpuResult)")
         print("  Expected: 300,000")
 
-        #expect(cpuResult == 300_000.0)
+        #expect(abs(cpuResult - 300_000.0) < 1e-2)
     }
 
     @Test("Debug GPU device simulation with hardcoded inputs")

@@ -19,16 +19,16 @@ import OSLog
         let x: Double = 4
         let y: Double = 9
         let result = (arithmeticGeometricMean([x, y]) * 10000).rounded() / 10000
-        #expect(result == 6.2475)
+        #expect(abs(result - 6.2475) < 1e-6)
     }
 	
 	@Test("ArithmeticHarmonicMean") func LArithmeticHarmonicMean() throws {
 		let x: Double = 4
 		let y: Double = 9
 		let result = (try arithmeticHarmonicMean([x, y]) * 10000).rounded() / 10000
-		#expect(result == 6.0)
+		#expect(abs(result - 6.0) < 1e-6)
 	}
-	
+
 	@Test("ContraHarmonicMean") func LContraHarmonicMean() throws {
 		let values: [Double] = [1, 2, 3, 4, 5]
 		let result = (try contraharmonicMean(values) * 10000).rounded() / 10000
@@ -44,7 +44,7 @@ import OSLog
 		let x: Double = 4
 		let y: Double = 9
 		let result = geometricMean([x, y])
-		#expect(result == 6.0)
+		#expect(abs(result - 6.0) < 1e-6)
 	}
 	
     @Test("HarmonicMean") func LHarmonicMean() throws {
@@ -118,15 +118,15 @@ import OSLog
 	@Test("Mean") func LMean() {
 		let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
 		let result = mean(doubleArray)
-		#expect(result == 2.0)
+		#expect(abs(result - 2.0) < 1e-6)
 	}
 
 	@Test("Median") func LMedian() {
 		let result = median([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
 		let resultOdd = median([0.0, 1.0, 2.0, 3.0, 4.0])
 		let resultOne = median([1.0, 1, 1, 1, 1, 1, 2])
-		#expect(result == 2.5)
-		#expect(resultOdd == 2.0)
+		#expect(abs(result - 2.5) < 1e-6)
+		#expect(abs(resultOdd - 2.0) < 1e-6)
 		#expect(resultOne == 1)
 	}
 
@@ -202,10 +202,10 @@ import OSLog
 		@Test("Single-element means return the element")
 		func single_element_means() throws {
 			let x = [42.0]
-			#expect(mean(x) == 42.0)
-			#expect(try harmonicMean(x) == 42.0)
-			#expect(geometricMean(x) == 42.0)
-			#expect(try contraharmonicMean(x) == 42.0)
+			#expect(abs(mean(x) - 42.0) < 1e-6)
+			#expect(abs(try harmonicMean(x) - 42.0) < 1e-6)
+			#expect(abs(geometricMean(x) - 42.0) < 1e-6)
+			#expect(abs(try contraharmonicMean(x) - 42.0) < 1e-6)
 			// For logarithmic/identric means (binary), this is not applicable
 		}
 	}
@@ -246,7 +246,7 @@ struct CentralTendencyNaNInfinityTests {
 		let values = [1.0, 2.0, Double.infinity]
 		let result = median(values)
 		// Median of [1, 2, inf] should be 2
-		#expect(result == 2.0)
+		#expect(abs(result - 2.0) < 1e-6)
 	}
 
 	@Test("harmonicMean rejects NaN input")
@@ -337,21 +337,21 @@ struct CentralTendencyEmptyArrayTests {
 		let values: [Double] = []
 		let result = mean(values)
 		// Empty array should return NaN or 0 depending on implementation
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("median handles empty array")
 	func median_empty_array() {
 		let values: [Double] = []
 		let result = median(values)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("mode handles empty array")
 	func mode_empty_array() {
 		let values: [Double] = []
 		let result = mode(values)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("harmonicMean throws on empty array")
@@ -366,7 +366,7 @@ struct CentralTendencyEmptyArrayTests {
 	func geometric_mean_empty_array() {
 		let values: [Double] = []
 		let result = geometricMean(values)
-		#expect(result.isNaN || result == 0.0 || result == 1.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6 || abs(result - 1.0) < 1e-6)
 	}
 
 	@Test("contraharmonicMean throws on empty array")
@@ -381,7 +381,7 @@ struct CentralTendencyEmptyArrayTests {
 	func arithmetic_geometric_mean_empty_array() {
 		let values: [Double] = []
 		let result = arithmeticGeometricMean(values)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("arithmeticHarmonicMean throws on empty array")

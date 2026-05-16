@@ -35,13 +35,13 @@ struct BinomialProperties {
 	@Test("p = 0 and p = 1 edge cases")
 	func p_zero_and_one() {
 		let n = 10.0
-		#expect(meanBinomial(n: Int(n), prob: 0.0) == 0.0)
-		#expect(varianceBinomial(n: Int(n), prob: 0.0) == 0.0)
-		#expect(stdDevBinomial(n: Int(n), prob: 0.0) == 0.0)
+		#expect(abs(meanBinomial(n: Int(n), prob: 0.0) - 0.0) < 1e-6)
+		#expect(abs(varianceBinomial(n: Int(n), prob: 0.0) - 0.0) < 1e-6)
+		#expect(abs(stdDevBinomial(n: Int(n), prob: 0.0) - 0.0) < 1e-6)
 
-		#expect(meanBinomial(n: Int(n), prob: 1.0) == n)
-		#expect(varianceBinomial(n: Int(n), prob: 1.0) == 0.0)
-		#expect(stdDevBinomial(n: Int(n), prob: 1.0) == 0.0)
+		#expect(abs(meanBinomial(n: Int(n), prob: 1.0) - n) < 1e-6)
+		#expect(abs(varianceBinomial(n: Int(n), prob: 1.0) - 0.0) < 1e-6)
+		#expect(abs(stdDevBinomial(n: Int(n), prob: 1.0) - 0.0) < 1e-6)
 	}
 }
 
@@ -54,9 +54,9 @@ struct BinomialInvalidInputTests {
 		let result_variance = varianceBinomial(n: 0, prob: 0.5)
 		let result_stdDev = stdDevBinomial(n: 0, prob: 0.5)
 
-		#expect(result_mean == 0.0)
-		#expect(result_variance == 0.0)
-		#expect(result_stdDev == 0.0)
+		#expect(abs(result_mean - 0.0) < 1e-6)
+		#expect(abs(result_variance - 0.0) < 1e-6)
+		#expect(abs(result_stdDev - 0.0) < 1e-6)
 	}
 
 	@Test("negative n produces NaN or zero")
@@ -66,9 +66,9 @@ struct BinomialInvalidInputTests {
 		let result_stdDev = stdDevBinomial(n: -5, prob: 0.5)
 
 		// Implementation should either return NaN or handle gracefully
-		#expect(result_mean.isNaN || result_mean == 0.0 || result_mean < 0.0)
-		#expect(result_variance.isNaN || result_variance == 0.0 || result_variance < 0.0)
-		#expect(result_stdDev.isNaN || result_stdDev == 0.0)
+		#expect(result_mean.isNaN || abs(result_mean - 0.0) < 1e-6 || result_mean < 0.0)
+		#expect(result_variance.isNaN || abs(result_variance - 0.0) < 1e-6 || result_variance < 0.0)
+		#expect(result_stdDev.isNaN || abs(result_stdDev - 0.0) < 1e-6)
 	}
 
 	@Test("p < 0 produces invalid result")

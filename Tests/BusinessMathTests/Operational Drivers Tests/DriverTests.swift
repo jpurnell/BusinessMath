@@ -22,8 +22,8 @@ struct DriverTests {
 		let period1 = Period.month(year: 2025, month: 1)
 		let period2 = Period.month(year: 2025, month: 2)
 
-		#expect(driver.sample(for: period1) == 10_000.0)
-		#expect(driver.sample(for: period2) == 10_000.0)
+		#expect(abs(driver.sample(for: period1) - 10_000.0) < 1e-6)
+		#expect(abs(driver.sample(for: period2) - 10_000.0) < 1e-6)
 		#expect(driver.name == "Rent")
 	}
 
@@ -36,7 +36,7 @@ struct DriverTests {
 
 		// All samples should be identical
 		for sample in samples {
-			#expect(sample == 100.0)
+			#expect(abs(sample - 100.0) < 1e-6)
 		}
 	}
 
@@ -111,7 +111,7 @@ struct DriverTests {
 
 		let period = Period.month(year: 2025, month: 1)
 
-		#expect(revenue.sample(for: period) == 1000.0)
+		#expect(abs(revenue.sample(for: period) - 1000.0) < 1e-6)
 		#expect(revenue.name == "Revenue")
 	}
 
@@ -142,7 +142,7 @@ struct DriverTests {
 
 		let period = Period.month(year: 2025, month: 1)
 
-		#expect(revenue.sample(for: period) == 1000.0)
+		#expect(abs(revenue.sample(for: period) - 1000.0) < 1e-6)
 		#expect(revenue.name.contains("×") || revenue.name.contains("*"))
 	}
 
@@ -156,7 +156,7 @@ struct DriverTests {
 
 		let period = Period.month(year: 2025, month: 1)
 
-		#expect(total.sample(for: period) == 15_000.0)
+		#expect(abs(total.sample(for: period) - 15_000.0) < 1e-6)
 		#expect(total.name == "Total")
 	}
 
@@ -168,7 +168,7 @@ struct DriverTests {
 
 		let period = Period.month(year: 2025, month: 1)
 
-		#expect(totalCost.sample(for: period) == 3000.0)
+		#expect(abs(totalCost.sample(for: period) - 3000.0) < 1e-6)
 	}
 
 	@Test("SumDriver subtracts with operator overloading")
@@ -179,7 +179,7 @@ struct DriverTests {
 
 		let period = Period.month(year: 2025, month: 1)
 
-		#expect(profit.sample(for: period) == 30_000.0)
+		#expect(abs(profit.sample(for: period) - 30_000.0) < 1e-6)
 	}
 
 	@Test("SumDriver adds probabilistic drivers")

@@ -21,11 +21,11 @@ struct AdvancedExpressionTests {
 
         // Test where a < b (should return 1.0)
         var result = model.toClosure()([5.0, 10.0])
-        #expect(result == 1.0)
+        #expect(abs(result - 1.0) < 1e-6)
 
         // Test where a >= b (should return 0.0)
         result = model.toClosure()([10.0, 5.0])
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 
     @Test("Greater than comparison")
@@ -36,11 +36,11 @@ struct AdvancedExpressionTests {
 
         var result = model.toClosure()( [150.0]
         )
-        #expect(result == 1.0)
+        #expect(abs(result - 1.0) < 1e-6)
 
         result = model.toClosure()( [50.0]
         )
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 
     @Test("Equal comparison with epsilon")
@@ -52,17 +52,17 @@ struct AdvancedExpressionTests {
         // Exactly equal
         var result = model.toClosure()( [10.0, 10.0]
         )
-        #expect(result == 1.0)
+        #expect(abs(result - 1.0) < 1e-6)
 
         // Very close (within epsilon)
         result = model.toClosure()( [10.0, 10.0 + 1e-11]
         )
-        #expect(result == 1.0)
+        #expect(abs(result - 1.0) < 1e-6)
 
         // Different
         result = model.toClosure()( [10.0, 10.1]
         )
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 
     // MARK: - Conditional Tests
@@ -80,12 +80,12 @@ struct AdvancedExpressionTests {
         // Above threshold - should apply bonus
         var result = model.toClosure()( [1500.0]
         )
-        #expect(result == 1800.0)  // 1500 * 1.2
+        #expect(abs(result - 1800.0) < 1e-2)  // 1500 * 1.2
 
         // Below threshold - no bonus
         result = model.toClosure()( [800.0]
         )
-        #expect(result == 800.0)
+        #expect(abs(result - 800.0) < 1e-6)
     }
 
     @Test("Nested conditionals")
@@ -111,17 +111,17 @@ struct AdvancedExpressionTests {
         // Tier 1: > 2000
         var result = model.toClosure()( [2500.0]
         )
-        #expect(result == 3250.0)  // 2500 * 1.3
+        #expect(abs(result - 3250.0) < 1e-2)  // 2500 * 1.3
 
         // Tier 2: > 1000 but <= 2000
         result = model.toClosure()( [1500.0]
         )
-        #expect(result == 1800.0)  // 1500 * 1.2
+        #expect(abs(result - 1800.0) < 1e-2)  // 1500 * 1.2
 
         // No bonus: <= 1000
         result = model.toClosure()( [800.0]
         )
-        #expect(result == 800.0)
+        #expect(abs(result - 800.0) < 1e-6)
     }
 
     @Test("Conditional with constants")
@@ -136,12 +136,12 @@ struct AdvancedExpressionTests {
         // Positive profit
         var result = model.toClosure()( [150.0]
         )
-        #expect(result == 150.0)
+        #expect(abs(result - 150.0) < 1e-6)
 
         // Negative profit - clamped to 0
         result = model.toClosure()( [-50.0]
         )
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 
     // MARK: - Monte Carlo Integration Tests
@@ -302,15 +302,15 @@ struct AdvancedExpressionTests {
 
         // All exceed thresholds
         var result = model.toClosure()([150.0, 75.0, 30.0])
-        #expect(result == 3.0)
+        #expect(abs(result - 3.0) < 1e-6)
 
         // Only 2 exceed
         result = model.toClosure()([150.0, 40.0, 30.0])
-        #expect(result == 2.0)
+        #expect(abs(result - 2.0) < 1e-6)
 
         // None exceed
         result = model.toClosure()([50.0, 25.0, 10.0])
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 
     @Test("Comparison with arithmetic")
@@ -330,10 +330,10 @@ struct AdvancedExpressionTests {
 
         // Good margin (30%): should get bonus
         var result = model.toClosure()([1000.0, 700.0])  // 300 profit, 30% margin
-        #expect(result == 30.0)  // 10% of 300
+        #expect(abs(result - 30.0) < 1e-6)  // 10% of 300
 
         // Poor margin (10%): no bonus
         result = model.toClosure()([1000.0, 900.0])  // 100 profit, 10% margin
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 }

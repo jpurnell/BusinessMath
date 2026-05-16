@@ -13,7 +13,7 @@ struct LiquidityRatiosTests {
         let currentAssets: Double = 15000.0
         let currentLiabilities: Double = 10000.0
         let result = try currentRatio(currentAssets: currentAssets, currentLiabilities: currentLiabilities)
-        #expect(result == 1.5) // Expected: 1.5
+        #expect(abs(result - 1.5) < 1e-6) // Expected: 1.5
     }
 
     @Test("Calculate quick ratio correctly")
@@ -22,7 +22,7 @@ struct LiquidityRatiosTests {
         let inventory: Double = 5000.0
         let currentLiabilities: Double = 15000.0
         let result = try quickRatio(currentAssets: currentAssets, inventory: inventory, currentLiabilities: currentLiabilities)
-        #expect(result == 1.0) // Expected: 1.0
+        #expect(abs(result - 1.0) < 1e-6) // Expected: 1.0
     }
 
     @Test("Current ratio throws on zero liabilities")

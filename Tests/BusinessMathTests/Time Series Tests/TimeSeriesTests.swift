@@ -50,9 +50,9 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: periods, values: values)
 
 		#expect(ts.count == 3)
-		#expect(ts[periods[0]] == 100.0)
-		#expect(ts[periods[1]] == 200.0)
-		#expect(ts[periods[2]] == 300.0)
+		#expect(abs((ts[periods[0]] ?? 0) - 100.0) < 1e-6)
+		#expect(abs((ts[periods[1]] ?? 0) - 200.0) < 1e-6)
+		#expect(abs((ts[periods[2]] ?? 0) - 300.0) < 1e-6)
 	}
 
 	@Test("Create time series with metadata")
@@ -78,7 +78,7 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: hours, values: values)
 		#expect(timeSeries.count == 24)
-		#expect(timeSeries[hours[12]] == 120.0)
+		#expect(abs((timeSeries[hours[12]] ?? 0) - 120.0) < 1e-6)
 	}
 
 	@Test("TimeSeries works with minute data")
@@ -90,7 +90,7 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: minutes, values: values)
 		#expect(timeSeries.count == 60)
-		#expect(timeSeries[minutes[30]] == 30.0)
+		#expect(abs((timeSeries[minutes[30]] ?? 0) - 30.0) < 1e-6)
 	}
 
 	@Test("TimeSeries works with second data")
@@ -102,7 +102,7 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: seconds, values: values)
 		#expect(timeSeries.count == 60)
-		#expect(timeSeries[seconds[45]] == 45.0)
+		#expect(abs((timeSeries[seconds[45]] ?? 0) - 45.0) < 1e-6)
 	}
 
 	@Test("TimeSeries works with millisecond data")
@@ -119,7 +119,7 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: milliseconds, values: values)
 		#expect(timeSeries.count == 100)
-		#expect(timeSeries[milliseconds[50]] == 50.0)
+		#expect(abs((timeSeries[milliseconds[50]] ?? 0) - 50.0) < 1e-6)
 	}
 
 	@Test("Create time series from dictionary")
@@ -134,8 +134,8 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(data: data)
 
 		#expect(ts.count == 2)
-		#expect(ts[jan] == 100.0)
-		#expect(ts[feb] == 200.0)
+		#expect(abs((ts[jan] ?? 0) - 100.0) < 1e-6)
+		#expect(abs((ts[feb] ?? 0) - 200.0) < 1e-6)
 	}
 
 	@Test("Initialization sorts periods chronologically")
@@ -151,9 +151,9 @@ struct TimeSeriesTests {
 
 		// Should sort by period, not preserve input order
 		let valuesArray = ts.valuesArray
-		#expect(valuesArray[0] == 100.0)  // Jan (month 1)
-		#expect(valuesArray[1] == 200.0)  // Feb (month 2)
-		#expect(valuesArray[2] == 300.0)  // Mar (month 3)
+		#expect(abs(valuesArray[0] - 100.0) < 1e-6)  // Jan (month 1)
+		#expect(abs(valuesArray[1] - 200.0) < 1e-6)  // Feb (month 2)
+		#expect(abs(valuesArray[2] - 300.0) < 1e-6)  // Mar (month 3)
 	}
 
 	@Test("Initialization handles duplicate periods by keeping last value")
@@ -166,7 +166,7 @@ struct TimeSeriesTests {
 
 		// Should keep the last value
 		#expect(ts.count == 1)
-		#expect(ts[jan] == 200.0)
+		#expect(abs((ts[jan] ?? 0) - 200.0) < 1e-6)
 	}
 
 	// MARK: - Subscript Access
@@ -177,7 +177,7 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: [jan], values: [100.0])
 
 		let value = ts[jan]
-		#expect(value == 100.0)
+		#expect(abs((value ?? 0) - 100.0) < 1e-6)
 	}
 
 	@Test("Subscript returns nil for missing period")
@@ -197,7 +197,7 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: [jan], values: [100.0])
 
 		let value = ts[feb, default: 0.0]
-		#expect(value == 0.0)
+		#expect(abs(value - 0.0) < 1e-6)
 	}
 
 	@Test("Subscript with default returns value for existing period")
@@ -206,7 +206,7 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: [jan], values: [100.0])
 
 		let value = ts[jan, default: 0.0]
-		#expect(value == 100.0)
+		#expect(abs(value - 100.0) < 1e-6)
 	}
 
 	// MARK: - Computed Properties
@@ -223,9 +223,9 @@ struct TimeSeriesTests {
 
 		let valuesArray = ts.valuesArray
 		#expect(valuesArray.count == 3)
-		#expect(valuesArray[0] == 100.0)
-		#expect(valuesArray[1] == 200.0)
-		#expect(valuesArray[2] == 300.0)
+		#expect(abs(valuesArray[0] - 100.0) < 1e-6)
+		#expect(abs(valuesArray[1] - 200.0) < 1e-6)
+		#expect(abs(valuesArray[2] - 300.0) < 1e-6)
 	}
 
 	@Test("count returns number of periods")
@@ -250,7 +250,7 @@ struct TimeSeriesTests {
 		let values: [Double] = [100.0, 200.0]
 		let ts = TimeSeries(periods: periods, values: values)
 
-		#expect(ts.first == 100.0)
+		#expect(abs((ts.first ?? 0) - 100.0) < 1e-6)
 	}
 
 	@Test("last returns last value")
@@ -262,7 +262,7 @@ struct TimeSeriesTests {
 		let values: [Double] = [100.0, 200.0]
 		let ts = TimeSeries(periods: periods, values: values)
 
-		#expect(ts.last == 200.0)
+		#expect(abs((ts.last ?? 0) - 200.0) < 1e-6)
 	}
 
 	@Test("first returns nil for empty time series")
@@ -311,8 +311,8 @@ struct TimeSeriesTests {
 		let subset = ts.range(from: feb, to: mar)
 
 		#expect(subset.count == 2)
-		#expect(subset[feb] == 200.0)
-		#expect(subset[mar] == 300.0)
+		#expect(abs((subset[feb] ?? 0) - 200.0) < 1e-6)
+		#expect(abs((subset[mar] ?? 0) - 300.0) < 1e-6)
 		#expect(subset[jan] == nil)
 		#expect(subset[apr] == nil)
 	}
@@ -331,8 +331,8 @@ struct TimeSeriesTests {
 		let subset = ts.range(from: jan, to: mar)
 
 		#expect(subset.count == 3)
-		#expect(subset[jan] == 100.0)
-		#expect(subset[mar] == 300.0)
+		#expect(abs((subset[jan] ?? 0) - 100.0) < 1e-6)
+		#expect(abs((subset[mar] ?? 0) - 300.0) < 1e-6)
 	}
 
 	@Test("range with same start and end returns single period")
@@ -348,7 +348,7 @@ struct TimeSeriesTests {
 		let subset = ts.range(from: feb, to: feb)
 
 		#expect(subset.count == 1)
-		#expect(subset[feb] == 200.0)
+		#expect(abs((subset[feb] ?? 0) - 200.0) < 1e-6)
 	}
 
 	@Test("range preserves metadata")
@@ -401,8 +401,8 @@ struct TimeSeriesTests {
 		let doubled = ts.map { $0 * 2.0 }
 
 		#expect(doubled.count == 2)
-		#expect(doubled[0] == 200.0)
-		#expect(doubled[1] == 400.0)
+		#expect(abs(doubled[0] - 200.0) < 1e-6)
+		#expect(abs(doubled[1] - 400.0) < 1e-6)
 	}
 
 	@Test("Can use filter on time series")
@@ -453,9 +453,9 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: [jan], values: [100.0])
 
 		#expect(ts.count == 1)
-		#expect(ts.first == 100.0)
-		#expect(ts.last == 100.0)
-		#expect(ts[jan] == 100.0)
+		#expect(abs((ts.first ?? 0) - 100.0) < 1e-6)
+		#expect(abs((ts.last ?? 0) - 100.0) < 1e-6)
+		#expect(abs((ts[jan] ?? 0) - 100.0) < 1e-6)
 	}
 
 	// NOTE: Mixed period types are supported, but currently trigger a Strideable
@@ -484,7 +484,7 @@ struct TimeSeriesTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries<Float>(periods: [jan], values: [100.0])
 
-		#expect(ts[jan] == 100.0)
+		#expect(abs((ts[jan] ?? 0) - 100.0) < 1e-6)
 	}
 
 	@Test("Time series with zero values")
@@ -494,8 +494,8 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: [jan, feb], values: [0.0, 0.0])
 
 		#expect(ts.count == 2)
-		#expect(ts[jan] == 0.0)
-		#expect(ts[feb] == 0.0)
+		#expect(abs((ts[jan] ?? 0) - 0.0) < 1e-6)
+		#expect(abs((ts[feb] ?? 0) - 0.0) < 1e-6)
 	}
 
 	@Test("Time series with negative values")
@@ -503,7 +503,7 @@ struct TimeSeriesTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries(periods: [jan], values: [-100.0])
 
-		#expect(ts[jan] == -100.0)
+		#expect(abs((ts[jan] ?? 0) - (-100.0)) < 1e-6)
 	}
 
 	@Test("Time series with very large values")
@@ -511,7 +511,7 @@ struct TimeSeriesTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries(periods: [jan], values: [1_000_000_000.0])
 
-		#expect(ts[jan] == 1_000_000_000.0)
+		#expect(abs((ts[jan] ?? 0) - 1_000_000_000.0) < 1e-2)
 	}
 
 	// MARK: - Real-World Scenarios

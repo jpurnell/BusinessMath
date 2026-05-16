@@ -82,10 +82,10 @@ struct WorkingCapitalTests {
 		let nwc = balanceSheet.netWorkingCapital
 
 		// Q1: ($500K + $1M + $800K) - ($600K + $200K) = $2.3M - $800K = $1.5M
-		#expect(nwc[periods[0]]! == 1_500_000.0)
+		#expect(abs(nwc[periods[0]]! - 1_500_000.0) < 1e-2)
 
 		// Q2: ($600K + $1.2M + $900K) - ($700K + $250K) = $2.7M - $950K = $1.75M
-		#expect(nwc[periods[1]]! == 1_750_000.0)
+		#expect(abs(nwc[periods[1]]! - 1_750_000.0) < 1e-2)
 	}
 
 	@Test("Net working capital equals working capital")
@@ -174,7 +174,7 @@ struct WorkingCapitalTests {
 		let nwc = balanceSheet.netWorkingCapital
 
 		// ($500K + $1M) - ($1.2M + $800K) = $1.5M - $2M = -$500K
-		#expect(nwc[periods[0]]! == -500_000.0)
+		#expect(abs(nwc[periods[0]]! - (-500_000.0)) < 1e-2)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -240,13 +240,13 @@ struct WorkingCapitalTests {
 		#expect(components.count == 5)
 
 		// Current assets (positive)
-		#expect(components[BalanceSheetRole.cashAndEquivalents]![periods[0]]! == 300_000.0)
-		#expect(components[BalanceSheetRole.accountsReceivable]![periods[0]]! == 500_000.0)
-		#expect(components[BalanceSheetRole.inventory]![periods[0]]! == 400_000.0)
+		#expect(abs(components[BalanceSheetRole.cashAndEquivalents]![periods[0]]! - 300_000.0) < 1e-2)
+		#expect(abs(components[BalanceSheetRole.accountsReceivable]![periods[0]]! - 500_000.0) < 1e-2)
+		#expect(abs(components[BalanceSheetRole.inventory]![periods[0]]! - 400_000.0) < 1e-2)
 
 		// Current liabilities (negative - showing reduction in NWC)
-		#expect(components[BalanceSheetRole.accountsPayable]![periods[0]]! == -350_000.0)
-		#expect(components[BalanceSheetRole.accruedLiabilities]![periods[0]]! == -150_000.0)
+		#expect(abs(components[BalanceSheetRole.accountsPayable]![periods[0]]! - (-350_000.0)) < 1e-2)
+		#expect(abs(components[BalanceSheetRole.accruedLiabilities]![periods[0]]! - (-150_000.0)) < 1e-2)
 	}
 
 	@Test("Working capital components sum equals net working capital")
@@ -350,10 +350,10 @@ struct WorkingCapitalTests {
 		let components: [BalanceSheetRole: TimeSeries<Double>] = balanceSheet.workingCapitalComponents
 
 		// Should aggregate both cash accounts
-		#expect(components[BalanceSheetRole.cashAndEquivalents]![periods[0]]! == 105_000.0)
+		#expect(abs(components[BalanceSheetRole.cashAndEquivalents]![periods[0]]! - 105_000.0) < 1e-2)
 
 		// Should aggregate both AP accounts (negative)
-		#expect(components[BalanceSheetRole.accountsPayable]![periods[0]]! == -60_000.0)
+		#expect(abs(components[BalanceSheetRole.accountsPayable]![periods[0]]! - (-60_000.0)) < 1e-2)
 	}
 
 	@Test("Working capital components exclude non-current items")
@@ -465,7 +465,7 @@ struct WorkingCapitalTests {
 		let turnover = balanceSheet.workingCapitalTurnover(revenue: revenue)
 
 		// Q1: $5M / $1M = 5.0×
-		#expect(turnover[periods[0]]! == 5.0)
+		#expect(abs(turnover[periods[0]]! - 5.0) < 1e-6)
 
 		// Q2: $6M / (($1M + $1.2M) / 2) = $6M / $1.1M = 5.45×
 		let q2Expected = 6_000_000.0 / 1_100_000.0
@@ -523,7 +523,7 @@ struct WorkingCapitalTests {
 		let turnover = balanceSheet.workingCapitalTurnover(revenue: revenue)
 
 		// $10M / $100K = 100× (very high - typical for retail)
-		#expect(turnover[periods[0]]! == 100.0)
+		#expect(abs(turnover[periods[0]]! - 100.0) < 1e-6)
 	}
 
 	@Test("Low working capital turnover (manufacturing)")
@@ -642,19 +642,19 @@ struct WorkingCapitalTests {
 		let q1ToQ2ARChange = arComponent[periods[1]]! - arComponent[periods[0]]!
 		let q3ToQ4ARChange = arComponent[periods[3]]! - arComponent[periods[2]]!
 
-		#expect(q1ToQ2ARChange == 200_000.0)  // AR increased - use of cash
-		#expect(q3ToQ4ARChange == -100_000.0)  // AR decreased - source of cash
+		#expect(abs(q1ToQ2ARChange - 200_000.0) < 1e-2)  // AR increased - use of cash
+		#expect(abs(q3ToQ4ARChange - (-100_000.0)) < 1e-2)  // AR decreased - source of cash
 
 		// Track total NWC changes
 		let q1NWC = nwc[periods[0]]!  // $1M + $800K - $500K = $1.3M
 		let q4NWC = nwc[periods[3]]!  // $1.3M + $800K - $750K = $1.35M
 
-		#expect(q1NWC == 1_300_000.0)
-		#expect(q4NWC == 1_350_000.0)
+		#expect(abs(q1NWC - 1_300_000.0) < 1e-2)
+		#expect(abs(q4NWC - 1_350_000.0) < 1e-2)
 
 		// Small NWC increase overall ($50K use of cash)
 		let nwcChange = q4NWC - q1NWC
-		#expect(nwcChange == 50_000.0)
+		#expect(abs(nwcChange - 50_000.0) < 1e-2)
 	}
 
 	@Test("LBO: Working capital efficiency improvement post-acquisition")
@@ -716,14 +716,14 @@ struct WorkingCapitalTests {
 		let turnover = balanceSheet.workingCapitalTurnover(revenue: revenue)
 
 		// Pre-acquisition NWC: ($500K + $3M + $2.5M) - $1M = $5M
-		#expect(nwc[periodsPreAcquisition[0]]! == 5_000_000.0)
+		#expect(abs(nwc[periodsPreAcquisition[0]]! - 5_000_000.0) < 1e-2)
 
 		// Post-acquisition NWC (2025): ($500K + $2.2M + $1.8M) - $1M = $3.5M
-		#expect(nwc[periodsPostAcquisition[1]]! == 3_500_000.0)
+		#expect(abs(nwc[periodsPostAcquisition[1]]! - 3_500_000.0) < 1e-2)
 
 		// Cash released from WC optimization: $5M - $3.5M = $1.5M
 		let cashReleased = nwc[periodsPreAcquisition[0]]! - nwc[periodsPostAcquisition[1]]!
-		#expect(cashReleased == 1_500_000.0)
+		#expect(abs(cashReleased - 1_500_000.0) < 1e-2)
 
 		// Turnover improved (lower denominator with stable revenue)
 		let preAcquisitionTurnover = turnover[periodsPreAcquisition[0]]!
@@ -769,6 +769,6 @@ struct WorkingCapitalTests {
 		#expect(components.isEmpty)
 
 		// NWC should be zero
-		#expect(balanceSheet.netWorkingCapital[periods[0]]! == 0.0)
+		#expect(abs(balanceSheet.netWorkingCapital[periods[0]]! - 0.0) < 1e-6)
 	}
 }

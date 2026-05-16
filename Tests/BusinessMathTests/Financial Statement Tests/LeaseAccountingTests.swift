@@ -449,8 +449,8 @@ struct LeaseAccountingTests {
 
         // If elected, no ROU asset or liability recognized
         if lease.applyShortTermExemption {
-            #expect(lease.rightOfUseAsset() == 0.0)
-            #expect(lease.liabilitySchedule()[q1] == 0.0)
+            #expect(abs(lease.rightOfUseAsset() - 0.0) < 1e-6)
+            #expect(abs(lease.liabilitySchedule()[q1]! - 0.0) < 1e-6)
         }
     }
 
@@ -477,7 +477,7 @@ struct LeaseAccountingTests {
         #expect(lease.isLowValue)
 
         if lease.applyLowValueExemption {
-            #expect(lease.rightOfUseAsset() == 0.0)
+            #expect(abs(lease.rightOfUseAsset() - 0.0) < 1e-6)
         }
     }
 
@@ -505,7 +505,7 @@ struct LeaseAccountingTests {
 
         // Should use IBR for discounting
         #expect(rouAsset > 0.0)
-        #expect(lease.effectiveRate == 0.07)
+        #expect(abs(lease.effectiveRate - 0.07) < 1e-6)
     }
 
     @Test("Discount rate - implicit rate in lease")
@@ -527,7 +527,7 @@ struct LeaseAccountingTests {
         )
 
         // Implicit rate preferred when determinable
-        #expect(lease.effectiveRate == 0.055)
+        #expect(abs(lease.effectiveRate - 0.055) < 1e-6)
     }
 
     // MARK: - Sale and Leaseback

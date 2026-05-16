@@ -57,7 +57,7 @@ struct FinancialScenarioTests {
 		// Verify the override driver returns expected value
 		let period = Period.quarter(year: 2025, quarter: 1)
 		let overrideValue = scenario.driverOverrides["Price"]?.sample(for: period)
-		#expect(overrideValue == 120.0)
+		#expect(abs((overrideValue ?? 0) - 120.0) < 1e-6)
 	}
 
 	@Test("Scenario with multiple driver overrides")
@@ -144,7 +144,7 @@ struct FinancialScenarioTests {
 		// Test that override returns same value for all periods
 		for period in periods {
 			let value = scenario.driverOverrides["Revenue Growth"]?.sample(for: period)
-			#expect(value == 0.15)
+			#expect(abs((value ?? 0) - 0.15) < 1e-6)
 		}
 	}
 
@@ -229,9 +229,9 @@ struct FinancialScenarioTests {
 		let optimisticPrice = optimisticScenario.driverOverrides["Price"]?.sample(for: period)
 		let pessimisticPrice = pessimisticScenario.driverOverrides["Price"]?.sample(for: period)
 
-		#expect(basePrice == 100.0)
-		#expect(optimisticPrice == 120.0)
-		#expect(pessimisticPrice == 90.0)
+		#expect(abs((basePrice ?? 0) - 100.0) < 1e-6)
+		#expect(abs((optimisticPrice ?? 0) - 120.0) < 1e-6)
+		#expect(abs((pessimisticPrice ?? 0) - 90.0) < 1e-6)
 
 		// Verify ordering
 		#expect(pessimisticPrice! < basePrice!)

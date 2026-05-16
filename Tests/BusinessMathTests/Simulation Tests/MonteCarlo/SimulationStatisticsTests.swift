@@ -21,10 +21,10 @@ struct SimulationStatisticsTests {
 		let stats = SimulationStatistics(values: values)
 
 		// Test basic statistics
-		#expect(stats.mean == 5.5, "Mean of 1-10 should be 5.5")
-		#expect(stats.median == 5.5, "Median of 1-10 should be 5.5")
-		#expect(stats.min == 1.0, "Min should be 1.0")
-		#expect(stats.max == 10.0, "Max should be 10.0")
+		#expect(abs(stats.mean - 5.5) < 1e-6, "Mean of 1-10 should be 5.5")
+		#expect(abs(stats.median - 5.5) < 1e-6, "Median of 1-10 should be 5.5")
+		#expect(abs(stats.min - 1.0) < 1e-6, "Min should be 1.0")
+		#expect(abs(stats.max - 10.0) < 1e-6, "Max should be 10.0")
 
 		// Test standard deviation
 		// For 1-10: stdDev ≈ 2.872 (population) or 3.028 (sample)

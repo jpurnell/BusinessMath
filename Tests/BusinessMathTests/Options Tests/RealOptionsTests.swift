@@ -108,7 +108,7 @@ struct RealOptionsTests {
 
 		let value = RealOptionsAnalysis<Double>.decisionTree(root: terminal)
 
-		#expect(value == 100.0)
+		#expect(abs(value - 100.0) < 1e-6)
 	}
 
 	@Test("Chance node calculates expected value")
@@ -148,7 +148,7 @@ struct RealOptionsTests {
 		let value = RealOptionsAnalysis<Double>.decisionTree(root: decisionNode)
 
 		// Should choose the better option (200)
-		#expect(value == 200.0)
+		#expect(abs(value - 200.0) < 1e-6)
 	}
 
 	@Test("Complex decision tree")
@@ -180,7 +180,7 @@ struct RealOptionsTests {
 		// High risk EV = 0.3 * 500 + 0.7 * (-100) = 150 - 70 = 80
 		// Low risk = 100
 		// Should choose low risk (100)
-		#expect(value == 100.0)
+		#expect(abs(value - 100.0) < 1e-6)
 	}
 
 	// MARK: - Edge Cases
@@ -209,6 +209,6 @@ struct RealOptionsTests {
 
 		let value = RealOptionsAnalysis<Double>.decisionTree(root: node)
 
-		#expect(value == 50.0)
+		#expect(abs(value - 50.0) < 1e-6)
 	}
 }

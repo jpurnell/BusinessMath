@@ -93,6 +93,6 @@ struct BytecodeFaultInjectionTests {
 		}
 
 		let result = try model.evaluate(inputs: [10.0, 20.0])
-		#expect(result == 30.0, "10.0 + 20.0 should equal 30.0")
+		#expect(abs(result - 30.0) < 1e-6, "10.0 + 20.0 should equal 30.0")
 	}
 }

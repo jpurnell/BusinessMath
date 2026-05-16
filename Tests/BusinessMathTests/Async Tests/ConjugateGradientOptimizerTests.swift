@@ -244,7 +244,7 @@ struct ConjugateGradientOptimizerTests {
         let betaValues = betaCollector.getItems()
         // Beta should be 0 for first iteration, non-zero for subsequent
         if betaValues.count >= 2 {
-            #expect(betaValues[0] == 0.0) // First iteration
+            #expect(abs(betaValues[0] - 0.0) < 1e-6) // First iteration
             // Later iterations may have non-zero beta
         }
     }

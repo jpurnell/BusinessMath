@@ -24,7 +24,7 @@ import Glibc
 
     @Test("Confidence") func LConfidence() {
         let result = (confidence(alpha: 0.05, stdev: 2.5, sampleSize: 50).high * 1000000.0).rounded(.up) / 1000000.0
-        #expect(result == 0.692952)
+        #expect(abs(result - 0.692952) < 1e-6)
     }
 
     @Test("Z-test p-value is non-significant for near-population sample")

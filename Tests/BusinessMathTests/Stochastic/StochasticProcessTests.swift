@@ -41,7 +41,7 @@ struct StochasticProcessTests {
     func mockStep() {
         let process = MockConstantProcess()
         let result = process.step(from: 100.0, dt: 1.0/12.0, normalDraws: 0.5)
-        #expect(result == 100.0)
+        #expect(abs(result - 100.0) < 1e-6)
     }
 
     @Test("Mock drift process accumulates over steps")
@@ -72,6 +72,6 @@ struct StochasticProcessTests {
     func stateType() {
         let process = MockConstantProcess()
         let result: MockConstantProcess.State = process.step(from: 50.0, dt: 0.1, normalDraws: 0.0)
-        #expect(result == 50.0)
+        #expect(abs(result - 50.0) < 1e-6)
     }
 }

@@ -132,8 +132,8 @@ struct ScenarioSensitivityAnalysisTests {
 		#expect(sensitivity.outputValues.count == 5)
 
 		// Verify input range
-		#expect(sensitivity.inputValues.first == 800.0)
-		#expect(sensitivity.inputValues.last == 1200.0)
+		#expect(abs((sensitivity.inputValues.first ?? 0) - 800.0) < 1e-2)
+		#expect(abs((sensitivity.inputValues.last ?? 0) - 1200.0) < 1e-2)
 
 		// Verify output increases with revenue (linear in this simple case)
 		#expect(sensitivity.outputValues[0] < sensitivity.outputValues[4])
@@ -476,7 +476,7 @@ struct ScenarioSensitivityAnalysisTests {
 
 		#expect(sensitivity.inputValues.count == 1)
 		#expect(sensitivity.outputValues.count == 1)
-		#expect(sensitivity.inputValues[0] == 1000.0)
+		#expect(abs(sensitivity.inputValues[0] - 1000.0) < 1e-2)
 	}
 
 	@Test("Sensitivity analysis with narrow range")
@@ -511,11 +511,11 @@ struct ScenarioSensitivityAnalysisTests {
 		}
 
 		#expect(sensitivity.inputValues.count == 5)
-		#expect(sensitivity.inputValues.first == 990.0)
-		#expect(sensitivity.inputValues.last == 1010.0)
+		#expect(abs((sensitivity.inputValues.first ?? 0) - 990.0) < 1e-2)
+		#expect(abs((sensitivity.inputValues.last ?? 0) - 1010.0) < 1e-2)
 
 		// Verify range is narrow
 		let range = sensitivity.inputValues.last! - sensitivity.inputValues.first!
-		#expect(range == 20.0)
+		#expect(abs(range - 20.0) < 1e-6)
 	}
 }

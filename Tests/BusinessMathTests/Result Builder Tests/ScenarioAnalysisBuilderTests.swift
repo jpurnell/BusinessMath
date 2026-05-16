@@ -34,8 +34,8 @@ struct ScenarioAnalysisBuilderTests {
         #expect(analysis.scenarios.count == 1)
         #expect(analysis.scenarios[0].name == "Base Case")
         #expect(analysis.scenarios[0].parameters["revenue"] == 1_000_000)
-        #expect(analysis.scenarios[0].parameters["growth"] == 0.15)
-        #expect(analysis.scenarios[0].parameters["expenses"] == 0.60)
+        #expect(abs((analysis.scenarios[0].parameters["growth"] ?? .nan) - 0.15) < 1e-6)
+        #expect(abs((analysis.scenarios[0].parameters["expenses"] ?? .nan) - 0.60) < 1e-6)
     }
 
     @Test("Multiple named scenarios")
@@ -87,7 +87,7 @@ struct ScenarioAnalysisBuilderTests {
         // All should have same revenue and expenses
         for scenario in analysis.scenarios {
             #expect(scenario.parameters["revenue"] == 1_000_000)
-            #expect(scenario.parameters["expenses"] == 0.60)
+            #expect(abs((scenario.parameters["expenses"] ?? .nan) - 0.60) < 1e-6)
         }
     }
 
@@ -124,7 +124,11 @@ struct ScenarioAnalysisBuilderTests {
         #expect(analysis.scenarios.count == 4)
 
         let taxRates = analysis.scenarios.map { $0.parameters["taxRate"] ?? 0 }
-        #expect(taxRates == [0.15, 0.21, 0.25, 0.30])
+        #expect(taxRates.count == 4)
+        #expect(abs(taxRates[0] - 0.15) < 1e-6)
+        #expect(abs(taxRates[1] - 0.21) < 1e-6)
+        #expect(abs(taxRates[2] - 0.25) < 1e-6)
+        #expect(abs(taxRates[3] - 0.30) < 1e-6)
     }
 
     // MARK: - Sensitivity Analysis Tests
@@ -199,8 +203,8 @@ struct ScenarioAnalysisBuilderTests {
         let results = analysis.evaluate(with: evaluate)
 
         #expect(results.count == 2)
-        #expect(results["Conservative"] == 840_000)      // 800k * 1.05
-        #expect(results["Aggressive"] == 1_950_000)      // 1.5M * 1.30
+        #expect(abs((results["Conservative"] ?? .nan) - 840_000) < 1e-2)      // 800k * 1.05
+        #expect(abs((results["Aggressive"] ?? .nan) - 1_950_000) < 1e-2)      // 1.5M * 1.30
     }
 
     @Test("Find best and worst scenarios")
@@ -386,6 +390,6 @@ struct ScenarioAnalysisBuilderTests {
 
         // Single step should use the 'from' value
         #expect(analysis.scenarios.count == 1)
-        #expect(analysis.scenarios[0].parameters["growth"] == 0.10)
+        #expect(abs((analysis.scenarios[0].parameters["growth"] ?? .nan) - 0.10) < 1e-6)
     }
 }

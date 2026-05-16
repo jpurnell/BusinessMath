@@ -22,8 +22,8 @@ struct GeneticAlgorithmTests {
 
         #expect(config.populationSize == 100)
         #expect(config.generations == 100)
-        #expect(config.crossoverRate == 0.8)
-        #expect(config.mutationRate == 0.1)
+        #expect(abs(config.crossoverRate - 0.8) < 1e-6)
+        #expect(abs(config.mutationRate - 0.1) < 1e-6)
         #expect(config.eliteCount == 2)
         #expect(config.tournamentSize == 3)
     }

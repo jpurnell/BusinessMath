@@ -40,7 +40,7 @@ struct InvestmentBuilderTests {
 
         #expect(investment.initialCost == 100_000)
         #expect(investment.cashFlows.count == 3)
-        #expect(investment.discountRate == 0.10)
+        #expect(abs(investment.discountRate - 0.10) < 1e-6)
     }
 
     @Test("Investment with all components")
@@ -65,7 +65,7 @@ struct InvestmentBuilderTests {
         #expect(investment.investmentDescription == "Residential solar installation project")
         #expect(investment.initialCost == 50_000)
         #expect(investment.cashFlows.count == 5)
-        #expect(investment.discountRate == 0.08)
+        #expect(abs(investment.discountRate - 0.08) < 1e-6)
     }
 
     @Test("Minimal investment")
@@ -80,7 +80,7 @@ struct InvestmentBuilderTests {
         }
 
         // Should use default 10% discount rate
-        #expect(investment.discountRate == 0.10)
+        #expect(abs(investment.discountRate - 0.10) < 1e-6)
         #expect(investment.name == nil)
         #expect(investment.investmentDescription == nil)
     }
@@ -314,7 +314,7 @@ struct InvestmentBuilderTests {
 
         #expect(investment.initialCost == 100_000)
         #expect(investment.cashFlows.count == 5)
-        #expect(investment.discountRate == 0.10)
+        #expect(abs(investment.discountRate - 0.10) < 1e-6)
 
         // All cash flows should be equal
         for cf in investment.cashFlows {
@@ -334,7 +334,7 @@ struct InvestmentBuilderTests {
 
         #expect(investment.initialCost == 100_000)
         #expect(investment.cashFlows.count == 4)
-        #expect(investment.discountRate == 0.12)
+        #expect(abs(investment.discountRate - 0.12) < 1e-6)
 
         // Cash flows should grow at 10% per year
         #expect(abs(investment.cashFlows[0].amount - 20_000) < 0.01)
@@ -634,9 +634,9 @@ struct InvestmentBuilderTests {
             DiscountRate(0.10)
         }
 
-        #expect(investment.cashFlows[0].amount == 25_500.50)
-        #expect(investment.cashFlows[1].amount == 30_750.75)
-        #expect(investment.cashFlows[2].amount == 35_999.99)
+        #expect(abs(investment.cashFlows[0].amount - 25_500.50) < 1e-6)
+        #expect(abs(investment.cashFlows[1].amount - 30_750.75) < 1e-6)
+        #expect(abs(investment.cashFlows[2].amount - 35_999.99) < 1e-6)
 
         // NPV calculation should handle fractional amounts
         #expect(investment.npv != 0)

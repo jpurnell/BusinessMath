@@ -25,7 +25,7 @@ struct AsyncGradientDescentOptimizerTests {
     func defaultInitialization() {
         let optimizer = AsyncGradientDescentOptimizer<Double>()
 
-        #expect(optimizer.learningRate == 0.01)
+        #expect(abs(optimizer.learningRate - 0.01) < 1e-6)
         #expect(abs(optimizer.momentum - 0.797734375) < 0.0001)  // Default momentum value
         #expect(optimizer.useNesterov == false)
     }
@@ -41,8 +41,8 @@ struct AsyncGradientDescentOptimizerTests {
             stepSize: 1e-5
         )
 
-        #expect(optimizer.learningRate == 0.05)
-        #expect(optimizer.momentum == 0.7)
+        #expect(abs(optimizer.learningRate - 0.05) < 1e-6)
+        #expect(abs(optimizer.momentum - 0.7) < 1e-6)
         #expect(optimizer.useNesterov == true)
     }
 

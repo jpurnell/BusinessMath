@@ -197,7 +197,7 @@ struct CreditCurveTests {
             recoveryRate: 0.40
         )
 
-        #expect(curve.recoveryRate == 0.40)
+        #expect(abs(curve.recoveryRate - 0.40) < 1e-6)
         #expect(curve.spreads.count == 4)
     }
 

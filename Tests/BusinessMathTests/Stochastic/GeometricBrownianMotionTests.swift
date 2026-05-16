@@ -71,7 +71,7 @@ struct GeometricBrownianMotionTests {
         let gbm = GeometricBrownianMotion(name: "Test", drift: 0.05, volatility: 0.25)
         let result = gbm.step(from: 0.0, dt: 1.0 / 12.0, normalDraws: 0.5)
         // GBM: 0 * exp(...) = 0 always
-        #expect(result == 0.0)
+        #expect(abs(result - 0.0) < 1e-6)
     }
 
     // MARK: - Property-Based

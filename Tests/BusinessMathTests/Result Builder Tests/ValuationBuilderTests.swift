@@ -374,6 +374,6 @@ struct ValuationBuilderTests {
         // Should provide detailed metrics
         #expect(valuation.forecastYears == 5)
         #expect(valuation.terminalValueMultiple > 0)
-        #expect(valuation.wacc == 0.10)
+        #expect(abs(valuation.wacc - 0.10) < 1e-6)
     }
 }

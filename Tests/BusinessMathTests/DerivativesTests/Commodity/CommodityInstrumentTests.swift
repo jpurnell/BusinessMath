@@ -29,7 +29,7 @@ struct CommoditySwapTests {
 			settlementPeriods: periods
 		)
 		let result = swap.settlement(spotPrice: 70.0)
-		#expect(result == 2.0 * 1000.0)
+		#expect(abs(result - 2.0 * 1000.0) < 1e-2)
 	}
 
 	@Test("Producer pays when spot is above fixed price")
@@ -41,7 +41,7 @@ struct CommoditySwapTests {
 			settlementPeriods: periods
 		)
 		let result = swap.settlement(spotPrice: 74.0)
-		#expect(result == -2.0 * 1000.0)
+		#expect(abs(result - (-2.0 * 1000.0)) < 1e-2)
 	}
 
 	@Test("Zero settlement when spot equals fixed")
@@ -53,7 +53,7 @@ struct CommoditySwapTests {
 			settlementPeriods: periods
 		)
 		let result = swap.settlement(spotPrice: 72.0)
-		#expect(result == 0.0)
+		#expect(abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("Multiple period settlements from realized prices")
@@ -70,9 +70,9 @@ struct CommoditySwapTests {
 		)
 		let settlements = swap.settlements(realizedPrices: realizedPrices)
 
-		#expect(settlements[periods[0]] == 2.0)
-		#expect(settlements[periods[1]] == -2.0)
-		#expect(settlements[periods[2]] == 4.0)
+		#expect(abs((settlements[periods[0]] ?? 0) - 2.0) < 1e-6)
+		#expect(abs((settlements[periods[1]] ?? 0) - (-2.0)) < 1e-6)
+		#expect(abs((settlements[periods[2]] ?? 0) - 4.0) < 1e-6)
 	}
 
 	@Test("Zero volume produces zero settlement")
@@ -84,7 +84,7 @@ struct CommoditySwapTests {
 			settlementPeriods: periods
 		)
 		let result = swap.settlement(spotPrice: 70.0)
-		#expect(result == 0.0)
+		#expect(abs(result - 0.0) < 1e-6)
 	}
 }
 
@@ -110,9 +110,9 @@ struct CommodityCollarTests {
 		)
 		// spot $50: put pays (60 - 50) = $10 per unit
 		let payoff = collar.payoff(spotPrice: 50.0)
-		#expect(payoff == 10.0)
+		#expect(abs(payoff - 10.0) < 1e-6)
 		let settlement = collar.settlement(spotPrice: 50.0)
-		#expect(settlement == 10.0 * 1000.0)
+		#expect(abs(settlement - 10.0 * 1000.0) < 1e-2)
 	}
 
 	@Test("Zero payoff when spot between strikes")
@@ -125,7 +125,7 @@ struct CommodityCollarTests {
 			settlementPeriods: periods
 		)
 		let payoff = collar.payoff(spotPrice: 70.0)
-		#expect(payoff == 0.0)
+		#expect(abs(payoff - 0.0) < 1e-6)
 	}
 
 	@Test("Negative payoff when spot above call strike (caps upside)")
@@ -139,9 +139,9 @@ struct CommodityCollarTests {
 		)
 		// spot $90: short call costs -(90 - 80) = -$10 per unit
 		let payoff = collar.payoff(spotPrice: 90.0)
-		#expect(payoff == -10.0)
+		#expect(abs(payoff - (-10.0)) < 1e-6)
 		let settlement = collar.settlement(spotPrice: 90.0)
-		#expect(settlement == -10.0 * 1000.0)
+		#expect(abs(settlement - (-10.0 * 1000.0)) < 1e-2)
 	}
 
 	@Test("Zero payoff at put strike boundary")
@@ -154,7 +154,7 @@ struct CommodityCollarTests {
 			settlementPeriods: periods
 		)
 		let payoff = collar.payoff(spotPrice: 60.0)
-		#expect(payoff == 0.0)
+		#expect(abs(payoff - 0.0) < 1e-6)
 	}
 
 	@Test("Zero payoff at call strike boundary")
@@ -167,7 +167,7 @@ struct CommodityCollarTests {
 			settlementPeriods: periods
 		)
 		let payoff = collar.payoff(spotPrice: 80.0)
-		#expect(payoff == 0.0)
+		#expect(abs(payoff - 0.0) < 1e-6)
 	}
 
 	@Test("Zero quantity produces zero settlement")
@@ -180,7 +180,7 @@ struct CommodityCollarTests {
 			settlementPeriods: periods
 		)
 		let settlement = collar.settlement(spotPrice: 50.0)
-		#expect(settlement == 0.0)
+		#expect(abs(settlement - 0.0) < 1e-6)
 	}
 
 	@Test("Degenerate collar with same strikes acts as forward")
@@ -193,11 +193,11 @@ struct CommodityCollarTests {
 			settlementPeriods: periods
 		)
 		// Below: payoff = 70 - 60 = 10
-		#expect(collar.payoff(spotPrice: 60.0) == 10.0)
+		#expect(abs(collar.payoff(spotPrice: 60.0) - 10.0) < 1e-6)
 		// Above: payoff = -(80 - 70) = -10
-		#expect(collar.payoff(spotPrice: 80.0) == -10.0)
+		#expect(abs(collar.payoff(spotPrice: 80.0) - (-10.0)) < 1e-6)
 		// At strike: zero
-		#expect(collar.payoff(spotPrice: 70.0) == 0.0)
+		#expect(abs(collar.payoff(spotPrice: 70.0) - 0.0) < 1e-6)
 	}
 }
 
@@ -226,9 +226,9 @@ struct ThreeWayCollarTests {
 		)
 		// spot $30: long put pays (60-30)=30, short put costs (40-30)=10 -> net = 20
 		let payoff = collar.payoff(spotPrice: 30.0)
-		#expect(payoff == 20.0)
+		#expect(abs(payoff - 20.0) < 1e-6)
 		let settlement = collar.settlement(spotPrice: 30.0)
-		#expect(settlement == 20.0 * 100.0)
+		#expect(abs(settlement - 20.0 * 100.0) < 1e-2)
 	}
 
 	@Test("Between short put and long put: partial protection")
@@ -243,7 +243,7 @@ struct ThreeWayCollarTests {
 		)
 		// spot $50: long put pays (60-50)=10, short put expired -> net = 10
 		let payoff = collar.payoff(spotPrice: 50.0)
-		#expect(payoff == 10.0)
+		#expect(abs(payoff - 10.0) < 1e-6)
 	}
 
 	@Test("Between long put and short call: zero payoff")
@@ -258,7 +258,7 @@ struct ThreeWayCollarTests {
 		)
 		// spot $70: nothing in the money -> net = 0
 		let payoff = collar.payoff(spotPrice: 70.0)
-		#expect(payoff == 0.0)
+		#expect(abs(payoff - 0.0) < 1e-6)
 	}
 
 	@Test("Above short call: negative payoff (capped upside)")
@@ -273,9 +273,9 @@ struct ThreeWayCollarTests {
 		)
 		// spot $90: short call costs -(90-80)=-10 -> net = -10
 		let payoff = collar.payoff(spotPrice: 90.0)
-		#expect(payoff == -10.0)
+		#expect(abs(payoff - (-10.0)) < 1e-6)
 		let settlement = collar.settlement(spotPrice: 90.0)
-		#expect(settlement == -10.0 * 100.0)
+		#expect(abs(settlement - (-10.0 * 100.0)) < 1e-2)
 	}
 
 	@Test("Boundary: spot exactly at short put strike")
@@ -290,7 +290,7 @@ struct ThreeWayCollarTests {
 		)
 		// spot $40: long put pays (60-40)=20, short put at-the-money pays 0 -> net = 20
 		let payoff = collar.payoff(spotPrice: 40.0)
-		#expect(payoff == 20.0)
+		#expect(abs(payoff - 20.0) < 1e-6)
 	}
 
 	@Test("Boundary: spot exactly at long put strike")
@@ -305,7 +305,7 @@ struct ThreeWayCollarTests {
 		)
 		// spot $60: long put at-the-money pays 0 -> net = 0
 		let payoff = collar.payoff(spotPrice: 60.0)
-		#expect(payoff == 0.0)
+		#expect(abs(payoff - 0.0) < 1e-6)
 	}
 
 	@Test("Boundary: spot exactly at short call strike")
@@ -320,7 +320,7 @@ struct ThreeWayCollarTests {
 		)
 		// spot $80: short call at-the-money pays 0 -> net = 0
 		let payoff = collar.payoff(spotPrice: 80.0)
-		#expect(payoff == 0.0)
+		#expect(abs(payoff - 0.0) < 1e-6)
 	}
 
 	@Test("Zero quantity produces zero settlement")
@@ -334,6 +334,6 @@ struct ThreeWayCollarTests {
 			settlementPeriods: periods
 		)
 		let settlement = collar.settlement(spotPrice: 30.0)
-		#expect(settlement == 0.0)
+		#expect(abs(settlement - 0.0) < 1e-6)
 	}
 }

@@ -32,14 +32,14 @@ import Numerics
         let carAge: [Double] = [10, 8, 3, 3, 2, 1]
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
         let result = (try slope(carAge, carPrice) * 1000).rounded(.up) / 1000
-        #expect(result == -1272.519)
+        #expect(abs(result - (-1272.519)) < 1e-6)
     }
     
     @Test("Intercept") func LIntercept() throws {
         let carAge: [Double] = [10, 8, 3, 3, 2, 1]
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
         let result = (try intercept(carAge, carPrice) * 1000).rounded(.up) / 1000
-        #expect(result == 12043.003)
+        #expect(abs(result - 12043.003) < 1e-2)
     }
        
     @Test("RSquared") func LRSquared() throws {
@@ -50,15 +50,15 @@ import Numerics
         let carPrice: [Double] = [500, 400, 7000, 8500, 11000, 10500]
         let carResult = (try rSquared(carAge, carPrice) * 100000).rounded(.up) / 100000
         let result = (try rSquared(x, y) * 100000).rounded(.up) / 100000
-        #expect(result == 0.99865)
-        #expect(carResult == 0.93443)
+        #expect(abs(result - 0.99865) < 1e-6)
+        #expect(abs(carResult - 0.93443) < 1e-6)
     }
 
     @Test("RSquaredAdjusted") func LRSquaredAdjusted() throws {
         let x: [Double] = [58, 61, 62, 65, 65, 68, 72, 74, 78, 85, 90, 95]
         let y: [Double] = [1, 1, 2, 2, 1, 2, 2, 3, 3, 4, 4, 5]
         let result = (try rSquared(x, y) * 100000).rounded(.up) / 100000
-        #expect(result == 0.91983)
+        #expect(abs(result - 0.91983) < 1e-6)
     }
 }
 

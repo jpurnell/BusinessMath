@@ -33,9 +33,9 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 3)
         let vals = series.valuesArray
-        #expect(vals[0] == 100_000.0)
-        #expect(vals[1] == 110_000.0)
-        #expect(vals[2] == 121_000.0)
+        #expect(abs(vals[0] - 100_000.0) < 1e-6)
+        #expect(abs(vals[1] - 110_000.0) < 1e-6)
+        #expect(abs(vals[2] - 121_000.0) < 1e-6)
     }
 
     @Test("TimeSeries with mixed period types")
@@ -67,7 +67,7 @@ struct TimeSeriesBuilderTests {
         }
 
         #expect(series.count == 1)
-        #expect(series.valuesArray[0] == 1_000_000.0)
+        #expect(abs(series.valuesArray[0] - 1_000_000.0) < 1e-6)
     }
 
     // MARK: - Projection-Based Construction
@@ -81,7 +81,7 @@ struct TimeSeriesBuilderTests {
         #expect(series.count == 5) // 2023-2027 inclusive
         // All values should be the same
         for value in series.valuesArray {
-            #expect(value == 100_000.0)
+            #expect(abs(value - 100_000.0) < 1e-6)
         }
     }
 
@@ -109,11 +109,11 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 5)
         let vals = series.valuesArray
-        #expect(vals[0] == 100_000.0)  // i=0
-        #expect(vals[1] == 105_000.0)  // i=1
-        #expect(vals[2] == 110_000.0)  // i=2
-        #expect(vals[3] == 115_000.0)  // i=3
-        #expect(vals[4] == 120_000.0)  // i=4
+        #expect(abs(vals[0] - 100_000.0) < 1e-6)  // i=0
+        #expect(abs(vals[1] - 105_000.0) < 1e-6)  // i=1
+        #expect(abs(vals[2] - 110_000.0) < 1e-6)  // i=2
+        #expect(abs(vals[3] - 115_000.0) < 1e-6)  // i=3
+        #expect(abs(vals[4] - 120_000.0) < 1e-6)  // i=4
     }
 
     @Test("Custom generator takes priority over growth")
@@ -126,9 +126,9 @@ struct TimeSeriesBuilderTests {
 
         // Custom generator should win
         let vals = series.valuesArray
-        #expect(vals[0] == 0.0)
-        #expect(vals[1] == 1_000.0)
-        #expect(vals[2] == 2_000.0)
+        #expect(abs(vals[0] - 0.0) < 1e-6)
+        #expect(abs(vals[1] - 1_000.0) < 1e-6)
+        #expect(abs(vals[2] - 2_000.0) < 1e-6)
     }
 
     // MARK: - Convenience Constructors
@@ -139,7 +139,7 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 5)
         for value in series.valuesArray {
-            #expect(value == 50_000.0)
+            #expect(abs(value - 50_000.0) < 1e-6)
         }
     }
 
@@ -154,10 +154,10 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 4)
         let vals = series.valuesArray
-        #expect(vals[0] == 100_000.0)  // 100k + 0*10k
-        #expect(vals[1] == 110_000.0)  // 100k + 1*10k
-        #expect(vals[2] == 120_000.0)  // 100k + 2*10k
-        #expect(vals[3] == 130_000.0)  // 100k + 3*10k
+        #expect(abs(vals[0] - 100_000.0) < 1e-6)  // 100k + 0*10k
+        #expect(abs(vals[1] - 110_000.0) < 1e-6)  // 100k + 1*10k
+        #expect(abs(vals[2] - 120_000.0) < 1e-6)  // 100k + 2*10k
+        #expect(abs(vals[3] - 130_000.0) < 1e-6)  // 100k + 3*10k
     }
 
     @Test("Exponential growth time series")
@@ -215,9 +215,9 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 3)
         let vals = series.valuesArray
-        #expect(vals[0] == 10_000.0)
-        #expect(vals[1] == 11_000.0)
-        #expect(vals[2] == 12_000.0)
+        #expect(abs(vals[0] - 10_000.0) < 1e-6)
+        #expect(abs(vals[1] - 11_000.0) < 1e-6)
+        #expect(abs(vals[2] - 12_000.0) < 1e-6)
     }
 
     @Test("Quarterly time series")
@@ -231,10 +231,10 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 4)
         let vals = series.valuesArray
-        #expect(vals[0] == 300_000.0)
-        #expect(vals[1] == 350_000.0)
-        #expect(vals[2] == 320_000.0)
-        #expect(vals[3] == 400_000.0)
+        #expect(abs(vals[0] - 300_000.0) < 1e-6)
+        #expect(abs(vals[1] - 350_000.0) < 1e-6)
+        #expect(abs(vals[2] - 320_000.0) < 1e-6)
+        #expect(abs(vals[3] - 400_000.0) < 1e-6)
     }
 
     // MARK: - Fluent Operations
@@ -251,9 +251,9 @@ struct TimeSeriesBuilderTests {
         let doubledArray = Array(doubled)
 
         #expect(doubledArray.count == 3)
-        #expect(doubledArray[0] == 200_000.0)
-        #expect(doubledArray[1] == 220_000.0)
-        #expect(doubledArray[2] == 242_000.0)
+        #expect(abs(doubledArray[0] - 200_000.0) < 1e-6)
+        #expect(abs(doubledArray[1] - 220_000.0) < 1e-6)
+        #expect(abs(doubledArray[2] - 242_000.0) < 1e-6)
     }
 
     @Test("Filter operation on builder-created series")
@@ -283,7 +283,7 @@ struct TimeSeriesBuilderTests {
         }
 
         #expect(series.count == 1)
-        #expect(series.valuesArray[0] == 100_000.0)
+        #expect(abs(series.valuesArray[0] - 100_000.0) < 1e-6)
     }
 
     @Test("Large year range")
@@ -295,7 +295,7 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 31) // 2020-2050 inclusive
         let vals = series.valuesArray
-        #expect(vals[0] == 100_000.0)
+        #expect(abs(vals[0] - 100_000.0) < 1e-6)
         // Last value should be significantly higher due to compound growth
         #expect(vals[30] > 400_000.0)
     }
@@ -309,7 +309,7 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 3)
         for value in series.valuesArray {
-            #expect(value == 0.0) // 0 * anything = 0
+            #expect(abs(value - 0.0) < 1e-6) // 0 * anything = 0
         }
     }
 
@@ -321,7 +321,7 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 3)
         for value in series.valuesArray {
-            #expect(value == -100_000.0)
+            #expect(abs(value - (-100_000.0)) < 1e-6)
         }
     }
 
@@ -349,8 +349,8 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 2)
         let vals = series.valuesArray
-        #expect(vals[0] == 1_000_000_000.0)
-        #expect(vals[1] == 2_000_000_000.0)
+        #expect(abs(vals[0] - 1_000_000_000.0) < 1e-2)
+        #expect(abs(vals[1] - 2_000_000_000.0) < 1e-2)
     }
 
     @Test("High growth rate")
@@ -396,7 +396,7 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 3)
         let vals = series.valuesArray
-        #expect(vals[1] == 110_000.0)
+        #expect(abs(vals[1] - 110_000.0) < 1e-6)
     }
 
     @Test("Array-based building")
@@ -415,9 +415,9 @@ struct TimeSeriesBuilderTests {
 
         #expect(series.count == 3)
         let vals = series.valuesArray
-        #expect(vals[0] == 100_000.0)
-        #expect(vals[1] == 110_000.0)
-        #expect(vals[2] == 121_000.0)
+        #expect(abs(vals[0] - 100_000.0) < 1e-6)
+        #expect(abs(vals[1] - 110_000.0) < 1e-6)
+        #expect(abs(vals[2] - 121_000.0) < 1e-6)
     }
 
     @Test("Accessing values by period subscript")
@@ -428,9 +428,9 @@ struct TimeSeriesBuilderTests {
             Period.year(2025) => 121_000.0
         }
 
-        #expect(series[Period.year(2023)] == 100_000.0)
-        #expect(series[Period.year(2024)] == 110_000.0)
-        #expect(series[Period.year(2025)] == 121_000.0)
+        #expect(abs((series[Period.year(2023)] ?? 0) - 100_000.0) < 1e-6)
+        #expect(abs((series[Period.year(2024)] ?? 0) - 110_000.0) < 1e-6)
+        #expect(abs((series[Period.year(2025)] ?? 0) - 121_000.0) < 1e-6)
         #expect(series[Period.year(2026)] == nil) // Not in series
     }
 
@@ -440,8 +440,8 @@ struct TimeSeriesBuilderTests {
             Period.year(2024) => 100_000.0
         }
 
-        #expect(series[Period.year(2024), default: 0.0] == 100_000.0)
-        #expect(series[Period.year(2025), default: 0.0] == 0.0) // Uses default
+        #expect(abs(series[Period.year(2024), default: 0.0] - 100_000.0) < 1e-6)
+        #expect(abs(series[Period.year(2025), default: 0.0] - 0.0) < 1e-6) // Uses default
     }
 
     @Test("First and last values")
@@ -452,8 +452,8 @@ struct TimeSeriesBuilderTests {
             Period.year(2025) => 121_000.0
         }
 
-        #expect(series.first == 100_000.0)
-        #expect(series.last == 121_000.0)
+        #expect(abs((series.first ?? 0) - 100_000.0) < 1e-6)
+        #expect(abs((series.last ?? 0) - 121_000.0) < 1e-6)
     }
 
     @Test("Empty series first and last")

@@ -335,7 +335,7 @@ struct IncomeStatementTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Gross Profit: 60k, Revenue: 100k, Margin: 0.6
-		#expect(grossMargin[q1] == 0.6)
+		#expect(abs(grossMargin[q1]! - 0.6) < 1e-6)
 	}
 
 	@Test("Operating margin is operating income divided by revenue")
@@ -357,7 +357,7 @@ struct IncomeStatementTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Operating Income: 40k, Revenue: 100k, Margin: 0.4
-		#expect(operatingMargin[q1] == 0.4)
+		#expect(abs(operatingMargin[q1]! - 0.4) < 1e-6)
 	}
 
 	@Test("Net margin is net income divided by revenue")
@@ -379,7 +379,7 @@ struct IncomeStatementTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Net Income: 40k, Revenue: 100k, Margin: 0.4
-		#expect(netMargin[q1] == 0.4)
+		#expect(abs(netMargin[q1]! - 0.4) < 1e-6)
 	}
 
 	@Test("EBITDA margin is EBITDA divided by revenue")
@@ -402,7 +402,7 @@ struct IncomeStatementTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// EBITDA: 40k, Revenue: 100k, Margin: 0.4
-		#expect(ebitdaMargin[q1] == 0.4)
+		#expect(abs(ebitdaMargin[q1]! - 0.4) < 1e-6)
 	}
 
 	// MARK: - Empty Account Handling
@@ -474,9 +474,9 @@ struct IncomeStatementTests {
 		#expect(materialized.netIncome[q1] == 40_000)
 		#expect(materialized.grossProfit[q1] == 60_000)
 		#expect(materialized.operatingIncome[q1] == 40_000)
-		#expect(materialized.grossMargin[q1] == 0.6)
-		#expect(materialized.operatingMargin[q1] == 0.4)
-		#expect(materialized.netMargin[q1] == 0.4)
+		#expect(abs(materialized.grossMargin[q1]! - 0.6) < 1e-6)
+		#expect(abs(materialized.operatingMargin[q1]! - 0.4) < 1e-6)
+		#expect(abs(materialized.netMargin[q1]! - 0.4) < 1e-6)
 	}
 
 	// MARK: - Codable

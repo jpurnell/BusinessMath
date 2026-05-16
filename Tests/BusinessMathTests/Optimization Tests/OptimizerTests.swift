@@ -23,8 +23,8 @@ struct OptimizerTests {
 			history: history
 		)
 
-		#expect(result.optimalValue == 0.1)
-		#expect(result.objectiveValue == 0.01)
+		#expect(abs(result.optimalValue - 0.1) < 1e-6)
+		#expect(abs(result.objectiveValue - 0.01) < 1e-6)
 		#expect(result.iterations == 3)
 		#expect(result.converged)
 		#expect(result.history.count == 3)
@@ -130,9 +130,9 @@ struct OptimizerTests {
 		}
 
 		#expect(history.count == 5)
-		#expect(history[0].value == 0.0)
-		#expect(history[4].value == 2.0)
-		#expect(history[4].objective == 4.0)
+		#expect(abs(history[0].value - 0.0) < 1e-6)
+		#expect(abs(history[4].value - 2.0) < 1e-6)
+		#expect(abs(history[4].objective - 4.0) < 1e-6)
 	}
 
 	// MARK: - Bounds

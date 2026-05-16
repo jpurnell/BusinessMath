@@ -23,10 +23,10 @@ struct DriverProjectionTests {
 		let timeSeries = projection.project()
 
 		#expect(timeSeries.periods.count == 4)
-		#expect(timeSeries[periods[0]] == 10_000.0)
-		#expect(timeSeries[periods[1]] == 10_000.0)
-		#expect(timeSeries[periods[2]] == 10_000.0)
-		#expect(timeSeries[periods[3]] == 10_000.0)
+		#expect(abs((timeSeries[periods[0]] ?? 0) - 10_000.0) < 1e-6)
+		#expect(abs((timeSeries[periods[1]] ?? 0) - 10_000.0) < 1e-6)
+		#expect(abs((timeSeries[periods[2]] ?? 0) - 10_000.0) < 1e-6)
+		#expect(abs((timeSeries[periods[3]] ?? 0) - 10_000.0) < 1e-6)
 	}
 
 	@Test("Probabilistic projection creates valid time series")

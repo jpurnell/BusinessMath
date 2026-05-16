@@ -89,8 +89,8 @@ struct MonteCarloSimulationTests {
 		let results = try simulation.run()
 		
 		#expect(results.values.count == 100)
-		#expect(results.statistics.mean == 42.0, "All values should be 42")
-		#expect(results.statistics.stdDev == 0.0, "No variation")
+		#expect(abs(results.statistics.mean - 42.0) < 1e-6, "All values should be 42")
+		#expect(abs(results.statistics.stdDev - 0.0) < 1e-6, "No variation")
 	}
 	
 	@Test("MonteCarloSimulation sum of normals")
@@ -200,8 +200,8 @@ struct MonteCarloSimulationTests {
 		
 		let results = try simulation.run()
 		
-		#expect(results.statistics.mean == 10.0, "5 * 2 = 10")
-		#expect(results.statistics.stdDev == 0.0, "No variation")
+		#expect(abs(results.statistics.mean - 10.0) < 1e-6, "5 * 2 = 10")
+		#expect(abs(results.statistics.stdDev - 0.0) < 1e-6, "No variation")
 	}
 	
 	@Test("MonteCarloSimulation error handling - no inputs")
@@ -241,7 +241,7 @@ struct MonteCarloSimulationTests {
 		let results = try simulation.run()
 		
 		#expect(results.values.count == 1)
-		#expect(results.statistics.stdDev == 0.0, "Single iteration has no variance")
+		#expect(abs(results.statistics.stdDev - 0.0) < 1e-6, "Single iteration has no variance")
 	}
 	
 	@Test("MonteCarloSimulation complex financial model")
@@ -361,7 +361,7 @@ struct MonteCarloSimulationTests {
 		
 		let results = try simulation.run()
 		
-		#expect(results.statistics.mean == 50.0, "100 - 50 = 50")
+		#expect(abs(results.statistics.mean - 50.0) < 1e-6, "100 - 50 = 50")
 	}
 	
 	@Test("MonteCarloSimulation with weibull reliability analysis")

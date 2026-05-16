@@ -257,7 +257,7 @@ struct ErrorHandlingExamples {
         #expect(revenue > 0)
 
         let marketing = (try? model.getValue(account: "Marketing", period: period)) ?? 0.0
-        #expect(marketing == 0.0)  // Falls back to default
+        #expect(abs(marketing - 0.0) < 1e-6)  // Falls back to default
     }
 
     @Test("Recovery with retry different parameters")

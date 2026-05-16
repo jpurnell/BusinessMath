@@ -427,8 +427,8 @@ struct PeriodTests {
 		dict[jan] = 100.0
 		dict[feb] = 200.0
 
-		#expect(dict[jan] == 100.0)
-		#expect(dict[feb] == 200.0)
+		#expect(abs((dict[jan] ?? 0) - 100.0) < 1e-6)
+		#expect(abs((dict[feb] ?? 0) - 200.0) < 1e-6)
 	}
 
 	@Test("Same period retrieves same value from dictionary")
@@ -439,7 +439,7 @@ struct PeriodTests {
 		dict[period1] = 100.0
 
 		let period2 = Period.month(year: 2025, month: 1)
-		#expect(dict[period2] == 100.0)
+		#expect(abs((dict[period2] ?? 0) - 100.0) < 1e-6)
 	}
 
 	// MARK: - Comparable

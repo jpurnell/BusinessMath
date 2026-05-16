@@ -70,7 +70,7 @@ import Glibc
         let result: Double = hypergeometric(total: 52, r: 4, n: 5, x: 2)
 		let roundedResult = (result * 10.0).rounded() / 10.0
         // Should be a small probability
-        #expect(roundedResult == 0.0)
+        #expect(abs(roundedResult - 0.0) < 1e-6)
         #expect(result < 0.05)
     }
 
@@ -238,7 +238,7 @@ import Glibc
         )
 
         #expect(table.count == 4, "Should have 4 entries")
-        #expect(table[0].input == 0.03, "First input should be 0.03")
+        #expect(abs(table[0].input - 0.03) < 1e-6, "First input should be 0.03")
         #expect(table[0].output > 0, "Payment should be positive")
         #expect(table[3].output > table[0].output, "Higher rate should mean higher payment")
 

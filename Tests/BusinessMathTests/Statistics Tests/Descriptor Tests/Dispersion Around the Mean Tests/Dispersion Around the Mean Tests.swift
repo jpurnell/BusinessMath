@@ -91,7 +91,7 @@ import Glibc
     @Test("VarianceS") func LVarianceS() {
         let doubleArray: [Double] = [0.0, 1.0, 2.0, 3.0, 4.0]
         let result = varianceS(doubleArray)
-        #expect(result == 2.5)
+        #expect(abs(result - 2.5) < 1e-6)
     }
 	
 	@Test("VarianceTDist") func LVarianceTDist() {

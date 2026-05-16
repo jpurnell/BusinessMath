@@ -59,9 +59,9 @@ struct AsyncOptimizationTests {
         )
 
         #expect(progress.iteration == 10)
-        #expect(progress.currentValue == 5.0)
-        #expect(progress.objectiveValue == 25.0)
-        #expect(progress.gradient == -2.0)
+        #expect(abs(progress.currentValue - 5.0) < 1e-6)
+        #expect(abs(progress.objectiveValue - 25.0) < 1e-6)
+        #expect(abs((progress.gradient ?? .nan) - (-2.0)) < 1e-6)
         #expect(progress.hasConverged == false)
         #expect(progress.phase == .optimization)
     }

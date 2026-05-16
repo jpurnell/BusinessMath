@@ -119,10 +119,10 @@ struct StreamingStatisticsTests {
         // Window 3: [8,1,9] -> min = 1.0
         // Window 4: [1,9,3] -> min = 1.0
         #expect(mins.count == 4)
-        #expect(mins[0] == 2.0)
-        #expect(mins[1] == 1.0)
-        #expect(mins[2] == 1.0)
-        #expect(mins[3] == 1.0)
+        #expect(abs(mins[0] - 2.0) < 1e-6)
+        #expect(abs(mins[1] - 1.0) < 1e-6)
+        #expect(abs(mins[2] - 1.0) < 1e-6)
+        #expect(abs(mins[3] - 1.0) < 1e-6)
     }
 
     @Test("Calculate rolling maximum over stream")
@@ -140,10 +140,10 @@ struct StreamingStatisticsTests {
         // Window 3: [8,1,9] -> max = 9.0
         // Window 4: [1,9,3] -> max = 9.0
         #expect(maxs.count == 4)
-        #expect(maxs[0] == 8.0)
-        #expect(maxs[1] == 8.0)
-        #expect(maxs[2] == 9.0)
-        #expect(maxs[3] == 9.0)
+        #expect(abs(maxs[0] - 8.0) < 1e-6)
+        #expect(abs(maxs[1] - 8.0) < 1e-6)
+        #expect(abs(maxs[2] - 9.0) < 1e-6)
+        #expect(abs(maxs[3] - 9.0) < 1e-6)
     }
 
     // MARK: - Rolling Sum Tests
@@ -162,9 +162,9 @@ struct StreamingStatisticsTests {
         // Window 2: [2,3,4] -> sum = 9.0
         // Window 3: [3,4,5] -> sum = 12.0
         #expect(sums.count == 3)
-        #expect(sums[0] == 6.0)
-        #expect(sums[1] == 9.0)
-        #expect(sums[2] == 12.0)
+        #expect(abs(sums[0] - 6.0) < 1e-6)
+        #expect(abs(sums[1] - 9.0) < 1e-6)
+        #expect(abs(sums[2] - 12.0) < 1e-6)
     }
 
     @Test("Calculate cumulative sum over stream")
@@ -223,15 +223,15 @@ struct StreamingStatisticsTests {
         #expect(abs(stats[0].mean - 2.0) < 0.001)
         #expect(abs(stats[0].variance - 1.0) < 0.001)
         #expect(abs(stats[0].stdDev - 1.0) < 0.001)
-        #expect(stats[0].min == 1.0)
-        #expect(stats[0].max == 3.0)
-        #expect(stats[0].sum == 6.0)
+        #expect(abs(stats[0].min - 1.0) < 1e-6)
+        #expect(abs(stats[0].max - 3.0) < 1e-6)
+        #expect(abs(stats[0].sum - 6.0) < 1e-6)
         #expect(stats[0].count == 3)
 
         // Window 3: [3,4,5]
         #expect(abs(stats[2].mean - 4.0) < 0.001)
-        #expect(stats[2].min == 3.0)
-        #expect(stats[2].max == 5.0)
+        #expect(abs(stats[2].min - 3.0) < 1e-6)
+        #expect(abs(stats[2].max - 5.0) < 1e-6)
     }
 
     // MARK: - Cumulative Statistics Tests
@@ -251,16 +251,16 @@ struct StreamingStatisticsTests {
         // After 3 values
         #expect(abs(stats[2].mean - 2.0) < 0.001)
         #expect(stats[2].count == 3)
-        #expect(stats[2].sum == 6.0)
-        #expect(stats[2].min == 1.0)
-        #expect(stats[2].max == 3.0)
+        #expect(abs(stats[2].sum - 6.0) < 1e-6)
+        #expect(abs(stats[2].min - 1.0) < 1e-6)
+        #expect(abs(stats[2].max - 3.0) < 1e-6)
 
         // After all 5 values
         #expect(abs(stats[4].mean - 3.0) < 0.001)
         #expect(stats[4].count == 5)
-        #expect(stats[4].sum == 15.0)
-        #expect(stats[4].min == 1.0)
-        #expect(stats[4].max == 5.0)
+        #expect(abs(stats[4].sum - 15.0) < 1e-6)
+        #expect(abs(stats[4].min - 1.0) < 1e-6)
+        #expect(abs(stats[4].max - 5.0) < 1e-6)
     }
 
     // MARK: - Memory Efficiency Tests

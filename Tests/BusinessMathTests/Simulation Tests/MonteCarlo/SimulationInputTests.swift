@@ -98,7 +98,7 @@ struct SimulationInputTests {
 		// Verify the custom sampler works
 		let samples = (0..<100).map { _ in input.sample() }
 		for value in samples {
-			#expect(value == 42.0, "Custom sampler should return 42.0")
+			#expect(abs(value - 42.0) < 1e-6, "Custom sampler should return 42.0")
 		}
 	}
 

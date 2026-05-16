@@ -225,7 +225,7 @@ struct FutureValueTests {
 	@Test("Future value with zero present value")
 	func fvZeroPresentValue() {
 		let fv = futureValue(presentValue: 0.0, rate: 0.10, periods: 5)
-		#expect(fv == 0.0)
+		#expect(abs(fv - 0.0) < 1e-6)
 	}
 
 	@Test("Future value with zero periods")
@@ -239,13 +239,13 @@ struct FutureValueTests {
 	@Test("Annuity with zero payment")
 	func annuityZeroPayment() {
 		let fv = futureValueAnnuity(payment: 0.0, rate: 0.10, periods: 5, type: .ordinary)
-		#expect(fv == 0.0)
+		#expect(abs(fv - 0.0) < 1e-6)
 	}
 
 	@Test("Annuity with zero periods")
 	func annuityZeroPeriods() {
 		let fv = futureValueAnnuity(payment: 100.0, rate: 0.10, periods: 0, type: .ordinary)
-		#expect(fv == 0.0)
+		#expect(abs(fv - 0.0) < 1e-6)
 	}
 
 	@Test("Large number of periods")

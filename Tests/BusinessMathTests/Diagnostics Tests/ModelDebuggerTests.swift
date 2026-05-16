@@ -32,7 +32,7 @@ struct ModelDebuggerTests {
         }
 
         #expect(trace.value == "NPV")
-        #expect(trace.result == 1000.0)
+        #expect(abs((trace.result ?? .nan) - 1000.0) < 1e-6)
     }
 
     @Test("Basic trace captures errors")
@@ -101,7 +101,7 @@ struct ModelDebuggerTests {
         }
 
         #expect(trace.dependencies.isEmpty)
-        #expect(trace.result == 100.0)
+        #expect(abs(trace.result - 100.0) < 1e-6)
     }
 
 	@Test("Detailed trace captures complex calculations", .localOnly)
@@ -330,9 +330,9 @@ struct ModelDebuggerTests {
             context: "Revenue"
         )
 
-        #expect(explanation.actual == 90.0)
-        #expect(explanation.expected == 100.0)
-        #expect(explanation.difference == -10.0)
+        #expect(abs(explanation.actual - 90.0) < 1e-6)
+        #expect(abs(explanation.expected - 100.0) < 1e-6)
+        #expect(abs(explanation.difference - (-10.0)) < 1e-6)
         #expect(!explanation.possibleReasons.isEmpty)
     }
 
@@ -361,8 +361,8 @@ struct ModelDebuggerTests {
 
         // When expected is zero, percentage difference is calculated as 0
         // (see implementation: expected != 0 ? (difference / expected) * 100 : 0)
-        #expect(explanation.percentageDifference == 0)
-        #expect(explanation.difference == 50.0)
+        #expect(abs(explanation.percentageDifference - 0.0) < 1e-6)
+        #expect(abs(explanation.difference - 50.0) < 1e-6)
     }
 
     @Test("Explain exact match")
@@ -375,8 +375,8 @@ struct ModelDebuggerTests {
             context: "Match"
         )
 
-        #expect(explanation.difference == 0.0)
-        #expect(explanation.percentageDifference == 0.0)
+        #expect(abs(explanation.difference - 0.0) < 1e-6)
+        #expect(abs(explanation.percentageDifference - 0.0) < 1e-6)
     }
 
     // MARK: - Edge Cases
@@ -549,7 +549,7 @@ struct ModelDebuggerTests {
             let trace = await debugger.trace(value: "Async") {
                 42.0
             }
-            #expect(trace.result == 42.0)
+            #expect(abs((trace.result ?? .nan) - 42.0) < 1e-6)
         }
     }
 

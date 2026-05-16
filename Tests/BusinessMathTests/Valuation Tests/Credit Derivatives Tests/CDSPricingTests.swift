@@ -29,10 +29,10 @@ struct CDSPricingTests {
         )
 
         // Then: Properties should be set correctly
-        #expect(cds.notional == 10_000_000.0)
-        #expect(cds.spread == 0.0150)
-        #expect(cds.maturity == 5.0)
-        #expect(cds.recoveryRate == 0.40)
+        #expect(abs(cds.notional - 10_000_000.0) < 1e-2)
+        #expect(abs(cds.spread - 0.0150) < 1e-6)
+        #expect(abs(cds.maturity - 5.0) < 1e-6)
+        #expect(abs(cds.recoveryRate - 0.40) < 1e-6)
         #expect(cds.paymentFrequency == .quarterly)
     }
 

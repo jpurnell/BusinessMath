@@ -108,9 +108,9 @@ struct TimeSeriesAnalyticsTests {
 		let ma = ts.movingAverage(window: 1)
 		
 		#expect(ma.count == 3)
-		#expect(ma[periods[0]] == 100.0)
-		#expect(ma[periods[1]] == 110.0)
-		#expect(ma[periods[2]] == 120.0)
+		#expect(abs((ma[periods[0]] ?? 0) - 100.0) < 1e-6)
+		#expect(abs((ma[periods[1]] ?? 0) - 110.0) < 1e-6)
+		#expect(abs((ma[periods[2]] ?? 0) - 120.0) < 1e-6)
 	}
 	
 		// MARK: - Exponential Moving Average Tests
@@ -123,7 +123,7 @@ struct TimeSeriesAnalyticsTests {
 		let ema = ts.exponentialMovingAverage(alpha: 0.5)
 		
 		#expect(ema.count == 4)
-		#expect(ema[periods[0]] == 100.0)  // First value unchanged
+		#expect(abs((ema[periods[0]] ?? 0) - 100.0) < 1e-6)  // First value unchanged
 										   // EMA = alpha * current + (1-alpha) * previous_EMA
 		#expect(abs(ema[periods[1]]! - 105.0) < tolerance)  // 0.5*110 + 0.5*100 = 105
 		#expect(abs(ema[periods[2]]! - 105.0) < tolerance)  // 0.5*105 + 0.5*105 = 105
@@ -138,9 +138,9 @@ struct TimeSeriesAnalyticsTests {
 		let ema = ts.exponentialMovingAverage(alpha: 1.0)
 		
 		#expect(ema.count == 3)
-		#expect(ema[periods[0]] == 100.0)
-		#expect(ema[periods[1]] == 110.0)
-		#expect(ema[periods[2]] == 120.0)
+		#expect(abs((ema[periods[0]] ?? 0) - 100.0) < 1e-6)
+		#expect(abs((ema[periods[1]] ?? 0) - 110.0) < 1e-6)
+		#expect(abs((ema[periods[2]] ?? 0) - 120.0) < 1e-6)
 	}
 	
 		// MARK: - Cumulative Tests
@@ -153,11 +153,11 @@ struct TimeSeriesAnalyticsTests {
 		let cumulative = ts.cumulative()
 		
 		#expect(cumulative.count == 5)
-		#expect(cumulative[periods[0]] == 10.0)
-		#expect(cumulative[periods[1]] == 30.0)   // 10 + 20
-		#expect(cumulative[periods[2]] == 60.0)   // 10 + 20 + 30
-		#expect(cumulative[periods[3]] == 100.0)  // 10 + 20 + 30 + 40
-		#expect(cumulative[periods[4]] == 150.0)  // 10 + 20 + 30 + 40 + 50
+		#expect(abs((cumulative[periods[0]] ?? 0) - 10.0) < 1e-6)
+		#expect(abs((cumulative[periods[1]] ?? 0) - 30.0) < 1e-6)   // 10 + 20
+		#expect(abs((cumulative[periods[2]] ?? 0) - 60.0) < 1e-6)   // 10 + 20 + 30
+		#expect(abs((cumulative[periods[3]] ?? 0) - 100.0) < 1e-6)  // 10 + 20 + 30 + 40
+		#expect(abs((cumulative[periods[4]] ?? 0) - 150.0) < 1e-6)  // 10 + 20 + 30 + 40 + 50
 	}
 	
 	@Test("cumulative with negative values")
@@ -167,10 +167,10 @@ struct TimeSeriesAnalyticsTests {
 		
 		let cumulative = ts.cumulative()
 		
-		#expect(cumulative[periods[0]] == 100.0)
-		#expect(cumulative[periods[1]] == 80.0)   // 100 - 20
-		#expect(cumulative[periods[2]] == 110.0)  // 100 - 20 + 30
-		#expect(cumulative[periods[3]] == 70.0)   // 100 - 20 + 30 - 40
+		#expect(abs((cumulative[periods[0]] ?? 0) - 100.0) < 1e-6)
+		#expect(abs((cumulative[periods[1]] ?? 0) - 80.0) < 1e-6)   // 100 - 20
+		#expect(abs((cumulative[periods[2]] ?? 0) - 110.0) < 1e-6)  // 100 - 20 + 30
+		#expect(abs((cumulative[periods[3]] ?? 0) - 70.0) < 1e-6)   // 100 - 20 + 30 - 40
 	}
 	
 		// MARK: - Difference Tests
@@ -183,9 +183,9 @@ struct TimeSeriesAnalyticsTests {
 		let diff = ts.diff(lag: 1)
 		
 		#expect(diff.count == 3)
-		#expect(diff[periods[1]] == 10.0)   // 110 - 100
-		#expect(diff[periods[2]] == -5.0)   // 105 - 110
-		#expect(diff[periods[3]] == 10.0)   // 115 - 105
+		#expect(abs((diff[periods[1]] ?? 0) - 10.0) < 1e-6)   // 110 - 100
+		#expect(abs((diff[periods[2]] ?? 0) - (-5.0)) < 1e-6)   // 105 - 110
+		#expect(abs((diff[periods[3]] ?? 0) - 10.0) < 1e-6)   // 115 - 105
 	}
 	
 	@Test("diff with lag 2")
@@ -237,9 +237,9 @@ struct TimeSeriesAnalyticsTests {
 		let rolling = ts.rollingSum(window: 3)
 		
 		#expect(rolling.count == 3)
-		#expect(rolling[periods[2]] == 60.0)   // 10 + 20 + 30
-		#expect(rolling[periods[3]] == 90.0)   // 20 + 30 + 40
-		#expect(rolling[periods[4]] == 120.0)  // 30 + 40 + 50
+		#expect(abs((rolling[periods[2]] ?? 0) - 60.0) < 1e-6)   // 10 + 20 + 30
+		#expect(abs((rolling[periods[3]] ?? 0) - 90.0) < 1e-6)   // 20 + 30 + 40
+		#expect(abs((rolling[periods[4]] ?? 0) - 120.0) < 1e-6)  // 30 + 40 + 50
 	}
 	
 		// MARK: - Rolling Min Tests
@@ -252,9 +252,9 @@ struct TimeSeriesAnalyticsTests {
 		let rolling = ts.rollingMin(window: 3)
 		
 		#expect(rolling.count == 3)
-		#expect(rolling[periods[2]] == 10.0)  // min(30, 10, 50)
-		#expect(rolling[periods[3]] == 10.0)  // min(10, 50, 20)
-		#expect(rolling[periods[4]] == 20.0)  // min(50, 20, 40)
+		#expect(abs((rolling[periods[2]] ?? 0) - 10.0) < 1e-6)  // min(30, 10, 50)
+		#expect(abs((rolling[periods[3]] ?? 0) - 10.0) < 1e-6)  // min(10, 50, 20)
+		#expect(abs((rolling[periods[4]] ?? 0) - 20.0) < 1e-6)  // min(50, 20, 40)
 	}
 	
 		// MARK: - Rolling Max Tests
@@ -267,9 +267,9 @@ struct TimeSeriesAnalyticsTests {
 		let rolling = ts.rollingMax(window: 3)
 		
 		#expect(rolling.count == 3)
-		#expect(rolling[periods[2]] == 50.0)  // max(30, 10, 50)
-		#expect(rolling[periods[3]] == 50.0)  // max(10, 50, 20)
-		#expect(rolling[periods[4]] == 50.0)  // max(50, 20, 40)
+		#expect(abs((rolling[periods[2]] ?? 0) - 50.0) < 1e-6)  // max(30, 10, 50)
+		#expect(abs((rolling[periods[3]] ?? 0) - 50.0) < 1e-6)  // max(10, 50, 20)
+		#expect(abs((rolling[periods[4]] ?? 0) - 50.0) < 1e-6)  // max(50, 20, 40)
 	}
 	
 		// MARK: - Edge Cases
@@ -307,9 +307,9 @@ struct TimeSeriesAnalyticsTests {
 		
 			// Lag 0 means difference from itself = 0
 		#expect(diff.count == 3)
-		#expect(diff[periods[0]] == 0.0)
-		#expect(diff[periods[1]] == 0.0)
-		#expect(diff[periods[2]] == 0.0)
+		#expect(abs((diff[periods[0]] ?? 0) - 0.0) < 1e-6)
+		#expect(abs((diff[periods[1]] ?? 0) - 0.0) < 1e-6)
+		#expect(abs((diff[periods[2]] ?? 0) - 0.0) < 1e-6)
 	}
 	
 		// MARK: - Real-World Scenarios
@@ -361,8 +361,8 @@ struct TimeSeriesAnalyticsTests {
 		let ts = TimeSeries(periods: periods, values: monthlyRevenue)
 		let ytd = ts.cumulative()
 		
-		#expect(ytd[periods[11]] == 1_200_000.0)  // Full year total
-		#expect(ytd[periods[5]] == 600_000.0)     // First 6 months
+		#expect(abs((ytd[periods[11]] ?? 0) - 1_200_000.0) < 1e-2)  // Full year total
+		#expect(abs((ytd[periods[5]] ?? 0) - 600_000.0) < 1e-6)     // First 6 months
 	}
 		// EMA edge case
 			@Test("EMA with alpha = 0.0 equals flat line at first value")

@@ -198,6 +198,6 @@ struct LMEDiagnosticsTests {
 		let grouping = try GroupingFactor([0])
 		let rho = withinGroupAutocorrelation(residuals: [0.0], grouping: grouping)
 		// Single obs group => no lag-1 pairs => return 0
-		#expect(rho == 0.0)
+		#expect(abs(rho - 0.0) < 1e-6)
 	}
 }

@@ -43,9 +43,9 @@ struct AccountNodeTests {
         let account = try makeAccount(name: "Revenue", values: [100.0, 200.0, 300.0])
         let node = AccountNode<Double>(id: "rev", account: account)
 
-        #expect(node.total(for: jan2025) == 100.0)
-        #expect(node.total(for: feb2025) == 200.0)
-        #expect(node.total(for: mar2025) == 300.0)
+        #expect(abs(node.total(for: jan2025) - 100.0) < 1e-6)
+        #expect(abs(node.total(for: feb2025) - 200.0) < 1e-6)
+        #expect(abs(node.total(for: mar2025) - 300.0) < 1e-6)
     }
 
     // MARK: - 2. Parent + Children Rollup
@@ -59,9 +59,9 @@ struct AccountNodeTests {
         let child2 = AccountNode<Double>(id: "service", account: serviceRevenue)
         let parent = AccountNode<Double>(id: "totalRevenue", account: nil, children: [child1, child2])
 
-        #expect(parent.total(for: jan2025) == 150.0)
-        #expect(parent.total(for: feb2025) == 260.0)
-        #expect(parent.total(for: mar2025) == 370.0)
+        #expect(abs(parent.total(for: jan2025) - 150.0) < 1e-6)
+        #expect(abs(parent.total(for: feb2025) - 260.0) < 1e-6)
+        #expect(abs(parent.total(for: mar2025) - 370.0) < 1e-6)
     }
 
     // MARK: - 3. Three-Level Hierarchy
@@ -80,9 +80,9 @@ struct AccountNodeTests {
         let root = AccountNode<Double>(id: "root", account: nil, children: [mid, leafC])
 
         // root = mid(a + b) + c = (10+5) + 3 = 18 for jan
-        #expect(root.total(for: jan2025) == 18.0)
-        #expect(root.total(for: feb2025) == 36.0)
-        #expect(root.total(for: mar2025) == 54.0)
+        #expect(abs(root.total(for: jan2025) - 18.0) < 1e-6)
+        #expect(abs(root.total(for: feb2025) - 36.0) < 1e-6)
+        #expect(abs(root.total(for: mar2025) - 54.0) < 1e-6)
     }
 
     // MARK: - 4. Grouping Node (nil account)
@@ -94,7 +94,7 @@ struct AccountNodeTests {
         let grouping = AccountNode<Double>(id: "group", account: nil, children: [child])
 
         #expect(grouping.account == nil)
-        #expect(grouping.total(for: jan2025) == 100.0)
+        #expect(abs(grouping.total(for: jan2025) - 100.0) < 1e-6)
     }
 
     // MARK: - 5. Find by ID (BFS)
@@ -109,7 +109,7 @@ struct AccountNodeTests {
         let found = root.find(id: "target")
         #expect(found != nil)
         #expect(found?.id == "target")
-        #expect(found?.total(for: jan2025) == 1.0)
+        #expect(abs((found?.total(for: jan2025) ?? .nan) - 1.0) < 1e-6)
     }
 
     // MARK: - 6. Find Missing ID
@@ -143,7 +143,7 @@ struct AccountNodeTests {
         #expect(parent.children.isEmpty)
         parent.addChild(child)
         #expect(parent.children.count == 1)
-        #expect(parent.total(for: jan2025) == 100.0)
+        #expect(abs(parent.total(for: jan2025) - 100.0) < 1e-6)
     }
 
     // MARK: - 9. Sendable Compliance
@@ -166,6 +166,6 @@ struct AccountNodeTests {
         let node = AccountNode<Double>(id: "rev", account: account)
         let missingPeriod = Period.month(year: 2099, month: 12)
 
-        #expect(node.total(for: missingPeriod) == 0.0)
+        #expect(abs(node.total(for: missingPeriod) - 0.0) < 1e-6)
     }
 }

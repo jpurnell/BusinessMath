@@ -30,16 +30,16 @@ struct NearestNeighborTests {
     @Test("Returns closest value for non-knot queries")
     func closestValue() throws {
         let interp = try NearestNeighborInterpolator(xs: Self.xs, ys: Self.ys)
-        #expect(interp(0.4) == 0.0)   // closer to xs[0]=0
-        #expect(interp(0.6) == 1.0)   // closer to xs[1]=1
-        #expect(interp(2.6) == 9.0)   // closer to xs[3]=3
+        #expect(abs(interp(0.4) - 0.0) < 1e-6)   // closer to xs[0]=0
+        #expect(abs(interp(0.6) - 1.0) < 1e-6)   // closer to xs[1]=1
+        #expect(abs(interp(2.6) - 9.0) < 1e-6)   // closer to xs[3]=3
     }
 
     @Test("Tie resolves to lower index")
     func tieResolvesLow() throws {
         let interp = try NearestNeighborInterpolator(xs: Self.xs, ys: Self.ys)
         // Halfway between xs[2]=2 and xs[3]=3 → returns ys[2]=4
-        #expect(interp(2.5) == 4.0)
+        #expect(abs(interp(2.5) - 4.0) < 1e-6)
     }
 
     @Test("Vector1D query equivalence")
@@ -51,8 +51,8 @@ struct NearestNeighborTests {
     @Test("Clamp extrapolation (default)")
     func clampExtrapolation() throws {
         let interp = try NearestNeighborInterpolator(xs: Self.xs, ys: Self.ys)
-        #expect(interp(-100.0) == 0.0)
-        #expect(interp(100.0) == 16.0)
+        #expect(abs(interp(-100.0) - 0.0) < 1e-6)
+        #expect(abs(interp(100.0) - 16.0) < 1e-6)
     }
 
     @Test("Constant extrapolation")
@@ -60,17 +60,17 @@ struct NearestNeighborTests {
         let interp = try NearestNeighborInterpolator(
             xs: Self.xs, ys: Self.ys, outOfBounds: .constant(-1)
         )
-        #expect(interp(-100.0) == -1.0)
-        #expect(interp(100.0) == -1.0)
-        #expect(interp(2.0) == 4.0)  // in-range still works
+        #expect(abs(interp(-100.0) - (-1.0)) < 1e-6)
+        #expect(abs(interp(100.0) - (-1.0)) < 1e-6)
+        #expect(abs(interp(2.0) - 4.0) < 1e-6)  // in-range still works
     }
 
     @Test("Single point degenerate case")
     func singlePoint() throws {
         let interp = try NearestNeighborInterpolator(xs: [5.0], ys: [42.0])
-        #expect(interp(0.0) == 42.0)
-        #expect(interp(5.0) == 42.0)
-        #expect(interp(100.0) == 42.0)
+        #expect(abs(interp(0.0) - 42.0) < 1e-6)
+        #expect(abs(interp(5.0) - 42.0) < 1e-6)
+        #expect(abs(interp(100.0) - 42.0) < 1e-6)
     }
 
     @Test("Throws on empty input")
@@ -126,17 +126,17 @@ struct PreviousValueTests {
     @Test("Returns previous y for in-interval queries")
     func previousValue() throws {
         let interp = try PreviousValueInterpolator(xs: Self.xs, ys: Self.ys)
-        #expect(interp(0.5) == 0.0)
-        #expect(interp(0.999) == 0.0)
-        #expect(interp(2.5) == 4.0)
-        #expect(interp(3.7) == 9.0)
+        #expect(abs(interp(0.5) - 0.0) < 1e-6)
+        #expect(abs(interp(0.999) - 0.0) < 1e-6)
+        #expect(abs(interp(2.5) - 4.0) < 1e-6)
+        #expect(abs(interp(3.7) - 9.0) < 1e-6)
     }
 
     @Test("Clamp extrapolation")
     func clampExtrapolation() throws {
         let interp = try PreviousValueInterpolator(xs: Self.xs, ys: Self.ys)
-        #expect(interp(-1.0) == 0.0)
-        #expect(interp(5.0) == 16.0)
+        #expect(abs(interp(-1.0) - 0.0) < 1e-6)
+        #expect(abs(interp(5.0) - 16.0) < 1e-6)
     }
 
     @Test("Vector1D query equivalence")
@@ -148,9 +148,9 @@ struct PreviousValueTests {
     @Test("Single point degenerate case")
     func singlePoint() throws {
         let interp = try PreviousValueInterpolator(xs: [5.0], ys: [42.0])
-        #expect(interp(0.0) == 42.0)
-        #expect(interp(5.0) == 42.0)
-        #expect(interp(100.0) == 42.0)
+        #expect(abs(interp(0.0) - 42.0) < 1e-6)
+        #expect(abs(interp(5.0) - 42.0) < 1e-6)
+        #expect(abs(interp(100.0) - 42.0) < 1e-6)
     }
 
     @Test("Throws on empty input")
@@ -180,17 +180,17 @@ struct NextValueTests {
     @Test("Returns next y for in-interval queries")
     func nextValue() throws {
         let interp = try NextValueInterpolator(xs: Self.xs, ys: Self.ys)
-        #expect(interp(0.001) == 1.0)
-        #expect(interp(0.5) == 1.0)
-        #expect(interp(2.001) == 9.0)
-        #expect(interp(3.7) == 16.0)
+        #expect(abs(interp(0.001) - 1.0) < 1e-6)
+        #expect(abs(interp(0.5) - 1.0) < 1e-6)
+        #expect(abs(interp(2.001) - 9.0) < 1e-6)
+        #expect(abs(interp(3.7) - 16.0) < 1e-6)
     }
 
     @Test("Clamp extrapolation")
     func clampExtrapolation() throws {
         let interp = try NextValueInterpolator(xs: Self.xs, ys: Self.ys)
-        #expect(interp(-1.0) == 0.0)
-        #expect(interp(5.0) == 16.0)
+        #expect(abs(interp(-1.0) - 0.0) < 1e-6)
+        #expect(abs(interp(5.0) - 16.0) < 1e-6)
     }
 
     @Test("Vector1D query equivalence")
@@ -240,8 +240,8 @@ struct LinearInterpolatorTests {
     @Test("Clamp extrapolation")
     func clampExtrapolation() throws {
         let interp = try LinearInterpolator(xs: Self.xs, ys: Self.ys)
-        #expect(interp(-1.0) == 0.0)
-        #expect(interp(5.0) == 16.0)
+        #expect(abs(interp(-1.0) - 0.0) < 1e-6)
+        #expect(abs(interp(5.0) - 16.0) < 1e-6)
     }
 
     @Test("Vector1D query equivalence")

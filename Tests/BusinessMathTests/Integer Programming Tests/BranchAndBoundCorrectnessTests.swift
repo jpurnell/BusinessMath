@@ -711,14 +711,14 @@ struct BranchAndBoundCorrectnessTests {
 
             // Should extract in order: 5, 7, 10
             let first = queue.extractBest()
-            #expect(first?.relaxationBound == 5.0,
+            #expect(abs((first?.relaxationBound ?? .nan) - 5.0) < 1e-6,
                 "Best-bound should extract lowest bound first")
 
             let second = queue.extractBest()
-            #expect(second?.relaxationBound == 7.0)
+            #expect(abs((second?.relaxationBound ?? .nan) - 7.0) < 1e-6)
 
             let third = queue.extractBest()
-            #expect(third?.relaxationBound == 10.0)
+            #expect(abs((third?.relaxationBound ?? .nan) - 10.0) < 1e-6)
         }
 
         @Test("Depth-first strategy explores deepest first")

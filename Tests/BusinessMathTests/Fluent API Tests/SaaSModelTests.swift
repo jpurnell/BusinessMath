@@ -29,7 +29,7 @@ import RealModule
 
         // Then: The model should be initialized correctly
         #expect(model.initialMRR == 10_000)
-        #expect(model.churnRate == 0.05)
+        #expect(abs(model.churnRate - 0.05) < 1e-6)
         #expect(model.newCustomersPerMonth == 100)
         #expect(model.averageRevenuePerUser == 100)
     }

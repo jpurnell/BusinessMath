@@ -37,7 +37,7 @@ import RealModule
         #expect(model.initialSellers == 500)
         #expect(model.monthlyTransactionsPerBuyer == 2)
         #expect(model.averageOrderValue == 75)
-        #expect(model.takeRate == 0.15)
+        #expect(abs(model.takeRate - 0.15) < 1e-6)
     }
 
     // MARK: - GMV Tests

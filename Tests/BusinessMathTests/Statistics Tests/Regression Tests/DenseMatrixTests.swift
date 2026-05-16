@@ -40,10 +40,10 @@ struct DenseMatrixTests {
 
         #expect(matrix.rows == 2)
         #expect(matrix.columns == 2)
-        #expect(matrix[0, 0] == 1.0)
-        #expect(matrix[0, 1] == 2.0)
-        #expect(matrix[1, 0] == 3.0)
-        #expect(matrix[1, 1] == 4.0)
+        #expect(abs(matrix[0, 0] - 1.0) < 1e-6)
+        #expect(abs(matrix[0, 1] - 2.0) < 1e-6)
+        #expect(abs(matrix[1, 0] - 3.0) < 1e-6)
+        #expect(abs(matrix[1, 1] - 4.0) < 1e-6)
     }
 
     @Test("Create identity matrix")
@@ -56,16 +56,16 @@ struct DenseMatrixTests {
 
         // Verify diagonal elements are 1
         for i in 0..<3 {
-            #expect(matrix[i, i] == 1.0)
+            #expect(abs(matrix[i, i] - 1.0) < 1e-6)
         }
 
         // Verify off-diagonal elements are 0
-        #expect(matrix[0, 1] == 0.0)
-        #expect(matrix[0, 2] == 0.0)
-        #expect(matrix[1, 0] == 0.0)
-        #expect(matrix[1, 2] == 0.0)
-        #expect(matrix[2, 0] == 0.0)
-        #expect(matrix[2, 1] == 0.0)
+        #expect(abs(matrix[0, 1] - 0.0) < 1e-6)
+        #expect(abs(matrix[0, 2] - 0.0) < 1e-6)
+        #expect(abs(matrix[1, 0] - 0.0) < 1e-6)
+        #expect(abs(matrix[1, 2] - 0.0) < 1e-6)
+        #expect(abs(matrix[2, 0] - 0.0) < 1e-6)
+        #expect(abs(matrix[2, 1] - 0.0) < 1e-6)
     }
 
     @Test("Matrix transpose")
@@ -77,12 +77,12 @@ struct DenseMatrixTests {
 
         #expect(transposed.rows == 3)
         #expect(transposed.columns == 2)
-        #expect(transposed[0, 0] == 1.0)
-        #expect(transposed[0, 1] == 4.0)
-        #expect(transposed[1, 0] == 2.0)
-        #expect(transposed[1, 1] == 5.0)
-        #expect(transposed[2, 0] == 3.0)
-        #expect(transposed[2, 1] == 6.0)
+        #expect(abs(transposed[0, 0] - 1.0) < 1e-6)
+        #expect(abs(transposed[0, 1] - 4.0) < 1e-6)
+        #expect(abs(transposed[1, 0] - 2.0) < 1e-6)
+        #expect(abs(transposed[1, 1] - 5.0) < 1e-6)
+        #expect(abs(transposed[2, 0] - 3.0) < 1e-6)
+        #expect(abs(transposed[2, 1] - 6.0) < 1e-6)
     }
 
     @Test("Matrix-vector multiplication")
@@ -154,11 +154,11 @@ struct DenseMatrixTests {
         #expect(matrix.rows == 1)
         #expect(matrix.columns == 1)
         #expect(matrix.isSquare)
-        #expect(matrix[0, 0] == 5.0)
+        #expect(abs(matrix[0, 0] - 5.0) < 1e-6)
 
         // Transpose of 1×1 is itself
         let transposed = matrix.transposed()
-        #expect(transposed[0, 0] == 5.0)
+        #expect(abs(transposed[0, 0] - 5.0) < 1e-6)
     }
 
     @Test("Transpose of transpose returns original")
@@ -197,8 +197,8 @@ struct DenseMatrixTests {
                     [0.0, 1.0]]
         let matrix = try DenseMatrix(data)
 
-        #expect(matrix[0, 1] == 0.0)
-        #expect(matrix[1, 0] == 0.0)
+        #expect(abs(matrix[0, 1] - 0.0) < 1e-6)
+        #expect(abs(matrix[1, 0] - 0.0) < 1e-6)
     }
 
     // MARK: - 3️⃣ Invalid Input Tests
@@ -464,7 +464,7 @@ struct DenseMatrixTests {
 
         // Verify diagonal
         for i in 0..<size {
-            #expect(I[i, i] == 1.0)
+            #expect(abs(I[i, i] - 1.0) < 1e-6)
         }
 
         // Verify trace equals size

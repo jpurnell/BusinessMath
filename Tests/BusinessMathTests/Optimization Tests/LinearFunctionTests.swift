@@ -79,8 +79,8 @@ struct LinearFunctionTests {
 
         for point in points {
             let grad = f.gradient(at: point)
-            #expect(grad.toArray()[0] == 2.0, "Gradient x₁ component should be 2.0 at \(point.toArray())")
-            #expect(grad.toArray()[1] == 3.0, "Gradient x₂ component should be 3.0 at \(point.toArray())")
+            #expect(abs(grad.toArray()[0] - 2.0) < 1e-6, "Gradient x₁ component should be 2.0 at \(point.toArray())")
+            #expect(abs(grad.toArray()[1] - 3.0) < 1e-6, "Gradient x₂ component should be 3.0 at \(point.toArray())")
         }
     }
 

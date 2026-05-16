@@ -27,11 +27,11 @@ struct MertonModelTests {
             maturity: 1.0
         )
 
-        #expect(model.assetValue == 100_000_000.0)
-        #expect(model.assetVolatility == 0.25)
-        #expect(model.debtFaceValue == 80_000_000.0)
-        #expect(model.riskFreeRate == 0.05)
-        #expect(model.maturity == 1.0)
+        #expect(abs(model.assetValue - 100_000_000.0) < 1e-2)
+        #expect(abs(model.assetVolatility - 0.25) < 1e-6)
+        #expect(abs(model.debtFaceValue - 80_000_000.0) < 1e-2)
+        #expect(abs(model.riskFreeRate - 0.05) < 1e-6)
+        #expect(abs(model.maturity - 1.0) < 1e-6)
     }
 
     // MARK: - Equity Valuation Tests

@@ -22,19 +22,19 @@ struct VectorSpaceTests {
 		let v2 = Vector1D<Double>(0.5)
 
 		let sum = v1 + v2
-		#expect(sum.value == 3.0)
+		#expect(abs(sum.value - 3.0) < 1e-6)
 
 		let diff = v1 - v2
-		#expect(diff.value == 2.0)
+		#expect(abs(diff.value - 2.0) < 1e-6)
 
 		let scaled = 2.0 * v1
-		#expect(scaled.value == 5.0)
+		#expect(abs(scaled.value - 5.0) < 1e-6)
 
 		let divided = v1 / 5.0
-		#expect(divided.value == 0.5)
+		#expect(abs(divided.value - 0.5) < 1e-6)
 
 		let negated = -v1
-		#expect(negated.value == -2.5)
+		#expect(abs(negated.value - (-2.5)) < 1e-6)
 	}
 
 	@Test("Vector1D norm and dot product")
@@ -44,15 +44,15 @@ struct VectorSpaceTests {
 		let vNeg = Vector1D<Double>(-7.5)
 
 		// Norm is the absolute value
-		#expect(v1.norm == 3.0)
-		#expect(vNeg.norm == 7.5)
+		#expect(abs(v1.norm - 3.0) < 1e-6)
+		#expect(abs(vNeg.norm - 7.5) < 1e-6)
 
 		// Dot product is just the product of components
-		#expect(v1.dot(v2) == 12.0)
-		#expect(v1.dot(v1) == 9.0)
+		#expect(abs(v1.dot(v2) - 12.0) < 1e-6)
+		#expect(abs(v1.dot(v1) - 9.0) < 1e-6)
 
 		// Squared norm via VectorSpace default
-		#expect(v1.squaredNorm == 9.0)
+		#expect(abs(v1.squaredNorm - 9.0) < 1e-6)
 	}
 
 	@Test("Vector1D array conversion")
@@ -60,11 +60,11 @@ struct VectorSpaceTests {
 		let v = Vector1D<Double>(2.5)
 
 		// To array
-		#expect(v.toArray() == [2.5])
+		#expect(v.toArray().count == 1 && abs(v.toArray()[0] - 2.5) < 1e-6)
 
 		// From array (valid)
 		let fromArray = Vector1D<Double>.fromArray([3.5])
-		#expect(fromArray?.value == 3.5)
+		#expect(abs((fromArray?.value ?? .nan) - 3.5) < 1e-6)
 
 		// From array (wrong size — must return nil)
 		#expect(Vector1D<Double>.fromArray([]) == nil)
@@ -74,7 +74,7 @@ struct VectorSpaceTests {
 	@Test("Vector1D zero, dimension, and isFinite")
 	func vector1DConvenienceMembers() {
 		let zero = Vector1D<Double>.zero
-		#expect(zero.value == 0.0)
+		#expect(abs(zero.value - 0.0) < 1e-6)
 
 		#expect(Vector1D<Double>.dimension == 1)
 
@@ -94,9 +94,9 @@ struct VectorSpaceTests {
 		let b = Vector1D<Double>(10.0)
 
 		// distance is the default extension method via VectorSpace
-		#expect(a.distance(to: b) == 10.0)
-		#expect(b.distance(to: a) == 10.0)
-		#expect(a.squaredDistance(to: b) == 100.0)
+		#expect(abs(a.distance(to: b) - 10.0) < 1e-6)
+		#expect(abs(b.distance(to: a) - 10.0) < 1e-6)
+		#expect(abs(a.squaredDistance(to: b) - 100.0) < 1e-6)
 	}
 
 	@Test("Vector1D Equatable and Hashable")
@@ -122,7 +122,7 @@ struct VectorSpaceTests {
 		let decoded = try decoder.decode(Vector1D<Double>.self, from: data)
 
 		#expect(decoded == original)
-		#expect(decoded.value == 2.5)
+		#expect(abs(decoded.value - 2.5) < 1e-6)
 	}
 
 	@Test("Vector1D Sendable conformance")
@@ -130,7 +130,7 @@ struct VectorSpaceTests {
 		let v = Vector1D<Double>(3.14)
 		// Compile-time check: passing across actor boundary requires Sendable
 		await Task.detached {
-			#expect(v.value == 3.14)
+			#expect(abs(v.value - 3.14) < 1e-6)
 		}.value
 	}
 
@@ -143,23 +143,23 @@ struct VectorSpaceTests {
 		
 			// Addition
 		let sum = v1 + v2
-		#expect(sum.x == 4.0)
-		#expect(sum.y == 6.0)
-		
+		#expect(abs(sum.x - 4.0) < 1e-6)
+		#expect(abs(sum.y - 6.0) < 1e-6)
+
 			// Scalar multiplication
 		let scaled = 2.0 * v1
-		#expect(scaled.x == 2.0)
-		#expect(scaled.y == 4.0)
-		
+		#expect(abs(scaled.x - 2.0) < 1e-6)
+		#expect(abs(scaled.y - 4.0) < 1e-6)
+
 			// Negation
 		let neg = -v1
-		#expect(neg.x == -1.0)
-		#expect(neg.y == -2.0)
-		
+		#expect(abs(neg.x - (-1.0)) < 1e-6)
+		#expect(abs(neg.y - (-2.0)) < 1e-6)
+
 			// Subtraction (default implementation)
 		let diff = v1 - v2
-		#expect(diff.x == -2.0)
-		#expect(diff.y == -2.0)
+		#expect(abs(diff.x - (-2.0)) < 1e-6)
+		#expect(abs(diff.y - (-2.0)) < 1e-6)
 	}
 	
 	@Test("Vector2D norm and dot product")
@@ -168,16 +168,17 @@ struct VectorSpaceTests {
 		let v2 = Vector2D<Double>(x: 1.0, y: 2.0)
 		
 			// Norm
-		#expect(v1.norm == 5.0)
-		#expect(v2.norm == sqrt(5.0))
-		
+		#expect(abs(v1.norm - 5.0) < 1e-6)
+		#expect(abs(v2.norm - sqrt(5.0)) < 1e-6)
+
 			// Squared norm
-		#expect(v1.squaredNorm == 25.0)
-		#expect(v2.squaredNorm == 5.0)
-		
+		#expect(abs(v1.squaredNorm - 25.0) < 1e-6)
+		#expect(abs(v2.squaredNorm - 5.0) < 1e-6)
+
 			// Dot product
 		let dot = v1.dot(v2)
-		#expect(dot == 3.0 * 1.0 + 4.0 * 2.0)
+		let expectedDot = 3.0 * 1.0 + 4.0 * 2.0
+		#expect(abs(dot - expectedDot) < 1e-6)
 		
 			// Distance
 		let distance = v1.distance(to: v2)
@@ -192,13 +193,13 @@ struct VectorSpaceTests {
 			// To array
 		let array = v.toArray()
 		#expect(array.count == 2)
-		#expect(array[0] == 1.5)
-		#expect(array[1] == 2.5)
-		
+		#expect(abs(array[0] - 1.5) < 1e-6)
+		#expect(abs(array[1] - 2.5) < 1e-6)
+
 			// From array
 		let fromArray = Vector2D<Double>.fromArray([3.0, 4.0])
-		#expect(fromArray?.x == 3.0)
-		#expect(fromArray?.y == 4.0)
+		#expect(abs((fromArray?.x ?? .nan) - 3.0) < 1e-6)
+		#expect(abs((fromArray?.y ?? .nan) - 4.0) < 1e-6)
 		
 			// Invalid array
 		let invalid = Vector2D<Double>.fromArray([1.0])
@@ -209,8 +210,8 @@ struct VectorSpaceTests {
 	func vector2DConvenienceMethods() {
 			// Zero vector
 		let zero = Vector2D<Double>.zero
-		#expect(zero.x == 0.0)
-		#expect(zero.y == 0.0)
+		#expect(abs(zero.x - 0.0) < 1e-6)
+		#expect(abs(zero.y - 0.0) < 1e-6)
 		
 			// Is finite
 		let finite = Vector2D<Double>(x: 1.0, y: 2.0)
@@ -223,8 +224,8 @@ struct VectorSpaceTests {
 		let start = Vector2D<Double>(x: 0.0, y: 0.0)
 		let end = Vector2D<Double>(x: 10.0, y: 20.0)
 		let lerped = Vector2D<Double>.lerp(from: start, to: end, t: 0.5)
-		#expect(lerped.x == 5.0)
-		#expect(lerped.y == 10.0)
+		#expect(abs(lerped.x - 5.0) < 1e-6)
+		#expect(abs(lerped.y - 10.0) < 1e-6)
 	}
 	
 		// MARK: - Vector3D Tests
@@ -235,14 +236,14 @@ struct VectorSpaceTests {
 		let v2 = Vector3D<Double>(x: 4.0, y: 5.0, z: 6.0)
 		
 		let sum = v1 + v2
-		#expect(sum.x == 5.0)
-		#expect(sum.y == 7.0)
-		#expect(sum.z == 9.0)
-		
+		#expect(abs(sum.x - 5.0) < 1e-6)
+		#expect(abs(sum.y - 7.0) < 1e-6)
+		#expect(abs(sum.z - 9.0) < 1e-6)
+
 		let scaled = 2.0 * v1
-		#expect(scaled.x == 2.0)
-		#expect(scaled.y == 4.0)
-		#expect(scaled.z == 6.0)
+		#expect(abs(scaled.x - 2.0) < 1e-6)
+		#expect(abs(scaled.y - 4.0) < 1e-6)
+		#expect(abs(scaled.z - 6.0) < 1e-6)
 	}
 	
 	@Test("Vector3D norm calculation")
@@ -258,15 +259,15 @@ struct VectorSpaceTests {
 			// From array
 		let v1 = VectorN<Double>([1.0, 2.0, 3.0])
 		#expect(v1.count == 3)
-		#expect(v1[0] == 1.0)
-		#expect(v1[1] == 2.0)
-		#expect(v1[2] == 3.0)
-		
+		#expect(abs(v1[0] - 1.0) < 1e-6)
+		#expect(abs(v1[1] - 2.0) < 1e-6)
+		#expect(abs(v1[2] - 3.0) < 1e-6)
+
 			// Repeating
 		let v2 = VectorN<Double>(repeating: 5.0, count: 4)
 		#expect(v2.count == 4)
-		#expect(v2[0] == 5.0)
-		#expect(v2[3] == 5.0)
+		#expect(abs(v2[0] - 5.0) < 1e-6)
+		#expect(abs(v2[3] - 5.0) < 1e-6)
 		
 			// Zero vector
 		let zero = VectorN<Double>.zero
@@ -281,19 +282,20 @@ struct VectorSpaceTests {
 			// Addition
 		let sum = v1 + v2
 		#expect(sum.count == 3)
-		#expect(sum[0] == 5.0)
-		#expect(sum[1] == 7.0)
-		#expect(sum[2] == 9.0)
-		
+		#expect(abs(sum[0] - 5.0) < 1e-6)
+		#expect(abs(sum[1] - 7.0) < 1e-6)
+		#expect(abs(sum[2] - 9.0) < 1e-6)
+
 			// Scalar multiplication
 		let scaled = 2.0 * v1
-		#expect(scaled[0] == 2.0)
-		#expect(scaled[1] == 4.0)
-		#expect(scaled[2] == 6.0)
-		
+		#expect(abs(scaled[0] - 2.0) < 1e-6)
+		#expect(abs(scaled[1] - 4.0) < 1e-6)
+		#expect(abs(scaled[2] - 6.0) < 1e-6)
+
 			// Dot product
 		let dot = v1.dot(v2)
-		#expect(dot == 1.0*4.0 + 2.0*5.0 + 3.0*6.0)
+		let expectedDotN = 1.0*4.0 + 2.0*5.0 + 3.0*6.0
+		#expect(abs(dot - expectedDotN) < 1e-6)
 		
 			// Norm
 		let norm = v1.norm
@@ -309,13 +311,13 @@ struct VectorSpaceTests {
 			// Addition with mismatch returns zero vector
 		let sum = v1 + v2
 		#expect(sum.count == 3)  // Max dimension
-		#expect(sum[0] == 0.0)
-		#expect(sum[1] == 0.0)
-		#expect(sum[2] == 0.0)
-		
+		#expect(abs(sum[0] - 0.0) < 1e-6)
+		#expect(abs(sum[1] - 0.0) < 1e-6)
+		#expect(abs(sum[2] - 0.0) < 1e-6)
+
 			// Dot product with mismatch returns 0
 		let dot = v1.dot(v2)
-		#expect(dot == 0.0)
+		#expect(abs(dot - 0.0) < 1e-6)
 	}
 	
 	@Test("VectorN subscript access")
@@ -323,17 +325,17 @@ struct VectorSpaceTests {
 		var v = VectorN<Double>([1.0, 2.0, 3.0])
 		
 			// Read access
-		#expect(v[0] == 1.0)
-		#expect(v[1] == 2.0)
-		#expect(v[2] == 3.0)
-		
+		#expect(abs(v[0] - 1.0) < 1e-6)
+		#expect(abs(v[1] - 2.0) < 1e-6)
+		#expect(abs(v[2] - 3.0) < 1e-6)
+
 			// Out of bounds read returns 0
-		#expect(v[-1] == 0.0)
-		#expect(v[10] == 0.0)
-		
+		#expect(abs(v[-1] - 0.0) < 1e-6)
+		#expect(abs(v[10] - 0.0) < 1e-6)
+
 			// Write access
 		v[1] = 99.0
-		#expect(v[1] == 99.0)
+		#expect(abs(v[1] - 99.0) < 1e-6)
 		
 			// Out of bounds write does nothing
 		v[-1] = 100.0
@@ -346,15 +348,15 @@ struct VectorSpaceTests {
 			// Unit vector
 		let unit = VectorN<Double>.unitVector(dimension: 3, direction: 1)
 		#expect(unit.count == 3)
-		#expect(unit[0] == 0.0)
-		#expect(unit[1] == 1.0)
-		#expect(unit[2] == 0.0)
-		
+		#expect(abs(unit[0] - 0.0) < 1e-6)
+		#expect(abs(unit[1] - 1.0) < 1e-6)
+		#expect(abs(unit[2] - 0.0) < 1e-6)
+
 			// With dimension
 		let sized = VectorN<Double>.withDimension(4, initialValue: 7.0)
 		#expect(sized.count == 4)
-		#expect(sized[0] == 7.0)
-		#expect(sized[3] == 7.0)
+		#expect(abs(sized[0] - 7.0) < 1e-6)
+		#expect(abs(sized[3] - 7.0) < 1e-6)
 		
 			// Is finite
 		let finite = VectorN<Double>([1.0, 2.0, 3.0])
@@ -373,15 +375,15 @@ struct VectorSpaceTests {
 		
 		let result = v1.hadamard(v2)
 		#expect(result.count == 3)
-		#expect(result[0] == 4.0)   // 1*4
-		#expect(result[1] == 10.0)  // 2*5
-		#expect(result[2] == 18.0)  // 3*6
-		
+		#expect(abs(result[0] - 4.0) < 1e-6)   // 1*4
+		#expect(abs(result[1] - 10.0) < 1e-6)  // 2*5
+		#expect(abs(result[2] - 18.0) < 1e-6)  // 3*6
+
 			// Mismatched dimensions returns zero
 		let v3 = VectorN<Double>([1.0, 2.0])
 		let zeroResult = v1.hadamard(v3)
 		#expect(zeroResult.count == 3)
-		#expect(zeroResult[0] == 0.0)
+		#expect(abs(zeroResult[0] - 0.0) < 1e-6)
 	}
 	
 	@Test("Vector operations - elementwise division")
@@ -391,9 +393,9 @@ struct VectorSpaceTests {
 		
 		let result = v1.elementwiseDivide(by: v2)
 		#expect(result.count == 3)
-		#expect(result[0] == 5.0)   // 10/2
-		#expect(result[1] == 5.0)   // 20/4
-		#expect(result[2] == 6.0)   // 30/5
+		#expect(abs(result[0] - 5.0) < 1e-6)   // 10/2
+		#expect(abs(result[1] - 5.0) < 1e-6)   // 20/4
+		#expect(abs(result[2] - 6.0) < 1e-6)   // 30/5
 	}
 	
 	@Test("Vector operations - statistics")
@@ -402,11 +404,11 @@ struct VectorSpaceTests {
 		let stdDev = v.standardDeviation()
 		let difference = Double(1.0) / Double(10000000000)
 		let value = abs(stdDev - sqrt(2.5))
-		#expect(v.sum == 15.0)
-		#expect(v.mean == 3.0)
+		#expect(abs(v.sum - 15.0) < 1e-6)
+		#expect(abs(v.mean - 3.0) < 1e-6)
 		#expect(value < difference)  // Population variance = 2.5
-		#expect(v.max == 5.0)
-		#expect(v.min == 1.0)
+		#expect(abs((v.max ?? .nan) - 5.0) < 1e-6)
+		#expect(abs((v.min ?? .nan) - 1.0) < 1e-6)
 	}
 	
 	@Test("Vector operations - normalization")
@@ -431,17 +433,17 @@ struct VectorSpaceTests {
 		
 		let projection = v1.projection(onto: v2)
 		#expect(projection.count == 3)
-		#expect(projection[0] == 1.0)  // Projects onto x-axis
-		#expect(projection[1] == 0.0)
-		#expect(projection[2] == 0.0)
-		
+		#expect(abs(projection[0] - 1.0) < 1e-6)  // Projects onto x-axis
+		#expect(abs(projection[1] - 0.0) < 1e-6)
+		#expect(abs(projection[2] - 0.0) < 1e-6)
+
 			// Projection onto zero vector returns zero
 		let zero = VectorN<Double>.zero
 		let zeroProjection = v1.projection(onto: zero)
 		#expect(zeroProjection.count == 3)  // Returns zero vector of same dimension
-	#expect(zeroProjection[0] == 0.0)
-	#expect(zeroProjection[1] == 0.0)
-	#expect(zeroProjection[2] == 0.0)
+	#expect(abs(zeroProjection[0] - 0.0) < 1e-6)
+	#expect(abs(zeroProjection[1] - 0.0) < 1e-6)
+	#expect(abs(zeroProjection[2] - 0.0) < 1e-6)
 	}
 	
 	@Test("Vector operations - angle calculation")
@@ -496,12 +498,12 @@ struct VectorSpaceTests {
 		#expect(result.count == 2)  // v1 dimension
 		#expect(result[0].count == 3)  // v2 dimension
 		
-		#expect(result[0][0] == 3.0)  // 1*3
-		#expect(result[0][1] == 4.0)  // 1*4
-		#expect(result[0][2] == 5.0)  // 1*5
-		#expect(result[1][0] == 6.0)  // 2*3
-		#expect(result[1][1] == 8.0)  // 2*4
-		#expect(result[1][2] == 10.0) // 2*5
+		#expect(abs(result[0][0] - 3.0) < 1e-6)  // 1*3
+		#expect(abs(result[0][1] - 4.0) < 1e-6)  // 1*4
+		#expect(abs(result[0][2] - 5.0) < 1e-6)  // 1*5
+		#expect(abs(result[1][0] - 6.0) < 1e-6)  // 2*3
+		#expect(abs(result[1][1] - 8.0) < 1e-6)  // 2*4
+		#expect(abs(result[1][2] - 10.0) < 1e-6) // 2*5
 	}
 	
 		// MARK: - Convenience Extensions Tests
@@ -543,19 +545,19 @@ struct VectorSpaceTests {
 		let d2: Double = 4.0
 		
 			// Operations
-		#expect(d1 + d2 == 7.0)
-		#expect(2.0 * d1 == 6.0)
-		#expect(-d1 == -3.0)
-		
+		#expect(abs(d1 + d2 - 7.0) < 1e-6)
+		#expect(abs(2.0 * d1 - 6.0) < 1e-6)
+		#expect(abs(-d1 - (-3.0)) < 1e-6)
+
 			// Norm
-		#expect(d1.norm == 3.0)
-		
+		#expect(abs(d1.norm - 3.0) < 1e-6)
+
 			// Dot product
-		#expect(d1.dot(d2) == 12.0)
-		
+		#expect(abs(d1.dot(d2) - 12.0) < 1e-6)
+
 			// Array conversion
-		#expect(d1.toArray() == [3.0])
-		#expect(Double.fromArray([5.0]) == 5.0)
+		#expect(d1.toArray().count == 1 && abs(d1.toArray()[0] - 3.0) < 1e-6)
+		#expect(abs((Double.fromArray([5.0]) ?? .nan) - 5.0) < 1e-6)
 		#expect(Double.fromArray([1.0, 2.0]) == nil)
 		
 			// Dimension
@@ -571,10 +573,10 @@ struct VectorSpaceTests {
 		let f1: Float = 3.0
 		let f2: Float = 4.0
 		
-		#expect(f1 + f2 == 7.0)
-		#expect(2.0 * f1 == 6.0)
-		#expect(f1.norm == 3.0)
-		#expect(f1.dot(f2) == 12.0)
+		#expect(abs(f1 + f2 - 7.0) < 1e-6)
+		#expect(abs(2.0 * f1 - 6.0) < 1e-6)
+		#expect(abs(f1.norm - 3.0) < 1e-6)
+		#expect(abs(f1.dot(f2) - 12.0) < 1e-6)
 		#expect(Float.dimension == 1)
 	}
 	
@@ -660,10 +662,10 @@ struct VectorSpaceTests {
 			// Operations with NaN
 		let v2 = VectorN<Double>([2.0, 3.0, 4.0, 5.0])
 		let sum = v + v2
-		#expect(sum[0] == 3.0)  // 1 + 2
+		#expect(abs(sum[0] - 3.0) < 1e-6)  // 1 + 2
 		#expect(sum[1].isNaN == true)  // NaN + 3
 		#expect(sum[2].isInfinite == true)  // ∞ + 4
-		#expect(sum[3] == 9.0)  // 4 + 5
+		#expect(abs(sum[3] - 9.0) < 1e-6)  // 4 + 5
 	}
 	
 //	@Test("Large dimension vectors")
@@ -722,13 +724,13 @@ struct VectorSpaceTests {
 			// Modify v2 - should trigger copy
 		v2[0] = 99.0
 		
-		#expect(v1[0] == 1.0)  // v1 unchanged
-		#expect(v2[0] == 99.0) // v2 modified
-		
+		#expect(abs(v1[0] - 1.0) < 1e-6)  // v1 unchanged
+		#expect(abs(v2[0] - 99.0) < 1e-6) // v2 modified
+
 			// Modify v1 - should not affect v2
 		v1[1] = 88.0
-		#expect(v1[1] == 88.0)
-		#expect(v2[1] == 2.0)  // v2 unchanged
+		#expect(abs(v1[1] - 88.0) < 1e-6)
+		#expect(abs(v2[1] - 2.0) < 1e-6)  // v2 unchanged
 	}
 	
 	@Test("Vector serialization (Codable)")
@@ -745,16 +747,16 @@ struct VectorSpaceTests {
 		
 		#expect(decoded == original)
 		#expect(decoded.count == 4)
-		#expect(decoded[0] == 1.0)
-		#expect(decoded[3] == 4.0)
-		
+		#expect(abs(decoded[0] - 1.0) < 1e-6)
+		#expect(abs(decoded[3] - 4.0) < 1e-6)
+
 			// Test Vector2D serialization
 		let v2d = Vector2D<Double>(x: 1.5, y: 2.5)
 		let v2dData = try encoder.encode(v2d)
 		let decodedV2D = try decoder.decode(Vector2D<Double>.self, from: v2dData)
-		
-		#expect(decodedV2D.x == 1.5)
-		#expect(decodedV2D.y == 2.5)
+
+		#expect(abs(decodedV2D.x - 1.5) < 1e-6)
+		#expect(abs(decodedV2D.y - 2.5) < 1e-6)
 	}
 	
 //	@Test("Vector description and debug strings")
@@ -784,22 +786,22 @@ struct VectorSpaceTests {
 		let v2 = Vector3D<Double>(x: 0.0, y: 1.0, z: 0.0)
 		
 		let cross = v1.cross(v2)
-		#expect(cross.x == 0.0)
-		#expect(cross.y == 0.0)
-		#expect(cross.z == 1.0)  // Right-hand rule: x × y = z
-		
+		#expect(abs(cross.x - 0.0) < 1e-6)
+		#expect(abs(cross.y - 0.0) < 1e-6)
+		#expect(abs(cross.z - 1.0) < 1e-6)  // Right-hand rule: x × y = z
+
 			// Test anticommutativity: v1 × v2 = -(v2 × v1)
 		let crossReverse = v2.cross(v1)
-		#expect(crossReverse.x == 0.0)
-		#expect(crossReverse.y == 0.0)
-		#expect(crossReverse.z == -1.0)
-		
+		#expect(abs(crossReverse.x - 0.0) < 1e-6)
+		#expect(abs(crossReverse.y - 0.0) < 1e-6)
+		#expect(abs(crossReverse.z - (-1.0)) < 1e-6)
+
 			// Parallel vectors have zero cross product
 		let v3 = Vector3D<Double>(x: 2.0, y: 0.0, z: 0.0)
 		let parallelCross = v1.cross(v3)
-		#expect(parallelCross.x == 0.0)
-		#expect(parallelCross.y == 0.0)
-		#expect(parallelCross.z == 0.0)
+		#expect(abs(parallelCross.x - 0.0) < 1e-6)
+		#expect(abs(parallelCross.y - 0.0) < 1e-6)
+		#expect(abs(parallelCross.z - 0.0) < 1e-6)
 	}
 	
 	@Test("Vector3D triple product")
@@ -810,22 +812,22 @@ struct VectorSpaceTests {
 
 		// Scalar triple product: a · (b × c)
 		let triple = a.tripleProduct(b, c)
-		#expect(triple == 1.0)  // Should be 1 for right-handed basis
+		#expect(abs(triple - 1.0) < 1e-6)  // Should be 1 for right-handed basis
 
 		// Vector triple product: a × (b × c)
 		// For a=i, b=j, c=k: b×c = i, so a×(b×c) = i×i = 0
 		let vectorTriple = a.vectorTripleProduct(b, c)
-		#expect(vectorTriple.x == 0.0)
-		#expect(vectorTriple.y == 0.0)  // a × (b × c) = b(a·c) - c(a·b) = j*0 - k*0 = 0
-		#expect(vectorTriple.z == 0.0)
+		#expect(abs(vectorTriple.x - 0.0) < 1e-6)
+		#expect(abs(vectorTriple.y - 0.0) < 1e-6)  // a × (b × c) = b(a·c) - c(a·b) = j*0 - k*0 = 0
+		#expect(abs(vectorTriple.z - 0.0) < 1e-6)
 
 		// Test with different vectors to get non-zero result
 		// For a=i, b=j, c=i: a×(b×c) = a×(j×i) = a×(-k) = j = (0,1,0)
 		let c2 = Vector3D<Double>(x: 1.0, y: 0.0, z: 0.0)  // i (same as a)
 		let vectorTriple2 = a.vectorTripleProduct(b, c2)
-		#expect(vectorTriple2.x == 0.0)
-		#expect(vectorTriple2.y == 1.0)  // Verified: b(a·c) - c(a·b) = j*1 - i*0 = j
-		#expect(vectorTriple2.z == 0.0)
+		#expect(abs(vectorTriple2.x - 0.0) < 1e-6)
+		#expect(abs(vectorTriple2.y - 1.0) < 1e-6)  // Verified: b(a·c) - c(a·b) = j*1 - i*0 = j
+		#expect(abs(vectorTriple2.z - 0.0) < 1e-6)
 	}
 	
 		// MARK: - Linear Interpolation Tests
@@ -845,13 +847,13 @@ struct VectorSpaceTests {
 		
 			// t = 0.5
 		let lerpMid = VectorN<Double>.lerp(from: start, to: end, t: 0.5)
-		#expect(lerpMid[0] == 5.0)
-		#expect(lerpMid[1] == 10.0)
-		
+		#expect(abs(lerpMid[0] - 5.0) < 1e-6)
+		#expect(abs(lerpMid[1] - 10.0) < 1e-6)
+
 			// t outside [0, 1] - extrapolation
 		let extrapolate = VectorN<Double>.lerp(from: start, to: end, t: 2.0)
-		#expect(extrapolate[0] == 20.0)
-		#expect(extrapolate[1] == 40.0)
+		#expect(abs(extrapolate[0] - 20.0) < 1e-6)
+		#expect(abs(extrapolate[1] - 40.0) < 1e-6)
 	}
 	
 		// MARK: - Distance and Similarity Tests
@@ -863,19 +865,19 @@ struct VectorSpaceTests {
 		
 			// Euclidean distance
 		let euclidean = v1.distance(to: v2)
-		#expect(euclidean == 5.0)  // 3-4-5 triangle
-		
+		#expect(abs(euclidean - 5.0) < 1e-6)  // 3-4-5 triangle
+
 			// Squared distance (faster, avoids sqrt)
 		let squared = v1.squaredDistance(to: v2)
-		#expect(squared == 25.0)
-		
+		#expect(abs(squared - 25.0) < 1e-6)
+
 			// Manhattan distance
 		let manhattan = v1.manhattanDistance(to: v2)
-		#expect(manhattan == 7.0)  // 3 + 4
-		
+		#expect(abs(manhattan - 7.0) < 1e-6)  // 3 + 4
+
 			// Chebyshev distance
 		let chebyshev = v1.chebyshevDistance(to: v2)
-		#expect(chebyshev == 4.0)  // max(3, 4)
+		#expect(abs(chebyshev - 4.0) < 1e-6)  // max(3, 4)
 	}
 	
 	@Test("Cosine similarity")
@@ -912,22 +914,22 @@ struct VectorSpaceTests {
 		let e2 = VectorN<Double>.unitVector(dimension: 3, direction: 1)
 		let e3 = VectorN<Double>.unitVector(dimension: 3, direction: 2)
 		
-		#expect(e1[0] == 1.0)
-		#expect(e1[1] == 0.0)
-		#expect(e1[2] == 0.0)
-		
-		#expect(e2[0] == 0.0)
-		#expect(e2[1] == 1.0)
-		#expect(e2[2] == 0.0)
-		
-		#expect(e3[0] == 0.0)
-		#expect(e3[1] == 0.0)
-		#expect(e3[2] == 1.0)
-		
+		#expect(abs(e1[0] - 1.0) < 1e-6)
+		#expect(abs(e1[1] - 0.0) < 1e-6)
+		#expect(abs(e1[2] - 0.0) < 1e-6)
+
+		#expect(abs(e2[0] - 0.0) < 1e-6)
+		#expect(abs(e2[1] - 1.0) < 1e-6)
+		#expect(abs(e2[2] - 0.0) < 1e-6)
+
+		#expect(abs(e3[0] - 0.0) < 1e-6)
+		#expect(abs(e3[1] - 0.0) < 1e-6)
+		#expect(abs(e3[2] - 1.0) < 1e-6)
+
 			// Orthogonality
-		#expect(e1.dot(e2) == 0.0)
-		#expect(e1.dot(e3) == 0.0)
-		#expect(e2.dot(e3) == 0.0)
+		#expect(abs(e1.dot(e2) - 0.0) < 1e-6)
+		#expect(abs(e1.dot(e3) - 0.0) < 1e-6)
+		#expect(abs(e2.dot(e3) - 0.0) < 1e-6)
 		
 			// Unit length
 		#expect(abs(e1.norm - 1.0) < 1e-10)
@@ -945,7 +947,7 @@ struct VectorSpaceTests {
 		
 		let sizedZero = VectorN<Double>.withDimension(dimension)
 		#expect(sizedZero.count == dimension)
-		#expect(sizedZero.sum == 0.0)
+		#expect(abs(sizedZero.sum - 0.0) < 1e-6)
 		
 			// Ones vector
 		let ones = VectorN<Double>.filled(with: 1.0, dimension: dimension)
@@ -956,9 +958,9 @@ struct VectorSpaceTests {
 			// Custom filled vector
 		let sevens = VectorN<Double>.filled(with: 7.0, dimension: 3)
 		#expect(sevens != nil)
-		#expect(sevens![0] == 7.0)
-		#expect(sevens![1] == 7.0)
-		#expect(sevens![2] == 7.0)
+		#expect(abs(sevens![0] - 7.0) < 1e-6)
+		#expect(abs(sevens![1] - 7.0) < 1e-6)
+		#expect(abs(sevens![2] - 7.0) < 1e-6)
 	}
 	
 		// MARK: - Error Handling Tests
@@ -977,22 +979,22 @@ struct VectorSpaceTests {
 		let zero = VectorN<Double>.zero
 		let normalizedZero = zero.normalized()
 		#expect(normalizedZero.count == 0)  // Returns zero vector of same dimension
-	#expect(normalizedZero[0] == 0.0)
-	#expect(normalizedZero[1] == 0.0)
-		
+	#expect(abs(normalizedZero[0] - 0.0) < 1e-6)
+	#expect(abs(normalizedZero[1] - 0.0) < 1e-6)
+
 			// Angle with zero vector
 		let angleWithZero = v1.angle(with: zero)
-		#expect(angleWithZero == 0.0)  // Defined as 0
-		
+		#expect(abs(angleWithZero - 0.0) < 1e-6)  // Defined as 0
+
 			// Projection onto zero vector
 		let projection = v1.projection(onto: zero)
 	#expect(projection.count == 2)  // Returns zero vector of same dimension
-	#expect(projection[0] == 0.0)
-	#expect(projection[1] == 0.0)
-		
+	#expect(abs(projection[0] - 0.0) < 1e-6)
+	#expect(abs(projection[1] - 0.0) < 1e-6)
+
 			// Cosine similarity with zero vector
 		let cosineWithZero = v1.cosineSimilarity(with: zero)
-		#expect(cosineWithZero == 0.0)  // Defined as 0
+		#expect(abs(cosineWithZero - 0.0) < 1e-6)  // Defined as 0
 	}
 	
 		// MARK: - Type Safety Tests
@@ -1031,7 +1033,7 @@ struct VectorSpaceTests {
 		}
 		
 		let norm = await task.value
-		#expect(norm == sqrt(14.0))
+		#expect(abs(norm - sqrt(14.0)) < 1e-6)
 		
 			// Vector2D should also be Sendable
 		let v2d = Vector2D<Double>(x: 1.0, y: 2.0)
@@ -1040,7 +1042,7 @@ struct VectorSpaceTests {
 		}
 		
 		let v2dNorm = await v2dTask.value
-		#expect(v2dNorm == sqrt(5.0))
+		#expect(abs(v2dNorm - sqrt(5.0)) < 1e-6)
 	}
 	
 	@Test(.disabled("Integration with existing math functions"))
@@ -1050,16 +1052,16 @@ struct VectorSpaceTests {
 		
 			// Apply element-wise functions
 		let squared = v.hadamard(v)
-		#expect(squared[0] == 1.0)
-		#expect(squared[1] == 4.0)
-		#expect(squared[2] == 9.0)
-		
+		#expect(abs(squared[0] - 1.0) < 1e-6)
+		#expect(abs(squared[1] - 4.0) < 1e-6)
+		#expect(abs(squared[2] - 9.0) < 1e-6)
+
 			// Use in optimization context (placeholder for future tests)
 		let gradient = VectorN<Double>([0.1, -0.2, 0.3])
 		let step = 0.1 * gradient
-		#expect(step[0] == 0.01)
-		#expect(step[1] == -0.02)
-		#expect(step[2] == 0.03)
+		#expect(abs(step[0] - 0.01) < 1e-6)
+		#expect(abs(step[1] - (-0.02)) < 1e-6)
+		#expect(abs(step[2] - 0.03) < 1e-6)
 		
 			// Test with statistical functions
 		let data = VectorN<Double>([1.0, 2.0, 3.0, 4.0, 5.0])
@@ -1067,7 +1069,7 @@ struct VectorSpaceTests {
 		let stdDev = data.standardDeviation()
 		let tolerance = 1.0 / 100000000000.0
 		let value = abs(stdDev - sqrt(2.5))
-		#expect(mean == 3.0)
+		#expect(abs(mean - 3.0) < 1e-6)
 		#expect(value < tolerance)
 		
 			// Test normalization in machine learning context
@@ -1126,8 +1128,8 @@ struct VectorSpaceTests {
 		
 		let rotated = rotation90.map({ vector.dot($0) })
 //		#expect(rotated != nil)
-		#expect(rotated[0] == -2.0)  // 0*1 + (-1)*2
-		#expect(rotated[1] == 1.0)   // 1*1 + 0*2
+		#expect(abs(rotated[0] - (-2.0)) < 1e-6)  // 0*1 + (-1)*2
+		#expect(abs(rotated[1] - 1.0) < 1e-6)   // 1*1 + 0*2
 		
 			// Scaling matrix
 		let scaling = [
@@ -1137,8 +1139,8 @@ struct VectorSpaceTests {
 		
 		let scaled = scaling.map({ vector.dot($0) })
 //		#expect(scaled != nil)
-		#expect(scaled[0] == 2.0)  // 2*1 + 0*2
-		#expect(scaled[1] == 6.0)  // 0*1 + 3*2
+		#expect(abs(scaled[0] - 2.0) < 1e-6)  // 2*1 + 0*2
+		#expect(abs(scaled[1] - 6.0) < 1e-6)  // 0*1 + 3*2
 		
 			// Test outer product for covariance-like calculation
 		let v1 = VectorN<Double>([1.0, 2.0, 3.0])
@@ -1148,8 +1150,8 @@ struct VectorSpaceTests {
 			// Should produce 3x3 matrix
 		#expect(outer.count == 3)
 		#expect(outer[0].count == 3)
-		#expect(outer[0][0] == 4.0)  // 1*4
-		#expect(outer[2][2] == 18.0) // 3*6
+		#expect(abs(outer[0][0] - 4.0) < 1e-6)  // 1*4
+		#expect(abs(outer[2][2] - 18.0) < 1e-6) // 3*6
 	}
 	
 	@Test("Integration with probability distributions", .disabled("Statistical test with random variation - needs larger sample size or deterministic seeding"))

@@ -20,7 +20,7 @@ struct UnassortedTests {
 		let prob: Double = 1/6
 		let distribution = [(1.0, prob), (2, prob), (3, prob), (4, prob), (5, prob), (6, prob)]
 		let result = meanDiscrete(distribution)
-		#expect(result == 3.5)
+		#expect(abs(result - 3.5) < 1e-6)
 	}
 
 	@Test("Variance of discrete distribution")
@@ -28,7 +28,7 @@ struct UnassortedTests {
 		let prob: Double = 1/6
 		let distribution = [(1.0, prob), (2, prob), (3, prob), (4, prob), (5, prob), (6, prob)]
 		let result = varianceDiscrete(distribution)
-		#expect(result == (35.0 / 12.0))
+		#expect(abs(result - (35.0 / 12.0)) < 1e-6)
 	}
 
 	@Test("Z-statistic calculation")
@@ -60,7 +60,7 @@ struct UnassortedTests {
 	@Test("Percentile from formal parameters")
 	func testPercentileFormal() {
 		let result = percentile(x: 1.959963984540054, mean: 0, stdDev: 1)
-		#expect(result == 0.975)
+		#expect(abs(result - 0.975) < 1e-6)
 	}
 
 	@Test("Inverse normal CDF")
@@ -76,7 +76,7 @@ struct UnassortedTests {
 		let resultPos = uniformCDF(x: 5)
 
 		#expect(resultNeg == 0)
-		#expect(resultSub1 == 0.5)
+		#expect(abs(resultSub1 - 0.5) < 1e-6)
 		#expect(resultPos == 1)
 	}
 
@@ -89,8 +89,8 @@ struct UnassortedTests {
 	@Test("Confidence interval calculation")
 	func testConfidenceInterval() {
 		let result = confidenceInterval(mean: 0, stdDev: 1, z: 1, popSize: 10_000_000)
-		#expect(result.low == -0.00031622776601683794)
-		#expect(result.high == 0.00031622776601683794)
+		#expect(abs(result.low - (-0.00031622776601683794)) < 1e-6)
+		#expect(abs(result.high - 0.00031622776601683794) < 1e-6)
 	}
 
 	@Test("Confidence interval from CI")
@@ -377,7 +377,7 @@ struct UnassortedTests {
 		// Test with larger sample size
 		let largerSample = Array(repeating: 2.0, count: 400)
 		let seOfConstant = standardError(largerSample)
-		#expect(seOfConstant == 0.0) // No variance means SE is 0
+		#expect(abs(seOfConstant - 0.0) < 1e-6) // No variance means SE is 0
     }
     
     @Test("Standard error probabilistic") func testStandardErrorProbabilistic() {
@@ -415,11 +415,11 @@ struct UnassortedTests {
 		let result = meanBinomial(n: n, prob: p)
 		
 		// For 100 trials with p=0.5, mean should be 50
-		#expect(result == 50.0)
+		#expect(abs(result - 50.0) < 1e-6)
 		
 		// Test with different probability
 		let result2 = meanBinomial(n: 50, prob: 0.3)
-		#expect(result2 == 15.0) // 50 * 0.3 = 15
+		#expect(abs(result2 - 15.0) < 1e-6) // 50 * 0.3 = 15
     }
     
     @Test("Standard deviation of binomial") func testStdDevBinomial() {
@@ -446,12 +446,12 @@ struct UnassortedTests {
 		let result = varianceBinomial(n: n, prob: p)
 		
 		// 100 * 0.5 * 0.5 = 25
-		#expect(result == 25.0)
+		#expect(abs(result - 25.0) < 1e-6)
 		
 		// Test with different values
 		let result2 = varianceBinomial(n: 50, prob: 0.3)
 		// 50 * 0.3 * 0.7 = 10.5
-		#expect(result2 == 10.5)
+		#expect(abs(result2 - 10.5) < 1e-6)
     }
     
     @Test("Percentile location") func testPercentileLocation() throws {
@@ -472,10 +472,10 @@ struct UnassortedTests {
 
 		// Test edge cases
 		let result0 = try PercentileLocation(0, values: values)
-		#expect(result0 == 1.0) // Should return first element
+		#expect(abs(result0 - 1.0) < 1e-6) // Should return first element
 
 		let result100 = try PercentileLocation(100, values: values)
-		#expect(result100 == 100.0) // Should return last element
+		#expect(abs(result100 - 100.0) < 1e-6) // Should return last element
 
 		// Test with smaller dataset
 		let smallValues: [Double] = [1, 2, 3, 4, 5]

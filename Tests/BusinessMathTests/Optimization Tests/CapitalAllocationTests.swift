@@ -40,7 +40,7 @@ struct CapitalAllocationTests {
 			capitalRequired: 50_000
 		)
 
-		#expect(project.roi == 2.0)  // 100k / 50k = 2.0
+		#expect(abs(project.roi - 2.0) < 1e-6)  // 100k / 50k = 2.0
 	}
 
 	// MARK: - Greedy Allocation

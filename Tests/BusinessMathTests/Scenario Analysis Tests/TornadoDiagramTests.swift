@@ -399,7 +399,7 @@ struct TornadoDiagramTests {
 //		logger.info("Tornado diagram - Zero Variation:\n\n\(plotTornadoDiagram(tornado))")
 
 		// Impact should be zero (no variation)
-		#expect(tornado.impacts["Price"]! == 0.0)
+		#expect(abs(tornado.impacts["Price"]! - 0.0) < 1e-6)
 	}
 
 	@Test("Tornado diagram with many inputs")

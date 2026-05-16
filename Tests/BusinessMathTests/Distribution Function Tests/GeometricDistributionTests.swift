@@ -274,7 +274,7 @@ struct GeometricDistributionTests {
 		let maxFreq = frequencies.values.max()!
 		let mode = frequencies.filter { $0.value == maxFreq }.keys.min()!
 
-		#expect(mode == 1.0, "Mode should always be 1 for geometric distribution")
+		#expect(abs(mode - 1.0) < 1e-6, "Mode should always be 1 for geometric distribution")
 	}
 
 	@Test("Geometric distribution waiting time application")

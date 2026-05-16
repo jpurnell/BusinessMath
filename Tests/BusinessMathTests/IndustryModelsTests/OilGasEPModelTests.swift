@@ -29,15 +29,15 @@ struct WellProductionProfileTests {
 
         // January 2026 has 31 days
         let janProduction = well.production(for: periods[0])
-        #expect(janProduction == 3100.0)
+        #expect(abs(janProduction - 3100.0) < 1e-6)
 
         // February 2026 has 28 days (not a leap year)
         let febProduction = well.production(for: periods[1])
-        #expect(febProduction == 2800.0)
+        #expect(abs(febProduction - 2800.0) < 1e-6)
 
         // March 2026 has 31 days
         let marProduction = well.production(for: periods[2])
-        #expect(marProduction == 3100.0)
+        #expect(abs(marProduction - 3100.0) < 1e-6)
     }
 
     @Test("Production returns zero for missing period")
@@ -49,7 +49,7 @@ struct WellProductionProfileTests {
         let well = WellProductionProfile(name: "Test Well", dailyProduction: dailyRates)
 
         let missing = well.production(for: periods[2])
-        #expect(missing == 0.0)
+        #expect(abs(missing - 0.0) < 1e-6)
     }
 }
 

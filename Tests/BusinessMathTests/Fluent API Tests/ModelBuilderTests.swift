@@ -45,7 +45,7 @@ struct ModelBuilderTests {
 
         #expect(model.revenueComponents.count == 1)
         #expect(model.revenueComponents[0].name == "Widget Sales")
-        #expect(model.revenueComponents[0].amount == 5000.0) // 50 * 100
+        #expect(abs(model.revenueComponents[0].amount - 5000.0) < 1e-6) // 50 * 100
     }
 
     @Test("Model with single cost component")
@@ -58,7 +58,7 @@ struct ModelBuilderTests {
 
         #expect(model.costComponents.count == 1)
         #expect(model.costComponents[0].name == "Rent")
-        #expect(model.calculateCosts() == 2000.0)
+        #expect(abs(model.calculateCosts() - 2000.0) < 1e-6)
     }
 
     @Test("Model with revenue and costs")
@@ -80,13 +80,13 @@ struct ModelBuilderTests {
         #expect(model.costComponents.count == 2)
 
         let revenue = model.calculateRevenue()
-        #expect(revenue == 5000.0) // 100 * 50
+        #expect(abs(revenue - 5000.0) < 1e-6) // 100 * 50
 
         let costs = model.calculateCosts(revenue: revenue)
-        #expect(costs == 2500.0) // 1000 + (5000 * 0.30)
+        #expect(abs(costs - 2500.0) < 1e-6) // 1000 + (5000 * 0.30)
 
         let profit = model.calculateProfit()
-        #expect(profit == 2500.0) // 5000 - 2500
+        #expect(abs(profit - 2500.0) < 1e-6) // 5000 - 2500
     }
 
     @Test("Model with multiple revenue sources")
@@ -106,7 +106,7 @@ struct ModelBuilderTests {
         #expect(model.revenueComponents.count == 2)
 
         let totalRevenue = model.calculateRevenue()
-        #expect(totalRevenue == 11000.0) // (50*100) + (75*80)
+        #expect(abs(totalRevenue - 11000.0) < 1e-6) // (50*100) + (75*80)
     }
 
     @Test("Model with multiple cost sources")
@@ -122,7 +122,7 @@ struct ModelBuilderTests {
         #expect(model.costComponents.count == 3)
 
         let costs = model.calculateCosts(revenue: 10000)
-        #expect(costs == 14000.0) // 2000 + 8000 + (10000 * 0.40)
+        #expect(abs(costs - 14000.0) < 1e-6) // 2000 + 8000 + (10000 * 0.40)
     }
 
     // MARK: - Product Revenue Builder
@@ -135,7 +135,7 @@ struct ModelBuilderTests {
 
         let component = product.toComponent()
         #expect(component.name == "Test Product")
-        #expect(component.amount == 5100.0) // 25.50 * 200
+        #expect(abs(component.amount - 5100.0) < 1e-6) // 25.50 * 200
     }
 
     @Test("Product with price and customers")
@@ -146,7 +146,7 @@ struct ModelBuilderTests {
 
         let component = product.toComponent()
         #expect(component.name == "Subscription")
-        #expect(component.amount == 14850.0) // 99 * 150
+        #expect(abs(component.amount - 14850.0) < 1e-6) // 99 * 150
     }
 
     @Test("Product chaining multiple properties")
@@ -156,7 +156,7 @@ struct ModelBuilderTests {
             .quantity(50)
 
         let component = product.toComponent()
-        #expect(component.amount == 9999.5) // 199.99 * 50
+        #expect(abs(component.amount - 9999.5) < 1e-6) // 199.99 * 50
     }
 
     @Test("Product with zero values")
@@ -165,13 +165,13 @@ struct ModelBuilderTests {
             .price(0)
             .customers(1000)
 
-        #expect(product1.toComponent().amount == 0.0)
+        #expect(abs(product1.toComponent().amount - 0.0) < 1e-6)
 
         let product2 = Product("No Sales")
             .price(100)
             .quantity(0)
 
-        #expect(product2.toComponent().amount == 0.0)
+        #expect(abs(product2.toComponent().amount - 0.0) < 1e-6)
     }
 
     @Test("Product defaults to quantity when both set")
@@ -182,7 +182,7 @@ struct ModelBuilderTests {
             .quantity(5)
             .customers(10)
 
-        #expect(product.toComponent().amount == 50.0) // Uses quantity
+        #expect(abs(product.toComponent().amount - 50.0) < 1e-6) // Uses quantity
     }
 
     // MARK: - Cost Types
@@ -192,9 +192,9 @@ struct ModelBuilderTests {
         let cost = Fixed("Office Rent", 3000)
 
         #expect(cost.name == "Office Rent")
-        #expect(cost.calculate(revenue: nil) == 3000.0)
-        #expect(cost.calculate(revenue: 10000) == 3000.0)
-        #expect(cost.calculate(revenue: 0) == 3000.0)
+        #expect(abs(cost.calculate(revenue: nil) - 3000.0) < 1e-6)
+        #expect(abs(cost.calculate(revenue: 10000) - 3000.0) < 1e-6)
+        #expect(abs(cost.calculate(revenue: 0) - 3000.0) < 1e-6)
     }
 
     @Test("Variable cost calculation")
@@ -202,10 +202,10 @@ struct ModelBuilderTests {
         let cost = Variable("Commission", 0.15)
 
         #expect(cost.name == "Commission")
-        #expect(cost.calculate(revenue: 10000) == 1500.0)
-        #expect(cost.calculate(revenue: 5000) == 750.0)
-        #expect(cost.calculate(revenue: 0) == 0.0)
-        #expect(cost.calculate(revenue: nil) == 0.0)
+        #expect(abs(cost.calculate(revenue: 10000) - 1500.0) < 1e-6)
+        #expect(abs(cost.calculate(revenue: 5000) - 750.0) < 1e-6)
+        #expect(abs(cost.calculate(revenue: 0) - 0.0) < 1e-6)
+        #expect(abs(cost.calculate(revenue: nil) - 0.0) < 1e-6)
     }
 
     @Test("Mixed costs calculation")
@@ -225,10 +225,10 @@ struct ModelBuilderTests {
         }
 
         let revenue = model.calculateRevenue()
-        #expect(revenue == 10000.0)
+        #expect(abs(revenue - 10000.0) < 1e-6)
 
         let costs = model.calculateCosts(revenue: revenue)
-        #expect(costs == 5000.0) // 2000 + (10000 * 0.25) + 500
+        #expect(abs(costs - 5000.0) < 1e-6) // 2000 + (10000 * 0.25) + 500
     }
 
     // MARK: - Scenario Adjustments
@@ -249,7 +249,7 @@ struct ModelBuilderTests {
         #expect(model.scenarios.count == 1)
         #expect(model.scenarios[0].name == "Pessimistic")
         #expect(model.scenarios[0].adjustments.count == 1)
-        #expect(model.scenarios[0].adjustments[0].percentage == -0.20)
+        #expect(abs(model.scenarios[0].adjustments[0].percentage - (-0.20)) < 1e-6)
     }
 
     @Test("Scenario with cost adjustment")
@@ -265,7 +265,7 @@ struct ModelBuilderTests {
 
         #expect(model.scenarios.count == 1)
         #expect(model.scenarios[0].adjustments.count == 1)
-        #expect(model.scenarios[0].adjustments[0].percentage == 0.30)
+        #expect(abs(model.scenarios[0].adjustments[0].percentage - 0.30) < 1e-6)
     }
 
     @Test("Scenario with multiple adjustments")
@@ -403,7 +403,7 @@ struct ModelBuilderTests {
 
         #expect(model.revenueComponents.count == 1)
         #expect(model.revenueComponents[0].name == "Premium Plan")
-        #expect(model.revenueComponents[0].amount == 4950.0)
+        #expect(abs(model.revenueComponents[0].amount - 4950.0) < 1e-6)
     }
 
     @Test("Model with optional components")
@@ -442,7 +442,7 @@ struct ModelBuilderTests {
         }
 
         #expect(model.revenueComponents.count == 3)
-        #expect(model.calculateRevenue() == 1600.0) // (50*10) + (75*8) + (100*5)
+        #expect(abs(model.calculateRevenue() - 1600.0) < 1e-6) // (50*10) + (75*8) + (100*5)
     }
 
     // MARK: - Integration Tests
@@ -485,13 +485,13 @@ struct ModelBuilderTests {
 
         // Verify calculations
         let revenue = model.calculateRevenue()
-        #expect(revenue == 39000.0) // (120*200) + (500*30)
+        #expect(abs(revenue - 39000.0) < 1e-6) // (120*200) + (500*30)
 
         let costs = model.calculateCosts(revenue: revenue)
-        #expect(costs == 32500.0) // 10000 + 3000 + (39000*0.35) + (39000*0.15)
+        #expect(abs(costs - 32500.0) < 1e-6) // 10000 + 3000 + (39000*0.35) + (39000*0.15)
 
         let profit = model.calculateProfit()
-        #expect(profit == 6500.0)
+        #expect(abs(profit - 6500.0) < 1e-6)
     }
 
     @Test("Model metadata preservation")
@@ -533,9 +533,9 @@ struct ModelBuilderTests {
         let baseCosts = model.calculateCosts(revenue: baseRevenue)
         let baseProfit = baseRevenue - baseCosts
 
-        #expect(baseRevenue == 100000.0)
-        #expect(baseCosts == 60000.0)
-        #expect(baseProfit == 40000.0)
+        #expect(abs(baseRevenue - 100000.0) < 1e-6)
+        #expect(abs(baseCosts - 60000.0) < 1e-6)
+        #expect(abs(baseProfit - 40000.0) < 1e-6)
 
         // Scenarios define adjustments but don't auto-apply
         // (actual application would be in a separate scenario runner)
@@ -553,7 +553,7 @@ struct ModelBuilderTests {
         }
 
         #expect(model.revenueComponents.isEmpty)
-        #expect(model.calculateRevenue() == 0.0)
+        #expect(abs(model.calculateRevenue() - 0.0) < 1e-6)
     }
 
     @Test("Empty costs block")
@@ -565,7 +565,7 @@ struct ModelBuilderTests {
         }
 
         #expect(model.costComponents.isEmpty)
-        #expect(model.calculateCosts() == 0.0)
+        #expect(abs(model.calculateCosts() - 0.0) < 1e-6)
     }
 
     @Test("Negative revenue handling")
@@ -579,7 +579,7 @@ struct ModelBuilderTests {
             }
         }
 
-        #expect(model.calculateRevenue() == -500.0)
+        #expect(abs(model.calculateRevenue() - (-500.0)) < 1e-6)
     }
 
     @Test("Negative costs handling")
@@ -591,7 +591,7 @@ struct ModelBuilderTests {
             }
         }
 
-        #expect(model.calculateCosts() == -1000.0)
+        #expect(abs(model.calculateCosts() - (-1000.0)) < 1e-6)
     }
 
     @Test("Large numbers handling")
@@ -610,13 +610,13 @@ struct ModelBuilderTests {
         }
 
         let revenue = model.calculateRevenue()
-        #expect(revenue == 50_000_000.0)
+        #expect(abs(revenue - 50_000_000.0) < 1e-2)
 
         let costs = model.calculateCosts(revenue: revenue)
-        #expect(costs == 10_000_000.0) // 5M + (50M * 0.10)
+        #expect(abs(costs - 10_000_000.0) < 1e-2) // 5M + (50M * 0.10)
 
         let profit = model.calculateProfit()
-        #expect(profit == 40_000_000.0)
+        #expect(abs(profit - 40_000_000.0) < 1e-2)
     }
 
     @Test("Fractional quantities")
@@ -629,7 +629,7 @@ struct ModelBuilderTests {
             }
         }
 
-        #expect(model.calculateRevenue() == 5625.0)
+        #expect(abs(model.calculateRevenue() - 5625.0) < 1e-6)
     }
 
     @Test("Very small percentages")
@@ -641,7 +641,7 @@ struct ModelBuilderTests {
         }
 
         let costs = model.calculateCosts(revenue: 10000)
-        #expect(costs == 290.0)
+        #expect(abs(costs - 290.0) < 1e-6)
     }
 
     @Test("Zero revenue with variable costs")
@@ -654,6 +654,6 @@ struct ModelBuilderTests {
         }
 
         let costs = model.calculateCosts(revenue: 0)
-        #expect(costs == 1000.0) // Only fixed costs apply
+        #expect(abs(costs - 1000.0) < 1e-6) // Only fixed costs apply
     }
 }

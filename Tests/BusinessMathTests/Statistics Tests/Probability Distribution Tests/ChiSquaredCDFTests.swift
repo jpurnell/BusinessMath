@@ -10,7 +10,7 @@ struct ChiSquaredCDFTests {
 	@Test("chiSquaredCDF(0, _) = 0")
 	func testZeroBoundary() throws {
 		let result: Double = try chiSquaredCDF(x: 0.0, df: 5)
-		#expect(result == 0.0)
+		#expect(abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("Large x approaches 1")

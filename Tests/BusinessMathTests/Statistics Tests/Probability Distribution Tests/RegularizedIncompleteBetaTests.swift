@@ -10,13 +10,13 @@ struct RegularizedIncompleteBetaTests {
 	@Test("I_0(a,b) = 0 for any a, b > 0")
 	func testZeroBoundary() throws {
 		let result: Double = try regularizedIncompleteBeta(x: 0.0, a: 2.0, b: 3.0)
-		#expect(result == 0.0)
+		#expect(abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("I_1(a,b) = 1 for any a, b > 0")
 	func testOneBoundary() throws {
 		let result: Double = try regularizedIncompleteBeta(x: 1.0, a: 2.0, b: 3.0)
-		#expect(result == 1.0)
+		#expect(abs(result - 1.0) < 1e-6)
 	}
 
 	@Test("I_0.5(1,1) = 0.5 (Uniform distribution median)")

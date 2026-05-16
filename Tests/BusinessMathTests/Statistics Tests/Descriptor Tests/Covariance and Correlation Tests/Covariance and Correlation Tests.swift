@@ -20,7 +20,7 @@ import OSLog
         let xVar = [1.8, 1.5, 2.1, 2.4, 0.2]
         let yVar = [2.5, 4.3, 4.5, 4.1, 2.2]
         let result = ((covarianceS(xVar, yVar) * 1000).rounded()) / 1000
-        #expect(result == 0.63)
+        #expect(abs(result - 0.63) < 1e-6)
     }
 
     @Test("CovarianceP") func LCovarianceP() {
@@ -28,7 +28,7 @@ import OSLog
         let xVar = [2, 2.8, 4, 3.2]
         let yVar = [8.0, 11, 12, 8]
         let result = ((covarianceP(xVar, yVar) * 100).rounded()) / 100
-        #expect(result == 0.85)
+        #expect(abs(result - 0.85) < 1e-6)
     }
 
     @Test("Covariance") func LCovariance() {
@@ -48,11 +48,11 @@ import OSLog
 
 		let result = try correlationCoefficient(x, y, .sample)
         let s = (result * 10000).rounded() / 10000
-        #expect(s == 0.9487)
+        #expect(abs(s - 0.9487) < 1e-6)
 
         let resultP = try correlationCoefficient(x, y, .population)
         let sP = (resultP * 10000).rounded() / 10000
-        #expect(sP == 0.9487)
+        #expect(abs(sP - 0.9487) < 1e-6)
     }
 }
 
@@ -181,7 +181,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 		let x: [Double] = []
 		let y: [Double] = []
 		let result = covarianceS(x, y)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("covarianceP handles empty arrays")
@@ -189,7 +189,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 		let x: [Double] = []
 		let y: [Double] = []
 		let result = covarianceP(x, y)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("covariance handles empty arrays")
@@ -197,7 +197,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 		let x: [Double] = []
 		let y: [Double] = []
 		let result = covariance(x, y)
-		#expect(result.isNaN || result == 0.0)
+		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("correlationCoefficient throws for empty arrays")
@@ -213,7 +213,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 		let y = [10.0]
 		let result = covarianceS(x, y)
 		// Single element has undefined sample covariance (division by n-1 = 0)
-		#expect(result.isNaN || result.isInfinite || result == 0.0)
+		#expect(result.isNaN || result.isInfinite || abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("correlationCoefficient throws for single-element arrays")

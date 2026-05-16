@@ -131,7 +131,7 @@ struct CubicSplineTests {
         let interp = try CubicSplineInterpolator(
             xs: [0.0, 1.0], ys: [0.0, 1.0], boundary: .clamped(left: 1.0, right: 1.0)
         )
-        #expect(interp(0.5) == 0.5)
+        #expect(abs(interp(0.5) - 0.5) < 1e-6)
     }
 
     @Test("Periodic throws when ys.first != ys.last")

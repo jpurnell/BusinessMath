@@ -12,7 +12,7 @@ struct ProfitabilityRatiosTests {
         let netIncome: Double = 1000.0
         let shareholderEquity: Double = 5000.0
         let result = try roe(netIncome: netIncome, shareholderEquity: shareholderEquity)
-        #expect(result == 0.20) // Expected: 20%
+        #expect(abs(result - 0.20) < 1e-6) // Expected: 20%
     }
 
     @Test("Calculate ROI correctly with investment")
@@ -20,7 +20,7 @@ struct ProfitabilityRatiosTests {
         let gainFromInvestment: Double = 500.0
         let costOfInvestment: Double = 1000.0
         let result = try roi(gainFromInvestment: gainFromInvestment, costOfInvestment: costOfInvestment)
-        #expect(result == 0.50) // Expected: 50%
+        #expect(abs(result - 0.50) < 1e-6) // Expected: 50%
     }
 
     @Test("Calculate profit margin correctly")
@@ -28,7 +28,7 @@ struct ProfitabilityRatiosTests {
         let netIncome: Double = 300.0
         let revenue: Double = 1200.0
         let result = try profitMargin(netIncome: netIncome, revenue: revenue)
-        #expect(result == 0.25) // Expected: 25%
+        #expect(abs(result - 0.25) < 1e-6) // Expected: 25%
     }
 
     @Test("ROE throws on zero equity")
