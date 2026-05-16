@@ -13,12 +13,15 @@ import Numerics
 /// The type of financial statement to retrieve.
 public enum FinancialStatementType: String, Sendable {
 	/// Income statement (profit and loss).
+	// LIVE: public API enum case for financial statement type selection
 	case income
 
 	/// Balance sheet.
+	// LIVE: public API enum case for financial statement type selection
 	case balance
 
 	/// Cash flow statement.
+	// LIVE: public API enum case for financial statement type selection
 	case cashFlow
 }
 
@@ -27,9 +30,11 @@ public enum FinancialStatementType: String, Sendable {
 /// The reporting period for financial data.
 public enum ReportingPeriod: String, Sendable {
 	/// Quarterly reporting period.
+	// LIVE: public API enum case for reporting period selection
 	case quarterly
 
 	/// Annual reporting period.
+	// LIVE: public API enum case for reporting period selection
 	case annual
 }
 

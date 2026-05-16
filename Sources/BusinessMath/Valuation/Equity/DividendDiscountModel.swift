@@ -13,13 +13,13 @@ import Numerics
 /// Errors that can occur during equity valuation
 public enum ValuationError: Error, Equatable {
     /// Invalid parameters were provided to the model
-    case invalidParameters(String)
+    case invalidParameters(String) // LIVE: public error case for valuation API
 
     /// Model assumptions are violated (e.g., growth rate >= discount rate)
     case invalidModelAssumptions(String)
 
     /// Missing required data for valuation
-    case insufficientData(String)
+    case insufficientData(String) // LIVE: public error case for valuation API
 }
 
 // MARK: - Gordon Growth Model

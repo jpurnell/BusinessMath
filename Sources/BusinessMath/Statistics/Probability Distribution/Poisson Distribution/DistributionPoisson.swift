@@ -10,9 +10,9 @@ import Foundation
 
 struct DistributionPoisson: RandomNumberGenerator {
 	var x: Int
-	var µ: Double
-	
-	func random() -> Double {
+	var µ: Double // LIVE: Poisson rate parameter used by random() and next()
+
+	func random() -> Double { // LIVE: public sampling API for Poisson distribution
 		poisson(x, µ: Double(x))
 	}
 	

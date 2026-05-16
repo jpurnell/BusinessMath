@@ -51,6 +51,7 @@ import OSLog
 /// print(plot)
 /// ```
 public struct SimulationResults: Sendable {
+	// LIVE: diagnostics logger for simulation result processing
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.SimulationResults", category: #function)
 	// MARK: - Properties
 

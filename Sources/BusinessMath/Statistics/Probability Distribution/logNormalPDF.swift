@@ -8,31 +8,6 @@
 import Foundation
 import Numerics
 
-	/// Computes the value of the Gaussian (normal) distribution's probability density function (PDF).
-	///
-	/// The Gaussian distribution is widely used in statistics and represents the distribution of many kinds of random variables.
-	/// This function calculates the probability density at a given point `x` for a normal distribution with the specified mean and standard deviation.
-	///
-	/// - Parameters:
-	///   - x: The value at which to evaluate the probability density function.
-	///   - µ: The mean (average) of the Gaussian distribution. Defaults to `0`.
-	///   - stdDev: The standard deviation of the Gaussian distribution. Defaults to `1`.
-	/// - Returns: The value of the probability density function at `x`.
-	///
-	/// - Note: The function follows the formula:
-	///   \[ f(x) = \frac{1}{\text{stdDev} \sqrt{2 \pi}} \exp\left(-\frac{(x - \mu)^2}{2 \cdot \text{stdDev}^2}\right) \]
-	///   where `π` is approximately 3.14159.
-
-func g<T: Real>(_ x: T, mean µ: T = T(0), stdDev: T = T(1)) -> T {
-	let coefficient = T(1) / (stdDev * T.sqrt(2 * .pi))
-	
-	// Use direct multiplication instead of T.pow() to avoid NaN with negative values
-	// See note in logNormalPDF for detailed explanation
-	let diff = x - µ
-	let exponent = -(diff * diff) / (T(2) * stdDev * stdDev)
-	return coefficient * T.exp(exponent)
-}
-
 /// Computes the value of the log-normal distribution's probability density function (PDF).
 ///
 /// The log-normal distribution is used in various fields such as finance and environmental science to model data that follows a normal distribution after a logarithmic transformation.

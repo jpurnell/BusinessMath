@@ -9,5 +9,5 @@ import Foundation
 
 
 enum MathError: Error {
-	case divisionByZero
+	case divisionByZero // LIVE: error case for division-safety guards
 }

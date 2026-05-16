@@ -69,6 +69,7 @@ private actor AlignmentState {
         hasFinished = true
     }
 
+    // LIVE: stream termination check used by AsyncAlignedSequence iterator
     func isFinished() -> Bool {
         hasFinished
     }

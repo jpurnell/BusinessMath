@@ -250,12 +250,6 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 
 	// MARK: - Helper Methods
 
-	/// Flatten a trajectory into a single vector.
-	private func flattenTrajectory(_ trajectory: [V]) -> VectorN<Double> {
-		let flat = trajectory.flatMap { $0.toArray() }
-		return VectorN(flat)
-	}
-
 	/// Unflatten a single vector into a trajectory.
 	private func unflattenTrajectory(_ flat: VectorN<Double>, dimension: Int) -> [V] {
 		let array = flat.toArray()

@@ -125,6 +125,7 @@ public enum MatrixError: Error, Equatable {
 	/// Matrix dimensions are invalid (e.g., empty or jagged array)
 	case invalidDimensions(expected: String, actual: String)
 
+	// LIVE: error case for matrix validation in Cholesky decomposition path
 	/// Matrix is not symmetric
 	case notSymmetric
 

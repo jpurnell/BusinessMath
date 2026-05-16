@@ -553,6 +553,7 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 	///   - total: Total budget (right-hand side)
 	///   - dimension: Number of variables
 	/// - Returns: Single linear inequality constraint
+	// LIVE: MCP tool interface for linear programming
 	static func budget(total: Double, dimension: Int) -> MultivariateConstraint<VectorN<Double>> {
 		.linearInequality(
 			coefficients: Array(repeating: 1.0, count: dimension),
@@ -580,6 +581,7 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 	///   - upper: Upper bound for all variables
 	///   - dimension: Number of variables
 	/// - Returns: Array of 2×dimension linear inequality constraints
+	// LIVE: MCP tool interface for linear programming
 	static func box(lower: Double, upper: Double, dimension: Int) -> [MultivariateConstraint<VectorN<Double>>] {
 		var constraints: [MultivariateConstraint<VectorN<Double>>] = []
 
@@ -616,6 +618,7 @@ public extension Array where Element == MultivariateConstraint<VectorN<Double>> 
 	///   - point: Point to check
 	///   - tolerance: Numerical tolerance
 	/// - Returns: True if all constraints are satisfied
+	// LIVE: MCP tool interface for constraint validation
 	func allSatisfied(at point: VectorN<Double>, tolerance: Double = 1e-6) -> Bool {
 		allSatisfy { $0.isSatisfied(at: point, tolerance: tolerance) }
 	}
@@ -647,6 +650,7 @@ public extension Array where Element == MultivariateConstraint<VectorN<Double>> 
 	///
 	/// - Parameter point: Point to check
 	/// - Returns: Maximum violation (0 if all satisfied)
+	// LIVE: MCP tool interface for constraint validation
 	func maxViolation(at point: VectorN<Double>) -> Double {
 		violations(at: point).max() ?? 0.0
 	}

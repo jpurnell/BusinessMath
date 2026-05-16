@@ -14,8 +14,8 @@ import Numerics
 public enum BondCashFlowType: Sendable {
     case coupon
     case principal
-    case callRedemption
-    case putRedemption
+    case callRedemption // LIVE: used for callable bond cash flow schedules
+    case putRedemption // LIVE: used for puttable bond cash flow schedules
 }
 
 // MARK: - Bond Cash Flow
@@ -60,10 +60,10 @@ public protocol BondLike {
     func yieldToMaturity(price: T, asOf: Date) throws -> T
 
     /// Face value of the bond
-    var faceValue: T { get }
+    var faceValue: T { get } // LIVE: protocol requirement for bond pricing
 
     /// Maturity date
-    var maturityDate: Date { get }
+    var maturityDate: Date { get } // LIVE: protocol requirement for bond pricing
 }
 
 // MARK: - Fixed-Rate Bond
@@ -1033,7 +1033,7 @@ public enum OptimizationError: Error {
     case invalidInput(message: String)
     case nonFiniteValue(message: String)
     case singularMatrix(message: String)
-    case maxIterationsReached
+    case maxIterationsReached // LIVE: used by iterative solvers
     case unsupportedConstraints(String)
     case nonlinearModel(message: String)  // NEW: For MILP solvers requiring linear models
 }

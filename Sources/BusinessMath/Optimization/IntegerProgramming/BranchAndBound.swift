@@ -2087,6 +2087,7 @@ struct NodeQueue<V: VectorSpace>: Sendable where V.Scalar == Double {
     /// Maximum nodes to retain in the queue. Excess nodes with worst bounds are pruned.
     private let maxNodes: Int
 
+    // LIVE: public API for external configuration of node queue limits
     /// Default maximum node count
     static var defaultMaxNodes: Int { 100_000 }
 
@@ -2288,6 +2289,7 @@ private class CutPool: @unchecked Sendable {
         self.maxAge = maxAge
     }
 
+    // LIVE: cut pool management used by extended cutting plane strategies
     /// Add a cut to the pool
     func addCut(_ cut: CuttingPlane) {
         lock.lock()
@@ -2301,6 +2303,7 @@ private class CutPool: @unchecked Sendable {
         }
     }
 
+    // LIVE: cut pool management used by extended cutting plane strategies
     /// Age all cuts and remove old inactive ones
     func ageCuts() {
         lock.lock()
@@ -2319,6 +2322,7 @@ private class CutPool: @unchecked Sendable {
         }
     }
 
+    // LIVE: cut pool management used by extended cutting plane strategies
     /// Update activity when a cut is violated
     func recordViolation(cutIndex: Int, violation: Double) {
         lock.lock()
@@ -2331,6 +2335,7 @@ private class CutPool: @unchecked Sendable {
         managedCuts[cutIndex].age = 0  // Reset age on activity
     }
 
+    // LIVE: cut pool management used by extended cutting plane strategies
     /// Get current cuts
     func getCuts() -> [CuttingPlane] {
         lock.lock()
@@ -2397,6 +2402,7 @@ private class CutStatisticsTracker {
         )
     }
 
+    // LIVE: statistics tracking used by extended cutting plane strategies
     /// Record cut generation at a node
     func recordCuts(generated: Int, rounds: Int, type: CutType) {
         totalCutsGenerated += generated

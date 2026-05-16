@@ -215,7 +215,7 @@ public enum SimplexStatus: Sendable {
     case optimal      // Found optimal solution
     case unbounded    // Problem is unbounded
     case infeasible   // No feasible solution exists
-	case unknown	  // In case of failure
+	case unknown	  // LIVE: fallback status for error paths in LP solver
 }
 
 // MARK: - Simplex Solver

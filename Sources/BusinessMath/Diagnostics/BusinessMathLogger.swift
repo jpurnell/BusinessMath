@@ -48,6 +48,7 @@ public extension Logger {
         category: "general"
     )
 
+    // LIVE: category logger used by consumers for model execution tracing
     /// Logger for model execution and building operations
     ///
     /// Use this to track model creation, builder operations, and structural changes.
@@ -61,6 +62,7 @@ public extension Logger {
 		category: "model-execution"
     )
 
+    // LIVE: category logger used by consumers for calculation tracing
     /// Logger for mathematical calculations and formulas
     ///
     /// Use this to trace calculation steps, formulas, and numerical operations.
@@ -74,6 +76,7 @@ public extension Logger {
 		category: "calculations"
     )
 
+    // LIVE: category logger used by consumers for performance profiling
     /// Logger for performance metrics and profiling
     ///
     /// Use this for timing information, performance measurements, and optimization tracking.
@@ -166,6 +169,7 @@ public extension Logger {
 
     // MARK: - Validation Logging
 
+    // LIVE: public API for structured validation warning logging
     /// Log a validation warning
     ///
     /// - Parameters:
@@ -184,6 +188,7 @@ public extension Logger {
         }
     }
 
+    // LIVE: public API for structured validation error logging
     /// Log a validation error
     ///
     /// - Parameters:
@@ -204,6 +209,7 @@ public extension Logger {
 
     // MARK: - Performance Logging
 
+    // LIVE: public API for structured performance metric logging
     /// Log a performance metric
     ///
     /// - Parameters:
@@ -223,6 +229,7 @@ public extension Logger {
         }
     }
 
+    // LIVE: public API for performance warning logging
     /// Log a performance warning for slow operations
     ///
     /// - Parameters:
@@ -240,6 +247,7 @@ public extension Logger {
 
     // MARK: - Model Execution Logging
 
+    // LIVE: public API for model building lifecycle logging
     /// Log the start of model building
     ///
     /// - Parameters:
@@ -258,6 +266,7 @@ public extension Logger {
         }
     }
 
+    // LIVE: public API for model building lifecycle logging
     /// Log successful model building completion
     ///
     /// - Parameters:
@@ -294,6 +303,7 @@ public extension Logger {
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 public extension Logger {
 
+    // LIVE: public API for Instruments signpost tracing
     /// Begin a signpost interval for performance tracking
     ///
     /// Use this with `endSignpost` to track performance in Instruments.
@@ -302,7 +312,7 @@ public extension Logger {
     ///   - name: Name of the interval
     ///   - id: Signpost ID (default is exclusive)
     ///
-	/// 
+	///
     /// Example:
     /// ```swift
     /// logger.beginSignpost("Calculation")
@@ -313,6 +323,7 @@ public extension Logger {
         os_signpost(.begin, log: OSLog(subsystem: "com.justinpurnell.BusinessMath", category: .pointsOfInterest), name: name, signpostID: id)
     }
 
+    // LIVE: public API for Instruments signpost tracing
     /// End a signpost interval
     ///
     /// - Parameters:
@@ -322,6 +333,7 @@ public extension Logger {
         os_signpost(.end, log: OSLog(subsystem: "com.justinpurnell.BusinessMath", category: .pointsOfInterest), name: name, signpostID: id)
     }
 
+    // LIVE: public API for Instruments signpost event markers
     /// Create an event signpost (instantaneous point in time)
     ///
     /// - Parameters:

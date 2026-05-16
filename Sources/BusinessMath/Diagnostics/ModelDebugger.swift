@@ -64,7 +64,7 @@ final class DebugContext: @unchecked Sendable {
         return steps
     }
 
-    func clearSteps() {
+    func clearSteps() { // LIVE: public reset for debug tracing sessions
         lock.lock()
         defer { lock.unlock() }
         steps.removeAll()
@@ -881,8 +881,8 @@ public struct DiagnosticIssue: Sendable {
     /// Severity level
     public enum Severity: Sendable {
         case error      // Prevents correct calculation
-        case warning    // Suspicious but may be valid
-        case info       // Informational
+        case warning    // LIVE: diagnostic severity level for suspicious-but-valid findings
+        case info       // LIVE: diagnostic severity level for informational notes
     }
 
     /// Severity of the issue

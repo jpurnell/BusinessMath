@@ -13,7 +13,9 @@ import RealModule
 /// Protocol for components that can be converted to time series entries.
 public protocol TimeSeriesEntry<Value>: Sendable {
     associatedtype Value: Real & Sendable
+    // LIVE: protocol requirement for time series entry period
     var period: Period { get }
+    // LIVE: protocol requirement for time series entry value
     var value: Value { get }
 }
 
@@ -576,7 +578,9 @@ public func GrowthFrom<T: Real & Sendable>(startValue: T, rate: T, periods: Int)
 
 /// Convenience enum for creating monthly periods.
 public enum Month: Int, Sendable {
+    // LIVE: public API enum cases for monthly period construction
     case january = 1, february, march, april, may, june
+    // LIVE: public API enum cases for monthly period construction
     case july, august, september, october, november, december
 
     /// Convert to a Period for a given year.
@@ -587,6 +591,7 @@ public enum Month: Int, Sendable {
 
 /// Convenience enum for creating quarterly periods.
 public enum Quarter: Int, Sendable {
+    // LIVE: public API enum cases for quarterly period construction
     case q1 = 1, q2, q3, q4
 
     /// Convert to a Period for a given year.

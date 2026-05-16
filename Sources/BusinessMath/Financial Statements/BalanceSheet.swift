@@ -17,15 +17,19 @@ private let logger = Logger(subsystem: "com.businessmath", category: "BalanceShe
 /// Errors that can occur when creating or manipulating balance sheets.
 public enum BalanceSheetError: Error, Sendable {
 	/// The entity is missing from one or more accounts
+	// LIVE: public API enum case for consumer error handling
 	case entityMismatch
 
 	/// Periods are inconsistent across accounts
+	// LIVE: public API enum case for consumer error handling
 	case periodMismatch
 
 	/// No accounts provided
+	// LIVE: public API enum case for consumer error handling
 	case noAccounts
 
 	/// Wrong account type (expected asset, liability, or equity)
+	// LIVE: public API enum case for consumer error handling
 	case invalidAccountType(expected: AccountType, actual: AccountType)
 
 	/// Accounting equation not satisfied: Assets != Liabilities + Equity

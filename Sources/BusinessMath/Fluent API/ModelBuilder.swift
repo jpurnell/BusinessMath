@@ -1189,7 +1189,9 @@ extension CostComponent: ModelComponent {
 ///     .adjust(.specific("COGS"), by: 0.10)   // COGS up 10%
 /// ```
 public enum AdjustmentTarget: Sendable {
+    // LIVE: public API enum case for scenario adjustment targeting
     case revenue
+    // LIVE: public API enum case for scenario adjustment targeting
     case costs
     case specific(String)
 }

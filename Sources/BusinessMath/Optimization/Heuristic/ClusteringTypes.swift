@@ -263,6 +263,7 @@ public enum ClusteringError: Error, Equatable {
 	/// - Parameter k: The invalid k value provided
 	case invalidK(k: Int)
 
+	// LIVE: error case thrown during K-Means iteration when cluster loses all points
 	/// Empty cluster created during iteration.
 	///
 	/// Occasionally during K-Means iteration, a cluster may end up with no

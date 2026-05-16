@@ -650,16 +650,6 @@ public struct PortfolioOptimizer {
 
 	// MARK: - Helper Functions
 
-	private func normalizeWeights(_ weights: VectorN<Double>) -> VectorN<Double> {
-		let sum = weights.toArray().reduce(0.0, +)
-		if abs(sum) < 1e-10 {
-			// If sum is zero, return equal weights
-			let n = weights.count
-			return VectorN(Array(repeating: 1.0 / Double(n), count: n))
-		}
-		return VectorN(weights.toArray().map { $0 / sum })
-	}
-
 	private func calculateVariance(weights: VectorN<Double>, covariance: [[Double]]) -> Double {
 		let w = weights.toArray()
 		var variance = 0.0

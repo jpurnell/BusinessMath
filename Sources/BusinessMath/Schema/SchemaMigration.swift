@@ -15,7 +15,7 @@ public enum MigrationError: Error {
 	case noMigrationPath(from: Int, to: Int)
 
 	/// A migration failed.
-	case migrationFailed(version: Int, reason: String)
+	case migrationFailed(version: Int, reason: String) // LIVE: public error case for schema migration API
 }
 
 // MARK: - SchemaMigration

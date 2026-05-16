@@ -1764,10 +1764,12 @@ final class ContinuationBox<Element: Sendable>: @unchecked Sendable {
         self.continuation = continuation
     }
 
+    // LIVE: thread-safe yield wrapper used by merge/combineLatest/debounce operators
 	func yield(_ value: Element) {
         continuation.yield(value)
     }
 
+    // LIVE: thread-safe yield wrapper used by merge/combineLatest/debounce operators
     func yield(with result: Result<Element, Never>) {
         continuation.yield(with: result)
     }
@@ -1791,10 +1793,12 @@ final class ThrowingContinuationBox<Element: Sendable>: @unchecked Sendable {
         self.continuation = continuation
     }
 
+    // LIVE: thread-safe yield wrapper used by throwing stream operators
     func yield(_ value: Element) {
         continuation.yield(value)
     }
 
+    // LIVE: thread-safe yield wrapper used by throwing stream operators
     func yield(with result: Result<Element, Error>) {
         continuation.yield(with: result)
     }

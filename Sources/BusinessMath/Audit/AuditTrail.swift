@@ -16,13 +16,13 @@ private let logger = Logger(subsystem: "com.businessmath", category: "AuditTrail
 /// The type of audit action performed.
 public enum AuditAction: String, Codable, Sendable {
 	/// Entity or account was created
-	case created
+	case created // LIVE: public enum case for audit trail entries
 
 	/// Entity or account was updated
-	case updated
+	case updated // LIVE: public enum case for audit trail entries
 
 	/// Entity or account was deleted
-	case deleted
+	case deleted // LIVE: public enum case for audit trail entries
 }
 
 // MARK: - AuditEntry

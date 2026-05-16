@@ -26,7 +26,7 @@ public extension Double {
     ///
     /// - Parameter tolerance: How close to an integer to snap (default: 1e-8)
     /// - Returns: Rounded value if close to integer, otherwise original value
-    func smartRounded(tolerance: Double = 1e-8) -> Double {
+    func smartRounded(tolerance: Double = 1e-8) -> Double { // LIVE: public formatting API
         let nearest = self.rounded()
         if abs(self - nearest) < tolerance {
             return nearest
@@ -47,7 +47,7 @@ public extension Double {
     ///
     /// - Parameter n: Number of significant figures
     /// - Returns: Formatted string
-    func significantFigures(_ n: Int) -> String {
+    func significantFigures(_ n: Int) -> String { // LIVE: public formatting API
         let formatter = FloatingPointFormatter(strategy: .significantFigures(count: n))
         return formatter.format(self).formatted
     }
@@ -67,7 +67,7 @@ public extension Double {
     ///   - maxDecimals: Maximum decimal places to show (default: 6)
     ///   - snapToInteger: Whether to snap to integers when close (default: true)
     /// - Returns: Formatted string
-    func formatted(maxDecimals: Int = 6, snapToInteger: Bool = true) -> String {
+    func formatted(maxDecimals: Int = 6, snapToInteger: Bool = true) -> String { // LIVE: public formatting API
         let tolerance = snapToInteger ? 1e-8 : 0.0
         let formatter = FloatingPointFormatter(strategy: .contextAware(tolerance: tolerance, maxDecimals: maxDecimals))
         return formatter.format(self).formatted
@@ -86,7 +86,7 @@ public extension Double {
     ///
     /// - Parameter strategy: The formatting strategy to use
     /// - Returns: FormattedValue containing raw and formatted values
-    func formatted(with strategy: FloatingPointFormatter.Strategy) -> FormattedValue<Double> {
+    func formatted(with strategy: FloatingPointFormatter.Strategy) -> FormattedValue<Double> { // LIVE: public formatting API
         let formatter = FloatingPointFormatter(strategy: strategy)
         return formatter.format(self)
     }
@@ -121,7 +121,7 @@ public extension Array where Element == Double {
     ///
     /// - Parameter strategy: The formatting strategy to use (default: smart rounding)
     /// - Returns: String representation of formatted array
-    func formattedDescription(with strategy: FloatingPointFormatter.Strategy = .smartRounding()) -> String {
+    func formattedDescription(with strategy: FloatingPointFormatter.Strategy = .smartRounding()) -> String { // LIVE: public formatting API
         "[" + formatted(with: strategy).joined(separator: ", ") + "]"
     }
 }
