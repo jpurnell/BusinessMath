@@ -506,6 +506,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         }
 
         // Get pipeline
+        // silent: GPU pipeline unavailable — falls back to CPU path
         guard let pipeline = try? metalDevice.getPSOUpdatePipeline() else { return nil }
 
         // Create command buffer and encoder

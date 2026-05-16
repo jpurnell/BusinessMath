@@ -342,12 +342,13 @@ public func multipleLinearRegression(
 
     // Compute p-values using t-distribution (two-tailed)
     let pValues = tStatistics.map { tStat in
-        let cdf = (try? tCDF(t: abs(tStat), df: degreesOfFreedom)) ?? 0.5
+        let cdf = (try? tCDF(t: abs(tStat), df: degreesOfFreedom)) ?? 0.5 // silent: fallback to 0.5 (non-significant) if CDF fails
         return 2.0 * (1.0 - cdf)
     }
 
     // MARK: - Compute Confidence Intervals
 
+    // silent: fallback to z-critical 1.96 if t-quantile computation fails
     let tCritical = (try? tQuantile(p: 1.0 - (1.0 - confidenceLevel) / 2.0, df: degreesOfFreedom)) ?? 1.96
     let confidenceIntervals = zip(beta, standardErrors).map { coef, se in
         // Handle perfect fit case where se ≈ 0
@@ -366,6 +367,7 @@ public func multipleLinearRegression(
     let fStatistic = MSR / MSE
 
     // Compute p-value for F-statistic
+    // silent: fallback to p=1.0 (non-significant) if F-CDF computation fails
     let fStatisticPValue = 1.0 - ((try? fCDF(f: fStatistic, df1: p, df2: degreesOfFreedom)) ?? 0.0)
 
     // MARK: - Compute VIF (Variance Inflation Factors)
@@ -393,7 +395,7 @@ public func multipleLinearRegression(
                 let auxResult = try multipleLinearRegression(X: XWithoutJ, y: yJ, confidenceLevel: confidenceLevel)
                 vif[j] = 1.0 / (1.0 - auxResult.rSquared)
             } catch {
-                // If regression fails, VIF is undefined (set to infinity)
+                // silent: auxiliary regression failure means VIF is undefined — set to infinity
                 vif[j] = .infinity
             }
         } else {

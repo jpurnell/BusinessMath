@@ -94,7 +94,7 @@ public func cccProfile<T: Real>(
 				x, y, target: t, bandwidth: bandwidth, kernel: kernel)
 			results.append((target: t, ccc: result))
 		} catch is BusinessMathError {
-			// Skip targets where effective sample size is insufficient
+			// silent: skip targets where effective sample size is insufficient
 			continue
 		}
 	}

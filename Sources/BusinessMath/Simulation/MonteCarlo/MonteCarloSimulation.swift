@@ -474,7 +474,7 @@ public struct MonteCarloSimulation: Sendable {
 						// Return GPU results
 						return SimulationResults(values: outcomes, usedGPU: true)
 					} catch {
-						// GPU failed, fall back to CPU — record the reason
+						// silent: GPU failed — fall back to CPU, error recorded in execution notes
 						executionNotes.append("GPU execution failed: \(error). Fell back to CPU execution.")
 					}
 				} else {

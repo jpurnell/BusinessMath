@@ -248,6 +248,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
     ///
     /// Consumes both input streams concurrently using a task group and yields
     /// values from either stream as they arrive through an internal channel.
+    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -280,6 +281,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @Sendable in
                         var iter = firstIterator
+                        // silent: stream termination or error ends merge naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             continuationBox.yield(value)
                         }
@@ -287,6 +289,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
 
                     group.addTask { @Sendable in
                         var iter = secondIterator
+                        // silent: stream termination or error ends merge naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             continuationBox.yield(value)
                         }
@@ -458,6 +461,7 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
     ///
     /// Maintains a timer that is reset with each new value. Only emits when
     /// the timer completes without being interrupted by a new value.
+    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -483,13 +487,14 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
                 // Create actor for safe state management
                 let state = DebounceState<Element>()
 
+                // silent: stream errors treated as end-of-stream for debounce
                 while let value = try? await baseIterator.next() {
                     // Update state through actor
                     await state.updateValue(value)
 
                     // Create new debounce task and store in actor
                     let debounceTask = Task { @Sendable in
-                        try? await Task.sleep(for: interval)
+                        try? await Task.sleep(for: interval) // silent: cancellation ends debounce naturally
                         if !Task.isCancelled {
                             // Safely read value through actor
                             if let val = await state.getValue() {
@@ -581,6 +586,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
     ///
     /// Tracks the most recent value from each stream and emits a combined
     /// tuple whenever either stream updates.
+    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -610,6 +616,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @Sendable in
                         var iter = first.makeAsyncIterator()
+                        // silent: stream termination or error ends combineLatest naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             await firstLatest.setValue(value)
                             if let second = await secondLatest.getValue() {
@@ -620,6 +627,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
 
                     group.addTask { @Sendable in
                         var iter = second.makeAsyncIterator()
+                        // silent: stream termination or error ends combineLatest naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             await secondLatest.setValue(value)
                             if let first = await firstLatest.getValue() {
@@ -706,6 +714,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
     ///
     /// Continuously updates the latest sampled value and emits it whenever
     /// the trigger stream produces an element.
+    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -738,6 +747,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @Sendable in
                         var iter = triggerIterator
+                        // silent: stream termination or error ends withLatestFrom naturally
                         while !Task.isCancelled, let _ = try? await iter.next() {
                             if let value = await latestSampled.getValue() {
                                 continuationBox.yield(value)
@@ -747,6 +757,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
 
                     group.addTask { @Sendable in
                         var iter = sampledIterator
+                        // silent: stream termination or error ends withLatestFrom naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             await latestSampled.setValue(value)
                         }
@@ -1098,6 +1109,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
     ///
     /// Maintains the latest value from the base stream and emits it
     /// at fixed time intervals.
+    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -1130,6 +1142,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
                     // Consume base stream
                     group.addTask { @Sendable in
                         var iter = baseIterator
+                        // silent: stream termination or error ends shareReplay naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             await latestValue.setValue(value)
                         }
@@ -1138,7 +1151,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
                     // Sample at intervals
                     group.addTask { @Sendable in
                         while !Task.isCancelled {
-                            try? await Task.sleep(for: interval)
+                            try? await Task.sleep(for: interval) // silent: cancellation ends sampling naturally
                             if let value = await latestValue.getValue() {
                                 continuationBox.yield(value)
                             }
@@ -1574,6 +1587,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
     ///
     /// Races each element fetch against a timeout timer. Throws if the
     /// timer completes first.
+    // Justification: Stored state is an AsyncThrowingStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncThrowingStream<Element, Error>
         private var iterator: AsyncThrowingStream<Element, Error>.AsyncIterator
@@ -1656,6 +1670,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
                             break
                         }
                     } catch {
+                        // silent: error propagated to stream consumer via continuation
                         continuationBox.finish(throwing: error)
                         break
                     }
@@ -1741,6 +1756,7 @@ private actor DebounceState<Element: Sendable> {
 /// The AsyncStream internally serializes all yields through its own queue,
 /// making this wrapper safe despite the @unchecked Sendable marker.
 @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
+// Justification: Wraps an immutable AsyncStream.Continuation whose yield/finish methods are internally thread-safe.
 final class ContinuationBox<Element: Sendable>: @unchecked Sendable {
     private let continuation: AsyncStream<Element>.Continuation
 
@@ -1767,6 +1783,7 @@ final class ContinuationBox<Element: Sendable>: @unchecked Sendable {
 /// The AsyncThrowingStream internally serializes all yields through its own queue,
 /// making this wrapper safe despite the @unchecked Sendable marker.
 @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
+// Justification: Wraps an immutable AsyncThrowingStream.Continuation whose yield/finish methods are internally thread-safe.
 final class ThrowingContinuationBox<Element: Sendable>: @unchecked Sendable {
     private let continuation: AsyncThrowingStream<Element, Error>.Continuation
 

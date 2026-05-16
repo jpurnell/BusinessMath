@@ -13,6 +13,10 @@
 
 #if canImport(Metal)
 import Metal
+#if canImport(os)
+import os
+private let logger = Logger(subsystem: "com.businessmath", category: "MonteCarloGPUDevice")
+#endif
 import Foundation
 
 /// GPU device manager for Monte Carlo simulation
@@ -36,6 +40,7 @@ import Foundation
 /// )
 /// ```
 @available(macOS 10.15, iOS 13.0, *)
+// Justification: Core Metal objects (device, commandQueue, library) are immutable; mutable pipeline and buffer caches are protected by bufferCacheLock (NSLock).
 public final class MonteCarloGPUDevice: @unchecked Sendable {
 
     // MARK: - Singleton
@@ -269,7 +274,9 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         do {
             compiledLibrary = try device.makeLibrary(source: kernelSource, options: nil)
         } catch {
-            print("❌ Metal kernel compilation failed: \(error)")
+            #if canImport(os)
+            logger.error("Metal kernel compilation failed: \(error, privacy: .public)")
+            #endif
             return nil
         }
 
@@ -280,13 +287,17 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             self.initRNGPipeline = try self.compilePipeline(functionName: "initializeRNG")
             self.monteCarloIterationPipeline = try self.compilePipeline(functionName: "monteCarloIteration")
         } catch {
-            print("❌ Metal pipeline compilation failed: \(error)")
+            #if canImport(os)
+            logger.error("Metal pipeline compilation failed: \(error, privacy: .public)")
+            #endif
             return nil
         }
 
         // Verify critical pipelines compiled
         guard initRNGPipeline != nil, monteCarloIterationPipeline != nil else {
-            print("❌ Critical pipelines are nil after compilation")
+            #if canImport(os)
+            logger.error("Critical pipelines are nil after compilation")
+            #endif
             return nil
         }
     }

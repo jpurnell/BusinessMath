@@ -221,6 +221,7 @@ public final class CalculationTrace: Sendable {
 // MARK: - Thread-Safe Array
 
 /// Thread-safe wrapper for array operations
+// Justification: All mutable state (_array) is protected by an NSLock; no unguarded access.
 private final class ThreadSafeArray<Element: Sendable>: @unchecked Sendable {
     private var _array: [Element] = []
     private let lock = NSLock()

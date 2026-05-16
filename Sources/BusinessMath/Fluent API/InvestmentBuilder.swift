@@ -112,7 +112,7 @@ public struct Investment: Sendable {
     /// Returns `nil` if IRR calculation fails (e.g., all cash flows are positive or negative).
     public var irr: Double? {
         let allCashFlows = [-initialCost] + cashFlows.map { $0.amount }
-        return try? BusinessMath.irr(cashFlows: allCashFlows)
+        return try? BusinessMath.irr(cashFlows: allCashFlows) // silent: IRR may not converge for some cash flow patterns
     }
 
     /// Profitability Index - automatically calculated using BusinessMath profitabilityIndex() function.

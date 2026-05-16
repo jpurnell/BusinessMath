@@ -231,6 +231,7 @@ private func computeICC1CI<T: Real>(
 	let kT = T(k)
 	let halfAlpha = alpha / T(2)
 
+	// silent: fQuantile may fail for extreme df values — return full range as fallback
 	guard let fUpper = try? fQuantile(p: T(1) - halfAlpha, df1: df1, df2: df2),
 		  let fLower = try? fQuantile(p: halfAlpha, df1: df1, df2: df2),
 		  fUpper > T.zero, fLower > T.zero else {
@@ -410,6 +411,7 @@ private func computeTwoWayCI<T: Real>(
 	let kT = T(k)
 	let halfAlpha = alpha / T(2)
 
+	// silent: fQuantile may fail for extreme df values — return full range as fallback
 	guard let fUpper = try? fQuantile(p: T(1) - halfAlpha, df1: df1, df2: df2),
 		  let fLower = try? fQuantile(p: halfAlpha, df1: df1, df2: df2),
 		  fUpper > T.zero, fLower > T.zero else {

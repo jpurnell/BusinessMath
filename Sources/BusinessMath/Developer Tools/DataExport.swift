@@ -286,6 +286,7 @@ public struct InvestmentExporter: Sendable {
 
 /// Convert dictionary to formatted JSON string
 private func dictToJson(_ dict: [String: Any]) -> String {
+    // silent: best-effort JSON serialization — returns empty object on failure
     guard let jsonData = try? JSONSerialization.data(
         withJSONObject: dict,
         options: [.prettyPrinted, .sortedKeys]

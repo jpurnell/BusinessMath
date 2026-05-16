@@ -635,12 +635,14 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 		let assetTurnoverSeries = assetTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 		self.assetTurnoverRatio = assetTurnoverSeries[period]
 
+		// silent: inventory turnover is optional — missing accounts yield nil
 		if let invTurnoverSeries = try? inventoryTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet) {
 			self.inventoryTurnoverRatio = invTurnoverSeries[period]
 		} else {
 			self.inventoryTurnoverRatio = nil
 		}
 
+		// silent: receivables turnover is optional — missing accounts yield nil
 		if let recTurnoverSeries = try? receivablesTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet) {
 			self.receivablesTurnoverRatio = recTurnoverSeries[period]
 		} else {
@@ -656,6 +658,7 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 			self.netDebtToEBITDARatio = T(0)
 		}
 
+		// silent: interest coverage is optional — missing interest expense yields nil
 		if let coverageSeries = try? interestCoverage(incomeStatement: incomeStatement) {
 			self.interestCoverageRatio = coverageSeries[period]
 		} else {

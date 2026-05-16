@@ -208,11 +208,13 @@ public func bayesianICC<T: Real>(
                 var idx = 0
                 let seeds = sg.nextArray(count: 10)
                 seedGen = sg
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: seeds, seedIndex: &idx) {
                     sigmaS = sampled
                 }
             } else {
                 var idx = 0
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: nil, seedIndex: &idx) {
                     sigmaS = sampled
                 }
@@ -230,11 +232,13 @@ public func bayesianICC<T: Real>(
                 var idx = 0
                 let seeds = sg.nextArray(count: 10)
                 seedGen = sg
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: seeds, seedIndex: &idx) {
                     sigmaR = sampled
                 }
             } else {
                 var idx = 0
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: nil, seedIndex: &idx) {
                     sigmaR = sampled
                 }
@@ -255,11 +259,13 @@ public func bayesianICC<T: Real>(
                 var idx = 0
                 let seeds = sg.nextArray(count: 10)
                 seedGen = sg
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: seeds, seedIndex: &idx) {
                     sigmaE = sampled
                 }
             } else {
                 var idx = 0
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: nil, seedIndex: &idx) {
                     sigmaE = sampled
                 }
@@ -559,11 +565,13 @@ public func bayesianICC<T: Real>(
                 var idx = 0
                 let seeds = sg.nextArray(count: 10)
                 seedGen = sg
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: seeds, seedIndex: &idx) {
                     sigmaS = sampled
                 }
             } else {
                 var idx = 0
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: nil, seedIndex: &idx) {
                     sigmaS = sampled
                 }
@@ -581,11 +589,13 @@ public func bayesianICC<T: Real>(
                 var idx = 0
                 let seeds = sg.nextArray(count: 10)
                 seedGen = sg
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: seeds, seedIndex: &idx) {
                     sigmaR = sampled
                 }
             } else {
                 var idx = 0
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: nil, seedIndex: &idx) {
                     sigmaR = sampled
                 }
@@ -608,11 +618,13 @@ public func bayesianICC<T: Real>(
                 var idx = 0
                 let seeds = sg.nextArray(count: 10)
                 seedGen = sg
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: seeds, seedIndex: &idx) {
                     sigmaE = sampled
                 }
             } else {
                 var idx = 0
+                // silent: MCMC sampling — retain previous value on rare numerical failure
                 if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: nil, seedIndex: &idx) {
                     sigmaE = sampled
                 }

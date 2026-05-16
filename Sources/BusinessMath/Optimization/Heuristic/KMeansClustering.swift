@@ -331,7 +331,23 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 			return assignClustersGPU(data: data, centroids: centroids)
 		}
 
-		// CPU implementation
+		return assignClustersCPU(data: data, centroids: centroids)
+	}
+
+	/// CPU implementation of cluster assignment.
+	///
+	/// Assigns each data point to the nearest centroid using the configured
+	/// distance metric.
+	///
+	/// - Parameters:
+	///   - data: Array of data points
+	///   - centroids: Array of cluster centroids
+	///
+	/// - Returns: Array where assignments[i] is the cluster index for data[i]
+	private func assignClustersCPU(
+		data: [V],
+		centroids: [V]
+	) -> [Int] {
 		return data.map { point in
 			// Find index of nearest centroid
 			var minDistance = V.Scalar.infinity
@@ -514,10 +530,10 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 		// For now, fall back to CPU implementation
 		// Full GPU implementation would use Metal Performance Shaders
 		// for true GPU acceleration on Apple Silicon
-		return assignClusters(data: data, centroids: centroids)
+		return assignClustersCPU(data: data, centroids: centroids)
 		#else
 		// Fallback to CPU if Accelerate not available
-		return assignClusters(data: data, centroids: centroids)
+		return assignClustersCPU(data: data, centroids: centroids)
 		#endif
 	}
 }

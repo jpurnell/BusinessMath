@@ -187,7 +187,7 @@ public actor ModelProfiler {
 
             let durations = measurements.map { $0.duration }
             let memoryUsages = measurements.map { $0.memoryUsed }
-			let percentiles = try? Percentiles(values: durations)
+			let percentiles = try? Percentiles(values: durations) // silent: empty or invalid durations yield nil percentiles
 
             let stats = OperationStatistics(
                 operation: operation,
@@ -266,12 +266,20 @@ public actor ModelProfiler {
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
-        let result = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_,
-                         task_flavor_t(MACH_TASK_BASIC_INFO),
-                         $0,
-                         &count)
+        // Allocate an integer_t buffer directly to avoid nested
+        // withUnsafeMutablePointer / withMemoryRebound, which triggers
+        // pointer-escape auditor warnings. Copy the result back as a value.
+        let intCount = Int(count)
+        let rawBuf = UnsafeMutablePointer<integer_t>.allocate(capacity: intCount)
+        defer { rawBuf.deallocate() }
+        rawBuf.initialize(repeating: 0, count: intCount)
+        let result = task_info(mach_task_self_,
+                               task_flavor_t(MACH_TASK_BASIC_INFO),
+                               rawBuf,
+                               &count)
+        if result == KERN_SUCCESS {
+            rawBuf.withMemoryRebound(to: mach_task_basic_info.self, capacity: 1) {
+                info = $0.pointee
             }
         }
 

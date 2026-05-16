@@ -382,7 +382,7 @@ public struct Logger: Sendable {
     ///
     /// - Parameter message: The message to log.
     public func debug(_ message: String) {
-        print("[\(category)] DEBUG: \(message)")
+        print("[\(category)] DEBUG: \(message)") // silent: Linux fallback — os.Logger unavailable
     }
 
     /// Logs an informational message.
@@ -392,7 +392,7 @@ public struct Logger: Sendable {
     ///
     /// - Parameter message: The message to log.
     public func info(_ message: String) {
-        print("[\(category)] INFO: \(message)")
+        print("[\(category)] INFO: \(message)") // silent: Linux fallback — os.Logger unavailable
     }
 
     /// Logs a notice-level message.
@@ -402,7 +402,7 @@ public struct Logger: Sendable {
     ///
     /// - Parameter message: The message to log.
     public func notice(_ message: String) {
-        print("[\(category)] NOTICE: \(message)")
+        print("[\(category)] NOTICE: \(message)") // silent: Linux fallback — os.Logger unavailable
     }
 
     /// Logs a warning message.
@@ -412,7 +412,7 @@ public struct Logger: Sendable {
     ///
     /// - Parameter message: The message to log.
     public func warning(_ message: String) {
-        print("[\(category)] WARNING: \(message)")
+        print("[\(category)] WARNING: \(message)") // silent: Linux fallback — os.Logger unavailable
     }
 
     /// Logs an error message.
@@ -422,7 +422,7 @@ public struct Logger: Sendable {
     ///
     /// - Parameter message: The message to log.
     public func error(_ message: String) {
-        print("[\(category)] ERROR: \(message)")
+        print("[\(category)] ERROR: \(message)") // silent: Linux fallback — os.Logger unavailable
     }
 
     /// Logs a trace-level message (debug builds only).
@@ -434,7 +434,7 @@ public struct Logger: Sendable {
     public func trace(_ message: String) {
         // Trace is very verbose, only in debug builds
         #if DEBUG
-        print("[\(category)] TRACE: \(message)")
+        print("[\(category)] TRACE: \(message)") // silent: Linux fallback — os.Logger unavailable
         #endif
     }
 
@@ -486,6 +486,7 @@ public struct Logger: Sendable {
     ///   - name: Name of the calculation.
     ///   - error: The error that occurred.
     public func calculationFailed(_ name: String, error: Error) {
+        // silent: Linux fallback struct — privacy annotations only apply to os.Logger
         self.error("Failed \(name): \(error.localizedDescription)")
     }
 

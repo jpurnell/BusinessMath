@@ -14,6 +14,7 @@ import OSLog
 // MARK: - Global Debug Context
 
 /// Thread-safe global debugging context for capturing calculation steps
+// Justification: All mutable state (steps, isEnabled) is protected by an NSLock; no unguarded access.
 final class DebugContext: @unchecked Sendable {
     private let lock = NSLock()
     private var steps: [CalculationStep] = []

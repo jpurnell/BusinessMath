@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(os)
+import os
+private let logger = Logger(subsystem: "com.businessmath", category: "BranchAndBound")
+#endif
 
 /// Norm used for cut coefficient scaling and normalization
 public enum VectorNorm: Sendable {
@@ -657,7 +661,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 queue.insert(rightChild)
                 updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
             } catch {
-                // Branching failed - node is infeasible
+                // silent: branching failed — node is infeasible, continue search
                 updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
                 continue
             }
@@ -721,10 +725,12 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
         // Warn if solution has violations (shouldn't happen if solver is correct)
         if !verification.isValid {
-            print("⚠️ WARNING: Solution verification failed!")
+            #if canImport(os)
+            logger.warning("Solution verification failed!")
             for violation in verification.violations {
-                print("  - \(violation)")
+                logger.warning("  - \(violation, privacy: .public)")
             }
+            #endif
         }
 
         return IntegerOptimizationResult(
@@ -1250,7 +1256,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                         }
 
                     } catch {
-                        // Re-solve failed - stop cutting
+                        // silent: LP re-solve failed after cut — stop cutting rounds
                         break
                     }
                 }
@@ -1286,7 +1292,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             )
 
         } catch {
-            // Solver error - treat as infeasible
+            // silent: solver error — treat as infeasible branch
             return BranchNode(
                 depth: depth,
                 parent: parent,
@@ -1604,7 +1610,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 return minimize ? -Double.infinity : Double.infinity
             }
         } catch {
-            // Error treated as infeasible
+            // silent: solver error treated as infeasible bound
             return minimize ? Double.infinity : -Double.infinity
         }
     }
@@ -1793,6 +1799,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 ///
 /// Maintains historical data about how branching on each variable affects bounds.
 /// Used to predict which variables will lead to the best bound improvements.
+// Justification: All mutable state (upCosts, downCosts) is protected by an NSLock; no unguarded access.
 class PseudoCostTracker: @unchecked Sendable {
     private var upCosts: [Int: (sum: Double, count: Int)] = [:]
     private var downCosts: [Int: (sum: Double, count: Int)] = [:]
@@ -2269,6 +2276,7 @@ private struct ManagedCut: Sendable {
 ///
 /// Manages a bounded pool of cutting planes, removing old inactive cuts
 /// to prevent unbounded memory growth during long solves.
+// Justification: All mutable state (managedCuts) is protected by an NSLock; maxSize and maxAge are immutable.
 private class CutPool: @unchecked Sendable {
     private var managedCuts: [ManagedCut] = []
     private let maxSize: Int

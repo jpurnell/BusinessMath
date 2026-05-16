@@ -159,7 +159,7 @@ public struct MonteCarloExpressionModel: Sendable {
             do {
                 return try BytecodeInterpreter.evaluate(bytecode: capturedBytecode, inputs: inputs)
             } catch {
-                // Return 0 on error (should not happen with valid bytecode)
+                // silent: bytecode evaluation failure — return zero as safe default
                 return 0.0
             }
         }
@@ -395,10 +395,10 @@ public enum EvaluationError: Error, CustomStringConvertible {
             return "Invalid input index \(index) (only \(available) inputs available)"
         case .divisionByZero:
             return "Division by zero"
-        case .invalidOperation(let description):
-            return "Invalid operation: \(description)"
-        case .invalidStack(let count):
-            return "Invalid stack after evaluation: \(count) values remaining (expected 1)"
+        case .invalidOperation(let message):
+            return "Invalid operation: \(message)"
+        case .invalidStack(let remaining):
+            return "Invalid stack after evaluation: \(remaining) values remaining (expected 1)"
         }
     }
 }

@@ -189,7 +189,7 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
             )
 
         } catch {
-            // InequalityOptimizer failed - treat as infeasible
+            // silent: InequalityOptimizer failed — treat as infeasible
             // This can happen if:
             // - Initial guess is infeasible and optimizer can't recover
             // - Problem is truly infeasible

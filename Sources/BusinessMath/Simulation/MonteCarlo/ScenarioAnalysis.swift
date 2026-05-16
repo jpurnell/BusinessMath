@@ -48,6 +48,7 @@ extension ScenarioError: LocalizedError {
 /// Builder for configuring scenario inputs using either fixed values or distributions.
 ///
 /// This class provides a fluent interface for defining scenario parameters.
+// Justification: All mutable state (_values, _distributions) is protected by an NSLock; no unguarded access.
 public final class ScenarioConfiguration: @unchecked Sendable {
 	private let lock = NSLock()
 	private var _values: [String: Double] = [:]
