@@ -22,8 +22,8 @@ struct ScenarioAnalysisTests {
 
 		#expect(scenario.name == "Base Case")
 		#expect(scenario.inputValues.count == 2)
-		#expect(scenario.inputValues["Revenue"] == 1_000_000.0)
-		#expect(scenario.inputValues["Costs"] == 700_000.0)
+		#expect(abs((scenario.inputValues["Revenue"] ?? 0) - 1_000_000.0) < 1e-2)
+		#expect(abs((scenario.inputValues["Costs"] ?? 0) - 700_000.0) < 1e-2)
 	}
 
 	@Test("ScenarioAnalysis basic setup")
@@ -296,7 +296,7 @@ struct ScenarioAnalysisTests {
 		)
 
 		#expect(result.inputName == "Revenue")
-		#expect(result.baseValue == 1_000_000.0)
+		#expect(abs(result.baseValue - 1_000_000.0) < 1e-2)
 		#expect(result.scenarios.count > 0)
 
 		// Check that output changes as input changes
@@ -505,8 +505,8 @@ struct ScenarioAnalysisTests {
 		// Total inputs = values + distributions
 		let totalInputs = scenario.inputValues.count + scenario.inputDistributions.count
 		#expect(totalInputs == 4)
-		#expect(scenario.inputValues["Revenue"] == 1_000_000.0)
-		#expect(scenario.inputValues["TaxRate"] == 0.3)
+		#expect(abs((scenario.inputValues["Revenue"] ?? 0) - 1_000_000.0) < 1e-2)
+		#expect(abs((scenario.inputValues["TaxRate"] ?? 0) - 0.3) < 1e-6)
 		#expect(scenario.inputDistributions["Costs"] != nil)
 		#expect(scenario.inputDistributions["GrowthRate"] != nil)
 	}

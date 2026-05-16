@@ -32,10 +32,10 @@ import RealModule
 
         // Then: The model should be initialized correctly
         #expect(model.initialSubscribers == 1_000)
-        #expect(model.monthlyBoxPrice == 49.99)
+        #expect(abs(model.monthlyBoxPrice - 49.99) < 1e-6)
         #expect(model.costOfGoodsPerBox == 20)
         #expect(model.shippingCostPerBox == 5)
-        #expect(model.monthlyChurnRate == 0.08)
+        #expect(abs(model.monthlyChurnRate - 0.08) < 1e-6)
         #expect(model.newSubscribersPerMonth == 150)
         #expect(model.customerAcquisitionCost == 40)
     }

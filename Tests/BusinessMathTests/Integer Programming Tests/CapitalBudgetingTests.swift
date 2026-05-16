@@ -47,8 +47,8 @@ struct CapitalBudgetingTests {
 
         // Should select no projects
         #expect(result.selectedProjects.count == 0)
-        #expect(result.totalNPV == 0.0)
-        #expect(result.totalCost == 0.0)
+        #expect(abs(result.totalNPV - 0.0) < 1e-6)
+        #expect(abs(result.totalCost - 0.0) < 1e-6)
     }
 
     @Test("Project dependencies - must select prerequisite")

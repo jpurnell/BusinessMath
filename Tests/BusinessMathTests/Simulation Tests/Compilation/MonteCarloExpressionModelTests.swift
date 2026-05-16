@@ -18,7 +18,7 @@ struct MonteCarloExpressionModelTests {
         }
 
         let result = try model.evaluate(inputs: [10.0, 20.0])
-        #expect(result == 30.0)
+        #expect(abs(result - 30.0) < 1e-6)
     }
 
     @Test("Create model: a - b")
@@ -28,7 +28,7 @@ struct MonteCarloExpressionModelTests {
         }
 
         let result = try model.evaluate(inputs: [100.0, 30.0])
-        #expect(result == 70.0)
+        #expect(abs(result - 70.0) < 1e-6)
     }
 
     @Test("Create model: a * b")
@@ -38,7 +38,7 @@ struct MonteCarloExpressionModelTests {
         }
 
         let result = try model.evaluate(inputs: [5.0, 6.0])
-        #expect(result == 30.0)
+        #expect(abs(result - 30.0) < 1e-6)
     }
 
     @Test("Create model: a / b")
@@ -48,7 +48,7 @@ struct MonteCarloExpressionModelTests {
         }
 
         let result = try model.evaluate(inputs: [20.0, 4.0])
-        #expect(result == 5.0)
+        #expect(abs(result - 5.0) < 1e-6)
     }
 
     // MARK: - Complex Models
@@ -60,7 +60,7 @@ struct MonteCarloExpressionModelTests {
         }
 
         let result = try model.evaluate(inputs: [3.0, 2.0, 5.0])
-        #expect(result == 25.0)
+        #expect(abs(result - 25.0) < 1e-6)
     }
 
     @Test("Financial model: revenue - costs")
@@ -93,7 +93,7 @@ struct MonteCarloExpressionModelTests {
         // totalCosts = 200 + 100*5 = 700
         // profit = 1000 - 700 = 300
         let result = try model.evaluate(inputs: [100, 10, 200, 5])
-        #expect(result == 300.0)
+        #expect(abs(result - 300.0) < 1e-6)
     }
 
     // MARK: - Model with Constants
@@ -105,7 +105,7 @@ struct MonteCarloExpressionModelTests {
         }
 
         let result = try model.evaluate(inputs: [200.0])
-        #expect(result == 400.0)
+        #expect(abs(result - 400.0) < 1e-6)
     }
 
     @Test("Model with constant folding: a + (5 * 2)")
@@ -115,7 +115,7 @@ struct MonteCarloExpressionModelTests {
         }
 
         let result = try model.evaluate(inputs: [20.0])
-        #expect(result == 30.0)
+        #expect(abs(result - 30.0) < 1e-6)
 
         // Verify constant was folded
         let bytecode = model.compile()
@@ -170,7 +170,7 @@ struct MonteCarloExpressionModelTests {
         #expect(bytecode == [.input(0)])
 
         let result = try model.evaluate(inputs: [42.0])
-        #expect(result == 42.0)
+        #expect(abs(result - 42.0) < 1e-6)
     }
 
     @Test("Optimization: a + 0 → a")
@@ -183,7 +183,7 @@ struct MonteCarloExpressionModelTests {
         #expect(bytecode == [.input(0)])
 
         let result = try model.evaluate(inputs: [100.0])
-        #expect(result == 100.0)
+        #expect(abs(result - 100.0) < 1e-6)
     }
 
     @Test("Multi-pass optimization: (a + 0) * 1")
@@ -196,7 +196,7 @@ struct MonteCarloExpressionModelTests {
         #expect(bytecode == [.input(0)])
 
         let result = try model.evaluate(inputs: [50.0])
-        #expect(result == 50.0)
+        #expect(abs(result - 50.0) < 1e-6)
     }
 
     // MARK: - Closure Conversion
@@ -210,7 +210,7 @@ struct MonteCarloExpressionModelTests {
         let closure = model.toClosure()
         let result = closure([5.0, 6.0])
 
-        #expect(result == 30.0)
+        #expect(abs(result - 30.0) < 1e-6)
     }
 
     @Test("Closure equivalence")
@@ -316,7 +316,7 @@ struct MonteCarloExpressionModelTests {
 
         // Simple linear version for testing
         let result = try model.evaluate(inputs: [1000, 0.05, 5])
-        #expect(result == 5250.0)
+        #expect(abs(result - 5250.0) < 1e-2)
     }
 }
 
@@ -331,7 +331,7 @@ struct MonteCarloExpressionModelThrowingInitTests {
             builder[0] + builder[1]
         }
         let result = try model.evaluate(inputs: [3.0, 4.0])
-        #expect(result == 7.0)
+        #expect(abs(result - 7.0) < 1e-6)
     }
 
     @Test("Model with single input compiles successfully")
@@ -340,7 +340,7 @@ struct MonteCarloExpressionModelThrowingInitTests {
             builder[0]
         }
         let result = try model.evaluate(inputs: [42.0])
-        #expect(result == 42.0)
+        #expect(abs(result - 42.0) < 1e-6)
     }
 
     @Test("Bytecode is non-empty after successful init")

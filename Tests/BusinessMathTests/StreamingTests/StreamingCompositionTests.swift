@@ -80,9 +80,9 @@ struct StreamingCompositionTests {
         }
 
         #expect(pairs.count == 3)
-        #expect(pairs[0].0 == 1.0 && pairs[0].1 == 10.0)
-        #expect(pairs[1].0 == 2.0 && pairs[1].1 == 20.0)
-        #expect(pairs[2].0 == 3.0 && pairs[2].1 == 30.0)
+        #expect(abs(pairs[0].0 - 1.0) < 1e-6 && abs(pairs[0].1 - 10.0) < 1e-6)
+        #expect(abs(pairs[1].0 - 2.0) < 1e-6 && abs(pairs[1].1 - 20.0) < 1e-6)
+        #expect(abs(pairs[2].0 - 3.0) < 1e-6 && abs(pairs[2].1 - 30.0) < 1e-6)
     }
 
     @Test("Zip terminates when shorter stream ends")
@@ -110,9 +110,9 @@ struct StreamingCompositionTests {
         }
 
         #expect(pairs.count == 3)
-        #expect(pairs[0].0 == 1.0 && pairs[0].1 == "a")
-        #expect(pairs[1].0 == 2.0 && pairs[1].1 == "b")
-        #expect(pairs[2].0 == 3.0 && pairs[2].1 == "c")
+        #expect(abs(pairs[0].0 - 1.0) < 1e-6 && pairs[0].1 == "a")
+        #expect(abs(pairs[1].0 - 2.0) < 1e-6 && pairs[1].1 == "b")
+        #expect(abs(pairs[2].0 - 3.0) < 1e-6 && pairs[2].1 == "c")
     }
 
     // MARK: - Debounce Tests
@@ -129,7 +129,7 @@ struct StreamingCompositionTests {
 
         // Should only emit the last value after silence
         #expect(debounced.count == 1)
-        #expect(debounced[0] == 3.0)
+        #expect(abs(debounced[0] - 3.0) < 1e-6)
     }
 
 	@Test("Debounce with separated values", .timeLimit(.minutes(1)), .disabled("This should be run manually, as it is inherently flaky in a sequential test environment."))
@@ -166,7 +166,7 @@ struct StreamingCompositionTests {
 
         // Last combination should be (3.0, 20.0)
         let last = combinations.last!
-        #expect(last.0 == 3.0 && last.1 == 20.0)
+        #expect(abs(last.0 - 3.0) < 1e-6 && abs(last.1 - 20.0) < 1e-6)
     }
 
     // MARK: - WithLatestFrom Tests

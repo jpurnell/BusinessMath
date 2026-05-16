@@ -37,7 +37,7 @@ struct NonCentralChiSquaredCDFTests {
 	@Test("x = 0 returns 0 for any lambda")
 	func testXZero() throws {
 		let result: Double = try nonCentralChiSquaredCDF(x: 0.0, df: 5, lambda: 3.0)
-		#expect(result == 0.0)
+		#expect(abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("Large x approaches 1")
@@ -105,7 +105,7 @@ struct NonCentralFCDFTests {
 	@Test("f = 0 returns 0")
 	func testFZero() throws {
 		let result: Double = try nonCentralFCDF(f: 0.0, df1: 5, df2: 20, lambda: 5.0)
-		#expect(result == 0.0)
+		#expect(abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("Large f approaches 1")

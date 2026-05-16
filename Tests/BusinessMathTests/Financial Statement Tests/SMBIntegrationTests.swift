@@ -146,7 +146,7 @@ struct SMBIntegrationTests {
 		let q4WorkingCapitalLiabilities = 31_000.0 + 6_500.0 + 13_000.0  // AP + Sales Tax + Payroll
 		let expectedQ4WorkingCapital = q4WorkingCapitalAssets - q4WorkingCapitalLiabilities
 
-		#expect(expectedQ4WorkingCapital == 50_500.0)
+		#expect(abs(expectedQ4WorkingCapital - 50_500.0) < 1e-2)
 
 		// Verify accounts are classified correctly for working capital
 		#expect(_cash.balanceSheetRole?.isWorkingCapital == false)

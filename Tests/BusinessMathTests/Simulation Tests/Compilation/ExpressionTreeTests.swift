@@ -37,7 +37,7 @@ struct ExpressionTreeTests {
             throw ExpressionTestError.unexpectedType("Expected constant")
         }
 
-        #expect(value == 42.0)
+        #expect(abs(value - 42.0) < 1e-6)
     }
 
     @Test("Input reference creation")

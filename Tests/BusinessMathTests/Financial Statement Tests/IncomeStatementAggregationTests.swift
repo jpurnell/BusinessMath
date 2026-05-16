@@ -62,7 +62,7 @@ struct IncomeStatementAggregationTests {
 
 		#expect(incomeStmt.accounts.count == 0)
 		// Should have zero revenue and expenses
-		#expect(incomeStmt.totalRevenue[testPeriods[0]]! == 0.0)
+		#expect(abs(incomeStmt.totalRevenue[testPeriods[0]]! - 0.0) < 1e-6)
 	}
 
 	// MARK: - Role Validation Tests
@@ -137,10 +137,10 @@ struct IncomeStatementAggregationTests {
 		)
 
 		// Total revenue should be sum of all revenue accounts
-		#expect(incomeStmt.totalRevenue[testPeriods[0]]! == 175.0)  // 100 + 50 + 25
-		#expect(incomeStmt.totalRevenue[testPeriods[1]]! == 195.0)  // 110 + 55 + 30
-		#expect(incomeStmt.totalRevenue[testPeriods[2]]! == 215.0)  // 120 + 60 + 35
-		#expect(incomeStmt.totalRevenue[testPeriods[3]]! == 235.0)  // 130 + 65 + 40
+		#expect(abs(incomeStmt.totalRevenue[testPeriods[0]]! - 175.0) < 1e-6)  // 100 + 50 + 25
+		#expect(abs(incomeStmt.totalRevenue[testPeriods[1]]! - 195.0) < 1e-6)  // 110 + 55 + 30
+		#expect(abs(incomeStmt.totalRevenue[testPeriods[2]]! - 215.0) < 1e-6)  // 120 + 60 + 35
+		#expect(abs(incomeStmt.totalRevenue[testPeriods[3]]! - 235.0) < 1e-6)  // 130 + 65 + 40
 	}
 
 	@Test("IncomeStatement aggregates multiple expense accounts")
@@ -181,7 +181,7 @@ struct IncomeStatementAggregationTests {
 
 		// Total operating expenses should be sum of R&D + S&M + G&A
 		let q1OpEx = incomeStmt.operatingExpenses[testPeriods[0]]!
-		#expect(q1OpEx == 450.0)  // 200 + 150 + 100
+		#expect(abs(q1OpEx - 450.0) < 1e-6)  // 200 + 150 + 100
 	}
 
 	// MARK: - Role-Based Accessor Tests
@@ -257,8 +257,8 @@ struct IncomeStatementAggregationTests {
 		)
 
 		// Gross Profit = Revenue - COGS
-		#expect(incomeStmt.grossProfit[testPeriods[0]]! == 600.0)  // 1000 - 400
-		#expect(incomeStmt.grossProfit[testPeriods[1]]! == 660.0)  // 1100 - 440
+		#expect(abs(incomeStmt.grossProfit[testPeriods[0]]! - 600.0) < 1e-6)  // 1000 - 400
+		#expect(abs(incomeStmt.grossProfit[testPeriods[1]]! - 660.0) < 1e-6)  // 1100 - 440
 	}
 
 	@Test("IncomeStatement computes operating income correctly")
@@ -292,7 +292,7 @@ struct IncomeStatementAggregationTests {
 
 		// Operating Income = Revenue - COGS - Operating Expenses
 		// Q1: 1000 - 300 - 200 = 500
-		#expect(incomeStmt.operatingIncome[testPeriods[0]]! == 500.0)
+		#expect(abs(incomeStmt.operatingIncome[testPeriods[0]]! - 500.0) < 1e-6)
 	}
 
 	@Test("IncomeStatement computes EBITDA correctly")
@@ -327,7 +327,7 @@ struct IncomeStatementAggregationTests {
 		// EBITDA = Operating Income + D&A
 		// Operating Income (EBIT) = Revenue - OpEx - D&A = 1000 - 300 - 100 = 600
 		// EBITDA = 600 + 100 = 700
-		#expect(incomeStmt.ebitda[testPeriods[0]]! == 700.0)
+		#expect(abs(incomeStmt.ebitda[testPeriods[0]]! - 700.0) < 1e-6)
 	}
 
 	@Test("IncomeStatement computes net income correctly")
@@ -368,7 +368,7 @@ struct IncomeStatementAggregationTests {
 
 		// Net Income = Revenue - All Expenses
 		// Q1: 1000 - 200 - 50 - 150 = 600
-		#expect(incomeStmt.netIncome[testPeriods[0]]! == 600.0)
+		#expect(abs(incomeStmt.netIncome[testPeriods[0]]! - 600.0) < 1e-6)
 	}
 
 	// MARK: - Entity and Period Validation Tests

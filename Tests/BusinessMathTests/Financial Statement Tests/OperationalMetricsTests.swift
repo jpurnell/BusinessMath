@@ -25,9 +25,9 @@ struct OperationalMetricsTests {
 		)
 
 		#expect(metrics["units_sold"] == 15_000)
-		#expect(metrics["average_order_value"] == 85.50)
+		#expect(abs(metrics["average_order_value"]! - 85.50) < 1e-6)
 		#expect(metrics["active_customers"] == 12_500)
-		#expect(metrics["conversion_rate"] == 0.032)
+		#expect(abs(metrics["conversion_rate"]! - 0.032) < 1e-6)
 	}
 
 	@Test("Create operational metrics for SaaS company")
@@ -49,7 +49,7 @@ struct OperationalMetricsTests {
 
 		#expect(metrics["monthly_recurring_revenue"] == 2_500_000)
 		#expect(metrics["customer_count"] == 850)
-		#expect(metrics["net_revenue_retention"] == 1.15)
+		#expect(abs(metrics["net_revenue_retention"]! - 1.15) < 1e-6)
 	}
 
 	@Test("Create operational metrics for oil & gas company")
@@ -70,7 +70,7 @@ struct OperationalMetricsTests {
 		)
 
 		#expect(metrics["production_boe_per_day"] == 125_000)
-		#expect(metrics["realized_price_per_boe"] == 68.50)
+		#expect(abs(metrics["realized_price_per_boe"]! - 68.50) < 1e-6)
 		#expect(metrics["wells_drilled"] == 12)
 	}
 
@@ -95,7 +95,7 @@ struct OperationalMetricsTests {
 			denominator: "customer_count"
 		)
 
-		#expect(revenuePerCustomer == 200.0, "Revenue per customer should be $200")
+		#expect(abs(revenuePerCustomer! - 200.0) < 1e-6, "Revenue per customer should be $200")
 	}
 
 	@Test("Calculate derived metric - cost per unit")
@@ -117,7 +117,7 @@ struct OperationalMetricsTests {
 			denominator: "units_produced"
 		)
 
-		#expect(costPerUnit == 20.0, "Cost per unit should be $20")
+		#expect(abs(costPerUnit! - 20.0) < 1e-6, "Cost per unit should be $20")
 	}
 
 	@Test("Derived metric returns nil for division by zero")

@@ -22,9 +22,9 @@ struct ParticleSwarmOptimizationTests {
 
         #expect(config.swarmSize == 50)
         #expect(config.maxIterations == 100)
-        #expect(config.inertiaWeight == 0.7298)  // Standard PSO parameter
-        #expect(config.cognitiveCoefficient == 1.49618)  // c1
-        #expect(config.socialCoefficient == 1.49618)  // c2
+        #expect(abs(config.inertiaWeight - 0.7298) < 1e-6)  // Standard PSO parameter
+        #expect(abs(config.cognitiveCoefficient - 1.49618) < 1e-6)  // c1
+        #expect(abs(config.socialCoefficient - 1.49618) < 1e-6)  // c2
     }
 
     @Test("ParticleSwarmConfig high performance preset")

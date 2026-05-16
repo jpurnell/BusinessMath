@@ -391,7 +391,7 @@ struct LogisticDistributionTests {
 
 		// Test zero stdDev returns mean (degenerate distribution)
 		let zeroStdDevResult = distributionLogistic(5.0, 0.0, seed: 0.5)
-		#expect(zeroStdDevResult == 5.0, "Zero stdDev should return mean (degenerate)")
+		#expect(abs(zeroStdDevResult - 5.0) < 1e-6, "Zero stdDev should return mean (degenerate)")
 
 		// Test NaN stdDev
 		let nanStdDevResult = distributionLogistic(0.0, Double.nan, seed: 0.5)

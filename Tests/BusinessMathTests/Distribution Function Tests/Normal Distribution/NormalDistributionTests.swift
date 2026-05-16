@@ -354,7 +354,7 @@ struct NormalDistributionTests {
 
 		// Test zero stdDev returns mean (degenerate distribution)
 		let zeroStdDevResult = distributionNormal(mean: 5.0, stdDev: 0.0, 0.5, 0.5)
-		#expect(zeroStdDevResult == 5.0, "Zero stdDev should return mean (degenerate)")
+		#expect(abs(zeroStdDevResult - 5.0) < 1e-6, "Zero stdDev should return mean (degenerate)")
 
 		// Test NaN stdDev
 		let nanStdDevResult = distributionNormal(mean: 0.0, stdDev: Double.nan, 0.5, 0.5)

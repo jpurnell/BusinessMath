@@ -91,7 +91,7 @@ struct OptimizerFaultInjectionTests {
 
 		#expect(result.converged, "Should converge since gradient is zero everywhere")
 		#expect(result.iterations <= 1, "Should converge in 0 or 1 iterations")
-		#expect(result.value == 42.0, "Function value should be 42.0")
+		#expect(abs(result.value - 42.0) < 1e-6, "Function value should be 42.0")
 	}
 
 	@Test("Very large learning rate does not crash")

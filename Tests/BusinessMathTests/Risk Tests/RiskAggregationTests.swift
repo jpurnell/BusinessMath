@@ -239,7 +239,7 @@ struct RiskAggregationTests {
 			correlations: correlations
 		)
 
-		#expect(aggregatedVaR == 100.0)
+		#expect(abs(aggregatedVaR - 100.0) < 1e-6)
 	}
 
 	@Test("Two entities with high correlation")

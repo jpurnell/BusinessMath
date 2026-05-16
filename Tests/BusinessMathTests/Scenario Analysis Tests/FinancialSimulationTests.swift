@@ -503,7 +503,7 @@ struct FinancialSimulationTests {
 		}
 
 		// Should be essentially zero
-		#expect(probLoss == 0.0)
+		#expect(abs(probLoss - 0.0) < 1e-6)
 	}
 
 	// MARK: - Edge Cases

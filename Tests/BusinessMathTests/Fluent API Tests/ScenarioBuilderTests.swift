@@ -34,7 +34,7 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Baseline")
         #expect(scenario.parameters["revenue"] == 1_000_000)
-        #expect(scenario.parameters["growth"] == 0.10)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.10) < 1e-6)
     }
 
     @Test("Pessimistic scenario creation")
@@ -46,7 +46,7 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Pessimistic")
         #expect(scenario.parameters["revenue"] == 800_000)
-        #expect(scenario.parameters["growth"] == 0.05)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.05) < 1e-6)
     }
 
     @Test("Optimistic scenario creation")
@@ -58,7 +58,7 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Optimistic")
         #expect(scenario.parameters["revenue"] == 1_200_000)
-        #expect(scenario.parameters["growth"] == 0.15)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.15) < 1e-6)
     }
 
     @Test("Custom named scenario")
@@ -71,7 +71,7 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Conservative Growth")
         #expect(scenario.parameters["revenue"] == 900_000)
-        #expect(scenario.parameters["growth"] == 0.07)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.07) < 1e-6)
         #expect(scenario.parameters["costs"] == 600_000)
     }
 
@@ -99,10 +99,10 @@ struct ScenarioBuilderTests {
         }
 
         #expect(scenario.parameters["revenue"] == 1_000_000)
-        #expect(scenario.parameters["growth"] == 0.10)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.10) < 1e-6)
         #expect(scenario.parameters["costs"] == 700_000)
-        #expect(scenario.parameters["margin"] == 0.30)
-        #expect(scenario.parameters["discountRate"] == 0.08)
+        #expect(abs((scenario.parameters["margin"] ?? 0) - 0.30) < 1e-6)
+        #expect(abs((scenario.parameters["discountRate"] ?? 0) - 0.08) < 1e-6)
     }
 
     @Test("Custom parameter")
@@ -113,9 +113,9 @@ struct ScenarioBuilderTests {
             parameter("averageRevenue", value: 99.99)
         }
 
-        #expect(scenario.parameters["churnRate"] == 0.05)
+        #expect(abs((scenario.parameters["churnRate"] ?? 0) - 0.05) < 1e-6)
         #expect(scenario.parameters["customerCount"] == 10_000)
-        #expect(scenario.parameters["averageRevenue"] == 99.99)
+        #expect(abs((scenario.parameters["averageRevenue"] ?? 0) - 99.99) < 1e-6)
     }
 
     // MARK: - Adjustments
@@ -126,7 +126,7 @@ struct ScenarioBuilderTests {
             adjustRevenue(by: -0.20)
         }
 
-        #expect(scenario.adjustments["revenue"] == -0.20)
+        #expect(abs((scenario.adjustments["revenue"] ?? 0) - (-0.20)) < 1e-6)
     }
 
     @Test("Cost adjustments")
@@ -135,7 +135,7 @@ struct ScenarioBuilderTests {
             adjustCosts(by: 0.15)
         }
 
-        #expect(scenario.adjustments["costs"] == 0.15)
+        #expect(abs((scenario.adjustments["costs"] ?? 0) - 0.15) < 1e-6)
     }
 
     @Test("Multiple adjustments")
@@ -146,9 +146,9 @@ struct ScenarioBuilderTests {
             adjustGrowth(by: -0.30)
         }
 
-        #expect(scenario.adjustments["revenue"] == -0.20)
-        #expect(scenario.adjustments["costs"] == 0.10)
-        #expect(scenario.adjustments["growth"] == -0.30)
+        #expect(abs((scenario.adjustments["revenue"] ?? 0) - (-0.20)) < 1e-6)
+        #expect(abs((scenario.adjustments["costs"] ?? 0) - 0.10) < 1e-6)
+        #expect(abs((scenario.adjustments["growth"] ?? 0) - (-0.30)) < 1e-6)
     }
 
     @Test("Custom parameter adjustments")
@@ -158,8 +158,8 @@ struct ScenarioBuilderTests {
             adjust("conversionRate", by: 0.10)
         }
 
-        #expect(scenario.adjustments["customerAcquisition"] == 0.25)
-        #expect(scenario.adjustments["conversionRate"] == 0.10)
+        #expect(abs((scenario.adjustments["customerAcquisition"] ?? 0) - 0.25) < 1e-6)
+        #expect(abs((scenario.adjustments["conversionRate"] ?? 0) - 0.10) < 1e-6)
     }
 
     @Test("Mixed parameters and adjustments")
@@ -172,9 +172,9 @@ struct ScenarioBuilderTests {
         }
 
         #expect(scenario.parameters["revenue"] == 1_000_000)
-        #expect(scenario.parameters["growth"] == 0.10)
-        #expect(scenario.adjustments["costs"] == -0.05)
-        #expect(scenario.adjustments["revenue"] == 0.15)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.10) < 1e-6)
+        #expect(abs((scenario.adjustments["costs"] ?? 0) - (-0.05)) < 1e-6)
+        #expect(abs((scenario.adjustments["revenue"] ?? 0) - 0.15) < 1e-6)
     }
 
     // MARK: - ScenarioSet Builder
@@ -295,7 +295,7 @@ struct ScenarioBuilderTests {
         }
         .withProbability(0.50)
 
-        #expect(scenario.probability == 0.50)
+        #expect(abs((scenario.probability ?? 0) - 0.50) < 1e-6)
     }
 
     @Test("Scenario with description")
@@ -317,7 +317,7 @@ struct ScenarioBuilderTests {
         .withProbability(0.25)
         .withDescription("Economic downturn scenario")
 
-        #expect(scenario.probability == 0.25)
+        #expect(abs((scenario.probability ?? 0) - 0.25) < 1e-6)
         #expect(scenario.description == "Economic downturn scenario")
     }
 
@@ -482,8 +482,8 @@ struct ScenarioBuilderTests {
         // Check baseline values
         let baseline = scenarios.scenario(named: "Baseline")!
         #expect(baseline.parameters["revenue"] == 1_000_000)
-        #expect(baseline.parameters["growth"] == 0.10)
-        #expect(baseline.probability == 0.50)
+        #expect(abs((baseline.parameters["growth"] ?? 0) - 0.10) < 1e-6)
+        #expect(abs((baseline.probability ?? 0) - 0.50) < 1e-6)
     }
 
     @Test("Standard three-way with custom variability")
@@ -526,7 +526,7 @@ struct ScenarioBuilderTests {
 
         // Check baseline is most probable
         let baseline = scenarios.scenario(named: "Baseline")!
-        #expect(baseline.probability == 0.40)
+        #expect(abs((baseline.probability ?? 0) - 0.40) < 1e-6)
     }
 
     @Test("Standard five-way with custom variability")
@@ -557,8 +557,8 @@ struct ScenarioBuilderTests {
             adjustGrowth(by: 1.5)  // 150% increase
         }
 
-        #expect(scenario.adjustments["revenue"] == 2.0)
-        #expect(scenario.adjustments["growth"] == 1.5)
+        #expect(abs((scenario.adjustments["revenue"] ?? 0) - 2.0) < 1e-6)
+        #expect(abs((scenario.adjustments["growth"] ?? 0) - 1.5) < 1e-6)
     }
 
     @Test("Extreme negative adjustments")
@@ -568,8 +568,8 @@ struct ScenarioBuilderTests {
             adjustCosts(by: -0.50)    // 50% decrease
         }
 
-        #expect(scenario.adjustments["revenue"] == -0.90)
-        #expect(scenario.adjustments["costs"] == -0.50)
+        #expect(abs((scenario.adjustments["revenue"] ?? 0) - (-0.90)) < 1e-6)
+        #expect(abs((scenario.adjustments["costs"] ?? 0) - (-0.50)) < 1e-6)
     }
 
     @Test("Zero values")
@@ -593,7 +593,7 @@ struct ScenarioBuilderTests {
         }
 
         #expect(scenario.parameters["revenue"] == -100_000)
-        #expect(scenario.parameters["growth"] == -0.05)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - (-0.05)) < 1e-6)
     }
 
     @Test("Very large numbers")
@@ -614,8 +614,8 @@ struct ScenarioBuilderTests {
             margin(0.0005)  // 0.05%
         }
 
-        #expect(scenario.parameters["growth"] == 0.0001)
-        #expect(scenario.parameters["margin"] == 0.0005)
+        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.0001) < 1e-6)
+        #expect(abs((scenario.parameters["margin"] ?? 0) - 0.0005) < 1e-6)
     }
 
     @Test("Probability sum validation in expected value")

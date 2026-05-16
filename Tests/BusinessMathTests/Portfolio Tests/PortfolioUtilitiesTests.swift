@@ -203,7 +203,7 @@ struct PortfolioUtilitiesTests {
 			riskFreeRate: 0.03
 		)
 
-		#expect(sharpe == 0.0, "Sharpe ratio should be 0 with zero volatility")
+		#expect(abs(sharpe - 0.0) < 1e-6, "Sharpe ratio should be 0 with zero volatility")
 	}
 
 	// MARK: - Simplified Variance

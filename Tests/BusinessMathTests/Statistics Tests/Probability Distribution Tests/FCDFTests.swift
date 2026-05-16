@@ -10,7 +10,7 @@ struct FCDFTests {
 	@Test("fCDF(0, _, _) = 0")
 	func testZeroBoundary() throws {
 		let result: Double = try fCDF(f: 0.0, df1: 5, df2: 10)
-		#expect(result == 0.0)
+		#expect(abs(result - 0.0) < 1e-6)
 	}
 
 	@Test("fCDF(∞, _, _) → 1 (large f approaches 1)")

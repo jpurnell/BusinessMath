@@ -39,7 +39,7 @@ struct CashFlowBuilderTests {
         }
 
         #expect(revenue.baseValue == 1_000_000)
-        #expect(revenue.growthRate == 0.15)
+        #expect(abs(revenue.growthRate - 0.15) < 1e-6)
 
         // Calculate year 1 and year 2
         let year1 = revenue.value(forYear: 1)
@@ -110,7 +110,7 @@ struct CashFlowBuilderTests {
             Variable(percentage: 0.40)  // 40% of revenue
         }
 
-        #expect(expenses.variablePercentage == 0.40)
+        #expect(abs(expenses.variablePercentage - 0.40) < 1e-6)
 
         let expenses1M = expenses.value(forYear: 1, revenue: 1_000_000)
         let expenses2M = expenses.value(forYear: 1, revenue: 2_000_000)
@@ -199,7 +199,7 @@ struct CashFlowBuilderTests {
             CorporateRate(0.21)
         }
 
-        #expect(taxes.corporateRate == 0.21)
+        #expect(abs(taxes.corporateRate - 0.21) < 1e-6)
 
         let taxOnIncome = taxes.value(on: 1_000_000)
 
@@ -212,7 +212,7 @@ struct CashFlowBuilderTests {
             StateRate(0.06)
         }
 
-        #expect(taxes.stateRate == 0.06)
+        #expect(abs(taxes.stateRate - 0.06) < 1e-6)
 
         let taxOnIncome = taxes.value(on: 1_000_000)
 

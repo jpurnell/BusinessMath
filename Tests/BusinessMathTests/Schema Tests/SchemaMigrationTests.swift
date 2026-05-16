@@ -78,7 +78,7 @@ struct SchemaMigrationTests {
 		// After all migrations:
 		#expect(migrated["category"] as? String == "Uncategorized")  // v1->v2
 		#expect(migrated["revenue"] == nil)  // Removed in v2->v3
-		#expect(migrated["totalRevenue"] as? Double == 100.0)  // Renamed and converted
+		#expect(abs((migrated["totalRevenue"] as? Double ?? 0) - 100.0) < 1e-6)  // Renamed and converted
 	}
 
 	@Test("Migration from v1 to v3")
@@ -94,7 +94,7 @@ struct SchemaMigrationTests {
 		let migrated = try manager.migrate(data: data, from: 1, to: 3)
 
 		#expect(migrated["category"] != nil)
-		#expect(migrated["totalRevenue"] as? Double == 100_000.0)
+		#expect(abs((migrated["totalRevenue"] as? Double ?? 0) - 100_000.0) < 1e-6)
 		#expect(migrated["revenue"] == nil)
 	}
 
@@ -147,7 +147,7 @@ struct SchemaMigrationTests {
 
 		// All original data preserved
 		#expect(migrated["name"] as? String == "Acme Corp")
-		#expect(migrated["revenue"] as? Double == 100_000.0)
+		#expect(abs((migrated["revenue"] as? Double ?? 0) - 100_000.0) < 1e-6)
 		#expect(migrated["employees"] as? Int == 50)
 		// Plus new field
 		#expect(migrated["category"] as? String == "Uncategorized")

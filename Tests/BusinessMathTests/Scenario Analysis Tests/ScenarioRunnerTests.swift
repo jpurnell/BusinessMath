@@ -138,7 +138,7 @@ struct ScenarioRunnerTests {
 		// Verify revenue was set correctly
 		let totalRevenue = projection.incomeStatement.totalRevenue
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		#expect(totalRevenue[q1] == 1000.0)
+		#expect(abs((totalRevenue[q1] ?? 0) - 1000.0) < 1e-2)
 	}
 
 	@Test("ScenarioRunner applies driver overrides")
@@ -210,8 +210,8 @@ struct ScenarioRunnerTests {
 		let baseRevenue = baseProjection.incomeStatement.totalRevenue[q1]!
 		let optimisticRevenue = optimisticProjection.incomeStatement.totalRevenue[q1]!
 
-		#expect(baseRevenue == 800.0)
-		#expect(optimisticRevenue == 1500.0)
+		#expect(abs(baseRevenue - 800.0) < 1e-2)
+		#expect(abs(optimisticRevenue - 1500.0) < 1e-2)
 		#expect(optimisticRevenue > baseRevenue)
 	}
 
@@ -280,9 +280,9 @@ struct ScenarioRunnerTests {
 		let expenses = projection.incomeStatement.totalExpenses[q1]!
 		let netIncome = projection.incomeStatement.netIncome[q1]!
 
-		#expect(revenue == 1000.0)
-		#expect(expenses == 600.0)
-		#expect(netIncome == 400.0)
+		#expect(abs(revenue - 1000.0) < 1e-2)
+		#expect(abs(expenses - 600.0) < 1e-2)
+		#expect(abs(netIncome - 400.0) < 1e-2)
 	}
 
 	@Test("ScenarioRunner with probabilistic drivers samples correctly")

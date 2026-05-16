@@ -26,8 +26,8 @@ struct TimeVaryingDriverTests {
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 		let q4 = Period.quarter(year: 2025, quarter: 4)
 
-		#expect(driver.sample(for: q1) == 100.0)
-		#expect(driver.sample(for: q4) == 150.0)
+		#expect(abs(driver.sample(for: q1) - 100.0) < 1e-6)
+		#expect(abs(driver.sample(for: q4) - 150.0) < 1e-6)
 	}
 
 	@Test("TimeVaryingDriver with deterministic time variation")
@@ -216,10 +216,10 @@ struct TimeVaryingDriverTests {
 
 		let timeSeries = projection.project()
 
-		#expect(timeSeries[periods[0]]! == 100.0)  // Q1
-		#expect(timeSeries[periods[1]]! == 100.0)  // Q2
-		#expect(timeSeries[periods[2]]! == 100.0)  // Q3
-		#expect(timeSeries[periods[3]]! == 150.0)  // Q4
+		#expect(abs(timeSeries[periods[0]]! - 100.0) < 1e-6)  // Q1
+		#expect(abs(timeSeries[periods[1]]! - 100.0) < 1e-6)  // Q2
+		#expect(abs(timeSeries[periods[2]]! - 100.0) < 1e-6)  // Q3
+		#expect(abs(timeSeries[periods[3]]! - 150.0) < 1e-6)  // Q4
 	}
 
 	@Test("TimeVaryingDriver Monte Carlo shows period-specific statistics")
@@ -281,9 +281,9 @@ struct TimeVaryingDriverTests {
 		let q3_2025 = Period.quarter(year: 2025, quarter: 3)  // Quarter 3 since launch
 		let q3_2026 = Period.quarter(year: 2026, quarter: 3)  // Quarter 7 since launch
 
-		#expect(driver.sample(for: q1_2025) == 50_000.0)  // Launch: 50k
-		#expect(driver.sample(for: q3_2025) == 75_000.0)  // Growth: 50k + (3-2)*25k = 75k
-		#expect(driver.sample(for: q3_2026) == 150_000.0)  // Mature: 150k
+		#expect(abs(driver.sample(for: q1_2025) - 50_000.0) < 1e-6)  // Launch: 50k
+		#expect(abs(driver.sample(for: q3_2025) - 75_000.0) < 1e-6)  // Growth: 50k + (3-2)*25k = 75k
+		#expect(abs(driver.sample(for: q3_2026) - 150_000.0) < 1e-6)  // Mature: 150k
 	}
 
 	@Test("Inflation-adjusted costs")

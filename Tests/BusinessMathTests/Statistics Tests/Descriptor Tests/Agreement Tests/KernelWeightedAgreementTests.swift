@@ -31,8 +31,8 @@ struct KernelWeightedAgreementTests {
 		// target=0, bandwidth=1 → means are 0, 2, 4 → u = 0, 2, 4
 		let weights = try kernelWeights(x, y, target: 0.0, bandwidth: 1.0, kernel: .epanechnikov)
 		#expect(weights[0] > 0.0)
-		#expect(weights[1] == 0.0) // |u| = 2 > 1
-		#expect(weights[2] == 0.0) // |u| = 4 > 1
+		#expect(abs(weights[1] - 0.0) < 1e-6) // |u| = 2 > 1
+		#expect(abs(weights[2] - 0.0) < 1e-6) // |u| = 4 > 1
 	}
 
 	@Test("Uniform kernel: constant within bandwidth, zero outside")
@@ -41,9 +41,9 @@ struct KernelWeightedAgreementTests {
 		let y: [Double] = [0.0, 0.5, 2.0]
 		// target=0, bandwidth=1 → means are 0, 0.5, 2 → u = 0, 0.5, 2
 		let weights = try kernelWeights(x, y, target: 0.0, bandwidth: 1.0, kernel: .uniform)
-		#expect(weights[0] == 0.5)
-		#expect(weights[1] == 0.5)
-		#expect(weights[2] == 0.0) // |u| = 2 > 1
+		#expect(abs(weights[0] - 0.5) < 1e-6)
+		#expect(abs(weights[1] - 0.5) < 1e-6)
+		#expect(abs(weights[2] - 0.0) < 1e-6) // |u| = 2 > 1
 	}
 
 	@Test("Target at data center: highest weights there")

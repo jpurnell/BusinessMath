@@ -31,8 +31,8 @@ struct LinearConstraintTests {
 
         // x ≥ 0  →  -x + 0 ≤ 0  →  -x ≤ 0
         // So: coefficients = [-1.0], constant = 0.0
-        #expect(canonical.coefficients == [-1.0], "Expected [-1.0], got \(canonical.coefficients)")
-        #expect(canonical.constant == 0.0, "Expected 0.0, got \(canonical.constant)")
+        #expect(canonical.coefficients.count == 1 && abs(canonical.coefficients[0] - (-1.0)) < 1e-6, "Expected [-1.0], got \(canonical.coefficients)")
+        #expect(abs(canonical.constant - 0.0) < 1e-6, "Expected 0.0, got \(canonical.constant)")
         #expect(canonical.isEquality == false, "Should be inequality")
     }
 
@@ -49,8 +49,8 @@ struct LinearConstraintTests {
 
         // x ≤ 5  →  x - 5 ≤ 0
         // So: coefficients = [1.0], constant = -5.0
-        #expect(canonical.coefficients == [1.0], "Expected [1.0], got \(canonical.coefficients)")
-        #expect(canonical.constant == -5.0, "Expected -5.0, got \(canonical.constant)")
+        #expect(canonical.coefficients.count == 1 && abs(canonical.coefficients[0] - 1.0) < 1e-6, "Expected [1.0], got \(canonical.coefficients)")
+        #expect(abs(canonical.constant - (-5.0)) < 1e-6, "Expected -5.0, got \(canonical.constant)")
         #expect(canonical.isEquality == false)
     }
 
@@ -66,8 +66,8 @@ struct LinearConstraintTests {
 
         // x = 3  →  x - 3 = 0
         // So: coefficients = [1.0], constant = -3.0
-        #expect(canonical.coefficients == [1.0])
-        #expect(canonical.constant == -3.0)
+        #expect(canonical.coefficients.count == 1 && abs(canonical.coefficients[0] - 1.0) < 1e-6)
+        #expect(abs(canonical.constant - (-3.0)) < 1e-6)
         #expect(canonical.isEquality == true, "Should be equality")
     }
 
@@ -84,8 +84,8 @@ struct LinearConstraintTests {
         let canonical = constraint.toCanonicalForm()
 
         // x + y ≤ 10  →  x + y - 10 ≤ 0
-        #expect(canonical.coefficients == [1.0, 1.0])
-        #expect(canonical.constant == -10.0)
+        #expect(canonical.coefficients.count == 2 && abs(canonical.coefficients[0] - 1.0) < 1e-6 && abs(canonical.coefficients[1] - 1.0) < 1e-6)
+        #expect(abs(canonical.constant - (-10.0)) < 1e-6)
     }
 
     @Test("Production constraint: 2x + 3y ≥ 100")
@@ -99,8 +99,8 @@ struct LinearConstraintTests {
         let canonical = constraint.toCanonicalForm()
 
         // 2x + 3y ≥ 100  →  -2x - 3y + 100 ≤ 0
-        #expect(canonical.coefficients == [-2.0, -3.0])
-        #expect(canonical.constant == 100.0)
+        #expect(canonical.coefficients.count == 2 && abs(canonical.coefficients[0] - (-2.0)) < 1e-6 && abs(canonical.coefficients[1] - (-3.0)) < 1e-6)
+        #expect(abs(canonical.constant - 100.0) < 1e-6)
     }
 
     @Test("Balance constraint: x - y = 0")
@@ -113,8 +113,8 @@ struct LinearConstraintTests {
         let canonical = constraint.toCanonicalForm()
 
         // x - y = 0  →  x - y = 0 (already canonical for equality)
-        #expect(canonical.coefficients == [1.0, -1.0])
-        #expect(canonical.constant == 0.0)
+        #expect(canonical.coefficients.count == 2 && abs(canonical.coefficients[0] - 1.0) < 1e-6 && abs(canonical.coefficients[1] - (-1.0)) < 1e-6)
+        #expect(abs(canonical.constant - 0.0) < 1e-6)
         #expect(canonical.isEquality == true)
     }
 
@@ -132,8 +132,8 @@ struct LinearConstraintTests {
         let canonical = constraint.toCanonicalForm()
 
         // -3x + 2y ≤ 5  →  -3x + 2y - 5 ≤ 0
-        #expect(canonical.coefficients == [-3.0, 2.0])
-        #expect(canonical.constant == -5.0)
+        #expect(canonical.coefficients.count == 2 && abs(canonical.coefficients[0] - (-3.0)) < 1e-6 && abs(canonical.coefficients[1] - 2.0) < 1e-6)
+        #expect(abs(canonical.constant - (-5.0)) < 1e-6)
     }
 
     @Test("Zero coefficients")
@@ -148,8 +148,8 @@ struct LinearConstraintTests {
         let canonical = constraint.toCanonicalForm()
 
         // 0x + y ≥ 2  →  -y + 2 ≤ 0
-        #expect(canonical.coefficients == [0.0, -1.0])
-        #expect(canonical.constant == 2.0)
+        #expect(canonical.coefficients.count == 2 && abs(canonical.coefficients[0] - 0.0) < 1e-6 && abs(canonical.coefficients[1] - (-1.0)) < 1e-6)
+        #expect(abs(canonical.constant - 2.0) < 1e-6)
     }
 
     @Test("Negative RHS")
@@ -164,8 +164,8 @@ struct LinearConstraintTests {
         let canonical = constraint.toCanonicalForm()
 
         // x ≥ -5  →  -x - 5 ≤ 0
-        #expect(canonical.coefficients == [-1.0])
-        #expect(canonical.constant == -5.0)
+        #expect(canonical.coefficients.count == 1 && abs(canonical.coefficients[0] - (-1.0)) < 1e-6)
+        #expect(abs(canonical.constant - (-5.0)) < 1e-6)
     }
 
     // MARK: - Factory Method Tests
@@ -179,8 +179,8 @@ struct LinearConstraintTests {
 
         // Should create: x₁ + x₂ + x₃ ≤ 100
         let canonical = constraints.toCanonicalForm()
-        #expect(canonical.coefficients == [1.0, 1.0, 1.0])
-        #expect(canonical.constant == -100.0)
+        #expect(canonical.coefficients.count == 3 && canonical.coefficients.allSatisfy { abs($0 - 1.0) < 1e-6 })
+        #expect(abs(canonical.constant - (-100.0)) < 1e-6)
     }
 
     @Test("Factory: non-negativity constraints")
@@ -194,13 +194,13 @@ struct LinearConstraintTests {
 
         // First constraint: x ≥ 0  →  -x ≤ 0
         let canonical0 = constraints[0].toCanonicalForm()
-        #expect(canonical0.coefficients == [-1.0, 0.0])
-        #expect(canonical0.constant == 0.0)
+        #expect(canonical0.coefficients.count == 2 && abs(canonical0.coefficients[0] - (-1.0)) < 1e-6 && abs(canonical0.coefficients[1] - 0.0) < 1e-6)
+        #expect(abs(canonical0.constant - 0.0) < 1e-6)
 
         // Second constraint: y ≥ 0  →  -y ≤ 0
         let canonical1 = constraints[1].toCanonicalForm()
-        #expect(canonical1.coefficients == [0.0, -1.0])
-        #expect(canonical1.constant == 0.0)
+        #expect(canonical1.coefficients.count == 2 && abs(canonical1.coefficients[0] - 0.0) < 1e-6 && abs(canonical1.coefficients[1] - (-1.0)) < 1e-6)
+        #expect(abs(canonical1.constant - 0.0) < 1e-6)
     }
 
     @Test("Factory: box constraints")
@@ -216,21 +216,21 @@ struct LinearConstraintTests {
 
         // First two: x bounds
         let x_lower = constraints[0].toCanonicalForm()  // x ≥ -5  →  -x - 5 ≤ 0
-        #expect(x_lower.coefficients == [-1.0, 0.0])
-        #expect(x_lower.constant == -5.0)
+        #expect(x_lower.coefficients.count == 2 && abs(x_lower.coefficients[0] - (-1.0)) < 1e-6 && abs(x_lower.coefficients[1] - 0.0) < 1e-6)
+        #expect(abs(x_lower.constant - (-5.0)) < 1e-6)
 
         let x_upper = constraints[1].toCanonicalForm()  // x ≤ 10  →  x - 10 ≤ 0
-        #expect(x_upper.coefficients == [1.0, 0.0])
-        #expect(x_upper.constant == -10.0)
+        #expect(x_upper.coefficients.count == 2 && abs(x_upper.coefficients[0] - 1.0) < 1e-6 && abs(x_upper.coefficients[1] - 0.0) < 1e-6)
+        #expect(abs(x_upper.constant - (-10.0)) < 1e-6)
 
         // Next two: y bounds
         let y_lower = constraints[2].toCanonicalForm()  // y ≥ -5  →  -y - 5 ≤ 0
-        #expect(y_lower.coefficients == [0.0, -1.0])
-        #expect(y_lower.constant == -5.0)
+        #expect(y_lower.coefficients.count == 2 && abs(y_lower.coefficients[0] - 0.0) < 1e-6 && abs(y_lower.coefficients[1] - (-1.0)) < 1e-6)
+        #expect(abs(y_lower.constant - (-5.0)) < 1e-6)
 
         let y_upper = constraints[3].toCanonicalForm()  // y ≤ 10  →  y - 10 ≤ 0
-        #expect(y_upper.coefficients == [0.0, 1.0])
-        #expect(y_upper.constant == -10.0)
+        #expect(y_upper.coefficients.count == 2 && abs(y_upper.coefficients[0] - 0.0) < 1e-6 && abs(y_upper.coefficients[1] - 1.0) < 1e-6)
+        #expect(abs(y_upper.constant - (-10.0)) < 1e-6)
     }
 
     // MARK: - High-Dimensional Tests
@@ -247,8 +247,8 @@ struct LinearConstraintTests {
         let canonical = constraint.toCanonicalForm()
 
         #expect(canonical.coefficients.count == 10)
-        #expect(canonical.coefficients.allSatisfy { $0 == 1.0 })
-        #expect(canonical.constant == -50.0)
+        #expect(canonical.coefficients.allSatisfy { abs($0 - 1.0) < 1e-6 })
+        #expect(abs(canonical.constant - (-50.0)) < 1e-6)
     }
 
     // MARK: - Verification Against Evaluation
@@ -273,6 +273,6 @@ struct LinearConstraintTests {
         }
 
         #expect(g <= 0.0, "Constraint should be satisfied: g(x) = \(g)")
-        #expect(g == -3.0, "Expected g(x) = -3.0, got \(g)")
+        #expect(abs(g - (-3.0)) < 1e-6, "Expected g(x) = -3.0, got \(g)")
     }
 }

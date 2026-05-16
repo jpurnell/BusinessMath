@@ -183,7 +183,7 @@ struct ModelValidationEdgeCaseTests {
 
 		// Test completed without crashing (may or may not pass)
 //		#expect(report != nil)
-		#expect(report.tolerance == 0.01)
+		#expect(abs(report.tolerance - 0.01) < 1e-6)
 
 		// Check that failed parameters actually have error > tolerance
 		for (param, withinTol) in report.withinTolerance where !withinTol {

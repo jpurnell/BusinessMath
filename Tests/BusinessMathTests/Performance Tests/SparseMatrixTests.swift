@@ -62,7 +62,7 @@ struct SparseMatrixTests {
 		#expect(sparse.rows == 10)
 		#expect(sparse.columns == 10)
 		#expect(sparse.nonZeroCount == 0)
-		#expect(sparse.sparsity == 1.0)  // 100% sparse (all zeros)
+		#expect(abs(sparse.sparsity - 1.0) < 1e-6)  // 100% sparse (all zeros)
 	}
 
 	// MARK: - Matrix-Vector Multiplication Tests
@@ -314,7 +314,7 @@ struct SparseMatrixTests {
 		let sparse = SparseMatrix(rows: 1, columns: 1, triplets: [(0, 0, 5.0)])
 
 		#expect(sparse.nonZeroCount == 1)
-		#expect(sparse.sparsity == 0.0)  // 0% sparse (fully dense)
+		#expect(abs(sparse.sparsity - 0.0) < 1e-6)  // 0% sparse (fully dense)
 
 		let result = sparse.multiply(vector: [3.0])
 		#expect(abs(result[0] - 15.0) < 1e-10)

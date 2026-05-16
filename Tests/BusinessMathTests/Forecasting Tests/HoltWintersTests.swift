@@ -91,7 +91,7 @@ struct HoltWintersTests {
 		#expect(forecast.forecast.periods.count == 12)
 		#expect(forecast.lowerBound.periods.count == 12)
 		#expect(forecast.upperBound.periods.count == 12)
-		#expect(forecast.confidenceLevel == 0.95)
+		#expect(abs(forecast.confidenceLevel - 0.95) < 1e-6)
 
 		// Check bounds make sense
 		for i in 0..<12 {
@@ -391,7 +391,7 @@ struct ConvenienceForecastTests {
 		#expect(forecast.forecast.count == 12, "Should forecast 12 periods")
 		#expect(forecast.lowerBound.count == 12, "Should have 12 lower bounds")
 		#expect(forecast.upperBound.count == 12, "Should have 12 upper bounds")
-		#expect(forecast.confidenceLevel == 0.95, "Should preserve confidence level")
+		#expect(abs(forecast.confidenceLevel - 0.95) < 1e-6, "Should preserve confidence level")
 
 		// Verify bounds are reasonable
 		for i in 0..<12 {

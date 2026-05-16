@@ -52,8 +52,8 @@ struct StandardTemplatesTests {
 
         #expect(model is SaaSModel)
         let saasModel = model as! SaaSModel
-        #expect(saasModel.initialMRR == 10_000.0)
-        #expect(saasModel.churnRate == 0.05)
+        #expect(abs(saasModel.initialMRR - 10_000.0) < 1e-6)
+        #expect(abs(saasModel.churnRate - 0.05) < 1e-6)
     }
 
     @Test("SaaS template validates parameters")
@@ -133,8 +133,8 @@ struct StandardTemplatesTests {
 
         #expect(model is RetailModel)
         let retailModel = model as! RetailModel
-        #expect(retailModel.initialInventoryValue == 50_000.0)
-        #expect(retailModel.monthlyRevenue == 100_000.0)
+        #expect(abs(retailModel.initialInventoryValue - 50_000.0) < 1e-6)
+        #expect(abs(retailModel.monthlyRevenue - 100_000.0) < 1e-6)
     }
 
     @Test("Retail template validation")
@@ -175,8 +175,8 @@ struct StandardTemplatesTests {
 
         #expect(model is ManufacturingModel)
         let mfgModel = model as! ManufacturingModel
-        #expect(mfgModel.productionCapacity == 10_000.0)
-        #expect(mfgModel.sellingPricePerUnit == 50.0)
+        #expect(abs(mfgModel.productionCapacity - 10_000.0) < 1e-6)
+        #expect(abs(mfgModel.sellingPricePerUnit - 50.0) < 1e-6)
     }
 
     // MARK: - Marketplace Template Tests
@@ -201,8 +201,8 @@ struct StandardTemplatesTests {
 
         #expect(model is MarketplaceModel)
         let marketplaceModel = model as! MarketplaceModel
-        #expect(marketplaceModel.initialBuyers == 1_000.0)
-        #expect(marketplaceModel.takeRate == 0.15)
+        #expect(abs(marketplaceModel.initialBuyers - 1_000.0) < 1e-6)
+        #expect(abs(marketplaceModel.takeRate - 0.15) < 1e-6)
     }
 
     // MARK: - Subscription Box Template Tests
@@ -225,8 +225,8 @@ struct StandardTemplatesTests {
 
         #expect(model is SubscriptionBoxModel)
         let subBoxModel = model as! SubscriptionBoxModel
-        #expect(subBoxModel.initialSubscribers == 1_000.0)
-        #expect(subBoxModel.monthlyBoxPrice == 49.99)
+        #expect(abs(subBoxModel.initialSubscribers - 1_000.0) < 1e-6)
+        #expect(abs(subBoxModel.monthlyBoxPrice - 49.99) < 1e-6)
     }
 
     // MARK: - Registry Integration Tests

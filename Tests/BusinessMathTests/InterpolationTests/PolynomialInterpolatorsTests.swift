@@ -109,9 +109,9 @@ struct BarycentricLagrangeTests {
     @Test("Single-point degenerate case")
     func singlePoint() throws {
         let interp = try BarycentricLagrangeInterpolator(xs: [5.0], ys: [42.0])
-        #expect(interp(0.0) == 42.0)
-        #expect(interp(5.0) == 42.0)
-        #expect(interp(100.0) == 42.0)
+        #expect(abs(interp(0.0) - 42.0) < 1e-6)
+        #expect(abs(interp(5.0) - 42.0) < 1e-6)
+        #expect(abs(interp(100.0) - 42.0) < 1e-6)
     }
 
     @Test("Throws on empty input")

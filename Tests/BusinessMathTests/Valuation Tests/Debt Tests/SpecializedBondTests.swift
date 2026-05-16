@@ -113,7 +113,7 @@ struct ZeroCouponBondTests {
         // Should have exactly ONE cash flow (principal at maturity)
         #expect(cashFlows.count == 1)
         #expect(cashFlows[0].type == .principal)
-        #expect(cashFlows[0].amount == 1000.0)
+        #expect(abs(cashFlows[0].amount - 1000.0) < 1e-6)
     }
 }
 

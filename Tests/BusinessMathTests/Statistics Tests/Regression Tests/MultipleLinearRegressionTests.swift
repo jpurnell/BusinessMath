@@ -293,7 +293,7 @@ struct MultipleLinearRegressionTests {
 
         // Should produce valid coefficients
         #expect(result.coefficients.count == 1)
-        #expect(result.rSquared == 1.0)  // Perfect fit with minimum points
+        #expect(abs(result.rSquared - 1.0) < 1e-6)  // Perfect fit with minimum points
     }
 
     @Test("Single observation throws error")

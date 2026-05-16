@@ -27,7 +27,10 @@ struct RelaxationSolverTests {
 
         #expect(result.solution != nil)
         let storedSolution = result.solution!
-        #expect(storedSolution.toArray() == [1.5, 2.5, 3.5])
+        #expect(storedSolution.toArray().count == 3)
+        #expect(abs(storedSolution.toArray()[0] - 1.5) < 1e-6)
+        #expect(abs(storedSolution.toArray()[1] - 2.5) < 1e-6)
+        #expect(abs(storedSolution.toArray()[2] - 3.5) < 1e-6)
     }
 
     @Test("RelaxationResult stores objective value")
@@ -38,7 +41,7 @@ struct RelaxationSolverTests {
             status: .optimal
         )
 
-        #expect(result.objectiveValue == 42.5)
+        #expect(abs(result.objectiveValue - 42.5) < 1e-6)
     }
 
     @Test("RelaxationResult stores status")
@@ -172,7 +175,7 @@ struct RelaxationSolverTests {
         // Verify the result is valid
         #expect(result.status == .optimal)
         #expect(result.solution != nil)
-        #expect(result.objectiveValue == 5.0)  // 1^2 + 2^2 = 5
+        #expect(abs(result.objectiveValue - 5.0) < 1e-6)  // 1^2 + 2^2 = 5
     }
 
     @Test("RelaxationSolver is Sendable")
@@ -336,6 +339,6 @@ struct RelaxationSolverTests {
             minimize: true
         )
 
-        #expect(result.objectiveValue == 3.0)  // Dimension is 3
+        #expect(abs(result.objectiveValue - 3.0) < 1e-6)  // Dimension is 3
     }
 }

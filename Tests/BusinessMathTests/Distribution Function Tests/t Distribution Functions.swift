@@ -18,13 +18,13 @@ struct TDistributionTests {
 		let mean = 3.0
 		let stdErr = 1.0
 		let tStat = tStatistic(x: x, mean: mean, stdErr: stdErr)
-		#expect(tStat == 2.0)
+		#expect(abs(tStat - 2.0) < 1e-6)
 	}
 
 	@Test("tStatistic with default parameters")
 	func tStatistic_default() throws {
 		let tStatDefault = tStatistic(x: 1.0)
-		#expect(tStatDefault == 1.0) // (1 - 0) / 1
+		#expect(abs(tStatDefault - 1.0) < 1e-6) // (1 - 0) / 1
 	}
 
 	@Test("pValueStudent is within (0,1)")

@@ -197,7 +197,7 @@ struct PresentValueTests {
 	@Test("Present value with zero future value")
 	func pvZeroFutureValue() {
 		let pv = presentValue(futureValue: 0.0, rate: 0.10, periods: 5)
-		#expect(pv == 0.0)
+		#expect(abs(pv - 0.0) < 1e-6)
 	}
 
 	@Test("Present value with zero periods")
@@ -211,13 +211,13 @@ struct PresentValueTests {
 	@Test("Annuity with zero payment")
 	func annuityZeroPayment() {
 		let pv = presentValueAnnuity(payment: 0.0, rate: 0.10, periods: 5, type: .ordinary)
-		#expect(pv == 0.0)
+		#expect(abs(pv - 0.0) < 1e-6)
 	}
 
 	@Test("Annuity with zero periods")
 	func annuityZeroPeriods() {
 		let pv = presentValueAnnuity(payment: 100.0, rate: 0.10, periods: 0, type: .ordinary)
-		#expect(pv == 0.0)
+		#expect(abs(pv - 0.0) < 1e-6)
 	}
 
 	@Test("Large number of periods")

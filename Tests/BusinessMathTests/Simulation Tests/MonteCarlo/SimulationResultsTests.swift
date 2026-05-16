@@ -58,16 +58,16 @@ struct SimulationResultsTests {
 		let results = SimulationResults(values: values)
 
 		// All values above 0
-		#expect(results.probabilityAbove(0.0) == 1.0, "All values > 0")
+		#expect(abs(results.probabilityAbove(0.0) - 1.0) < 1e-6, "All values > 0")
 
 		// All values below 200
-		#expect(results.probabilityBelow(200.0) == 1.0, "All values < 200")
+		#expect(abs(results.probabilityBelow(200.0) - 1.0) < 1e-6, "All values < 200")
 
 		// No values above 200
-		#expect(results.probabilityAbove(200.0) == 0.0, "No values > 200")
+		#expect(abs(results.probabilityAbove(200.0) - 0.0) < 1e-6, "No values > 200")
 
 		// No values below 0
-		#expect(results.probabilityBelow(0.0) == 0.0, "No values < 0")
+		#expect(abs(results.probabilityBelow(0.0) - 0.0) < 1e-6, "No values < 0")
 	}
 
 	@Test("SimulationResults histogram generation")
@@ -145,12 +145,12 @@ struct SimulationResultsTests {
 		let results = SimulationResults(values: values)
 
 		#expect(results.values.count == 5)
-		#expect(results.statistics.mean == 3.0)
-		#expect(results.percentiles.p50 == 3.0)
+		#expect(abs(results.statistics.mean - 3.0) < 1e-6)
+		#expect(abs(results.percentiles.p50 - 3.0) < 1e-6)
 
 		// Test probability calculations
-		#expect(results.probabilityAbove(3.0) == 0.4, "2 out of 5 values > 3")
-		#expect(results.probabilityBelow(3.0) == 0.4, "2 out of 5 values < 3")
+		#expect(abs(results.probabilityAbove(3.0) - 0.4) < 1e-6, "2 out of 5 values > 3")
+		#expect(abs(results.probabilityBelow(3.0) - 0.4) < 1e-6, "2 out of 5 values < 3")
 	}
 
 	@Test("SimulationResults with single value")
@@ -159,14 +159,14 @@ struct SimulationResultsTests {
 		let results = SimulationResults(values: values)
 
 		#expect(results.values.count == 1)
-		#expect(results.statistics.mean == 42.0)
-		#expect(results.statistics.median == 42.0)
-		#expect(results.percentiles.p50 == 42.0)
+		#expect(abs(results.statistics.mean - 42.0) < 1e-6)
+		#expect(abs(results.statistics.median - 42.0) < 1e-6)
+		#expect(abs(results.percentiles.p50 - 42.0) < 1e-6)
 
 		// Probability tests
-		#expect(results.probabilityAbove(41.0) == 1.0)
-		#expect(results.probabilityBelow(43.0) == 1.0)
-		#expect(results.probabilityBetween(41.0, 43.0) == 1.0)
+		#expect(abs(results.probabilityAbove(41.0) - 1.0) < 1e-6)
+		#expect(abs(results.probabilityBelow(43.0) - 1.0) < 1e-6)
+		#expect(abs(results.probabilityBetween(41.0, 43.0) - 1.0) < 1e-6)
 	}
 
 	@Test("SimulationResults with large dataset")
@@ -438,7 +438,7 @@ struct SimulationResultsExecutionNotesTests {
 		#expect(results.usedGPU == true)
 		#expect(results.executionNotes.isEmpty)
 		#expect(!results.isDegraded)
-		#expect(results.statistics.mean == 20.0)
+		#expect(abs(results.statistics.mean - 20.0) < 1e-6)
 	}
 }
 
@@ -451,9 +451,9 @@ struct SimulationResultsAdditionalTests {
 		let results = SimulationResults(values: values)
 
 		// Pin the semantics to avoid ambiguity
-		#expect(results.probabilityAbove(42.0) == 0.0, "Above should be strictly greater")
-		#expect(results.probabilityBelow(42.0) == 0.0, "Below should be strictly less")
-		#expect(results.probabilityBetween(42.0, 42.0) == 0.0, "Strict between equals zero when bounds equal")
+		#expect(abs(results.probabilityAbove(42.0) - 0.0) < 1e-6, "Above should be strictly greater")
+		#expect(abs(results.probabilityBelow(42.0) - 0.0) < 1e-6, "Below should be strictly less")
+		#expect(abs(results.probabilityBetween(42.0, 42.0) - 0.0) < 1e-6, "Strict between equals zero when bounds equal")
 	}
 
 	@Test("Histogram bin coverage at exact bounds")

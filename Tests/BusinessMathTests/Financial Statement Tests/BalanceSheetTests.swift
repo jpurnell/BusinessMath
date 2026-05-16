@@ -307,7 +307,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Current Assets: 80k, Current Liabilities: 20k, Ratio: 4.0
-		#expect(ratio[q1] == 4.0)
+		#expect(abs(ratio[q1]! - 4.0) < 1e-6)
 	}
 
 	@Test("Debt to equity is interest-bearing debt divided by total equity")
@@ -330,7 +330,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Interest-bearing debt: 80k, Equity: 80k, Ratio: 1.0
-		#expect(ratio[q1] == 1.0)
+		#expect(abs(ratio[q1]! - 1.0) < 1e-6)
 	}
 
 	@Test("Equity ratio is total equity divided by total assets")
@@ -476,8 +476,8 @@ struct BalanceSheetTests {
 		#expect(materialized.totalEquity[q1] == 80_000)
 		#expect(materialized.currentAssets[q1] == 80_000)
 		#expect(materialized.currentLiabilities[q1] == 20_000)
-		#expect(materialized.currentRatio[q1] == 4.0)
-		#expect(materialized.debtToEquity[q1] == 1.0)  // Interest-bearing debt (80k) / Equity (80k)
+		#expect(abs(materialized.currentRatio[q1]! - 4.0) < 1e-6)
+		#expect(abs(materialized.debtToEquity[q1]! - 1.0) < 1e-6)  // Interest-bearing debt (80k) / Equity (80k)
 		#expect(materialized.workingCapital[q1] == 60_000)
 	}
 
@@ -519,7 +519,7 @@ struct BalanceSheetTests {
 		// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
 		// = (50k + 30k + 20k - 20k) / 20k
 		// = 80k / 20k = 4.0
-		#expect(quickRatio[q1]! == 4.0, "Quick ratio should be 4.0")
+		#expect(abs(quickRatio[q1]! - 4.0) < 1e-6, "Quick ratio should be 4.0")
 
 		// Quick ratio should be lower than current ratio (due to inventory exclusion)
 		let currentRatio = balanceSheet.currentRatio
@@ -579,7 +579,7 @@ struct BalanceSheetTests {
 
 		// Cash Ratio = Cash / Current Liabilities
 		// = 50k / 20k = 2.5
-		#expect(cashRatio[q1]! == 2.5, "Cash ratio should be 2.5")
+		#expect(abs(cashRatio[q1]! - 2.5) < 1e-6, "Cash ratio should be 2.5")
 
 		// Cash ratio should be lower than both current and quick ratios
 		let currentRatio = balanceSheet.currentRatio
@@ -617,7 +617,7 @@ struct BalanceSheetTests {
 
 		// Cash Ratio = (Cash + Marketable Securities) / Current Liabilities
 		// = (50k + 10k) / 20k = 3.0
-		#expect(cashRatio[q1]! == 3.0, "Cash ratio should include marketable securities")
+		#expect(abs(cashRatio[q1]! - 3.0) < 1e-6, "Cash ratio should include marketable securities")
 	}
 
 	@Test("Cash Ratio - no cash accounts")
@@ -640,7 +640,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// With no cash, cash ratio should be 0
-		#expect(cashRatio[q1]! == 0.0, "Cash ratio should be 0 when no cash accounts exist")
+		#expect(abs(cashRatio[q1]! - 0.0) < 1e-6, "Cash ratio should be 0 when no cash accounts exist")
 	}
 
 	// MARK: - Leverage Ratios (Debt Ratio)
@@ -693,7 +693,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Debt Ratio = 0 / 50k = 0
-		#expect(debtRatio[q1]! == 0.0, "Debt ratio should be 0 with no liabilities")
+		#expect(abs(debtRatio[q1]! - 0.0) < 1e-6, "Debt ratio should be 0 with no liabilities")
 	}
 
 	@Test("Debt Ratio - high leverage")

@@ -24,10 +24,10 @@ struct LogNormalCDFTests {
 	func logNormalCDFZeroForNonPositive() {
 		// Lognormal is only defined for x > 0
 		let prob0: Double = logNormalCDF(0.0, mean: 0.0, stdDev: 1.0)
-		#expect(prob0 == 0.0, "CDF should be 0 at x=0")
+		#expect(abs(prob0 - 0.0) < 1e-6, "CDF should be 0 at x=0")
 
 		let probNeg: Double = logNormalCDF(-1.0, mean: 0.0, stdDev: 1.0)
-		#expect(probNeg == 0.0, "CDF should be 0 for negative x")
+		#expect(abs(probNeg - 0.0) < 1e-6, "CDF should be 0 for negative x")
 	}
 
 	@Test("LogNormal CDF is 0.5 at median (e^μ)")

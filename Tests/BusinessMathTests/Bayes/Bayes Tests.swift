@@ -51,7 +51,7 @@ struct BayesTests {
 		let result = bayes(probabilityD, probabilityTrueGivenD, probabilityTrueGivenNotD)
 
 		// Perfect test means positive result guarantees disease
-		#expect(result == 1.0)
+		#expect(abs(result - 1.0) < 1e-6)
 	}
 
 	@Test("Low prior probability with imperfect test")

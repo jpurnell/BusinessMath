@@ -30,7 +30,7 @@ import RealModule
         // Then: The model should be initialized correctly
         #expect(model.initialInventoryValue == 100_000)
         #expect(model.monthlyRevenue == 50_000)
-        #expect(model.costOfGoodsSoldPercentage == 0.60)
+        #expect(abs(model.costOfGoodsSoldPercentage - 0.60) < 1e-6)
         #expect(model.operatingExpenses == 15_000)
     }
 

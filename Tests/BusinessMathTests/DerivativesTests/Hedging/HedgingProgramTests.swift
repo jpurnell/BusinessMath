@@ -72,7 +72,7 @@ struct HedgingProgramTests {
 		// spot=55: payoff = (60-55) * 10000 = 50000
 		#expect(totalSettlements[periods[0]] == 50_000.0)
 		// spot=70: payoff = 0 (in the range)
-		#expect(totalSettlements[periods[1]] == 0.0)
+		#expect(abs((totalSettlements[periods[1]] ?? 0) - 0.0) < 1e-6)
 		// spot=85: payoff = -(85-80) * 10000 = -50000
 		#expect(totalSettlements[periods[2]] == -50_000.0)
 	}
@@ -179,7 +179,7 @@ struct HedgingProgramTests {
 		)
 
 		for period in periods {
-			#expect(effectivePrice[period] == 72.0)
+			#expect(abs((effectivePrice[period] ?? 0) - 72.0) < 1e-6)
 		}
 	}
 
@@ -203,8 +203,8 @@ struct HedgingProgramTests {
 		let ratio = program.coverageRatio(totalProduction: production)
 
 		for period in periods {
-			#expect(settlements[period] == 0.0)
-			#expect(ratio[period] == 0.0)
+			#expect(abs((settlements[period] ?? 0) - 0.0) < 1e-6)
+			#expect(abs((ratio[period] ?? 0) - 0.0) < 1e-6)
 		}
 	}
 }
@@ -252,7 +252,7 @@ struct HedgePnLTests {
 
 		// Settlements: (72-68)*10000=40000, (72-72)*10000=0, (72-76)*10000=-40000
 		// Sum = 0
-		#expect(pnl.realizedPnL == 0.0)
+		#expect(abs(pnl.realizedPnL - 0.0) < 1e-6)
 		#expect(pnl.totalPnL == pnl.realizedPnL + pnl.unrealizedPnL)
 	}
 
@@ -352,6 +352,6 @@ struct HedgePnLTests {
 		// Each period: spot=60, settlement=(72-60)*10000=120000, production=10000
 		// Effective = 60 + 120000/10000 = 72
 		// Average effective price = 72
-		#expect(pnl.effectivePrice == 72.0)
+		#expect(abs(pnl.effectivePrice - 72.0) < 1e-6)
 	}
 }

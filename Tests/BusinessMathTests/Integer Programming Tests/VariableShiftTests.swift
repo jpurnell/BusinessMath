@@ -27,7 +27,7 @@ struct VariableShiftTests {
         let shift = try extractVariableShift(from: constraints, dimension: 1)
 
         #expect(!shift.needsShift, "Should not need shift for x ∈ [0, 10]")
-        #expect(shift.shifts == [0.0], "Shift should be zero")
+        #expect(shift.shifts.count == 1 && abs(shift.shifts[0] - 0.0) < 1e-6, "Shift should be zero")
     }
 
     @Test("Shift for negative lower bound")
@@ -40,7 +40,7 @@ struct VariableShiftTests {
         let shift = try extractVariableShift(from: constraints, dimension: 1)
 
         #expect(shift.needsShift, "Should need shift for x ≥ -3")
-        #expect(shift.shifts == [-3.0], "Shift should be -3")
+        #expect(shift.shifts.count == 1 && abs(shift.shifts[0] - (-3.0)) < 1e-6, "Shift should be -3")
     }
 
     @Test("Multiple variables with mixed bounds")
@@ -55,7 +55,7 @@ struct VariableShiftTests {
         let shift = try extractVariableShift(from: constraints, dimension: 2)
 
         #expect(shift.needsShift, "Should need shift for y ≥ -5")
-        #expect(shift.shifts == [0.0, -5.0], "First variable no shift, second shifted by -5")
+        #expect(shift.shifts.count == 2 && abs(shift.shifts[0] - 0.0) < 1e-6 && abs(shift.shifts[1] - (-5.0)) < 1e-6, "First variable no shift, second shifted by -5")
     }
 
     @Test("All variables have negative bounds")
@@ -70,7 +70,7 @@ struct VariableShiftTests {
         let shift = try extractVariableShift(from: constraints, dimension: 2)
 
         #expect(shift.needsShift)
-        #expect(shift.shifts == [-10.0, -20.0])
+        #expect(shift.shifts.count == 2 && abs(shift.shifts[0] - (-10.0)) < 1e-6 && abs(shift.shifts[1] - (-20.0)) < 1e-6)
     }
 
     @Test("No explicit lower bound defaults to zero")
@@ -83,7 +83,7 @@ struct VariableShiftTests {
         let shift = try extractVariableShift(from: constraints, dimension: 1)
 
         #expect(!shift.needsShift, "Should assume x ≥ 0 when no lower bound given")
-        #expect(shift.shifts == [0.0])
+        #expect(shift.shifts.count == 1 && abs(shift.shifts[0] - 0.0) < 1e-6)
     }
 
     // MARK: - Point Transformation Tests
@@ -96,7 +96,7 @@ struct VariableShiftTests {
         let original = VectorN([-3.0])  // x = -3 (at lower bound)
         let shifted = shift.shiftPoint(original)
 
-        #expect(shifted.toArray() == [0.0], "x = -3 should shift to y = 0")
+        #expect(shifted.toArray().count == 1 && abs(shifted.toArray()[0] - 0.0) < 1e-6, "x = -3 should shift to y = 0")
     }
 
     @Test("Shift point backward")
@@ -107,7 +107,7 @@ struct VariableShiftTests {
         let shifted = VectorN([0.0])  // y = 0
         let original = shift.unshiftPoint(shifted)
 
-        #expect(original.toArray() == [-3.0], "y = 0 should unshift to x = -3")
+        #expect(original.toArray().count == 1 && abs(original.toArray()[0] - (-3.0)) < 1e-6, "y = 0 should unshift to x = -3")
     }
 
     @Test("Round-trip transformation")
@@ -135,7 +135,7 @@ struct VariableShiftTests {
         let original = VectorN([-10.0, -20.0])  // At lower bounds
         let shifted = shift.shiftPoint(original)
 
-        #expect(shifted.toArray() == [0.0, 0.0], "Should shift to origin")
+        #expect(shifted.toArray().count == 2 && abs(shifted.toArray()[0] - 0.0) < 1e-6 && abs(shifted.toArray()[1] - 0.0) < 1e-6, "Should shift to origin")
     }
 
     // MARK: - Objective Transformation Tests
@@ -152,7 +152,7 @@ struct VariableShiftTests {
         let transformedCoeffs = shift.transformObjectiveCoefficients(originalCoeffs)
 
         // Coefficients themselves don't change for linear objectives
-        #expect(transformedCoeffs == [2.0, 3.0],
+        #expect(transformedCoeffs.count == 2 && abs(transformedCoeffs[0] - 2.0) < 1e-6 && abs(transformedCoeffs[1] - 3.0) < 1e-6,
                 "Linear objective coefficients unchanged by shift")
     }
 
@@ -174,8 +174,8 @@ struct VariableShiftTests {
         let canonical = transformed.toCanonicalForm()
 
         // x' ≥ 0  →  -x' ≤ 0
-        #expect(canonical.coefficients == [-1.0])
-        #expect(canonical.constant == 0.0)
+        #expect(canonical.coefficients.count == 1 && abs(canonical.coefficients[0] - (-1.0)) < 1e-6)
+        #expect(abs(canonical.constant - 0.0) < 1e-6)
     }
 
     @Test("Transform constraint: x ≤ 5 with shift")
@@ -194,7 +194,7 @@ struct VariableShiftTests {
         let canonical = transformed.toCanonicalForm()
 
         // x' ≤ 8  →  x' - 8 ≤ 0
-        #expect(canonical.coefficients == [1.0])
+        #expect(canonical.coefficients.count == 1 && abs(canonical.coefficients[0] - 1.0) < 1e-6)
         #expect(abs(canonical.constant - (-8.0)) < 1e-10,
                 "Expected -8.0, got \(canonical.constant)")
     }
@@ -216,7 +216,7 @@ struct VariableShiftTests {
         let canonical = transformed.toCanonicalForm()
 
         // 2x' + 3y' ≤ 20  →  2x' + 3y' - 20 ≤ 0
-        #expect(canonical.coefficients == [2.0, 3.0])
+        #expect(canonical.coefficients.count == 2 && abs(canonical.coefficients[0] - 2.0) < 1e-6 && abs(canonical.coefficients[1] - 3.0) < 1e-6)
         #expect(abs(canonical.constant - (-20.0)) < 1e-10)
     }
 
@@ -230,8 +230,8 @@ struct VariableShiftTests {
         let shifted = shift.shiftPoint(point)
         let unshifted = shift.unshiftPoint(point)
 
-        #expect(shifted.toArray() == [5.0, 7.0])
-        #expect(unshifted.toArray() == [5.0, 7.0])
+        #expect(shifted.toArray().count == 2 && abs(shifted.toArray()[0] - 5.0) < 1e-6 && abs(shifted.toArray()[1] - 7.0) < 1e-6)
+        #expect(unshifted.toArray().count == 2 && abs(unshifted.toArray()[0] - 5.0) < 1e-6 && abs(unshifted.toArray()[1] - 7.0) < 1e-6)
     }
 
     @Test("Large negative bounds")
@@ -242,11 +242,11 @@ struct VariableShiftTests {
 
         let shift = try extractVariableShift(from: constraints, dimension: 1)
 
-        #expect(shift.shifts == [-1000.0])
+        #expect(shift.shifts.count == 1 && abs(shift.shifts[0] - (-1000.0)) < 1e-2)
 
         let original = VectorN([-1000.0])
         let shifted = shift.shiftPoint(original)
-        #expect(shifted.toArray() == [0.0])
+        #expect(shifted.toArray().count == 1 && abs(shifted.toArray()[0] - 0.0) < 1e-6)
     }
 
     @Test("Fractional negative bounds")
@@ -257,7 +257,7 @@ struct VariableShiftTests {
 
         let shift = try extractVariableShift(from: constraints, dimension: 1)
 
-        #expect(shift.shifts == [-2.5])
+        #expect(shift.shifts.count == 1 && abs(shift.shifts[0] - (-2.5)) < 1e-6)
     }
 
     // MARK: - Solution Verification Tests
@@ -274,7 +274,7 @@ struct VariableShiftTests {
         let shiftedSolution = VectorN([0.0])  // x' = 0
         let originalSolution = shift.unshiftPoint(shiftedSolution)
 
-        #expect(originalSolution.toArray()[0] == -3.0)
+        #expect(abs(originalSolution.toArray()[0] - (-3.0)) < 1e-6)
 
         // Verify satisfies original constraints
         #expect(originalSolution.toArray()[0] >= -3.0)
@@ -291,6 +291,6 @@ struct VariableShiftTests {
         let shiftedSolution = VectorN([5.0])  // x' = 5
         let originalSolution = shift.unshiftPoint(shiftedSolution)
 
-        #expect(originalSolution.toArray()[0] == 2.0)
+        #expect(abs(originalSolution.toArray()[0] - 2.0) < 1e-6)
     }
 }

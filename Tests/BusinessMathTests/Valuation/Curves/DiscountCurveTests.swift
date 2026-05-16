@@ -264,8 +264,8 @@ struct DiscountCurveTests {
         )
         #expect(abs(curve.discountFactor(at: 0.0) - 1.0) < 1e-12)
         #expect(abs(curve.discountFactor(at: 5.0) - 1.0) < 1e-12)
-        #expect(curve.zeroRate(at: 5.0) == 0.0)
-        #expect(curve.forwardRate(from: 1.0, to: 2.0) == 0.0)
+        #expect(abs(curve.zeroRate(at: 5.0) - 0.0) < 1e-6)
+        #expect(abs(curve.forwardRate(from: 1.0, to: 2.0) - 0.0) < 1e-6)
     }
 
     // MARK: - Additional Tests

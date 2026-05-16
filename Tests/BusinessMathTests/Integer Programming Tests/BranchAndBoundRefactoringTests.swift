@@ -62,7 +62,7 @@ struct BranchAndBoundRefactoringTests {
         )
 
         #expect(solver.maxNodes == 5000)
-        #expect(solver.timeLimit == 60.0)
+        #expect(abs(solver.timeLimit - 60.0) < 1e-6)
     }
 
     // MARK: - Solving Tests

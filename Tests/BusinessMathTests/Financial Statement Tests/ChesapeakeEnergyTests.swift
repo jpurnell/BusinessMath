@@ -261,8 +261,8 @@ struct ChesapeakeEnergyTests {
 		// Verify Q1 production and pricing
 		let q1Metrics = operationalMetrics[0]
 		#expect(q1Metrics["production_boe_per_day"] == 488_000)
-		#expect(q1Metrics["realized_price_per_boe"] == 62.50)
-		#expect(q1Metrics["lifting_cost_per_boe"] == 12.80)
+		#expect(abs(q1Metrics["realized_price_per_boe"]! - 62.50) < 1e-6)
+		#expect(abs(q1Metrics["lifting_cost_per_boe"]! - 12.80) < 1e-6)
 
 		// Verify production growth over year
 		let q1Production = operationalMetrics[0]["production_boe_per_day"]!

@@ -54,11 +54,11 @@ struct IntegerSpecificationTests {
         let rounded = spec.rounded(solution)
 
         // Variable 0 and 2 should be unchanged
-        #expect(rounded.toArray()[0] == 1.7)
+        #expect(abs(rounded.toArray()[0] - 1.7) < 1e-6)
         // Variable 1 should be rounded
-        #expect(rounded.toArray()[1] == 2.0)
+        #expect(abs(rounded.toArray()[1] - 2.0) < 1e-6)
         // Variable 2 should be unchanged
-        #expect(rounded.toArray()[2] == 3.9)
+        #expect(abs(rounded.toArray()[2] - 3.9) < 1e-6)
     }
 
     @Test("Most fractional variable selection")

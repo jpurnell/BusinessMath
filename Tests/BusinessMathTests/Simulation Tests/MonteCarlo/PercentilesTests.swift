@@ -55,9 +55,9 @@ struct PercentilesTests {
 		let values = [1.0, 2.0, 3.0, 4.0, 5.0]
 		let percentiles = try Percentiles(values: values)
 
-		#expect(percentiles.p50 == 3.0, "Median of [1,2,3,4,5] should be 3")
-		#expect(percentiles.min == 1.0)
-		#expect(percentiles.max == 5.0)
+		#expect(abs(percentiles.p50 - 3.0) < 1e-6, "Median of [1,2,3,4,5] should be 3")
+		#expect(abs(percentiles.min - 1.0) < 1e-6)
+		#expect(abs(percentiles.max - 5.0) < 1e-6)
 	}
 
 	@Test("Percentiles with single value")
@@ -67,11 +67,11 @@ struct PercentilesTests {
 		let percentiles = try Percentiles(values: values)
 
 		// All percentiles should equal the single value
-		#expect(percentiles.p5 == 42.0)
-		#expect(percentiles.p50 == 42.0)
-		#expect(percentiles.p95 == 42.0)
-		#expect(percentiles.min == 42.0)
-		#expect(percentiles.max == 42.0)
+		#expect(abs(percentiles.p5 - 42.0) < 1e-6)
+		#expect(abs(percentiles.p50 - 42.0) < 1e-6)
+		#expect(abs(percentiles.p95 - 42.0) < 1e-6)
+		#expect(abs(percentiles.min - 42.0) < 1e-6)
+		#expect(abs(percentiles.max - 42.0) < 1e-6)
 	}
 
 	@Test("Percentiles with all same values")
@@ -81,11 +81,11 @@ struct PercentilesTests {
 		let percentiles = try Percentiles(values: values)
 
 		// All percentiles should equal the constant value
-		#expect(percentiles.p5 == 100.0)
-		#expect(percentiles.p25 == 100.0)
-		#expect(percentiles.p50 == 100.0)
-		#expect(percentiles.p75 == 100.0)
-		#expect(percentiles.p95 == 100.0)
+		#expect(abs(percentiles.p5 - 100.0) < 1e-6)
+		#expect(abs(percentiles.p25 - 100.0) < 1e-6)
+		#expect(abs(percentiles.p50 - 100.0) < 1e-6)
+		#expect(abs(percentiles.p75 - 100.0) < 1e-6)
+		#expect(abs(percentiles.p95 - 100.0) < 1e-6)
 	}
 
 	@Test("Interquartile range (IQR) calculation")
@@ -121,9 +121,9 @@ struct PercentilesTests {
 		let values = [-50.0, -25.0, 0.0, 25.0, 50.0, 75.0, 100.0]
 		let percentiles = try Percentiles(values: values)
 
-		#expect(percentiles.min == -50.0)
-		#expect(percentiles.max == 100.0)
-		#expect(percentiles.p50 == 25.0, "Median should be 25")
+		#expect(abs(percentiles.min - (-50.0)) < 1e-6)
+		#expect(abs(percentiles.max - 100.0) < 1e-6)
+		#expect(abs(percentiles.p50 - 25.0) < 1e-6, "Median should be 25")
 	}
 
 	@Test("Percentiles with large dataset")
@@ -183,8 +183,8 @@ struct PercentilesTests {
 		let values = [1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0, 4.0, 4.0, 5.0]
 		let percentiles = try Percentiles(values: values)
 
-		#expect(percentiles.min == 1.0)
-		#expect(percentiles.max == 5.0)
+		#expect(abs(percentiles.min - 1.0) < 1e-6)
+		#expect(abs(percentiles.max - 5.0) < 1e-6)
 		// Median should be around 3
 		#expect(percentiles.p50 >= 2.0 && percentiles.p50 <= 4.0)
 	}
@@ -215,7 +215,7 @@ struct PercentilesAdditionalTests {
 
 		// Verify valid percentile calculation works (R-7 linear interpolation)
 		// For values [1,2,...,10], p10 = 1.0 + 0.9*(2.0-1.0) = 1.9
-		#expect(p.percentile(0.1) == 1.9, "10th percentile should be 1.9")
+		#expect(abs(p.percentile(0.1) - 1.9) < 1e-6, "10th percentile should be 1.9")
 
 		// Verify clamping behavior for out-of-range values
 		// percentile < 0 should return min
@@ -234,9 +234,9 @@ struct PercentilesAdditionalTests {
 	@Test("Happy path still works with non-empty finite data")
 	func happyPath() throws {
 			let p = try Percentiles(values: [3.0, 1.0, 2.0, 4.0, 5.0])
-			#expect(p.min == 1.0)
-			#expect(p.max == 5.0)
-			#expect(p.p50 == 3.0)
+			#expect(abs(p.min - 1.0) < 1e-6)
+			#expect(abs(p.max - 5.0) < 1e-6)
+			#expect(abs(p.p50 - 3.0) < 1e-6)
 			#expect(p.interquartileRange > 0.0)
 			// Boundary semantics preserved
 			#expect(p.percentile(0.0) == p.min)

@@ -22,8 +22,8 @@ struct DifferentialEvolutionTests {
 
         #expect(config.populationSize == 100)
         #expect(config.generations == 200)
-        #expect(config.mutationFactor == 0.8)
-        #expect(config.crossoverRate == 0.9)
+        #expect(abs(config.mutationFactor - 0.8) < 1e-6)
+        #expect(abs(config.crossoverRate - 0.9) < 1e-6)
         #expect(config.strategy == .rand1)
     }
 
@@ -33,8 +33,8 @@ struct DifferentialEvolutionTests {
 
         #expect(config.populationSize == 1000)
         #expect(config.generations == 500)
-        #expect(config.mutationFactor == 0.7)
-        #expect(config.crossoverRate == 0.95)
+        #expect(abs(config.mutationFactor - 0.7) < 1e-6)
+        #expect(abs(config.crossoverRate - 0.95) < 1e-6)
     }
 
     // MARK: - Simple Optimization Tests

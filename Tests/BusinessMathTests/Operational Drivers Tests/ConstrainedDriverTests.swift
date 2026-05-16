@@ -116,7 +116,7 @@ struct ConstrainedDriverTests {
 		let period = Period.month(year: 2025, month: 1)
 		let value = floored.sample(for: period)
 
-		#expect(value == 47.0)
+		#expect(abs(value - 47.0) < 1e-6)
 	}
 
 	@Test("Ceiling driver rounds up")
@@ -127,7 +127,7 @@ struct ConstrainedDriverTests {
 		let period = Period.month(year: 2025, month: 1)
 		let value = ceiling.sample(for: period)
 
-		#expect(value == 48.0)
+		#expect(abs(value - 48.0) < 1e-6)
 	}
 
 	// MARK: - Transformed Tests
@@ -142,7 +142,7 @@ struct ConstrainedDriverTests {
 		let period = Period.month(year: 2025, month: 1)
 		let value = transformed.sample(for: period)
 
-		#expect(value == 200.0)
+		#expect(abs(value - 200.0) < 1e-6)
 	}
 
 	@Test("Transformed driver with complex logic")
@@ -364,15 +364,15 @@ struct ConstrainedDriverAdditionalTests {
 		let negHalf = DeterministicDriver(name: "Half-", value: -2.5).rounded()
 
 		let p = Period.month(year: 2025, month: 1)
-		#expect(posHalf.sample(for: p) == 3.0)
-		#expect(negHalf.sample(for: p) == -3.0)
+		#expect(abs(posHalf.sample(for: p) - 3.0) < 1e-6)
+		#expect(abs(negHalf.sample(for: p) - (-3.0)) < 1e-6)
 	}
 
 	@Test("Positive clamps deterministic negatives to zero")
 	func positiveClampsDeterministic() {
 		let neg = DeterministicDriver(name: "Neg", value: -42.0).positive()
 		let p = Period.month(year: 2025, month: 1)
-		#expect(neg.sample(for: p) == 0.0)
+		#expect(abs(neg.sample(for: p) - 0.0) < 1e-6)
 	}
 
 	@Test("Clamp does not change values within bounds")
@@ -380,7 +380,7 @@ struct ConstrainedDriverAdditionalTests {
 		let base = DeterministicDriver(name: "Value", value: 42.0)
 		let clamped = base.clamped(min: 0.0, max: 100.0)
 		let p = Period.month(year: 2025, month: 1)
-		#expect(clamped.sample(for: p) == 42.0)
+		#expect(abs(clamped.sample(for: p) - 42.0) < 1e-6)
 	}
 
 	@Test("Floor and ceiling on negatives behave correctly")
@@ -389,8 +389,8 @@ struct ConstrainedDriverAdditionalTests {
 		let ceilDrv = DeterministicDriver(name: "Neg", value: -3.2).ceiling()
 
 		let p = Period.month(year: 2025, month: 1)
-		#expect(floorDrv.sample(for: p) == -4.0)
-		#expect(ceilDrv.sample(for: p) == -3.0)
+		#expect(abs(floorDrv.sample(for: p) - (-4.0)) < 1e-6)
+		#expect(abs(ceilDrv.sample(for: p) - (-3.0)) < 1e-6)
 	}
 
 	@Test("Percentiles consistent with min/max after clamping")

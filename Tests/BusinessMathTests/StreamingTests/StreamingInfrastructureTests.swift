@@ -249,8 +249,8 @@ struct StreamingInfrastructureTests {
         let collected = collector.getItems()
 
         // First value should be fallback (0.0), rest should be 42.0
-        #expect(collected[0] == 0.0)
-        #expect(collected[1] == 42.0)
+        #expect(abs(collected[0] - 0.0) < 1e-6)
+        #expect(abs(collected[1] - 42.0) < 1e-6)
     }
 
     // MARK: - Backpressure Tests

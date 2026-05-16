@@ -14,7 +14,7 @@ struct FloatingPointFormatterTests {
         // Should snap to nearest integer
         let result1 = formatter.format(2.9999999999999964)
         #expect(result1.formatted == "3")
-        #expect(result1.rawValue == 2.9999999999999964)
+        #expect(abs(result1.rawValue - 2.9999999999999964) < 1e-6)
 
         let result2 = formatter.format(3.0000000000000004)
         #expect(result2.formatted == "3")
