@@ -713,7 +713,7 @@ private func gatherLevelInfo<T: Real>(_ data: NestedData<T>, depth: Int) -> [[[I
 	return info
 }
 
-private func gatherLevelInfoHelper<T: Real>(
+private func gatherLevelInfoHelper<T: Real>( // recursion:safe — tree traversal with .observations leaf as base case
 	_ node: NestedData<T>,
 	level: Int,
 	depth: Int,

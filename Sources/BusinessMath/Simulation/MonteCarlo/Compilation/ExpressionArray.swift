@@ -369,7 +369,7 @@ extension ExpressionBuilder {
     ///     value * (1.0 + builder[0])
     /// }
     /// ```
-    public func forEach<R: RangeExpression>(
+    public func forEach<R: RangeExpression>( // recursion:safe — forwards Double overload to ExpressionProxy overload (different signature)
         _ range: R,
         initial: Double,
         body: (Int, ExpressionProxy) -> ExpressionProxy

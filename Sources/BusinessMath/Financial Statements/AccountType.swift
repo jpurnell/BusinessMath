@@ -99,29 +99,37 @@ public enum AssetType: String, Codable, Equatable, Sendable {
 	// MARK: - Current Assets
 
 	/// Cash and cash equivalents (liquid assets).
+	// LIVE: public API enum case for asset account classification
 	case cashAndEquivalents
 
 	/// Accounts receivable (amounts owed by customers).
+	// LIVE: public API enum case for asset account classification
 	case accountsReceivable
 
 	/// Inventory (goods held for sale).
+	// LIVE: public API enum case for asset account classification
 	case inventory
 
 	/// Other current assets (prepaid expenses, etc.).
+	// LIVE: public API enum case for asset account classification
 	case otherCurrentAsset
 
 	// MARK: - Long-Term Assets
 
 	/// Property, plant, and equipment (fixed assets).
+	// LIVE: public API enum case for asset account classification
 	case propertyPlantEquipment
 
 	/// Intangible assets (patents, goodwill, etc.).
+	// LIVE: public API enum case for asset account classification
 	case intangibleAssets
 
 	/// Long-term investments.
+	// LIVE: public API enum case for asset account classification
 	case investments
 
 	/// Other long-term assets.
+	// LIVE: public API enum case for asset account classification
 	case otherLongTermAsset
 }
 
@@ -141,35 +149,45 @@ public enum LiabilityType: String, Codable, Equatable, Sendable {
 	// MARK: - Current Liabilities
 
 	/// Accounts payable (amounts owed to suppliers).
+	// LIVE: public API enum case for liability account classification
 	case accountsPayable
 
 	/// Accrued expenses (wages, utilities, etc.).
+	// LIVE: public API enum case for liability account classification
 	case accruedExpenses
 
 	/// Short-term debt (debt maturing within 1 year).
+	// LIVE: public API enum case for liability account classification
 	case shortTermDebt
 
 	/// Current portion of long-term debt.
+	// LIVE: public API enum case for liability account classification
 	case currentPortionLongTermDebt
 
 	/// Other current liabilities.
+	// LIVE: public API enum case for liability account classification
 	case otherCurrentLiability
 
 	// MARK: - Long-Term Liabilities
 
 	/// Long-term debt (loans, term debt).
+	// LIVE: public API enum case for liability account classification
 	case longTermDebt
 
 	/// Bonds payable.
+	// LIVE: public API enum case for liability account classification
 	case bonds
 
 	/// Capital lease obligations.
+	// LIVE: public API enum case for liability account classification
 	case capitalLeases
 
 	/// Preferred stock (treated as quasi-debt for capital structure).
+	// LIVE: public API enum case for liability account classification
 	case preferredStock
 
 	/// Other long-term liabilities.
+	// LIVE: public API enum case for liability account classification
 	case otherLongTermLiability
 }
 
@@ -187,18 +205,23 @@ public enum LiabilityType: String, Codable, Equatable, Sendable {
 /// ```
 public enum ExpenseType: String, Codable, Equatable, Sendable {
 	/// Cost of goods sold (direct costs of production).
+	// LIVE: public API enum case for expense account classification
 	case costOfGoodsSold
 
 	/// Operating expenses (SG&A, R&D, etc.).
+	// LIVE: public API enum case for expense account classification
 	case operatingExpense
 
 	/// Depreciation and amortization.
+	// LIVE: public API enum case for expense account classification
 	case depreciationAmortization
 
 	/// Interest expense.
+	// LIVE: public API enum case for expense account classification
 	case interestExpense
 
 	/// Tax expense.
+	// LIVE: public API enum case for expense account classification
 	case taxExpense
 }
 

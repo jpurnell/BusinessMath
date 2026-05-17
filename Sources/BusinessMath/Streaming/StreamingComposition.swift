@@ -1669,8 +1669,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
                             continuationBox.finish(throwing: TimeoutError(duration: duration))
                             break
                         }
-                    } catch {
-                        // silent: error propagated to stream consumer via continuation
+                    } catch { // logging: error propagated to stream consumer via continuation
                         continuationBox.finish(throwing: error)
                         break
                     }

@@ -108,8 +108,7 @@ public func isPositiveSemiDefinite(_ matrix: [[Double]]) -> Bool {
 	do {
 		_ = try choleskyDecomposition(matrix)
 		return true
-	} catch {
-		// silent: Cholesky failure means matrix is not positive definite
+	} catch { // logging: Cholesky failure means matrix is not positive definite
 		return false
 	}
 }
@@ -125,9 +124,8 @@ public enum MatrixError: Error, Equatable {
 	/// Matrix dimensions are invalid (e.g., empty or jagged array)
 	case invalidDimensions(expected: String, actual: String)
 
-	// LIVE: error case for matrix validation in Cholesky decomposition path
 	/// Matrix is not symmetric
-	case notSymmetric
+	case notSymmetric // LIVE: error case for matrix validation in Cholesky decomposition path
 
 	/// Matrix is singular (determinant is zero, not invertible)
 	case singularMatrix

@@ -168,7 +168,8 @@ public struct BytecodeCompiler {
     }
 
     /// Recursive compilation helper (post-order traversal)
-    private static func compileRecursive(_ expr: Expression, into bytecode: inout [Bytecode]) throws {
+    private static func compileRecursive(_ expr: Expression, into bytecode: inout [Bytecode]) throws { // recursion:safe — AST traversal with .input/.constant leaf cases
+
         switch expr {
         case .input(let index):
             bytecode.append(.input(index))
@@ -308,17 +309,14 @@ public struct BytecodeCompiler {
 
 /// Errors that can occur during bytecode compilation
 public enum CompilationError: Error {
-    // LIVE: thrown during compilation when expression nesting exceeds GPU stack limit
     /// Expression tree is too deep (stack overflow risk)
-    case expressionTooDeep
+    case expressionTooDeep // LIVE: thrown during compilation when expression nesting exceeds GPU stack limit
 
-    // LIVE: thrown during compilation when expression references out-of-range input
     /// Expression references invalid input index
-    case invalidInputIndex(Int)
+    case invalidInputIndex(Int) // LIVE: thrown during compilation when expression references out-of-range input
 
-    // LIVE: thrown during compilation for unrecognized expression nodes
     /// Expression contains unsupported operation
-    case unsupportedOperation(String)
+    case unsupportedOperation(String) // LIVE: thrown during compilation for unrecognized expression nodes
 }
 
 // MARK: - Bytecode Analysis

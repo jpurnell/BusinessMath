@@ -348,7 +348,7 @@
 		///   - constraints: The constraints to satisfy.
 		///   - bounds: Optional bounds.
 		/// - Returns: A feasible value that satisfies constraints.
-		private func projectToFeasibleRegion(
+		private func projectToFeasibleRegion( // LIVE: constrained Newton-Raphson feasibility projection used by optimization consumers
 			_ value: T,
 			constraints: [Constraint<T>],
 			bounds: (lower: T, upper: T)?

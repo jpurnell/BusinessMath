@@ -149,8 +149,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         // swiftlint:disable:next force_try
         do {
             return try DenseMatrix(matrix)
-        } catch {
-            // silent: unreachable for a well-formed identity matrix
+        } catch { // logging: unreachable for a well-formed identity matrix
             return DenseMatrix(rows: size, columns: size, repeating: T(0))
         }
     }
@@ -171,8 +170,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         // Safe: we constructed a rectangular matrix, so init cannot throw
         do {
             return try DenseMatrix(matrix)
-        } catch {
-            // silent: unreachable for a well-formed diagonal matrix
+        } catch { // logging: unreachable for a well-formed diagonal matrix
             return DenseMatrix(rows: n, columns: n, repeating: T(0))
         }
     }
@@ -187,7 +185,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
     ///
     /// - Returns: Element at the specified position
     ///
-    /// - Throws: ``MatrixError/indexOutOfBounds`` if row or column is out of bounds
+    /// - Throws: ``MatrixError/invalidDimensions(expected:actual:)`` if row or column is out of bounds
     ///
     /// - Complexity: O(1)
     public func element(atRow row: Int, column: Int) throws -> T {
@@ -348,8 +346,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         // Safe: transposed array is always rectangular
         do {
             return try DenseMatrix(result)
-        } catch {
-            // silent: unreachable for a well-formed transposed matrix
+        } catch { // logging: unreachable for a well-formed transposed matrix
             return DenseMatrix(rows: columns, columns: rows, repeating: T(0))
         }
     }
@@ -500,8 +497,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
         // Safe: result array is always rectangular
         do {
             return try DenseMatrix(result)
-        } catch {
-            // silent: unreachable for a well-formed rectangular result
+        } catch { // logging: unreachable for a well-formed rectangular result
             return DenseMatrix(rows: matrix.rows, columns: matrix.columns, repeating: T(0))
         }
     }

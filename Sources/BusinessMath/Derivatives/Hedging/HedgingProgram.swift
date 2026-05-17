@@ -18,9 +18,8 @@ import Numerics
 public protocol HedgeInstrument: Sendable {
 	associatedtype Value: Real & Sendable & Codable
 
-	// LIVE: protocol requirement used by HedgingProgram for coverage calculation
 	/// The periods over which the instrument settles.
-	var settlementPeriods: [Period] { get }
+	var settlementPeriods: [Period] { get } // LIVE: protocol requirement used by HedgingProgram for coverage calculation
 
 	/// Calculates the settlement amount for a single spot price observation.
 	///

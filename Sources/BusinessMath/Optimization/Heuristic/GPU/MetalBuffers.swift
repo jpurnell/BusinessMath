@@ -152,22 +152,20 @@ internal final class MetalBuffers {
         }
     }
 
-    // LIVE: GPU result retrieval for fitness evaluation pipeline
     /// Download fitness values from GPU to CPU.
     ///
     /// - Returns: Fitness values (one per individual)
-    func downloadFitness() -> [Float] {
+    func downloadFitness() -> [Float] { // LIVE: GPU result retrieval for fitness evaluation pipeline
         let pointer = fitness.contents().bindMemory(to: Float.self, capacity: populationSize)
         return Array(UnsafeBufferPointer(start: pointer, count: populationSize))
     }
 
     // MARK: - Buffer Swapping
 
-    // LIVE: ping-pong buffer management for GPU evolution pipeline
     /// Swap population buffers for ping-pong update pattern.
     ///
     /// After evolving population from A → B, swap so B becomes the new A.
-    func swapPopulationBuffers() {
+    func swapPopulationBuffers() { // LIVE: ping-pong buffer management for GPU evolution pipeline
         swap(&populationA, &populationB)
     }
 
@@ -181,9 +179,8 @@ internal final class MetalBuffers {
         return populationBytes + fitnessBytes + seedBytes
     }
 
-    // LIVE: diagnostic output for GPU memory monitoring
     /// Total GPU memory allocated (formatted string).
-    var memoryDescription: String {
+    var memoryDescription: String { // LIVE: diagnostic output for GPU memory monitoring
         let bytes = totalMemoryAllocated
         let mb = Double(bytes) / (1024 * 1024) // fp-safety:disable
         return "\(mb.number(2)) MB"

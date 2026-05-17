@@ -80,7 +80,7 @@ public struct FloatingPointFormatter: Sendable {
     /// Format an array of values
     /// - Parameter values: The values to format
     /// - Returns: Array of FormattedValues
-    public func format(_ values: [Double]) -> [FormattedValue<Double>] {
+    public func format(_ values: [Double]) -> [FormattedValue<Double>] { // recursion:safe — maps [Double] overload to scalar Double overload
         values.map { format($0) }
     }
 

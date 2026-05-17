@@ -291,7 +291,8 @@ struct ModelValidationEdgeCaseTests {
 		let yMin = yValues.min()!
 
 		// With low noise (sigma=0.05), y values should roughly span from ~0.03 to ~2
-		#expect(yMax > 0.5, "Maximum y should reflect small x values")
+		// Use conservative bound: 100 uniform samples in [1,100] almost always yield x < 10
+		#expect(yMax > 0.1, "Maximum y should reflect small x values")
 		#expect(yMin < 1.0, "Minimum y should reflect large x values")
 	}
 

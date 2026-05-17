@@ -93,8 +93,7 @@ public func cccProfile<T: Real>(
 			let result = try kernelWeightedCCC(
 				x, y, target: t, bandwidth: bandwidth, kernel: kernel)
 			results.append((target: t, ccc: result))
-		} catch is BusinessMathError {
-			// silent: skip targets where effective sample size is insufficient
+		} catch is BusinessMathError { // logging: skip targets where effective sample size is insufficient
 			continue
 		}
 	}

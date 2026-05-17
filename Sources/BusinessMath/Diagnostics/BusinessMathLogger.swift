@@ -48,7 +48,6 @@ public extension Logger {
         category: "general"
     )
 
-    // LIVE: category logger used by consumers for model execution tracing
     /// Logger for model execution and building operations
     ///
     /// Use this to track model creation, builder operations, and structural changes.
@@ -57,12 +56,11 @@ public extension Logger {
     /// ```swift
     /// Logger.modelExecution.info("Building financial model with 3 revenue streams")
     /// ```
-    static let modelExecution = Logger(
+    static let modelExecution = Logger( // LIVE: category logger used by consumers for model execution tracing
         subsystem: "com.justinpurnell.BusinessMath",
 		category: "model-execution"
     )
 
-    // LIVE: category logger used by consumers for calculation tracing
     /// Logger for mathematical calculations and formulas
     ///
     /// Use this to trace calculation steps, formulas, and numerical operations.
@@ -71,12 +69,11 @@ public extension Logger {
     /// ```swift
     /// Logger.calculations.debug("Calculating NPV with discount rate: \(rate)")
     /// ```
-    static let calculations = Logger(
+    static let calculations = Logger( // LIVE: category logger used by consumers for calculation tracing
         subsystem: "com.justinpurnell.BusinessMath",
 		category: "calculations"
     )
 
-    // LIVE: category logger used by consumers for performance profiling
     /// Logger for performance metrics and profiling
     ///
     /// Use this for timing information, performance measurements, and optimization tracking.
@@ -85,7 +82,7 @@ public extension Logger {
     /// ```swift
     /// Logger.performance.notice("Monte Carlo simulation completed in \(duration)s")
     /// ```
-    static let performance = Logger(
+    static let performance = Logger( // LIVE: category logger used by consumers for performance profiling
         subsystem: "com.justinpurnell.BusinessMath",
         category: "performance"
     )
@@ -169,7 +166,6 @@ public extension Logger {
 
     // MARK: - Validation Logging
 
-    // LIVE: public API for structured validation warning logging
     /// Log a validation warning
     ///
     /// - Parameters:
@@ -180,7 +176,7 @@ public extension Logger {
     /// ```swift
     /// logger.validationWarning("Value exceeds recommended range", field: "discountRate")
     /// ```
-    func validationWarning(_ message: String, field: String? = nil) {
+    func validationWarning(_ message: String, field: String? = nil) { // LIVE: public API for structured validation warning logging
         if let field = field {
             self.warning("⚠️ \(field, privacy: .public): \(message, privacy: .public)")
         } else {
@@ -188,7 +184,6 @@ public extension Logger {
         }
     }
 
-    // LIVE: public API for structured validation error logging
     /// Log a validation error
     ///
     /// - Parameters:
@@ -199,7 +194,7 @@ public extension Logger {
     /// ```swift
     /// logger.validationError("Negative value not allowed", field: "revenue")
     /// ```
-    func validationError(_ message: String, field: String? = nil) {
+    func validationError(_ message: String, field: String? = nil) { // LIVE: public API for structured validation error logging
         if let field = field {
             self.error("🔴 \(field, privacy: .public): \(message, privacy: .public)")
         } else {
@@ -209,7 +204,6 @@ public extension Logger {
 
     // MARK: - Performance Logging
 
-    // LIVE: public API for structured performance metric logging
     /// Log a performance metric
     ///
     /// - Parameters:
@@ -221,7 +215,7 @@ public extension Logger {
     /// ```swift
     /// logger.performance("Monte Carlo Simulation", duration: 2.34, context: "10,000 iterations")
     /// ```
-    func performance(_ operation: String, duration: TimeInterval, context: String? = nil) {
+    func performance(_ operation: String, duration: TimeInterval, context: String? = nil) { // LIVE: public API for structured performance metric logging
         if let context = context {
             self.notice("⚡️ \(operation, privacy: .public) [\(context, privacy: .public)]: \(duration, format: .fixed(precision: 3), privacy: .public)s")
         } else {
@@ -229,7 +223,6 @@ public extension Logger {
         }
     }
 
-    // LIVE: public API for performance warning logging
     /// Log a performance warning for slow operations
     ///
     /// - Parameters:
@@ -241,13 +234,12 @@ public extension Logger {
     /// ```swift
     /// logger.performanceWarning("Model Building", duration: 5.2, threshold: 1.0)
     /// ```
-    func performanceWarning(_ operation: String, duration: TimeInterval, threshold: TimeInterval) {
+    func performanceWarning(_ operation: String, duration: TimeInterval, threshold: TimeInterval) { // LIVE: public API for performance warning logging
         self.warning("🐌 \(operation, privacy: .public) took \(duration, format: .fixed(precision: 3), privacy: .public)s (expected < \(threshold, format: .fixed(precision: 3), privacy: .public)s)")
     }
 
     // MARK: - Model Execution Logging
 
-    // LIVE: public API for model building lifecycle logging
     /// Log the start of model building
     ///
     /// - Parameters:
@@ -258,7 +250,7 @@ public extension Logger {
     /// ```swift
     /// logger.modelBuildingStarted("Financial Model", components: 5)
     /// ```
-    func modelBuildingStarted(_ modelType: String, components: Int? = nil) {
+    func modelBuildingStarted(_ modelType: String, components: Int? = nil) { // LIVE: public API for model building lifecycle logging
         if let components = components {
             self.info("🏗️ Building \(modelType, privacy: .public) with \(components, privacy: .public) component(s)")
         } else {
@@ -266,7 +258,6 @@ public extension Logger {
         }
     }
 
-    // LIVE: public API for model building lifecycle logging
     /// Log successful model building completion
     ///
     /// - Parameters:
@@ -277,7 +268,7 @@ public extension Logger {
     /// ```swift
     /// logger.modelBuildingCompleted("Financial Model", duration: 0.12)
     /// ```
-    func modelBuildingCompleted(_ modelType: String, duration: TimeInterval? = nil) {
+    func modelBuildingCompleted(_ modelType: String, duration: TimeInterval? = nil) { // LIVE: public API for model building lifecycle logging
         if let duration = duration {
             self.info("✨ Completed \(modelType, privacy: .public) in \(duration, format: .fixed(precision: 3), privacy: .public)s")
         } else {
@@ -303,7 +294,6 @@ public extension Logger {
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 public extension Logger {
 
-    // LIVE: public API for Instruments signpost tracing
     /// Begin a signpost interval for performance tracking
     ///
     /// Use this with `endSignpost` to track performance in Instruments.
@@ -319,21 +309,19 @@ public extension Logger {
     /// performCalculation()
     /// logger.endSignpost("Calculation")
     /// ```
-    func beginSignpost(_ name: StaticString, id: OSSignpostID = .exclusive) {
+    func beginSignpost(_ name: StaticString, id: OSSignpostID = .exclusive) { // LIVE: public API for Instruments signpost tracing
         os_signpost(.begin, log: OSLog(subsystem: "com.justinpurnell.BusinessMath", category: .pointsOfInterest), name: name, signpostID: id)
     }
 
-    // LIVE: public API for Instruments signpost tracing
     /// End a signpost interval
     ///
     /// - Parameters:
     ///   - name: Name of the interval (must match `beginSignpost`)
     ///   - id: Signpost ID (default is exclusive, must match `beginSignpost`)
-    func endSignpost(_ name: StaticString, id: OSSignpostID = .exclusive) {
+    func endSignpost(_ name: StaticString, id: OSSignpostID = .exclusive) { // LIVE: public API for Instruments signpost tracing
         os_signpost(.end, log: OSLog(subsystem: "com.justinpurnell.BusinessMath", category: .pointsOfInterest), name: name, signpostID: id)
     }
 
-    // LIVE: public API for Instruments signpost event markers
     /// Create an event signpost (instantaneous point in time)
     ///
     /// - Parameters:
@@ -344,7 +332,7 @@ public extension Logger {
     /// ```swift
     /// logger.signpostEvent("Cache Miss")
     /// ```
-    func signpostEvent(_ name: StaticString, message: String? = nil) {
+    func signpostEvent(_ name: StaticString, message: String? = nil) { // LIVE: public API for Instruments signpost event markers
         if let message = message {
             os_signpost(.event, log: OSLog(subsystem: "com.justinpurnell.BusinessMath", category: .pointsOfInterest), name: name, "%{public}s", message)
         } else {
@@ -499,7 +487,7 @@ public struct Logger: Sendable {
     ///   - error: The error that occurred.
     public func calculationFailed(_ name: String, error: Error) {
         // silent: Linux fallback struct — privacy annotations only apply to os.Logger
-        self.error("Failed \(name): \(error.localizedDescription)")
+        self.error("Failed \(name, privacy: .public): \(error.localizedDescription, privacy: .private)")
     }
 
     /// Logs a validation warning (simplified for Linux).

@@ -41,13 +41,11 @@ public enum OptimizationPhase: Sendable, Equatable, Hashable {
     /// Initial setup phase before optimization begins.
     case initialization
 
-    // LIVE: used by two-phase simplex methods (AsyncSimplex)
     /// Phase I of two-phase optimization (finding feasible solution).
-    case phaseI
+    case phaseI // LIVE: used by two-phase simplex methods (AsyncSimplex)
 
-    // LIVE: used by two-phase simplex methods (AsyncSimplex)
     /// Phase II of two-phase optimization (optimizing objective).
-    case phaseII
+    case phaseII // LIVE: used by two-phase simplex methods (AsyncSimplex)
 
     /// Main optimization phase for single-phase algorithms.
     case optimization

@@ -76,7 +76,7 @@ extension DenseMatrix {
 	///
 	/// - Parameter B: Right-hand side matrix (rows must equal self.rows).
 	/// - Returns: Solution matrix X.
-	/// - Throws: Same as ``choleskySolve(_:)-3slhv``.
+	/// - Throws: ``MatrixError/notSquare``, ``MatrixError/notPositiveDefinite``.
 	/// - Complexity: O(n³ / 3) + O(n² * k) where k = B.columns.
 	public func choleskySolve(_ B: DenseMatrix<T>) throws -> DenseMatrix<T> {
 		guard B.rows == rows else {
@@ -128,7 +128,7 @@ extension DenseMatrix {
 	///
 	/// Computes A⁻¹ by solving A * X = I column by column using the Cholesky factor.
 	///
-	/// - Note: Prefer ``choleskySolve(_:)-3slhv`` over forming the explicit inverse
+	/// - Note: Prefer the vector or matrix `choleskySolve` overloads over forming the explicit inverse
 	///   whenever possible.
 	///
 	/// - Returns: The inverse matrix A⁻¹.

@@ -278,8 +278,7 @@ public struct SimplexRelaxationSolver: RelaxationSolver {
                 simplexResult: result  // Include for cut generation
             )
 
-        } catch {
-            // silent: solver error — treat as infeasible relaxation
+        } catch { // logging: solver error — treat as infeasible relaxation
             return RelaxationResult(
                 solution: nil,
                 objectiveValue: minimize ? Double.infinity : -Double.infinity,

@@ -225,9 +225,9 @@ struct ModelProfilerTests {
             Thread.sleep(forTimeInterval: 0.001)
         }
 
-        // Slow operation
+        // Slow operation (wide margin to avoid scheduling jitter flips)
         await profiler.measure(operation: "Slow") {
-            Thread.sleep(forTimeInterval: 0.005)
+            Thread.sleep(forTimeInterval: 0.05)
         }
 
         let report = await profiler.report(sortBy: .totalTime)
@@ -365,14 +365,14 @@ struct ModelProfilerTests {
 	@Test("Custom warning threshold", .localOnly)
     func customWarningThreshold() async {
         let profiler = ModelProfiler()
-        await profiler.setWarningThreshold(0.005) // 5ms
+        await profiler.setWarningThreshold(0.050) // 50ms
 
         await profiler.measure(operation: "Fast") {
             Thread.sleep(forTimeInterval: 0.001)
         }
 
         await profiler.measure(operation: "Slow") {
-            Thread.sleep(forTimeInterval: 0.01)
+            Thread.sleep(forTimeInterval: 0.1)
         }
 
         let bottlenecks = await profiler.bottlenecks()
