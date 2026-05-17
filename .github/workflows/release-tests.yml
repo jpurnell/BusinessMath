@@ -50,19 +50,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, ubuntu-24.04]
+        os: [macos-26, ubuntu-24.04]
     env:
       PACKAGE_NAME: BusinessMath
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode 16.x (Swift 6)
-        if: matrix.os == 'macos-15'
+      - name: Select Xcode 26.x (Swift 6.2)
+        if: matrix.os == 'macos-26'
         run: |
-          XCODE_PATH=$(ls -d /Applications/Xcode_16* 2>/dev/null | sort -V | tail -1)
+          XCODE_PATH=$(ls -d /Applications/Xcode_26* 2>/dev/null | sort -V | tail -1)
           if [ -z "$XCODE_PATH" ]; then
-            echo "No Xcode 16.x found, using default"
+            echo "No Xcode 26.x found, using default"
             xcodebuild -version
           else
             sudo xcode-select -s "$XCODE_PATH"
@@ -106,7 +106,7 @@ jobs:
     name: Thread Sanitizer (macOS)
     needs: check_changes
     if: needs.check_changes.outputs.has_changes == 'true'
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 180
     env:
       PACKAGE_NAME: BusinessMath
@@ -114,11 +114,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode 16.x (Swift 6)
+      - name: Select Xcode 26.x (Swift 6.2)
         run: |
-          XCODE_PATH=$(ls -d /Applications/Xcode_16* 2>/dev/null | sort -V | tail -1)
+          XCODE_PATH=$(ls -d /Applications/Xcode_26* 2>/dev/null | sort -V | tail -1)
           if [ -z "$XCODE_PATH" ]; then
-            echo "No Xcode 16.x found, using default"
+            echo "No Xcode 26.x found, using default"
             xcodebuild -version
           else
             sudo xcode-select -s "$XCODE_PATH"
