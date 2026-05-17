@@ -96,18 +96,11 @@ import Numerics
 /// - **Accurate**: Inherits accuracy of normalCDF (error < 10^-15)
 /// - **Numerically stable**: No cancellation or overflow issues
 ///
-/// ## Related Functions
+/// ## See Also
 ///
 /// - ``logNormalPDF(_:mean:stdDev:)``
 /// - ``distributionLogNormal(mean:stdDev:_:_:)``
 /// - ``normalCDF(x:mean:stdDev:)``
-///
-/// ## See Also
-///
-/// - [Log-normal distribution (Wikipedia)](https://en.wikipedia.org/wiki/Log-normal_distribution)
-/// - Black-Scholes option pricing model
-/// - Value at Risk (VaR) calculations
-///
 public func logNormalCDF<T: Real>(_ x: T, mean μ: T = T(0), stdDev σ: T = T(1)) -> T {
 	// Lognormal is only defined for positive x
 	// P(X ≤ 0) = 0 for lognormal distribution
