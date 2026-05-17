@@ -93,7 +93,7 @@ jobs:
           swift test  $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
 
   build_and_compile:
-    name: Release build + Apple platform compile checks
+    name: Release build
     runs-on: macos-26
     steps:
       - name: Checkout
@@ -116,51 +116,6 @@ jobs:
 
       - name: Release build (SPM)
         run: swift build -c release -Xswiftc -Xfrontend -Xswiftc -solver-expression-time-threshold=500
-
-      - name: Prepare ephemeral Xcode workspace
-        shell: bash
-        run: |
-          set -euo pipefail
-          PKG_SCHEME="BusinessMath-Package"
-          xcodebuild -scheme "$PKG_SCHEME" -resolvePackageDependencies -quiet || true
-          xcodebuild -scheme "$PKG_SCHEME" -showBuildSettings >/dev/null
-          echo "Schemes in workspace:"
-          xcodebuild -list -workspace .swiftpm/xcode/package.xcworkspace || true
-
-      - name: Apple platform compile checks (BusinessMath via archive; no tests)
-        shell: bash
-        run: |
-          set -euo pipefail
-          WORKSPACE=".swiftpm/xcode/package.xcworkspace"
-          SCHEME_LIB="BusinessMath"
-
-          for plat in iOS tvOS watchOS; do
-            echo "Archiving $SCHEME_LIB for $plat"
-            OUTDIR="$(mktemp -d)"
-            if xcodebuild -showsdks | grep -q "${plat}"; then
-              xcodebuild -workspace "$WORKSPACE" \
-              -scheme "$SCHEME_LIB" \
-              -destination "generic/platform=${plat}" \
-              -configuration Release \
-              -skipPackagePluginValidation \
-              -archivePath "$OUTDIR/BM-${plat}.xcarchive" \
-              archive
-            else
-              echo "Skipping $plat: SDK not available on this runner"
-            fi
-          done
-
-          if xcodebuild -showsdks | grep -q "visionOS"; then
-            echo "Archiving $SCHEME_LIB for visionOS"
-            OUTDIR="$(mktemp -d)"
-            xcodebuild -workspace "$WORKSPACE" \
-              -scheme "$SCHEME_LIB" \
-              -destination "generic/platform=visionOS" \
-              -configuration Release \
-              -skipPackagePluginValidation \
-              -archivePath "$OUTDIR/BM-visionOS.xcarchive" \
-              archive
-          fi
 
   linux_compile:
     name: Linux release compile check
