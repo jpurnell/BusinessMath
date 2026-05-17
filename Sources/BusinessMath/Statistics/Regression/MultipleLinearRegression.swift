@@ -421,8 +421,7 @@ public func multipleLinearRegression(
                 } else {
                     vif[j] = 1.0 / oneMinusR2 // fp-safety:disable
                 }
-            } catch {
-                // silent: auxiliary regression failure means VIF is undefined — set to infinity
+            } catch { // logging: auxiliary regression failure means VIF is undefined — set to infinity
                 vif[j] = .infinity
             }
         } else {

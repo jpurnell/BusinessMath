@@ -368,8 +368,7 @@ public struct AsyncSimplexSolver: Sendable {
 					#if canImport(os)
 					logger.debug("Simplex solve completed; final progress reported")
 					#endif
-                } catch {
-                    // silent: error propagated to stream consumer via continuation
+                } catch { // logging: error propagated to stream consumer via continuation
                     continuation.finish(throwing: error)
                 }
             }

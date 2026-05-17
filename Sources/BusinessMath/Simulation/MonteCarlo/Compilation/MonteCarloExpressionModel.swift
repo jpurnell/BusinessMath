@@ -158,8 +158,7 @@ public struct MonteCarloExpressionModel: Sendable {
         return { inputs in
             do {
                 return try BytecodeInterpreter.evaluate(bytecode: capturedBytecode, inputs: inputs)
-            } catch {
-                // silent: bytecode evaluation failure — return zero as safe default
+            } catch { // logging: bytecode evaluation failure returns zero as safe default
                 return 0.0
             }
         }

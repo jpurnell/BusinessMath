@@ -50,18 +50,16 @@ public protocol StochasticProcess<State>: Sendable {
     /// - Returns: The next state value.
     func step(from current: State, dt: State.Scalar, normalDraws: State.NormalDraws) -> State
 
-    // LIVE: protocol requirement used by simulation kernel for path validation
     /// Whether this process can produce negative values in any component.
     ///
     /// - `false` for GBM (log-space ensures positivity)
     /// - `true` for OU, ABM (mean-reversion and arithmetic drift allow negatives)
-    var allowsNegativeValues: Bool { get }
+    var allowsNegativeValues: Bool { get } // LIVE: protocol requirement used by simulation kernel for path validation
 
-    // LIVE: protocol requirement used by simulation kernel for correlated draws
     /// The number of independent Brownian motions driving this process.
     ///
     /// For scalar processes, this is 1. For multi-factor processes (e.g., Heston
     /// with correlated spot and variance), this equals the number of independent
     /// noise sources.
-    var factors: Int { get }
+    var factors: Int { get } // LIVE: protocol requirement used by simulation kernel for correlated draws
 }

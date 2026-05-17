@@ -85,8 +85,7 @@ internal final class MetalDevice: @unchecked Sendable {
             // Fallback: compile from embedded source string
             do {
                 self.library = try Self.compileShaderLibrary(device: device)
-            } catch {
-                // silent: fatal — Metal library is required for GPU acceleration
+            } catch { // logging: fatal — Metal library required for GPU acceleration
                 preconditionFailure("Failed to load or compile Metal library: \(error)")
             }
         }
@@ -489,12 +488,11 @@ internal final class MetalDevice: @unchecked Sendable {
         return pipeline
     }
 
-    // LIVE: used by GPU-accelerated differential evolution optimizer
     /// Get or create DE selection compute pipeline.
     ///
     /// - Returns: Compute pipeline for DE selection kernel
     /// - Throws: `OptimizationError` if kernel not found or compilation fails
-    func getDESelectionPipeline() throws -> MTLComputePipelineState {
+    func getDESelectionPipeline() throws -> MTLComputePipelineState { // LIVE: used by GPU-accelerated differential evolution optimizer
         pipelineLock.lock()
         defer { pipelineLock.unlock() }
 
@@ -560,9 +558,8 @@ internal final class MetalDevice: @unchecked Sendable {
 
     // MARK: - Device Information
 
-    // LIVE: used for compute kernel dispatch configuration
     /// Maximum threads per threadgroup supported by device.
-    var maxThreadsPerThreadgroup: Int {
+    var maxThreadsPerThreadgroup: Int { // LIVE: used for compute kernel dispatch configuration
         device.maxThreadsPerThreadgroup.width
     }
 
@@ -571,9 +568,8 @@ internal final class MetalDevice: @unchecked Sendable {
         device.name
     }
 
-    // LIVE: capability detection for buffer allocation strategy
     /// Whether device supports unified memory (macOS typically does).
-    var supportsUnifiedMemory: Bool {
+    var supportsUnifiedMemory: Bool { // LIVE: capability detection for buffer allocation strategy
         #if os(macOS)
         return true  // All Apple Silicon and Intel Macs support unified memory
         #else

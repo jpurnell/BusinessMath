@@ -485,6 +485,7 @@ actor CalculationCacheAsync {
 	}
 	
 		// Sync convenience
+	// LIVE: public API for library consumers needing synchronous cache access
 	func getOrCalculate<T: Sendable>(key: String, calculation: @Sendable () -> T) async -> T {
 		let asyncOverload: (String, @Sendable () async -> T) async -> T = self.getOrCalculate
 		return await asyncOverload(key, { () async -> T in
@@ -500,6 +501,7 @@ actor CalculationCacheAsync {
 		seenOrder.removeAll()
 	}
 	
+	// LIVE: public API for library consumers needing selective cache invalidation
 	func remove(key: String) {
 		let prefix = key + "|"
 		let toRemove = cache.keys.filter { $0.hasPrefix(prefix) }
@@ -701,7 +703,7 @@ final class StringBuilder {
 		parts.joined()
 	}
 	
-	func clear() {
+	func clear() { // LIVE: public API for reusable buffer pattern
 		parts.removeAll(keepingCapacity: true)
 		estimatedLength = 0
 	}

@@ -575,8 +575,7 @@ public struct AsyncCatchErrorsSequence<Base: AsyncSequence>: AsyncSequence {
         public mutating func next() async throws -> Base.Element? {
             do {
                 return try await baseIterator.next()
-            } catch {
-                // silent: error handled by user-provided recovery handler
+            } catch { // logging: error handled by user-provided recovery handler
                 return handler(error)
             }
         }

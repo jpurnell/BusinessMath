@@ -210,8 +210,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
                                 return
                             }
                         }
-                    } catch {
-                        // silent: error propagated to stream consumer via continuation
+                    } catch { // logging: error propagated to stream consumer via continuation
                         continuation.finish(throwing: error)
                         return
                     }
@@ -276,8 +275,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
                             initialGuess: start,
                             bounds: bounds
                         )
-                    } catch {
-                        // silent: individual start point failure — other starts may succeed
+                    } catch { // logging: individual start point failure — other starts may succeed
                         return nil
                     }
                 }

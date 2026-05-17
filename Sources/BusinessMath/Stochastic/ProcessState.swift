@@ -37,10 +37,9 @@ public protocol ProcessState: Sendable {
     /// For vector processes, this matches the state dimension.
     associatedtype NormalDraws: Sendable
 
-    // LIVE: protocol requirement used by BusinessMathPro simulation kernel
     /// The dimensionality of the state space.
     /// Returns 1 for scalar processes.
-    static var dimension: Int { get }
+    static var dimension: Int { get } // LIVE: protocol requirement used by BusinessMathPro simulation kernel
 }
 
 // MARK: - Double Conformance

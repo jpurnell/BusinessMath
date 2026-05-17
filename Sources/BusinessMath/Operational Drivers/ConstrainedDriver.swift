@@ -382,8 +382,7 @@ public struct ValidatedDriver<Base: Driver>: Sendable where Base.Value: BinaryFl
 		let rawValue = base.sample(for: period)
 		do {
 			return try validator(rawValue)
-		} catch {
-			// silent: validation failure — return caller-provided fallback value
+		} catch { // logging: validation failure — return caller-provided fallback value
 			return fallback
 		}
 	}

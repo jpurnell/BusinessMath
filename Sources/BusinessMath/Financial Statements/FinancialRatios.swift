@@ -1230,10 +1230,10 @@ public func efficiencyRatios<T: Real & Sendable>(
 	let assetTurnoverRatio = assetTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 	// silent: efficiency ratios are optional — missing accounts yield nil rather than error
 	let inventoryTurnoverRatio = try? inventoryTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let receivablesTurnoverRatio = try? receivablesTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let dso = try? daysSalesOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let dio = try? daysInventoryOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-	let dpo = try? daysPayableOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
+	let receivablesTurnoverRatio = try? receivablesTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet) // silent: optional ratio — missing account yields nil
+	let dso = try? daysSalesOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet) // silent: optional ratio — missing account yields nil
+	let dio = try? daysInventoryOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet) // silent: optional ratio — missing account yields nil
+	let dpo = try? daysPayableOutstanding(incomeStatement: incomeStatement, balanceSheet: balanceSheet) // silent: optional ratio — missing account yields nil
 
 	// Cash Conversion Cycle = DIO + DSO - DPO (only if all three available)
 	let ccc: TimeSeries<T>?

@@ -394,8 +394,7 @@ public final class AuditTrailManager {
 			let decoder = JSONDecoder()
 			decoder.dateDecodingStrategy = .iso8601
 			entries = try decoder.decode([AuditEntry].self, from: data)
-		} catch {
-			// silent: file doesn't exist or is unreadable — start with empty entries
+		} catch { // logging: file doesn't exist or is unreadable — start with empty entries
 			entries = []
 		}
 	}

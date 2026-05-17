@@ -167,8 +167,7 @@ public struct AsyncAlignedSequence<
                                     break
                                 }
                                 await state.update(value)
-                            } catch {
-                                // silent: stream error treated as end-of-stream for alignment
+                            } catch { // logging: stream error treated as end-of-stream for alignment
                                 await state.markFinished()
                                 break
                             }
@@ -230,8 +229,7 @@ public struct AsyncAlignedSequence<
                                 }
 
                                 continuationBox.yield((primaryElement.value, alignedValue))
-                            } catch {
-                                // silent: primary stream error treated as end-of-alignment
+                            } catch { // logging: primary stream error treated as end-of-alignment
                                 break
                             }
                         }

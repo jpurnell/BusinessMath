@@ -660,8 +660,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 queue.insert(leftChild)
                 queue.insert(rightChild)
                 updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
-            } catch {
-                // silent: branching failed — node is infeasible, continue search
+            } catch { // logging: branching failed — node infeasible, continue search
                 updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
                 continue
             }
@@ -1255,8 +1254,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             }
                         }
 
-                    } catch {
-                        // silent: LP re-solve failed after cut — stop cutting rounds
+                    } catch { // logging: LP re-solve failed after cut — stop cutting rounds
                         break
                     }
                 }
@@ -1291,8 +1289,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 branchedVariable: branchedVariable
             )
 
-        } catch {
-            // silent: solver error — treat as infeasible branch
+        } catch { // logging: solver error — treat as infeasible branch
             return BranchNode(
                 depth: depth,
                 parent: parent,
@@ -1609,8 +1606,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 // Unbounded has best possible bound (shouldn't happen with integer constraints)
                 return minimize ? -Double.infinity : Double.infinity
             }
-        } catch {
-            // silent: solver error treated as infeasible bound
+        } catch { // logging: solver error treated as infeasible bound
             return minimize ? Double.infinity : -Double.infinity
         }
     }
@@ -2087,9 +2083,8 @@ struct NodeQueue<V: VectorSpace>: Sendable where V.Scalar == Double {
     /// Maximum nodes to retain in the queue. Excess nodes with worst bounds are pruned.
     private let maxNodes: Int
 
-    // LIVE: public API for external configuration of node queue limits
     /// Default maximum node count
-    static var defaultMaxNodes: Int { 100_000 }
+    static var defaultMaxNodes: Int { 100_000 } // LIVE: public API for external configuration of node queue limits
 
     init(strategy: NodeSelectionStrategy, minimize: Bool, maxNodes: Int = 100_000) {
         self.strategy = strategy
@@ -2289,9 +2284,8 @@ private class CutPool: @unchecked Sendable {
         self.maxAge = maxAge
     }
 
-    // LIVE: cut pool management used by extended cutting plane strategies
     /// Add a cut to the pool
-    func addCut(_ cut: CuttingPlane) {
+    func addCut(_ cut: CuttingPlane) { // LIVE: cut pool management used by extended cutting plane strategies
         lock.lock()
         defer { lock.unlock() }
 
@@ -2303,9 +2297,8 @@ private class CutPool: @unchecked Sendable {
         }
     }
 
-    // LIVE: cut pool management used by extended cutting plane strategies
     /// Age all cuts and remove old inactive ones
-    func ageCuts() {
+    func ageCuts() { // LIVE: cut pool management used by extended cutting plane strategies
         lock.lock()
         defer { lock.unlock() }
 
@@ -2322,9 +2315,8 @@ private class CutPool: @unchecked Sendable {
         }
     }
 
-    // LIVE: cut pool management used by extended cutting plane strategies
     /// Update activity when a cut is violated
-    func recordViolation(cutIndex: Int, violation: Double) {
+    func recordViolation(cutIndex: Int, violation: Double) { // LIVE: cut pool management used by extended cutting plane strategies
         lock.lock()
         defer { lock.unlock() }
 
@@ -2335,9 +2327,8 @@ private class CutPool: @unchecked Sendable {
         managedCuts[cutIndex].age = 0  // Reset age on activity
     }
 
-    // LIVE: cut pool management used by extended cutting plane strategies
     /// Get current cuts
-    func getCuts() -> [CuttingPlane] {
+    func getCuts() -> [CuttingPlane] { // LIVE: cut pool management used by extended cutting plane strategies
         lock.lock()
         defer { lock.unlock() }
 
@@ -2402,9 +2393,8 @@ private class CutStatisticsTracker {
         )
     }
 
-    // LIVE: statistics tracking used by extended cutting plane strategies
     /// Record cut generation at a node
-    func recordCuts(generated: Int, rounds: Int, type: CutType) {
+    func recordCuts(generated: Int, rounds: Int, type: CutType) { // LIVE: statistics tracking used by extended cutting plane strategies
         totalCutsGenerated += generated
         cuttingRounds += rounds
         lpResolves += rounds  // Each round requires an LP re-solve

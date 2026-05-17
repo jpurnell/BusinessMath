@@ -248,8 +248,7 @@ public func fitGeneralLME<T: Real>(
 			var delta: [T]
 			do {
 				delta = try aiMat.choleskySolve(aiResult.score)
-			} catch {
-				// silent: AI matrix not positive definite — fall back to diagonal step
+			} catch { // logging: AI matrix not positive definite — fall back to diagonal step
 				delta = (0..<nTheta).map { i -> T in
 					let diag = aiResult.ai[i][i]
 					guard diag > T.ulpOfOne else { return T.zero }
@@ -656,7 +655,7 @@ private func generalEMUpdate<T: Real & Sendable>(
 
 		// Residual variance contribution
 		var ssResid = T.zero
-		for (localIdx, obsIdx) in indices.enumerated() {
+		for (_, obsIdx) in indices.enumerated() {
 			var zuHat = T.zero
 			for k in 0..<r { zuHat += zData[obsIdx][k] * uHat[k] }
 			let eHat = resid[obsIdx] - zuHat
@@ -960,8 +959,7 @@ private func generalIsPSD<T: Real & Sendable>(_ mat: [[T]], r: Int) -> Bool {
 		let m = try DenseMatrix(reg)
 		_ = try m.cholesky()
 		return true
-	} catch {
-		// silent: Cholesky failure means matrix is not positive semi-definite
+	} catch { // logging: Cholesky failure means matrix is not positive semi-definite
 		return false
 	}
 }

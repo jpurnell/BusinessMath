@@ -372,8 +372,7 @@ public struct AsyncConjugateGradientOptimizer: Sendable {
                     )
                     continuation.yield(finalProgress)
                     continuation.finish()
-                } catch {
-                    // silent: error propagated to stream consumer via continuation
+                } catch { // logging: error propagated to stream consumer via continuation
                     continuation.finish(throwing: error)
                 }
             }

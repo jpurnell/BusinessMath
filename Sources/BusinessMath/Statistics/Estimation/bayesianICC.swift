@@ -345,7 +345,7 @@ public func bayesianICC<T: Real>(
 
 /// Estimates the ICC with support for missing observations.
 ///
-/// Operates identically to ``bayesianICC(_:model:priors:config:)-7o8wy`` but allows `nil`
+/// Operates identically to ``bayesianICC(_:model:priors:config:)`` but allows `nil`
 /// entries in the ratings matrix. Only observed (non-`nil`) cells contribute to the
 /// full conditionals. Subjects or raters with zero observed cells are silently excluded.
 ///

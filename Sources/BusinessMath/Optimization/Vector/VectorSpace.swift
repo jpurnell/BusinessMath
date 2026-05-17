@@ -79,11 +79,10 @@ public protocol VectorSpace: AdditiveArithmetic, Hashable, Codable, Sendable {
 	/// - Returns: Array representation of the vector's components.
 	func toArray() -> [Scalar]
 	
-	// LIVE: protocol requirement used by generic algorithms and interpolation
 	/// The dimension of the vector space.
 	/// For fixed-dimension vectors (like Vector2D), this is constant.
 	/// For variable-dimension vectors (like VectorN), this may be variable.
-	static var dimension: Int { get }
+	static var dimension: Int { get } // LIVE: protocol requirement used by generic algorithms and interpolation
 	
 	/// Check if all components of the vector are finite.
 	/// - Returns: True if all components are finite numbers (not NaN or infinity).
@@ -116,11 +115,10 @@ public extension VectorSpace {
 		return (self - other).norm
 	}
 	
-	// LIVE: used by clustering and optimization algorithms for fast distance checks
 	/// Squared distance between two vectors (faster than distance for comparisons).
 	/// - Parameter other: Another vector
 	/// - Returns: Squared Euclidean distance: ‖self - other‖²
-	func squaredDistance(to other: Self) -> Scalar {
+	func squaredDistance(to other: Self) -> Scalar { // LIVE: used by clustering and optimization algorithms for fast distance checks
 		return (self - other).squaredNorm
 	}
 	
@@ -151,14 +149,13 @@ public extension VectorSpace {
 		return dotProduct / norms
 	}
 	
-	// LIVE: used by interpolation and animation subsystems
 	/// Linear interpolation between two vectors.
 	/// - Parameters:
 	///   - from: Starting vector
 	///   - to: Ending vector
 	///   - t: Interpolation parameter (0 = from, 1 = to, can extrapolate outside [0,1])
 	/// - Returns: Interpolated vector: from + t * (to - from)
-	static func lerp(from: Self, to: Self, t: Scalar) -> Self {
+	static func lerp(from: Self, to: Self, t: Scalar) -> Self { // LIVE: used by interpolation and animation subsystems
 		return from + t * (to - from)
 	}
 }

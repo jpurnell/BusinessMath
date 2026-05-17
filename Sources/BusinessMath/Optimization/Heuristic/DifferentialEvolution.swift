@@ -628,9 +628,8 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         }
 
         // Get pipelines
-        // silent: GPU pipeline unavailable — falls back to CPU path
-        guard let mutationPipeline = try? device.getDEMutationPipeline(),
-              let crossoverPipeline = try? device.getDECrossoverPipeline() else {
+        guard let mutationPipeline = try? device.getDEMutationPipeline(), // silent: GPU pipeline unavailable — falls back to CPU path
+              let crossoverPipeline = try? device.getDECrossoverPipeline() else { // silent: GPU pipeline unavailable — falls back to CPU path
             return nil
         }
 
