@@ -8,6 +8,7 @@
 import Testing
 import Numerics
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 @Suite("Island Model Genetic Algorithm Tests")
@@ -225,7 +226,7 @@ struct IslandModelTests {
             numberOfIslands: 4,
             migrationInterval: 5,
             migrationSize: 2,
-            topology: .random
+            topology: stochasticMigrationTopology
         )
 
         let optimizer = IslandModel<VectorN<Double>>(

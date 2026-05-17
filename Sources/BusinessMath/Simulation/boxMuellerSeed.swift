@@ -27,7 +27,7 @@ import Numerics
 ///	   - An implementation of a uniform random number generator such as `distributionUniform()` which generates uniformly distributed values between 0 and 1.
 ///
 ///	 - Important: Ensure that `distributionUniform()` is implemented correctly to provide values within the required range.
-	public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint {
+	public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint { // stochastic:exempt
 		// Get uniform samples
 		var u1: T = distributionUniform(u1Seed)
 		var u2: T = distributionUniform(u2Seed)

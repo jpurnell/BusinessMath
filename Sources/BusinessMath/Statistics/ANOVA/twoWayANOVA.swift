@@ -8,7 +8,7 @@ import Numerics
 ///
 /// - Note: This implementation assumes no replication (one observation
 ///   per subject-rater combination).
-public struct TwoWayANOVAResult<T: Real>: Sendable, Equatable {
+public struct TwoWayANOVAResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Sum of squares between subjects (rows).
 	public let ssSubjects: T
 	/// Sum of squares between raters (columns).

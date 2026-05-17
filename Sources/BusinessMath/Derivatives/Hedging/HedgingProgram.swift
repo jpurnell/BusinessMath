@@ -32,14 +32,17 @@ public protocol HedgeInstrument: Sendable {
 // MARK: - HedgeInstrument Conformances
 
 extension CommoditySwap: HedgeInstrument {
+	/// The numeric type used for settlement calculations.
 	public typealias Value = T
 }
 
 extension CommodityCollar: HedgeInstrument {
+	/// The numeric type used for settlement calculations.
 	public typealias Value = T
 }
 
 extension ThreeWayCollar: HedgeInstrument {
+	/// The numeric type used for settlement calculations.
 	public typealias Value = T
 }
 

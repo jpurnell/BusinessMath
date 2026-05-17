@@ -220,7 +220,8 @@ public struct RetailModel: Sendable {
     /// - Returns: Number of times inventory turns over per year
     public func calculateInventoryTurnover() -> Double {
         let annualCOGS = calculateCOGS() * 12
-        return annualCOGS / initialInventoryValue
+        guard initialInventoryValue > 0 else { return 0 }
+        return annualCOGS / initialInventoryValue // fp-safety:disable — guarded above
     }
 
     /// Calculate annual inventory turns (alias for calculateInventoryTurnover).
@@ -239,7 +240,8 @@ public struct RetailModel: Sendable {
     /// - Returns: Days inventory outstanding
     public func calculateDaysInventoryOutstanding() -> Double {
         let turnover = calculateInventoryTurnover()
-        return 365.0 / turnover
+        guard turnover > 0 else { return 0 }
+        return 365.0 / turnover // fp-safety:disable — guarded above
     }
 
     // MARK: - Net Profit Calculations
@@ -267,7 +269,8 @@ public struct RetailModel: Sendable {
     ///
     /// - Returns: Net profit margin percentage
     public func calculateNetProfitMargin() -> Double {
-        return calculateNetProfit() / monthlyRevenue
+        guard monthlyRevenue != 0 else { return 0 } // fp-safety:disable
+        return calculateNetProfit() / monthlyRevenue // fp-safety:disable — guarded above
     }
 
     /// Calculate net profit margin for a specific month.
@@ -277,7 +280,8 @@ public struct RetailModel: Sendable {
     public func calculateNetProfitMargin(forMonth month: Int) -> Double {
         let netProfit = calculateNetProfit(forMonth: month)
         let revenue = calculateRevenue(forMonth: month)
-        return netProfit / revenue
+        guard revenue != 0 else { return 0 }
+        return netProfit / revenue // fp-safety:disable — guarded above
     }
 
     // MARK: - Markup Calculations
@@ -292,7 +296,8 @@ public struct RetailModel: Sendable {
     ///
     /// - Returns: Markup percentage
     public func calculateMarkup() -> Double {
-        return (1.0 - costOfGoodsSoldPercentage) / costOfGoodsSoldPercentage
+        guard costOfGoodsSoldPercentage > 0 else { return 0 }
+        return (1.0 - costOfGoodsSoldPercentage) / costOfGoodsSoldPercentage // fp-safety:disable — guarded above
     }
 
     // MARK: - Break-Even Analysis
@@ -305,7 +310,9 @@ public struct RetailModel: Sendable {
     ///
     /// - Returns: Monthly revenue needed to break even
     public func calculateBreakEvenRevenue() -> Double {
-        return operatingExpenses / calculateGrossMargin()
+        let grossMargin = calculateGrossMargin()
+        guard grossMargin > 0 else { return 0 }
+        return operatingExpenses / grossMargin // fp-safety:disable — guarded above
     }
 
     // MARK: - Store Performance Metrics
@@ -318,7 +325,8 @@ public struct RetailModel: Sendable {
     /// - Parameter squareFootage: Total square footage (for all stores if multi-location)
     /// - Returns: Monthly revenue per square foot
     public func calculateRevenuePerSquareFoot(squareFootage: Double) -> Double {
-        return monthlyRevenue / squareFootage
+        guard squareFootage > 0 else { return 0 }
+        return monthlyRevenue / squareFootage // fp-safety:disable — guarded above
     }
 
     /// Calculate revenue per square foot for a specific store.
@@ -330,9 +338,9 @@ public struct RetailModel: Sendable {
     public func calculateRevenuePerSquareFoot(squareFootage: Double, forStore storeIndex: Int) -> Double {
         guard let avgRevenue = averageStoreRevenue else {
             // Single-store model: use total revenue
-            return monthlyRevenue / squareFootage
+            return monthlyRevenue / squareFootage // fp-safety:disable
         }
-        return avgRevenue / squareFootage
+        return avgRevenue / squareFootage // fp-safety:disable
     }
 
     // MARK: - Comprehensive Projections

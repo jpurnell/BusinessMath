@@ -32,7 +32,7 @@ struct StandardTemplatesTests {
         try await registry.register(template, metadata: metadata)
 
         let found = await registry.template(named: "SaaS Template")
-        #expect(found != nil)
+        #expect(found != nil) // TEST-QUALITY: existence check
     }
 
     @Test("SaaS template creates valid model")
@@ -113,7 +113,7 @@ struct StandardTemplatesTests {
 
         // Verify imported
         let found = await registry2.template(named: "SaaS Template")
-        #expect(found != nil)
+        #expect(found != nil) // TEST-QUALITY: existence check
     }
 
     // MARK: - Retail Template Tests

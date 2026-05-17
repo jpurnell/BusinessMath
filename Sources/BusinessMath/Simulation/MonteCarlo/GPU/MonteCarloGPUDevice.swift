@@ -39,8 +39,8 @@ import Foundation
 ///     iterations: 100_000
 /// )
 /// ```
-@available(macOS 10.15, iOS 13.0, *)
 // Justification: Core Metal objects (device, commandQueue, library) are immutable; mutable pipeline and buffer caches are protected by bufferCacheLock (NSLock).
+@available(macOS 10.15, iOS 13.0, *)
 public final class MonteCarloGPUDevice: @unchecked Sendable {
 
     // MARK: - Singleton
@@ -472,7 +472,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             commandBuffer: commandBuffer,
             buffer: buffers.rngStates,
             iterations: iterations,
-            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random())
+            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt
         )
 
         // Step 2: Encode Monte Carlo iterations in same command buffer
@@ -515,7 +515,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         // OPTIMIZATION: Use larger thread groups for better GPU utilization
         let threadsPerGroup = MTLSize(width: min(iterations, 1024), height: 1, depth: 1)
         let threadGroups = MTLSize(
-            width: (iterations + threadsPerGroup.width - 1) / threadsPerGroup.width,
+            width: (iterations + threadsPerGroup.width - 1) / threadsPerGroup.width, // fp-safety:disable — width is min(iterations, 1024) >= 1
             height: 1,
             depth: 1
         )
@@ -554,7 +554,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         // OPTIMIZATION: Use larger thread groups (1024 vs 256) for better occupancy
         let threadsPerGroup = MTLSize(width: min(iterations, 1024), height: 1, depth: 1)
         let threadGroups = MTLSize(
-            width: (iterations + threadsPerGroup.width - 1) / threadsPerGroup.width,
+            width: (iterations + threadsPerGroup.width - 1) / threadsPerGroup.width, // fp-safety:disable — width is min(iterations, 1024) >= 1
             height: 1,
             depth: 1
         )

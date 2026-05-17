@@ -41,7 +41,7 @@ struct MonteCarloGPUDeviceTests {
 
         // Verify command queue exists
         let commandQueue = metalDevice.commandQueue
-        #expect(commandQueue.label != nil || commandQueue.label == nil) // Just check it's not crashing
+        #expect(commandQueue.label != nil || commandQueue.label == nil) // Just check it's not crashing // TEST-QUALITY: existence check
 
         print("✓ Metal device available: \(device.name)")
         #endif
@@ -425,14 +425,14 @@ struct MonteCarloGPUDeviceTests {
 
         // Allocate buffer
         var buffer1: MTLBuffer? = device.makeBuffer(length: bufferSize, options: .storageModeShared)
-        #expect(buffer1 != nil)
+        #expect(buffer1 != nil) // TEST-QUALITY: existence check
 
         // Release buffer
         buffer1 = nil
 
         // Allocate again (should reuse memory pool)
         let buffer2 = device.makeBuffer(length: bufferSize, options: .storageModeShared)
-        #expect(buffer2 != nil)
+        #expect(buffer2 != nil) // TEST-QUALITY: existence check
 
         print("✓ Memory reuse pattern working")
         #endif

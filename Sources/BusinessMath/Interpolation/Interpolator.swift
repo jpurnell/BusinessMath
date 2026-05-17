@@ -81,7 +81,7 @@ public protocol Interpolator: Sendable {
 
 extension Interpolator {
     /// Default batch evaluation: maps the single-point method over the array.
-    public func callAsFunction(at queries: [Point]) -> [Value] {
+    public func callAsFunction(at queries: [Point]) -> [Value] { // recursion:safe — calls single-point overload (Point), not array overload ([Point])
         queries.map { callAsFunction(at: $0) }
     }
 }

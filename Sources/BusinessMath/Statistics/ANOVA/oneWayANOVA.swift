@@ -2,7 +2,7 @@ import Foundation
 import Numerics
 
 /// Result of a one-way analysis of variance.
-public struct OneWayANOVAResult<T: Real>: Sendable, Equatable {
+public struct OneWayANOVAResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Sum of squares between groups.
 	public let ssBetween: T
 	/// Sum of squares within groups.

@@ -107,9 +107,9 @@ extension FFTBackend {
 
         let nyquistBin = raw.count - 1
         // Typical bins: factor of 2 for the one-sided convention
-        let typicalFactor = 2.0 / (Double(unpaddedLength) * sampleRate)
+        let typicalFactor = 2.0 / (Double(unpaddedLength) * sampleRate) // fp-safety:disable — guarded by signal.isEmpty == false and sampleRate > 0
         // DC bin and Nyquist bin: no factor of 2
-        let edgeFactor = 1.0 / (Double(unpaddedLength) * sampleRate)
+        let edgeFactor = 1.0 / (Double(unpaddedLength) * sampleRate) // fp-safety:disable — guarded by signal.isEmpty == false and sampleRate > 0
 
         var psd = [Double](repeating: 0.0, count: raw.count)
         psd[0] = raw[0] * edgeFactor
@@ -143,7 +143,7 @@ extension FFTBackend {
         guard psd.isEmpty == false else { return [] }
         let paddedLength = (psd.count - 1) * 2
         guard paddedLength > 0 else { return [] }
-        let deltaF = sampleRate / Double(paddedLength)
+        let deltaF = sampleRate / Double(paddedLength) // fp-safety:disable — guarded by paddedLength > 0 check above
         return psd.enumerated().map { idx, value in
             PSDBin(frequency: Double(idx) * deltaF, power: value)
         }
@@ -252,7 +252,7 @@ public struct PureSwiftFFTBackend: FFTBackend, Sendable {
         var size = 2
         while size <= n {
             let halfSize = size / 2
-            let angle = -2.0 * Double.pi / Double(size)
+            let angle = -2.0 * Double.pi / Double(size) // fp-safety:disable
 
             for start in stride(from: 0, to: n, by: size) {
                 for k in 0..<halfSize {

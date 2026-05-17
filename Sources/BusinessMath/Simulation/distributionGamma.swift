@@ -74,7 +74,7 @@ public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, se
 			seedIndex += 1
 			return seed
 		}
-		return Double.random(in: 0...1)
+		return Double.random(in: 0...1) // stochastic:exempt
 	}
 
 	// For shape < 1, use the transformation property
@@ -82,7 +82,7 @@ public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, se
 		let uSeed = nextSeed()
 		let u: T = distributionUniform(min: T(0), max: T(1), uSeed)
 		let x = gammaVariate(shape: shape + T(1), scale: scale, seeds: seeds, seedIndex: &seedIndex)
-		return x * T.pow(u, T(1) / shape)
+		return x * T.pow(u, T(1) / shape) // fp-safety:disable — shape > 0 guarded at function entry
 	}
 
 	// Marsaglia and Tsang's method for shape >= 1
@@ -90,9 +90,9 @@ public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, se
 	let maxIterations = 10000
 	let maxInnerIterations = 1000
 
-	let oneThird: T = T(1) / T(3)
+	let oneThird: T = T(1) / T(3) // fp-safety:disable — constant T(3)
 	let d = shape - oneThird
-	let c = T(1) / T.sqrt(T(9) * d)
+	let c = T(1) / T.sqrt(T(9) * d) // fp-safety:disable — shape >= 1 so d >= 2/3 > 0
 
 	for _ in 0..<maxIterations {
 		var x: T

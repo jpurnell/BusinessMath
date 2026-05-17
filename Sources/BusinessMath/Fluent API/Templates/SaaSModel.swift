@@ -88,7 +88,8 @@ public struct SaaSModel: Sendable {
 
     /// Initial customer count derived from MRR and ARPU
     private var initialCustomerCount: Double {
-        initialMRR / averageRevenuePerUser
+        guard averageRevenuePerUser > 0 else { return 0 }
+        return initialMRR / averageRevenuePerUser // fp-safety:disable — guarded above
     }
 
     // MARK: - MRR Calculations
@@ -195,7 +196,8 @@ public struct SaaSModel: Sendable {
     /// - Returns: Customer Lifetime Value
     public func calculateLTV() -> Double {
         let margin = grossMargin ?? 1.0
-        return (averageRevenuePerUser * margin) / churnRate
+        guard churnRate > 0 else { return 0 }
+        return (averageRevenuePerUser * margin) / churnRate // fp-safety:disable — guarded above
     }
 
     // MARK: - CAC Calculations
@@ -207,7 +209,8 @@ public struct SaaSModel: Sendable {
     /// - Returns: Number of months to recover CAC, or 0 if CAC is not specified
     public func calculateCACPayback() -> Double {
         guard let cac = customerAcquisitionCost else { return 0 }
-        return cac / averageRevenuePerUser
+        guard averageRevenuePerUser > 0 else { return 0 }
+        return cac / averageRevenuePerUser // fp-safety:disable — guarded above
     }
 
     // MARK: - Unit Economics

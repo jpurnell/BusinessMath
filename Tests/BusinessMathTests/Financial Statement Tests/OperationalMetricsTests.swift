@@ -190,7 +190,7 @@ struct OperationalMetricsTests {
 
 		#expect(metrics.metadata?.industry == "SaaS")
 		#expect(metrics.metadata?.businessModel == "Subscription-based B2B software")
-		#expect(metrics.metadata?.metricDefinitions?["monthly_recurring_revenue"] != nil)
+		#expect(metrics.metadata?.metricDefinitions?["monthly_recurring_revenue"] != nil) // TEST-QUALITY: existence check
 	}
 
 	// MARK: - Time Series
@@ -261,7 +261,7 @@ struct OperationalMetricsTests {
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: metricsList)
 		let unitsSold = timeSeries.timeSeries(for: "units_sold")
 
-		#expect(unitsSold != nil)
+		#expect(unitsSold != nil) // TEST-QUALITY: existence check
 		#expect(unitsSold?[quarters[0]] == 10_000)
 		#expect(unitsSold?[quarters[1]] == 11_000)
 		#expect(unitsSold?[quarters[2]] == 12_100)
@@ -299,7 +299,7 @@ struct OperationalMetricsTests {
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: metricsList)
 		let growth = timeSeries.growthRate(metric: "units_sold")
 
-		#expect(growth != nil)
+		#expect(growth != nil) // TEST-QUALITY: existence check
 
 		// Q1 to Q2: 10% growth
 		let q2Growth = growth?[quarters[1]]!

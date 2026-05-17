@@ -36,6 +36,7 @@ import RealModule
 /// )
 /// ```
 public struct PeriodSequence: Sequence, Sendable {
+    /// The type of element produced by iteration.
     public typealias Element = Period
 
     private let periods: [Period]
@@ -50,6 +51,7 @@ public struct PeriodSequence: Sequence, Sendable {
         self.periods = Array(range)
     }
 
+    /// Returns an iterator over the periods in this sequence.
     public func makeIterator() -> IndexingIterator<[Period]> {
         periods.makeIterator()
     }

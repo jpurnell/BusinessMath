@@ -14,7 +14,7 @@ struct ConvergenceDiagnosticsTests {
         let chain2: [Double] = (0..<500).map { Double(($0 + 50) % 100) / 100.0 + 0.5 }
 
         let rHat = rHatStatistic([chain1, chain2])
-        #expect(rHat != nil)
+        #expect(rHat != nil) // TEST-QUALITY: existence check
 
         if let rHat = rHat {
             #expect(rHat < 1.05, "Convergent chains should have R-hat < 1.05, got \(rHat)")
@@ -30,7 +30,7 @@ struct ConvergenceDiagnosticsTests {
         let chain2: [Double] = (0..<10).map { _ in 100.0 }
 
         let rHat = rHatStatistic([chain1, chain2])
-        #expect(rHat != nil)
+        #expect(rHat != nil) // TEST-QUALITY: existence check
 
         if let rHat = rHat {
             #expect(rHat > 1.1, "Non-convergent chains should have R-hat > 1.1, got \(rHat)")
@@ -54,7 +54,7 @@ struct ConvergenceDiagnosticsTests {
         // For n=1000, that is sqrt(0.999) ≈ 0.9995 — well within 0.06 of 1.0.
         let chain: [Double] = (0..<1000).map { Double($0) }
         let rHat = rHatStatistic([chain, chain])
-        #expect(rHat != nil)
+        #expect(rHat != nil) // TEST-QUALITY: existence check
 
         if let rHat = rHat {
             #expect(abs(rHat - 1.0) < 0.06, "Identical chains should have R-hat ~1.0, got \(rHat)")
@@ -71,7 +71,7 @@ struct ConvergenceDiagnosticsTests {
         let chain3: [Double] = (0..<n).map { Double(($0 + 33) % 50) / 50.0 }
 
         let rHat = rHatStatistic([chain1, chain2, chain3])
-        #expect(rHat != nil)
+        #expect(rHat != nil) // TEST-QUALITY: existence check
 
         if let rHat = rHat {
             #expect(rHat < 1.1, "Three convergent chains should have reasonable R-hat, got \(rHat)")

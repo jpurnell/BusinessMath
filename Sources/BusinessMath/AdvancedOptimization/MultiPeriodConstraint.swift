@@ -267,7 +267,7 @@ extension MultiPeriodConstraint {
 	) -> MultiPeriodConstraint {
 		.trajectory { trajectory in
 			let values = trajectory.map(metric)
-			let average = values.reduce(0.0, +) / Double(values.count)
+			let average = values.reduce(0.0, +) / Double(values.count) // fp-safety:disable — trajectory is nonempty
 			return threshold - average  // average ≥ threshold → threshold - average ≤ 0
 		}
 	}

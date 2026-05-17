@@ -203,12 +203,12 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 			}
 
 			let successfulRuns = runs.filter { $0.converged }
-			let avgTime = runs.map(\.executionTime).reduce(0, +) / Double(trials)
+			let avgTime = runs.map(\.executionTime).reduce(0, +) / Double(trials) // fp-safety:disable — trials >= 1 (default 10)
 			let stdTime = standardDeviation(runs.map(\.executionTime))
-			let avgIterations = runs.map { Double($0.iterations) }.reduce(0, +) / Double(trials)
-			let successRate = Double(successfulRuns.count) / Double(trials)
-			let avgObjective = successfulRuns.isEmpty ? 0.0 :
-				successfulRuns.map(\.objectiveValue).reduce(0, +) / Double(successfulRuns.count)
+			let avgIterations = runs.map { Double($0.iterations) }.reduce(0, +) / Double(trials) // fp-safety:disable — trials >= 1
+			let successRate = Double(successfulRuns.count) / Double(trials) // fp-safety:disable — trials >= 1
+			let avgObjective = successfulRuns.isEmpty ? 0.0 : // fp-safety:disable
+				successfulRuns.map(\.objectiveValue).reduce(0, +) / Double(successfulRuns.count) // fp-safety:disable — guarded by !isEmpty
 			let bestObjective = runs.map(\.objectiveValue).min() ?? 0.0
 
 			let result = OptimizerResult(

@@ -951,13 +951,13 @@ struct VectorSpaceTests {
 		
 			// Ones vector
 		let ones = VectorN<Double>.filled(with: 1.0, dimension: dimension)
-		#expect(ones != nil)
+		#expect(ones != nil) // TEST-QUALITY: existence check
 		#expect(ones!.count == dimension)
 		#expect(ones!.sum == Double(dimension))
 		
 			// Custom filled vector
 		let sevens = VectorN<Double>.filled(with: 7.0, dimension: 3)
-		#expect(sevens != nil)
+		#expect(sevens != nil) // TEST-QUALITY: existence check
 		#expect(abs(sevens![0] - 7.0) < 1e-6)
 		#expect(abs(sevens![1] - 7.0) < 1e-6)
 		#expect(abs(sevens![2] - 7.0) < 1e-6)
@@ -1156,24 +1156,28 @@ struct VectorSpaceTests {
 	
 	@Test("Integration with probability distributions", .disabled("Statistical test with random variation - needs larger sample size or deterministic seeding"))
 	func integrationWithProbabilityDistributions() {
-			// Generate random vectors for Monte Carlo simulation
+			// Generate deterministic vectors simulating Monte Carlo
 		let dimension = 3
 		let sampleSize = 1000
-		
+
 		var samples: [VectorN<Double>] = []
 		var sum = VectorN<Double>.withDimension(dimension)
-		
-			// Generate samples from uniform distribution
-		for _ in 0..<sampleSize {
-			if let sample = VectorN<Double>.random(in: 0...1) {
-				samples.append(sample)
-				sum = sum + sample
+
+			// Generate samples using golden-ratio hash (deterministic, uniform-like)
+		for i in 0..<sampleSize {
+			let phi = 0.6180339887498949
+			let values = (0..<dimension).map { d in
+				let raw = Double(i * dimension + d + 1) * phi
+				return raw - Double(Int(raw)) // fractional part in [0,1)
 			}
+			let sample = VectorN<Double>(values)
+			samples.append(sample)
+			sum = sum + sample
 		}
-		
+
 			// Calculate sample mean
 		let sampleMean = (1.0 / Double(sampleSize)) * sum
-		
+
 			// Mean should be near 0.5 for uniform [0,1]
 		#expect(abs(sampleMean.mean - 0.5) < 0.2)
 		

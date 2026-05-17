@@ -76,7 +76,7 @@ import RealModule
 
         // And: Variable cost step should show calculation
         let variableStep = costSteps.first { $0.description.contains("Variable") }
-        #expect(variableStep != nil)
+        #expect(variableStep != nil) // TEST-QUALITY: existence check
         #expect(variableStep?.description.contains("30,000") ?? false, "Should show calculated variable cost amount")
     }
 
@@ -112,7 +112,7 @@ import RealModule
 
         // And: Profit step should reference revenue and costs
         let profitStep = profitSteps.first
-        #expect(profitStep != nil)
+        #expect(profitStep != nil) // TEST-QUALITY: existence check
         #expect(profitStep?.description.contains("50,000") ?? false, "Should show revenue")
         #expect(profitStep?.description.contains("22,500") ?? false, "Should show costs")
     }
@@ -142,7 +142,7 @@ import RealModule
         for step in trace.steps {
             #expect(!step.description.isEmpty, "Step should have description")
             #expect(step.category == step.category, "Step should have category")
-            #expect(step.value != nil, "Step should have value")
+            #expect(step.value != nil, "Step should have value") // TEST-QUALITY: existence check
         }
     }
 

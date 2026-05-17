@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 @Suite("Risk Parity Optimization Tests")
@@ -8,21 +9,22 @@ struct RiskParityTests {
 	// MARK: - Helper Functions
 
 	func makeTestReturns() -> (assets: [String], returns: [TimeSeries<Double>]) {
+		var gen = DeterministicGenerator(seed: 42)
 		let periods = (0..<120).map { Period.month(year: 2014 + $0 / 12, month: $0 % 12 + 1) }
 
 		// High vol asset
-		let highVolReturns = (0..<120).map { i in
-			0.10 / 12.0 + Double.random(in: -0.05...0.05)
+		let highVolReturns = (0..<120).map { _ in
+			0.10 / 12.0 + gen.nextDouble(in: -0.05...0.05)
 		}
 
 		// Low vol asset
-		let lowVolReturns = (0..<120).map { i in
-			0.05 / 12.0 + Double.random(in: -0.01...0.01)
+		let lowVolReturns = (0..<120).map { _ in
+			0.05 / 12.0 + gen.nextDouble(in: -0.01...0.01)
 		}
 
 		// Medium vol asset
-		let medVolReturns = (0..<120).map { i in
-			0.07 / 12.0 + Double.random(in: -0.03...0.03)
+		let medVolReturns = (0..<120).map { _ in
+			0.07 / 12.0 + gen.nextDouble(in: -0.03...0.03)
 		}
 
 		return (
@@ -58,14 +60,15 @@ struct RiskParityTests {
 
 	@Test("Risk parity allocates less to high vol assets")
 	func lessToHighVol() throws {
+		var gen = DeterministicGenerator(seed: 99)
 		// Create assets with clearly different volatilities
 		let periods = (0..<60).map { Period.month(year: 2020 + $0 / 12, month: $0 % 12 + 1) }
 
 		// Very high volatility asset
-		let highVol = (0..<60).map { _ in Double.random(in: -0.10...0.10) }
+		let highVol = (0..<60).map { _ in gen.nextDouble(in: -0.10...0.10) }
 
 		// Very low volatility asset
-		let lowVol = (0..<60).map { _ in Double.random(in: -0.01...0.01) }
+		let lowVol = (0..<60).map { _ in gen.nextDouble(in: -0.01...0.01) }
 
 		let optimizer = RiskParityOptimizer<Double>()
 		let allocation = optimizer.optimize(
@@ -85,11 +88,12 @@ struct RiskParityTests {
 
 	@Test("Risk parity with equal volatilities gives equal weights")
 	func equalVolEqualWeights() throws {
+		var gen = DeterministicGenerator(seed: 77)
 		let periods = (0..<60).map { Period.month(year: 2020 + $0 / 12, month: $0 % 12 + 1) }
 
 		// Both assets have same volatility
-		let returns1 = (0..<60).map { _ in Double.random(in: -0.02...0.02) }
-		let returns2 = (0..<60).map { _ in Double.random(in: -0.02...0.02) }
+		let returns1 = (0..<60).map { _ in gen.nextDouble(in: -0.02...0.02) }
+		let returns2 = (0..<60).map { _ in gen.nextDouble(in: -0.02...0.02) }
 
 		let optimizer = RiskParityOptimizer<Double>()
 		let allocation = optimizer.optimize(

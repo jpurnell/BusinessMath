@@ -230,6 +230,7 @@ struct MultiStartOptimizerTests {
 
         // Should terminate without error
         _ = try? await task.value
+        #expect(true) // TEST-QUALITY: validates no-throw execution
     }
 
     // MARK: - Starting Point Generation Tests

@@ -140,7 +140,7 @@ public struct ExpressionArray: Sendable {
     /// ```
     public func mean() -> ExpressionProxy {
         let total = sum()
-        return total / Double(count)
+        return total / Double(count) // fp-safety:disable — count is array element count, >= 1 for valid arrays
     }
 
     // MARK: - Element-wise Operations
@@ -232,7 +232,7 @@ public struct ExpressionArray: Sendable {
     public func variance() -> ExpressionProxy {
         let avg = mean()
         let deviations = map { ($0 - avg) * ($0 - avg) }
-        return deviations.sum() / Double(count)
+        return deviations.sum() / Double(count) // fp-safety:disable — count is array element count, >= 1 for valid arrays
     }
 
     /// Calculate standard deviation

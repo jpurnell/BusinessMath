@@ -2,7 +2,7 @@ import Foundation
 import Numerics
 
 /// Result of a Bland-Altman agreement analysis.
-public struct BlandAltmanResult<T: Real>: Sendable, Equatable {
+public struct BlandAltmanResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Mean difference (x - y). Positive means x reads higher than y.
 	public let bias: T
 

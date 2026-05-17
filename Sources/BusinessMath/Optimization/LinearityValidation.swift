@@ -70,7 +70,7 @@ public func validateLinearModel<V: VectorSpace>(
         }
 
         // Forward difference: df/dx_i ≈ (f(x + h*e_i) - f(x)) / h
-        let derivative = (function(vecPlus) - function(initialPoint)) / h
+        let derivative = (function(vecPlus) - function(initialPoint)) / h // fp-safety:disable — h = 1e-8 (constant)
         coeffs.append(derivative)
     }
 
@@ -87,7 +87,7 @@ public func validateLinearModel<V: VectorSpace>(
         // Generate random point in reasonable range [-10, 10]
         var randomComponents: [Double] = []
         for _ in 0..<dimension {
-            let randomValue = Double.random(in: -10.0...10.0)
+            let randomValue = Double.random(in: -10.0...10.0) // stochastic:exempt
             randomComponents.append(randomValue)
         }
 

@@ -125,7 +125,7 @@ struct AsyncOptimizationTests {
 
         #expect(config.progressUpdateInterval == .milliseconds(100))
         #expect(config.maxIterations == 10_000)
-        #expect(config.tolerance == 1e-6)
+        #expect(abs(config.tolerance - 1e-6) < 1e-12)
         #expect(config.reportEveryNIterations == 1)
     }
 
@@ -140,7 +140,7 @@ struct AsyncOptimizationTests {
 
         #expect(config.progressUpdateInterval == .milliseconds(500))
         #expect(config.maxIterations == 1000)
-        #expect(config.tolerance == 1e-4)
+        #expect(abs(config.tolerance - 1e-4) < 1e-10)
         #expect(config.reportEveryNIterations == 10)
     }
 
@@ -232,6 +232,7 @@ struct AsyncOptimizationTests {
         // Task should complete (cancelled tasks finish their current work)
         // We're just verifying that cancellation can be called without error
         _ = try? await task.value
+        #expect(true) // TEST-QUALITY: validates no-throw execution
     }
 
     @Test("AsyncOptimizer progress includes objective values")

@@ -259,8 +259,8 @@ public func multipleLinearRegression(
     }
 
     // Check for variance in y
-    let yMean = y.reduce(0.0, +) / Double(n)
-    let yVariance = y.map { pow($0 - yMean, 2) }.reduce(0.0, +) / Double(n)
+    let yMean = y.reduce(0.0, +) / Double(n) // fp-safety:disable
+    let yVariance = y.map { pow($0 - yMean, 2) }.reduce(0.0, +) / Double(n) // fp-safety:disable
     guard yVariance > 1e-15 else {
         throw RegressionError.noVariance(message: "y has no variance (all values approximately equal)")
     }
@@ -319,56 +319,78 @@ public func multipleLinearRegression(
     let TSS = y.map { pow($0 - yMean, 2) }.reduce(0.0, +)
     let RSS = residuals.map { $0 * $0 }.reduce(0.0, +)
     let rSquared = 1.0 - (RSS / TSS)
-    let adjustedRSquared = 1.0 - ((1.0 - rSquared) * Double(n - 1) / Double(n - p - 1))
+
+    let degreesOfFreedom = n - p - 1
+    let adjustedRSquared: Double
+    if degreesOfFreedom == 0 {
+        adjustedRSquared = rSquared
+    } else {
+        adjustedRSquared = 1.0 - ((1.0 - rSquared) * Double(n - 1) / Double(degreesOfFreedom)) // fp-safety:disable
+    }
 
     // MARK: - Compute Standard Errors
 
-    let degreesOfFreedom = n - p - 1
-    let residualVariance = RSS / Double(degreesOfFreedom)
-    let residualStandardError = sqrt(residualVariance)
+    let residualVariance: Double
+    let residualStandardError: Double
+    let standardErrors: [Double]
+    let tStatistics: [Double]
+    let pValues: [Double]
+    let confidenceIntervals: [ConfidenceInterval]
+    let fStatistic: Double
+    let fStatisticPValue: Double
 
-    // Compute (XᵀX)⁻¹
-    let XTXInv = try computeInverse(XTX, backend: backend)
+    if degreesOfFreedom > 0 {
+        residualVariance = RSS / Double(degreesOfFreedom) // fp-safety:disable
+        residualStandardError = sqrt(residualVariance)
 
-    // Standard errors = sqrt(diag(σ² (XᵀX)⁻¹))
-    var standardErrors = Array(repeating: 0.0, count: p + 1)
-    for i in 0..<(p + 1) {
-        standardErrors[i] = sqrt(residualVariance * XTXInv[i][i])
-    }
+        // Compute (XᵀX)⁻¹
+        let XTXInv = try computeInverse(XTX, backend: backend)
 
-    // MARK: - Compute t-statistics and p-values
-
-    let tStatistics = zip(beta, standardErrors).map { $0 / $1 }
-
-    // Compute p-values using t-distribution (two-tailed)
-    let pValues = tStatistics.map { tStat in
-        let cdf = (try? tCDF(t: abs(tStat), df: degreesOfFreedom)) ?? 0.5 // silent: fallback to 0.5 (non-significant) if CDF fails
-        return 2.0 * (1.0 - cdf)
-    }
-
-    // MARK: - Compute Confidence Intervals
-
-    // silent: fallback to z-critical 1.96 if t-quantile computation fails
-    let tCritical = (try? tQuantile(p: 1.0 - (1.0 - confidenceLevel) / 2.0, df: degreesOfFreedom)) ?? 1.96
-    let confidenceIntervals = zip(beta, standardErrors).map { coef, se in
-        // Handle perfect fit case where se ≈ 0
-        if se < 1e-15 || !tCritical.isFinite {
-            // For perfect fit, use very tight interval
-            return ConfidenceInterval(lower: coef - 1e-10, upper: coef + 1e-10)
+        // Standard errors = sqrt(diag(σ² (XᵀX)⁻¹))
+        var se = Array(repeating: 0.0, count: p + 1)
+        for i in 0..<(p + 1) {
+            se[i] = sqrt(residualVariance * XTXInv[i][i])
         }
-        let margin = tCritical * se
-        return ConfidenceInterval(lower: coef - margin, upper: coef + margin)
+        standardErrors = se
+
+        tStatistics = zip(beta, standardErrors).map { $0 / $1 }
+
+        // Compute p-values using t-distribution (two-tailed)
+        pValues = tStatistics.map { tStat in
+            let cdf = (try? tCDF(t: abs(tStat), df: degreesOfFreedom)) ?? 0.5 // silent: fallback to 0.5 (non-significant) if CDF fails
+            return 2.0 * (1.0 - cdf)
+        }
+
+        // silent: fallback to z-critical 1.96 if t-quantile computation fails
+        let tCritical = (try? tQuantile(p: 1.0 - (1.0 - confidenceLevel) / 2.0, df: degreesOfFreedom)) ?? 1.96
+        confidenceIntervals = zip(beta, standardErrors).map { coef, se in
+            // Handle perfect fit case where se ≈ 0
+            if se < 1e-15 || !tCritical.isFinite {
+                return ConfidenceInterval(lower: coef - 1e-10, upper: coef + 1e-10)
+            }
+            let margin = tCritical * se
+            return ConfidenceInterval(lower: coef - margin, upper: coef + margin)
+        }
+
+        let MSR = (TSS - RSS) / Double(p) // fp-safety:disable
+        let MSE = RSS / Double(degreesOfFreedom) // fp-safety:disable
+        fStatistic = MSR / MSE
+
+        // silent: fallback to p=1.0 (non-significant) if F-CDF computation fails
+        fStatisticPValue = 1.0 - ((try? fCDF(f: fStatistic, df1: p, df2: degreesOfFreedom)) ?? 0.0)
+    } else {
+        // silent: zero degrees of freedom — standard errors and inferential stats are undefined
+        residualVariance = 0.0
+        residualStandardError = 0.0
+        standardErrors = Array(repeating: 0.0, count: p + 1)
+        tStatistics = Array(repeating: .infinity, count: p + 1)
+        pValues = Array(repeating: 0.0, count: p + 1)
+        confidenceIntervals = beta.map { coef in
+            ConfidenceInterval(lower: coef - 1e-10, upper: coef + 1e-10)
+        }
+        fStatistic = .infinity
+        fStatisticPValue = 0.0
     }
-
-    // MARK: - Compute F-statistic
-
-    let MSR = (TSS - RSS) / Double(p)
-    let MSE = RSS / Double(degreesOfFreedom)
-    let fStatistic = MSR / MSE
-
-    // Compute p-value for F-statistic
-    // silent: fallback to p=1.0 (non-significant) if F-CDF computation fails
-    let fStatisticPValue = 1.0 - ((try? fCDF(f: fStatistic, df1: p, df2: degreesOfFreedom)) ?? 0.0)
 
     // MARK: - Compute VIF (Variance Inflation Factors)
 
@@ -393,7 +415,12 @@ public func multipleLinearRegression(
             // Regress x_j on other predictors
             do {
                 let auxResult = try multipleLinearRegression(X: XWithoutJ, y: yJ, confidenceLevel: confidenceLevel)
-                vif[j] = 1.0 / (1.0 - auxResult.rSquared)
+                let oneMinusR2 = 1.0 - auxResult.rSquared
+                if abs(oneMinusR2) < 1e-15 {
+                    vif[j] = .infinity
+                } else {
+                    vif[j] = 1.0 / oneMinusR2 // fp-safety:disable
+                }
             } catch {
                 // silent: auxiliary regression failure means VIF is undefined — set to infinity
                 vif[j] = .infinity

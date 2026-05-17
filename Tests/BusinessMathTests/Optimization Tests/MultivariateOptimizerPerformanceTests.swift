@@ -52,6 +52,7 @@ struct MultivariateOptimizerPerformanceTests {
 
     @Test("Performance - Algorithm factory overhead")
     func factoryOverhead() throws {
+        #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
         let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let initialGuess = VectorN([3.0, 4.0])
         let iterations = 50

@@ -117,6 +117,7 @@ public protocol Driver: Sendable {
 /// ]
 /// ```
 public struct AnyDriver<T: Real & Sendable>: Driver, Sendable {
+	/// The display name of the wrapped driver.
 	public let name: String
 	private let _sample: @Sendable (Period) -> T
 

@@ -35,8 +35,9 @@ public struct ValidationError: Error, CustomStringConvertible {
 
 // MARK: - Property-Level Validation Macros
 
-/// Marks a property as requiring positive values (> 0)
+/// Marks a property as requiring positive values (> 0).
 public struct PositiveMacro: PeerMacro {
+    /// Expands the `@Positive` attribute (detected by `@Validated`, not expanded directly).
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -47,8 +48,9 @@ public struct PositiveMacro: PeerMacro {
     }
 }
 
-/// Marks a property as requiring non-negative values (>= 0)
+/// Marks a property as requiring non-negative values (>= 0).
 public struct NonNegativeMacro: PeerMacro {
+    /// Expands the `@NonNegative` attribute (detected by `@Validated`, not expanded directly).
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -58,8 +60,9 @@ public struct NonNegativeMacro: PeerMacro {
     }
 }
 
-/// Marks a property as requiring values within a specified range
+/// Marks a property as requiring values within a specified range.
 public struct RangeMacro: PeerMacro {
+    /// Expands the `@Range` attribute (detected by `@Validated`, not expanded directly).
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -69,8 +72,9 @@ public struct RangeMacro: PeerMacro {
     }
 }
 
-/// Marks a property as requiring a minimum value
+/// Marks a property as requiring a minimum value.
 public struct MinMacro: PeerMacro {
+    /// Expands the `@Min` attribute (detected by `@Validated`, not expanded directly).
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -80,8 +84,9 @@ public struct MinMacro: PeerMacro {
     }
 }
 
-/// Marks a property as requiring a maximum value
+/// Marks a property as requiring a maximum value.
 public struct MaxMacro: PeerMacro {
+    /// Expands the `@Max` attribute (detected by `@Validated`, not expanded directly).
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -91,8 +96,9 @@ public struct MaxMacro: PeerMacro {
     }
 }
 
-/// Marks a collection property as requiring non-empty values
+/// Marks a collection property as requiring non-empty values.
 public struct NonEmptyMacro: PeerMacro {
+    /// Expands the `@NonEmpty` attribute (detected by `@Validated`, not expanded directly).
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -104,9 +110,11 @@ public struct NonEmptyMacro: PeerMacro {
 
 // MARK: - Struct-Level Validation Macro
 
-/// Macro for adding validation to struct properties
-/// Scans properties for validation attributes and generates validation logic
+/// Macro that scans struct properties for validation attributes and generates validation logic.
+///
+/// Generates `validate()`, `isValid`, and `validationError` members on the annotated struct.
 public struct ValidatedMacro: MemberMacro {
+    /// Expands the `@Validated` attribute by generating validation members for the struct.
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,

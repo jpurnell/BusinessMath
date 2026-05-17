@@ -30,7 +30,7 @@ import Numerics
 ///
 /// - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
 
-public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
+public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
 	// Validate parameters - return NaN for invalid inputs
 	guard !stdDev.isNaN, stdDev.isFinite else { return T.nan }
 	guard stdDev >= T(0) else { return T.nan }  // Negative stdDev is invalid
@@ -63,7 +63,7 @@ public func boxMuller<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Doubl
 ///   ```
 ///
 /// - Requires: Appropriate implementation of the function `boxMullerSeed` to generate standard normal values.
-public func boxMuller<T: Real>(mean: T, variance: T, _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
+public func boxMuller<T: Real>(mean: T, variance: T, _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
 	// Validate parameters - return NaN for invalid inputs
 	guard !variance.isNaN, variance.isFinite else { return T.nan }
 	guard variance >= T(0) else { return T.nan }  // Negative variance is invalid

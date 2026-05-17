@@ -281,8 +281,10 @@ public struct CapTable {
     ) -> CapTable {
         // Simplified down round - similar to regular round but at lower valuation
         let postMoneyValuation = preMoneyValuation + newInvestment
-        let investorOwnership = newInvestment / postMoneyValuation
-        let pricePerShare = preMoneyValuation / totalShares
+        guard postMoneyValuation != 0 else { return self }
+        let investorOwnership = newInvestment / postMoneyValuation // fp-safety:disable
+        guard totalShares > 0 else { return self }
+        let pricePerShare = preMoneyValuation / totalShares // fp-safety:disable
 
         let investorShares = (investorOwnership / (1.0 - investorOwnership)) * totalShares
 
@@ -363,8 +365,10 @@ public struct CapTable {
         poolTiming: OptionPoolTiming = .postRound
     ) -> CapTable {
         let postMoneyValuation = preMoneyValuation + newInvestment
-        let investorOwnership = newInvestment / postMoneyValuation
-        let pricePerShare = preMoneyValuation / totalShares
+        guard postMoneyValuation != 0 else { return self }
+        let investorOwnership = newInvestment / postMoneyValuation // fp-safety:disable
+        guard totalShares > 0 else { return self }
+        let pricePerShare = preMoneyValuation / totalShares // fp-safety:disable
 
         // Calculate new shares for investor
         let investorShares = (investorOwnership / (1.0 - investorOwnership)) * totalShares
@@ -758,11 +762,11 @@ public struct SAFE {
         switch type {
         case .postMoney:
             // Post-money SAFE: ownership = investment / cap
-            let ownershipPct = investment / postMoneyCap
+            let ownershipPct = investment / postMoneyCap // fp-safety:disable
             // Assume cap is based on some standard share count (e.g., 10M shares)
             let assumedShares = 10_000_000.0
-            let pricePerShare = postMoneyCap / assumedShares
-            let shares = investment / pricePerShare
+            let pricePerShare = postMoneyCap / assumedShares // fp-safety:disable
+            let shares = investment / pricePerShare // fp-safety:disable
 
             return SAFEConversion(
                 shares: shares,
@@ -773,11 +777,14 @@ public struct SAFE {
 
         case .preMoney:
             // Pre-money SAFE: use cap vs series A price
-            let capPrice = postMoneyCap / 10_000_000
-            let seriesAPrice = seriesAValuation / 10_000_000
+            let capPrice = postMoneyCap / 10_000_000 // fp-safety:disable
+            let seriesAPrice = seriesAValuation / 10_000_000 // fp-safety:disable
 
             let conversionPrice = min(capPrice, seriesAPrice)
-            let shares = investment / conversionPrice
+            guard conversionPrice != 0 else {
+                return SAFEConversion(shares: 0, pricePerShare: 0, appliedTerm: .cap, ownershipPercentOverride: nil)
+            }
+            let shares = investment / conversionPrice // fp-safety:disable
 
             return SAFEConversion(
                 shares: shares,
@@ -907,7 +914,7 @@ public struct SAFEConversion {
         if let override = ownershipPercentOverride {
             return override
         }
-        return shares / (10_000_000.0 + shares)
+        return shares / (10_000_000.0 + shares) // fp-safety:disable
     }
 }
 
@@ -1069,5 +1076,6 @@ public func postMoneyFromPreMoney(preMoney: Double, investment: Double) -> Doubl
 
 /// Calculate ownership percentage from investment and valuation
 public func ownershipFromInvestment(investment: Double, postMoneyValuation: Double) -> Double {
-    return investment / postMoneyValuation
+    guard postMoneyValuation != 0 else { return 0.0 }
+    return investment / postMoneyValuation // fp-safety:disable
 }

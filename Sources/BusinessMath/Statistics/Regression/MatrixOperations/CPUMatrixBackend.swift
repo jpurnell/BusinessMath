@@ -143,7 +143,7 @@ public struct CPUMatrixBackend: MatrixBackend {
                 throw MatrixError.singularMatrix
             }
 
-            x[i] = sum / R[i][i]
+            x[i] = sum / R[i][i] // fp-safety:disable
         }
 
         return x

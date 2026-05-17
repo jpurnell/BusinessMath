@@ -92,7 +92,7 @@ public struct DebtInstrument {
     /// - Returns: Complete amortization schedule
     public func schedule() -> AmortizationSchedule {
         let periods = generatePeriods()
-        let periodicRate = interestRate / Double(paymentFrequency.periodsPerYear)
+        let periodicRate = interestRate / Double(paymentFrequency.periodsPerYear) // fp-safety:disable
         let numPayments = periods.count
 
         // Pre-allocate dictionary capacity for better performance
@@ -134,7 +134,8 @@ public struct DebtInstrument {
 
         case .straightLine:
             // Equal principal payments, declining interest
-            let principalPerPayment = principal / Double(numPayments)
+            guard numPayments > 0 else { break }
+            let principalPerPayment = principal / Double(numPayments) // fp-safety:disable
 
             for period in periods {
                 beginningBalance[period] = currentBalance
@@ -205,7 +206,7 @@ public struct DebtInstrument {
     /// - Returns: The effective annual interest rate
     public func effectiveAnnualRate() -> Double {
         let n = Double(paymentFrequency.periodsPerYear)
-        return pow(1.0 + interestRate / n, n) - 1.0
+        return pow(1.0 + interestRate / n, n) - 1.0 // fp-safety:disable
     }
 
     // MARK: - Private Helpers
@@ -273,7 +274,8 @@ public struct DebtInstrument {
     private func calculateLevelPayment(principal: Double, rate: Double, periods: Int) -> Double {
         if rate == 0 {
             // Zero interest - just divide principal evenly
-            return principal / Double(periods)
+            guard periods > 0 else { return 0.0 }
+            return principal / Double(periods) // fp-safety:disable
         }
 
         // Standard amortization formula: PMT = P * [r(1+r)^n] / [(1+r)^n - 1]

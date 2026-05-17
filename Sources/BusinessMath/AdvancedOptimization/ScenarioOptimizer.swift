@@ -248,7 +248,7 @@ public struct ScenarioOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 				let value = objective(x, scenario)
 				total += value * scenario.probability
 			}
-			return total / totalProbabilityCopy
+			return total / totalProbabilityCopy // fp-safety:disable — totalProbability > 0 (sum of scenario probabilities)
 		}
 
 		// Convert scenario constraints to standard constraints

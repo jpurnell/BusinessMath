@@ -73,7 +73,7 @@ public func distributionT<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil
 			seedIndex += 1
 			return seed
 		}
-		return Double.random(in: 0...1)
+		return Double.random(in: 0...1) // stochastic:exempt
 	}
 
 	// Generate Z ~ N(0,1) - needs 2 seeds
@@ -83,13 +83,14 @@ public func distributionT<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil
 
 	// Generate V ~ χ²(df) using the relationship χ²(df) = Gamma(df/2, 2)
 	let df = T(degreesOfFreedom)
-	let shape = df / T(2)
+	let shape = df / T(2) // fp-safety:disable — constant T(2)
 	let scale = T(2)
 	let v = gammaVariate(shape: shape, scale: scale, seeds: seeds, seedIndex: &seedIndex)
 
 	// T = Z / √(V/df)
-	let denominator = T.sqrt(v / df)
-	return z / denominator
+	let denominator = T.sqrt(v / df) // fp-safety:disable — df > 0 guarded above
+	guard denominator > T(0) else { return z }
+	return z / denominator // fp-safety:disable — guarded by denominator > 0 above
 }
 
 /// A type that represents a Student's t-distribution.

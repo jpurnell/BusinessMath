@@ -17,7 +17,7 @@ import Numerics
 /// ```
 /// SS_total = SS_between + SS_subgroups(within) + SS_within
 /// ```
-public struct NestedANOVAResult<T: Real>: Sendable, Equatable {
+public struct NestedANOVAResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Sum of squares between groups (factor A).
 	public let ssBetweenGroups: T
 	/// Sum of squares among subgroups nested within groups (factor B within A).
@@ -354,7 +354,7 @@ private func computeN0Alpha<T: Real>(
 /// - `observations([T])`: Leaf node containing raw measurements.
 /// - `group([NestedData<T>])`: Internal node whose children are subgroups
 ///   at the next lower level.
-public indirect enum NestedData<T: Real>: Sendable, Equatable {
+public indirect enum NestedData<T: Real & Sendable>: Sendable, Equatable {
 	/// Leaf node: raw observation values.
 	case observations([T])
 	/// Internal node: a group of nested sub-elements.
@@ -366,7 +366,7 @@ public indirect enum NestedData<T: Real>: Sendable, Equatable {
 /// Generalises ``NestedANOVAResult`` to an arbitrary number of hierarchy levels.
 /// Level 0 is the top (between groups), and the last level is within-subgroups
 /// (residual error).
-public struct MultiLevelNestedANOVAResult<T: Real>: Sendable, Equatable {
+public struct MultiLevelNestedANOVAResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Sum of squares at each level (from top to residual).
 	public let ssLevels: [T]
 	/// Mean squares at each level.

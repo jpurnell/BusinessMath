@@ -34,8 +34,8 @@ struct ErrorHandlingExamples {
         } catch let error as BusinessMathError {
             if case .invalidInput = error {
                 #expect(error.code == "E001")
-                #expect(error.errorDescription != nil)
-                #expect(error.recoverySuggestion != nil)
+                #expect(error.errorDescription != nil) // TEST-QUALITY: existence check
+                #expect(error.recoverySuggestion != nil) // TEST-QUALITY: existence check
             } else {
                 Issue.record("Wrong error type: \(error)")
             }
@@ -273,7 +273,7 @@ struct ErrorHandlingExamples {
             result = try? irr(cashFlows: cashFlows, guess: 0.5)
         }
 
-        #expect(result != nil)
+        #expect(result != nil) // TEST-QUALITY: existence check
     }
 }
 

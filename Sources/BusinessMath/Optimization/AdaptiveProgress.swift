@@ -329,7 +329,7 @@ public struct ConvergenceBasedStrategy: ProgressStrategy {
             totalImprovement += recentMetrics[i].improvementFrom(recentMetrics[i - 1])
         }
 
-        return totalImprovement / Double(recentMetrics.count - 1)
+        return totalImprovement / Double(recentMetrics.count - 1) // fp-safety:disable — guarded by count >= 2 above
     }
 }
 
@@ -409,7 +409,7 @@ public struct ConvergenceDetector: Sendable {
         for i in 1..<recentWindow.count {
             totalImprovement += recentWindow[i].improvementFrom(recentWindow[i - 1])
         }
-        let avgImprovement = totalImprovement / Double(recentWindow.count - 1)
+        let avgImprovement = totalImprovement / Double(recentWindow.count - 1) // fp-safety:disable — windowSize >= 2
         let improvementSmall = avgImprovement < improvementThreshold
 
         return allGradientsSmall && improvementSmall
@@ -442,13 +442,14 @@ public struct ConvergenceDetector: Sendable {
         guard metricsHistory.count >= 2 else { return 0 }
 
         let recentWindow = Array(metricsHistory.suffix(min(windowSize, metricsHistory.count)))
+        guard recentWindow.count >= 2 else { return 0 }
 
         var totalImprovement = 0.0
         for i in 1..<recentWindow.count {
             totalImprovement += recentWindow[i].improvementFrom(recentWindow[i - 1])
         }
 
-        return totalImprovement / Double(recentWindow.count - 1)
+        return totalImprovement / Double(recentWindow.count - 1) // fp-safety:disable — guarded >= 2 above
     }
 
     /// Get convergence status description

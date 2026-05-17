@@ -209,7 +209,7 @@ public struct VolatilitySurface: Sendable {
         }
 
         let span = array[hi] - array[lo]
-        let weight = span > 0 ? (value - array[lo]) / span : 0.0
+        let weight = span > 0 ? (value - array[lo]) / span : 0.0 // fp-safety:disable — guarded inline
 
         return (IndexPair(lower: lo, upper: hi), weight)
     }
@@ -266,7 +266,7 @@ public struct VolatilitySurface: Sendable {
                 }
             }
             for j in 0..<n {
-                centroid[j] /= Double(n)
+                centroid[j] /= Double(n) // fp-safety:disable — n = initialPoint.count, Nelder-Mead requires n >= 1
             }
 
             // Reflection

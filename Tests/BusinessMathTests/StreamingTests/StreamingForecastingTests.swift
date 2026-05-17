@@ -296,9 +296,11 @@ struct StreamingForecastingTests {
 
     @Test("Streaming forecasting maintains O(1) memory")
     func constantMemoryForForecasting() async throws {
-        // Simulate large stream
+        // Simulate large stream with deterministic values
+        var counter: Double = 0
         let largeStream = AsyncGeneratorStream {
-            return Double.random(in: 0...100)
+            counter += 1
+            return counter.truncatingRemainder(dividingBy: 100)
         }
 
         var forecastCount = 0

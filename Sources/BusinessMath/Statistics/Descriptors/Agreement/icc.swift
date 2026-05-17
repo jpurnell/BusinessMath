@@ -36,7 +36,7 @@ public enum ICCAgreement: Sendable {
 ///
 /// Contains the ICC estimate, a confidence interval, the F-statistic
 /// used in the computation, and descriptive metadata.
-public struct ICCResult<T: Real>: Sendable {
+public struct ICCResult<T: Real & Sendable>: Sendable {
 	/// The intraclass correlation coefficient estimate.
 	public let icc: T
 	/// Lower bound of the confidence interval.
@@ -54,6 +54,7 @@ public struct ICCResult<T: Real>: Sendable {
 }
 
 extension ICCResult: Equatable {
+	/// Returns a Boolean value indicating whether two ICC results are equal.
 	public static func == (lhs: ICCResult, rhs: ICCResult) -> Bool {
 		lhs.icc == rhs.icc &&
 		lhs.lowerBound == rhs.lowerBound &&

@@ -217,11 +217,11 @@ struct ScenarioBuilderTests {
         }
 
         let baseline = scenarios.scenario(named: "Baseline")
-        #expect(baseline != nil)
+        #expect(baseline != nil) // TEST-QUALITY: existence check
         #expect(baseline?.parameters["revenue"] == 1_000_000)
 
         let pessimistic = scenarios.scenario(named: "Pessimistic")
-        #expect(pessimistic != nil)
+        #expect(pessimistic != nil) // TEST-QUALITY: existence check
         #expect(pessimistic?.parameters["revenue"] == 800_000)
 
         let missing = scenarios.scenario(named: "NonExistent")
@@ -346,7 +346,7 @@ struct ScenarioBuilderTests {
             scenario.parameters["revenue"] ?? 0
         }
 
-        #expect(expectedRevenue != nil)
+        #expect(expectedRevenue != nil) // TEST-QUALITY: existence check
         // (0.25 * 800k) + (0.50 * 1M) + (0.25 * 1.2M) = 200k + 500k + 300k = 1M
         #expect(abs(expectedRevenue! - 1_000_000) < 1.0)
     }
@@ -389,7 +389,7 @@ struct ScenarioBuilderTests {
         }
 
         let variance = scenarios.variance { $0.parameters["revenue"] ?? 0 }
-        #expect(variance != nil)
+        #expect(variance != nil) // TEST-QUALITY: existence check
         #expect(variance! > 0) // Should have positive variance
     }
 
@@ -413,7 +413,7 @@ struct ScenarioBuilderTests {
         }
 
         let stdDev = scenarios.standardDeviation { $0.parameters["revenue"] ?? 0 }
-        #expect(stdDev != nil)
+        #expect(stdDev != nil) // TEST-QUALITY: existence check
         #expect(stdDev! > 0)
 
         // Verify it's the square root of variance
@@ -440,7 +440,7 @@ struct ScenarioBuilderTests {
         }
 
         let range = scenarios.range { $0.parameters["revenue"] ?? 0 }
-        #expect(range != nil)
+        #expect(range != nil) // TEST-QUALITY: existence check
         #expect(range?.min == 800_000)
         #expect(range?.max == 1_200_000)
     }
@@ -454,7 +454,7 @@ struct ScenarioBuilderTests {
         }
 
         let range = scenarios.range { $0.parameters["revenue"] ?? 0 }
-        #expect(range != nil)
+        #expect(range != nil) // TEST-QUALITY: existence check
         #expect(range?.min == 1_000_000)
         #expect(range?.max == 1_000_000)
     }
@@ -471,9 +471,9 @@ struct ScenarioBuilderTests {
         #expect(scenarios.scenarios.count == 3)
 
         // Check scenario names
-        #expect(scenarios.scenario(named: "Pessimistic") != nil)
-        #expect(scenarios.scenario(named: "Baseline") != nil)
-        #expect(scenarios.scenario(named: "Optimistic") != nil)
+        #expect(scenarios.scenario(named: "Pessimistic") != nil) // TEST-QUALITY: existence check
+        #expect(scenarios.scenario(named: "Baseline") != nil) // TEST-QUALITY: existence check
+        #expect(scenarios.scenario(named: "Optimistic") != nil) // TEST-QUALITY: existence check
 
         // Check probabilities sum to 1.0
         let totalProb = scenarios.scenarios.compactMap(\.probability).reduce(0, +)
@@ -514,11 +514,11 @@ struct ScenarioBuilderTests {
         #expect(scenarios.scenarios.count == 5)
 
         // Check scenario names
-        #expect(scenarios.scenario(named: "Worst Case") != nil)
-        #expect(scenarios.scenario(named: "Pessimistic") != nil)
-        #expect(scenarios.scenario(named: "Baseline") != nil)
-        #expect(scenarios.scenario(named: "Optimistic") != nil)
-        #expect(scenarios.scenario(named: "Best Case") != nil)
+        #expect(scenarios.scenario(named: "Worst Case") != nil) // TEST-QUALITY: existence check
+        #expect(scenarios.scenario(named: "Pessimistic") != nil) // TEST-QUALITY: existence check
+        #expect(scenarios.scenario(named: "Baseline") != nil) // TEST-QUALITY: existence check
+        #expect(scenarios.scenario(named: "Optimistic") != nil) // TEST-QUALITY: existence check
+        #expect(scenarios.scenario(named: "Best Case") != nil) // TEST-QUALITY: existence check
 
         // Check probabilities sum to 1.0
         let totalProb = scenarios.scenarios.compactMap(\.probability).reduce(0, +)

@@ -29,7 +29,7 @@ struct CorrelatedNormalsTests {
 
 		// Should not throw
 		let correlated = try? CorrelatedNormals(means: means, correlationMatrix: correlationMatrix)
-		#expect(correlated != nil, "Should initialize with valid inputs")
+		#expect(correlated != nil, "Should initialize with valid inputs") // TEST-QUALITY: existence check
 	}
 
 	@Test("CorrelatedNormals rejects mismatched dimensions")

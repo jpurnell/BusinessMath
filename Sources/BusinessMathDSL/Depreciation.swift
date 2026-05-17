@@ -93,7 +93,7 @@ public struct StraightLine {
 
     /// Calculate annual depreciation
     public var annualDepreciation: Double {
-        assetValue / Double(years)
+        assetValue / Double(years) // fp-safety:disable — years > 0 from precondition in init
     }
 
     /// Calculate depreciation for a specific year
@@ -109,6 +109,7 @@ public struct StraightLine {
 
 /// Depreciation model combining multiple depreciation schedules
 public struct Depreciation {
+    /// The individual straight-line depreciation schedules that compose this model.
     public let schedules: [StraightLine]
 
     internal init(schedules: [StraightLine] = []) {

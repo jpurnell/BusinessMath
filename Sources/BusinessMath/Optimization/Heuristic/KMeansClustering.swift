@@ -383,7 +383,7 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 		iteration: Int
 	) throws -> [V] {
 		var newCentroids: [V] = []
-		var rng = SystemRandomNumberGenerator()
+		var rng = SystemRandomNumberGenerator() // stochastic:exempt
 
 		for clusterIndex in 0..<k {
 			// Find all points assigned to this cluster
@@ -491,7 +491,7 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 		}
 
 		let count = V.Scalar(points.count)
-		return (V.Scalar(1) / count) * sum
+		return (V.Scalar(1) / count) * sum // fp-safety:disable — guarded by !points.isEmpty above
 	}
 
 	// MARK: - GPU Acceleration

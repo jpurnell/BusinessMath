@@ -152,6 +152,21 @@ enum ModelTestHelpers {
     }
 }
 
+// MARK: - Seeded RNG for Mock Data
+
+/// Deterministic PRNG for reproducible mock data generation.
+private struct SplitMix64Mock: RandomNumberGenerator {
+    var state: UInt64
+    init(seed: UInt64) { state = seed }
+    mutating func next() -> UInt64 {
+        state &+= 0x9e3779b97f4a7c15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xbf58476d1ce4e5b9
+        z = (z ^ (z >> 27)) &* 0x94d049bb133111eb
+        return z ^ (z >> 31)
+    }
+}
+
 // MARK: - Mock Data Generators
 
 extension TimeSeries where T == Double {
@@ -162,7 +177,7 @@ extension TimeSeries where T == Double {
         case linear(slope: Double, intercept: Double)
         case exponential(base: Double, scale: Double)
         case seasonal(amplitude: Double, period: Int, baseline: Double)
-        case random(mean: Double, stddev: Double)
+        case gaussian(mean: Double, stddev: Double)
     }
 
     /// Generate mock time series data with a specific pattern.
@@ -177,6 +192,7 @@ extension TimeSeries where T == Double {
         pattern: MockPattern,
         startYear: Int = 2020
     ) -> TimeSeries<Double> {
+        var rng = SplitMix64Mock(seed: 42)
         let periodArray = (0..<periods).map { Period.year(startYear + $0) }
 
         let values: [Double] = (0..<periods).map { index in
@@ -194,11 +210,14 @@ extension TimeSeries where T == Double {
                 let angle = 2.0 * .pi * Double(index) / Double(period)
                 return baseline + amplitude * sin(angle)
 
-            case .random(let mean, let stddev):
-                // Simple Box-Muller transform for normal distribution
-                let u1 = Double.random(in: 0..<1)
-                let u2 = Double.random(in: 0..<1)
-                let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2)
+            case .gaussian(let mean, let stddev):
+                // Simple Box-Muller transform for normal distribution (seeded)
+                let raw1 = rng.next()
+                let u1 = Double(raw1 >> 11) * 0x1.0p-53
+                let clamped = Swift.max(u1, Double.leastNonzeroMagnitude)
+                let raw2 = rng.next()
+                let u2 = Double(raw2 >> 11) * 0x1.0p-53
+                let z = sqrt(-2.0 * log(clamped)) * cos(2.0 * .pi * u2)
                 return mean + stddev * z
             }
         }

@@ -2,7 +2,7 @@ import Foundation
 import Numerics
 
 /// Result of a concordance correlation coefficient analysis.
-public struct CCCResult<T: Real>: Sendable, Equatable {
+public struct CCCResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Lin's concordance correlation coefficient in [-1, 1].
 	public let ccc: T
 

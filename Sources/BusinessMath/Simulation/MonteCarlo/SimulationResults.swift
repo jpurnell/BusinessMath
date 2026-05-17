@@ -386,7 +386,7 @@ public struct SimulationResults: Sendable {
 
 		// Calculate bin width
 		let range = maxValue - minValue
-		let binWidth = range / Double(binCount)
+		let binWidth = range / Double(binCount) // fp-safety:disable — binCount is a parameter >= 1
 
 		// Create bins
 		var histogram: [(range: Range<Double>, count: Int)] = []

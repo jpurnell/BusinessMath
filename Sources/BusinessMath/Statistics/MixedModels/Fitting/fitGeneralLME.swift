@@ -443,7 +443,7 @@ public func fitGeneralLME<T: Real>(
 ///
 /// A small ridge is added to the diagonal to ensure numerical
 /// positive definiteness even when G is near-singular.
-private func generalBuildVi<T: Real>(
+private func generalBuildVi<T: Real & Sendable>(
 	zi: [[T]], gArr: [[T]], sigmaE2: T, nig: Int, r: Int
 ) throws -> [[T]] where T: BinaryFloatingPoint {
 	// Ridge proportional to sigmaE2 for scale-invariance
@@ -467,13 +467,13 @@ private func generalBuildVi<T: Real>(
 	return vi
 }
 
-private struct GeneralGLSResult<T: Real> {
+private struct GeneralGLSResult<T: Real & Sendable> {
 	let beta: [T]
 	let remlLogLik: T
 }
 
 /// OLS estimate: beta = (X'X)^{-1} X'y
-private func generalOLSEstimate<T: Real>(
+private func generalOLSEstimate<T: Real & Sendable>(
 	xData: [[T]], y: [T], N: Int, p: Int
 ) throws -> [T] where T: BinaryFloatingPoint {
 	var xtx = Array(repeating: Array(repeating: T.zero, count: p), count: p)
@@ -491,7 +491,7 @@ private func generalOLSEstimate<T: Real>(
 }
 
 /// GLS estimate of beta and REML log-likelihood for the general LME model.
-private func generalGLSEstimate<T: Real>(
+private func generalGLSEstimate<T: Real & Sendable>(
 	xData: [[T]], y: [T], zData: [[T]],
 	N: Int, p: Int, r: Int, m: Int,
 	ni: [Int], groupIdx: [[Int]],
@@ -575,13 +575,13 @@ private func generalGLSEstimate<T: Real>(
 	return GeneralGLSResult(beta: beta, remlLogLik: logLik)
 }
 
-private struct GeneralEMResult<T: Real> {
+private struct GeneralEMResult<T: Real & Sendable> {
 	let sigmaE2: T
 	let gArr: [[T]]
 }
 
 /// EM update for variance components in the general LME model.
-private func generalEMUpdate<T: Real>(
+private func generalEMUpdate<T: Real & Sendable>(
 	resid: [T], zData: [[T]], m: Int, r: Int,
 	ni: [Int], groupIdx: [[Int]],
 	gArr: [[T]], sigmaE2: T, N: Int
@@ -679,12 +679,12 @@ private func generalEMUpdate<T: Real>(
 		gArr: newG)
 }
 
-private struct GeneralAIREMLResult<T: Real> {
+private struct GeneralAIREMLResult<T: Real & Sendable> {
 	let score: [T]   // (1 + r*(r+1)/2) vector
 	let ai: [[T]]    // (1 + r*(r+1)/2) x (1 + r*(r+1)/2) matrix
 }
 
-private struct GeneralGroupCache<T: Real> {
+private struct GeneralGroupCache<T: Real & Sendable> {
 	let viInv: DenseMatrix<T>
 	let viInvR: [T]
 	let viInvXi: DenseMatrix<T>
@@ -697,7 +697,7 @@ private struct GeneralGroupCache<T: Real> {
 ///
 /// Variance parameters are ordered: theta = (sigma_e², G[0,0], G[0,1], ..., G[0,r-1], G[1,1], G[1,2], ..., G[r-1,r-1])
 /// i.e., sigma_e² first, then the upper triangle of G in row-major order.
-private func generalAIREMLUpdate<T: Real>(
+private func generalAIREMLUpdate<T: Real & Sendable>(
 	resid: [T], xData: [[T]], zData: [[T]],
 	m: Int, r: Int, ni: [Int], groupIdx: [[Int]],
 	gArr: [[T]], sigmaE2: T,
@@ -895,7 +895,7 @@ private func generalAIREMLUpdate<T: Real>(
 }
 
 /// Standard errors of fixed effects: sqrt(diag((X'V^{-1}X)^{-1}))
-private func generalFixedEffectsSE<T: Real>(
+private func generalFixedEffectsSE<T: Real & Sendable>(
 	xData: [[T]], zData: [[T]],
 	N: Int, p: Int, r: Int, m: Int,
 	ni: [Int], groupIdx: [[Int]],
@@ -942,7 +942,7 @@ private func generalFixedEffectsSE<T: Real>(
 
 /// Check if a symmetric matrix is positive semi-definite by attempting Cholesky
 /// on a slightly regularized version.
-private func generalIsPSD<T: Real>(_ mat: [[T]], r: Int) -> Bool {
+private func generalIsPSD<T: Real & Sendable>(_ mat: [[T]], r: Int) -> Bool {
 	// Check diagonal elements are non-negative
 	for i in 0..<r {
 		guard mat[i][i] >= T.zero else { return false }
@@ -970,7 +970,7 @@ private func generalIsPSD<T: Real>(_ mat: [[T]], r: Int) -> Bool {
 ///
 /// For r <= 2, clamps off-diagonal elements. For larger r, attempts Cholesky
 /// and if it fails, adds a small ridge to the diagonal until PSD.
-private func generalEnsurePSD<T: Real>(_ mat: [[T]], r: Int) -> [[T]] {
+private func generalEnsurePSD<T: Real & Sendable>(_ mat: [[T]], r: Int) -> [[T]] {
 	var result = mat
 	// First pass: clamp off-diagonal
 	for i in 0..<r {

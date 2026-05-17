@@ -111,9 +111,9 @@ struct DebtSubtypeTests {
 
 		// Verify all three debt types are in the breakdown
 		#expect(debtByType.count == 3)
-		#expect(debtByType[.revolvingCreditFacility] != nil)
-		#expect(debtByType[.termLoanLongTerm] != nil)
-		#expect(debtByType[.mezzanineDebt] != nil)
+		#expect(debtByType[.revolvingCreditFacility] != nil) // TEST-QUALITY: existence check
+		#expect(debtByType[.termLoanLongTerm] != nil) // TEST-QUALITY: existence check
+		#expect(debtByType[.mezzanineDebt] != nil) // TEST-QUALITY: existence check
 
 		// Verify values for Q1
 		#expect(abs(debtByType[.revolvingCreditFacility]![periods[0]]! - 50_000.0) < 1e-2)

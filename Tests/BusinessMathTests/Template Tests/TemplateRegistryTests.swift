@@ -192,7 +192,7 @@ struct TemplateRegistryTests {
         try await registry.register(template, metadata: metadata)
 
         let found = await registry.template(named: "Findable Template")
-        #expect(found != nil)
+        #expect(found != nil) // TEST-QUALITY: existence check
         #expect(found?.identifier == "com.test.simple-template")
     }
 
@@ -306,7 +306,7 @@ struct TemplateRegistryTests {
         try await registry.register(template, metadata: metadata)
 
         let retrieved = await registry.metadata(for: "Metadata Test")
-        #expect(retrieved != nil)
+        #expect(retrieved != nil) // TEST-QUALITY: existence check
         #expect(retrieved?.name == "Metadata Test")
         #expect(retrieved?.version == "2.0.0")
         #expect(retrieved?.author == "Test Author")
@@ -585,8 +585,8 @@ struct TemplateRegistryTests {
         )
 
         #expect(schema.examples.count == 2)
-        #expect(schema.examples["basic"] != nil)
-        #expect(schema.examples["advanced"] != nil)
+        #expect(schema.examples["basic"] != nil) // TEST-QUALITY: existence check
+        #expect(schema.examples["advanced"] != nil) // TEST-QUALITY: existence check
     }
 
     // MARK: - Utility Tests

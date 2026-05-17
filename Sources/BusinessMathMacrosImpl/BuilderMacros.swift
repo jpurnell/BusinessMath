@@ -14,6 +14,9 @@ import Foundation
 
 /// Macro that generates builder initialization methods for structs
 public struct BuilderInitializableMacro: MemberMacro {
+    /// Expands the `@BuilderInitializable` attribute to synthesize builder-style initialisation methods for the struct's stored properties.
+    ///
+    /// - Returns: An array of member declarations providing fluent builder initialisers.
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,

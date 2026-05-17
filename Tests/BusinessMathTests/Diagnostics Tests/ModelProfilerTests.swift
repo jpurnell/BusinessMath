@@ -51,7 +51,7 @@ struct ModelProfilerTests {
             return sum
         }
 
-        #expect(result == 500_500.0)
+        #expect(abs(result - 500_500.0) < 1e-6)
 
         let report = await profiler.report()
         #expect(report.operations[0].totalTime > 0)

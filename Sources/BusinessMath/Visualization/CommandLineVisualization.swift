@@ -256,7 +256,7 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		// Total bar width should be proportional to impact
 		let totalBarWidth: Int
 		if maxImpact > 0 {
-			totalBarWidth = Int((impact / maxImpact) * Double(maxBarWidth * 2))
+			totalBarWidth = Int((impact / maxImpact) * Double(maxBarWidth * 2)) // fp-safety:disable
 		} else {
 			totalBarWidth = 0
 		}
@@ -284,7 +284,7 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		let paddedName = input.padding(toLength: maxInputNameWidth, withPad: " ", startingAt: 0)
 
 		// Calculate percentage impact
-		let percentImpact = baseCaseOutput != 0 ? (abs(impact) / abs(baseCaseOutput)) : 0.0
+		let percentImpact = baseCaseOutput != 0 ? (abs(impact) / abs(baseCaseOutput)) : 0.0 // fp-safety:disable — guarded inline
 
 		// Pad bars: left bar is right-aligned (padding on left), right bar is left-aligned (padding on right)
 		let paddedLeftBar = String(repeating: " ", count: maxBarWidth - leftWidth) + leftBar

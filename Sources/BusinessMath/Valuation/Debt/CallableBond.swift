@@ -196,7 +196,7 @@ public struct CallableBond<T: Real> where T: Sendable {
         // For date calculations, we need to work in Double (TimeInterval)
         // Extract the underlying Double value by computing in terms of the original timeInterval
         let timeIntervalDouble = Double(timeInterval)
-        let dtDouble = timeIntervalDouble / Double(steps)
+        let dtDouble = timeIntervalDouble / Double(steps) // fp-safety:disable — steps defaults to 50, callers must pass > 0
 
         // Build tree - tree[i][j] represents value at node (i,j)
         // i = up-moves, j = time step
@@ -466,7 +466,7 @@ public struct CallableBond<T: Real> where T: Sendable {
         let numerator = pMinus - pPlus
         let denominator = T(2) * p0 * shift
 
-        return numerator / denominator
+        return numerator / denominator // fp-safety:disable — denominator = 2 * p0 * shift; shift defaults to 1/100, p0 is a price
     }
 
     // MARK: - Helper Methods

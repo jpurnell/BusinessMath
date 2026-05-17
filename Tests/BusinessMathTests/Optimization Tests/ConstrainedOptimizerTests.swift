@@ -162,17 +162,17 @@ struct ConstrainedOptimizerTests {
 		// For this problem: f*(b) = b²/2, so df*/db = b
 		// At b = 1: λ ≈ -1 (negative because we're minimizing)
 
-		let testConstraintValue: (Double) -> (solution: VectorN<Double>, multiplier: Double) = { b in
+		let testConstraintValue: (Double) throws -> (solution: VectorN<Double>, multiplier: Double) = { b in
 			let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] + v[1] * v[1] }
 			let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in v[0] + v[1] - b }
 			let optimizer = ConstrainedOptimizer<VectorN<Double>>()
 
-			let result = try! optimizer.minimize(objective, from: VectorN([b/2, b/2]), subjectTo: [constraint])
+			let result = try optimizer.minimize(objective, from: VectorN([b/2, b/2]), subjectTo: [constraint])
 			return (result.solution, result.lagrangeMultipliers[0])
 		}
 
-		let result1 = testConstraintValue(1.0)
-		let result2 = testConstraintValue(1.1)
+		let result1 = try testConstraintValue(1.0)
+		let result2 = try testConstraintValue(1.1)
 
 		// Approximate derivative: Δf*/Δb
 		let df_db = (
@@ -303,7 +303,7 @@ struct ConstrainedOptimizerTests {
 			subjectTo: [constraint]
 		)
 
-		#expect(result.history != nil && !result.history!.isEmpty, "Should record history")
+		#expect(result.history != nil && !result.history!.isEmpty, "Should record history") // TEST-QUALITY: existence check
 		#expect(result.history!.count <= 20, "History should not exceed max iterations")
 		#expect(result.history!.last!.0 == result.iterations - 1, "Last history entry should match iteration count")
 

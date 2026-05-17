@@ -11,6 +11,31 @@ import TestSupport  // Cross-platform math functions
 import Testing
 @testable import BusinessMath
 
+/// Deterministic PRNG for reproducible test data generation.
+private struct SplitMix64 {
+    var state: UInt64
+    init(seed: UInt64) { state = seed }
+    mutating func next() -> UInt64 {
+        state &+= 0x9e3779b97f4a7c15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xbf58476d1ce4e5b9
+        z = (z ^ (z >> 27)) &* 0x94d049bb133111eb
+        return z ^ (z >> 31)
+    }
+    /// Returns a Double in [lo, hi] deterministically.
+    mutating func nextDouble(in range: ClosedRange<Double>) -> Double {
+        let raw = next()
+        let unit = Double(raw >> 11) * 0x1.0p-53
+        return range.lowerBound + unit * (range.upperBound - range.lowerBound)
+    }
+    /// Returns an Int in [lo, hi) deterministically.
+    mutating func nextInt(in range: Range<Int>) -> Int {
+        let raw = next()
+        let span = UInt64(range.upperBound - range.lowerBound)
+        return range.lowerBound + Int(raw % span)
+    }
+}
+
 @Suite("Sparse Matrix Performance Benchmarks", .serialized,
        .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
                 "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
@@ -71,8 +96,9 @@ struct SparsePerformanceBenchmark {
         let density = 0.0006  // 0.06% density
 
         // Create random sparse matrix with specified density
-        let sparse = createRandomSparseMatrix(rows: n, columns: n, density: density)
-        let vector = (0..<n).map { _ in Double.random(in: -1.0...1.0) }
+        var rng = SplitMix64(seed: 100)
+        let sparse = createRandomSparseMatrix(rows: n, columns: n, density: density, using: &rng)
+        let vector = (0..<n).map { i in Double(i) / Double(n) * 2.0 - 1.0 }
 
         // Benchmark sparse multiply
         let start = Date()
@@ -148,7 +174,8 @@ struct SparsePerformanceBenchmark {
         let density = 0.003  // 0.3% density
 
         // Create random sparse matrix with specified density
-        let sparse = createRandomSparseMatrix(rows: n, columns: n, density: density)
+        var rng = SplitMix64(seed: 200)
+        let sparse = createRandomSparseMatrix(rows: n, columns: n, density: density, using: &rng)
 
         // Calculate memory usage
         let sparseMemory = sparse.nonZeroCount * (MemoryLayout<Double>.size + MemoryLayout<Int>.size)
@@ -189,13 +216,14 @@ struct SparsePerformanceBenchmark {
 
     // MARK: - Helper Functions
 
-    /// Create a random sparse matrix with specified density
+    /// Create a random sparse matrix with specified density using a seeded RNG
     /// - Parameters:
     ///   - rows: Number of rows
     ///   - columns: Number of columns
     ///   - density: Desired density (fraction of non-zero elements, e.g., 0.001 for 0.1%)
+    ///   - rng: A seeded random number generator for deterministic results
     /// - Returns: A sparse matrix with approximately the specified density
-    private func createRandomSparseMatrix(rows: Int, columns: Int, density: Double) -> SparseMatrix {
+    private func createRandomSparseMatrix(rows: Int, columns: Int, density: Double, using rng: inout SplitMix64) -> SparseMatrix {
         let totalElements = rows * columns
         let targetNonZeros = Int(Double(totalElements) * density)
 
@@ -204,13 +232,13 @@ struct SparsePerformanceBenchmark {
 
         // Generate random non-zero entries
         while triplets.count < targetNonZeros {
-            let row = Int.random(in: 0..<rows)
-            let col = Int.random(in: 0..<columns)
+            let row = rng.nextInt(in: 0..<rows)
+            let col = rng.nextInt(in: 0..<columns)
             let position = row * columns + col
 
             // Avoid duplicate positions
             if !usedPositions.contains(position) {
-                let value = Double.random(in: -10.0...10.0)
+                let value = rng.nextDouble(in: -10.0...10.0)
                 if abs(value) > 0.01 {  // Avoid near-zero values
                     triplets.append((row, col, value))
                     usedPositions.insert(position)
@@ -228,6 +256,7 @@ struct SparsePerformanceBenchmark {
     ///   - diagonalStrength: How dominant the diagonal should be (default: 2.0)
     /// - Returns: An SPD sparse matrix that will converge with CG
     private func createSPDSparseMatrix(size: Int, density: Double, diagonalStrength: Double = 2.0) -> SparseMatrix {
+        var rng = SplitMix64(seed: 300)
         let totalElements = size * size
         let targetNonZeros = Int(Double(totalElements) * density)
 
@@ -243,8 +272,8 @@ struct SparsePerformanceBenchmark {
         // Add symmetric off-diagonal entries
         var pairsAdded = 0
         while pairsAdded < offDiagonalPairs {
-            let row = Int.random(in: 0..<size)
-            let col = Int.random(in: 0..<size)
+            let row = rng.nextInt(in: 0..<size)
+            let col = rng.nextInt(in: 0..<size)
 
             // Only off-diagonal
             guard row != col else { continue }
@@ -253,7 +282,7 @@ struct SparsePerformanceBenchmark {
             let pairKey = row < col ? "\(row),\(col)" : "\(col),\(row)"
             guard !usedPairs.contains(pairKey) else { continue }
 
-            let value = Double.random(in: -1.0...1.0)
+            let value = rng.nextDouble(in: -1.0...1.0)
             guard abs(value) > 0.01 else { continue }
 
             // Add both (i,j) and (j,i) for symmetry
@@ -284,6 +313,7 @@ struct SparsePerformanceBenchmark {
     ///   - diagonalStrength: How dominant the diagonal should be (default: 2.0)
     /// - Returns: A well-conditioned diagonal dominant sparse matrix
     private func createDiagonalDominantSparseMatrix(size: Int, density: Double, asymmetryFactor: Double = 0.2, diagonalStrength: Double = 2.0) -> SparseMatrix {
+        var rng = SplitMix64(seed: 400)
         let totalElements = size * size
         let targetNonZeros = Int(Double(totalElements) * density)
         let offDiagonalCount = targetNonZeros - size  // Reserve size entries for diagonal
@@ -295,8 +325,8 @@ struct SparsePerformanceBenchmark {
         // Add off-diagonal entries
         var added = 0
         while added < offDiagonalCount {
-            let row = Int.random(in: 0..<size)
-            let col = Int.random(in: 0..<size)
+            let row = rng.nextInt(in: 0..<size)
+            let col = rng.nextInt(in: 0..<size)
 
             guard row != col else { continue }
 
@@ -304,11 +334,11 @@ struct SparsePerformanceBenchmark {
             guard !usedPositions.contains(position) else { continue }
 
             // Create mild asymmetry by varying the range
-            let baseValue = Double.random(in: -1.0...1.0)
+            let baseValue = rng.nextDouble(in: -1.0...1.0)
             let value: Double
-            if Double.random(in: 0...1) < asymmetryFactor {
+            if rng.nextDouble(in: 0.0...1.0) < asymmetryFactor {
                 // Make this entry more asymmetric
-                value = baseValue * Double.random(in: 0.5...1.5)
+                value = baseValue * rng.nextDouble(in: 0.5...1.5)
             } else {
                 value = baseValue
             }

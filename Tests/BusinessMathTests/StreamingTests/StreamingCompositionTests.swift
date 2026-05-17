@@ -237,9 +237,11 @@ struct StreamingCompositionTests {
 
     @Test("Sample at regular intervals")
     func sampleAtIntervals() async throws {
-        // Create a stream that emits frequently
+        // Create a stream that emits frequently with deterministic values
+        var counter: Double = 0
         let stream = AsyncGeneratorStream {
-            Double.random(in: 0...100)
+            counter += 1
+            return counter
         }
 
         var samples: [Double] = []
@@ -346,8 +348,10 @@ struct StreamingCompositionTests {
 
     @Test("Stream composition maintains O(1) memory")
     func constantMemoryForComposition() async throws {
-        let stream1 = AsyncGeneratorStream { Double.random(in: 0...100) }
-        let stream2 = AsyncGeneratorStream { Double.random(in: 0...100) }
+        var c1: Double = 0
+        var c2: Double = 0
+        let stream1 = AsyncGeneratorStream { c1 += 1; return c1 }
+        let stream2 = AsyncGeneratorStream { c2 += 1; return c2 }
 
         var count = 0
         for try await _ in stream1.merge(with: stream2).take(10000) {

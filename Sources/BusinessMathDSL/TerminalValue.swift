@@ -49,6 +49,7 @@ public struct ExitMultiple {
 
 /// Terminal value calculation for DCF valuation
 public struct TerminalValue {
+    /// The valuation method (perpetuity growth or exit multiple) used to compute the terminal value.
     public let method: TerminalValueMethod
 
     internal init(method: TerminalValueMethod) {

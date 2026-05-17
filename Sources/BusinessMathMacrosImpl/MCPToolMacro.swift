@@ -34,6 +34,9 @@ import Foundation
 /// - Error handling
 public struct MCPToolMacro: PeerMacro {
 
+    /// Expands the `@MCPTool` attribute into a peer MCP handler function with argument validation and error handling.
+    ///
+    /// - Returns: An array of generated peer declarations implementing the MCP tool interface.
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,

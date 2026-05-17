@@ -139,8 +139,8 @@ import Foundation
 	// MARK: - Integration Test with SimulationResults
 
 	@Test("PlotHistogram_WithSimulationResults_ProducesOutput") func LPlotHistogram_WithSimulationResults_ProducesOutput() {
-		// Given
-		let values = (0..<1000).map { _ in Double.random(in: 0.0...100.0) }
+		// Given — deterministic spread across [0, 100]
+		let values = (0..<1000).map { i in Double(i) / 10.0 }
 		let results = SimulationResults(values: values)
 		let histogram = results.histogram(bins: 10)
 
@@ -261,7 +261,7 @@ struct VisualizationAdditionalTests {
 		// Ensure higher impact appears before lower impact in textual output
 		let revIndex = output.range(of: "Revenue")?.lowerBound
 		let mktIndex = output.range(of: "Marketing")?.lowerBound
-		#expect(revIndex != nil && mktIndex != nil)
+		#expect(revIndex != nil && mktIndex != nil) // TEST-QUALITY: existence check
 		if let r = revIndex, let m = mktIndex {
 			#expect(r < m)
 		}

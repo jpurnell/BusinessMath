@@ -8,7 +8,7 @@ import Numerics
 /// decomposition (via one-way ANOVA on per-subject differences) to produce
 /// modified limits of agreement that properly account for within-subject
 /// correlation.
-public struct RepeatedMeasuresBlandAltmanResult<T: Real>: Sendable, Equatable {
+public struct RepeatedMeasuresBlandAltmanResult<T: Real & Sendable>: Sendable, Equatable {
 	/// Overall mean difference (bias).
 	public let bias: T
 

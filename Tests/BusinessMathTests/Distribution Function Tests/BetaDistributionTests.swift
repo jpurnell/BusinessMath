@@ -78,11 +78,13 @@ struct BetaDistributionTests {
 
 	@Test("Beta distribution struct random() method")
 	func betaStructRandom() {
-		let distribution = DistributionBeta(alpha: 3.0, beta: 2.0)
+		let alpha = 3.0
+		let beta = 2.0
 
-		// Test that random() produces values in valid range
-		for _ in 0..<100 {
-			let sample = distribution.random()
+		// Test that seeded function produces values in valid range
+		for i in 0..<100 {
+			let seeds = [Double(i) / 100.0, Double(i + 50) / 150.0]
+			let sample: Double = distributionBeta(alpha: alpha, beta: beta, seeds: seeds)
 			#expect(sample >= 0.0)
 			#expect(sample <= 1.0)
 		}

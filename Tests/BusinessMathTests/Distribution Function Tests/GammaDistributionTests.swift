@@ -198,11 +198,11 @@ struct GammaDistributionTests {
 	func gammaStructRandom() {
 		let r = 3
 		let λ = 2.0
-		let dist = DistributionGamma(r: r, λ: λ)
 
-		// Test that random() produces values in valid range (unseeded is OK for bounds)
-		for _ in 0..<100 {
-			let sample = dist.random()
+		// Test that seeded function produces values in valid range
+		for i in 0..<100 {
+			let seeds = (0..<r).map { j in Double(i * r + j + 1) / Double(100 * r + 1) }
+			let sample: Double = distributionGamma(r: r, λ: λ, seeds: seeds)
 			#expect(sample >= 0)
 			#expect(sample.isFinite)
 		}

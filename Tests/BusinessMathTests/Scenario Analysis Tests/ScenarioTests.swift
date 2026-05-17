@@ -52,7 +52,7 @@ struct FinancialScenarioTests {
 		)
 
 		#expect(scenario.driverOverrides.count == 1)
-		#expect(scenario.driverOverrides["Price"] != nil)
+		#expect(scenario.driverOverrides["Price"] != nil) // TEST-QUALITY: existence check
 
 		// Verify the override driver returns expected value
 		let period = Period.quarter(year: 2025, quarter: 1)
@@ -78,9 +78,9 @@ struct FinancialScenarioTests {
 		)
 
 		#expect(scenario.driverOverrides.count == 3)
-		#expect(scenario.driverOverrides["Price"] != nil)
-		#expect(scenario.driverOverrides["Volume"] != nil)
-		#expect(scenario.driverOverrides["Unit Cost"] != nil)
+		#expect(scenario.driverOverrides["Price"] != nil) // TEST-QUALITY: existence check
+		#expect(scenario.driverOverrides["Volume"] != nil) // TEST-QUALITY: existence check
+		#expect(scenario.driverOverrides["Unit Cost"] != nil) // TEST-QUALITY: existence check
 	}
 
 	@Test("Scenario with assumptions")

@@ -271,19 +271,19 @@ public struct Lease {
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {
             case .millisecond:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000)
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000) // fp-safety:disable
             case .second:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60)
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60) // fp-safety:disable
             case .minute:
-                periodicRate = discountRate / (365.25 * 24 * 60)
+                periodicRate = discountRate / (365.25 * 24 * 60) // fp-safety:disable
             case .hourly:
-                periodicRate = discountRate / (365.25 * 24)
+                periodicRate = discountRate / (365.25 * 24) // fp-safety:disable
             case .daily:
-                periodicRate = discountRate / 365.25
+                periodicRate = discountRate / 365.25 // fp-safety:disable
             case .monthly:
-                periodicRate = discountRate / 12.0
+                periodicRate = discountRate / 12.0 // fp-safety:disable
             case .quarterly:
-                periodicRate = discountRate / 4.0
+                periodicRate = discountRate / 4.0 // fp-safety:disable
             case .annual:
                 periodicRate = discountRate
             }
@@ -295,13 +295,17 @@ public struct Lease {
         var pv = 0.0
         for (index, payment) in payments.enumerated() {
             let period = Double(index + 1)
-            pv += payment / pow(1.0 + periodicRate, period)
+            let discountFactor = pow(1.0 + periodicRate, period)
+            guard discountFactor != 0 else { continue }
+            pv += payment / discountFactor // fp-safety:disable
         }
 
         // Add present value of residual
         if residualValue > 0 {
             let finalPeriod = Double(payments.count + 1)
-            pv += residualValue / pow(1.0 + periodicRate, finalPeriod)
+            let discountFactor = pow(1.0 + periodicRate, finalPeriod)
+            guard discountFactor != 0 else { return pv }
+            pv += residualValue / discountFactor // fp-safety:disable
         }
 
         return pv
@@ -324,19 +328,19 @@ public struct Lease {
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {
             case .millisecond:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000)
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000) // fp-safety:disable
             case .second:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60)
+                periodicRate = discountRate / (365.25 * 24 * 60 * 60) // fp-safety:disable
             case .minute:
-                periodicRate = discountRate / (365.25 * 24 * 60)
+                periodicRate = discountRate / (365.25 * 24 * 60) // fp-safety:disable
             case .hourly:
-                periodicRate = discountRate / (365.25 * 24)
+                periodicRate = discountRate / (365.25 * 24) // fp-safety:disable
             case .daily:
-                periodicRate = discountRate / 365.25
+                periodicRate = discountRate / 365.25 // fp-safety:disable
             case .monthly:
-                periodicRate = discountRate / 12.0
+                periodicRate = discountRate / 12.0 // fp-safety:disable
             case .quarterly:
-                periodicRate = discountRate / 4.0
+                periodicRate = discountRate / 4.0 // fp-safety:disable
             case .annual:
                 periodicRate = discountRate
             }
@@ -916,7 +920,8 @@ public struct SaleAndLeaseback {
     public func immediateGain() -> Double {
         // Under ASC 842, the recognized gain is reduced by the PV of leaseback
         // since the seller retains some benefit through continued use
-        return gainOnSale - (gainOnSale * (leaseObligationPV / salePrice))
+        guard salePrice != 0 else { return gainOnSale } // fp-safety:disable
+        return gainOnSale - (gainOnSale * (leaseObligationPV / salePrice)) // fp-safety:disable
     }
 
     /// Alias for immediateGain() for compatibility
@@ -962,13 +967,15 @@ public func classifyLease(
     }
 
     // Test 3: Lease term is major part of asset's useful life (≥75%)
-    let termRatio = Double(leaseTerm) / Double(assetUsefulLife)
+    guard assetUsefulLife > 0 else { return .finance }
+    let termRatio = Double(leaseTerm) / Double(assetUsefulLife) // fp-safety:disable
     if termRatio >= 0.75 {
         return .finance
     }
 
     // Test 4: PV of lease payments ≥ substantially all of asset's fair value (≥90%)
-    let pvRatio = presentValue / assetFairValue
+    guard assetFairValue > 0 else { return .finance }
+    let pvRatio = presentValue / assetFairValue // fp-safety:disable
     if pvRatio >= 0.90 {
         return .finance
     }

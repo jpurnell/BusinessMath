@@ -145,7 +145,7 @@ struct PostHocTests {
 			let result = try bonferroniPostHoc(testGroups, anova: anova)
 			// Group 0 mean ≈ 5.0, Group 1 mean ≈ 9.0 → diff = 5 - 9 = -4
 			let comp01 = result.comparisons.first { $0.groupA == 0 && $0.groupB == 1 }
-			#expect(comp01 != nil)
+			#expect(comp01 != nil) // TEST-QUALITY: existence check
 			if let c = comp01 {
 				#expect(c.meanDifference < 0)
 			}
@@ -210,7 +210,7 @@ struct PostHocTests {
 			// All pairs clearly differ → both methods should find significance
 			for bComp in bonf.comparisons {
 				let sComp = schef.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
-				#expect(sComp != nil)
+				#expect(sComp != nil) // TEST-QUALITY: existence check
 				if let s = sComp {
 					#expect(bComp.isSignificant == s.isSignificant)
 				}
@@ -376,8 +376,8 @@ struct PostHocTests {
 				let sComp = schef.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
 				let tComp = tukey.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
 
-				#expect(sComp != nil)
-				#expect(tComp != nil)
+				#expect(sComp != nil) // TEST-QUALITY: existence check
+				#expect(tComp != nil) // TEST-QUALITY: existence check
 
 				if let s = sComp, let t = tComp {
 					// All p-values in valid range
@@ -398,7 +398,7 @@ struct PostHocTests {
 
 			for bComp in bonf.comparisons {
 				let tComp = tukey.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
-				#expect(tComp != nil)
+				#expect(tComp != nil) // TEST-QUALITY: existence check
 				if let t = tComp {
 					#expect(t.pValue <= bComp.pValue + 1e-8)
 				}

@@ -176,7 +176,8 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// - Returns: Gross margin percentage
     public func calculateGrossMarginPercentage() -> Double {
-        return calculateGrossMarginPerBox() / monthlyBoxPrice
+        guard monthlyBoxPrice > 0 else { return 0 }
+        return calculateGrossMarginPerBox() / monthlyBoxPrice // fp-safety:disable — guarded above
     }
 
     // MARK: - LTV Calculations
@@ -190,7 +191,8 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// - Returns: Customer lifetime value
     public func calculateCustomerLifetimeValue() -> Double {
-        return calculateGrossMarginPerBox() / monthlyChurnRate
+        guard monthlyChurnRate > 0 else { return 0 }
+        return calculateGrossMarginPerBox() / monthlyChurnRate // fp-safety:disable — guarded above
     }
 
     // MARK: - Unit Economics
@@ -201,7 +203,8 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// - Returns: LTV:CAC ratio
     public func calculateLTVtoCAC() -> Double {
-        return calculateCustomerLifetimeValue() / customerAcquisitionCost
+        guard customerAcquisitionCost > 0 else { return 0 }
+        return calculateCustomerLifetimeValue() / customerAcquisitionCost // fp-safety:disable — guarded above
     }
 
     /// Calculate CAC payback period in months.
@@ -212,7 +215,9 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// - Returns: Number of months to payback CAC
     public func calculateCACPaybackMonths() -> Double {
-        return customerAcquisitionCost / calculateGrossMarginPerBox()
+        let grossMargin = calculateGrossMarginPerBox()
+        guard grossMargin > 0 else { return 0 }
+        return customerAcquisitionCost / grossMargin // fp-safety:disable — guarded above
     }
 
     // MARK: - Profit Calculations

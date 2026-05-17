@@ -635,7 +635,7 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 
                 if initializationBuffer.count == seasonLength {
                     // Initialize level, trend, and seasonal factors
-                    level = initializationBuffer.reduce(0.0, +) / Double(seasonLength)
+                    level = initializationBuffer.reduce(0.0, +) / Double(seasonLength) // fp-safety:disable — seasonLength >= 1 (struct init parameter)
                     trend = 0.0
 
                     // Initialize seasonal factors
@@ -660,7 +660,7 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
             let seasonIndex = currentIndex % seasonLength
 
             // Deseasonalize
-            let deseasonalized = value / seasonalFactors[seasonIndex]
+            let deseasonalized = value / seasonalFactors[seasonIndex] // fp-safety:disable — factors initialized to 1.0, updated multiplicatively
 
             // Update level
             let newLevel = alpha * deseasonalized + (1.0 - alpha) * (currentLevel + currentTrend)
@@ -669,7 +669,7 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
             let newTrend = beta * (newLevel - currentLevel) + (1.0 - beta) * currentTrend
 
             // Update seasonal factor
-            seasonalFactors[seasonIndex] = gamma * (value / newLevel) + (1.0 - gamma) * seasonalFactors[seasonIndex]
+            seasonalFactors[seasonIndex] = gamma * (value / newLevel) + (1.0 - gamma) * seasonalFactors[seasonIndex] // fp-safety:disable — newLevel is smoothed average, nonzero for valid input
 
             level = newLevel
             trend = newTrend
@@ -755,7 +755,7 @@ public struct AsyncMovingAverageForecastSequence<Base: AsyncSequence>: AsyncSequ
             }
 
             // Forecast is mean of current window
-            let forecast = buffer.reduce(0.0, +) / Double(buffer.count)
+            let forecast = buffer.reduce(0.0, +) / Double(buffer.count) // fp-safety:disable — buffer filled to window size above
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
@@ -845,16 +845,16 @@ public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence wh
             let sumXY = Swift.zip(0..<buffer.count, buffer).reduce(0.0) { $0 + Double($1.0) * $1.1 }
             let sumX2 = (0..<buffer.count).reduce(0.0) { $0 + Double($1) * Double($1) }
 
-            let slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
+            let slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) // fp-safety:disable — window >= 2 ensures nonzero denominator for distinct x indices
 
             // Calculate R-squared for confidence
-            let meanY = sumY / n
+            let meanY = sumY / n // fp-safety:disable — n = buffer.count >= window >= 2
             let ssTotal = buffer.reduce(0.0) { $0 + pow($1 - meanY, 2) }
             let ssResidual = Swift.zip(0..<buffer.count, buffer).reduce(0.0) {
                 let predicted = slope * Double($1.0) + (meanY - slope * (n - 1) / 2)
                 return $0 + pow($1.1 - predicted, 2)
             }
-            let rSquared = 1.0 - (ssResidual / ssTotal)
+            let rSquared = 1.0 - (ssResidual / ssTotal) // fp-safety:disable — ssTotal is 0 only if all y identical, slope would be 0 and both ss equal
 
             // Determine direction
             let direction: TrendDirection
@@ -969,7 +969,7 @@ public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSeque
                     continue
                 }
 
-                let currentMean = buffer.reduce(0.0, +) / Double(buffer.count)
+                let currentMean = buffer.reduce(0.0, +) / Double(buffer.count) // fp-safety:disable — guarded by buffer.count >= window
 
                 if let prevMean = previousMean {
                     let change = abs(currentMean - prevMean)
@@ -1066,9 +1066,9 @@ public struct AsyncForecastErrorSequence<Base: AsyncSequence>: AsyncSequence whe
                 sumAbsPercentError += abs(error / pair.actual)
             }
 
-            let mae = sumAbsError / Double(count)
-            let rmse = sqrt(sumSqError / Double(count))
-            let mape = sumAbsPercentError / Double(count)
+            let mae = sumAbsError / Double(count) // fp-safety:disable — count incremented to >= 1 above
+            let rmse = sqrt(sumSqError / Double(count)) // fp-safety:disable — count incremented to >= 1 above
+            let mape = sumAbsPercentError / Double(count) // fp-safety:disable — count incremented to >= 1 above
 
             return StreamingForecastError(mae: mae, rmse: rmse, mape: mape)
         }

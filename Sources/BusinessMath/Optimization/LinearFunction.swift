@@ -162,7 +162,7 @@ extension StandardLinearFunction {
             }
 
             // Forward difference: df/dx_i ≈ (f(x + h*e_i) - f(x)) / h
-            let derivative = (function(vecPlus) - function(point)) / h
+            let derivative = (function(vecPlus) - function(point)) / h // fp-safety:disable — h = 1e-8 (constant)
             coeffs.append(derivative)
         }
 

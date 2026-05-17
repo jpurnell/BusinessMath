@@ -355,7 +355,7 @@ struct AccountMetadataExtensionsTests {
         )
 
         // Verify complete metadata
-        #expect(metadata.description != nil)
+        #expect(metadata.description != nil) // TEST-QUALITY: existence check
         #expect(metadata.externalSourceSystem == "Xero")
         #expect(metadata.externalDetailType == "SalesTaxPayable")
         #expect(metadata.tags.count == 3)

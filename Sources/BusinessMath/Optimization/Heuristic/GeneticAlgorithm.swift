@@ -183,7 +183,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         if let seed = config.seed {
             self.rng = RNGWrapper(generator: SeededRandomNumberGenerator(seed: seed))
         } else {
-            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator())
+            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator()) // stochastic:exempt
         }
     }
 
@@ -514,7 +514,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             var offspring: Individual<V>
 
             // Crossover
-            let crossoverRand = Double(rng.next()) / Double(UInt64.max)
+            let crossoverRand = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
             if crossoverRand < config.crossoverRate {
                 offspring = crossover(parent1, parent2)
             } else {
@@ -522,7 +522,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             }
 
             // Mutation
-            let mutationRand = Double(rng.next()) / Double(UInt64.max)
+            let mutationRand = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
             if mutationRand < config.mutationRate {
                 offspring = mutate(offspring)
             }
@@ -737,7 +737,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
 
         for i in 0..<genes1.count {
             // Uniform crossover: 50/50 chance for each gene
-            let crossoverChoice = Double(rng.next()) / Double(UInt64.max)
+            let crossoverChoice = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
             if crossoverChoice < 0.5 {
                 childGenes.append(genes1[i])
             } else {
@@ -757,7 +757,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         var genes = individual.genes.toArray()
 
         for i in 0..<genes.count {
-            let mutationCheck = Double(rng.next()) / Double(UInt64.max)
+            let mutationCheck = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
             if mutationCheck < config.mutationRate {
                 let (lower, upper) = searchSpace[i]
                 let range = upper - lower
@@ -766,13 +766,13 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
                 let u1Raw = rng.next()
                 let u2Raw = rng.next()
                 // Fixed: Divide by 2^32 for proper [0, 1) range (was UInt32.max = 2^32-1)
-                let u1 = V.Scalar(Int(u1Raw >> 32)) / V.Scalar(Int(1 << 32))
-                let u2 = V.Scalar(Int(u2Raw >> 32)) / V.Scalar(Int(1 << 32))
+                let u1 = V.Scalar(Int(u1Raw >> 32)) / V.Scalar(Int(1 << 32)) // fp-safety:disable
+                let u2 = V.Scalar(Int(u2Raw >> 32)) / V.Scalar(Int(1 << 32)) // fp-safety:disable
                 let gaussian = V.Scalar.sqrt(-V.Scalar(2) * V.Scalar.log(u1)) * V.Scalar.cos(V.Scalar(2) * V.Scalar.pi * u2)
 
                 // Convert mutation strength from Double to V.Scalar
                 let strengthInt = Int(config.mutationStrength * 1_000_000)
-                let mutationStrengthScalar = V.Scalar(strengthInt) / V.Scalar(1_000_000)
+                let mutationStrengthScalar = V.Scalar(strengthInt) / V.Scalar(1_000_000) // fp-safety:disable
                 let mutation = gaussian * mutationStrengthScalar * range
                 let newValue = genes[i] + mutation
 

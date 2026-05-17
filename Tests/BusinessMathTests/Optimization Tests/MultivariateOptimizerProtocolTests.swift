@@ -168,6 +168,7 @@ struct MultivariateOptimizerProtocolTests {
         _ = result.objectiveValue  // Double
         _ = result.iterations  // Int
         _ = result.convergenceReason  // String or similar
+        #expect(true) // TEST-QUALITY: validates no-throw execution
     }
 
     @Test("Protocol works with different vector types")

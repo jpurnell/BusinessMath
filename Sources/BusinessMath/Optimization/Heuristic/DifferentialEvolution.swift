@@ -131,7 +131,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         if let seed = config.seed {
             self.rng = RNGWrapper(generator: SeededRandomNumberGenerator(seed: seed))
         } else {
-            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator())
+            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator()) // stochastic:exempt
         }
     }
 
@@ -354,7 +354,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
                 let (lower, upper) = searchSpace[d]
                 // Generate random value in [0, 1)
                 let randRaw = rng.next()
-                let randValue = V.Scalar(Int(randRaw >> 32)) / V.Scalar(Int(UInt32.max))
+                let randValue = V.Scalar(Int(randRaw >> 32)) / V.Scalar(Int(UInt32.max)) // fp-safety:disable
                 let value = lower + randValue * (upper - lower)
                 components.append(value)
             }
@@ -431,7 +431,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
 
         for j in 0..<dimension {
             // Generate random [0,1) value
-            let randValue = Double(rng.next()) / Double(UInt64.max)
+            let randValue = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
             if randValue < config.crossoverRate || j == jRand {
                 trial.append(mutantArray[j])
             } else {

@@ -479,7 +479,7 @@ struct NPVTests {
 
 		#expect(npvValue > 0.0)  // Should be profitable
 		#expect(pi > 1.0)  // PI > 1 for positive NPV
-		#expect(payback != nil)  // Should have payback period
+		#expect(payback != nil)  // Should have payback period // TEST-QUALITY: existence check
 	}
 
 	@Test("Manufacturing equipment decision")
@@ -496,7 +496,7 @@ struct NPVTests {
 		#expect(npvValue > 0.0)
 		#expect(pi > 1.0)
 		#expect(regularPayback == 4)  // Simple payback: 50k/15k ≈ 3.33, so year 4
-		#expect(discountedPayback != nil)
+		#expect(discountedPayback != nil) // TEST-QUALITY: existence check
 		if let dp = discountedPayback, let rp = regularPayback {
 			#expect(dp >= rp)  // Discounted payback >= regular payback
 		}

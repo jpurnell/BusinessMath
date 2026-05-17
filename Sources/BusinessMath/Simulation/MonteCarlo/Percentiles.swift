@@ -40,6 +40,7 @@ import Numerics
 ///
 /// 
 public struct Percentiles: Sendable {
+	/// The sorted array of sample values from which percentile statistics are derived.
 	public let values: [Double]
 	
 	// MARK: - Min/Max

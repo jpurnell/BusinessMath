@@ -364,7 +364,7 @@ extension MultiPeriodReport {
 // MARK: - Array Extension for Safe Subscripting
 
 private extension Array {
-	subscript(safe index: Int) -> Element? {
+	subscript(safe index: Int) -> Element? { // recursion:safe — self[index] calls the standard Array subscript, not subscript(safe:)
 		indices.contains(index) ? self[index] : nil
 	}
 }

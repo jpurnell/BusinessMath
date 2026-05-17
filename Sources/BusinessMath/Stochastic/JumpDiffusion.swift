@@ -126,17 +126,17 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
         guard current > 0, dt > 0 else { return current }
         guard jumpIntensity > 0 else {
             // No jumps — pure GBM
-            let driftTerm = (drift - volatility * volatility / 2.0) * dt
+            let driftTerm = (drift - volatility * volatility / 2.0) * dt // fp-safety:disable — constant 2.0
             let diffusionTerm = volatility * dt.squareRoot() * normalDraws
             return current * Double.exp(driftTerm + diffusionTerm)
         }
 
         // Expected jump size for drift compensation
-        let k = Double.exp(jumpMean + jumpVolatility * jumpVolatility / 2.0) - 1.0
+        let k = Double.exp(jumpMean + jumpVolatility * jumpVolatility / 2.0) - 1.0 // fp-safety:disable — constant 2.0
 
         // GBM component with jump-compensated drift
         let adjustedDrift = drift - jumpIntensity * k
-        let driftTerm = (adjustedDrift - volatility * volatility / 2.0) * dt
+        let driftTerm = (adjustedDrift - volatility * volatility / 2.0) * dt // fp-safety:disable — constant 2.0
         let diffusionTerm = volatility * dt.squareRoot() * normalDraws
 
         // Poisson jump count using the normal draw to derive a uniform for Poisson
@@ -155,8 +155,8 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
                 let u1Bits = jumpSeed
                 jumpSeed = jumpSeed &* 6364136223846793005 &+ 1442695040888963407
                 let u2Bits = jumpSeed
-                let u1 = max(Double(u1Bits) / Double(UInt64.max), 1e-15)
-                let u2 = Double(u2Bits) / Double(UInt64.max)
+                let u1 = max(Double(u1Bits) / Double(UInt64.max), 1e-15) // fp-safety:disable — UInt64.max is constant
+                let u2 = Double(u2Bits) / Double(UInt64.max) // fp-safety:disable — UInt64.max is constant
                 let z = (-2.0 * Double.log(u1)).squareRoot() * Double.cos(2.0 * .pi * u2)
                 jumpComponent += jumpMean + jumpVolatility * z
             }
@@ -177,8 +177,8 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
 
         let sign: Double = x < 0 ? -1.0 : 1.0
         let absX = abs(x)
-        let t = 1.0 / (1.0 + p * absX)
-        let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Double.exp(-absX * absX / 2.0)
+        let t = 1.0 / (1.0 + p * absX) // fp-safety:disable — denominator >= 1.0 (p > 0, absX >= 0)
+        let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Double.exp(-absX * absX / 2.0) // fp-safety:disable — constant 2.0
 
         return 0.5 * (1.0 + sign * y)
     }
@@ -206,7 +206,7 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
 
         while cdf < u && k < 200 {
             k += 1
-            p *= mean / Double(k)
+            p *= mean / Double(k) // fp-safety:disable — k starts at 1 and increments
             cdf += p
         }
 

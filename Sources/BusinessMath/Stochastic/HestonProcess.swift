@@ -279,10 +279,10 @@ public struct HestonProcess: Sendable {
         timeToExpiry: Double,
         initialVariance: Double
     ) -> Double {
-        let logMoneyness = Double.log(spot / strike)
+        let logMoneyness = Double.log(spot / strike) // fp-safety:disable — strike validated positive by caller (option pricing)
         let numSteps = 2000
         let upperLimit = 500.0
-        let dphi = upperLimit / Double(numSteps)
+        let dphi = upperLimit / Double(numSteps) // fp-safety:disable — numSteps is constant 2000
 
         var integral = 0.0
         for k in 1...numSteps {
@@ -308,7 +308,7 @@ public struct HestonProcess: Sendable {
             integral += integrand * dphi
         }
 
-        let result = 0.5 + integral / Double.pi
+        let result = 0.5 + integral / Double.pi // fp-safety:disable
         return min(max(result, 0.0), 1.0)
     }
 

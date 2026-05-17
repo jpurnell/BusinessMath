@@ -12,8 +12,11 @@ import SwiftCompilerPlugin
 import SwiftDiagnostics
 import Foundation
 
-/// Macro for marking optimization variables with bounds checking
+/// Macro for marking optimization variables with bounds checking.
+///
+/// Generates bounds range, validity check, clamping, and clamped-setter members for the annotated property.
 public struct VariableMacro: PeerMacro {
+    /// Expands the `@Variable(bounds:)` attribute into bounds-checking helper members.
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -87,8 +90,11 @@ public struct VariableMacro: PeerMacro {
     }
 }
 
-/// Macro for defining optimization constraints with validation
+/// Macro for defining optimization constraints with validation.
+///
+/// Generates a constraint name, satisfaction check, and violation amount for the annotated function.
 public struct ConstraintMacro: PeerMacro {
+    /// Expands the `@Constraint` attribute into constraint-checking helper members.
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -125,8 +131,11 @@ public struct ConstraintMacro: PeerMacro {
     }
 }
 
-/// Macro for defining optimization objectives with evaluation tracking
+/// Macro for defining optimization objectives with evaluation tracking.
+///
+/// Generates an objective function reference, name, current-value accessor, and target-check method.
 public struct ObjectiveMacro: PeerMacro {
+    /// Expands the `@Objective` attribute into objective-evaluation helper members.
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,

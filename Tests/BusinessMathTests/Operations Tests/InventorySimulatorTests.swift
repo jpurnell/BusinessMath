@@ -75,8 +75,10 @@ struct InventorySimulatorTests {
 
 		var rng = DeterministicRNG(seed: 1)
 		let demand = (0..<1000).map { _ -> Double in
-			let u1 = Double.random(in: Double.leastNonzeroMagnitude..<1.0, using: &rng)
-			let u2 = Double.random(in: 0.0..<1.0, using: &rng)
+			let raw1 = rng.next()
+			let u1 = Swift.max(Double(raw1 >> 11) * 0x1.0p-53, Double.leastNonzeroMagnitude)
+			let raw2 = rng.next()
+			let u2 = Double(raw2 >> 11) * 0x1.0p-53
 			let z = Foundation.sqrt(-2.0 * Foundation.log(u1)) * Foundation.cos(2.0 * .pi * u2)
 			return 10.0 + 3.0 * z
 		}

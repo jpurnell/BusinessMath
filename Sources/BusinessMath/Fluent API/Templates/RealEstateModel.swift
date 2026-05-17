@@ -160,7 +160,7 @@ public struct RealEstateModel: Sendable {
 
     /// Annual depreciation deduction
     public var annualDepreciation: Double {
-        depreciableValue / depreciationPeriodYears
+        depreciableValue / depreciationPeriodYears // fp-safety:disable — depreciationPeriodYears defaults to 27.5, always > 0
     }
 
     // MARK: - Cash Flow Calculations
@@ -267,7 +267,8 @@ public struct RealEstateModel: Sendable {
     /// - Returns: Cash-on-cash return as percentage
     public func calculateCashOnCashReturn(year: Int) -> Double {
         let cashFlow = afterTaxCashFlow(year: year)
-        return cashFlow / initialInvestment
+        guard initialInvestment > 0 else { return 0 }
+        return cashFlow / initialInvestment // fp-safety:disable — guarded above
     }
 
     /// Calculate property value at a given year
@@ -361,7 +362,8 @@ public struct RealEstateModel: Sendable {
         let proceeds = saleProceeds(year: holdingPeriodYears, sellingCostsPercentage: sellingCostsPercentage)
         totalCashFlow += proceeds
 
-        return totalCashFlow / initialInvestment
+        guard initialInvestment > 0 else { return 0 }
+        return totalCashFlow / initialInvestment // fp-safety:disable — guarded above
     }
 
     /// Calculate cap rate (year 1 NOI / purchase price)
@@ -369,7 +371,8 @@ public struct RealEstateModel: Sendable {
     /// - Returns: Capitalization rate
     public func calculateCapRate() -> Double {
         let year1NOI = netOperatingIncome(year: 1)
-        return year1NOI / purchasePrice
+        guard purchasePrice > 0 else { return 0 }
+        return year1NOI / purchasePrice // fp-safety:disable — guarded above
     }
 
     // MARK: - Private Helpers

@@ -260,7 +260,7 @@ struct StreamingAnomalyDetectionTests {
 
         // The anomalous value should have a higher composite score
         let maxScore = scores.max(by: { $0.score < $1.score })
-        #expect(maxScore != nil)
+        #expect(maxScore != nil) // TEST-QUALITY: existence check
         #expect(maxScore!.score > 0.5)  // Composite score ranges 0-1
     }
 
@@ -268,9 +268,11 @@ struct StreamingAnomalyDetectionTests {
 
     @Test("Anomaly detection maintains O(1) memory")
     func constantMemoryForAnomalyDetection() async throws {
-        // Simulate large stream
+        // Simulate large stream with deterministic values
+        var counter: Double = 0
         let largeStream = AsyncGeneratorStream {
-            return Double.random(in: 0...100)
+            counter += 1
+            return counter.truncatingRemainder(dividingBy: 100)
         }
 
         var detectionCount = 0

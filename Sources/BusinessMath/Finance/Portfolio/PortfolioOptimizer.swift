@@ -70,6 +70,14 @@ public enum PortfolioConstraintSet {
 	}
 }
 
+// MARK: - Portfolio Optimization Errors
+
+/// Errors that can occur during portfolio optimization.
+public enum PortfolioOptimizerError: Error, Sendable, Equatable {
+	/// Expected returns vector must contain at least one asset.
+	case emptyReturns
+}
+
 // MARK: - Portfolio Optimization Results
 
 /// Results from portfolio optimization
@@ -272,6 +280,7 @@ public struct PortfolioOptimizer {
 		constraintSet: PortfolioConstraintSet? = nil
 	) throws -> OptimalPortfolio {
 		let n = expectedReturns.count
+		guard n > 0 else { throw PortfolioOptimizerError.emptyReturns }
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		// Portfolio variance: σ² = w'Σw
@@ -312,7 +321,7 @@ public struct PortfolioOptimizer {
 			weights: result.solution,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
-			sharpeRatio: portfolioReturn / portfolioVolatility,
+			sharpeRatio: portfolioVolatility > 0 ? portfolioReturn / portfolioVolatility : 0, // fp-safety:disable — guarded inline
 			converged: result.converged,
 			iterations: result.iterations
 		)
@@ -337,6 +346,7 @@ public struct PortfolioOptimizer {
 		constraintSet: PortfolioConstraintSet = .longOnly
 	) throws -> OptimalPortfolio {
 		let n = expectedReturns.count
+		guard n > 0 else { throw PortfolioOptimizerError.emptyReturns }
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		// Negative Sharpe ratio (minimize negative = maximize positive)
@@ -362,7 +372,7 @@ public struct PortfolioOptimizer {
 			}
 
 			// Return negative Sharpe ratio (we minimize)
-			let sharpeRatio = (portfolioReturn - riskFreeRate) / volatility
+			let sharpeRatio = (portfolioReturn - riskFreeRate) / volatility // fp-safety:disable — guarded above
 			return -sharpeRatio
 		}
 
@@ -406,7 +416,7 @@ public struct PortfolioOptimizer {
 		let portfolioReturn = expectedReturns.dot(finalWeights)
 		let portfolioVariance = calculateVariance(weights: finalWeights, covariance: covariance)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
-		let sharpeRatio = (portfolioReturn - riskFreeRate) / portfolioVolatility
+		let sharpeRatio = portfolioVolatility > 0 ? (portfolioReturn - riskFreeRate) / portfolioVolatility : 0 // fp-safety:disable — guarded inline
 
 		return OptimalPortfolio(
 			weights: finalWeights,
@@ -439,7 +449,7 @@ public struct PortfolioOptimizer {
 		let maxReturn = expectedReturns.toArray().max() ?? 0.1
 
 		// Generate target returns
-		let step = (maxReturn - minReturn) / Double(numberOfPoints - 1)
+		let step = (maxReturn - minReturn) / Double(numberOfPoints - 1) // fp-safety:disable — numberOfPoints >= 2 by API contract
 		let targetReturns = (0..<numberOfPoints).map { minReturn + Double($0) * step }
 
 		var portfolios: [OptimalPortfolio] = []
@@ -480,6 +490,7 @@ public struct PortfolioOptimizer {
 		constraintSet: PortfolioConstraintSet = .longOnly
 	) throws -> OptimalPortfolio {
 		let n = expectedReturns.count
+		guard n > 0 else { throw PortfolioOptimizerError.emptyReturns }
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		// Objective: minimize sum of squared differences in risk contributions
@@ -510,11 +521,11 @@ public struct PortfolioOptimizer {
 			// Calculate risk contributions
 			var riskContributions = Array(repeating: 0.0, count: n)
 			for i in 0..<n {
-				riskContributions[i] = w[i] * marginalRisk[i] / volatility
+				riskContributions[i] = w[i] * marginalRisk[i] / volatility // fp-safety:disable — guarded above
 			}
 
 			// Target: equal risk contribution (1/n of total risk)
-			let targetRC = volatility / Double(n)
+			let targetRC = volatility / Double(n) // fp-safety:disable — n >= 1 from expectedReturns.count
 
 			// Sum of squared errors
 			var error = 0.0
@@ -571,7 +582,7 @@ public struct PortfolioOptimizer {
 			weights: finalWeights,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
-			sharpeRatio: portfolioReturn / portfolioVolatility,
+			sharpeRatio: portfolioVolatility > 0 ? portfolioReturn / portfolioVolatility : 0, // fp-safety:disable — guarded inline
 			converged: converged,
 			iterations: iterations
 		)
@@ -600,6 +611,7 @@ public struct PortfolioOptimizer {
 		// Now properly implemented with Lagrange multipliers
 
 		let n = expectedReturns.count
+		guard n > 0 else { throw PortfolioOptimizerError.emptyReturns }
 		let initialWeights = VectorN(Array(repeating: 1.0 / Double(n), count: n))
 
 		let varianceFunction: @Sendable (VectorN<Double>) -> Double = { weights in
@@ -636,7 +648,7 @@ public struct PortfolioOptimizer {
 		let portfolioReturn = expectedReturns.dot(finalWeights)
 		let portfolioVariance = calculateVariance(weights: finalWeights, covariance: covariance)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
-		let sharpeRatio = (portfolioReturn - riskFreeRate) / portfolioVolatility
+		let sharpeRatio = portfolioVolatility > 0 ? (portfolioReturn - riskFreeRate) / portfolioVolatility : 0 // fp-safety:disable — guarded inline
 
 		return OptimalPortfolio(
 			weights: finalWeights,

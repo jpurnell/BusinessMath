@@ -110,7 +110,7 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
         if let seed = config.seed {
             self.rng = RNGWrapper(generator: SeededRandomNumberGenerator(seed: seed))
         } else {
-            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator())
+            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator()) // stochastic:exempt
         }
     }
 
@@ -237,10 +237,10 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
                 if let d = deltaE as? Double { deltaEDouble = d }
                 else if let f = deltaE as? Float { deltaEDouble = Double(f) }
                 else { deltaEDouble = Double("\(deltaE)") ?? 0.0 }
-                let probability = exp(-deltaEDouble / temperature)
+                let probability = exp(-deltaEDouble / temperature) // fp-safety:disable — temperature > finalTemperature > 0 per loop condition
                 // Fixed: UInt32.max is 2^32 - 1, but shifted value ranges 0 to 2^32 - 1
                 // Divide by 2^32 (1 << 32) to get proper [0, 1) range
-                let randomValue = Double(rng.next() >> 32) / Double(1 << 32)
+                let randomValue = Double(rng.next() >> 32) / Double(1 << 32) // fp-safety:disable
                 accepted = randomValue < probability
             }
 
@@ -326,14 +326,14 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
             let randRaw2 = rng.next()
 
             // Box-Muller transform for Gaussian random
-            let u1 = Double(randRaw1 >> 32) / Double(UInt32.max)
-            let u2 = Double(randRaw2 >> 32) / Double(UInt32.max)
+            let u1 = Double(randRaw1 >> 32) / Double(UInt32.max) // fp-safety:disable
+            let u2 = Double(randRaw2 >> 32) / Double(UInt32.max) // fp-safety:disable
             let gaussian = sqrt(-2.0 * log(u1 + 1e-10)) * cos(2.0 * .pi * u2)
 
             // Scale perturbation (convert through Int for generic safety)
             let scaledGaussian = config.perturbationScale * gaussian
             let scaledInt = Int(scaledGaussian * 1_000_000)
-            let perturbation = V.Scalar(scaledInt) / V.Scalar(1_000_000) * range
+            let perturbation = V.Scalar(scaledInt) / V.Scalar(1_000_000) * range // fp-safety:disable
 
             // Apply perturbation and clamp
             let newValue = currentArray[d] + perturbation

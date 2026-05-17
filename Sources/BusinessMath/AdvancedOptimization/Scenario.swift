@@ -146,7 +146,7 @@ public struct ScenarioGenerator {
 
 		// Set seed if provided
 		if let seed = seed {
-			srand48(Int(seed))
+			srand48(Int(seed)) // stochastic:exempt
 		}
 
 		var scenarios: [MonteCarloScenario] = []
@@ -157,9 +157,9 @@ public struct ScenarioGenerator {
 
 			for i in 0..<dimension {
 				// Box-Muller transform for normal samples
-				let u1 = drand48()
-				let u2 = drand48()
-				let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2)
+				let u1 = drand48() // stochastic:exempt
+				let u2 = drand48() // stochastic:exempt
+				let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2) // fp-safety:disable — u1 from drand48 in (0,1)
 				let value = mean[i] + standardDeviation[i] * z
 
 				parameters["param_\(i)"] = value
@@ -167,7 +167,7 @@ public struct ScenarioGenerator {
 
 			scenarios.append(MonteCarloScenario(
 				parameters: parameters,
-				probability: 1.0 / Double(numberOfScenarios)
+				probability: 1.0 / Double(numberOfScenarios) // fp-safety:disable — numberOfScenarios > 0 from guard
 			))
 		}
 
@@ -203,7 +203,7 @@ public struct ScenarioGenerator {
 
 		// Set seed if provided
 		if let seed = seed {
-			srand48(Int(seed))
+			srand48(Int(seed)) // stochastic:exempt
 		}
 
 		var scenarios: [MonteCarloScenario] = []
@@ -212,7 +212,7 @@ public struct ScenarioGenerator {
 
 		for _ in 0..<numberOfScenarios {
 			// Random sample from historical data
-			let index = Int(drand48() * Double(historicalData.count))
+			let index = Int(drand48() * Double(historicalData.count)) // stochastic:exempt fp-safety:disable — count > 0 from guard
 			let sample = historicalData[index]
 
 			var parameters: [String: Double] = [:]
@@ -222,7 +222,7 @@ public struct ScenarioGenerator {
 
 			scenarios.append(MonteCarloScenario(
 				parameters: parameters,
-				probability: 1.0 / Double(numberOfScenarios)
+				probability: 1.0 / Double(numberOfScenarios) // fp-safety:disable — numberOfScenarios > 0 from guard
 			))
 		}
 
@@ -252,7 +252,7 @@ public struct ScenarioGenerator {
 
 		// Set seed if provided
 		if let seed = seed {
-			srand48(Int(seed))
+			srand48(Int(seed)) // stochastic:exempt
 		}
 
 		var scenarios: [MonteCarloScenario] = []
@@ -262,14 +262,14 @@ public struct ScenarioGenerator {
 			var parameters: [String: Double] = [:]
 
 			for i in 0..<dimension {
-				let u = drand48()
+				let u = drand48() // stochastic:exempt
 				let value = lowerBounds[i] + u * (upperBounds[i] - lowerBounds[i])
 				parameters["param_\(i)"] = value
 			}
 
 			scenarios.append(MonteCarloScenario(
 				parameters: parameters,
-				probability: 1.0 / Double(numberOfScenarios)
+				probability: 1.0 / Double(numberOfScenarios) // fp-safety:disable — numberOfScenarios > 0 from guard
 			))
 		}
 

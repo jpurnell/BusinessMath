@@ -88,7 +88,7 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 	public let discountRate: Double
 
 	/// Discount factor δ = 1 / (1 + discountRate)
-	public var discountFactor: Double { 1.0 / (1.0 + discountRate) }
+	public var discountFactor: Double { 1.0 / (1.0 + discountRate) } // fp-safety:disable — denominator >= 1.0
 
 	/// Maximum iterations for underlying optimizer
 	public let maxIterations: Int

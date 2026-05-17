@@ -4,7 +4,7 @@ import Numerics
 // MARK: - Result Types
 
 /// Result of a pairwise post-hoc comparison.
-public struct PairwiseComparison<T: Real>: Sendable, Equatable {
+public struct PairwiseComparison<T: Real & Sendable>: Sendable, Equatable {
 	/// Index of the first group.
 	public let groupA: Int
 	/// Index of the second group.
@@ -20,7 +20,7 @@ public struct PairwiseComparison<T: Real>: Sendable, Equatable {
 }
 
 /// Result of a post-hoc analysis.
-public struct PostHocResult<T: Real>: Sendable, Equatable {
+public struct PostHocResult<T: Real & Sendable>: Sendable, Equatable {
 	/// The method used.
 	public let method: String
 	/// All pairwise comparisons.

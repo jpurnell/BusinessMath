@@ -41,16 +41,25 @@ import Numerics
 /// interp(2.5)   // smooth cardinal spline value
 /// ```
 public struct CatmullRomInterpolator<T: Real & Sendable & Codable>: Interpolator {
+    /// The scalar type for coordinates and values.
     public typealias Scalar = T
+    /// Input point type (1D scalar wrapped in ``Vector1D``).
     public typealias Point = Vector1D<T>
+    /// Output value type (scalar).
     public typealias Value = T
 
+    /// The number of input dimensions (always 1).
     public let inputDimension = 1
+    /// The number of output dimensions (always 1 for scalar output).
     public let outputDimension = 1
 
+    /// Sample x-coordinates, strictly monotonically increasing.
     public let xs: [T]
+    /// Sample y-values at each knot.
     public let ys: [T]
+    /// Cardinal spline tension in `[0, 1]`. Zero gives standard Catmull-Rom.
     public let tension: T
+    /// Behavior for queries outside `[xs.first, xs.last]`.
     public let outOfBounds: ExtrapolationPolicy<T>
 
     @usableFromInline
@@ -87,11 +96,18 @@ public struct CatmullRomInterpolator<T: Real & Sendable & Codable>: Interpolator
         self.slopes = Self.computeSlopes(xs: xs, ys: ys, tension: tension)
     }
 
+    /// Evaluate the spline at a wrapped query point.
+    ///
+    /// - Parameter query: The query point as a ``Vector1D``.
+    /// - Returns: Interpolated y-value.
     public func callAsFunction(at query: Vector1D<T>) -> T {
         callAsFunction(query.value)
     }
 
-    /// Scalar convenience.
+    /// Evaluate the spline at a scalar query point.
+    ///
+    /// - Parameter t: The x-coordinate to evaluate at.
+    /// - Returns: The cardinal-spline value at `t`.
     public func callAsFunction(_ t: T) -> T {
         if let extrapolated = extrapolatedValue(at: t, xs: xs, ys: ys, policy: outOfBounds) {
             return extrapolated

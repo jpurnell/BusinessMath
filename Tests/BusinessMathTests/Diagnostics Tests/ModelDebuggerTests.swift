@@ -50,7 +50,7 @@ struct ModelDebuggerTests {
 
         #expect(trace.value == "Calculation")
         #expect(trace.result == nil)
-        #expect(trace.error != nil)
+        #expect(trace.error != nil) // TEST-QUALITY: existence check
     }
 
 	@Test(.disabled("Trace timing is captured"))
@@ -85,7 +85,7 @@ struct ModelDebuggerTests {
         #expect(trace.dependencies["rate"] == "0.08")
         #expect(trace.dependencies["periods"] == "10")
         #expect(trace.formula == "PV / (1 + rate)^periods")
-        #expect(trace.result != 0)
+        #expect(trace.result != 0) // TEST-QUALITY: nonzero check
     }
 
     @Test("Detailed trace with no dependencies")
@@ -124,7 +124,7 @@ struct ModelDebuggerTests {
             principal * pow(1 + rate, Double(periods))
         }
 
-        #expect(trace.result != 0)
+        #expect(trace.result != 0) // TEST-QUALITY: nonzero check
         #expect(abs(trace.result - 146_932.81) < 0.01)
         #expect(trace.duration > 0)
     }
@@ -492,7 +492,7 @@ struct ModelDebuggerTests {
             return P * r * pow(1 + r, n) / (pow(1 + r, n) - 1)
         }
 
-        #expect(trace.result != 0)
+        #expect(trace.result != 0) // TEST-QUALITY: nonzero check
 
         // Step 2: Validate result
         let validation = await debugger.validate(

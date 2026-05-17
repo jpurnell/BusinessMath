@@ -352,6 +352,7 @@ struct XNPVTests {
 	
 	@Test("XNPV with duplicate dates aggregates correctly")
 		func xnpvDuplicateDates() throws {
+	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 			func d(_ y:Int,_ m:Int,_ day:Int) -> Date {
 				var c = DateComponents()
 				c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)

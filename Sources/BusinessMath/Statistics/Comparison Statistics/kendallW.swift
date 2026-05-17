@@ -156,21 +156,43 @@ public func kendallWFromRankSums<T: Real>(rankSums: [T], judges: Int, items: Int
 
 // MARK: - Concordance Analysis Result
 
+/// The result of a concordance analysis, containing agreement statistics and significance tests.
+///
+/// Provides Kendall's W (both raw and tie-corrected), chi-squared and Friedman test statistics,
+/// degrees of freedom, p-value, and F-statistic for assessing inter-rater agreement.
 public struct ConcordanceResult<T: Real>: Sendable where T: Sendable {
+    /// Kendall's W coefficient of concordance (uncorrected for ties).
     public let w: T
+    /// Kendall's W corrected for tied ranks within judges.
     public let wCorrected: T
+    /// Chi-squared statistic for testing significance of agreement.
     public let chiSquare: T
+    /// Friedman test statistic derived from the rank sums.
     public let friedman: T
+    /// Degrees of freedom for the chi-squared test (items - 1).
     public let degreesOfFreedom: Int
+    /// P-value for the null hypothesis of no agreement.
     public let pValue: T
+    /// F-statistic approximation for small-sample significance testing.
     public let fStatistic: T
+    /// The number of judges (raters) in the analysis.
     public let judges: Int
+    /// The number of items (objects) being ranked.
     public let items: Int
+    /// Total tie correction factor summed across all judges.
     public let totalTieCorrection: T
 }
 
 // MARK: - Concordance Analysis (Full Matrix)
 
+/// Performs a full concordance analysis on a ranking matrix with tie correction.
+///
+/// Computes Kendall's W, chi-squared statistic, Friedman statistic, p-value,
+/// and F-statistic. Automatically detects and corrects for tied ranks.
+///
+/// - Parameter rankings: A 2D array where rows are judges and columns are items.
+/// - Returns: A ``ConcordanceResult`` with all agreement statistics.
+/// - Throws: `BusinessMathError.invalidInput` if the matrix is empty or has fewer than 2 items.
 public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws -> ConcordanceResult<T> {
     guard !rankings.isEmpty else {
         throw BusinessMathError.invalidInput(
@@ -261,6 +283,18 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
 
 // MARK: - Concordance Analysis (From Rank Sums)
 
+/// Performs concordance analysis from pre-computed rank sums (no tie correction).
+///
+/// Use this when you have already computed column-wise rank sums externally
+/// (e.g., from an `Array2D`). Since individual judge rows are not available,
+/// tie correction is not applied.
+///
+/// - Parameters:
+///   - rankSums: Array of rank sums for each item.
+///   - judges: The number of judges (n).
+///   - items: The number of items (k).
+/// - Returns: A ``ConcordanceResult`` with agreement statistics.
+/// - Throws: `BusinessMathError.invalidInput` if items < 2 or judges < 1.
 public func concordanceAnalysisFromRankSums<T: Real & Sendable>(
     rankSums: [T], judges: Int, items: Int
 ) throws -> ConcordanceResult<T> {
@@ -316,6 +350,15 @@ public func concordanceAnalysisFromRankSums<T: Real & Sendable>(
 
 // MARK: - Concordance with Missing Data (Brueckl 2011)
 
+/// Performs concordance analysis on rankings with missing data using the Brueckl (2011) method.
+///
+/// Uses pairwise Spearman correlations weighted by overlap size to estimate W
+/// when some judges have not rated all items.
+///
+/// - Parameter rankings: A 2D array of optional ranks (nil = missing rating).
+/// - Returns: A ``ConcordanceResult`` with agreement statistics.
+/// - Throws: `BusinessMathError.invalidInput` if the matrix is empty or has fewer than 2 items.
+///   `BusinessMathError.insufficientData` if fewer than 2 judges have at least 2 ratings.
 public func concordanceAnalysisNA<T: Real & Sendable>(_ rankings: [[T?]]) throws -> ConcordanceResult<T> {
     guard !rankings.isEmpty else {
         throw BusinessMathError.invalidInput(
@@ -396,6 +439,16 @@ public func concordanceAnalysisNA<T: Real & Sendable>(_ rankings: [[T?]]) throws
 
 // MARK: - Permutation Test for Concordance
 
+/// Estimates the p-value of Kendall's W using a permutation test.
+///
+/// Shuffles each judge's rankings independently to build a null distribution,
+/// then computes the proportion of permuted W values that meet or exceed the observed W.
+///
+/// - Parameters:
+///   - rankings: A 2D array where rows are judges and columns are items.
+///   - permutations: Number of random permutations (default 10,000).
+/// - Returns: A tuple of the observed W and its permutation-based p-value.
+/// - Throws: `BusinessMathError.invalidInput` if W cannot be computed from the rankings.
 public func concordancePermutationTest<T: Real & Sendable>(
     _ rankings: [[T]], permutations: Int = 10000
 ) throws -> (w: T, pValue: T) {
@@ -412,7 +465,7 @@ public func concordancePermutationTest<T: Real & Sendable>(
     for _ in 0..<permutations {
         var permuted = rankings
         for i in 0..<permuted.count {
-            permuted[i].shuffle()
+            permuted[i].shuffle() // stochastic:exempt
         }
         let permW = kendallW(permuted)
         if permW >= observedW {

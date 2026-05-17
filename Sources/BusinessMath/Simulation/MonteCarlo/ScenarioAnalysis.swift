@@ -432,7 +432,7 @@ public struct SensitivityAnalysis: Sendable {
 		var scenarios: [(multiplier: Double, result: SimulationResults)] = []
 
 		// Generate multipliers evenly spaced in range
-		let stepSize = (range.upperBound - range.lowerBound) / Double(steps - 1)
+		let stepSize = (range.upperBound - range.lowerBound) / Double(steps - 1) // fp-safety:disable — steps >= 2 for sensitivity analysis
 
 		for i in 0..<steps {
 			let multiplier = range.lowerBound + Double(i) * stepSize

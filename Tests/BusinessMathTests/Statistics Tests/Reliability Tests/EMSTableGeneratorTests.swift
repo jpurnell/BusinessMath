@@ -23,7 +23,7 @@ struct EMSTableGeneratorTests {
 
         // Check EMS({p})
         let emsP = table[Set(["p"])]
-        #expect(emsP != nil)
+        #expect(emsP != nil) // TEST-QUALITY: existence check
         #expect(emsP?.count == 2) // sigma^2_p and sigma^2_{p,r}
 
         let pSelfCoeff = emsP?.first { $0.component == Set(["p"]) }?.coefficient
@@ -34,7 +34,7 @@ struct EMSTableGeneratorTests {
 
         // Check EMS({r})
         let emsR = table[Set(["r"])]
-        #expect(emsR != nil)
+        #expect(emsR != nil) // TEST-QUALITY: existence check
         #expect(emsR?.count == 2)
 
         let rSelfCoeff = emsR?.first { $0.component == Set(["r"]) }?.coefficient
@@ -45,7 +45,7 @@ struct EMSTableGeneratorTests {
 
         // Check EMS({p,r})
         let emsPR = table[Set(["p", "r"])]
-        #expect(emsPR != nil)
+        #expect(emsPR != nil) // TEST-QUALITY: existence check
         #expect(emsPR?.count == 1)
         #expect(abs((emsPR?.first?.coefficient ?? 0) - 1.0) < 1e-6)
     }
@@ -70,7 +70,7 @@ struct EMSTableGeneratorTests {
         // c({p,i}, {p}) = n_r = 3
         // c({p,r,i}, {p}) = 1
         let emsP = table[Set(["p"])]
-        #expect(emsP != nil)
+        #expect(emsP != nil) // TEST-QUALITY: existence check
         #expect(emsP?.count == 4)
 
         let pSelf = emsP?.first { $0.component == Set(["p"]) }?.coefficient

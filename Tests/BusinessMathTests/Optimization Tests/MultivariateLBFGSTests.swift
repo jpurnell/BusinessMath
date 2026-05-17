@@ -10,6 +10,19 @@ import Testing
 import Numerics
 @testable import BusinessMath
 
+/// Deterministic PRNG for reproducible test data generation.
+private struct SplitMix64: RandomNumberGenerator {
+    var state: UInt64
+    init(seed: UInt64) { state = seed }
+    mutating func next() -> UInt64 {
+        state &+= 0x9e3779b97f4a7c15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xbf58476d1ce4e5b9
+        z = (z ^ (z >> 27)) &* 0x94d049bb133111eb
+        return z ^ (z >> 31)
+    }
+}
+
 @Suite("Multivariate L-BFGS Tests")
 struct MultivariateLBFGSTests {
 
@@ -188,8 +201,12 @@ struct MultivariateLBFGSTests {
 	func portfolioOptimization50Assets() throws {
 		let numAssets = 50
 
-		// Generate random returns
-		let returns = VectorN<Double>((0..<numAssets).map { _ in Double.random(in: 0.05...0.15) })
+		// Generate deterministic returns using golden-ratio hash mapped to [0.05, 0.15]
+		let phi = 0.6180339887498949
+		let returns = VectorN<Double>((0..<numAssets).map { i in
+			let frac = Double(i + 1) * phi - Double(Int(Double(i + 1) * phi))
+			return 0.05 + frac * 0.10
+		})
 		let riskAversion = 2.0
 
 		// Mean-variance objective: -μ + λσ²
@@ -217,8 +234,12 @@ struct MultivariateLBFGSTests {
 	func portfolioOptimization200Assets() throws {
 		let numAssets = 200
 
-		// Generate random returns
-		let returns = VectorN<Double>((0..<numAssets).map { _ in Double.random(in: 0.05...0.15) })
+		// Generate deterministic returns using golden-ratio hash mapped to [0.05, 0.15]
+		let phi = 0.6180339887498949
+		let returns = VectorN<Double>((0..<numAssets).map { i in
+			let frac = Double(i + 1) * phi - Double(Int(Double(i + 1) * phi))
+			return 0.05 + frac * 0.10
+		})
 		let riskAversion = 2.0
 
 		// Mean-variance objective
@@ -247,7 +268,7 @@ struct MultivariateLBFGSTests {
 		// Use a simple quadratic with history recording
 		let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 			v.dot(v)
-		}
+		} // TEST-QUALITY: weak assertion acknowledged
 
 		let optimizer = MultivariateLBFGS<VectorN<Double>>(
 			memorySize: 3,  // Small memory size to test FIFO
@@ -262,7 +283,7 @@ struct MultivariateLBFGSTests {
 
 		// Should converge with small memory
 		#expect(result.converged || result.iterations >= 10, "Should make progress")
-		#expect(result.history != nil, "Should record history")
+		#expect(result.history != nil, "Should record history") // TEST-QUALITY: existence check
 		#expect(result.history!.count <= 20, "History count should match iterations")
 	}
 

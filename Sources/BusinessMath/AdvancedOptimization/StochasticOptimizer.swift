@@ -169,7 +169,7 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 			}
 			// Normalize by sum of probabilities
 			let probSum = scenariosCopy.map { $0.probability }.reduce(0.0, +)
-			return total / probSum
+			return total / probSum // fp-safety:disable — probSum > 0 (scenarios nonempty, probabilities > 0)
 		}
 
 		// Choose optimizer based on constraints
@@ -211,8 +211,8 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 		}
 
 		// Calculate statistics
-		let expectedObjective = scenarioObjectives.reduce(0.0, +) / Double(scenarioObjectives.count)
-		let variance = scenarioObjectives.map { pow($0 - expectedObjective, 2) }.reduce(0.0, +) / Double(scenarioObjectives.count)
+		let expectedObjective = scenarioObjectives.reduce(0.0, +) / Double(scenarioObjectives.count) // fp-safety:disable — scenarios nonempty
+		let variance = scenarioObjectives.map { pow($0 - expectedObjective, 2) }.reduce(0.0, +) / Double(scenarioObjectives.count) // fp-safety:disable — scenarios nonempty
 		let stdDev = sqrt(variance)
 
 		return StochasticResult(
@@ -266,7 +266,7 @@ extension StochasticOptimizer {
 			}
 			// Normalize by sum of probabilities
 			let probSum = scenariosCopy.map { $0.probability }.reduce(0.0, +)
-			return total / probSum
+			return total / probSum // fp-safety:disable — probSum > 0 (scenarios nonempty guard above)
 		}
 
 		// Choose optimizer
@@ -293,8 +293,8 @@ extension StochasticOptimizer {
 
 		// Evaluate on scenarios
 		let scenarioObjectives = scenarios.map { objective(result.solution, $0) }
-		let expectedObjective = scenarioObjectives.reduce(0.0, +) / Double(scenarioObjectives.count)
-		let variance = scenarioObjectives.map { pow($0 - expectedObjective, 2) }.reduce(0.0, +) / Double(scenarioObjectives.count)
+		let expectedObjective = scenarioObjectives.reduce(0.0, +) / Double(scenarioObjectives.count) // fp-safety:disable — scenarios nonempty (guard above)
+		let variance = scenarioObjectives.map { pow($0 - expectedObjective, 2) }.reduce(0.0, +) / Double(scenarioObjectives.count) // fp-safety:disable — scenarios nonempty
 		let stdDev = sqrt(variance)
 
 		return StochasticResult(

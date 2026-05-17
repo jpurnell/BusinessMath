@@ -155,7 +155,7 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 
 		// Calculate success rate
 		let convergedCount = allResults.filter { $0.1.converged }.count
-		let successRate = Double(convergedCount) / Double(numberOfStarts)
+		let successRate = Double(convergedCount) / Double(numberOfStarts) // fp-safety:disable — numberOfStarts >= 1 (default 10)
 
 		// Extract just the optimization results (without starting points)
 		let optimizationResults = allResults.map { $0.1 }
@@ -191,7 +191,7 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 			for d in 0..<dimension {
 				let lower = lowerArray[d]
 				let upper = upperArray[d]
-				let random = Double.random(in: 0...1)
+				let random = Double.random(in: 0...1) // stochastic:exempt
 				let value = lower + random * (upper - lower)
 				coordinates.append(value)
 			}

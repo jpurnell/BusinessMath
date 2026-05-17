@@ -15,7 +15,7 @@ struct DebtCovenantsTests {
         interest: Double,
         tax: Double,
         periods: [Period]
-    ) -> IncomeStatement<Double> {
+    ) throws -> IncomeStatement<Double> {
 		let entity = Entity(
 			id: "ACME001",
 			primaryType: .ticker,
@@ -25,42 +25,42 @@ struct DebtCovenantsTests {
 			metadata: ["description": "Leading provider of widgets"]
 		)
 
-        let revenueAccount = try! Account(
+        let revenueAccount = try Account(
 			entity: entity,
             name: "Revenue",
 			incomeStatementRole: .revenue,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: revenue, count: periods.count))
         )
 
-        let cogsAccount = try! Account(
+        let cogsAccount = try Account(
 			entity: entity,
             name: "COGS",
 			incomeStatementRole: .costOfGoodsSold,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cogs, count: periods.count))
         )
 
-        let opexAccount = try! Account(
+        let opexAccount = try Account(
 			entity: entity,
             name: "OpEx",
 			incomeStatementRole: .operatingExpenseOther,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: opex, count: periods.count))
         )
 
-        let interestAccount = try! Account(
+        let interestAccount = try Account(
 			entity: entity,
             name: "Interest",
 			incomeStatementRole: .interestExpense,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: interest, count: periods.count))
         )
 
-        let taxAccount = try! Account(
+        let taxAccount = try Account(
 			entity: entity,
             name: "Tax",
 			incomeStatementRole: .incomeTaxExpense,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: tax, count: periods.count))
         )
 
-        return try! IncomeStatement(
+        return try IncomeStatement(
 			entity: entity,
 			periods: periods,
             accounts: [revenueAccount, cogsAccount, opexAccount, interestAccount, taxAccount]
@@ -75,7 +75,7 @@ struct DebtCovenantsTests {
         debt: Double,
         equity: Double,
         periods: [Period]
-    ) -> BalanceSheet<Double> {
+    ) throws -> BalanceSheet<Double> {
 		let entity = Entity(
 			id: "ACME001",
 			primaryType: .ticker,
@@ -85,49 +85,49 @@ struct DebtCovenantsTests {
 			metadata: ["description": "Leading provider of widgets"]
 		)
 
-        let cashAccount = try! Account(
+        let cashAccount = try Account(
 			entity: entity,
 			name: "Cash",
 			balanceSheetRole: .cashAndEquivalents,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: cash, count: periods.count))
         )
 
-        let otherCurrentAssets = try! Account(
+        let otherCurrentAssets = try Account(
 			entity: entity,
             name: "Other Current",
 			balanceSheetRole: .otherCurrentAssets,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentAssets - cash, count: periods.count))
         )
 
-        let fixedAssets = try! Account(
+        let fixedAssets = try Account(
 			entity: entity,
 			name: "Fixed Assets",
 			balanceSheetRole: .propertyPlantEquipment,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: totalAssets - currentAssets, count: periods.count))
         )
 
-        let currentLiabAccount = try! Account(
+        let currentLiabAccount = try Account(
 			entity: entity,
             name: "Current Liabilities",
 			balanceSheetRole: .accountsPayable,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: currentLiabilities, count: periods.count))
         )
 
-        let debtAccount = try! Account(
+        let debtAccount = try Account(
 			entity: entity,
             name: "Long-term Debt",
 			balanceSheetRole: .longTermDebt,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: debt, count: periods.count))
         )
 
-        let equityAccount = try! Account(
+        let equityAccount = try Account(
 			entity: entity,
             name: "Equity",
 			balanceSheetRole: .retainedEarnings,
 			timeSeries: TimeSeries(periods: periods, values: Array(repeating: equity, count: periods.count))
         )
 
-        return try! BalanceSheet(
+        return try BalanceSheet(
 			entity: entity,
 			periods: periods,
             accounts: [cashAccount, otherCurrentAssets, fixedAssets, currentLiabAccount, debtAccount, equityAccount]
@@ -141,7 +141,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_000_000.0,
             cogs: 400_000.0,
             opex: 300_000.0,
@@ -150,7 +150,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 100_000.0,
             currentAssets: 300_000.0,
             totalAssets: 1_000_000.0,
@@ -183,7 +183,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 500_000.0,
             cogs: 300_000.0,
             opex: 180_000.0,
@@ -192,7 +192,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 50_000.0,
             currentAssets: 200_000.0,
             totalAssets: 800_000.0,
@@ -228,7 +228,7 @@ struct DebtCovenantsTests {
         let ebit = 300_000.0
         let interest = 60_000.0
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_000_000.0,
             cogs: 400_000.0,
             opex: 300_000.0,
@@ -236,7 +236,7 @@ struct DebtCovenantsTests {
             tax: 50_000.0,
             periods: periods
         )
-		let balanceSheet = createTestBalanceSheet(
+		let balanceSheet = try createTestBalanceSheet(
 			cash: 50_000.0,
 			currentAssets: 200_000.0,
 			totalAssets: 800_000.0,
@@ -264,7 +264,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 2000000,
 			cogs: 800000.0,
 			opex: 600000.0,
@@ -277,7 +277,7 @@ struct DebtCovenantsTests {
         // Debt = 1,500,000
         // Ratio = 2.5x
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 200_000.0,
             currentAssets: 500_000.0,
             totalAssets: 2_000_000.0,
@@ -308,7 +308,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_000_000.0,
             cogs: 600_000.0,
             opex: 350_000.0,
@@ -321,7 +321,7 @@ struct DebtCovenantsTests {
         // Debt = 500,000
         // Ratio = 10.0x (too high)
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 10_000.0,
             currentAssets: 100_000.0,
             totalAssets: 600_000.0,
@@ -354,7 +354,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_000_000.0,
             cogs: 400_000.0,
             opex: 300_000.0,
@@ -363,7 +363,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 200_000.0,
             currentAssets: 600_000.0,
             totalAssets: 1_500_000.0,
@@ -394,7 +394,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 500_000.0,
             cogs: 300_000.0,
             opex: 150_000.0,
@@ -403,7 +403,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 50_000.0,
             currentAssets: 200_000.0,
             totalAssets: 800_000.0,
@@ -442,7 +442,7 @@ struct DebtCovenantsTests {
         // Principal payment = 100,000
         // DSCR = 500,000 / (50,000 + 100,000) = 3.33
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 2_000_000.0,
             cogs: 800_000.0,
             opex: 700_000.0,
@@ -451,7 +451,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 300_000.0,
             currentAssets: 600_000.0,
             totalAssets: 2_000_000.0,
@@ -489,7 +489,7 @@ struct DebtCovenantsTests {
         // Principal = 80,000
         // DSCR = 100,000 / 140,000 = 0.71
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 800_000.0,
             cogs: 500_000.0,
             opex: 200_000.0,
@@ -498,7 +498,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 50_000.0,
             currentAssets: 200_000.0,
             totalAssets: 1_000_000.0,
@@ -533,7 +533,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 3_000_000.0,
             cogs: 1_200_000.0,
             opex: 1_000_000.0,
@@ -542,7 +542,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 500_000.0,
             currentAssets: 1_000_000.0,
             totalAssets: 3_000_000.0,
@@ -572,7 +572,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_000_000.0,
             cogs: 600_000.0,
             opex: 350_000.0,
@@ -581,7 +581,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 100_000.0,
             currentAssets: 300_000.0,
             totalAssets: 1_000_000.0,
@@ -613,7 +613,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_000_000.0,
             cogs: 400_000.0,
             opex: 300_000.0,
@@ -622,7 +622,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 300_000.0,
             currentAssets: 800_000.0,
             totalAssets: 2_000_000.0,
@@ -654,7 +654,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 2_000_000.0,
             cogs: 800_000.0,
             opex: 600_000.0,
@@ -663,7 +663,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 400_000.0,
             currentAssets: 1_000_000.0,
             totalAssets: 3_000_000.0,
@@ -695,7 +695,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_000_000.0,
             cogs: 400_000.0,
             opex: 300_000.0,
@@ -704,7 +704,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 200_000.0,
             currentAssets: 500_000.0,
             totalAssets: 1_500_000.0,
@@ -736,7 +736,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 800_000.0,
             cogs: 500_000.0,
             opex: 250_000.0,
@@ -745,7 +745,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 80_000.0,
             currentAssets: 320_000.0,
             totalAssets: 1_000_000.0,
@@ -779,7 +779,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 1_500_000.0,
             cogs: 600_000.0,
             opex: 450_000.0,
@@ -788,7 +788,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 250_000.0,
             currentAssets: 600_000.0,
             totalAssets: 2_000_000.0,
@@ -824,7 +824,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 2_000_000.0,
             cogs: 800_000.0,
             opex: 700_000.0,
@@ -833,7 +833,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 400_000.0,
             currentAssets: 900_000.0,
             totalAssets: 2_500_000.0,
@@ -875,7 +875,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 600_000.0,
             cogs: 400_000.0,
             opex: 180_000.0,
@@ -884,7 +884,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 30_000.0,
             currentAssets: 150_000.0,
             totalAssets: 700_000.0,
@@ -929,7 +929,7 @@ struct DebtCovenantsTests {
         let q2 = Period.quarter(year: 2025, quarter: 2)
         let periods = [q1, q2]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 500_000.0,
             cogs: 350_000.0,
             opex: 130_000.0,
@@ -938,7 +938,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 50_000.0,
             currentAssets: 200_000.0,
             totalAssets: 800_000.0,
@@ -976,7 +976,7 @@ struct DebtCovenantsTests {
         let q1 = Period.quarter(year: 2025, quarter: 1)
         let periods = [q1]
 
-        let incomeStatement = createTestIncomeStatement(
+        let incomeStatement = try createTestIncomeStatement(
             revenue: 500_000.0,
             cogs: 350_000.0,
             opex: 130_000.0,
@@ -985,7 +985,7 @@ struct DebtCovenantsTests {
             periods: periods
         )
 
-        let balanceSheet = createTestBalanceSheet(
+        let balanceSheet = try createTestBalanceSheet(
             cash: 40_000.0,
             currentAssets: 180_000.0,
             totalAssets: 700_000.0,
@@ -1035,35 +1035,35 @@ struct DebtCovenantsExtrasTests {
 		[Period.quarter(year: 2025, quarter: 1)]
 	}
 
-	func income(revenue: Double, cogs: Double = 0, opex: Double = 0, interest: Double = 0, tax: Double = 0) -> IncomeStatement<Double> {
+	func income(revenue: Double, cogs: Double = 0, opex: Double = 0, interest: Double = 0, tax: Double = 0) throws -> IncomeStatement<Double> {
 		let e = entity()
 		let p = periods()
-		let rev = try! Account(entity: e, name: "Revenue", incomeStatementRole: .revenue, timeSeries: TimeSeries(periods: p, values: [revenue]))
-		let c = try! Account(entity: e, name: "COGS", incomeStatementRole: .costOfGoodsSold,  timeSeries: TimeSeries(periods: p, values: [cogs]))
-		let o = try! Account(entity: e, name: "OPEX", incomeStatementRole: .operatingExpenseOther,  timeSeries: TimeSeries(periods: p, values: [opex]))
-		let i = try! Account(entity: e, name: "Interest", incomeStatementRole: .incomeTaxExpense, timeSeries: TimeSeries(periods: p, values: [interest]))
-		let t = try! Account(entity: e, name: "Tax", incomeStatementRole: .incomeTaxExpense,  timeSeries: TimeSeries(periods: p, values: [tax]))
-		return try! IncomeStatement(entity: e, periods: p, accounts: [rev, c, o, i, t])
+		let rev = try Account(entity: e, name: "Revenue", incomeStatementRole: .revenue, timeSeries: TimeSeries(periods: p, values: [revenue]))
+		let c = try Account(entity: e, name: "COGS", incomeStatementRole: .costOfGoodsSold,  timeSeries: TimeSeries(periods: p, values: [cogs]))
+		let o = try Account(entity: e, name: "OPEX", incomeStatementRole: .operatingExpenseOther,  timeSeries: TimeSeries(periods: p, values: [opex]))
+		let i = try Account(entity: e, name: "Interest", incomeStatementRole: .incomeTaxExpense, timeSeries: TimeSeries(periods: p, values: [interest]))
+		let t = try Account(entity: e, name: "Tax", incomeStatementRole: .incomeTaxExpense,  timeSeries: TimeSeries(periods: p, values: [tax]))
+		return try IncomeStatement(entity: e, periods: p, accounts: [rev, c, o, i, t])
 	}
 
-	func balance(currentAssets: Double, currentLiabilities: Double, totalAssets: Double? = nil, debt: Double = 0, equity: Double = 0) -> BalanceSheet<Double> {
+	func balance(currentAssets: Double, currentLiabilities: Double, totalAssets: Double? = nil, debt: Double = 0, equity: Double = 0) throws -> BalanceSheet<Double> {
 		let e = entity()
 		let p = periods()
-		let ca = try! Account(entity: e, name: "CA", balanceSheetRole: .cashAndEquivalents, timeSeries: TimeSeries(periods: p, values: [currentAssets]))
+		let ca = try Account(entity: e, name: "CA", balanceSheetRole: .cashAndEquivalents, timeSeries: TimeSeries(periods: p, values: [currentAssets]))
 		let totalA = totalAssets ?? max(currentAssets, 1)
 		let nonCurrent = max(totalA - currentAssets, 0)
-		let nc = try! Account(entity: e, name: "NC", balanceSheetRole: .otherNonCurrentAssets, timeSeries: TimeSeries(periods: p, values: [nonCurrent]))
-		let cl = try! Account(entity: e, name: "CL", balanceSheetRole: .otherCurrentLiabilities, timeSeries: TimeSeries(periods: p, values: [currentLiabilities]))
-		let d = try! Account(entity: e, name: "Debt", balanceSheetRole: .longTermDebt, timeSeries: TimeSeries(periods: p, values: [debt]))
-		let eq = try! Account(entity: e, name: "Equity", balanceSheetRole: .commonStock, timeSeries: TimeSeries(periods: p, values: [equity]))
-		return try! BalanceSheet(entity: e, periods: p, accounts: [ca, nc, cl, d, eq])
+		let nc = try Account(entity: e, name: "NC", balanceSheetRole: .otherNonCurrentAssets, timeSeries: TimeSeries(periods: p, values: [nonCurrent]))
+		let cl = try Account(entity: e, name: "CL", balanceSheetRole: .otherCurrentLiabilities, timeSeries: TimeSeries(periods: p, values: [currentLiabilities]))
+		let d = try Account(entity: e, name: "Debt", balanceSheetRole: .longTermDebt, timeSeries: TimeSeries(periods: p, values: [debt]))
+		let eq = try Account(entity: e, name: "Equity", balanceSheetRole: .commonStock, timeSeries: TimeSeries(periods: p, values: [equity]))
+		return try BalanceSheet(entity: e, periods: p, accounts: [ca, nc, cl, d, eq])
 	}
 
 	@Test("Headroom is negative when covenant is breached")
 	func headroomNegativeOnBreach() throws {
 		let p = periods()[0]
-		let isty = income(revenue: 100_000)
-		let bs = balance(currentAssets: 80_000, currentLiabilities: 100_000, totalAssets: 200_000, debt: 50_000, equity: 50_000)
+		let isty = try income(revenue: 100_000)
+		let bs = try balance(currentAssets: 80_000, currentLiabilities: 100_000, totalAssets: 200_000, debt: 50_000, equity: 50_000)
 
 		let covenant = FinancialCovenant(name: "Current Ratio", requirement: .minimumRatio(metric: .currentRatio, threshold: 1.2))
 		let headroom = covenant.headroom(incomeStatement: isty, balanceSheet: bs, period: p)
@@ -1073,8 +1073,8 @@ struct DebtCovenantsExtrasTests {
 	@Test("Waiver expires and covenant fails after expiration")
 	func waiverExpiration() throws {
 		let p = periods()[0]
-		let isty = income(revenue: 100_000)
-		let bs = balance(currentAssets: 80_000, currentLiabilities: 100_000, totalAssets: 200_000, debt: 50_000, equity: 50_000)
+		let isty = try income(revenue: 100_000)
+		let bs = try balance(currentAssets: 80_000, currentLiabilities: 100_000, totalAssets: 200_000, debt: 50_000, equity: 50_000)
 		var covenant = FinancialCovenant(name: "Current Ratio", requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5))
 
 		// initially failing

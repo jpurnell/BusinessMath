@@ -129,6 +129,7 @@ public struct CatchUp {
 
 /// Residual distribution (captures all remaining proceeds)
 public struct Residual {
+    /// Creates a residual distribution component that captures all remaining proceeds.
     public init() {}
 }
 

@@ -24,7 +24,7 @@ struct SimplexRelaxationSolverTests {
         // Type annotation verifies protocol conformance at compile time
         let _: any RelaxationSolver = solver
         // Verify the solver was configured with the specified tolerance
-        #expect(solver.lpTolerance == 1e-8)
+        #expect(abs(solver.lpTolerance - 1e-8) < 1e-15)
     }
 
     @Test("SimplexRelaxationSolver solves simple LP minimization")
@@ -48,7 +48,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: (0, 0) with objective = 0
         let sol = result.solution!
@@ -78,7 +78,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: (10, 0) or (0, 10) or anywhere on x + y = 10
         let sol = result.solution!
@@ -108,7 +108,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: (0, 0) with objective = -5
         let sol = result.solution!
@@ -140,7 +140,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Verify constraint satisfied: 2x + 3y ≥ 6
         let sol = result.solution!
@@ -169,7 +169,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Verify equality: x + y = 5
         let sol = result.solution!
@@ -198,7 +198,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Verify constraint: x + 2y ≤ 10
         let sol = result.solution!
@@ -229,7 +229,7 @@ struct SimplexRelaxationSolverTests {
 
         #expect(result.status == .infeasible)
         #expect(result.solution == nil)
-        #expect(result.objectiveValue == Double.infinity)  // Minimization infeasible
+        #expect(result.objectiveValue.isInfinite && result.objectiveValue > 0)  // Minimization infeasible
     }
 
     @Test("SimplexRelaxationSolver detects unboundedness")
@@ -282,7 +282,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: x = 2
         let sol = result.solution!
@@ -306,7 +306,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: x = 0
         let sol = result.solution!
@@ -342,7 +342,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Verify weight constraint
         let sol = result.solution!
@@ -386,7 +386,7 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Expected: (0, 0) with objective = 0
         let sol = result.solution!

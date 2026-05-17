@@ -83,8 +83,8 @@ import Testing
 		// Verify order (Revenue should appear before Marketing in output)
 		let revenueIndex = output.range(of: "Revenue")?.lowerBound
 		let marketingIndex = output.range(of: "Marketing")?.lowerBound
-		#expect(revenueIndex != nil)
-		#expect(marketingIndex != nil)
+		#expect(revenueIndex != nil) // TEST-QUALITY: existence check
+		#expect(marketingIndex != nil) // TEST-QUALITY: existence check
 		if let rev = revenueIndex, let mkt = marketingIndex {
 			#expect(rev < mkt, "Revenue (higher impact) should appear before Marketing")
 		}

@@ -181,11 +181,11 @@ struct ExponentialDistributionTests {
 	@Test("Exponential distribution struct random() method - bounds check")
 	func exponentialStructRandom() {
 		let λ = 2.0
-		let dist = DistributionExponential(λ)
 
-		// Test that random() produces values in valid range (unseeded is OK for bounds)
-		for _ in 0..<100 {
-			let sample = dist.random()
+		// Test that seeded function produces values in valid range
+		for i in 0..<100 {
+			let seed = Double(i + 1) / 101.0
+			let sample: Double = distributionExponential(λ: λ, seed: seed)
 			#expect(sample >= 0)
 			#expect(sample.isFinite)
 		}

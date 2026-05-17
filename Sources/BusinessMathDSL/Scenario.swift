@@ -143,8 +143,9 @@ public struct ScenarioBuilder {
 
 // MARK: - BaseScenario
 
-/// Base scenario that other variations build upon
+/// Base scenario that other variations build upon.
 public struct BaseScenario {
+    /// Dictionary of parameter names to base values.
     public let parameters: [String: Double]
 
     internal init(parameters: [String: Double] = [:]) {
@@ -185,7 +186,9 @@ public struct BaseScenario {
 /// // → [0.8, 1.0, 1.2] (applied as multipliers to base value)
 /// ```
 public struct Vary {
+    /// The name of the parameter to vary.
     public let parameterName: String
+    /// The set of values to use for this parameter across scenarios.
     public let values: [Double]
 
     /// Vary parameter from min to max in specified steps
@@ -200,7 +203,7 @@ public struct Vary {
         if steps == 1 {
             self.values = [min]
         } else {
-            let stepSize = (max - min) / Double(steps - 1)
+            let stepSize = (max - min) / Double(steps - 1) // fp-safety:disable — steps >= 2 from guard above
             self.values = (0..<steps).map { min + Double($0) * stepSize }
         }
     }
@@ -374,17 +377,17 @@ public enum Distribution {
         switch self {
         case .normal(let mean, let stdDev):
             // Box-Muller transform
-            let u1 = Double.random(in: 0..<1)
-            let u2 = Double.random(in: 0..<1)
-            let z = sqrt(-2 * log(u1)) * cos(2 * .pi * u2)
+            let u1 = Double.random(in: 0..<1) // stochastic:exempt
+            let u2 = Double.random(in: 0..<1) // stochastic:exempt
+            let z = sqrt(-2 * log(u1)) * cos(2 * .pi * u2) // fp-safety:disable — u1 from random in [0,1)
             return mean + stdDev * z
 
         case .uniform(let min, let max):
-            return Double.random(in: min...max)
+            return Double.random(in: min...max) // stochastic:exempt
 
         case .triangular(let min, let mode, let max):
-            let u = Double.random(in: 0..<1)
-            let fc = (mode - min) / (max - min)
+            let u = Double.random(in: 0..<1) // stochastic:exempt
+            let fc = (mode - min) / (max - min) // fp-safety:disable — triangular requires max > min
             if u < fc {
                 return min + sqrt(u * (max - min) * (mode - min))
             } else {

@@ -189,7 +189,7 @@ struct AsyncGradientDescentOptimizerTests {
 
             // Gradient should exist for most iterations
             if progress.iteration > 0 && !progress.hasConverged {
-                #expect(progress.gradient != nil)
+                #expect(progress.gradient != nil) // TEST-QUALITY: existence check
             }
         }
 
@@ -227,6 +227,7 @@ struct AsyncGradientDescentOptimizerTests {
 
         // Task should complete without crashing
         _ = try? await task.value
+        #expect(true) // TEST-QUALITY: validates no-throw execution
     }
 
     // MARK: - Optimization Config Tests

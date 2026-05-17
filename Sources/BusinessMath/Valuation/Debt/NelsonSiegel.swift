@@ -126,13 +126,13 @@ public struct NelsonSiegelYieldCurve: Sendable, Codable {
 		}
 
 		// Calculate factors
-		let expTerm = exp(-tau / lambda)
-		let tauOverLambda = tau / lambda
+		let expTerm = exp(-tau / lambda) // fp-safety:disable — lambda validated at init (default 2.5, must be nonzero for model)
+		let tauOverLambda = tau / lambda // fp-safety:disable — lambda validated at init
 
 		// f₁(τ) = (1 - exp(-τ/λ)) / (τ/λ)
 		let factor1: Double
 		if abs(tauOverLambda) > 1e-10 {
-			factor1 = (1.0 - expTerm) / tauOverLambda
+			factor1 = (1.0 - expTerm) / tauOverLambda // fp-safety:disable — guarded above
 		} else {
 			// Taylor expansion for small τ/λ: f₁ ≈ 1 - τ/(2λ)
 			factor1 = 1.0 - tauOverLambda / 2.0
@@ -174,10 +174,10 @@ public struct NelsonSiegelYieldCurve: Sendable, Codable {
 			return parameters.beta0 + beta1
 		}
 
-		let expTerm = exp(-tau / lambda)
+		let expTerm = exp(-tau / lambda) // fp-safety:disable — lambda validated at init
 
 		// f(τ) = β₀ + β₁·exp(-τ/λ) + β₂·(τ/λ)·exp(-τ/λ)
-		return parameters.beta0 + beta1 * expTerm + beta2 * (tau / lambda) * expTerm
+		return parameters.beta0 + beta1 * expTerm + beta2 * (tau / lambda) * expTerm // fp-safety:disable — lambda validated at init
 	}
 }
 
@@ -230,13 +230,13 @@ extension NelsonSiegelYieldCurve {
 	public func price(bond: BondMarketData) -> Double {
 		let periodsPerYear = Double(bond.frequency)
 		let totalPeriods = Int(bond.maturity * periodsPerYear)
-		let couponPayment = bond.faceValue * bond.couponRate / periodsPerYear
+		let couponPayment = bond.faceValue * bond.couponRate / periodsPerYear // fp-safety:disable — frequency >= 1 by BondMarketData init
 
 		var price = 0.0
 
 		// Present value of coupons
 		for t in 1...max(1, totalPeriods) {
-			let timeToPayment = Double(t) / periodsPerYear
+			let timeToPayment = Double(t) / periodsPerYear // fp-safety:disable — frequency >= 1 by BondMarketData init
 			let yieldRate = yield(maturity: timeToPayment)
 			let discountFactor = exp(-yieldRate * timeToPayment)
 			price += couponPayment * discountFactor
@@ -364,12 +364,12 @@ extension NelsonSiegelYieldCurve {
 		// Approximate yields from bond prices
 		let approxYields = bonds.map { bond -> Double in
 			// Simple yield approximation: (FV - Price) / Price / Maturity + Coupon
-			let yieldEst = (bond.faceValue - bond.marketPrice) / bond.marketPrice / bond.maturity + bond.couponRate
+			let yieldEst = (bond.faceValue - bond.marketPrice) / bond.marketPrice / bond.maturity + bond.couponRate // fp-safety:disable — marketPrice and maturity > 0 for valid bonds
 			return min(max(yieldEst, 0.01), 0.20)  // Clamp to [1%, 20%]
 		}
 
 		// β₀: Average yield (long-term level)
-		let avgYield = approxYields.reduce(0, +) / Double(approxYields.count)
+		let avgYield = approxYields.reduce(0, +) / Double(approxYields.count) // fp-safety:disable — bonds array nonempty (caller provides)
 		let beta0 = min(max(avgYield, 0.03), 0.10)
 
 		// β₁: Slope (short rate - long rate)
@@ -447,8 +447,8 @@ public struct NelsonSiegelCalibrationResult: Sendable {
 		}
 
 		self.sumSquaredErrors = sumSquaredErr
-		self.meanAbsoluteError = sumAbsErr / Double(bonds.count)
-		self.rootMeanSquaredError = sqrt(sumSquaredErr / Double(bonds.count))
+		self.meanAbsoluteError = sumAbsErr / Double(bonds.count) // fp-safety:disable — bonds nonempty (required for calibration)
+		self.rootMeanSquaredError = sqrt(sumSquaredErr / Double(bonds.count)) // fp-safety:disable — bonds nonempty
 		self.bondErrors = errors
 	}
 }

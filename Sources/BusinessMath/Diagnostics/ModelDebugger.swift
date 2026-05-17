@@ -261,7 +261,7 @@ public actor ModelDebugger {
         var suggestions: [DiagnosticSuggestion] = []
 
         let difference = value - expected
-        let percentDifference = expected != 0 ? abs(difference / expected) : 0
+        let percentDifference = expected != 0 ? abs(difference / expected) : 0 // fp-safety:disable — guarded inline
 
         // Check for NaN or infinity
         if value.isNaN {
@@ -1008,7 +1008,7 @@ public enum ValidationConstraint: Sendable {
             }
 
         case .nonZero:
-            if value == 0 {
+            if value == 0 { // fp-safety:disable
                 return ValidationError(
                     field: fieldName,
                     value: value,

@@ -711,8 +711,8 @@ struct LeaseAccountingTests {
         let maturityAnalysis = lease.maturityAnalysis()
 
         // Should show payments by year
-        #expect(maturityAnalysis["Year 1"] != nil)
-        #expect(maturityAnalysis["Year 2"] != nil)
+        #expect(maturityAnalysis["Year 1"] != nil) // TEST-QUALITY: existence check
+        #expect(maturityAnalysis["Year 2"] != nil) // TEST-QUALITY: existence check
     }
 
     @Test("Lease disclosure - total commitments")

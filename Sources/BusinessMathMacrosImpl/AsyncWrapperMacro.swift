@@ -14,6 +14,9 @@ import Foundation
 
 /// Macro that generates async wrapper functions for synchronous functions
 public struct AsyncWrapperMacro: PeerMacro {
+    /// Expands the `@AsyncWrapper` attribute to generate an async peer function that wraps the annotated synchronous function.
+    ///
+    /// - Returns: An array containing the generated async peer declaration.
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
