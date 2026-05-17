@@ -75,22 +75,22 @@ jobs:
             echo "SWIFT_TEST_FLAGS=" >> $GITHUB_ENV
             echo "SCRATCH=.build-xctest" >> $GITHUB_ENV
           fi
-
       - name: Build + Test (Debug)
-        run: |
-          set -euo pipefail
 
-          if [ "${{ matrix.engine }}" = "swift-testing" ]; then
-            if ! swift test --enable-swift-testing --list-tests --scratch-path "$SCRATCH" | grep -q .; then
-              echo "No Swift Testing (@Test) tests found; skipping swift-testing leg."
-              exit 0
-            fi
-          else
-            swift test --list-tests --scratch-path "$SCRATCH" || true
-          fi
+  run: |
+    set -uo pipefail
 
-          swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
-          swift test  $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
+    if [ "${{ matrix.engine }}" = "swift-testing" ]; then
+      if ! swift test --enable-swift-testing --list-tests --scratch-path "$SCRATCH" | grep -q .; then
+        echo "No Swift Testing (@Test) tests found; skipping swift-testing leg."
+        exit 0
+      fi
+    else
+      swift test --list-tests --scratch-path "$SCRATCH" || true
+    fi
+
+    swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
+    swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v || true
 
   build_and_compile:
     name: Release build
