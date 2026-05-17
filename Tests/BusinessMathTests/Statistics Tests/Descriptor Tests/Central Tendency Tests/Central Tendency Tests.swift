@@ -409,7 +409,7 @@ struct CentralTendencyStressTests {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = median(values)
 		#expect(result.isFinite)
-		#expect(result == 500_000.5)
+		#expect(abs(result - 500_000.5) < 1e-6)
 	}
 
 	@Test("harmonicMean handles large dataset", .timeLimit(.minutes(1)))

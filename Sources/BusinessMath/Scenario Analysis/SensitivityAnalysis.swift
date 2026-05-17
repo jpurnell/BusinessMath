@@ -874,7 +874,7 @@ private func generateSteps(from: Double, to: Double, steps: Int) -> [Double] {
 	var result = [Double]()
 	result.reserveCapacity(steps)
 
-	let stepSize = (to - from) / Double(steps - 1)
+	let stepSize = (to - from) / Double(steps - 1) // fp-safety:disable — guard steps > 1 above ensures divisor >= 1
 	for i in 0..<steps {
 		result.append(from + Double(i) * stepSize)
 	}

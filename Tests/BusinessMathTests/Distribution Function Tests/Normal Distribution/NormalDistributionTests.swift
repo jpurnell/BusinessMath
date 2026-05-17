@@ -190,11 +190,12 @@ struct NormalDistributionTests {
 	func normalStructRandom() {
 		let mean = 100.0
 		let stdDev = 15.0
-		let dist = DistributionNormal(mean, stdDev)
 
-		// Test that random() produces finite values (unseeded is OK for bounds)
-		for _ in 0..<100 {
-			let sample = dist.random()
+		// Test that seeded function produces finite values
+		for i in 0..<100 {
+			let u1 = Double(i + 1) / 101.0
+			let u2 = Double(i + 51) / 151.0
+			let sample: Double = distributionNormal(mean: mean, stdDev: stdDev, u1, u2)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
 		}

@@ -145,12 +145,12 @@ struct RayleighDistributionTests {
 	@Test("Rayleigh distribution struct random() method")
 	func rayleighStructRandom() {
 		let mean = 5.0
-		let dist = DistributionRayleigh(mean: mean)
 
 		let sampleCount = 1000
 		var samples: [Double] = []
-		for _ in 0..<sampleCount {
-			let sample = dist.random()
+		for i in 0..<sampleCount {
+			let seed = Double(i + 1) / Double(sampleCount + 1)
+			let sample: Double = distributionRayleigh(mean: mean, seed: seed)
 			samples.append(sample)
 			#expect(sample > 0)
 			#expect(sample.isFinite)

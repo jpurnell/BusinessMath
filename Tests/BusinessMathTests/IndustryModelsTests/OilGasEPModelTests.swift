@@ -102,12 +102,12 @@ struct OilGasEPModelTests {
 
         // January: 100 BOEPD * 31 days * $70 = $217,000
         let janRevenue = revenue[periods[0]]
-        #expect(janRevenue != nil)
+        #expect(janRevenue != nil) // TEST-QUALITY: existence check
         #expect(abs((janRevenue ?? 0.0) - 217_000.0) < 0.01)
 
         // February: 100 BOEPD * 28 days * $70 = $196,000
         let febRevenue = revenue[periods[1]]
-        #expect(febRevenue != nil)
+        #expect(febRevenue != nil) // TEST-QUALITY: existence check
         #expect(abs((febRevenue ?? 0.0) - 196_000.0) < 0.01)
     }
 
@@ -127,12 +127,12 @@ struct OilGasEPModelTests {
 
         // January: 100 * 31 * $15 = $46,500
         let janLOE = costOfRevenue[0].timeSeries[periods[0]]
-        #expect(janLOE != nil)
+        #expect(janLOE != nil) // TEST-QUALITY: existence check
         #expect(abs((janLOE ?? 0.0) - 46_500.0) < 0.01)
 
         // February: 100 * 28 * $15 = $42,000
         let febLOE = costOfRevenue[0].timeSeries[periods[1]]
-        #expect(febLOE != nil)
+        #expect(febLOE != nil) // TEST-QUALITY: existence check
         #expect(abs((febLOE ?? 0.0) - 42_000.0) < 0.01)
     }
 
@@ -150,12 +150,12 @@ struct OilGasEPModelTests {
 
         // Period 1: 0.01 * 10,000,000 = 100,000
         let janDDA = nonCashAccounts[0].timeSeries[periods[0]]
-        #expect(janDDA != nil)
+        #expect(janDDA != nil) // TEST-QUALITY: existence check
         #expect(abs((janDDA ?? 0.0) - 100_000.0) < 0.01)
 
         // Period 2: PP&E reduced by first DD&A: 0.01 * 9,900,000 = 99,000
         let febDDA = nonCashAccounts[0].timeSeries[periods[1]]
-        #expect(febDDA != nil)
+        #expect(febDDA != nil) // TEST-QUALITY: existence check
         #expect(abs((febDDA ?? 0.0) - 99_000.0) < 0.01)
     }
 
@@ -179,7 +179,7 @@ struct OilGasEPModelTests {
         // Tax: 20,500 * 0.21 = 4,305
         // Net Income: 20,500 - 4,305 = 16,195
         let janNI = netIncome[periods[0]]
-        #expect(janNI != nil)
+        #expect(janNI != nil) // TEST-QUALITY: existence check
         #expect(abs((janNI ?? 0.0) - 16_195.0) < 0.01)
     }
 
@@ -207,7 +207,7 @@ struct OilGasEPModelTests {
 
         // January revenue with hedge: 100 * 31 * 70 + 5000 = 222,000
         let janRevenue = revenue[periods[0]]
-        #expect(janRevenue != nil)
+        #expect(janRevenue != nil) // TEST-QUALITY: existence check
         #expect(abs((janRevenue ?? 0.0) - 222_000.0) < 0.01)
     }
 
@@ -271,7 +271,7 @@ struct OilGasEPModelTests {
 
         // Zero production means zero revenue
         let janRevenue = revenue[periods[0]]
-        #expect(janRevenue != nil)
+        #expect(janRevenue != nil) // TEST-QUALITY: existence check
         #expect(abs(janRevenue ?? 1.0) < 0.01)
     }
 }

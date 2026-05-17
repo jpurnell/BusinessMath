@@ -160,7 +160,8 @@ public struct Investment: Sendable {
 
     /// Total return on investment (undiscounted)
     public var totalROI: Double {
-        (totalCashInflows - initialCost) / initialCost
+        guard initialCost > 0 else { return 0 }
+        return (totalCashInflows - initialCost) / initialCost // fp-safety:disable — guarded above
     }
 
     /// Return on investment (alias for totalROI) - matches documented API

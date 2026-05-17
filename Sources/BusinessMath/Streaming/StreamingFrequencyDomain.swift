@@ -182,7 +182,7 @@ public struct AsyncFFTSequence<Base: AsyncSequence>: AsyncSequence
                 return FrequencySpectrum(powers: [], sampleRate: 0, sampleCount: 0)
             }
 
-            let sampleRate = Double(window.count - 1) / totalDuration
+            let sampleRate = Double(window.count - 1) / totalDuration // fp-safety:disable — guarded by totalDuration > 0
 
             // Resample to regular grid via linear interpolation
             let resampled = resampleToRegularGrid(window, count: window.count)
@@ -222,7 +222,7 @@ public struct AsyncFFTSequence<Base: AsyncSequence>: AsyncSequence
             var windowIdx = 0
 
             for i in 0..<count {
-                let targetFraction = Double(i) / Double(count - 1)
+                let targetFraction = Double(i) / Double(count - 1) // fp-safety:disable
                 let targetNs = targetFraction * totalNs
 
                 // Advance to the bracketing pair

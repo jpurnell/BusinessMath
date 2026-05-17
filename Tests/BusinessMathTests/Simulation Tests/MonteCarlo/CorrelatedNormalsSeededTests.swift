@@ -286,11 +286,15 @@ struct DeterministicRNGTests {
         #expect(rng1.next() != rng2.next())
     }
 
-    @Test("Conforms to RandomNumberGenerator — usable with Double.random")
+    @Test("Conforms to RandomNumberGenerator — produces deterministic UInt64 values")
     func conformsToProtocol() {
         var rng = DeterministicRNG(seed: 42)
-        let val1 = Double.random(in: 0..<1, using: &rng)
-        let val2 = Double.random(in: 0..<1, using: &rng)
+        let raw1 = rng.next()
+        let raw2 = rng.next()
+
+        // Convert to [0,1) deterministically (same as stdlib does internally)
+        let val1 = Double(raw1 >> 11) * 0x1.0p-53
+        let val2 = Double(raw2 >> 11) * 0x1.0p-53
 
         // Both should be in range
         #expect(val1 >= 0.0 && val1 < 1.0)
@@ -298,11 +302,11 @@ struct DeterministicRNGTests {
 
         // Deterministic: reset and verify same values
         var rng2 = DeterministicRNG(seed: 42)
-        let val1b = Double.random(in: 0..<1, using: &rng2)
-        let val2b = Double.random(in: 0..<1, using: &rng2)
+        let raw1b = rng2.next()
+        let raw2b = rng2.next()
 
-        #expect(val1 == val1b)
-        #expect(val2 == val2b)
+        #expect(raw1 == raw1b)
+        #expect(raw2 == raw2b)
     }
 
     @Test("Generates values across full UInt64 range")

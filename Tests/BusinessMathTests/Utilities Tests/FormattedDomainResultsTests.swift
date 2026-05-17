@@ -52,8 +52,8 @@ struct FormattedDomainResultsTests {
 
     @Test("SimulationResults provides formatted statistics")
     func testSimulationResultsFormatting() throws {
-        // Simulation with noise
-        let values = (0..<100).map { _ in 99.99999999999999 + Double.random(in: -0.0000000000000001...0.0000000000000001) }
+        // Simulation with deterministic near-100 values
+        let values = (0..<100).map { i in 99.99999999999999 + Double(i - 50) * 0.000000000000000001 }
         let results = SimulationResults(values: values)
 
         // Should have formatted statistics
@@ -155,7 +155,7 @@ struct FormattedDomainResultsTests {
 
     @Test("Handles very large simulation results")
     func testLargeSimulationResults() throws {
-        let values = (0..<10_000).map { _ in 1_000_000.0 + Double.random(in: -0.5...0.5) }
+        let values = (0..<10_000).map { i in 1_000_000.0 + (Double(i) / 10_000.0 - 0.5) }
         let results = SimulationResults(values: values)
 
         // Should format large numbers clearly

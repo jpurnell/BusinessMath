@@ -99,15 +99,15 @@ struct IntegrationExampleTests {
 		let projections = model.projectDeterministic(periods: quarters)
 
 		// Verify all components present
-		#expect(projections["users"] != nil)
-		#expect(projections["pricePerUser"] != nil)
-		#expect(projections["revenue"] != nil)
-		#expect(projections["fixedCosts"] != nil)
-		#expect(projections["variableCosts"] != nil)
-		#expect(projections["headcount"] != nil)
-		#expect(projections["payroll"] != nil)
-		#expect(projections["totalCosts"] != nil)
-		#expect(projections["profit"] != nil)
+		#expect(projections["users"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["pricePerUser"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["revenue"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["fixedCosts"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["variableCosts"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["headcount"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["payroll"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["totalCosts"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["profit"] != nil) // TEST-QUALITY: existence check
 
 		// Verify each has correct number of periods
 		for (_, timeSeries) in projections {
@@ -175,9 +175,9 @@ struct IntegrationExampleTests {
 		let results = model.projectMonteCarlo(periods: quarters, iterations: 1_000)
 
 		// Verify all components present
-		#expect(results["profit"] != nil)
-		#expect(results["revenue"] != nil)
-		#expect(results["totalCosts"] != nil)
+		#expect(results["profit"] != nil) // TEST-QUALITY: existence check
+		#expect(results["revenue"] != nil) // TEST-QUALITY: existence check
+		#expect(results["totalCosts"] != nil) // TEST-QUALITY: existence check
 
 		// Analyze Q1 profit
 		let q1 = quarters[0]

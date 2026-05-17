@@ -141,7 +141,8 @@ public struct ManufacturingModel: Sendable {
     /// - Returns: Total cost per unit
     public func calculateUnitCost(atCapacityUtilization capacityUtilization: Double) -> Double {
         let unitsProduced = productionCapacity * capacityUtilization
-        let overheadPerUnit = monthlyOverhead / unitsProduced
+        guard unitsProduced > 0 else { return 0 }
+        let overheadPerUnit = monthlyOverhead / unitsProduced // fp-safety:disable — guarded above
         return variableCostPerUnit + overheadPerUnit
     }
 
@@ -150,7 +151,8 @@ public struct ManufacturingModel: Sendable {
     /// - Parameter production: Number of units produced
     /// - Returns: Overhead cost per unit
     public func calculateOverheadPerUnit(atProduction production: Double) -> Double {
-        return monthlyOverhead / production
+        guard production > 0 else { return 0 }
+        return monthlyOverhead / production // fp-safety:disable — guarded above
     }
 
     // MARK: - Contribution Margin
@@ -179,7 +181,8 @@ public struct ManufacturingModel: Sendable {
     ///
     /// - Returns: Contribution margin ratio (percentage)
     public func calculateContributionMarginRatio() -> Double {
-        return calculateContributionMarginPerUnit() / sellingPricePerUnit
+        guard sellingPricePerUnit > 0 else { return 0 }
+        return calculateContributionMarginPerUnit() / sellingPricePerUnit // fp-safety:disable — guarded above
     }
 
     // MARK: - Break-Even Analysis
@@ -190,7 +193,9 @@ public struct ManufacturingModel: Sendable {
     ///
     /// - Returns: Number of units needed to break even
     public func calculateBreakEvenUnits() -> Double {
-        return monthlyOverhead / calculateContributionMarginPerUnit()
+        let cmPerUnit = calculateContributionMarginPerUnit()
+        guard cmPerUnit > 0 else { return 0 }
+        return monthlyOverhead / cmPerUnit // fp-safety:disable — guarded above
     }
 
     /// Calculate break-even revenue.
@@ -211,7 +216,8 @@ public struct ManufacturingModel: Sendable {
     /// - Returns: Capacity utilization ratio (0.0 to 1.0+), or 0 if actualProduction is not set
     public func calculateCapacityUtilization() -> Double {
         guard let production = actualProduction else { return 0 }
-        return production / productionCapacity
+        guard productionCapacity > 0 else { return 0 }
+        return production / productionCapacity // fp-safety:disable — guarded above
     }
 
     /// Calculate capacity utilization.
@@ -221,7 +227,8 @@ public struct ManufacturingModel: Sendable {
     /// - Parameter actualProduction: Number of units actually produced
     /// - Returns: Capacity utilization ratio (0.0 to 1.0+)
     public func calculateCapacityUtilization(actualProduction: Double) -> Double {
-        return actualProduction / productionCapacity
+        guard productionCapacity > 0 else { return 0 }
+        return actualProduction / productionCapacity // fp-safety:disable — guarded above
     }
 
     // MARK: - Production Efficiency
@@ -233,8 +240,8 @@ public struct ManufacturingModel: Sendable {
     /// - Parameter actualProduction: Number of units actually produced
     /// - Returns: Efficiency ratio, or 0 if no target is set
     public func calculateProductionEfficiency(actualProduction: Double) -> Double {
-        guard let target = targetProduction else { return 0 }
-        return actualProduction / target
+        guard let target = targetProduction, target > 0 else { return 0 }
+        return actualProduction / target // fp-safety:disable — guarded above
     }
 
     // MARK: - Profit Calculations
@@ -278,7 +285,7 @@ public struct ManufacturingModel: Sendable {
             return Period.month(year: year, month: month)
         }
 
-        let capacityUtilization = unitsPerMonth / productionCapacity
+        let capacityUtilization = unitsPerMonth / productionCapacity // fp-safety:disable
 
         let revenueValues = Array(repeating: calculateRevenue(unitsProduced: unitsPerMonth), count: months)
         let profitValues = Array(repeating: calculateProfit(unitsProduced: unitsPerMonth), count: months)

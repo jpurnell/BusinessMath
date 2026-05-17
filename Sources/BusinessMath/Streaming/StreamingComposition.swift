@@ -1755,8 +1755,8 @@ private actor DebounceState<Element: Sendable> {
 /// Allows safe concurrent access to continuation from multiple tasks.
 /// The AsyncStream internally serializes all yields through its own queue,
 /// making this wrapper safe despite the @unchecked Sendable marker.
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 // Justification: Wraps an immutable AsyncStream.Continuation whose yield/finish methods are internally thread-safe.
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 final class ContinuationBox<Element: Sendable>: @unchecked Sendable {
     private let continuation: AsyncStream<Element>.Continuation
 
@@ -1784,8 +1784,8 @@ final class ContinuationBox<Element: Sendable>: @unchecked Sendable {
 /// Allows safe concurrent access to continuation from multiple tasks.
 /// The AsyncThrowingStream internally serializes all yields through its own queue,
 /// making this wrapper safe despite the @unchecked Sendable marker.
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 // Justification: Wraps an immutable AsyncThrowingStream.Continuation whose yield/finish methods are internally thread-safe.
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 final class ThrowingContinuationBox<Element: Sendable>: @unchecked Sendable {
     private let continuation: AsyncThrowingStream<Element, Error>.Continuation
 

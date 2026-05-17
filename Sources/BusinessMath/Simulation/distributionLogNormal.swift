@@ -17,7 +17,7 @@ import Numerics
 ///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
 ///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
 /// - Returns: A Log Normal distributed value, x, centered on the mean µ with a standard deviation of σ. Running this function many times will generate an array of values that is distributed log normally around µ with std dev of σ
-public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
+public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
     return T.exp(distributionNormal(mean: mean, stdDev: stdDev, u1Seed, u2Seed))
 }
 
@@ -28,7 +28,7 @@ public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u
 	///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
 	///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
 	/// - Returns: A Log Normal distributed value, x, centered on the mean µ with a variance of σ^2. Running this function many times will generate an array of values that is distributed log normally around µ with variance of σ^2
-public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint {
+public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
     return T.exp(distributionNormal(mean: mean, variance: variance, u1Seed, u2Seed))
 }
 

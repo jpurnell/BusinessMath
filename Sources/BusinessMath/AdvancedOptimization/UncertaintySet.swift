@@ -121,7 +121,7 @@ public struct BoxUncertaintySet: UncertaintySet {
 				// Sample uniformly within [nominal - deviation, nominal + deviation]
 				let lower = nominal[j] - deviations[j]
 				let upper = nominal[j] + deviations[j]
-				point.append(Double.random(in: lower...upper))
+				point.append(Double.random(in: lower...upper)) // stochastic:exempt
 			}
 			points.append(point)
 		}
@@ -260,7 +260,7 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 			var direction: [Double] = []
 			var normSquared = 0.0
 			for _ in 0..<dimension {
-				let value = Double.random(in: -1...1)
+				let value = Double.random(in: -1...1) // stochastic:exempt
 				direction.append(value)
 				normSquared += value * value
 			}
@@ -268,7 +268,7 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 			// Normalize and scale
 			let norm = sqrt(normSquared)
 			if norm > 0 {
-				let scale = Double.random(in: 0...radius) / norm
+				let scale = Double.random(in: 0...radius) / norm // stochastic:exempt fp-safety:disable — norm > 0 from enclosing if
 				for i in 0..<dimension {
 					// Simple diagonal approximation (would use full covariance in production)
 					let stdDev = sqrt(covariance[i][i])
@@ -313,7 +313,7 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 			let diff = point[i] - nominal[i]
 			let variance = covariance[i][i]
 			if variance > 0 {
-				distanceSquared += (diff * diff) / variance
+				distanceSquared += (diff * diff) / variance // fp-safety:disable — variance > 0 from enclosing if
 			}
 		}
 

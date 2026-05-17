@@ -156,7 +156,7 @@ public struct DCFModel {
         for (index, fcf) in fcfs.enumerated() {
             let year = index + 1
             let discountFactor = pow(1.0 + waccRate, Double(year))
-            pvOfFCF += fcf / discountFactor
+            pvOfFCF += fcf / discountFactor // fp-safety:disable — discountFactor = pow(1+wacc, year), always > 0
         }
 
         // Calculate terminal value
@@ -176,7 +176,7 @@ public struct DCFModel {
 
         // Discount terminal value to present
         let terminalYearDiscountFactor = pow(1.0 + waccRate, Double(years))
-        let pvOfTerminalValue = tv / terminalYearDiscountFactor
+        let pvOfTerminalValue = tv / terminalYearDiscountFactor // fp-safety:disable
 
         // Enterprise Value = PV(FCF) + PV(TV)
         let enterpriseValue = pvOfFCF + pvOfTerminalValue

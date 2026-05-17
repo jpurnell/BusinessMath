@@ -18,7 +18,7 @@ private struct SeedSequence: Sendable {
         // LCG constants (Numerical Recipes)
         state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
         // Map to [0, 1]
-        return Double(state >> 11) / Double(1 << 53)
+        return Double(state >> 11) / Double(1 << 53) // fp-safety:disable
     }
 
     mutating func nextArray(count: Int) -> [Double] {

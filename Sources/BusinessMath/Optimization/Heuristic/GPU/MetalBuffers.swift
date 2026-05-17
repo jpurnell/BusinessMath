@@ -102,7 +102,7 @@ internal final class MetalBuffers {
     private func initializeRandomSeeds() {
         let seedPointer = randomSeeds.contents().bindMemory(to: UInt32.self, capacity: populationSize)
         for i in 0..<populationSize {
-            seedPointer[i] = UInt32.random(in: 0...UInt32.max)
+            seedPointer[i] = UInt32.random(in: 0...UInt32.max) // stochastic:exempt
         }
     }
 
@@ -185,7 +185,7 @@ internal final class MetalBuffers {
     /// Total GPU memory allocated (formatted string).
     var memoryDescription: String {
         let bytes = totalMemoryAllocated
-        let mb = Double(bytes) / (1024 * 1024)
+        let mb = Double(bytes) / (1024 * 1024) // fp-safety:disable
         return "\(mb.number(2)) MB"
     }
 }

@@ -236,8 +236,8 @@ import Testing
 
 		// Check that parameters exist
 		for scenario in scenarios {
-			#expect(scenario["param_0"] != nil)
-			#expect(scenario["param_1"] != nil)
+			#expect(scenario["param_0"] != nil) // TEST-QUALITY: existence check
+			#expect(scenario["param_1"] != nil) // TEST-QUALITY: existence check
 		}
 
 		// Statistical properties (with large sample)

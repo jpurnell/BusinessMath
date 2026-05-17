@@ -43,9 +43,9 @@ struct GStudyTests {
 		let rComp = result.components.first { $0.source == "raters" }
 		let eComp = result.components.first { $0.source == "p x raters" }
 
-		#expect(pComp != nil)
-		#expect(rComp != nil)
-		#expect(eComp != nil)
+		#expect(pComp != nil) // TEST-QUALITY: existence check
+		#expect(rComp != nil) // TEST-QUALITY: existence check
+		#expect(eComp != nil) // TEST-QUALITY: existence check
 
 		#expect(abs(pComp!.variance - 20.0 / 3.0) < 1e-10)
 		#expect(abs(rComp!.variance - 1.0) < 1e-10)
@@ -68,8 +68,8 @@ struct GStudyTests {
 		let rComp = result.components.first { $0.source == "raters" }
 		let eComp = result.components.first { $0.source == "p x raters" }
 
-		#expect(rComp != nil)
-		#expect(eComp != nil)
+		#expect(rComp != nil) // TEST-QUALITY: existence check
+		#expect(eComp != nil) // TEST-QUALITY: existence check
 		#expect(abs(rComp!.variance) < 1e-10)
 		#expect(abs(eComp!.variance) < 1e-10)
 	}
@@ -86,7 +86,7 @@ struct GStudyTests {
 
 		let pComp = result.components.first { $0.source == "p" }
 
-		#expect(pComp != nil)
+		#expect(pComp != nil) // TEST-QUALITY: existence check
 		#expect(abs(pComp!.variance) < 1e-10)
 	}
 
@@ -130,7 +130,7 @@ struct GStudyTests {
 		let result = try gStudy(data)
 
 		let pComp = result.components.first { $0.source == "p" }
-		#expect(pComp != nil)
+		#expect(pComp != nil) // TEST-QUALITY: existence check
 		#expect(pComp!.variance >= 0.0)
 		#expect(abs(pComp!.variance) < 1e-10)
 	}

@@ -95,7 +95,7 @@ struct CuttingPlaneTests {
             totalVariableCount: 4  // x0, x1, s0, s1
         )
 
-        #expect(cut != nil, "Should generate a cut for fractional solution")
+        #expect(cut != nil, "Should generate a cut for fractional solution") // TEST-QUALITY: existence check
 
         guard let cut = cut else { return }
 
@@ -215,7 +215,7 @@ struct CuttingPlaneTests {
             totalVariableCount: 4
         )
 
-        #expect(cut != nil, "Should generate cut for fractional integer variable")
+        #expect(cut != nil, "Should generate cut for fractional integer variable") // TEST-QUALITY: existence check
 
         // Note: Full MIR implementation would differentiate integer vs continuous
     }
@@ -283,7 +283,7 @@ struct CuttingPlaneTests {
             currentSolution: currentSolution
         )
 
-        #expect(selectedCut != nil, "Should select a cut")
+        #expect(selectedCut != nil, "Should select a cut") // TEST-QUALITY: existence check
 
         // Selected cut should have maximum violation
         // violation = ax - b (for constraint ax ≤ b)
@@ -413,7 +413,7 @@ struct CuttingPlaneTests {
 					solution: lpSolution
 				)
 
-				#expect(coverCut != nil, "Should generate a cover cut for fractional knapsack solution")
+				#expect(coverCut != nil, "Should generate a cover cut for fractional knapsack solution") // TEST-QUALITY: existence check
 
 				guard let cut = coverCut else { return }
 

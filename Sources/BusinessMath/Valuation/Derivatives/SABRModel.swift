@@ -98,13 +98,13 @@ public struct SABRParameters: Sendable {
         let denominator = fkBetaHalf * (1.0 + a1 + a2)
 
         // Correction terms
-        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha
-            / Double.pow(fk, oneBeta)
-        let term2 = 0.25 * rho * beta * nu * alpha / fkBetaHalf
+        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha // fp-safety:disable
+            / Double.pow(fk, oneBeta) // fp-safety:disable — fk = f*k, both positive (ATM-checked above)
+        let term2 = 0.25 * rho * beta * nu * alpha / fkBetaHalf // fp-safety:disable — fkBetaHalf = pow(fk, (1-β)/2) > 0
         let term3 = (2.0 - 3.0 * rho * rho) / 24.0 * nu * nu
         let correction = 1.0 + (term1 + term2 + term3) * t
 
-        return numerator / denominator * (z / xz) * correction
+        return numerator / denominator * (z / xz) * correction // fp-safety:disable — denominator > 0 (fk^beta product of positive f,k); xz > 0 from xOfZ guard
     }
 
     // MARK: - Private Helpers
@@ -114,13 +114,13 @@ public struct SABRParameters: Sendable {
         let oneBeta = 1.0 - beta
         let fBeta = Double.pow(forward, oneBeta)
 
-        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha
+        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha // fp-safety:disable — fBeta = forward^(1-beta), forward > 0 from guard
             / (fBeta * fBeta)
-        let term2 = 0.25 * rho * beta * nu * alpha / fBeta
+        let term2 = 0.25 * rho * beta * nu * alpha / fBeta // fp-safety:disable — fBeta > 0
         let term3 = (2.0 - 3.0 * rho * rho) / 24.0 * nu * nu
         let correction = 1.0 + (term1 + term2 + term3) * timeToExpiry
 
-        return alpha / fBeta * correction
+        return alpha / fBeta * correction // fp-safety:disable — fBeta > 0 (forward^(1-beta), forward > 0)
     }
 
     /// Computes x(z) = log((sqrt(1 - 2*rho*z + z^2) + z - rho) / (1 - rho)).
@@ -140,6 +140,6 @@ public struct SABRParameters: Sendable {
             return 1.0
         }
 
-        return Double.log(numerator / denominator)
+        return Double.log(numerator / denominator) // fp-safety:disable — guarded above (denominator > 1e-15, numerator > 1e-15)
     }
 }

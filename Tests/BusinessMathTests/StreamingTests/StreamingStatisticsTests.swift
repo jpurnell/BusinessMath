@@ -267,9 +267,11 @@ struct StreamingStatisticsTests {
 
     @Test("Streaming statistics maintain O(1) memory")
     func constantMemoryForStatistics() async throws {
-        // Simulate large stream
+        // Simulate large stream with deterministic values
+        var counter: Double = 0
         let largeStream = AsyncGeneratorStream {
-            return Double.random(in: 0...100)
+            counter += 1
+            return counter.truncatingRemainder(dividingBy: 100)
         }
 
         var statCount = 0

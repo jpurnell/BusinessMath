@@ -93,11 +93,17 @@ struct StudentTDistributionTests {
 
 	@Test("t-distribution struct random() method")
 	func tStructRandom() {
-		let distribution = DistributionT(degreesOfFreedom: 10)
+		let df = 10
+		let seedCount: Int = df + 1
+		let totalSeeds: Double = Double(100 * seedCount + 1)
 
-		// Test that random() produces finite values
-		for _ in 0..<100 {
-			let sample = distribution.random()
+		// Test that seeded function produces finite values
+		for i in 0..<100 {
+			let seeds: [Double] = (0..<seedCount).map { j in
+				let numerator: Double = Double(i * seedCount + j + 1)
+				return numerator / totalSeeds
+			}
+			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seeds)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
 		}

@@ -43,8 +43,11 @@ import Numerics
 /// interp(2.5)   // ≈ 6.25 (close to the analytic 6.25 from y = x²)
 /// ```
 public struct CubicSplineInterpolator<T: Real & Sendable & Codable>: Interpolator {
+    /// The scalar type for coordinates and values.
     public typealias Scalar = T
+    /// Input point type (1D scalar wrapped in ``Vector1D``).
     public typealias Point = Vector1D<T>
+    /// Output value type (scalar).
     public typealias Value = T
 
     /// Boundary condition for the cubic spline.
@@ -62,12 +65,18 @@ public struct CubicSplineInterpolator<T: Real & Sendable & Codable>: Interpolato
         case periodic
     }
 
+    /// The number of input dimensions (always 1).
     public let inputDimension = 1
+    /// The number of output dimensions (always 1 for scalar output).
     public let outputDimension = 1
 
+    /// Sample x-coordinates, strictly monotonically increasing.
     public let xs: [T]
+    /// Sample y-values at each knot.
     public let ys: [T]
+    /// The boundary condition governing endpoint behavior.
     public let boundary: BoundaryCondition
+    /// Behavior for queries outside `[xs.first, xs.last]`.
     public let outOfBounds: ExtrapolationPolicy<T>
 
     /// Precomputed second derivatives at each knot.
@@ -115,11 +124,18 @@ public struct CubicSplineInterpolator<T: Real & Sendable & Codable>: Interpolato
         )
     }
 
+    /// Evaluate the spline at a wrapped query point.
+    ///
+    /// - Parameter query: The query point as a ``Vector1D``.
+    /// - Returns: Interpolated y-value.
     public func callAsFunction(at query: Vector1D<T>) -> T {
         callAsFunction(query.value)
     }
 
-    /// Scalar convenience.
+    /// Evaluate the spline at a scalar query point.
+    ///
+    /// - Parameter t: The x-coordinate to evaluate at.
+    /// - Returns: The C2-smooth cubic spline value at `t`.
     public func callAsFunction(_ t: T) -> T {
         if let extrapolated = extrapolatedValue(at: t, xs: xs, ys: ys, policy: outOfBounds) {
             return extrapolated

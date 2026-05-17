@@ -51,6 +51,19 @@ public struct InventoryAdvisor: Sendable {
         /// Annual holding cost per unit, for EOQ analysis.
         public let holdingCostPerUnit: Double?
 
+        /// Creates an inventory context from demand history and optional supply-chain parameters.
+        ///
+        /// - Parameters:
+        ///   - demandHistory: Historical demand observations used to estimate demand distribution.
+        ///   - leadTimeMean: Average replenishment lead time in the same time unit as demand observations.
+        ///   - leadTimeStdDev: Standard deviation of lead time; `nil` assumes deterministic lead time.
+        ///   - forecastRMSE: Root-mean-square forecast error for safety-stock sizing.
+        ///   - underageCost: Per-unit cost of a stockout (lost-sale or backorder penalty).
+        ///   - overageCost: Per-unit cost of excess inventory (holding or obsolescence).
+        ///   - isPerishable: Whether the item has a limited shelf life.
+        ///   - annualDemand: Annualised demand; inferred from history when `nil`.
+        ///   - orderingCost: Fixed cost per order, used for EOQ analysis.
+        ///   - holdingCostPerUnit: Annual holding cost per unit, used for EOQ analysis.
         public init(
             demandHistory: [Double],
             leadTimeMean: Double,

@@ -158,7 +158,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         if let seed = config.seed {
             self.rng = RNGWrapper(generator: SeededRandomNumberGenerator(seed: seed))
         } else {
-            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator())
+            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator()) // stochastic:exempt
         }
     }
 
@@ -730,6 +730,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
 
     /// Calculate swarm diversity (average distance from global best).
     private func calculateSwarmDiversity(positions: [V], globalBest: V) -> V.Scalar {
+        guard !positions.isEmpty else { return V.Scalar.zero }
+
         var totalDistance = V.Scalar.zero
 
         for position in positions {
@@ -738,7 +740,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             totalDistance += distance
         }
 
-        return totalDistance / V.Scalar(positions.count)
+        return totalDistance / V.Scalar(positions.count) // fp-safety:disable — guarded above
     }
 
     // MARK: - Penalty Method for Constraints

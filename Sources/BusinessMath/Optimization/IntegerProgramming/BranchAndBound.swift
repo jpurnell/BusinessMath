@@ -1046,8 +1046,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             }
 
                             // Normalize: divide coefficients and RHS by norm
-                            let normalizedCoeffs = cut.coefficients.map { $0 / norm }
-                            let normalizedRHS = cut.rhs / norm
+                            let normalizedCoeffs = cut.coefficients.map { $0 / norm } // fp-safety:disable — norm > cutCoefficientThreshold per guard above
+                            let normalizedRHS = cut.rhs / norm // fp-safety:disable — norm > cutCoefficientThreshold per guard above
 
                             cut = CuttingPlane(
                                 coefficients: normalizedCoeffs,
@@ -1819,7 +1819,7 @@ class PseudoCostTracker: @unchecked Sendable {
         fractionalChange: Double
     ) {
         guard fractionalChange > 1e-10 else { return }
-        let cost = boundImprovement / fractionalChange
+        let cost = boundImprovement / fractionalChange // fp-safety:disable — guarded > 1e-10 above
 
         lock.lock()
         defer { lock.unlock() }
@@ -1845,8 +1845,8 @@ class PseudoCostTracker: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        let upAvg = upCosts[variable].map { $0.sum / Double($0.count) } ?? 0.0
-        let downAvg = downCosts[variable].map { $0.sum / Double($0.count) } ?? 0.0
+        let upAvg = upCosts[variable].map { $0.sum / Double($0.count) } ?? 0.0 // fp-safety:disable — count >= 1 when entry exists
+        let downAvg = downCosts[variable].map { $0.sum / Double($0.count) } ?? 0.0 // fp-safety:disable — count >= 1 when entry exists
 
         // Pessimistic estimate: min of up/down costs
         // Weight by fractional part (closer to 0.5 = more uncertain)
@@ -2348,8 +2348,8 @@ private class CutPool: @unchecked Sendable {
     private func prunePool() {
         // Sort by value: prefer recently used (low age), highly active cuts
         managedCuts.sort { cut1, cut2 in
-            let score1 = cut1.activity / Double(cut1.age + 1)
-            let score2 = cut2.activity / Double(cut2.age + 1)
+            let score1 = cut1.activity / Double(cut1.age + 1) // fp-safety:disable — age >= 0, so age + 1 >= 1
+            let score2 = cut2.activity / Double(cut2.age + 1) // fp-safety:disable — age >= 0, so age + 1 >= 1
             return score1 > score2
         }
 

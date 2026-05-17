@@ -127,9 +127,9 @@ struct DSCR_EdgeCaseTests {
 		#expect(dscr[periods[0]] == nil, "Q1 DSCR should not exist")
 
 		// Q2-Q4 should exist
-		#expect(dscr[periods[1]] != nil, "Q2 DSCR should exist")
-		#expect(dscr[periods[2]] != nil, "Q3 DSCR should exist")
-		#expect(dscr[periods[3]] != nil, "Q4 DSCR should exist")
+		#expect(dscr[periods[1]] != nil, "Q2 DSCR should exist") // TEST-QUALITY: existence check
+		#expect(dscr[periods[2]] != nil, "Q3 DSCR should exist") // TEST-QUALITY: existence check
+		#expect(dscr[periods[3]] != nil, "Q4 DSCR should exist") // TEST-QUALITY: existence check
 
 		// Each DSCR should be: Operating Income / (Principal + Interest)
 		// Principal = $5k (debt decreases by $5k each quarter)

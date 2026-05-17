@@ -80,8 +80,8 @@ import RealModule
 
         // Verify documented metrics
         #expect(investment.npv > 0, "Should have positive NPV")
-        #expect(investment.irr != nil, "Should calculate IRR")
-        #expect(investment.paybackPeriod != nil, "Should calculate payback period")
+        #expect(investment.irr != nil, "Should calculate IRR") // TEST-QUALITY: existence check
+        #expect(investment.paybackPeriod != nil, "Should calculate payback period") // TEST-QUALITY: existence check
     }
 
     // MARK: - Feature Examples
@@ -170,7 +170,7 @@ import RealModule
         // JSON should be valid
         if let jsonData = jsonOutput.data(using: .utf8) {
             let parsed = try? JSONSerialization.jsonObject(with: jsonData)
-            #expect(parsed != nil, "Should produce valid JSON")
+            #expect(parsed != nil, "Should produce valid JSON") // TEST-QUALITY: existence check
         }
     }
 

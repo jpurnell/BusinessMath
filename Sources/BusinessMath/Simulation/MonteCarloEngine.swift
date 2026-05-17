@@ -186,11 +186,11 @@ public struct MonteCarloEngine: Sendable {
         }
 
         let n = Double(effectivePaths)
-        let mean = sumPayoffs / n
+        let mean = sumPayoffs / n // fp-safety:disable — n = effectivePaths which is >= numPaths >= 1
         // Sample variance: E[X^2] - E[X]^2, with Bessel correction
         let variance: Double
         if effectivePaths > 1 {
-            let meanOfSquares = sumPayoffsSquared / n
+            let meanOfSquares = sumPayoffsSquared / n // fp-safety:disable — n = effectivePaths >= 2 (guarded by effectivePaths > 1)
             let squareOfMean = mean * mean
             // Use n/(n-1) Bessel correction
             variance = (meanOfSquares - squareOfMean) * n / (n - 1.0)

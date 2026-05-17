@@ -37,7 +37,7 @@ struct NonlinearRelaxationSolverTests {
 
         // Verify solver created successfully
         #expect(solver.maxIterations == 500)
-        #expect(solver.tolerance == 1e-7)
+        #expect(abs(solver.tolerance - 1e-7) < 1e-13)
     }
 
     // MARK: - Quadratic Objective Tests
@@ -63,7 +63,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: x = y = 1 (symmetry), with objective = 2
         let sol = result.solution!
@@ -95,7 +95,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Maximum of -(x² + y²) occurs at boundary: x + y = 2
         let sol = result.solution!
@@ -126,7 +126,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Verify circle constraint satisfied
         let sol = result.solution!
@@ -155,7 +155,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal should be on ellipse boundary (minimizing x)
         let sol = result.solution!
@@ -187,7 +187,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Verify annulus constraints
         let sol = result.solution!
@@ -223,7 +223,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: (0, 0) with objective = 0
         let sol = result.solution!
@@ -303,7 +303,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Optimal: x = 1
         let sol = result.solution!
@@ -331,7 +331,7 @@ struct NonlinearRelaxationSolverTests {
         #expect(result.status == .optimal || result.status == .infeasible)
 
         if result.status == .optimal {
-            #expect(result.solution != nil)
+            #expect(result.solution != nil) // TEST-QUALITY: existence check
             #expect(result.objectiveValue >= 0.0)
         }
     }
@@ -359,7 +359,7 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil)
+        #expect(result.solution != nil) // TEST-QUALITY: existence check
 
         // Verify equality constraint
         let sol = result.solution!

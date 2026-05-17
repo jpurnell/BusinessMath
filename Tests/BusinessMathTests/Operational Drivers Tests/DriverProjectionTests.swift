@@ -41,7 +41,7 @@ struct DriverProjectionTests {
 
 		// Should have values for all periods
 		for period in periods {
-			#expect(timeSeries[period] != nil)
+			#expect(timeSeries[period] != nil) // TEST-QUALITY: existence check
 		}
 	}
 

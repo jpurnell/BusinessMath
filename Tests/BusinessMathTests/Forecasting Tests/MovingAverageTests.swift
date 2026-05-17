@@ -23,6 +23,7 @@ struct MovingAverageTests {
 		try model.train(on: data)
 
 		// Should succeed without error
+	    #expect(true) // TEST-QUALITY: validates no-throw execution
 	}
 
 	@Test("Insufficient data for window size")

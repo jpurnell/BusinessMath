@@ -156,7 +156,7 @@ extension FinancialSimulation {
 		for projection in projections {
 			sum += metric(projection)
 		}
-		return sum / Double(projections.count)
+		return sum / Double(projections.count) // fp-safety:disable — projections nonempty (FinancialSimulation requires projections)
 	}
 
 	/// Calculates a percentile of a metric across all projections.
@@ -304,7 +304,7 @@ extension FinancialSimulation {
 			sum += sortedValues[i]
 		}
 
-		return sum / Double(endIndex)
+		return sum / Double(endIndex) // fp-safety:disable — endIndex >= 1 (tailSize > 0 from guard above)
 	}
 
 	/// Calculates the probability that a metric will be negative (a loss).
@@ -330,7 +330,7 @@ extension FinancialSimulation {
 				lossCount += 1
 			}
 		}
-		return Double(lossCount) / Double(projections.count)
+		return Double(lossCount) / Double(projections.count) // fp-safety:disable — projections nonempty
 	}
 
 	/// Calculates the probability that a metric will be below a threshold.
@@ -360,7 +360,7 @@ extension FinancialSimulation {
 				belowCount += 1
 			}
 		}
-		return Double(belowCount) / Double(projections.count)
+		return Double(belowCount) / Double(projections.count) // fp-safety:disable — projections nonempty
 	}
 
 	/// Calculates the probability that a metric will be above a threshold.

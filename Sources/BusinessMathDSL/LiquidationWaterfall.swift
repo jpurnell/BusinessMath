@@ -82,6 +82,7 @@ public struct WaterfallResult {
 
 /// Liquidation waterfall model for distributing proceeds through priority tiers
 public struct LiquidationWaterfall {
+    /// The priority-ordered tiers through which liquidation proceeds are distributed.
     public let tiers: [Tier]
 
     internal init(tiers: [Tier] = []) {

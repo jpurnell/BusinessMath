@@ -14,7 +14,7 @@ import Numerics
 /// ```
 /// where `s_i` ~ N(0, sigma_s^2), `r_j` ~ N(0, sigma_r^2),
 /// and `e_ij` ~ N(0, sigma_e^2).
-public struct ICCMissingDataResult<T: Real>: Sendable, Equatable {
+public struct ICCMissingDataResult<T: Real & Sendable>: Sendable, Equatable {
 	/// The intraclass correlation coefficient estimate.
 	public let icc: T
 	/// Estimated between-subjects variance component (sigma_s^2).

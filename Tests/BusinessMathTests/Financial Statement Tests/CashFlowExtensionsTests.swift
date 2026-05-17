@@ -64,9 +64,9 @@ struct CashFlowExtensionsTests {
 
 		// Should have 3 WC components (AR, Inventory, AP), not CapEx
 		#expect(wcComponents.count == 3)
-		#expect(wcComponents[CashFlowRole.changeInReceivables] != nil)
-		#expect(wcComponents[CashFlowRole.changeInInventory] != nil)
-		#expect(wcComponents[CashFlowRole.changeInPayables] != nil)
+		#expect(wcComponents[CashFlowRole.changeInReceivables] != nil) // TEST-QUALITY: existence check
+		#expect(wcComponents[CashFlowRole.changeInInventory] != nil) // TEST-QUALITY: existence check
+		#expect(wcComponents[CashFlowRole.changeInPayables] != nil) // TEST-QUALITY: existence check
 		#expect(wcComponents[CashFlowRole.capitalExpenditures] == nil)
 
 		// AR changes: Q2 = $1.2M - $1M = $200K (use of cash)

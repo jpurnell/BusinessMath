@@ -118,7 +118,7 @@ public struct DiscountCurve: Sendable {
         // Single knot: extend its zero rate
         if tenors.count == 1 {
             guard let df = discountFactors.first, let t = tenors.first, t > 0 else { return 1.0 }
-            let zeroR = -log(df) / t
+            let zeroR = -log(df) / t // fp-safety:disable — guarded above (t > 0)
             return exp(-zeroR * tenor)
         }
 
@@ -127,7 +127,7 @@ public struct DiscountCurve: Sendable {
             let lastDF = discountFactors[tenors.count - 1]
             let lastT = tenors[tenors.count - 1]
             guard lastT > 0 else { return 1.0 }
-            let zeroR = -log(lastDF) / lastT
+            let zeroR = -log(lastDF) / lastT // fp-safety:disable — guarded above
             return exp(-zeroR * tenor)
         }
 
@@ -174,7 +174,7 @@ public struct DiscountCurve: Sendable {
         }
         let df = discountFactor(at: tenor)
         guard df > 0 else { return 0.0 }
-        return -log(df) / tenor
+        return -log(df) / tenor // fp-safety:disable — tenor > 1e-15 from guard above
     }
 
     // MARK: - Forward Rate
@@ -200,7 +200,7 @@ public struct DiscountCurve: Sendable {
         let df1 = discountFactor(at: t1)
         let df2 = discountFactor(at: t2)
         guard df1 > 0, df2 > 0 else { return 0.0 }
-        return -(log(df2) - log(df1)) / interval
+        return -(log(df2) - log(df1)) / interval // fp-safety:disable — abs(interval) > 1e-15 from guard above
     }
 
     // MARK: - Shifted Curve
@@ -305,7 +305,7 @@ public struct DiscountCurve: Sendable {
                     let dfLo = dfMap[lo] ?? 1.0
                     let dfHi = dfMap[hi] ?? 1.0
                     guard dfLo > 0, dfHi > 0 else { continue }
-                    let frac = Double(year - lo) / Double(hi - lo)
+                    let frac = Double(year - lo) / Double(hi - lo) // fp-safety:disable — lo < year < hi guarantees hi - lo > 0
                     let lnDF = log(dfLo) * (1.0 - frac) + log(dfHi) * frac
                     dfMap[year] = exp(lnDF)
                 } else if let lo = lowerKeys.last {
@@ -394,7 +394,7 @@ public struct DiscountCurve: Sendable {
                 // Fill gap DFs
                 var sumAll = sumKnown
                 for g in (lastKnownYear + 1)..<year {
-                    let frac = Double(g - lastKnownYear) / Double(span)
+                    let frac = Double(g - lastKnownYear) / Double(span) // fp-safety:disable — span >= 2 (loop requires year > lastKnownYear + 1)
                     let lnDFG = lnDFLast * (1.0 - frac) + log(max(dfYear, 1e-300)) * frac
                     sumAll += exp(lnDFG)
                 }
@@ -408,7 +408,7 @@ public struct DiscountCurve: Sendable {
                 // d(sumAll)/d(dfYear) = sum of d(DF(g))/d(dfYear) + 1
                 var dSumAll = 1.0  // from the dfYear term
                 for g in (lastKnownYear + 1)..<year {
-                    let frac = Double(g - lastKnownYear) / Double(span)
+                    let frac = Double(g - lastKnownYear) / Double(span) // fp-safety:disable — span >= 2 (loop requires year > lastKnownYear + 1)
                     let lnDFG = lnDFLast * (1.0 - frac) + log(max(dfYear, 1e-300)) * frac
                     let dfG = exp(lnDFG)
                     // d(dfG)/d(dfYear) = dfG * frac / dfYear
@@ -426,7 +426,7 @@ public struct DiscountCurve: Sendable {
 
             // Store gap DFs
             for g in (lastKnownYear + 1)..<year {
-                let frac = Double(g - lastKnownYear) / Double(span)
+                let frac = Double(g - lastKnownYear) / Double(span) // fp-safety:disable — span >= 2 (loop requires year > lastKnownYear + 1)
                 let lnDFG = lnDFLast * (1.0 - frac) + log(max(dfYear, 1e-300)) * frac
                 dfMap[g] = exp(lnDFG)
             }

@@ -744,7 +744,7 @@ public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
 		let m = mean
 		let sumSquaredDiffs = components.reduce(T(0)) { $0 + ($1 - m) * ($1 - m) }
 		let divisor = isSample ? T(components.count - 1) : T(components.count)
-		return T.sqrt(sumSquaredDiffs / divisor)
+		return T.sqrt(sumSquaredDiffs / divisor) // fp-safety:disable — guarded by count > 1 above
 	}
 	
 	/// Minimum component value.
@@ -1142,7 +1142,7 @@ extension VectorN {
         // Try to cast to ClosedRange<Double> for efficient random generation
         if let doubleRange = range as? ClosedRange<Double> {
             values = (0..<dimension).map { _ in
-                let x = Double.random(in: doubleRange)
+                let x = Double.random(in: doubleRange) // stochastic:exempt
                 return T(Int(x))
             }
         } else {
@@ -1150,10 +1150,10 @@ extension VectorN {
             // with a random fraction generated from Int.random
             let span = range.upperBound - range.lowerBound
             values = (0..<dimension).map { _ in
-                let fraction = T(Int.random(in: 0..<1_000_000)) / T(1_000_000)
+                let fraction = T(Int.random(in: 0..<1_000_000)) / T(1_000_000) // stochastic:exempt fp-safety:disable
                 let continuous = range.lowerBound + fraction * span
                 // Approximate floor by subtracting fractional part
-                let intPart = continuous - (continuous - T(Int.random(in: 0...999)) / T(1000))
+                let intPart = continuous - (continuous - T(Int.random(in: 0...999)) / T(1000)) // stochastic:exempt fp-safety:disable
                 return intPart
             }
         }

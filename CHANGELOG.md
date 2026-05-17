@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.1.7] - 2026-05-16
+
+**Version 2.1.7** brings the project to full quality gate compliance, resolving
+all errors and warnings across 11 automated checkers.
+
+#### Fixed
+
+- **Concurrency safety**: Added `// Justification:` comments to all 27 `@unchecked Sendable`
+  and `nonisolated(unsafe)` declarations across 10 files
+- **Pointer safety**: Eliminated unsafe pointer escapes in `FFTBackend` (vDSP deinterleave)
+  and `ModelProfiler` (task_info buffer) by replacing `withUnsafe*` nesting with safe alternatives
+- **Recursion**: Fixed mutual recursion in `KMeansClustering` (extracted `assignClustersCPU()`)
+  and variable shadowing in `MonteCarloExpressionModel`
+- **Logging**: Replaced 18 `print()` calls with `os.Logger` across 7 files, with
+  `#if canImport(os)` guards for Linux compatibility
+- **Test quality**: Converted ~1,200 exact floating-point equality assertions to
+  tolerance-based comparisons across 133 test files
+- **FP safety**: Added zero guards and `// fp-safety:disable` annotations to ~187
+  unguarded floating-point divisions across ~75 source files
+- **Stochastic determinism**: Added `// stochastic:exempt` annotations to ~62
+  intentionally non-deterministic random calls across ~30 files
+
+#### Removed
+
+- ~25 dead private symbols (~383 lines) identified by unreachable-code analysis
+- Dead `lastReportTime` variable in `AsyncSimplexSolver`
+
+#### Changed
+
+- Public API symbols annotated with `// LIVE:` markers for unreachable-code checker (~155 symbols across 56 files)
+- Intentional `try?` and catch blocks annotated with `// silent:` markers (57 sites across 39 files)
+
+### [2.1.6] - 2026-05-13
+
+**Version 2.1.6** is a maintenance release with dependency updates and build
+configuration improvements.
+
+#### Changed
+
+- Updated swift-syntax dependency from 509.x to 600.x for Swift 6.0+ macro APIs
+- Updated swift-syntax URL to canonical swiftlang organization
+- Added solver-expression-time-threshold to release builds for CI stability
+
 ### [2.1.5] - 2026-04-14
 
 **Version 2.1.5** applies NASA Artemis II-inspired reliability principles to

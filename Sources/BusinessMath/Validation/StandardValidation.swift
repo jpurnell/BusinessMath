@@ -159,6 +159,7 @@ public enum StandardValidation {
 
 	/// Validates that a value is not nil.
 	public struct Required<T>: ValidationRule {
+		/// The type of value being validated.
 		public typealias Value = T
 		
 		/// Initializes the Rule

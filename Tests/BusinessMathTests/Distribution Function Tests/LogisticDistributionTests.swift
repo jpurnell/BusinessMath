@@ -157,11 +157,11 @@ struct LogisticDistributionTests {
 	func logisticStructRandom() {
 		let mean = 100.0
 		let stdDev = 15.0
-		let dist = DistributionLogistic(mean, stdDev)
 
-		// Test that random() produces finite values (unseeded is OK for bounds)
-		for _ in 0..<100 {
-			let sample = dist.random()
+		// Test that seeded function produces finite values
+		for i in 0..<100 {
+			let seed = Double(i + 1) / 101.0
+			let sample: Double = distributionLogistic(mean, stdDev, seed: seed)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
 		}

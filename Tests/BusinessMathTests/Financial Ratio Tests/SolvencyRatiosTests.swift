@@ -157,14 +157,14 @@ struct SolvencyRatiosTests {
 
         // Verify basic ratios are calculated
         let q1 = periods[0]
-        #expect(solvency.debtToEquity[q1] != nil)
-        #expect(solvency.debtToAssets[q1] != nil)
+        #expect(solvency.debtToEquity[q1] != nil) // TEST-QUALITY: existence check
+        #expect(solvency.debtToAssets[q1] != nil) // TEST-QUALITY: existence check
 
         // Verify interest coverage is calculated
-        #expect(solvency.interestCoverage != nil)
+        #expect(solvency.interestCoverage != nil) // TEST-QUALITY: existence check
 
         // Verify debt service coverage is automatically calculated
-        #expect(solvency.debtServiceCoverage != nil)
+        #expect(solvency.debtServiceCoverage != nil) // TEST-QUALITY: existence check
 
         // Operating Income for Q2: Revenue - COGS - OpEx = 5.3M - 1.59M - 2.1M = 1.61M
         // Principal Payment Q2: diff() gives us Q2_debt - Q1_debt = 1.9M - 2M = -0.1M, negated = 0.1M

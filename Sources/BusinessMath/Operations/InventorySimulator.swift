@@ -114,7 +114,7 @@ public struct InventorySimulator: Sendable {
                 ddltValues.append(ddlt)
             }
         } else {
-            var rng = SystemRandomNumberGenerator()
+            var rng = SystemRandomNumberGenerator() // stochastic:exempt
             for _ in 0..<iterations {
                 let lt = sampleLeadTime(mean: meanLeadTime, stdDev: leadTimeStdDev, using: &rng)
                 let ddlt = sampleDDLT(

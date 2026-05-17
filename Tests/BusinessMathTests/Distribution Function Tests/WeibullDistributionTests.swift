@@ -78,11 +78,13 @@ struct WeibullDistributionTests {
 
 	@Test("Weibull distribution struct random() method")
 	func weibullStructRandom() {
-		let distribution = DistributionWeibull(shape: 3.0, scale: 2.0)
+		let shape = 3.0
+		let scale = 2.0
 
-		// Test that random() produces values in valid range
-		for _ in 0..<100 {
-			let sample = distribution.random()
+		// Test that seeded function produces values in valid range
+		for i in 0..<100 {
+			let seed = Double(i + 1) / 101.0
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seed)
 			#expect(sample >= 0.0)
 		}
 	}

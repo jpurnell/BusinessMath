@@ -164,11 +164,12 @@ struct GeometricDistributionTests {
 	@Test("Geometric distribution struct random() method - bounds check")
 	func geometricStructRandom() {
 		let p = 0.4
-		let dist = DistributionGeometric(p)
 
-		// Test that random() produces values in valid range (unseeded is OK for bounds)
-		for _ in 0..<100 {
-			let sample = dist.random()
+		// Test that seeded function produces values in valid range
+		for i in 0..<100 {
+			// Geometric distribution needs multiple seeds (one per trial)
+			let seeds = (0..<30).map { j in Double(i * 30 + j + 1) / Double(100 * 30 + 1) }
+			let sample: Double = distributionGeometric(p, seeds: seeds)
 			#expect(sample >= 1)
 			#expect(sample == floor(sample))
 			#expect(sample.isFinite)

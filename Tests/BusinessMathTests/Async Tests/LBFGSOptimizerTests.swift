@@ -305,7 +305,7 @@ struct LBFGSOptimizerTests {
 
         #expect(result.converged)
         let lastMetrics = metricsCollector.last()
-        #expect(lastMetrics != nil)
+        #expect(lastMetrics != nil) // TEST-QUALITY: existence check
 
         if let metrics = lastMetrics {
             // Near convergence, gradient should be small
@@ -349,7 +349,7 @@ struct LBFGSOptimizerTests {
 
         // Final update should have result
         if let last = progressUpdates.last {
-            #expect(last.result != nil)
+            #expect(last.result != nil) // TEST-QUALITY: existence check
             #expect(last.result?.converged == true)
         }
     }

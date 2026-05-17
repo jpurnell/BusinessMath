@@ -284,9 +284,11 @@ struct StreamingInfrastructureTests {
 
     @Test("Streaming maintains O(1) memory for windowed operations")
     func constantMemoryForWindows() async throws {
-        // Simulate large stream
+        // Simulate large stream with deterministic values
+        var counter: Double = 0
         let largeStream = AsyncGeneratorStream {
-            return Double.random(in: 0...100)
+            counter += 1
+            return counter.truncatingRemainder(dividingBy: 100)
         }
 
         var windowCount = 0

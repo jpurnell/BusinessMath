@@ -41,7 +41,7 @@ struct SimplexTableauAccessTests {
         #expect(result.status == .optimal, "Should find optimal solution")
 
         // SimplexResult should now have tableau field
-        #expect(result.tableau != nil, "Result should expose final tableau")
+        #expect(result.tableau != nil, "Result should expose final tableau") // TEST-QUALITY: existence check
 
         if let tableau = result.tableau {
             // Tableau should have rows for each constraint + objective row
@@ -67,7 +67,7 @@ struct SimplexTableauAccessTests {
         #expect(result.status == .optimal)
 
         // SimplexResult should expose which variables are basic
-        #expect(result.basis != nil, "Result should expose basis")
+        #expect(result.basis != nil, "Result should expose basis") // TEST-QUALITY: existence check
 
         if let basis = result.basis {
             // Basis should have one entry per constraint (basic variable per row)
@@ -218,7 +218,7 @@ struct SimplexTableauAccessTests {
         let result = try solver.maximize(objective: objective, subjectTo: constraints)
 
         #expect(result.status == .optimal)
-        #expect(result.tableau != nil, "Need tableau for cut generation")
+        #expect(result.tableau != nil, "Need tableau for cut generation") // TEST-QUALITY: existence check
 
         if let tableau = result.tableau, let basis = result.basis {
             // For first basic variable (if fractional), extract tableau row

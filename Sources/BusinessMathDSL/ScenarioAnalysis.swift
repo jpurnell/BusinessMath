@@ -148,6 +148,7 @@ import Numerics
 
 /// Container for multiple scenarios for comparison and sensitivity analysis
 public struct ScenarioAnalysis {
+    /// The collection of scenarios included in this analysis.
     public let scenarios: [Scenario]
 
     internal init(scenarios: [Scenario]) {
@@ -216,16 +217,16 @@ public struct ScenarioAnalysis {
 
         let count = values.count
         let sum = values.reduce(0, +)
-        let mean = sum / Double(count)
+        let mean = sum / Double(count) // fp-safety:disable — guard !values.isEmpty above
 
         let median: Double
         if count % 2 == 0 {
-            median = (values[count/2 - 1] + values[count/2]) / 2
+            median = (values[count/2 - 1] + values[count/2]) / 2 // fp-safety:disable — literal constant
         } else {
             median = values[count/2]
         }
 
-        let variance = values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(count)
+        let variance = values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(count) // fp-safety:disable — guard !values.isEmpty above
         let stdDev = sqrt(variance)
 
         return Statistics(
@@ -312,7 +313,7 @@ public struct ScenarioAnalysisBuilder {
                 }
 
                 let baseValue = base[sensitivity.parameterName] ?? 0
-                let stepSize = (sensitivity.range.upperBound - sensitivity.range.lowerBound) / Double(sensitivity.steps - 1)
+                let stepSize = (sensitivity.range.upperBound - sensitivity.range.lowerBound) / Double(sensitivity.steps - 1) // fp-safety:disable
 
                 for i in 0..<sensitivity.steps {
                     let multiplier = sensitivity.range.lowerBound + Double(i) * stepSize

@@ -34,9 +34,9 @@ struct MultiWayANOVATests {
         let ssR = multi.sumOfSquares[Set(["r"])]
         let ssPR = multi.sumOfSquares[Set(["p", "r"])]
 
-        #expect(ssP != nil)
-        #expect(ssR != nil)
-        #expect(ssPR != nil)
+        #expect(ssP != nil) // TEST-QUALITY: existence check
+        #expect(ssR != nil) // TEST-QUALITY: existence check
+        #expect(ssPR != nil) // TEST-QUALITY: existence check
 
         #expect(abs(ssP! - twoWay.ssSubjects) < 1e-10)
         #expect(abs(ssR! - twoWay.ssRaters) < 1e-10)

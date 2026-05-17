@@ -39,7 +39,7 @@ public func generateRandomReturns(
 	mean: Double,
 	stdDev: Double
 ) -> VectorN<Double> {
-	var generator = SystemRandomNumberGenerator()
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt
 	return generateRandomReturns(count: count, mean: mean, stdDev: stdDev, using: &generator)
 }
 
@@ -124,7 +124,7 @@ public func generateCovarianceMatrix(
 ) -> [[Double]] {
 	// Generate random volatilities for each asset
 	let volatilities = (0..<size).map { _ in
-		Double.random(in: volatility.min...volatility.max)
+		Double.random(in: volatility.min...volatility.max) // stochastic:exempt
 	}
 
 	// Create covariance matrix: Cov(i,j) = ρ * σᵢ * σⱼ
@@ -140,7 +140,7 @@ public func generateCovarianceMatrix(
 		for j in (i+1)..<size {
 			// Off-diagonal: covariance = ρ * σᵢ * σⱼ
 			// Add small random variation to correlation
-			let correlation = avgCorrelation + Double.random(in: -0.05...0.05)
+			let correlation = avgCorrelation + Double.random(in: -0.05...0.05) // stochastic:exempt
 			let clampedCorrelation = max(0.0, min(1.0, correlation))
 			let covariance = clampedCorrelation * volatilities[i] * volatilities[j]
 
@@ -202,7 +202,7 @@ public func generateSparseCovarianceMatrix(
 ) -> [[Double]] {
 	// Generate random volatilities
 	let volatilities = (0..<size).map { _ in
-		Double.random(in: volatility.min...volatility.max)
+		Double.random(in: volatility.min...volatility.max) // stochastic:exempt
 	}
 
 	// Create matrix
@@ -226,7 +226,7 @@ public func generateSparseCovarianceMatrix(
 		for i in startIdx..<endIdx {
 			for j in (i+1)..<endIdx {
 				// Random correlation within cluster (0.2 to 0.5)
-				let correlation = Double.random(in: 0.20...0.50)
+				let correlation = Double.random(in: 0.20...0.50) // stochastic:exempt
 				let covariance = correlation * volatilities[i] * volatilities[j]
 				matrix[i][j] = covariance
 				matrix[j][i] = covariance  // Symmetric
@@ -309,7 +309,7 @@ public func sharpeRatio(
 
 	guard volatility > 0.0 else { return 0.0 }
 
-	return (expectedReturn - riskFreeRate) / volatility
+	return (expectedReturn - riskFreeRate) / volatility // fp-safety:disable — guarded above
 }
 
 // MARK: - Simplified Portfolio Utilities
@@ -369,7 +369,7 @@ public func generateRandomVolatilities(
 	maxVolatility: Double = 0.30
 ) -> VectorN<Double> {
 	let volatilities = (0..<count).map { _ in
-		Double.random(in: minVolatility...maxVolatility)
+		Double.random(in: minVolatility...maxVolatility) // stochastic:exempt
 	}
 	return VectorN(volatilities)
 }

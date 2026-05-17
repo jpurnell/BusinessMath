@@ -29,11 +29,16 @@ import Numerics
 /// interp(2.5)   // 4  (tie — resolves to lower index, xs[2] = 2)
 /// ```
 public struct NearestNeighborInterpolator<T: Real & Sendable & Codable>: Interpolator {
+    /// The scalar type for coordinates and values.
     public typealias Scalar = T
+    /// Input point type (1D scalar wrapped in ``Vector1D``).
     public typealias Point = Vector1D<T>
+    /// Output value type (scalar).
     public typealias Value = T
 
+    /// The number of input dimensions (always 1).
     public let inputDimension = 1
+    /// The number of output dimensions (always 1 for scalar output).
     public let outputDimension = 1
 
     /// Sample x-coordinates, strictly monotonically increasing.
@@ -67,6 +72,10 @@ public struct NearestNeighborInterpolator<T: Real & Sendable & Codable>: Interpo
         self.outOfBounds = outOfBounds
     }
 
+    /// Evaluate the interpolator at a wrapped query point.
+    ///
+    /// - Parameter query: The query point as a ``Vector1D``.
+    /// - Returns: The y-value of the nearest knot to the query.
     public func callAsFunction(at query: Vector1D<T>) -> T {
         callAsFunction(query.value)
     }

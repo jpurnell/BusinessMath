@@ -123,9 +123,11 @@ public struct StateRate {
 
 // MARK: - Taxes Model
 
-/// Tax model with corporate and state rates
+/// Tax model with corporate and state rates.
 public struct Taxes {
+    /// The federal corporate tax rate as a decimal (e.g., 0.21 for 21%).
     public let corporateRate: Double
+    /// The state tax rate as a decimal (e.g., 0.06 for 6%).
     public let stateRate: Double
 
     internal init(

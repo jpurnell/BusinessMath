@@ -274,13 +274,13 @@ public func fitRandomIntercept<T: Real>(
 
 // MARK: - Internal Helpers
 
-private struct GLSResult<T: Real> {
+private struct GLSResult<T: Real & Sendable> {
 	let beta: [T]
 	let remlLogLik: T
 }
 
 /// OLS estimate: beta = (X'X)^{-1} X'y
-private func olsEstimate<T: Real>(
+private func olsEstimate<T: Real & Sendable>(
 	xData: [[T]], y: [T], N: Int, p: Int
 ) throws -> [T] where T: BinaryFloatingPoint {
 	// X'X
@@ -302,7 +302,7 @@ private func olsEstimate<T: Real>(
 ///
 /// Uses the closed-form V_i^{-1} for compound symmetry:
 /// V_i^{-1} = (1/sigmaE2) * [I - (sigmaU2 / (sigmaE2 + ni*sigmaU2)) * J]
-private func glsEstimate<T: Real>(
+private func glsEstimate<T: Real & Sendable>(
 	xData: [[T]], y: [T], N: Int, p: Int, m: Int,
 	ni: [Int], groupIdx: [[Int]],
 	sigmaU2: T, sigmaE2: T
@@ -387,13 +387,13 @@ private func glsEstimate<T: Real>(
 	return GLSResult(beta: beta, remlLogLik: logLik)
 }
 
-private struct FisherUpdate<T: Real> {
+private struct FisherUpdate<T: Real & Sendable> {
 	let deltaSigmaE2: T
 	let deltaSigmaU2: T
 }
 
 /// Fisher scoring update for (sigma_e², sigma_u²).
-private func fisherScoringUpdate<T: Real>(
+private func fisherScoringUpdate<T: Real & Sendable>(
 	resid: [T], m: Int, ni: [Int], groupIdx: [[Int]],
 	sigmaU2: T, sigmaE2: T, N: Int
 ) -> FisherUpdate<T> where T: BinaryFloatingPoint {
@@ -460,7 +460,7 @@ private func fisherScoringUpdate<T: Real>(
 }
 
 /// Standard errors of fixed effects: sqrt(diag((X'V^{-1}X)^{-1}))
-private func fixedEffectsSE<T: Real>(
+private func fixedEffectsSE<T: Real & Sendable>(
 	xData: [[T]], N: Int, p: Int, m: Int,
 	ni: [Int], groupIdx: [[Int]],
 	sigmaU2: T, sigmaE2: T

@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import CompilerPluginSupport
@@ -44,6 +44,10 @@ var dependencies: [Package.Dependency] = [
 	.package(
 		url: "https://github.com/apple/swift-collections.git",
 		from: "1.1.0"
+	),
+	.package(
+		url: "https://github.com/swiftlang/swift-docc-plugin",
+		from: "1.4.3"
 	)
 ]
 
@@ -116,7 +120,7 @@ var targets: [Target] = [
 	// Test Support (cross-platform utilities)
 	.target(
 		name: "TestSupport",
-		dependencies: [],
+		dependencies: ["BusinessMath"],
 		path: "Tests/TestSupport"
 	),
 

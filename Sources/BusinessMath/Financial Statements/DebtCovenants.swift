@@ -532,7 +532,7 @@ public func calculateInterestCoverage<T: Real & Sendable>(
     }
 
     guard abs(interestExpense) > 0.001 else { return Double.infinity }
-    let ratio: Double = operatingIncome / interestExpense
+    let ratio: Double = operatingIncome / interestExpense // fp-safety:disable
     return ratio
 }
 

@@ -37,7 +37,7 @@ struct BranchAndCutRobustnessTests {
 
         // Cuts should be generated if fractional basic variables exist
         // Note: Cut generation depends on simplex basis structure
-        #expect(result.cuttingPlaneStats != nil)
+        #expect(result.cuttingPlaneStats != nil) // TEST-QUALITY: existence check
         #expect(result.cuttingPlaneStats!.totalCutsGenerated >= 0)
     }
 

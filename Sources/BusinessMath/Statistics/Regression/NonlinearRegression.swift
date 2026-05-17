@@ -178,7 +178,7 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 
 		for _ in 0..<n {
 			// Generate x uniformly
-			let u = T(Double.random(in: 0...1))
+			let u = T(Double.random(in: 0...1)) // stochastic:exempt
 			let x = xRange.lowerBound + u * (xRange.upperBound - xRange.lowerBound)
 
 			// Compute mean response
@@ -186,9 +186,9 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 
 			// Generate y from Normal(mu, sigma)
 			let y: T
-			if T.self == Double.self {
+			if T.self == Double.self { // fp-safety:disable
 				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma)))
-			} else if T.self == Float.self {
+			} else if T.self == Float.self { // fp-safety:disable
 				y = T(Float(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma))))
 			} else {
 				// Fallback for other Real types
@@ -210,7 +210,7 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 		xValues.map { x in
 			let mu = ReciprocalRegressionModel.predictedMean(x: x, params: parameters)
 			let y: T
-			if T.self == Double.self {
+			if T.self == Double.self { // fp-safety:disable
 				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma)))
 			} else {
 				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma)))

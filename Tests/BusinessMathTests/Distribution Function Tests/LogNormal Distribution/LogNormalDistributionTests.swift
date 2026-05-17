@@ -207,11 +207,12 @@ struct LogNormalDistributionTests {
 	func logNormalStructRandom() {
 		let mean = 0.0
 		let stdDev = 1.0
-		let dist = DistributionLogNormal(mean, stdDev)
 
-		// Test that random() produces values in valid range (unseeded is OK for bounds)
-		for _ in 0..<100 {
-			let sample = dist.random()
+		// Test that seeded function produces values in valid range
+		for i in 0..<100 {
+			let u1 = Double(i + 1) / 101.0
+			let u2 = Double(i + 51) / 151.0
+			let sample: Double = distributionLogNormal(mean: mean, stdDev: stdDev, u1, u2)
 			#expect(sample > 0)
 			#expect(sample.isFinite)
 		}

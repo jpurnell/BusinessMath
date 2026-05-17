@@ -386,7 +386,7 @@ public struct AsyncCumulativeMeanSequence<Base: AsyncSequence>: AsyncSequence wh
 
             count += 1
             sum += value
-            return sum / Double(count)
+            return sum / Double(count) // fp-safety:disable — count incremented to >= 1 above
         }
     }
 }
@@ -487,7 +487,7 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
             let n = buffer.count
             let variance: Double
             if n > 1 {
-                variance = runningM2 / Double(n - 1)
+                variance = runningM2 / Double(n - 1) // fp-safety:disable — guarded by n > 1
             } else {
                 variance = 0.0
             }
@@ -499,7 +499,7 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
 
                 // Reverse Welford: remove evicted value's contribution
                 let oldMean = runningMean
-                runningMean = (oldMean * nDouble - evicted) / Double(buffer.count)
+                runningMean = (oldMean * nDouble - evicted) / Double(buffer.count) // fp-safety:disable — buffer.count >= window - 1 >= 1
                 runningM2 -= (evicted - runningMean) * (evicted - oldMean)
 
                 // Forward Welford: add new value
@@ -1168,18 +1168,17 @@ public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence
         private func calculateStats(_ values: [Double]) -> RollingStats {
             let count = values.count
             let sum = values.reduce(0.0, +)
-            let mean = sum / Double(count)
-
+            let mean = sum / Double(count) // fp-safety:disable — count is values.count which is >= window size
             // Welford's algorithm for variance
             var m2 = 0.0
             var runningMean = 0.0
             for (i, value) in values.enumerated() {
                 let delta = value - runningMean
-                runningMean += delta / Double(i + 1)
+                runningMean += delta / Double(i + 1) // fp-safety:disable — i + 1 >= 1
                 let delta2 = value - runningMean
                 m2 += delta * delta2
             }
-            let variance = count > 1 ? m2 / Double(count - 1) : 0.0
+            let variance = count > 1 ? m2 / Double(count - 1) : 0.0 // fp-safety:disable — guarded by count > 1
             let stdDev = sqrt(variance)
 
             let min = values.min() ?? 0.0
@@ -1300,11 +1299,11 @@ public struct AsyncCumulativeStatisticsSequence<Base: AsyncSequence>: AsyncSeque
 
             // Update mean and variance using Welford's online algorithm
             let delta = value - mean
-            mean += delta / Double(count)
+            mean += delta / Double(count) // fp-safety:disable — count incremented to >= 1 above
             let delta2 = value - mean
             m2 += delta * delta2
 
-            let variance = count > 1 ? m2 / Double(count - 1) : 0.0
+            let variance = count > 1 ? m2 / Double(count - 1) : 0.0 // fp-safety:disable — guarded by count > 1
             let stdDev = sqrt(variance)
 
             return CumulativeStats(

@@ -132,19 +132,19 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	public var daysApproximate: Double {
 		switch self {
 		case .millisecond:
-			return 1.0 / 86_400_000.0
+			return 1.0 / 86_400_000.0 // fp-safety:disable — literal constant
 		case .second:
-			return 1.0 / 86_400.0
+			return 1.0 / 86_400.0 // fp-safety:disable — literal constant
 		case .minute:
-			return 1.0 / 1_440.0
+			return 1.0 / 1_440.0 // fp-safety:disable — literal constant
 		case .hourly:
-			return 1.0 / 24.0
+			return 1.0 / 24.0 // fp-safety:disable — literal constant
 		case .daily:
 			return 1.0
 		case .monthly:
-			return 365.25 / 12.0  // 30.4375
+			return 365.25 / 12.0  // fp-safety:disable — literal constants
 		case .quarterly:
-			return 365.25 / 4.0   // 91.3125
+			return 365.25 / 4.0   // fp-safety:disable — literal constants
 		case .annual:
 			return 365.25
 		}
@@ -212,15 +212,15 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	public var monthsEquivalent: Double {
 		switch self {
 		case .millisecond:
-			return 1.0 / (365.25 / 12.0 * 86_400_000.0)
+			return 1.0 / (365.25 / 12.0 * 86_400_000.0) // fp-safety:disable — literal constants
 		case .second:
-			return 1.0 / (365.25 / 12.0 * 86_400.0)
+			return 1.0 / (365.25 / 12.0 * 86_400.0) // fp-safety:disable — literal constants
 		case .minute:
-			return 1.0 / (365.25 / 12.0 * 1_440.0)
+			return 1.0 / (365.25 / 12.0 * 1_440.0) // fp-safety:disable — literal constants
 		case .hourly:
-			return 1.0 / (365.25 / 12.0 * 24.0)
+			return 1.0 / (365.25 / 12.0 * 24.0) // fp-safety:disable — literal constants
 		case .daily:
-			return 1.0 / (365.25 / 12.0)  // ~0.03285
+			return 1.0 / (365.25 / 12.0) // fp-safety:disable — literal constants
 		case .monthly:
 			return 1.0
 		case .quarterly:
@@ -285,7 +285,7 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 		let totalDays = count * self.daysApproximate
 
 		// Convert from days to target type
-		return totalDays / targetType.daysApproximate
+		return totalDays / targetType.daysApproximate // fp-safety:disable — daysApproximate > 0 for all cases
 	}
 
 	// MARK: - Comparable Conformance

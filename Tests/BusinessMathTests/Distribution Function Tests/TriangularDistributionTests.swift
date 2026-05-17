@@ -237,11 +237,11 @@ struct TriangularDistributionTests {
 		let low = 5.0
 		let high = 15.0
 		let base = 10.0
-		let dist = DistributionTriangular(low: low, high: high, base: base)
 
-		// Test that random() produces values in valid range (unseeded is OK for bounds)
-		for _ in 0..<100 {
-			let sample = dist.random()
+		// Test that seeded function produces values in valid range
+		for i in 0..<100 {
+			let seed = Double(i + 1) / 101.0
+			let sample: Double = triangularDistribution(low: low, high: high, base: base, seed)
 			#expect(sample >= low)
 			#expect(sample <= high)
 			#expect(sample.isFinite)

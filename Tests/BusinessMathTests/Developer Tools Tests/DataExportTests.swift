@@ -106,11 +106,11 @@ import RealModule
 
         // And: Should be parseable JSON
         let jsonData = jsonOutput.data(using: .utf8)
-        #expect(jsonData != nil, "Should produce valid UTF-8 data")
+        #expect(jsonData != nil, "Should produce valid UTF-8 data") // TEST-QUALITY: existence check
 
         if let jsonData = jsonData {
             let parsed = try? JSONSerialization.jsonObject(with: jsonData)
-            #expect(parsed != nil, "Should be valid JSON")
+            #expect(parsed != nil, "Should be valid JSON") // TEST-QUALITY: existence check
         }
 
         // And: Should include model data
@@ -135,11 +135,11 @@ import RealModule
         #expect(!jsonOutput.isEmpty, "JSON output should not be empty")
 
         let jsonData = jsonOutput.data(using: .utf8)
-        #expect(jsonData != nil)
+        #expect(jsonData != nil) // TEST-QUALITY: existence check
 
         if let jsonData = jsonData {
             let parsed = try? JSONSerialization.jsonObject(with: jsonData)
-            #expect(parsed != nil, "Should be valid JSON")
+            #expect(parsed != nil, "Should be valid JSON") // TEST-QUALITY: existence check
         }
 
         // And: Should include period and value data

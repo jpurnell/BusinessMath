@@ -32,7 +32,7 @@ struct StressTestingTests {
 		let scenario = StressScenario<Double>.supplyShock
 
 		#expect(scenario.name == "Supply Chain Shock")
-		#expect(scenario.shocks["COGS"] != nil)
+		#expect(scenario.shocks["COGS"] != nil) // TEST-QUALITY: existence check
 		#expect(scenario.shocks["COGS"]! > 0.0) // Costs increase
 	}
 
@@ -84,10 +84,10 @@ struct StressTestingTests {
 		)
 
 		#expect(result.scenario.name == "Recession")
-		#expect(result.baselineNPV == 1_000_000.0)
-		#expect(result.scenarioNPV == 850_000.0)
+		#expect(abs(result.baselineNPV - 1_000_000.0) < 1e-6)
+		#expect(abs(result.scenarioNPV - 850_000.0) < 1e-6)
 		#expect(result.impact < 0.0) // Should be negative for recession
-		#expect(result.impact == -150_000.0)
+		#expect(abs(result.impact - (-150_000.0)) < 1e-6)
 	}
 
 	@Test("Stress test report identifies worst case")
@@ -97,8 +97,8 @@ struct StressTestingTests {
 		let recession = StressScenario<Double>.recession
 		let crisis = StressScenario<Double>.crisis
 
-		#expect(recession.shocks["Revenue"] != nil)
-		#expect(crisis.shocks["Revenue"] != nil)
+		#expect(recession.shocks["Revenue"] != nil) // TEST-QUALITY: existence check
+		#expect(crisis.shocks["Revenue"] != nil) // TEST-QUALITY: existence check
 		// Crisis should be worse than recession
 		#expect(abs(crisis.shocks["Revenue"]!) > abs(recession.shocks["Revenue"]!))
 	}

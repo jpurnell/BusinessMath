@@ -70,11 +70,11 @@ struct HedgingProgramTests {
 		let totalSettlements = program.totalSettlements(realizedPrices: spotPrices)
 
 		// spot=55: payoff = (60-55) * 10000 = 50000
-		#expect(totalSettlements[periods[0]] == 50_000.0)
+		#expect(abs((totalSettlements[periods[0]] ?? .nan) - 50_000.0) < 1e-6)
 		// spot=70: payoff = 0 (in the range)
-		#expect(abs((totalSettlements[periods[1]] ?? 0) - 0.0) < 1e-6)
+		#expect(abs((totalSettlements[periods[1]] ?? .nan) - 0.0) < 1e-6)
 		// spot=85: payoff = -(85-80) * 10000 = -50000
-		#expect(totalSettlements[periods[2]] == -50_000.0)
+		#expect(abs((totalSettlements[periods[2]] ?? .nan) - (-50_000.0)) < 1e-6)
 	}
 
 	// MARK: - Multi-Instrument
@@ -108,11 +108,11 @@ struct HedgingProgramTests {
 		let totalSettlements = program.totalSettlements(realizedPrices: spotPrices)
 
 		// Period 1 (spot=68): swap = (72-68)*5000 = 20000, collar = 0 (in range) => 20000
-		#expect(totalSettlements[periods[0]] == 20_000.0)
+		#expect(abs((totalSettlements[periods[0]] ?? .nan) - 20_000.0) < 1e-6)
 		// Period 2 (spot=70): swap = (72-70)*5000 = 10000, collar = 0 => 10000
-		#expect(totalSettlements[periods[1]] == 10_000.0)
+		#expect(abs((totalSettlements[periods[1]] ?? .nan) - 10_000.0) < 1e-6)
 		// Period 3 (spot=76): swap = (72-76)*5000 = -20000, collar = 0 => -20000
-		#expect(totalSettlements[periods[2]] == -20_000.0)
+		#expect(abs((totalSettlements[periods[2]] ?? .nan) - (-20_000.0)) < 1e-6)
 	}
 
 	// MARK: - Coverage Ratio
@@ -138,7 +138,7 @@ struct HedgingProgramTests {
 
 		for period in periods {
 			let value = ratio[period]
-			#expect(value != nil)
+			#expect(value != nil) // TEST-QUALITY: existence check
 			if let value {
 				#expect(abs(value - (10_000.0 / 15_000.0)) < 1e-10)
 			}

@@ -622,15 +622,15 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
             // Estimate process standard deviation
             let sigma: Double
             if values.count >= 2 {
-                let mean = values.reduce(0.0, +) / Double(values.count)
-                let variance = values.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(values.count - 1)
+                let mean = values.reduce(0.0, +) / Double(values.count) // fp-safety:disable — guarded by values.count >= 2
+                let variance = values.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(values.count - 1) // fp-safety:disable — guarded by values.count >= 2
                 sigma = sqrt(variance)
             } else {
                 sigma = 1.0  // Default until we have enough data
             }
 
             // Control limits: target ± L * σ * sqrt(λ/(2-λ))
-            let limitFactor = controlLimitSigma * sigma * sqrt(lambda / (2.0 - lambda))
+            let limitFactor = controlLimitSigma * sigma * sqrt(lambda / (2.0 - lambda)) // fp-safety:disable — lambda in (0,1] so (2-lambda) in [1,2)
             let ucl = target + limitFactor
             let lcl = target - limitFactor
 
@@ -769,11 +769,11 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
                 return OutlierDetection(value: value, score: 0.0, isOutlier: false, method: "z-score", index: index)
             }
 
-            let mean = buffer.reduce(0.0, +) / Double(buffer.count)
-            let variance = buffer.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(buffer.count - 1)
+            let mean = buffer.reduce(0.0, +) / Double(buffer.count) // fp-safety:disable — guarded by buffer.count >= 2
+            let variance = buffer.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(buffer.count - 1) // fp-safety:disable — guarded by buffer.count >= 2
             let stdDev = sqrt(variance)
 
-            let zScore = stdDev > 0 ? abs(value - mean) / stdDev : 0.0
+            let zScore = stdDev > 0 ? abs(value - mean) / stdDev : 0.0 // fp-safety:disable — guarded by stdDev > 0
             let isOutlier = zScore > threshold
 
             return OutlierDetection(value: value, score: zScore, isOutlier: isOutlier, method: "z-score", index: index)
@@ -795,7 +795,7 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
             let upperBound = q3 + multiplier * iqr
 
             let isOutlier = value < lowerBound || value > upperBound
-            let score = iqr > 0 ? Swift.min(abs(value - q1), abs(value - q3)) / iqr : 0.0
+            let score = iqr > 0 ? Swift.min(abs(value - q1), abs(value - q3)) / iqr : 0.0 // fp-safety:disable — guarded by iqr > 0
 
             return OutlierDetection(value: value, score: score, isOutlier: isOutlier, method: "iqr", index: index)
         }
@@ -811,7 +811,7 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
             let mad = calculateMedian(deviations)
 
             // Modified Z-score: M_i = 0.6745 * (x_i - median) / MAD
-            let modifiedZScore = mad > 0 ? 0.6745 * abs(value - median) / mad : 0.0
+            let modifiedZScore = mad > 0 ? 0.6745 * abs(value - median) / mad : 0.0 // fp-safety:disable — guarded by mad > 0
             let isOutlier = modifiedZScore > threshold
 
             return OutlierDetection(value: value, score: modifiedZScore, isOutlier: isOutlier, method: "mad", index: index)
@@ -1015,7 +1015,7 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
             }
 
             let segment = Array(values[start..<end])
-            let segmentMean = segment.reduce(0.0, +) / Double(segment.count)
+            let segmentMean = segment.reduce(0.0, +) / Double(segment.count) // fp-safety:disable — guarded by end - start >= 2 * minSize
             let totalCost = segment.map { pow($0 - segmentMean, 2) }.reduce(0.0, +)
 
             var bestBreakpoint: Breakpoint?
@@ -1025,8 +1025,8 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
                 let left = Array(values[start..<i])
                 let right = Array(values[i..<end])
 
-                let leftMean = left.reduce(0.0, +) / Double(left.count)
-                let rightMean = right.reduce(0.0, +) / Double(right.count)
+                let leftMean = left.reduce(0.0, +) / Double(left.count) // fp-safety:disable — left.count >= minSize
+                let rightMean = right.reduce(0.0, +) / Double(right.count) // fp-safety:disable — right.count >= minSize
 
                 let leftCost = left.map { pow($0 - leftMean, 2) }.reduce(0.0, +)
                 let rightCost = right.map { pow($0 - rightMean, 2) }.reduce(0.0, +)
@@ -1202,11 +1202,11 @@ public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence w
                 }
 
                 if !seasonalValues.isEmpty {
-                    let mean = seasonalValues.reduce(0.0, +) / Double(seasonalValues.count)
+                    let mean = seasonalValues.reduce(0.0, +) / Double(seasonalValues.count) // fp-safety:disable — guarded by !seasonalValues.isEmpty
                     seasonalMeans[seasonIndex] = mean
 
                     if seasonalValues.count >= 2 {
-                        let variance = seasonalValues.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(seasonalValues.count - 1)
+                        let variance = seasonalValues.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(seasonalValues.count - 1) // fp-safety:disable — guarded by seasonalValues.count >= 2
                         seasonalStdDevs[seasonIndex] = sqrt(variance)
                     }
                 }
@@ -1330,7 +1330,7 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             }
 
             // Normalize composite score to 0-1 range
-            let compositeScore = methods.isEmpty ? 0.0 : Swift.min(1.0, totalScore / Double(methods.count) / 3.0)
+            let compositeScore = methods.isEmpty ? 0.0 : Swift.min(1.0, totalScore / Double(methods.count) / 3.0) // fp-safety:disable — guarded by methods.isEmpty check
 
             let result = CompositeAnomalyScore(
                 value: value,
@@ -1345,10 +1345,10 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
 
         private func calculateZScore(value: Double) -> Double {
             guard buffer.count >= 2 else { return 0.0 }
-            let mean = buffer.reduce(0.0, +) / Double(buffer.count)
-            let variance = buffer.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(buffer.count - 1)
+            let mean = buffer.reduce(0.0, +) / Double(buffer.count) // fp-safety:disable — guarded by buffer.count >= 2
+            let variance = buffer.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(buffer.count - 1) // fp-safety:disable — guarded by buffer.count >= 2
             let stdDev = sqrt(variance)
-            return stdDev > 0 ? abs(value - mean) / stdDev : 0.0
+            return stdDev > 0 ? abs(value - mean) / stdDev : 0.0 // fp-safety:disable — guarded by stdDev > 0
         }
 
         private func calculateIQRScore(value: Double) -> Double {
@@ -1357,7 +1357,7 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             let q1 = sorted[sorted.count / 4]
             let q3 = sorted[3 * sorted.count / 4]
             let iqr = q3 - q1
-            return iqr > 0 ? Swift.min(abs(value - q1), abs(value - q3)) / iqr : 0.0
+            return iqr > 0 ? Swift.min(abs(value - q1), abs(value - q3)) / iqr : 0.0 // fp-safety:disable — guarded by iqr > 0
         }
 
         private func calculateMADScore(value: Double) -> Double {
@@ -1365,7 +1365,7 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             let median = calculateMedian(buffer)
             let deviations = buffer.map { abs($0 - median) }
             let mad = calculateMedian(deviations)
-            return mad > 0 ? 0.6745 * abs(value - median) / mad : 0.0
+            return mad > 0 ? 0.6745 * abs(value - median) / mad : 0.0 // fp-safety:disable — guarded by mad > 0
         }
 
         private func calculateMedian(_ values: [Double]) -> Double {

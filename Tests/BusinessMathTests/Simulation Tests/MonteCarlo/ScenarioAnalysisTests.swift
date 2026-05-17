@@ -72,7 +72,7 @@ struct ScenarioAnalysisTests {
 		let results = try analysis.run()
 
 		#expect(results.count == 1)
-		#expect(results["Base Case"] != nil)
+		#expect(results["Base Case"] != nil) // TEST-QUALITY: existence check
 
 		let baseCaseResults = results["Base Case"]!
 		// Mean should be exactly 300,000 (deterministic inputs: 1,000,000 - 700,000)
@@ -486,8 +486,8 @@ struct ScenarioAnalysisTests {
 		let summary = comparison.summaryTable(metrics: [.mean, .median, .stdDev])
 
 		#expect(summary.count == 2)
-		#expect(summary["S1"] != nil)
-		#expect(summary["S2"] != nil)
+		#expect(summary["S1"] != nil) // TEST-QUALITY: existence check
+		#expect(summary["S2"] != nil) // TEST-QUALITY: existence check
 
 		let s1Summary = summary["S1"]!
 		#expect(s1Summary.count == 3)  // mean, p50, stdDev
@@ -507,8 +507,8 @@ struct ScenarioAnalysisTests {
 		#expect(totalInputs == 4)
 		#expect(abs((scenario.inputValues["Revenue"] ?? 0) - 1_000_000.0) < 1e-2)
 		#expect(abs((scenario.inputValues["TaxRate"] ?? 0) - 0.3) < 1e-6)
-		#expect(scenario.inputDistributions["Costs"] != nil)
-		#expect(scenario.inputDistributions["GrowthRate"] != nil)
+		#expect(scenario.inputDistributions["Costs"] != nil) // TEST-QUALITY: existence check
+		#expect(scenario.inputDistributions["GrowthRate"] != nil) // TEST-QUALITY: existence check
 	}
 
 	@Test("ScenarioAnalysis error - missing input configuration")

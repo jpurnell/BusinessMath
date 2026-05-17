@@ -252,7 +252,7 @@ struct IntegrationTests {
 		#expect(beatsHurdleRate)
 
 		// Payback should occur (not nil)
-		#expect(payback != nil)
+		#expect(payback != nil) // TEST-QUALITY: existence check
 
 		// Discounted payback may be nil if not reached within period
 		// (these are irregular cash flows, so it's OK if one metric doesn't apply)

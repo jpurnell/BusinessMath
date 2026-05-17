@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 @Suite("Portfolio Optimization Tests")
@@ -8,22 +9,23 @@ struct PortfolioTests {
 	// MARK: - Helper Functions
 
 	func makeTestReturns() -> (assets: [String], returns: [TimeSeries<Double>]) {
+		var gen = DeterministicGenerator(seed: 42)
 		// Create sample return data for 3 assets
 		let periods = (0..<120).map { Period.month(year: 2014 + $0 / 12, month: $0 % 12 + 1) }
 
 		// Stock: 8% avg, high volatility
-		let stockReturns = (0..<120).map { i in
-			0.08 / 12.0 + Double.random(in: -0.03...0.03)
+		let stockReturns = (0..<120).map { _ in
+			0.08 / 12.0 + gen.nextDouble(in: -0.03...0.03)
 		}
 
 		// Bond: 4% avg, low volatility
-		let bondReturns = (0..<120).map { i in
-			0.04 / 12.0 + Double.random(in: -0.01...0.01)
+		let bondReturns = (0..<120).map { _ in
+			0.04 / 12.0 + gen.nextDouble(in: -0.01...0.01)
 		}
 
 		// Commodity: 6% avg, medium volatility
-		let commodityReturns = (0..<120).map { i in
-			0.06 / 12.0 + Double.random(in: -0.02...0.02)
+		let commodityReturns = (0..<120).map { _ in
+			0.06 / 12.0 + gen.nextDouble(in: -0.02...0.02)
 		}
 
 		return (

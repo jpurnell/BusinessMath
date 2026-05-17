@@ -414,9 +414,9 @@ struct MultiPeriodReportTests {
 
 		// All should have values (not nil)
 		for i in 0..<4 {
-			#expect(peRatios[i] != nil)
-			#expect(pbRatios[i] != nil)
-			#expect(psRatios[i] != nil)
+			#expect(peRatios[i] != nil) // TEST-QUALITY: existence check
+			#expect(pbRatios[i] != nil) // TEST-QUALITY: existence check
+			#expect(psRatios[i] != nil) // TEST-QUALITY: existence check
 		}
 	}
 
@@ -439,7 +439,7 @@ struct MultiPeriodReportTests {
 		let report = try MultiPeriodReport(entity: entity, periodSummaries: summaries)
 
 		let q2Summary = report[quarters[1]]
-		#expect(q2Summary != nil)
+		#expect(q2Summary != nil) // TEST-QUALITY: existence check
 		#expect(q2Summary?.period == quarters[1])
 	}
 
@@ -596,7 +596,7 @@ struct MultiPeriodReportTests {
 		)
 
 		#expect(report.periodCount == 4)
-		#expect(report.annualSummary != nil)
+		#expect(report.annualSummary != nil) // TEST-QUALITY: existence check
 		#expect(report.annualSummary?.period == annualPeriod)
 	}
 

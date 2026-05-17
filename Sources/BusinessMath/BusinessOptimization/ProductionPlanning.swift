@@ -345,7 +345,7 @@ public struct ProductionPlanningOptimizer {
 					revenue += product.pricePerUnit * quantity
 					costs += product.variableCostPerUnit * quantity
 				}
-				return revenue > 0 ? (revenue - costs) / revenue : 0
+				return revenue > 0 ? (revenue - costs) / revenue : 0 // fp-safety:disable — guarded inline
 			}
 
 		case .minimizeCosts:
@@ -361,6 +361,7 @@ public struct ProductionPlanningOptimizer {
 			return { quantities in
 				var totalUtilization = 0.0
 				let resourceCount = resources.count
+				guard resourceCount > 0 else { return 0 }
 
 				for (resource, capacity) in resources {
 					var used = 0.0
@@ -371,7 +372,7 @@ public struct ProductionPlanningOptimizer {
 					totalUtilization += (capacity > 0) ? (used / capacity) : 0
 				}
 
-				return totalUtilization / Double(resourceCount)
+				return totalUtilization / Double(resourceCount) // fp-safety:disable — resourceCount > 0 from guard above
 			}
 		}
 	}

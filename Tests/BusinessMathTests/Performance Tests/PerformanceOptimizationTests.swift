@@ -61,7 +61,7 @@ import RealModule
         let start = Date()
         for _ in 0..<1000 {
             let profit = model.calculateProfit()
-            #expect(profit != 0)
+            #expect(profit != 0) // TEST-QUALITY: nonzero check
         }
         let elapsed = Date().timeIntervalSince(start)
         #expect(elapsed < 1.0, "Should complete 1000 calculations in < 1s (got \((elapsed * 1000).number(2))ms)")
@@ -301,7 +301,7 @@ import RealModule
         }
         let elapsed = Date().timeIntervalSince(start)
 
-        #expect(totalProfit != 0)
+        #expect(totalProfit != 0) // TEST-QUALITY: nonzero check
         #expect(elapsed < 0.01, "Should complete 100 calculations in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Summary Generation Performance
@@ -451,6 +451,6 @@ struct ExporterEquivalenceTests {
 
 		let data = Data(json.utf8)
 		let obj = try? JSONSerialization.jsonObject(with: data, options: [])
-		#expect(obj != nil, "JSON export should produce parseable JSON.")
+		#expect(obj != nil, "JSON export should produce parseable JSON.") // TEST-QUALITY: existence check
 	}
 }

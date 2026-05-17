@@ -441,7 +441,7 @@ public func fitRandomSlope<T: Real>(
 // MARK: - Internal Helpers
 
 /// Build V_i = Z_i G Z_i' + sigmaE2 * I for a single group.
-private func buildVi<T: Real>(
+private func buildVi<T: Real & Sendable>(
 	zi: [[T]], g00: T, g11: T, g01: T, sigmaE2: T, nig: Int
 ) throws -> [[T]] where T: BinaryFloatingPoint {
 	// Z_i is nig x 2, G is 2x2
@@ -466,13 +466,13 @@ private func buildVi<T: Real>(
 	return vi
 }
 
-private struct SlopeGLSResult<T: Real> {
+private struct SlopeGLSResult<T: Real & Sendable> {
 	let beta: [T]
 	let remlLogLik: T
 }
 
 /// OLS estimate: beta = (X'X)^{-1} X'y
-private func slopeOLSEstimate<T: Real>(
+private func slopeOLSEstimate<T: Real & Sendable>(
 	xData: [[T]], y: [T], N: Int, p: Int
 ) throws -> [T] where T: BinaryFloatingPoint {
 	var xtx = Array(repeating: Array(repeating: T.zero, count: p), count: p)
@@ -493,7 +493,7 @@ private func slopeOLSEstimate<T: Real>(
 ///
 /// Builds per-group V_i = Z_i G Z_i' + sigma_e² I, inverts via Cholesky,
 /// then computes beta = (X'V^{-1}X)^{-1} X'V^{-1}y and the REML criterion.
-private func slopeGLSEstimate<T: Real>(
+private func slopeGLSEstimate<T: Real & Sendable>(
 	xData: [[T]], y: [T], zSlope: [T], N: Int, p: Int, m: Int,
 	ni: [Int], groupIdx: [[Int]],
 	g00: T, g11: T, g01: T, sigmaE2: T
@@ -586,7 +586,7 @@ private func slopeGLSEstimate<T: Real>(
 	return SlopeGLSResult(beta: beta, remlLogLik: logLik)
 }
 
-private struct SlopeEMResult<T: Real> {
+private struct SlopeEMResult<T: Real & Sendable> {
 	let sigmaE2: T
 	let g00: T
 	let g11: T
@@ -597,7 +597,7 @@ private struct SlopeEMResult<T: Real> {
 ///
 /// Guarantees monotone log-likelihood improvement. Used for warm-up
 /// iterations before switching to the faster AI-REML algorithm.
-private func slopeEMUpdate<T: Real>(
+private func slopeEMUpdate<T: Real & Sendable>(
 	resid: [T], zSlope: [T], m: Int, ni: [Int], groupIdx: [[Int]],
 	g00: T, g11: T, g01: T, sigmaE2: T, N: Int
 ) throws -> SlopeEMResult<T> where T: BinaryFloatingPoint {
@@ -682,12 +682,12 @@ private func slopeEMUpdate<T: Real>(
 		g01: sumG[0][1] / T(m))
 }
 
-private struct SlopeAIREMLResult<T: Real> {
+private struct SlopeAIREMLResult<T: Real & Sendable> {
 	let score: [T]     // 4-vector: d(logLik)/d(sigmaE2, g00, g11, g01)
 	let ai: [[T]]      // 4x4 average information matrix
 }
 
-private struct SlopeGroupCache<T: Real> {
+private struct SlopeGroupCache<T: Real & Sendable> {
 	let viInv: DenseMatrix<T>
 	let viInvR: [T]
 	let viInvXi: DenseMatrix<T>
@@ -711,7 +711,7 @@ private struct SlopeGroupCache<T: Real> {
 /// ```
 ///
 /// where P = V^{-1} - V^{-1} X (X'V^{-1}X)^{-1} X' V^{-1}.
-private func slopeAIREMLUpdate<T: Real>(
+private func slopeAIREMLUpdate<T: Real & Sendable>(
 	resid: [T], xData: [[T]], zSlope: [T],
 	m: Int, ni: [Int], groupIdx: [[Int]],
 	g00: T, g11: T, g01: T, sigmaE2: T,
@@ -950,7 +950,7 @@ private func slopeAIREMLUpdate<T: Real>(
 }
 
 /// Standard errors of fixed effects: sqrt(diag((X'V^{-1}X)^{-1}))
-private func slopeFixedEffectsSE<T: Real>(
+private func slopeFixedEffectsSE<T: Real & Sendable>(
 	xData: [[T]], zSlope: [T], N: Int, p: Int, m: Int,
 	ni: [Int], groupIdx: [[Int]],
 	g00: T, g11: T, g01: T, sigmaE2: T

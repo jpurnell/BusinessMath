@@ -30,10 +30,11 @@ struct AnomalyDetectionTests {
 		let periods = (0..<100).map { Period.day(Date(timeIntervalSince1970: Double($0 * 86400))) }
 		var values: [Double] = []
 		var seq = Deterministic01(seed: seed)
-		let dist = DistributionUniform(-5.0, 5.0)
 
 		for _ in 0..<100 {
-			let jitter = dist.random(seq.next())
+			// Inline uniform mapping: [0,1) -> [-5, 5]
+			let u = seq.next()
+			let jitter = u * 10.0 - 5.0
 			values.append(100.0 + jitter)
 		}
 		return TimeSeries(periods: periods, values: values)
@@ -43,7 +44,6 @@ struct AnomalyDetectionTests {
 		let periods = (0..<100).map { Period.day(Date(timeIntervalSince1970: Double($0 * 86400))) }
 		var values: [Double] = []
 		var seq = Deterministic01(seed: seed)
-		let dist = DistributionUniform(-5.0, 5.0)
 
 		for i in 0..<100 {
 			if i == 50 {
@@ -51,7 +51,9 @@ struct AnomalyDetectionTests {
 			} else if i == 75 {
 				values.append(50.0)
 			} else {
-				let jitter = dist.random(seq.next())
+				// Inline uniform mapping: [0,1) -> [-5, 5]
+				let u = seq.next()
+				let jitter = u * 10.0 - 5.0
 				values.append(100.0 + jitter)
 			}
 		}

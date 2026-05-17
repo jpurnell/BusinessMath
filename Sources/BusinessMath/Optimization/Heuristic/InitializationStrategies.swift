@@ -112,7 +112,7 @@ public struct RandomInitialization: CentroidInitialization {
 		if let seed = seed {
 			rng = SeededRandomNumberGenerator(seed: seed)
 		} else {
-			rng = SystemRandomNumberGenerator()
+			rng = SystemRandomNumberGenerator() // stochastic:exempt
 		}
 
 		// Randomly select k distinct indices
@@ -187,7 +187,7 @@ public struct ForgyInitialization: CentroidInitialization {
 		if let seed = seed {
 			rng = SeededRandomNumberGenerator(seed: seed)
 		} else {
-			rng = SystemRandomNumberGenerator()
+			rng = SystemRandomNumberGenerator() // stochastic:exempt
 		}
 
 		// Randomly assign each point to a cluster
@@ -289,7 +289,7 @@ public struct KMeansPlusPlusInitialization: CentroidInitialization {
 		if let seed = seed {
 			rng = SeededRandomNumberGenerator(seed: seed)
 		} else {
-			rng = SystemRandomNumberGenerator()
+			rng = SystemRandomNumberGenerator() // stochastic:exempt
 		}
 
 		var centroids: [V] = []
@@ -367,5 +367,5 @@ private func computeMean<V: VectorSpace>(points: [V]) -> V {
 
 	// Divide by count to get mean
 	let count = V.Scalar(points.count)
-	return (V.Scalar(1) / count) * sum
+	return (V.Scalar(1) / count) * sum // fp-safety:disable — guarded by !points.isEmpty above
 }

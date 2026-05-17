@@ -445,7 +445,7 @@ struct ChesapeakeEnergyTests {
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: operationalMetrics)
 		let production = timeSeries.timeSeries(for: "production_boe_per_day")
 
-		#expect(production != nil)
+		#expect(production != nil) // TEST-QUALITY: existence check
 
 		let productionValues = quarters.map { production![$0]! }
 		#expect(productionValues.count == 4)
@@ -463,7 +463,7 @@ struct ChesapeakeEnergyTests {
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: operationalMetrics)
 		let growth = timeSeries.growthRate(metric: "production_boe_per_day")
 
-		#expect(growth != nil)
+		#expect(growth != nil) // TEST-QUALITY: existence check
 		#expect(growth!.periods.count == 3, "Should have 3 growth rates for 4 quarters")
 
 		// All growth rates should be positive
@@ -537,7 +537,7 @@ struct ChesapeakeEnergyTests {
 		// 7. Create operational metrics time series
 		let opTimeSeries = try OperationalMetricsTimeSeries(metrics: operationalMetrics)
 		let prodGrowth = opTimeSeries.growthRate(metric: "production_boe_per_day")
-		#expect(prodGrowth != nil)
+		#expect(prodGrowth != nil) // TEST-QUALITY: existence check
 	}
 
 	@Test("Chesapeake data is Codable")

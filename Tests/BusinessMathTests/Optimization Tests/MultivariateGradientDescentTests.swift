@@ -254,7 +254,7 @@ struct MultivariateGradientDescentTests {
 			initialGuess: initialGuess
 		)
 
-		#expect(result.history != nil, "History should be recorded")
+		#expect(result.history != nil, "History should be recorded") // TEST-QUALITY: existence check
 		if let history = result.history {
 			#expect(history.count > 0, "Should have history entries")
 			#expect(history.count == result.iterations || history.count == result.iterations + 1,

@@ -424,9 +424,9 @@ struct BusinessMathErrorTests {
         // Test as LocalizedError
         let localizedError: LocalizedError = error
 
-        #expect(localizedError.errorDescription != nil)
-        #expect(localizedError.recoverySuggestion != nil)
-        #expect(localizedError.helpAnchor != nil)
+        #expect(localizedError.errorDescription != nil) // TEST-QUALITY: existence check
+        #expect(localizedError.recoverySuggestion != nil) // TEST-QUALITY: existence check
+        #expect(localizedError.helpAnchor != nil) // TEST-QUALITY: existence check
     }
 
     // MARK: - Real-world Scenarios

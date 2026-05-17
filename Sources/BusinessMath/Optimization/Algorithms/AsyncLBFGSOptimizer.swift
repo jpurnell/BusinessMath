@@ -379,7 +379,7 @@ public struct AsyncLBFGSOptimizer: Sendable {
             let s = sHistory[i]
             let y = yHistory[i]
 
-            let rho = 1.0 / max(abs(s * y), 1e-10)
+            let rho = 1.0 / max(abs(s * y), 1e-10) // fp-safety:disable — clamped to >= 1e-10
             let alpha = rho * s * q
             alphas.append(alpha)
             q = q - alpha * y
@@ -398,7 +398,7 @@ public struct AsyncLBFGSOptimizer: Sendable {
             let s = sHistory[i]
             let y = yHistory[i]
 
-            let rho = 1.0 / max(abs(s * y), 1e-10)
+            let rho = 1.0 / max(abs(s * y), 1e-10) // fp-safety:disable — clamped to >= 1e-10
             let beta = rho * y * r
             r = r + s * (alphas[i] - beta)
         }

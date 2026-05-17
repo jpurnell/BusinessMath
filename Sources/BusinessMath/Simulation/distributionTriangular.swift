@@ -38,17 +38,18 @@ import OSLog
 ///   let randomValue: Double = triangularDistribution(low: lowerBound, high: upperBound, base: mode)
 ///   // randomValue will be a random number generated from the triangular distribution with parameters a = 0.0, b = 10.0, and c = 5.0
 
-public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uSeed: Double = Double.random(in: 0...1)) -> T {
+public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uSeed: Double = Double.random(in: 0...1)) -> T { // stochastic:exempt
 	// Validate parameters - return NaN for invalid inputs
 	guard !a.isNaN, !b.isNaN, !c.isNaN else { return T.nan }
 	guard a.isFinite, b.isFinite, c.isFinite else { return T.nan }
 	guard a <= b else { return T.nan }  // low must be < high
 	guard c >= a, c <= b else { return T.nan }  // base must be in [low, high]
+	guard b > a else { return a }  // degenerate case: single point
 
-    let fc = (c - a) / (b - a)
+    let fc = (c - a) / (b - a) // fp-safety:disable — guarded by b > a above
 	// Convert Double seed to type T with high precision (6 decimal places)
 	let uInt = Int(uSeed * 1_000_000)
-	let u = T(uInt) / T(1_000_000)
+	let u = T(uInt) / T(1_000_000) // fp-safety:disable — constant 1_000_000
     if u > 0 && u < fc {
         let s = u * (b - a) * (c - a)
         return a + sqrt(s)
