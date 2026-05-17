@@ -137,13 +137,17 @@ jobs:
           for plat in iOS tvOS watchOS; do
             echo "Archiving $SCHEME_LIB for $plat"
             OUTDIR="$(mktemp -d)"
-            xcodebuild -workspace "$WORKSPACE" \
+            if xcodebuild -showsdks | grep -q "${plat}"; then
+              xcodebuild -workspace "$WORKSPACE" \
               -scheme "$SCHEME_LIB" \
               -destination "generic/platform=${plat}" \
               -configuration Release \
               -skipPackagePluginValidation \
               -archivePath "$OUTDIR/BM-${plat}.xcarchive" \
               archive
+            else
+              echo "Skipping $plat: SDK not available on this runner"
+            fi
           done
 
           if xcodebuild -showsdks | grep -q "visionOS"; then
