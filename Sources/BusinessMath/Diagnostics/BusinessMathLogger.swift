@@ -486,8 +486,7 @@ public struct Logger: Sendable {
     ///   - name: Name of the calculation.
     ///   - error: The error that occurred.
     public func calculationFailed(_ name: String, error: Error) {
-        // silent: Linux fallback struct — privacy annotations only apply to os.Logger
-        self.error("Failed \(name, privacy: .public): \(error.localizedDescription, privacy: .private)")
+        self.error("Failed \(name): \(error.localizedDescription)") // silent: Linux fallback — no privacy annotations
     }
 
     /// Logs a validation warning (simplified for Linux).
