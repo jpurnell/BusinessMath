@@ -781,16 +781,16 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
 /// ```
 ///
-/// ## See Also
-///
-/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
-/// - ``debtServiceCoverage(incomeStatement:balanceSheet:debtAccount:interestAccount:)``
-///
 /// - Parameters:
 ///   - incomeStatement: Income statement containing operating income and interest expense
 ///   - balanceSheet: Balance sheet containing debt accounts
 /// - Returns: Time series of debt service coverage ratios
 /// - Throws: ``FinancialRatioError/missingExpense(_:)`` if interest expense not found
+///
+/// ## See Also
+///
+/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
+/// - ``debtServiceCoverage(incomeStatement:balanceSheet:debtAccount:interestAccount:)``
 public func debtServiceCoverage<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>
@@ -927,17 +927,17 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
 /// ```
 ///
-/// ## See Also
-///
-/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
-/// - ``solvencyRatios(incomeStatement:balanceSheet:debtAccount:interestAccount:)``
-///
 /// - Parameters:
 ///   - incomeStatement: Income statement containing operating income
 ///   - balanceSheet: Balance sheet containing the debt account
 ///   - debtAccount: Debt liability account to derive principal payments from
 ///   - interestAccount: Interest expense account from income statement
 /// - Returns: Time series of debt service coverage ratios
+///
+/// ## See Also
+///
+/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
+/// - ``solvencyRatios(incomeStatement:balanceSheet:debtAccount:interestAccount:)``
 public func debtServiceCoverage<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
@@ -1532,17 +1532,17 @@ public func solvencyRatios<T: Real & Sendable>(
 /// print("DSCR: \(solvency.debtServiceCoverage![q1]!)x")
 /// ```
 ///
-/// ## See Also
-///
-/// - ``solvencyRatios(incomeStatement:balanceSheet:principalPayments:interestPayments:)``
-/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
-///
 /// - Parameters:
 ///   - incomeStatement: Income statement containing operating income
 ///   - balanceSheet: Balance sheet containing the debt account
 ///   - debtAccount: Debt liability account to derive principal payments from
 ///   - interestAccount: Interest expense account from income statement
 /// - Returns: Structure containing all solvency ratios including debt service coverage
+///
+/// ## See Also
+///
+/// - ``solvencyRatios(incomeStatement:balanceSheet:principalPayments:interestPayments:)``
+/// - ``debtServiceCoverage(incomeStatement:principalPayments:interestPayments:)``
 public func solvencyRatios<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
