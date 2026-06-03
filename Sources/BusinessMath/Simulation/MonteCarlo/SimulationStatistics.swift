@@ -12,17 +12,17 @@ import OSLog
 #endif
 // Private aliases to global statistics functions to avoid namespace conflicts
 // These are explicitly typed for Double to resolve generic parameters
-// Justification: Immutable let bindings to pure stateless functions; assigned once at module load, never mutated.
+// Justification: Immutable alias to the global mean() function; captures no mutable state, safe to share across isolation domains.
 private nonisolated(unsafe) let globalMean: ([Double]) -> Double = mean
-// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
+// Justification: Immutable alias to the global median() function; pure sort-and-index operation with no shared state.
 private nonisolated(unsafe) let globalMedian: ([Double]) -> Double = median
-// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
+// Justification: Immutable alias to the global variance() function; computes sum-of-squares from its input array only.
 private nonisolated(unsafe) let globalVariance: ([Double], Population) -> Double = variance
-// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
+// Justification: Immutable alias to the global stdDev() function; delegates to variance() with no additional shared state.
 private nonisolated(unsafe) let globalStdDev: ([Double], Population) -> Double = stdDev
-// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
+// Justification: Immutable alias to the global skew() function; computes third central moment from its input array only.
 private nonisolated(unsafe) let globalSkew: ([Double], Population) -> Double = skew
-// Justification: Immutable let binding to a pure stateless function; assigned once at module load, never mutated.
+// Justification: Immutable alias to the global confidenceInterval() function; stateless z-score computation over its input array.
 private nonisolated(unsafe) let globalConfidenceInterval: (Double, [Double]) -> (low: Double, high: Double) = confidenceInterval(ci:values:)
 
 /// A structure containing comprehensive statistical measures for simulation results.

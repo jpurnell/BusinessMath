@@ -9,7 +9,7 @@
 //
 
 import Foundation
-import RealModule
+import Numerics
 
 /// Heston stochastic volatility state: (spot price, variance).
 ///

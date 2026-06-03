@@ -5,7 +5,7 @@
 //  Ornstein-Uhlenbeck mean-reverting process: dX = κ(θ - X)dt + σdW
 //
 
-import RealModule
+import Numerics
 
 /// Ornstein-Uhlenbeck mean-reverting process.
 ///

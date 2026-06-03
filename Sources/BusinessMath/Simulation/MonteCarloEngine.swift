@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import RealModule
+import Numerics
 
 // MARK: - MonteCarloPricingResult
 
