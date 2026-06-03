@@ -5,7 +5,7 @@
 //  Geometric Brownian Motion: dS = μSdt + σSdW
 //
 
-import RealModule
+import Numerics
 
 /// Geometric Brownian Motion: the standard model for equity and commodity spot prices.
 ///

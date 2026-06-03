@@ -5,7 +5,7 @@
 //  Conformance bridge for scalar and vector process states.
 //
 
-import RealModule
+import Numerics
 
 /// The state type of a stochastic process.
 ///

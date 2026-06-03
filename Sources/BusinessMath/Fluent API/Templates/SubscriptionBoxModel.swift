@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import RealModule
+import Numerics
 
 /// A financial model template for Subscription Box businesses.
 ///

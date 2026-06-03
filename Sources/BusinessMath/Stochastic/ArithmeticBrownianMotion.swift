@@ -5,7 +5,7 @@
 //  Arithmetic Brownian Motion: dS = μdt + σdW
 //
 
-import RealModule
+import Numerics
 
 /// Arithmetic Brownian Motion: a process with constant drift and diffusion.
 ///

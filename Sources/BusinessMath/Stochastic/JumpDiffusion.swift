@@ -5,7 +5,7 @@
 //  Merton Jump-Diffusion: GBM + Poisson-distributed jumps
 //
 
-import RealModule
+import Numerics
 
 /// Merton jump-diffusion process: GBM with Poisson-distributed jumps.
 ///

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import RealModule
+import Numerics
 
 /// Utility for creating test financial entities and statements.
 public struct TestEntity {

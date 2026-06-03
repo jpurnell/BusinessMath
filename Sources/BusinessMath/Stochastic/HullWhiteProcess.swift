@@ -5,7 +5,7 @@
 //  Hull-White one-factor short rate model: dr = [θ(t) - κr(t)]dt + σdW
 //
 
-import RealModule
+import Numerics
 
 /// Hull-White one-factor short rate model.
 ///

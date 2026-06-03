@@ -461,7 +461,7 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
     ///
     /// Maintains a timer that is reset with each new value. Only emits when
     /// the timer completes without being interrupted by a new value.
-    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
+    // Justification: Debounce iterator holds only an AsyncStream and its iterator; next() is called serially by async for-in, so the mutable iterator position is never accessed concurrently.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -586,7 +586,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
     ///
     /// Tracks the most recent value from each stream and emits a combined
     /// tuple whenever either stream updates.
-    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
+    // Justification: CombineLatest iterator merges two streams into one AsyncStream; the mutable iterator is advanced only in next(), which async for-in calls serially.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -714,7 +714,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
     ///
     /// Continuously updates the latest sampled value and emits it whenever
     /// the trigger stream produces an element.
-    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
+    // Justification: Sample iterator pairs a trigger stream with a sampled value; the mutable iterator is advanced only via serial next() calls from async for-in.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
@@ -1109,7 +1109,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
     ///
     /// Maintains the latest value from the base stream and emits it
     /// at fixed time intervals.
-    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
+    // Justification: TimeSample iterator emits the latest base value on a clock tick; only the serial next() call advances the inner AsyncStream iterator.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private let channel: AsyncStream<Element>
         private var iterator: AsyncStream<Element>.AsyncIterator
