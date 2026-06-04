@@ -30,17 +30,13 @@ struct MultiWayANOVATests {
         let multi = try multiWayANOVA(data)
 
         // Compare SS values
-        let ssP = multi.sumOfSquares[Set(["p"])]
-        let ssR = multi.sumOfSquares[Set(["r"])]
-        let ssPR = multi.sumOfSquares[Set(["p", "r"])]
+        let ssP = try #require(multi.sumOfSquares[Set(["p"])])
+        let ssR = try #require(multi.sumOfSquares[Set(["r"])])
+        let ssPR = try #require(multi.sumOfSquares[Set(["p", "r"])])
 
-        #expect(ssP != nil) // TEST-QUALITY: existence check
-        #expect(ssR != nil) // TEST-QUALITY: existence check
-        #expect(ssPR != nil) // TEST-QUALITY: existence check
-
-        #expect(abs(ssP! - twoWay.ssSubjects) < 1e-10)
-        #expect(abs(ssR! - twoWay.ssRaters) < 1e-10)
-        #expect(abs(ssPR! - twoWay.ssError) < 1e-10)
+        #expect(abs(ssP - twoWay.ssSubjects) < 1e-10)
+        #expect(abs(ssR - twoWay.ssRaters) < 1e-10)
+        #expect(abs(ssPR - twoWay.ssError) < 1e-10)
 
         // Compare df
         #expect(multi.degreesOfFreedom[Set(["p"])] == twoWay.dfSubjects)

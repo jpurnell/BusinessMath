@@ -85,12 +85,11 @@ struct GeneralizedGStudyTests {
 
         // Person variance should be the dominant component
         // (person effects span 10-25, other effects are much smaller)
-        let personVar = result.varianceComponents[Set(["p"])]
-        #expect(personVar != nil) // TEST-QUALITY: existence check
-        #expect(personVar! > 0.0)
+        let personVar = try #require(result.varianceComponents[Set(["p"])])
+        #expect(personVar > 0.0)
 
         // varianceObject should match person variance
-        #expect(result.varianceObject == personVar!)
+        #expect(result.varianceObject == personVar)
 
         // Total variance should equal sum of all components
         let sumVar = result.varianceComponents.values.reduce(0.0, +)

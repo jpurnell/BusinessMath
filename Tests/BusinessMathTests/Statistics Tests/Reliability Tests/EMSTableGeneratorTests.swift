@@ -22,32 +22,29 @@ struct EMSTableGeneratorTests {
         #expect(table.count == 3) // 2^2 - 1 = 3 effects
 
         // Check EMS({p})
-        let emsP = table[Set(["p"])]
-        #expect(emsP != nil) // TEST-QUALITY: existence check
-        #expect(emsP?.count == 2) // sigma^2_p and sigma^2_{p,r}
+        let emsP = try #require(table[Set(["p"])])
+        #expect(emsP.count == 2) // sigma^2_p and sigma^2_{p,r}
 
-        let pSelfCoeff = emsP?.first { $0.component == Set(["p"]) }?.coefficient
-        let pPRCoeff = emsP?.first { $0.component == Set(["p", "r"]) }?.coefficient
+        let pSelfCoeff = emsP.first { $0.component == Set(["p"]) }?.coefficient
+        let pPRCoeff = emsP.first { $0.component == Set(["p", "r"]) }?.coefficient
 
         #expect(abs((pSelfCoeff ?? 0) - 3.0) < 1e-6) // n_r = 3
         #expect(abs((pPRCoeff ?? 0) - 1.0) < 1e-6)   // empty product = 1
 
         // Check EMS({r})
-        let emsR = table[Set(["r"])]
-        #expect(emsR != nil) // TEST-QUALITY: existence check
-        #expect(emsR?.count == 2)
+        let emsR = try #require(table[Set(["r"])])
+        #expect(emsR.count == 2)
 
-        let rSelfCoeff = emsR?.first { $0.component == Set(["r"]) }?.coefficient
-        let rPRCoeff = emsR?.first { $0.component == Set(["p", "r"]) }?.coefficient
+        let rSelfCoeff = emsR.first { $0.component == Set(["r"]) }?.coefficient
+        let rPRCoeff = emsR.first { $0.component == Set(["p", "r"]) }?.coefficient
 
         #expect(abs((rSelfCoeff ?? 0) - 4.0) < 1e-6) // n_p = 4
         #expect(abs((rPRCoeff ?? 0) - 1.0) < 1e-6)
 
         // Check EMS({p,r})
-        let emsPR = table[Set(["p", "r"])]
-        #expect(emsPR != nil) // TEST-QUALITY: existence check
-        #expect(emsPR?.count == 1)
-        #expect(abs((emsPR?.first?.coefficient ?? 0) - 1.0) < 1e-6)
+        let emsPR = try #require(table[Set(["p", "r"])])
+        #expect(emsPR.count == 1)
+        #expect(abs((emsPR.first?.coefficient ?? 0) - 1.0) < 1e-6)
     }
 
     // MARK: - Three-Facet EMS Table
@@ -69,14 +66,13 @@ struct EMSTableGeneratorTests {
         // c({p,r}, {p}) = n_i = 2
         // c({p,i}, {p}) = n_r = 3
         // c({p,r,i}, {p}) = 1
-        let emsP = table[Set(["p"])]
-        #expect(emsP != nil) // TEST-QUALITY: existence check
-        #expect(emsP?.count == 4)
+        let emsP = try #require(table[Set(["p"])])
+        #expect(emsP.count == 4)
 
-        let pSelf = emsP?.first { $0.component == Set(["p"]) }?.coefficient
-        let pPR = emsP?.first { $0.component == Set(["p", "r"]) }?.coefficient
-        let pPI = emsP?.first { $0.component == Set(["p", "i"]) }?.coefficient
-        let pPRI = emsP?.first { $0.component == Set(["p", "r", "i"]) }?.coefficient
+        let pSelf = emsP.first { $0.component == Set(["p"]) }?.coefficient
+        let pPR = emsP.first { $0.component == Set(["p", "r"]) }?.coefficient
+        let pPI = emsP.first { $0.component == Set(["p", "i"]) }?.coefficient
+        let pPRI = emsP.first { $0.component == Set(["p", "r", "i"]) }?.coefficient
 
         #expect(abs((pSelf ?? 0) - 6.0) < 1e-6)
         #expect(abs((pPR ?? 0) - 2.0) < 1e-6)
