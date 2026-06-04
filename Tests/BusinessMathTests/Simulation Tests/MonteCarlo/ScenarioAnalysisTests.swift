@@ -72,9 +72,8 @@ struct ScenarioAnalysisTests {
 		let results = try analysis.run()
 
 		#expect(results.count == 1)
-		#expect(results["Base Case"] != nil) // TEST-QUALITY: existence check
 
-		let baseCaseResults = results["Base Case"]!
+		let baseCaseResults = try #require(results["Base Case"])
 		// Mean should be exactly 300,000 (deterministic inputs: 1,000,000 - 700,000)
 		// Use tolerance to make deterministic intent explicit
 		#expect(abs(baseCaseResults.statistics.mean - 300_000.0) < 0.01)
@@ -115,9 +114,13 @@ struct ScenarioAnalysisTests {
 
 		#expect(results.count == 3)
 
-		let baseProfit = results["Base Case"]!.statistics.mean
-		let bestProfit = results["Best Case"]!.statistics.mean
-		let worstProfit = results["Worst Case"]!.statistics.mean
+		let baseResult = try #require(results["Base Case"])
+		let bestResult = try #require(results["Best Case"])
+		let worstResult = try #require(results["Worst Case"])
+
+		let baseProfit = baseResult.statistics.mean
+		let bestProfit = bestResult.statistics.mean
+		let worstProfit = worstResult.statistics.mean
 
 		// Best case should be most profitable
 		#expect(bestProfit > baseProfit)
@@ -151,8 +154,8 @@ struct ScenarioAnalysisTests {
 
 		let results = try analysis.run()
 
-		let normalResults = results["Normal Uncertainty"]!
-		let highResults = results["High Uncertainty"]!
+		let normalResults = try #require(results["Normal Uncertainty"])
+		let highResults = try #require(results["High Uncertainty"])
 
 		// Both should have similar means (~300k)
 		#expect(abs(normalResults.statistics.mean - 300_000.0) < 50_000.0)
@@ -396,7 +399,7 @@ struct ScenarioAnalysisTests {
 		analysis.addScenario(mixedScenario)
 
 		let results = try analysis.run()
-		let mixedResults = results["Mixed"]!
+		let mixedResults = try #require(results["Mixed"])
 
 		// Mean should be around 300k
 		#expect(abs(mixedResults.statistics.mean - 300_000.0) < 30_000.0)
@@ -439,9 +442,13 @@ struct ScenarioAnalysisTests {
 
 		let results = try analysis.run()
 
-		let normalProfit = results["Normal"]!.statistics.mean
-		let collapseProfit = results["Revenue Collapse"]!.statistics.mean
-		let spikeProfit = results["Cost Spike"]!.statistics.mean
+		let normalResult = try #require(results["Normal"])
+		let collapseResult = try #require(results["Revenue Collapse"])
+		let spikeResult = try #require(results["Cost Spike"])
+
+		let normalProfit = normalResult.statistics.mean
+		let collapseProfit = collapseResult.statistics.mean
+		let spikeProfit = spikeResult.statistics.mean
 
 		// Normal should be profitable
 		#expect(normalProfit > 0.0)
@@ -486,15 +493,14 @@ struct ScenarioAnalysisTests {
 		let summary = comparison.summaryTable(metrics: [.mean, .median, .stdDev])
 
 		#expect(summary.count == 2)
-		#expect(summary["S1"] != nil) // TEST-QUALITY: existence check
-		#expect(summary["S2"] != nil) // TEST-QUALITY: existence check
 
-		let s1Summary = summary["S1"]!
+		let s1Summary = try #require(summary["S1"])
+		let _ = try #require(summary["S2"])
 		#expect(s1Summary.count == 3)  // mean, p50, stdDev
 	}
 
 	@Test("Scenario configuration builder pattern")
-	func scenarioBuilderPattern() {
+	func scenarioBuilderPattern() throws {
 		let scenario = Scenario(name: "Complex") { config in
 			config.setValue(1_000_000.0, forInput: "Revenue")
 			config.setDistribution(DistributionNormal(700_000.0, 50_000.0), forInput: "Costs")
@@ -507,8 +513,8 @@ struct ScenarioAnalysisTests {
 		#expect(totalInputs == 4)
 		#expect(abs((scenario.inputValues["Revenue"] ?? 0) - 1_000_000.0) < 1e-2)
 		#expect(abs((scenario.inputValues["TaxRate"] ?? 0) - 0.3) < 1e-6)
-		#expect(scenario.inputDistributions["Costs"] != nil) // TEST-QUALITY: existence check
-		#expect(scenario.inputDistributions["GrowthRate"] != nil) // TEST-QUALITY: existence check
+		let _ = try #require(scenario.inputDistributions["Costs"])
+		let _ = try #require(scenario.inputDistributions["GrowthRate"])
 	}
 
 	@Test("ScenarioAnalysis error - missing input configuration")

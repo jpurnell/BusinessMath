@@ -64,7 +64,7 @@ import RealModule
         #expect(csvOutput.contains("2021"))
     }
 
-    @Test("QuickStart_InvestmentAnalysis") func LQuickStart_InvestmentAnalysis() {
+    @Test("QuickStart_InvestmentAnalysis") func LQuickStart_InvestmentAnalysis() throws {
         // Example from Quick Start: Investment
         let investment = Investment {
             InitialCost(50_000)
@@ -80,8 +80,10 @@ import RealModule
 
         // Verify documented metrics
         #expect(investment.npv > 0, "Should have positive NPV")
-        #expect(investment.irr != nil, "Should calculate IRR") // TEST-QUALITY: existence check
-        #expect(investment.paybackPeriod != nil, "Should calculate payback period") // TEST-QUALITY: existence check
+        let irr = try #require(investment.irr, "Should calculate IRR")
+        #expect(irr.isFinite)
+        let payback = try #require(investment.paybackPeriod, "Should calculate payback period")
+        #expect(payback.isFinite)
     }
 
     // MARK: - Feature Examples
@@ -143,7 +145,7 @@ import RealModule
         #expect(formattedTrace.contains("Profit"))
     }
 
-    @Test("Example_DataExport") func LExample_DataExport() {
+    @Test("Example_DataExport") func LExample_DataExport() throws {
         // Example from DataExport documentation
         let model = FinancialModel {
             Revenue {
@@ -168,10 +170,12 @@ import RealModule
         #expect(!jsonOutput.isEmpty)
 
         // JSON should be valid
-        if let jsonData = jsonOutput.data(using: .utf8) {
-            let parsed = try? JSONSerialization.jsonObject(with: jsonData)
-            #expect(parsed != nil, "Should produce valid JSON") // TEST-QUALITY: existence check
-        }
+        let jsonData = try #require(jsonOutput.data(using: .utf8), "JSON output should be valid UTF-8")
+        let parsed = try #require(
+            try? JSONSerialization.jsonObject(with: jsonData),
+            "Should produce valid JSON"
+        )
+        #expect(parsed is [String: Any] || parsed is [Any], "Parsed JSON should be a dictionary or array")
     }
 
     // MARK: - Integration Examples

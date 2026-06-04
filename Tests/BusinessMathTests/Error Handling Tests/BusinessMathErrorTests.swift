@@ -415,7 +415,7 @@ struct BusinessMathErrorTests {
     // MARK: - LocalizedError Protocol
 
     @Test("LocalizedError conformance")
-    func localizedErrorConformance() {
+    func localizedErrorConformance() throws {
         let error = BusinessMathError.calculationFailed(
             operation: "IRR",
             reason: "Non-convergent"
@@ -424,9 +424,12 @@ struct BusinessMathErrorTests {
         // Test as LocalizedError
         let localizedError: LocalizedError = error
 
-        #expect(localizedError.errorDescription != nil) // TEST-QUALITY: existence check
-        #expect(localizedError.recoverySuggestion != nil) // TEST-QUALITY: existence check
-        #expect(localizedError.helpAnchor != nil) // TEST-QUALITY: existence check
+        let desc = try #require(localizedError.errorDescription)
+        #expect(!desc.isEmpty)
+        let recovery = try #require(localizedError.recoverySuggestion)
+        #expect(!recovery.isEmpty)
+        let anchor = try #require(localizedError.helpAnchor)
+        #expect(!anchor.isEmpty)
     }
 
     // MARK: - Real-world Scenarios

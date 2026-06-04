@@ -22,7 +22,7 @@ import RealModule
 
     // MARK: - Invalid Input Tests
 
-    @Test("BusinessMathError_InvalidDiscountRate") func businessMathErrorInvalidDiscountRate() {
+    @Test("BusinessMathError_InvalidDiscountRate") func businessMathErrorInvalidDiscountRate() throws {
         // Given: An investment with invalid discount rate
         // When: Creating investment with negative discount rate
         // Then: Should throw BusinessMathError.invalidInput with clear message
@@ -35,8 +35,10 @@ import RealModule
             case .invalidInput(let message, let value, let expectedRange):
                 #expect(message.contains("Discount rate"))
                 #expect(message.contains("negative"))
-                #expect(value != nil) // TEST-QUALITY: existence check
-                #expect(expectedRange != nil) // TEST-QUALITY: existence check
+                let val = try #require(value)
+                #expect(!val.isEmpty)
+                let range = try #require(expectedRange)
+                #expect(!range.isEmpty)
             default:
                 Issue.record("Expected .invalidInput error, got \(error)")
             }
@@ -45,7 +47,7 @@ import RealModule
         }
     }
 
-    @Test("BusinessMathError_NegativeInitialCost") func businessMathErrorNegativeInitialCost() {
+    @Test("BusinessMathError_NegativeInitialCost") func businessMathErrorNegativeInitialCost() throws {
         // Given: An investment with negative initial cost
         // When: Creating investment
         // Then: Should throw BusinessMathError.invalidInput
@@ -60,10 +62,9 @@ import RealModule
                 #expect(message.contains("negative") || message.contains("positive"))
 
                 // Verify value includes the invalid value
-                #expect(value != nil, "Error should include the invalid value") // TEST-QUALITY: existence check
-                if let valueString = value, let valueDouble = Double(valueString) {
-                    #expect(abs(valueDouble - -1000.0) < 0.01, "Value should contain the actual invalid value")
-                }
+                let valueString = try #require(value, "Error should include the invalid value")
+                let valueDouble = try #require(Double(valueString), "Value should be numeric")
+                #expect(abs(valueDouble - -1000.0) < 0.01, "Value should contain the actual invalid value")
             default:
                 Issue.record("Expected .invalidInput error, got \(error)")
             }
@@ -92,7 +93,7 @@ import RealModule
         }
     }
 
-    @Test("BusinessMathError_MismatchedPeriods") func businessMathErrorMismatchedPeriods() {
+    @Test("BusinessMathError_MismatchedPeriods") func businessMathErrorMismatchedPeriods() throws {
         // Given: Two time series with different periods
         // When: Attempting to combine them
         // Then: Should throw BusinessMathError.mismatchedDimensions
@@ -104,8 +105,10 @@ import RealModule
             switch error {
             case .mismatchedDimensions(let message, let expected, let actual):
                 #expect(message.contains("period") || message.contains("dimension"))
-                #expect(expected != nil) // TEST-QUALITY: existence check
-                #expect(actual != nil) // TEST-QUALITY: existence check
+                let exp = try #require(expected)
+                #expect(!exp.isEmpty)
+                let act = try #require(actual)
+                #expect(!act.isEmpty)
             default:
                 Issue.record("Expected .mismatchedDimensions error, got \(error)")
             }
@@ -225,7 +228,7 @@ import RealModule
         #expect(validationResult.warnings.contains { $0.message.contains("gap") || $0.message.contains("missing") })
     }
 
-    @Test("Validation_OutlierDetection") func validationOutlierDetection() {
+    @Test("Validation_OutlierDetection") func validationOutlierDetection() throws {
         // Given: A time series with outliers
         // When: Validating with outlier detection
         // Then: Should identify outliers
@@ -237,8 +240,9 @@ import RealModule
         #expect(validationResult.warnings.contains { $0.message.contains("outlier") })
 
         // Should provide indices of outliers
-        let outlierWarning = validationResult.warnings.first { $0.type == .outlier }
-        #expect(outlierWarning?.context["indices"] != nil) // TEST-QUALITY: existence check
+        let outlierWarning = try #require(validationResult.warnings.first { $0.type == .outlier })
+        let indices = try #require(outlierWarning.context["indices"])
+        #expect(!indices.isEmpty)
     }
 
     @Test("Validation_NaNValues") func validationNaNValues() {
@@ -336,7 +340,7 @@ import RealModule
         #expect(description.count > 20, "Error message should be descriptive")
     }
 
-    @Test("Error_IncludesContext") func errorIncludesContext() {
+    @Test("Error_IncludesContext") func errorIncludesContext() throws {
         // Given: Any error
         // When: Error is thrown
         // Then: Should include relevant context information
@@ -347,8 +351,10 @@ import RealModule
         } catch let error as BusinessMathError {
             switch error {
             case .mismatchedDimensions(_, let expected, let actual):
-                #expect(expected != nil || actual != nil, "Error should include context") // TEST-QUALITY: existence check
-                #expect(expected != nil && actual != nil, "Should have both expected and actual") // TEST-QUALITY: existence check
+                let exp = try #require(expected, "Error should include expected context")
+                let act = try #require(actual, "Error should include actual context")
+                #expect(!exp.isEmpty, "Expected value should be non-empty")
+                #expect(!act.isEmpty, "Actual value should be non-empty")
             default:
                 Issue.record("Expected .mismatchedDimensions error, got \(error)")
             }
@@ -357,7 +363,7 @@ import RealModule
         }
     }
 
-    @Test("Error_IncludesExpectedRange") func errorIncludesExpectedRange() {
+    @Test("Error_IncludesExpectedRange") func errorIncludesExpectedRange() throws {
         // Given: Invalid input that's out of range
         // When: Error is thrown
         // Then: Should include expected range in context
@@ -368,7 +374,8 @@ import RealModule
         } catch let error as BusinessMathError {
             switch error {
             case .invalidInput(_, _, let expectedRange):
-					#expect(expectedRange != nil) // TEST-QUALITY: existence check
+                let range = try #require(expectedRange)
+                #expect(!range.isEmpty)
 			default:
                 Issue.record("Expected .invalidInput error, got \(error)")
             }
@@ -561,7 +568,7 @@ struct ErrorHandlingAdditionalTests {
 	}
 
 	@Test("Discount rate NaN is invalid and includes expected range")
-	func discountRate_NaNIsInvalid() {
+	func discountRate_NaNIsInvalid() throws {
 		let rate = Double.nan
 		do {
 			_ = try createInvestmentWithDiscountRate(rate)
@@ -570,7 +577,8 @@ struct ErrorHandlingAdditionalTests {
 			switch error {
 			case .invalidInput(_, let value, let expectedRange):
 				#expect(value == String(rate))
-				#expect(expectedRange != nil) // TEST-QUALITY: existence check
+				let range = try #require(expectedRange)
+				#expect(!range.isEmpty)
 			default:
 				Issue.record("Expected .invalidInput")
 			}
@@ -580,7 +588,7 @@ struct ErrorHandlingAdditionalTests {
 	}
 
 	@Test("Discount rate +infinity is invalid and includes expected range")
-	func discountRate_InfiniteIsInvalid() {
+	func discountRate_InfiniteIsInvalid() throws {
 		let rate = Double.infinity
 		do {
 			_ = try createInvestmentWithDiscountRate(rate)
@@ -589,7 +597,8 @@ struct ErrorHandlingAdditionalTests {
 			switch error {
 			case .invalidInput(_, let value, let expectedRange):
 				#expect(value == String(rate))
-				#expect(expectedRange != nil) // TEST-QUALITY: existence check
+				let range = try #require(expectedRange)
+				#expect(!range.isEmpty)
 			default:
 				Issue.record("Expected .invalidInput")
 			}

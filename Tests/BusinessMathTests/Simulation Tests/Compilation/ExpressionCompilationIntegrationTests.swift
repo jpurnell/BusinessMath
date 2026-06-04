@@ -176,9 +176,8 @@ struct ExpressionCompilationIntegrationTests {
         let gpuBytecode = BytecodeCompiler.toGPUFormat(bytecode)
 
         // Find CONST instruction
-        let constInstr = gpuBytecode.first { $0.0 == 5 }
-        #expect(constInstr != nil) // TEST-QUALITY: existence check
-        #expect(abs(constInstr!.2 - 42.5) < 0.001)
+        let constInstr = try #require(gpuBytecode.first { $0.0 == 5 })
+        #expect(abs(constInstr.2 - 42.5) < 0.001)
     }
 
     // MARK: - Stack Depth Analysis
