@@ -5,6 +5,9 @@
 //  Created on December 2, 2025.
 //
 
+#if canImport(Darwin)
+@preconcurrency import Darwin
+#endif
 import Foundation
 
 #if canImport(OSLog)
