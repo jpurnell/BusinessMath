@@ -78,9 +78,9 @@ import Testing
 
 		// Check we have results for all scenarios
 		#expect(result.scenarioObjectives.count == 3)
-		#expect(result.objective(for: "Bull Market") != nil) // TEST-QUALITY: existence check
-		#expect(result.objective(for: "Base Case") != nil) // TEST-QUALITY: existence check
-		#expect(result.objective(for: "Bear Market") != nil) // TEST-QUALITY: existence check
+		#expect(result.objective(for: "Bull Market")?.isFinite == true)
+		#expect(result.objective(for: "Base Case")?.isFinite == true)
+		#expect(result.objective(for: "Bear Market")?.isFinite == true)
 	}
 
 	/// Test probability weighting.
@@ -166,20 +166,15 @@ import Testing
 		)
 
 		// Check per-scenario objectives
-		let objA = result.objective(for: "Scenario A")
-		let objB = result.objective(for: "Scenario B")
-
-		#expect(objA != nil) // TEST-QUALITY: existence check
-		#expect(objB != nil) // TEST-QUALITY: existence check
+		let objA = try #require(result.objective(for: "Scenario A"))
+		let objB = try #require(result.objective(for: "Scenario B"))
 
 		// B should have higher objective (factor 3 vs 2)
-		if let a = objA, let b = objB {
-			#expect(b > a)
-		}
+		#expect(objB > objA)
 
 		// Can retrieve scenarios by name
-		#expect(result.scenario(named: "Scenario A") != nil) // TEST-QUALITY: existence check
-		#expect(result.scenario(named: "Scenario B") != nil) // TEST-QUALITY: existence check
+		let _ = try #require(result.scenario(named: "Scenario A"))
+		let _ = try #require(result.scenario(named: "Scenario B"))
 		#expect(result.scenario(named: "Nonexistent") == nil)
 	}
 

@@ -234,10 +234,10 @@ import Testing
 			#expect(abs(scenario.probability - 1.0 / 1000.0) < 1e-10)
 		}
 
-		// Check that parameters exist
+		// Check that parameters exist and are finite
 		for scenario in scenarios {
-			#expect(scenario["param_0"] != nil) // TEST-QUALITY: existence check
-			#expect(scenario["param_1"] != nil) // TEST-QUALITY: existence check
+			#expect(scenario["param_0"]?.isFinite == true)
+			#expect(scenario["param_1"]?.isFinite == true)
 		}
 
 		// Statistical properties (with large sample)

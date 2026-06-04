@@ -48,10 +48,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: (0, 0) with objective = 0
-        let sol = result.solution!
         #expect(abs(sol[0]) < 1e-6, "Expected x ≈ 0, got \(sol[0])")
         #expect(abs(sol[1]) < 1e-6, "Expected y ≈ 0, got \(sol[1])")
         #expect(abs(result.objectiveValue) < 1e-6, "Expected obj ≈ 0, got \(result.objectiveValue)")
@@ -78,10 +77,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: (10, 0) or (0, 10) or anywhere on x + y = 10
-        let sol = result.solution!
         let sum = sol[0] + sol[1]
         #expect(abs(sum - 10.0) < 1e-6, "Expected x + y = 10, got \(sum)")
         #expect(abs(result.objectiveValue - 10.0) < 1e-6)
@@ -108,10 +106,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: (0, 0) with objective = -5
-        let sol = result.solution!
         #expect(abs(sol[0]) < 1e-6)
         #expect(abs(sol[1]) < 1e-6)
         #expect(abs(result.objectiveValue - (-5.0)) < 1e-6)
@@ -140,10 +137,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Verify constraint satisfied: 2x + 3y ≥ 6
-        let sol = result.solution!
         let demand = 2.0 * sol[0] + 3.0 * sol[1]
         #expect(demand >= 6.0 - 1e-6, "Demand constraint violated: \(demand) < 6")
     }
@@ -169,10 +165,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Verify equality: x + y = 5
-        let sol = result.solution!
         let sum = sol[0] + sol[1]
         #expect(abs(sum - 5.0) < 1e-6, "Equality violated: x + y = \(sum) ≠ 5")
     }
@@ -198,10 +193,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Verify constraint: x + 2y ≤ 10
-        let sol = result.solution!
         let lhs = sol[0] + 2.0 * sol[1]
         #expect(lhs <= 10.0 + 1e-6, "Constraint violated: \(lhs) > 10")
     }
@@ -282,10 +276,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: x = 2
-        let sol = result.solution!
         #expect(abs(sol[0] - 2.0) < 1e-6, "Expected x = 2, got \(sol[0])")
     }
 
@@ -306,10 +299,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: x = 0
-        let sol = result.solution!
         #expect(abs(sol[0]) < 1e-6)
     }
 
@@ -342,10 +334,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Verify weight constraint
-        let sol = result.solution!
         let totalWeight = zip(weights, sol.toArray()).reduce(0.0) { $0 + $1.0 * $1.1 }
         #expect(totalWeight <= capacity + 1e-6, "Weight exceeded: \(totalWeight) > \(capacity)")
 
@@ -386,10 +377,9 @@ struct SimplexRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Expected: (0, 0) with objective = 0
-        let sol = result.solution!
         #expect(abs(sol[0]) < 1e-6)
         #expect(abs(sol[1]) < 1e-6)
         #expect(abs(result.objectiveValue) < 1e-6)

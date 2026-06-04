@@ -350,10 +350,9 @@ struct ConjugateGradientOptimizerTests {
         #expect(progressUpdates.count > 0)
 
         // Final update should have result
-        if let last = progressUpdates.last {
-            #expect(last.result != nil) // TEST-QUALITY: existence check
-            #expect(last.result?.converged == true)
-        }
+        let last = try #require(progressUpdates.last)
+        let finalResult = try #require(last.result)
+        #expect(finalResult.converged == true)
     }
 
     // MARK: - Edge Cases

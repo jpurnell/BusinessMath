@@ -41,15 +41,13 @@ struct SimplexTableauAccessTests {
         #expect(result.status == .optimal, "Should find optimal solution")
 
         // SimplexResult should now have tableau field
-        #expect(result.tableau != nil, "Result should expose final tableau") // TEST-QUALITY: existence check
+        let tableau = try #require(result.tableau, "Result should expose final tableau")
 
-        if let tableau = result.tableau {
-            // Tableau should have rows for each constraint + objective row
-            #expect(tableau.rowCount >= constraints.count, "Tableau should have constraint rows")
+        // Tableau should have rows for each constraint + objective row
+        #expect(tableau.rowCount >= constraints.count, "Tableau should have constraint rows")
 
-            // Tableau should have columns for variables + slack + RHS
-            #expect(tableau.columnCount > objective.count, "Tableau should have slack variables")
-        }
+        // Tableau should have columns for variables + slack + RHS
+        #expect(tableau.columnCount > objective.count, "Tableau should have slack variables")
     }
 
     @Test("SimplexResult exposes basis information")
@@ -67,16 +65,14 @@ struct SimplexTableauAccessTests {
         #expect(result.status == .optimal)
 
         // SimplexResult should expose which variables are basic
-        #expect(result.basis != nil, "Result should expose basis") // TEST-QUALITY: existence check
+        let basis = try #require(result.basis, "Result should expose basis")
 
-        if let basis = result.basis {
-            // Basis should have one entry per constraint (basic variable per row)
-            #expect(basis.count == constraints.count, "Basis size should match constraint count")
+        // Basis should have one entry per constraint (basic variable per row)
+        #expect(basis.count == constraints.count, "Basis size should match constraint count")
 
-            // All basis indices should be valid
-            for varIndex in basis {
-                #expect(varIndex >= 0, "Basis variable index should be non-negative")
-            }
+        // All basis indices should be valid
+        for varIndex in basis {
+            #expect(varIndex >= 0, "Basis variable index should be non-negative")
         }
     }
 
@@ -218,9 +214,9 @@ struct SimplexTableauAccessTests {
         let result = try solver.maximize(objective: objective, subjectTo: constraints)
 
         #expect(result.status == .optimal)
-        #expect(result.tableau != nil, "Need tableau for cut generation") // TEST-QUALITY: existence check
+        let tableau = try #require(result.tableau, "Need tableau for cut generation")
 
-        if let tableau = result.tableau, let basis = result.basis {
+        if let basis = result.basis {
             // For first basic variable (if fractional), extract tableau row
             let rowIndex = 0
             guard rowIndex < basis.count else {

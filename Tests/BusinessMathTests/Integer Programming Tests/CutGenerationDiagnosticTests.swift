@@ -88,7 +88,7 @@ struct CutGenerationDiagnosticTests {
             }
         }
 
-        #expect(result.simplexResult != nil) // TEST-QUALITY: existence check
-        #expect(result.simplexResult?.tableau != nil) // TEST-QUALITY: existence check
+        let simplexResult = try #require(result.simplexResult)
+        let _ = try #require(simplexResult.tableau)
     }
 }
