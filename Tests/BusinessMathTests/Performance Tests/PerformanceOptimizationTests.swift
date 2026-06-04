@@ -450,7 +450,7 @@ struct ExporterEquivalenceTests {
 		let json = exporter.exportToJSON()
 
 		let data = Data(json.utf8)
-		let obj = try? JSONSerialization.jsonObject(with: data, options: [])
-		#expect(obj != nil, "JSON export should produce parseable JSON.") // TEST-QUALITY: existence check
+		let obj = try #require(try? JSONSerialization.jsonObject(with: data, options: []), "JSON export should produce parseable JSON.")
+		_ = obj
 	}
 }

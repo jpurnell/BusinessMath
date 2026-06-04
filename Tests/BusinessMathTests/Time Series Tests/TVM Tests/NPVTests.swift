@@ -461,7 +461,7 @@ struct NPVTests {
 	// MARK: - Real-World Scenarios
 
 	@Test("Real estate investment analysis")
-	func realEstateScenario() {
+	func realEstateScenario() throws {
 		// $100k investment, 5 years of rent, then sale
 		let cashFlows = [
 			-100000.0,  // Purchase
@@ -479,11 +479,11 @@ struct NPVTests {
 
 		#expect(npvValue > 0.0)  // Should be profitable
 		#expect(pi > 1.0)  // PI > 1 for positive NPV
-		#expect(payback != nil)  // Should have payback period // TEST-QUALITY: existence check
+		let _ = try #require(payback)  // Should have payback period
 	}
 
 	@Test("Manufacturing equipment decision")
-	func manufacturingScenario() {
+	func manufacturingScenario() throws {
 		// $50k equipment, 5 years of savings
 		let cashFlows = [-50000.0, 15000.0, 15000.0, 15000.0, 15000.0, 15000.0]
 		let rate = 0.08
@@ -496,7 +496,7 @@ struct NPVTests {
 		#expect(npvValue > 0.0)
 		#expect(pi > 1.0)
 		#expect(regularPayback == 4)  // Simple payback: 50k/15k ≈ 3.33, so year 4
-		#expect(discountedPayback != nil) // TEST-QUALITY: existence check
+		let _ = try #require(discountedPayback)
 		if let dp = discountedPayback, let rp = regularPayback {
 			#expect(dp >= rp)  // Discounted payback >= regular payback
 		}

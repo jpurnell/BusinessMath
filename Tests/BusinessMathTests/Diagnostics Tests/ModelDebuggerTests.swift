@@ -36,7 +36,7 @@ struct ModelDebuggerTests {
     }
 
     @Test("Basic trace captures errors")
-    func basicTraceError() async {
+    func basicTraceError() async throws {
         let debugger = ModelDebugger()
 
         struct TestError: Error {
@@ -50,7 +50,7 @@ struct ModelDebuggerTests {
 
         #expect(trace.value == "Calculation")
         #expect(trace.result == nil)
-        #expect(trace.error != nil) // TEST-QUALITY: existence check
+        let _ = try #require(trace.error)
     }
 
 	@Test(.disabled("Trace timing is captured"))

@@ -101,14 +101,12 @@ struct OilGasEPModelTests {
         let revenue = integration.incomeStatement.totalRevenue
 
         // January: 100 BOEPD * 31 days * $70 = $217,000
-        let janRevenue = revenue[periods[0]]
-        #expect(janRevenue != nil) // TEST-QUALITY: existence check
-        #expect(abs((janRevenue ?? 0.0) - 217_000.0) < 0.01)
+        let janRevenue = try #require(revenue[periods[0]])
+        #expect(abs(janRevenue - 217_000.0) < 0.01)
 
         // February: 100 BOEPD * 28 days * $70 = $196,000
-        let febRevenue = revenue[periods[1]]
-        #expect(febRevenue != nil) // TEST-QUALITY: existence check
-        #expect(abs((febRevenue ?? 0.0) - 196_000.0) < 0.01)
+        let febRevenue = try #require(revenue[periods[1]])
+        #expect(abs(febRevenue - 196_000.0) < 0.01)
     }
 
     @Test("LOE equals total production times per-BOE cost")
@@ -126,14 +124,12 @@ struct OilGasEPModelTests {
         #expect(!costOfRevenue.isEmpty)
 
         // January: 100 * 31 * $15 = $46,500
-        let janLOE = costOfRevenue[0].timeSeries[periods[0]]
-        #expect(janLOE != nil) // TEST-QUALITY: existence check
-        #expect(abs((janLOE ?? 0.0) - 46_500.0) < 0.01)
+        let janLOE = try #require(costOfRevenue[0].timeSeries[periods[0]])
+        #expect(abs(janLOE - 46_500.0) < 0.01)
 
         // February: 100 * 28 * $15 = $42,000
-        let febLOE = costOfRevenue[0].timeSeries[periods[1]]
-        #expect(febLOE != nil) // TEST-QUALITY: existence check
-        #expect(abs((febLOE ?? 0.0) - 42_000.0) < 0.01)
+        let febLOE = try #require(costOfRevenue[0].timeSeries[periods[1]])
+        #expect(abs(febLOE - 42_000.0) < 0.01)
     }
 
     @Test("DD&A equals depreciation rate times PP&E")
@@ -149,14 +145,12 @@ struct OilGasEPModelTests {
         #expect(!nonCashAccounts.isEmpty)
 
         // Period 1: 0.01 * 10,000,000 = 100,000
-        let janDDA = nonCashAccounts[0].timeSeries[periods[0]]
-        #expect(janDDA != nil) // TEST-QUALITY: existence check
-        #expect(abs((janDDA ?? 0.0) - 100_000.0) < 0.01)
+        let janDDA = try #require(nonCashAccounts[0].timeSeries[periods[0]])
+        #expect(abs(janDDA - 100_000.0) < 0.01)
 
         // Period 2: PP&E reduced by first DD&A: 0.01 * 9,900,000 = 99,000
-        let febDDA = nonCashAccounts[0].timeSeries[periods[1]]
-        #expect(febDDA != nil) // TEST-QUALITY: existence check
-        #expect(abs((febDDA ?? 0.0) - 99_000.0) < 0.01)
+        let febDDA = try #require(nonCashAccounts[0].timeSeries[periods[1]])
+        #expect(abs(febDDA - 99_000.0) < 0.01)
     }
 
     @Test("Net income equals revenue minus all expenses minus taxes")
@@ -178,9 +172,8 @@ struct OilGasEPModelTests {
         // Pre-tax: 217,000 - 46,500 - 100,000 - 50,000 = 20,500
         // Tax: 20,500 * 0.21 = 4,305
         // Net Income: 20,500 - 4,305 = 16,195
-        let janNI = netIncome[periods[0]]
-        #expect(janNI != nil) // TEST-QUALITY: existence check
-        #expect(abs((janNI ?? 0.0) - 16_195.0) < 0.01)
+        let janNI = try #require(netIncome[periods[0]])
+        #expect(abs(janNI - 16_195.0) < 0.01)
     }
 
     @Test("Hedging settlements integrate into revenue")
@@ -206,9 +199,8 @@ struct OilGasEPModelTests {
         let revenue = integration.incomeStatement.totalRevenue
 
         // January revenue with hedge: 100 * 31 * 70 + 5000 = 222,000
-        let janRevenue = revenue[periods[0]]
-        #expect(janRevenue != nil) // TEST-QUALITY: existence check
-        #expect(abs((janRevenue ?? 0.0) - 222_000.0) < 0.01)
+        let janRevenue = try #require(revenue[periods[0]])
+        #expect(abs(janRevenue - 222_000.0) < 0.01)
     }
 
     @Test("Three-statement output produces valid StatementIntegration")
@@ -270,8 +262,7 @@ struct OilGasEPModelTests {
         let revenue = integration.incomeStatement.totalRevenue
 
         // Zero production means zero revenue
-        let janRevenue = revenue[periods[0]]
-        #expect(janRevenue != nil) // TEST-QUALITY: existence check
-        #expect(abs(janRevenue ?? 1.0) < 0.01)
+        let janRevenue = try #require(revenue[periods[0]])
+        #expect(abs(janRevenue) < 0.01)
     }
 }

@@ -24,7 +24,9 @@ struct StressTestingTests {
 
 		#expect(crisis.name == "Financial Crisis")
 		// Crisis should have more severe revenue impact
-		#expect(abs(crisis.shocks["Revenue"]!) > abs(recession.shocks["Revenue"]!))
+		let crisisRevShock = try #require(crisis.shocks["Revenue"])
+		let recessionRevShock = try #require(recession.shocks["Revenue"])
+		#expect(abs(crisisRevShock) > abs(recessionRevShock))
 	}
 
 	@Test("Supply shock scenario targets operations")
@@ -32,8 +34,8 @@ struct StressTestingTests {
 		let scenario = StressScenario<Double>.supplyShock
 
 		#expect(scenario.name == "Supply Chain Shock")
-		#expect(scenario.shocks["COGS"] != nil) // TEST-QUALITY: existence check
-		#expect(scenario.shocks["COGS"]! > 0.0) // Costs increase
+		let cogsShock = try #require(scenario.shocks["COGS"])
+		#expect(cogsShock > 0.0) // Costs increase
 	}
 
 	@Test("Custom stress scenario")
@@ -97,10 +99,10 @@ struct StressTestingTests {
 		let recession = StressScenario<Double>.recession
 		let crisis = StressScenario<Double>.crisis
 
-		#expect(recession.shocks["Revenue"] != nil) // TEST-QUALITY: existence check
-		#expect(crisis.shocks["Revenue"] != nil) // TEST-QUALITY: existence check
+		let recessionRevenue = try #require(recession.shocks["Revenue"])
+		let crisisRevenue = try #require(crisis.shocks["Revenue"])
 		// Crisis should be worse than recession
-		#expect(abs(crisis.shocks["Revenue"]!) > abs(recession.shocks["Revenue"]!))
+		#expect(abs(crisisRevenue) > abs(recessionRevenue))
 	}
 
 	@Test("Stress test report identifies best case")

@@ -31,8 +31,7 @@ struct StandardTemplatesTests {
 
         try await registry.register(template, metadata: metadata)
 
-        let found = await registry.template(named: "SaaS Template")
-        #expect(found != nil) // TEST-QUALITY: existence check
+        let found = try #require(await registry.template(named: "SaaS Template"))
     }
 
     @Test("SaaS template creates valid model")
@@ -112,8 +111,7 @@ struct StandardTemplatesTests {
         _ = try await registry2.import(package)
 
         // Verify imported
-        let found = await registry2.template(named: "SaaS Template")
-        #expect(found != nil) // TEST-QUALITY: existence check
+        let found = try #require(await registry2.template(named: "SaaS Template"))
     }
 
     // MARK: - Retail Template Tests

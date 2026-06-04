@@ -29,7 +29,7 @@ struct PerformanceBenchmarkTests {
 		)
 
 		// Verify result structure
-		#expect(result.algorithmName != nil) // TEST-QUALITY: existence check
+		let _ = try #require(result.algorithmName)
 		#expect(result.converged)
 		#expect(result.executionTime > 0.0)
 		#expect(result.iterations > 0)

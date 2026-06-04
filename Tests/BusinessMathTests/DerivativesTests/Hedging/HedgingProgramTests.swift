@@ -118,7 +118,7 @@ struct HedgingProgramTests {
 	// MARK: - Coverage Ratio
 
 	@Test("Coverage ratio — 10K hedged / 15K produced = 66.7%")
-	func coverageRatio() {
+	func coverageRatio() throws {
 		let swap = CommoditySwap<Double>(
 			underlier: "WTI",
 			fixedPrice: 72.0,
@@ -137,11 +137,8 @@ struct HedgingProgramTests {
 		let ratio = program.coverageRatio(totalProduction: production)
 
 		for period in periods {
-			let value = ratio[period]
-			#expect(value != nil) // TEST-QUALITY: existence check
-			if let value {
-				#expect(abs(value - (10_000.0 / 15_000.0)) < 1e-10)
-			}
+			let value = try #require(ratio[period])
+			#expect(abs(value - (10_000.0 / 15_000.0)) < 1e-10)
 		}
 	}
 

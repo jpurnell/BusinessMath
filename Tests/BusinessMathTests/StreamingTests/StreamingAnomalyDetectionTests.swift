@@ -259,9 +259,8 @@ struct StreamingAnomalyDetectionTests {
         }
 
         // The anomalous value should have a higher composite score
-        let maxScore = scores.max(by: { $0.score < $1.score })
-        #expect(maxScore != nil) // TEST-QUALITY: existence check
-        #expect(maxScore!.score > 0.5)  // Composite score ranges 0-1
+        let maxScore = try #require(scores.max(by: { $0.score < $1.score }))
+        #expect(maxScore.score > 0.5)  // Composite score ranges 0-1
     }
 
     // MARK: - Memory Efficiency Tests

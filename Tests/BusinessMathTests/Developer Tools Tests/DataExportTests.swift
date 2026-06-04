@@ -85,7 +85,7 @@ import RealModule
 
     // MARK: - JSON Export Tests
 
-    @Test("DataExport_ExportsModelToJSON") func LDataExport_ExportsModelToJSON() {
+    @Test("DataExport_ExportsModelToJSON") func LDataExport_ExportsModelToJSON() throws {
         // Given: A financial model
         let model = FinancialModel {
             Revenue {
@@ -105,13 +105,10 @@ import RealModule
         #expect(!jsonOutput.isEmpty, "JSON output should not be empty")
 
         // And: Should be parseable JSON
-        let jsonData = jsonOutput.data(using: .utf8)
-        #expect(jsonData != nil, "Should produce valid UTF-8 data") // TEST-QUALITY: existence check
+        let jsonData = try #require(jsonOutput.data(using: .utf8), "Should produce valid UTF-8 data")
 
-        if let jsonData = jsonData {
-            let parsed = try? JSONSerialization.jsonObject(with: jsonData)
-            #expect(parsed != nil, "Should be valid JSON") // TEST-QUALITY: existence check
-        }
+        let parsed = try #require(try? JSONSerialization.jsonObject(with: jsonData), "Should be valid JSON")
+        _ = parsed
 
         // And: Should include model data
         #expect(jsonOutput.contains("revenue"), "Should have revenue section")
@@ -120,7 +117,7 @@ import RealModule
         #expect(jsonOutput.contains("Expenses"), "Should include Expenses component")
     }
 
-    @Test("DataExport_ExportsTimeSeriesToJSON") func LDataExport_ExportsTimeSeriesToJSON() {
+    @Test("DataExport_ExportsTimeSeriesToJSON") func LDataExport_ExportsTimeSeriesToJSON() throws {
         // Given: A time series
         let series = TimeSeries<Double>(
             periods: [.quarter(year: 2023, quarter: 1), .quarter(year: 2023, quarter: 2)],
@@ -134,13 +131,10 @@ import RealModule
         // Then: Should produce valid JSON
         #expect(!jsonOutput.isEmpty, "JSON output should not be empty")
 
-        let jsonData = jsonOutput.data(using: .utf8)
-        #expect(jsonData != nil) // TEST-QUALITY: existence check
+        let jsonData = try #require(jsonOutput.data(using: .utf8))
 
-        if let jsonData = jsonData {
-            let parsed = try? JSONSerialization.jsonObject(with: jsonData)
-            #expect(parsed != nil, "Should be valid JSON") // TEST-QUALITY: existence check
-        }
+        let parsed = try #require(try? JSONSerialization.jsonObject(with: jsonData), "Should be valid JSON")
+        _ = parsed
 
         // And: Should include period and value data
         #expect(jsonOutput.contains("periods") || jsonOutput.contains("data"), "Should have data structure")
