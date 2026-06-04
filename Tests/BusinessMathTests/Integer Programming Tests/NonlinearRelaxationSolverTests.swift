@@ -63,10 +63,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: x = y = 1 (symmetry), with objective = 2
-        let sol = result.solution!
         let sum = sol[0] + sol[1]
         #expect(abs(sum - 2.0) < 1e-3, "Expected x + y = 2, got \(sum)")
         #expect(abs(sol[0] - sol[1]) < 1e-3, "Expected x ≈ y by symmetry")
@@ -95,10 +94,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Maximum of -(x² + y²) occurs at boundary: x + y = 2
-        let sol = result.solution!
         let sum = sol[0] + sol[1]
         #expect(abs(sum - 2.0) < 1e-3, "Expected x + y = 2, got \(sum)")
     }
@@ -126,10 +124,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Verify circle constraint satisfied
-        let sol = result.solution!
         let radius = sol[0] * sol[0] + sol[1] * sol[1]
         #expect(radius <= 1.0 + 1e-3, "Circle constraint violated: r² = \(radius)")
     }
@@ -155,10 +152,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal should be on ellipse boundary (minimizing x)
-        let sol = result.solution!
         let ellipse = (sol[0] / 2.0) * (sol[0] / 2.0) + sol[1] * sol[1]
         #expect(ellipse <= 1.0 + 1e-3, "Ellipse constraint violated")
     }
@@ -187,10 +183,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Verify annulus constraints
-        let sol = result.solution!
         let r2 = sol[0] * sol[0] + sol[1] * sol[1]
         #expect(r2 >= 1.0 - 1e-3, "Inner circle constraint violated: r² = \(r2)")
         #expect(r2 <= 4.0 + 1e-3, "Outer circle constraint violated: r² = \(r2)")
@@ -223,10 +218,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: (0, 0) with objective = 0
-        let sol = result.solution!
         #expect(abs(sol[0]) < 1e-3, "Expected x ≈ 0, got \(sol[0])")
         #expect(abs(sol[1]) < 1e-3, "Expected y ≈ 0, got \(sol[1])")
     }
@@ -303,10 +297,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Optimal: x = 1
-        let sol = result.solution!
         #expect(abs(sol[0] - 1.0) < 1e-3, "Expected x = 1, got \(sol[0])")
     }
 
@@ -331,7 +324,7 @@ struct NonlinearRelaxationSolverTests {
         #expect(result.status == .optimal || result.status == .infeasible)
 
         if result.status == .optimal {
-            #expect(result.solution != nil) // TEST-QUALITY: existence check
+            let _ = try #require(result.solution)
             #expect(result.objectiveValue >= 0.0)
         }
     }
@@ -359,10 +352,9 @@ struct NonlinearRelaxationSolverTests {
         )
 
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let sol = try #require(result.solution)
 
         // Verify equality constraint
-        let sol = result.solution!
         let sum = sol[0] + sol[1]
         #expect(abs(sum - 2.0) < 1e-3, "Equality violated: x + y = \(sum)")
     }

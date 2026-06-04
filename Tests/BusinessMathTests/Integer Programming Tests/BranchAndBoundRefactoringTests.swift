@@ -29,20 +29,20 @@ struct BranchAndBoundRefactoringTests {
     }
 
     @Test("BranchAndBound defaults to SimplexRelaxationSolver")
-    func testDefaultRelaxationSolver() {
+    func testDefaultRelaxationSolver() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>()
 
         // Should use SimplexRelaxationSolver by default (test by solving a problem)
         let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] }
-        let result = try? solver.solve(
+        let maybeResult = try? solver.solve(
             objective: objective,
             from: VectorN([0.5]),
             subjectTo: [],
             integerSpec: .allBinary(dimension: 1)
         )
 
-        #expect(result != nil) // TEST-QUALITY: existence check
-        #expect(result?.status == .optimal)
+        let result = try #require(maybeResult)
+        #expect(result.status == .optimal)
     }
 
     @Test("BranchAndBound accepts all constructor parameters with relaxation solver")

@@ -254,17 +254,15 @@ struct MultivariateGradientDescentTests {
 			initialGuess: initialGuess
 		)
 
-		#expect(result.history != nil, "History should be recorded") // TEST-QUALITY: existence check
-		if let history = result.history {
-			#expect(history.count > 0, "Should have history entries")
-			#expect(history.count == result.iterations || history.count == result.iterations + 1,
-				   "History count should match or be one more than iterations")
+		let history = try #require(result.history, "History should be recorded")
+		#expect(!history.isEmpty, "Should have history entries")
+		#expect(history.count == result.iterations || history.count == result.iterations + 1,
+			   "History count should match or be one more than iterations")
 
-			// Values should decrease over time
-			for i in 1..<history.count {
-				#expect(history[i].value <= history[i-1].value,
-					   "Function value should decrease or stay same")
-			}
+		// Values should decrease over time
+		for i in 1..<history.count {
+			#expect(history[i].value <= history[i-1].value,
+				   "Function value should decrease or stay same")
 		}
 	}
 

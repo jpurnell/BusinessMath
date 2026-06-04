@@ -67,13 +67,11 @@ struct NodeCutLoopTests {
         )
 
         // Result should contain cutting plane statistics
-        #expect(result.cuttingPlaneStats != nil, "Should track cutting plane statistics") // TEST-QUALITY: existence check
+        let stats = try #require(result.cuttingPlaneStats, "Should track cutting plane statistics")
 
-        if let stats = result.cuttingPlaneStats {
-            // At least some cuts should have been generated
-            #expect(stats.totalCutsGenerated >= 0, "Should track total cuts")
-            #expect(stats.cuttingRounds >= 0, "Should track cutting rounds")
-        }
+        // At least some cuts should have been generated
+        #expect(stats.totalCutsGenerated >= 0, "Should track total cuts")
+        #expect(stats.cuttingRounds >= 0, "Should track cutting rounds")
     }
 
     @Test("LP is re-solved after adding cuts")

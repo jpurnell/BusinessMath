@@ -283,8 +283,8 @@ struct MultivariateLBFGSTests {
 
 		// Should converge with small memory
 		#expect(result.converged || result.iterations >= 10, "Should make progress")
-		#expect(result.history != nil, "Should record history") // TEST-QUALITY: existence check
-		#expect(result.history!.count <= 20, "History count should match iterations")
+		let history = try #require(result.history, "Should record history")
+		#expect(history.count <= 20, "History count should match iterations")
 	}
 
 	@Test("Curvature condition rejection")

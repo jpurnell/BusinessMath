@@ -304,17 +304,14 @@ struct LBFGSOptimizerTests {
         }
 
         #expect(result.converged)
-        let lastMetrics = metricsCollector.last()
-        #expect(lastMetrics != nil) // TEST-QUALITY: existence check
+        let metrics = try #require(metricsCollector.last())
 
-        if let metrics = lastMetrics {
-            // Near convergence, gradient should be small
-            #expect(metrics.gradientNorm < 0.1)
-            // Relative change should be small
-            #expect(metrics.relativeChange < 0.1)
-            // Step size should be positive
-            #expect(metrics.stepSize >= 0)
-        }
+        // Near convergence, gradient should be small
+        #expect(metrics.gradientNorm < 0.1)
+        // Relative change should be small
+        #expect(metrics.relativeChange < 0.1)
+        // Step size should be positive
+        #expect(metrics.stepSize >= 0)
     }
 
     // MARK: - AsyncSequence Progress Stream Tests
@@ -348,10 +345,9 @@ struct LBFGSOptimizerTests {
         #expect(progressUpdates.count > 0)
 
         // Final update should have result
-        if let last = progressUpdates.last {
-            #expect(last.result != nil) // TEST-QUALITY: existence check
-            #expect(last.result?.converged == true)
-        }
+        let last = try #require(progressUpdates.last)
+        let finalResult = try #require(last.result)
+        #expect(finalResult.converged == true)
     }
 
     // MARK: - Edge Cases

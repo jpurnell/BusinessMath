@@ -189,7 +189,7 @@ struct AsyncGradientDescentOptimizerTests {
 
             // Gradient should exist for most iterations
             if progress.iteration > 0 && !progress.hasConverged {
-                #expect(progress.gradient != nil) // TEST-QUALITY: existence check
+                #expect(progress.gradient?.isFinite == true)
             }
         }
 

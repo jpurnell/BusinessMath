@@ -256,8 +256,8 @@ struct AsyncSimplexSolverTests {
             }
         }
 
-        #expect(finalObjective != nil) // TEST-QUALITY: existence check
-        #expect(abs(finalObjective! - 9.0) < 1e-6)
+        let objective = try #require(finalObjective)
+        #expect(abs(objective - 9.0) < 1e-6)
     }
 
     // MARK: - Cancellation Tests

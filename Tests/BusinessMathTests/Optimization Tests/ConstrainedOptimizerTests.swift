@@ -303,15 +303,17 @@ struct ConstrainedOptimizerTests {
 			subjectTo: [constraint]
 		)
 
-		#expect(result.history != nil && !result.history!.isEmpty, "Should record history") // TEST-QUALITY: existence check
-		#expect(result.history!.count <= 20, "History should not exceed max iterations")
-		#expect(result.history!.last!.0 == result.iterations - 1, "Last history entry should match iteration count")
+		let history = try #require(result.history, "Should record history")
+		#expect(!history.isEmpty, "History should not be empty")
+		#expect(history.count <= 20, "History should not exceed max iterations")
+		let lastEntry = try #require(history.last, "History should have a last entry")
+		#expect(lastEntry.0 == result.iterations - 1, "Last history entry should match iteration count")
 
 		// For augmented Lagrangian, objective may temporarily increase
 		// Just check that we eventually converge to a reasonable solution
-		if let history = result.history, history.count > 1 {
+		if history.count > 1 {
 			let firstObj = history[0].2  // tuple.2 is objectiveValue
-			let lastObj = history.last!.2
+			let lastObj = lastEntry.2
 			print(firstObj)
 			// Augmented Lagrangian can increase temporarily, so just check final value is reasonable
 			#expect(lastObj < 1.0, "Final objective should be reasonable for this problem")

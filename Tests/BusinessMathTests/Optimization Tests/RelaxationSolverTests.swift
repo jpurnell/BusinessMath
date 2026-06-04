@@ -17,7 +17,7 @@ struct RelaxationSolverTests {
     // MARK: - RelaxationResult Tests
 
     @Test("RelaxationResult stores solution correctly")
-    func testRelaxationResultSolution() {
+    func testRelaxationResultSolution() throws {
         let solution = VectorN([1.5, 2.5, 3.5])
         let result = RelaxationResult(
             solution: solution,
@@ -25,8 +25,7 @@ struct RelaxationSolverTests {
             status: .optimal
         )
 
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
-        let storedSolution = result.solution!
+        let storedSolution = try #require(result.solution)
         #expect(storedSolution.toArray().count == 3)
         #expect(abs(storedSolution.toArray()[0] - 1.5) < 1e-6)
         #expect(abs(storedSolution.toArray()[1] - 2.5) < 1e-6)
@@ -176,7 +175,7 @@ struct RelaxationSolverTests {
 
         // Verify the result is valid
         #expect(result.status == .optimal)
-        #expect(result.solution != nil) // TEST-QUALITY: existence check
+        let _ = try #require(result.solution)
         #expect(abs(result.objectiveValue - 5.0) < 1e-6)  // 1^2 + 2^2 = 5
     }
 

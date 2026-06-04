@@ -37,8 +37,8 @@ struct BranchAndCutRobustnessTests {
 
         // Cuts should be generated if fractional basic variables exist
         // Note: Cut generation depends on simplex basis structure
-        #expect(result.cuttingPlaneStats != nil) // TEST-QUALITY: existence check
-        #expect(result.cuttingPlaneStats!.totalCutsGenerated >= 0)
+        let stats = try #require(result.cuttingPlaneStats)
+        #expect(stats.totalCutsGenerated >= 0)
     }
 
     @Test("LP infeasibility after cuts prunes node")

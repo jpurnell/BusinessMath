@@ -374,12 +374,10 @@ struct MultivariateNewtonRaphsonTests {
 			initialGuess: initialGuess
 		)
 
-		#expect(result.history != nil, "History should be recorded") // TEST-QUALITY: existence check
-		if let history = result.history {
-			#expect(history.count > 0, "Should have history entries")
-			// Newton-Raphson converges very fast on quadratic
-			#expect(history.count < 5, "Should converge in very few iterations")
-		}
+		let history = try #require(result.history, "History should be recorded")
+		#expect(!history.isEmpty, "Should have history entries")
+		// Newton-Raphson converges very fast on quadratic
+		#expect(history.count < 5, "Should converge in very few iterations")
 	}
 
 	// MARK: - Automatic Gradient Tests

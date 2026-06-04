@@ -938,7 +938,7 @@ struct VectorSpaceTests {
 	}
 	
 	@Test("Ones and zeros vectors")
-	func onesAndZerosVectors() {
+	func onesAndZerosVectors() throws {
 		let dimension = 5
 		
 			// Zero vector
@@ -950,17 +950,15 @@ struct VectorSpaceTests {
 		#expect(abs(sizedZero.sum - 0.0) < 1e-6)
 		
 			// Ones vector
-		let ones = VectorN<Double>.filled(with: 1.0, dimension: dimension)
-		#expect(ones != nil) // TEST-QUALITY: existence check
-		#expect(ones!.count == dimension)
-		#expect(ones!.sum == Double(dimension))
-		
+		let ones = try #require(VectorN<Double>.filled(with: 1.0, dimension: dimension))
+		#expect(ones.count == dimension)
+		#expect(ones.sum == Double(dimension))
+
 			// Custom filled vector
-		let sevens = VectorN<Double>.filled(with: 7.0, dimension: 3)
-		#expect(sevens != nil) // TEST-QUALITY: existence check
-		#expect(abs(sevens![0] - 7.0) < 1e-6)
-		#expect(abs(sevens![1] - 7.0) < 1e-6)
-		#expect(abs(sevens![2] - 7.0) < 1e-6)
+		let sevens = try #require(VectorN<Double>.filled(with: 7.0, dimension: 3))
+		#expect(abs(sevens[0] - 7.0) < 1e-6)
+		#expect(abs(sevens[1] - 7.0) < 1e-6)
+		#expect(abs(sevens[2] - 7.0) < 1e-6)
 	}
 	
 		// MARK: - Error Handling Tests
