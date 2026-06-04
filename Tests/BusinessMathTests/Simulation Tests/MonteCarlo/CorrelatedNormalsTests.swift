@@ -20,7 +20,7 @@ struct CorrelatedNormalsTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.CorrelatedNormalsTests", category: #function)
 
 	@Test("CorrelatedNormals initialization with valid inputs")
-	func initializationValid() {
+	func initializationValid() throws {
 		let means = [0.0, 0.0]
 		let correlationMatrix = [
 			[1.0, 0.5],
@@ -28,8 +28,8 @@ struct CorrelatedNormalsTests {
 		]
 
 		// Should not throw
-		let correlated = try? CorrelatedNormals(means: means, correlationMatrix: correlationMatrix)
-		#expect(correlated != nil, "Should initialize with valid inputs") // TEST-QUALITY: existence check
+		let correlated = try CorrelatedNormals(means: means, correlationMatrix: correlationMatrix)
+		#expect(correlated.sample().count == 2, "Should initialize with valid inputs")
 	}
 
 	@Test("CorrelatedNormals rejects mismatched dimensions")

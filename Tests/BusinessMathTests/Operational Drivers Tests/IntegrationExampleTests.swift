@@ -99,15 +99,15 @@ struct IntegrationExampleTests {
 		let projections = model.projectDeterministic(periods: quarters)
 
 		// Verify all components present
-		#expect(projections["users"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["pricePerUser"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["revenue"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["fixedCosts"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["variableCosts"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["headcount"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["payroll"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["totalCosts"] != nil) // TEST-QUALITY: existence check
-		#expect(projections["profit"] != nil) // TEST-QUALITY: existence check
+		#expect(projections["users"]?.count == 4)
+		#expect(projections["pricePerUser"]?.count == 4)
+		#expect(projections["revenue"]?.count == 4)
+		#expect(projections["fixedCosts"]?.count == 4)
+		#expect(projections["variableCosts"]?.count == 4)
+		#expect(projections["headcount"]?.count == 4)
+		#expect(projections["payroll"]?.count == 4)
+		#expect(projections["totalCosts"]?.count == 4)
+		#expect(projections["profit"]?.count == 4)
 
 		// Verify each has correct number of periods
 		for (_, timeSeries) in projections {
@@ -167,21 +167,18 @@ struct IntegrationExampleTests {
 	// MARK: - Monte Carlo Simulation
 
 	@Test(.disabled("Run Monte Carlo simulation"))
-	func monteCarloSimulation() {
+	func monteCarloSimulation() throws {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
 		// Run Monte Carlo with 1000 iterations (reduced for test speed)
 		let results = model.projectMonteCarlo(periods: quarters, iterations: 1_000)
 
-		// Verify all components present
-		#expect(results["profit"] != nil) // TEST-QUALITY: existence check
-		#expect(results["revenue"] != nil) // TEST-QUALITY: existence check
-		#expect(results["totalCosts"] != nil) // TEST-QUALITY: existence check
-
-		// Analyze Q1 profit
+		// Verify all components present and analyze Q1 profit
 		let q1 = quarters[0]
-		let profitResults = results["profit"]!
+		let profitResults = try #require(results["profit"])
+		let _ = try #require(results["revenue"])
+		let _ = try #require(results["totalCosts"])
 		let profitStats = profitResults.statistics[q1]!
 		let profitPctiles = profitResults.percentiles[q1]!
 
