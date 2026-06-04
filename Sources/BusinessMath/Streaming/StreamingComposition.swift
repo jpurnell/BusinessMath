@@ -259,7 +259,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
             // from multiple task group children. The AsyncStream serializes yields.
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
                 var box: ContinuationBox<Element>?
-                let ch = AsyncStream<Element> { cont in
+                let ch = AsyncStream<Element>(bufferingPolicy: .bufferingOldest(64)) { cont in
                     box = ContinuationBox(cont)
                 }
                 guard let resolvedBox = box else {
@@ -470,7 +470,7 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
             // SAFETY: ContinuationBox allows safe concurrent access from debounce tasks
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
                 var box: ContinuationBox<Element>?
-                let ch = AsyncStream<Element> { cont in
+                let ch = AsyncStream<Element>(bufferingPolicy: .bufferingNewest(1)) { cont in
                     box = ContinuationBox(cont)
                 }
                 guard let resolvedBox = box else {
@@ -596,7 +596,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
             // ThreadSafeBox (actor) provides synchronized access to latest values
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
                 var box: ContinuationBox<Element>?
-                let ch = AsyncStream<Element> { cont in
+                let ch = AsyncStream<Element>(bufferingPolicy: .bufferingNewest(1)) { cont in
                     box = ContinuationBox(cont)
                 }
                 guard let resolvedBox = box else {
@@ -724,7 +724,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
             // ThreadSafeBox (actor) provides synchronized access to latest sampled value
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
                 var box: ContinuationBox<Element>?
-                let ch = AsyncStream<Element> { cont in
+                let ch = AsyncStream<Element>(bufferingPolicy: .bufferingNewest(1)) { cont in
                     box = ContinuationBox(cont)
                 }
                 guard let resolvedBox = box else {
@@ -1119,7 +1119,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
             // ThreadSafeBox (actor) provides synchronized access to latest value
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
                 var box: ContinuationBox<Element>?
-                let ch = AsyncStream<Element> { cont in
+                let ch = AsyncStream<Element>(bufferingPolicy: .bufferingNewest(1)) { cont in
                     box = ContinuationBox(cont)
                 }
                 guard let resolvedBox = box else {
@@ -1617,7 +1617,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
             // SAFETY: ThrowingContinuationBox allows safe concurrent access from timeout tasks
             let (channel, continuationBox): (AsyncThrowingStream<Element, Error>, ThrowingContinuationBox<Element>) = {
                 var box: ThrowingContinuationBox<Element>?
-                let ch = AsyncThrowingStream<Element, Error> { cont in
+                let ch = AsyncThrowingStream<Element, Error>(bufferingPolicy: .bufferingOldest(64)) { cont in
                     box = ThrowingContinuationBox(cont)
                 }
                 guard let resolvedBox = box else {

@@ -145,7 +145,7 @@ public struct AsyncAlignedSequence<
         init(primary: Primary, secondary: Secondary, strategy: AlignmentStrategy) {
             let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
                 var box: ContinuationBox<Element>!  // swiftlint:disable:this identifier_name
-                let ch = AsyncStream<Element> { cont in
+                let ch = AsyncStream<Element>(bufferingPolicy: .bufferingOldest(64)) { cont in
                     box = ContinuationBox(cont)
                 }
                 return (ch, box)
