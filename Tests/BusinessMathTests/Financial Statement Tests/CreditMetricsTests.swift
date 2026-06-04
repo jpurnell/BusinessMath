@@ -685,7 +685,7 @@ struct CreditMetricsTests {
 		]
 
 		for signal in expectedSignals {
-			#expect(score.signals[signal] != nil, "Signal '\(signal)' should be present") // TEST-QUALITY: existence check
+			let _ = try #require(score.signals[signal], "Signal '\(signal)' should be present")
 		}
 
 		// Verify score components sum correctly

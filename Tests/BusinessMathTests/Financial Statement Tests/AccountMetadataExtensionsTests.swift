@@ -340,7 +340,7 @@ struct AccountMetadataExtensionsTests {
     }
 
     @Test("Real-world scenario: Complete imported account")
-    func completeImportedAccount() {
+    func completeImportedAccount() throws {
         let metadata = AccountMetadata(
             description: "Sales tax collected from customers",
             category: "Current Liabilities",
@@ -355,7 +355,8 @@ struct AccountMetadataExtensionsTests {
         )
 
         // Verify complete metadata
-        #expect(metadata.description != nil) // TEST-QUALITY: existence check
+        let desc = try #require(metadata.description)
+        #expect(!desc.isEmpty)
         #expect(metadata.externalSourceSystem == "Xero")
         #expect(metadata.externalDetailType == "SalesTaxPayable")
         #expect(metadata.tags.count == 3)

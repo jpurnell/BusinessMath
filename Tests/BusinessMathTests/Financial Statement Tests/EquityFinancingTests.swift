@@ -526,7 +526,7 @@ struct EquityFinancingTests {
 
         // Employee now in cap table with unvested options
         let ownership = capTable.ownership()
-        #expect(ownership["Employee"] != nil) // TEST-QUALITY: existence check
+        #expect(ownership["Employee"]?.isFinite == true)
     }
 
     @Test("Vesting schedule - 4 year with 1 year cliff")

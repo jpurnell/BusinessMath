@@ -106,10 +106,9 @@ struct AccountNodeTests {
         let mid = AccountNode<Double>(id: "mid", account: nil, children: [target])
         let root = AccountNode<Double>(id: "root", account: nil, children: [mid])
 
-        let found = root.find(id: "target")
-        #expect(found != nil) // TEST-QUALITY: existence check
-        #expect(found?.id == "target")
-        #expect(abs((found?.total(for: jan2025) ?? .nan) - 1.0) < 1e-6)
+        let found = try #require(root.find(id: "target"))
+        #expect(found.id == "target")
+        #expect(abs(found.total(for: jan2025) - 1.0) < 1e-6)
     }
 
     // MARK: - 6. Find Missing ID

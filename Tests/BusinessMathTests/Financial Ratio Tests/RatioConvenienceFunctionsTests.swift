@@ -203,12 +203,12 @@ struct RatioConvenienceFunctionsTests {
 				#expect(efficiency.assetTurnover[q1]! > 0.0)
 
 				// With our test data, all optional metrics should be present
-				#expect(efficiency.inventoryTurnover != nil) // TEST-QUALITY: existence check
-				#expect(efficiency.receivablesTurnover != nil) // TEST-QUALITY: existence check
-				#expect(efficiency.daysSalesOutstanding != nil) // TEST-QUALITY: existence check
-				#expect(efficiency.daysInventoryOutstanding != nil) // TEST-QUALITY: existence check
-				#expect(efficiency.daysPayableOutstanding != nil) // TEST-QUALITY: existence check
-				#expect(efficiency.cashConversionCycle != nil) // TEST-QUALITY: existence check
+				#expect(efficiency.inventoryTurnover?[q1]?.isFinite == true)
+				#expect(efficiency.receivablesTurnover?[q1]?.isFinite == true)
+				#expect(efficiency.daysSalesOutstanding?[q1]?.isFinite == true)
+				#expect(efficiency.daysInventoryOutstanding?[q1]?.isFinite == true)
+				#expect(efficiency.daysPayableOutstanding?[q1]?.isFinite == true)
+				#expect(efficiency.cashConversionCycle?[q1]?.isFinite == true)
 
 				// Verify values are reasonable
 				guard let inventoryTurnover = efficiency.inventoryTurnover?[q1] else {
@@ -317,7 +317,7 @@ struct RatioConvenienceFunctionsTests {
 				#expect(equityRatio < 1.0)
 
 				// With our test data, interest coverage should be present
-				#expect(solvency.interestCoverage != nil) // TEST-QUALITY: existence check
+				#expect(solvency.interestCoverage?[q1]?.isFinite == true)
 				guard let interestCoverage = solvency.interestCoverage?[q1] else {
 						Issue.record("Interest coverage should be present for Q1")
 						return
@@ -329,7 +329,7 @@ struct RatioConvenienceFunctionsTests {
 				#expect(abs(sum - 1.0) < 0.01)
 
 				// Debt service coverage is automatically derived from balance sheet
-				#expect(solvency.debtServiceCoverage != nil) // TEST-QUALITY: existence check
+				#expect(solvency.debtServiceCoverage?[periods[1]]?.isFinite == true)
 		}
 
 		@Test("solvencyRatios() calculates DSCR when payments provided")
@@ -349,7 +349,7 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// DSCR should be calculated
-				#expect(solvency.debtServiceCoverage != nil) // TEST-QUALITY: existence check
+				#expect(solvency.debtServiceCoverage?[q1]?.isFinite == true)
 				guard let dscr = solvency.debtServiceCoverage?[q1] else {
 						Issue.record("DSCR should be present for Q1")
 						return
@@ -710,10 +710,10 @@ struct RatioConvenienceFunctionsAdditionalTests {
 
 								// Also check both periods are present
 								let q2 = periods[1]
-								#expect(liquidity.currentRatio[q2] != nil) // TEST-QUALITY: existence check
-								#expect(liquidity.quickRatio[q2] != nil) // TEST-QUALITY: existence check
-								#expect(liquidity.cashRatio[q2] != nil) // TEST-QUALITY: existence check
-								#expect(liquidity.workingCapital[q2] != nil) // TEST-QUALITY: existence check
+								#expect(liquidity.currentRatio[q2]?.isFinite == true)
+								#expect(liquidity.quickRatio[q2]?.isFinite == true)
+								#expect(liquidity.cashRatio[q2]?.isFinite == true)
+								#expect(liquidity.workingCapital[q2]?.isFinite == true)
 				}
 
 				@Test("Valuation ratios: P/E, P/S, P/B exact Q1 values")
@@ -776,10 +776,12 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								#expect(abs(ratios.netMargin[q1]! - netMarginExpected) < 1e-12)
 
 								// Ensure both periods are populated
-								#expect(ratios.grossMargin[q2] != nil) // TEST-QUALITY: existence check
-								#expect(ratios.netMargin[q2] != nil) // TEST-QUALITY: existence check
-								#expect(ratios.roa[q1] != nil && ratios.roa[q2] != nil) // TEST-QUALITY: existence check
-								#expect(ratios.roe[q1] != nil && ratios.roe[q2] != nil) // TEST-QUALITY: existence check
+								#expect(ratios.grossMargin[q2]?.isFinite == true)
+								#expect(ratios.netMargin[q2]?.isFinite == true)
+								#expect(ratios.roa[q1]?.isFinite == true)
+								#expect(ratios.roa[q2]?.isFinite == true)
+								#expect(ratios.roe[q1]?.isFinite == true)
+								#expect(ratios.roe[q2]?.isFinite == true)
 				}
 
 				@Test("Solvency: interest coverage equals EBIT/Interest, Q1")
@@ -798,8 +800,8 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let ebitQ1 = revenueQ1 - cogsQ1 - opexQ1 - depQ1 // 250,000
 								let expectedCoverage = ebitQ1 / interestQ1 // 10.0
 
-								#expect(solvency.interestCoverage != nil) // TEST-QUALITY: existence check
-								#expect(abs(solvency.interestCoverage![q1]! - expectedCoverage) < 1e-12)
+								let interestCov = try #require(solvency.interestCoverage?[q1])
+								#expect(abs(interestCov - expectedCoverage) < 1e-12)
 				}
 
 				@Test("Piotroski alias: score bounded and components within [0,1]")
@@ -931,7 +933,7 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let efficiency = efficiencyRatios(incomeStatement: isObj, balanceSheet: bsObj)
 
 								#expect(efficiency.assetTurnover[p1] == nil)
-								#expect(efficiency.assetTurnover[p2] != nil) // TEST-QUALITY: existence check
-								#expect(efficiency.assetTurnover[p3] != nil) // TEST-QUALITY: existence check
+								#expect(efficiency.assetTurnover[p2]?.isFinite == true)
+								#expect(efficiency.assetTurnover[p3]?.isFinite == true)
 				}
 }

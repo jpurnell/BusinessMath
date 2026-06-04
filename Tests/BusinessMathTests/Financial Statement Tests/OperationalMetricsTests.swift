@@ -190,7 +190,8 @@ struct OperationalMetricsTests {
 
 		#expect(metrics.metadata?.industry == "SaaS")
 		#expect(metrics.metadata?.businessModel == "Subscription-based B2B software")
-		#expect(metrics.metadata?.metricDefinitions?["monthly_recurring_revenue"] != nil) // TEST-QUALITY: existence check
+		let mrrDef = try #require(metrics.metadata?.metricDefinitions?["monthly_recurring_revenue"])
+		#expect(!mrrDef.isEmpty)
 	}
 
 	// MARK: - Time Series
@@ -259,13 +260,12 @@ struct OperationalMetricsTests {
 		]
 
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: metricsList)
-		let unitsSold = timeSeries.timeSeries(for: "units_sold")
+		let unitsSold = try #require(timeSeries.timeSeries(for: "units_sold"))
 
-		#expect(unitsSold != nil) // TEST-QUALITY: existence check
-		#expect(unitsSold?[quarters[0]] == 10_000)
-		#expect(unitsSold?[quarters[1]] == 11_000)
-		#expect(unitsSold?[quarters[2]] == 12_100)
-		#expect(unitsSold?[quarters[3]] == 13_310)
+		#expect(unitsSold[quarters[0]] == 10_000)
+		#expect(unitsSold[quarters[1]] == 11_000)
+		#expect(unitsSold[quarters[2]] == 12_100)
+		#expect(unitsSold[quarters[3]] == 13_310)
 	}
 
 	@Test("Calculate growth rate for metric")
@@ -297,17 +297,15 @@ struct OperationalMetricsTests {
 		]
 
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: metricsList)
-		let growth = timeSeries.growthRate(metric: "units_sold")
-
-		#expect(growth != nil) // TEST-QUALITY: existence check
+		let growth = try #require(timeSeries.growthRate(metric: "units_sold"))
 
 		// Q1 to Q2: 10% growth
-		let q2Growth = growth?[quarters[1]]!
-		#expect(abs(q2Growth! - 0.10) < 0.01, "Q2 growth should be ~10%")
+		let q2Growth = growth[quarters[1]]!
+		#expect(abs(q2Growth - 0.10) < 0.01, "Q2 growth should be ~10%")
 
 		// Q2 to Q3: 10% growth
-		let q3Growth = growth?[quarters[2]]!
-		#expect(abs(q3Growth! - 0.10) < 0.01, "Q3 growth should be ~10%")
+		let q3Growth = growth[quarters[2]]!
+		#expect(abs(q3Growth - 0.10) < 0.01, "Q3 growth should be ~10%")
 	}
 
 	@Test("Time series rejects metrics from different entities")
