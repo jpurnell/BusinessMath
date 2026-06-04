@@ -156,7 +156,7 @@ struct ValidationRuleTests {
 
 		#expect(context.fieldName == "Revenue")
 		#expect(context.entity?.name == "Test Co")
-		#expect(context.period != nil) // TEST-QUALITY: existence check
+		let _ = try #require(context.period)
 		#expect(context.metadata["source"] as? String == "manual_entry")
 	}
 

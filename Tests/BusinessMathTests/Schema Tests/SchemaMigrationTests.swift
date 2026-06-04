@@ -93,7 +93,7 @@ struct SchemaMigrationTests {
 
 		let migrated = try manager.migrate(data: data, from: 1, to: 3)
 
-		#expect(migrated["category"] != nil) // TEST-QUALITY: existence check
+		let _ = try #require(migrated["category"])
 		#expect(abs((migrated["totalRevenue"] as? Double ?? 0) - 100_000.0) < 1e-6)
 		#expect(migrated["revenue"] == nil)
 	}

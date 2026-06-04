@@ -191,9 +191,8 @@ struct TemplateRegistryTests {
 
         try await registry.register(template, metadata: metadata)
 
-        let found = await registry.template(named: "Findable Template")
-        #expect(found != nil) // TEST-QUALITY: existence check
-        #expect(found?.identifier == "com.test.simple-template")
+        let found = try #require(await registry.template(named: "Findable Template"))
+        #expect(found.identifier == "com.test.simple-template")
     }
 
     @Test("Get all templates")
@@ -305,11 +304,10 @@ struct TemplateRegistryTests {
 
         try await registry.register(template, metadata: metadata)
 
-        let retrieved = await registry.metadata(for: "Metadata Test")
-        #expect(retrieved != nil) // TEST-QUALITY: existence check
-        #expect(retrieved?.name == "Metadata Test")
-        #expect(retrieved?.version == "2.0.0")
-        #expect(retrieved?.author == "Test Author")
+        let retrieved = try #require(await registry.metadata(for: "Metadata Test"))
+        #expect(retrieved.name == "Metadata Test")
+        #expect(retrieved.version == "2.0.0")
+        #expect(retrieved.author == "Test Author")
     }
 
     // MARK: - Export/Import Tests
@@ -568,7 +566,7 @@ struct TemplateRegistryTests {
     }
 
     @Test("Schema with examples")
-    func schemaWithExamples() {
+    func schemaWithExamples() throws {
         let schema = TemplateSchema(
             parameters: [
                 TemplateSchema.Parameter(
@@ -585,8 +583,8 @@ struct TemplateRegistryTests {
         )
 
         #expect(schema.examples.count == 2)
-        #expect(schema.examples["basic"] != nil) // TEST-QUALITY: existence check
-        #expect(schema.examples["advanced"] != nil) // TEST-QUALITY: existence check
+        let _ = try #require(schema.examples["basic"])
+        let _ = try #require(schema.examples["advanced"])
     }
 
     // MARK: - Utility Tests

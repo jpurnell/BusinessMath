@@ -39,7 +39,7 @@ struct FinancialScenarioTests {
 	}
 
 	@Test("Scenario with driver overrides")
-	func scenarioWithDriverOverrides() {
+	func scenarioWithDriverOverrides() throws {
 		let optimisticPrice = DeterministicDriver(name: "Price", value: 120.0)
 
 		var overrides: [String: AnyDriver<Double>] = [:]
@@ -52,16 +52,16 @@ struct FinancialScenarioTests {
 		)
 
 		#expect(scenario.driverOverrides.count == 1)
-		#expect(scenario.driverOverrides["Price"] != nil) // TEST-QUALITY: existence check
+		let priceDriver = try #require(scenario.driverOverrides["Price"])
 
 		// Verify the override driver returns expected value
 		let period = Period.quarter(year: 2025, quarter: 1)
-		let overrideValue = scenario.driverOverrides["Price"]?.sample(for: period)
-		#expect(abs((overrideValue ?? 0) - 120.0) < 1e-6)
+		let overrideValue = priceDriver.sample(for: period)
+		#expect(abs(overrideValue - 120.0) < 1e-6)
 	}
 
 	@Test("Scenario with multiple driver overrides")
-	func scenarioWithMultipleOverrides() {
+	func scenarioWithMultipleOverrides() throws {
 		let highPrice = DeterministicDriver(name: "Price", value: 150.0)
 		let lowVolume = DeterministicDriver(name: "Volume", value: 800.0)
 		let highCost = DeterministicDriver(name: "Unit Cost", value: 60.0)
@@ -78,9 +78,9 @@ struct FinancialScenarioTests {
 		)
 
 		#expect(scenario.driverOverrides.count == 3)
-		#expect(scenario.driverOverrides["Price"] != nil) // TEST-QUALITY: existence check
-		#expect(scenario.driverOverrides["Volume"] != nil) // TEST-QUALITY: existence check
-		#expect(scenario.driverOverrides["Unit Cost"] != nil) // TEST-QUALITY: existence check
+		let _ = try #require(scenario.driverOverrides["Price"])
+		let _ = try #require(scenario.driverOverrides["Volume"])
+		let _ = try #require(scenario.driverOverrides["Unit Cost"])
 	}
 
 	@Test("Scenario with assumptions")

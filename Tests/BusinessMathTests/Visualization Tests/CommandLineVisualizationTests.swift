@@ -246,7 +246,7 @@ struct VisualizationAdditionalTests {
 	}
 
 	@Test("Tornado deterministic, shows base and sorted drivers")
-	func tornadoDeterministic() {
+	func tornadoDeterministic() throws {
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue", "Costs", "Marketing"],
 			impacts: ["Revenue": 300.0, "Costs": 200.0, "Marketing": 100.0],
@@ -259,11 +259,8 @@ struct VisualizationAdditionalTests {
 		#expect(output.contains("Base"))
 		#expect(output.contains("1000"))
 		// Ensure higher impact appears before lower impact in textual output
-		let revIndex = output.range(of: "Revenue")?.lowerBound
-		let mktIndex = output.range(of: "Marketing")?.lowerBound
-		#expect(revIndex != nil && mktIndex != nil) // TEST-QUALITY: existence check
-		if let r = revIndex, let m = mktIndex {
-			#expect(r < m)
-		}
+		let revRange = try #require(output.range(of: "Revenue"))
+		let mktRange = try #require(output.range(of: "Marketing"))
+		#expect(revRange.lowerBound < mktRange.lowerBound)
 	}
 }

@@ -50,7 +50,7 @@ import Testing
 
 	// MARK: - Multiple Inputs Tests
 
-	@Test("PlotTornadoDiagram_MultipleInputs_ShowsAllInRankedOrder") func LPlotTornadoDiagram_MultipleInputs_ShowsAllInRankedOrder() {
+	@Test("PlotTornadoDiagram_MultipleInputs_ShowsAllInRankedOrder") func LPlotTornadoDiagram_MultipleInputs_ShowsAllInRankedOrder() throws {
 		// Given - inputs already sorted by impact
 		let tornado = TornadoDiagramAnalysis(
 			inputs: ["Revenue", "Costs", "Marketing"],
@@ -81,13 +81,9 @@ import Testing
 		#expect(output.contains("Marketing"), "Should show Marketing")
 
 		// Verify order (Revenue should appear before Marketing in output)
-		let revenueIndex = output.range(of: "Revenue")?.lowerBound
-		let marketingIndex = output.range(of: "Marketing")?.lowerBound
-		#expect(revenueIndex != nil) // TEST-QUALITY: existence check
-		#expect(marketingIndex != nil) // TEST-QUALITY: existence check
-		if let rev = revenueIndex, let mkt = marketingIndex {
-			#expect(rev < mkt, "Revenue (higher impact) should appear before Marketing")
-		}
+		let revenueRange = try #require(output.range(of: "Revenue"))
+		let marketingRange = try #require(output.range(of: "Marketing"))
+		#expect(revenueRange.lowerBound < marketingRange.lowerBound, "Revenue (higher impact) should appear before Marketing")
 	}
 
 	// MARK: - Bar Direction Tests

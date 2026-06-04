@@ -46,7 +46,7 @@ import RealModule
 
     // MARK: - Cost Calculation Tracing Tests
 
-    @Test("CalculationTrace_TracksCostCalculation") func LCalculationTrace_TracksCostCalculation() {
+    @Test("CalculationTrace_TracksCostCalculation") func LCalculationTrace_TracksCostCalculation() throws {
         // Given: A model with fixed and variable costs
         let model = FinancialModel {
             Revenue {
@@ -75,14 +75,13 @@ import RealModule
         #expect(costSteps.contains { $0.description.contains("Variable") && $0.description.contains("COGS") })
 
         // And: Variable cost step should show calculation
-        let variableStep = costSteps.first { $0.description.contains("Variable") }
-        #expect(variableStep != nil) // TEST-QUALITY: existence check
-        #expect(variableStep?.description.contains("30,000") ?? false, "Should show calculated variable cost amount")
+        let variableStep = try #require(costSteps.first { $0.description.contains("Variable") })
+        #expect(variableStep.description.contains("30,000"), "Should show calculated variable cost amount")
     }
 
     // MARK: - Profit Calculation Tracing Tests
 
-    @Test("CalculationTrace_TracksProfitCalculation") func LCalculationTrace_TracksProfitCalculation() {
+    @Test("CalculationTrace_TracksProfitCalculation") func LCalculationTrace_TracksProfitCalculation() throws {
         // Given: A complete financial model
         let model = FinancialModel {
             Revenue {
@@ -111,15 +110,14 @@ import RealModule
         #expect(!profitSteps.isEmpty, "Should trace profit calculation")
 
         // And: Profit step should reference revenue and costs
-        let profitStep = profitSteps.first
-        #expect(profitStep != nil) // TEST-QUALITY: existence check
-        #expect(profitStep?.description.contains("50,000") ?? false, "Should show revenue")
-        #expect(profitStep?.description.contains("22,500") ?? false, "Should show costs")
+        let profitStep = try #require(profitSteps.first)
+        #expect(profitStep.description.contains("50,000"), "Should show revenue")
+        #expect(profitStep.description.contains("22,500"), "Should show costs")
     }
 
     // MARK: - Trace Step Access Tests
 
-    @Test("CalculationTrace_ProvidesStepAccess") func LCalculationTrace_ProvidesStepAccess() {
+    @Test("CalculationTrace_ProvidesStepAccess") func LCalculationTrace_ProvidesStepAccess() throws {
         // Given: A model with calculations
         let model = FinancialModel {
             Revenue {
@@ -142,7 +140,7 @@ import RealModule
         for step in trace.steps {
             #expect(!step.description.isEmpty, "Step should have description")
             #expect(step.category == step.category, "Step should have category")
-            #expect(step.value != nil, "Step should have value") // TEST-QUALITY: existence check
+            let _ = try #require(step.value, "Step should have value")
         }
     }
 
