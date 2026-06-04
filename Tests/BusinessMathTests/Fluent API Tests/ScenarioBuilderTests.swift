@@ -205,7 +205,7 @@ struct ScenarioBuilderTests {
     }
 
     @Test("ScenarioSet scenario lookup")
-    func scenarioSetLookup() {
+    func scenarioSetLookup() throws {
         let scenarios = ScenarioSet {
             Baseline {
                 revenue(1_000_000)
@@ -216,13 +216,11 @@ struct ScenarioBuilderTests {
             }
         }
 
-        let baseline = scenarios.scenario(named: "Baseline")
-        #expect(baseline != nil) // TEST-QUALITY: existence check
-        #expect(baseline?.parameters["revenue"] == 1_000_000)
+        let baseline = try #require(scenarios.scenario(named: "Baseline"))
+        #expect(baseline.parameters["revenue"] == 1_000_000)
 
-        let pessimistic = scenarios.scenario(named: "Pessimistic")
-        #expect(pessimistic != nil) // TEST-QUALITY: existence check
-        #expect(pessimistic?.parameters["revenue"] == 800_000)
+        let pessimistic = try #require(scenarios.scenario(named: "Pessimistic"))
+        #expect(pessimistic.parameters["revenue"] == 800_000)
 
         let missing = scenarios.scenario(named: "NonExistent")
         #expect(missing == nil)
@@ -324,7 +322,7 @@ struct ScenarioBuilderTests {
     // MARK: - Expected Value and Statistics
 
     @Test("Expected value calculation")
-    func expectedValueCalculation() {
+    func expectedValueCalculation() throws {
         let scenarios = ScenarioSet {
             Pessimistic {
                 revenue(800_000)
@@ -342,13 +340,12 @@ struct ScenarioBuilderTests {
             .withProbability(0.25)
         }
 
-        let expectedRevenue = scenarios.expectedValue { scenario in
+        let expectedRevenue = try #require(scenarios.expectedValue { scenario in
             scenario.parameters["revenue"] ?? 0
-        }
+        })
 
-        #expect(expectedRevenue != nil) // TEST-QUALITY: existence check
         // (0.25 * 800k) + (0.50 * 1M) + (0.25 * 1.2M) = 200k + 500k + 300k = 1M
-        #expect(abs(expectedRevenue! - 1_000_000) < 1.0)
+        #expect(abs(expectedRevenue - 1_000_000) < 1.0)
     }
 
     @Test("Expected value with missing probabilities")
@@ -370,7 +367,7 @@ struct ScenarioBuilderTests {
     }
 
     @Test("Variance calculation")
-    func varianceCalculation() {
+    func varianceCalculation() throws {
         let scenarios = ScenarioSet {
             Pessimistic {
                 revenue(800_000)
@@ -388,13 +385,12 @@ struct ScenarioBuilderTests {
             .withProbability(0.25)
         }
 
-        let variance = scenarios.variance { $0.parameters["revenue"] ?? 0 }
-        #expect(variance != nil) // TEST-QUALITY: existence check
-        #expect(variance! > 0) // Should have positive variance
+        let variance = try #require(scenarios.variance { $0.parameters["revenue"] ?? 0 })
+        #expect(variance > 0) // Should have positive variance
     }
 
     @Test("Standard deviation calculation")
-    func standardDeviationCalculation() {
+    func standardDeviationCalculation() throws {
         let scenarios = ScenarioSet {
             Pessimistic {
                 revenue(800_000)
@@ -412,19 +408,16 @@ struct ScenarioBuilderTests {
             .withProbability(0.25)
         }
 
-        let stdDev = scenarios.standardDeviation { $0.parameters["revenue"] ?? 0 }
-        #expect(stdDev != nil) // TEST-QUALITY: existence check
-        #expect(stdDev! > 0)
+        let stdDev = try #require(scenarios.standardDeviation { $0.parameters["revenue"] ?? 0 })
+        #expect(stdDev > 0)
 
         // Verify it's the square root of variance
-        let variance = scenarios.variance { $0.parameters["revenue"] ?? 0 }
-        if let v = variance, let sd = stdDev {
-            #expect(abs(sd * sd - v) < 0.01)
-        }
+        let variance = try #require(scenarios.variance { $0.parameters["revenue"] ?? 0 })
+        #expect(abs(stdDev * stdDev - variance) < 0.01)
     }
 
     @Test("Range calculation")
-    func rangeCalculation() {
+    func rangeCalculation() throws {
         let scenarios = ScenarioSet {
             Pessimistic {
                 revenue(800_000)
@@ -439,30 +432,28 @@ struct ScenarioBuilderTests {
             }
         }
 
-        let range = scenarios.range { $0.parameters["revenue"] ?? 0 }
-        #expect(range != nil) // TEST-QUALITY: existence check
-        #expect(range?.min == 800_000)
-        #expect(range?.max == 1_200_000)
+        let range = try #require(scenarios.range { $0.parameters["revenue"] ?? 0 })
+        #expect(range.min == 800_000)
+        #expect(range.max == 1_200_000)
     }
 
     @Test("Range with single scenario")
-    func rangeSingleScenario() {
+    func rangeSingleScenario() throws {
         let scenarios = ScenarioSet {
             Baseline {
                 revenue(1_000_000)
             }
         }
 
-        let range = scenarios.range { $0.parameters["revenue"] ?? 0 }
-        #expect(range != nil) // TEST-QUALITY: existence check
-        #expect(range?.min == 1_000_000)
-        #expect(range?.max == 1_000_000)
+        let range = try #require(scenarios.range { $0.parameters["revenue"] ?? 0 })
+        #expect(range.min == 1_000_000)
+        #expect(range.max == 1_000_000)
     }
 
     // MARK: - Standard Templates
 
     @Test("Standard three-way template")
-    func standardThreeWayTemplate() {
+    func standardThreeWayTemplate() throws {
         let scenarios = ScenarioSet.standardThreeWay(
             baseRevenue: 1_000_000,
             baseGrowth: 0.10
@@ -471,31 +462,30 @@ struct ScenarioBuilderTests {
         #expect(scenarios.scenarios.count == 3)
 
         // Check scenario names
-        #expect(scenarios.scenario(named: "Pessimistic") != nil) // TEST-QUALITY: existence check
-        #expect(scenarios.scenario(named: "Baseline") != nil) // TEST-QUALITY: existence check
-        #expect(scenarios.scenario(named: "Optimistic") != nil) // TEST-QUALITY: existence check
+        let _ = try #require(scenarios.scenario(named: "Pessimistic"))
+        let baseline = try #require(scenarios.scenario(named: "Baseline"))
+        let _ = try #require(scenarios.scenario(named: "Optimistic"))
 
         // Check probabilities sum to 1.0
         let totalProb = scenarios.scenarios.compactMap(\.probability).reduce(0, +)
         #expect(abs(totalProb - 1.0) < 0.001)
 
         // Check baseline values
-        let baseline = scenarios.scenario(named: "Baseline")!
         #expect(baseline.parameters["revenue"] == 1_000_000)
         #expect(abs((baseline.parameters["growth"] ?? 0) - 0.10) < 1e-6)
         #expect(abs((baseline.probability ?? 0) - 0.50) < 1e-6)
     }
 
     @Test("Standard three-way with custom variability")
-    func standardThreeWayCustomVariability() {
+    func standardThreeWayCustomVariability() throws {
         let scenarios = ScenarioSet.standardThreeWay(
             baseRevenue: 1_000_000,
             baseGrowth: 0.10,
             variability: 0.30
         )
 
-        let pessimistic = scenarios.scenario(named: "Pessimistic")!
-        let optimistic = scenarios.scenario(named: "Optimistic")!
+        let pessimistic = try #require(scenarios.scenario(named: "Pessimistic"))
+        let optimistic = try #require(scenarios.scenario(named: "Optimistic"))
 
         // Pessimistic: 1M * (1 - 0.30) = 700k
         #expect(pessimistic.parameters["revenue"] == 700_000)
@@ -505,7 +495,7 @@ struct ScenarioBuilderTests {
     }
 
     @Test("Standard five-way template")
-    func standardFiveWayTemplate() {
+    func standardFiveWayTemplate() throws {
         let scenarios = ScenarioSet.standardFiveWay(
             baseRevenue: 1_000_000,
             baseGrowth: 0.10
@@ -514,23 +504,22 @@ struct ScenarioBuilderTests {
         #expect(scenarios.scenarios.count == 5)
 
         // Check scenario names
-        #expect(scenarios.scenario(named: "Worst Case") != nil) // TEST-QUALITY: existence check
-        #expect(scenarios.scenario(named: "Pessimistic") != nil) // TEST-QUALITY: existence check
-        #expect(scenarios.scenario(named: "Baseline") != nil) // TEST-QUALITY: existence check
-        #expect(scenarios.scenario(named: "Optimistic") != nil) // TEST-QUALITY: existence check
-        #expect(scenarios.scenario(named: "Best Case") != nil) // TEST-QUALITY: existence check
+        let _ = try #require(scenarios.scenario(named: "Worst Case"))
+        let _ = try #require(scenarios.scenario(named: "Pessimistic"))
+        let baseline = try #require(scenarios.scenario(named: "Baseline"))
+        let _ = try #require(scenarios.scenario(named: "Optimistic"))
+        let _ = try #require(scenarios.scenario(named: "Best Case"))
 
         // Check probabilities sum to 1.0
         let totalProb = scenarios.scenarios.compactMap(\.probability).reduce(0, +)
         #expect(abs(totalProb - 1.0) < 0.001)
 
         // Check baseline is most probable
-        let baseline = scenarios.scenario(named: "Baseline")!
         #expect(abs((baseline.probability ?? 0) - 0.40) < 1e-6)
     }
 
     @Test("Standard five-way with custom variability")
-    func standardFiveWayCustomVariability() {
+    func standardFiveWayCustomVariability() throws {
         let scenarios = ScenarioSet.standardFiveWay(
             baseRevenue: 1_000_000,
             baseGrowth: 0.10,
@@ -538,8 +527,8 @@ struct ScenarioBuilderTests {
             extremeVariability: 0.40
         )
 
-        let worstCase = scenarios.scenario(named: "Worst Case")!
-        let bestCase = scenarios.scenario(named: "Best Case")!
+        let worstCase = try #require(scenarios.scenario(named: "Worst Case"))
+        let bestCase = try #require(scenarios.scenario(named: "Best Case"))
 
         // Worst: 1M * (1 - 0.40) = 600k
         #expect(worstCase.parameters["revenue"] == 600_000)

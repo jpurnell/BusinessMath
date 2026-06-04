@@ -39,17 +39,13 @@ struct GStudyTests {
 		#expect(result.components.count == 3) // p, raters, residual
 
 		// Find components by source label
-		let pComp = result.components.first { $0.source == "p" }
-		let rComp = result.components.first { $0.source == "raters" }
-		let eComp = result.components.first { $0.source == "p x raters" }
+		let pComp = try #require(result.components.first { $0.source == "p" })
+		let rComp = try #require(result.components.first { $0.source == "raters" })
+		let eComp = try #require(result.components.first { $0.source == "p x raters" })
 
-		#expect(pComp != nil) // TEST-QUALITY: existence check
-		#expect(rComp != nil) // TEST-QUALITY: existence check
-		#expect(eComp != nil) // TEST-QUALITY: existence check
-
-		#expect(abs(pComp!.variance - 20.0 / 3.0) < 1e-10)
-		#expect(abs(rComp!.variance - 1.0) < 1e-10)
-		#expect(abs(eComp!.variance - 0.0) < 1e-10)
+		#expect(abs(pComp.variance - 20.0 / 3.0) < 1e-10)
+		#expect(abs(rComp.variance - 1.0) < 1e-10)
+		#expect(abs(eComp.variance - 0.0) < 1e-10)
 
 		#expect(abs(result.variancePersons - 20.0 / 3.0) < 1e-10)
 	}
@@ -65,13 +61,11 @@ struct GStudyTests {
 
 		let result = try gStudy(data)
 
-		let rComp = result.components.first { $0.source == "raters" }
-		let eComp = result.components.first { $0.source == "p x raters" }
+		let rComp = try #require(result.components.first { $0.source == "raters" })
+		let eComp = try #require(result.components.first { $0.source == "p x raters" })
 
-		#expect(rComp != nil) // TEST-QUALITY: existence check
-		#expect(eComp != nil) // TEST-QUALITY: existence check
-		#expect(abs(rComp!.variance) < 1e-10)
-		#expect(abs(eComp!.variance) < 1e-10)
+		#expect(abs(rComp.variance) < 1e-10)
+		#expect(abs(eComp.variance) < 1e-10)
 	}
 
 	@Test("No subject differentiation: sigma_p near zero")
@@ -84,10 +78,9 @@ struct GStudyTests {
 
 		let result = try gStudy(data)
 
-		let pComp = result.components.first { $0.source == "p" }
+		let pComp = try #require(result.components.first { $0.source == "p" })
 
-		#expect(pComp != nil) // TEST-QUALITY: existence check
-		#expect(abs(pComp!.variance) < 1e-10)
+		#expect(abs(pComp.variance) < 1e-10)
 	}
 
 	@Test("Variance component percentages sum to 100%")
@@ -129,10 +122,9 @@ struct GStudyTests {
 		// sigma_p^2 = (0 - 54)/2 = -27 → truncate to 0
 		let result = try gStudy(data)
 
-		let pComp = result.components.first { $0.source == "p" }
-		#expect(pComp != nil) // TEST-QUALITY: existence check
-		#expect(pComp!.variance >= 0.0)
-		#expect(abs(pComp!.variance) < 1e-10)
+		let pComp = try #require(result.components.first { $0.source == "p" })
+		#expect(pComp.variance >= 0.0)
+		#expect(abs(pComp.variance) < 1e-10)
 	}
 
 	@Test("Fewer than 2 persons throws insufficientData")

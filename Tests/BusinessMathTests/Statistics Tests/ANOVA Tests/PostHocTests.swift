@@ -144,11 +144,8 @@ struct PostHocTests {
 			let anova = try oneWayANOVA(testGroups)
 			let result = try bonferroniPostHoc(testGroups, anova: anova)
 			// Group 0 mean ≈ 5.0, Group 1 mean ≈ 9.0 → diff = 5 - 9 = -4
-			let comp01 = result.comparisons.first { $0.groupA == 0 && $0.groupB == 1 }
-			#expect(comp01 != nil) // TEST-QUALITY: existence check
-			if let c = comp01 {
-				#expect(c.meanDifference < 0)
-			}
+			let comp01 = try #require(result.comparisons.first { $0.groupA == 0 && $0.groupB == 1 })
+			#expect(comp01.meanDifference < 0)
 		}
 	}
 
@@ -209,11 +206,8 @@ struct PostHocTests {
 			let schef = try scheffePostHoc(groups, anova: anova)
 			// All pairs clearly differ → both methods should find significance
 			for bComp in bonf.comparisons {
-				let sComp = schef.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
-				#expect(sComp != nil) // TEST-QUALITY: existence check
-				if let s = sComp {
-					#expect(bComp.isSignificant == s.isSignificant)
-				}
+				let sComp = try #require(schef.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB })
+				#expect(bComp.isSignificant == sComp.isSignificant)
 			}
 		}
 
@@ -373,20 +367,15 @@ struct PostHocTests {
 
 			// All methods should produce the same set of pairs
 			for bComp in bonf.comparisons {
-				let sComp = schef.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
-				let tComp = tukey.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
+				let sComp = try #require(schef.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB })
+				let tComp = try #require(tukey.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB })
 
-				#expect(sComp != nil) // TEST-QUALITY: existence check
-				#expect(tComp != nil) // TEST-QUALITY: existence check
-
-				if let s = sComp, let t = tComp {
-					// All p-values in valid range
-					#expect(bComp.pValue >= 0.0 && bComp.pValue <= 1.0)
-					#expect(s.pValue >= 0.0 && s.pValue <= 1.0)
-					#expect(t.pValue >= 0.0 && t.pValue <= 1.0)
-					// Mean differences should be the same across methods
-					#expect(abs(bComp.meanDifference - s.meanDifference) < 1e-10)
-				}
+				// All p-values in valid range
+				#expect(bComp.pValue >= 0.0 && bComp.pValue <= 1.0)
+				#expect(sComp.pValue >= 0.0 && sComp.pValue <= 1.0)
+				#expect(tComp.pValue >= 0.0 && tComp.pValue <= 1.0)
+				// Mean differences should be the same across methods
+				#expect(abs(bComp.meanDifference - sComp.meanDifference) < 1e-10)
 			}
 		}
 
@@ -397,11 +386,8 @@ struct PostHocTests {
 			let tukey = try tukeyHSD(testGroups, anova: anova)
 
 			for bComp in bonf.comparisons {
-				let tComp = tukey.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB }
-				#expect(tComp != nil) // TEST-QUALITY: existence check
-				if let t = tComp {
-					#expect(t.pValue <= bComp.pValue + 1e-8)
-				}
+				let tComp = try #require(tukey.comparisons.first { $0.groupA == bComp.groupA && $0.groupB == bComp.groupB })
+				#expect(tComp.pValue <= bComp.pValue + 1e-8)
 			}
 		}
 
