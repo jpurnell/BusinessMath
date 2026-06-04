@@ -410,8 +410,8 @@ struct WorkingCapitalTests {
 
 		// Should only have 2 components (cash and AP)
 		#expect(components.count == 2)
-		#expect(components[BalanceSheetRole.cashAndEquivalents] != nil) // TEST-QUALITY: existence check
-		#expect(components[BalanceSheetRole.accountsPayable] != nil) // TEST-QUALITY: existence check
+		let _ = try #require(components[BalanceSheetRole.cashAndEquivalents])
+		let _ = try #require(components[BalanceSheetRole.accountsPayable])
 
 		// Should NOT have PPE or long-term debt
 		#expect(components[BalanceSheetRole.propertyPlantEquipment] == nil)

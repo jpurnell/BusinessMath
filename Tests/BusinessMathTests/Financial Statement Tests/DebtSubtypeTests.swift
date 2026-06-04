@@ -111,14 +111,14 @@ struct DebtSubtypeTests {
 
 		// Verify all three debt types are in the breakdown
 		#expect(debtByType.count == 3)
-		#expect(debtByType[.revolvingCreditFacility] != nil) // TEST-QUALITY: existence check
-		#expect(debtByType[.termLoanLongTerm] != nil) // TEST-QUALITY: existence check
-		#expect(debtByType[.mezzanineDebt] != nil) // TEST-QUALITY: existence check
+		let revolvingSeries = try #require(debtByType[.revolvingCreditFacility])
+		let termLoanSeries = try #require(debtByType[.termLoanLongTerm])
+		let mezzSeries = try #require(debtByType[.mezzanineDebt])
 
 		// Verify values for Q1
-		#expect(abs(debtByType[.revolvingCreditFacility]![periods[0]]! - 50_000.0) < 1e-2)
-		#expect(abs(debtByType[.termLoanLongTerm]![periods[0]]! - 100_000.0) < 1e-2)
-		#expect(abs(debtByType[.mezzanineDebt]![periods[0]]! - 30_000.0) < 1e-2)
+		#expect(abs(revolvingSeries[periods[0]]! - 50_000.0) < 1e-2)
+		#expect(abs(termLoanSeries[periods[0]]! - 100_000.0) < 1e-2)
+		#expect(abs(mezzSeries[periods[0]]! - 30_000.0) < 1e-2)
 	}
 
 	@Test("Total debt equals sum of debt breakdown")

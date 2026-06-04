@@ -414,9 +414,9 @@ struct MultiPeriodReportTests {
 
 		// All should have values (not nil)
 		for i in 0..<4 {
-			#expect(peRatios[i] != nil) // TEST-QUALITY: existence check
-			#expect(pbRatios[i] != nil) // TEST-QUALITY: existence check
-			#expect(psRatios[i] != nil) // TEST-QUALITY: existence check
+			#expect(peRatios[i]?.isFinite == true)
+			#expect(pbRatios[i]?.isFinite == true)
+			#expect(psRatios[i]?.isFinite == true)
 		}
 	}
 
@@ -438,9 +438,8 @@ struct MultiPeriodReportTests {
 
 		let report = try MultiPeriodReport(entity: entity, periodSummaries: summaries)
 
-		let q2Summary = report[quarters[1]]
-		#expect(q2Summary != nil) // TEST-QUALITY: existence check
-		#expect(q2Summary?.period == quarters[1])
+		let q2Summary = try #require(report[quarters[1]])
+		#expect(q2Summary.period == quarters[1])
 	}
 
 	@Test("Access period summary by index")
@@ -596,8 +595,8 @@ struct MultiPeriodReportTests {
 		)
 
 		#expect(report.periodCount == 4)
-		#expect(report.annualSummary != nil) // TEST-QUALITY: existence check
-		#expect(report.annualSummary?.period == annualPeriod)
+		let annual = try #require(report.annualSummary)
+		#expect(annual.period == annualPeriod)
 	}
 
 	// MARK: - Codable Tests

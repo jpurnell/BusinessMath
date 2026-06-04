@@ -64,25 +64,22 @@ struct CashFlowExtensionsTests {
 
 		// Should have 3 WC components (AR, Inventory, AP), not CapEx
 		#expect(wcComponents.count == 3)
-		#expect(wcComponents[CashFlowRole.changeInReceivables] != nil) // TEST-QUALITY: existence check
-		#expect(wcComponents[CashFlowRole.changeInInventory] != nil) // TEST-QUALITY: existence check
-		#expect(wcComponents[CashFlowRole.changeInPayables] != nil) // TEST-QUALITY: existence check
+		let arChanges = try #require(wcComponents[CashFlowRole.changeInReceivables])
+		let invChanges = try #require(wcComponents[CashFlowRole.changeInInventory])
+		let apChanges = try #require(wcComponents[CashFlowRole.changeInPayables])
 		#expect(wcComponents[CashFlowRole.capitalExpenditures] == nil)
 
 		// AR changes: Q2 = $1.2M - $1M = $200K (use of cash)
-		let arChanges = wcComponents[CashFlowRole.changeInReceivables]!
 		#expect(abs(arChanges[periods[1]]! - 200_000.0) < 1e-2)
 		// Q3 = $1.4M - $1.2M = $200K (continued use of cash)
 		#expect(abs(arChanges[periods[2]]! - 200_000.0) < 1e-2)
 
 		// Inventory changes: Q2 = $900K - $800K = $100K (use of cash)
-		let invChanges = wcComponents[CashFlowRole.changeInInventory]!
 		#expect(abs(invChanges[periods[1]]! - 100_000.0) < 1e-2)
 		// Q3 = $850K - $900K = -$50K (source of cash - inventory decrease)
 		#expect(abs(invChanges[periods[2]]! - (-50_000.0)) < 1e-2)
 
 		// AP changes: Q2 = $700K - $600K = $100K (source of cash)
-		let apChanges = wcComponents[CashFlowRole.changeInPayables]!
 		#expect(abs(apChanges[periods[1]]! - 100_000.0) < 1e-2)
 		// Q3 = $750K - $700K = $50K (continued source of cash)
 		#expect(abs(apChanges[periods[2]]! - 50_000.0) < 1e-2)

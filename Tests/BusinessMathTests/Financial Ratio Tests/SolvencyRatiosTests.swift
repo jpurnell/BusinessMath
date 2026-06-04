@@ -157,15 +157,13 @@ struct SolvencyRatiosTests {
 
         // Verify basic ratios are calculated
         let q1 = periods[0]
-        #expect(solvency.debtToEquity[q1] != nil) // TEST-QUALITY: existence check
-        #expect(solvency.debtToAssets[q1] != nil) // TEST-QUALITY: existence check
+        #expect(solvency.debtToEquity[q1]?.isFinite == true)
+        #expect(solvency.debtToAssets[q1]?.isFinite == true)
 
         // Verify interest coverage is calculated
-        #expect(solvency.interestCoverage != nil) // TEST-QUALITY: existence check
+        #expect(solvency.interestCoverage?[q1]?.isFinite == true)
 
         // Verify debt service coverage is automatically calculated
-        #expect(solvency.debtServiceCoverage != nil) // TEST-QUALITY: existence check
-
         // Operating Income for Q2: Revenue - COGS - OpEx = 5.3M - 1.59M - 2.1M = 1.61M
         // Principal Payment Q2: diff() gives us Q2_debt - Q1_debt = 1.9M - 2M = -0.1M, negated = 0.1M
         // Interest Payment Q2: 95K = 0.095M
@@ -173,7 +171,7 @@ struct SolvencyRatiosTests {
         // DSCR Q2 = 1.61M / 0.195M ≈ 8.256
 
         let q2 = periods[1]
-        let dscr = solvency.debtServiceCoverage![q2]!
+        let dscr = try #require(solvency.debtServiceCoverage?[q2])
 
         // Verify the computed DSCR matches the expected value
         let expectedDSCR = 1_610_000.0 / 195_000.0  // ≈ 8.256
