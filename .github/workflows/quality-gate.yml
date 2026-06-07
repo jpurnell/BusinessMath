@@ -3,11 +3,18 @@ name: Quality Gate
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  schedule:
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: read
 
 jobs:
   quality-gate:
     uses: jpurnell/quality-gate-swift/.github/workflows/quality-gate-reusable.yml@main
     with:
-      checks: "safety status"
+      checks: "all"
+      continue-on-failure: true
+      corpus-repo: jpurnell/org-judgement-corpus
+    secrets:
+      corpus-token: ${{ secrets.CORPUS_PUSH_TOKEN }}
