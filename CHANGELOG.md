@@ -9,6 +9,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.2.1] - 2026-06-08
+
+**Version 2.2.1** completes the test assertion hardening effort and eliminates
+all remaining compiler warnings, achieving a fully clean build across all targets.
+
+#### Fixed
+
+- **6 compiler warnings eliminated** — removed dead code left behind by algorithm
+  refactors (`sx`/`sy` in CCC, `subsetFacets` in multi-way ANOVA, `e4` in Fisher
+  scoring, `parIndex` in discount curve bootstrap) and changed `var` to `let` for
+  `newSigmaU2` in LME fitting
+- **~300 weak test assertions strengthened** across 6 commits — replaced `!= 0`
+  nonzero checks and loose bounds with precise expected-value comparisons in
+  Financial Ratios, Statements, Integer Programming, Optimization, Fluent API,
+  Statistics, Error Handling, Simulation, and Operational test suites
+
+#### Changed
+
+- **CI**: Added daily quality gate with corpus telemetry, updated macOS runners to
+  macos-26 (Swift 6.2), Linux Swift to 6.2, added visionOS archive support,
+  removed `--parallel` from test invocations to prevent worker hangs
+- **Concurrency**: Marked `mach_task_self_` access as `nonisolated(unsafe)`, added
+  explicit `bufferingPolicy` to all `AsyncStream` initializers
+
+#### Status
+
+- Build: 0 warnings, 0 errors
+- Tests: 5,731 across 484 suites (all passing)
+- Quality gate: 24 checkers, 0 errors
+
+### [2.2.0] - 2026-05-16
+
+**Version 2.2.0** is a major feature release introducing statistical analysis
+modules (ANOVA, agreement statistics, ICC, mixed models), valuation curve
+infrastructure, stochastic process protocols, and the operations module.
+This release also adds the quality gate compliance framework.
+
+#### Added
+
+- **Linear Mixed Effects framework** (Phases 1–6) — random intercept model,
+  random intercept + slope, general LME with arbitrary random-effects structure,
+  residual diagnostics (QQ, influence, R²), convenience functions and model comparison
+- **Agreement statistics module** — concordance correlation coefficient (CCC),
+  Bland-Altman analysis, successive differences, repeated measures Bland-Altman
+  with variance decomposition, weighted statistics and weighted agreement metrics
+- **ANOVA suite** — one-way, two-way, multi-way, and nested ANOVA; post-hoc
+  tests (Bonferroni, Scheffé, Tukey HSD)
+- **Intraclass correlation coefficient (ICC)** — ICC(1,1) through ICC(3,k),
+  missing-data ICC, kernel-weighted agreement
+- **Generalized G-theory** and **Bayesian ICC estimation** via MCMC
+- **Advanced reliability statistics** — concordance with tie correction, missing
+  data handling, permutation tests, crossed design EMS tables
+- **Non-central distributions** (chi-squared, F, t) and **power analysis**
+- **Exact distribution CDFs** — F, t, chi-squared via regularized incomplete beta
+- **Error metrics** — standalone `mae`, `rmse`, `mape` functions; surfaced on
+  `RegressionResult` and trend models
+- **Stochastic process protocols** (v3.0 foundations) — `StochasticProcess`,
+  `ProcessState`, `MeasureTag`; implementations: GBM, OU, ABM, JumpDiffusion,
+  Heston, HullWhite
+- **`PeriodSequence`** for structured time iteration
+- **Valuation infrastructure** — `DiscountCurve` (par rate bootstrap),
+  `ForwardCurve`, `VolatilitySurface` with SABR calibration, exotic option payoffs
+- **`MonteCarloEngine`** for generic derivative pricing
+- **`AccountNode`** tree structure for hierarchical financial statements
+- **Commodity derivative instruments** and **`HedgingProgram`** with hedge PnL
+- **`StatementIntegration`** for linked three-statement models
+- **`OilGasEPModel`** E&P financial projection (with throws, not fatalError)
+- **Operations module** — `InventorySimulator`, `InventoryAdvisor` for EOQ,
+  reorder point, safety stock, and ABC analysis
+- **`DeterministicRNG`** and seeded `CorrelatedNormals` sampling
+- **`TestSupport/DeterministicHelpers`** for reproducible test fixtures
+
+#### Fixed
+
+- Replaced `fatalError` with `throws` in `OilGasEPModel.project()` and fixed
+  `Sendable` conformance
+- Broke up 4 compound generic arithmetic expressions for Swift 6.0.3 type-checker
+  compatibility (Friedman, logLikelihood, general expressions)
+- Deprecated flawed `chi2cdf`/`pValueStudent`; added correct `studentTPDF`,
+  `tPValue`, `betaCDF`
+- Replaced redundant `stddev`/`mean`/Box-Muller reimplementations with library
+  functions
+- Removed `FileManager.fileExists` call flagged as CWE-22 path traversal
+- Replaced last 7 `fatalError`/`precondition` calls in `Period.swift`
+- Resolved ~364 quality gate safety violations across 57+ source files
+
+#### Changed
+
+- Updated swift-syntax from 509.x to 600.x for Swift 6.0+ macro APIs
+- Added solver-expression-time-threshold to release builds for CI stability
+
+#### Test Suite
+
+- **5,731 tests** across 484 suites (up from 4,817 in v2.1.4) — 914 net new tests
+
 ### [2.1.7] - 2026-05-16
 
 **Version 2.1.7** brings the project to full quality gate compliance, resolving
