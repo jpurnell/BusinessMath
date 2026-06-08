@@ -270,9 +270,6 @@ public struct DiscountCurve: Sendable {
         // Map from integer year -> DF
         var dfMap: [Int: Double] = [:]
 
-        // Index into sorted par rates
-        var parIndex = 0
-
         // Build par rate lookup for quick access
         var parRateLookup: [Int: Double] = [:]
         for entry in sorted {

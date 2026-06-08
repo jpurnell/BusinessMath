@@ -85,7 +85,7 @@ struct ModelDebuggerTests {
         #expect(trace.dependencies["rate"] == "0.08")
         #expect(trace.dependencies["periods"] == "10")
         #expect(trace.formula == "PV / (1 + rate)^periods")
-        #expect(trace.result != 0) // TEST-QUALITY: nonzero check
+        #expect(abs(trace.result - 463.193488) < 1e-4)
     }
 
     @Test("Detailed trace with no dependencies")
@@ -124,8 +124,7 @@ struct ModelDebuggerTests {
             principal * pow(1 + rate, Double(periods))
         }
 
-        #expect(trace.result != 0) // TEST-QUALITY: nonzero check
-        #expect(abs(trace.result - 146_932.81) < 0.01)
+        #expect(abs(trace.result - 146_932.808) < 0.01)
         #expect(trace.duration > 0)
     }
 
@@ -492,7 +491,7 @@ struct ModelDebuggerTests {
             return P * r * pow(1 + r, n) / (pow(1 + r, n) - 1)
         }
 
-        #expect(trace.result != 0) // TEST-QUALITY: nonzero check
+        #expect(abs(trace.result - 1073.643246) < 1e-4)
 
         // Step 2: Validate result
         let validation = await debugger.validate(

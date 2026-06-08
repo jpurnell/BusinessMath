@@ -151,7 +151,7 @@ public func fitRandomIntercept<T: Real>(
 			sigmaU2: sigmaU2, sigmaE2: sigmaE2, N: N)
 
 		var newSigmaE2 = sigmaE2 + update.deltaSigmaE2
-		var newSigmaU2 = sigmaU2 + update.deltaSigmaU2
+		let newSigmaU2 = sigmaU2 + update.deltaSigmaU2
 
 		// Step halving only for sigma_e² (must stay positive);
 		// sigma_u² is clamped independently at the boundary.
@@ -439,7 +439,6 @@ private func fisherScoringUpdate<T: Real & Sendable>(
 		scoreU += T(-1) / T(2) * (scoreUterm1 - scoreUterm2)
 
 		// Fisher information entries
-		let e4 = sigmaE2 * sigmaE2 * sigmaE2 * sigmaE2
 		let i11TermA: T = (nig - T(1)) / sigmaE2sq
 		let i11TermB: T = T(1) / ai2
 		I11 += T(1) / T(2) * (i11TermA + i11TermB)

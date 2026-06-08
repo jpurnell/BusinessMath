@@ -84,10 +84,6 @@ public func concordanceCorrelationCoefficient<T: Real>(
 		throw BusinessMathError.divisionByZero(context: "y series has zero variance")
 	}
 
-	// Sample standard deviations
-	let sx = T.sqrt(sxx / (nT - T(1)))
-	let sy = T.sqrt(syy / (nT - T(1)))
-
 	// Pearson r
 	let r = sxy / T.sqrt(sxx * syy)
 
