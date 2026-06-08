@@ -639,6 +639,6 @@ struct InvestmentBuilderTests {
         #expect(abs(investment.cashFlows[2].amount - 35_999.99) < 1e-6)
 
         // NPV calculation should handle fractional amounts
-        #expect(investment.npv != 0) // TEST-QUALITY: nonzero check
+        #expect(abs(investment.npv - (-24_356.558978)) < 0.01)
     }
 }

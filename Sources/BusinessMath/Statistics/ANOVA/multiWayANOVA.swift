@@ -164,7 +164,6 @@ public func multiWayANOVA<T: Real>(
             var adjustedMean = T.zero
 
             for subsetOfEffect in subsetsOfEffect {
-                let subsetFacets = effectIndices.filter { subsetOfEffect.contains(facetNames[$0]) }
                 let sign: T = (effect.count - subsetOfEffect.count) % 2 == 0 ? T(1) : T(-1)
 
                 // Look up the marginal mean for this subset at the restricted indices
