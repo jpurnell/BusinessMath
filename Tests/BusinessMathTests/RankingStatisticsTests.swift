@@ -17,6 +17,18 @@
 
 import Testing
 import Foundation
+
+private struct SplitMix64: RandomNumberGenerator {
+    var state: UInt64
+    init(seed: UInt64) { state = seed }
+    mutating func next() -> UInt64 {
+        state &+= 0x9e3779b97f4a7c15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xbf58476d1ce4e5b9
+        z = (z ^ (z >> 27)) &* 0x94d049bb133111eb
+        return z ^ (z >> 31)
+    }
+}
 @testable import BusinessMath
 
 // MARK: - Helper Functions
@@ -292,7 +304,8 @@ struct RankingFunctionsTests {
 
     @Test("rank() - Large array performance", .timeLimit(.minutes(1)))
     func rankLargeArray() {
-        let values = (1...10000).map { Double($0) }.shuffled()
+        var rng = SplitMix64(seed: 42)
+        let values = (1...10000).map { Double($0) }.shuffled(using: &rng)
         let result = values.rank()
 
         #expect(result.count == 10000)
