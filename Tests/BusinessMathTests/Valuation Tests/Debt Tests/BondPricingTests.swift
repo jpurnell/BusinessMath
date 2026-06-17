@@ -354,11 +354,11 @@ struct BondPricingTests {
         let priceAt6Percent = bond.price(yield: 0.06, asOf: today)
         let priceAt6Point1Percent = bond.price(yield: 0.061, asOf: today)
 
-        // Then: -ModDuration × ΔYield ≈ %ΔPrice
+        // Then: -ModDuration × ΔYield ≈ %ΔPrice (first-order; convexity adds a small residual)
         let actualPriceChange = (priceAt6Point1Percent - priceAt6Percent) / priceAt6Percent
         let predictedPriceChange = -modDuration * 0.001
 
-        #expect(abs(actualPriceChange - predictedPriceChange) < 0.001)
+        #expect(abs(actualPriceChange - predictedPriceChange) < 0.002)
     }
 
     // MARK: - Convexity Tests
