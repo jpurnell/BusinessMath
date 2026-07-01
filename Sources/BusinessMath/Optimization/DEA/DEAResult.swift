@@ -81,6 +81,13 @@ public struct DMUScore: Sendable {
     /// Output slack values.
     public let outputSlacks: [Double]?
 
+    /// Whether the super-efficiency LP was infeasible for this DMU.
+    ///
+    /// In BCC super-efficiency, extreme-vertex DMUs may have no feasible
+    /// reference set when excluded from the frontier. When `true`,
+    /// ``efficiency`` is set to `Double.infinity`.
+    public let superEfficiencyInfeasible: Bool
+
     /// Creates a DMU score.
     public init(
         name: String,
@@ -90,7 +97,8 @@ public struct DMUScore: Sendable {
         targetInputs: [Double]? = nil,
         targetOutputs: [Double]? = nil,
         inputSlacks: [Double]? = nil,
-        outputSlacks: [Double]? = nil
+        outputSlacks: [Double]? = nil,
+        superEfficiencyInfeasible: Bool = false
     ) {
         self.name = name
         self.efficiency = efficiency
@@ -100,6 +108,7 @@ public struct DMUScore: Sendable {
         self.targetOutputs = targetOutputs
         self.inputSlacks = inputSlacks
         self.outputSlacks = outputSlacks
+        self.superEfficiencyInfeasible = superEfficiencyInfeasible
     }
 }
 
