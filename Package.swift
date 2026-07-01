@@ -92,6 +92,9 @@ var targets: [Target] = [
 			"Simulation/MonteCarlo/GPU/MonteCarloDistributions.metal",
 			"Statistics/Regression/MatrixOperations/MatrixOperations.metal"
 		],
+		resources: [
+			.process("BusinessMath.docc")
+		],
 		cSettings: [
 			// Use new Accelerate LAPACK interface (macOS 13.3+) to silence deprecation warnings
 			.define("ACCELERATE_NEW_LAPACK"),
