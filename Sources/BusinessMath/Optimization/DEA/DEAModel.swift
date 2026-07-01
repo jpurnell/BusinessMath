@@ -7,6 +7,14 @@
 
 import Foundation
 
+/// Specifies constant or variable returns to scale.
+public enum DEAReturnsToScale: Sendable, Equatable {
+    /// Constant returns to scale (CRS).
+    case constant
+    /// Variable returns to scale (VRS).
+    case variable
+}
+
 /// Specifies the base DEA model for super-efficiency analysis.
 public enum DEABaseModel: Sendable, Equatable {
     /// Charnes-Cooper-Rhodes model (constant returns to scale).
@@ -26,6 +34,11 @@ public enum DEAModelType: Sendable, Equatable {
     /// Removes the evaluated DMU from its own reference set,
     /// allowing efficient DMUs to score above 1.0 for ranking.
     case superEfficiency(base: DEABaseModel)
+    /// Slacks-Based Measure (Tone 2001). Non-oriented.
+    ///
+    /// Simultaneously optimizes all input reductions and output expansions.
+    /// The orientation parameter is ignored for SBM models.
+    case sbm(returnsToScale: DEAReturnsToScale)
 }
 
 /// Specifies the orientation of the DEA model.

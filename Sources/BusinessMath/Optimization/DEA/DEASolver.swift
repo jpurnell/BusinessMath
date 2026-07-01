@@ -6,6 +6,9 @@
 //
 
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.businessmath", category: "DEASolver")
 
 /// Solves Data Envelopment Analysis problems using the simplex method.
 ///
@@ -54,6 +57,12 @@ public struct DEASolver: Sendable {
             return try solveSuperEfficiency(
                 dmus: dmus,
                 base: base,
+                orientation: orientation
+            )
+        case .sbm(let rts):
+            return try solveSBM(
+                dmus: dmus,
+                returnsToScale: rts,
                 orientation: orientation
             )
         case .ccr, .bcc:
@@ -123,6 +132,22 @@ public struct DEASolver: Sendable {
         model: DEAModelType,
         orientation: DEAOrientation
     ) throws -> (score: DMUScore, iterations: Int) {
+        if case .sbm(let rts) = model {
+            let simplex = SimplexSolver()
+            let lpResult = try solveSBMLP(
+                forDMU: k,
+                dmus: dmus,
+                returnsToScale: rts,
+                solver: simplex
+            )
+            let score = try extractSBMScore(
+                forDMU: k,
+                dmus: dmus,
+                lpResult: lpResult
+            )
+            return (score, lpResult.iterations)
+        }
+
         let simplex = SimplexSolver()
         let lpResult = try solveLP(
             forDMU: k,
@@ -462,6 +487,244 @@ public struct DEASolver: Sendable {
         )
     }
 
+    // MARK: - SBM (Slacks-Based Measure, Tone 2001)
+
+    /// Solve using the Slacks-Based Measure (SBM) model.
+    ///
+    /// SBM is non-oriented: it simultaneously optimizes input reductions
+    /// and output expansions. Uses the Charnes-Cooper transformation to
+    /// convert the fractional program into a standard LP.
+    ///
+    /// - Parameters:
+    ///   - dmus: All DMUs (already validated).
+    ///   - returnsToScale: Constant (CRS) or variable (VRS) returns to scale.
+    ///   - orientation: Ignored for SBM (non-oriented by definition).
+    /// - Returns: DEA results with SBM efficiency scores and slack decomposition.
+    private func solveSBM(
+        dmus: [DMU],
+        returnsToScale: DEAReturnsToScale,
+        orientation: DEAOrientation
+    ) throws -> DEAResult {
+        let simplex = SimplexSolver()
+        var scores: [DMUScore] = []
+        var totalIterations = 0
+
+        for k in 0..<dmus.count {
+            let lpResult = try solveSBMLP(
+                forDMU: k,
+                dmus: dmus,
+                returnsToScale: returnsToScale,
+                solver: simplex
+            )
+            totalIterations += lpResult.iterations
+
+            let score = try extractSBMScore(
+                forDMU: k,
+                dmus: dmus,
+                lpResult: lpResult
+            )
+            scores.append(score)
+        }
+
+        return DEAResult(
+            scores: scores,
+            model: .sbm(returnsToScale: returnsToScale),
+            orientation: orientation,
+            totalIterations: totalIterations
+        )
+    }
+
+    /// Build and solve the Charnes-Cooper linearized SBM LP for DMU k.
+    ///
+    /// LP variables: `[t, Λ₁, ..., Λₙ, S₁⁻, ..., Sₘ⁻, S₁⁺, ..., Sₛ⁺]`
+    ///
+    /// After Charnes-Cooper transformation (t = 1 / denominator):
+    /// ```
+    /// minimize  t - (1/m) Σᵢ Sᵢ⁻/xᵢₖ
+    /// s.t.      t + (1/s) Σᵣ Sᵣ⁺/yᵣₖ = 1
+    ///           Σⱼ Λⱼ·xᵢⱼ + Sᵢ⁻ - t·xᵢₖ = 0   ∀i
+    ///           Σⱼ Λⱼ·yᵣⱼ - Sᵣ⁺ - t·yᵣₖ = 0   ∀r
+    ///           Σⱼ Λⱼ = t  (VRS only)
+    /// ```
+    private func solveSBMLP(
+        forDMU k: Int,
+        dmus: [DMU],
+        returnsToScale: DEAReturnsToScale,
+        solver: SimplexSolver
+    ) throws -> SimplexResult {
+        let n = dmus.count
+        let m = dmus[0].inputs.count
+        let s = dmus[0].outputs.count
+        guard m > 0 else {
+            throw DEAError.emptyDimension(description: "inputs")
+        }
+        guard s > 0 else {
+            throw DEAError.emptyDimension(description: "outputs")
+        }
+        let numVars = 1 + n + m + s
+
+        // Objective: minimize t - (1/m) Σᵢ Sᵢ⁻/xᵢₖ
+        var objective = [Double](repeating: 0, count: numVars)
+        objective[0] = 1.0
+        let invM = 1.0 / Double(m)
+        for i in 0..<m {
+            let coeff = invM / dmus[k].inputs[i]
+            objective[n + 1 + i] = -coeff
+        }
+
+        var constraints: [SimplexConstraint] = []
+
+        // Normalization: t + (1/s) Σᵣ Sᵣ⁺/yᵣₖ = 1
+        var normCoeffs = [Double](repeating: 0, count: numVars)
+        normCoeffs[0] = 1.0
+        let invS = 1.0 / Double(s)
+        for r in 0..<s {
+            let coeff = invS / dmus[k].outputs[r]
+            normCoeffs[n + 1 + m + r] = coeff
+        }
+        constraints.append(SimplexConstraint(
+            coefficients: normCoeffs,
+            relation: .equal,
+            rhs: 1.0
+        ))
+
+        // Input constraints: Σⱼ Λⱼ·xᵢⱼ + Sᵢ⁻ - t·xᵢₖ = 0
+        for i in 0..<m {
+            var coeffs = [Double](repeating: 0, count: numVars)
+            coeffs[0] = -dmus[k].inputs[i]
+            for j in 0..<n {
+                coeffs[j + 1] = dmus[j].inputs[i]
+            }
+            coeffs[n + 1 + i] = 1.0
+            constraints.append(SimplexConstraint(
+                coefficients: coeffs,
+                relation: .equal,
+                rhs: 0
+            ))
+        }
+
+        // Output constraints: Σⱼ Λⱼ·yᵣⱼ - Sᵣ⁺ - t·yᵣₖ = 0
+        for r in 0..<s {
+            var coeffs = [Double](repeating: 0, count: numVars)
+            coeffs[0] = -dmus[k].outputs[r]
+            for j in 0..<n {
+                coeffs[j + 1] = dmus[j].outputs[r]
+            }
+            coeffs[n + 1 + m + r] = -1.0
+            constraints.append(SimplexConstraint(
+                coefficients: coeffs,
+                relation: .equal,
+                rhs: 0
+            ))
+        }
+
+        // VRS convexity constraint: Σⱼ Λⱼ - t = 0
+        if returnsToScale == .variable {
+            var convCoeffs = [Double](repeating: 0, count: numVars)
+            convCoeffs[0] = -1.0
+            for j in 0..<n {
+                convCoeffs[j + 1] = 1.0
+            }
+            constraints.append(SimplexConstraint(
+                coefficients: convCoeffs,
+                relation: .equal,
+                rhs: 0
+            ))
+        }
+
+        let result = try solver.minimize(
+            objective: objective,
+            subjectTo: constraints
+        )
+
+        guard result.status == .optimal else {
+            throw DEAError.solverFailed(dmu: dmus[k].name, status: result.status)
+        }
+
+        return result
+    }
+
+    /// Extract SBM efficiency score and slacks from the Charnes-Cooper LP result.
+    ///
+    /// Recovers original-space slacks by dividing transformed variables by t.
+    private func extractSBMScore(
+        forDMU k: Int,
+        dmus: [DMU],
+        lpResult: SimplexResult
+    ) throws -> DMUScore {
+        let n = dmus.count
+        let m = dmus[0].inputs.count
+        let s = dmus[0].outputs.count
+        let expectedVars = 1 + n + m + s
+
+        guard lpResult.solution.count >= expectedVars else {
+            throw DEAError.solverFailed(dmu: dmus[k].name, status: .unknown)
+        }
+
+        let t = lpResult.solution[0]
+
+        // Division safety: t must be strictly positive
+        guard t > Double.ulpOfOne else {
+            throw DEAError.solverFailed(dmu: dmus[k].name, status: .unknown)
+        }
+
+        let efficiency = lpResult.objectiveValue
+
+        // Recover original-space lambdas: λⱼ = Λⱼ / t
+        var lambdas = [Double](repeating: 0, count: n)
+        for j in 0..<n {
+            lambdas[j] = lpResult.solution[j + 1] / t
+        }
+
+        // Recover original-space input slacks: sᵢ⁻ = Sᵢ⁻ / t
+        var inputSlacks = [Double](repeating: 0, count: m)
+        for i in 0..<m {
+            let rawSlack = lpResult.solution[n + 1 + i]
+            inputSlacks[i] = max(rawSlack / t, 0)
+        }
+
+        // Recover original-space output slacks: sᵣ⁺ = Sᵣ⁺ / t
+        var outputSlacks = [Double](repeating: 0, count: s)
+        for r in 0..<s {
+            let rawSlack = lpResult.solution[n + 1 + m + r]
+            outputSlacks[r] = max(rawSlack / t, 0)
+        }
+
+        // Build reference set from significant lambdas
+        let lambdaTolerance = 1e-6
+        var referenceSet: [ReferenceUnit] = []
+        for j in 0..<n {
+            if lambdas[j] > lambdaTolerance {
+                referenceSet.append(ReferenceUnit(
+                    name: dmus[j].name,
+                    weight: lambdas[j]
+                ))
+            }
+        }
+
+        // Compute target values from the reference set projection
+        var targetInputs = [Double](repeating: 0, count: m)
+        for i in 0..<m {
+            targetInputs[i] = dmus[k].inputs[i] - inputSlacks[i]
+        }
+
+        var targetOutputs = [Double](repeating: 0, count: s)
+        for r in 0..<s {
+            targetOutputs[r] = dmus[k].outputs[r] + outputSlacks[r]
+        }
+
+        return DMUScore(
+            name: dmus[k].name,
+            efficiency: efficiency,
+            rawScore: efficiency,
+            referenceSet: referenceSet,
+            targetInputs: targetInputs,
+            targetOutputs: targetOutputs,
+            inputSlacks: inputSlacks,
+            outputSlacks: outputSlacks
+        )
+    }
+
     // MARK: - Super-Efficiency (Andersen-Petersen)
 
     /// Solve using the Andersen-Petersen super-efficiency model.
@@ -587,6 +850,7 @@ public struct DEASolver: Sendable {
                 )
             }
         } catch {
+            logger.debug("Super-efficiency LP infeasible for DMU \(dmus[k].name, privacy: .public)")
             return .failure(
                 DEAError.solverFailed(dmu: dmus[k].name, status: .infeasible)
             )
