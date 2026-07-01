@@ -49,6 +49,28 @@ public struct DEASolver: Sendable {
     ) throws -> DEAResult {
         try validate(dmus: dmus)
 
+        switch model {
+        case .superEfficiency(let base):
+            return try solveSuperEfficiency(
+                dmus: dmus,
+                base: base,
+                orientation: orientation
+            )
+        case .ccr, .bcc:
+            return try solveStandard(
+                dmus: dmus,
+                model: model,
+                orientation: orientation
+            )
+        }
+    }
+
+    /// Standard DEA solve loop for CCR and BCC models.
+    private func solveStandard(
+        dmus: [DMU],
+        model: DEAModelType,
+        orientation: DEAOrientation
+    ) throws -> DEAResult {
         let simplex = SimplexSolver()
         var scores: [DMUScore] = []
         var totalIterations = 0
@@ -437,6 +459,272 @@ public struct DEASolver: Sendable {
             targetOutputs: targetOutputs,
             inputSlacks: inputSlacks,
             outputSlacks: outputSlacks
+        )
+    }
+
+    // MARK: - Super-Efficiency (Andersen-Petersen)
+
+    /// Solve using the Andersen-Petersen super-efficiency model.
+    ///
+    /// For each DMU k, the LP excludes k from the reference set (n-1 lambda
+    /// variables). Efficient DMUs can score above 1.0; inefficient DMUs
+    /// retain their standard scores.
+    ///
+    /// BCC super-efficiency may be infeasible for extreme-vertex DMUs.
+    /// In that case the score is set to `Double.infinity` and
+    /// ``DMUScore/superEfficiencyInfeasible`` is `true`.
+    private func solveSuperEfficiency(
+        dmus: [DMU],
+        base: DEABaseModel,
+        orientation: DEAOrientation
+    ) throws -> DEAResult {
+        let simplex = SimplexSolver()
+        var scores: [DMUScore] = []
+        var totalIterations = 0
+        let model: DEAModelType = .superEfficiency(base: base)
+
+        for k in 0..<dmus.count {
+            let result = solveSuperLP(
+                forDMU: k,
+                dmus: dmus,
+                base: base,
+                orientation: orientation,
+                solver: simplex
+            )
+
+            switch result {
+            case .success(let lpResult):
+                totalIterations += lpResult.iterations
+                let score = try extractSuperScore(
+                    forDMU: k,
+                    dmus: dmus,
+                    orientation: orientation,
+                    lpResult: lpResult
+                )
+                scores.append(score)
+
+            case .failure:
+                scores.append(DMUScore(
+                    name: dmus[k].name,
+                    efficiency: .infinity,
+                    rawScore: .infinity,
+                    referenceSet: [],
+                    superEfficiencyInfeasible: true
+                ))
+            }
+        }
+
+        return DEAResult(
+            scores: scores,
+            model: model,
+            orientation: orientation,
+            totalIterations: totalIterations
+        )
+    }
+
+    /// Build and solve the super-efficiency LP for DMU k.
+    ///
+    /// Returns `.failure` if the LP is infeasible (possible with BCC).
+    private func solveSuperLP(
+        forDMU k: Int,
+        dmus: [DMU],
+        base: DEABaseModel,
+        orientation: DEAOrientation,
+        solver: SimplexSolver
+    ) -> Result<SimplexResult, DEAError> {
+        let n = dmus.count
+        let m = dmus[0].inputs.count
+        let s = dmus[0].outputs.count
+        let numVars = n
+
+        var objective = [Double](repeating: 0, count: numVars)
+        objective[0] = 1.0
+
+        var refIndices: [Int] = []
+        for j in 0..<n where j != k {
+            refIndices.append(j)
+        }
+
+        var constraints: [SimplexConstraint] = []
+
+        switch orientation {
+        case .inputOriented:
+            constraints = buildSuperInputConstraints(
+                forDMU: k, dmus: dmus,
+                refIndices: refIndices,
+                m: m, s: s, numVars: numVars
+            )
+        case .outputOriented:
+            constraints = buildSuperOutputConstraints(
+                forDMU: k, dmus: dmus,
+                refIndices: refIndices,
+                m: m, s: s, numVars: numVars
+            )
+        }
+
+        if base == .bcc {
+            var convexityCoeffs = [Double](repeating: 0, count: numVars)
+            for p in 0..<refIndices.count {
+                convexityCoeffs[p + 1] = 1.0
+            }
+            constraints.append(SimplexConstraint(
+                coefficients: convexityCoeffs,
+                relation: .equal,
+                rhs: 1.0
+            ))
+        }
+
+        let result: SimplexResult
+        do {
+            switch orientation {
+            case .inputOriented:
+                result = try solver.minimize(
+                    objective: objective, subjectTo: constraints
+                )
+            case .outputOriented:
+                result = try solver.maximize(
+                    objective: objective, subjectTo: constraints
+                )
+            }
+        } catch {
+            return .failure(
+                DEAError.solverFailed(dmu: dmus[k].name, status: .infeasible)
+            )
+        }
+
+        guard result.status == .optimal else {
+            return .failure(
+                DEAError.solverFailed(dmu: dmus[k].name, status: result.status)
+            )
+        }
+
+        return .success(result)
+    }
+
+    /// Build input-oriented constraints for the super-efficiency LP.
+    private func buildSuperInputConstraints(
+        forDMU k: Int,
+        dmus: [DMU],
+        refIndices: [Int],
+        m: Int, s: Int, numVars: Int
+    ) -> [SimplexConstraint] {
+        var constraints: [SimplexConstraint] = []
+
+        for i in 0..<m {
+            var coeffs = [Double](repeating: 0, count: numVars)
+            coeffs[0] = -dmus[k].inputs[i]
+            for (p, j) in refIndices.enumerated() {
+                coeffs[p + 1] = dmus[j].inputs[i]
+            }
+            constraints.append(SimplexConstraint(
+                coefficients: coeffs,
+                relation: .lessOrEqual,
+                rhs: 0
+            ))
+        }
+
+        for r in 0..<s {
+            var coeffs = [Double](repeating: 0, count: numVars)
+            for (p, j) in refIndices.enumerated() {
+                coeffs[p + 1] = dmus[j].outputs[r]
+            }
+            constraints.append(SimplexConstraint(
+                coefficients: coeffs,
+                relation: .greaterOrEqual,
+                rhs: dmus[k].outputs[r]
+            ))
+        }
+
+        return constraints
+    }
+
+    /// Build output-oriented constraints for the super-efficiency LP.
+    private func buildSuperOutputConstraints(
+        forDMU k: Int,
+        dmus: [DMU],
+        refIndices: [Int],
+        m: Int, s: Int, numVars: Int
+    ) -> [SimplexConstraint] {
+        var constraints: [SimplexConstraint] = []
+
+        for i in 0..<m {
+            var coeffs = [Double](repeating: 0, count: numVars)
+            for (p, j) in refIndices.enumerated() {
+                coeffs[p + 1] = dmus[j].inputs[i]
+            }
+            constraints.append(SimplexConstraint(
+                coefficients: coeffs,
+                relation: .lessOrEqual,
+                rhs: dmus[k].inputs[i]
+            ))
+        }
+
+        for r in 0..<s {
+            var coeffs = [Double](repeating: 0, count: numVars)
+            coeffs[0] = -dmus[k].outputs[r]
+            for (p, j) in refIndices.enumerated() {
+                coeffs[p + 1] = dmus[j].outputs[r]
+            }
+            constraints.append(SimplexConstraint(
+                coefficients: coeffs,
+                relation: .greaterOrEqual,
+                rhs: 0
+            ))
+        }
+
+        return constraints
+    }
+
+    /// Extract a DMUScore from a super-efficiency LP result.
+    private func extractSuperScore(
+        forDMU k: Int,
+        dmus: [DMU],
+        orientation: DEAOrientation,
+        lpResult: SimplexResult
+    ) throws -> DMUScore {
+        let n = dmus.count
+        let refCount = n - 1
+
+        guard lpResult.solution.count >= refCount + 1 else {
+            throw DEAError.solverFailed(dmu: dmus[k].name, status: .unknown)
+        }
+
+        let rawScore = lpResult.solution[0]
+        let lambdas = Array(lpResult.solution[1...refCount])
+
+        let efficiency: Double
+        switch orientation {
+        case .inputOriented:
+            efficiency = rawScore
+        case .outputOriented:
+            guard abs(rawScore) > Double.ulpOfOne else {
+                throw DEAError.solverFailed(dmu: dmus[k].name, status: .unknown)
+            }
+            efficiency = 1.0 / rawScore
+        }
+
+        var refIndices: [Int] = []
+        for j in 0..<n where j != k {
+            refIndices.append(j)
+        }
+
+        let lambdaTolerance = 1e-6
+        var referenceSet: [ReferenceUnit] = []
+        for (p, j) in refIndices.enumerated() {
+            if lambdas[p] > lambdaTolerance {
+                referenceSet.append(ReferenceUnit(
+                    name: dmus[j].name,
+                    weight: lambdas[p]
+                ))
+            }
+        }
+
+        return DMUScore(
+            name: dmus[k].name,
+            efficiency: efficiency,
+            rawScore: rawScore,
+            referenceSet: referenceSet,
+            superEfficiencyInfeasible: false
         )
     }
 }

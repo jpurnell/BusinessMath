@@ -7,12 +7,25 @@
 
 import Foundation
 
+/// Specifies the base DEA model for super-efficiency analysis.
+public enum DEABaseModel: Sendable, Equatable {
+    /// Charnes-Cooper-Rhodes model (constant returns to scale).
+    case ccr
+    /// Banker-Charnes-Cooper model (variable returns to scale).
+    case bcc
+}
+
 /// Specifies the DEA model type.
 public enum DEAModelType: Sendable, Equatable {
     /// Charnes-Cooper-Rhodes model (constant returns to scale).
     case ccr
     /// Banker-Charnes-Cooper model (variable returns to scale).
     case bcc
+    /// Andersen-Petersen super-efficiency model.
+    ///
+    /// Removes the evaluated DMU from its own reference set,
+    /// allowing efficient DMUs to score above 1.0 for ranking.
+    case superEfficiency(base: DEABaseModel)
 }
 
 /// Specifies the orientation of the DEA model.
