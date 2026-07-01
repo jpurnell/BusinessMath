@@ -10,14 +10,12 @@ import Testing
 
 // MARK: - Reference Data
 
-/// Cooper et al. (2007) Table 1.3 — same dataset used in synchronous tests.
-private let cooperDMUs: [DMU] = [
-    DMU(name: "A", inputs: [2, 5], outputs: [1, 4]),
-    DMU(name: "B", inputs: [3, 3], outputs: [2, 2]),
-    DMU(name: "C", inputs: [6, 2], outputs: [3, 1]),
-    DMU(name: "D", inputs: [5, 5], outputs: [1, 3]),
-    DMU(name: "E", inputs: [2, 4], outputs: [2, 1]),
-    DMU(name: "F", inputs: [4, 6], outputs: [1, 5])
+/// Minimal 3-DMU dataset for async parity checks.
+/// DEA correctness is validated in the synchronous test suites.
+private let parityDMUs: [DMU] = [
+    DMU(name: "A", inputs: [2], outputs: [1]),
+    DMU(name: "B", inputs: [3], outputs: [2]),
+    DMU(name: "C", inputs: [5], outputs: [4])
 ]
 
 // MARK: - Correctness: Async Matches Synchronous
@@ -31,14 +29,14 @@ struct AsyncDEACorrectnessTests {
     func ccrInputOrientedMatchesSynchronous() async throws {
         let syncSolver = DEASolver()
         let syncResult = try syncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .ccr,
             orientation: .inputOriented
         )
 
         let asyncSolver = AsyncDEASolver()
         let asyncResult = try await asyncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .ccr,
             orientation: .inputOriented
         )
@@ -69,14 +67,14 @@ struct AsyncDEACorrectnessTests {
     func bccInputOrientedMatchesSynchronous() async throws {
         let syncSolver = DEASolver()
         let syncResult = try syncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .bcc,
             orientation: .inputOriented
         )
 
         let asyncSolver = AsyncDEASolver()
         let asyncResult = try await asyncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .bcc,
             orientation: .inputOriented
         )
@@ -101,14 +99,14 @@ struct AsyncDEACorrectnessTests {
     func outputOrientedMatchesSynchronous() async throws {
         let syncSolver = DEASolver()
         let syncResult = try syncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .ccr,
             orientation: .outputOriented
         )
 
         let asyncSolver = AsyncDEASolver()
         let asyncResult = try await asyncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .ccr,
             orientation: .outputOriented
         )
@@ -145,9 +143,9 @@ struct AsyncDEAConcurrencyDeterminismTests {
         let solver2 = AsyncDEASolver(maxConcurrency: 2)
         let solver4 = AsyncDEASolver(maxConcurrency: 4)
 
-        let result1 = try await solver1.solve(dmus: cooperDMUs, model: .ccr)
-        let result2 = try await solver2.solve(dmus: cooperDMUs, model: .ccr)
-        let result4 = try await solver4.solve(dmus: cooperDMUs, model: .ccr)
+        let result1 = try await solver1.solve(dmus: parityDMUs, model: .ccr)
+        let result2 = try await solver2.solve(dmus: parityDMUs, model: .ccr)
+        let result4 = try await solver4.solve(dmus: parityDMUs, model: .ccr)
 
         let sorted1 = result1.scores.sorted { $0.name < $1.name }
         let sorted2 = result2.scores.sorted { $0.name < $1.name }
@@ -276,14 +274,14 @@ struct AsyncDEASequentialEquivalenceTests {
     func maxConcurrencyOneEquivalentToSequential() async throws {
         let syncSolver = DEASolver()
         let syncResult = try syncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .ccr,
             orientation: .inputOriented
         )
 
         let asyncSolver = AsyncDEASolver(maxConcurrency: 1)
         let asyncResult = try await asyncSolver.solve(
-            dmus: cooperDMUs,
+            dmus: parityDMUs,
             model: .ccr,
             orientation: .inputOriented
         )

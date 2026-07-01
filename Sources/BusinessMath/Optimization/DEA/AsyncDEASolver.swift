@@ -50,7 +50,7 @@ public struct AsyncDEASolver: Sendable {
     /// Evaluate the relative efficiency of DMUs concurrently.
     ///
     /// Validates inputs once, then dispatches one LP per DMU via a bounded
-    /// ``TaskGroup``. Results are collected in the original DMU order.
+    /// `TaskGroup`. Results are collected in the original DMU order.
     ///
     /// - Parameters:
     ///   - dmus: Array of decision-making units to evaluate. Minimum 2.
