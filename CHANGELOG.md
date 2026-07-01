@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.3.0] - 2026-07-01
+
+**Version 2.3.0** adds Data Envelopment Analysis (DEA), a linear-programming-based
+technique for evaluating the relative efficiency of decision-making units across
+multiple input and output dimensions. Built on the existing `SimplexSolver`.
+
+#### Added
+
+- **CCR model** (Charnes-Cooper-Rhodes) — constant returns to scale DEA with
+  input-oriented and output-oriented variants
+- **BCC model** (Banker-Charnes-Cooper) — variable returns to scale DEA with
+  convexity constraint for scale-appropriate comparisons
+- **Super-efficiency** (Andersen-Petersen) — removes the evaluated DMU from its
+  own reference set, allowing efficient units to score above 1.0 for ranking;
+  handles BCC infeasibility gracefully
+- **Slacks-Based Measure** (Tone 2001) — non-oriented additive model that
+  simultaneously optimizes all input reductions and output expansions via
+  Charnes-Cooper linearization; CRS and VRS variants
+- **Matrix-form convenience API** — `solve(inputs:outputs:names:...)` accepts
+  raw `[[Double]]` matrices, auto-generates DMU names if omitted
+- **Async parallel solver** — `AsyncDEASolver` dispatches LP solves concurrently
+  via bounded `TaskGroup`; deterministic results regardless of concurrency level
+- **DEA DocC article** — `5.21-DataEnvelopmentAnalysis.md` with worked examples
+  and model selection guidance
+- **DEA playground** — interactive Xcode playground demonstrating all four model
+  types with the Cooper et al. reference dataset
+
+#### Status
+
+- Build: 0 warnings, 0 errors
+- Tests: 81 new DEA tests across 24 suites (5,812 total across 508 suites)
+- Quality gate: 0 errors, 0 warnings on DEA code
+- DocC coverage: 100% (6,266/6,266 public APIs documented)
+
 ### [2.2.1] - 2026-06-08
 
 **Version 2.2.1** completes the test assertion hardening effort and eliminates

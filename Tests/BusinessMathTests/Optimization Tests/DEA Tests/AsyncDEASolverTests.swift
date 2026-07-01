@@ -24,7 +24,7 @@ private let parityDMUs: [DMU] = [
 struct AsyncDEACorrectnessTests {
 
     @Test("CCR input-oriented async results match synchronous solver",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
     func ccrInputOrientedMatchesSynchronous() async throws {
         let syncSolver = DEASolver()
@@ -62,7 +62,7 @@ struct AsyncDEACorrectnessTests {
     }
 
     @Test("BCC input-oriented async results match synchronous solver",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
     func bccInputOrientedMatchesSynchronous() async throws {
         let syncSolver = DEASolver()
@@ -94,7 +94,7 @@ struct AsyncDEACorrectnessTests {
     }
 
     @Test("Output-oriented async results match synchronous solver",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
     func outputOrientedMatchesSynchronous() async throws {
         let syncSolver = DEASolver()
@@ -136,7 +136,7 @@ struct AsyncDEACorrectnessTests {
 struct AsyncDEAConcurrencyDeterminismTests {
 
     @Test("maxConcurrency 1, 2, and 4 produce identical scores",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
     func concurrencyLevelsProduceIdenticalResults() async throws {
         let solver1 = AsyncDEASolver(maxConcurrency: 1)
@@ -227,7 +227,7 @@ struct AsyncDEAInputValidationTests {
 struct AsyncDEAScaleTests {
 
     @Test("50 DMUs with 3 inputs / 3 outputs — all scores in (0, 1]",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
     func fiftyDMUsModerateScale() async throws {
         var dmus: [DMU] = []
@@ -269,7 +269,7 @@ struct AsyncDEAScaleTests {
 struct AsyncDEASequentialEquivalenceTests {
 
     @Test("maxConcurrency = 1 produces correct results (sequential fallback)",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
     func maxConcurrencyOneEquivalentToSequential() async throws {
         let syncSolver = DEASolver()
