@@ -8,7 +8,7 @@
 import Foundation
 
 /// Specifies the DEA model type.
-public enum DEAModelType: Sendable {
+public enum DEAModelType: Sendable, Equatable {
     /// Charnes-Cooper-Rhodes model (constant returns to scale).
     case ccr
     /// Banker-Charnes-Cooper model (variable returns to scale).
@@ -16,7 +16,7 @@ public enum DEAModelType: Sendable {
 }
 
 /// Specifies the orientation of the DEA model.
-public enum DEAOrientation: Sendable {
+public enum DEAOrientation: Sendable, Equatable {
     /// Input-oriented: minimize inputs while maintaining output levels.
     case inputOriented
     /// Output-oriented: maximize outputs while maintaining input levels.
