@@ -531,3 +531,106 @@ struct DEAStressTests {
         }
     }
 }
+
+// MARK: - Matrix-Form Convenience API
+
+@Suite("DEA Matrix-Form API")
+struct DEAMatrixFormTests {
+
+    let solver = DEASolver()
+
+    @Test("Matrix form produces identical results to DMU form")
+    func matrixFormEquivalence() throws {
+        let dmuResult = try solver.solve(
+            dmus: cooperDMUs,
+            model: .ccr,
+            orientation: .inputOriented
+        )
+
+        let inputs: [[Double]] = [
+            [2, 5], [3, 3], [6, 2], [5, 5], [2, 4], [4, 6]
+        ]
+        let outputs: [[Double]] = [
+            [1, 4], [2, 2], [3, 1], [1, 3], [2, 1], [1, 5]
+        ]
+        let names = ["A", "B", "C", "D", "E", "F"]
+
+        let matrixResult = try solver.solve(
+            inputs: inputs,
+            outputs: outputs,
+            names: names,
+            model: .ccr,
+            orientation: .inputOriented
+        )
+
+        #expect(matrixResult.scores.count == dmuResult.scores.count)
+        for (matrix, dmu) in zip(
+            matrixResult.scores.sorted(by: { $0.name < $1.name }),
+            dmuResult.scores.sorted(by: { $0.name < $1.name })
+        ) {
+            #expect(abs(matrix.efficiency - dmu.efficiency) < 1e-10,
+                    "Scores must match for DMU \(matrix.name)")
+        }
+    }
+
+    @Test("Matrix form generates default names when omitted")
+    func matrixFormDefaultNames() throws {
+        let inputs: [[Double]] = [[2, 5], [3, 3]]
+        let outputs: [[Double]] = [[1, 4], [2, 2]]
+
+        let result = try solver.solve(inputs: inputs, outputs: outputs)
+
+        #expect(result.scores[0].name == "DMU_1")
+        #expect(result.scores[1].name == "DMU_2")
+    }
+
+    @Test("Matrix form throws on mismatched row counts")
+    func matrixFormMismatchedRows() {
+        let inputs: [[Double]] = [[2, 5], [3, 3], [6, 2]]
+        let outputs: [[Double]] = [[1, 4], [2, 2]]
+
+        #expect(throws: DEAError.self) {
+            _ = try solver.solve(inputs: inputs, outputs: outputs)
+        }
+    }
+
+    @Test("Matrix form throws on inconsistent column counts")
+    func matrixFormInconsistentColumns() {
+        let inputs: [[Double]] = [[2, 5], [3]]
+        let outputs: [[Double]] = [[1, 4], [2, 2]]
+
+        #expect(throws: DEAError.self) {
+            _ = try solver.solve(inputs: inputs, outputs: outputs)
+        }
+    }
+
+    @Test("Matrix form throws when names array length mismatches")
+    func matrixFormNamesMismatch() {
+        let inputs: [[Double]] = [[2, 5], [3, 3]]
+        let outputs: [[Double]] = [[1, 4], [2, 2]]
+
+        #expect(throws: DEAError.self) {
+            _ = try solver.solve(inputs: inputs, outputs: outputs, names: ["A"])
+        }
+    }
+
+    @Test("Matrix form works with BCC and output orientation")
+    func matrixFormBCCOutputOriented() throws {
+        let inputs: [[Double]] = [[2, 5], [3, 3], [6, 2]]
+        let outputs: [[Double]] = [[1, 4], [2, 2], [3, 1]]
+
+        let result = try solver.solve(
+            inputs: inputs,
+            outputs: outputs,
+            model: .bcc,
+            orientation: .outputOriented
+        )
+
+        #expect(result.scores.count == 3)
+        #expect(result.model == .bcc)
+        #expect(result.orientation == .outputOriented)
+        for score in result.scores {
+            #expect(score.efficiency > 0 && score.efficiency <= 1.0 + 1e-6)
+        }
+    }
+}

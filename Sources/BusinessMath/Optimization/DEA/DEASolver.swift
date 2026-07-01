@@ -397,3 +397,74 @@ public struct DEASolver: Sendable {
         )
     }
 }
+
+// MARK: - Matrix-Form Convenience API
+
+extension DEASolver {
+
+    /// Evaluate efficiency from raw input/output matrices.
+    ///
+    /// Convenience method that constructs ``DMU`` objects from row-major matrices.
+    /// Row `i` of `inputs` and `outputs` corresponds to DMU `i`.
+    ///
+    /// - Parameters:
+    ///   - inputs: Matrix of input values, shape [n x m]. Each row is one DMU.
+    ///   - outputs: Matrix of output values, shape [n x s]. Each row is one DMU.
+    ///   - names: Optional DMU names. If nil, defaults to "DMU_1", "DMU_2", etc.
+    ///   - model: DEA model type. Default: `.ccr`.
+    ///   - orientation: Input or output oriented. Default: `.inputOriented`.
+    ///   - inputNames: Optional labels for input dimensions.
+    ///   - outputNames: Optional labels for output dimensions.
+    /// - Returns: DEA results.
+    /// - Throws: ``DEAError`` if dimensions are inconsistent or values non-positive.
+    public func solve(
+        inputs: [[Double]],
+        outputs: [[Double]],
+        names: [String]? = nil,
+        model: DEAModelType = .ccr,
+        orientation: DEAOrientation = .inputOriented,
+        inputNames: [String]? = nil,
+        outputNames: [String]? = nil
+    ) throws -> DEAResult {
+        guard inputs.count == outputs.count else {
+            throw DEAError.dimensionMismatch(
+                expected: inputs.count,
+                actual: outputs.count,
+                dmu: "matrix rows"
+            )
+        }
+
+        if let names = names {
+            guard names.count == inputs.count else {
+                throw DEAError.dimensionMismatch(
+                    expected: inputs.count,
+                    actual: names.count,
+                    dmu: "names array"
+                )
+            }
+        }
+
+        let dmuNames = names ?? (1...inputs.count).map { "DMU_\($0)" }
+
+        let dmus = try zip(dmuNames, zip(inputs, outputs)).map { name, data in
+            let (inp, out) = data
+            guard let expectedInputCount = inputs.first?.count,
+                  inp.count == expectedInputCount else {
+                throw DEAError.dimensionMismatch(
+                    expected: inputs.first?.count ?? 0,
+                    actual: inp.count,
+                    dmu: name
+                )
+            }
+            return DMU(name: name, inputs: inp, outputs: out)
+        }
+
+        return try solve(
+            dmus: dmus,
+            model: model,
+            orientation: orientation,
+            inputNames: inputNames,
+            outputNames: outputNames
+        )
+    }
+}
