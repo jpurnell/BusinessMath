@@ -80,9 +80,52 @@ public struct DEASolver: Sendable {
         )
     }
 
+    // MARK: - Single-DMU Solve (Internal)
+
+    /// Solve the LP for a single DMU within a validated set.
+    ///
+    /// Callers must validate `dmus` before invoking. This method constructs and
+    /// solves one LP, then extracts the score. Used by ``AsyncDEASolver`` to
+    /// dispatch independent solves concurrently.
+    ///
+    /// - Parameters:
+    ///   - index: Index of the DMU to evaluate.
+    ///   - dmus: All DMUs (already validated).
+    ///   - model: DEA model type.
+    ///   - orientation: Input or output oriented.
+    /// - Returns: Tuple of the DMU score and simplex iteration count.
+    /// - Throws: ``DEAError`` if the LP fails.
+    internal func solveSingleDMU(
+        index k: Int,
+        dmus: [DMU],
+        model: DEAModelType,
+        orientation: DEAOrientation
+    ) throws -> (score: DMUScore, iterations: Int) {
+        let simplex = SimplexSolver()
+        let lpResult = try solveLP(
+            forDMU: k,
+            dmus: dmus,
+            model: model,
+            orientation: orientation,
+            solver: simplex
+        )
+        let score = try extractScore(
+            forDMU: k,
+            dmus: dmus,
+            orientation: orientation,
+            lpResult: lpResult
+        )
+        return (score, lpResult.iterations)
+    }
+
     // MARK: - Input Validation
 
-    private func validate(dmus: [DMU]) throws {
+    /// Validate DMU inputs for consistency and correctness.
+    ///
+    /// Checks minimum count, dimension consistency, and positivity.
+    /// Exposed as `internal` so ``AsyncDEASolver`` can validate once
+    /// before dispatching concurrent solves.
+    internal func validate(dmus: [DMU]) throws {
         guard dmus.count >= 2 else {
             throw DEAError.insufficientDMUs(count: dmus.count)
         }
