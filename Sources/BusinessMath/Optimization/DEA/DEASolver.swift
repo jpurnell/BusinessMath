@@ -6,9 +6,10 @@
 //
 
 import Foundation
+#if canImport(os)
 import os
-
 private let logger = Logger(subsystem: "com.businessmath", category: "DEASolver")
+#endif
 
 /// Solves Data Envelopment Analysis problems using the simplex method.
 ///
@@ -850,7 +851,9 @@ public struct DEASolver: Sendable {
                 )
             }
         } catch {
+            #if canImport(os)
             logger.debug("Super-efficiency LP infeasible for DMU \(dmus[k].name, privacy: .public)")
+            #endif
             return .failure(
                 DEAError.solverFailed(dmu: dmus[k].name, status: .infeasible)
             )
