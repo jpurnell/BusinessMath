@@ -36,11 +36,20 @@ multiple input and output dimensions. Built on the existing `SimplexSolver`.
 - **DEA playground** — interactive Xcode playground demonstrating all four model
   types with the Cooper et al. reference dataset
 
+#### Fixed
+
+- **Linux CI** — wrapped `os.Logger` usage in `#if canImport(os)` guards so the
+  package builds cleanly on Linux where os.Logger is unavailable
+- **Flaky duration sensitivity test** — widened tolerance for convexity residual
+  comparison that was sensitive to floating-point scheduling order
+- **Non-deterministic ranking test** — replaced unseeded `.shuffled()` in
+  `RankingStatisticsTests` with a seeded shuffle for reproducible CI runs
+
 #### Status
 
 - Build: 0 warnings, 0 errors
 - Tests: 81 new DEA tests across 24 suites (5,812 total across 508 suites)
-- Quality gate: 0 errors, 0 warnings on DEA code
+- Quality gate: 0 errors, 1 warning (institutional consistency signal)
 - DocC coverage: 100% (6,266/6,266 public APIs documented)
 
 ### [2.2.1] - 2026-06-08
