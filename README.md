@@ -169,8 +169,8 @@ dependencies: [
 ### 💻 Code Examples
 **Detailed examples** for common workflows:
 
-- **[QUICK_START_EXAMPLE.swift](QUICK_START_EXAMPLE.swift)** - 🚀 Copy-paste investment analysis example (start here!)
-- **[EXAMPLES.md](EXAMPLES.md)** - Time series, forecasting, loans, securities, risk, optimization
+- **[QUICK_START_EXAMPLE.swift](Examples/QUICK_START_EXAMPLE.swift)** - 🚀 Copy-paste investment analysis example (start here!)
+- **[EXAMPLES.md](Documentation/EXAMPLES.md)** - Time series, forecasting, loans, securities, risk, optimization
 - **[All DocC Tutorials](Sources/BusinessMath/BusinessMath.docc/)** - 61 comprehensive guides with runnable examples
 
 ## What's Included
@@ -222,7 +222,7 @@ dependencies: [
 
 ## Release Notes
 
-📢 **[v2.0.0 Release Notes](RELEASE_NOTES_v2.0.0.md)** - Complete what's new guide for the 2.0 release
+📢 **[Release history](CHANGELOG.md)** - Complete what's new guide for the 2.0 release
 
 ## Contributing
 
@@ -250,6 +250,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **Documentation**: [BusinessMath.docc](Sources/BusinessMath/BusinessMath.docc/)
 - **Issues**: [GitHub Issues](https://github.com/jpurnell/BusinessMath/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/jpurnell/BusinessMath/discussions)
-- **Examples**: [QUICK_START_EXAMPLE.swift](QUICK_START_EXAMPLE.swift) | [EXAMPLES.md](EXAMPLES.md)
+- **Examples**: [QUICK_START_EXAMPLE.swift](Examples/QUICK_START_EXAMPLE.swift) | [EXAMPLES.md](Documentation/EXAMPLES.md)
 
 ---

@@ -42,3 +42,7 @@ MIGRATION_GUIDE.md
 PARAMETER_NAMING_AUDIT.md
 STABILITY.md
 2_0_RELEASE_PATH.md
+# Internal/marketing (kept local, out of the repo)
+PRODUCT_HUNT_LAUNCH_KIT.md
+RELEASE_NOTES_*.md
+CLAUDE.md
