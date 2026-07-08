@@ -1,4 +1,5 @@
 // swift-tools-version: 6.2
+// legibility:description: Production-ready Swift library for financial analysis, forecasting, and quantitative modeling.
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import CompilerPluginSupport
