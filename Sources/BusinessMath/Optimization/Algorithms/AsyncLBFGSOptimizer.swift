@@ -293,10 +293,10 @@ public struct AsyncLBFGSOptimizer: Sendable {
             x = newX
             previousObjective = newObjective
 
-            // Check for Task cancellation
-            if Task.isCancelled {
-                break
-            }
+            // Cooperative cancellation: throw rather than break-and-return, which
+            // would be indistinguishable from a genuine max-iterations exit and
+            // silently present a truncated, non-converged result as a normal one.
+            try Task.checkCancellation()
         }
 
         // Max iterations reached

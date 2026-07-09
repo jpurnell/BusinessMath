@@ -137,7 +137,11 @@ public struct AsyncTumblingTimeWindowSequence<Base: AsyncSequence, V: Sendable>:
                     currentWindow.append(element)
                 }
             }
-            return nil
+            // Reached only when the loop condition flips on cancellation (no break
+            // exists above). Throw rather than returning nil, which would be
+            // indistinguishable from clean end-of-stream and silently drop the
+            // partially-filled window.
+            throw CancellationError()
         }
     }
 }
@@ -280,7 +284,11 @@ public struct AsyncSlidingTimeWindowSequence<Base: AsyncSequence, V: Sendable>: 
                     return pending
                 }
             }
-            return nil
+            // Reached only when the loop condition flips on cancellation (no break
+            // exists above). Throw rather than returning nil, which would be
+            // indistinguishable from clean end-of-stream and silently drop the
+            // buffered sliding window.
+            throw CancellationError()
         }
     }
 }

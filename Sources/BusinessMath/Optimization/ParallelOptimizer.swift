@@ -137,6 +137,9 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 			for try await (start, result) in group {
 				results.append((start, result))
 			}
+			// Surface cancellation as an error rather than returning a best-of-N and
+			// a successRate computed from whatever completed before cancellation.
+			try Task.checkCancellation()
 			return results
 		}
 

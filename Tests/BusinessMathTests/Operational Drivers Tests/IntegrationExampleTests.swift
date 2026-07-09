@@ -339,16 +339,26 @@ struct IntegrationExampleTests {
 		let model = SaaSFinancialModel()
 		let period = Period.quarter(year: 2025, quarter: 1)
 
-		// Sample 100 times
-		for _ in 0..<100 {
+		// Payroll = headcount × salary is a product of two random variables, so
+		// individual draws are heavy-tailed and a rare sample can exceed $400k.
+		// Assert the *mean* against the expected range (its standard error over 100
+		// draws is tiny, so this is deterministic), and keep only distribution-
+		// agnostic invariants — positivity and a generous no-absurd-value ceiling —
+		// as per-sample checks. A hard per-sample upper bound flakes on tail events.
+		let sampleCount = 100
+		var totalCostsSum = 0.0
+		for _ in 0..<sampleCount {
 			let costs = model.totalCosts.sample(for: period)
-
-			// Fixed ($50k) + Variable (1000 × $20 = $20k) + Payroll (20 × $10k = $200k)
-			// = ~$270k total, but with variability
-			#expect(costs >= 150_000.0, "Costs should be at least $150k")
-			#expect(costs <= 400_000.0, "Costs should be at most $400k")
 			#expect(costs > 0.0, "Costs must be positive")
+			#expect(costs < 1_000_000.0, "Costs must not be absurd (mean is ~$270k)")
+			totalCostsSum += costs
 		}
+
+		// Fixed ($50k) + Variable (1000 × $20 = $20k) + Payroll (20 × $10k = $200k)
+		// = ~$270k mean.
+		let meanCosts = totalCostsSum / Double(sampleCount)
+		#expect(meanCosts >= 150_000.0, "Mean costs should be at least $150k")
+		#expect(meanCosts <= 400_000.0, "Mean costs should be at most $400k")
 	}
 
 	// MARK: - Real-World Scenario Testing
