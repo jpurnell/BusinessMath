@@ -42,6 +42,7 @@ import RealModule
         // Verify correctness
         #expect(profit > 0)
         // Verify performance (generous threshold for slow CI)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.5, "Should complete in < 500ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_RepeatedCalculations") func LPerformance_RepeatedCalculations() {
@@ -64,6 +65,7 @@ import RealModule
             #expect(abs(profit - 13_000.0) < 1e-6)
         }
         let elapsed = Date().timeIntervalSince(start)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 1.0, "Should complete 1000 calculations in < 1s (got \((elapsed * 1000).number(2))ms)")
     }
 
@@ -84,6 +86,7 @@ import RealModule
 
         #expect(!summary.isEmpty)
         #expect(summary.contains("Revenue"))
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.1, "Should complete in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Export Performance
@@ -105,6 +108,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(csv.count > 1000)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.5, "Should complete in < 500ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_JSONExportLargeModel") func LPerformance_JSONExportLargeModel() {
@@ -125,6 +129,7 @@ import RealModule
 
         #expect(json.count > 1000)
         #expect(json.contains("revenue"))
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.5, "Should complete in < 500ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_TimeSeriesExport") func LPerformance_TimeSeriesExport() {
@@ -141,6 +146,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(csv.count > 10000)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.5, "Should complete in < 500ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Validation Performance
@@ -157,6 +163,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(validation.isValid)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.05, "Should complete in < 50ms (got \((elapsed * 1000).number(2))ms)")
     }
     @Test("Performance_ModelValidation") func LPerformance_ModelValidation() {
@@ -179,6 +186,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(!summary.isEmpty)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.1, "Should complete in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Calculation Trace Performance
@@ -205,6 +213,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(trace.steps.count > 0)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.1, "Should complete in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Memory Efficiency
@@ -247,6 +256,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         // If we made it here without running out of memory, we're good
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 10.0, "Should complete 1000 model creations in < 10s (got \((elapsed * 1000).number(2))ms)")
     }
 	@Test("Performance_TimeSeriesMemoryEfficiency", .localOnly)
@@ -275,6 +285,7 @@ import RealModule
         #endif
         let elapsed = Date().timeIntervalSince(start)
 
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 25.0, "Should complete 100 time series creations in < 25s (got \(elapsed.number(3))s)")
     }
     // MARK: - Batch Operations
@@ -302,6 +313,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(abs(totalProfit - 2_475_000.0) < 1e-6)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.01, "Should complete 100 calculations in < 10ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Summary Generation Performance
@@ -331,6 +343,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(!summary.isEmpty)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.05, "Should complete in < 50ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Dependency Graph Performance
@@ -358,6 +371,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(graph.count > 0)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.1, "Should complete in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Investment Calculation Performance
@@ -379,6 +393,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(!npv.isNaN)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.1, "Should complete in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Export Format Performance
@@ -401,6 +416,7 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(formatted.count > 100)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.1, "Should complete in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
 }

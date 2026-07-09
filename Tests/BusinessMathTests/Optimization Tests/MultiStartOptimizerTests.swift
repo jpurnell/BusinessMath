@@ -134,6 +134,7 @@ struct MultiStartOptimizerTests {
         // Parallel execution should complete in reasonable time
         // With 4 tasks running in parallel and limited iterations,
         // should complete quickly (< 1 second)
+        // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < .seconds(1))
     }
 
@@ -425,6 +426,7 @@ struct MultiStartOptimizerTests {
 
         // 9 starts should not take 3× as long (due to parallelism)
         // Allow some overhead, but ensure it's reasonably parallel
+        // TIMING: intentional wall-clock perf benchmark
         #expect(time9 < time3 * 2)
     }
 }

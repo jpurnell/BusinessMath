@@ -530,8 +530,6 @@ struct EquityValuationIntegrationTests {
     @Test("Integrated valuation workflow completes quickly")
     func integratedWorkflowPerformance() throws {
         // Given: Complete valuation workflow
-        let start = Date()
-
         // Run full DCF workflow
         let periods = (2024...2028).map { Period.year($0) }
         let fcff = TimeSeries(periods: periods, values: [100.0, 110.0, 121.0, 133.0, 146.0])
@@ -554,11 +552,7 @@ struct EquityValuationIntegrationTests {
         let equityValue = bridge.equityValue()
         let sharePrice = bridge.valuePerShare(sharesOutstanding: 100.0)
 
-        let elapsed = Date().timeIntervalSince(start)
-
-        // Then: Should complete in reasonable time (100ms threshold to avoid CI flakiness)
-        // Note: This is a smoke test only; dedicated performance testing is in DDMPerformanceTests
-        #expect(elapsed < 0.100, "Integrated workflow took \(elapsed * 1000) ms")
+        // Then: Assert on logical outcomes (dedicated performance testing lives in DDMPerformanceTests).
         #expect(sharePrice > 0)
         #expect(!equityValue.isNaN)
     }

@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+#### Fixed
+
+- **`MultiStartOptimizer` fail-silent on cancellation** — when the surrounding
+  task was cancelled, the parallel start-collection loop exited early via `break`
+  and then returned the best of a *partial* result set, silently presenting a
+  truncated search as the global optimum. It now calls `try Task.checkCancellation()`
+  immediately after the loop, throwing `CancellationError` and honoring the
+  method's documented `- Throws:` contract. Callers that cancel now receive an
+  error instead of a plausible-but-wrong result. Internally switched from
+  `withTaskGroup` to `withThrowingTaskGroup` so the cancellation check can
+  propagate out of the group body. (Flagged by the quality gate's new
+  task-exit / cancellation-boundary rule.)
+
+#### Changed (tests)
+
+- **Temporal determinism** — cleared 42 `temporal-determinism` warnings surfaced
+  by a quality-gate rule update:
+  - `AsyncOptimizationTests` mock stream now derives progress `timestamp:` values
+    from a fixed logical origin advanced by synthetic step time, rather than
+    `Date()`, so sample spacing is deterministic instead of tracking scheduler jitter.
+  - Removed three incidental wall-clock `#expect` assertions from functional tests
+    (`DocumentationExamplesTests`, `BranchAndBoundTests`,
+    `EquityValuationIntegrationTests`) in favor of the logical assertions already
+    present; the Branch-and-Bound solver's own `timeLimit` already enforces its bound.
+  - Marked 35 genuine wall-clock perf benchmarks (`PerformanceOptimizationTests`,
+    `DDMPerformanceTests`, `SparsePerformanceBenchmark`, `ParallelOptimizerTests`,
+    and the two parallelism-scaling tests in `MultiStartOptimizerTests`) with the
+    sanctioned `// TIMING:` intent marker.
+
 ### [2.3.0] - 2026-07-01
 
 **Version 2.3.0** adds Data Envelopment Analysis (DEA), a linear-programming-based
