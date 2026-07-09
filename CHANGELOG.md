@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [2.3.1] - 2026-07-08
+
+**Version 2.3.1** is a cancellation-safety patch. A quality-gate rule addition
+surfaced a fail-silent-on-cancellation bug in `MultiStartOptimizer`; a follow-up
+audit of every `TaskGroup` / async-iteration site in the optimization and
+streaming layers found the same shape in two more async optimizers and three
+streaming iterators. All are fixed so that a cancelled computation now throws
+`CancellationError` (or finishes a stream with an error) instead of returning a
+plausible-but-wrong "complete" result. No public API changes.
 
 #### Fixed
 
@@ -23,9 +31,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `withTaskGroup` to `withThrowingTaskGroup` so the cancellation check can
   propagate out of the group body. (Flagged by the quality gate's new
   task-exit / cancellation-boundary rule.)
+- **`AsyncConjugateGradientOptimizer` / `AsyncLBFGSOptimizer` cancellation** — the
+  iteration loop's `if Task.isCancelled { break }` fell through to the
+  "max iterations reached" return, so a cancelled optimization was returned as an
+  ordinary `converged: false` result (indistinguishable from hitting the iteration
+  cap) and their progress streams finished *cleanly* rather than with an error.
+  Both now `try Task.checkCancellation()` at the loop boundary, throwing
+  `CancellationError` which also routes the progress stream into its error path.
+  Regression tests added for both.
+- **`AsyncAlignedSequence` cancellation** — the two-stream alignment iterator
+  finished its `AsyncStream` *cleanly* on cancellation, so a consumer saw normal
+  completion of a truncated alignment. Migrated the internal channel to
+  `AsyncThrowingStream` (reusing the existing `ThrowingContinuationBox`) and now
+  finishes with `CancellationError` when cancelled. No public API change
+  (`next()` was already `async throws`).
+- **`AsyncTumblingTimeWindowSequence` / `AsyncSlidingTimeWindowSequence`
+  cancellation** — on cancellation the window iterators returned `nil`, the same
+  sentinel as clean end-of-stream, silently dropping the partially-filled window.
+  They now throw `CancellationError` at the cancellation exit so a cut-short
+  windowing pipeline is distinguishable from natural completion.
+
+#### Changed
+
+- **`ParallelOptimizer` cancellation responsiveness** — added a post-collection
+  `try Task.checkCancellation()` so a cancelled caller receives a prompt
+  `CancellationError` rather than waiting out all N optimizations. (Not a
+  fail-silent bug — its synchronous child tasks always run to completion — but
+  brought in line with the other async optimizers.)
 
 #### Changed (tests)
 
+- **Cancellation regression coverage** — added deterministic tests asserting that
+  `AsyncConjugateGradientOptimizer` and `AsyncLBFGSOptimizer` throw
+  `CancellationError` on cancel. They cancel immediately (no timed sleep) so they
+  are robust under the concurrent full-suite load, and use a quartic objective so
+  conjugate gradient cannot one-shot it the way it would a quadratic.
+- **Flaky stochastic test fixed** — `verifyTotalCostsRange` asserted a hard $400k
+  upper bound on every one of 100 unseeded random draws; because payroll is a
+  product of two random variables, a rare tail draw could exceed it. Now asserts
+  the *sample mean* against the expected range (its standard error over 100 draws
+  is tiny) and keeps only distribution-agnostic per-sample invariants.
 - **Temporal determinism** — cleared 42 `temporal-determinism` warnings surfaced
   by a quality-gate rule update:
   - `AsyncOptimizationTests` mock stream now derives progress `timestamp:` values

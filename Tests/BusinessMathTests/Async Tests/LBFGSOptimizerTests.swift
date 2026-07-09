@@ -424,4 +424,42 @@ struct LBFGSOptimizerTests {
         // Should not exceed max iterations
         #expect(result.iterations <= 10)
     }
+
+    // MARK: - Cancellation
+
+    @Test("L-BFGS throws CancellationError on cancel (not a truncated result)")
+    func throwsOnCancellation() async throws {
+        // Quartic (non-quadratic, very flat near the minimum) so the optimizer keeps
+        // iterating toward the 1e-15 tolerance and is still running when cancelled.
+        let objective: @Sendable (Double) -> Double = { x in
+            let d = x - 100.0
+            return d * d * d * d
+        }
+        let optimizer = AsyncLBFGSOptimizer(
+            memorySize: 5,
+            tolerance: 1e-15,
+            maxIterations: 100_000
+        )
+
+        let task = Task {
+            try await optimizer.optimizeWithProgress(
+                objective: objective,
+                constraints: [],
+                initialGuess: 0.0,
+                bounds: nil
+            )
+        }
+
+        // Cancel immediately (no sleep): the flag is set in microseconds, while the
+        // optimizer needs milliseconds of compute to reach its first checkpoint —
+        // so cancellation is observed deterministically, even under heavy parallel
+        // test load where a timed sleep would let the optimizer finish first.
+        task.cancel()
+
+        // Must surface cancellation as an error, NOT return a plausible-but-wrong
+        // `converged: false` result indistinguishable from a max-iterations exit.
+        await #expect(throws: CancellationError.self) {
+            _ = try await task.value
+        }
+    }
 }

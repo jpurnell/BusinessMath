@@ -137,16 +137,16 @@ public struct AsyncAlignedSequence<
     /// latest values are stored in an actor for thread-safe access. When the primary
     /// stream emits, the iterator reads the secondary state and applies the alignment
     /// strategy.
-    // Justification: Stored state is an AsyncStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
+    // Justification: Stored state is an AsyncThrowingStream (Sendable) and its iterator; mutation is confined to next() which is called serially by the async for-in protocol.
     public struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
-        private let channel: AsyncStream<Element>
-        private var iterator: AsyncStream<Element>.AsyncIterator
+        private let channel: AsyncThrowingStream<Element, Error>
+        private var iterator: AsyncThrowingStream<Element, Error>.AsyncIterator
 
         init(primary: Primary, secondary: Secondary, strategy: AlignmentStrategy) {
-            let (channel, continuationBox): (AsyncStream<Element>, ContinuationBox<Element>) = {
-                var box: ContinuationBox<Element>!  // swiftlint:disable:this identifier_name
-                let ch = AsyncStream<Element>(bufferingPolicy: .bufferingOldest(64)) { cont in
-                    box = ContinuationBox(cont)
+            let (channel, continuationBox): (AsyncThrowingStream<Element, Error>, ThrowingContinuationBox<Element>) = {
+                var box: ThrowingContinuationBox<Element>!  // swiftlint:disable:this identifier_name
+                let ch = AsyncThrowingStream<Element, Error>(bufferingPolicy: .bufferingOldest(64)) { cont in
+                    box = ThrowingContinuationBox(cont)
                 }
                 return (ch, box)
             }()
@@ -236,7 +236,14 @@ public struct AsyncAlignedSequence<
                     }
 
                     await group.waitForAll()
-                    continuationBox.finish()
+                    // If the surrounding task was cancelled, both consumers exit
+                    // their loops early; surface that as an error so a truncated
+                    // alignment is not reported to the consumer as clean completion.
+                    if Task.isCancelled {
+                        continuationBox.finish(throwing: CancellationError())
+                    } else {
+                        continuationBox.finish()
+                    }
                 }
             }
         }
@@ -246,7 +253,7 @@ public struct AsyncAlignedSequence<
         /// - Returns: A tuple of (primary value, aligned secondary value), or `nil`
         ///   when the primary stream completes.
         public mutating func next() async throws -> Element? {
-            return await iterator.next()
+            return try await iterator.next()
         }
     }
 }
