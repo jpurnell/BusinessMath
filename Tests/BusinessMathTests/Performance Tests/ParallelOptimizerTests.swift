@@ -464,6 +464,7 @@ struct ParallelOptimizerPerformanceTests {
 		// Generous threshold to avoid flaky failures on low-powered Linux CI.
 		// 8 starts × 50 iterations on simple 1D objective — completes in <1s on Mac,
 		// but shared CI runners with CPU throttling can be 10x slower.
+		// TIMING: intentional wall-clock perf benchmark
 		#expect(elapsed < 30.0, "Should complete within 30 seconds (got \(elapsed.number(2))s)")
 	}
 }

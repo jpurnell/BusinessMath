@@ -299,6 +299,9 @@ private struct MockAsyncOptimizer: AsyncOptimizer {
                 let learningRate = 0.3  // Increased for faster convergence
                 let maxIterations = 50  // More iterations
                 let tolerance = 1e-3
+                // Fixed logical origin so sample spacing is deterministic, not wall-clock jitter.
+                let logicalOrigin = Date(timeIntervalSinceReferenceDate: 0)
+                let syntheticStep = 0.005  // seconds of simulated work per iteration
 
                 // Simple gradient descent
                 for iteration in 0..<maxIterations {
@@ -334,7 +337,7 @@ private struct MockAsyncOptimizer: AsyncOptimizer {
                         objectiveValue: fx,
                         gradient: gradient,
                         hasConverged: hasConverged,
-                        timestamp: Date(),
+                        timestamp: logicalOrigin.addingTimeInterval(Double(iteration) * syntheticStep),
                         phase: .optimization
                     )
                     continuation.yield(progress)
@@ -359,7 +362,7 @@ private struct MockAsyncOptimizer: AsyncOptimizer {
                     objectiveValue: fx,
                     gradient: gradient,
                     hasConverged: true,
-                    timestamp: Date(),
+                    timestamp: logicalOrigin.addingTimeInterval(Double(maxIterations) * syntheticStep),
                     phase: .finalization
                 )
                 continuation.yield(finalProgress)

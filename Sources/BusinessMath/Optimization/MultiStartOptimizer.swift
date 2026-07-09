@@ -265,7 +265,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
         )
 
         // Launch parallel optimizations and collect results
-        let results = await withTaskGroup(of: OptimizationResult<T>?.self) { group in
+        let results = try await withThrowingTaskGroup(of: OptimizationResult<T>?.self) { group in
             for start in startingPoints {
                 group.addTask {
                     do {
@@ -282,7 +282,7 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
             }
 
             var collected: [OptimizationResult<T>] = []
-            for await result in group {
+            for try await result in group {
                 if let result = result {
                     collected.append(result)
                 }
@@ -291,6 +291,9 @@ public struct MultiStartOptimizer<BaseOptimizer: AsyncOptimizer>: AsyncOptimizer
                     break
                 }
             }
+            // A cancelled loop exits quietly with a partial set of results; surface
+            // that as a thrown error rather than returning a plausible-but-wrong best.
+            try Task.checkCancellation()
             return collected
         }
 

@@ -137,7 +137,7 @@ struct SparsePerformanceBenchmark {
         let residual = sqrt(zip(Ax, b).reduce(0.0) { $0 + pow($1.0 - $1.1, 2) })
 
         #expect(residual < 1e-6, "Solution should be accurate")
-		#expect(duration < 1.0, "Should solve in < 1s. (Got \((duration * 1000).number(3))ms)")
+		#expect(duration < 1.0, "Should solve in < 1s. (Got \((duration * 1000).number(3))ms)") // TIMING: intentional wall-clock perf benchmark
     }
 
     /// Benchmark: BiCG solver for non-symmetric system
@@ -162,6 +162,7 @@ struct SparsePerformanceBenchmark {
         let residual = sqrt(zip(Ax, b).reduce(0.0) { $0 + pow($1.0 - $1.1, 2) })
 
         #expect(residual < 1e-4, "Solution should be reasonably accurate")
+		// TIMING: intentional wall-clock perf benchmark
 		#expect(duration < 2.0, "Should solve in < 2s. Got \((duration * 1000).number(3))ms")
     }
 
@@ -211,6 +212,7 @@ struct SparsePerformanceBenchmark {
 		let sparseDuration = Date().timeIntervalSince(startSparse)
 
 		// For 1% density (diagonal), sparse should be very fast
+		// TIMING: intentional wall-clock perf benchmark
 		#expect(sparseDuration < 10.0, "Should complete 1000 multiplies in < 10s (got \(sparseDuration.number(3))s)")
 	}
 
