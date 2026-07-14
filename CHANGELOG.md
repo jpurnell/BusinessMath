@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+#### Fixed (tests only — no library changes)
+
+- **`testConditionalInMonteCarloGPU` was statistically flaky by construction** — it
+  asserted `statistics.min > 0` on 10,000 draws of `min(D, C)` with
+  D ~ Normal(1000, 200), which requires every draw to stay above z = −5 and fails
+  ~0.3% of runs on correct code. A 100-run diagnostic confirmed the GPU RNG tail is
+  healthy (worst min z = −4.8; zero minima ≤ 0), so the gate failure was a flake,
+  not a code bug. The test now asserts what it means: mean ∈ (950, 990) — the
+  clamped expectation is ≈ 977 (SE ≈ 2), vs ≈ 1000 if the capacity conditional were
+  broken — plus a finite min above a z ≈ −8 tail bound (false-failure odds ~10⁻¹²
+  per run).
+
 ### [2.3.2] - 2026-07-14
 
 **Version 2.3.2** fixes a boundary bug in `binomialPMF` and adds the test coverage
