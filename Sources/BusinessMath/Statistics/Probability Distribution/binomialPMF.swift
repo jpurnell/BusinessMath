@@ -35,6 +35,9 @@ public func binomialPMF<T: Real>(n: Int, k: Int, p: T) -> T {
     guard p >= 0, p <= 1 else { return T(0) }
 
     let coef = T(combination(n, c: k))
-    let prob = coef * T.pow(p, T(k)) * T.pow(T(1) - p, T(n - k))
+    // Use the integer-exponent `pow` overload: with a real exponent, the boundary term
+    // `pow(0, 0)` evaluates as `exp(0 · log 0) = NaN`, whereas the integer overload
+    // correctly yields 1 (an empty product) — so p = 0 / p = 1 stay well-defined.
+    let prob = coef * T.pow(p, k) * T.pow(T(1) - p, n - k)
     return prob
 }
