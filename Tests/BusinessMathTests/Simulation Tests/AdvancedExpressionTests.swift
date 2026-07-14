@@ -221,9 +221,17 @@ struct AdvancedExpressionTests {
         // Verify GPU was used
         #expect(results.usedGPU == true, "Should use GPU for 10K iterations")
 
-        // Production should be clamped by capacity
-        #expect(results.statistics.mean < 1300)
-        #expect(results.statistics.min > 0)
+        // Production should be clamped by capacity: E[min(D, C)] ≈ 977 with SE ≈ 2 at
+        // 10K iterations (verified empirically: 100 runs spanned 975.5–978.9), vs ≈ 1000
+        // if the conditional failed to clamp. 950–990 is >10σ safe yet detects a broken
+        // clamp at ~5σ.
+        #expect(results.statistics.mean > 950 && results.statistics.mean < 990)
+
+        // Tail sanity: finite and no deeper than z ≈ -8 (P ≈ 6e-12 per run). The previous
+        // `min > 0` needed all 10,000 N(1000, 200) draws above z = -5 and failed ~0.3% of
+        // runs by construction — a statistical flake, not a code bug.
+        #expect(results.statistics.min.isFinite)
+        #expect(results.statistics.min > -600)
 
         print("✓ Conditional GPU simulation: usedGPU=\(results.usedGPU), mean=\(results.statistics.mean)")
         #endif
