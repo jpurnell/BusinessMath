@@ -9,7 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [2.4.0] - 2026-07-14
+
+**Version 2.4.0** makes Monte Carlo simulations reproducible and non-blocking:
+an optional seed produces identical results run-over-run, and an async `run()`
+overload frees Swift concurrency's thread pool while the GPU works.
+
+#### Added
+
+- **`MonteCarloSimulation.seed`** — pass `seed:` at init (or set the property) and
+  the same configuration reproduces identical results: the GPU kernel derives its
+  per-thread RNG states from the seed; the CPU path samples through the new
+  **`SplitMix64`** generator (Vigna's published algorithm, golden-tested against
+  its reference vectors). Determinism is per execution path (GPU and CPU streams
+  differ; each is reproducible), and GPU→CPU fallback stays seeded.
+- **`SeedableDistribution`** — protocol refinement of `DistributionRandom` with
+  `next(using: inout some RandomNumberGenerator)`. All 15 built-in distributions
+  conform (Normal, Uniform, Triangular, Exponential, LogNormal, Weibull, Logistic,
+  Geometric, Pareto, ChiSquared, Gamma, Beta, T, F, Rayleigh), each drawing every
+  uniform from the caller's generator while preserving its probability law.
+- **`SimulationError.seedingUnsupported`** — seeded runs fail loudly for inputs
+  that cannot honor the seed (custom sampler closures; correlated sampling), never
+  silently losing determinism.
+- **`run() async`** — async overload (selected automatically in async contexts)
+  that awaits GPU completion via the command buffer's completion handler instead of
+  blocking with `waitUntilCompleted()`, and adds cancellation checkpoints
+  (`CancellationError` within ~1,024 iterations) to the CPU loop. Results are
+  identical to the sync overload for the same seed and path. The synchronous API is
+  unchanged. `MonteCarloGPUDevice` gains the matching async `runSimulation`.
+- **DocC**: new narrative article *Deterministic Simulation Guide*
+  (`4.5-DeterministicSimulationGuide`); ADR-005 records the design.
+- 63 new swift-testing tests (SplitMix64 reference vectors; per-distribution
+  seeded-stream determinism and moment checks; simulation seed/async/cancellation
+  behavior). Full suite: 5,927 tests green.
 
 #### Fixed (tests only — no library changes)
 

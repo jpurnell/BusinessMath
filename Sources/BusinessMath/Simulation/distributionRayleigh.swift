@@ -57,3 +57,16 @@ public struct DistributionRayleigh: DistributionRandom {
         return random()
     }
 }
+
+extension DistributionRayleigh: SeedableDistribution {
+    /// Generates the next random value, drawing the uniform seed from `generator`.
+    ///
+    /// Follows the same probability law as ``next()``; a seeded generator makes the
+    /// stream fully reproducible.
+    ///
+    /// - Parameter generator: The random source for the uniform draw.
+    /// - Returns: A random value sampled from the Rayleigh distribution
+    public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+        return distributionRayleigh(mean: mean, seed: Double.random(in: 0...1, using: &generator))
+    }
+}

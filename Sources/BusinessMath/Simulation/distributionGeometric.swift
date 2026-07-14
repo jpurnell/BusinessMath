@@ -83,5 +83,18 @@ public struct DistributionGeometric: DistributionRandom {
 	}
 }
 
+extension DistributionGeometric: SeedableDistribution {
+	/// Generates the next random value, drawing the inverse-transform uniform from `generator`.
+	///
+	/// Follows the same probability law as ``next()``; a seeded generator makes the
+	/// stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for the single uniform draw.
+	/// - Returns: A random positive integer (as Double) representing number of trials until first success
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		return distributionGeometric(p, seeds: [Double.random(in: 0...1, using: &generator)])
+	}
+}
+
 
 

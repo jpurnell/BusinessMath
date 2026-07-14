@@ -154,3 +154,31 @@ public struct DistributionT: DistributionRandom {
 		return random()
 	}
 }
+
+extension DistributionT: SeedableDistribution {
+	/// Generates the next random value, drawing all randomness from `generator`.
+	///
+	/// Follows the same probability law as ``next()`` — T = Z / √(V/df) where Z ~ N(0,1)
+	/// via Box-Muller and V ~ χ²(df) built as Gamma(df/2, 2) via Marsaglia-Tsang —
+	/// sourcing every uniform draw from `generator`; a seeded generator makes the stream
+	/// fully reproducible.
+	///
+	/// - Parameter generator: The random source for every uniform draw.
+	/// - Returns: A random Double sampled from t(df)
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		// Generate Z ~ N(0,1) - consumes 2 uniforms
+		let u1Seed = Double.random(in: 0...1, using: &generator)
+		let u2Seed = Double.random(in: 0...1, using: &generator)
+		let z = distributionNormal(mean: 0.0, stdDev: 1.0, u1Seed, u2Seed)
+
+		// Generate V ~ χ²(df) using the relationship χ²(df) = Gamma(df/2, 2)
+		let df = Double(degreesOfFreedom)
+		let shape = df / 2.0
+		let v = gammaVariate(shape: shape, scale: 2.0, using: &generator)
+
+		// T = Z / √(V/df)
+		let denominator = Double.sqrt(v / df) // fp-safety:disable — df > 0 guarded in init
+		guard denominator > 0 else { return z }
+		return z / denominator // fp-safety:disable — guarded by denominator > 0 above
+	}
+}

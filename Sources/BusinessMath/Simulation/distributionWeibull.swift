@@ -171,3 +171,17 @@ public struct DistributionWeibull: DistributionRandom, Sendable {
 		return random()
 	}
 }
+
+extension DistributionWeibull: SeedableDistribution {
+	/// Generates the next random value, drawing the inverse-transform uniform from `generator`.
+	///
+	/// Follows the same probability law as ``next()``; a seeded generator makes the
+	/// stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for the single uniform draw.
+	/// - Returns: A random value sampled from Weibull(k, λ), a non-negative value
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		return distributionWeibull(shape: shape, scale: scale,
+								   seed: Double.random(in: 0...1, using: &generator))
+	}
+}

@@ -101,3 +101,18 @@ public struct DistributionNormal: DistributionRandom, Sendable {
 		return random()
 	}
 }
+
+extension DistributionNormal: SeedableDistribution {
+	/// Generates the next random value, drawing both Box-Muller uniforms from `generator`.
+	///
+	/// Follows the same probability law as ``next()``; a seeded generator makes the
+	/// stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for the two uniform draws.
+	/// - Returns: A random Double from the normal distribution with configured mean and standard deviation
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		return distributionNormal(mean: mean, stdDev: stdDev,
+								  Double.random(in: 0...1, using: &generator),
+								  Double.random(in: 0...1, using: &generator))
+	}
+}

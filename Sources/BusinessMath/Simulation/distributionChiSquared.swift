@@ -164,3 +164,25 @@ public struct DistributionChiSquared: DistributionRandom {
 		return random()
 	}
 }
+
+@available(macOS 11.0, *)
+extension DistributionChiSquared: SeedableDistribution {
+	/// Generates the next random value, drawing every underlying uniform from `generator`.
+	///
+	/// Uses the defining property χ²(df) = Σᵢ Zᵢ² over `df` independent standard
+	/// normal draws, each produced by the seeded Box-Muller transform, so the result
+	/// follows the same probability law as ``next()``; a seeded generator makes the
+	/// stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for all standard normal draws.
+	/// - Returns: A random value sampled from χ²(df), always non-negative
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		let standardNormal = DistributionNormal(0.0, 1.0)
+		var sumOfSquares = 0.0
+		for _ in 0..<degreesOfFreedom {
+			let z = standardNormal.next(using: &generator)
+			sumOfSquares += z * z
+		}
+		return sumOfSquares
+	}
+}

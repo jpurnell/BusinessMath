@@ -151,3 +151,17 @@ public struct DistributionPareto: DistributionRandom {
 		return random()
 	}
 }
+
+extension DistributionPareto: SeedableDistribution {
+	/// Generates the next random value, drawing the inverse-transform uniform from `generator`.
+	///
+	/// Follows the same probability law as ``next()``; a seeded generator makes the
+	/// stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for the single uniform draw.
+	/// - Returns: A random value sampled from Pareto(xₘ, α), always >= scale
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		return distributionPareto(scale: scale, shape: shape,
+								  seed: Double.random(in: 0...1, using: &generator))
+	}
+}

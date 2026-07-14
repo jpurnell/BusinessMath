@@ -82,3 +82,17 @@ public struct DistributionLogistic: DistributionRandom {
 		return random()
 	}
 }
+
+extension DistributionLogistic: SeedableDistribution {
+	/// Generates the next random value, drawing the quantile-transform uniform from `generator`.
+	///
+	/// Follows the same probability law as ``next()``; a seeded generator makes the
+	/// stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for the single uniform draw.
+	/// - Returns: A random Double from the logistic distribution with configured mean and standard deviation
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		return distributionLogistic(mean, stdDev,
+									seed: Double.random(in: 0...1, using: &generator))
+	}
+}

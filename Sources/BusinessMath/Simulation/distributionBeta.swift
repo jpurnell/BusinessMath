@@ -151,3 +151,32 @@ public struct DistributionBeta: DistributionRandom {
 		return random()
 	}
 }
+
+extension DistributionBeta: SeedableDistribution {
+	/// Generates the next random value, drawing all randomness from `generator`.
+	///
+	/// Follows the same probability law as ``next()`` — the Beta-Gamma relationship
+	/// X/(X+Y) where X ~ Gamma(α, 1) and Y ~ Gamma(β, 1), with Beta(1, 1) reducing to
+	/// Uniform(0, 1) — sourcing every uniform draw from `generator`; a seeded generator
+	/// makes the stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for every uniform draw.
+	/// - Returns: A random Double sampled from Beta(α, β), in the range [0, 1]
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		// Special case: Beta(1, 1) is Uniform(0, 1) (mirrors distributionBeta(alpha:beta:))
+		if abs(alpha - 1.0) < .ulpOfOne && abs(beta - 1.0) < .ulpOfOne {
+			return distributionUniform(min: 0.0, max: 1.0, Double.random(in: 0...1, using: &generator))
+		}
+
+		// Use the Beta-Gamma relationship: X/(X+Y) where X~Gamma(α,1), Y~Gamma(β,1)
+		let x = gammaVariate(shape: alpha, scale: 1.0, using: &generator)
+		let y = gammaVariate(shape: beta, scale: 1.0, using: &generator)
+
+		let total = x + y
+		guard total > 0 else {
+			// Degenerate underflow (measure zero for valid α, β): fall back to the distribution mean
+			return alpha / (alpha + beta) // fp-safety:disable — alpha and beta are positive, guarded in init
+		}
+		return x / total // fp-safety:disable — guarded by total > 0 above
+	}
+}

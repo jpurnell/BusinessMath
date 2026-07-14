@@ -85,6 +85,21 @@ public struct SimulationInput: Sendable {
 	/// - Non-nil for inputs created with `DistributionRandom` types (GPU compatible)
 	internal let originalDistribution: (Any & Sendable)?
 
+	/// The type-erased seeded sampling function, when the distribution supports it.
+	///
+	/// Non-nil only when the input was created from a distribution conforming to
+	/// ``SeedableDistribution``; drawing through it sources every uniform from the
+	/// provided generator, so a seeded ``SplitMix64`` reproduces the identical stream.
+	/// `nil` for custom-closure inputs and non-seedable distributions.
+	internal let seededSampler: (@Sendable (inout SplitMix64) -> Double)?
+
+	/// Whether this input can participate in seeded (deterministic) simulation runs.
+	///
+	/// `true` when the input was created from a ``SeedableDistribution``-conforming
+	/// distribution. Seeded ``MonteCarloSimulation`` runs throw
+	/// `SimulationError.seedingUnsupported` for inputs where this is `false`.
+	public var supportsSeeding: Bool { seededSampler != nil }
+
 	// MARK: - Initialization from Distribution
 
 	/// Creates a SimulationInput from any type conforming to `DistributionRandom`.
@@ -131,6 +146,42 @@ public struct SimulationInput: Sendable {
 
 		// Store original distribution for GPU compatibility
 		self.originalDistribution = distribution
+
+		// Only the SeedableDistribution overload can honor a seed
+		self.seededSampler = nil
+	}
+
+	/// Creates a SimulationInput from a distribution that supports seeded sampling.
+	///
+	/// Swift prefers this overload when the concrete distribution conforms to
+	/// ``SeedableDistribution``, capturing a seeded sampler alongside the ordinary
+	/// one so the input can participate in deterministic
+	/// (``MonteCarloSimulation/seed``-driven) runs.
+	///
+	/// - Parameters:
+	///   - name: A descriptive name for this input variable
+	///   - distribution: Any type conforming to `SeedableDistribution` with `T == Double`
+	///   - metadata: Optional key-value pairs for documentation (default: empty)
+	public init<D: SeedableDistribution & Sendable>(
+		name: String,
+		distribution: D,
+		metadata: [String: String] = [:]
+	) where D.T == Double {
+		self.name = name
+		self.metadata = metadata
+
+		// Type erasure: capture the distribution and wrap its next() method
+		self.sampler = {
+			distribution.next()
+		}
+
+		// Store original distribution for GPU compatibility
+		self.originalDistribution = distribution
+
+		// Seeded sampling: every draw flows from the caller's generator
+		self.seededSampler = { generator in
+			distribution.next(using: &generator)
+		}
 	}
 
 	// MARK: - Initialization from Custom Sampler
@@ -180,6 +231,7 @@ public struct SimulationInput: Sendable {
 		self.metadata = metadata
 		self.sampler = sampler
 		self.originalDistribution = nil  // Custom samplers are not GPU-compatible
+		self.seededSampler = nil         // Custom samplers cannot honor a seed
 	}
 
 	// MARK: - Sampling

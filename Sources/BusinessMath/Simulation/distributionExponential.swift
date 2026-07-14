@@ -60,3 +60,16 @@ public struct DistributionExponential: DistributionRandom, Sendable {
 		return random()
 	}
 }
+
+extension DistributionExponential: SeedableDistribution {
+	/// Generates the next random value, drawing the uniform seed from `generator`.
+	///
+	/// Follows the same probability law as ``next()``; a seeded generator makes the
+	/// stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for the uniform draw.
+	/// - Returns: A random positive Double from the exponential distribution
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		return distributionExponential(λ: λ, seed: Double.random(in: 0...1, using: &generator))
+	}
+}
