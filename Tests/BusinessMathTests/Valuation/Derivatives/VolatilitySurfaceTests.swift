@@ -5,10 +5,11 @@
 //  Created by Justin Purnell on 4/15/26.
 //
 
-import XCTest
+import Testing
 @testable import BusinessMath
 
-final class VolatilitySurfaceTests: XCTestCase {
+@Suite("Volatility Surface Tests")
+struct VolatilitySurfaceTests {
 
     // MARK: - Test Data
 
@@ -28,15 +29,15 @@ final class VolatilitySurfaceTests: XCTestCase {
 
     // MARK: - 1. Bilinear interpolation at grid points = exact match
 
-    func testInterpolationAtGridPointsExactMatch() {
+    @Test func interpolationAtGridPointsExactMatch() {
         let surface = makeTestSurface()
 
         // Check every grid point
         for (ei, expiry) in surface.expiries.enumerated() {
             for (si, strike) in surface.strikes.enumerated() {
                 let vol = surface.impliedVol(strike: strike, expiry: expiry)
-                XCTAssertEqual(
-                    vol, surface.vols[ei][si], accuracy: 1e-12,
+                #expect(
+                    abs((vol) - (surface.vols[ei][si])) <= (1e-12),
                     "Grid point (\(strike), \(expiry)) should match exactly"
                 )
             }
@@ -45,30 +46,30 @@ final class VolatilitySurfaceTests: XCTestCase {
 
     // MARK: - 2. Interpolation between grid points
 
-    func testInterpolationBetweenGridPoints() {
+    @Test func interpolationBetweenGridPoints() {
         let surface = makeTestSurface()
 
         // Midpoint between strikes 95 and 100 at expiry 0.25
         let vol = surface.impliedVol(strike: 97.5, expiry: 0.25)
         let expected = (0.22 + 0.20) / 2.0  // linear midpoint
-        XCTAssertEqual(vol, expected, accuracy: 1e-12)
+        #expect(abs((vol) - (expected)) <= (1e-12))
 
         // Midpoint between expiries 0.25 and 0.5 at strike 100
         let vol2 = surface.impliedVol(strike: 100.0, expiry: 0.375)
         let expected2 = (0.20 + 0.19) / 2.0
-        XCTAssertEqual(vol2, expected2, accuracy: 1e-12)
+        #expect(abs((vol2) - (expected2)) <= (1e-12))
 
         // Interior point: strike=97.5, expiry=0.375 (bilinear)
         let vol3 = surface.impliedVol(strike: 97.5, expiry: 0.375)
         // Strike midpoint at expiry 0.25: (0.22+0.20)/2 = 0.21
         // Strike midpoint at expiry 0.50: (0.21+0.19)/2 = 0.20
         // Expiry midpoint: (0.21+0.20)/2 = 0.205
-        XCTAssertEqual(vol3, 0.205, accuracy: 1e-12)
+        #expect(abs((vol3) - (0.205)) <= (1e-12))
     }
 
     // MARK: - 3. Flat vol surface: same vol everywhere
 
-    func testFlatVolSurface() {
+    @Test func flatVolSurface() {
         let flatVol = 0.20
         let surface = VolatilitySurface(
             underlier: "FLAT",
@@ -78,16 +79,16 @@ final class VolatilitySurfaceTests: XCTestCase {
         )
 
         // Test at grid points
-        XCTAssertEqual(surface.impliedVol(strike: 100.0, expiry: 0.5), flatVol, accuracy: 1e-12)
+        #expect(abs((surface.impliedVol(strike: 100.0, expiry: 0.5)) - (flatVol)) <= (1e-12))
 
         // Test at interpolated points
-        XCTAssertEqual(surface.impliedVol(strike: 95.0, expiry: 0.3), flatVol, accuracy: 1e-12)
-        XCTAssertEqual(surface.impliedVol(strike: 115.0, expiry: 1.5), flatVol, accuracy: 1e-12)
+        #expect(abs((surface.impliedVol(strike: 95.0, expiry: 0.3)) - (flatVol)) <= (1e-12))
+        #expect(abs((surface.impliedVol(strike: 115.0, expiry: 1.5)) - (flatVol)) <= (1e-12))
     }
 
     // MARK: - 4. No-arbitrage: call price decreasing in strike
 
-    func testCallPriceDecreasingInStrike() {
+    @Test func callPriceDecreasingInStrike() {
         let surface = makeTestSurface()
         let spot = 100.0
         let rate = 0.05
@@ -106,8 +107,8 @@ final class VolatilitySurfaceTests: XCTestCase {
                 riskFreeRate: rate,
                 volatility: vol
             )
-            XCTAssertLessThanOrEqual(
-                price, previousPrice + 1e-10,
+            #expect(
+                price <= previousPrice + 1e-10,
                 "Call price should decrease as strike increases (strike=\(strike))"
             )
             previousPrice = price
@@ -116,19 +117,19 @@ final class VolatilitySurfaceTests: XCTestCase {
 
     // MARK: - 5. SABR: beta=1 (lognormal), ATM vol approx alpha
 
-    func testSABRLognormalATMVol() {
+    @Test func sabrLognormalATMVol() {
         let alpha = 0.25
         let params = SABRParameters(alpha: alpha, beta: 1.0, rho: 0.0, nu: 0.0)
 
         // With nu=0 and rho=0, ATM vol should be very close to alpha
         let vol = params.impliedVol(forward: 100.0, strike: 100.0, timeToExpiry: 1.0)
-        XCTAssertEqual(vol, alpha, accuracy: 0.005,
-                       "For beta=1, nu=0, rho=0, ATM vol should approximately equal alpha")
+        #expect(abs((vol) - (alpha)) <= (0.005),
+                "For beta=1, nu=0, rho=0, ATM vol should approximately equal alpha")
     }
 
     // MARK: - 6. SABR: rho < 0 produces skew
 
-    func testSABRNegativeRhoProducesSkew() {
+    @Test func sabrNegativeRhoProducesSkew() {
         let params = SABRParameters(alpha: 0.3, beta: 0.5, rho: -0.5, nu: 0.4)
         let forward = 100.0
         let t = 1.0
@@ -138,15 +139,15 @@ final class VolatilitySurfaceTests: XCTestCase {
         let volHighStrike = params.impliedVol(forward: forward, strike: 120.0, timeToExpiry: t)
 
         // Negative rho: low-strike vols > high-strike vols (downward skew direction)
-        XCTAssertGreaterThan(volLowStrike, volATM,
-                             "Negative rho should produce higher vol for low strikes")
-        XCTAssertGreaterThan(volLowStrike, volHighStrike,
-                             "Negative rho should skew: low-strike vol > high-strike vol")
+        #expect(volLowStrike > volATM,
+                "Negative rho should produce higher vol for low strikes")
+        #expect(volLowStrike > volHighStrike,
+                "Negative rho should skew: low-strike vol > high-strike vol")
     }
 
     // MARK: - 7. SABR: nu > 0 produces smile (wings above ATM)
 
-    func testSABRPositiveNuProducesSmile() {
+    @Test func sabrPositiveNuProducesSmile() {
         let params = SABRParameters(alpha: 0.3, beta: 0.5, rho: 0.0, nu: 0.8)
         let forward = 100.0
         let t = 1.0
@@ -156,15 +157,15 @@ final class VolatilitySurfaceTests: XCTestCase {
         let volHighStrike = params.impliedVol(forward: forward, strike: 120.0, timeToExpiry: t)
 
         // With rho=0 and nu>0, both wings should be above ATM (smile shape)
-        XCTAssertGreaterThan(volLowStrike, volATM,
-                             "Low-strike vol should exceed ATM vol for nu > 0")
-        XCTAssertGreaterThan(volHighStrike, volATM,
-                             "High-strike vol should exceed ATM vol for nu > 0")
+        #expect(volLowStrike > volATM,
+                "Low-strike vol should exceed ATM vol for nu > 0")
+        #expect(volHighStrike > volATM,
+                "High-strike vol should exceed ATM vol for nu > 0")
     }
 
     // MARK: - 8. SABR calibration: fit to 5-point market data
 
-    func testSABRCalibrationFitsMarketData() {
+    @Test func sabrCalibrationFitsMarketData() {
         // Generate "market" data from known SABR params
         let trueParams = SABRParameters(alpha: 0.35, beta: 0.5, rho: -0.3, nu: 0.5)
         let forward = 100.0
@@ -185,44 +186,44 @@ final class VolatilitySurfaceTests: XCTestCase {
         for i in 0..<strikes.count {
             let fittedVol = calibrated.impliedVol(
                 forward: forward, strike: strikes[i], timeToExpiry: t)
-            XCTAssertEqual(fittedVol, marketVols[i], accuracy: 0.01,
-                           "Calibrated vol at strike \(strikes[i]) should match within 1 vol point")
+            #expect(abs((fittedVol) - (marketVols[i])) <= (0.01),
+                    "Calibrated vol at strike \(strikes[i]) should match within 1 vol point")
         }
     }
 
     // MARK: - 9. Edge cases: strike and expiry at boundary
 
-    func testEdgeCasesAtBoundary() {
+    @Test func edgeCasesAtBoundary() {
         let surface = makeTestSurface()
 
         // Strike below minimum: should clamp to boundary
         let volLowStrike = surface.impliedVol(strike: 50.0, expiry: 0.5)
         let volMinStrike = surface.impliedVol(strike: 90.0, expiry: 0.5)
-        XCTAssertEqual(volLowStrike, volMinStrike, accuracy: 1e-12,
-                       "Below-minimum strike should clamp to boundary")
+        #expect(abs((volLowStrike) - (volMinStrike)) <= (1e-12),
+                "Below-minimum strike should clamp to boundary")
 
         // Strike above maximum: should clamp to boundary
         let volHighStrike = surface.impliedVol(strike: 200.0, expiry: 0.5)
         let volMaxStrike = surface.impliedVol(strike: 110.0, expiry: 0.5)
-        XCTAssertEqual(volHighStrike, volMaxStrike, accuracy: 1e-12,
-                       "Above-maximum strike should clamp to boundary")
+        #expect(abs((volHighStrike) - (volMaxStrike)) <= (1e-12),
+                "Above-maximum strike should clamp to boundary")
 
         // Expiry below minimum: should clamp to boundary
         let volLowExpiry = surface.impliedVol(strike: 100.0, expiry: 0.01)
         let volMinExpiry = surface.impliedVol(strike: 100.0, expiry: 0.25)
-        XCTAssertEqual(volLowExpiry, volMinExpiry, accuracy: 1e-12,
-                       "Below-minimum expiry should clamp to boundary")
+        #expect(abs((volLowExpiry) - (volMinExpiry)) <= (1e-12),
+                "Below-minimum expiry should clamp to boundary")
 
         // Expiry above maximum: should clamp to boundary
         let volHighExpiry = surface.impliedVol(strike: 100.0, expiry: 5.0)
         let volMaxExpiry = surface.impliedVol(strike: 100.0, expiry: 1.0)
-        XCTAssertEqual(volHighExpiry, volMaxExpiry, accuracy: 1e-12,
-                       "Above-maximum expiry should clamp to boundary")
+        #expect(abs((volHighExpiry) - (volMaxExpiry)) <= (1e-12),
+                "Above-maximum expiry should clamp to boundary")
     }
 
     // MARK: - 10. Single-expiry surface
 
-    func testSingleExpirySurface() {
+    @Test func singleExpirySurface() {
         let surface = VolatilitySurface(
             underlier: "AAPL",
             strikes: [90.0, 100.0, 110.0],
@@ -233,16 +234,16 @@ final class VolatilitySurfaceTests: XCTestCase {
         )
 
         // Grid points
-        XCTAssertEqual(surface.impliedVol(strike: 90.0, expiry: 0.25), 0.30, accuracy: 1e-12)
-        XCTAssertEqual(surface.impliedVol(strike: 100.0, expiry: 0.25), 0.25, accuracy: 1e-12)
-        XCTAssertEqual(surface.impliedVol(strike: 110.0, expiry: 0.25), 0.28, accuracy: 1e-12)
+        #expect(abs((surface.impliedVol(strike: 90.0, expiry: 0.25)) - (0.30)) <= (1e-12))
+        #expect(abs((surface.impliedVol(strike: 100.0, expiry: 0.25)) - (0.25)) <= (1e-12))
+        #expect(abs((surface.impliedVol(strike: 110.0, expiry: 0.25)) - (0.28)) <= (1e-12))
 
         // Interpolated strike
         let vol = surface.impliedVol(strike: 95.0, expiry: 0.25)
-        XCTAssertEqual(vol, (0.30 + 0.25) / 2.0, accuracy: 1e-12)
+        #expect(abs((vol) - ((0.30 + 0.25) / 2.0)) <= (1e-12))
 
         // Different expiry should clamp (only one expiry)
         let volOtherExpiry = surface.impliedVol(strike: 100.0, expiry: 1.0)
-        XCTAssertEqual(volOtherExpiry, 0.25, accuracy: 1e-12)
+        #expect(abs((volOtherExpiry) - (0.25)) <= (1e-12))
     }
 }
