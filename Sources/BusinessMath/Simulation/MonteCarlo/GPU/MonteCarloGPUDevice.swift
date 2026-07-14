@@ -368,6 +368,68 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         return downloadResults(from: buffers.outputs, count: iterations)
     }
 
+    /// Run Monte Carlo simulation on GPU without blocking the calling thread.
+    ///
+    /// Identical validation, seeding, and results to the synchronous
+    /// ``runSimulation(distributions:modelBytecode:iterations:seed:)``, but GPU
+    /// completion is awaited through the command buffer's completion handler
+    /// instead of `waitUntilCompleted()`, so no cooperative-pool thread is blocked
+    /// while the GPU works. Each call owns freshly allocated buffers, so concurrent
+    /// invocations do not share mutable state.
+    ///
+    /// - Parameters:
+    ///   - distributions: Array of distribution configurations (type, params)
+    ///   - modelBytecode: Bytecode operations for model evaluation
+    ///   - iterations: Number of Monte Carlo iterations
+    ///   - seed: Random seed for reproducibility (optional)
+    /// - Returns: Array of simulation results (one per iteration)
+    /// - Throws: GPUError if execution fails
+    public func runSimulation(
+        distributions: [DistributionConfig],
+        modelBytecode: [ModelOperation],
+        iterations: Int,
+        seed: UInt64? = nil
+    ) async throws -> [Float] {
+        let numInputs = distributions.count
+        let numOps = modelBytecode.count
+
+        // Validate inputs
+        guard numInputs > 0 && numInputs <= 32 else {
+            throw GPUError.invalidInput("Number of distributions must be 1-32")
+        }
+        guard numOps > 0 && numOps <= 128 else {
+            throw GPUError.invalidInput("Number of bytecode operations must be 1-128")
+        }
+        guard iterations > 0 else {
+            throw GPUError.invalidInput("Iterations must be > 0")
+        }
+
+        // Get or allocate buffers (with caching for performance)
+        let buffers = try getOrAllocateBuffers(
+            iterations: iterations,
+            numInputs: numInputs,
+            numOps: numOps
+        )
+
+        // Upload distribution data
+        try uploadDistributions(distributions, to: buffers)
+
+        // Upload model bytecode
+        try uploadBytecode(modelBytecode, to: buffers)
+
+        // Execute simulation pipeline, awaiting completion without blocking
+        try await executePipelineAwaiting(
+            buffers: buffers,
+            iterations: iterations,
+            numInputs: numInputs,
+            numOps: numOps,
+            seed: seed
+        )
+
+        // Download results
+        return downloadResults(from: buffers.outputs, count: iterations)
+    }
+
     // MARK: - Buffer Management
 
     private struct Buffers {
@@ -489,6 +551,48 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
 
         if commandBuffer.status == .error {
             throw GPUError.executionFailed("GPU pipeline execution failed")
+        }
+    }
+
+    /// Async twin of `executePipeline` — encodes the same two kernels, then awaits
+    /// the command buffer's completion handler instead of blocking the thread.
+    private func executePipelineAwaiting(
+        buffers: Buffers,
+        iterations: Int,
+        numInputs: Int,
+        numOps: Int,
+        seed: UInt64?
+    ) async throws {
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
+            throw GPUError.commandBufferCreationFailed
+        }
+
+        try encodeRNGInitialization(
+            commandBuffer: commandBuffer,
+            buffer: buffers.rngStates,
+            iterations: iterations,
+            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt
+        )
+
+        try encodeMonteCarloIterations(
+            commandBuffer: commandBuffer,
+            buffers: buffers,
+            iterations: iterations,
+            numInputs: numInputs,
+            numOps: numOps
+        )
+
+        // The completion handler must be registered before commit; it fires exactly
+        // once, so the continuation is resumed exactly once.
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            commandBuffer.addCompletedHandler { completed in
+                if completed.status == .error {
+                    continuation.resume(throwing: GPUError.executionFailed("GPU pipeline execution failed"))
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+            commandBuffer.commit()
         }
     }
 

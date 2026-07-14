@@ -168,6 +168,24 @@ public struct MonteCarloSimulation: Sendable {
 	/// with 1.0 on the diagonal and values in [-1, 1] off-diagonal.
 	public var correlationMatrix: [[Double]]?
 
+	/// Optional seed for reproducible runs.
+	///
+	/// When set, the same seed (with the same inputs, iteration count, and execution
+	/// path) reproduces identical results: the GPU kernel derives its per-thread RNG
+	/// states from this seed, and the CPU path samples every input through a
+	/// ``SplitMix64`` generator initialized with it.
+	///
+	/// Determinism is guaranteed *per execution path* — a seeded GPU run and a seeded
+	/// CPU run produce different (each internally reproducible) streams, and a GPU
+	/// failure still falls back to the seeded CPU path (recorded in
+	/// `SimulationResults.executionNotes`).
+	///
+	/// Seeded runs require every input to support seeding
+	/// (``SimulationInput/supportsSeeding``); custom-closure inputs and correlated
+	/// sampling throw `SimulationError.seedingUnsupported` rather than silently
+	/// losing determinism. `nil` (the default) preserves non-deterministic behavior.
+	public var seed: UInt64?
+
 	#if canImport(Metal)
 	/// GPU device manager for Metal acceleration
 	private let gpuDevice: MonteCarloGPUDevice?
@@ -180,6 +198,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// - Parameters:
 	///   - iterations: Number of iterations to run (must be > 0)
 	///   - enableGPU: Enable GPU acceleration for large simulations (default: true)
+	///   - seed: Optional seed for reproducible runs (default: nil — non-deterministic). See ``seed``.
 	///   - model: The model function that computes outcomes from sampled inputs
 	///
 	/// ## Example
@@ -197,9 +216,10 @@ public struct MonteCarloSimulation: Sendable {
 	/// - Automatically uses GPU (Metal) if available
 	/// - Falls back to CPU if GPU unavailable or model not supported
 	/// - Typical speedup: 2-15x depending on model complexity (see class documentation for details)
-	public init(iterations: Int, enableGPU: Bool = true, model: @escaping @Sendable ([Double]) -> Double) {
+	public init(iterations: Int, enableGPU: Bool = true, seed: UInt64? = nil, model: @escaping @Sendable ([Double]) -> Double) {
 		self.iterations = iterations
 		self.enableGPU = enableGPU
+		self.seed = seed
 		self.model = model
 		self.inputs = []
 		self.expressionModel = nil  // Closure-based models don't have expression representation
@@ -223,6 +243,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// - Parameters:
 	///   - iterations: Number of iterations to run (must be > 0)
 	///   - enableGPU: Enable GPU acceleration (default: true)
+	///   - seed: Optional seed for reproducible runs (default: nil — non-deterministic). See ``seed``.
 	///   - expressionModel: Expression-based model for GPU acceleration
 	///
 	/// ## Example - GPU-Accelerated Simulation
@@ -267,9 +288,10 @@ public struct MonteCarloSimulation: Sendable {
 	/// - GPU execution fails (rare)
 	///
 	/// Results are statistically equivalent regardless of execution path.
-	public init(iterations: Int, enableGPU: Bool = true, expressionModel: MonteCarloExpressionModel) {
+	public init(iterations: Int, enableGPU: Bool = true, seed: UInt64? = nil, expressionModel: MonteCarloExpressionModel) {
 		self.iterations = iterations
 		self.enableGPU = enableGPU
+		self.seed = seed
 		self.expressionModel = expressionModel
 		self.model = expressionModel.toClosure()  // Store closure for CPU fallback
 		self.inputs = []
@@ -304,6 +326,7 @@ public struct MonteCarloSimulation: Sendable {
 	public init() {
 		self.iterations = 0
 		self.enableGPU = false
+		self.seed = nil
 		self.model = { _ in 0.0 }
 		self.inputs = []
 		self.expressionModel = nil
@@ -443,6 +466,12 @@ public struct MonteCarloSimulation: Sendable {
 
 		// If correlation matrix is set, use correlated sampling (CPU only)
 		if let corrMatrix = correlationMatrix {
+			guard seed == nil else {
+				throw SimulationError.seedingUnsupported(
+					inputName: "correlationMatrix",
+					details: "Correlated sampling does not support seeded runs yet"
+				)
+			}
 			return try runCorrelated(
 				inputs: inputs,
 				correlationMatrix: corrMatrix,
@@ -454,62 +483,194 @@ public struct MonteCarloSimulation: Sendable {
 		var executionNotes: [String] = []
 
 		#if canImport(Metal)
-		// Try GPU path if eligible (no correlation)
-		if enableGPU && iterations >= 1000, let gpu = gpuDevice {
-			// Check if inputs are GPU-compatible
-			if let distributionConfigs = getGPUDistributionConfigs() {
-				// Check if model can be compiled for GPU
-				if let modelBytecode = compileModelForGPU() {
-					// Attempt GPU execution
-					do {
-						let gpuResults = try gpu.runSimulation(
-							distributions: distributionConfigs,
-							modelBytecode: modelBytecode,
-							iterations: iterations
-						)
-
-						// Convert Float results to Double
-						let outcomes = gpuResults.map { Double($0) }
-
-						// Return GPU results
-						return SimulationResults(values: outcomes, usedGPU: true)
-					} catch { // logging: GPU failed, fall back to CPU
-						executionNotes.append("GPU execution failed: \(error). Fell back to CPU execution.")
-					}
-				} else {
-					executionNotes.append("Could not compile model for GPU (unsupported operations or closure-based). Using CPU execution.")
-				}
-			} else {
-				executionNotes.append("Inputs are not GPU-compatible (unsupported distributions or correlation matrix). Using CPU execution.")
-			}
+		if let gpuResults = attemptGPUExecution(notes: &executionNotes) {
+			return gpuResults
 		}
 		#endif
 
-		// CPU path (original implementation)
+		// CPU path
 		var outcomes: [Double] = []
 		outcomes.reserveCapacity(iterations)
 
-		for iteration in 0..<iterations {
-			// Sample from all input distributions
-			let sampledValues = inputs.map { $0.sample() }
-
-			// Run model function
-			let outcome = model(sampledValues)
-
-			// Validate outcome
-			guard outcome.isFinite else {
-				throw SimulationError.invalidModel(
-					iteration: iteration,
-					details: outcome.isNaN ? "NaN result" : "Infinite result"
-				)
+		if let seed {
+			let samplers = try resolveSeededSamplers()
+			var generator = SplitMix64(seed: seed)
+			for iteration in 0..<iterations {
+				let sampledValues = samplers.map { $0(&generator) }
+				outcomes.append(try validatedOutcome(from: sampledValues, iteration: iteration))
 			}
-
-			outcomes.append(outcome)
+		} else {
+			for iteration in 0..<iterations {
+				let sampledValues = inputs.map { $0.sample() }
+				outcomes.append(try validatedOutcome(from: sampledValues, iteration: iteration))
+			}
 		}
 
 		// Create and return results
 		return SimulationResults(values: outcomes, usedGPU: false, executionNotes: executionNotes)
 	}
+
+	/// Runs the Monte Carlo simulation without blocking the calling thread.
+	///
+	/// Identical decision logic and results to the synchronous ``run()`` — same
+	/// GPU eligibility, fallback, and ``seed`` semantics — but the GPU completion is
+	/// awaited through a completion handler instead of a blocking wait, and the CPU
+	/// loop periodically yields and honors task cancellation (throwing
+	/// `CancellationError`).
+	///
+	/// Prefer this overload in async contexts (Swift selects it automatically):
+	/// blocking the cooperative thread pool with the synchronous variant can starve
+	/// unrelated tasks.
+	///
+	/// - Returns: Complete simulation results with statistics and percentiles
+	/// - Throws: `SimulationError` if validation fails or the model produces invalid
+	///   results, `CancellationError` if the surrounding task is cancelled
+	public func run() async throws -> SimulationResults {
+		// Validate inputs
+		guard iterations > 0 else {
+			throw SimulationError.insufficientIterations
+		}
+
+		guard !inputs.isEmpty else {
+			throw SimulationError.noInputs
+		}
+
+		// If correlation matrix is set, use correlated sampling (CPU only)
+		if let corrMatrix = correlationMatrix {
+			guard seed == nil else {
+				throw SimulationError.seedingUnsupported(
+					inputName: "correlationMatrix",
+					details: "Correlated sampling does not support seeded runs yet"
+				)
+			}
+			return try runCorrelated(
+				inputs: inputs,
+				correlationMatrix: corrMatrix,
+				iterations: iterations,
+				calculation: model
+			)
+		}
+
+		var executionNotes: [String] = []
+
+		#if canImport(Metal)
+		if let gpuResults = try await attemptGPUExecutionAsync(notes: &executionNotes) {
+			return gpuResults
+		}
+		#endif
+
+		// CPU path: same sampling as the sync variant, with cooperative
+		// cancellation and scheduling checkpoints every 1,024 iterations.
+		var outcomes: [Double] = []
+		outcomes.reserveCapacity(iterations)
+
+		if let seed {
+			let samplers = try resolveSeededSamplers()
+			var generator = SplitMix64(seed: seed)
+			for iteration in 0..<iterations {
+				if iteration % 1024 == 0 {
+					try Task.checkCancellation()
+					await Task.yield()
+				}
+				let sampledValues = samplers.map { $0(&generator) }
+				outcomes.append(try validatedOutcome(from: sampledValues, iteration: iteration))
+			}
+		} else {
+			for iteration in 0..<iterations {
+				if iteration % 1024 == 0 {
+					try Task.checkCancellation()
+					await Task.yield()
+				}
+				let sampledValues = inputs.map { $0.sample() }
+				outcomes.append(try validatedOutcome(from: sampledValues, iteration: iteration))
+			}
+		}
+
+		return SimulationResults(values: outcomes, usedGPU: false, executionNotes: executionNotes)
+	}
+
+	// MARK: - Shared Execution Helpers
+
+	/// Validates a model outcome, throwing `invalidModel` for NaN or infinite results.
+	private func validatedOutcome(from sampledValues: [Double], iteration: Int) throws -> Double {
+		let outcome = model(sampledValues)
+		guard outcome.isFinite else {
+			throw SimulationError.invalidModel(
+				iteration: iteration,
+				details: outcome.isNaN ? "NaN result" : "Infinite result"
+			)
+		}
+		return outcome
+	}
+
+	/// Resolves every input's seeded sampler, throwing when any input cannot honor the seed.
+	private func resolveSeededSamplers() throws -> [@Sendable (inout SplitMix64) -> Double] {
+		try inputs.map { input in
+			guard let sampler = input.seededSampler else {
+				throw SimulationError.seedingUnsupported(
+					inputName: input.name,
+					details: "Input uses a custom sampler or a distribution that does not conform to SeedableDistribution"
+				)
+			}
+			return sampler
+		}
+	}
+
+	#if canImport(Metal)
+	/// Attempts GPU execution, returning `nil` (with a note) when the GPU path
+	/// is ineligible or fails — the caller then falls through to the CPU path.
+	private func attemptGPUExecution(notes: inout [String]) -> SimulationResults? {
+		guard enableGPU && iterations >= 1000, let gpu = gpuDevice else { return nil }
+		guard let distributionConfigs = getGPUDistributionConfigs() else {
+			notes.append("Inputs are not GPU-compatible (unsupported distributions or correlation matrix). Using CPU execution.")
+			return nil
+		}
+		guard let modelBytecode = compileModelForGPU() else {
+			notes.append("Could not compile model for GPU (unsupported operations or closure-based). Using CPU execution.")
+			return nil
+		}
+		do {
+			let gpuResults = try gpu.runSimulation(
+				distributions: distributionConfigs,
+				modelBytecode: modelBytecode,
+				iterations: iterations,
+				seed: seed
+			)
+			return SimulationResults(values: gpuResults.map { Double($0) }, usedGPU: true)
+		} catch { // logging: GPU failed, fall back to CPU
+			notes.append("GPU execution failed: \(error). Fell back to CPU execution.")
+			return nil
+		}
+	}
+
+	/// Async twin of ``attemptGPUExecution(notes:)`` — awaits GPU completion
+	/// without blocking the calling thread.
+	private func attemptGPUExecutionAsync(notes: inout [String]) async throws -> SimulationResults? {
+		guard enableGPU && iterations >= 1000, let gpu = gpuDevice else { return nil }
+		guard let distributionConfigs = getGPUDistributionConfigs() else {
+			notes.append("Inputs are not GPU-compatible (unsupported distributions or correlation matrix). Using CPU execution.")
+			return nil
+		}
+		guard let modelBytecode = compileModelForGPU() else {
+			notes.append("Could not compile model for GPU (unsupported operations or closure-based). Using CPU execution.")
+			return nil
+		}
+		do {
+			let gpuResults = try await gpu.runSimulation(
+				distributions: distributionConfigs,
+				modelBytecode: modelBytecode,
+				iterations: iterations,
+				seed: seed
+			)
+			return SimulationResults(values: gpuResults.map { Double($0) }, usedGPU: true)
+		} catch is CancellationError {
+			throw CancellationError()
+		} catch { // logging: GPU failed, fall back to CPU
+			notes.append("GPU execution failed: \(error). Fell back to CPU execution.")
+			return nil
+		}
+	}
+	#endif
 
 	// MARK: - Correlated Variables
 

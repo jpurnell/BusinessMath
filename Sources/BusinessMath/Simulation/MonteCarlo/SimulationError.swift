@@ -54,6 +54,18 @@ public enum SimulationError: Error, Sendable {
 	/// - Bounded values (-1.0 ≤ matrix[i][j] ≤ 1.0)
 	/// - Positive semi-definite (all eigenvalues ≥ 0)
 	case invalidCorrelationMatrix
+
+	/// A seeded run was requested but an input (or configuration) cannot honor the seed.
+	///
+	/// Seeded runs require every input's distribution to conform to
+	/// ``SeedableDistribution`` so all randomness flows from the seeded generator.
+	/// Custom-closure inputs and correlated sampling do not support seeding; the
+	/// simulation throws rather than silently losing determinism.
+	///
+	/// - Parameters:
+	///   - inputName: The name of the offending input, or a configuration label
+	///   - details: Why the seed cannot be honored
+	case seedingUnsupported(inputName: String, details: String)
 }
 
 extension SimulationError: LocalizedError {
@@ -70,6 +82,8 @@ extension SimulationError: LocalizedError {
 			return "Correlation matrix dimensions must match the number of input variables"
 		case .invalidCorrelationMatrix:
 			return "Correlation matrix is not valid (must be symmetric, positive semi-definite, with unit diagonal)"
+		case .seedingUnsupported(let inputName, let details):
+			return "Seeded run cannot honor the seed for '\(inputName)': \(details)"
 		}
 	}
 }

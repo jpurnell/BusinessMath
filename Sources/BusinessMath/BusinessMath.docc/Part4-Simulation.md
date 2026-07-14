@@ -26,6 +26,9 @@ Uncertainty isn't something to fear or ignore—it's information. By quantifying
 ### Structured Scenarios
 - <doc:4.2-ScenarioAnalysisGuide>
 
+### Reproducibility & Concurrency
+- <doc:4.5-DeterministicSimulationGuide>
+
 ## Prerequisites
 
 Before diving into simulation and uncertainty quantification, you should complete Part I (especially time series), understand financial modeling from Part III (you need models to simulate), and review risk analytics for risk measurement concepts. Familiarity with basic probability and statistics is helpful but not required.

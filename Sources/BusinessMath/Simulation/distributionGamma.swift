@@ -146,6 +146,92 @@ public func gammaVariate<T: Real>(shape: T, scale: T, seeds: [Double]? = nil, se
 	return shape * scale
 }
 
+/// Generates a random value from a Gamma distribution, drawing all randomness from a generator.
+///
+/// Generator-parameterized variant of ``gammaVariate(shape:scale:seeds:seedIndex:)``. It follows
+/// the identical probability law — Marsaglia and Tsang's rejection-sampling method for
+/// shape ≥ 1, and the shape transformation property for shape < 1 — but sources every
+/// uniform draw (including those inside the rejection loop) from `generator`, so a seeded
+/// generator such as ``SplitMix64`` reproduces the identical sample stream on every run.
+///
+/// - Parameters:
+///   - shape: The shape parameter (k > 0)
+///   - scale: The scale parameter (θ > 0)
+///   - generator: The random source for every uniform draw; a seeded generator makes the
+///     returned stream fully reproducible.
+/// - Returns: A random value from Gamma(shape, scale)
+public func gammaVariate<T: Real, G: RandomNumberGenerator>(shape: T, scale: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
+	guard shape > T(0) && scale > T(0) else {
+		preconditionFailure("Gamma shape and scale must be positive")
+	}
+
+	// For shape < 1, use the transformation property
+	if shape < T(1) {
+		let u: T = distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
+		let x = gammaVariate(shape: shape + T(1), scale: scale, using: &generator)
+		return x * T.pow(u, T(1) / shape) // fp-safety:disable — shape > 0 guarded at function entry
+	}
+
+	// Marsaglia and Tsang's method for shape >= 1
+	// Acceptance rate is typically >95%, but add safety limit
+	let maxIterations = 10000
+	let maxInnerIterations = 1000
+
+	let oneThird: T = T(1) / T(3) // fp-safety:disable — constant T(3)
+	let d = shape - oneThird
+	let c = T(1) / T.sqrt(T(9) * d) // fp-safety:disable — shape >= 1 so d >= 2/3 > 0
+
+	for _ in 0..<maxIterations {
+		var x: T
+		var v: T
+
+		// Generate v = (1 + c×Z)³ where Z ~ N(0,1)
+		var innerIterations = 0
+		repeat {
+			let u1Seed = Double.random(in: 0...1, using: &generator)
+			let u2Seed = Double.random(in: 0...1, using: &generator)
+			x = distributionNormal(mean: T(0), stdDev: T(1), u1Seed, u2Seed)
+			v = T(1) + c * x
+			innerIterations += 1
+			// Safety: break inner loop if stuck (shouldn't happen with valid parameters)
+			if innerIterations >= maxInnerIterations {
+				break
+			}
+		} while v <= T(0)
+
+		// If inner loop exhausted, try outer loop again
+		guard v > T(0) else { continue }
+
+		v = v * v * v
+
+		// Generate U ~ Uniform(0,1)
+		let u: T = distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
+
+		// Acceptance test
+		let x2 = x * x
+		let x4 = x2 * x2
+		let constant: T = T(331) / T(10000)  // 0.0331
+		let threshold1 = T(1) - constant * x4
+		if u < threshold1 {
+			return d * v * scale
+		}
+
+		let logU = T.log(u)
+		let logV = T.log(v)
+		let half: T = T(1) / T(2)
+		let term1 = half * x2
+		let term2 = d * (T(1) - v + logV)
+		let threshold2 = term1 + term2
+		if logU < threshold2 {
+			return d * v * scale
+		}
+	}
+
+	// Fallback: return mean of gamma distribution if rejection sampling exhausted
+	// This should never happen with valid parameters
+	return shape * scale
+}
+
 /// A Gamma distribution generator for producing random values.
 ///
 /// The Gamma distribution is useful for modeling waiting times and is a generalization
@@ -173,5 +259,27 @@ public struct DistributionGamma: DistributionRandom {
 	/// - Returns: A random Double from the Gamma distribution
 	public func next() -> Double {
 		return random()
+	}
+}
+
+extension DistributionGamma: SeedableDistribution {
+	/// Generates the next random value, drawing all exponential-summation uniforms from `generator`.
+	///
+	/// Follows the same probability law as ``next()`` — a Gamma(r, λ) variate built as the sum
+	/// of `r` exponential variates with rate `λ` — sourcing every uniform draw from `generator`;
+	/// a seeded generator makes the stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for the `r` uniform draws.
+	/// - Returns: A random Double from the Gamma distribution with configured shape and rate, or NaN for invalid parameters
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		// Validate parameters - return NaN for invalid inputs (mirrors distributionGamma(r:λ:))
+		guard r > 0 else { return Double.nan }
+		guard λ > 0, !λ.isNaN, λ.isFinite else { return Double.nan }
+
+		var sum = 0.0
+		for _ in 0..<r {
+			sum += distributionExponential(λ: λ, seed: Double.random(in: 0...1, using: &generator))
+		}
+		return sum
 	}
 }

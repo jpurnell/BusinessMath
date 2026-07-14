@@ -48,7 +48,7 @@ import Numerics
 ///     }
 /// }
 /// ```
-public protocol DistributionRandom {
+public protocol DistributionRandom<T> {
 	/// The numeric type for random values.
 	associatedtype T: Real
 

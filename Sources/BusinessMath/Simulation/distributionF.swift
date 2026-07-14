@@ -172,3 +172,34 @@ public struct DistributionF: DistributionRandom {
 		return random()
 	}
 }
+
+@available(macOS 11.0, *)
+extension DistributionF: SeedableDistribution {
+	/// Generates the next random value, drawing all randomness from `generator`.
+	///
+	/// Follows the same probability law as ``next()`` — F = (χ²(df1)/df1) / (χ²(df2)/df2),
+	/// with each chi-squared variate built as Gamma(df/2, 2) via Marsaglia-Tsang (the same
+	/// construction `distributionChiSquared` uses) — sourcing every uniform draw from
+	/// `generator`; a seeded generator makes the stream fully reproducible.
+	///
+	/// - Parameter generator: The random source for every uniform draw.
+	/// - Returns: A random Double sampled from F(df1, df2), always non-negative
+	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		let dfOne = Double(df1)
+		let dfTwo = Double(df2)
+
+		// Generate two independent chi-squared variates via χ²(df) = Gamma(df/2, 2)
+		let chi1 = gammaVariate(shape: dfOne / 2.0, scale: 2.0, using: &generator)
+		let chi2 = gammaVariate(shape: dfTwo / 2.0, scale: 2.0, using: &generator)
+
+		// F = (χ²₁/df1) / (χ²₂/df2)
+		let numerator = chi1 / dfOne // fp-safety:disable — df1 > 0 guarded in init
+		let denominator = chi2 / dfTwo // fp-safety:disable — df2 > 0 guarded in init
+
+		guard denominator > 0 else {
+			// Degenerate underflow (measure zero for valid df2): mirror the NaN convention
+			return Double.nan
+		}
+		return numerator / denominator // fp-safety:disable — guarded by denominator > 0 above
+	}
+}
