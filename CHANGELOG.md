@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.3.2] - 2026-07-14
+
+**Version 2.3.2** fixes a boundary bug in `binomialPMF` and adds the test coverage
+that was missing for it. No public API changes.
+
+#### Fixed
+
+- **`binomialPMF` returned `NaN` at the p = 0 and p = 1 boundaries** — the PMF
+  computed `(1 - p)^(n - k)` (and `p^k`) with a **real-valued** exponent, so a
+  degenerate binomial hit `pow(0, 0)`, which the real `pow` evaluates as
+  `exp(0 · log 0) = NaN`. As a result `binomialPMF(n: 10, k: 10, p: 1.0)` returned
+  `NaN` instead of `1.0` (and likewise `p = 0, k = 0`). Switched both exponent
+  terms to the **integer-exponent** `pow` overload, which correctly yields 1 for a
+  zero exponent at any base. Interior values are unchanged.
+
+#### Testing
+
+- Added `BinomialPMFTests` covering interior values, the full PMF summing to 1, the
+  p = 0 / p = 1 boundaries, and out-of-range `k` — the function previously had no
+  direct test coverage.
+
 ### [2.3.1] - 2026-07-08
 
 **Version 2.3.1** is a cancellation-safety patch. A quality-gate rule addition
