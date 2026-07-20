@@ -4,7 +4,6 @@
 
 import CompilerPluginSupport
 import PackageDescription
-import Foundation
 
 // MARK: - Products
 
@@ -52,15 +51,17 @@ var dependencies: [Package.Dependency] = [
 	)
 ]
 
-// Add swift-crypto on Linux (CryptoKit is built-in on Apple platforms)
-#if os(Linux)
-	dependencies.append(
-		.package(
-			url: "https://github.com/apple/swift-crypto.git",
-			from: "3.0.0"
-		)
+// swift-crypto backs `import Crypto` on platforms without a built-in CryptoKit (Linux, Android).
+// Declared UNCONDITIONALLY: a package manifest's `#if os(...)` reflects the build *host*, not the
+// target, so the old `#if os(Linux)` never fired when cross-compiling from an Apple host (which
+// broke Android and cross-built Linux alike). The product is only *linked* where needed — see
+// the `.when(platforms:)` condition in businessMathDeps below — so Apple builds pay no cost.
+dependencies.append(
+	.package(
+		url: "https://github.com/apple/swift-crypto.git",
+		from: "3.0.0"
 	)
-#endif
+)
 
 // MARK: - Targets
 
@@ -70,12 +71,16 @@ var businessMathDeps: [Target.Dependency] = [
 	.product(name: "Collections", package: "swift-collections")
 ]
 
-// Add Crypto on Linux (CryptoKit built-in on Apple platforms)
-#if os(Linux)
-	businessMathDeps.append(
-		.product(name: "Crypto", package: "swift-crypto")
+// Link swift-crypto's Crypto only where CryptoKit is absent. `.when(platforms:)` is evaluated
+// against the TARGET triple, so it works under cross-compilation — unlike the host-based
+// `#if os(Linux)` it replaces. Apple targets keep using built-in CryptoKit via `canImport`.
+businessMathDeps.append(
+	.product(
+		name: "Crypto",
+		package: "swift-crypto",
+		condition: .when(platforms: [.linux, .android])
 	)
-#endif
+)
 
 var targets: [Target] = [
 
