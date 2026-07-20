@@ -324,7 +324,7 @@ public struct DenseMatrix<T: Real>: Sendable where T: Sendable {
                 sumSquares += data[i][j] * data[i][j]
             }
         }
-        return sqrt(sumSquares)
+        return sumSquares.squareRoot()
     }
 
     // MARK: - Basic Operations
