@@ -52,10 +52,10 @@ public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uS
 	let u = T(uInt) / T(1_000_000) // fp-safety:disable — constant 1_000_000
     if u > 0 && u < fc {
         let s = u * (b - a) * (c - a)
-        return a + sqrt(s)
+        return a + s.squareRoot()
     } else {
         let s = (1 - u) * (b - a) * (b - c)
-        return b - sqrt(s)
+        return b - s.squareRoot()
     }
 }
 

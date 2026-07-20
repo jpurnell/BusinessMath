@@ -107,7 +107,7 @@ public func nemenyiCD(judges: Int, items: Int, alpha: Double) -> Float {
     let k = Float(items)
     let n = Float(judges)
     let fraction = (k * (k + 1)) / (6 * n)
-    let cd = q * sqrt(fraction)
+    let cd = q * fraction.squareRoot()
 
     return cd
 }
