@@ -258,6 +258,12 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	///   - confidenceLevel: Confidence level (e.g., 0.95 for 95%).
 	/// - Returns: Forecast with confidence intervals.
 	/// - Throws: ``ForecastError`` if model not trained or lastPeriod not set.
+	///
+	/// - Important: These bands are **parametric and in-sample** (from the training
+	///   residuals), so on drifting/event-driven series they can be optimistically
+	///   narrow. For out-of-sample uncertainty use
+	///   ``BacktestReport/empiricalIntervals(around:confidenceLevel:)`` with a
+	///   rolling-origin ``TimeSeries/backtest(_:config:)``.
 	public func predictWithConfidence(
 		periods: Int,
 		confidenceLevel: T

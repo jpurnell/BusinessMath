@@ -437,6 +437,12 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// - Confidence intervals widen as forecast horizon increases
 	/// - Better model fit (lower residuals) produces narrower intervals
 	/// - More historical data provides tighter confidence bounds
+	///
+	/// - Important: These bands are **parametric and in-sample** — derived from the
+	///   residuals of the fit, not from out-of-sample performance. On event-driven or
+	///   regime-shifting series they can be optimistically narrow. For honest,
+	///   out-of-sample uncertainty use ``BacktestReport/empiricalIntervals(around:confidenceLevel:)``
+	///   with a rolling-origin ``TimeSeries/backtest(_:config:)``.
 	public func projectWithConfidence(
 		periods: Int,
 		confidenceLevel: T
