@@ -29,6 +29,7 @@ public struct NaiveForecaster<Value: Real & Sendable>: Forecaster {
     /// Creates a naive forecaster.
     public init() {}
 
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(
         from history: TimeSeries<Value>,
         exogenous: ForecastRegressors<Value>?,
@@ -62,6 +63,7 @@ public struct SeasonalNaiveForecaster<Value: Real & Sendable>: Forecaster {
         self.seasonLength = seasonLength
     }
 
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(
         from history: TimeSeries<Value>,
         exogenous: ForecastRegressors<Value>?,
@@ -97,6 +99,7 @@ public struct DriftForecaster<Value: Real & Sendable>: Forecaster {
     /// Creates a drift forecaster.
     public init() {}
 
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(
         from history: TimeSeries<Value>,
         exogenous: ForecastRegressors<Value>?,

@@ -126,6 +126,7 @@ public struct AnyForecaster<Value: Real & Sendable>: Forecaster {
         self.body = { history, _, horizon in try body(history, horizon) }
     }
 
+    /// Trains on `history` and forecasts `horizon` steps via the wrapped closure.
     public func trainedForecast(
         from history: TimeSeries<Value>,
         exogenous: ForecastRegressors<Value>?,
@@ -150,24 +151,28 @@ private extension TrendModel {
 }
 
 extension LinearTrend: Forecaster {
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(from history: TimeSeries<T>, exogenous: ForecastRegressors<T>?, horizon: Int) throws -> TimeSeries<T> {
         try trendForecast(from: history, horizon: horizon)
     }
 }
 
 extension ExponentialTrend: Forecaster {
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(from history: TimeSeries<T>, exogenous: ForecastRegressors<T>?, horizon: Int) throws -> TimeSeries<T> {
         try trendForecast(from: history, horizon: horizon)
     }
 }
 
 extension LogisticTrend: Forecaster {
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(from history: TimeSeries<T>, exogenous: ForecastRegressors<T>?, horizon: Int) throws -> TimeSeries<T> {
         try trendForecast(from: history, horizon: horizon)
     }
 }
 
 extension CustomTrend: Forecaster {
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(from history: TimeSeries<T>, exogenous: ForecastRegressors<T>?, horizon: Int) throws -> TimeSeries<T> {
         try trendForecast(from: history, horizon: horizon)
     }
@@ -176,12 +181,14 @@ extension CustomTrend: Forecaster {
 // MARK: - Holt-Winters & Moving-Average conformances
 
 extension HoltWintersModel: Forecaster {
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(from history: TimeSeries<T>, exogenous: ForecastRegressors<T>?, horizon: Int) throws -> TimeSeries<T> {
         try forecast(timeSeries: history, periods: horizon)
     }
 }
 
 extension MovingAverageModel: Forecaster {
+    /// Trains on `history` and forecasts `horizon` steps. See ``Forecaster``.
     public func trainedForecast(from history: TimeSeries<T>, exogenous: ForecastRegressors<T>?, horizon: Int) throws -> TimeSeries<T> {
         var model = self
         try model.train(on: history)

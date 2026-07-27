@@ -9,6 +9,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.5.0] - 2026-07-27
+
+**Version 2.5.0** adds a **Forecast Evaluation & Diagnostics tier** — the layer that
+makes every existing forecaster *honest* (scored out-of-sample), *comparable* (against
+naive baselines), and *diagnosable*. Motivated by the observation that in-sample fit
+and parametric confidence bands systematically overstate forecast quality on
+event-driven series, this tier follows the discipline: measure forecastability first,
+beat the naive baseline, evaluate out-of-sample, diagnose, then quantify uncertainty
+empirically.
+
+#### Added
+
+- **`Forecaster` protocol** — one model-agnostic abstraction (`trainedForecast(from:exogenous:horizon:)`)
+  that lets a single harness drive trend models, Holt-Winters, moving averages, and
+  baselines. Exogenous-ready from day one (optional `ForecastRegressors`, unused in
+  v1) so driver-based forecasting can be added without a breaking change. `AnyForecaster`
+  wraps closures. Retroactive conformances for all built-in models.
+- **Baselines** — `NaiveForecaster`, `SeasonalNaiveForecaster`, `DriftForecaster`: the
+  benchmarks every forecast is measured against and the MASE scaling denominators.
+- **`TimeSeries.backtest(_:config:)`** — rolling-origin (walk-forward) out-of-sample
+  evaluation with an anti-leakage guarantee, expanding/sliding windows, and a
+  `BacktestReport` carrying pooled RMSE/MAE/MAPE/MASE, per-fold detail, and
+  per-horizon residuals. `TimeSeries.mase(against:training:seasonLength:)` for scaled error.
+- **Forecastability** — `TimeSeries.forecastability()` (normalized spectral entropy via
+  the existing FFT backend → noise/weak/moderate/strong verdict) and
+  `requireForecastable(maxSpectralEntropy:)`. A `RefusalPolicy` on `BacktestConfig`
+  throws `BacktestError.unforecastableSeries` on noise rather than returning a
+  plausible-but-wrong forecast.
+- **Diagnostics** — `TimeSeries.autocorrelation(maxLag:)` / `partialAutocorrelation(maxLag:)`
+  (Durbin–Levinson) / `dominantSeasonLength(maxLag:)` (auto season detection);
+  `ljungBox(lags:fittedParameters:)` whiteness test; `augmentedDickeyFuller(lag:)` and
+  `kpss(regression:lag:)` unit-root/stationarity tests (opposite nulls, so agreement is
+  a confident verdict).
+- **`BacktestReport.empiricalIntervals(around:confidenceLevel:)`** — prediction bands
+  from out-of-sample residual quantiles, widening with horizon as the data actually did.
+
+#### Changed
+
+- `LinearTrend.projectWithConfidence` and `HoltWintersModel.predictWithConfidence` DocC
+  now note their bands are parametric/in-sample and point to `empiricalIntervals` for
+  out-of-sample uncertainty.
+- `HoltWintersModel` and `MovingAverageModel` are now `Sendable`.
+
+#### Notes
+
+- 53 new tests, all deterministic. Includes a benchmark-replication suite that
+  reproduces the two canonical regimes (strong-seasonality vs. low-forecastability)
+  using only BusinessMath.
+
 ### [2.4.0] - 2026-07-14
 
 **Version 2.4.0** makes Monte Carlo simulations reproducible and non-blocking:

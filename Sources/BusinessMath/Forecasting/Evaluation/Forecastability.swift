@@ -39,6 +39,7 @@ public struct ForecastabilityReport<T: BinaryFloatingPoint & Sendable>: Sendable
     /// Plain-language bucket.
     public let verdict: ForecastabilityVerdict
 
+    /// Creates a forecastability report.
     public init(spectralEntropy: T, forecastability: T, skillVsNaive: T?, verdict: ForecastabilityVerdict) {
         self.spectralEntropy = spectralEntropy
         self.forecastability = forecastability
@@ -100,7 +101,7 @@ public extension TimeSeries where T: BinaryFloatingPoint {
         let n = values.count
         guard n >= 2 else { return 1.0 }
 
-        let mean = values.reduce(0.0, +) / Double(n)
+        let mean = values.reduce(0.0, +) / Double(n) // fp-safety:disable — n >= 2 guarded above
         let demeaned = values.map { $0 - mean }
 
         let backend = FFTBackendSelector.selectBackend()

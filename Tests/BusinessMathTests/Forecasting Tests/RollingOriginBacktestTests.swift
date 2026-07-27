@@ -78,7 +78,7 @@ struct RollingOriginBacktestTests {
             lengthReporter, config: BacktestConfig(initialTrainSize: 3, horizon: 1, step: 1, window: .sliding(length: 2)))
         // sliding training length is fixed at 2 (clamped to origin)
         for fold in sliding.folds {
-            #expect(fold.forecast.valuesArray[0] == 2.0)
+            #expect(abs(fold.forecast.valuesArray[0] - 2.0) < 1e-9)
         }
     }
 
@@ -109,15 +109,14 @@ struct RollingOriginBacktestTests {
     // MARK: - MASE (standalone)
 
     @Test("MASE == numeratorMAE / naiveScale")
-    func maseValue() {
+    func maseValue() throws {
         // actual [10,12,14], forecast [11,11,11] → abs errors [1,1,3], MAE=5/3
         // training [2,4,6,8] seasonLength 1 → scale mean|Δ| = 2 → MASE = (5/3)/2 ≈ 0.8333
         let actual = monthly([10, 12, 14])
         let forecast = monthly([11, 11, 11])
         let training = monthly([2, 4, 6, 8])
-        let mase = actual.mase(against: forecast, training: training, seasonLength: 1)
-        #expect(mase != nil)
-        #expect(abs(mase! - (5.0 / 3.0) / 2.0) < 1e-9)
+        let value = try #require(actual.mase(against: forecast, training: training, seasonLength: 1))
+        #expect(abs(value - (5.0 / 3.0) / 2.0) < 1e-9)
     }
 
     @Test("MASE == 1 when error magnitude equals the naive scale")
@@ -142,8 +141,8 @@ struct RollingOriginBacktestTests {
             NaiveForecaster<Double>(),
             config: BacktestConfig(initialTrainSize: 4, horizon: 1, step: 1, seasonLength: 1))
         // ramp: naive error 1 each step; naive scale of full ramp = 1 → MASE 1
-        #expect(report.mase != nil)
-        #expect(abs(report.mase! - 1.0) < 1e-9)
+        let value = try #require(report.mase)
+        #expect(abs(value - 1.0) < 1e-9)
     }
 
     // MARK: - Validation
