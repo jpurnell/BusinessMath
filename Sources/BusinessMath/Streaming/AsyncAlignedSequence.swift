@@ -153,7 +153,7 @@ public struct AsyncAlignedSequence<
             self.channel = channel
             self.iterator = channel.makeAsyncIterator()
 
-            Task { @Sendable in
+            let producer = Task { @Sendable in
                 let state = AlignmentState()
 
                 await withTaskGroup(of: Void.self) { group in
@@ -252,6 +252,7 @@ public struct AsyncAlignedSequence<
                     }
                 }
             }
+            continuationBox.setOnTermination { producer.cancel() }
         }
 
         /// Advances to the next aligned value pair.
