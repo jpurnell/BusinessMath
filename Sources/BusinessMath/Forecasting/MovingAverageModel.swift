@@ -24,7 +24,7 @@ import Numerics
 ///
 /// let forecast = model.predict(periods: 6)
 /// ```
-public struct MovingAverageModel<T: Real & Sendable & Codable> {
+public struct MovingAverageModel<T: Real & Sendable & Codable>: Sendable {
 
 	// MARK: - Properties
 
