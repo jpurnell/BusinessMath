@@ -97,14 +97,24 @@ jobs:
           swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v &
           TEST_PID=$!
           (
-            sleep 420
+            sleep 300
             if kill -0 "$TEST_PID" 2>/dev/null; then
-              echo "::warning::swift test still running after 7min — capturing stacks (suspected hang)"
+              echo "::warning::swift test still running after 5min — capturing stacks (suspected exit/finalization hang)"
               if [ "${RUNNER_OS:-}" = "macOS" ]; then
-                sudo /usr/bin/spindump 5 10 -o "$RUNNER_TEMP/spindump.txt" >/dev/null 2>&1 || true
-                echo "===== SPINDUMP (test-related processes) ====="
-                grep -n -iE "swiftpm-testing|xctest|PackageTests|BusinessMath|waitUntilCompleted|dispatch_group_wait|semaphore_wait|MTLCommandBuffer" "$RUNNER_TEMP/spindump.txt" 2>/dev/null | head -120 || true
-                echo "===== END SPINDUMP ====="
+                echo "===== PROCESS TREE ====="
+                ps -A -o pid,ppid,stat,comm | grep -iE "swift|xctest|PackageTests|BusinessMath" | grep -v grep || true
+                # sample() works on our own processes without sudo; target the child test
+                # process (the `swift test` driver only waits on it).
+                for name in "BusinessMathPackageTests" "PackageTests.xctest" "xctest" "swiftpm-testing-helper"; do
+                  PID=$(pgrep -f "$name" | head -1 || true)
+                  if [ -n "${PID:-}" ]; then
+                    echo "===== SAMPLE $name (pid $PID) ====="
+                    sample "$PID" 4 -f "$RUNNER_TEMP/sample_$PID.txt" >/dev/null 2>&1 || true
+                    sed -n '1,240p' "$RUNNER_TEMP/sample_$PID.txt" 2>/dev/null || echo "(sample produced no output)"
+                    echo "===== END SAMPLE $name ====="
+                    break
+                  fi
+                done
               fi
               kill -9 "$TEST_PID" 2>/dev/null || true
             fi
