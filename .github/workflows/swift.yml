@@ -20,6 +20,7 @@ jobs:
   tests:
     name: Tests (${{ matrix.os }} / ${{ matrix.engine }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -89,7 +90,28 @@ jobs:
           fi
 
           swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
-          swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v || true
+
+          # Run tests with a hang watchdog: if the process is still alive well after
+          # tests should have finished, capture thread stacks (to diagnose a suspected
+          # cooperative-thread-pool deadlock on the CI runner) before killing it.
+          swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v &
+          TEST_PID=$!
+          (
+            sleep 420
+            if kill -0 "$TEST_PID" 2>/dev/null; then
+              echo "::warning::swift test still running after 7min — capturing stacks (suspected hang)"
+              if [ "${RUNNER_OS:-}" = "macOS" ]; then
+                sudo /usr/bin/spindump 5 10 -o "$RUNNER_TEMP/spindump.txt" >/dev/null 2>&1 || true
+                echo "===== SPINDUMP (test-related processes) ====="
+                grep -n -iE "swiftpm-testing|xctest|PackageTests|BusinessMath|waitUntilCompleted|dispatch_group_wait|semaphore_wait|MTLCommandBuffer" "$RUNNER_TEMP/spindump.txt" 2>/dev/null | head -120 || true
+                echo "===== END SPINDUMP ====="
+              fi
+              kill -9 "$TEST_PID" 2>/dev/null || true
+            fi
+          ) &
+          WATCHDOG_PID=$!
+          wait "$TEST_PID" 2>/dev/null || true
+          kill "$WATCHDOG_PID" 2>/dev/null || true
 
   build_and_compile:
     name: Release build
