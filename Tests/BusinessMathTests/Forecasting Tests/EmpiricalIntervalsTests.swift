@@ -27,9 +27,9 @@ struct EmpiricalIntervalsTests {
     }
 
     @Test("Symmetric residuals produce a band symmetric about the point forecast")
-    func symmetricBand() {
+    func symmetricBand() throws {
         let r = report(residuals: [[-2, -1, 0, 1, 2]], horizon: 1)
-        let ci = r.empiricalIntervals(around: series([10]), confidenceLevel: 0.95)
+        let ci = try r.empiricalIntervals(around: series([10]), confidenceLevel: 0.95)
         let lo = ci.lowerBound.valuesArray[0]
         let hi = ci.upperBound.valuesArray[0]
         #expect(abs((lo + hi) - 20.0) < 1e-9)   // symmetric about 10
@@ -37,19 +37,19 @@ struct EmpiricalIntervalsTests {
     }
 
     @Test("Interval widens with forecast horizon when later-step errors are larger")
-    func widensWithHorizon() {
+    func widensWithHorizon() throws {
         let r = report(residuals: [[-1, 0, 1], [-3, 0, 3]], horizon: 2)
-        let ci = r.empiricalIntervals(around: series([10, 10]), confidenceLevel: 0.95)
+        let ci = try r.empiricalIntervals(around: series([10, 10]), confidenceLevel: 0.95)
         let width0 = ci.upperBound.valuesArray[0] - ci.lowerBound.valuesArray[0]
         let width1 = ci.upperBound.valuesArray[1] - ci.lowerBound.valuesArray[1]
         #expect(width1 > width0)
     }
 
     @Test("Higher confidence level gives a wider interval")
-    func higherConfidenceWider() {
+    func higherConfidenceWider() throws {
         let r = report(residuals: [[-2, -1, 0, 1, 2]], horizon: 1)
-        let narrow = r.empiricalIntervals(around: series([10]), confidenceLevel: 0.80)
-        let wide = r.empiricalIntervals(around: series([10]), confidenceLevel: 0.99)
+        let narrow = try r.empiricalIntervals(around: series([10]), confidenceLevel: 0.80)
+        let wide = try r.empiricalIntervals(around: series([10]), confidenceLevel: 0.99)
         let wNarrow = narrow.upperBound.valuesArray[0] - narrow.lowerBound.valuesArray[0]
         let wWide = wide.upperBound.valuesArray[0] - wide.lowerBound.valuesArray[0]
         #expect(wWide > wNarrow)
@@ -62,11 +62,11 @@ struct EmpiricalIntervalsTests {
             NaiveForecaster<Double>(),
             config: BacktestConfig(initialTrainSize: 24, horizon: 3, step: 3))
         let point = try NaiveForecaster<Double>().trainedForecast(from: sine, horizon: 3)
-        let ci = bt.empiricalIntervals(around: point, confidenceLevel: 0.90)
+        let ci = try bt.empiricalIntervals(around: point, confidenceLevel: 0.90)
         #expect(ci.forecast.count == 3)
         for k in 0..<3 {
             #expect(ci.lowerBound.valuesArray[k] <= ci.upperBound.valuesArray[k])
         }
-        #expect(ci.confidenceLevel == 0.90)
+        #expect(abs(ci.confidenceLevel - 0.90) < 1e-9)
     }
 }

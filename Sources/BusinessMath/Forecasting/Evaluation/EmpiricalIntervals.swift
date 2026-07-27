@@ -29,10 +29,11 @@ public extension BacktestReport {
     ///   - confidenceLevel: The interval coverage (e.g. `0.95`), clamped to `[0, 1]`.
     /// - Returns: A ``ForecastWithConfidence`` with empirical lower/upper bounds. Horizon
     ///   steps with no residuals fall back to a zero-width band at the point forecast.
+    /// - Throws: rethrows if the empirical quantile estimator rejects a residual sample.
     func empiricalIntervals(
         around pointForecast: TimeSeries<T>,
         confidenceLevel: T
-    ) -> ForecastWithConfidence<T> {
+    ) throws -> ForecastWithConfidence<T> {
         let clamped = Swift.min(Swift.max(Double(confidenceLevel), 0.0), 1.0)
         let alphaLow = (1.0 - clamped) / 2.0
         let alphaHigh = 1.0 - alphaLow
@@ -53,11 +54,7 @@ public extension BacktestReport {
                 continue
             }
             let samples = bucket.map { Double($0) }
-            guard let percentiles = try? Percentiles(values: samples) else {
-                lowerValues.append(point)
-                upperValues.append(point)
-                continue
-            }
+            let percentiles = try Percentiles(values: samples)
             let low = T(percentiles.percentile(alphaLow))
             let high = T(percentiles.percentile(alphaHigh))
             lowerValues.append(point + low)

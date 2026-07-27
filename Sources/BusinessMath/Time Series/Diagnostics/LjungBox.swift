@@ -23,6 +23,7 @@ public struct LjungBoxResult<T: BinaryFloatingPoint & Sendable>: Sendable {
     /// Number of lags tested.
     public let lags: Int
 
+    /// Creates a Ljung–Box result.
     public init(statistic: T, degreesOfFreedom: Int, pValue: T, lags: Int) {
         self.statistic = statistic
         self.degreesOfFreedom = degreesOfFreedom

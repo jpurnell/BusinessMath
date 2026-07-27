@@ -91,6 +91,7 @@ public struct BacktestFold<T: Real & Sendable & Codable & BinaryFloatingPoint>: 
     /// Error metrics for this fold.
     public let errors: ForecastErrorMetrics<T>
 
+    /// Creates a backtest fold result.
     public init(originIndex: Int, actual: TimeSeries<T>, forecast: TimeSeries<T>, errors: ForecastErrorMetrics<T>) {
         self.originIndex = originIndex
         self.actual = actual
@@ -124,6 +125,7 @@ public struct BacktestReport<T: Real & Sendable & Codable & BinaryFloatingPoint>
     /// The forecast horizon used.
     public let horizon: Int
 
+    /// Creates a backtest report.
     public init(
         folds: [BacktestFold<T>],
         rmse: T, mae: T, mape: T, mase: T?,

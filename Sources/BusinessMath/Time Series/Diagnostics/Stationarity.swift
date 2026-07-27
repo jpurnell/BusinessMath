@@ -34,6 +34,7 @@ public struct StationarityTestResult<T: BinaryFloatingPoint & Sendable>: Sendabl
     /// Plain-language recommendation.
     public let recommendation: String
 
+    /// Creates a stationarity test result.
     public init(statistic: T, pValue: T, usedLag: Int, isStationary: Bool, recommendation: String) {
         self.statistic = statistic
         self.pValue = pValue
@@ -114,7 +115,7 @@ public extension TimeSeries where T: BinaryFloatingPoint {
         let residuals: [Double]
         switch regression {
         case .level:
-            let mean = y.reduce(0.0, +) / Double(n)
+            let mean = y.reduce(0.0, +) / Double(n) // fp-safety:disable — n >= 8 guarded above
             residuals = y.map { $0 - mean }
         case .trend:
             let rows = (0..<n).map { [Double($0)] }
@@ -137,15 +138,15 @@ public extension TimeSeries where T: BinaryFloatingPoint {
             for l in 1...L {
                 var cross = 0.0
                 for t in l..<n { cross += residuals[t] * residuals[t - l] }
-                let weight = 1.0 - Double(l) / Double(L + 1)
-                variance += 2.0 * weight * cross / nDouble
+                let weight = 1.0 - Double(l) / Double(L + 1) // fp-safety:disable — L + 1 >= 1
+                variance += 2.0 * weight * cross / nDouble // fp-safety:disable — nDouble = n >= 8
             }
         }
         guard variance > 0 else {
             throw ForecastError.invalidParameter("degenerate KPSS long-run variance")
         }
 
-        let stat = sumSquaredPartials / (nDouble * nDouble * variance)
+        let stat = sumSquaredPartials / (nDouble * nDouble * variance) // fp-safety:disable — variance > 0 guarded above, nDouble >= 8
         let critical5 = regression == .level ? 0.463 : 0.146
         let stationary = stat < critical5
         let pValue = Self.kpssPValue(stat, regression: regression)
