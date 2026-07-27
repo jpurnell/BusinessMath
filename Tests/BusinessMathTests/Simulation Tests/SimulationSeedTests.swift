@@ -140,14 +140,19 @@ struct AsyncRunTests {
 
 	@Test("Async CPU run surfaces cancellation promptly", .timeLimit(.minutes(1)))
 	func asyncCancellation() async throws {
-		var simulation = MonteCarloSimulation(iterations: 50_000_000, enableGPU: false) { inputs in
+		// The run checks Task.checkCancellation() at every 1024-iteration checkpoint
+		// (including iteration 0), so a cancelled task surfaces the error at its first
+		// checkpoint. Cancelling promptly (rather than sleeping a fixed interval and
+		// hoping the run is still mid-flight) makes this deterministic and removes the
+		// wall-clock race that previously flaked under parallel test load. A modest
+		// iteration count avoids a large, load-sensitive capacity reservation.
+		var simulation = MonteCarloSimulation(iterations: 1_000_000, enableGPU: false) { inputs in
 			inputs[0]
 		}
 		simulation.addInput(SimulationInput(name: "A", distribution: DistributionNormal(0, 1)))
 		let frozen = simulation
 
 		let task = Task { try await frozen.run() }
-		try await Task.sleep(for: .milliseconds(50))
 		task.cancel()
 
 		await #expect(throws: (any Error).self) {

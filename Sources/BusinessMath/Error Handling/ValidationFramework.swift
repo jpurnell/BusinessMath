@@ -11,7 +11,7 @@ import Numerics
 // MARK: - Warning Severity
 
 /// Severity level for validation warnings
-public enum WarningSeverity: Sendable {
+public enum WarningSeverity: Sendable { // legibility:reserved part of the public CalculationWarning shape surfaced by BMValidationResult
     case info
     case warning
     case error
@@ -20,7 +20,7 @@ public enum WarningSeverity: Sendable {
 // MARK: - Warning Type
 
 /// Type classification for warnings
-public enum WarningType: Sendable {
+public enum WarningType: Sendable { // legibility:reserved part of the public CalculationWarning shape surfaced by BMValidationResult
     case missingData
     case outlier
     case numericalIssue
@@ -32,7 +32,7 @@ public enum WarningType: Sendable {
 // MARK: - Calculation Warning
 
 /// A warning generated during validation or calculation
-public struct CalculationWarning: Sendable {
+public struct CalculationWarning: Sendable { // legibility:reserved exposed via BMValidationResult.warnings public API; consumed by downstream packages
     /// The severity of this warning
     public let severity: WarningSeverity
 
