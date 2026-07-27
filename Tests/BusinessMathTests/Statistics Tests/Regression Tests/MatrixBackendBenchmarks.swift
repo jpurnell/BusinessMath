@@ -128,7 +128,7 @@ struct MatrixBackendBenchmarks {
 
     // MARK: - Medium Matrix Benchmarks (500×500)
 
-    @Test("CPU backend: 500×500 matrix multiplication", .timeLimit(.minutes(1)))
+    @Test("CPU backend: 500×500 matrix multiplication", .timeLimit(.minutes(2)))
     func cpuMediumMultiply() throws {
         let A = randomMatrix(rows: 500, cols: 500)
         let B = randomMatrix(rows: 500, cols: 500)

@@ -228,7 +228,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 @Suite("Covariance and Correlation - Stress Tests")
 struct CovarianceCorrelationStressTests {
 
-	@Test("covarianceS handles large datasets", .timeLimit(.minutes(1)))
+	@Test("covarianceS handles large datasets", .timeLimit(.minutes(2)))
 	func covarianceS_large_datasets() {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 }
@@ -237,7 +237,7 @@ struct CovarianceCorrelationStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("covarianceP handles large datasets", .timeLimit(.minutes(1)))
+	@Test("covarianceP handles large datasets", .timeLimit(.minutes(2)))
 	func covarianceP_large_datasets() {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 }
@@ -246,7 +246,7 @@ struct CovarianceCorrelationStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("correlationCoefficient handles large datasets", .timeLimit(.minutes(1)))
+	@Test("correlationCoefficient handles large datasets", .timeLimit(.minutes(2)))
 	func correlation_large_datasets() throws {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }

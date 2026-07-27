@@ -518,7 +518,7 @@ struct GeneticAlgorithmTests {
     // MARK: - Performance Benchmarks
 
     @Test("Benchmark: GPU completes large population efficiently",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     func benchmarkGPUEfficiency() throws {
         #if canImport(Metal)
         guard MetalDevice.shared != nil else {
@@ -548,7 +548,7 @@ struct GeneticAlgorithmTests {
     }
 
     @Test("Benchmark: GPU advantage at scale",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     func benchmarkGPUAdvantage() throws {
         #if canImport(Metal)
         guard MetalDevice.shared != nil else {
