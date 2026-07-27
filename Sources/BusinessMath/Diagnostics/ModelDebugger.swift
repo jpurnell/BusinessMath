@@ -899,7 +899,7 @@ public struct DiagnosticIssue: Sendable {
 }
 
 /// A diagnostic warning
-public struct DiagnosticWarning: Sendable {
+public struct DiagnosticWarning: Sendable { // legibility:reserved exposed via ModelDebugger's public `warnings` result; part of the downstream API contract
     /// Description of the warning
     public let message: String
 
