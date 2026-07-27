@@ -373,6 +373,10 @@ struct StreamAlignmentTests {
             resultCount += 1
         }
 
+        // The alignment waits for the secondary to start, so the first primary element
+        // always produces a pair (≥ 1, no longer scheduler-dependent). The channel's
+        // bounded bufferingOldest(64) may drop later pairs under backpressure, so the
+        // count stays ≤ 1000 (one per primary element at most).
         #expect(resultCount >= 1)
         #expect(resultCount <= 1000)
     }
