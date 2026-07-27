@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [2.5.0] - 2026-07-27
+### [Unreleased]
 
-**Version 2.5.0** adds a **Forecast Evaluation & Diagnostics tier** — the layer that
+_Planned as 2.5.0 — rename and tag `v2.5.0` at release._
+
+Adds a **Forecast Evaluation & Diagnostics tier** — the layer that
 makes every existing forecaster *honest* (scored out-of-sample), *comparable* (against
 naive baselines), and *diagnosable*. Motivated by the observation that in-sample fit
 and parametric confidence bands systematically overstate forecast quality on
