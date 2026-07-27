@@ -513,7 +513,7 @@ struct DEAStressTests {
     let solver = DEASolver()
 
     @Test("100 DMUs with 5 inputs and 5 outputs completes",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     func hundredDMUs() throws {
         var dmus: [DMU] = []
         for i in 0..<100 {

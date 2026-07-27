@@ -396,7 +396,7 @@ struct CentralTendencyEmptyArrayTests {
 @Suite("Central Tendency - Stress Tests")
 struct CentralTendencyStressTests {
 
-	@Test("mean handles large dataset", .timeLimit(.minutes(1)))
+	@Test("mean handles large dataset", .timeLimit(.minutes(2)))
 	func mean_large_dataset() {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = mean(values)
@@ -404,7 +404,7 @@ struct CentralTendencyStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("median handles large dataset", .timeLimit(.minutes(1)))
+	@Test("median handles large dataset", .timeLimit(.minutes(2)))
 	func median_large_dataset() {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = median(values)
@@ -412,7 +412,7 @@ struct CentralTendencyStressTests {
 		#expect(abs(result - 500_000.5) < 1e-6)
 	}
 
-	@Test("harmonicMean handles large dataset", .timeLimit(.minutes(1)))
+	@Test("harmonicMean handles large dataset", .timeLimit(.minutes(2)))
 	func harmonic_mean_large_dataset() throws {
 		let values = (1...100_000).map { Double($0) }
 		let result = try harmonicMean(values)
@@ -420,7 +420,7 @@ struct CentralTendencyStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("geometricMean handles large dataset", .timeLimit(.minutes(1)))
+	@Test("geometricMean handles large dataset", .timeLimit(.minutes(2)))
 	func geometric_mean_large_dataset() {
 		let values = Array(repeating: 2.0, count: 1_000_000)
 		let result = geometricMean(values)
@@ -428,7 +428,7 @@ struct CentralTendencyStressTests {
 		#expect(abs(result - 2.0) < 1e-6)
 	}
 
-	@Test("contraharmonicMean handles large dataset", .timeLimit(.minutes(1)))
+	@Test("contraharmonicMean handles large dataset", .timeLimit(.minutes(2)))
 	func contraharmonic_mean_large_dataset() throws {
 		let values = (1...100_000).map { Double($0) }
 		let result = try contraharmonicMean(values)

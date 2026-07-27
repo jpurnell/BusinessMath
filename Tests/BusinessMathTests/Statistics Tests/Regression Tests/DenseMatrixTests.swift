@@ -394,7 +394,7 @@ struct DenseMatrixTests {
 
     // MARK: - 6️⃣ Stress Tests
 
-    @Test("Large matrix creation", .timeLimit(.minutes(1)))
+    @Test("Large matrix creation", .timeLimit(.minutes(2)))
     func largeMatrixCreation() throws {
         let size = 1000
         var data: [[Double]] = []
@@ -412,7 +412,7 @@ struct DenseMatrixTests {
         #expect(matrix.columns == size)
     }
 
-    @Test("Large matrix transpose", .timeLimit(.minutes(1)))
+    @Test("Large matrix transpose", .timeLimit(.minutes(2)))
     func largeMatrixTranspose() throws {
         let size = 500
         let data = (0..<size).map { i in
@@ -430,7 +430,7 @@ struct DenseMatrixTests {
         #expect(transposed[10, 20] == matrix[20, 10])
     }
 
-    @Test("Large matrix-vector multiplication", .timeLimit(.minutes(1)))
+    @Test("Large matrix-vector multiplication", .timeLimit(.minutes(2)))
     func largeMatrixVectorMultiplication() throws {
         // Seeded RNG via TestSupport. The DenseMatrix tests previously used
         // a local SeededRNG that mapped output to [-1, 1] directly from

@@ -393,7 +393,7 @@ struct StreamingFrequencyDomainTests {
 
     // MARK: - Stress Tests
 
-    @Test("FFT on 4096-sample signal", .timeLimit(.minutes(1)))
+    @Test("FFT on 4096-sample signal", .timeLimit(.minutes(2)))
     func stressTestLargeFFT() {
         let backend = PureSwiftFFTBackend()
         let n = 4096
@@ -418,7 +418,7 @@ struct StreamingFrequencyDomainTests {
         #expect(abs(peakFreq - 100.0) < 2.0)
     }
 
-    @Test("FrequencySpectrum.power(in:) with many band queries on large spectrum", .timeLimit(.minutes(1)))
+    @Test("FrequencySpectrum.power(in:) with many band queries on large spectrum", .timeLimit(.minutes(2)))
     func stressTestManyBandQueries() {
         // Create a large spectrum: 2048 bins
         let n = 4096

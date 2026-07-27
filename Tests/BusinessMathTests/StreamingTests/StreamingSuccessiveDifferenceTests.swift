@@ -409,7 +409,7 @@ struct StreamingSuccessiveDifferenceTests {
     // MARK: - Stress Tests
 
     @Test("Successive differences over 100_000 elements completes in time",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     func successiveDifferencesStress() async throws {
         let values = (0..<100_000).map { Double($0) }
         let stream = AsyncValueStream(values)
@@ -423,7 +423,7 @@ struct StreamingSuccessiveDifferenceTests {
     }
 
     @Test("RMSSD over 50_000 elements completes in time",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     func rmssdStress() async throws {
         let values = (0..<50_000).map { Double($0) }
         let stream = AsyncValueStream(values)

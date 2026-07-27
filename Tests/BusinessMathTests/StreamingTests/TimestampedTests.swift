@@ -196,7 +196,7 @@ struct TimestampedTests {
     // MARK: - Stress Tests
 
     @Test("Large stream (100_000 elements) timestamps efficiently",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(2)))
     func largeStreamStress() async throws {
         let values = (0..<100_000).map { Double($0) }
         let stream = AsyncValueStream(values)

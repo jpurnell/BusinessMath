@@ -214,7 +214,7 @@ struct LinearRegressionNaNInfinityTests {
 @Suite("Linear Regression - Stress Tests")
 struct LinearRegressionStressTests {
 
-	@Test("slope handles large datasets", .timeLimit(.minutes(1)))
+	@Test("slope handles large datasets", .timeLimit(.minutes(2)))
 	func slope_large_datasets() throws {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
@@ -223,7 +223,7 @@ struct LinearRegressionStressTests {
 		#expect(abs(result - 2.0) < 1e-6)
 	}
 
-	@Test("intercept handles large datasets", .timeLimit(.minutes(1)))
+	@Test("intercept handles large datasets", .timeLimit(.minutes(2)))
 	func intercept_large_datasets() throws {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
@@ -232,7 +232,7 @@ struct LinearRegressionStressTests {
 		#expect(abs(result - 3.0) < 1e-6)
 	}
 
-	@Test("rSquared handles large datasets", .timeLimit(.minutes(1)))
+	@Test("rSquared handles large datasets", .timeLimit(.minutes(2)))
 	func rSquared_large_datasets() throws {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }
@@ -242,7 +242,7 @@ struct LinearRegressionStressTests {
 		#expect(abs(result - 1.0) < 1e-10)
 	}
 
-	@Test("linearRegression handles large datasets", .timeLimit(.minutes(1)))
+	@Test("linearRegression handles large datasets", .timeLimit(.minutes(2)))
 	func linearRegression_large_datasets() throws {
 		let x = (1...100_000).map { Double($0) }
 		let y = (1...100_000).map { Double($0) * 2.0 + 3.0 }

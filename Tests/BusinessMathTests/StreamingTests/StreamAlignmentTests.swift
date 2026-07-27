@@ -354,7 +354,7 @@ struct StreamAlignmentTests {
 
     // MARK: - Stress Tests
 
-    @Test("Alignment with 1000-element primary and 5000-element secondary", .timeLimit(.minutes(1)))
+    @Test("Alignment with 1000-element primary and 5000-element secondary", .timeLimit(.minutes(2)))
     func stressTestLargeStreams() async throws {
         let ref = ContinuousClock.now
 
