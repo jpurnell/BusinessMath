@@ -274,10 +274,11 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
             let firstIterator = first.makeAsyncIterator()
             let secondIterator = second.makeAsyncIterator()
 
-            // Start tasks to consume both streams
-            // Note: Task continues until streams complete. Check Task.isCancelled
-            // for cooperative cancellation when the outer context is cancelled.
-            Task { @Sendable in
+            // Start tasks to consume both streams. The producer task is cancelled when
+            // the consumer stops iterating (via onTermination below), so it cannot spin
+            // after the consumer has gone away — which previously kept the process from
+            // becoming idle when a source stream outlived its consumer.
+            let producer = Task { @Sendable in
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @Sendable in
                         var iter = firstIterator
@@ -299,6 +300,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
                     continuationBox.finish()
                 }
             }
+            continuationBox.setOnTermination { producer.cancel() }
         }
 
         /// Advances to the next merged element.
@@ -481,7 +483,7 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
             self.channel = channel
             iterator = channel.makeAsyncIterator()
 
-            Task { @Sendable in
+            let producer = Task { @Sendable in
                 var baseIterator = base.makeAsyncIterator()
 
                 // Create actor for safe state management
@@ -511,6 +513,7 @@ public struct AsyncDebounceSequence<Base: AsyncSequence & Sendable>: AsyncSequen
                 await state.waitForDebounce()
                 continuationBox.finish()
             }
+            continuationBox.setOnTermination { producer.cancel() }
         }
 
         /// Advances to the next debounced element.
@@ -609,7 +612,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
 
             // Note: Task continues until streams complete. Check Task.isCancelled
             // for cooperative cancellation when the outer context is cancelled.
-            Task { @Sendable in
+            let producer = Task { @Sendable in
                 let firstLatest = ThreadSafeBox<First.Element?>(nil)
                 let secondLatest = ThreadSafeBox<Second.Element?>(nil)
 
@@ -640,6 +643,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
                     continuationBox.finish()
                 }
             }
+            continuationBox.setOnTermination { producer.cancel() }
         }
 
         /// Advances to the next combined element.
@@ -741,7 +745,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
 
             // Note: Task continues until streams complete. Check Task.isCancelled
             // for cooperative cancellation when the outer context is cancelled.
-            Task { @Sendable in
+            let producer = Task { @Sendable in
                 let latestSampled = ThreadSafeBox<Sampled.Element?>(nil)
 
                 await withTaskGroup(of: Void.self) { group in
@@ -767,6 +771,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
                     continuationBox.finish()
                 }
             }
+            continuationBox.setOnTermination { producer.cancel() }
         }
 
         /// Advances to the next sampled element.
@@ -1135,7 +1140,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
 
             // Note: Task continues until stream completes. Check Task.isCancelled
             // for cooperative cancellation when the outer context is cancelled.
-            Task { @Sendable in
+            let producer = Task { @Sendable in
                 let latestValue = ThreadSafeBox<Element?>(nil)
 
                 await withTaskGroup(of: Void.self) { group in
@@ -1162,6 +1167,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
                     continuationBox.finish()
                 }
             }
+            continuationBox.setOnTermination { producer.cancel() }
         }
 
         /// Advances to the next sampled element.
@@ -1632,7 +1638,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
             let baseIterator = base.makeAsyncIterator()
             let wrapper = IteratorWrapper(baseIterator)
 
-            Task { @Sendable in
+            let producer = Task { @Sendable in
                 while !Task.isCancelled {
                     // Race each element against timeout using a result enum
                     do {
@@ -1675,6 +1681,7 @@ public struct AsyncTimeoutSequence<Base: AsyncSequence>: AsyncSequence where Bas
                     }
                 }
             }
+            continuationBox.setOnTermination { producer.cancel() }
         }
 
         /// Advances to the next element within the timeout period.
@@ -1776,6 +1783,13 @@ final class ContinuationBox<Element: Sendable>: @unchecked Sendable {
     func finish() {
         continuation.finish()
     }
+
+    /// Installs a termination handler invoked when the stream finishes or its consumer
+    /// stops iterating. Used to cancel the producer task so it cannot spin after the
+    /// consumer has gone away (which would keep the process from becoming idle).
+    func setOnTermination(_ handler: @escaping @Sendable () -> Void) {
+        continuation.onTermination = { _ in handler() }
+    }
 }
 
 /// Thread-safe wrapper for AsyncThrowingStream.Continuation
@@ -1808,6 +1822,13 @@ final class ThrowingContinuationBox<Element: Sendable>: @unchecked Sendable {
 
     func finish(throwing error: Error) {
         continuation.finish(throwing: error)
+    }
+
+    /// Installs a termination handler invoked when the stream finishes or its consumer
+    /// stops iterating. Used to cancel the producer task so it cannot spin after the
+    /// consumer has gone away.
+    func setOnTermination(_ handler: @escaping @Sendable () -> Void) {
+        continuation.onTermination = { _ in handler() }
     }
 }
 
