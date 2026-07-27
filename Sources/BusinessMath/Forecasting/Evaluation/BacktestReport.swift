@@ -33,6 +33,9 @@ public struct BacktestConfig: Sendable {
     /// Season length for the report's MASE scale. `nil` ⇒ auto-detect via ACF,
     /// falling back to 1 (non-seasonal).
     public var seasonLength: Int?
+    /// Refusal policy (R2). `.lenient` (default) always computes; `.strict` throws on a
+    /// noise-like series before any fold runs.
+    public var refusal: RefusalPolicy
 
     /// Creates a backtest configuration.
     public init(
@@ -40,13 +43,15 @@ public struct BacktestConfig: Sendable {
         horizon: Int,
         step: Int = 1,
         window: BacktestWindow = .expanding,
-        seasonLength: Int? = nil
+        seasonLength: Int? = nil,
+        refusal: RefusalPolicy = .lenient
     ) {
         self.initialTrainSize = initialTrainSize
         self.horizon = horizon
         self.step = step
         self.window = window
         self.seasonLength = seasonLength
+        self.refusal = refusal
     }
 }
 
@@ -58,6 +63,19 @@ public enum BacktestError: Error, Sendable {
     case seriesTooShort(required: Int, got: Int)
     /// A configuration value was invalid (non-positive sizes, bad forecaster output).
     case invalidConfig(String)
+    /// Refusal (R2): under a `.strict` refusal policy, the series' spectral entropy
+    /// exceeded the threshold — it is indistinguishable from noise, so no forecast is
+    /// produced rather than returning a plausible-but-wrong one.
+    case unforecastableSeries(spectralEntropy: Double, threshold: Double)
+}
+
+/// How aggressively the backtest refuses low-signal series (R2 — Fail-Silent).
+public enum RefusalPolicy: Sendable, Equatable {
+    /// Never refuse — always compute metrics (default; backward-compatible).
+    case lenient
+    /// Throw ``BacktestError/unforecastableSeries(spectralEntropy:threshold:)`` when the
+    /// series' normalized spectral entropy exceeds `maxSpectralEntropy` (0…1).
+    case strict(maxSpectralEntropy: Double)
 }
 
 // MARK: - Results

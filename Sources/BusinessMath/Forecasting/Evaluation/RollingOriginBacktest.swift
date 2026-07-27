@@ -48,6 +48,11 @@ public extension TimeSeries where T: BinaryFloatingPoint & Codable {
             throw BacktestError.seriesTooShort(required: i0 + horizon, got: n)
         }
 
+        // R2 — refuse noise-like series before doing any work.
+        if case let .strict(maxEntropy) = config.refusal {
+            try requireForecastable(maxSpectralEntropy: maxEntropy)
+        }
+
         let allPeriods = periods
         let allValues = valuesArray
 
