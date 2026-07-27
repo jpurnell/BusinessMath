@@ -471,7 +471,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 		let sumSquaredResiduals = residuals.map { $0 * $0 }.reduce(T.zero, +)
 		let degreesOfFreedom = max(residuals.count - 2, 1)  // -2 for slope and intercept
 		let mse = sumSquaredResiduals / T(degreesOfFreedom)
-		let standardError = sqrt(mse)
+		let standardError = mse.squareRoot()
 
 		// Get z-score for confidence level using built-in function
 		let zScoreValue = zScore(ci: confidenceLevel)
@@ -491,7 +491,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 			let term1 = T(1)
 			let term2 = T(1) / n
 			let term3 = (horizon * horizon) / (T(12) * n)
-			let varianceFactor = sqrt(term1 + term2 + term3)
+			let varianceFactor = (term1 + term2 + term3).squareRoot()
 			let forecastSE = standardError * varianceFactor
 
 			let margin = zScoreValue * forecastSE
@@ -913,7 +913,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 		let sumSquaredResiduals = residuals.map { $0 * $0 }.reduce(T.zero, +)
 		let degreesOfFreedom = max(residuals.count - 2, 1)
 		let mse = sumSquaredResiduals / T(degreesOfFreedom)
-		let standardError = sqrt(mse)
+		let standardError = mse.squareRoot()
 
 		// Get z-score for confidence level
 		let zScoreValue = zScore(ci: confidenceLevel)
@@ -931,7 +931,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 			let term1 = T(1)
 			let term2 = T(1) / n
 			let term3 = (horizon * horizon) / (T(12) * n)
-			let varianceFactor = sqrt(term1 + term2 + term3)
+			let varianceFactor = (term1 + term2 + term3).squareRoot()
 			let forecastSE = standardError * varianceFactor
 
 			let margin = zScoreValue * forecastSE
@@ -1317,7 +1317,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 		let sumSquaredResiduals = residuals.map { $0 * $0 }.reduce(T.zero, +)
 		let degreesOfFreedom = max(residuals.count - 3, 1)  // -3 for logistic parameters
 		let mse = sumSquaredResiduals / T(degreesOfFreedom)
-		let standardError = sqrt(mse)
+		let standardError = mse.squareRoot()
 
 		// Get z-score for confidence level
 		let zScoreValue = zScore(ci: confidenceLevel)
@@ -1336,7 +1336,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 			let term1 = T(1)
 			let term2 = T(1) / n
 			let term3 = (horizon * horizon) / (T(12) * n)
-			let varianceFactor = sqrt(term1 + term2 + term3)
+			let varianceFactor = (term1 + term2 + term3).squareRoot()
 			let forecastSE = standardError * varianceFactor
 
 			let margin = zScoreValue * forecastSE
