@@ -186,10 +186,16 @@ public struct AsyncAlignedSequence<
                                     break
                                 }
 
-                                // Wait briefly for secondary to have at least one value
+                                // Wait for the secondary to have produced at least one
+                                // value (or to finish). A single fixed sleep here made
+                                // result counts scheduler-dependent — under load a slow
+                                // secondary start dropped primary elements. Yielding until
+                                // the first value (or finish) is deterministic and only
+                                // spins for the first primary element (getCurrent() never
+                                // reverts to nil once set).
                                 var secondaryCurrent = await state.getCurrent()
-                                if secondaryCurrent == nil {
-                                    try? await Task.sleep(for: .milliseconds(5))
+                                while secondaryCurrent == nil, !(await state.isFinished()) {
+                                    await Task.yield()
                                     secondaryCurrent = await state.getCurrent()
                                 }
 

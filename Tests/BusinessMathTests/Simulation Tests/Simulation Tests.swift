@@ -33,9 +33,10 @@ import Glibc
 		let b = 1.0
 		let c = 0.7
 		
+		var rng = SplitMix64(seed: 0xA1)
 		var testBed: [Double] = []
 		for _ in stride(from: 0.0, to: 1.0, by: 0.0001) {
-			testBed.append(triangularDistribution(low: a, high: b, base: c, distributionUniform()))
+			testBed.append(triangularDistribution(low: a, high: b, base: c, Double.random(in: 0...1, using: &rng)))
 		}
 		let countUnderC = testBed.filter({$0 <= c}).count
 		let roundedCount = (Double(countUnderC) / 10.0).rounded() * 10.0
@@ -235,8 +236,9 @@ struct UniformDistributionTests {
 	@Test("Default uniform() produces values in [0,1]")
 	func defaultUniformRange() {
 		let n = 5_000
+		var rng = SplitMix64(seed: 0xB2)
 		for _ in 0..<n {
-			let x: Double = distributionUniform()
+			let x: Double = Double.random(in: 0...1, using: &rng)
 			#expect(x >= 0.0 && x <= 1.0)
 		}
 	}
@@ -249,17 +251,18 @@ struct TriangularDistributionTests_Additional {
 	func cdfAtModeMatchesTheory() {
 		let a = 0.6, b = 1.0, c = 0.7
 		let n = 20_000
+		var rng = SplitMix64(seed: 0xC3)
 		var countUnderC = 0
 
 		for _ in 0..<n {
-			let x = triangularDistribution(low: a, high: b, base: c, distributionUniform())
+			let x = triangularDistribution(low: a, high: b, base: c, Double.random(in: 0...1, using: &rng))
 			if x <= c { countUnderC += 1 }
 		}
 
 		let p = (c - a) / (b - a)
 		let observed = Double(countUnderC) / Double(n)
 
-		// Binomial normal approximation: ±3 sqrt(p(1-p)/n)
+		// Seeded (deterministic): binomial normal approximation ±3 sqrt(p(1-p)/n)
 		let tol = 3.0 * sqrt(p * (1 - p) / Double(n))
 		#expect(abs(observed - p) <= tol)
 	}
@@ -268,16 +271,17 @@ struct TriangularDistributionTests_Additional {
 	func meanMatchesTheory() {
 		let a = 0.6, b = 1.0, c = 0.7
 		let n = 20_000
+		var rng = SplitMix64(seed: 0xD4)
 		var xs = [Double]()
 		xs.reserveCapacity(n)
 		for _ in 0..<n {
-			xs.append(triangularDistribution(low: a, high: b, base: c, distributionUniform()))
+			xs.append(triangularDistribution(low: a, high: b, base: c, Double.random(in: 0...1, using: &rng)))
 		}
 
 		let expectedMean = (a + b + c) / 3.0
 		let m = mean(xs)
 
-		// Tolerance: rough 1% of range, to avoid flakiness without a seed
+		// Seeded (deterministic): 1% of range comfortably covers the fixed-seed sampling error
 		let tol = 0.01 * (b - a)
 		#expect(abs(m - expectedMean) <= tol)
 	}
@@ -286,9 +290,10 @@ struct TriangularDistributionTests_Additional {
 	func edgeModesProduceValidSamples() {
 		let a = 0.0, b = 1.0
 
+		var rng = SplitMix64(seed: 0xE5)
 		for c in [a, b] {
 			for _ in 0..<5_000 {
-				let x = triangularDistribution(low: a, high: b, base: c, distributionUniform())
+				let x = triangularDistribution(low: a, high: b, base: c, Double.random(in: 0...1, using: &rng))
 				#expect(x >= a && x <= b)
 			}
 		}
