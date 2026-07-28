@@ -91,37 +91,11 @@ jobs:
 
           swift build --build-tests $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
 
-          # Run tests with a hang watchdog: if the process is still alive well after
-          # tests should have finished, capture thread stacks (to diagnose a suspected
-          # cooperative-thread-pool deadlock on the CI runner) before killing it.
-          swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v &
-          TEST_PID=$!
-          (
-            sleep 300
-            if kill -0 "$TEST_PID" 2>/dev/null; then
-              echo "::warning::swift test still running after 5min — capturing stacks (suspected exit/finalization hang)"
-              if [ "${RUNNER_OS:-}" = "macOS" ]; then
-                echo "===== PROCESS TREE ====="
-                ps -A -o pid,ppid,stat,comm | grep -iE "swift|xctest|PackageTests|BusinessMath" | grep -v grep || true
-                # sample() works on our own processes without sudo; target the child test
-                # process (the `swift test` driver only waits on it).
-                for name in "BusinessMathPackageTests" "PackageTests.xctest" "xctest" "swiftpm-testing-helper"; do
-                  PID=$(pgrep -f "$name" | head -1 || true)
-                  if [ -n "${PID:-}" ]; then
-                    echo "===== SAMPLE $name (pid $PID) ====="
-                    sample "$PID" 4 -f "$RUNNER_TEMP/sample_$PID.txt" >/dev/null 2>&1 || true
-                    sed -n '1,240p' "$RUNNER_TEMP/sample_$PID.txt" 2>/dev/null || echo "(sample produced no output)"
-                    echo "===== END SAMPLE $name ====="
-                    break
-                  fi
-                done
-              fi
-              kill -9 "$TEST_PID" 2>/dev/null || true
-            fi
-          ) &
-          WATCHDOG_PID=$!
-          wait "$TEST_PID" 2>/dev/null || true
-          kill "$WATCHDOG_PID" 2>/dev/null || true
+          # A hang is guarded by the job's timeout-minutes (fails visibly). The earlier
+          # sample()-capturing watchdog was diagnostic scaffolding for the streaming
+          # exit hang fixed in 2.5.1; it is intentionally removed so a future hang fails
+          # the job rather than being silently killed and reported green.
+          swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v || true
 
   build_and_compile:
     name: Release build
