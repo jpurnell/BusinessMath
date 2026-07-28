@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.5.1] - 2026-07-28
+
+**Version 2.5.1** fixes a correctness bug in the async streaming composition operators:
+their producer tasks could outlive or starve their consumer, spinning indefinitely
+(runaway CPU, unbounded memory, and — on constrained/CI hosts — preventing the process
+from exiting).
+
+#### Fixed
+
+- **Streaming producer-task lifecycle.** `merge`, `combineLatest`, `withLatestFrom`,
+  `sample`, `debounce`, `timeout`, and `AsyncAlignedSequence` spawn an unstructured
+  producer task that consumes their source stream(s). Three issues are fixed:
+  - The producer is now cancelled when the consumer stops (`onTermination →
+    producer.cancel()`), instead of running forever with a long/unending source.
+  - Producer loops break immediately when a `yield` returns `.terminated` (consumer
+    gone), a reliable stop signal that does not depend on cancellation propagation.
+  - `merge` producers now `await Task.yield()` per element so a non-suspending source
+    cannot monopolize the cooperative thread pool and starve the consumer.
+
+  Symptom on CI: the full test suite passed but the process hung at exit on the
+  `macos-26` runner. Root-caused via a live `sample()` of the hung process.
+
+#### Changed
+
+- CI (`swift.yml`): fixed a YAML indentation error, added `timeout-minutes`, and a
+  hang-diagnostic watchdog (captures a `sample()` of a stuck test process).
+- Test suite: de-flaked three pre-existing scheduler-dependent tests (seeded RNG;
+  deterministic async-cancellation) and raised over-tight hang-guard time limits.
+
 ### [2.5.0] - 2026-07-27
 
 **Version 2.5.0** adds a **Forecast Evaluation & Diagnostics tier** — the layer that
