@@ -284,7 +284,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
                         var iter = firstIterator
                         // silent: stream termination or error ends merge naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
-                            continuationBox.yield(value)
+                            if case .terminated = continuationBox.yield(value) { break }
                         }
                     }
 
@@ -292,7 +292,7 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
                         var iter = secondIterator
                         // silent: stream termination or error ends merge naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
-                            continuationBox.yield(value)
+                            if case .terminated = continuationBox.yield(value) { break }
                         }
                     }
 
@@ -623,7 +623,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
                         while !Task.isCancelled, let value = try? await iter.next() {
                             await firstLatest.setValue(value)
                             if let second = await secondLatest.getValue() {
-                                continuationBox.yield((value, second))
+                                if case .terminated = continuationBox.yield((value, second)) { break }
                             }
                         }
                     }
@@ -634,7 +634,7 @@ public struct AsyncCombineLatestSequence<First: AsyncSequence & Sendable, Second
                         while !Task.isCancelled, let value = try? await iter.next() {
                             await secondLatest.setValue(value)
                             if let first = await firstLatest.getValue() {
-                                continuationBox.yield((first, value))
+                                if case .terminated = continuationBox.yield((first, value)) { break }
                             }
                         }
                     }
@@ -754,7 +754,7 @@ public struct AsyncWithLatestFromSequence<Trigger: AsyncSequence, Sampled: Async
                         // silent: stream termination or error ends withLatestFrom naturally
                         while !Task.isCancelled, let _ = try? await iter.next() {
                             if let value = await latestSampled.getValue() {
-                                continuationBox.yield(value)
+                                if case .terminated = continuationBox.yield(value) { break }
                             }
                         }
                     }
@@ -1158,7 +1158,7 @@ public struct AsyncSampleSequence<Base: AsyncSequence>: AsyncSequence where Base
                         while !Task.isCancelled {
                             try? await Task.sleep(for: interval) // silent: cancellation ends sampling naturally
                             if let value = await latestValue.getValue() {
-                                continuationBox.yield(value)
+                                if case .terminated = continuationBox.yield(value) { break }
                             }
                         }
                     }
@@ -1770,8 +1770,11 @@ final class ContinuationBox<Element: Sendable>: @unchecked Sendable {
         self.continuation = continuation
     }
 
-    // LIVE: thread-safe yield wrapper used by merge/combineLatest/debounce operators
-	func yield(_ value: Element) {
+    // LIVE: thread-safe yield wrapper used by merge/combineLatest/debounce operators.
+    // Returns the yield result so producers can stop when the consumer has terminated
+    // (`.terminated`), which is reliable even for a busy, non-suspending producer loop.
+    @discardableResult
+	func yield(_ value: Element) -> AsyncStream<Element>.Continuation.YieldResult {
         continuation.yield(value)
     }
 
