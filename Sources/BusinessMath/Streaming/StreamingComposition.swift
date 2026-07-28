@@ -285,6 +285,10 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
                         // silent: stream termination or error ends merge naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             if case .terminated = continuationBox.yield(value) { break }
+                            // Cooperative suspension so a non-suspending source cannot
+                            // starve the consumer (which would prevent the stream from
+                            // ever terminating and hang the process).
+                            await Task.yield()
                         }
                     }
 
@@ -293,6 +297,10 @@ public struct AsyncMergeSequence<First: AsyncSequence, Second: AsyncSequence>: A
                         // silent: stream termination or error ends merge naturally
                         while !Task.isCancelled, let value = try? await iter.next() {
                             if case .terminated = continuationBox.yield(value) { break }
+                            // Cooperative suspension so a non-suspending source cannot
+                            // starve the consumer (which would prevent the stream from
+                            // ever terminating and hang the process).
+                            await Task.yield()
                         }
                     }
 
