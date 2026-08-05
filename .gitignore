@@ -46,3 +46,5 @@ STABILITY.md
 PRODUCT_HUNT_LAUNCH_KIT.md
 RELEASE_NOTES_*.md
 CLAUDE.md
+/.claude/skills/
+/development-guidelines.pre-v2/
