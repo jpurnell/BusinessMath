@@ -1,0 +1,169 @@
+{
+  "mappingVersion": "2.0",
+  "description": "CSV to BusinessMath Account mapping configuration",
+  "entity": {
+    "idColumn": "Entity ID",
+    "nameColumn": "Entity Name",
+    "typeColumn": "Entity Type",
+    "defaultId": "EXAMPLE",
+    "defaultName": "Example Corp",
+    "defaultType": "internal"
+  },
+  "periods": {
+    "type": "columns",
+    "columnPattern": "Q[0-9] [0-9]{4}",
+    "parseFormat": "quarter",
+    "columns": [
+      {
+        "column": "Q1 2024",
+        "period": {"type": "quarter", "year": 2024, "quarter": 1}
+      },
+      {
+        "column": "Q2 2024",
+        "period": {"type": "quarter", "year": 2024, "quarter": 2}
+      },
+      {
+        "column": "Q3 2024",
+        "period": {"type": "quarter", "year": 2024, "quarter": 3}
+      },
+      {
+        "column": "Q4 2024",
+        "period": {"type": "quarter", "year": 2024, "quarter": 4}
+      }
+    ]
+  },
+  "accounts": {
+    "nameColumn": "Account Name",
+    "typeColumn": "Account Type",
+    "roleMapping": {
+      "incomeStatementRoleColumn": "Income Statement Role",
+      "balanceSheetRoleColumn": "Balance Sheet Role",
+      "cashFlowRoleColumn": "Cash Flow Role"
+    },
+    "valueColumns": ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"],
+    "validation": {
+      "requireAtLeastOneRole": true,
+      "allowMultipleRoles": true,
+      "skipEmptyRoles": true
+    }
+  },
+  "dataTypes": {
+    "defaultNumericType": "Double",
+    "scaleFactors": {
+      "thousands": 1000,
+      "millions": 1000000,
+      "billions": 1000000000
+    },
+    "currentScale": "actual"
+  },
+  "roleMappings": {
+    "incomeStatementRole": {
+      "productRevenue": "Product sales and revenue",
+      "serviceRevenue": "Service and subscription revenue",
+      "subscriptionRevenue": "Recurring subscription revenue",
+      "licensingRevenue": "Licensing and royalty revenue",
+      "costOfGoodsSold": "Cost of goods sold (COGS)",
+      "costOfServices": "Cost of services rendered",
+      "researchDevelopment": "R&D expenses",
+      "salesMarketing": "Sales and marketing expenses",
+      "generalAdministrative": "General and administrative expenses",
+      "depreciationAmortization": "Depreciation and amortization expense",
+      "stockBasedCompensation": "Stock-based compensation expense",
+      "interestExpense": "Interest expense on debt",
+      "interestIncome": "Interest income on investments",
+      "taxExpense": "Income tax expense",
+      "otherIncome": "Other income/expense"
+    },
+    "balanceSheetRole": {
+      "cashAndEquivalents": "Cash and cash equivalents",
+      "shortTermInvestments": "Short-term marketable securities",
+      "accountsReceivable": "Trade accounts receivable",
+      "inventory": "Inventory (raw materials, WIP, finished goods)",
+      "prepaidExpenses": "Prepaid expenses and other current assets",
+      "otherCurrentAssets": "Other current assets",
+      "propertyPlantEquipment": "PP&E at net book value",
+      "intangibleAssets": "Intangible assets (patents, trademarks)",
+      "goodwill": "Goodwill from acquisitions",
+      "longTermInvestments": "Long-term investments",
+      "otherNonCurrentAssets": "Other non-current assets",
+      "accountsPayable": "Trade accounts payable",
+      "accruedExpenses": "Accrued expenses and liabilities",
+      "deferredRevenue": "Deferred/unearned revenue",
+      "shortTermDebt": "Short-term debt and notes payable",
+      "currentPortionLongTermDebt": "Current portion of long-term debt",
+      "otherCurrentLiabilities": "Other current liabilities",
+      "longTermDebt": "Long-term debt",
+      "deferredTaxLiabilities": "Deferred tax liabilities",
+      "pensionLiabilities": "Pension and post-retirement obligations",
+      "otherNonCurrentLiabilities": "Other non-current liabilities",
+      "commonStock": "Common stock and additional paid-in capital",
+      "preferredStock": "Preferred stock",
+      "retainedEarnings": "Retained earnings",
+      "treasuryStock": "Treasury stock (shares repurchased)",
+      "accumulatedOCI": "Accumulated other comprehensive income"
+    },
+    "cashFlowRole": {
+      "netIncome": "Net income (starting point)",
+      "depreciationAmortizationAddback": "Add back: D&A (non-cash expense)",
+      "stockBasedCompensationAddback": "Add back: Stock compensation (non-cash)",
+      "deferredTaxes": "Deferred tax adjustments",
+      "changeInReceivables": "Change in accounts receivable",
+      "changeInInventory": "Change in inventory",
+      "changeInPayables": "Change in accounts payable",
+      "changeInDeferredRevenue": "Change in deferred revenue",
+      "otherOperatingActivities": "Other operating cash flow adjustments",
+      "capitalExpenditures": "Capital expenditures (PP&E purchases)",
+      "proceedsFromAssetSales": "Proceeds from asset sales",
+      "acquisitions": "Acquisitions and investments",
+      "purchasesOfInvestments": "Purchases of marketable securities",
+      "salesOfInvestments": "Sales of marketable securities",
+      "otherInvestingActivities": "Other investing activities",
+      "proceedsFromDebt": "Proceeds from debt issuance",
+      "repaymentOfDebt": "Debt repayment",
+      "proceedsFromEquity": "Proceeds from equity issuance",
+      "shareRepurchases": "Share repurchases",
+      "dividendsPaid": "Dividends paid",
+      "otherFinancingActivities": "Other financing activities"
+    }
+  },
+  "examples": {
+    "singleRoleAccount": {
+      "csvRow": "Product Revenue,Revenue,productRevenue,,,100000,110000,120000,130000",
+      "parsedAccount": {
+        "name": "Product Revenue",
+        "incomeStatementRole": "productRevenue",
+        "balanceSheetRole": null,
+        "cashFlowRole": null,
+        "values": [100000, 110000, 120000, 130000]
+      }
+    },
+    "multiRoleAccount": {
+      "csvRow": "Depreciation,Expense,depreciationAmortization,,depreciationAmortizationAddback,5000,5100,5200,5300",
+      "parsedAccount": {
+        "name": "Depreciation",
+        "incomeStatementRole": "depreciationAmortization",
+        "balanceSheetRole": null,
+        "cashFlowRole": "depreciationAmortizationAddback",
+        "values": [5000, 5100, 5200, 5300]
+      }
+    },
+    "workingCapitalAccount": {
+      "csvRow": "Inventory,Asset,,inventory,changeInInventory,6000,6200,6400,6600",
+      "parsedAccount": {
+        "name": "Inventory",
+        "incomeStatementRole": null,
+        "balanceSheetRole": "inventory",
+        "cashFlowRole": "changeInInventory",
+        "values": [6000, 6200, 6400, 6600]
+      }
+    }
+  },
+  "notes": [
+    "Empty role columns should be parsed as nil (not present)",
+    "At least one role (IS, BS, or CFS) must be specified per account",
+    "Multi-role accounts are supported - an account can have roles in multiple statements",
+    "Values should be parsed as Double by default",
+    "Apply scale factor if specified (e.g., multiply by 1,000,000 for millions)",
+    "Period columns can be detected automatically using columnPattern regex"
+  ]
+}

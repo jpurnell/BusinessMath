@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <title>
+    Simulating from and checking a model in Stan:  It&#8217;s so easy in Stan Playground&#8211;it just runs on your browser! | Statistical Modeling, Causal Inference, and Social Science	</title>
+    <link rel="profile" href="https://gmpg.org/xfn/11"/>
+    <link rel="stylesheet" type="text/css" media="all" href="https://statmodeling.stat.columbia.edu/wp-content/themes/twentyeleven/style.css?ver=20220127"/>
+    <link rel="pingback" href="https://statmodeling.stat.columbia.edu/xmlrpc.php">
+    <!--[if lt IE 9]>
+    <script src="https://statmodeling.stat.columbia.edu/wp-content/themes/twentyeleven/js/html5.js?ver=3.7.0" type="text/javascript"></script>
+    <![endif]-->
+    <meta name='robots' content='max-image-preview:large'/>
+    <link rel="alternate" type="application/rss+xml" title="Statistical Modeling, Causal Inference, and Social Science &raquo; Feed" href="https://statmodeling.stat.columbia.edu/feed/"/>
+    <link rel="alternate" type="application/rss+xml" title="Statistical Modeling, Causal Inference, and Social Science &raquo; Comments Feed" href="https://statmodeling.stat.columbia.edu/comments/feed/"/>
+    <link rel="alternate" type="application/rss+xml" title="Statistical Modeling, Causal Inference, and Social Science &raquo; Simulating from and checking a model in Stan:  It&#8217;s so easy in Stan Playground&#8211;it just runs on your browser! Comments Feed" href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/feed/"/>
+
+    <link rel='stylesheet' id='moztheme2011-css' href='https://statmodeling.stat.columbia.edu/wp-content/plugins/twenty-eleven-theme-extensions/moztheme2011.css?ver=6.4.3' type='text/css' media='all'/>
+    <link rel='stylesheet' id='wp-quicklatex-format-css' href='https://statmodeling.stat.columbia.edu/wp-content/plugins/wp-quicklatex/css/quicklatex-format.css?ver=6.4.3' type='text/css' media='all'/>
+    <style id='wp-emoji-styles-inline-css' type='text/css'>
+    img.wp-smiley, img.emoji {
+        display: inline !important;
+        border: none !important;
+        box-shadow: none !important;
+        height: 1em !important;
+        width: 1em !important;
+        margin: 0 0.07em !important;
+        vertical-align: -0.1em !important;
+        background: none !important;
+        padding: 0 !important;
+    }
+    </style>
+    <link rel='stylesheet' id='wp-block-library-css' href='https://statmodeling.stat.columbia.edu/wp-includes/css/dist/block-library/style.min.css?ver=6.4.3' type='text/css' media='all'/>
+    <style id='wp-block-library-theme-inline-css' type='text/css'>
+    .wp-block-audio figcaption {
+        color: #555;
+        font-size: 13px;
+        text-align:center
+    }
+
+    .is-dark-theme .wp-block-audio figcaption {
+        color:hsla(0, 0%, 100%, .65)
+    }
+
+    .wp-block-audio {
+        margin:0 0 1em
+    }
+
+    .wp-block-code {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: Menlo, Consolas, monaco, monospace;
+        padding:.8em 1em
+    }
+
+    .wp-block-embed figcaption {
+        color: #555;
+        font-size: 13px;
+        text-align:center
+    }
+
+    .is-dark-theme .wp-block-embed figcaption {
+        color:hsla(0, 0%, 100%, .65)
+    }
+
+    .wp-block-embed {
+        margin:0 0 1em
+    }
+
+    .blocks-gallery-caption {
+        color: #555;
+        font-size: 13px;
+        text-align:center
+    }
+
+    .is-dark-theme .blocks-gallery-caption {
+        color:hsla(0, 0%, 100%, .65)
+    }
+
+    .wp-block-image figcaption {
+        color: #555;
+        font-size: 13px;
+        text-align:center
+    }
+
+    .is-dark-theme .wp-block-image figcaption {
+        color:hsla(0, 0%, 100%, .65)
+    }
+
+    .wp-block-image {
+        margin:0 0 1em
+    }
+
+    .wp-block-pullquote {
+        border-bottom: 4px solid;
+        border-top: 4px solid;
+        color: currentColor;
+        margin-bottom:1.75em
+    }
+
+    .wp-block-pullquote cite, .wp-block-pullquote footer, .wp-block-pullquote__citation {
+        color: currentColor;
+        font-size: .8125em;
+        font-style: normal;
+        text-transform:uppercase
+    }
+
+    .wp-block-quote {
+        border-left: .25em solid;
+        margin: 0 0 1.75em;
+        padding-left:1em
+    }
+
+    .wp-block-quote cite, .wp-block-quote footer {
+        color: currentColor;
+        font-size: .8125em;
+        font-style: normal;
+        position:relative
+    }
+
+    .wp-block-quote.has-text-align-right {
+        border-left: none;
+        border-right: .25em solid;
+        padding-left: 0;
+        padding-right:1em
+    }
+
+    .wp-block-quote.has-text-align-center {
+        border: none;
+        padding-left:0
+    }
+
+    .wp-block-quote.is-large, .wp-block-quote.is-style-large, .wp-block-quote.is-style-plain {
+        border:none
+    }
+
+    .wp-block-search .wp-block-search__label {
+        font-weight:700
+    }
+
+    .wp-block-search__button {
+        border: 1px solid #ccc;
+        padding:.375em .625em
+    }
+
+    :where(.wp-block-group.has-background) {
+        padding:1.25em 2.375em
+    }
+
+    .wp-block-separator.has-css-opacity {
+        opacity:.4
+    }
+
+    .wp-block-separator {
+        border: none;
+        border-bottom: 2px solid;
+        margin-left: auto;
+        margin-right:auto
+    }
+
+    .wp-block-separator.has-alpha-channel-opacity {
+        opacity:1
+    }
+
+    .wp-block-separator:not(.is-style-wide):not(.is-style-dots) {
+        width:100px
+    }
+
+    .wp-block-separator.has-background:not(.is-style-dots) {
+        border-bottom: none;
+        height:1px
+    }
+
+    .wp-block-separator.has-background:not(.is-style-wide):not(.is-style-dots) {
+        height:2px
+    }
+
+    .wp-block-table {
+        margin:0 0 1em
+    }
+
+    .wp-block-table td, .wp-block-table th {
+        word-break:normal
+    }
+
+    .wp-block-table figcaption {
+        color: #555;
+        font-size: 13px;
+        text-align:center
+    }
+
+    .is-dark-theme .wp-block-table figcaption {
+        color:hsla(0, 0%, 100%, .65)
+    }
+
+    .wp-block-video figcaption {
+        color: #555;
+        font-size: 13px;
+        text-align:center
+    }
+
+    .is-dark-theme .wp-block-video figcaption {
+        color:hsla(0, 0%, 100%, .65)
+    }
+
+    .wp-block-video {
+        margin:0 0 1em
+    }
+
+    .wp-block-template-part.has-background {
+        margin-bottom: 0;
+        margin-top: 0;
+        padding: 1.25em 2.375em
+    }
+    </style>
+    <style id='classic-theme-styles-inline-css' type='text/css'>
+    /*! This file is auto-generated */
+    .wp-block-button__link {
+        color: #fff;
+        background-color: #32373c;
+        border-radius: 9999px;
+        box-shadow: none;
+        text-decoration: none;
+        padding: calc(.667em + 2px) calc(1.333em + 2px);
+        font-size:1.125em
+    }
+
+    .wp-block-file__button {
+        background: #32373c;
+        color: #fff;
+        text-decoration: none
+    }
+    </style>
+    <style id='global-styles-inline-css' type='text/css'>
+    body {
+        --wp--preset--color--black: #000;
+        --wp--preset--color--cyan-bluish-gray: #abb8c3;
+        --wp--preset--color--white: #fff;
+        --wp--preset--color--pale-pink: #f78da7;
+        --wp--preset--color--vivid-red: #cf2e2e;
+        --wp--preset--color--luminous-vivid-orange: #ff6900;
+        --wp--preset--color--luminous-vivid-amber: #fcb900;
+        --wp--preset--color--light-green-cyan: #7bdcb5;
+        --wp--preset--color--vivid-green-cyan: #00d084;
+        --wp--preset--color--pale-cyan-blue: #8ed1fc;
+        --wp--preset--color--vivid-cyan-blue: #0693e3;
+        --wp--preset--color--vivid-purple: #9b51e0;
+        --wp--preset--color--blue: #1982d1;
+        --wp--preset--color--dark-gray: #373737;
+        --wp--preset--color--medium-gray: #666;
+        --wp--preset--color--light-gray: #e2e2e2;
+        --wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg, rgba(6, 147, 227, 1) 0%, rgb(155, 81, 224) 100%);
+        --wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg, rgb(122, 220, 180) 0%, rgb(0, 208, 130) 100%);
+        --wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg, rgba(252, 185, 0, 1) 0%, rgba(255, 105, 0, 1) 100%);
+        --wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg, rgba(255, 105, 0, 1) 0%, rgb(207, 46, 46) 100%);
+        --wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg, rgb(238, 238, 238) 0%, rgb(169, 184, 195) 100%);
+        --wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg, rgb(74, 234, 220) 0%, rgb(151, 120, 209) 20%, rgb(207, 42, 186) 40%, rgb(238, 44, 130) 60%, rgb(251, 105, 98) 80%, rgb(254, 248, 76) 100%);
+        --wp--preset--gradient--blush-light-purple: linear-gradient(135deg, rgb(255, 206, 236) 0%, rgb(152, 150, 240) 100%);
+        --wp--preset--gradient--blush-bordeaux: linear-gradient(135deg, rgb(254, 205, 165) 0%, rgb(254, 45, 45) 50%, rgb(107, 0, 62) 100%);
+        --wp--preset--gradient--luminous-dusk: linear-gradient(135deg, rgb(255, 203, 112) 0%, rgb(199, 81, 192) 50%, rgb(65, 88, 208) 100%);
+        --wp--preset--gradient--pale-ocean: linear-gradient(135deg, rgb(255, 245, 203) 0%, rgb(182, 227, 212) 50%, rgb(51, 167, 181) 100%);
+        --wp--preset--gradient--electric-grass: linear-gradient(135deg, rgb(202, 248, 128) 0%, rgb(113, 206, 126) 100%);
+        --wp--preset--gradient--midnight: linear-gradient(135deg, rgb(2, 3, 129) 0%, rgb(40, 116, 252) 100%);
+        --wp--preset--font-size--small: 13px;
+        --wp--preset--font-size--medium: 20px;
+        --wp--preset--font-size--large: 36px;
+        --wp--preset--font-size--x-large: 42px;
+        --wp--preset--spacing--20: 0.44rem;
+        --wp--preset--spacing--30: 0.67rem;
+        --wp--preset--spacing--40: 1rem;
+        --wp--preset--spacing--50: 1.5rem;
+        --wp--preset--spacing--60: 2.25rem;
+        --wp--preset--spacing--70: 3.38rem;
+        --wp--preset--spacing--80: 5.06rem;
+        --wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);
+        --wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);
+        --wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);
+        --wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);
+        --wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);
+    }
+
+    :where(.is-layout-flex) {
+        gap: 0.5em;
+    }
+
+    :where(.is-layout-grid) {
+        gap: 0.5em;
+    }
+
+    body .is-layout-flow > .alignleft {
+        float: left;
+        margin-inline-start: 0;
+        margin-inline-end: 2em;
+    }
+
+    body .is-layout-flow > .alignright {
+        float: right;
+        margin-inline-start: 2em;
+        margin-inline-end: 0;
+    }
+
+    body .is-layout-flow > .aligncenter {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    body .is-layout-constrained > .alignleft {
+        float: left;
+        margin-inline-start: 0;
+        margin-inline-end: 2em;
+    }
+
+    body .is-layout-constrained > .alignright {
+        float: right;
+        margin-inline-start: 2em;
+        margin-inline-end: 0;
+    }
+
+    body .is-layout-constrained > .aligncenter {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    body .is-layout-constrained > :where(:not(.alignleft):not(.alignright):not(.alignfull)) {
+        max-width: var(--wp--style--global--content-size);
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    body .is-layout-constrained > .alignwide {
+        max-width: var(--wp--style--global--wide-size);
+    }
+
+    body .is-layout-flex {
+        display: flex;
+    }
+
+    body .is-layout-flex {
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    body .is-layout-flex > * {
+        margin: 0;
+    }
+
+    body .is-layout-grid {
+        display: grid;
+    }
+
+    body .is-layout-grid > * {
+        margin: 0;
+    }
+
+    :where(.wp-block-columns.is-layout-flex) {
+        gap: 2em;
+    }
+
+    :where(.wp-block-columns.is-layout-grid) {
+        gap: 2em;
+    }
+
+    :where(.wp-block-post-template.is-layout-flex) {
+        gap: 1.25em;
+    }
+
+    :where(.wp-block-post-template.is-layout-grid) {
+        gap: 1.25em;
+    }
+
+    .has-black-color {
+        color: var(--wp--preset--color--black) !important;
+    }
+
+    .has-cyan-bluish-gray-color {
+        color: var(--wp--preset--color--cyan-bluish-gray) !important;
+    }
+
+    .has-white-color {
+        color: var(--wp--preset--color--white) !important;
+    }
+
+    .has-pale-pink-color {
+        color: var(--wp--preset--color--pale-pink) !important;
+    }
+
+    .has-vivid-red-color {
+        color: var(--wp--preset--color--vivid-red) !important;
+    }
+
+    .has-luminous-vivid-orange-color {
+        color: var(--wp--preset--color--luminous-vivid-orange) !important;
+    }
+
+    .has-luminous-vivid-amber-color {
+        color: var(--wp--preset--color--luminous-vivid-amber) !important;
+    }
+
+    .has-light-green-cyan-color {
+        color: var(--wp--preset--color--light-green-cyan) !important;
+    }
+
+    .has-vivid-green-cyan-color {
+        color: var(--wp--preset--color--vivid-green-cyan) !important;
+    }
+
+    .has-pale-cyan-blue-color {
+        color: var(--wp--preset--color--pale-cyan-blue) !important;
+    }
+
+    .has-vivid-cyan-blue-color {
+        color: var(--wp--preset--color--vivid-cyan-blue) !important;
+    }
+
+    .has-vivid-purple-color {
+        color: var(--wp--preset--color--vivid-purple) !important;
+    }
+
+    .has-black-background-color {
+        background-color: var(--wp--preset--color--black) !important;
+    }
+
+    .has-cyan-bluish-gray-background-color {
+        background-color: var(--wp--preset--color--cyan-bluish-gray) !important;
+    }
+
+    .has-white-background-color {
+        background-color: var(--wp--preset--color--white) !important;
+    }
+
+    .has-pale-pink-background-color {
+        background-color: var(--wp--preset--color--pale-pink) !important;
+    }
+
+    .has-vivid-red-background-color {
+        background-color: var(--wp--preset--color--vivid-red) !important;
+    }
+
+    .has-luminous-vivid-orange-background-color {
+        background-color: var(--wp--preset--color--luminous-vivid-orange) !important;
+    }
+
+    .has-luminous-vivid-amber-background-color {
+        background-color: var(--wp--preset--color--luminous-vivid-amber) !important;
+    }
+
+    .has-light-green-cyan-background-color {
+        background-color: var(--wp--preset--color--light-green-cyan) !important;
+    }
+
+    .has-vivid-green-cyan-background-color {
+        background-color: var(--wp--preset--color--vivid-green-cyan) !important;
+    }
+
+    .has-pale-cyan-blue-background-color {
+        background-color: var(--wp--preset--color--pale-cyan-blue) !important;
+    }
+
+    .has-vivid-cyan-blue-background-color {
+        background-color: var(--wp--preset--color--vivid-cyan-blue) !important;
+    }
+
+    .has-vivid-purple-background-color {
+        background-color: var(--wp--preset--color--vivid-purple) !important;
+    }
+
+    .has-black-border-color {
+        border-color: var(--wp--preset--color--black) !important;
+    }
+
+    .has-cyan-bluish-gray-border-color {
+        border-color: var(--wp--preset--color--cyan-bluish-gray) !important;
+    }
+
+    .has-white-border-color {
+        border-color: var(--wp--preset--color--white) !important;
+    }
+
+    .has-pale-pink-border-color {
+        border-color: var(--wp--preset--color--pale-pink) !important;
+    }
+
+    .has-vivid-red-border-color {
+        border-color: var(--wp--preset--color--vivid-red) !important;
+    }
+
+    .has-luminous-vivid-orange-border-color {
+        border-color: var(--wp--preset--color--luminous-vivid-orange) !important;
+    }
+
+    .has-luminous-vivid-amber-border-color {
+        border-color: var(--wp--preset--color--luminous-vivid-amber) !important;
+    }
+
+    .has-light-green-cyan-border-color {
+        border-color: var(--wp--preset--color--light-green-cyan) !important;
+    }
+
+    .has-vivid-green-cyan-border-color {
+        border-color: var(--wp--preset--color--vivid-green-cyan) !important;
+    }
+
+    .has-pale-cyan-blue-border-color {
+        border-color: var(--wp--preset--color--pale-cyan-blue) !important;
+    }
+
+    .has-vivid-cyan-blue-border-color {
+        border-color: var(--wp--preset--color--vivid-cyan-blue) !important;
+    }
+
+    .has-vivid-purple-border-color {
+        border-color: var(--wp--preset--color--vivid-purple) !important;
+    }
+
+    .has-vivid-cyan-blue-to-vivid-purple-gradient-background {
+        background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;
+    }
+
+    .has-light-green-cyan-to-vivid-green-cyan-gradient-background {
+        background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;
+    }
+
+    .has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background {
+        background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;
+    }
+
+    .has-luminous-vivid-orange-to-vivid-red-gradient-background {
+        background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;
+    }
+
+    .has-very-light-gray-to-cyan-bluish-gray-gradient-background {
+        background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;
+    }
+
+    .has-cool-to-warm-spectrum-gradient-background {
+        background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;
+    }
+
+    .has-blush-light-purple-gradient-background {
+        background: var(--wp--preset--gradient--blush-light-purple) !important;
+    }
+
+    .has-blush-bordeaux-gradient-background {
+        background: var(--wp--preset--gradient--blush-bordeaux) !important;
+    }
+
+    .has-luminous-dusk-gradient-background {
+        background: var(--wp--preset--gradient--luminous-dusk) !important;
+    }
+
+    .has-pale-ocean-gradient-background {
+        background: var(--wp--preset--gradient--pale-ocean) !important;
+    }
+
+    .has-electric-grass-gradient-background {
+        background: var(--wp--preset--gradient--electric-grass) !important;
+    }
+
+    .has-midnight-gradient-background {
+        background: var(--wp--preset--gradient--midnight) !important;
+    }
+
+    .has-small-font-size {
+        font-size: var(--wp--preset--font-size--small) !important;
+    }
+
+    .has-medium-font-size {
+        font-size: var(--wp--preset--font-size--medium) !important;
+    }
+
+    .has-large-font-size {
+        font-size: var(--wp--preset--font-size--large) !important;
+    }
+
+    .has-x-large-font-size {
+        font-size: var(--wp--preset--font-size--x-large) !important;
+    }
+
+    .wp-block-navigation a:where(:not(.wp-element-button)) {
+        color: inherit;
+    }
+
+    :where(.wp-block-post-template.is-layout-flex) {
+        gap: 1.25em;
+    }
+
+    :where(.wp-block-post-template.is-layout-grid) {
+        gap: 1.25em;
+    }
+
+    :where(.wp-block-columns.is-layout-flex) {
+        gap: 2em;
+    }
+
+    :where(.wp-block-columns.is-layout-grid) {
+        gap: 2em;
+    }
+
+    .wp-block-pullquote {
+        font-size: 1.5em;
+        line-height: 1.6;
+    }
+    </style>
+    <link rel='stylesheet' id='twentyeleven-block-style-css' href='https://statmodeling.stat.columbia.edu/wp-content/themes/twentyeleven/blocks.css?ver=20190102' type='text/css' media='all'/>
+    <style id='akismet-widget-style-inline-css' type='text/css'>
+    .a-stats {
+        --akismet-color-mid-green: #357b49;
+        --akismet-color-white: #fff;
+        --akismet-color-light-grey: #f6f7f7;
+        max-width: 350px;
+        width: auto;
+    }
+
+    .a-stats * {
+        all: unset;
+        box-sizing: border-box;
+    }
+
+    .a-stats strong {
+        font-weight: 600;
+    }
+
+    .a-stats a.a-stats__link, .a-stats a.a-stats__link:visited, .a-stats a.a-stats__link:active {
+        background: var(--akismet-color-mid-green);
+        border: none;
+        box-shadow: none;
+        border-radius: 8px;
+        color: var(--akismet-color-white);
+        cursor: pointer;
+        display: block;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen-Sans', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
+        font-weight: 500;
+        padding: 12px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }/* Extra specificity to deal with TwentyTwentyOne focus style */
+
+    .widget .a-stats a.a-stats__link:focus {
+        background: var(--akismet-color-mid-green);
+        color: var(--akismet-color-white);
+        text-decoration: none;
+    }
+
+    .a-stats a.a-stats__link:hover {
+        filter: brightness(110%);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 0 2px rgba(0, 0, 0, 0.16);
+    }
+
+    .a-stats .count {
+        color: var(--akismet-color-white);
+        display: block;
+        font-size: 1.5em;
+        line-height: 1.4;
+        padding: 0 13px;
+        white-space: nowrap;
+    }
+    </style>
+    <script type="text/javascript" src="https://statmodeling.stat.columbia.edu/wp-includes/js/jquery/jquery.min.js?ver=3.7.1" id="jquery-core-js"></script>
+    <script type="text/javascript" src="https://statmodeling.stat.columbia.edu/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1" id="jquery-migrate-js"></script>
+    <script type="text/javascript" src="https://statmodeling.stat.columbia.edu/wp-content/plugins/wp-quicklatex/js/wp-quicklatex-frontend.js?ver=1.0" id="wp-quicklatex-frontend-js"></script>
+    <link rel="https://api.w.org/" href="https://statmodeling.stat.columbia.edu/wp-json/"/>
+    <link rel="alternate" type="application/json" href="https://statmodeling.stat.columbia.edu/wp-json/wp/v2/posts/52935"/>
+    <link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://statmodeling.stat.columbia.edu/xmlrpc.php?rsd"/>
+    <link rel="canonical" href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/"/>
+    <link rel='shortlink' href='https://statmodeling.stat.columbia.edu/?p=52935'/>
+    <link rel="alternate" type="application/json+oembed" href="https://statmodeling.stat.columbia.edu/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fstatmodeling.stat.columbia.edu%2F2025%2F12%2F15%2Fsimulating-from-and-checking-a-model-in-stan%2F"/>
+    <link rel="alternate" type="text/xml+oembed" href="https://statmodeling.stat.columbia.edu/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fstatmodeling.stat.columbia.edu%2F2025%2F12%2F15%2Fsimulating-from-and-checking-a-model-in-stan%2F&#038;format=xml"/>
+
+    <!-- GA Google Analytics @ https://m0n.co/ga -->
+    <script>
+    (function(i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function() {
+            (i[r].q = i[r].q || []).push(arguments)
+        },
+        i[r].l = 1 * new Date();
+        a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-46652329-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
+    <style>
+    /* Link color */
+    a, #site-title a:focus, #site-title a:hover, #site-title a:active, .entry-title a:hover, .entry-title a:focus, .entry-title a:active, .widget_twentyeleven_ephemera .comments-link a:hover, section.recent-posts .other-recent-posts a[rel="bookmark"]:hover, section.recent-posts .other-recent-posts .comments-link a:hover, .format-image footer.entry-meta a:hover, #site-generator a:hover {
+        color: #1a5ead;
+    }
+
+    section.recent-posts .other-recent-posts .comments-link a:hover {
+        border-color: #1a5ead;
+    }
+
+    article.feature-image.small .entry-summary p a:hover, .entry-header .comments-link a:hover, .entry-header .comments-link a:focus, .entry-header .comments-link a:active, .feature-slider a.active {
+        background-color: #1a5ead;
+    }
+    </style>
+    <style type="text/css">
+    .recentcomments a {
+        display: inline !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    </style>
+    <style type="text/css" id="custom-background-css">
+    body.custom-background {
+        background-color: #ffffff;
+    }
+    </style>
+</head>
+
+<body class="post-template-default single single-post postid-52935 single-format-standard custom-background wp-embed-responsive two-column right-sidebar moz-sidebar-adjust">
+    <div class="skip-link">
+        <a class="assistive-text" href="#content">Skip to primary content</a>
+    </div>
+    <div id="page" class="hfeed">
+        <header id="branding" role="banner">
+            <hgroup>
+                <h1 id="site-title">
+                    <span>
+                        <a href="https://statmodeling.stat.columbia.edu/" rel="home">Statistical Modeling, Causal Inference, and Social Science</a>
+                    </span>
+                </h1>
+                <h2 id="site-description"></h2>
+            </hgroup>
+
+            <form method="get" id="searchform" action="https://statmodeling.stat.columbia.edu/">
+                <label for="s" class="assistive-text">Search</label>
+                <input type="text" class="field" name="s" id="s" placeholder="Search"/>
+                <input type="submit" class="submit" name="submit" id="searchsubmit" value="Search"/>
+            </form>
+
+            <nav id="access" role="navigation">
+                <h3 class="assistive-text">Main menu</h3>
+                <div class="menu-main-menu-container">
+                    <ul id="menu-main-menu" class="menu">
+                        <li id="menu-item-46579" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-home menu-item-46579">
+                            <a href="https://statmodeling.stat.columbia.edu/">Home</a>
+                        </li>
+                        <li id="menu-item-46580" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-46580">
+                            <a href="https://statmodeling.stat.columbia.edu/authors/">Authors</a>
+                        </li>
+                        <li id="menu-item-46582" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-46582">
+                            <a href="https://statmodeling.stat.columbia.edu/blogs-i-read/">Blogs We Read</a>
+                        </li>
+                        <li id="menu-item-50993" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-50993">
+                            <a href="https://statmodeling.stat.columbia.edu/books/">Books</a>
+                        </li>
+                        <li id="menu-item-46584" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-46584">
+                            <a href="https://statmodeling.stat.columbia.edu/sponsors/">Sponsors</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <!-- #access -->
+        </header>
+        <!-- #branding -->
+
+        <div id="main">
+
+            <div id="primary">
+                <div id="content" role="main">
+
+                    <nav id="nav-single">
+                        <h3 class="assistive-text">Post navigation</h3>
+                        <span class="nav-previous">
+                            <a href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/" rel="prev">Who is the most famous living person who was born on each continent?</a>
+                        </span>
+                        <span class="nav-next"></span>
+                    </nav>
+                    <!-- #nav-single -->
+
+                    <article id="post-52935" class="post-52935 post type-post status-publish format-standard hentry category-bayesian-statistics category-stan category-statistical-computing">
+                        <header class="entry-header">
+                            <h1 class="entry-title">Simulating from and checking a model in Stan:  It&#8217;s so easy in Stan Playground&#8211;it just runs on your browser!</h1>
+
+                            <div class="entry-meta">
+                                <span class="sep">Posted on </span>
+                                <a href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/" title="4:34 pm" rel="bookmark">
+                                    <time class="entry-date" datetime="2025-12-15T16:34:38-05:00">December 15, 2025 4:34 PM</time>
+                                </a>
+                                <span class="by-author">
+                                    <span class="sep"> by </span>
+                                    <span class="author vcard">
+                                        <a class="url fn n" href="https://statmodeling.stat.columbia.edu/author/andrew/" title="View all posts by Andrew" rel="author">Andrew</a>
+                                    </span>
+                                </span>
+                            </div>
+                            <!-- .entry-meta -->
+                        </header>
+                        <!-- .entry-header -->
+
+                        <div class="entry-content">
+                            <p>
+                                <img fetchpriority="high" decoding="async" src="https://statmodeling.stat.columbia.edu/wp-content/uploads/2025/12/Screenshot-2025-12-15-at-16.32.42-1024x537.png" alt="" width="584" height="306" class="alignnone size-large wp-image-52937" srcset="https://statmodeling.stat.columbia.edu/wp-content/uploads/2025/12/Screenshot-2025-12-15-at-16.32.42-1024x537.png 1024w, https://statmodeling.stat.columbia.edu/wp-content/uploads/2025/12/Screenshot-2025-12-15-at-16.32.42-300x157.png 300w, https://statmodeling.stat.columbia.edu/wp-content/uploads/2025/12/Screenshot-2025-12-15-at-16.32.42-768x403.png 768w, https://statmodeling.stat.columbia.edu/wp-content/uploads/2025/12/Screenshot-2025-12-15-at-16.32.42-1536x806.png 1536w, https://statmodeling.stat.columbia.edu/wp-content/uploads/2025/12/Screenshot-2025-12-15-at-16.32.42-2048x1074.png 2048w, https://statmodeling.stat.columbia.edu/wp-content/uploads/2025/12/Screenshot-2025-12-15-at-16.32.42-500x262.png 500w" sizes="(max-width: 584px) 100vw, 584px"/>
+                            </p>
+                            <p>When building models, it&#8217;s helpful to check our understanding by simulating fake data and seeing if the fitted model can recover the true underlying parameters.  And it&#8217;s so easy to do in Stan!</p>
+                            <p>
+                                See above&#8211;I just did a simple example in 
+                                <a href="https://statmodeling.stat.columbia.edu/2024/10/31/stan-playground-run-stan-on-the-web-play-with-your-program-and-data-at-will-and-no-need-to-download-anything-on-your-computer/">Stan Playground</a>
+                                .  (Thanks, Brian!)  The code&#8217;s kind of ugly because I specified the true parameter values in the transformed data block Stan code rather than calling them as data; on the upside the whole thing is then in one program.
+                            </p>
+                            <p>
+                                This is not the same as full 
+                                <a href="https://sites.stat.columbia.edu/gelman/research/published/2211.02383.pdf">simulation-based calibration checking</a>
+                                 (SBC).  In SBC you draw the true parameter values from the prior, repeat the entire process in parallel many times, and then check the average coverage of posterior inferences with respect to the true parameter values, averaging over the prior.  Here I&#8217;m just running one simulation and setting the true parameter values just once.  It&#8217;s a kind of 
+                                <a href="https://sites.stat.columbia.edu/gelman/research/unpublished/Approximate_posterior_calibration.pdf">quick-and-dirty</a>
+                                 SBC which can still be useful in catching problems such as nonidentified models or poor mixing.
+                            </p>
+                            <p>And it&#8217;s so easy to do!  Whenever you fit a model, you should be checking it on fake data.</p>
+                            <p>I was doing the above example because I wanted to quickly check for one of the exercises I&#8217;m writing for the forthcoming Bayesian Workflow book.</p>
+                            <p>
+                                <strong>P.S.</strong>
+                                  Here&#8217;s the code for the above example if you want to try it yourself:
+                                <br/>
+                                <span id="more-52935"></span>
+                            </p>
+                            <pre>
+                            transformed data {
+                              int N = 100;
+                              real a_true = 0.2;
+                              real b_true = 0.3;
+                              real sigma_true = 0.2;
+                              vector[N] x;
+                              vector[N] y;
+                               for (n in 1:N) {
+                                x[n] = uniform_rng(0, 10);
+                                y[n] = normal_rng(1 / (a_true + b_true * x[n]), sigma_true);
+                              }
+                            }
+                            parameters {
+                              real&lt;lower=0> a, b, sigma;
+                            }
+                            model {
+                              a ~ normal(0, 1);
+                              b ~ normal(0, 1);
+                              for (n in 1:N) {
+                                y[n] ~ normal(1 / (a + b * x[n]), sigma);
+                              }
+                            }
+                            </pre>
+                        </div>
+                        <!-- .entry-content -->
+
+                        <footer class="entry-meta">
+
+                            		This entry was posted in 
+                            <a href="https://statmodeling.stat.columbia.edu/category/bayesian-statistics/" rel="category tag">Bayesian Statistics</a>
+                            , 
+                            <a href="https://statmodeling.stat.columbia.edu/category/stan/" rel="category tag">Stan</a>
+                            , 
+                            <a href="https://statmodeling.stat.columbia.edu/category/statistical-computing/" rel="category tag">Statistical Computing</a>
+                             by 
+                            <a href="https://statmodeling.stat.columbia.edu/author/andrew/">Andrew</a>
+                            . Bookmark the 
+                            <a href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/" title="Permalink to Simulating from and checking a model in Stan:  It&#8217;s so easy in Stan Playground&#8211;it just runs on your browser!" rel="bookmark">permalink</a>
+                            .
+                            		
+                            			
+                        </footer>
+                        <!-- .entry-meta -->
+                    </article>
+                    <!-- #post-52935 -->
+
+                    <div id="comments">
+
+                        <h2 id="comments-title">
+
+                            			2 thoughts on &ldquo;
+                            <span>Simulating from and checking a model in Stan:  It&#8217;s so easy in Stan Playground&#8211;it just runs on your browser!</span>
+                            &rdquo;		
+                        </h2>
+
+                        <ol class="commentlist">
+                            <li class="comment even thread-even depth-1" id="li-comment-2407169">
+                                <article id="comment-2407169" class="comment">
+                                    <footer class="comment-meta">
+                                        <div class="comment-author vcard">
+                                            <img alt='' src='https://secure.gravatar.com/avatar/198d46fec796b626df44a82613a04973?s=68&#038;d=identicon&#038;r=g' srcset='https://secure.gravatar.com/avatar/198d46fec796b626df44a82613a04973?s=136&#038;d=identicon&#038;r=g 2x' class='avatar avatar-68 photo' height='68' width='68' decoding='async'/>
+                                            <span class="fn">Cedric</span>
+                                             on 
+                                            <a href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/#comment-2407169">
+                                                <time datetime="2025-12-15T17:32:35-05:00">December 15, 2025 5:32 PM at 5:32 pm</time>
+                                            </a>
+                                            <span class="says">said:</span>
+                                        </div>
+                                        <!-- .comment-author .vcard -->
+
+                                    </footer>
+
+                                    <div class="comment-content">
+                                        <p>Oh, that might be the right time to ask about that: I sincerely don&#8217;t understand what the point is of doing this check. I remember having the same question while reading Regression and Other Stories (§7.2 Checking the model-fitting procedure using fake-data simulation). Actually I&#8217;ll copy here what I wrote at the time in the margin:</p>
+                                        <p>&#8220;I don&#8217;t get it, what are we checking exactly? That a linear phenomenon can be linearly modelized? I don&#8217;t care that fake data created from our model is coherent with our model, can that even ever fail? Or is that section just a demo for when we have real-world data to check against? Probably not since we&#8217;re doing it in a loop. Or maybe it&#8217;s of use in some kind of bootstrap?&#8221;</p>
+                                        <p>Truthfully, I&#8217;m still at that point: I don&#8217;t see how generating data using the structure of our model, then fitting that data with our model can fail (outside of truly eggregious random sampling) and I don&#8217;t understand what we&#8217;d learn from such a failure. You mention &#8220;nonidentified models or poor mixing&#8221; but can you expand on what you mean by that?</p>
+                                    </div>
+
+                                    <div class="reply">
+                                        <a rel='nofollow' class='comment-reply-link' href='https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/?replytocom=2407169#respond' data-commentid="2407169" data-postid="52935" data-belowelement="comment-2407169" data-respondelement="respond" data-replyto="Reply to Cedric" aria-label='Reply to Cedric'>
+                                            Reply 
+                                            <span>&darr;</span>
+                                        </a>
+                                    </div>
+                                    <!-- .reply -->
+                                </article>
+                                <!-- #comment-## -->
+
+                                <ul class="children">
+                                    <li class="comment byuser comment-author-andrew bypostauthor odd alt depth-2" id="li-comment-2407170">
+                                        <article id="comment-2407170" class="comment">
+                                            <footer class="comment-meta">
+                                                <div class="comment-author vcard">
+                                                    <img alt='' src='https://secure.gravatar.com/avatar/d582b760aff3a7d7ce1197505fb57837?s=39&#038;d=identicon&#038;r=g' srcset='https://secure.gravatar.com/avatar/d582b760aff3a7d7ce1197505fb57837?s=78&#038;d=identicon&#038;r=g 2x' class='avatar avatar-39 photo' height='39' width='39' decoding='async'/>
+                                                    <span class="fn">
+                                                        <a href="http://www.stat.columbia.edu/~gelman/" class="url" rel="ugc external nofollow">Andrew</a>
+                                                    </span>
+                                                     on 
+                                                    <a href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/#comment-2407170">
+                                                        <time datetime="2025-12-15T17:50:33-05:00">December 15, 2025 5:50 PM at 5:50 pm</time>
+                                                    </a>
+                                                    <span class="says">said:</span>
+                                                </div>
+                                                <!-- .comment-author .vcard -->
+
+                                            </footer>
+
+                                            <div class="comment-content">
+                                                <p>Cedric:</p>
+                                                <p>Model fits can fail all the time!  As a simple illustration, try the above example with flat priors on a and b and it will indeed blow up.</p>
+                                                <p>More generally, every fitting algorithm I&#8217;ve ever seen can have problems.  Whether you&#8217;re using Hamiltonian Monte Carlo or variational inference or expectation propagation or nested Laplace or just plain optimization, we frequently run into real-world problems where the models don&#8217;t fit, sometimes because of poor mixing (the algorithms don&#8217;t do a good job of traversing parameter space), sometimes because of poor identification (the target function (in a Bayesian context, the unnormalized posterior density) has an infinite integral or includes all sorts of weird faraway regions, sometimes because the mode of the target function is degenerate (when you&#8217;re doing optimization), sometimes because the approximations in the approximation part of your algorithm (for variational inference or expectation propagation) are too approximate, sometimes because there&#8217;s a bug in your modeling code, . . . all sorts of reasons!</p>
+                                                <p>
+                                                    If your program can fit data simulated from the model, that doesn&#8217;t demonstrate that it&#8217;s a good model or that it will fit well with real data.  It&#8217;s a minimum check.  If you&#8217;re program 
+                                                    <em>can&#8217;t</em>
+                                                     fit data simulated from the model, then that&#8217;s something that you&#8217;ll want to know right away.  And, given that this happens often, it makes sense to do the check.
+                                                </p>
+                                                <p>
+                                                    Beyond all that, 
+                                                    <a href="https://statmodeling.stat.columbia.edu/2023/02/28/whats-so-funny-bout-fake-data-simulation/" rel="ugc">I find fake-data simulation helpful</a>
+                                                     because it can clarify what I&#8217;m doing with my model.  The thing about fake-data simulation is that it&#8217;s generative.  Often we can write a model and it kinda looks ok, both in math and in code, but then when we try to simulate from it generatively, we realize it&#8217;s missing some pieces.
+                                                </p>
+                                            </div>
+
+                                            <div class="reply">
+                                                <a rel='nofollow' class='comment-reply-link' href='https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/?replytocom=2407170#respond' data-commentid="2407170" data-postid="52935" data-belowelement="comment-2407170" data-respondelement="respond" data-replyto="Reply to Andrew" aria-label='Reply to Andrew'>
+                                                    Reply 
+                                                    <span>&darr;</span>
+                                                </a>
+                                            </div>
+                                            <!-- .reply -->
+                                        </article>
+                                        <!-- #comment-## -->
+
+                                    </li>
+                                    <!-- #comment-## -->
+                                </ul>
+                                <!-- .children -->
+                            </li>
+                            <!-- #comment-## -->
+                        </ol>
+
+                        <div id="respond" class="comment-respond">
+                            <h3 id="reply-title" class="comment-reply-title">
+                                Leave a Reply 
+                                <small>
+                                    <a rel="nofollow" id="cancel-comment-reply-link" href="/2025/12/15/simulating-from-and-checking-a-model-in-stan/#respond" style="display:none;">Cancel reply</a>
+                                </small>
+                            </h3>
+                            <form action="https://statmodeling.stat.columbia.edu/wp-comments-post.php?wpe-comment-post=statmodeling" method="post" id="commentform" class="comment-form">
+                                <p class="comment-notes">
+                                    <span id="email-notes">Your email address will not be published.</span>
+                                    <span class="required-field-message">
+                                        Required fields are marked 
+                                        <span class="required">*</span>
+                                    </span>
+                                </p>
+                                <p class="comment-form-comment">
+                                    <label for="comment">
+                                        Comment 
+                                        <span class="required">*</span>
+                                    </label>
+                                    <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required="required"></textarea>
+                                </p>
+                                <p class="comment-form-author">
+                                    <label for="author">Name</label>
+                                    <input id="author" name="author" type="text" value="" size="30" maxlength="245" autocomplete="name"/>
+                                </p>
+                                <p class="comment-form-email">
+                                    <label for="email">Email</label>
+                                    <input id="email" name="email" type="text" value="" size="30" maxlength="100" aria-describedby="email-notes" autocomplete="email"/>
+                                </p>
+                                <p class="comment-form-url">
+                                    <label for="url">Website</label>
+                                    <input id="url" name="url" type="text" value="" size="30" maxlength="200" autocomplete="url"/>
+                                </p>
+                                <p class="form-submit">
+                                    <input name="submit" type="submit" id="submit" class="submit" value="Post Comment"/>
+                                    <input type='hidden' name='comment_post_ID' value='52935' id='comment_post_ID'/>
+                                    <input type='hidden' name='comment_parent' id='comment_parent' value='0'/>
+                                </p>
+                                <p style="display: none;">
+                                    <input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="2c0ae4a214"/>
+                                </p>
+                                <p style="display: none !important;" class="akismet-fields-container" data-prefix="ak_">
+                                    <label>
+                                        &#916;
+                                        <textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100"></textarea>
+                                    </label>
+                                    <input type="hidden" id="ak_js_1" name="ak_js" value="146"/>
+                                    <script>
+                                    document.getElementById("ak_js_1").setAttribute("value", (new Date()).getTime());
+                                    </script>
+                                </p>
+                            </form>
+                        </div>
+                        <!-- #respond -->
+
+                    </div>
+                    <!-- #comments -->
+
+                </div>
+                <!-- #content -->
+            </div>
+            <!-- #primary -->
+
+            <div id="secondary" class="widget-area" role="complementary">
+                <aside id="block-3" class="widget widget_block widget_categories">
+                    <ul class="wp-block-categories-list wp-block-categories">
+                        <li class="cat-item cat-item-25">
+                            <a href="https://statmodeling.stat.columbia.edu/category/art/">Art</a>
+                        </li>
+                        <li class="cat-item cat-item-12">
+                            <a href="https://statmodeling.stat.columbia.edu/category/bayesian-statistics/">Bayesian Statistics</a>
+                        </li>
+                        <li class="cat-item cat-item-13">
+                            <a href="https://statmodeling.stat.columbia.edu/category/causal-inference/">Causal Inference</a>
+                        </li>
+                        <li class="cat-item cat-item-11">
+                            <a href="https://statmodeling.stat.columbia.edu/category/decision-theory/">Decision Analysis</a>
+                        </li>
+                        <li class="cat-item cat-item-19">
+                            <a href="https://statmodeling.stat.columbia.edu/category/economics/">Economics</a>
+                        </li>
+                        <li class="cat-item cat-item-239">
+                            <a href="https://statmodeling.stat.columbia.edu/category/jobs/">Jobs</a>
+                        </li>
+                        <li class="cat-item cat-item-21">
+                            <a href="https://statmodeling.stat.columbia.edu/category/literature/">Literature</a>
+                        </li>
+                        <li class="cat-item cat-item-23">
+                            <a href="https://statmodeling.stat.columbia.edu/category/miscellaneous-science/">Miscellaneous Science</a>
+                        </li>
+                        <li class="cat-item cat-item-16">
+                            <a href="https://statmodeling.stat.columbia.edu/category/miscellaneous-statistics/">Miscellaneous Statistics</a>
+                        </li>
+                        <li class="cat-item cat-item-14">
+                            <a href="https://statmodeling.stat.columbia.edu/category/multilevel-modeling/">Multilevel Modeling</a>
+                        </li>
+                        <li class="cat-item cat-item-323">
+                            <a href="https://statmodeling.stat.columbia.edu/category/obituaries/">Obituaries</a>
+                        </li>
+                        <li class="cat-item cat-item-257">
+                            <a href="https://statmodeling.stat.columbia.edu/category/papers/">Papers</a>
+                        </li>
+                        <li class="cat-item cat-item-10">
+                            <a href="https://statmodeling.stat.columbia.edu/category/political-science/">Political Science</a>
+                        </li>
+                        <li class="cat-item cat-item-17">
+                            <a href="https://statmodeling.stat.columbia.edu/category/public-health/">Public Health</a>
+                        </li>
+                        <li class="cat-item cat-item-15">
+                            <a href="https://statmodeling.stat.columbia.edu/category/sociology/">Sociology</a>
+                        </li>
+                        <li class="cat-item cat-item-44">
+                            <a href="https://statmodeling.stat.columbia.edu/category/sports/">Sports</a>
+                        </li>
+                        <li class="cat-item cat-item-94">
+                            <a href="https://statmodeling.stat.columbia.edu/category/stan/">Stan</a>
+                        </li>
+                        <li class="cat-item cat-item-22">
+                            <a href="https://statmodeling.stat.columbia.edu/category/statistical-computing/">Statistical Computing</a>
+                        </li>
+                        <li class="cat-item cat-item-24">
+                            <a href="https://statmodeling.stat.columbia.edu/category/statistical-graphics/">Statistical Graphics</a>
+                        </li>
+                        <li class="cat-item cat-item-20">
+                            <a href="https://statmodeling.stat.columbia.edu/category/teaching/">Teaching</a>
+                        </li>
+                        <li class="cat-item cat-item-27">
+                            <a href="https://statmodeling.stat.columbia.edu/category/zombies/">Zombies</a>
+                        </li>
+                    </ul>
+                </aside>
+                <aside id="block-4" class="widget widget_block">
+                    <div class="wp-block-columns is-layout-flex wp-container-core-columns-layout-2 wp-block-columns-is-layout-flex">
+                        <div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow" style="flex-basis:100%">
+                            <div class="wp-block-group is-layout-flow wp-block-group-is-layout-flow">
+                                <div class="wp-block-group__inner-container">
+                                    <div class="wp-block-columns is-layout-flex wp-container-core-columns-layout-1 wp-block-columns-is-layout-flex">
+                                        <div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow" style="flex-basis:100%">
+                                            <div class="wp-block-group is-layout-flow wp-block-group-is-layout-flow">
+                                                <div class="wp-block-group__inner-container">
+                                                    <ol class="has-dates has-excerpts wp-block-latest-comments">
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/#comment-2407170">Simulating from and checking a model in Stan:  It&#8217;s so easy in Stan Playground&#8211;it just runs on your browser!</a>
+                                                                    <time datetime="2025-12-15T17:50:33-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 5:50 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Cedric: Model fits can fail all the time! As a simple illustration, try the above example with flat priors on&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Cedric</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/simulating-from-and-checking-a-model-in-stan/#comment-2407169">Simulating from and checking a model in Stan:  It&#8217;s so easy in Stan Playground&#8211;it just runs on your browser!</a>
+                                                                    <time datetime="2025-12-15T17:32:35-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 5:32 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Oh, that might be the right time to ask about that: I sincerely don't understand what the point is of&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://likelyllc.com">Andre Zapico</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407168">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T16:39:15-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 4:39 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>I’m a Shakira fan but given the fan-base of football (soccer) I’d have to bet on Messi. No one in&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Adrie Visscher</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/11/we-conclude-that-apparent-effects-of-growth-mindset-interventions-on-academic-achievement-are-likely-attributable-to-inadequate-study-design-reporting-flaws-and-bias/#comment-2407167">&#8220;We conclude that apparent effects of growth mindset interventions on academic achievement are likely attributable to inadequate study design, reporting flaws, and bias.&#8221;</a>
+                                                                    <time datetime="2025-12-15T16:22:04-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 4:22 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>https://psycnet.apa.org/manuscript/2023-90931-003.pdf</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/10/is-there-a-through-line-from-b-s-numbers-in-junk-science-to-b-s-numbers-coming-from-the-government/#comment-2407166">25,000 lives saved per ship sunk, $100,000 per citation, a probability of 10^-90 of a decisive vote . . . Is there a through line from B.S. numbers in junk science to B.S. numbers coming from the government?</a>
+                                                                    <time datetime="2025-12-15T16:19:04-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 4:19 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>We keep pushing that rock up the hill . . .</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">John Quiggin</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/10/is-there-a-through-line-from-b-s-numbers-in-junk-science-to-b-s-numbers-coming-from-the-government/#comment-2407165">25,000 lives saved per ship sunk, $100,000 per citation, a probability of 10^-90 of a decisive vote . . . Is there a through line from B.S. numbers in junk science to B.S. numbers coming from the government?</a>
+                                                                    <time datetime="2025-12-15T16:14:23-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 4:14 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Blasts from the past ! I was slamming Sunstein (along with the odious Adrian Vermeule) on my blog back in&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">RJ</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/09/24/more-on-the-decline-and-fall-of-steven-levitt/#comment-2407164">More on the decline and fall of Steven Levitt</a>
+                                                                    <time datetime="2025-12-15T15:02:41-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 3:02 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Andrew, I think I will write that book someday ... and you can skewer my work in this blog afterwards!</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Anonymous</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407163">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T14:59:18-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:59 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Some possible lyrics for a new one: https://statmodeling.stat.columbia.edu/2025/08/29/the-mantra-and-mania-of-data-sharing/#comment-2402883</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Thomas Lumley</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407162">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T14:53:22-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:53 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>I came here to suggest Allan Border for this reason, but if Obama counts he's clearly the top.</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">RJ</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/09/24/more-on-the-decline-and-fall-of-steven-levitt/#comment-2407161">More on the decline and fall of Steven Levitt</a>
+                                                                    <time datetime="2025-12-15T14:50:24-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:50 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Levitt mentioned that the idea of the name originated from his sister. It does go well with the shtick of&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="https://twitter.com/shiraamitchell">shira</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/09/survey-statistics-divine-probabilities/#comment-2407160">Survey Statistics: divine probabilities</a>
+                                                                    <time datetime="2025-12-15T14:50:08-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:50 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Thanks, AnonToo ! I now understand Anon better. A device (model for inclusion) is used to estimate the divine probabilities.&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/09/24/more-on-the-decline-and-fall-of-steven-levitt/#comment-2407159">More on the decline and fall of Steven Levitt</a>
+                                                                    <time datetime="2025-12-15T14:30:02-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:30 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Rj: 1. I have no idea if a book with all of Freakonomics's positive qualities and none of its negative&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407158">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T14:24:04-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:24 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Carlos: Interesting! From the wikipedia article on Oceania: The United Nations (UN) has used its own geopolitical definition of Oceania&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">RJ</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/09/24/more-on-the-decline-and-fall-of-steven-levitt/#comment-2407157">More on the decline and fall of Steven Levitt</a>
+                                                                    <time datetime="2025-12-15T14:21:53-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:21 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Then write that book that can be a counterpoint to the Freakonomics books. The best way to counter books "promoting&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Max Shepsi</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407156">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T14:14:44-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:14 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>I would've thought a cricketer from Australia or NZ would be. India has a large population and cricket is huge&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Chris</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407155">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T14:09:44-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:09 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Kylie Minogue may be the most famous Ocianiaista still these things can change quickly.</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Chris P</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407154">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T14:03:19-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 2:03 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Rebecca Black was the most famous person born on Friday, Friday, gotta get down on Friday</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Carlos Ungil</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407153">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T13:10:22-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 1:10 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Quoting the classics, that’s just like your opinion, man. https://en.wikipedia.org/wiki/Polynesia</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407152">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T12:56:25-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 12:56 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Carlos: Hawaii is a Pacific island and is part of North America only in a political or jurisdictional sense. But&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Carlos Ungil</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407151">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T12:47:12-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 12:47 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>&gt; Maybe Rupert Murdoch is the most famous living person who was born in Oceania? Maybe at one time Mel&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="https://www.junkcharts.com">Kaiser</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407149">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T12:25:34-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 12:25 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>This question has a better answer if it is asked of subpopulations: "Who is the most famous living person born&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">BB</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407148">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T11:41:56-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 11:41 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Similarly I don't think Kim Jong Un would beat out Modi or Xi. This may be true for who is&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Phil</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/10/is-there-a-through-line-from-b-s-numbers-in-junk-science-to-b-s-numbers-coming-from-the-government/#comment-2407147">25,000 lives saved per ship sunk, $100,000 per citation, a probability of 10^-90 of a decisive vote . . . Is there a through line from B.S. numbers in junk science to B.S. numbers coming from the government?</a>
+                                                                    <time datetime="2025-12-15T11:31:32-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 11:31 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>In your example, wouldn't it be that 1 kg of heroin injected efficiently would kill 50,000 people?</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Rodney Sparapani</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407146">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T11:10:44-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 11:10 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Hi Andrew: An interesting topic as usual. A lot of this depends on the year and the age of the&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Christopher Lee-Messer</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407145">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T10:57:55-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:57 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Andrew, thank you for another fun post. I recently listed to a holliday song written by acapella science that made&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Victor</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407143">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T10:56:07-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:56 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Mel Gibson was born in Peekskill, NY only a few miles, alas, from where I used to live.</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://michaellugo.com">Michael Lugo</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2022/01/15/the-oldest-famous-person/#comment-2407142">The oldest famous person</a>
+                                                                    <time datetime="2025-12-15T10:48:39-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:48 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>The answer is no longer Jimmy Carter, since he died in December 2024. Dick van Dyke was born December 13,&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Anon</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407141">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T10:38:54-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:38 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>For Oceania you also have Russell Crowe, Margot Robbie, Nicole Kidman. I'd probably put my money on Ms Robbie, especially&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Daniel Lakeland</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407140">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-15T10:16:16-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:16 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Ugh, i always knew ESR was a bit nuts, but i definitely think he must have gotten worse under the&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407139">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T10:10:10-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:10 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>C: I guess the most famous living statistician is Nate Silver, although maybe you're not counting him because he's a&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">C. Peirce</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407138">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T10:02:38-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:02 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Who is the most famous living statistician in the world? For bonus points, the best drummer.</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Anonymous</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/15/who-is-the-most-famous-living-person-who-was-born-on-each-continent/#comment-2407137">Who is the most famous living person who was born on each continent?</a>
+                                                                    <time datetime="2025-12-15T10:01:34-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 10:01 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Reminds me of BBC polls of famous actors. Sometimes they mention Bollywood actors, and Facebook comments are always like "WHO???"&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/09/24/more-on-the-decline-and-fall-of-steven-levitt/#comment-2407135">More on the decline and fall of Steven Levitt</a>
+                                                                    <time datetime="2025-12-15T08:16:42-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 8:16 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Rj: My beef with the Freakonomics team is not that they "leave out nuances" or "cherry pick stories" or that&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407134">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-15T07:59:47-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 7:59 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Elin: I agree with everything you write. Also, amusing point about the cathedral towns being the market towns. That's a&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">9P</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/14/combining-a-high-quality-probability-sample-with-data-from-larger-online-panels/#comment-2407132">Combining a high-quality probability sample with data from larger online panels</a>
+                                                                    <time datetime="2025-12-15T06:54:53-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 6:54 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>This seems like a really helpful paper and I'd like to read it in more detail at some point, but&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Harlan</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/14/combining-a-high-quality-probability-sample-with-data-from-larger-online-panels/#comment-2407130">Combining a high-quality probability sample with data from larger online panels</a>
+                                                                    <time datetime="2025-12-15T01:16:31-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 1:16 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Perhaps of interest— https://arxiv.org/abs/2404.02283 In this, we propose a Bayesian model that combines data from a small non-biased survey with&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">elin</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407128">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-15T00:02:20-05:00" class="wp-block-latest-comments__comment-date">December 15, 2025 12:02 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>I've spent a number of years in the FOSS world, and I think that there is a lot of confusion.&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">RJ</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/09/24/more-on-the-decline-and-fall-of-steven-levitt/#comment-2407127">More on the decline and fall of Steven Levitt</a>
+                                                                    <time datetime="2025-12-14T23:20:58-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 11:20 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Hi Andrew, It seems like you have a beef with Levitt. Yes, I know the Freakonomics books oversimplifies many things.&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Daniel Lakeland</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407126">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-14T14:51:46-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 2:51 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>the point i was making is that if you think of a firm as a cathedral organized top down and&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Anonymous</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407124">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-14T12:17:50-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 12:17 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>&gt; this analogy is highly dependent on our current dominant capitalist system. No, it isn't. It depends only in the&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Daniel Lakeland</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407123">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-14T11:50:31-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 11:50 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Aaron, expertise and coordination are not the same as dominance. tomorrow if Torvalds started keeping things from going into the&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Raphael K</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/14/combining-a-high-quality-probability-sample-with-data-from-larger-online-panels/#comment-2407122">Combining a high-quality probability sample with data from larger online panels</a>
+                                                                    <time datetime="2025-12-14T10:59:17-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 10:59 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>I find it somewhat strange to distinguish between 'good' and 'bad' samples. We can evaluate the quality of an individual&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/14/combining-a-high-quality-probability-sample-with-data-from-larger-online-panels/#comment-2407121">Combining a high-quality probability sample with data from larger online panels</a>
+                                                                    <time datetime="2025-12-14T10:36:04-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 10:36 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Anon: In this case, I think the workflow they are presenting is a formalization of things that they are already&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Anoneuoid</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/14/combining-a-high-quality-probability-sample-with-data-from-larger-online-panels/#comment-2407120">Combining a high-quality probability sample with data from larger online panels</a>
+                                                                    <time datetime="2025-12-14T10:24:06-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 10:24 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>The flow chart is missing anything about checking the predictive skill on new data. In general, there are lots of&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Aaron</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407119">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-14T09:41:15-05:00" class="wp-block-latest-comments__comment-date">December 14, 2025 9:41 AM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>I think some skepticism of Daniel's comment is warranted; even in Linux, the very paradigmatic example of the bazaar model&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="http://www.stat.columbia.edu/~gelman/">Andrew</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407115">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-13T22:39:07-05:00" class="wp-block-latest-comments__comment-date">December 13, 2025 10:39 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Malnourished: Given the topic of the post--different forms of coordination in group activity--I think the comments by Mark and Daniel&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Malnourished James</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407113">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-13T20:15:01-05:00" class="wp-block-latest-comments__comment-date">December 13, 2025 8:15 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>Jesus dude, Do you really have to shoehorn this ideologue shit into every topic?</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Daniel Lakeland</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407112">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-13T17:40:50-05:00" class="wp-block-latest-comments__comment-date">December 13, 2025 5:40 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>this analogy is highly dependent on our current dominant capitalist system. it is not an essential component of firms. for&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <a class="wp-block-latest-comments__comment-author" href="https://bob-carpenter.github.io">Bob Carpenter</a>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/11/a-slew-of-improvements-to-nuts/#comment-2407111">A slew of improvements to NUTS</a>
+                                                                    <time datetime="2025-12-13T16:50:32-05:00" class="wp-block-latest-comments__comment-date">December 13, 2025 4:50 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>I have. It's very easy to switch all this out. I've heard about muon through Robert Gower here at Flatiron&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                        <li class="wp-block-latest-comments__comment">
+                                                            <article>
+                                                                <footer class="wp-block-latest-comments__comment-meta">
+                                                                    <span class="wp-block-latest-comments__comment-author">Mark Phariss</span>
+                                                                     on 
+                                                                    <a class="wp-block-latest-comments__comment-link" href="https://statmodeling.stat.columbia.edu/2025/12/13/the-cathedral-the-bazaar-and-statistical-workflow/#comment-2407110">The cathedral, the bazaar, and statistical workflow</a>
+                                                                    <time datetime="2025-12-13T16:41:46-05:00" class="wp-block-latest-comments__comment-date">December 13, 2025 4:41 PM</time>
+                                                                </footer>
+                                                                <div class="wp-block-latest-comments__comment-excerpt">
+                                                                    <p>This is reminiscent of Coase's "The Nature of the Firm". Firm : Market :: Cathedral : Bazaar Which could imply&hellip;</p>
+                                                                </div>
+                                                            </article>
+                                                        </li>
+                                                    </ol>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+            <!-- #secondary .widget-area -->
+
+        </div>
+        <!-- #main -->
+
+        <footer id="colophon" role="contentinfo">
+
+            <div id="site-generator">
+                <a href="https://wordpress.org/" class="imprint" title="Semantic Personal Publishing Platform">
+                					Proudly powered by WordPress				</a>
+            </div>
+        </footer>
+        <!-- #colophon -->
+    </div>
+    <!-- #page -->
+
+    <style id='core-block-supports-inline-css' type='text/css'>
+    .wp-container-core-columns-layout-1.wp-container-core-columns-layout-1 {
+        flex-wrap: nowrap;
+    }
+
+    .wp-container-core-columns-layout-2.wp-container-core-columns-layout-2 {
+        flex-wrap: nowrap;
+    }
+    </style>
+    <script type="text/javascript" src="https://statmodeling.stat.columbia.edu/wp-includes/js/comment-reply.min.js?ver=6.4.3" id="comment-reply-js" async="async" data-wp-strategy="async"></script>
+    <script defer type="text/javascript" src="https://statmodeling.stat.columbia.edu/wp-content/plugins/akismet/_inc/akismet-frontend.js?ver=1747661584" id="akismet-frontend-js"></script>
+
+    <script>
+    (function() {
+        function c() {
+            var b = a.contentDocument || a.contentWindow.document;
+            if (b) {
+                var d = b.createElement('script');
+                d.innerHTML = "window.__CF$cv$params={r:'9aea4f628c026e53',t:'MTc2NTg0NzUyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+                b.getElementsByTagName('head')[0].appendChild(d)
+            }
+        }
+        if (document.body) {
+            var a = document.createElement('iframe');
+            a.height = 1;
+            a.width = 1;
+            a.style.position = 'absolute';
+            a.style.top = 0;
+            a.style.left = 0;
+            a.style.border = 'none';
+            a.style.visibility = 'hidden';
+            document.body.appendChild(a);
+            if ('loading' !== document.readyState)
+                c();
+            else if (window.addEventListener)
+                document.addEventListener('DOMContentLoaded', c);
+            else {
+                var e = document.onreadystatechange || function() {};
+                document.onreadystatechange = function(b) {
+                    e(b);
+                    'loading' !== document.readyState && (document.onreadystatechange = e, c())
+                }
+            }
+        }
+    })();
+    </script>
+</body>
+</html>

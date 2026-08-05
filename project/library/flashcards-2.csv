@@ -1,0 +1,78 @@
+"In BusinessMath, what are the two core components for working with time series data?",Periods (type-safe temporal identifiers) and Time Series (generic containers associating values with periods).
+Which time period granularity is recommended for financial reporting and most business metrics?,Monthly.
+Forward fill is an appropriate method for handling missing data for what type of metrics?,"Status-like data, such as price levels or inventory counts."
+What is the primary benefit of using the BusinessMath Fluent API for building financial models?,It provides a SwiftUI-style declarative syntax that is more readable and less error-prone than traditional imperative construction.
+When is it preferable to use traditional object construction instead of Fluent APIs in BusinessMath?,"When performance is critical in tight loops, migrating existing code, or dynamic construction from external data sources is required."
+The _____ builder in the Fluent API is used to create time series with natural syntax and automatic period sequencing.,TimeSeriesBuilder
+What is the key benefit of using BusinessMath's pre-built model templates like SaaSModel or RetailModel?,"They save time and reduce errors by providing pre-configured industry-specific metrics, validated calculations, and consistent structure."
+"Which BusinessMath template is best suited for a business that models monthly recurring revenue, customer acquisition, and churn?",The SaaSModel template.
+"Key metrics for the MarketplaceModel template include GMV, take rate, and what other two types of metrics?",Buyer and seller metrics.
+"What tool in BusinessMath is used to trace calculations, inspect model state, and detect circular dependencies?",ModelDebugger.
+The _____ tool is used to measure the execution time of operations and identify performance bottlenecks in financial models.,ModelProfiler
+"In BusinessMath's error handling system, what category do errors related to mismatched dimensions and missing data fall into?",Data Errors (E100-E199).
+"According to BusinessMath best practices, when should you use `throws` versus returning an `Optional`?","Use `throws` when an error is unexpected and needs handling; use `Optional` when the absence of a value is a normal, non-error condition."
+What is the BusinessMath equivalent of Excel's 'What-If Analysis' feature for exploring how input changes affect outputs?,Data Tables.
+"A one-variable data table is used for _____, while a two-variable data table is used for creating scenario matrices.",sensitivity analysis
+"In financial ratio analysis, what do Liquidity Ratios measure?",A company's ability to meet its short-term obligations.
+The DuPont Analysis decomposes which key profitability ratio to understand its drivers?,Return on Equity (ROE).
+An Altman Z-Score below 1.8 indicates what about a company's financial health?,A high risk of bankruptcy.
+What does Value at Risk (VaR) measure in risk analytics?,The maximum expected loss over a specific time horizon at a given confidence level.
+"How does Conditional VaR (CVaR), or Expected Shortfall, differ from VaR?",CVaR measures the average loss in the worst-case scenarios that fall beyond the VaR threshold.
+What type of visualization is essential for sensitivity analysis to show which inputs have the greatest impact on an output?,A Tornado Diagram.
+"In a Tornado Diagram, what do the bars ranked by impact represent?","The input drivers, with the one having the largest impact at the top."
+What is the fundamental purpose of the fake-data simulation workflow in model validation?,"To verify that a fitting procedure can recover known parameters from data simulated by the model itself, before using it on real data."
+"If your model fitting procedure fails to recover known parameters during a fake-data simulation, what does this indicate?","It indicates a fundamental problem with the model, algorithm, or implementation that must be fixed before using it on real data."
+What is the formula for Compound Annual Growth Rate (CAGR)?,"$CAGR = (\frac{Ending \, Value}{Beginning \, Value})^{\frac{1}{Number \, of \, Periods}} - 1$"
+"Which trend model is best for scenarios of constant percentage growth, like 15% per year?",An Exponential Trend model.
+A _____ trend model is best suited for market saturation scenarios or product adoption curves where growth approaches a capacity limit.,Logistic
+"In time series decomposition, when should a multiplicative model be used instead of an additive one?","When the seasonal variation is proportional to the level of the time series (e.g., a 20% spike in Q4 sales)."
+What does Holt-Winters triple exponential smoothing effectively handle in time series forecasting?,"It handles three components: level, trend, and seasonality."
+What does a Mean Absolute Percentage Error (MAPE) score measure?,It measures the accuracy of a forecast as a percentage.
+"In the process of building a revenue model, what is the purpose of deseasonalizing the data?",To remove seasonal effects in order to see and model the underlying growth trend more clearly.
+The `MultiPeriodReport` in BusinessMath aggregates multiple `FinancialPeriodSummary` objects for what primary purpose?,To enable trend analysis and the calculation of period-over-period growth rates.
+"In BusinessMath, what is the role of the `OperationalMetrics` component in financial reporting?","It tracks industry-specific business drivers behind financial performance, such as production volumes, customer counts, or pricing."
+What are the three core financial statements modeled in the BusinessMath framework?,"The Income Statement, Balance Sheet, and Cash Flow Statement."
+"Under IFRS 16 and ASC 842, what two types of leases are exempt from being capitalized on the balance sheet?","Short-term leases (12 months or less) and low-value leases (asset value < $5,000)."
+The initial Right-of-Use (ROU) asset in lease accounting is calculated as the initial lease liability plus what two other costs?,Initial direct costs and any prepayments.
+"In loan amortization, what is the primary characteristic of the early payments in a long-term loan?","The majority of the payment is allocated to interest, with only a small portion reducing the principal."
+What is the primary decision rule for accepting or rejecting an investment based on Net Present Value (NPV)?,Accept the project if NPV > 0; reject it if NPV < 0.
+"For investments with irregular cash flows, which functions should be used instead of NPV and IRR?",XNPV and XIRR.
+"Which equity valuation model is most suitable for mature, stable companies like utilities that have a consistent dividend payout policy?",The Gordon Growth Model (a type of Dividend Discount Model).
+"The _____ model is superior to Dividend Discount Models for growth companies because it captures all cash available to equity holders, not just dividends.",Free Cash Flow to Equity (FCFE)
+"In M&A analysis, what is the purpose of the Enterprise Value Bridge?","It translates the firm-level enterprise value to the equity value available to common shareholders by accounting for debt, preferred stock, etc."
+"The inverse relationship between a bond's price and its yield means that when the market yield exceeds the coupon rate, the bond will trade at a _____.",discount
+What does a bond's duration measure?,It measures the bond's price sensitivity to changes in interest rates.
+The Option-Adjusted Spread (OAS) on a callable bond is designed to isolate what type of risk?,"Credit risk, by removing the impact of the embedded call option."
+"In credit risk modeling, what does a Credit Default Swap (CDS) contract provide to the protection buyer?",It provides insurance against a default event by the reference entity.
+"The _____ structural model views a company's equity as a call option on its assets, with the strike price equal to its debt.",Merton
+"In credit modeling, what is the process of building a complete term structure of default probabilities from market CDS quotes called?",Bootstrapping a credit curve.
+The Black-Scholes model is used for pricing what type of options?,"European options, which can only be exercised at expiration."
+"In real options analysis, the opportunity to expand a project can be valued as a _____ option.",call
+The value of being able to exit or shut down a project if it becomes unprofitable is modeled as a _____ option in real options analysis.,put
+What is the main advantage of Monte Carlo simulation over a traditional single-point forecast?,"It provides a range of possible outcomes with associated probabilities, rather than a single, deterministic result."
+"In a Monte Carlo simulation of revenue growth, why does the uncertainty (width of the confidence interval) typically widen over time?","Because the uncertainty from each period compounds on the previous periods, leading to a greater range of possible outcomes further in the future."
+What are the three typical scenarios modeled in business scenario analysis?,"Base Case (most likely), Best Case (optimistic), and Worst Case (conservative)."
+"What is the primary purpose of root-finding, or goal-seeking, in financial analysis?","To find the input value that causes a function to equal a specific target output, such as finding the breakeven price."
+The goal-seeking API in BusinessMath uses the _____ method for its calculations.,Newton-Raphson
+What is the purpose of the `VectorSpace` protocol in BusinessMath's optimization framework?,"It provides a generic interface for vector operations, allowing optimization algorithms to work with vectors of any dimension (2D, 3D, N-dimensional)."
+"For multivariate optimization, when should you use a fixed-dimension vector like `Vector2D` instead of the flexible `VectorN`?","When the problem's dimension is known at compile-time, as it offers better performance with no array overhead."
+"In constrained optimization, an equality constraint is of the form _____, while an inequality constraint is of the form _____.",$h(x) = 0$; $g(x) \le 0$
+What is the key difference between Gradient Descent and Newton-Raphson optimization methods?,"Gradient Descent uses only first-order derivative (gradient) information, while Newton-Raphson uses second-order (Hessian/curvature) information for faster convergence."
+The BFGS method is a quasi-Newton optimization algorithm that offers a key advantage over the full Newton method. What is it?,"It approximates the Hessian matrix using only gradient information, avoiding the expensive computation of the exact Hessian."
+What is the objective of a Minimum Variance Portfolio in Modern Portfolio Theory?,To find the combination of assets that has the lowest possible risk (volatility).
+The _____ is a curve that represents all optimal portfolios that offer the highest expected return for a given level of risk.,Efficient Frontier
+How does a Risk Parity portfolio allocation strategy differ from a mean-variance optimization strategy?,"Risk Parity allocates capital so each asset contributes equally to total portfolio risk, whereas mean-variance optimization seeks to maximize the risk-adjusted return."
+"In constrained optimization, what information does a Lagrange multiplier (or shadow price) provide?",It indicates how much the objective function would improve if the corresponding constraint were relaxed by a small amount.
+The _____ optimizer in BusinessMath handles problems with constraints like `w >= 0` (non-negativity) or `production <= capacity` (capacity limits).,InequalityOptimizer
+What is the primary function of the Adaptive Optimizer in BusinessMath?,"It automatically analyzes a problem's characteristics (size, constraints) and selects the most appropriate optimization algorithm."
+"According to the Adaptive Optimizer's rules, which algorithm is typically selected for large-scale problems with more than 100 variables?","Gradient Descent, due to its memory efficiency and scalability."
+What is the main advantage of Parallel Multi-Start Optimization?,It increases the probability of finding the global optimum by running multiple optimization attempts from different starting points simultaneously.
+In what type of optimization problem is Parallel Multi-Start particularly useful?,Non-convex problems with multiple local minima.
+"The _____ tool in BusinessMath is used to measure, compare, and analyze the performance of different optimizers in a systematic, evidence-based way.",PerformanceBenchmark
+What is the primary benefit of using a sparse matrix (like in CSR format) instead of a dense matrix for large-scale problems?,It saves significant memory and computational time by storing and operating only on non-zero elements.
+The Conjugate Gradient (CG) sparse solver is designed for what specific type of matrices?,Symmetric positive definite (SPD) matrices.
+What capability does Multi-Period Optimization add to the BusinessMath framework?,"It enables dynamic optimization across multiple time periods, considering factors like transaction costs, turnover limits, and the time value of money."
+"A _____ constraint in multi-period optimization links consecutive time periods, such as an inventory balance equation.",inter-temporal
+What is the core objective of Robust Optimization?,To find a solution that performs acceptably even under the worst-case realization of uncertain parameters within a defined set.
+An _____ uncertainty set is based on a statistical covariance matrix and is generally less conservative than a box uncertainty set for correlated parameters.,ellipsoidal
+What is meant by the 'Price of Robustness' in robust optimization?,It is the amount of expected performance (at nominal parameters) that is sacrificed in order to gain improved worst-case protection.

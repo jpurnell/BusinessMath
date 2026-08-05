@@ -1,0 +1,79 @@
+"In bond valuation, what is the fundamental inverse relationship between price and yield?","When the market yield rises, the bond's price falls, and vice versa."
+A bond trades at a _____ to par value when its coupon rate is lower than the market yield.,discount
+What does Yield to Maturity (YTM) represent for a bond investor?,"The total return anticipated if the bond is held until it matures, assuming coupons are reinvested at the YTM rate."
+What is the primary function of Duration in bond risk analysis?,It provides a linear approximation of a bond's price sensitivity to changes in interest rates.
+"Why is Convexity important for analyzing bond price changes, especially for large shifts in yield?","It captures the non-linear, curved relationship between a bond's price and yield, improving accuracy beyond duration's linear estimate."
+What is the complete workflow described in the guide for bridging fundamental credit analysis to market pricing?,Z-Score → Default Probability → Credit Spread → Bond Yield → Bond Price.
+"In credit analysis, a _____ compensates investors for bearing the risk of default.",credit spread
+How does credit deterioration in a company affect its bond prices and credit spreads?,Credit deterioration leads to wider credit spreads and consequently lower bond prices.
+Why do callable bonds typically trade at lower prices than comparable non-callable bonds?,"Because the issuer holds a valuable refinancing option, which represents a risk to the investor."
+What specific risk does Option-Adjusted Spread (OAS) isolate in the valuation of bonds with embedded options?,OAS isolates the credit risk by removing the impact of the embedded option's value.
+Callable bonds exhibit what type of convexity when interest rates fall?,"Negative convexity, because their price appreciation is capped by the call price."
+The formula for portfolio Expected Loss is Probability of Default (PD) multiplied by Loss Given Default (LGD) multiplied by _____.,Exposure
+Why do higher seniority bonds typically have lower loss rates in the event of a default?,They have better recovery rates because they are paid back before more junior debt holders.
+How does higher interest rate volatility affect the value of a callable bond from the investor's perspective?,"Higher volatility increases the value of the issuer's call option, making the callable bond less valuable to the investor."
+"In financial reporting, what component combines the income statement, balance sheet, and operational metrics into a single-period 'one-pager'?",The FinancialPeriodSummary.
+The MultiPeriodReport is designed to aggregate multiple period summaries primarily for what type of analysis?,Trend analysis and the calculation of growth rates over time.
+A Credit Default Swap (CDS) is best described as a form of _____ against default.,insurance
+"In a CDS valuation, the premium leg is considered a 'risky annuity' because payments only occur if what condition is met?",The reference entity survives without a default event.
+What is the key insight of the Merton structural model regarding a company's equity?,"It treats the company's equity as a call option on the firm's assets, with the firm's debt acting as the strike price."
+"In the Merton model, when is a default event considered to occur?",Default occurs when the value of the firm's assets falls below the value of its debt at maturity.
+What does the 'Distance to Default' (DD) metric measure?,It measures how many standard deviations the firm's asset value is away from the default point (its debt level).
+"In a reduced-form model with a constant hazard rate ($\lambda$), what formula describes the survival probability S(t) over time t?",The survival probability follows exponential decay: $S(t) = e^{-\lambda t}$.
+What is the simple approximation formula that links a credit spread (S) to the hazard rate ($\lambda$) and recovery rate (R)?,$\lambda \approx S / (1 - R)$.
+What is the purpose of 'bootstrapping' a credit curve from market CDS quotes?,To build a complete term structure of hazard rates that perfectly reproduces all observed market CDS spreads.
+How do structural models (like Merton) and reduced-form models (hazard rates) complement each other in credit analysis?,"Structural models provide economic intuition based on fundamentals, while reduced-form models are better for fitting market prices and hedging."
+"In a one-variable data table for sensitivity analysis, what is the primary goal?",To show how a single output variable changes as a single input variable is systematically varied.
+The Capital Asset Pricing Model (CAPM) calculates the cost of equity (Re) using what formula?,"$Re = R_f + \beta \times (R_m - R_f)$, where Rf is the risk-free rate, $\beta$ is beta, and Rm is the market return."
+What is the formula for calculating a company's Weighted Average Cost of Capital (WACC)?,$WACC = (E/(E+D)) \times R_e + (D/(E+D)) \times R_d \times (1-T)$.
+What is the purpose of unlevering and relevering beta in capital structure analysis?,"To adjust a company's observed equity beta for its financial leverage, allowing for comparison with peers or analysis of different capital structures."
+"In equity financing, what is the primary purpose of an 'option pool'?","It is a block of shares reserved for issuance to employees, directors, and consultants as equity compensation."
+"Under modern lease accounting standards (IFRS 16 / ASC 842), how is a lease liability initially measured on the balance sheet?","It is measured as the present value of all future lease payments, discounted at an appropriate rate."
+What constitutes the initial value of the Right-of-Use (ROU) Asset on the balance sheet?,The initial lease liability plus any initial direct costs and prepayments made by the lessee.
+"What is the primary characteristic of a 'bullet payment' amortization schedule, common for bonds?","The borrower pays only interest throughout the term, with the entire principal amount (the 'bullet') repaid at maturity."
+The Gordon Growth Model is most suitable for valuing what type of companies?,"Mature, stable companies with a history of paying dividends that are expected to grow at a constant rate."
+Why is the Free Cash Flow to Equity (FCFE) model often superior to dividend discount models for valuing growth companies?,"FCFE captures all cash available to equity holders, not just the portion that is currently paid out as dividends."
+What is the function of the Enterprise Value (EV) to Equity Value bridge?,"It reconciles a firm's total value (EV) to the value attributable to common shareholders by subtracting debt, preferred stock, and minority interest."
+The Residual Income Model posits that a company creates value when its Return on Equity (ROE) is greater than its _____.,cost of equity
+What is a common pitfall regarding the terminal growth rate used in valuation models like the DDM or DCF?,"Using a terminal growth rate that is higher than the long-term growth rate of the overall economy (e.g., GDP growth)."
+What are the three main components of DuPont analysis that are multiplied to calculate Return on Equity (ROE)?,"Net Profit Margin, Asset Turnover, and Equity Multiplier (Financial Leverage)."
+An Altman Z-Score below what value is typically considered to indicate a high risk of bankruptcy?,A Z-Score below 1.81.
+"What does a high Piotroski F-Score (e.g., 8 or 9) suggest about a company's financial health?","It suggests the company is financially very strong based on profitability, leverage, and operating efficiency metrics."
+"The _____ provides a declarative, SwiftUI-style syntax for building financial models and other analyses.",Fluent API
+"Which time series forecasting method is designed to handle level, trend, and seasonality components simultaneously?",Holt-Winters triple exponential smoothing.
+What is the purpose of calculating Compound Annual Growth Rate (CAGR)?,"It calculates the constant, steady growth rate that would be required for an investment to grow from its beginning balance to its ending balance."
+A _____ trend model is best suited for scenarios where growth is expected to approach a capacity limit or market saturation point.,logistic (S-curve)
+What is the purpose of seasonal adjustment or 'deseasonalizing' a time series?,To remove recurring seasonal patterns from the data in order to see the underlying growth trend more clearly.
+What is the primary decision rule for accepting or rejecting a project based on its Net Present Value (NPV)?,Accept the project if its NPV is greater than zero; reject it if its NPV is less than zero.
+How is the Internal Rate of Return (IRR) of an investment defined in relation to NPV?,IRR is the discount rate at which the Net Present Value (NPV) of all cash flows from the investment equals zero.
+Why are XNPV and XIRR used in practice instead of standard NPV and IRR for many real-world investments?,"Because real-world cash flows often occur at irregular dates, which XNPV and XIRR are specifically designed to handle."
+The Profitability Index (PI) is calculated by dividing the present value of future cash flows by the _____.,initial investment
+What is the key insight from an analysis showing the impact of making extra principal payments on a loan?,"Making extra payments can significantly reduce the total interest paid and shorten the loan's term, paying it off years earlier."
+What key advantage does Monte Carlo simulation provide over a single point-estimate forecast?,"It generates a range of possible outcomes and their probabilities, providing a full distribution instead of a single number."
+"In a Monte Carlo simulation of financial projections, why does the width of the confidence interval typically widen over time?","Because uncertainty compounds with each successive period, leading to a wider range of possible outcomes further in the future."
+"In the BusinessMath library, what is the goal of a 'Phase 1' optimization process like goal-seeking?","To find the input value at which a function equals a specific target value, such as finding a breakeven point."
+"What is the primary objective of Modern Portfolio Theory (MPT), also known as mean-variance optimization?",To construct portfolios that maximize expected return for a given level of risk (variance) or minimize risk for a given level of return.
+The set of all optimal portfolios that offer the highest expected return for a defined level of risk is known as the _____.,Efficient Frontier
+What does the Sharpe Ratio measure?,"The risk-adjusted return of an investment or portfolio, calculated as the excess return over the risk-free rate per unit of volatility."
+How does a 'risk parity' portfolio allocation strategy differ from a traditional mean-variance approach?,"Risk parity allocates capital so that each asset contributes equally to the total portfolio risk, rather than optimizing for expected returns."
+What fundamental concept do 'real options' bring to strategic business valuation that traditional NPV analysis misses?,"They capture the value of managerial flexibility—the ability to expand, abandon, or delay a project as future uncertainty is resolved."
+"Modeling the ability to exit a project if it becomes unprofitable is known as an 'option to _____,' which is analogous to a financial put option.",abandon
+Which option pricing model is generally preferred for valuing American-style options that allow for early exercise?,The Binomial Tree model.
+"In sensitivity analysis, what is the primary purpose of creating a Tornado Diagram?","To visually rank input variables by the magnitude of their impact on a given output, identifying the most critical drivers of risk or value."
+What does Value at Risk (VaR) measure?,The maximum potential loss a portfolio is expected to experience over a specific time horizon at a given confidence level.
+"How does Conditional VaR (CVaR), or Expected Shortfall, provide more information than standard VaR?","CVaR measures the expected loss in the worst-case scenarios that fall beyond the VaR threshold, quantifying the severity of tail risk."
+What is the purpose of stress testing in risk analytics?,To evaluate how a portfolio or financial model would perform under specific adverse economic scenarios or historical crises.
+The BusinessMath SaaS model template tracks the LTV:CAC ratio. What does this metric represent?,"It compares the Customer Lifetime Value (LTV) to the Customer Acquisition Cost (CAC), indicating the profitability of acquiring a new customer."
+"In a marketplace business model, what is the 'take rate'?",The percentage of the total transaction value (GMV) that the marketplace keeps as its commission or revenue.
+"In time series analysis, what is the purpose of 'forward fill' for handling missing data?","It propagates the last valid observation forward to fill the gaps, which is suitable for status-like data like inventory counts or price levels."
+What type of financial instrument is modeled as 'interest-only with principal at maturity'?,A bullet loan or bond.
+"In a command-line visualization, how does a histogram help in analyzing simulation results?","It shows the frequency distribution of outcomes, revealing the central tendency, spread, and shape (e.g., normal, skewed) of the results."
+What is the primary difference between a simple moving average and a weighted moving average forecast?,"A weighted moving average assigns more weight to more recent data points, making it more responsive to recent changes."
+What financial metric is defined as the discount rate where the NPV of an investment is zero?,Internal Rate of Return (IRR).
+"According to the provided guide, a Z-Score in the 'Grey' zone (1.81 - 2.99) indicates what level of default risk?",Moderate default risk (1-10%).
+"For a zero-coupon bond, what is the relationship between its duration and its maturity?",The duration of a zero-coupon bond is equal to its time to maturity.
+What does positive convexity imply about a bond's price change when yields move?,The bond's price increases by more when yields fall than it decreases when yields rise by an equal amount.
+What is the main benefit of the `ModelDebugger` tool in the BusinessMath library?,"It allows for real-time inspection of models, tracing of calculations, and validation of model integrity."
+"In the context of the BusinessMath library, what does it mean for the financial reporting system to be 'presentation-agnostic'?","It provides the data structures for financial reports but does not dictate the user interface or how the data is displayed (e.g., CLI, SwiftUI)."
+The `xirr` function is designed to calculate the internal rate of return for a series of cash flows that are _____.,irregularly timed
+"In the Black-Scholes model, what does the Greek letter 'Delta' measure?",Delta measures the rate of change of the option's price with respect to a change in the underlying asset's price.
