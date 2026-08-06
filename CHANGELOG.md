@@ -11,6 +11,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Changed — BREAKING (results, not API): MonteCarloSimulation now runs xoshiro256**
+- Seeded CPU runs draw from `Xoshiro256StarStar` instead of `SplitMix64`.
+  **Every seeded simulation result changes.** The API is untouched and the
+  determinism guarantee is unchanged — the same seed still reproduces the same
+  run exactly — but a seed no longer reproduces results recorded before this
+  version. Anything that has archived seeded output should re-baseline.
+- The reason: SplitMix64 was designed as a *seeder*, not a simulation generator.
+  xoshiro256** carries 256 bits of state against SplitMix64's 64 and distributes
+  better over the long sample counts a Monte Carlo run draws. `SplitMix64` still
+  seeds it, which is what its authors recommend.
+- No test changed. `SeedableDistribution.next(using:)` is generic over
+  `RandomNumberGenerator`, so no distribution needed touching, and the seeded
+  tests assert reproducibility (`s1 == s2`) rather than pinned values. All 5987
+  tests pass, including the tolerance-based statistical cases, which re-roll
+  under a new generator and still hold.
+- The GPU path is unaffected: it already ran Xorshift128+, so seeded CPU and GPU
+  streams were never identical, and their agreement is asserted statistically
+  (within 2% on the mean) rather than stream-for-stream.
+- `SplitMix64` remains public and re-exported for callers driving
+  `SeedableDistribution` directly.
+
 #### Changed
 - `SplitMix64` is now SwiftDeterminism's, re-exported from
   `Simulation/SplitMix64.swift` rather than implemented there. It was one of
