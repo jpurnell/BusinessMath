@@ -89,9 +89,9 @@ public struct SimulationInput: Sendable {
 	///
 	/// Non-nil only when the input was created from a distribution conforming to
 	/// ``SeedableDistribution``; drawing through it sources every uniform from the
-	/// provided generator, so a seeded ``SplitMix64`` reproduces the identical stream.
+	/// provided generator, so a seeded ``Xoshiro256StarStar`` reproduces the identical stream.
 	/// `nil` for custom-closure inputs and non-seedable distributions.
-	internal let seededSampler: (@Sendable (inout SplitMix64) -> Double)?
+	internal let seededSampler: (@Sendable (inout Xoshiro256StarStar) -> Double)?
 
 	/// Whether this input can participate in seeded (deterministic) simulation runs.
 	///

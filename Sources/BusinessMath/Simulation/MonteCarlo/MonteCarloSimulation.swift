@@ -173,7 +173,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// When set, the same seed (with the same inputs, iteration count, and execution
 	/// path) reproduces identical results: the GPU kernel derives its per-thread RNG
 	/// states from this seed, and the CPU path samples every input through a
-	/// ``SplitMix64`` generator initialized with it.
+	/// ``Xoshiro256StarStar`` generator initialized with it.
 	///
 	/// Determinism is guaranteed *per execution path* — a seeded GPU run and a seeded
 	/// CPU run produce different (each internally reproducible) streams, and a GPU
@@ -494,7 +494,7 @@ public struct MonteCarloSimulation: Sendable {
 
 		if let seed {
 			let samplers = try resolveSeededSamplers()
-			var generator = SplitMix64(seed: seed)
+			var generator = Xoshiro256StarStar(seed: seed)
 			for iteration in 0..<iterations {
 				let sampledValues = samplers.map { $0(&generator) }
 				outcomes.append(try validatedOutcome(from: sampledValues, iteration: iteration))
@@ -566,7 +566,7 @@ public struct MonteCarloSimulation: Sendable {
 
 		if let seed {
 			let samplers = try resolveSeededSamplers()
-			var generator = SplitMix64(seed: seed)
+			var generator = Xoshiro256StarStar(seed: seed)
 			for iteration in 0..<iterations {
 				if iteration % 1024 == 0 {
 					try Task.checkCancellation()
@@ -604,7 +604,7 @@ public struct MonteCarloSimulation: Sendable {
 	}
 
 	/// Resolves every input's seeded sampler, throwing when any input cannot honor the seed.
-	private func resolveSeededSamplers() throws -> [@Sendable (inout SplitMix64) -> Double] {
+	private func resolveSeededSamplers() throws -> [@Sendable (inout Xoshiro256StarStar) -> Double] {
 		try inputs.map { input in
 			guard let sampler = input.seededSampler else {
 				throw SimulationError.seedingUnsupported(

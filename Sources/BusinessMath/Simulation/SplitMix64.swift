@@ -16,11 +16,12 @@
 /// writing `BusinessMath.SplitMix64`, and the seeded expectations throughout the test
 /// suite, keep working untouched. The stream is identical, so no simulation result moves.
 ///
-/// **What BusinessMath uses it for.** It drives reproducible Monte Carlo runs: pass a
-/// seed to ``MonteCarloSimulation`` and every CPU-path sample flows through this
-/// generator, so a suspicious result can be re-run exactly. See ``SeedableDistribution``
-/// for how a distribution turns its bits into samples — SwiftDeterminism produces bits,
-/// BusinessMath gives them meaning.
+/// **What BusinessMath uses it for.** It remains available to callers who want to drive
+/// ``SeedableDistribution`` directly, and it seeds ``Xoshiro256StarStar`` — which is what
+/// ``MonteCarloSimulation`` now runs on the CPU path, SplitMix64 having been designed as a
+/// *seeder* rather than a simulation generator. See ``SeedableDistribution`` for how a
+/// distribution turns bits into samples: SwiftDeterminism produces bits, BusinessMath
+/// gives them meaning.
 ///
 /// ## Example
 ///
@@ -32,3 +33,10 @@
 /// It is **not** cryptographically secure — the mixing function is invertible, so two
 /// outputs reveal the state. Never use it for keys, tokens, or anything security-sensitive.
 @_exported import struct SwiftDeterminism.SplitMix64
+
+/// The generator ``MonteCarloSimulation`` uses for seeded CPU runs.
+///
+/// `xoshiro256**` carries 256 bits of state against SplitMix64's 64, and distributes
+/// better over the long sample counts a Monte Carlo run draws. Re-exported here so a
+/// caller can construct one without importing SwiftDeterminism directly.
+@_exported import struct SwiftDeterminism.Xoshiro256StarStar
