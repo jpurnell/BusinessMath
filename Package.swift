@@ -48,6 +48,15 @@ var dependencies: [Package.Dependency] = [
 	.package(
 		url: "https://github.com/swiftlang/swift-docc-plugin",
 		from: "1.4.3"
+	),
+	// One seeded generator for the portfolio. BusinessMath's SplitMix64 was one of
+	// several byte-identical copies; the algorithm now lives in SwiftDeterminism,
+	// tested against Vigna's published vectors, and BusinessMath re-exports it so
+	// `BusinessMath.SplitMix64` keeps resolving for existing callers.
+	// Distributions stay here — that package produces bits, this one gives them meaning.
+	.package(
+		url: "https://github.com/jpurnell/SwiftDeterminism.git",
+		from: "1.0.0"
 	)
 ]
 
@@ -68,7 +77,8 @@ dependencies.append(
 // Prepare BusinessMath dependencies
 var businessMathDeps: [Target.Dependency] = [
 	.product(name: "Numerics", package: "swift-numerics"),
-	.product(name: "Collections", package: "swift-collections")
+	.product(name: "Collections", package: "swift-collections"),
+	.product(name: "SwiftDeterminism", package: "SwiftDeterminism")
 ]
 
 // Link swift-crypto's Crypto only where CryptoKit is absent. `.when(platforms:)` is evaluated

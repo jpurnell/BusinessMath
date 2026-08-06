@@ -24,19 +24,18 @@ public let stochasticMigrationTopology: MigrationTopology = .stochastic
 /// reproducible values without using `.random(in:using:)` syntax in
 /// calling code.
 public struct DeterministicGenerator {
-    private var state: UInt64
+    /// The underlying stream. This type used to inline SplitMix64's arithmetic; it now
+    /// delegates to the one implementation, so `nextRaw()` returns exactly the values it
+    /// always has and every expectation built on it still holds.
+    private var generator: SplitMix64
 
     public init(seed: UInt64) {
-        state = seed
+        generator = SplitMix64(seed: seed)
     }
 
     /// Advance state and return raw UInt64.
     public mutating func nextRaw() -> UInt64 {
-        state &+= 0x9e3779b97f4a7c15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xbf58476d1ce4e5b9
-        z = (z ^ (z >> 27)) &* 0x94d049bb133111eb
-        return z ^ (z >> 31)
+        generator.next()
     }
 
     /// Returns a Double uniformly distributed in a closed range.

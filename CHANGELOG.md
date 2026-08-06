@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+#### Changed
+- `SplitMix64` is now SwiftDeterminism's, re-exported from
+  `Simulation/SplitMix64.swift` rather than implemented there. It was one of
+  several byte-identical copies across this portfolio; the algorithm now lives in
+  one package, where it is tested against Vigna's published reference vectors
+  instead of against itself.
+- **No API and no results change.** The name is re-exported, so callers writing
+  `BusinessMath.SplitMix64` are untouched, and the stream is identical — same
+  golden-ratio increment, same shifts, same multipliers. All 5987 tests pass with
+  no seeded expectation edited, including every Monte Carlo and
+  `SeedableDistribution` case.
+- `TestSupport.DeterministicGenerator` delegates to `SplitMix64` instead of
+  inlining the same arithmetic a third time; `nextRaw()` returns exactly the
+  values it always has.
+
+#### Removed
+- The private `SplitMix64` duplicate inside `RankingStatisticsTests.swift`, which
+  shadowed the library's own type with an identical implementation.
+
+#### Notes
+- Distributions stay here by design: SwiftDeterminism produces bits, BusinessMath
+  gives them meaning. `SeedableDistribution` and the distribution types did not move.
+- `MonteCarloSimulation` still uses `SplitMix64`, not `Xoshiro256StarStar`.
+  Switching would alter every seeded simulation result, so it is a deliberate
+  decision rather than part of this consolidation.
+
 ### [2.5.1] - 2026-07-28
 
 **Version 2.5.1** fixes a correctness bug in the async streaming composition operators:
