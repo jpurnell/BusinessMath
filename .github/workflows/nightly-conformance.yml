@@ -26,6 +26,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Authenticate SPM for private dependencies
+        env:
+          SPM_TOKEN: ${{ secrets.SPM_PRIVATE_DEPS_TOKEN }}
+        run: |
+          # SwiftDeterminism is a private repo; GITHUB_TOKEN cannot read it.
+          if [ -z "$SPM_TOKEN" ]; then
+            echo "::error::SPM_PRIVATE_DEPS_TOKEN is not set — the private SwiftDeterminism dependency cannot be resolved."
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${SPM_TOKEN}@github.com/".insteadOf "https://github.com/"
+
       - name: Setup Swift
         uses: swift-actions/setup-swift@v2
         with:
