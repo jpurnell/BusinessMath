@@ -92,7 +92,15 @@ jobs:
           set -uo pipefail
 
           if [ "${{ matrix.engine }}" = "swift-testing" ]; then
-            if ! swift test --enable-swift-testing --list-tests --scratch-path "$SCRATCH" | grep -q .; then
+            # Distinguish "listing failed" from "no tests exist". These used to be
+            # conflated: a failure to resolve dependencies produced no output, the
+            # empty output was read as "this project has no @Test cases", and the
+            # job exited 0 — reporting green while running none of the suite.
+            if ! LISTED=$(swift test --enable-swift-testing --list-tests --scratch-path "$SCRATCH"); then
+              echo "::error::Could not list tests — dependency resolution or build failed. This is a failure, not an empty suite."
+              exit 1
+            fi
+            if [ -z "$(printf '%s' "$LISTED" | tr -d '[:space:]')" ]; then
               echo "No Swift Testing (@Test) tests found; skipping swift-testing leg."
               exit 0
             fi
@@ -106,7 +114,10 @@ jobs:
           # sample()-capturing watchdog was diagnostic scaffolding for the streaming
           # exit hang fixed in 2.5.1; it is intentionally removed so a future hang fails
           # the job rather than being silently killed and reported green.
-          swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v || true
+          # No `|| true`: a failing test must fail the job. Previously it did not,
+          # which left `swift build --build-tests` as the only thing that could turn
+          # this job red — so the suite could fail wholesale and still report green.
+          swift test $SWIFT_TEST_FLAGS --scratch-path "$SCRATCH" -v
 
   build_and_compile:
     name: Release build
