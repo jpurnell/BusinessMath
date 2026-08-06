@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Changed — BREAKING (results, not API): DeterministicRNG is no longer an LCG
+- `DeterministicRNG` is now a `public typealias` for `Xoshiro256StarStar` instead
+  of Knuth's MMIX linear congruential generator. **Seeded results from
+  `MonteCarloEngine`, `InventorySimulator` and `CorrelatedNormals` all change.**
+  The determinism contract is unchanged — same seed, same sequence — but a seed
+  no longer reproduces streams recorded before this version.
+- The LCG returned its **raw state** as output, and in any LCG the low bits of
+  the state are barely random: bit 0 has period 2, bit 1 period 4, and so on. Any
+  draw reduced modulo a small number came out visibly poor. These values drive
+  Box–Muller normal variates in `MonteCarloEngine` and demand sampling in
+  `InventorySimulator`, which deserve a generator whose every bit is distributed.
+- `xoshiro256**` carries 256 bits of state, passes the standard statistical
+  batteries, and is seeded through SplitMix64 as its authors recommend. It is now
+  the generator `MonteCarloSimulation` uses too, so the two agree.
+- No call site and no test changed. `CorrelatedNormals.sample(using:)` is generic
+  over `RandomNumberGenerator`, the typealias satisfies `MonteCarloEngine`'s
+  `inout DeterministicRNG`, and the seeded tests assert reproducibility rather
+  than pinned values. All 5987 tests pass.
+
 #### Changed — BREAKING (results, not API): MonteCarloSimulation now runs xoshiro256**
 - Seeded CPU runs draw from `Xoshiro256StarStar` instead of `SplitMix64`.
   **Every seeded simulation result changes.** The API is untouched and the
