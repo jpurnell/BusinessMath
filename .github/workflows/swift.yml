@@ -32,17 +32,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Authenticate SPM for private dependencies
-        env:
-          SPM_TOKEN: ${{ secrets.SPM_PRIVATE_DEPS_TOKEN }}
-        run: |
-          # SwiftDeterminism is a private repo; GITHUB_TOKEN cannot read it.
-          if [ -z "$SPM_TOKEN" ]; then
-            echo "::error::SPM_PRIVATE_DEPS_TOKEN is not set — the private SwiftDeterminism dependency cannot be resolved."
-            exit 1
-          fi
-          git config --global url."https://x-access-token:${SPM_TOKEN}@github.com/".insteadOf "https://github.com/"
-
       - name: Select Xcode 26.x (Swift 6.2)
         if: matrix.os == 'macos-26'
         run: |
@@ -126,20 +115,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Authenticate SPM for private dependencies
-        env:
-          SPM_TOKEN: ${{ secrets.SPM_PRIVATE_DEPS_TOKEN }}
-        run: |
-          # SwiftDeterminism is a private repo. GITHUB_TOKEN is scoped to *this*
-          # repository only, so dependency resolution needs a PAT that can read it.
-          # Without this, `swift build` fails with "could not read Username for
-          # 'https://github.com': terminal prompts disabled".
-          if [ -z "$SPM_TOKEN" ]; then
-            echo "::error::SPM_PRIVATE_DEPS_TOKEN is not set — the private SwiftDeterminism dependency cannot be resolved."
-            exit 1
-          fi
-          git config --global url."https://x-access-token:${SPM_TOKEN}@github.com/".insteadOf "https://github.com/"
-
       - name: Select Xcode 26.x (Swift 6.2)
         run: |
           XCODE_PATH=$(ls -d /Applications/Xcode_26* 2>/dev/null | sort -V | tail -1)
@@ -164,17 +139,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Authenticate SPM for private dependencies
-        env:
-          SPM_TOKEN: ${{ secrets.SPM_PRIVATE_DEPS_TOKEN }}
-        run: |
-          # SwiftDeterminism is a private repo; GITHUB_TOKEN cannot read it.
-          if [ -z "$SPM_TOKEN" ]; then
-            echo "::error::SPM_PRIVATE_DEPS_TOKEN is not set — the private SwiftDeterminism dependency cannot be resolved."
-            exit 1
-          fi
-          git config --global url."https://x-access-token:${SPM_TOKEN}@github.com/".insteadOf "https://github.com/"
 
       - name: Install Swift (Linux)
         uses: swift-actions/setup-swift@v2
