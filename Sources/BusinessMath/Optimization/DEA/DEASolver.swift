@@ -149,6 +149,44 @@ public struct DEASolver: Sendable {
             return (score, lpResult.iterations)
         }
 
+        // Super-efficiency solves a different LP — the DMU is excluded from its own
+        // reference set — and reports infeasibility rather than throwing. Falling
+        // through to the standard path below returns an ordinary DEA score capped at
+        // 1.0, which is indistinguishable from a correct standard solve and destroys
+        // the one property super-efficiency exists to provide.
+        if case .superEfficiency(let base) = model {
+            let simplex = SimplexSolver()
+            let result = solveSuperLP(
+                forDMU: k,
+                dmus: dmus,
+                base: base,
+                orientation: orientation,
+                solver: simplex
+            )
+            switch result {
+            case .success(let lpResult):
+                let score = try extractSuperScore(
+                    forDMU: k,
+                    dmus: dmus,
+                    orientation: orientation,
+                    lpResult: lpResult
+                )
+                return (score, lpResult.iterations)
+            case .failure:
+                // A DMU with no feasible reference set once removed from the
+                // frontier. Reported, not thrown: the rest of the set is still
+                // measurable, and the caller decides what an unmeasured unit means.
+                let score = DMUScore(
+                    name: dmus[k].name,
+                    efficiency: .infinity,
+                    rawScore: .infinity,
+                    referenceSet: [],
+                    superEfficiencyInfeasible: true
+                )
+                return (score, 0)
+            }
+        }
+
         let simplex = SimplexSolver()
         let lpResult = try solveLP(
             forDMU: k,

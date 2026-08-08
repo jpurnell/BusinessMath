@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Fixed — `AsyncDEASolver` silently ignored super-efficiency
+
+`solveSingleDMU`, the async path's per-DMU entry point, special-cased SBM and fell
+through to the standard LP for every other model. A `.superEfficiency` request
+therefore returned ordinary DEA with every score capped at 1.0 — no error, no
+warning, and output indistinguishable from a correct standard solve. A unit scoring
+1.875 through `DEASolver` came back 1.0 through `AsyncDEASolver`.
+
+Found downstream by a consumer whose own equivalence test compared the two paths.
+Any caller using the async solver for super-efficiency has been receiving standard
+scores; re-run those analyses.
+
+The parity suite covered `.ccr` and `.bcc` by hand and was never extended when
+`.superEfficiency` and `.sbm` were added to `DEAModelType`. It is now driven from
+an explicit list of every model, alongside a test asserting the property capping
+destroys — that a super-efficient unit scores above 1 on **both** paths, since
+equivalence alone would not catch both paths being wrong in the same way.
+
 #### Changed — BREAKING (results, not API): DeterministicRNG is no longer an LCG
 - `DeterministicRNG` is now a `public typealias` for `Xoshiro256StarStar` instead
   of Knuth's MMIX linear congruential generator. **Seeded results from
