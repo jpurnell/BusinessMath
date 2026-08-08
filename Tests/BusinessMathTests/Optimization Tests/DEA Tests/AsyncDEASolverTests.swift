@@ -300,3 +300,93 @@ struct AsyncDEASequentialEquivalenceTests {
         }
     }
 }
+
+/// Async and sync agreement across **every** model, not just the ones someone
+/// remembered to list.
+///
+/// The existing equivalence tests cover `.ccr` and `.bcc` by hand. When
+/// `.superEfficiency` and `.sbm` were added to ``DEAModelType`` the list was not
+/// extended, and `solveSingleDMU` — the async path's per-DMU entry point —
+/// special-cased SBM and fell through to the standard LP for everything else.
+/// A super-efficiency request therefore returned ordinary DEA with every score
+/// capped at 1.0: no error, no warning, and output indistinguishable from a
+/// correct standard solve.
+///
+/// It was found downstream, by a consumer whose own equivalence test compared
+/// the two paths. A unit scoring 1.875 synchronously came back 1.0.
+///
+/// These tests are written against the model *space* rather than a remembered
+/// list, so a future model case cannot be added without one of them failing.
+@Suite("Async/sync model parity")
+struct AsyncSyncModelParityTests {
+
+    /// A spread with a clearly super-efficient unit: `cheap` dominates on input
+    /// at equal output, so removing it from its own reference set must leave it
+    /// scoring above 1.
+    private var dmus: [DMU] {
+        [
+            DMU(name: "cheap", inputs: [2], outputs: [5]),
+            DMU(name: "mid", inputs: [4], outputs: [5]),
+            DMU(name: "dear", inputs: [6], outputs: [5]),
+            DMU(name: "odd", inputs: [3], outputs: [4])
+        ]
+    }
+
+    /// Every model this package offers, listed so that adding a case to
+    /// ``DEAModelType`` without adding it here leaves the enumeration visibly
+    /// incomplete next to the type.
+    private static let everyModel: [DEAModelType] = [
+        .ccr,
+        .bcc,
+        .superEfficiency(base: .ccr),
+        .superEfficiency(base: .bcc),
+        .sbm(returnsToScale: .constant),
+        .sbm(returnsToScale: .variable)
+    ]
+
+    @Test("Async matches sync for every model", arguments: everyModel)
+    func asyncMatchesSync(model: DEAModelType) async throws {
+        let sync = try DEASolver().solve(dmus: dmus, model: model)
+        let async = try await AsyncDEASolver(maxConcurrency: 4).solve(dmus: dmus, model: model)
+
+        #expect(async.scores.count == sync.scores.count)
+        for (a, s) in zip(async.scores, sync.scores) {
+            #expect(a.name == s.name)
+            #expect(a.superEfficiencyInfeasible == s.superEfficiencyInfeasible,
+                    "\(model): \(a.name) disagrees on feasibility")
+            guard a.efficiency.isFinite, s.efficiency.isFinite else { continue }
+            #expect(abs(a.efficiency - s.efficiency) < 1e-9,
+                    "\(model): \(a.name) async \(a.efficiency) vs sync \(s.efficiency)")
+        }
+    }
+
+    /// The property that distinguishes super-efficiency from every other model,
+    /// and precisely what capping destroys. Equivalence alone would not have
+    /// caught this had both paths been wrong in the same way.
+    @Test("Super-efficiency exceeds 1 on both paths", arguments: [DEABaseModel.ccr, .bcc])
+    func superEfficiencyExceedsOneOnBothPaths(base: DEABaseModel) async throws {
+        let model = DEAModelType.superEfficiency(base: base)
+
+        let sync = try DEASolver().solve(dmus: dmus, model: model)
+        let syncCheap = try #require(sync.scores.first { $0.name == "cheap" })
+        #expect(syncCheap.efficiency > 1.0, "sync capped a super-efficient unit")
+
+        let async = try await AsyncDEASolver(maxConcurrency: 4).solve(dmus: dmus, model: model)
+        let asyncCheap = try #require(async.scores.first { $0.name == "cheap" })
+        #expect(asyncCheap.efficiency > 1.0, "async capped a super-efficient unit")
+    }
+
+    /// Concurrency level must not change the answer for any model — the async
+    /// parity tests previously checked this for `.ccr` alone.
+    @Test("Concurrency level does not change results", arguments: everyModel)
+    func concurrencyLevelIrrelevant(model: DEAModelType) async throws {
+        let one = try await AsyncDEASolver(maxConcurrency: 1).solve(dmus: dmus, model: model)
+        let many = try await AsyncDEASolver(maxConcurrency: 8).solve(dmus: dmus, model: model)
+
+        for (a, b) in zip(one.scores, many.scores) {
+            #expect(a.name == b.name)
+            guard a.efficiency.isFinite, b.efficiency.isFinite else { continue }
+            #expect(abs(a.efficiency - b.efficiency) < 1e-9, "\(model): \(a.name) diverged")
+        }
+    }
+}
