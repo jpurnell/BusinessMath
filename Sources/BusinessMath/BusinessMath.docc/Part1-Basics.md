@@ -13,6 +13,7 @@ By the end of this part, you'll be comfortable creating time series, performing 
 ## What You'll Learn
 
 - **Time Series Operations**: How to create, manipulate, and analyze temporal data using the `TimeSeries<T>` structure
+- **Formula Evaluation**: Deriving accounts from configuration, so companies that define their statements differently can be analysed the same way
 - **Time Value of Money**: Core financial calculations including present value, future value, NPV, IRR, and annuities
 - **Statistical Distributions**: Descriptive statistics and probability distributions for data analysis
 - **Fluent APIs**: SwiftUI-style declarative syntax for building readable, maintainable financial models
@@ -26,6 +27,7 @@ By the end of this part, you'll be comfortable creating time series, performing 
 
 ### Core Data Structures
 - <doc:1.2-TimeSeries>
+- <doc:1.9-FormulaEvaluation>
 
 ### Fundamental Financial Concepts
 - <doc:1.3-TimeValueOfMoney>

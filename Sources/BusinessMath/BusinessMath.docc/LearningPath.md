@@ -36,32 +36,33 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 ### Phase 1: Foundations (4-5 hours)
 1. <doc:1.1-GettingStarted>
 2. <doc:1.2-TimeSeries>
-3. <doc:1.3-TimeValueOfMoney>
-4. <doc:1.4-FluentAPIGuide>
+3. <doc:1.9-FormulaEvaluation>
+4. <doc:1.3-TimeValueOfMoney>
+5. <doc:1.4-FluentAPIGuide>
 
 **Checkpoint**: Build a simple NPV calculation with time series data
 
 ### Phase 2: Financial Modeling (5-6 hours)
-5. <doc:3.1-GrowthModeling>
-6. <doc:3.2-ForecastingGuide>
-7. <doc:3.3-BuildingRevenueModel>
-8. <doc:3.4-BuildingFinancialReports>
-9. <doc:3.5-FinancialStatementsGuide>
+6. <doc:3.1-GrowthModeling>
+7. <doc:3.2-ForecastingGuide>
+8. <doc:3.3-BuildingRevenueModel>
+9. <doc:3.4-BuildingFinancialReports>
+10. <doc:3.5-FinancialStatementsGuide>
 
 **Checkpoint**: Build a three-statement financial model
 
 ### Phase 3: Valuation (4-5 hours)
-10. <doc:3.8-InvestmentAnalysis>
-11. <doc:3.9-EquityValuationGuide>
-12. <doc:3.10-BondValuationGuide>
-13. <doc:2.2-FinancialRatiosGuide>
+11. <doc:3.8-InvestmentAnalysis>
+12. <doc:3.9-EquityValuationGuide>
+13. <doc:3.10-BondValuationGuide>
+14. <doc:2.2-FinancialRatiosGuide>
 
 **Checkpoint**: Value a company using multiple methods
 
 ### Phase 4: Analysis & Sensitivity (3-4 hours)
-14. <doc:2.1-DataTableAnalysis>
-15. <doc:4.2-ScenarioAnalysisGuide>
-16. <doc:2.4-VisualizationGuide>
+15. <doc:2.1-DataTableAnalysis>
+16. <doc:4.2-ScenarioAnalysisGuide>
+17. <doc:2.4-VisualizationGuide>
 
 **Checkpoint**: Analyze which assumptions drive your valuation
 
@@ -165,24 +166,25 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 ### Phase 1: Quick Start (2-3 hours)
 1. <doc:1.1-GettingStarted>
 2. <doc:1.2-TimeSeries>
-3. <doc:1.3-TimeValueOfMoney>
+3. <doc:1.9-FormulaEvaluation>
+4. <doc:1.3-TimeValueOfMoney>
 
 **Checkpoint**: Calculate ROI for a project
 
 ### Phase 2: Financial Modeling (4-5 hours)
-4. <doc:3.1-GrowthModeling>
-5. <doc:3.2-ForecastingGuide>
-6. <doc:3.3-BuildingRevenueModel>
-7. <doc:3.4-BuildingFinancialReports>
-8. <doc:2.2-FinancialRatiosGuide>
+5. <doc:3.1-GrowthModeling>
+6. <doc:3.2-ForecastingGuide>
+7. <doc:3.3-BuildingRevenueModel>
+8. <doc:3.4-BuildingFinancialReports>
+9. <doc:2.2-FinancialRatiosGuide>
 
 **Checkpoint**: Build a revenue forecast model
 
 ### Phase 3: Analysis & Decisions (3-4 hours)
-9. <doc:2.1-DataTableAnalysis>
-10. <doc:4.2-ScenarioAnalysisGuide>
-11. <doc:3.8-InvestmentAnalysis>
-12. <doc:5.1-OptimizationGuide>
+10. <doc:2.1-DataTableAnalysis>
+11. <doc:4.2-ScenarioAnalysisGuide>
+12. <doc:3.8-InvestmentAnalysis>
+13. <doc:5.1-OptimizationGuide>
 
 **Checkpoint**: Evaluate capital allocation across projects
 
