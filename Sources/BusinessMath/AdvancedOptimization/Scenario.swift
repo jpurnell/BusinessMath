@@ -121,7 +121,41 @@ public struct DiscreteScenario: OptimizationScenario {
 // MARK: - Scenario Generation
 
 /// Helper for generating scenarios from distributions.
+///
+/// ## Seeds and concurrency
+///
+/// Each generator comes in two forms. The `seed:` form owns its stream: it builds a
+/// private ``DeterministicRNG`` from the seed, so the same seed yields the same scenarios
+/// no matter what else the process is doing at the time. Passing `nil` (the default)
+/// draws from system entropy and is non-reproducible *by contract* — that is the whole
+/// difference between the two.
+///
+/// The `using:` form takes the caller's generator instead. Reach for it when one seed has
+/// to drive more than one block of scenarios. Three `seed: 42` calls give three streams
+/// that all start at the same place — the normal block and the uniform block would be
+/// built from the same underlying uniforms, which is a correlation the caller did not ask
+/// for. One generator threaded through three calls gives three independent blocks, and
+/// the caller still owns reproducibility.
+///
+/// ```swift
+/// var rng = DeterministicRNG(seed: 42)
+/// let returns = ScenarioGenerator.normal(mean: mu, standardDeviation: sigma,
+///                                        numberOfScenarios: 1_000, using: &rng)
+/// let shocks  = ScenarioGenerator.uniform(lowerBounds: lo, upperBounds: hi,
+///                                         numberOfScenarios: 1_000, using: &rng)
+/// ```
+///
+/// ### Why the generator is passed rather than stored
+///
+/// These were `srand48`/`drand48`, which is one random stream shared by the entire
+/// process. A seed set that way survives only until something else draws from it, so two
+/// seeded generations running concurrently consumed each other's values and neither
+/// reproduced. Nothing about the old signatures said so; the seed simply did not mean
+/// what it said outside a single-threaded program. Threading the generator through as an
+/// `inout` parameter is what makes each call's randomness its own.
 public struct ScenarioGenerator {
+
+	// MARK: - Normal
 
 	/// Generate scenarios from normal distribution.
 	///
@@ -129,13 +163,45 @@ public struct ScenarioGenerator {
 	///   - mean: Mean vector
 	///   - standardDeviation: Standard deviation vector
 	///   - numberOfScenarios: Number of samples
-	///   - seed: Random seed for reproducibility
-	/// - Returns: Array of Monte Carlo scenarios
+	///   - seed: Seed for the private ``DeterministicRNG``. The same seed reproduces the
+	///     same scenarios exactly, including when other seeded generations run at the same
+	///     time. `nil` (the default) draws from system entropy and does not reproduce.
+	/// - Returns: Array of Monte Carlo scenarios, or `[]` if the two vectors differ in
+	///   length or `numberOfScenarios` is not positive.
 	public static func normal(
 		mean: [Double],
 		standardDeviation: [Double],
 		numberOfScenarios: Int,
 		seed: UInt64? = nil
+	) -> [MonteCarloScenario] {
+		if let seed {
+			var generator = DeterministicRNG(seed: seed)
+			return normal(mean: mean, standardDeviation: standardDeviation,
+						  numberOfScenarios: numberOfScenarios, using: &generator)
+		}
+		var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+		return normal(mean: mean, standardDeviation: standardDeviation,
+					  numberOfScenarios: numberOfScenarios, using: &generator)
+	}
+
+	/// Generate normally distributed scenarios, drawing every value from `generator`.
+	///
+	/// The generator-parameterized form of
+	/// ``normal(mean:standardDeviation:numberOfScenarios:seed:)``, following the same
+	/// convention as ``SeedableDistribution/next(using:)``.
+	///
+	/// - Parameters:
+	///   - mean: Mean vector
+	///   - standardDeviation: Standard deviation vector
+	///   - numberOfScenarios: Number of samples
+	///   - generator: The random source. Advanced by two draws per parameter per scenario.
+	/// - Returns: Array of Monte Carlo scenarios, or `[]` if the two vectors differ in
+	///   length or `numberOfScenarios` is not positive.
+	public static func normal<G: RandomNumberGenerator>(
+		mean: [Double],
+		standardDeviation: [Double],
+		numberOfScenarios: Int,
+		using generator: inout G
 	) -> [MonteCarloScenario] {
 		guard mean.count == standardDeviation.count else {
 			return []
@@ -144,25 +210,16 @@ public struct ScenarioGenerator {
 			return []
 		}
 
-		// Set seed if provided
-		if let seed = seed {
-			srand48(Int(seed)) // stochastic:exempt
-		}
-
 		var scenarios: [MonteCarloScenario] = []
+		scenarios.reserveCapacity(numberOfScenarios)
 		let dimension = mean.count
 
 		for _ in 0..<numberOfScenarios {
 			var parameters: [String: Double] = [:]
 
 			for i in 0..<dimension {
-				// Box-Muller transform for normal samples
-				let u1 = drand48() // stochastic:exempt
-				let u2 = drand48() // stochastic:exempt
-				let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2) // fp-safety:disable — u1 from drand48 in (0,1)
-				let value = mean[i] + standardDeviation[i] * z
-
-				parameters["param_\(i)"] = value
+				let z = standardNormal(using: &generator)
+				parameters["param_\(i)"] = mean[i] + standardDeviation[i] * z
 			}
 
 			scenarios.append(MonteCarloScenario(
@@ -174,17 +231,69 @@ public struct ScenarioGenerator {
 		return scenarios
 	}
 
+	/// A standard normal variate by the Box–Muller transform.
+	///
+	/// The first uniform is taken as `1 - u`, not `u`, and that is the whole point of the
+	/// helper. `Double.random(in: 0..<1)` can return exactly `0.0` — the interval is
+	/// half-open at the *bottom* as well as closed nowhere — and `log(0)` is `-infinity`,
+	/// which makes `z` non-finite and poisons every downstream statistic. Reflecting the
+	/// draw fixes it without distorting anything: `u < 1` implies `1 - u > 0` in IEEE
+	/// arithmetic for every representable `u`, and `u ↦ 1 - u` is a measure-preserving
+	/// bijection of the unit interval, so the transformed draw is still uniform. Clamping
+	/// to a small epsilon would also avoid the pole, but at the cost of an atom of
+	/// probability piled on the clamp value.
+	///
+	/// The second uniform sits under a cosine, which is total, so it is used as drawn.
+	private static func standardNormal<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		let u1 = 1.0 - Double.random(in: 0..<1, using: &generator)   // (0, 1]
+		let u2 = Double.random(in: 0..<1, using: &generator)         // [0, 1)
+		return (-2.0 * Foundation.log(u1)).squareRoot() * Foundation.cos(2.0 * Double.pi * u2)
+	}
+
+	// MARK: - Bootstrap
+
 	/// Generate scenarios from historical data (bootstrap resampling).
 	///
 	/// - Parameters:
 	///   - historicalData: Historical observations
 	///   - numberOfScenarios: Number of bootstrap samples
-	///   - seed: Random seed for reproducibility
+	///   - seed: Seed for the private ``DeterministicRNG``. The same seed reproduces the
+	///     same resample exactly, including when other seeded generations run at the same
+	///     time. `nil` (the default) draws from system entropy and does not reproduce.
 	/// - Returns: Array of Monte Carlo scenarios
+	/// - Throws: `BusinessMathError.insufficientData` if `historicalData` is empty, or
+	///   `BusinessMathError.invalidInput` if `numberOfScenarios` is not positive.
 	public static func bootstrap(
 		historicalData: [[Double]],
 		numberOfScenarios: Int,
 		seed: UInt64? = nil
+	) throws -> [MonteCarloScenario] {
+		if let seed {
+			var generator = DeterministicRNG(seed: seed)
+			return try bootstrap(historicalData: historicalData,
+								 numberOfScenarios: numberOfScenarios, using: &generator)
+		}
+		var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+		return try bootstrap(historicalData: historicalData,
+							 numberOfScenarios: numberOfScenarios, using: &generator)
+	}
+
+	/// Resample historical observations, drawing every index from `generator`.
+	///
+	/// The generator-parameterized form of
+	/// ``bootstrap(historicalData:numberOfScenarios:seed:)``.
+	///
+	/// - Parameters:
+	///   - historicalData: Historical observations
+	///   - numberOfScenarios: Number of bootstrap samples
+	///   - generator: The random source. Advanced once per scenario.
+	/// - Returns: Array of Monte Carlo scenarios
+	/// - Throws: `BusinessMathError.insufficientData` if `historicalData` is empty, or
+	///   `BusinessMathError.invalidInput` if `numberOfScenarios` is not positive.
+	public static func bootstrap<G: RandomNumberGenerator>(
+		historicalData: [[Double]],
+		numberOfScenarios: Int,
+		using generator: inout G
 	) throws -> [MonteCarloScenario] {
 		guard !historicalData.isEmpty else {
 			throw BusinessMathError.insufficientData(
@@ -201,18 +310,16 @@ public struct ScenarioGenerator {
 			)
 		}
 
-		// Set seed if provided
-		if let seed = seed {
-			srand48(Int(seed)) // stochastic:exempt
-		}
-
 		var scenarios: [MonteCarloScenario] = []
+		scenarios.reserveCapacity(numberOfScenarios)
 		// Safe: guard above ensures at least one element
 		let dimension = historicalData[0].count
 
 		for _ in 0..<numberOfScenarios {
-			// Random sample from historical data
-			let index = Int(drand48() * Double(historicalData.count)) // stochastic:exempt fp-safety:disable — count > 0 from guard
+			// Drawn as an integer rather than by truncating a scaled uniform: the integer
+			// form is exactly uniform over the observations, whereas `Int(u * count)`
+			// inherits the rounding of the floating-point product at the interval edges.
+			let index = Int.random(in: 0..<historicalData.count, using: &generator)
 			let sample = historicalData[index]
 
 			var parameters: [String: Double] = [:]
@@ -229,19 +336,52 @@ public struct ScenarioGenerator {
 		return scenarios
 	}
 
+	// MARK: - Uniform
+
 	/// Generate uniform random scenarios.
 	///
 	/// - Parameters:
 	///   - lowerBounds: Lower bounds for each parameter
 	///   - upperBounds: Upper bounds for each parameter
 	///   - numberOfScenarios: Number of samples
-	///   - seed: Random seed for reproducibility
-	/// - Returns: Array of Monte Carlo scenarios
+	///   - seed: Seed for the private ``DeterministicRNG``. The same seed reproduces the
+	///     same scenarios exactly, including when other seeded generations run at the same
+	///     time. `nil` (the default) draws from system entropy and does not reproduce.
+	/// - Returns: Array of Monte Carlo scenarios, or `[]` if the two bound vectors differ
+	///   in length or `numberOfScenarios` is not positive.
 	public static func uniform(
 		lowerBounds: [Double],
 		upperBounds: [Double],
 		numberOfScenarios: Int,
 		seed: UInt64? = nil
+	) -> [MonteCarloScenario] {
+		if let seed {
+			var generator = DeterministicRNG(seed: seed)
+			return uniform(lowerBounds: lowerBounds, upperBounds: upperBounds,
+						   numberOfScenarios: numberOfScenarios, using: &generator)
+		}
+		var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+		return uniform(lowerBounds: lowerBounds, upperBounds: upperBounds,
+					   numberOfScenarios: numberOfScenarios, using: &generator)
+	}
+
+	/// Generate uniform random scenarios, drawing every value from `generator`.
+	///
+	/// The generator-parameterized form of
+	/// ``uniform(lowerBounds:upperBounds:numberOfScenarios:seed:)``.
+	///
+	/// - Parameters:
+	///   - lowerBounds: Lower bounds for each parameter
+	///   - upperBounds: Upper bounds for each parameter
+	///   - numberOfScenarios: Number of samples
+	///   - generator: The random source. Advanced once per parameter per scenario.
+	/// - Returns: Array of Monte Carlo scenarios, or `[]` if the two bound vectors differ
+	///   in length or `numberOfScenarios` is not positive.
+	public static func uniform<G: RandomNumberGenerator>(
+		lowerBounds: [Double],
+		upperBounds: [Double],
+		numberOfScenarios: Int,
+		using generator: inout G
 	) -> [MonteCarloScenario] {
 		guard lowerBounds.count == upperBounds.count else {
 			return []
@@ -250,21 +390,20 @@ public struct ScenarioGenerator {
 			return []
 		}
 
-		// Set seed if provided
-		if let seed = seed {
-			srand48(Int(seed)) // stochastic:exempt
-		}
-
 		var scenarios: [MonteCarloScenario] = []
+		scenarios.reserveCapacity(numberOfScenarios)
 		let dimension = lowerBounds.count
 
 		for _ in 0..<numberOfScenarios {
 			var parameters: [String: Double] = [:]
 
 			for i in 0..<dimension {
-				let u = drand48() // stochastic:exempt
-				let value = lowerBounds[i] + u * (upperBounds[i] - lowerBounds[i])
-				parameters["param_\(i)"] = value
+				// Interpolated rather than `Double.random(in: lower...upper)`, which traps
+				// when a caller passes bounds the wrong way round. Inverted bounds still
+				// produce values between them here, which is the behaviour this has always
+				// had, and a library should not kill the process over an argument order.
+				let u = Double.random(in: 0..<1, using: &generator)
+				parameters["param_\(i)"] = lowerBounds[i] + u * (upperBounds[i] - lowerBounds[i])
 			}
 
 			scenarios.append(MonteCarloScenario(
