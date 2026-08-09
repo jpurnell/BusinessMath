@@ -421,3 +421,73 @@ struct MertonModelTests {
         #expect(model.assetVolatility < 0.80)
     }
 }
+
+// MARK: - Normal CDF Consolidation
+
+/// Pins the Merton outputs against a 120-digit reference.
+///
+/// `MertonModel.swift` defined `cumulativeNormal` twice in one file — a
+/// `private func` on the type and a file-scope generic one — and both were
+/// character-for-character the body of the public `normalCDF`. Deleting them
+/// is exactly output-preserving, and the first two tests below say so to the
+/// last bit rather than to a tolerance.
+///
+/// `equityValue()` is different: it delegates to `BlackScholesModel`, which was
+/// running on the Abramowitz & Stegun `erf`. Consolidating that onto the exact
+/// `T.erf` moves the number, so it is pinned here against an oracle that shares
+/// arithmetic with neither implementation.
+@Suite("Merton Model Normal CDF Consolidation")
+struct MertonNormalCDFConsolidationTests {
+
+    /// V = 100e6, D = 80e6, sigma = 0.25, r = 0.05, T = 1.
+    private var model: MertonModel<Double> {
+        MertonModel(
+            assetValue: 100_000_000.0,
+            assetVolatility: 0.25,
+            debtFaceValue: 80_000_000.0,
+            riskFreeRate: 0.05,
+            maturity: 1.0
+        )
+    }
+
+    @Test("Default probability is bit-identical to the public normalCDF")
+    func defaultProbabilityMatchesCanonicalCDF() {
+        // Reference computed at 120 digits: 1.66628532445970035e-01.
+        // Both deleted copies computed (1 + erf(x/sqrt(2)))/2, which is what
+        // normalCDF(x:mean:stdDev:) reduces to at mean 0, stdDev 1 — `x - 0` and
+        // `/ 1` are both exact — so this must not move by a single ulp.
+        let probability = model.defaultProbability()
+        #expect(abs(probability - 1.66628532445970035e-01) <= 1e-15)
+    }
+
+    @Test("Distance to default is unchanged")
+    func distanceToDefaultUnchanged() {
+        // Reference computed at 120 digits. distanceToDefault() never touched a
+        // cumulative normal at all, so this is a guard against collateral damage.
+        #expect(abs(model.distanceToDefault() - 9.67574205256839015e-01) <= 1e-15)
+    }
+
+    @Test("Equity value matches a 120-digit reference")
+    func equityValueMatchesHighPrecisionReference() {
+        // Reference: $25,412,511.9983143136.
+        // Under the A&S erf inside BlackScholesModel this came out
+        // $25,412,505.1188 — $6.88 low on a $25.4M equity claim, 2.71e-07
+        // relative.
+        let equity = model.equityValue()
+        let reference = 2.54125119983143136e+07
+        #expect(abs(equity - reference) <= 1e-12 * reference,
+                "equityValue: got \(equity), reference \(reference), miss \(abs(equity - reference))")
+    }
+
+    @Test("Default probability and N(-d2) agree exactly")
+    func defaultProbabilityIsNormalCDFOfMinusD2() {
+        // The relationship the deleted helpers existed to express. Now that
+        // there is one implementation, it holds bit-for-bit by construction.
+        let m = model
+        let d1 = (Foundation.log(m.assetValue / m.debtFaceValue)
+                  + (m.riskFreeRate + 0.5 * m.assetVolatility * m.assetVolatility) * m.maturity)
+                 / (m.assetVolatility * Foundation.sqrt(m.maturity))
+        let d2 = d1 - m.assetVolatility * Foundation.sqrt(m.maturity)
+        #expect(m.defaultProbability() == normalCDF(x: -d2))
+    }
+}

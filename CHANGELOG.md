@@ -11,6 +11,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Changed (breaking) — `VectorSpace.Scalar` now requires `BinaryFloatingPoint`
+
+`Real` gives no way to convert a scalar to `Double`. Twenty-three sites across the optimizers,
+the simulators and the financial statements worked around that with a runtime-cast ladder:
+
+```swift
+let deltaEDouble: Double
+if let d = deltaE as? Double { deltaEDouble = d }
+else if let f = deltaE as? Float { deltaEDouble = Double(f) }
+else { deltaEDouble = Double("\(deltaE)") ?? 0.0 }
+```
+
+The literal on the last line is not a neutral default, it is an answer. In
+`SimulatedAnnealing`'s Metropolis test a `deltaE` of `0.0` makes `exp(-ΔE/T) == 1`, so the
+optimizer accepts **every** worse solution and the anneal degenerates into a random walk
+that reports itself as converged. In `DifferentialEvolution` and `GeneticAlgorithm` the
+`0.0`/`1.0` pair silently rewrote the caller's search box to the unit square. The same
+shape of defect in `CoxProcess.simulateDefaultTime` (below) was reached in practice and
+returned answers wrong by a factor of seven.
+
+`BinaryFloatingPoint` supplies exactly the missing conversion, and every concrete `Real`
+conformer — `Float`, `Double`, `Float80` — already satisfies it, so no existing
+instantiation breaks. `VectorSpace.Scalar` is now `Real & BinaryFloatingPoint & Sendable &
+Codable`, and `Vector1D`, `Vector2D`, `Vector3D` and `VectorN` pick the constraint up on
+their `T`. The ladders are deleted, not repaired: the conversion is now total and exact,
+with no branch left to take a wrong turn.
+
+The constraint propagated to the generic parameters of `RiskParityOptimizer`, the
+`Interpolator` protocol and its twenty conforming interpolators, `HazardRateCurve` and
+`bootstrapCreditCurve`, `DistributionRandom.T`, the covenant functions in
+`DebtCovenants`, `Array.descriptiveStatistics`, and `xnpv`/`xirr`. `BalanceSheet.validate`
+moved to an `extension BalanceSheet where T: BinaryFloatingPoint` rather than tightening
+`BalanceSheet<T>` itself, which would have cascaded across the whole financial-statement
+module for one error message.
+
+A `Real` type that is not `BinaryFloatingPoint` would no longer satisfy these constraints.
+swift-numerics ships no such type.
+
+Two of the ladders were live rather than dead:
+
+- **`xnpv` and `xirr` truncated fractional years for any scalar but `Double`.** `years`
+  came from `yearsDouble as? T` with `T(Int(yearsDouble))` behind it. For `T == Float` the
+  cast always failed, so a cash flow 0.5 years out was discounted as if it were at time
+  zero and one at 1.5 years as if at 1.0 — the entire point of XNPV over NPV, discounting
+  by exact date, was discarded. Pinned by `xnpvFloatKeepsFractionalYears`.
+- **`Array.descriptiveStatistics` silently dropped elements it could not cast.** The
+  ladder sat inside a `compactMap`, so any unrecognised element vanished and the summary
+  described a subset of the array while presenting itself as describing all of it.
+
+`SimulatedAnnealing`'s Metropolis criterion is now the named
+`acceptanceProbability(deltaE:temperature:)`, which had no test asserting the probability
+at all; `metropolisAcceptanceProbability` pins it against the analytic `exp(-ΔE/T)`, and
+`metropolisAcceptanceProbabilityFloatScalar` pins the case the fallback would have broken.
+The arithmetic stays in `Double` there because the temperature schedule is `Double`;
+widening `deltaE` is exact, so nothing is lost. Elsewhere — `HazardRateCurve.cdsSpread`'s
+`Int(maturity)` and quarterly period labels — the conversion to `Double` was removed
+entirely and the work stays in the scalar type.
+
 #### Fixed (breaking) — `CoxProcess.simulateDefaultTime` simulated the wrong model
 
 `simulateDefaultTime(seeds: [Double])` is replaced by
@@ -216,6 +274,64 @@ whose coefficients span several orders of magnitude.
 #### Fixed — exact float equality in `FormulaEvaluatorTests`
 
 Two `#expect(x == 0.1)` assertions failed the test-quality audit; now tolerance-based.
+
+#### Changed (breaking) — one canonical `inverseNormalCDF`, and the `tolerance:` parameter is gone
+
+Three implementations of the inverse normal CDF existed. One was deleted earlier for being
+discontinuous — it jumped from 0.30 to 1.372 at `u = 0.6`, leaving an entire interval of
+outputs unreachable. Having three copies is what let the broken one survive unnoticed, so
+the remaining two are now one.
+
+The public generic keeps its name and shape. Its body — a bisection on `[-10, 10]` calling
+`normalCDF` about eighteen times per evaluation — is replaced by a closed form: Acklam's
+(2000) rational approximation, polished by a single Halley step against `erfc`. The private
+Beasley-Springer-Moro copy in `JumpDiffusion` is deleted; it now calls the public function.
+
+**`tolerance:` is removed from the signature.** It was a stopping width for the bisection,
+expressed in `z` rather than in probability, which is what made the old body uniformly
+coarse. A closed form has nothing to iterate, so the parameter would have silently done
+nothing — the same defect pattern removed elsewhere in this release. No call site passed it:
+all eleven across `Sources` and `Tests` relied on the default, so nothing breaks at the call
+site. Only the DocC symbol link in `1.8-StatisticalDistributionsGuide.md` needed updating.
+
+Accuracy was measured before the swap rather than assumed. Absolute error in `z` against an
+`erfc`-based Halley reference:
+
+| p        | bisection (old) | this release |
+|----------|-----------------|--------------|
+| 0.4      | 2.5e-05         | 5.6e-17      |
+| 0.05     | 3.2e-05         | 2.2e-16      |
+| 1e-3     | 5.4e-05         | 4.4e-16      |
+| 1e-4     | 6.8e-05         | 0.0          |
+| 1e-6     | 7.0e-05         | 8.9e-16      |
+
+Worst case over a dense sweep: **7.6e-05 → 1.8e-15** (2 ulp) for `1e-12 <= p <= 1 - 1e-12`,
+and 1.1e-14 down the lower tail as far as `p = 1e-225`. The old
+body also failed outright below about `p = 1e-16`, where the true quantile leaves its
+hard-coded `[-10, 10]` bracket — at `p = 1e-20` it returned `-8.33` against a true `-9.26`.
+Evaluation is also about ten times faster, having traded eighteen `erf` calls for one `erfc`.
+
+For the record on which variant: the plain Beasley-Springer rational measures 4.5e-4 and
+diverges outside its central region (error 1.9 at `p = 1e-6`); Moro's Chebyshev-tailed
+refinement measures 3.0e-9; the unpolished Acklam seed measures 8.4e-9. The Halley step is
+what buys the remaining six orders of magnitude, and it also removes the 4.4e-9
+discontinuity the raw rational carries at its `p = 0.02425` branch seam — worth having in a
+function whose predecessor was deleted for being discontinuous.
+
+Two behaviours are new:
+
+- **Domain edges are total.** `p <= 0` returns `-infinity`, `p >= 1` returns `+infinity`,
+  and NaN propagates, rather than trapping. The function sits under Monte Carlo draws and
+  optimiser inner loops, where a trap takes down a whole run over one sample.
+- **Symmetry is exact.** For `p >= 0.5` the subtraction `1 - p` is exact in binary floating
+  point, so the upper half is computed as `-quantile(1 - p)` and `z(p) == -z(1 - p)` now
+  holds bit-for-bit.
+
+`JumpDiffusion`'s output is unchanged: all 957 pinned values across three parameter sets and
+a sweep over the `lambda*dt == 30` boundary are bit-identical. Its only consumer of this
+function is the normal approximation inside `poissonInverseCDF`, whose result is rounded to
+an `Int`; the underlying continuous value moved by at most 4.0e-07, which is far too small
+to cross a rounding boundary in any sampled case.
 
 ### [2.5.2] - 2026-08-07
 
