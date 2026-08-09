@@ -1031,7 +1031,23 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
 public enum OptimizationError: Error {
     case failedToConverge(message: String)
     case invalidInput(message: String)
+    /// Two dimensions that disagree — a right-hand side of the wrong length, a ragged matrix, a
+    /// point whose arity does not match the search space.
+    ///
+    /// Distinct from ``invalidInput(message:)``, which covers a dimension that is absent or
+    /// nonsensical rather than *inconsistent*. The distinction is actionable: a mismatch is a bug
+    /// at the call site, and naming both counts tells the caller which argument to correct.
+    case dimensionMismatch(message: String)
     case nonFiniteValue(message: String)
+    /// A computation whose values are still finite but can no longer be trusted — typically a
+    /// pivot small enough that elimination amplifies rounding error past the point of meaning.
+    ///
+    /// Distinct from ``singularMatrix(message:)``, which is exact singularity, and from
+    /// ``nonFiniteValue(message:)``, where a value has already gone non-finite. A nearly singular
+    /// matrix is invertible in exact arithmetic; it is the floating-point solve that fails. So
+    /// rescaling or reformulating may succeed where retrying unchanged will not — which is why
+    /// this is worth distinguishing rather than folding into either neighbour.
+    case numericalInstability(message: String)
     case singularMatrix(message: String)
     case maxIterationsReached // LIVE: used by iterative solvers
     case unsupportedConstraints(String)

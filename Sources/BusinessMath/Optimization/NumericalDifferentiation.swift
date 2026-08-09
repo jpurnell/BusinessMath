@@ -212,8 +212,21 @@ public func solveLinearSystem<T: Real>(
 	vector: [T]
 ) throws -> [T] {
 	let n = matrix.count
-	guard n > 0, matrix.allSatisfy({ $0.count == n }), vector.count == n else {
-		throw OptimizationError.invalidInput(message: "Matrix dimensions inconsistent")
+	// Separated so the error names the actual condition: an empty matrix is not a mismatch,
+	// and a caller correcting a mismatch needs both counts.
+	guard n > 0 else {
+		throw OptimizationError.invalidInput(message: "Matrix is empty")
+	}
+	guard matrix.allSatisfy({ $0.count == n }) else {
+		let widths = Set(matrix.map(\.count)).sorted()
+		throw OptimizationError.dimensionMismatch(
+			message: "Matrix has \(n) rows but row widths \(widths); every row must have \(n)"
+		)
+	}
+	guard vector.count == n else {
+		throw OptimizationError.dimensionMismatch(
+			message: "Matrix is \(n)×\(n) but the right-hand side has \(vector.count) elements"
+		)
 	}
 
 	// Create augmented matrix [A|b]
@@ -235,9 +248,19 @@ public func solveLinearSystem<T: Real>(
 			}
 		}
 
-		// Check for singular matrix
-		if maxVal < T(1) / T(1_000_000_000) {  // Essentially zero
-			throw OptimizationError.singularMatrix(message: "Matrix is singular or nearly singular")
+		// "Singular or nearly singular" conflated two conditions a caller can act on
+		// differently. An exactly zero column is singular and no amount of rescaling helps; a
+		// tiny-but-nonzero pivot is invertible in exact arithmetic and fails only in floating
+		// point, so reformulating or rescaling the problem may well succeed.
+		if maxVal == T(0) {
+			throw OptimizationError.singularMatrix(
+				message: "Column \(col) is entirely zero; the matrix is singular"
+			)
+		}
+		if maxVal < T(1) / T(1_000_000_000) {
+			throw OptimizationError.numericalInstability(
+				message: "Pivot in column \(col) is below 1e-9; elimination would amplify rounding error past the point of meaning"
+			)
 		}
 
 		// Swap rows if needed
@@ -271,11 +294,20 @@ public func solveLinearSystem<T: Real>(
 ///
 /// - Parameter matrix: The matrix to invert (n×n)
 /// - Returns: The inverse matrix
-/// - Throws: `OptimizationError` if the matrix is singular
+/// - Throws: ``OptimizationError/invalidInput(message:)`` if the matrix is empty,
+///   ``OptimizationError/dimensionMismatch(message:)`` if it is not square,
+///   ``OptimizationError/singularMatrix(message:)`` if it is singular, or
+///   ``OptimizationError/numericalInstability(message:)`` if it is too ill-conditioned to invert.
 public func invertMatrix<T: Real>(_ matrix: [[T]]) throws -> [[T]] {
 	let n = matrix.count
-	guard n > 0, matrix.allSatisfy({ $0.count == n }) else {
-		throw OptimizationError.invalidInput(message: "Matrix must be square")
+	guard n > 0 else {
+		throw OptimizationError.invalidInput(message: "Matrix is empty")
+	}
+	guard matrix.allSatisfy({ $0.count == n }) else {
+		let widths = Set(matrix.map(\.count)).sorted()
+		throw OptimizationError.dimensionMismatch(
+			message: "Matrix has \(n) rows but row widths \(widths); a square matrix needs every row to have \(n)"
+		)
 	}
 
 	// Create identity matrix

@@ -58,7 +58,7 @@ public func validateLinearModel<V: VectorSpace>(
     for i in 0..<dimension {
         var pointPlus = initialPoint.toArray()
         guard i < pointPlus.count else {
-            throw OptimizationError.invalidInput(
+            throw OptimizationError.dimensionMismatch(
                 message: "Initial point has \(pointPlus.count) dimensions, expected \(dimension)"
             )
         }
