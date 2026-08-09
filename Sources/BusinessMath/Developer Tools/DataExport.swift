@@ -28,8 +28,12 @@ import Numerics
 ///
 /// let exporter = DataExporter(model: model)
 /// let csv = exporter.exportToCSV()
-/// let json = exporter.exportToJSON()
+/// let json = try exporter.exportToJSON()
 /// ```
+///
+/// JSON export refuses rather than defaults: if the model contains a non-finite amount —
+/// which a division by zero upstream will produce — ``DataExporter/exportToJSON(includeMetadata:)``
+/// throws an error naming the offending key path instead of emitting misleading output.
 public struct DataExporter: Sendable {
     /// The financial model to export
     public let model: FinancialModel
@@ -80,7 +84,10 @@ public struct DataExporter: Sendable {
     ///
     /// - Parameter includeMetadata: Whether to include model metadata (default: false)
     /// - Returns: JSON-formatted string with model data
-    public func exportToJSON(includeMetadata: Bool = false) -> String {
+    /// - Throws: ``BusinessMathError/dataQuality(message:context:)`` if any component amount or
+    ///   percentage is non-finite (NaN or infinite). The error names the offending key path,
+    ///   such as `revenue[2].amount`, so the model can be corrected at the source.
+    public func exportToJSON(includeMetadata: Bool = false) throws -> String {
         var dict: [String: Any] = [:]
 
         // Revenue section
@@ -123,7 +130,7 @@ public struct DataExporter: Sendable {
             dict["metadata"] = metadataDict
         }
 
-        return dictToJson(dict)
+        return try dictToJson(dict)
     }
 
     private func escapeCsv(_ string: String) -> String {
@@ -174,13 +181,16 @@ public struct TimeSeriesExporter<T: Real & Sendable>: Sendable {
     /// Export time series to JSON format
     ///
     /// - Returns: JSON-formatted string with period and value data
-    public func exportToJSON() -> String {
+    /// - Throws: ``BusinessMathError/dataQuality(message:context:)`` if any observation is
+    ///   non-finite (NaN or infinite). The error names the offending key path, such as
+    ///   `data[7].value`, so the series can be corrected at the source.
+    public func exportToJSON() throws -> String {
         var dict: [String: Any] = [:]
 
         if series.count == 0 {
             dict["data"] = []
             dict["count"] = 0
-            return dictToJson(dict)
+            return try dictToJson(dict)
         }
 
         var dataArray: [[String: Any]] = []
@@ -197,7 +207,7 @@ public struct TimeSeriesExporter<T: Real & Sendable>: Sendable {
         dict["data"] = dataArray
         dict["count"] = series.count
 
-        return dictToJson(dict)
+        return try dictToJson(dict)
     }
 }
 
@@ -252,7 +262,10 @@ public struct InvestmentExporter: Sendable {
     /// Export investment analysis to JSON format
     ///
     /// - Returns: JSON-formatted string with investment data
-    public func exportToJSON() -> String {
+    /// - Throws: ``BusinessMathError/dataQuality(message:context:)`` if any metric or cash flow
+    ///   is non-finite (NaN or infinite) — for instance a present value derived from a discount
+    ///   rate of -100%. The error names the offending key path, such as `cash_flows[3].amount`.
+    public func exportToJSON() throws -> String {
         var dict: [String: Any] = [:]
 
         dict["initial_cost"] = investment.initialCost
@@ -278,21 +291,100 @@ public struct InvestmentExporter: Sendable {
         }
         dict["cash_flows"] = cashFlowsArray
 
-        return dictToJson(dict)
+        return try dictToJson(dict)
     }
 }
 
 // MARK: - JSON Helper
 
-/// Convert dictionary to formatted JSON string
-private func dictToJson(_ dict: [String: Any]) -> String {
-    // silent: best-effort JSON serialization — returns empty object on failure
-    guard let jsonData = try? JSONSerialization.data(
-        withJSONObject: dict,
-        options: [.prettyPrinted, .sortedKeys]
-    ) else {
-        return "{}"
+/// Human-readable rendering of a non-finite value, for error messages.
+private func nonFiniteDescription(_ value: Double) -> String {
+    if value.isNaN {
+        return "NaN"
+    }
+    return value > 0 ? "+Infinity" : "-Infinity"
+}
+
+/// Find the first non-finite number in a candidate JSON object graph and report its key path.
+///
+/// Key paths use dot notation for dictionary keys and bracket notation for array indices,
+/// so a caller is told exactly which component is at fault — e.g. `revenue[2].amount`.
+///
+/// - Parameters:
+///   - value: The value to inspect. Dictionaries and arrays are walked recursively.
+///   - path: The key path accumulated so far.
+///   - depth: Current recursion depth.
+/// - Returns: The key path and value of the first non-finite number found, or `nil` if none.
+private func firstNonFiniteValue(in value: Any, at path: String, depth: Int = 0) -> (path: String, value: Double)? {
+    // recursion-safe: bounded by an explicit depth guard; export dictionaries nest two levels
+    guard depth < 32 else { return nil }
+
+    if let dictionary = value as? [String: Any] {
+        for key in dictionary.keys.sorted() {
+            let childPath = path.isEmpty ? key : "\(path).\(key)"
+            if let found = firstNonFiniteValue(in: dictionary[key] as Any, at: childPath, depth: depth + 1) {
+                return found
+            }
+        }
+        return nil
     }
 
-    return String(data: jsonData, encoding: .utf8) ?? "{}"
+    if let array = value as? [Any] {
+        for (index, element) in array.enumerated() {
+            if let found = firstNonFiniteValue(in: element, at: "\(path)[\(index)]", depth: depth + 1) {
+                return found
+            }
+        }
+        return nil
+    }
+
+    if let double = value as? Double, !double.isFinite {
+        return (path, double)
+    }
+
+    if let float = value as? Float, !float.isFinite {
+        return (path, Double(float))
+    }
+
+    return nil
+}
+
+/// Convert dictionary to formatted JSON string.
+///
+/// A non-finite `Double` anywhere in `dict` cannot be written as JSON. `JSONSerialization.data`
+/// signals this by raising an Objective-C `NSInvalidArgumentException`, which is not a Swift
+/// error: `try?` does not catch it and the process terminates. `isValidJSONObject(_:)` performs
+/// the same validation without raising, so it is used as the pre-check here and the offending
+/// value is reported rather than defaulted away.
+///
+/// - Parameter dict: The dictionary to serialize.
+/// - Returns: Pretty-printed JSON with sorted keys.
+/// - Throws: ``BusinessMathError/dataQuality(message:context:)`` naming the key path and value
+///   of the first entry that JSON cannot represent.
+private func dictToJson(_ dict: [String: Any]) throws -> String {
+    guard JSONSerialization.isValidJSONObject(dict) else {
+        guard let offender = firstNonFiniteValue(in: dict, at: "") else {
+            throw BusinessMathError.dataQuality(
+                message: "Export contains a value that JSON cannot represent",
+                context: ["format": "JSON"]
+            )
+        }
+
+        let rendered = nonFiniteDescription(offender.value)
+        throw BusinessMathError.dataQuality(
+            message: "\(offender.path) is \(rendered); JSON has no representation for non-finite numbers",
+            context: [
+                "format": "JSON",
+                "path": offender.path,
+                "value": rendered
+            ]
+        )
+    }
+
+    let jsonData = try JSONSerialization.data(
+        withJSONObject: dict,
+        options: [.prettyPrinted, .sortedKeys]
+    )
+
+    return String(decoding: jsonData, as: UTF8.self)
 }

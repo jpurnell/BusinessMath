@@ -111,7 +111,7 @@ import RealModule
         // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 0.5, "Should complete in < 500ms (got \((elapsed * 1000).number(2))ms)")
     }
-    @Test("Performance_JSONExportLargeModel") func LPerformance_JSONExportLargeModel() {
+    @Test("Performance_JSONExportLargeModel") func LPerformance_JSONExportLargeModel() throws {
         // Given: A large model
         var model = FinancialModel()
 
@@ -124,7 +124,7 @@ import RealModule
 
         // When/Then: JSON export should complete in < 50ms
         let start = Date()
-        let json = exporter.exportToJSON()
+        let json = try exporter.exportToJSON()
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(json.count > 1000)
@@ -463,7 +463,7 @@ struct ExporterEquivalenceTests {
 			model.revenueComponents.append(RevenueComponent(name: "R\(i)", amount: Double(i)))
 		}
 		let exporter = DataExporter(model: model)
-		let json = exporter.exportToJSON()
+		let json = try exporter.exportToJSON()
 
 		let data = Data(json.utf8)
 		let obj = try #require(try? JSONSerialization.jsonObject(with: data, options: []), "JSON export should produce parseable JSON.")

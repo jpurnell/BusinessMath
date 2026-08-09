@@ -99,7 +99,7 @@ import RealModule
 
         // When: Exporting to JSON
         let exporter = DataExporter(model: model)
-        let jsonOutput = exporter.exportToJSON()
+        let jsonOutput = try exporter.exportToJSON()
 
         // Then: Should produce valid JSON
         #expect(!jsonOutput.isEmpty, "JSON output should not be empty")
@@ -126,7 +126,7 @@ import RealModule
 
         // When: Exporting to JSON
         let exporter = TimeSeriesExporter(series: series)
-        let jsonOutput = exporter.exportToJSON()
+        let jsonOutput = try exporter.exportToJSON()
 
         // Then: Should produce valid JSON
         #expect(!jsonOutput.isEmpty, "JSON output should not be empty")
@@ -219,7 +219,7 @@ import RealModule
 
     // MARK: - JSON Format Validation Tests
 
-    @Test("DataExport_JSONIsPrettyPrinted") func LDataExport_JSONIsPrettyPrinted() {
+    @Test("DataExport_JSONIsPrettyPrinted") func LDataExport_JSONIsPrettyPrinted() throws {
         // Given: A model with data
         let model = FinancialModel {
             Revenue {
@@ -229,7 +229,7 @@ import RealModule
 
         // When: Exporting to JSON
         let exporter = DataExporter(model: model)
-        let jsonOutput = exporter.exportToJSON()
+        let jsonOutput = try exporter.exportToJSON()
 
         // Then: Should be formatted (have indentation/whitespace)
         let hasIndentation = jsonOutput.contains("  ") || jsonOutput.contains("\t")
@@ -240,7 +240,7 @@ import RealModule
 
     // MARK: - Custom Options Tests
 
-    @Test("DataExport_SupportsIncludeMetadataOption") func LDataExport_SupportsIncludeMetadataOption() {
+    @Test("DataExport_SupportsIncludeMetadataOption") func LDataExport_SupportsIncludeMetadataOption() throws {
         // Given: A model with metadata
         let model = FinancialModel {
             Revenue {
@@ -250,7 +250,7 @@ import RealModule
 
         // When: Exporting with metadata included
         let exporter = DataExporter(model: model)
-        let jsonWithMetadata = exporter.exportToJSON(includeMetadata: true)
+        let jsonWithMetadata = try exporter.exportToJSON(includeMetadata: true)
 
         // Then: Should include model metadata
 		#expect(
@@ -261,9 +261,176 @@ import RealModule
         )
     }
 
+    // MARK: - Non-Finite Value Tests
+
+    @Test("DataExport_ThrowsOnNonFiniteRevenueAmount") func LDataExport_ThrowsOnNonFiniteRevenueAmount() throws {
+        // Given: A model whose revenue amount is non-finite (e.g. a division by zero
+        // upstream in FormulaEvaluator, which returns a non-finite result rather than throwing)
+        var model = FinancialModel()
+        model.revenueComponents.append(RevenueComponent(name: "Good", amount: 100_000))
+        model.revenueComponents.append(RevenueComponent(name: "Bad", amount: Double.nan))
+
+        // When: Exporting to JSON
+        let exporter = DataExporter(model: model)
+
+        // Then: Should throw rather than terminate the process
+        #expect(throws: BusinessMathError.self) {
+            _ = try exporter.exportToJSON()
+        }
+    }
+
+    @Test("DataExport_ErrorNamesOffendingKeyPathAndValue") func LDataExport_ErrorNamesOffendingKeyPathAndValue() throws {
+        // Given: A model whose second revenue component is NaN
+        var model = FinancialModel()
+        model.revenueComponents.append(RevenueComponent(name: "Good", amount: 100_000))
+        model.revenueComponents.append(RevenueComponent(name: "Bad", amount: Double.nan))
+
+        let exporter = DataExporter(model: model)
+
+        // When: Exporting to JSON
+        var caught: BusinessMathError?
+        do {
+            _ = try exporter.exportToJSON()
+        } catch let error as BusinessMathError {
+            caught = error
+        }
+
+        // Then: The error names the exact key path and the offending value
+        let error = try #require(caught, "Should throw a BusinessMathError")
+        let description = try #require(error.errorDescription)
+        #expect(description.contains("revenue[1].amount"), "Should name the offending key path: \(description)")
+        #expect(description.contains("NaN"), "Should name the offending value: \(description)")
+        #expect(error.code == "E101", "Should be a data-quality error")
+    }
+
+    @Test("DataExport_ThrowsOnNonFiniteCostAmount") func LDataExport_ThrowsOnNonFiniteCostAmount() throws {
+        // Given: A model whose variable cost percentage is infinite
+        var model = FinancialModel()
+        model.costComponents.append(CostComponent(name: "Runaway", type: .variable(Double.infinity)))
+
+        let exporter = DataExporter(model: model)
+
+        var caught: BusinessMathError?
+        do {
+            _ = try exporter.exportToJSON()
+        } catch let error as BusinessMathError {
+            caught = error
+        }
+
+        let error = try #require(caught, "Should throw a BusinessMathError")
+        let description = try #require(error.errorDescription)
+        #expect(description.contains("costs[0].percentage"), "Should name the offending key path: \(description)")
+        #expect(description.contains("+Infinity"), "Should name the offending value: \(description)")
+    }
+
+    @Test("DataExport_ThrowsOnNonFiniteTimeSeriesValue") func LDataExport_ThrowsOnNonFiniteTimeSeriesValue() throws {
+        // Given: A time series containing a non-finite value
+        let series = TimeSeries<Double>(
+            periods: [.year(2023), .year(2024)],
+            values: [1000, -Double.infinity]
+        )
+
+        let exporter = TimeSeriesExporter(series: series)
+
+        var caught: BusinessMathError?
+        do {
+            _ = try exporter.exportToJSON()
+        } catch let error as BusinessMathError {
+            caught = error
+        }
+
+        let error = try #require(caught, "Should throw a BusinessMathError")
+        let description = try #require(error.errorDescription)
+        #expect(description.contains("data[1].value"), "Should name the offending key path: \(description)")
+        #expect(description.contains("-Infinity"), "Should name the offending value: \(description)")
+    }
+
+    @Test("DataExport_ThrowsOnNonFiniteInvestmentCashFlow") func LDataExport_ThrowsOnNonFiniteInvestmentCashFlow() throws {
+        // Given: An investment with a non-finite cash flow amount
+        let investment = Investment {
+            InitialCost(50_000)
+            CashFlows {
+                [
+                    CashFlow(period: 1, amount: 15_000),
+                    CashFlow(period: 2, amount: Double.nan)
+                ]
+            }
+            DiscountRate(0.10)
+        }
+
+        let exporter = InvestmentExporter(investment: investment)
+
+        var caught: BusinessMathError?
+        do {
+            _ = try exporter.exportToJSON()
+        } catch let error as BusinessMathError {
+            caught = error
+        }
+
+        let error = try #require(caught, "Should throw a BusinessMathError")
+        let description = try #require(error.errorDescription)
+        #expect(description.contains("cash_flows[1]"), "Should name the offending key path: \(description)")
+    }
+
+    @Test("DataExport_JSONFormatIsUnchangedForFiniteModels") func LDataExport_JSONFormatIsUnchangedForFiniteModels() throws {
+        // Given: A model with only finite values
+        let model = FinancialModel {
+            Revenue {
+                RevenueComponent(name: "Sales", amount: 100_000)
+            }
+
+            Costs {
+                Fixed("Expenses", 40_000)
+            }
+        }
+
+        // When: Exporting to JSON
+        let exporter = DataExporter(model: model)
+        let jsonOutput = try exporter.exportToJSON()
+
+        // Then: Output is byte-for-byte what it was before the throwing change
+        // (pretty-printed, sorted keys, two-space indent)
+        let expected = """
+        {
+          "costs" : [
+            {
+              "amount" : 40000,
+              "name" : "Expenses",
+              "type" : "fixed"
+            }
+          ],
+          "revenue" : [
+            {
+              "amount" : 100000,
+              "name" : "Sales"
+            }
+          ]
+        }
+        """
+        #expect(jsonOutput == expected, "JSON format regressed:\n\(jsonOutput)")
+    }
+
+    @Test("DataExport_CSVEmitsNonFiniteValuesWithoutCrashing") func LDataExport_CSVEmitsNonFiniteValuesWithoutCrashing() {
+        // Given: A model with non-finite amounts
+        // Characterization: CSV has no prohibition on non-finite numbers the way JSON does,
+        // so CSV export writes them out rather than refusing. Pinned here so the difference
+        // between the two exporters is deliberate and visible, not accidental.
+        var model = FinancialModel()
+        model.revenueComponents.append(RevenueComponent(name: "Bad", amount: Double.nan))
+        model.costComponents.append(CostComponent(name: "Runaway", type: .variable(Double.infinity)))
+
+        // When: Exporting to CSV
+        let exporter = DataExporter(model: model)
+        let csvOutput = exporter.exportToCSV()
+
+        // Then: It completes, writing the raw textual forms
+        #expect(csvOutput.contains("Bad,Revenue,Fixed,nan,"), "Interpolated Double writes 'nan': \(csvOutput)")
+        #expect(csvOutput.contains("Runaway,Cost,Variable,,∞"), "percent() renders infinity as '∞': \(csvOutput)")
+    }
+
     // MARK: - Large Data Tests
 
-    @Test("DataExport_HandlesLargeTimeSeries") func LDataExport_HandlesLargeTimeSeries() {
+    @Test("DataExport_HandlesLargeTimeSeries") func LDataExport_HandlesLargeTimeSeries() throws {
         // Given: A large time series
         let periods = (2000...2100).map { Period.year($0) }
         let values = (0..<101).map { Double($0 * 1000) }
@@ -274,7 +441,7 @@ import RealModule
 
         // Then: Should complete without errors
         _ = exporter.exportToCSV()
-        _ = exporter.exportToJSON()
+        _ = try exporter.exportToJSON()
 
         let csvOutput = exporter.exportToCSV()
         #expect(csvOutput.count > 1000, "Should have substantial output for large series")

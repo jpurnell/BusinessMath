@@ -181,8 +181,8 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// let rent = try Account(
 	///     entity: company,
 	///     name: "Rent Expense",
+	///     incomeStatementRole: .generalAndAdministrative,
 	///     timeSeries: rentData,
-	///     incomeStatementRole: .rent,
 	///     metadata: rentMetadata
 	/// )
 	/// ```
@@ -224,8 +224,8 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// let cogs = try Account(
 	///     entity: company,
 	///     name: "Cost of Goods Sold",
+	///     incomeStatementRole: .costOfGoodsSold,
 	///     timeSeries: cogsData,
-	///     incomeStatementRole: .costOfRevenue,
 	///     metadata: cogsMetadata
 	/// )
 	/// ```
