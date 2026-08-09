@@ -73,12 +73,24 @@ The chapters in this part can be read in any order based on your needs:
 Understanding which inputs matter most is crucial for any financial model. Data table analysis lets you systematically vary one or two inputs and observe the impact on outputs—just like Excel's data tables but with programmatic control:
 
 ```swift
-let dataTable = DataTable()
-    .input(variable: revenueGrowth, range: 0.05...0.20, steps: 10)
-    .output { growth in
-        revenueModel.setGrowthRate(growth).calculate().npv()
+import BusinessMath
+
+// Vary the revenue growth assumption and watch NPV respond
+let growthRates = [0.05, 0.08, 0.11, 0.14, 0.17, 0.20]
+
+let npvTable = DataTable<Double, Double>.oneVariable(
+    inputs: growthRates,
+    calculate: { growth in
+        let cashFlows = (1...5).map { year in
+            1_000_000.0 * pow(1.0 + growth, Double(year))
+        }
+        return npv(discountRate: 0.10, cashFlows: cashFlows)
     }
-    .calculate()
+)
+
+for (growth, value) in npvTable {
+    print("Growth \(growth): NPV \(value)")
+}
 ```
 
 ### Regression Modeling
@@ -121,16 +133,21 @@ let prediction = result.intercept +
 Ratios transform raw financial data into comparable metrics that reveal business health:
 
 ```swift
-let ratios = FinancialRatios(
-    revenue: revenue,
-    costs: costs,
-    assets: assets,
-    liabilities: liabilities
+let annualRevenue = 5_000_000.0
+let netIncome = 750_000.0
+let shareholderEquity = 3_000_000.0
+let totalLiabilities = 2_000_000.0
+
+let margin = try profitMargin(netIncome: netIncome, revenue: annualRevenue)
+let returnOnEquity = try roe(netIncome: netIncome, shareholderEquity: shareholderEquity)
+let leverage = try debtToEquity(
+    totalLiabilities: totalLiabilities,
+    shareholderEquity: shareholderEquity
 )
 
-let profitMargin = ratios.profitMargin()
-let roe = ratios.returnOnEquity()
-let debtRatio = ratios.debtToEquity()
+print("Profit margin: \(margin)")
+print("ROE: \(returnOnEquity)")
+print("Debt/equity: \(leverage)")
 ```
 
 ### Risk Analytics
@@ -138,10 +155,33 @@ let debtRatio = ratios.debtToEquity()
 Quantifying risk lets you move from "what if?" questions to probabilistic statements about outcomes:
 
 ```swift
-let riskMetrics = portfolio.risk()
-let var95 = riskMetrics.valueAtRisk(confidence: 0.95)
-let cvar = riskMetrics.conditionalVaR(confidence: 0.95)
-let stressScenario = riskMetrics.stressTest(scenarios: [recession, crisis])
+// Simulate a 60/40 portfolio, then read the tail off the distribution
+var portfolio = MonteCarloSimulation(iterations: 10_000) { inputs in
+    0.6 * inputs[0] + 0.4 * inputs[1]
+}
+portfolio.addInput(SimulationInput(
+    name: "Stocks",
+    distribution: DistributionNormal(0.12, 0.20)
+))
+portfolio.addInput(SimulationInput(
+    name: "Bonds",
+    distribution: DistributionNormal(0.04, 0.05)
+))
+
+let riskMetrics = try portfolio.run()
+let var95 = riskMetrics.valueAtRisk(confidenceLevel: 0.95)
+let cvar95 = riskMetrics.conditionalValueAtRisk(confidenceLevel: 0.95)
+
+// Named stress scenarios describe the shocks to apply to your drivers
+let stressScenarios = [
+    StressScenario<Double>.recession,
+    StressScenario<Double>.crisis
+]
+
+print("95% VaR: \(var95), 95% CVaR: \(cvar95)")
+for scenario in stressScenarios {
+    print("\(scenario.name): \(scenario.shocks)")
+}
 ```
 
 ### Visualization
@@ -150,12 +190,19 @@ BusinessMath provides command-line visualization for quick data exploration:
 
 ```swift
 // Histogram visualization for distributions
-let results = SimulationResults(values: revenueData)
-let histogram = results.histogram(bins: 20)
+let revenueData = (0..<1_000).map { _ in DistributionNormal(5_000_000, 750_000).next() }
+let revenueResults = SimulationResults(values: revenueData)
+let histogram = revenueResults.histogram(bins: 20)
 let plot = plotHistogram(histogram)
 print(plot)
+```
 
-// Tornado diagram for sensitivity analysis
+Tornado diagrams rank sensitivity across drivers. The call below assumes a
+`baseCase` scenario, `entity`, `periods`, and statement `builder` already in
+hand — see <doc:2.4-VisualizationGuide> for the full setup:
+
+<!-- docs:illustrative -->
+```swift
 let tornado = try runTornadoAnalysis(
     baseCase: baseCase,
     entity: entity,
@@ -174,8 +221,12 @@ For graphical charts, export data to external tools like Swift Charts, Excel, or
 
 ```swift
 // Export for external visualization
-let csvData = revenue.toCSV()
-try csvData.write(to: URL(fileURLWithPath: "revenue.csv"))
+let csvData = DataTable<Double, Double>.toCSV(
+    npvTable,
+    inputHeader: "Growth Rate",
+    outputHeader: "NPV"
+)
+try csvData.write(to: URL(fileURLWithPath: "npv.csv"), atomically: true, encoding: .utf8)
 ```
 
 ### Model Validation

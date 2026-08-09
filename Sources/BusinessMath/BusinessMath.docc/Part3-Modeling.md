@@ -116,7 +116,7 @@ let equity = GordonGrowthModel(
     growthRate: 0.05,
     requiredReturn: 0.10
 )
-let value = equity.valuePerShare()
+let value = try equity.valuePerShare()
 ```
 
 **Bond Pricing:**
@@ -136,8 +136,8 @@ let price = bond.price(yield: 0.045)
 Connect revenue models to complete financial statements:
 
 ```swift
-let quarters = Period.year(2025).quarters()
-let model = FinancialModel {
+let quartersIntegrated = Period.year(2025).quarters()
+let integratedModel = FinancialModel {
     Revenue {
         Product("SaaS Subscriptions")
             .price(99)
@@ -150,9 +150,9 @@ let model = FinancialModel {
     }
 }
 
-let revenue = model.totalRevenue(for: quarters[0])
-let expenses = model.totalExpenses(for: quarters[0])
-let profit = model.profit(for: quarters[0])
+let integratedRevenue = integratedModel.totalRevenue(for: quartersIntegrated[0])
+let expenses = integratedModel.totalExpenses(for: quartersIntegrated[0])
+let profit = integratedModel.profit(for: quartersIntegrated[0])
 ```
 
 ## Real-World Applications

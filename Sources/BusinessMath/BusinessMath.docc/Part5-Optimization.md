@@ -100,75 +100,68 @@ Optimize subject to real-world constraints:
 
 ```swift
 import BusinessMath
-import PlaygroundSupport
 
-PlaygroundPage.current.needsIndefiniteExecution = true
+// Allocate capital across 3 investments to maximize risk-adjusted return
+let optimizer = InequalityOptimizer<VectorN<Double>>()
 
-Task {
-    // Allocate capital across 3 investments to maximize risk-adjusted return
-    let optimizer = InequalityOptimizer<VectorN<Double>>()
+let totalBudget = 100_000.0
+let expectedReturns = [0.08, 0.12, 0.15]  // 8%, 12%, 15%
 
-    let totalBudget = 100_000.0
-    let expectedReturns = [0.08, 0.12, 0.15]  // 8%, 12%, 15%
+// Asset volatilities (annualized standard deviation)
+let volatilities_constOpt = [0.10, 0.18, 0.25]  // 10%, 18%, 25%
 
-    // Asset volatilities (annualized standard deviation)
-    let volatilities_constOpt = [0.10, 0.18, 0.25]  // 10%, 18%, 25%
+// Covariance matrix (volatilities and correlations)
+// Correlation structure: Low-High: 0.3, Low-Med: 0.2, Med-High: 0.6
+let covarianceMatrix_constOpt = [
+    [0.0100, 0.0036, 0.0075],  // Low risk asset
+    [0.0036, 0.0324, 0.0270],  // Medium risk asset
+    [0.0075, 0.0270, 0.0625]   // High risk asset
+]
 
-    // Covariance matrix (volatilities and correlations)
-    // Correlation structure: Low-High: 0.3, Low-Med: 0.2, Med-High: 0.6
-    let covarianceMatrix_constOpt = [
-        [0.0100, 0.0036, 0.0075],  // Low risk asset
-        [0.0036, 0.0324, 0.0270],  // Medium risk asset
-        [0.0075, 0.0270, 0.0625]   // High risk asset
-    ]
+// Risk aversion parameter (balances return vs variance)
+let riskAversion_constOpt = 2.0
 
-    // Risk aversion parameter (balances return vs variance)
-    let riskAversion_constOpt = 2.0
+// Objective: maximize risk-adjusted return (minimize negative)
+let objective: @Sendable (VectorN<Double>) -> Double = { capital in
+    let allocation = capital.toArray()
+    let weights = allocation.map { $0 / totalBudget }
 
-    // Objective: maximize risk-adjusted return (minimize negative)
-    let objective: @Sendable (VectorN<Double>) -> Double = { capital in
-        let allocation = capital.toArray()
-        let weights = allocation.map { $0 / totalBudget }
+    // Expected return
+    let totalReturn = zip(allocation, expectedReturns).map(*).reduce(0, +)
 
-        // Expected return
-        let totalReturn = zip(allocation, expectedReturns).map(*).reduce(0, +)
-
-        // Portfolio variance
-        let variance = (0..<3).map { i in
-            (0..<3).map { j in
-                weights[i] * covarianceMatrix_constOpt[i][j] * weights[j]
-            }.reduce(0, +)
+    // Portfolio variance
+    let variance = (0..<3).map { i in
+        (0..<3).map { j in
+            weights[i] * covarianceMatrix_constOpt[i][j] * weights[j]
         }.reduce(0, +)
+    }.reduce(0, +)
 
-        // Risk-adjusted objective (mean-variance optimization)
-        return -(totalReturn - riskAversion_constOpt * variance * totalBudget * totalBudget)
-    }
-
-    // Constraints: must use full budget, no negative allocations, concentration limits
-    let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-        .equality { v in v.toArray().reduce(0, +) - totalBudget },  // Use all budget
-        .inequality { v in -v[0] },  // Non-negative allocations
-        .inequality { v in -v[1] },
-        .inequality { v in -v[2] },
-        .inequality { v in v[0] - 0.60 * totalBudget },  // Max 60% in any asset (concentration limit)
-        .inequality { v in v[1] - 0.60 * totalBudget },
-        .inequality { v in v[2] - 0.60 * totalBudget }
-    ]
-
-    let result = try optimizer.minimize(
-        objective,
-        from: VectorN([30_000, 40_000, 30_000]),
-        constraints: constraints
-    )
-
-    let optimalAllocation = result.solution
-    // Expected: ~$15K low-risk (15%), ~$45K medium-risk (45%), ~$40K high-risk (40%)
-    // The optimizer balances higher returns against increased volatility
-
-    print("Optimal allocation: \(optimalAllocation)")
-
-    PlaygroundPage.current.finishExecution()
+    // Risk-adjusted objective (mean-variance optimization)
+    return -(totalReturn - riskAversion_constOpt * variance * totalBudget * totalBudget)
 }
+
+// Constraints: must use full budget, no negative allocations, concentration limits
+let constraints: [MultivariateConstraint<VectorN<Double>>] = [
+    .equality { v in v.toArray().reduce(0, +) - totalBudget },  // Use all budget
+    .inequality { v in -v[0] },  // Non-negative allocations
+    .inequality { v in -v[1] },
+    .inequality { v in -v[2] },
+    .inequality { v in v[0] - 0.60 * totalBudget },  // Max 60% in any asset (concentration limit)
+    .inequality { v in v[1] - 0.60 * totalBudget },
+    .inequality { v in v[2] - 0.60 * totalBudget }
+]
+
+let result = try optimizer.minimize(
+    objective,
+    from: VectorN([30_000, 40_000, 30_000]),
+    subjectTo: constraints
+)
+
+let optimalAllocation = result.solution
+// Expected: ~$15K low-risk (15%), ~$45K medium-risk (45%), ~$40K high-risk (40%)
+// The optimizer balances higher returns against increased volatility
+
+print("Optimal allocation: \(optimalAllocation)")
 ```
 
 ### Portfolio Optimization
@@ -177,45 +170,39 @@ Construct efficient portfolios using Modern Portfolio Theory:
 
 ```swift
 import BusinessMath
-import PlaygroundSupport
 
-PlaygroundPage.current.needsIndefiniteExecution = true
+let returns = VectorN([0.08, 0.12, 0.15])
+let covMatrix = [
+    [0.04, 0.01, 0.02],
+    [0.01, 0.09, 0.03],
+    [0.02, 0.03, 0.16]
+]
 
-Task {
-    let returns = VectorN([0.08, 0.12, 0.15])
-    let covMatrix = [
-        [0.04, 0.01, 0.02],
-        [0.01, 0.09, 0.03],
-        [0.02, 0.03, 0.16]
-    ]
+let portfolioOptimizer = PortfolioOptimizer()
 
-    let optimizer = PortfolioOptimizer()
+// Minimum variance portfolio
+let minVar = try portfolioOptimizer.minimumVariancePortfolio(
+    expectedReturns: returns,
+    covariance: covMatrix
+)
 
-    // Minimum variance portfolio
-    let minVar = try optimizer.minimumVariancePortfolio(
-        expectedReturns: returns,
-        covariance: covMatrix
-    )
+// Maximum Sharpe ratio
+let maxSharpe = try portfolioOptimizer.maximumSharpePortfolio(
+    expectedReturns: returns,
+    covariance: covMatrix,
+    riskFreeRate: 0.02
+)
 
-    // Maximum Sharpe ratio
-    let maxSharpe = try optimizer.maximumSharpePortfolio(
-        expectedReturns: returns,
-        covariance: covMatrix,
-        riskFreeRate: 0.02
-    )
+// Efficient frontier
+let frontier = try portfolioOptimizer.efficientFrontier(
+    expectedReturns: returns,
+    covariance: covMatrix,
+    numberOfPoints: 50
+)
 
-    // Efficient frontier
-    let frontier = try optimizer.efficientFrontier(
-        expectedReturns: returns,
-        covariance: covMatrix,
-        numberOfPoints: 50
-    )
-
-    print("Minimum variance weights: \(minVar)")
-    print("Maximum Sharpe weights: \(maxSharpe)")
-
-    PlaygroundPage.current.finishExecution()
-}
+print("Minimum variance weights: \(minVar)")
+print("Maximum Sharpe weights: \(maxSharpe)")
+print("Frontier points: \(frontier.portfolios.count)")
 ```
 
 ### Integer Programming
@@ -224,53 +211,46 @@ Optimize with discrete decisions (yes/no, count, selection):
 
 ```swift
 import BusinessMath
-import PlaygroundSupport
 
-PlaygroundPage.current.needsIndefiniteExecution = true
+// Select projects to maximize NPV subject to budget constraint
+let projectNPVs = [50_000.0, 75_000.0, 60_000.0, 90_000.0]
+let projectCosts = [20_000.0, 35_000.0, 25_000.0, 40_000.0]
+let budget = 80_000.0
 
-Task {
-    // Select projects to maximize NPV subject to budget constraint
-    let projectNPVs = [50_000.0, 75_000.0, 60_000.0, 90_000.0]
-    let projectCosts = [20_000.0, 35_000.0, 25_000.0, 40_000.0]
-    let budget = 80_000.0
-
-    // Objective: maximize NPV (minimize negative NPV)
-    let objective: @Sendable (VectorN<Double>) -> Double = { selected in
-        let npv = zip(selected.toArray(), projectNPVs).map(*).reduce(0, +)
-        return -npv
-    }
-
-    // Constraints: budget + binary bounds (0 ≤ x ≤ 1)
-    var constraints: [MultivariateConstraint<VectorN<Double>>] = [
-        .inequality { v in
-            let cost = zip(v.toArray(), projectCosts).map(*).reduce(0, +)
-            return cost - budget
-        }
-    ]
-
-    // Add binary bounds for each variable
-    for i in 0..<projectNPVs.count {
-        constraints.append(.inequality { v in -v.toArray()[i] })           // x ≥ 0
-        constraints.append(.inequality { v in v.toArray()[i] - 1.0 })      // x ≤ 1
-    }
-
-    // Integer specification: all variables are binary
-    let integerSpec = IntegerProgramSpecification.allBinary(dimension: projectNPVs.count)
-
-    let solver = BranchAndBoundSolver<VectorN<Double>>()
-    let result = try solver.solve(
-        objective: objective,
-        from: VectorN([0.5, 0.5, 0.5, 0.5]),
-        subjectTo: constraints,
-        integerSpec: integerSpec,
-        minimize: true
-    )
-
-    let selectedProjects = result.solution  // Binary vector: 1 = selected, 0 = rejected
-    print("Selected projects: \(selectedProjects)")
-
-    PlaygroundPage.current.finishExecution()
+// Objective: maximize NPV (minimize negative NPV)
+let projectObjective: @Sendable (VectorN<Double>) -> Double = { selected in
+    let selectedNPV = zip(selected.toArray(), projectNPVs).map(*).reduce(0, +)
+    return -selectedNPV
 }
+
+// Constraints: budget + binary bounds (0 ≤ x ≤ 1)
+var projectConstraints: [MultivariateConstraint<VectorN<Double>>] = [
+    .inequality { v in
+        let cost = zip(v.toArray(), projectCosts).map(*).reduce(0, +)
+        return cost - budget
+    }
+]
+
+// Add binary bounds for each variable
+for i in 0..<projectNPVs.count {
+    projectConstraints.append(.inequality { v in -v.toArray()[i] })       // x ≥ 0
+    projectConstraints.append(.inequality { v in v.toArray()[i] - 1.0 })  // x ≤ 1
+}
+
+// Integer specification: all variables are binary
+let integerSpec = IntegerProgramSpecification.allBinary(dimension: projectNPVs.count)
+
+let solver = BranchAndBoundSolver<VectorN<Double>>()
+let projectResult = try solver.solve(
+    objective: projectObjective,
+    from: VectorN([0.5, 0.5, 0.5, 0.5]),
+    subjectTo: projectConstraints,
+    integerSpec: integerSpec,
+    minimize: true
+)
+
+let selectedProjects = projectResult.solution  // Binary vector: 1 = selected, 0 = rejected
+print("Selected projects: \(selectedProjects)")
 ```
 
 ## Real-World Applications

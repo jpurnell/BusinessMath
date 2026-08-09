@@ -45,12 +45,15 @@ Start by encoding the business rules as a structured model:
 ```swift
 import BusinessMath
 
-`/// Reid's Raisin Company profit model
+/// Reid's Raisin Company profit model
 struct ReidsRaisinsModel {
     // MARK: - Input Parameters
 
-    /// Contract grape price ($/lb)
-    let contractGrapePrice: Double = 0.25
+    /// Contract grape price ($/lb).
+    ///
+    /// Negotiated in spring, so it is fixed for a given season — but the tornado
+    /// analysis below varies it, so it is a `var` with the base case as its default.
+    var contractGrapePrice: Double = 0.25
 
     /// Sugar coating cost ($/lb)
     let coatingPrice: Double = 0.55
