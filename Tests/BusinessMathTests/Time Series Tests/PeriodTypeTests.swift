@@ -97,86 +97,86 @@ struct PeriodTypeTests {
 	// MARK: - Days Approximate
 
 	@Test("Daily period has 1 day")
-	func daysApproximateDaily() {
-		let days = PeriodType.daily.daysApproximate
+	func daysApproximateDaily() throws {
+		let days = try #require(PeriodType.daily.daysApproximate)
 		#expect(abs(days - 1.0) < tolerance)
 	}
 
 	@Test("Monthly period has 30.4375 days")
-	func daysApproximateMonthly() {
+	func daysApproximateMonthly() throws {
 		// 365.25 days / 12 months = 30.4375 days per month (accounting for leap years)
-		let days = PeriodType.monthly.daysApproximate
+		let days = try #require(PeriodType.monthly.daysApproximate)
 		let expected = 365.25 / 12.0
 		#expect(abs(days - expected) < tolerance)
 	}
 
 	@Test("Quarterly period has 91.3125 days")
-	func daysApproximateQuarterly() {
+	func daysApproximateQuarterly() throws {
 		// 365.25 days / 4 quarters = 91.3125 days per quarter
-		let days = PeriodType.quarterly.daysApproximate
+		let days = try #require(PeriodType.quarterly.daysApproximate)
 		let expected = 365.25 / 4.0
 		#expect(abs(days - expected) < tolerance)
 	}
 
 	@Test("Annual period has 365.25 days")
-	func daysApproximateAnnual() {
+	func daysApproximateAnnual() throws {
 		// Accounting for leap years (1 extra day every 4 years)
-		let days = PeriodType.annual.daysApproximate
+		let days = try #require(PeriodType.annual.daysApproximate)
 		#expect(abs(days - 365.25) < tolerance)
 	}
 
 	// MARK: - Milliseconds Exact
 
 	@Test("Millisecond period has 1 millisecond")
-	func millisecondsExactMillisecond() {
-		let ms = PeriodType.millisecond.millisecondsExact
+	func millisecondsExactMillisecond() throws {
+		let ms = try #require(PeriodType.millisecond.millisecondsExact)
 		#expect(abs(ms - 1.0) < tolerance)
 	}
 
 	@Test("Second period has 1000 milliseconds")
-	func millisecondsExactSecond() {
-		let ms = PeriodType.second.millisecondsExact
+	func millisecondsExactSecond() throws {
+		let ms = try #require(PeriodType.second.millisecondsExact)
 		#expect(abs(ms - 1_000.0) < tolerance)
 	}
 
 	@Test("Minute period has 60,000 milliseconds")
-	func millisecondsExactMinute() {
-		let ms = PeriodType.minute.millisecondsExact
+	func millisecondsExactMinute() throws {
+		let ms = try #require(PeriodType.minute.millisecondsExact)
 		#expect(abs(ms - 60_000.0) < tolerance)
 	}
 
 	@Test("Hourly period has 3,600,000 milliseconds")
-	func millisecondsExactHourly() {
-		let ms = PeriodType.hourly.millisecondsExact
+	func millisecondsExactHourly() throws {
+		let ms = try #require(PeriodType.hourly.millisecondsExact)
 		#expect(abs(ms - 3_600_000.0) < tolerance)
 	}
 
 	@Test("Daily period has 86,400,000 milliseconds")
-	func millisecondsExactDaily() {
-		let ms = PeriodType.daily.millisecondsExact
+	func millisecondsExactDaily() throws {
+		let ms = try #require(PeriodType.daily.millisecondsExact)
 		#expect(abs(ms - 86_400_000.0) < tolerance)
 	}
 
 	@Test("Monthly period has ~2.628 billion milliseconds")
-	func millisecondsExactMonthly() {
+	func millisecondsExactMonthly() throws {
 		// 30.4375 days * 86,400,000 ms/day
-		let ms = PeriodType.monthly.millisecondsExact
+		let ms = try #require(PeriodType.monthly.millisecondsExact)
 		let expected = 30.4375 * 86_400_000.0
 		#expect(abs(ms - expected) < tolerance)
 	}
 
 	@Test("Quarterly period has ~7.884 billion milliseconds")
-	func millisecondsExactQuarterly() {
+	func millisecondsExactQuarterly() throws {
 		// 91.3125 days * 86,400,000 ms/day
-		let ms = PeriodType.quarterly.millisecondsExact
+		let ms = try #require(PeriodType.quarterly.millisecondsExact)
 		let expected = 91.3125 * 86_400_000.0
 		#expect(abs(ms - expected) < tolerance)
 	}
 
 	@Test("Annual period has ~31.536 billion milliseconds")
-	func millisecondsExactAnnual() {
+	func millisecondsExactAnnual() throws {
 		// 365.25 days * 86,400,000 ms/day
-		let ms = PeriodType.annual.millisecondsExact
+		let ms = try #require(PeriodType.annual.millisecondsExact)
 		let expected = 365.25 * 86_400_000.0
 		#expect(abs(ms - expected) < tolerance)
 	}
@@ -184,118 +184,118 @@ struct PeriodTypeTests {
 	// MARK: - Months Equivalent
 
 	@Test("Daily period is approximately 0.0329 months")
-	func monthsEquivalentDaily() {
-		let months = PeriodType.daily.monthsEquivalent
+	func monthsEquivalentDaily() throws {
+		let months = try #require(PeriodType.daily.monthsEquivalent)
 		// 1 day / 30.4375 days per month = 0.03285 months
 		let expected = 1.0 / (365.25 / 12.0)
 		#expect(abs(months - expected) < tolerance)
 	}
 
 	@Test("Monthly period is 1 month")
-	func monthsEquivalentMonthly() {
-		let months = PeriodType.monthly.monthsEquivalent
+	func monthsEquivalentMonthly() throws {
+		let months = try #require(PeriodType.monthly.monthsEquivalent)
 		#expect(abs(months - 1.0) < tolerance)
 	}
 
 	@Test("Quarterly period is 3 months")
-	func monthsEquivalentQuarterly() {
-		let months = PeriodType.quarterly.monthsEquivalent
+	func monthsEquivalentQuarterly() throws {
+		let months = try #require(PeriodType.quarterly.monthsEquivalent)
 		#expect(abs(months - 3.0) < tolerance)
 	}
 
 	@Test("Annual period is 12 months")
-	func monthsEquivalentAnnual() {
-		let months = PeriodType.annual.monthsEquivalent
+	func monthsEquivalentAnnual() throws {
+		let months = try #require(PeriodType.annual.monthsEquivalent)
 		#expect(abs(months - 12.0) < tolerance)
 	}
 
 	// MARK: - Period Conversions
 
 	@Test("Convert daily to other periods")
-	func convertDailyToPeriods() {
+	func convertDailyToPeriods() throws {
 		// 365.25 days = 1 year
-		let toAnnual = PeriodType.daily.convert(365.25, to: .annual)
+		let toAnnual = try #require(PeriodType.daily.convert(365.25, to: .annual))
 		#expect(abs(toAnnual - 1.0) < tolerance)
 
 		// 30.4375 days ≈ 1 month
-		let toMonthly = PeriodType.daily.convert(30.4375, to: .monthly)
+		let toMonthly = try #require(PeriodType.daily.convert(30.4375, to: .monthly))
 		#expect(abs(toMonthly - 1.0) < tolerance)
 
 		// 91.3125 days ≈ 1 quarter
-		let toQuarterly = PeriodType.daily.convert(91.3125, to: .quarterly)
+		let toQuarterly = try #require(PeriodType.daily.convert(91.3125, to: .quarterly))
 		#expect(abs(toQuarterly - 1.0) < tolerance)
 	}
 
 	@Test("Convert monthly to other periods")
-	func convertMonthlyToPeriods() {
+	func convertMonthlyToPeriods() throws {
 		// 12 months = 1 year
-		let toAnnual = PeriodType.monthly.convert(12.0, to: .annual)
+		let toAnnual = try #require(PeriodType.monthly.convert(12.0, to: .annual))
 		#expect(abs(toAnnual - 1.0) < tolerance)
 
 		// 3 months = 1 quarter
-		let toQuarterly = PeriodType.monthly.convert(3.0, to: .quarterly)
+		let toQuarterly = try #require(PeriodType.monthly.convert(3.0, to: .quarterly))
 		#expect(abs(toQuarterly - 1.0) < tolerance)
 
 		// 1 month = 30.4375 days
-		let toDays = PeriodType.monthly.convert(1.0, to: .daily)
+		let toDays = try #require(PeriodType.monthly.convert(1.0, to: .daily))
 		#expect(abs(toDays - 30.4375) < tolerance)
 	}
 
 	@Test("Convert quarterly to other periods")
-	func convertQuarterlyToPeriods() {
+	func convertQuarterlyToPeriods() throws {
 		// 4 quarters = 1 year
-		let toAnnual = PeriodType.quarterly.convert(4.0, to: .annual)
+		let toAnnual = try #require(PeriodType.quarterly.convert(4.0, to: .annual))
 		#expect(abs(toAnnual - 1.0) < tolerance)
 
 		// 1 quarter = 3 months
-		let toMonthly = PeriodType.quarterly.convert(1.0, to: .monthly)
+		let toMonthly = try #require(PeriodType.quarterly.convert(1.0, to: .monthly))
 		#expect(abs(toMonthly - 3.0) < tolerance)
 
 		// 1 quarter = 91.3125 days
-		let toDays = PeriodType.quarterly.convert(1.0, to: .daily)
+		let toDays = try #require(PeriodType.quarterly.convert(1.0, to: .daily))
 		#expect(abs(toDays - 91.3125) < tolerance)
 	}
 
 	@Test("Convert annual to other periods")
-	func convertAnnualToPeriods() {
+	func convertAnnualToPeriods() throws {
 		// 1 year = 4 quarters
-		let toQuarterly = PeriodType.annual.convert(1.0, to: .quarterly)
+		let toQuarterly = try #require(PeriodType.annual.convert(1.0, to: .quarterly))
 		#expect(abs(toQuarterly - 4.0) < tolerance)
 
 		// 1 year = 12 months
-		let toMonthly = PeriodType.annual.convert(1.0, to: .monthly)
+		let toMonthly = try #require(PeriodType.annual.convert(1.0, to: .monthly))
 		#expect(abs(toMonthly - 12.0) < tolerance)
 
 		// 1 year = 365.25 days
-		let toDays = PeriodType.annual.convert(1.0, to: .daily)
+		let toDays = try #require(PeriodType.annual.convert(1.0, to: .daily))
 		#expect(abs(toDays - 365.25) < tolerance)
 	}
 
 	@Test("Convert same period type returns same value")
-	func convertSameType() {
-		let monthly = PeriodType.monthly.convert(5.0, to: .monthly)
+	func convertSameType() throws {
+		let monthly = try #require(PeriodType.monthly.convert(5.0, to: .monthly))
 		#expect(abs(monthly - 5.0) < tolerance)
 
-		let quarterly = PeriodType.quarterly.convert(8.0, to: .quarterly)
+		let quarterly = try #require(PeriodType.quarterly.convert(8.0, to: .quarterly))
 		#expect(abs(quarterly - 8.0) < tolerance)
 
-		let annual = PeriodType.annual.convert(3.0, to: .annual)
+		let annual = try #require(PeriodType.annual.convert(3.0, to: .annual))
 		#expect(abs(annual - 3.0) < tolerance)
 	}
 
 	@Test("Convert handles fractional results with precision")
-	func convertFractional() {
+	func convertFractional() throws {
 		// 45 days = 1.478 months (45 / 30.4375)
-		let toMonthly = PeriodType.daily.convert(45.0, to: .monthly)
+		let toMonthly = try #require(PeriodType.daily.convert(45.0, to: .monthly))
 		let expectedMonthly = 45.0 / 30.4375
 		#expect(abs(toMonthly - expectedMonthly) < tolerance)
 
 		// 18 months = 1.5 years
-		let toAnnual = PeriodType.monthly.convert(18.0, to: .annual)
+		let toAnnual = try #require(PeriodType.monthly.convert(18.0, to: .annual))
 		#expect(abs(toAnnual - 1.5) < tolerance)
 
 		// 5 quarters = 1.25 years
-		let quartersToYears = PeriodType.quarterly.convert(5.0, to: .annual)
+		let quartersToYears = try #require(PeriodType.quarterly.convert(5.0, to: .annual))
 		#expect(abs(quartersToYears - 1.25) < tolerance)
 	}
 
@@ -367,32 +367,32 @@ struct PeriodTypeTests {
 	// MARK: - Edge Cases
 
 	@Test("Convert zero periods returns zero")
-	func convertZero() {
-		let toAnnual = PeriodType.monthly.convert(0.0, to: .annual)
+	func convertZero() throws {
+		let toAnnual = try #require(PeriodType.monthly.convert(0.0, to: .annual))
 		#expect(abs(toAnnual) < tolerance)
 
-		let toMonthly = PeriodType.daily.convert(0.0, to: .monthly)
+		let toMonthly = try #require(PeriodType.daily.convert(0.0, to: .monthly))
 		#expect(abs(toMonthly) < tolerance)
 	}
 
 	@Test("Convert large numbers maintains precision")
-	func convertLargeNumbers() {
+	func convertLargeNumbers() throws {
 		// 10 years in months
-		let toMonthly = PeriodType.annual.convert(10.0, to: .monthly)
+		let toMonthly = try #require(PeriodType.annual.convert(10.0, to: .monthly))
 		#expect(abs(toMonthly - 120.0) < tolerance)
 
 		// 5 years in quarters
-		let toQuarterly = PeriodType.annual.convert(5.0, to: .quarterly)
+		let toQuarterly = try #require(PeriodType.annual.convert(5.0, to: .quarterly))
 		#expect(abs(toQuarterly - 20.0) < tolerance)
 
 		// 1000 days in months
-		let toDaysToMonths = PeriodType.daily.convert(1000.0, to: .monthly)
+		let toDaysToMonths = try #require(PeriodType.daily.convert(1000.0, to: .monthly))
 		let expected = 1000.0 / 30.4375
 		#expect(abs(toDaysToMonths - expected) < tolerance)
 	}
 
 	@Test("Real-world scenario: oil production over 31-day month")
-	func oilProductionScenario() {
+	func oilProductionScenario() throws {
 		// Producer makes 1000 barrels/day
 		// January has 31 days, need to convert to monthly rate
 		let dailyProduction = 1000.0
@@ -402,7 +402,7 @@ struct PeriodTypeTests {
 		let januaryTotal = dailyProduction * daysInJanuary
 
 		// Convert to monthly equivalent rate
-		let monthlyRate = PeriodType.daily.convert(januaryTotal, to: .monthly)
+		let monthlyRate = try #require(PeriodType.daily.convert(januaryTotal, to: .monthly))
 
 		// Expected: 31000 barrels / 30.4375 days per month
 		let expected = januaryTotal / 30.4375

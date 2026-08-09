@@ -43,13 +43,20 @@ import Foundation
 /// }
 ///
 /// // Convert 12 months to years
-/// let years = PeriodType.monthly.convert(12.0, to: .annual)  // 1.0
+/// let years = PeriodType.monthly.convert(12.0, to: .annual)  // Optional(1.0)
 ///
 /// // Convert daily production to monthly rate
 /// let dailyBarrels = 1000.0
 /// let daysInMonth = 31.0
 /// let monthlyRate = PeriodType.daily.convert(dailyBarrels * daysInMonth, to: .monthly)
 /// ```
+///
+/// ## Irregular Ranges
+///
+/// The type-level tables and ``convert(_:to:)`` return `nil` for ``custom``, which has
+/// no duration derivable from its type. When you hold a ``Period`` rather than a bare
+/// type, use ``Period/durationInDays``, ``Period/durationInMilliseconds``, or
+/// ``Period/durationInMonths`` — those are non-optional and answer for every period.
 ///
 /// ### High-Frequency Data Analysis
 /// ```swift
@@ -61,11 +68,11 @@ import Foundation
 /// }
 ///
 /// // Convert milliseconds to exact duration
-/// let msPerSecond = PeriodType.second.millisecondsExact  // 1000.0
-/// let msPerHour = PeriodType.hourly.millisecondsExact   // 3,600,000.0
+/// let msPerSecond = PeriodType.second.millisecondsExact  // Optional(1000.0)
+/// let msPerHour = PeriodType.hourly.millisecondsExact   // Optional(3,600,000.0)
 ///
 /// // Convert hours to days
-/// let hoursInDay = PeriodType.hourly.convert(24.0, to: .daily)  // 1.0
+/// let hoursInDay = PeriodType.hourly.convert(24.0, to: .daily)  // Optional(1.0)
 /// ```
 ///
 /// ## Topics
@@ -138,9 +145,10 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	///
 	/// A custom period's duration is a property of the *instance*, not the type.
 	/// The type-level conversion tables (``daysApproximate``, ``millisecondsExact``,
-	/// ``monthsEquivalent``) have no answer for this case and trap rather than
-	/// return a fabricated scalar. Use ``Period/durationInDays``,
-	/// ``Period/durationInMilliseconds``, or ``Period/durationInMonths`` instead.
+	/// ``monthsEquivalent``) have no answer for this case and return `nil` rather
+	/// than a fabricated scalar. Use ``Period/durationInDays``,
+	/// ``Period/durationInMilliseconds``, or ``Period/durationInMonths`` instead —
+	/// those are non-optional and defined for every period.
 	case custom = 9
 
 	// MARK: - Ordering
@@ -176,12 +184,16 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// type-level duration.
 	///
 	/// `false` only for ``custom``. Regular types can answer ``daysApproximate``,
-	/// ``millisecondsExact``, and ``monthsEquivalent``; a custom range cannot.
+	/// ``millisecondsExact``, and ``monthsEquivalent``; a custom range cannot, and
+	/// those properties return `nil` for it.
+	///
+	/// Checking this first is equivalent to unwrapping the table, so prefer whichever
+	/// reads better at the call site.
 	///
 	/// ## Example
 	/// ```swift
-	/// if periodType.isRegular {
-	///     let days = periodType.daysApproximate
+	/// if let days = periodType.daysApproximate {
+	///     // A ladder type, with a fixed duration.
 	/// }
 	/// ```
 	public var isRegular: Bool {
@@ -201,18 +213,19 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// - Semiannual: 182.625 (365.25 / 2)
 	/// - Annual: 365.25
 	///
-	/// - Returns: The number of days as a `Double`.
+	/// - Returns: The number of days, or `nil` for ``custom``.
 	///
-	/// - Precondition: `self` must be ``isRegular``. ``custom`` has no type-level
-	///   duration; calling this on it is a programmer error and traps. Use
-	///   ``Period/durationInDays`` for a value that is defined for every period.
+	/// - Important: ``custom`` has no type-level duration, so this is `nil` for it.
+	///   Reach for ``Period/durationInDays`` instead whenever you have a period rather
+	///   than a bare type: it is non-optional and defined for every period, consulting
+	///   the real interval for a custom range and this table otherwise.
 	///
 	/// ## Example
 	/// ```swift
 	/// let daysPerMonth = PeriodType.monthly.daysApproximate
-	/// print(daysPerMonth)  // 30.4375
+	/// print(daysPerMonth)  // Optional(30.4375)
 	/// ```
-	public var daysApproximate: Double {
+	public var daysApproximate: Double? {
 		switch self {
 		case .millisecond:
 			return 1.0 / 86_400_000.0 // fp-safety:disable — literal constant
@@ -233,7 +246,10 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 		case .annual:
 			return 365.25
 		case .custom:
-			preconditionFailure(Self.irregularDurationMessage("daysApproximate", instanceAccessor: "Period.durationInDays"))
+			// An arbitrary date range has no duration derivable from its *type*, and a
+			// library must not take the host process down over a value the caller can
+			// legitimately construct. Refuse with nil; Period.durationInDays answers.
+			return nil
 		}
 	}
 
@@ -250,18 +266,18 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// - Semiannual: ~15,778,800,000 (average)
 	/// - Annual: ~31,536,000,000
 	///
-	/// - Returns: The number of milliseconds as a `Double`.
+	/// - Returns: The number of milliseconds, or `nil` for ``custom``.
 	///
-	/// - Precondition: `self` must be ``isRegular``. ``custom`` has no type-level
-	///   duration; calling this on it is a programmer error and traps. Use
-	///   ``Period/durationInMilliseconds`` instead.
+	/// - Important: ``custom`` has no type-level duration, so this is `nil` for it.
+	///   Prefer ``Period/durationInMilliseconds``, which is non-optional and defined
+	///   for every period.
 	///
 	/// ## Example
 	/// ```swift
 	/// let msPerSecond = PeriodType.second.millisecondsExact
-	/// print(msPerSecond)  // 1000.0
+	/// print(msPerSecond)  // Optional(1000.0)
 	/// ```
-	public var millisecondsExact: Double {
+	public var millisecondsExact: Double? {
 		switch self {
 		case .millisecond:
 			return 1.0
@@ -282,7 +298,8 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 		case .annual:
 			return 365.25 * 86_400_000.0   // ~31,536,000,000
 		case .custom:
-			preconditionFailure(Self.irregularDurationMessage("millisecondsExact", instanceAccessor: "Period.durationInMilliseconds"))
+			// See daysApproximate: no type-level answer, and no reason to crash a caller.
+			return nil
 		}
 	}
 
@@ -299,18 +316,18 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// - Semiannual: 6.0
 	/// - Annual: 12.0
 	///
-	/// - Returns: The number of months as a `Double`.
+	/// - Returns: The number of months, or `nil` for ``custom``.
 	///
-	/// - Precondition: `self` must be ``isRegular``. ``custom`` has no type-level
-	///   duration; calling this on it is a programmer error and traps. Use
-	///   ``Period/durationInMonths`` instead.
+	/// - Important: ``custom`` has no type-level duration, so this is `nil` for it.
+	///   Prefer ``Period/durationInMonths``, which is non-optional and defined for
+	///   every period.
 	///
 	/// ## Example
 	/// ```swift
 	/// let monthsPerQuarter = PeriodType.quarterly.monthsEquivalent
-	/// print(monthsPerQuarter)  // 3.0
+	/// print(monthsPerQuarter)  // Optional(3.0)
 	/// ```
-	public var monthsEquivalent: Double {
+	public var monthsEquivalent: Double? {
 		switch self {
 		case .millisecond:
 			return 1.0 / (365.25 / 12.0 * 86_400_000.0) // fp-safety:disable — literal constants
@@ -331,23 +348,9 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 		case .annual:
 			return 12.0
 		case .custom:
-			preconditionFailure(Self.irregularDurationMessage("monthsEquivalent", instanceAccessor: "Period.durationInMonths"))
+			// See daysApproximate: no type-level answer, and no reason to crash a caller.
+			return nil
 		}
-	}
-
-	// MARK: - Irregular Duration Diagnostics
-
-	/// Builds the trap message used when a type-level duration is asked of ``custom``.
-	///
-	/// Refusing loudly is deliberate: an arbitrary date range has no duration that
-	/// can be derived from its *type*, so any scalar returned here would be a
-	/// fabrication. The message names the instance-level accessor that does work.
-	private static func irregularDurationMessage(_ property: String, instanceAccessor: String) -> String {
-		return """
-			PeriodType.custom has no type-level \(property): an arbitrary date range's \
-			duration is a property of the instance, not the type. Use \(instanceAccessor), \
-			or guard on PeriodType.isRegular before reaching for the conversion tables.
-			"""
 	}
 
 	// MARK: - Conversion Methods
@@ -362,28 +365,35 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	///   - count: The number of periods of the current type to convert.
 	///   - targetType: The period type to convert to.
 	///
-	/// - Returns: The equivalent number of periods in the target type.
+	/// - Returns: The equivalent number of periods in the target type, or `nil` if
+	///   either side is ``custom``.
 	///
 	/// - Note: Conversions maintain full precision. No rounding or truncation occurs.
 	///
-	/// - Precondition: Both `self` and `targetType` must be ``isRegular``. Converting
-	///   to or from ``custom`` is a programmer error and traps, because a custom range
-	///   has no type-level duration to convert with.
+	/// - Important: Both `self` and `targetType` must be ``isRegular``. Converting to
+	///   or from ``custom`` yields `nil`, because a custom range has no type-level
+	///   duration to convert with. That includes `.custom` to `.custom`: the case is
+	///   one value but stands for arbitrarily many different lengths, so treating it
+	///   as an identity conversion would be asserting something the type cannot know.
 	///
 	/// ## Conversion Examples
 	///
 	/// ```swift
 	/// // Convert years to months
 	/// let months = PeriodType.annual.convert(1.0, to: .monthly)
-	/// // Result: 12.0
+	/// // Result: Optional(12.0)
 	///
 	/// // Convert days to months
 	/// let monthlyRate = PeriodType.daily.convert(30.4375, to: .monthly)
-	/// // Result: 1.0
+	/// // Result: Optional(1.0)
 	///
 	/// // Convert months to years (fractional)
 	/// let years = PeriodType.monthly.convert(18.0, to: .annual)
-	/// // Result: 1.5
+	/// // Result: Optional(1.5)
+	///
+	/// // An arbitrary range has nothing to convert with
+	/// let none = PeriodType.custom.convert(1.0, to: .annual)
+	/// // Result: nil
 	/// ```
 	///
 	/// ## Real-World Example: Oil Production
@@ -399,17 +409,25 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// let monthlyRate = PeriodType.daily.convert(januaryTotal, to: .monthly)
 	/// // Result: 31000 / 30.4375 ≈ 1018.52 barrels/month equivalent
 	/// ```
-	public func convert(_ count: Double, to targetType: PeriodType) -> Double {
+	public func convert(_ count: Double, to targetType: PeriodType) -> Double? {
+		// Both ends need a type-level duration. Refusing here rather than at either
+		// unwrap keeps one rule — convert answers for ladder types only — instead of
+		// carving out an identity exception for custom-to-custom.
+		guard let sourceDays = self.daysApproximate,
+			  let targetDays = targetType.daysApproximate else {
+			return nil
+		}
+
 		// If converting to the same type, return the original count
 		if self == targetType {
 			return count
 		}
 
 		// Convert to days first (common denominator)
-		let totalDays = count * self.daysApproximate
+		let totalDays = count * sourceDays
 
 		// Convert from days to target type
-		return totalDays / targetType.daysApproximate // fp-safety:disable — daysApproximate > 0 for all cases
+		return totalDays / targetDays // fp-safety:disable — daysApproximate is > 0 for every ladder case
 	}
 
 	// MARK: - Comparable Conformance

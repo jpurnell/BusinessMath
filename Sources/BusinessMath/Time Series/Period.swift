@@ -1303,10 +1303,12 @@ extension Period {
 	/// Period.custom(start: apr1, end: aug31).durationInDays   // 152.0 (actual)
 	/// ```
 	public var durationInDays: Double {
-		guard type.isRegular else {
+		// A nil table entry *is* the signal to consult the interval, so unwrapping the
+		// optional and testing `isRegular` are the same test written twice. Unwrap.
+		guard let ladderDays = type.daysApproximate else {
 			return endDate.timeIntervalSince(startDate) / 86_400.0 // fp-safety:disable — literal constant
 		}
-		return type.daysApproximate
+		return ladderDays
 	}
 
 	/// The length of this period in milliseconds.
@@ -1314,10 +1316,10 @@ extension Period {
 	/// Type-level for ladder periods (``PeriodType/millisecondsExact``); the actual
 	/// interval for ``PeriodType/custom``.
 	public var durationInMilliseconds: Double {
-		guard type.isRegular else {
+		guard let ladderMilliseconds = type.millisecondsExact else {
 			return endDate.timeIntervalSince(startDate) * 1_000.0
 		}
-		return type.millisecondsExact
+		return ladderMilliseconds
 	}
 
 	/// The length of this period in months.
@@ -1326,11 +1328,11 @@ extension Period {
 	/// ``PeriodType/custom`` the actual interval is converted at the standard
 	/// 365.25/12 days per month, so the result is generally fractional.
 	public var durationInMonths: Double {
-		guard type.isRegular else {
+		guard let ladderMonths = type.monthsEquivalent else {
 			let averageDaysPerMonth = 365.25 / 12.0 // fp-safety:disable — literal constants
 			return durationInDays / averageDaysPerMonth // fp-safety:disable — divisor is a positive constant
 		}
-		return type.monthsEquivalent
+		return ladderMonths
 	}
 }
 
