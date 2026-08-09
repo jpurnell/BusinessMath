@@ -107,7 +107,7 @@ let csv = exporter.exportToCSV()
 print(csv)
 
 // Export to JSON (with optional metadata)
-let json = exporter.exportToJSON(includeMetadata: true)
+let json = try exporter.exportToJSON(includeMetadata: true)
 print(json)
 ```
 
@@ -197,7 +197,7 @@ print(trace.formatTrace())
 // 5. Export for reporting
 let exporter = DataExporter(model: model)
 let csv = exporter.exportToCSV()
-let json = exporter.exportToJSON()
+let json = try exporter.exportToJSON()
 
 // Save to files
 try? csv.write(toFile: "model.csv", atomically: true, encoding: .utf8)
@@ -337,7 +337,7 @@ try csv.write(toFile: "model.csv", atomically: true, encoding: .utf8)
 
 ```swift
 let exporter = DataExporter(model: model)
-let json = exporter.exportToJSON()
+let json = try exporter.exportToJSON()
 // Send JSON to web API or frontend
 ```
 

@@ -37,8 +37,8 @@ import Foundation
 /// let salesAccount = try Account(
 ///     entity: myEntity,
 ///     name: "Product Sales",
-///     timeSeries: salesData,
-///     incomeStatementRole: .productRevenue
+///     incomeStatementRole: .productRevenue,
+///     timeSeries: salesData
 /// )
 ///
 /// // Check if account is revenue
