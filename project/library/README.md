@@ -107,9 +107,14 @@ let csv = exporter.exportToCSV()
 print(csv)
 
 // Export to JSON (with optional metadata)
-let json = try exporter.exportToJSON(includeMetadata: true)
+let json = exporter.exportToJSON(includeMetadata: true)
 print(json)
 ```
+
+Neither export refuses on a non-finite amount, and neither substitutes a plausible number for
+one. CSV writes the round-trippable ASCII tokens `nan`, `inf` and `-inf`; JSON writes `null`,
+which is legal JSON and tells the consumer, in the record where the number belonged, that it
+was not available.
 
 ### 5. Time Series Analysis
 
@@ -197,7 +202,7 @@ print(trace.formatTrace())
 // 5. Export for reporting
 let exporter = DataExporter(model: model)
 let csv = exporter.exportToCSV()
-let json = try exporter.exportToJSON()
+let json = exporter.exportToJSON()
 
 // Save to files
 try? csv.write(toFile: "model.csv", atomically: true, encoding: .utf8)
@@ -337,7 +342,7 @@ try csv.write(toFile: "model.csv", atomically: true, encoding: .utf8)
 
 ```swift
 let exporter = DataExporter(model: model)
-let json = try exporter.exportToJSON()
+let json = exporter.exportToJSON()
 // Send JSON to web API or frontend
 ```
 
