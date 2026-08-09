@@ -170,6 +170,86 @@ struct LinearityValidationTests {
         }
     }
 
+    @Test("Rejects a function with a kink at the origin")
+    func testRejectsKinkAtOrigin() throws {
+        // f(x) = max(0, x) — linear on each half-line, nonlinear across the origin.
+        // Coefficients extracted at x = 0.5 describe only the right-hand branch, so the
+        // model is only refuted by a sample with a negative first component.
+        let relu: @Sendable (VectorN<Double>) -> Double = { v in
+            max(0.0, v[0])
+        }
+
+        #expect(throws: OptimizationError.self) {
+            try validateLinearModel(
+                relu,
+                dimension: 1,
+                at: VectorN([0.5])
+            )
+        }
+    }
+
+    // MARK: - Determinism
+
+    /// Records every point the validator evaluates, so two runs can be compared.
+    private final class ProbeRecorder {
+        var points: [[Double]] = []
+    }
+
+    @Test("Evaluates the same points on every call")
+    func testValidationIsReproducible() throws {
+        func probedPoints() throws -> [[Double]] {
+            let recorder = ProbeRecorder()
+            let linear: (VectorN<Double>) -> Double = { v in
+                recorder.points.append(v.toArray())
+                return 3.0 * v[0] + 2.0 * v[1] + 1.0
+            }
+
+            _ = try validateLinearModel(
+                linear,
+                dimension: 2,
+                at: VectorN([0.5, 0.5])
+            )
+            return recorder.points
+        }
+
+        let first = try probedPoints()
+        let second = try probedPoints()
+
+        #expect(first == second, """
+            The validator sampled different points on two calls with identical arguments. \
+            A validator whose sample set varies can return a different verdict for the same \
+            function on different runs — accepting a nonlinear model into a MILP solver.
+            """)
+    }
+
+    @Test("Every variable is sampled on both sides of zero")
+    func testSamplesStraddleZero() throws {
+        let recorder = ProbeRecorder()
+        let linear: (VectorN<Double>) -> Double = { v in
+            recorder.points.append(v.toArray())
+            return v[0] + v[1] + v[2]
+        }
+
+        _ = try validateLinearModel(
+            linear,
+            dimension: 3,
+            at: VectorN([0.5, 0.5, 0.5])
+        )
+
+        // Drop the finite-difference probes, which sit at the initial point.
+        let samples = recorder.points.filter { point in
+            point != [0.5, 0.5, 0.5] && !point.contains(where: { abs($0 - 0.5) > 0 && abs($0 - 0.5) < 1e-6 })
+        }
+
+        for variable in 0..<3 {
+            let column = samples.map { $0[variable] }
+            #expect(column.contains(where: { $0 > 0 }),
+                    "Variable \(variable) was never sampled at a positive value")
+            #expect(column.contains(where: { $0 < 0 }),
+                    "Variable \(variable) was never sampled at a negative value")
+        }
+    }
+
     // MARK: - High-Dimensional Tests
 
     @Test("Accepts high-dimensional linear function")
