@@ -71,13 +71,23 @@ private let cachedCalendar = Calendar.current
 /// `Period` uses calendar years by default. For fiscal year support (e.g., Apple's
 /// September 30 year-end), use `FiscalCalendar` to map calendar periods to fiscal periods.
 ///
+/// ## Irregular Periods
+///
+/// Not every reporting period sits on the granularity ladder. When a company
+/// switches from quarterly to semiannual reporting, or moves its fiscal year-end,
+/// it emits one odd-length period at the boundary. Use ``custom(start:end:)`` for
+/// those. A custom period knows its own interval, but it cannot be stepped with
+/// ``next()`` or ``advanced(by:)`` and it has no type-level duration.
+///
 /// ## Topics
 ///
 /// ### Creating Periods
 /// - ``day(_:)``
 /// - ``month(year:month:)``
 /// - ``quarter(year:quarter:)``
+/// - ``semiannual(year:half:)``
 /// - ``year(_:)``
+/// - ``custom(start:end:)``
 ///
 /// ### Properties
 /// - ``type``
@@ -86,25 +96,38 @@ private let cachedCalendar = Calendar.current
 /// - ``endDate``
 /// - ``label``
 ///
+/// ### Durations
+/// - ``durationInDays``
+/// - ``durationInMonths``
+/// - ``durationInMilliseconds``
+///
 /// ### Formatting
 /// - ``formatted(using:)``
 ///
 /// ### Subdivision
 /// - ``months()``
 /// - ``quarters()``
+/// - ``semiannuals()``
 /// - ``days()``
 public struct Period: Hashable, Comparable, Codable, Sendable {
 
 	// MARK: - Properties
 
-	/// The type of this period (daily, monthly, quarterly, or annual).
+	/// The type of this period (daily, monthly, quarterly, semiannual, annual, or custom).
 	public let type: PeriodType
 
 	/// The reference date for this period.
 	///
 	/// For daily periods, this is the specific day (at 00:00:00).
-	/// For monthly/quarterly/annual periods, this is the first day of the period.
+	/// For monthly/quarterly/semiannual/annual periods, this is the first day of the period.
+	/// For custom periods, this is the start instant exactly as supplied.
 	public let date: Date
+
+	/// The explicitly stored end instant, present only for ``PeriodType/custom`` periods.
+	///
+	/// Ladder periods leave this `nil` and derive ``endDate`` from `type` + `date`,
+	/// which is what keeps their encoded form identical to the pre-`custom` format.
+	internal let explicitEnd: Date?
 
 	// MARK: - Factory Methods
 
@@ -315,6 +338,77 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		return Period.month(year: year, month: 1).asAnnual()
 	}
 
+	/// Creates a semiannual period for the specified year and half.
+	///
+	/// Halves are defined as:
+	/// - H1: January - June
+	/// - H2: July - December
+	///
+	/// Semiannual reporting is the cadence US public companies would move to if
+	/// quarterly reporting requirements were relaxed.
+	///
+	/// - Parameters:
+	///   - year: The year for this period.
+	///   - half: The half (1-2). Precondition failure if outside valid range.
+	///
+	/// - Returns: A semiannual period starting on the first day of the half's first month.
+	///
+	/// - Precondition: `half` must be 1 or 2.
+	///
+	/// ## Example
+	/// ```swift
+	/// let h1 = Period.semiannual(year: 2025, half: 1)
+	/// print(h1.label)              // "2025-H1"
+	/// print(h1.months().count)     // 6
+	/// print(h1.quarters().count)   // 2
+	/// ```
+	public static func semiannual(year: Int, half: Int) -> Period {
+		guard half >= 1, half <= 2 else {
+			preconditionFailure("Half must be 1 or 2")
+		}
+
+		let month = (half - 1) * 6 + 1  // H1=1, H2=7
+		return Period.month(year: year, month: month).asSemiannual()
+	}
+
+	/// Creates a period covering an arbitrary date range.
+	///
+	/// Use this for irregular reporting periods that no granularity rung can express:
+	/// the odd-length stub emitted when a company switches from quarterly to
+	/// semiannual reporting mid-year, or when it moves its fiscal year-end.
+	///
+	/// The interval is stored verbatim. `end` becomes the period's ``endDate`` —
+	/// that is, it is the last instant *included* in the period, matching how
+	/// ``endDate`` behaves for every other period type.
+	///
+	/// - Parameters:
+	///   - start: The first instant of the period.
+	///   - end: The last instant of the period. Must not precede `start`.
+	///
+	/// - Returns: A custom period spanning `start` through `end`.
+	///
+	/// - Precondition: `end >= start`.
+	///
+	/// - Note: A custom period cannot be stepped. ``next()`` and ``advanced(by:)``
+	///   trap on it, ``distance(to:)`` throws, and it cannot appear in a ``PeriodRange``.
+	///   Use ``nextIfSteppable()`` / ``advancedIfSteppable(by:)`` when the type is not
+	///   known statically.
+	///
+	/// ## Example
+	/// ```swift
+	/// // A company moving from quarterly to semiannual reporting emits a
+	/// // five-month stub between its last quarter and its first half.
+	/// let stub = Period.custom(start: aprilFirst, end: augustThirtyFirst)
+	/// print(stub.durationInDays)   // 152.0
+	/// print(stub.months())         // [] — a stub is not divisible on the ladder
+	/// ```
+	public static func custom(start: Date, end: Date) -> Period {
+		guard end >= start else {
+			preconditionFailure("Custom period end (\(end)) must not precede its start (\(start))")
+		}
+		return Period(type: .custom, date: start, explicitEnd: end)
+	}
+
 	// MARK: - Computed Properties
 
 	/// The start date of this period (at 00:00:00).
@@ -332,9 +426,16 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// - Daily: End of the day (23:59:59)
 	/// - Monthly: Last moment of the last day of the month
 	/// - Quarterly: Last moment of the last day of the third month
+	/// - Semiannual: Last moment of the last day of the sixth month
 	/// - Annual: December 31 at 23:59:59
+	/// - Custom: the end instant supplied to ``custom(start:end:)``, verbatim
 	public var endDate: Date {
 		let calendar = cachedCalendar
+
+		// A custom period carries its own end; nothing about its type implies one.
+		if let explicitEnd {
+			return explicitEnd
+		}
 
 		switch type {
 		case .millisecond:
@@ -390,6 +491,21 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			}
 			return calendar.date(byAdding: .second, value: -1, to: nextQuarterStart) ?? startDate
 
+		case .semiannual:
+			// Start of month after sixth month, minus 1 second
+			var components = DateComponents()
+			components.month = 6
+			guard let nextHalfStart = calendar.date(byAdding: components, to: startDate) else {
+				return startDate
+			}
+			return calendar.date(byAdding: .second, value: -1, to: nextHalfStart) ?? startDate
+
+		case .custom:
+			// Unreachable in practice: `custom(start:end:)` always stores an explicit
+			// end, and decoding rejects a custom period without one. A zero-length
+			// range is the only non-fabricated fallback.
+			return startDate
+
 		case .annual:
 			// Start of next year, minus 1 second
 			var components = DateComponents()
@@ -407,7 +523,9 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// - Daily: "YYYY-MM-DD" (e.g., "2025-01-15")
 	/// - Monthly: "YYYY-MM" (e.g., "2025-01")
 	/// - Quarterly: "YYYY-QN" (e.g., "2025-Q1")
+	/// - Semiannual: "YYYY-HN" (e.g., "2025-H1")
 	/// - Annual: "YYYY" (e.g., "2025")
+	/// - Custom: "YYYY-MM-DD/YYYY-MM-DD" (e.g., "2025-04-01/2025-08-31")
 	///
 	/// For custom formatting, use ``formatted(using:)``.
 	public var label: String {
@@ -466,9 +584,28 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			let quarterStr = String(quarter).paddingLeft(toLength: 2, withPad: "Q")
 			return "\(yearStr)-\(quarterStr)"
 
+		case .semiannual:
+			let yearStr = String(year).paddingLeft(toLength: 4, withPad: "0")
+			let half = ((components.month ?? 1) - 1) / 6 + 1
+			let halfStr = String(half).paddingLeft(toLength: 2, withPad: "H")
+			return "\(yearStr)-\(halfStr)"
+
 		case .annual:
 			return String(components.year ?? 0)
+
+		case .custom:
+			// ISO 8601 interval notation, so the label is unambiguous about being a range.
+			return "\(Period.isoDayString(for: startDate))/\(Period.isoDayString(for: endDate))"
 		}
+	}
+
+	/// Renders a date as `YYYY-MM-DD` using the cached calendar.
+	private static func isoDayString(for date: Date) -> String {
+		let components = cachedCalendar.dateComponents([.year, .month, .day], from: date)
+		let yearStr = String(components.year ?? 0).paddingLeft(toLength: 4, withPad: "0")
+		let monthStr = String(components.month ?? 0).paddingLeft(toLength: 2, withPad: "0")
+		let dayStr = String(components.day ?? 0).paddingLeft(toLength: 2, withPad: "0")
+		return "\(yearStr)-\(monthStr)-\(dayStr)"
 	}
 	
 	var description: String {
@@ -503,7 +640,9 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// - Daily: Returns empty array (cannot subdivide)
 	/// - Monthly: Returns array containing only this period
 	/// - Quarterly: Returns array of 3 monthly periods
+	/// - Semiannual: Returns array of 6 monthly periods
 	/// - Annual: Returns array of 12 monthly periods
+	/// - Custom: Returns empty array (an arbitrary range is not divisible on the ladder)
 	///
 	/// ## Example
 	/// ```swift
@@ -516,6 +655,11 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		case .millisecond, .second, .minute, .hourly, .daily:
 			return []  // Cannot subdivide sub-daily or daily periods to months
 
+		case .custom:
+			// An arbitrary range need not begin or end on a month boundary, so there is
+			// no honest set of whole months to return. Use `days()` for its real extent.
+			return []
+
 		case .monthly:
 			return [self]
 
@@ -524,6 +668,15 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			let startComponents = calendar.dateComponents([.year, .month], from: startDate)
 
 			return (0..<3).map { offset in
+				Period.month(year: startComponents.year ?? 0,
+							 month: (startComponents.month ?? 1) + offset)
+			}
+
+		case .semiannual:
+			let calendar = cachedCalendar
+			let startComponents = calendar.dateComponents([.year, .month], from: startDate)
+
+			return (0..<6).map { offset in
 				Period.month(year: startComponents.year ?? 0,
 							 month: (startComponents.month ?? 1) + offset)
 			}
@@ -543,7 +696,9 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// - Daily: Returns empty array (cannot subdivide)
 	/// - Monthly: Returns empty array (cannot subdivide)
 	/// - Quarterly: Returns array containing only this period
+	/// - Semiannual: Returns array of 2 quarterly periods
 	/// - Annual: Returns array of 4 quarterly periods
+	/// - Custom: Returns empty array (an arbitrary range is not divisible on the ladder)
 	///
 	/// ## Example
 	/// ```swift
@@ -556,8 +711,21 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		case .millisecond, .second, .minute, .hourly, .daily, .monthly:
 			return []  // Cannot subdivide to quarters
 
+		case .custom:
+			return []  // An arbitrary range has no whole-quarter decomposition
+
 		case .quarterly:
 			return [self]
+
+		case .semiannual:
+			let calendar = cachedCalendar
+			let components = calendar.dateComponents([.year, .month], from: startDate)
+			let year = components.year ?? 0
+			let firstQuarter = ((components.month ?? 1) - 1) / 3 + 1
+
+			return (0..<2).map { offset in
+				Period.quarter(year: year, quarter: firstQuarter + offset)
+			}
 
 		case .annual:
 			let calendar = cachedCalendar
@@ -565,6 +733,36 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 
 			return (1...4).map { quarter in
 				Period.quarter(year: year, quarter: quarter)
+			}
+		}
+	}
+
+	/// Returns an array of semiannual periods that comprise this period.
+	///
+	/// - Semiannual: Returns array containing only this period
+	/// - Annual: Returns array of 2 semiannual periods (H1, H2)
+	/// - Everything else: Returns empty array (cannot subdivide to halves)
+	///
+	/// ## Example
+	/// ```swift
+	/// let year = Period.year(2025)
+	/// let halves = year.semiannuals()  // [2025-H1, 2025-H2]
+	/// print(halves.count)  // 2
+	/// ```
+	public func semiannuals() -> [Period] {
+		switch type {
+		case .millisecond, .second, .minute, .hourly, .daily, .monthly, .quarterly, .custom:
+			return []  // Cannot subdivide to halves
+
+		case .semiannual:
+			return [self]
+
+		case .annual:
+			let calendar = cachedCalendar
+			let year = calendar.component(.year, from: startDate)
+
+			return (1...2).map { half in
+				Period.semiannual(year: year, half: half)
 			}
 		}
 	}
@@ -626,7 +824,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return []  // Cannot subdivide sub-hourly periods into hours
 		case .hourly:
 			return [self]
-		case .daily, .monthly, .quarterly, .annual:
+		case .daily, .monthly, .quarterly, .semiannual, .annual, .custom:
 			// Generate hourly periods
 			let calendar = cachedCalendar
 			var currentDate = startDate
@@ -671,7 +869,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return []  // Cannot subdivide sub-minute periods into minutes
 		case .minute:
 			return [self]
-		case .hourly, .daily, .monthly, .quarterly, .annual:
+		case .hourly, .daily, .monthly, .quarterly, .semiannual, .annual, .custom:
 			// Generate minute periods
 			let calendar = cachedCalendar
 			var currentDate = startDate
@@ -717,7 +915,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			return []  // Cannot subdivide milliseconds into seconds
 		case .second:
 			return [self]
-		case .minute, .hourly, .daily, .monthly, .quarterly, .annual:
+		case .minute, .hourly, .daily, .monthly, .quarterly, .semiannual, .annual, .custom:
 			// Generate second periods
 			let calendar = cachedCalendar
 			var currentDate = startDate
@@ -762,7 +960,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		switch type {
 		case .millisecond:
 			return [self]
-		case .second, .minute, .hourly, .daily, .monthly, .quarterly, .annual:
+		case .second, .minute, .hourly, .daily, .monthly, .quarterly, .semiannual, .annual, .custom:
 			// Generate millisecond periods
 			let calendar = cachedCalendar
 			var currentDate = startDate
@@ -894,13 +1092,54 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 			let quarter = ((month - 1) / 3) + 1
 			return Period.quarter(year: components.year ?? 0, quarter: quarter)
 
+		case .semiannual:
+			guard let nextDate = calendar.date(byAdding: .month, value: 6, to: date) else {
+				return self
+			}
+			let components = calendar.dateComponents([.year, .month], from: nextDate)
+			let month = components.month ?? 1
+			let half = ((month - 1) / 6) + 1
+			return Period.semiannual(year: components.year ?? 0, half: half)
+
 		case .annual:
 			guard let nextDate = calendar.date(byAdding: .year, value: 1, to: date) else {
 				return self
 			}
 			let components = calendar.dateComponents([.year], from: nextDate)
 			return Period.year(components.year ?? 0)
+
+		case .custom:
+			preconditionFailure(Period.notSteppableMessage("next()", alternative: "nextIfSteppable()"))
 		}
+	}
+
+	/// The next period of the same type, or `nil` when this period cannot be stepped.
+	///
+	/// Identical to ``next()`` for every rung of the granularity ladder. Returns `nil`
+	/// for ``PeriodType/custom``, because an arbitrary range has no defined successor:
+	/// nothing about "April 1 through August 31" says where the following stub begins.
+	///
+	/// Use this instead of ``next()`` whenever the period's type is not known statically.
+	///
+	/// ## Example
+	/// ```swift
+	/// guard let following = period.nextIfSteppable() else {
+	///     // A transition stub — the caller has to supply the next boundary itself.
+	///     return
+	/// }
+	/// ```
+	public func nextIfSteppable() -> Period? {
+		guard type.isRegular else { return nil }
+		return next()
+	}
+
+	/// The message used when a stepping operation is attempted on an arbitrary range.
+	fileprivate static func notSteppableMessage(_ operation: String, alternative: String) -> String {
+		return """
+			Period.custom cannot be stepped with \(operation): an arbitrary date range has no \
+			defined successor or predecessor. Use \(alternative), which returns nil, or build \
+			the next period explicitly with Period.custom(start:end:).
+			"""
 	}
 
 	// MARK: - Comparable Conformance
@@ -908,9 +1147,16 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// Compares two periods.
 	///
 	/// Periods are ordered first by type (shorter periods before longer),
-	/// then by start date within the same type.
+	/// then by start date, then by end date within the same type.
 	///
-	/// Type ordering: daily < monthly < quarterly < annual
+	/// The end-date tie-break only ever fires for ``PeriodType/custom`` periods —
+	/// every other type derives its end from its type and start date, so equal
+	/// type and start already imply equal end. Without it, two distinct custom
+	/// ranges sharing a start would compare as neither less nor greater while
+	/// still being unequal, which breaks sorting and `Set`/`Dictionary` ordering
+	/// assumptions.
+	///
+	/// Type ordering: daily < monthly < quarterly < semiannual < annual < custom
 	///
 	/// ## Example
 	/// ```swift
@@ -929,7 +1175,12 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		}
 
 		// Same type: compare by start date
-		return lhs.startDate < rhs.startDate
+		if lhs.startDate != rhs.startDate {
+			return lhs.startDate < rhs.startDate
+		}
+
+		// Same type and start: only custom periods can still differ, by their end.
+		return lhs.endDate < rhs.endDate
 	}
 
 	// MARK: - Internal Helpers
@@ -939,17 +1190,25 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// - Parameters:
 	///   - type: The period type.
 	///   - date: The start date for this period.
+	///   - explicitEnd: An explicit end instant. Supply this only for
+	///     ``PeriodType/custom``; ladder types derive their end from type + date.
 	///
 	/// - Note: This initializer is internal to allow extensions (like PeriodArithmetic)
 	///   to create new periods while maintaining encapsulation.
-	internal init(type: PeriodType, date: Date) {
+	internal init(type: PeriodType, date: Date, explicitEnd: Date? = nil) {
 		self.type = type
 		self.date = date
+		self.explicitEnd = explicitEnd
 	}
 
 	/// Converts this period to a quarterly period (for internal use).
 	private func asQuarterly() -> Period {
 		return Period(type: .quarterly, date: self.date)
+	}
+
+	/// Converts this period to a semiannual period (for internal use).
+	private func asSemiannual() -> Period {
+		return Period(type: .semiannual, date: self.date)
 	}
 
 	/// Converts this period to an annual period (for internal use).
@@ -958,10 +1217,135 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	}
 }
 
-// MARK: - Convenience Properties
+// MARK: - Codable
 
 extension Period {
-	/// The year component of this period.
+
+	/// Coding keys for `Period`.
+	///
+	/// `type` and `date` match the keys the compiler synthesized before ``PeriodType/custom``
+	/// existed. `end` is new and optional, which is what makes the format
+	/// backward compatible in both directions.
+	private enum CodingKeys: String, CodingKey {
+		case type
+		case date
+		case end
+	}
+
+	/// Decodes a period, tolerating payloads written before custom ranges existed.
+	///
+	/// A payload without an `end` key is a ladder period, exactly as previously
+	/// persisted: its end is derived from `type` + `date` at read time. A payload
+	/// with an `end` key carries an explicit interval.
+	///
+	/// - Throws: `DecodingError.dataCorrupted` if a ``PeriodType/custom`` period
+	///   arrives without an `end`, or with an `end` that precedes its start. Both
+	///   are unrecoverable — there is no defensible value to substitute.
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		let decodedType = try container.decode(PeriodType.self, forKey: .type)
+		let decodedDate = try container.decode(Date.self, forKey: .date)
+		let decodedEnd = try container.decodeIfPresent(Date.self, forKey: .end)
+
+		if decodedType == .custom {
+			guard let decodedEnd else {
+				throw DecodingError.dataCorruptedError(
+					forKey: .end,
+					in: container,
+					debugDescription: "A custom period requires an explicit end date; none was present."
+				)
+			}
+			guard decodedEnd >= decodedDate else {
+				throw DecodingError.dataCorruptedError(
+					forKey: .end,
+					in: container,
+					debugDescription: "A custom period's end (\(decodedEnd)) must not precede its start (\(decodedDate))."
+				)
+			}
+		}
+
+		// A stray `end` on a ladder type is ignored rather than honored: the type
+		// already determines the end, and trusting the payload would let two encodings
+		// of the same quarter disagree.
+		self.init(type: decodedType, date: decodedDate, explicitEnd: decodedType == .custom ? decodedEnd : nil)
+	}
+
+	/// Encodes a period.
+	///
+	/// Ladder periods emit only `type` and `date`, byte-identical to the format
+	/// produced before custom ranges existed, so older readers keep working.
+	/// Custom periods add an `end` key.
+	public func encode(to encoder: Encoder) throws {
+		var container = encoder.container(keyedBy: CodingKeys.self)
+		try container.encode(type, forKey: .type)
+		try container.encode(date, forKey: .date)
+		try container.encodeIfPresent(explicitEnd, forKey: .end)
+	}
+}
+
+// MARK: - Instance Durations
+
+extension Period {
+
+	/// The length of this period in days.
+	///
+	/// For every rung of the granularity ladder this is the type-level approximation
+	/// (``PeriodType/daysApproximate``), so a monthly period reports 30.4375 days
+	/// regardless of which month it is — the same normalized figure the conversion
+	/// tables have always used.
+	///
+	/// For ``PeriodType/custom`` it is the *actual* elapsed time of the stored
+	/// interval, because an arbitrary range has no type to consult.
+	///
+	/// ## Example
+	/// ```swift
+	/// Period.quarter(year: 2025, quarter: 1).durationInDays   // 91.3125 (type average)
+	/// Period.custom(start: apr1, end: aug31).durationInDays   // 152.0 (actual)
+	/// ```
+	public var durationInDays: Double {
+		guard type.isRegular else {
+			return endDate.timeIntervalSince(startDate) / 86_400.0 // fp-safety:disable — literal constant
+		}
+		return type.daysApproximate
+	}
+
+	/// The length of this period in milliseconds.
+	///
+	/// Type-level for ladder periods (``PeriodType/millisecondsExact``); the actual
+	/// interval for ``PeriodType/custom``.
+	public var durationInMilliseconds: Double {
+		guard type.isRegular else {
+			return endDate.timeIntervalSince(startDate) * 1_000.0
+		}
+		return type.millisecondsExact
+	}
+
+	/// The length of this period in months.
+	///
+	/// Type-level for ladder periods (``PeriodType/monthsEquivalent``). For
+	/// ``PeriodType/custom`` the actual interval is converted at the standard
+	/// 365.25/12 days per month, so the result is generally fractional.
+	public var durationInMonths: Double {
+		guard type.isRegular else {
+			let averageDaysPerMonth = 365.25 / 12.0 // fp-safety:disable — literal constants
+			return durationInDays / averageDaysPerMonth // fp-safety:disable — divisor is a positive constant
+		}
+		return type.monthsEquivalent
+	}
+}
+
+// MARK: - Convenience Properties
+
+/// Calendar components of a period.
+///
+/// - Important: Every property in this extension describes the period's **start
+///   date**. That is unambiguous for ladder periods, whose start determines the
+///   whole span. For ``PeriodType/custom`` it is only a description of where the
+///   range begins: a stub running April 1 to August 31 reports `quarter == 2` and
+///   `half == 1` even though it spills into Q3 and H2. Use ``Period/startDate``,
+///   ``Period/endDate``, and ``Period/durationInDays`` when the extent matters.
+extension Period {
+	/// The year in which this period starts.
 	///
 	/// ## Example
 	/// ```swift
@@ -973,7 +1357,23 @@ extension Period {
 		return calendar.component(.year, from: startDate)
 	}
 
-	/// The quarter component of this period (1-4).
+	/// The half of the year in which this period starts (1-2).
+	///
+	/// - H1: January - June (months 1-6)
+	/// - H2: July - December (months 7-12)
+	///
+	/// ## Example
+	/// ```swift
+	/// let oct = Period.month(year: 2025, month: 10)
+	/// print(oct.half)  // 2
+	/// ```
+	public var half: Int {
+		let calendar = cachedCalendar
+		let month = calendar.component(.month, from: startDate)
+		return ((month - 1) / 6) + 1
+	}
+
+	/// The quarter in which this period starts (1-4).
 	///
 	/// Returns the quarter based on the month:
 	/// - Q1: January - March (months 1-3)

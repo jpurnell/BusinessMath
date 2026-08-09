@@ -87,6 +87,25 @@ public struct PeriodSequence: Sequence, Sendable {
         return PeriodSequence(Array(start...end))
     }
 
+    /// Generate semiannual periods for a range of halves.
+    ///
+    /// - Parameters:
+    ///   - fromYear: Start year.
+    ///   - fromHalf: Start half (1-2).
+    ///   - throughYear: End year.
+    ///   - throughHalf: End half (1-2).
+    /// - Returns: A sequence of semiannual periods.
+    public static func semiannual(
+        fromYear: Int,
+        fromHalf: Int,
+        throughYear: Int,
+        throughHalf: Int
+    ) -> PeriodSequence {
+        let start = Period.semiannual(year: fromYear, half: fromHalf)
+        let end = Period.semiannual(year: throughYear, half: throughHalf)
+        return PeriodSequence(Array(start...end))
+    }
+
     /// Generate annual periods.
     ///
     /// - Parameters:
@@ -176,9 +195,14 @@ public struct PeriodSequence: Sequence, Sendable {
         case .quarterly:
             let quarter = (month - 1) / 3 + 1
             return Period.quarter(year: year, quarter: quarter)
+        case .semiannual:
+            let half = (month - 1) / 6 + 1
+            return Period.semiannual(year: year, half: half)
         case .annual:
             return Period.year(year)
         default:
+            // Includes `.custom`: an arbitrary range is not a bucket other periods
+            // can be sorted into, so the source period stands unchanged.
             return source
         }
     }

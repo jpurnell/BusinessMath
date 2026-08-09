@@ -189,6 +189,29 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 		return (fiscalMonth - 1) / 3 + 1
 	}
 
+	/// Returns the fiscal half (1-2) for the given date.
+	///
+	/// Fiscal halves are 6-month periods starting from the beginning of the fiscal year.
+	/// H1 covers fiscal months 1-6; H2 covers fiscal months 7-12.
+	///
+	/// For Apple (Sept 30 year-end):
+	/// - H1: October - March
+	/// - H2: April - September
+	///
+	/// - Parameter date: The date to evaluate.
+	/// - Returns: The fiscal half (1-2).
+	///
+	/// ## Example
+	/// ```swift
+	/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
+	/// let jan2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 15))!
+	/// let fh = apple.fiscalHalf(for: jan2025)  // 1 (January is fiscal month 4)
+	/// ```
+	public func fiscalHalf(for date: Date) -> Int {
+		let fiscalMonth = self.fiscalMonth(for: date)
+		return (fiscalMonth - 1) / 6 + 1
+	}
+
 	/// Returns the fiscal month (1-12) for the given date.
 	///
 	/// Fiscal month 1 starts the day after the previous fiscal year-end.
@@ -234,11 +257,17 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	/// This maps a calendar period to its position within the fiscal year:
 	/// - Monthly periods map to fiscal months (1-12)
 	/// - Quarterly periods map to fiscal quarters (1-4)
+	/// - Semiannual periods map to fiscal halves (1-2)
 	/// - Annual periods always map to 1
 	/// - Daily periods map to their fiscal month
 	///
 	/// - Parameter period: The calendar period to map.
 	/// - Returns: The fiscal period number.
+	///
+	/// - Precondition: `period` must not be ``PeriodType/custom``. An arbitrary range
+	///   has no position on any fiscal ladder, so there is no number to return. Use
+	///   ``fiscalPeriod(for:)`` for a nil-returning form, or ``fiscalMonth(for:)`` on
+	///   the range's start date if that is what you actually want.
 	///
 	/// ## Example
 	/// ```swift
@@ -263,8 +292,33 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 		case .quarterly:
 			return fiscalQuarter(for: period.startDate)
 
+		case .semiannual:
+			return fiscalHalf(for: period.startDate)
+
 		case .annual:
 			return 1  // Annual periods always map to period 1
+
+		case .custom:
+			preconditionFailure("""
+				PeriodType.custom has no position within a fiscal year: an arbitrary date \
+				range does not sit on the monthly, quarterly, semiannual, or annual ladder. \
+				Use fiscalPeriod(for:) if a nil result is acceptable, or fiscalMonth(for:) \
+				on the range's start date if that is the question you meant to ask.
+				""")
 		}
+	}
+
+	/// Returns the fiscal period number for the given calendar period, or `nil` when
+	/// the period has no position on any fiscal ladder.
+	///
+	/// Identical to ``periodInFiscalYear(_:)`` except that a ``PeriodType/custom``
+	/// period yields `nil` instead of trapping. Use this when the period's type is
+	/// not known statically.
+	///
+	/// - Parameter period: The calendar period to map.
+	/// - Returns: The fiscal period number, or `nil` for an arbitrary date range.
+	public func fiscalPeriod(for period: Period) -> Int? {
+		guard period.type.isRegular else { return nil }
+		return periodInFiscalYear(period)
 	}
 }
