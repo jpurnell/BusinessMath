@@ -79,17 +79,17 @@ struct PeriodSemiannualAndCustomTests {
 	// MARK: - Decision 2: Semiannual conversion tables
 
 	@Test("Semiannual answers all three conversion tables")
-	func semiannualConversionTables() {
-		#expect(abs(PeriodType.semiannual.daysApproximate - 182.625) < tolerance)
-		#expect(abs(PeriodType.semiannual.monthsEquivalent - 6.0) < tolerance)
-		#expect(abs(PeriodType.semiannual.millisecondsExact - (182.625 * 86_400_000.0)) < 1.0)
+	func semiannualConversionTables() throws {
+		#expect(abs(try #require(PeriodType.semiannual.daysApproximate) - 182.625) < tolerance)
+		#expect(abs(try #require(PeriodType.semiannual.monthsEquivalent) - 6.0) < tolerance)
+		#expect(abs(try #require(PeriodType.semiannual.millisecondsExact) - (182.625 * 86_400_000.0)) < 1.0)
 	}
 
 	@Test("Semiannual converts cleanly to annual and quarterly")
-	func semiannualConverts() {
-		#expect(abs(PeriodType.semiannual.convert(2.0, to: .annual) - 1.0) < tolerance)
-		#expect(abs(PeriodType.semiannual.convert(1.0, to: .quarterly) - 2.0) < tolerance)
-		#expect(abs(PeriodType.annual.convert(1.0, to: .semiannual) - 2.0) < tolerance)
+	func semiannualConverts() throws {
+		#expect(abs(try #require(PeriodType.semiannual.convert(2.0, to: .annual)) - 1.0) < tolerance)
+		#expect(abs(try #require(PeriodType.semiannual.convert(1.0, to: .quarterly)) - 2.0) < tolerance)
+		#expect(abs(try #require(PeriodType.annual.convert(1.0, to: .semiannual)) - 2.0) < tolerance)
 	}
 
 	// MARK: - Decision 2: Semiannual periods
@@ -313,15 +313,15 @@ struct PeriodSemiannualAndCustomTests {
 	// MARK: - Decision 4: Instance-level durations
 
 	@Test("Instance duration for ladder periods matches the type table")
-	func instanceDurationMatchesTypeTable() {
-		#expect(abs(Period.month(year: 2025, month: 1).durationInDays - PeriodType.monthly.daysApproximate) < tolerance)
-		#expect(abs(Period.quarter(year: 2025, quarter: 1).durationInDays - PeriodType.quarterly.daysApproximate) < tolerance)
+	func instanceDurationMatchesTypeTable() throws {
+		#expect(abs(Period.month(year: 2025, month: 1).durationInDays - (try #require(PeriodType.monthly.daysApproximate))) < tolerance)
+		#expect(abs(Period.quarter(year: 2025, quarter: 1).durationInDays - (try #require(PeriodType.quarterly.daysApproximate))) < tolerance)
 		#expect(abs(Period.semiannual(year: 2025, half: 1).durationInDays - 182.625) < tolerance)
 		#expect(abs(Period.year(2025).durationInDays - 365.25) < tolerance)
 
 		#expect(abs(Period.quarter(year: 2025, quarter: 1).durationInMonths - 3.0) < tolerance)
 		#expect(abs(Period.semiannual(year: 2025, half: 1).durationInMonths - 6.0) < tolerance)
-		#expect(abs(Period.year(2025).durationInMilliseconds - PeriodType.annual.millisecondsExact) < 1.0)
+		#expect(abs(Period.year(2025).durationInMilliseconds - (try #require(PeriodType.annual.millisecondsExact))) < 1.0)
 	}
 
 	@Test("Instance duration for a custom period comes from the interval")
@@ -493,5 +493,108 @@ struct PeriodSemiannualAndCustomTests {
 		#expect(String(data: data, encoding: .utf8) == "6")
 		let semi = try JSONEncoder().encode(PeriodType.semiannual)
 		#expect(String(data: semi, encoding: .utf8) == "8")
+	}
+
+	// MARK: - Type-level conversion tables refuse without trapping
+	//
+	// `.custom` is a public case any caller can construct, so a library that traps
+	// on it kills the host process over a legal input. The three tables answer with
+	// `nil` instead; the instance-level accessors on `Period` remain non-optional.
+
+	@Test("daysApproximate is nil for custom and unchanged for the ladder")
+	func daysApproximateIsOptional() throws {
+		#expect(PeriodType.custom.daysApproximate == nil)
+
+		let monthly = try #require(PeriodType.monthly.daysApproximate)
+		#expect(abs(monthly - 30.4375) < tolerance)
+	}
+
+	@Test("millisecondsExact is nil for custom and unchanged for the ladder")
+	func millisecondsExactIsOptional() throws {
+		#expect(PeriodType.custom.millisecondsExact == nil)
+
+		let hourly = try #require(PeriodType.hourly.millisecondsExact)
+		#expect(abs(hourly - 3_600_000.0) < tolerance)
+	}
+
+	@Test("monthsEquivalent is nil for custom and unchanged for the ladder")
+	func monthsEquivalentIsOptional() throws {
+		#expect(PeriodType.custom.monthsEquivalent == nil)
+
+		let quarterly = try #require(PeriodType.quarterly.monthsEquivalent)
+		#expect(abs(quarterly - 3.0) < tolerance)
+	}
+
+	@Test("convert propagates nil when either side is a custom range")
+	func convertIsOptionalForCustom() throws {
+		#expect(PeriodType.custom.convert(1.0, to: .monthly) == nil)
+		#expect(PeriodType.monthly.convert(1.0, to: .custom) == nil)
+		// Same-type shortcut must not smuggle a value out for custom either.
+		#expect(PeriodType.custom.convert(1.0, to: .custom) == nil)
+
+		let months = try #require(PeriodType.annual.convert(1.0, to: .monthly))
+		#expect(abs(months - 12.0) < tolerance)
+	}
+
+	@Test("A custom period is still measurable through the instance accessors")
+	func customMeasurableViaInstanceAccessors() {
+		// The point of the change: the type has no answer, the instance does, and
+		// asking the type no longer takes the process down.
+		let stub = Period.custom(start: date(2025, 4, 1), end: date(2025, 8, 31))
+		#expect(stub.type.daysApproximate == nil)
+		#expect(stub.durationInDays > 150.0)
+	}
+
+	// MARK: - Ladder values pinned
+
+	@Test("No ladder-case value moved when the tables became optional")
+	func ladderConversionValuesUnchanged() throws {
+		let expectedDays: [PeriodType: Double] = [
+			.millisecond: 1.0 / 86_400_000.0,
+			.second: 1.0 / 86_400.0,
+			.minute: 1.0 / 1_440.0,
+			.hourly: 1.0 / 24.0,
+			.daily: 1.0,
+			.monthly: 365.25 / 12.0,
+			.quarterly: 365.25 / 4.0,
+			.semiannual: 365.25 / 2.0,
+			.annual: 365.25
+		]
+		for (type, expected) in expectedDays {
+			let actual = try #require(type.daysApproximate, "\(type) must still answer daysApproximate")
+			#expect(actual == expected, "daysApproximate moved for \(type)")
+		}
+
+		let expectedMilliseconds: [PeriodType: Double] = [
+			.millisecond: 1.0,
+			.second: 1_000.0,
+			.minute: 60_000.0,
+			.hourly: 3_600_000.0,
+			.daily: 86_400_000.0,
+			.monthly: 30.4375 * 86_400_000.0,
+			.quarterly: 91.3125 * 86_400_000.0,
+			.semiannual: 182.625 * 86_400_000.0,
+			.annual: 365.25 * 86_400_000.0
+		]
+		for (type, expected) in expectedMilliseconds {
+			let actual = try #require(type.millisecondsExact, "\(type) must still answer millisecondsExact")
+			#expect(actual == expected, "millisecondsExact moved for \(type)")
+		}
+
+		let expectedMonths: [PeriodType: Double] = [
+			.millisecond: 1.0 / (365.25 / 12.0 * 86_400_000.0),
+			.second: 1.0 / (365.25 / 12.0 * 86_400.0),
+			.minute: 1.0 / (365.25 / 12.0 * 1_440.0),
+			.hourly: 1.0 / (365.25 / 12.0 * 24.0),
+			.daily: 1.0 / (365.25 / 12.0),
+			.monthly: 1.0,
+			.quarterly: 3.0,
+			.semiannual: 6.0,
+			.annual: 12.0
+		]
+		for (type, expected) in expectedMonths {
+			let actual = try #require(type.monthsEquivalent, "\(type) must still answer monthsEquivalent")
+			#expect(actual == expected, "monthsEquivalent moved for \(type)")
+		}
 	}
 }

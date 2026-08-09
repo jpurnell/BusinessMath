@@ -11,6 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Changed (breaking) — the period conversion tables refuse instead of crashing
+
+`PeriodType.daysApproximate`, `millisecondsExact`, and `monthsEquivalent` now return
+`Double?`, and `PeriodType.convert(_:to:)` returns `Double?`. All four answered
+`PeriodType.custom` with `preconditionFailure` when `.custom` shipped.
+
+That was the wrong instrument. `custom` is a public case, constructible by any caller
+through `Period.custom(start:end:)`, so trapping meant a *library* terminating the host
+application over a legal input. Refusing loudly and killing the process are not the same
+thing, and only one of them is a library's to choose. The values are `nil` for `.custom`
+and unchanged for every rung of the ladder — daily, monthly, quarterly, semiannual and
+annual are pinned in tests against literal constants, so no arithmetic moved.
+
+`convert(_:to:)` becomes optional rather than throwing: it has exactly one failure mode,
+which a caller can see for itself in `isRegular`, so a typed error would carry no
+information a `nil` does not, and `nil` composes with `??` and `map` where `try` would
+force a `do`/`catch` into non-throwing call chains. It also returns `nil` for
+`.custom` → `.custom` rather than treating that as the identity: the case is one value
+standing for arbitrarily many lengths, so "3 custom periods equal 3 custom periods" is a
+claim the type is not entitled to make.
+
+The instance-level accessors are unaffected and remain the ones to reach for:
+`Period.durationInDays`, `.durationInMilliseconds`, and `.durationInMonths` are still
+non-optional and defined for every period, consulting the real interval for `.custom`.
+Internally they now unwrap the table rather than testing `isRegular` first — a `nil`
+entry *is* the signal to consult the interval, so the two were the same test written
+twice.
+
+Migration: unwrap. `type.daysApproximate` becomes `if let days = type.daysApproximate`,
+or route through the `Period` accessor when you hold a period rather than a bare type.
+
+Traps elsewhere in the period surface are deliberate and unchanged — `next()`,
+`advanced(by:)`, `PeriodRange.init`, and `FiscalCalendar.periodInFiscalYear` each ask a
+question that has no answer for a stub period, and each already has a nil-returning
+sibling for callers who do not know the type statically.
+
 #### Fixed — feasibility depended on the units a problem was written in
 
 Phase I of the two-phase simplex minimises the sum of the artificial variables and
