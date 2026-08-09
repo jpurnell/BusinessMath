@@ -725,16 +725,18 @@ extension DataExporter {
 		
 			// Revenue components
 		for component in model.revenueComponents {
-			builder.append("\(escapeCsv(component.name)),Revenue,Fixed,\(component.amount),\n")
+			builder.append("\(escapeCsv(component.name)),Revenue,Fixed,\(csvNumber(component.amount)),\n")
 		}
 		
 			// Cost components
 		for component in model.costComponents {
 			switch component.type {
 				case .fixed(let amount):
-					builder.append("\(escapeCsv(component.name)),Cost,Fixed,\(amount),\n")
+					builder.append("\(escapeCsv(component.name)),Cost,Fixed,\(csvNumber(amount)),\n")
 				case .variable(let percentage):
-					let percentageStr = "\((percentage * 100).number(2))%"
+						// `number(_:)` is a display formatter, so the non-finite case takes the
+						// same ASCII token as every other column and as the non-optimized path.
+					let percentageStr = csvNonFiniteToken(percentage) ?? "\((percentage * 100).number(2))%"
 					builder.append("\(escapeCsv(component.name)),Cost,Variable,,\(percentageStr)\n")
 			}
 		}
@@ -769,7 +771,8 @@ extension TimeSeriesExporter {
 		
 			// Data rows - pre-allocate array for efficiency
 		let rows = zip(series.periods, series.valuesArray).map { period, value in
-			"\(period.label),\(value)\n"
+			let valueStr = csvNonFiniteToken(value) ?? "\(value)"
+			return "\(period.label),\(valueStr)\n"
 		}
 		builder.append(rows)
 		

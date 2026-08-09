@@ -166,7 +166,7 @@ import RealModule
         #expect(csvOutput.contains("Sales"))
 
         // Should export to JSON
-        let jsonOutput = try exporter.exportToJSON()
+        let jsonOutput = exporter.exportToJSON()
         #expect(!jsonOutput.isEmpty)
 
         // JSON should be valid
@@ -246,7 +246,7 @@ import RealModule
         #expect(csv.contains("2020"))
         #expect(csv.contains("500000"))
 
-        let json = try exporter.exportToJSON()
+        let json = exporter.exportToJSON()
         #expect(!json.isEmpty)
         #expect(json.contains("2023"))
     }

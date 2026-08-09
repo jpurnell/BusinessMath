@@ -124,7 +124,7 @@ import RealModule
 
         // When/Then: JSON export should complete in < 50ms
         let start = Date()
-        let json = try exporter.exportToJSON()
+        let json = exporter.exportToJSON()
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(json.count > 1000)
@@ -463,7 +463,7 @@ struct ExporterEquivalenceTests {
 			model.revenueComponents.append(RevenueComponent(name: "R\(i)", amount: Double(i)))
 		}
 		let exporter = DataExporter(model: model)
-		let json = try exporter.exportToJSON()
+		let json = exporter.exportToJSON()
 
 		let data = Data(json.utf8)
 		let obj = try #require(try? JSONSerialization.jsonObject(with: data, options: []), "JSON export should produce parseable JSON.")
