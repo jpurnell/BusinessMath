@@ -182,43 +182,48 @@ struct HazardRateModelTests {
             volatility: 0.30
         )
 
-        let seeds = [0.3, 0.5, 0.7]
-        let defaultTime = cox.simulateDefaultTime(seeds: seeds)
+        let defaultTime = cox.simulateDefaultTime(seed: 42)
 
         // Default time should be positive
         #expect(defaultTime > 0)
     }
 
-    @Test("Cox process is deterministic with same seeds and varies with different seeds")
+    @Test("Cox process is deterministic with same seed and varies with different seeds")
     func coxProcessVariability() {
         let cox = CoxProcess(
             meanHazardRate: 0.02,
             volatility: 0.30
         )
 
-        // Determinism: same seeds produce same result
-        let time1a = cox.simulateDefaultTime(seeds: [0.1, 0.2, 0.3])
-        let time1b = cox.simulateDefaultTime(seeds: [0.1, 0.2, 0.3])
-        #expect(time1a == time1b, "Same seeds should produce identical results")
+        // Determinism: the same seed produces the same result
+        let time1a = cox.simulateDefaultTime(seed: 7)
+        let time1b = cox.simulateDefaultTime(seed: 7)
+        #expect(time1a == time1b, "Same seed should produce identical results")
 
         // Sensitivity: different seeds produce different results
-        let time2 = cox.simulateDefaultTime(seeds: [0.8, 0.9, 0.95])
+        let time2 = cox.simulateDefaultTime(seed: 8)
         #expect(time1a != time2, "Different seeds should produce different results")
     }
 
-    @Test("Cox process higher volatility increases spread of outcomes")
+    @Test("Cox process higher volatility widens the spread of outcomes")
     func coxProcessVolatility() {
         let lowVol = CoxProcess(meanHazardRate: 0.02, volatility: 0.10)
-        let highVol = CoxProcess(meanHazardRate: 0.02, volatility: 0.50)
+        let highVol = CoxProcess(meanHazardRate: 0.02, volatility: 1.50)
 
-        let seeds = [0.3, 0.5, 0.7]
+        func spread(_ cox: CoxProcess<Double>) -> Double {
+            var rng = DeterministicRNG(seed: 2468)
+            let xs = (0..<3_000).map { _ in cox.simulateDefaultTime(horizon: 5_000, using: &rng) }
+            let m = xs.reduce(0, +) / Double(xs.count)
+            let v = xs.map { ($0 - m) * ($0 - m) }.reduce(0, +) / Double(xs.count - 1)
+            return v.squareRoot() / m
+        }
 
-        let time1 = lowVol.simulateDefaultTime(seeds: seeds)
-        let time2 = highVol.simulateDefaultTime(seeds: seeds)
-
-        // Both should be positive
-        #expect(time1 > 0)
-        #expect(time2 > 0)
+        // The exponential threshold alone gives CV = 1; dispersion in the intensity adds
+        // to it, so a volatile intensity must produce a wider relative spread.
+        let lowSpread = spread(lowVol)
+        let highSpread = spread(highVol)
+        #expect(lowSpread > 0)
+        #expect(highSpread > lowSpread, "σ=1.50 CV \(highSpread) not above σ=0.10 CV \(lowSpread)")
     }
 
     // MARK: - Integration Tests
