@@ -191,9 +191,8 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
         guard mean > 0, u > 0 else { return 0 }
 
         if mean > 30 {
-            // Normal approximation for large lambda
-            // Inverse normal CDF approximation (Beasley-Springer-Moro)
-            let z = inverseNormalCDF(u)
+            // Normal approximation for large lambda: Poisson(λ) ≈ N(λ, λ).
+            let z = inverseNormalCDF(p: u)
             let result = mean + mean.squareRoot() * z
             return max(0, Int(result.rounded()))
         }
@@ -213,37 +212,4 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
         return k
     }
 
-    /// Simple inverse normal CDF (rational approximation).
-    private func inverseNormalCDF(_ u: Double) -> Double {
-        // Beasley-Springer-Moro approximation
-        let a = [0.0, -3.969683028665376e+01, 2.209460984245205e+02,
-                 -2.759285104469687e+02, 1.383577518672690e+02,
-                 -3.066479806614716e+01, 2.506628277459239e+00]
-        let b = [0.0, -5.447609879822406e+01, 1.615858368580409e+02,
-                 -1.556989798598866e+02, 6.680131188771972e+01,
-                 -1.328068155288572e+01]
-        let c = [0.0, -7.784894002430293e-03, -3.223964580411365e-01,
-                 -2.400758277161838e+00, -2.549732539343734e+00,
-                 4.374664141464968e+00, 2.938163982698783e+00]
-        let d = [0.0, 7.784695709041462e-03, 3.224671290700398e-01,
-                 2.445134137142996e+00, 3.754408661907416e+00]
-
-        let pLow = 0.02425
-        let pHigh = 1.0 - pLow
-
-        if u < pLow {
-            let q = (-2.0 * Double.log(u)).squareRoot()
-            return (((((c[1]*q+c[2])*q+c[3])*q+c[4])*q+c[5])*q+c[6]) /
-                   ((((d[1]*q+d[2])*q+d[3])*q+d[4])*q+1.0)
-        } else if u <= pHigh {
-            let q = u - 0.5
-            let r = q * q
-            return (((((a[1]*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+a[6])*q /
-                   (((((b[1]*r+b[2])*r+b[3])*r+b[4])*r+b[5])*r+1.0)
-        } else {
-            let q = (-2.0 * Double.log(1.0 - u)).squareRoot()
-            return -(((((c[1]*q+c[2])*q+c[3])*q+c[4])*q+c[5])*q+c[6]) /
-                    ((((d[1]*q+d[2])*q+d[3])*q+d[4])*q+1.0)
-        }
-    }
 }

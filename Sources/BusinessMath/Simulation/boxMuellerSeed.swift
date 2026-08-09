@@ -38,8 +38,14 @@ import Numerics
 		u1 = max(epsilon, min(T(1) - epsilon, u1))
 		u2 = max(epsilon, min(T(1) - epsilon, u2))
 
-		let z1 = T.sqrt(T(-2) * T.log(u1)) * T.sin(2 * T.pi * u2)
-		let z2 = T.sqrt(T(-2) * T.log(u1)) * T.cos(2 * T.pi) * u2
+		// The two variates share a radius and differ only in the angle: sin and cos of the
+		// same 2πu₂. Writing `T.cos(2 * T.pi) * u2` instead — cos of a full turn, which is the
+		// constant 1, scaled by u₂ — made z2 equal to the radius times a uniform, which is not
+		// normal and is not independent of z1.
+		let radius = T.sqrt(T(-2) * T.log(u1))
+		let angle = 2 * T.pi * u2
+		let z1 = radius * T.sin(angle)
+		let z2 = radius * T.cos(angle)
 		return (z1, z2)
 	}
 

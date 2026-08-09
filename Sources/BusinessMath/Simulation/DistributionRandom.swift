@@ -50,7 +50,7 @@ import Numerics
 /// ```
 public protocol DistributionRandom<T> {
 	/// The numeric type for random values.
-	associatedtype T: Real
+	associatedtype T: Real & BinaryFloatingPoint
 
 	/// Generates the next random value from this distribution.
 	///
