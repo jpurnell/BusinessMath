@@ -286,7 +286,14 @@ extension TimeSeries {
 	///
 	/// // Aggregate monthly to annual
 	/// let annual = monthly.aggregate(to: .annual, method: .average)
+	///
+	/// // Quarterly into halves, for a company moving to semiannual reporting
+	/// let halves = quarterly.aggregate(to: .semiannual, method: .sum)
 	/// ```
+	///
+	/// - Note: Supported targets are `.quarterly`, `.semiannual`, and `.annual`.
+	///   Any other target — including `.custom`, which names one specific interval
+	///   rather than a repeating bucket — yields an empty series.
 	public func aggregate(to targetType: PeriodType, method: AggregationMethod) -> TimeSeries<T> {
 		// Group periods by their target period
 		var groups: [Period: [T]] = [:]
@@ -305,11 +312,24 @@ extension TimeSeries {
 				let quarter = ((components.month ?? 1) - 1) / 3 + 1
 				targetPeriod = Period.quarter(year: components.year ?? 0, quarter: quarter)
 
+			case .semiannual:
+				// Map month to half of the year
+				let calendar = Calendar.current
+				let components = calendar.dateComponents([.year, .month], from: period.startDate)
+				let half = ((components.month ?? 1) - 1) / 6 + 1
+				targetPeriod = Period.semiannual(year: components.year ?? 0, half: half)
+
 			case .annual:
 				// Map any period to year
 				let calendar = Calendar.current
-				let year = calendar.component(.year, from: period.startDate)
-				targetPeriod = Period.year(year)
+				let calendarYear = calendar.component(.year, from: period.startDate)
+				targetPeriod = Period.year(calendarYear)
+
+			case .custom:
+				// There is no rule that groups periods into an arbitrary range: a custom
+				// target names one specific interval, not a repeating bucket. Nothing is
+				// emitted, matching the existing behaviour for non-coarsening targets.
+				continue
 
 			default:
 				// Can't aggregate to smaller or same period type

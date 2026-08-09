@@ -480,12 +480,29 @@ public struct CreditCurve<T: Real> where T: Sendable {
             let quarter = (monthInt - 1) / 3 + 1
             let totalQuarters = yearInt * 4 + quarter
             return T(totalQuarters) / T(4)
+        case .semiannual:
+            // Extract year and half from date
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.year, .month], from: period.date)
+            let yearInt = components.year ?? 0
+            let monthInt = components.month ?? 1
+            let half = (monthInt - 1) / 6 + 1
+            let totalHalves = yearInt * 2 + half
+            return T(totalHalves) / T(2)
         case .annual:
             // Extract year from date
             let calendar = Calendar.current
             let components = calendar.dateComponents([.year], from: period.date)
             let yearInt = components.year ?? 0
             return T(yearInt)
+        case .custom:
+            // An arbitrary range has no ladder position; fall back to the same
+            // epoch-seconds measure used for sub-daily periods.
+            let regularDays = T(365) * T(24) * T(3600)
+            let quarterDay = T(1) / T(4) * T(24) * T(3600)
+            let secondsPerYear = regularDays + quarterDay
+            let seconds = T(Int(period.date.timeIntervalSince1970))
+            return seconds / secondsPerYear
         }
     }
 }

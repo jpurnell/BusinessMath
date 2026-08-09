@@ -25,7 +25,11 @@ import Foundation
 /// - ``daily``
 /// - ``monthly``
 /// - ``quarterly``
+/// - ``semiannual``
 /// - ``annual``
+///
+/// **Irregular Periods**:
+/// - ``custom`` — an arbitrary date range with no type-level duration.
 ///
 /// ## Usage Examples
 ///
@@ -70,9 +74,13 @@ import Foundation
 /// - ``daily``
 /// - ``monthly``
 /// - ``quarterly``
+/// - ``semiannual``
 /// - ``annual``
+/// - ``custom``
 ///
 /// ### Properties
+/// - ``granularityRank``
+/// - ``isRegular``
 /// - ``daysApproximate``
 /// - ``monthsEquivalent``
 ///
@@ -112,6 +120,74 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// Accounts for leap years by using 365.25 days per year.
 	case annual = 7
 
+	/// Semiannual period type (average 182.625 days).
+	///
+	/// Calculated as 365.25 days per year / 2 halves per year. Half 1 covers
+	/// January through June; half 2 covers July through December.
+	///
+	/// - Note: The raw value (8) is deliberately *higher* than ``annual`` (7)
+	///   so that raw values already written to disk stay valid. Ordering comes
+	///   from ``granularityRank``, not the raw value.
+	case semiannual = 8
+
+	/// An arbitrary date range that does not sit on the granularity ladder.
+	///
+	/// Use this for irregular reporting periods — the odd-length stub a company
+	/// emits when it changes reporting cadence (quarterly to semiannual) or moves
+	/// its fiscal year-end.
+	///
+	/// A custom period's duration is a property of the *instance*, not the type.
+	/// The type-level conversion tables (``daysApproximate``, ``millisecondsExact``,
+	/// ``monthsEquivalent``) have no answer for this case and trap rather than
+	/// return a fabricated scalar. Use ``Period/durationInDays``,
+	/// ``Period/durationInMilliseconds``, or ``Period/durationInMonths`` instead.
+	case custom = 9
+
+	// MARK: - Ordering
+
+	/// The position of this period type on the granularity ladder.
+	///
+	/// Ordering is expressed explicitly rather than being inferred from `rawValue`
+	/// so that new cases can be appended (keeping raw values, and therefore persisted
+	/// `Codable` payloads, stable) while still sorting in the right place.
+	///
+	/// The ladder runs
+	/// `millisecond < second < minute < hourly < daily < monthly < quarterly < semiannual < annual`.
+	///
+	/// ``custom`` is not on the ladder. It is ranked last so that `Comparable`
+	/// remains a total order, but comparing a custom range's granularity to a ladder
+	/// rung is not meaningful — check ``isRegular`` first if that distinction matters.
+	public var granularityRank: Int {
+		switch self {
+		case .millisecond: return 0
+		case .second: return 1
+		case .minute: return 2
+		case .hourly: return 3
+		case .daily: return 4
+		case .monthly: return 5
+		case .quarterly: return 6
+		case .semiannual: return 7
+		case .annual: return 8
+		case .custom: return 9
+		}
+	}
+
+	/// Whether this period type sits on the granularity ladder with a fixed,
+	/// type-level duration.
+	///
+	/// `false` only for ``custom``. Regular types can answer ``daysApproximate``,
+	/// ``millisecondsExact``, and ``monthsEquivalent``; a custom range cannot.
+	///
+	/// ## Example
+	/// ```swift
+	/// if periodType.isRegular {
+	///     let days = periodType.daysApproximate
+	/// }
+	/// ```
+	public var isRegular: Bool {
+		return self != .custom
+	}
+
 	// MARK: - Computed Properties
 
 	/// The approximate number of days in this period type.
@@ -122,7 +198,14 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// - Quarterly: 91.3125 (365.25 / 4)
 	/// - Annual: 365.25
 	///
+	/// - Semiannual: 182.625 (365.25 / 2)
+	/// - Annual: 365.25
+	///
 	/// - Returns: The number of days as a `Double`.
+	///
+	/// - Precondition: `self` must be ``isRegular``. ``custom`` has no type-level
+	///   duration; calling this on it is a programmer error and traps. Use
+	///   ``Period/durationInDays`` for a value that is defined for every period.
 	///
 	/// ## Example
 	/// ```swift
@@ -145,8 +228,12 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 			return 365.25 / 12.0  // fp-safety:disable — literal constants
 		case .quarterly:
 			return 365.25 / 4.0   // fp-safety:disable — literal constants
+		case .semiannual:
+			return 365.25 / 2.0   // fp-safety:disable — literal constants
 		case .annual:
 			return 365.25
+		case .custom:
+			preconditionFailure(Self.irregularDurationMessage("daysApproximate", instanceAccessor: "Period.durationInDays"))
 		}
 	}
 
@@ -160,9 +247,14 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// - Daily: 86,400,000
 	/// - Monthly: ~2,628,000,000 (average)
 	/// - Quarterly: ~7,884,000,000 (average)
+	/// - Semiannual: ~15,778,800,000 (average)
 	/// - Annual: ~31,536,000,000
 	///
 	/// - Returns: The number of milliseconds as a `Double`.
+	///
+	/// - Precondition: `self` must be ``isRegular``. ``custom`` has no type-level
+	///   duration; calling this on it is a programmer error and traps. Use
+	///   ``Period/durationInMilliseconds`` instead.
 	///
 	/// ## Example
 	/// ```swift
@@ -185,8 +277,12 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 			return 30.4375 * 86_400_000.0  // ~2,628,000,000
 		case .quarterly:
 			return 91.3125 * 86_400_000.0  // ~7,884,000,000
+		case .semiannual:
+			return 182.625 * 86_400_000.0  // ~15,778,800,000
 		case .annual:
 			return 365.25 * 86_400_000.0   // ~31,536,000,000
+		case .custom:
+			preconditionFailure(Self.irregularDurationMessage("millisecondsExact", instanceAccessor: "Period.durationInMilliseconds"))
 		}
 	}
 
@@ -200,9 +296,14 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// - Daily: ~0.03285 (1 / 30.4375)
 	/// - Monthly: 1.0
 	/// - Quarterly: 3.0
+	/// - Semiannual: 6.0
 	/// - Annual: 12.0
 	///
 	/// - Returns: The number of months as a `Double`.
+	///
+	/// - Precondition: `self` must be ``isRegular``. ``custom`` has no type-level
+	///   duration; calling this on it is a programmer error and traps. Use
+	///   ``Period/durationInMonths`` instead.
 	///
 	/// ## Example
 	/// ```swift
@@ -225,9 +326,28 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 			return 1.0
 		case .quarterly:
 			return 3.0
+		case .semiannual:
+			return 6.0
 		case .annual:
 			return 12.0
+		case .custom:
+			preconditionFailure(Self.irregularDurationMessage("monthsEquivalent", instanceAccessor: "Period.durationInMonths"))
 		}
+	}
+
+	// MARK: - Irregular Duration Diagnostics
+
+	/// Builds the trap message used when a type-level duration is asked of ``custom``.
+	///
+	/// Refusing loudly is deliberate: an arbitrary date range has no duration that
+	/// can be derived from its *type*, so any scalar returned here would be a
+	/// fabrication. The message names the instance-level accessor that does work.
+	private static func irregularDurationMessage(_ property: String, instanceAccessor: String) -> String {
+		return """
+			PeriodType.custom has no type-level \(property): an arbitrary date range's \
+			duration is a property of the instance, not the type. Use \(instanceAccessor), \
+			or guard on PeriodType.isRegular before reaching for the conversion tables.
+			"""
 	}
 
 	// MARK: - Conversion Methods
@@ -245,6 +365,10 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// - Returns: The equivalent number of periods in the target type.
 	///
 	/// - Note: Conversions maintain full precision. No rounding or truncation occurs.
+	///
+	/// - Precondition: Both `self` and `targetType` must be ``isRegular``. Converting
+	///   to or from ``custom`` is a programmer error and traps, because a custom range
+	///   has no type-level duration to convert with.
 	///
 	/// ## Conversion Examples
 	///
@@ -293,7 +417,10 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// Compares two period types based on their duration.
 	///
 	/// Period types are ordered by their typical duration:
-	/// `millisecond < second < minute < hourly < daily < monthly < quarterly < annual`
+	/// `millisecond < second < minute < hourly < daily < monthly < quarterly < semiannual < annual`
+	///
+	/// ``custom`` sorts after ``annual`` so the order stays total, but the comparison
+	/// carries no granularity meaning for an arbitrary range.
 	///
 	/// - Parameters:
 	///   - lhs: The left-hand period type.
@@ -308,7 +435,9 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	/// // Result: [.millisecond, .second, .daily, .quarterly, .annual]
 	/// ```
 	public static func < (lhs: PeriodType, rhs: PeriodType) -> Bool {
-		// Natural ordering via raw values (0 = smallest, 7 = largest)
-		return lhs.rawValue < rhs.rawValue
+		// Ordering is explicit (see granularityRank), NOT the raw value. Raw values are
+		// append-only so that persisted Codable payloads keep decoding; semiannual was
+		// added as 8 but belongs between quarterly (6) and annual (7).
+		return lhs.granularityRank < rhs.granularityRank
 	}
 }

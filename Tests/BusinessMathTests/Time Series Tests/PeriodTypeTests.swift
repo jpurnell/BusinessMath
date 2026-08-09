@@ -351,7 +351,7 @@ struct PeriodTypeTests {
 	@Test("All cases can be iterated")
 	func caseIterable() {
 		let allCases = PeriodType.allCases
-		#expect(allCases.count == 8)
+		#expect(allCases.count == 10)
 		#expect(allCases.contains(.millisecond))
 		#expect(allCases.contains(.second))
 		#expect(allCases.contains(.minute))
@@ -359,7 +359,9 @@ struct PeriodTypeTests {
 		#expect(allCases.contains(.daily))
 		#expect(allCases.contains(.monthly))
 		#expect(allCases.contains(.quarterly))
+		#expect(allCases.contains(.semiannual))
 		#expect(allCases.contains(.annual))
+		#expect(allCases.contains(.custom))
 	}
 
 	// MARK: - Edge Cases

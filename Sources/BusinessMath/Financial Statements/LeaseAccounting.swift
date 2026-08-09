@@ -284,8 +284,15 @@ public struct Lease {
                 periodicRate = discountRate / 12.0 // fp-safety:disable
             case .quarterly:
                 periodicRate = discountRate / 4.0 // fp-safety:disable
+            case .semiannual:
+                periodicRate = discountRate / 2.0 // fp-safety:disable
             case .annual:
                 periodicRate = discountRate
+            case .custom:
+                // A transition stub has no periods-per-year to divide by. Scale the
+                // annual rate by the stub's actual length, which is what dividing by
+                // 12 / 4 / 2 above does for the regular cases.
+                periodicRate = discountRate * firstPeriod.durationInDays / 365.25 // fp-safety:disable
             }
         } else {
             // Default to annual if no period info
@@ -341,8 +348,15 @@ public struct Lease {
                 periodicRate = discountRate / 12.0 // fp-safety:disable
             case .quarterly:
                 periodicRate = discountRate / 4.0 // fp-safety:disable
+            case .semiannual:
+                periodicRate = discountRate / 2.0 // fp-safety:disable
             case .annual:
                 periodicRate = discountRate
+            case .custom:
+                // A transition stub has no periods-per-year to divide by. Scale the
+                // annual rate by the stub's actual length, which is what dividing by
+                // 12 / 4 / 2 above does for the regular cases.
+                periodicRate = discountRate * firstPeriod.durationInDays / 365.25 // fp-safety:disable
             }
         } else {
             periodicRate = discountRate
