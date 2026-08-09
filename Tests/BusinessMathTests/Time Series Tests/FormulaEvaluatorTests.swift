@@ -166,9 +166,9 @@ struct FormulaEvaluatorTests {
 
 		let result = try evaluator.evaluate("profit / revenue")
 
-		#expect(result.valuesArray[0] == 0.1)
+		#expect(abs(result.valuesArray[0] - 0.1) < 1e-12)
 		#expect(!result.valuesArray[1].isFinite, "a zero denominator produced a usable-looking number")
-		#expect(result.valuesArray[2] == 0.1)
+		#expect(abs(result.valuesArray[2] - 0.1) < 1e-12)
 	}
 
 	// MARK: - Validating a configuration before data exists
