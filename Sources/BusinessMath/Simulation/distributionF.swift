@@ -47,7 +47,10 @@ import OSLog
 /// - Parameters:
 ///   - df1: The first degrees of freedom parameter (numerator, df1 > 0)
 ///   - df2: The second degrees of freedom parameter (denominator, df2 > 0)
-///   - seeds: Optional seeds for reproducibility
+///   - seed: Seed for a private ``DeterministicRNG``. The same seed with the same degrees
+///     of freedom reproduces the same value exactly. `nil` (the default) draws from system
+///     entropy and is non-reproducible by contract — use `seed:` or
+///     ``distributionF(df1:df2:using:)`` when reproducibility matters.
 /// - Returns: A random value sampled from the F(df1, df2) distribution, or NaN if df1 ≤ 0 or df2 ≤ 0
 ///
 /// ## Example
@@ -57,48 +60,65 @@ import OSLog
 /// let fStat: Double = distributionF(df1: 5, df2: 20)
 /// print("F-statistic: \(fStat)")
 ///
-/// // Compare variances of two samples
-/// let varianceRatio: Double = distributionF(df1: 10, df2: 15)
+/// // The same value on every run
+/// let reproducible: Double = distributionF(df1: 5, df2: 20, seed: 42)
 ///
 /// // Invalid degrees of freedom returns NaN
 /// let invalid: Double = distributionF(df1: 0, df2: 10)
 /// print(invalid.isNaN)  // true
 /// ```
 @available(macOS 11.0, *)
-public func distributionF<T: Real>(df1: Int, df2: Int, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionF<T: Real>(df1: Int, df2: Int, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionF(df1: df1, df2: df2, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionF(df1: df1, df2: df2, using: &generator)
+}
+
+/// Generates an F variate, drawing every uniform from `generator`.
+///
+/// The generator-parameterized form of ``distributionF(df1:df2:seed:)``, following the
+/// same convention as ``SeedableDistribution/next(using:)``: all randomness comes from the
+/// caller's generator, so the caller owns reproducibility and can interleave this draw
+/// with others on a single stream.
+///
+/// The two chi-squared variates are drawn in sequence from the one stream. The array form
+/// this replaced split a fixed `[Double]` down the middle and handed half to each — so
+/// neither chi-squared got a stream it could finish, and at df1 = df2 = 1 the draw
+/// silently left the supplied uniforms on 5.5% of calls.
+///
+/// - Parameters:
+///   - df1: The first degrees of freedom parameter (numerator, df1 > 0)
+///   - df2: The second degrees of freedom parameter (denominator, df2 > 0)
+///   - generator: The random source. Advanced by a data-dependent number of draws.
+/// - Returns: A random value sampled from the F(df1, df2) distribution, or NaN if df1 ≤ 0 or df2 ≤ 0
+@available(macOS 11.0, *)
+public func distributionF<T: Real, G: RandomNumberGenerator>(df1: Int, df2: Int, using generator: inout G) -> T where T: BinaryFloatingPoint {
 	// F-distribution is undefined for df1 ≤ 0 or df2 ≤ 0
 	guard df1 > 0, df2 > 0 else {
 		return T.nan
 	}
-	
+
 	// F(df1, df2) = (χ²(df1)/df1) / (χ²(df2)/df2)
 	// where χ²(df) = Gamma(df/2, 2)
 
 	let dfOne = T(df1)
 	let dfTwo = T(df2)
 
-	// Generate two independent chi-squared random variables
-	// Split seeds: first half for chi1, second half for chi2
-	let chi1Seeds: [Double]?
-	let chi2Seeds: [Double]?
-
-	if let seeds = seeds {
-		let midpoint = seeds.count / 2
-		chi1Seeds = Array(seeds[0..<midpoint])
-		chi2Seeds = Array(seeds[midpoint..<seeds.count])
-	} else {
-		chi1Seeds = nil
-		chi2Seeds = nil
-	}
-
-	let chi1: T = distributionChiSquared(degreesOfFreedom: df1, seeds: chi1Seeds)
-	let chi2: T = distributionChiSquared(degreesOfFreedom: df2, seeds: chi2Seeds)
+	let chi1: T = distributionChiSquared(degreesOfFreedom: df1, using: &generator)
+	let chi2: T = distributionChiSquared(degreesOfFreedom: df2, using: &generator)
 
 	// F = (χ²₁/df1) / (χ²₂/df2)
-	let numerator = chi1 / dfOne
-	let denominator = chi2 / dfTwo
+	let numerator = chi1 / dfOne // fp-safety:disable — df1 > 0 guarded above
+	let denominator = chi2 / dfTwo // fp-safety:disable — df2 > 0 guarded above
 
-	return numerator / denominator
+	guard denominator > T(0) else {
+		// Degenerate underflow (measure zero for valid df2): mirror the NaN convention
+		return T.nan
+	}
+	return numerator / denominator // fp-safety:disable — guarded by denominator > 0 above
 }
 
 /// A type that represents an F-distribution.
@@ -185,21 +205,6 @@ extension DistributionF: SeedableDistribution {
 	/// - Parameter generator: The random source for every uniform draw.
 	/// - Returns: A random Double sampled from F(df1, df2), always non-negative
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		let dfOne = Double(df1)
-		let dfTwo = Double(df2)
-
-		// Generate two independent chi-squared variates via χ²(df) = Gamma(df/2, 2)
-		let chi1 = gammaVariate(shape: dfOne / 2.0, scale: 2.0, using: &generator)
-		let chi2 = gammaVariate(shape: dfTwo / 2.0, scale: 2.0, using: &generator)
-
-		// F = (χ²₁/df1) / (χ²₂/df2)
-		let numerator = chi1 / dfOne // fp-safety:disable — df1 > 0 guarded in init
-		let denominator = chi2 / dfTwo // fp-safety:disable — df2 > 0 guarded in init
-
-		guard denominator > 0 else {
-			// Degenerate underflow (measure zero for valid df2): mirror the NaN convention
-			return Double.nan
-		}
-		return numerator / denominator // fp-safety:disable — guarded by denominator > 0 above
+		return distributionF(df1: df1, df2: df2, using: &generator)
 	}
 }

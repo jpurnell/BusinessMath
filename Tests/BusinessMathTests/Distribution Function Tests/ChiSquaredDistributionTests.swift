@@ -19,23 +19,15 @@ import OSLog
 struct ChiSquaredDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.ChiSquaredDistributionTests", category: #function)
 	
-		// Helper function to generate seed sets for chi-squared distribution using SeededRNG
-		// Chi-squared uses gamma distribution which needs ~10 seeds per sample
-	static func seedSetsForChiSquared(count: Int, seedsPerSample: Int = 10) -> [[Double]] {
-		let rng = SeededRNG(seed: 54321)  // Different seed from t-dist
-		var seedSets: [[Double]] = []
-		
-		for _ in 0..<count {
-			var seedSet: [Double] = []
-			for _ in 0..<seedsPerSample {
-				var seed = rng.next()
-				seed = max(0.0001, min(0.9999, seed))
-				seedSet.append(seed)
-			}
-			seedSets.append(seedSet)
-		}
-		
-		return seedSets
+	// Deterministic seeds for the distribution's `seed:` parameter. Each element seeds a
+	// private xoshiro256** stream, which sizes itself to whatever the sampler asks for.
+	// This used to hand out fixed-length `[Double]` budgets of pre-drawn uniforms; the
+	// sampler consumes a data-dependent number of them and silently finished on the
+	// global generator once a budget ran out, so the "deterministic" tests below were
+	// only mostly deterministic.
+	static func seedSetsForChiSquared(count: Int) -> [UInt64] {
+		var rng = DeterministicRNG(seed: 54321)
+		return (0..<count).map { _ in rng.next() }
 	}
 	
 	@Test("Chi-squared distribution function produces positive values")
@@ -48,7 +40,7 @@ struct ChiSquaredDistributionTests {
 		let seedSets = ChiSquaredDistributionTests.seedSetsForChiSquared(count: sampleCount)
 		
 		for i in 0..<sampleCount {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i])
 			#expect(sample >= 0.0, "Chi-squared values must be >= 0")
 			#expect(sample.isFinite, "Chi-squared values must be finite")
 			#expect(!sample.isNaN, "Chi-squared values must not be NaN")
@@ -68,7 +60,7 @@ struct ChiSquaredDistributionTests {
 		
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 		}
 		
@@ -89,8 +81,7 @@ struct ChiSquaredDistributionTests {
 
 		// Test that seeded function produces positive values
 		for i in 0..<100 {
-			let seeds = (0..<df).map { j in Double(i * df + j + 1) / Double(100 * df + 1) }
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seeds)
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: UInt64(i) &+ 1)
 			#expect(sample >= 0.0)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
@@ -106,7 +97,7 @@ struct ChiSquaredDistributionTests {
 		
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 			#expect(sample.isFinite)
@@ -128,7 +119,7 @@ struct ChiSquaredDistributionTests {
 		
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -148,7 +139,7 @@ struct ChiSquaredDistributionTests {
 		
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -168,7 +159,7 @@ struct ChiSquaredDistributionTests {
 		
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 		}
 		
@@ -191,7 +182,7 @@ struct ChiSquaredDistributionTests {
 		
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 		}
 		
@@ -218,8 +209,8 @@ struct ChiSquaredDistributionTests {
 		var samplesDF50: [Double] = []
 		
 		for i in 0..<sampleCount {
-			samplesDF5.append(distributionChiSquared(degreesOfFreedom: 5, seeds: seedSets[i]))
-			samplesDF50.append(distributionChiSquared(degreesOfFreedom: 50, seeds: seedSets[i]))
+			samplesDF5.append(distributionChiSquared(degreesOfFreedom: 5, seed: seedSets[i]))
+			samplesDF50.append(distributionChiSquared(degreesOfFreedom: 50, seed: seedSets[i]))
 		}
 		
 			// Calculate skewness: E[(X-μ)³] / σ³
@@ -255,7 +246,7 @@ struct ChiSquaredDistributionTests {
 			
 			var samples: [Double] = []
 			for i in 0..<sampleCount {
-				samples.append(distributionChiSquared(degreesOfFreedom: testCase.df, seeds: seedSets[i]))
+				samples.append(distributionChiSquared(degreesOfFreedom: testCase.df, seed: seedSets[i]))
 			}
 			
 			let mean = samples.reduce(0, +) / Double(samples.count)
@@ -279,7 +270,7 @@ struct ChiSquaredDistributionTests {
 			// Generate samples and verify consistency
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i]))
+			samples.append(distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i]))
 		}
 		
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -300,8 +291,8 @@ struct ChiSquaredDistributionTests {
 		var sumSamples: [Double] = []
 		
 		for i in 0..<sampleCount {
-			let sample1: Double = distributionChiSquared(degreesOfFreedom: df1, seeds: seedSets[i])
-			let sample2: Double = distributionChiSquared(degreesOfFreedom: df2, seeds: seedSets[i + sampleCount])
+			let sample1: Double = distributionChiSquared(degreesOfFreedom: df1, seed: seedSets[i])
+			let sample2: Double = distributionChiSquared(degreesOfFreedom: df2, seed: seedSets[i + sampleCount])
 			sumSamples.append(sample1 + sample2)
 		}
 		
@@ -322,13 +313,20 @@ struct ChiSquaredDistributionTests {
 		var chiSquaredSamples: [Double] = []
 		var normalSquaredSamples: [Double] = []
 
+		// The normal block runs on its own stream. χ²(1) rejects, so it consumes a
+		// data-dependent number of uniforms and cannot be paired draw-for-draw with a
+		// two-uniform Box-Muller; the comparison below is between sample means, which
+		// is all the identity χ²(1) = Z² asserts at this sample size.
+		var normalRNG = DeterministicRNG(seed: 54_322)
+
 		for i in 0..<sampleCount {
 			// Generate chi-squared directly
-			chiSquaredSamples.append(distributionChiSquared(degreesOfFreedom: 1, seeds: seedSets[i]))
+			chiSquaredSamples.append(distributionChiSquared(degreesOfFreedom: 1, seed: seedSets[i]))
 
 			// Generate from normal: Z² where Z ~ N(0,1)
-			// Using first two seeds for normal distribution
-			let normalSample: Double =  distributionNormal(mean: 0, stdDev: 1, seedSets[i][0], seedSets[i][1])
+			let u1 = Double.random(in: 0...1, using: &normalRNG)
+			let u2 = Double.random(in: 0...1, using: &normalRNG)
+			let normalSample: Double = distributionNormal(mean: 0, stdDev: 1, u1, u2)
 			normalSquaredSamples.append(normalSample * normalSample)
 		}
 
@@ -358,7 +356,7 @@ struct ChiSquaredDistributionTests {
 
 			var samples: [Double] = []
 			for i in 0..<sampleCount {
-				samples.append(distributionChiSquared(degreesOfFreedom: testCase.df, seeds: seedSets[i]))
+				samples.append(distributionChiSquared(degreesOfFreedom: testCase.df, seed: seedSets[i]))
 			}
 
 			// Estimate mode using histogram
@@ -393,7 +391,7 @@ struct ChiSquaredDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionChiSquared(degreesOfFreedom: df, seeds: seedSets[i]))
+			samples.append(distributionChiSquared(degreesOfFreedom: df, seed: seedSets[i]))
 		}
 
 		// Test first four moments
@@ -428,7 +426,7 @@ struct ChiSquaredDistributionTests {
 			var samples: [Double] = []
 
 			for i in 0..<sampleCount {
-				let sample: Double = distributionChiSquared(degreesOfFreedom: testCase.df, seeds: seedSets[i])
+				let sample: Double = distributionChiSquared(degreesOfFreedom: testCase.df, seed: seedSets[i])
 				samples.append(sample)
 
 				if sample < 0 || sample.isNaN || !sample.isFinite {
@@ -457,35 +455,36 @@ struct ChiSquaredDistributionTests {
 		]
 
 		for testCase in invalidDFCases {
-			let sample: Double = distributionChiSquared(degreesOfFreedom: testCase.df, seeds: [0.5, 0.6])
+			let sample: Double = distributionChiSquared(degreesOfFreedom: testCase.df, seed: 5150)
 			#expect(sample.isNaN, "Should return NaN for \(testCase.description)")
 		}
 
-		// Test that valid df with empty seeds array still works (uses random generation)
-		let sampleWithEmptySeeds: Double = distributionChiSquared(degreesOfFreedom: 5, seeds: [])
-		#expect(sampleWithEmptySeeds.isFinite, "Should handle empty seeds array")
+		// A valid df with no seed uses system entropy — still a well-formed variate.
+		let unseeded: Double = distributionChiSquared(degreesOfFreedom: 5)
+		#expect(unseeded.isFinite, "The unseeded path should still produce a finite variate")
 
-		// Test that seeds out of range are handled (this is clamped in implementation)
-		let sampleWithBadSeeds: Double = distributionChiSquared(degreesOfFreedom: 5, seeds: [1.1, 0.5])
-		#expect(sampleWithBadSeeds.isFinite, "Should handle seeds out of range by clamping")
+		// Every UInt64 is a legal seed, including ones past Int.max. This replaced a
+		// check that an out-of-range *uniform* (1.1) was "clamped" — it was not clamped,
+		// and there is no longer a way to hand the sampler a malformed uniform.
+		let extremeSeed: Double = distributionChiSquared(degreesOfFreedom: 5, seed: UInt64.max)
+		#expect(extremeSeed.isFinite, "Seeds above Int.max must be legal")
 	}
 	
 	@Test("Chi-squared consistency across repeated calls")
 	func chiSquaredConsistency() {
-		// Same seeds should produce same results
+		// Same seed should produce same results
 		let df = 10
-		let seeds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
+		let seed: UInt64 = 909
 
-		let sample1: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seeds)
-		let sample2: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seeds)
-		let sample3: Double = distributionChiSquared(degreesOfFreedom: df, seeds: seeds)
+		let sample1: Double = distributionChiSquared(degreesOfFreedom: df, seed: seed)
+		let sample2: Double = distributionChiSquared(degreesOfFreedom: df, seed: seed)
+		let sample3: Double = distributionChiSquared(degreesOfFreedom: df, seed: seed)
 
 		#expect(sample1 == sample2 && sample2 == sample3,
-			   "Same seeds should produce identical results")
+			   "Same seed should produce identical results")
 
 		// Different seeds should produce different results
-		let differentSeeds = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]
-		let differentSample: Double = distributionChiSquared(degreesOfFreedom: df, seeds: differentSeeds)
+		let differentSample: Double = distributionChiSquared(degreesOfFreedom: df, seed: 910)
 
 		#expect(sample1 != differentSample,
 			   "Different seeds should produce different results")

@@ -36,7 +36,10 @@ import Numerics
 /// - Parameters:
 ///   - alpha: The first shape parameter (α > 0)
 ///   - beta: The second shape parameter (β > 0)
-///   - seeds: Optional seeds for reproducibility
+///   - seed: Seed for a private ``DeterministicRNG``. The same seed with the same α and β
+///     reproduces the same value exactly. `nil` (the default) draws from system entropy
+///     and is non-reproducible by contract — use `seed:` or
+///     ``distributionBeta(alpha:beta:using:)`` when reproducibility matters.
 /// - Returns: A random value sampled from the Beta(α, β) distribution
 ///
 /// ## Example
@@ -46,38 +49,51 @@ import Numerics
 /// let completion: Double = distributionBeta(alpha: 8.0, beta: 2.0)
 /// print("Project is \(completion * 100)% complete")
 ///
-/// // Generate symmetric distribution around 0.5
-/// let symmetric: Double = distributionBeta(alpha: 5.0, beta: 5.0)
+/// // The same value on every run
+/// let reproducible: Double = distributionBeta(alpha: 8.0, beta: 2.0, seed: 42)
 /// ```
-public func distributionBeta<T: Real>(alpha: T, beta: T, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionBeta<T: Real>(alpha: T, beta: T, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionBeta(alpha: alpha, beta: beta, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionBeta(alpha: alpha, beta: beta, using: &generator)
+}
+
+/// Generates a Beta variate, drawing every uniform from `generator`.
+///
+/// The generator-parameterized form of ``distributionBeta(alpha:beta:seed:)``, following
+/// the same convention as ``SeedableDistribution/next(using:)``: all randomness comes
+/// from the caller's generator, so the caller owns reproducibility and can interleave
+/// this draw with others on a single stream.
+///
+/// The two gamma variates are drawn in sequence from the one stream. The array form this
+/// replaced split a fixed `[Double]` down the middle and handed half to each — so neither
+/// gamma got a stream it could finish, and at α = β = 0.5 the draw silently left the
+/// supplied uniforms on 5.1% of calls.
+///
+/// - Parameters:
+///   - alpha: The first shape parameter (α > 0)
+///   - beta: The second shape parameter (β > 0)
+///   - generator: The random source. Advanced by a data-dependent number of draws.
+/// - Returns: A random value sampled from the Beta(α, β) distribution, in [0, 1]
+public func distributionBeta<T: Real, G: RandomNumberGenerator>(alpha: T, beta: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
 	// Special case: Beta(1, 1) is Uniform(0, 1)
 	if alpha == T(1) && beta == T(1) {
-		if let seeds = seeds, !seeds.isEmpty {
-			return distributionUniform(min: T(0), max: T(1), seeds[0])
-		}
-		return distributionUniform(min: T(0), max: T(1))
+		return distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
 	}
 
 	// Use the Beta-Gamma relationship: X/(X+Y) where X~Gamma(α,1), Y~Gamma(β,1)
-	// Split seeds: first half for X, second half for Y
-	var seedIndexX = 0
-	var seedIndexY = 0
-	let xSeeds: [Double]?
-	let ySeeds: [Double]?
+	let x = gammaVariate(shape: alpha, scale: T(1), using: &generator)
+	let y = gammaVariate(shape: beta, scale: T(1), using: &generator)
 
-	if let seeds = seeds {
-		let midpoint = seeds.count / 2
-		xSeeds = Array(seeds[0..<midpoint])
-		ySeeds = Array(seeds[midpoint..<seeds.count])
-	} else {
-		xSeeds = nil
-		ySeeds = nil
+	let total = x + y
+	guard total > T(0) else {
+		// Degenerate underflow (measure zero for valid α, β): fall back to the distribution mean
+		return alpha / (alpha + beta) // fp-safety:disable — alpha and beta are positive
 	}
-
-	let x = gammaVariate(shape: alpha, scale: T(1), seeds: xSeeds, seedIndex: &seedIndexX)
-	let y = gammaVariate(shape: beta, scale: T(1), seeds: ySeeds, seedIndex: &seedIndexY)
-
-	return x / (x + y)
+	return x / total // fp-safety:disable — guarded by total > 0 above
 }
 
 /// A type that represents a Beta distribution.
@@ -163,20 +179,6 @@ extension DistributionBeta: SeedableDistribution {
 	/// - Parameter generator: The random source for every uniform draw.
 	/// - Returns: A random Double sampled from Beta(α, β), in the range [0, 1]
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		// Special case: Beta(1, 1) is Uniform(0, 1) (mirrors distributionBeta(alpha:beta:))
-		if abs(alpha - 1.0) < .ulpOfOne && abs(beta - 1.0) < .ulpOfOne {
-			return distributionUniform(min: 0.0, max: 1.0, Double.random(in: 0...1, using: &generator))
-		}
-
-		// Use the Beta-Gamma relationship: X/(X+Y) where X~Gamma(α,1), Y~Gamma(β,1)
-		let x = gammaVariate(shape: alpha, scale: 1.0, using: &generator)
-		let y = gammaVariate(shape: beta, scale: 1.0, using: &generator)
-
-		let total = x + y
-		guard total > 0 else {
-			// Degenerate underflow (measure zero for valid α, β): fall back to the distribution mean
-			return alpha / (alpha + beta) // fp-safety:disable — alpha and beta are positive, guarded in init
-		}
-		return x / total // fp-safety:disable — guarded by total > 0 above
+		return distributionBeta(alpha: alpha, beta: beta, using: &generator)
 	}
 }

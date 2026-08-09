@@ -11,6 +11,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Changed (breaking) — `seeds: [Double]?` is gone from the gamma-family distributions
+
+Eight entry points took a `seeds: [Double]?` — `distributionGamma(r:λ:)`,
+`gammaVariate(shape:scale:)`, `distributionBeta(alpha:beta:)`,
+`distributionGeometric(_:)`, `distributionChiSquared(degreesOfFreedom:)`,
+`distributionChiSquaredThrowing(degreesOfFreedom:)`, `distributionF(df1:df2:)`,
+`distributionT(degreesOfFreedom:)`, and `sampleInverseGamma(shape:scale:seedIndex:)`.
+It was not a seed. It was a finite array of pre-drawn uniforms consumed by index, and
+when the index ran past the end the helper fell through to `Double.random(in: 0...1)`.
+Reproducibility held for as long as the array lasted and then stopped — no error, no
+signal, no way for the caller to find out.
+
+The parameter is removed rather than made to fail loudly, because for `gammaVariate`
+there is no length a caller could supply that would be correct. It is rejection
+sampling bounded at 10,000 outer by 1,000 inner iterations, so the number of uniforms
+consumed is data-dependent and unbounded; measured at shape 0.5, consumption averaged
+4.08 uniforms with a maximum of 13 over 20,000 draws. Making exhaustion throw would
+convert a silent wrong answer into an unpredictable failure, which is better but still
+not usable. Six of the eight entry points route through `gammaVariate` and inherit
+that; only `distributionGamma(r:λ:)` and `distributionGeometric` had a knowable
+consumption, and keeping the parameter for two of eight is not an API.
+
+This was not a corner case. Measured against the ten-uniform budget the library's own
+distribution tests supplied, two runs of the same call with the same array disagreed
+on 1,102 of 20,000 draws for `distributionF(df1: 1, df2: 1)` (5.5%) and 1,017 of
+20,000 for `distributionBeta(alpha: 0.5, beta: 0.5)` (5.1%) — `distributionF` and
+`distributionBeta` split the array down the middle and gave each of their two gamma
+draws half of it, so neither got a stream it could finish.
+
+Replaced by the shape `integrate` and `ScenarioGenerator` already use:
+
+- `seed: UInt64?` — builds a private ``DeterministicRNG`` (`xoshiro256**`). A seed
+  sizes itself to whatever the sampler asks for, so the same seed reproduces exactly
+  however many rejection iterations a particular draw happens to need.
+- `using generator: inout G where G: RandomNumberGenerator` — for callers who want one
+  stream across several draws. This matters here specifically: a chi-squared and an F
+  built from `seed: 42` separately are built from the *same* underlying uniforms, a
+  correlation nobody asked for. One generator threaded through both makes them
+  independent.
+- A `nil` seed takes a `SystemRandomNumberGenerator` path, documented as
+  non-reproducible by contract. That is the one honest `stochastic:exempt`, and each
+  marker names the alternative.
+
+Migration: `seeds: someArray` becomes `seed: someUInt64` for a single draw, or
+`using: &rng` for a block of them. `seedIndex:` disappears with the array; the
+generator carries the position. Calls that passed no seed at all are unchanged.
+
+`bayesianICC` threaded the same pattern internally and was affected in the same way:
+its Gibbs sampler handed `sampleInverseGamma` ten uniforms per variance component, and
+any draw needing an eleventh finished on the global generator, from which point
+`GibbsConfig.seed` meant nothing for the rest of the chain. The sampler now threads one
+generator per chain through every draw of the sweep. Seeded results for a given seed
+differ from previous versions — they were never reproducible before, so nothing could
+have depended on the old values.
+
 #### Changed (breaking) — the period conversion tables refuse instead of crashing
 
 `PeriodType.daysApproximate`, `millisecondsExact`, and `monthsEquivalent` now return

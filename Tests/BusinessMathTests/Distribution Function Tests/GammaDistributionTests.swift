@@ -19,23 +19,15 @@ import OSLog
 struct GammaDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.GammaDistributionTests", category: #function)
 
-	// Helper function to generate seeds for Gamma distribution using SeededRNG
-	// Gamma(r, λ) as sum of r exponentials needs r seeds
-	static func seedsForGamma(count: Int, shape: Int) -> [[Double]] {
-		let rng = SeededRNG(seed: 44444)  // Unique seed for Gamma
-		var seedArrays: [[Double]] = []
-
-		for _ in 0..<count {
-			var seeds: [Double] = []
-			for _ in 0..<shape {
-				var seed = rng.next()
-				seed = max(0.0001, min(0.9999, seed))
-				seeds.append(seed)
-			}
-			seedArrays.append(seeds)
-		}
-
-		return seedArrays
+	// Deterministic seeds for the distribution's `seed:` parameter. Each element seeds a
+	// private xoshiro256** stream, which sizes itself to whatever the sampler asks for.
+	// This used to hand out fixed-length `[Double]` budgets of pre-drawn uniforms; the
+	// sampler consumes a data-dependent number of them and silently finished on the
+	// global generator once a budget ran out, so the "deterministic" tests below were
+	// only mostly deterministic.
+	static func seedsForGamma(count: Int) -> [UInt64] {
+		var rng = DeterministicRNG(seed: 44444)
+		return (0..<count).map { _ in rng.next() }
 	}
 
 	@Test("Gamma distribution function produces non-negative values")
@@ -43,10 +35,10 @@ struct GammaDistributionTests {
 		let r = 3
 		let λ = 2.0
 		let sampleCount = 1000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		for i in 0..<sampleCount {
-			let sample: Double = distributionGamma(r: r, λ: λ, seeds: seedArrays[i])
+			let sample: Double = distributionGamma(r: r, λ: λ, seed: seedArrays[i])
 			#expect(sample >= 0, "Gamma values must be non-negative")
 			#expect(sample.isFinite, "Gamma values must be finite")
 			#expect(!sample.isNaN, "Gamma values must not be NaN")
@@ -61,11 +53,11 @@ struct GammaDistributionTests {
 		let λ = 2.0
 		let expectedMean = Double(r) / λ
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionGamma(r: r, λ: λ, seeds: seedArrays[i])
+			let sample: Double = distributionGamma(r: r, λ: λ, seed: seedArrays[i])
 			samples.append(sample)
 		}
 
@@ -82,11 +74,11 @@ struct GammaDistributionTests {
 		let λ = 2.0
 		let expectedMean = 1.0 / λ  // Mean of Exponential(λ)
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionGamma(r: r, λ: λ, seeds: seedArrays[i])
+			let sample: Double = distributionGamma(r: r, λ: λ, seed: seedArrays[i])
 			samples.append(sample)
 		}
 
@@ -101,11 +93,11 @@ struct GammaDistributionTests {
 		let expectedMean = Double(r) / λ
 		let expectedVariance = Double(r) / (λ * λ)
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			samples.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -121,15 +113,15 @@ struct GammaDistributionTests {
 		let λ = 1.0
 		let sampleCount = 5000
 
-		let seedArrays2 = Self.seedsForGamma(count: sampleCount, shape: 2)
-		let seedArrays5 = Self.seedsForGamma(count: sampleCount, shape: 5)
+		let seedArrays2 = Self.seedsForGamma(count: sampleCount)
+		let seedArrays5 = Self.seedsForGamma(count: sampleCount)
 
 		var samplesR2: [Double] = []
 		var samplesR5: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesR2.append(distributionGamma(r: 2, λ: λ, seeds: seedArrays2[i]))
-			samplesR5.append(distributionGamma(r: 5, λ: λ, seeds: seedArrays5[i]))
+			samplesR2.append(distributionGamma(r: 2, λ: λ, seed: seedArrays2[i]))
+			samplesR5.append(distributionGamma(r: 5, λ: λ, seed: seedArrays5[i]))
 		}
 
 		let meanR2 = samplesR2.reduce(0, +) / Double(samplesR2.count)
@@ -146,14 +138,14 @@ struct GammaDistributionTests {
 		// Higher λ means smaller mean for fixed r
 		let r = 3
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samplesλ1: [Double] = []
 		var samplesλ3: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesλ1.append(distributionGamma(r: r, λ: 1.0, seeds: seedArrays[i]))
-			samplesλ3.append(distributionGamma(r: r, λ: 3.0, seeds: seedArrays[i]))
+			samplesλ1.append(distributionGamma(r: r, λ: 1.0, seed: seedArrays[i]))
+			samplesλ3.append(distributionGamma(r: r, λ: 3.0, seed: seedArrays[i]))
 		}
 
 		let meanλ1 = samplesλ1.reduce(0, +) / Double(samplesλ1.count)
@@ -171,26 +163,21 @@ struct GammaDistributionTests {
 		let r = 4
 		let λ = 2.0
 		let sampleCount = 1000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
-
-		var gammaSamples: [Double] = []
-		var sumExpSamples: [Double] = []
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		for i in 0..<sampleCount {
-			// Generate Gamma directly
-			gammaSamples.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			let gammaSample: Double = distributionGamma(r: r, λ: λ, seed: seedArrays[i])
 
-			// Generate as sum of exponentials using same seeds
+			// The same stream, drawn by hand. distributionGamma documents that it
+			// consumes exactly r uniforms, one per exponential, in order — so this
+			// also pins that contract, which the old fixed-array form could not.
+			var rng = DeterministicRNG(seed: seedArrays[i])
 			var sum: Double = 0
-			for j in 0..<r {
-				sum += distributionExponential(λ: λ, seed: seedArrays[i][j])
+			for _ in 0..<r {
+				sum += distributionExponential(λ: λ, seed: Double.random(in: 0...1, using: &rng))
 			}
-			sumExpSamples.append(sum)
-		}
 
-		// These should be identical with same seeds
-		for i in 0..<sampleCount {
-			#expect(abs(gammaSamples[i] - sumExpSamples[i]) < 0.0001, "Gamma should equal sum of exponentials")
+			#expect(abs(gammaSample - sum) < 1e-12, "Gamma should equal sum of exponentials")
 		}
 	}
 
@@ -201,8 +188,7 @@ struct GammaDistributionTests {
 
 		// Test that seeded function produces values in valid range
 		for i in 0..<100 {
-			let seeds = (0..<r).map { j in Double(i * r + j + 1) / Double(100 * r + 1) }
-			let sample: Double = distributionGamma(r: r, λ: λ, seeds: seeds)
+			let sample: Double = distributionGamma(r: r, λ: λ, seed: UInt64(i) &+ 1)
 			#expect(sample >= 0)
 			#expect(sample.isFinite)
 		}
@@ -216,11 +202,11 @@ struct GammaDistributionTests {
 
 		// Use seeded variant for deterministic statistical testing
 		let sampleCount = 1000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			samples.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -254,11 +240,11 @@ struct GammaDistributionTests {
 		let r = 2
 		let λ = 1.0
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			samples.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
 		}
 
 		let mean = samples.reduce(0, +) / Double(samples.count)
@@ -275,11 +261,11 @@ struct GammaDistributionTests {
 		let r = 50
 		let λ = 2.0
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			samples.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
 		}
 
 		let mean = samples.reduce(0, +) / Double(samples.count)
@@ -298,11 +284,11 @@ struct GammaDistributionTests {
 		let λ = 2.0
 		let expectedMode = Double(r - 1) / λ  // 2.0
 		let sampleCount = 10000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			samples.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
 		}
 
 		// Create histogram to find mode
@@ -338,11 +324,11 @@ struct GammaDistributionTests {
 
 		for testCase in testCases {
 			let sampleCount = 5000
-			let seedArrays = Self.seedsForGamma(count: sampleCount, shape: testCase.r)
+			let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 			var samples: [Double] = []
 			for i in 0..<sampleCount {
-				samples.append(distributionGamma(r: testCase.r, λ: testCase.λ, seeds: seedArrays[i]))
+				samples.append(distributionGamma(r: testCase.r, λ: testCase.λ, seed: seedArrays[i]))
 			}
 
 			let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -358,15 +344,15 @@ struct GammaDistributionTests {
 	func gammaDeterministicSeeding() {
 		let r = 3
 		let λ = 2.0
-		let seedArrays = Self.seedsForGamma(count: 100, shape: r)
+		let seedArrays = Self.seedsForGamma(count: 100)
 
 		// Generate sequence twice with same seeds
 		var samples1: [Double] = []
 		var samples2: [Double] = []
 
 		for i in 0..<100 {
-			samples1.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
-			samples2.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			samples1.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
+			samples2.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
 		}
 
 		#expect(samples1 == samples2, "Same seeds should produce identical sequences")
@@ -399,11 +385,11 @@ struct GammaDistributionTests {
 		let r = 5  // waiting for 5th event
 		let λ = 2.0  // 2 events per time unit
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGamma(count: sampleCount, shape: r)
+		let seedArrays = Self.seedsForGamma(count: sampleCount)
 
 		var waitingTimes: [Double] = []
 		for i in 0..<sampleCount {
-			waitingTimes.append(distributionGamma(r: r, λ: λ, seeds: seedArrays[i]))
+			waitingTimes.append(distributionGamma(r: r, λ: λ, seed: seedArrays[i]))
 		}
 
 		let meanWaitingTime = waitingTimes.reduce(0, +) / Double(waitingTimes.count)
@@ -417,26 +403,26 @@ struct GammaDistributionTests {
 
 	@Test("Gamma distribution invalid parameters return NaN")
 	func gammaInvalidParameters() {
-		let seeds = [0.5, 0.6, 0.7]
+		let seed: UInt64 = 5150
 
 		// Test negative shape
-		let negativeShapeResult = distributionGamma(r: -1, λ: 2.0, seeds: seeds)
+		let negativeShapeResult = distributionGamma(r: -1, λ: 2.0, seed: seed)
 		#expect(negativeShapeResult.isNaN, "Negative shape should return NaN")
 
 		// Test zero shape
-		let zeroShapeResult = distributionGamma(r: 0, λ: 2.0, seeds: seeds)
+		let zeroShapeResult = distributionGamma(r: 0, λ: 2.0, seed: seed)
 		#expect(zeroShapeResult.isNaN, "Zero shape should return NaN")
 
 		// Test negative rate
-		let negativeRateResult = distributionGamma(r: 3, λ: -1.0, seeds: seeds)
+		let negativeRateResult = distributionGamma(r: 3, λ: -1.0, seed: seed)
 		#expect(negativeRateResult.isNaN, "Negative λ should return NaN")
 
 		// Test zero rate
-		let zeroRateResult = distributionGamma(r: 3, λ: 0.0, seeds: seeds)
+		let zeroRateResult = distributionGamma(r: 3, λ: 0.0, seed: seed)
 		#expect(zeroRateResult.isNaN, "Zero λ should return NaN")
 
 		// Test NaN rate
-		let nanRateResult = distributionGamma(r: 3, λ: Double.nan, seeds: seeds)
+		let nanRateResult = distributionGamma(r: 3, λ: Double.nan, seed: seed)
 		#expect(nanRateResult.isNaN, "NaN λ should return NaN")
 	}
 }

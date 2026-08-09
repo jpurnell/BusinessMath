@@ -18,18 +18,42 @@ import Numerics
 ///
 /// - Parameters:
 ///   - p: The probability of success on each trial. It should be a value between 0 and 1.
-///   - seeds: Optional array of uniform random seeds for deterministic generation (default: nil)
+///   - seed: Seed for a private ``DeterministicRNG``. The same seed with the same `p`
+///     reproduces the same value exactly. `nil` (the default) draws from system entropy
+///     and is non-reproducible by contract — use `seed:` or
+///     ``distributionGeometric(_:using:)`` when reproducibility matters.
 /// - Returns: A random number generated from the geometric distribution with success probability `p`.
 ///
-/// - Note: The function generates random numbers using a uniform random number generator to simulate Bernoulli trials until the first success occurs.
-///         Make sure to seed the random number generator appropriately when using `distributionUniform()`.
+/// - Note: The function uses the inverse transform method: `X = ceil(ln(U) / ln(1-p))` for
+///         `U ~ Uniform(0, 1)`, so it consumes exactly one uniform per draw.
 ///
 /// - Example:
 ///   ```swift
 ///   let probabilityOfSuccess: Double = 0.5
-///   let randomValue: Double = distributionGeometric(probabilityOfSuccess)
-///   // randomValue will be a random number generated from the geometric distribution with parameter p = 0.5
-public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
+///   let randomValue: Double = distributionGeometric(probabilityOfSuccess, seed: 42)
+///   // The same value on every run.
+///   ```
+public func distributionGeometric<T: Real>(_ p: T, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionGeometric(p, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionGeometric(p, using: &generator)
+}
+
+/// Generates a geometric variate, drawing its uniform from `generator`.
+///
+/// The generator-parameterized form of ``distributionGeometric(_:seed:)``, following the
+/// same convention as ``SeedableDistribution/next(using:)``: all randomness comes from the
+/// caller's generator, so the caller owns reproducibility and can interleave this draw
+/// with others on a single stream.
+///
+/// - Parameters:
+///   - p: The probability of success on each trial (0 < p ≤ 1).
+///   - generator: The random source. Advanced by exactly one draw.
+/// - Returns: The number of trials until the first success, or `NaN` if `p` is out of range.
+public func distributionGeometric<T: Real, G: RandomNumberGenerator>(_ p: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
 	// Validate parameters - return NaN for invalid inputs
 	guard p > T(0), p <= T(1), !p.isNaN, p.isFinite else { return T.nan }
 
@@ -38,12 +62,7 @@ public func distributionGeometric<T: Real>(_ p: T, seeds: [Double]? = nil) -> T 
 
 	// Use inverse transform method (O(1), no iteration needed)
 	// X = ceil(ln(U) / ln(1-p)) where U ~ Uniform(0,1)
-	let u: T
-	if let seeds = seeds, !seeds.isEmpty {
-		u = distributionUniform(min: T(0), max: T(1), seeds[0])
-	} else {
-		u = distributionUniform()
-	}
+	let u: T = distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
 
 	// Avoid log(0) by using 1-U which has same distribution as U
 	let oneMinusP = T(1) - p
@@ -92,7 +111,7 @@ extension DistributionGeometric: SeedableDistribution {
 	/// - Parameter generator: The random source for the single uniform draw.
 	/// - Returns: A random positive integer (as Double) representing number of trials until first success
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return distributionGeometric(p, seeds: [Double.random(in: 0...1, using: &generator)])
+		return distributionGeometric(p, using: &generator)
 	}
 }
 
