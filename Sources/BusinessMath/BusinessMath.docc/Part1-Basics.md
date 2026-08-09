@@ -93,13 +93,13 @@ BusinessMath uses SwiftUI-style fluent APIs that let you chain operations togeth
 import BusinessMath
 
 // Define quarters for 2025
-let quarters = Period.year(2025).quarters()
+let quartersFluent = Period.year(2025).quarters()
 
 // Create and configure revenue model using fluent API
 let model = RevenueModel()
     .baseRevenue(100_000)
     .growthRate(0.15)
-    .periods(quarters)
+    .periods(quartersFluent)
     .calculate()
 
 print("Q1 2025 revenue: \(model.revenue[0].currency(0))")  // $100,000

@@ -111,20 +111,25 @@ analysis.addScenario(Scenario(name: "Downside") { config in
     config.setDistribution(DistributionNormal(-0.01, 0.005), forInput: "Margin Expansion")
 })
 
-let results = try analysis.run()
-let comparison = ScenarioComparison(results: results)
-let best = comparison.bestScenario(by: .mean)
+let scenarioResults = try analysis.run()
+let scenarioComparison = ScenarioComparison(results: scenarioResults)
+let best = scenarioComparison.bestScenario(by: .mean)
+print("Best scenario: \(best.name)")
 
 // Each scenario runs 1,000 iterations, sampling from distributions
-print("Base Case mean: \(results["Base Case"]!.statistics.mean.currency(0))")
-print("Upside mean: \(results["Upside"]!.statistics.mean.currency(0))")
-print("Downside mean: \(results["Downside"]!.statistics.mean.currency(0))")
+print("Base Case mean: \(scenarioResults["Base Case"]!.statistics.mean.currency(0))")
+print("Upside mean: \(scenarioResults["Upside"]!.statistics.mean.currency(0))")
+print("Downside mean: \(scenarioResults["Downside"]!.statistics.mean.currency(0))")
 ```
 
 **★ Insight ─────────────────────────────────────**
 Note the use of `setDistribution()` versus `setValue()`?
 
-We offer the ability to use a single value _or_ a distributed variable:
+We offer the ability to use a single value _or_ a distributed variable. Both
+lines below are fragments from inside a `Scenario` configuration closure, where
+`config` is the ``ScenarioConfiguration`` handed to you:
+
+<!-- docs:illustrative -->
 ```swift
 config.setValue(distributionNormal(mean: 0.10, stdDev: 0.01), forInput: "Revenue Growth")
 ```
@@ -132,6 +137,8 @@ config.setValue(distributionNormal(mean: 0.10, stdDev: 0.01), forInput: "Revenue
 This samples the distribution **once** when defining the scenario, then uses that single value for all 1,000 iterations. 
 
 **Dynamic approach:**
+
+<!-- docs:illustrative -->
 ```swift
 config.setDistribution(DistributionNormal(0.10, 0.01), forInput: "Revenue Growth")
 ```
@@ -151,7 +158,7 @@ Create forecasts that communicate uncertainty clearly:
 
 ```swift
 // Forecast next 12 months with uncertainty
-var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+var forecastSimulation = MonteCarloSimulation(iterations: 10_000) { inputs in
 	let baseRevenue = inputs[0]
 	let growthRate = inputs[1]
 	let volatility = inputs[2]
@@ -162,22 +169,23 @@ var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
 	return trend + randomShock
 }
 
-simulation.addInput(SimulationInput(
+forecastSimulation.addInput(SimulationInput(
 	name: "Base Revenue",
 	distribution: DistributionNormal(100_000, 5_000)
 ))
-simulation.addInput(SimulationInput(
+forecastSimulation.addInput(SimulationInput(
 	name: "Growth Rate",
 	distribution: DistributionNormal(0.10, 0.03)
 ))
-simulation.addInput(SimulationInput(
+forecastSimulation.addInput(SimulationInput(
 	name: "Volatility",
 	distribution: DistributionNormal( 0, 2_000)
 ))
 
-let results = try simulation.run()
-let median = results.percentiles.p50
-let confidence90 = (results.percentiles.p5, results.percentiles.p95)
+let forecastResults = try forecastSimulation.run()
+let forecastMedian = forecastResults.percentiles.p50
+let forecastConfidence90 = (forecastResults.percentiles.p5, forecastResults.percentiles.p95)
+print("Median revenue: \(forecastMedian), 90% range: \(forecastConfidence90)")
 ```
 
 ### Stress Testing
@@ -272,9 +280,9 @@ for (name, result) in results_stress {
 }
 
 // 2. Identify worst-case scenario
-let comparison = ScenarioComparison(results: results_stress)
-let worstCase = comparison.worstScenario(by: .mean)
-let worstP5 = comparison.worstScenario(by: .p5)
+let stressComparison = ScenarioComparison(results: results_stress)
+let worstCase = stressComparison.worstScenario(by: .mean)
+let worstP5 = stressComparison.worstScenario(by: .p5)
 
 print("Worst-Case Analysis:")
 print("  Lowest mean outcome: \(worstCase.name) \(worstCase.results.statistics.mean.currency(0))")

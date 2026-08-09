@@ -83,12 +83,12 @@ let price = [180.0, 220.0, 210.0, 260.0, 290.0, 270.0]  // in $1000s
 // Create predictor matrix: each row = [size, age]
 let X = zip(size, age).map { [$0, $1] }
 
-let result = try multipleLinearRegression(X: X, y: price)
+let multiPredictorResult = try multipleLinearRegression(X: X, y: price)
 
-print("Price = \(result.intercept) + \(result.coefficients[0])×Size + \(result.coefficients[1])×Age")
-print("R² = \(result.rSquared)")
-print("Size coefficient: \(result.coefficients[0]) (p = \(result.pValues[1]))")
-print("Age coefficient: \(result.coefficients[1]) (p = \(result.pValues[2]))")
+print("Price = \(multiPredictorResult.intercept) + \(multiPredictorResult.coefficients[0])×Size + \(multiPredictorResult.coefficients[1])×Age")
+print("R² = \(multiPredictorResult.rSquared)")
+print("Size coefficient: \(multiPredictorResult.coefficients[0]) (p = \(multiPredictorResult.pValues[1]))")
+print("Age coefficient: \(multiPredictorResult.coefficients[1]) (p = \(multiPredictorResult.pValues[2]))")
 ```
 
 **Interpretation:**
@@ -102,33 +102,33 @@ Model non-linear relationships by fitting polynomials:
 
 ```swift
 // Data: Revenue vs Price (non-linear relationship - demand curve)
-let price = [10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0]
+let polynomialPrice = [10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0]
 var revenue: [Double] = []
 
 // True relationship: Revenue = -0.2×Price² + 15×Price
-for p in price {
+for p in polynomialPrice {
     revenue.append(-0.2 * p * p + 15.0 * p)
 }
 
 // Fit quadratic model (degree 2)
-let result = try polynomialRegression(x: price, y: revenue, degree: 2)
+let polynomialResult = try polynomialRegression(x: polynomialPrice, y: revenue, degree: 2)
 
-print("Revenue = \(result.intercept) + \(result.coefficients[0])×Price + \(result.coefficients[1])×Price²")
-print("R² = \(result.rSquared)")
+print("Revenue = \(polynomialResult.intercept) + \(polynomialResult.coefficients[0])×Price + \(polynomialResult.coefficients[1])×Price²")
+print("R² = \(polynomialResult.rSquared)")
 
 // Make prediction for Price = $55
 let newPrice = 55.0
-let prediction = result.intercept +
-                result.coefficients[0] * newPrice +
-                result.coefficients[1] * newPrice * newPrice
+let prediction = polynomialResult.intercept +
+                polynomialResult.coefficients[0] * newPrice +
+                polynomialResult.coefficients[1] * newPrice * newPrice
 print("Predicted revenue at $55: $\(prediction)K")
 ```
 
 **Coefficient Interpretation:**
-- `result.intercept`: β₀ (constant term)
-- `result.coefficients[0]`: β₁ (linear coefficient for x)
-- `result.coefficients[1]`: β₂ (quadratic coefficient for x²)
-- `result.coefficients[k-1]`: βₖ (coefficient for xᵏ)
+- `polynomialResult.intercept`: β₀ (constant term)
+- `polynomialResult.coefficients[0]`: β₁ (linear coefficient for x)
+- `polynomialResult.coefficients[1]`: β₂ (quadratic coefficient for x²)
+- `polynomialResult.coefficients[k-1]`: βₖ (coefficient for xᵏ)
 
 **When to Use Polynomial Regression:**
 
@@ -146,11 +146,11 @@ For maximum control, manually create polynomial features:
 
 ```swift
 // Create polynomial features manually
-let X = price.map { p in
+let polynomialX = polynomialPrice.map { p in
     [p, p * p, p * p * p]  // [x, x², x³]
 }
 
-let result = try multipleLinearRegression(X: X, y: revenue)
+let manualPolynomialResult = try multipleLinearRegression(X: polynomialX, y: revenue)
 ```
 
 This gives you full control over which polynomial terms to include.
@@ -170,8 +170,9 @@ This gives you full control over which polynomial terms to include.
 | 0.00-0.29 | Poor fit - model adds little value |
 
 ```swift
-let result = try multipleLinearRegression(X: X, y: y)
-print("R² = \(result.rSquared)")
+// Reuses the size/age predictor matrix and house prices from above
+let diagnosticsResult = try multipleLinearRegression(X: X, y: price)
+print("R² = \(diagnosticsResult.rSquared)")
 ```
 
 **Warning:** R² always increases when adding predictors, even if they're irrelevant. Use Adjusted R² for model comparison.
@@ -181,7 +182,7 @@ print("R² = \(result.rSquared)")
 **What it measures:** R² penalized for number of predictors
 
 ```swift
-print("Adjusted R² = \(result.adjustedRSquared)")
+print("Adjusted R² = \(diagnosticsResult.adjustedRSquared)")
 ```
 
 **Formula:** Adjusted R² = 1 - [(1 - R²) × (n - 1) / (n - p - 1)]
@@ -193,8 +194,8 @@ print("Adjusted R² = \(result.adjustedRSquared)")
 **What it tests:** H₀: All coefficients = 0 (model has no predictive value)
 
 ```swift
-print("F-statistic = \(result.fStatistic)")
-print("p-value = \(result.fStatisticPValue)")
+print("F-statistic = \(diagnosticsResult.fStatistic)")
+print("p-value = \(diagnosticsResult.fStatisticPValue)")
 ```
 
 **Interpretation:**
@@ -208,11 +209,11 @@ print("p-value = \(result.fStatisticPValue)")
 Each coefficient has a t-test: H₀: βᵢ = 0
 
 ```swift
-for i in 0..<result.coefficients.count {
-    print("x\(i+1): coef=\(result.coefficients[i]), ")
-    print("     SE=\(result.standardErrors[i+1]), ")
-    print("     t=\(result.tStatistics[i+1]), ")
-    print("     p=\(result.pValues[i+1])")
+for i in 0..<diagnosticsResult.coefficients.count {
+    print("x\(i+1): coef=\(diagnosticsResult.coefficients[i]), ")
+    print("     SE=\(diagnosticsResult.standardErrors[i+1]), ")
+    print("     t=\(diagnosticsResult.tStatistics[i+1]), ")
+    print("     p=\(diagnosticsResult.pValues[i+1])")
 }
 ```
 
@@ -226,10 +227,10 @@ for i in 0..<result.coefficients.count {
 95% confidence intervals for each coefficient:
 
 ```swift
-print("Intercept: [\(result.confidenceIntervals[0].lower), \(result.confidenceIntervals[0].upper)]")
+print("Intercept: [\(diagnosticsResult.confidenceIntervals[0].lower), \(diagnosticsResult.confidenceIntervals[0].upper)]")
 
-for i in 0..<result.coefficients.count {
-    let ci = result.confidenceIntervals[i+1]
+for i in 0..<diagnosticsResult.coefficients.count {
+    let ci = diagnosticsResult.confidenceIntervals[i+1]
     print("β\(i+1): [\(ci.lower), \(ci.upper)]")
 }
 ```
@@ -245,8 +246,8 @@ for i in 0..<result.coefficients.count {
 Differences between actual and predicted values:
 
 ```swift
-print("Residuals: \(result.residuals)")
-print("Residual Std Error: \(result.residualStandardError)")
+print("Residuals: \(diagnosticsResult.residuals)")
+print("Residual Std Error: \(diagnosticsResult.residualStandardError)")
 ```
 
 **Best practices:**
@@ -268,7 +269,7 @@ print("Residual Std Error: \(result.residualStandardError)")
 **Formula:** VIF_j = 1 / (1 - R²_j) where R²_j is from regressing x_j on all other predictors
 
 ```swift
-print("VIF values: \(result.vif)")
+print("VIF values: \(diagnosticsResult.vif)")
 ```
 
 | VIF Value | Multicollinearity | Action |
@@ -287,11 +288,13 @@ let education = [12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0]
 let occupation = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]  // Highly correlated with education!
 let productivity = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
 
-let X = zip3(income, education, occupation).map { [$0, $1, $2] }
-let result = try multipleLinearRegression(X: X, y: productivity)
+let multicollinearityX = (0..<income.count).map { i in
+    [income[i], education[i], occupation[i]]
+}
+let multicollinearityResult = try multipleLinearRegression(X: multicollinearityX, y: productivity)
 
 // Check for multicollinearity
-for (i, vifValue) in result.vif.enumerated() {
+for (i, vifValue) in multicollinearityResult.vif.enumerated() {
     print("Predictor \(i+1) VIF: \(vifValue)")
     if vifValue > 10 {
         print("  ⚠️ Severe multicollinearity detected!")
@@ -313,13 +316,20 @@ Predict y for new observations:
 
 ```swift
 // Model: Sales based on advertising and price
-let result = try multipleLinearRegression(X: historicalData, y: historicalSales)
+// Each row is [advertising spend ($1000s), unit price ($)]
+let historicalData = [
+    [10.0, 55.0], [15.0, 52.0], [20.0, 50.0],
+    [25.0, 48.0], [30.0, 45.0], [35.0, 44.0]
+]
+let historicalSales = [120.0, 145.0, 170.0, 195.0, 220.0, 245.0]
+
+let salesResult = try multipleLinearRegression(X: historicalData, y: historicalSales)
 
 // Predict sales with $25k advertising and $50 price
 func predict(advertising: Double, price: Double) -> Double {
-    return result.intercept +
-           result.coefficients[0] * advertising +
-           result.coefficients[1] * price
+    return salesResult.intercept +
+           salesResult.coefficients[0] * advertising +
+           salesResult.coefficients[1] * price
 }
 
 let predictedSales = predict(advertising: 25.0, price: 50.0)
@@ -346,7 +356,7 @@ extension RegressionResult {
     }
 }
 
-let (lower, upper) = result.predictionInterval([25.0, 50.0])
+let (lower, upper) = salesResult.predictionInterval([25.0, 50.0])
 print("95% Prediction Interval: [\(lower), \(upper)]")
 ```
 
@@ -447,19 +457,19 @@ let houses = [
 ]
 
 // Prepare data
-let X = houses.map { [$0.size, $0.bedrooms, $0.age, $0.locationScore] }
+let houseX = houses.map { [$0.size, $0.bedrooms, $0.age, $0.locationScore] }
 let y = houses.map { $0.price }
 
 // Fit model
-let result = try multipleLinearRegression(X: X, y: y, confidenceLevel: 0.95)
+let houseResult = try multipleLinearRegression(X: houseX, y: y, confidenceLevel: 0.95)
 
 // 1. Check overall model fit
 print("=== Model Fit ===")
-print("R² = \(String(format: "%.3f", result.rSquared))")
-print("Adjusted R² = \(String(format: "%.3f", result.adjustedRSquared))")
-print("F-statistic = \(String(format: "%.2f", result.fStatistic)) (p = \(String(format: "%.4f", result.fStatisticPValue)))")
+print("R² = \(String(format: "%.3f", houseResult.rSquared))")
+print("Adjusted R² = \(String(format: "%.3f", houseResult.adjustedRSquared))")
+print("F-statistic = \(String(format: "%.2f", houseResult.fStatistic)) (p = \(String(format: "%.4f", houseResult.fStatisticPValue)))")
 
-if result.fStatisticPValue < 0.05 {
+if houseResult.fStatisticPValue < 0.05 {
     print("✓ Model is statistically significant")
 }
 
@@ -467,10 +477,10 @@ if result.fStatisticPValue < 0.05 {
 print("\n=== Coefficients ===")
 let predictorNames = ["Size (sq ft)", "Bedrooms", "Age (years)", "Location Score"]
 
-for i in 0..<result.coefficients.count {
-    let coef = result.coefficients[i]
-    let pValue = result.pValues[i + 1]
-    let ci = result.confidenceIntervals[i + 1]
+for i in 0..<houseResult.coefficients.count {
+    let coef = houseResult.coefficients[i]
+    let pValue = houseResult.pValues[i + 1]
+    let ci = houseResult.confidenceIntervals[i + 1]
 
     print("\(predictorNames[i]):")
     print("  Coefficient: \(String(format: "%.4f", coef))")
@@ -481,7 +491,7 @@ for i in 0..<result.coefficients.count {
 
 // 3. Check for multicollinearity
 print("\n=== Multicollinearity ===")
-for (i, vif) in result.vif.enumerated() {
+for (i, vif) in houseResult.vif.enumerated() {
     let status = vif < 5 ? "✓ Low" : vif < 10 ? "⚠️ Moderate" : "✗ High"
     print("\(predictorNames[i]): VIF = \(String(format: "%.2f", vif)) (\(status))")
 }
@@ -490,20 +500,20 @@ for (i, vif) in result.vif.enumerated() {
 print("\n=== Predictions ===")
 let newHouse = [2000.0, 3.0, 7.0, 8.0]  // 2000 sq ft, 3 bed, 7 years old, location score 8
 
-func predict(_ x: [Double]) -> Double {
-    return result.intercept + zip(result.coefficients, x).map(*).reduce(0, +)
+func predictPrice(_ x: [Double]) -> Double {
+    return houseResult.intercept + zip(houseResult.coefficients, x).map(*).reduce(0, +)
 }
 
-let predicted = predict(newHouse)
+let predicted = predictPrice(newHouse)
 print("Predicted price for new house: $\(String(format: "%.1f", predicted))k")
 
 // 5. Model diagnostics
 print("\n=== Diagnostics ===")
-print("Residual Std Error: \(String(format: "%.2f", result.residualStandardError))")
-print("Mean absolute residual: \(String(format: "%.2f", result.residuals.map(abs).reduce(0, +) / Double(result.residuals.count)))")
+print("Residual Std Error: \(String(format: "%.2f", houseResult.residualStandardError))")
+print("Mean absolute residual: \(String(format: "%.2f", houseResult.residuals.map(abs).reduce(0, +) / Double(houseResult.residuals.count)))")
 
 // Check for large residuals (outliers)
-let largeResiduals = result.residuals.enumerated().filter { abs($0.element) > 2 * result.residualStandardError }
+let largeResiduals = houseResult.residuals.enumerated().filter { abs($0.element) > 2 * houseResult.residualStandardError }
 if !largeResiduals.isEmpty {
     print("⚠️ Potential outliers at indices: \(largeResiduals.map { $0.offset })")
 }
