@@ -29,7 +29,7 @@ import Numerics
 /// interp(0.5)   // 0.5
 /// interp(2.5)   // 6.5
 /// ```
-public struct LinearInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct LinearInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates and values.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).

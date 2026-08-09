@@ -244,12 +244,10 @@ public struct ScenarioAnalysis: Sendable {
 						fixedValue
 					}
 				} else if let distribution = scenario.inputDistributions[inputName] {
-					// Distribution: use it directly with safe conversion
+					// Distribution: use it directly. `DistributionRandom.T` is
+					// `BinaryFloatingPoint`, so widening the sample is exact and total.
 					input = SimulationInput(name: inputName) {
-						let sample = distribution.next()
-						if let d = sample as? Double { return d }
-						if let f = sample as? Float { return Double(f) }
-						return Double("\(sample)") ?? 0.0
+						Double(distribution.next())
 					}
 				} else {
 					// This shouldn't happen due to validation above

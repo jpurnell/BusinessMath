@@ -58,17 +58,16 @@ public func descriptives<T: Real>(_ values: [T]) throws -> (mean: T, stdDev: T, 
     return (mu, stDev, skew, coVar)
 }
 
-extension Array where Element: Real {
+extension Array where Element: Real & BinaryFloatingPoint {
 	/// Returns a human-readable version of the descriptive statistics, or an error message if calculation fails
+	///
+	/// `BinaryFloatingPoint` gives an exact, total conversion of every element to
+	/// `Double`. The previous conditional-cast ladder silently *dropped* any element
+	/// it could not recognise, so the summary could describe a subset of the array
+	/// while claiming to describe all of it.
     public var descriptiveStatistics: String {
-		// Convert elements to Double using conditional cast
-		let doubles = self.compactMap { element -> Double? in
-			if let d = element as? Double { return d }
-			if let f = element as? Float { return Double(f) }
-			// For other Real types, try converting via description
-			return Double("\(element)")
-		}
-		guard let desc = try? descriptives(doubles) else { // silent: best-effort summary for non-numeric collections
+		let doubles = self.map { Double($0) }
+		guard let desc = try? descriptives(doubles) else { // silent: empty collections have no summary
 			return "Unable to calculate descriptive statistics"
 		}
 		return "µ:\(desc.mean)\tσ:\(desc.stdDev)\tsk:\(desc.skew)\tCv:\(desc.cVar)"

@@ -24,7 +24,7 @@ import Numerics
 /// Validate that all vectors in `ys` have the same dimension as `ys[0]`,
 /// and return that dimension. Throws if mismatched.
 @inlinable
-internal func validateVectorYs<T: Real & Sendable & Codable>(
+internal func validateVectorYs<T: Real & BinaryFloatingPoint & Sendable & Codable>(
     _ ys: [VectorN<T>]
 ) throws -> Int {
     guard let first = ys.first else { return 0 }
@@ -40,7 +40,7 @@ internal func validateVectorYs<T: Real & Sendable & Codable>(
 /// Transpose `[VectorN<T>]` of length `n` (each of dimension `dim`) into
 /// `dim` channels, each a `[T]` of length `n`.
 @inlinable
-internal func transposeChannels<T: Real & Sendable & Codable>(
+internal func transposeChannels<T: Real & BinaryFloatingPoint & Sendable & Codable>(
     _ ys: [VectorN<T>],
     dimension dim: Int
 ) -> [[T]] {
@@ -59,7 +59,7 @@ internal func transposeChannels<T: Real & Sendable & Codable>(
 /// Vector-output nearest-neighbor interpolation, returning the vector at the closest knot.
 ///
 /// Each output channel is interpolated independently using ``NearestNeighborInterpolator``.
-public struct VectorNearestNeighborInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorNearestNeighborInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -124,7 +124,7 @@ public struct VectorNearestNeighborInterpolator<T: Real & Sendable & Codable>: I
 /// Vector-output step interpolation holding the previous known vector value.
 ///
 /// Each output channel is interpolated independently using ``PreviousValueInterpolator``.
-public struct VectorPreviousValueInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorPreviousValueInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -189,7 +189,7 @@ public struct VectorPreviousValueInterpolator<T: Real & Sendable & Codable>: Int
 /// Vector-output step interpolation holding the next known vector value.
 ///
 /// Each output channel is interpolated independently using ``NextValueInterpolator``.
-public struct VectorNextValueInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorNextValueInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -254,7 +254,7 @@ public struct VectorNextValueInterpolator<T: Real & Sendable & Codable>: Interpo
 /// Vector-output piecewise-linear interpolation between knot vectors.
 ///
 /// Each output channel is interpolated independently using ``LinearInterpolator``.
-public struct VectorLinearInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorLinearInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -319,7 +319,7 @@ public struct VectorLinearInterpolator<T: Real & Sendable & Codable>: Interpolat
 /// Vector-output cubic spline interpolation with configurable boundary conditions.
 ///
 /// Each output channel is interpolated independently using ``CubicSplineInterpolator``.
-public struct VectorCubicSplineInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorCubicSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -390,7 +390,7 @@ public struct VectorCubicSplineInterpolator<T: Real & Sendable & Codable>: Inter
 /// Vector-output monotone cubic (PCHIP) interpolation preserving per-channel monotonicity.
 ///
 /// Each output channel is interpolated independently using ``PCHIPInterpolator``.
-public struct VectorPCHIPInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorPCHIPInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -454,7 +454,7 @@ public struct VectorPCHIPInterpolator<T: Real & Sendable & Codable>: Interpolato
 /// Vector-output Akima spline interpolation with optional modified ("makima") variant.
 ///
 /// Each output channel is interpolated independently using ``AkimaInterpolator``.
-public struct VectorAkimaInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorAkimaInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -523,7 +523,7 @@ public struct VectorAkimaInterpolator<T: Real & Sendable & Codable>: Interpolato
 /// Vector-output Catmull-Rom (cardinal) spline interpolation with configurable tension.
 ///
 /// Each output channel is interpolated independently using ``CatmullRomInterpolator``.
-public struct VectorCatmullRomInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorCatmullRomInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -592,7 +592,7 @@ public struct VectorCatmullRomInterpolator<T: Real & Sendable & Codable>: Interp
 /// Vector-output interpolating B-spline of configurable degree (1--5).
 ///
 /// Each output channel is interpolated independently using ``BSplineInterpolator``.
-public struct VectorBSplineInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorBSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).
@@ -662,7 +662,7 @@ public struct VectorBSplineInterpolator<T: Real & Sendable & Codable>: Interpola
 ///
 /// Each output channel is interpolated independently using ``BarycentricLagrangeInterpolator``.
 /// Best for small datasets (N <= 20); larger datasets risk Runge-phenomenon oscillation.
-public struct VectorBarycentricLagrangeInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct VectorBarycentricLagrangeInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).

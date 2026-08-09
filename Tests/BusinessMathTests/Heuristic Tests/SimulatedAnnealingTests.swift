@@ -479,4 +479,41 @@ struct SimulatedAnnealingTests {
         #expect(result.converged)
         #expect(result.value < 50.0) // Should improve significantly from initial (~90)
     }
+
+    // MARK: - Metropolis Acceptance Criterion
+
+    @Test("Metropolis acceptance probability equals exp(-ΔE/T)")
+    func metropolisAcceptanceProbability() throws {
+        // ΔE = 1, T = 1 → exp(-1) ≈ 0.36787944117144233
+        let p1 = SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: 1.0, temperature: 1.0)
+        #expect(abs(p1 - 0.36787944117144233) < 1e-15)
+
+        // ΔE = 10, T = 2 → exp(-5) ≈ 0.006737946999085467
+        let p2 = SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: 10.0, temperature: 2.0)
+        #expect(abs(p2 - 0.006737946999085467) < 1e-15)
+
+        // Hot temperature accepts a small worsening most of the time
+        let p3 = SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: 1.0, temperature: 100.0)
+        #expect(abs(p3 - 0.9900498337491681) < 1e-15)
+
+        // Cold temperature effectively never accepts a large worsening
+        let p4 = SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: 100.0, temperature: 0.01)
+        #expect(p4 < 1e-300)
+    }
+
+    @Test("Metropolis always accepts an improving move")
+    func metropolisAcceptsImprovements() throws {
+        #expect(SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: -1.0, temperature: 1.0) == 1.0)
+        #expect(SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: 0.0, temperature: 1.0) == 1.0)
+    }
+
+    @Test("Metropolis acceptance probability is exact for a Float scalar")
+    func metropolisAcceptanceProbabilityFloatScalar() throws {
+        // Regression guard: ΔE used to be converted with an `as? Double` / `as? Float`
+        // ladder that fell back to 0.0, making exp(-0/T) == 1 — i.e. accept *every*
+        // worse solution. A non-Double scalar must still give the analytic value.
+        let p = SimulatedAnnealing<VectorN<Float>>.acceptanceProbability(deltaE: Float(2.0), temperature: 4.0)
+        #expect(abs(p - 0.6065306597126334) < 1e-12)
+        #expect(p != 1.0)
+    }
 }

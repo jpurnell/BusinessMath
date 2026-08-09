@@ -44,7 +44,7 @@ import Numerics
 /// // Returns 6.25 — the polynomial through these 5 points is exactly y = x²
 /// interp(2.5)
 /// ```
-public struct BarycentricLagrangeInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct BarycentricLagrangeInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates and values.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).

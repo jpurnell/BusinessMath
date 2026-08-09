@@ -42,7 +42,7 @@ import Numerics
 /// )
 /// interp(2.5)   // ≈ 6.25 (close to the analytic 6.25 from y = x²)
 /// ```
-public struct CubicSplineInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct CubicSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates and values.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).

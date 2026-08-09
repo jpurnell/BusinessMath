@@ -29,7 +29,7 @@ import Numerics
 /// let default5yr = curve.defaultProbability(time: 5.0)
 /// let spread4yr = curve.cdsSpread(maturity: 4.0, recoveryRate: 0.40)
 /// ```
-public struct HazardRateCurve<T: Real & Sendable>: Sendable {
+public struct HazardRateCurve<T: Real & BinaryFloatingPoint & Sendable>: Sendable {
 
     /// Time series of hazard rates (piecewise constant)
     public let hazardRates: TimeSeries<T>
@@ -102,12 +102,7 @@ public struct HazardRateCurve<T: Real & Sendable>: Sendable {
     public func cdsSpread(maturity: T, recoveryRate: T = T(40) / T(100)) -> T {
         // Build discount curve (assume flat at 5% for simplicity)
         let riskFreeRate = T(5) / T(100)
-        // Safe conversion: try Double, Float, or string representation
-        let maturityDouble: Double
-        if let d = maturity as? Double { maturityDouble = d }
-        else if let f = maturity as? Float { maturityDouble = Double(f) }
-        else { maturityDouble = Double("\(maturity)") ?? 5.0 }
-        let numPeriods = Int(maturityDouble) * 4  // Quarterly
+        let numPeriods = Int(maturity) * 4  // Quarterly
         var discountTimes: [T] = []
         var discountFactors: [T] = []
 
@@ -122,11 +117,7 @@ public struct HazardRateCurve<T: Real & Sendable>: Sendable {
         guard !discountTimes.isEmpty else { return T.zero }
 
         let periods = discountTimes.map { time -> Period in
-            let timeDouble: Double
-            if let d = time as? Double { timeDouble = d }
-            else if let f = time as? Float { timeDouble = Double(f) }
-            else { timeDouble = Double("\(time)") ?? 0.0 }
-            return Period.year(Int(timeDouble) + 2024)
+            Period.year(Int(time) + 2024)
         }
         _ = TimeSeries<T>(periods: periods, values: discountFactors)  // Discount curve (for reference)
 
@@ -236,7 +227,7 @@ public struct HazardRateCurve<T: Real & Sendable>: Sendable {
 ///   - cdsSpreads: Array of market CDS spreads (as decimals)
 ///   - recoveryRate: Expected recovery rate (default: 0.40)
 /// - Returns: Calibrated hazard rate curve
-public func bootstrapCreditCurve<T: Real & Sendable>(
+public func bootstrapCreditCurve<T: Real & BinaryFloatingPoint & Sendable>(
     tenors: [T],
     cdsSpreads: [T],
     recoveryRate: T = T(40) / T(100)
@@ -295,7 +286,7 @@ public func bootstrapCreditCurve<T: Real & Sendable>(
 ///
 /// Uses iterative search to find the hazard rate that produces a CDS
 /// spread matching the market quote, given previously bootstrapped rates.
-private func bootstrapHazardRate<T: Real & Sendable>(
+private func bootstrapHazardRate<T: Real & BinaryFloatingPoint & Sendable>(
     targetTenor: T,
     targetSpread: T,
     previousTenors: [T],
@@ -340,7 +331,7 @@ private func bootstrapHazardRate<T: Real & Sendable>(
 }
 
 /// Build a temporary hazard rate curve for bootstrapping.
-private func buildTempCurve<T: Real & Sendable>(tenors: [T], rates: [T]) -> HazardRateCurve<T> {
+private func buildTempCurve<T: Real & BinaryFloatingPoint & Sendable>(tenors: [T], rates: [T]) -> HazardRateCurve<T> {
     let baseYear = 2024
     let periods = tenors.enumerated().map { (i, _) in Period.year(baseYear + i) }
     let hazardCurve = TimeSeries(periods: periods, values: rates)

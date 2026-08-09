@@ -47,7 +47,7 @@ import Numerics
 /// need to wrap query coordinates in `Vector1D` for the common case.
 public protocol Interpolator: Sendable {
     /// Scalar numeric type used for both coordinates and (typically) values.
-    associatedtype Scalar: Real & Sendable & Codable
+    associatedtype Scalar: Real & BinaryFloatingPoint & Sendable & Codable
 
     /// Type of input query points. Use ``Vector1D`` for time-series or other
     /// 1D domains, ``Vector2D`` for image/heightmap domains, ``Vector3D`` for

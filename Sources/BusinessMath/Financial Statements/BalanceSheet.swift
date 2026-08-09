@@ -897,7 +897,16 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		return totalLiabilities / totalAssets
 	}
 
-	// MARK: - Validation
+}
+
+// MARK: - Validation
+
+/// The accounting-equation check reports the offending figures as `Double` in its
+/// error, so it needs an exact, total conversion out of the scalar type. `T:
+/// BinaryFloatingPoint` supplies one; `Real` alone does not. Every concrete `Real`
+/// (`Float`, `Double`, `Float80`) satisfies it, so nothing that could call `validate`
+/// before has lost the ability to.
+extension BalanceSheet where T: BinaryFloatingPoint {
 
 	/// Validates the accounting equation: Assets = Liabilities + Equity.
 	///
@@ -928,21 +937,10 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 			let difference = abs(assetValue - liabilitiesAndEquity)
 
 			if difference > tolerance {
-				// Convert to Double for error message using safe conversion
-				let assetsDouble: Double
-				let laeDouble: Double
-				if let d = assetValue as? Double { assetsDouble = d }
-				else if let f = assetValue as? Float { assetsDouble = Double(f) }
-				else { assetsDouble = Double("\(assetValue)") ?? 0.0 }
-
-				if let d = liabilitiesAndEquity as? Double { laeDouble = d }
-				else if let f = liabilitiesAndEquity as? Float { laeDouble = Double(f) }
-				else { laeDouble = Double("\(liabilitiesAndEquity)") ?? 0.0 }
-
 				throw BalanceSheetError.accountingEquationViolation(
 					period: period,
-					assets: assetsDouble,
-					liabilitiesAndEquity: laeDouble
+					assets: Double(assetValue),
+					liabilitiesAndEquity: Double(liabilitiesAndEquity)
 				)
 			}
 		}

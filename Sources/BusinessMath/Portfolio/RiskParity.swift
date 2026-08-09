@@ -31,7 +31,7 @@ import Numerics
 /// Risk parity aims to equalize the marginal contribution to risk (MCR) from each asset:
 /// - MCR_i = weight_i * (∂σ/∂weight_i)
 /// - Target: MCR_1 = MCR_2 = ... = MCR_n
-public struct RiskParityOptimizer<T: Real & Sendable & Codable> {
+public struct RiskParityOptimizer<T: Real & BinaryFloatingPoint & Sendable & Codable> {
 
 	/// Creates a risk parity optimizer.
 	///
