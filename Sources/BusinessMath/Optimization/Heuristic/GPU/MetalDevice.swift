@@ -171,9 +171,16 @@ internal final class MetalDevice: @unchecked Sendable {
                 float r = random_float(seed, uint(i) * 2);
 
                 if (r < mutationRate) {
-                    float u1 = random_float(seed, uint(i) * 2 + 1);
+                    // Box-Muller. This is Metal Shading Language compiled for the
+                    // GPU, so it cannot call the package's shared boxMuellerSeed;
+                    // the arithmetic has to stay inline and in Float32. The pole
+                    // guard matches the Swift one: random_float returns
+                    // float(hash) / 4294967296.0, a half-open [0, 1), so 1 - u
+                    // lands in (0, 1] exactly and never reaches log(0). The
+                    // previous `u1 = max(u1, 1e-8)` was a clamp, which put an
+                    // atom of probability on radius sqrt(-2·log(1e-8)) = 6.07.
+                    float u1 = 1.0f - random_float(seed, uint(i) * 2 + 1);
                     float u2 = random_float(seed, uint(i) * 2 + 2);
-                    u1 = max(u1, 1e-8);
 
                     float gaussian = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI_F * u2);
 

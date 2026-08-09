@@ -19,12 +19,32 @@ public func distributionRayleigh<T: Real>(mean: T, seed: Double? = nil) -> T whe
 	// Validate parameters - return NaN for invalid inputs
 	guard mean > T(0), !mean.isNaN, mean.isFinite else { return T.nan }
 
-	let u: T
+	// Rayleigh is the *radius* of the Box-Muller transform, so it meets the same
+	// `log(0)` pole and needs the same guard — this one had none, and returned
+	// `+infinity` whenever the uniform came out zero. `distributionUniform`
+	// quantizes to a multiple of 1e-7, so that was every seed below 1e-7, one
+	// draw in ten million, not the vanishing probability the pole has in exact
+	// arithmetic.
+	//
+	// The guard is `1 - u` rather than a clamp, matching `d247691`: for any
+	// representable `u < 1`, IEEE subtraction gives `1 - u > 0` exactly, and
+	// `u ↦ 1 - u` is measure-preserving, so the draw stays exactly uniform on
+	// `(0, 1]`. A clamp would instead pile an atom of probability on the clamp
+	// value. Only one variate is needed here, so `boxMullerSeed` — which returns
+	// a pair and would compute a second sine and cosine to discard them — is not
+	// the right shared routine to call.
+	let raw: T
 	if let seed = seed {
-		u = distributionUniform(min: T(0), max: T(1), seed)
+		raw = distributionUniform(min: T(0), max: T(1), seed)
 	} else {
-		u = distributionUniform(min: T(0), max: T(1))
+		raw = distributionUniform(min: T(0), max: T(1))
 	}
+	// `distributionUniform` is documented half-open but returns a closed [0, 1]:
+	// its lattice is k/10_000_000 for k in 0...10_000_000, and the top point
+	// arises only from a seed of exactly 1.0, which `Double.random(in: 0...1)`
+	// can produce. Fold that one spurious point back onto the lattice's first,
+	// so `1 - raw` lands in (0, 1] for every input the API accepts.
+	let u = raw < T(1) ? T(1) - raw : T(1)
     return mean * T.sqrt(T(-2) * T.log(u))
 }
 

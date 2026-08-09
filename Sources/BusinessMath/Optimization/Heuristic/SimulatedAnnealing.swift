@@ -344,10 +344,21 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
             let randRaw1 = rng.next()
             let randRaw2 = rng.next()
 
-            // Box-Muller transform for Gaussian random
-            let u1 = Double(randRaw1 >> 32) / Double(UInt32.max) // fp-safety:disable
-            let u2 = Double(randRaw2 >> 32) / Double(UInt32.max) // fp-safety:disable
-            let gaussian = sqrt(-2.0 * log(u1 + 1e-10)) * cos(2.0 * .pi * u2)
+            // Gaussian via the package's shared Box-Muller transform.
+            //
+            // The seeds divide by 2^32, not by UInt32.max, giving the half-open
+            // [0, 1) the transform needs — the same expression the acceptance
+            // test above already uses. Dividing by UInt32.max produced a *closed*
+            // [0, 1], and the guard that stood here, `log(u1 + 1e-10)`, turned
+            // the upper endpoint into `sqrt(-2 · log(1 + 1e-10))`, the square
+            // root of a negative number. The resulting NaN reached
+            // `Int(scaledGaussian * 1_000_000)` below, and converting NaN to Int
+            // in Swift traps rather than returning a wrong answer: one draw in
+            // 2^32 took the process down. The shift also biased every other
+            // draw, by 1.5e-02 in the radius at u1 = 1e-9.
+            let u1 = Double(randRaw1 >> 32) / Double(UInt64(1) << 32) // fp-safety:disable
+            let u2 = Double(randRaw2 >> 32) / Double(UInt64(1) << 32) // fp-safety:disable
+            let (gaussian, _): (Double, Double) = boxMullerSeed(u1, u2)
 
             // Scale perturbation (convert through Int for generic safety)
             let scaledGaussian = config.perturbationScale * gaussian

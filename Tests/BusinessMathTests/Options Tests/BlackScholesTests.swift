@@ -348,3 +348,112 @@ struct BlackScholesAdditionalTests {
 		#expect(abs(vegaFD - greeks.vega) / greeks.vega < 0.02) // within 2%
 	}
 }
+
+// MARK: - Normal CDF Accuracy
+
+/// One priced option with its value computed independently at 120 decimal digits.
+struct BlackScholesReferenceCase: Sendable, CustomStringConvertible {
+	let name: String
+	let spot: Double
+	let strike: Double
+	let expiry: Double
+	let rate: Double
+	let vol: Double
+	let referenceCall: Double
+	let referencePut: Double
+
+	var description: String { name }
+}
+
+/// Pins Black-Scholes against an oracle that does not share its arithmetic.
+///
+/// `BlackScholesModel` used to carry a private `erf` — the Abramowitz & Stegun
+/// 7.1.26 rational-times-Gaussian approximation, whose stated bound is 1.5e-7
+/// absolute in `erf`, so roughly 7e-8 in the normal CDF. Every price and every
+/// Greek in the model went through it. The reference values below were computed
+/// with a 120-digit `Decimal` implementation of the Black-Scholes formula
+/// (Taylor series for `erf`), so they are independent of both the old
+/// approximation and of swift-numerics' `T.erf` that replaced it — a test that
+/// re-derived the expected value from `normalCDF` would only be asserting that
+/// the code equals itself.
+///
+/// The tolerance is `1e-12 * max(|reference|, 1)`: loose enough to absorb the
+/// handful of ulps that double-precision arithmetic contributes on top of an
+/// exact CDF, and roughly six orders of magnitude tighter than the error the
+/// A&S polynomial produced. Under the old approximation the largest miss in
+/// this table was 6.25e-04 absolute, on `indexScale`.
+@Suite("Black-Scholes Normal CDF Accuracy")
+struct BlackScholesNormalCDFAccuracyTests {
+
+	static let cases: [BlackScholesReferenceCase] = [
+		.init(name: "atmShortLowVol", spot: 100, strike: 100, expiry: 0.25, rate: 0.05, vol: 0.1,
+			  referenceCall: 2.66483222163918532e+00, referencePut: 1.42261227102732790e+00),
+		.init(name: "atmShortMidVol", spot: 100, strike: 100, expiry: 0.25, rate: 0.05, vol: 0.2,
+			  referenceCall: 4.61499712960286601e+00, referencePut: 3.37277717899100837e+00),
+		.init(name: "atmOneYear", spot: 100, strike: 100, expiry: 1.0, rate: 0.05, vol: 0.2,
+			  referenceCall: 1.04505835721855682e+01, referencePut: 5.57352602225696803e+00),
+		.init(name: "atmFiveYearHiVol", spot: 100, strike: 100, expiry: 5.0, rate: 0.05, vol: 0.6,
+			  referenceCall: 5.59760916447862158e+01, referencePut: 3.38561699519267023e+01),
+		.init(name: "itmOneYear", spot: 120, strike: 100, expiry: 1.0, rate: 0.05, vol: 0.2,
+			  referenceCall: 2.61690439468473102e+01, referencePut: 1.29198639691871198e+00),
+		.init(name: "otmOneYear", spot: 80, strike: 100, expiry: 1.0, rate: 0.05, vol: 0.2,
+			  referenceCall: 1.85941957281218362e+00, referencePut: 1.69823620228835850e+01),
+		.init(name: "deepItmShort", spot: 150, strike: 100, expiry: 0.25, rate: 0.05, vol: 0.15,
+			  referenceCall: 5.12422199699733554e+01, referencePut: 1.93614990445625430e-08),
+		.init(name: "shortDatedWeek", spot: 100, strike: 100, expiry: 0.0192, rate: 0.05, vol: 0.2,
+			  referenceCall: 1.15365536121333578e+00, referencePut: 1.05770142647127408e+00),
+		.init(name: "longDatedTenYear", spot: 100, strike: 100, expiry: 10.0, rate: 0.05, vol: 0.25,
+			  referenceCall: 4.87843763879120118e+01, referencePut: 9.43744235917535335e+00),
+		.init(name: "veryHighVol", spot: 100, strike: 100, expiry: 1.0, rate: 0.03, vol: 1.0,
+			  referenceCall: 3.92199646797952539e+01, referencePut: 3.62645180346460734e+01),
+		.init(name: "veryLowVol", spot: 100, strike: 95, expiry: 2.0, rate: 0.04, vol: 0.05,
+			  referenceCall: 1.23857454165533039e+01, referencePut: 8.17983232837036639e-02),
+		.init(name: "indexScale", spot: 4500, strike: 4600, expiry: 0.5, rate: 0.045, vol: 0.18,
+			  referenceCall: 2.29457226321541896e+02, referencePut: 2.27112917410889168e+02),
+		.init(name: "pennyStock", spot: 2.5, strike: 3, expiry: 0.75, rate: 0.05, vol: 0.8,
+			  referenceCall: 5.50639881081281146e-01, referencePut: 9.40223134243746372e-01)
+	]
+
+	@Test("Prices match a 120-digit reference", arguments: cases)
+	func priceMatchesHighPrecisionReference(_ c: BlackScholesReferenceCase) {
+		let call = BlackScholesModel<Double>.price(
+			optionType: .call, spotPrice: c.spot, strikePrice: c.strike,
+			timeToExpiry: c.expiry, riskFreeRate: c.rate, volatility: c.vol)
+		let put = BlackScholesModel<Double>.price(
+			optionType: .put, spotPrice: c.spot, strikePrice: c.strike,
+			timeToExpiry: c.expiry, riskFreeRate: c.rate, volatility: c.vol)
+
+		let callTolerance = 1e-12 * Swift.max(abs(c.referenceCall), 1.0)
+		let putTolerance = 1e-12 * Swift.max(abs(c.referencePut), 1.0)
+
+		#expect(abs(call - c.referenceCall) <= callTolerance,
+				"\(c.name) call: got \(call), reference \(c.referenceCall), miss \(abs(call - c.referenceCall))")
+		#expect(abs(put - c.referencePut) <= putTolerance,
+				"\(c.name) put: got \(put), reference \(c.referencePut), miss \(abs(put - c.referencePut))")
+	}
+
+	@Test("Normal CDF is exactly one half at zero")
+	func cdfIsExactlyOneHalfAtZero() {
+		// The A&S polynomial returned 0.500000000500 here — erf(0) came out as
+		// 1e-9 rather than 0. An option struck exactly at its forward therefore
+		// had a delta that was not 0.5 and a call/put pair that was not
+		// symmetric, at a point where both are exact by symmetry.
+		#expect(normalCDF(x: 0.0) == 0.5)
+	}
+
+	@Test("Deep-tail CDF stays monotone and bounded")
+	func deepTailIsMonotone() {
+		// A&S 7.1.26 is a fit on [0, ∞) with no tail guarantee; past |x| ≈ 5 its
+		// 1.5e-7 absolute error dwarfs the true probability, which is where an
+		// approximation stops being merely imprecise and starts being wrong in
+		// sign of the derivative.
+		var previous = 0.0
+		for step in 0...800 {
+			let x = -8.0 + Double(step) / 100.0
+			let value = normalCDF(x: x)
+			#expect(value >= previous, "normalCDF decreased at x = \(x)")
+			#expect(value >= 0.0 && value <= 1.0, "normalCDF out of [0,1] at x = \(x)")
+			previous = value
+		}
+	}
+}

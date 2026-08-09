@@ -73,12 +73,12 @@ public struct BlackScholesModel<T: Real & Sendable> {
 
 		switch optionType {
 		case .call:
-			return spotPrice * cumulativeNormal(d1) -
-				   strikePrice * T.exp(-riskFreeRate * timeToExpiry) * cumulativeNormal(d2)
+			return spotPrice * normalCDF(x: d1) -
+				   strikePrice * T.exp(-riskFreeRate * timeToExpiry) * normalCDF(x: d2)
 
 		case .put:
-			return strikePrice * T.exp(-riskFreeRate * timeToExpiry) * cumulativeNormal(-d2) -
-				   spotPrice * cumulativeNormal(-d1)
+			return strikePrice * T.exp(-riskFreeRate * timeToExpiry) * normalCDF(x: -d2) -
+				   spotPrice * normalCDF(x: -d1)
 		}
 	}
 
@@ -116,34 +116,34 @@ public struct BlackScholesModel<T: Real & Sendable> {
 		// Delta: ∂V/∂S
 		let delta: T
 		if optionType == .call {
-			delta = cumulativeNormal(d1)
+			delta = normalCDF(x: d1)
 		} else {
-			delta = cumulativeNormal(d1) - T(1)
+			delta = normalCDF(x: d1) - T(1)
 		}
 
 		// Gamma: ∂²V/∂S²
-		let gamma = normalPDF(d1) / (spotPrice * volatility * T.sqrt(timeToExpiry))
+		let gamma = normalPDF(x: d1) / (spotPrice * volatility * T.sqrt(timeToExpiry))
 
 		// Vega: ∂V/∂σ
-		let vega = spotPrice * normalPDF(d1) * T.sqrt(timeToExpiry)
+		let vega = spotPrice * normalPDF(x: d1) * T.sqrt(timeToExpiry)
 
 		// Theta: ∂V/∂t
 		let theta: T
-		let term1 = -(spotPrice * normalPDF(d1) * volatility) / (T(2) * T.sqrt(timeToExpiry))
+		let term1 = -(spotPrice * normalPDF(x: d1) * volatility) / (T(2) * T.sqrt(timeToExpiry))
 		if optionType == .call {
-			let term2 = riskFreeRate * strikePrice * T.exp(-riskFreeRate * timeToExpiry) * cumulativeNormal(d2)
+			let term2 = riskFreeRate * strikePrice * T.exp(-riskFreeRate * timeToExpiry) * normalCDF(x: d2)
 			theta = term1 - term2
 		} else {
-			let term2 = riskFreeRate * strikePrice * T.exp(-riskFreeRate * timeToExpiry) * cumulativeNormal(-d2)
+			let term2 = riskFreeRate * strikePrice * T.exp(-riskFreeRate * timeToExpiry) * normalCDF(x: -d2)
 			theta = term1 + term2
 		}
 
 		// Rho: ∂V/∂r
 		let rho: T
 		if optionType == .call {
-			rho = strikePrice * timeToExpiry * T.exp(-riskFreeRate * timeToExpiry) * cumulativeNormal(d2)
+			rho = strikePrice * timeToExpiry * T.exp(-riskFreeRate * timeToExpiry) * normalCDF(x: d2)
 		} else {
-			rho = -strikePrice * timeToExpiry * T.exp(-riskFreeRate * timeToExpiry) * cumulativeNormal(-d2)
+			rho = -strikePrice * timeToExpiry * T.exp(-riskFreeRate * timeToExpiry) * normalCDF(x: -d2)
 		}
 
 		return Greeks(delta: delta, gamma: gamma, vega: vega, theta: theta, rho: rho)
@@ -163,43 +163,13 @@ public struct BlackScholesModel<T: Real & Sendable> {
 			   (volatility * T.sqrt(timeToExpiry))
 	}
 
-	/// Cumulative normal distribution function.
-	private static func cumulativeNormal(_ x: T) -> T {
-		return (T(1) + erf(x / T.sqrt(T(2)))) / T(2)
-	}
-
-	/// Normal probability density function.
-	private static func normalPDF(_ x: T) -> T {
-		return T.exp(-x * x / T(2)) / T.sqrt(T(2) * T.pi)
-	}
-
-	/// Error function approximation (Abramowitz and Stegun).
-	private static func erf(_ x: T) -> T {
-		// Coefficients for error function approximation
-		let a1 = T(254829592) / T(1000000000)   // 0.254829592
-		let a2 = -T(284496736) / T(1000000000)  // -0.284496736
-		let a3 = T(1421413741) / T(1000000000)  // 1.421413741
-		let a4 = -T(1453152027) / T(1000000000) // -1.453152027
-		let a5 = T(1061405429) / T(1000000000)  // 1.061405429
-		let p = T(3275911) / T(10000000)        // 0.3275911
-
-		let sign: T = x < T(0) ? -T(1) : T(1)
-		let absX = abs(x)
-
-		let t = T(1) / (T(1) + p * absX)
-		
-		// Break down the polynomial evaluation into steps
-		let term1 = a5 * t + a4
-		let term2 = term1 * t + a3
-		let term3 = term2 * t + a2
-		let term4 = term3 * t + a1
-		let polynomial = term4 * t
-		
-		let expTerm = T.exp(-absX * absX)
-		let y = T(1) - polynomial * expTerm
-
-		return sign * y
-	}
+	// The cumulative normal, the normal density and an Abramowitz & Stegun `erf`
+	// used to live here as private statics. The A&S 7.1.26 approximation is
+	// accurate to about 1.5e-7 in `erf`, so roughly 7e-8 in the CDF, and every
+	// price and Greek this type produced went through it — 6.25e-04 of error on
+	// an index-scale option. Pricing now calls the package's `normalCDF(x:)` and
+	// `normalPDF(x:)`, which use swift-numerics' `T.erf` and are correct to the
+	// last few ulp. See `BlackScholesNormalCDFAccuracyTests`.
 }
 
 // MARK: - Greeks

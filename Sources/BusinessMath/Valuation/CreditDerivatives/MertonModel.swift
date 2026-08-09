@@ -191,7 +191,7 @@ public struct MertonModel<T: Real & Sendable>: Sendable {
     /// - Returns: Probability of default (0 to 1)
     public func defaultProbability() -> T {
         let d2 = calculateD2()
-        return cumulativeNormal(-d2)
+        return normalCDF(x: -d2)
     }
 
     // MARK: - Distance to Default
@@ -238,10 +238,14 @@ public struct MertonModel<T: Real & Sendable>: Sendable {
         return numerator / denominator
     }
 
-    /// Cumulative normal distribution function
-    private func cumulativeNormal(_ x: T) -> T {
-        return (T(1) + T.erf(x / T.sqrt(T(2)))) / T(2)
-    }
+    // This file defined `cumulativeNormal` twice — once as a member here and
+    // once at file scope below the calibration routine — and both were the body
+    // of the package's public `normalCDF(x:mean:stdDev:)` written out again.
+    // Both are gone. The substitution is exact, not approximate: at mean 0 and
+    // stdDev 1, `(x - mean) / sqrt(2) / stdDev` reduces to `x / sqrt(2)` with
+    // `x - 0` and `/ 1` both exact in IEEE arithmetic, so default probabilities
+    // and distance to default are bit-identical. See
+    // `MertonNormalCDFConsolidationTests`.
 }
 
 // MARK: - Model Calibration
@@ -335,7 +339,7 @@ public func calibrateMertonModel<T: Real>(
         let numerator = logRatio + drift * maturity
         let denominator = assetVolatility * T.sqrt(maturity)
         let d1 = numerator / denominator
-        let nd1 = cumulativeNormal(d1)
+        let nd1 = normalCDF(x: d1)
 
         // Update asset value using Newton step
         let step = error / nd1
@@ -351,12 +355,5 @@ public func calibrateMertonModel<T: Real>(
     }
 
     throw MertonCalibrationError.noConvergence
-}
-
-// MARK: - Helper Functions
-
-/// Cumulative normal distribution function
-private func cumulativeNormal<T: Real>(_ x: T) -> T {
-    return (T(1) + T.erf(x / T.sqrt(T(2)))) / T(2)
 }
 

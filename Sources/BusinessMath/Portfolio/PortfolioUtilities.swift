@@ -71,12 +71,25 @@ public func generateRandomReturns<G: RandomNumberGenerator>(
 	using generator: inout G
 ) -> VectorN<Double> {
 	let returns = (0..<count).map { _ in
-		// Box-Muller transform for normal distribution
-		let u1 = Double.random(in: 0.0...1.0, using: &generator)
-		let u2 = Double.random(in: 0.0...1.0, using: &generator)
-		// Avoid log(0) — Double.random returns values in [0, 1) so u1 may be 0
-		let safeU1 = u1 == 0 ? Double.leastNormalMagnitude : u1
-		let z = sqrt(-2.0 * log(safeU1)) * cos(2.0 * .pi * u2)
+		// Box-Muller transform for normal distribution.
+		//
+		// `1 - Double.random(in: 0..<1)` puts u1 in (0, 1], which is the interval
+		// the transform requires. The previous guard,
+		// `u1 == 0 ? Double.leastNormalMagnitude : u1`, is a clamp: it mapped the
+		// degenerate draw onto 2.2e-308, whose radius is
+		// sqrt(-2·log(2.2e-308)) = 37.64 — a 37-sigma sample emitted as a point
+		// mass. Subtraction is exact for every representable u < 1 and
+		// `u ↦ 1 - u` is measure-preserving, so the draw stays exactly uniform
+		// and no value carries an atom. See `git show d247691`.
+		//
+		// This does not call the shared `boxMuller`: that routine runs its seeds
+		// through `distributionUniform`, which quantizes to a multiple of 1e-7.
+		// These uniforms carry the full 53-bit significand, and routing them
+		// through a 10-million-point lattice would be a measurable loss of
+		// resolution in the tail — see the note in `boxMuellerSeed`.
+		let u1 = 1.0 - Double.random(in: 0.0..<1.0, using: &generator)
+		let u2 = Double.random(in: 0.0..<1.0, using: &generator)
+		let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2)
 		return mean + stdDev * z
 	}
 	return VectorN(returns)
