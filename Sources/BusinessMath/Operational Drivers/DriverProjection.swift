@@ -142,6 +142,20 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	/// - Parameter iterations: The number of Monte Carlo iterations to run.
 	/// - Returns: Projection results containing statistics for each period.
 	///
+	/// ## Memory
+	///
+	/// The returned ``ProjectionResults`` retains every sampled value, not just
+	/// the summary statistics: the ``Percentiles`` held for each period keeps
+	/// the period's whole sample so that ``ProjectionResults/percentile(_:)``
+	/// can answer any probability exactly rather than rounding to a stored
+	/// summary. Retained memory is therefore **linear in
+	/// `iterations × periods.count`** — roughly 16 bytes per sample per period,
+	/// because the sample is kept in both the sampled order and sorted order.
+	/// That is about 640 KB for 10,000 iterations over four quarters, 9.6 MB
+	/// for 10,000 over 60 monthly periods, and 96 MB for 100,000 over 60. Peak
+	/// memory during the run is unchanged; only what survives the call grows.
+	/// Size `iterations` with that in mind before reaching for millions.
+	///
 	/// ## Example
 	/// ```swift
 	/// let results = projection.projectMonteCarlo(iterations: 10_000)
@@ -231,6 +245,10 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	public let statistics: [Period: SimulationStatistics]
 
 	/// Percentiles for each period.
+	///
+	/// Each ``Percentiles`` retains the period's full sample, which is what
+	/// lets ``percentile(_:)`` answer arbitrary probabilities exactly. See the
+	/// memory note on ``DriverProjection/projectMonteCarlo(iterations:)``.
 	public let percentiles: [Period: Percentiles]
 
 	/// Creates projection results.
@@ -276,6 +294,16 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 
 	/// Returns a time series at the specified percentile.
 	///
+	/// Any `p` is answered exactly, from the full sample retained for each
+	/// period, using ``quantile(sorted:p:)`` — linear interpolation between
+	/// order statistics (type 7, the R and NumPy default). `p` outside
+	/// `[0, 1]` clamps to the sample minimum or maximum.
+	///
+	/// - Note: Earlier versions snapped `p` to the nearest of the five stored
+	///   summary percentiles, so `percentile(0.30)` returned p25 verbatim and
+	///   `percentile(0.40)` returned the median. Values other than
+	///   0.05/0.25/0.50/0.75/0.95 now differ from those releases.
+	///
 	/// - Parameter p: The percentile (0.0 to 1.0).
 	/// - Returns: A time series containing the percentile value for each period.
 	///
@@ -284,25 +312,12 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	/// let medianRevenue = results.percentile(0.50)  // Median
 	/// let worstCase = results.percentile(0.05)  // 5th percentile (downside risk)
 	/// let bestCase = results.percentile(0.95)  // 95th percentile (upside potential)
+	/// let p30 = results.percentile(0.30)  // Exact, not rounded to p25
 	/// ```
 	public func percentile(_ p: Double) -> TimeSeries<T> where T: BinaryFloatingPoint {
 		let values = periods.map { period -> T in
 			guard let pctiles = percentiles[period] else { return T(0) }
-
-			// Map percentile to closest standard percentile
-			let value: Double
-			if p <= 0.15 {
-				value = pctiles.p5
-			} else if p <= 0.375 {
-				value = pctiles.p25
-			} else if p <= 0.625 {
-				value = pctiles.p50
-			} else if p <= 0.85 {
-				value = pctiles.p75
-			} else {
-				value = pctiles.p95
-			}
-			return T(value)
+			return T(pctiles.percentile(p))
 		}
 
 		let metadata = TimeSeriesMetadata(

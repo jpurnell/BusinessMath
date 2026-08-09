@@ -180,44 +180,18 @@ extension SimulationResults {
 
 	/// Calculates a percentile from the simulation values.
 	///
-	/// Uses linear interpolation (R-7 / Type 7 method) consistent with the Percentiles struct.
+	/// Delegates to ``quantile(sorted:p:)`` — the library's single empirical
+	/// quantile (type 7 linear interpolation), the same one behind
+	/// ``Percentiles``. An empty sample answers `0` here rather than `nan`,
+	/// matching what this type has always returned when there is nothing to
+	/// measure.
 	///
 	/// - Parameter alpha: The percentile level (0.0 to 1.0)
 	/// - Returns: The value at the specified percentile
+	///
+	/// - Complexity: O(n log n) — sorts on every call.
 	private func calculatePercentile(alpha: Double) -> Double {
-		// Handle edge cases
 		guard !values.isEmpty else { return 0.0 }
-		if values.count == 1 { return values[0] }
-
-		// Sort values
-		let sortedValues = values.sorted()
-
-		// Handle boundary cases
-		// Safe: guard and count check above ensure at least 2 elements
-		if alpha <= 0.0 { return sortedValues[0] }
-		if alpha >= 1.0 { return sortedValues[sortedValues.count - 1] }
-
-		// Linear interpolation (R-7 / Type 7 method)
-		let n = Double(sortedValues.count)
-		let position = (n - 1.0) * alpha
-
-		let lowerIndex = Int(Foundation.floor(position))
-		let upperIndex = Int(Foundation.ceil(position))
-
-		// Ensure indices are within bounds
-		let safeLowerIndex = Swift.max(0, Swift.min(lowerIndex, sortedValues.count - 1))
-		let safeUpperIndex = Swift.max(0, Swift.min(upperIndex, sortedValues.count - 1))
-
-		// If indices are the same, return that value
-		if safeLowerIndex == safeUpperIndex {
-			return sortedValues[safeLowerIndex]
-		}
-
-		// Interpolate between lower and upper values
-		let lowerValue = sortedValues[safeLowerIndex]
-		let upperValue = sortedValues[safeUpperIndex]
-		let fraction = position - Double(lowerIndex)
-
-		return lowerValue + fraction * (upperValue - lowerValue)
+		return quantile(sorted: values.sorted(), p: alpha)
 	}
 }
