@@ -177,24 +177,24 @@ extension FinancialSimulation {
 	/// ```
 	///
 	/// ## Algorithm
-	/// Uses linear interpolation between adjacent values for non-integer positions.
+	/// The empirical quantile with linear interpolation between order statistics
+	/// (type 7), computed by ``quantile(sorted:p:)`` — the same function behind
+	/// ``Percentiles`` and ``ProjectionResults/percentile(_:)``.
 	public func percentile(_ p: Double, metric: (FinancialProjection) -> Double) -> Double {
 		let sortedValues = projections.map(metric).sorted()
 		return percentileFromSorted(p, values: sortedValues)
 	}
 
 	/// Helper to calculate percentile from pre-sorted values.
+	///
+	/// Delegates to ``quantile(sorted:p:)``. The one difference is the empty
+	/// case: a simulation with no projections answers `0`, as it always has,
+	/// rather than the `nan` the canonical quantile returns for no data.
 	@usableFromInline
 	@inline(__always)
 	internal func percentileFromSorted(_ p: Double, values: [Double]) -> Double {
 		guard !values.isEmpty else { return 0.0 }
-
-		let position = p * Double(values.count - 1)
-		let lowerIndex = Int(position)
-		let upperIndex = min(lowerIndex + 1, values.count - 1)
-		let fraction = position - Double(lowerIndex)
-
-		return values[lowerIndex] * (1.0 - fraction) + values[upperIndex] * fraction
+		return quantile(sorted: values, p: p)
 	}
 
 	/// Calculates a confidence interval for a metric.

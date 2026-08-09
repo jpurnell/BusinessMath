@@ -123,8 +123,8 @@ public func selectBandwidth<T: Real>(
 	let sorted = values.sorted()
 
 	// Compute IQR using simple index-based percentile
-	let q25 = sortedPercentile(sorted, p: T(25) / T(100))
-	let q75 = sortedPercentile(sorted, p: T(75) / T(100))
+	let q25 = quantile(sorted: sorted, p: T(25) / T(100))
+	let q75 = quantile(sorted: sorted, p: T(75) / T(100))
 	let iqr = q75 - q25
 
 	// Silverman bandwidth
@@ -149,24 +149,6 @@ public func selectBandwidth<T: Real>(
 	case .crossValidation:
 		return crossValidationBandwidth(sorted, silverman: silverman)
 	}
-}
-
-/// Computes a percentile from a pre-sorted array using linear interpolation.
-///
-/// - Parameters:
-///   - sorted: A sorted array of values.
-///   - p: Percentile in [0, 1].
-/// - Returns: The interpolated percentile value.
-private func sortedPercentile<T: Real>(_ sorted: [T], p: T) -> T where T: BinaryFloatingPoint {
-	let n = sorted.count
-	guard n > 1 else { return sorted[0] }
-
-	let index = p * T(n - 1)
-	let lower = Int(Double(index)) // truncates toward zero, same as floor for non-negative
-	let upper = min(lower + 1, n - 1)
-	let fraction = index - T(lower)
-
-	return sorted[lower] + fraction * (sorted[upper] - sorted[lower])
 }
 
 /// Cross-validation bandwidth selection using leave-one-out density estimation.

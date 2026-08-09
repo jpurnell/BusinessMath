@@ -15,7 +15,10 @@ import Numerics
 ///
 /// ## Percentile Calculation
 ///
-/// Uses linear interpolation between data points for accurate percentile estimation:
+/// Every value here comes from ``quantile(sorted:p:)``, the library's single
+/// empirical quantile: linear interpolation between order statistics (type 7,
+/// the default in R and NumPy).
+///
 /// - p025: 2.5th percentile (bottom 2.5%)
 /// - p5: 5th percentile (bottom 5%)
 /// - p10: 10th percentile
@@ -40,7 +43,12 @@ import Numerics
 ///
 /// 
 public struct Percentiles: Sendable {
-	/// The sorted array of sample values from which percentile statistics are derived.
+	/// The sample from which the percentile statistics are derived, in the order it was supplied.
+	///
+	/// - Important: This array is **not** sorted, despite what earlier
+	///   documentation claimed. Do not hand it to ``quantile(sorted:p:)``,
+	///   which assumes ascending order and does not check. Use
+	///   ``percentile(_:)`` instead, or sort first.
 	public let values: [Double]
 	
 	// MARK: - Min/Max
@@ -97,20 +105,6 @@ public struct Percentiles: Sendable {
 	/// IQR measures the spread of the middle 50% of the data and is robust to outliers.
 	public let interquartileRange: Double
 	
-	// R-7 quantile helper (same method your tests already assume)
-	private static func quantileR7(_ sorted: [Double], _ p: Double) -> Double {
-			let n = sorted.count
-			if n == 1 { return sorted[0] }
-			// Clamp p to [0, 1] to avoid crashing in edge calls; adjust if you prefer throwing
-			let pp = Double.minimum(Double.maximum(p, 0.0), 1.0)
-			let pos = pp * Double(n - 1)
-			let lo = Int(floor(pos))
-			let hi = Int(ceil(pos))
-			if lo == hi { return sorted[lo] }
-			let w = pos - Double(lo)
-			return sorted[lo] + w * (sorted[hi] - sorted[lo])
-	}
-
 	// MARK: - Initialization
 
 	/// Creates a Percentiles struct from an array of values.
@@ -149,16 +143,16 @@ public struct Percentiles: Sendable {
 					self.max = sorted[sorted.count - 1]
 
 					// Precompute commonly used percentiles
-					self.p025 = Self.quantileR7(sorted, 0.025)
-					self.p5  = Self.quantileR7(sorted, 0.05)
-					self.p10 = Self.quantileR7(sorted, 0.10)
-					self.p25 = Self.quantileR7(sorted, 0.25)
-					self.p50 = Self.quantileR7(sorted, 0.50)
-					self.p75 = Self.quantileR7(sorted, 0.75)
-					self.p90 = Self.quantileR7(sorted, 0.90)
-					self.p95 = Self.quantileR7(sorted, 0.95)
-					self.p975 = Self.quantileR7(sorted, 0.975)
-					self.p99 = Self.quantileR7(sorted, 0.99)
+					self.p025 = quantile(sorted: sorted, p: 0.025)
+					self.p5  = quantile(sorted: sorted, p: 0.05)
+					self.p10 = quantile(sorted: sorted, p: 0.10)
+					self.p25 = quantile(sorted: sorted, p: 0.25)
+					self.p50 = quantile(sorted: sorted, p: 0.50)
+					self.p75 = quantile(sorted: sorted, p: 0.75)
+					self.p90 = quantile(sorted: sorted, p: 0.90)
+					self.p95 = quantile(sorted: sorted, p: 0.95)
+					self.p975 = quantile(sorted: sorted, p: 0.975)
+					self.p99 = quantile(sorted: sorted, p: 0.99)
 
 					self.interquartileRange = self.p75 - self.p25
 			}
@@ -166,6 +160,9 @@ public struct Percentiles: Sendable {
 	// MARK: - Custom Percentile Calculation
 
 	/// Calculates a custom percentile from the dataset.
+	///
+	/// Delegates to ``quantile(sorted:p:)``; see there for the interpolation
+	/// rule and the behaviour of `p` outside `[0, 1]`.
 	///
 	/// - Parameter p: The percentile to calculate (0.0 to 1.0, e.g., 0.95 for 95th percentile)
 	/// - Returns: The value at the specified percentile
@@ -177,58 +174,7 @@ public struct Percentiles: Sendable {
 	/// let p85 = percentiles.percentile(0.85)  // 85th percentile
 	/// ```
 	public func percentile(_ p: Double) -> Double {
-		return Self.calculatePercentile(sortedValues: sortedValues, percentile: p)
+		return quantile(sorted: sortedValues, p: p)
 	}
 
-	// MARK: - Internal Percentile Calculation
-
-	/// Calculates a percentile using linear interpolation.
-	///
-	/// Uses the linear interpolation method (R-7 in R, Type 7 in NumPy),
-	/// which is the default in many statistical packages.
-	///
-	/// - Parameters:
-	///   - sortedValues: A sorted array of values
-	///   - percentile: The percentile to calculate (0.0 to 1.0)
-	/// - Returns: The interpolated percentile value
-	private static func calculatePercentile(sortedValues: [Double], percentile: Double) -> Double {
-		guard !sortedValues.isEmpty else { return 0.0 }
-
-		// Handle edge cases
-		if sortedValues.count == 1 {
-			return sortedValues[0]
-		}
-
-		if percentile <= 0.0 {
-			return sortedValues[0]  // Safe: guard above ensures non-empty
-		}
-
-		if percentile >= 1.0 {
-			return sortedValues[sortedValues.count - 1]  // Safe: guard above ensures non-empty
-		}
-
-		// Linear interpolation (R-7 / Type 7 method)
-		// Position = (n - 1) * percentile
-		let n = Double(sortedValues.count)
-		let position = (n - 1.0) * percentile
-
-		let lowerIndex = Int(Foundation.floor(position))
-		let upperIndex = Int(Foundation.ceil(position))
-
-		// Ensure indices are within bounds
-		let safeLowerIndex = Swift.max(0, Swift.min(lowerIndex, sortedValues.count - 1))
-		let safeUpperIndex = Swift.max(0, Swift.min(upperIndex, sortedValues.count - 1))
-
-		// If position is exactly on an index, return that value
-		if safeLowerIndex == safeUpperIndex {
-			return sortedValues[safeLowerIndex]
-		}
-
-		// Linear interpolation between two values
-		let lowerValue = sortedValues[safeLowerIndex]
-		let upperValue = sortedValues[safeUpperIndex]
-		let fraction = position - Double(lowerIndex)
-
-		return lowerValue + fraction * (upperValue - lowerValue)
-	}
 }
