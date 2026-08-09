@@ -19,23 +19,15 @@ import OSLog
 struct GeometricDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.GeometricDistributionTests", category: #function)
 
-	// Helper function to generate seed arrays for Geometric distribution using SeededRNG
-	// Geometric needs variable number of seeds (until success), provide enough for testing
-	static func seedsForGeometric(count: Int, maxTrialsPerSample: Int = 20) -> [[Double]] {
-		let rng = SeededRNG(seed: 77777)  // Unique seed for Geometric
-		var seedArrays: [[Double]] = []
-
-		for _ in 0..<count {
-			var seeds: [Double] = []
-			for _ in 0..<maxTrialsPerSample {
-				var seed = rng.next()
-				seed = max(0.0001, min(0.9999, seed))
-				seeds.append(seed)
-			}
-			seedArrays.append(seeds)
-		}
-
-		return seedArrays
+	// Deterministic seeds for the distribution's `seed:` parameter. Each element seeds a
+	// private xoshiro256** stream, which sizes itself to whatever the sampler asks for.
+	// This used to hand out fixed-length `[Double]` budgets of pre-drawn uniforms; the
+	// sampler consumes a data-dependent number of them and silently finished on the
+	// global generator once a budget ran out, so the "deterministic" tests below were
+	// only mostly deterministic.
+	static func seedsForGeometric(count: Int) -> [UInt64] {
+		var rng = DeterministicRNG(seed: 77777)
+		return (0..<count).map { _ in rng.next() }
 	}
 
 	@Test("Geometric distribution function produces positive integers")
@@ -45,7 +37,7 @@ struct GeometricDistributionTests {
 		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		for i in 0..<sampleCount {
-			let sample: Double = distributionGeometric(p, seeds: seedArrays[i])
+			let sample: Double = distributionGeometric(p, seed: seedArrays[i])
 			#expect(sample >= 1, "Geometric values must be >= 1")
 			#expect(sample == floor(sample), "Geometric values must be integers")
 			#expect(sample.isFinite, "Geometric values must be finite")
@@ -64,7 +56,7 @@ struct GeometricDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionGeometric(p, seeds: seedArrays[i])
+			let sample: Double = distributionGeometric(p, seed: seedArrays[i])
 			samples.append(sample)
 		}
 
@@ -84,7 +76,7 @@ struct GeometricDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionGeometric(p, seeds: seedArrays[i])
+			let sample: Double = distributionGeometric(p, seed: seedArrays[i])
 			samples.append(sample)
 		}
 
@@ -96,15 +88,15 @@ struct GeometricDistributionTests {
 	func geometricProbabilityEffect() {
 		// Higher probability of success means fewer trials on average
 		let sampleCount = 5000
-		let seedArraysP01 = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 50)
-		let seedArraysP05 = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 10)
+		let seedArraysP01 = Self.seedsForGeometric(count: sampleCount)
+		let seedArraysP05 = Self.seedsForGeometric(count: sampleCount)
 
 		var samplesP01: [Double] = []
 		var samplesP05: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesP01.append(distributionGeometric(0.1, seeds: seedArraysP01[i]))
-			samplesP05.append(distributionGeometric(0.5, seeds: seedArraysP05[i]))
+			samplesP01.append(distributionGeometric(0.1, seed: seedArraysP01[i]))
+			samplesP05.append(distributionGeometric(0.5, seed: seedArraysP05[i]))
 		}
 
 		let meanP01 = samplesP01.reduce(0, +) / Double(samplesP01.count)
@@ -122,11 +114,11 @@ struct GeometricDistributionTests {
 		let expectedMean = 1.0 / p
 		let expectedVariance = (1.0 - p) / (p * p)
 		let sampleCount = 10000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 20)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -143,11 +135,11 @@ struct GeometricDistributionTests {
 		let p = 0.3
 		let threshold = 3.0
 		let sampleCount = 10000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 30)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		// Filter samples > threshold and shift them
@@ -167,9 +159,7 @@ struct GeometricDistributionTests {
 
 		// Test that seeded function produces values in valid range
 		for i in 0..<100 {
-			// Geometric distribution needs multiple seeds (one per trial)
-			let seeds = (0..<30).map { j in Double(i * 30 + j + 1) / Double(100 * 30 + 1) }
-			let sample: Double = distributionGeometric(p, seeds: seeds)
+			let sample: Double = distributionGeometric(p, seed: UInt64(i) &+ 1)
 			#expect(sample >= 1)
 			#expect(sample == floor(sample))
 			#expect(sample.isFinite)
@@ -183,11 +173,11 @@ struct GeometricDistributionTests {
 
 		// Use seeded variant for deterministic statistical testing
 		let sampleCount = 1000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 30)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -219,11 +209,11 @@ struct GeometricDistributionTests {
 		// P(X=1) = p
 		let p = 0.5
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 10)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		let firstTrialSuccesses = samples.filter { $0 == 1.0 }.count
@@ -238,11 +228,11 @@ struct GeometricDistributionTests {
 		// Geometric is always right-skewed
 		let p = 0.3
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 30)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		let mean = samples.reduce(0, +) / Double(samples.count)
@@ -258,11 +248,11 @@ struct GeometricDistributionTests {
 		// The most likely outcome is always 1 (success on first trial)
 		let p = 0.3
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 30)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		// Count frequency of each value
@@ -284,11 +274,11 @@ struct GeometricDistributionTests {
 		// Example: Number of coin flips until first heads
 		let p = 0.5  // fair coin
 		let sampleCount = 5000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 20)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var waitingTimes: [Double] = []
 		for i in 0..<sampleCount {
-			waitingTimes.append(distributionGeometric(p, seeds: seedArrays[i]))
+			waitingTimes.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		let meanWaitingTime = waitingTimes.reduce(0, +) / Double(waitingTimes.count)
@@ -311,12 +301,11 @@ struct GeometricDistributionTests {
 
 		for testCase in testCases {
 			let sampleCount = 5000
-			let maxTrials = Int(ceil(testCase.expectedMean * 5))  // Allocate enough seeds
-			let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: maxTrials)
+			let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 			var samples: [Double] = []
 			for i in 0..<sampleCount {
-				samples.append(distributionGeometric(testCase.p, seeds: seedArrays[i]))
+				samples.append(distributionGeometric(testCase.p, seed: seedArrays[i]))
 			}
 
 			let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -331,15 +320,15 @@ struct GeometricDistributionTests {
 	@Test("Geometric distribution seeding produces deterministic results")
 	func geometricDeterministicSeeding() {
 		let p = 0.3
-		let seedArrays = Self.seedsForGeometric(count: 100, maxTrialsPerSample: 20)
+		let seedArrays = Self.seedsForGeometric(count: 100)
 
 		// Generate sequence twice with same seeds
 		var samples1: [Double] = []
 		var samples2: [Double] = []
 
 		for i in 0..<100 {
-			samples1.append(distributionGeometric(p, seeds: seedArrays[i]))
-			samples2.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples1.append(distributionGeometric(p, seed: seedArrays[i]))
+			samples2.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		#expect(samples1 == samples2, "Same seeds should produce identical sequences")
@@ -369,11 +358,11 @@ struct GeometricDistributionTests {
 		// PMF: P(X = k) = (1-p)^(k-1) * p
 		let p = 0.4
 		let sampleCount = 10000
-		let seedArrays = Self.seedsForGeometric(count: sampleCount, maxTrialsPerSample: 20)
+		let seedArrays = Self.seedsForGeometric(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionGeometric(p, seeds: seedArrays[i]))
+			samples.append(distributionGeometric(p, seed: seedArrays[i]))
 		}
 
 		// Check P(X=2) empirically
@@ -386,22 +375,22 @@ struct GeometricDistributionTests {
 
 	@Test("Geometric distribution invalid parameters return NaN")
 	func geometricInvalidParameters() {
-		let seeds = [0.5, 0.6, 0.7, 0.8, 0.9]
+		let seed: UInt64 = 5150
 
 		// Test negative p
-		let negativeResult = distributionGeometric(-0.5, seeds: seeds)
+		let negativeResult = distributionGeometric(-0.5, seed: seed)
 		#expect(negativeResult.isNaN, "Negative p should return NaN")
 
 		// Test zero p
-		let zeroResult = distributionGeometric(0.0, seeds: seeds)
+		let zeroResult = distributionGeometric(0.0, seed: seed)
 		#expect(zeroResult.isNaN, "Zero p should return NaN")
 
 		// Test p > 1
-		let greaterThanOneResult = distributionGeometric(1.5, seeds: seeds)
+		let greaterThanOneResult = distributionGeometric(1.5, seed: seed)
 		#expect(greaterThanOneResult.isNaN, "p > 1 should return NaN")
 
 		// Test NaN p
-		let nanResult = distributionGeometric(Double.nan, seeds: seeds)
+		let nanResult = distributionGeometric(Double.nan, seed: seed)
 		#expect(nanResult.isNaN, "NaN p should return NaN")
 	}
 }

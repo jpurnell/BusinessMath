@@ -126,19 +126,13 @@ import Glibc
 		let sampleCount = 10000
 		let theoreticalVariance20 = Double(df20) / Double(df20 - 2) // 20/18 ≈ 1.1111
 		
-		// Deterministic seeds via TestSupport's consolidated MMIX generator
-		var rng = MMIXSeededRNG(state: 12345)
+		// One deterministic stream for the whole block: t consumes a data-dependent
+		// number of uniforms per draw, so a fixed per-sample budget could not hold it.
+		var rng = DeterministicRNG(seed: 12345)
 		var samples: [Double] = []
 		
 		for _ in 0..<sampleCount {
-			var seeds: [Double] = []
-			for _ in 0..<10 {
-				var seed = rng.next()
-				seed = max(0.0001, min(0.9999, seed))
-				seeds.append(seed)
-			}
-			let sample: Double = distributionT(degreesOfFreedom: df20, seeds: seeds)
-			samples.append(sample)
+			samples.append(distributionT(degreesOfFreedom: df20, using: &rng))
 		}
 		
 		// Calculate empirical variance

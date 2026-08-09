@@ -46,7 +46,11 @@ import OSLog
 ///
 /// - Parameters:
 ///   - degreesOfFreedom: The degrees of freedom parameter (df > 0)
-///   - seeds: Optional seeds for reproducibility
+///   - seed: Seed for a private ``DeterministicRNG``. The same seed and the same `df`
+///     reproduce the same value exactly, however many rejection iterations the underlying
+///     gamma draw happens to need. `nil` (the default) draws from system entropy and is
+///     non-reproducible by contract — use `seed:` or
+///     ``distributionChiSquared(degreesOfFreedom:using:)`` when reproducibility matters.
 /// - Returns: A random value sampled from the χ²(df) distribution, or NaN if df ≤ 0
 ///
 /// ## Example
@@ -56,42 +60,63 @@ import OSLog
 /// let chiSq: Double = distributionChiSquared(degreesOfFreedom: 10)
 /// print("Chi-squared statistic: \(chiSq)")
 ///
-/// // Generate variance estimates
-/// let variance: Double = distributionChiSquared(degreesOfFreedom: 20)
+/// // The same value on every run
+/// let reproducible: Double = distributionChiSquared(degreesOfFreedom: 10, seed: 42)
 ///
 /// // Invalid degrees of freedom returns NaN
 /// let invalid: Double = distributionChiSquared(degreesOfFreedom: 0)
 /// print(invalid.isNaN)  // true
 /// ```
 @available(macOS 11.0, *)
-public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionChiSquared<T: Real>(degreesOfFreedom: Int, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionChiSquared(degreesOfFreedom: degreesOfFreedom, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionChiSquared(degreesOfFreedom: degreesOfFreedom, using: &generator)
+}
+
+/// Generates a chi-squared variate, drawing every uniform from `generator`.
+///
+/// The generator-parameterized form of ``distributionChiSquared(degreesOfFreedom:seed:)``,
+/// following the same convention as ``SeedableDistribution/next(using:)``: all randomness
+/// comes from the caller's generator, so the caller owns reproducibility and can
+/// interleave this draw with others on a single stream.
+///
+/// - Parameters:
+///   - degreesOfFreedom: The degrees of freedom parameter (df > 0)
+///   - generator: The random source. Advanced by a data-dependent number of draws, since
+///     the underlying Marsaglia-Tsang sampler rejects.
+/// - Returns: A random value sampled from the χ²(df) distribution, or NaN if df ≤ 0
+@available(macOS 11.0, *)
+public func distributionChiSquared<T: Real, G: RandomNumberGenerator>(degreesOfFreedom: Int, using generator: inout G) -> T where T: BinaryFloatingPoint {
 	guard degreesOfFreedom > 0 else {
 		// Chi-squared distribution is undefined for df ≤ 0
 		return T.nan
 	}
-
-	var seedIndex = 0
 
 	// Chi-squared(df) = Gamma(df/2, 2)
 	let df = T(degreesOfFreedom)
 	let shape = df / T(2)
 	let scale = T(2)
 
-	return gammaVariate(shape: shape, scale: scale, seeds: seeds, seedIndex: &seedIndex)
+	return gammaVariate(shape: shape, scale: scale, using: &generator)
 }
 
 /// Generates a random value from a Chi-squared distribution with validation.
 ///
-/// Same as ``distributionChiSquared(degreesOfFreedom:seeds:)`` but throws an error instead
+/// Same as ``distributionChiSquared(degreesOfFreedom:seed:)`` but throws an error instead
 /// of returning NaN for invalid degrees of freedom.
 ///
 /// - Parameters:
 ///   - degreesOfFreedom: The degrees of freedom parameter (must be > 0)
-///   - seeds: Optional array of seed values for deterministic generation
+///   - seed: Seed for a private ``DeterministicRNG``; `nil` (the default) draws from
+///     system entropy and is non-reproducible by contract.
 /// - Returns: A random value sampled from the χ²(df) distribution
 /// - Throws: ``BusinessMathError/invalidInput(message:value:expectedRange:)`` if df ≤ 0
 @available(macOS 11.0, *)
-public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seeds: [Double]? = nil) throws -> T where T: BinaryFloatingPoint {
+public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seed: UInt64? = nil) throws -> T where T: BinaryFloatingPoint {
 	guard degreesOfFreedom > 0 else {
 		throw BusinessMathError.invalidInput(
 			message: "Degrees of freedom must be positive",
@@ -99,7 +124,29 @@ public func distributionChiSquaredThrowing<T: Real>(degreesOfFreedom: Int, seeds
 			expectedRange: "> 0"
 		)
 	}
-	return distributionChiSquared(degreesOfFreedom: degreesOfFreedom, seeds: seeds)
+	return distributionChiSquared(degreesOfFreedom: degreesOfFreedom, seed: seed)
+}
+
+/// Generates a validated chi-squared variate, drawing every uniform from `generator`.
+///
+/// The generator-parameterized form of
+/// ``distributionChiSquaredThrowing(degreesOfFreedom:seed:)``.
+///
+/// - Parameters:
+///   - degreesOfFreedom: The degrees of freedom parameter (must be > 0)
+///   - generator: The random source.
+/// - Returns: A random value sampled from the χ²(df) distribution
+/// - Throws: ``BusinessMathError/invalidInput(message:value:expectedRange:)`` if df ≤ 0
+@available(macOS 11.0, *)
+public func distributionChiSquaredThrowing<T: Real, G: RandomNumberGenerator>(degreesOfFreedom: Int, using generator: inout G) throws -> T where T: BinaryFloatingPoint {
+	guard degreesOfFreedom > 0 else {
+		throw BusinessMathError.invalidInput(
+			message: "Degrees of freedom must be positive",
+			value: "\(degreesOfFreedom)",
+			expectedRange: "> 0"
+		)
+	}
+	return distributionChiSquared(degreesOfFreedom: degreesOfFreedom, using: &generator)
 }
 
 /// A type that represents a Chi-squared distribution.

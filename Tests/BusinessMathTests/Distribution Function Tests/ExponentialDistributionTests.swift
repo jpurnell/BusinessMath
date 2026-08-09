@@ -392,12 +392,15 @@ struct ExponentialDistributionTests {
 			exponentialSamples.append(distributionExponential(λ: λ, seed: seeds[i]))
 		}
 
-		// Compare with Gamma(1, 1/λ) - should be identical
+		// Compare with Gamma(1, 1/λ) — the same law, so the two sample means agree.
+		// This runs on its own stream: gammaVariate rejects, so it consumes a
+		// data-dependent number of uniforms and cannot be driven one-for-one off the
+		// exponential's single-uniform seeds.
 		var gammaSamples: [Double] = []
-		var seedIndex = 0
-		for i in 0..<sampleCount {
+		var gammaRNG = DeterministicRNG(seed: 606_060)
+		for _ in 0..<sampleCount {
 			// Gamma(shape=1, scale=1/λ) = Exponential(λ)
-			gammaSamples.append(gammaVariate(shape: 1.0, scale: 1.0/λ, seeds: [seeds[i]], seedIndex: &seedIndex))
+			gammaSamples.append(gammaVariate(shape: 1.0, scale: 1.0/λ, using: &gammaRNG))
 		}
 
 		let expMean = exponentialSamples.reduce(0, +) / Double(exponentialSamples.count)

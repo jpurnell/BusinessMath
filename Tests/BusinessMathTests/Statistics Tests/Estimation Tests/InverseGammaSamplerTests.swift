@@ -16,10 +16,9 @@ struct InverseGammaSamplerTests {
         var samples: [Double] = []
         samples.reserveCapacity(sampleCount)
 
-        for i in 0..<sampleCount {
-            var idx = 0
-            let value = try sampleInverseGamma(shape: shape, scale: scale, seeds: nil, seedIndex: &idx)
-            samples.append(value)
+        var rng = DeterministicRNG(seed: 30_001)
+        for _ in 0..<sampleCount {
+            samples.append(try sampleInverseGamma(shape: shape, scale: scale, using: &rng))
         }
 
         let sampleMean = mean(samples)
@@ -41,10 +40,9 @@ struct InverseGammaSamplerTests {
         var samples: [Double] = []
         samples.reserveCapacity(sampleCount)
 
+        var rng = DeterministicRNG(seed: 30_002)
         for _ in 0..<sampleCount {
-            var idx = 0
-            let value = try sampleInverseGamma(shape: shape, scale: scale, seeds: nil, seedIndex: &idx)
-            samples.append(value)
+            samples.append(try sampleInverseGamma(shape: shape, scale: scale, using: &rng))
         }
 
         let sampleVar = varianceS(samples)
@@ -58,9 +56,9 @@ struct InverseGammaSamplerTests {
     func testAllSamplesPositive() throws {
         let sampleCount = 10_000
 
+        var rng = DeterministicRNG(seed: 30_003)
         for _ in 0..<sampleCount {
-            var idx = 0
-            let value: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seeds: nil, seedIndex: &idx)
+            let value: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, using: &rng)
             #expect(value > 0.0)
         }
     }
@@ -69,14 +67,12 @@ struct InverseGammaSamplerTests {
 
     @Test("Shape <= 0 throws invalidInput")
     func testNegativeShapeThrows() throws {
-        var idx = 0
         #expect(throws: BusinessMathError.self) {
-            let _: Double = try sampleInverseGamma(shape: 0.0, scale: 2.0, seeds: nil, seedIndex: &idx)
+            let _: Double = try sampleInverseGamma(shape: 0.0, scale: 2.0, seed: 7)
         }
 
-        idx = 0
         #expect(throws: BusinessMathError.self) {
-            let _: Double = try sampleInverseGamma(shape: -1.0, scale: 2.0, seeds: nil, seedIndex: &idx)
+            let _: Double = try sampleInverseGamma(shape: -1.0, scale: 2.0, seed: 7)
         }
     }
 
@@ -84,14 +80,12 @@ struct InverseGammaSamplerTests {
 
     @Test("Scale <= 0 throws invalidInput")
     func testNegativeScaleThrows() throws {
-        var idx = 0
         #expect(throws: BusinessMathError.self) {
-            let _: Double = try sampleInverseGamma(shape: 3.0, scale: 0.0, seeds: nil, seedIndex: &idx)
+            let _: Double = try sampleInverseGamma(shape: 3.0, scale: 0.0, seed: 7)
         }
 
-        idx = 0
         #expect(throws: BusinessMathError.self) {
-            let _: Double = try sampleInverseGamma(shape: 3.0, scale: -1.0, seeds: nil, seedIndex: &idx)
+            let _: Double = try sampleInverseGamma(shape: 3.0, scale: -1.0, seed: 7)
         }
     }
 
@@ -99,12 +93,11 @@ struct InverseGammaSamplerTests {
 
     @Test("Deterministic seeds produce repeatable results")
     func testDeterministicSeeds() throws {
-        let seeds: [Double] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.15]
-        var idx1 = 0
-        var idx2 = 0
-        let val1: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seeds: seeds, seedIndex: &idx1)
-        let val2: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seeds: seeds, seedIndex: &idx2)
+        let val1: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seed: 424_242)
+        let val2: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seed: 424_242)
+        #expect(val1 == val2, "The same seed must produce identical values")
 
-        #expect(val1 == val2, "Same seeds should produce identical values")
+        let other: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seed: 424_243)
+        #expect(val1 != other, "A different seed must produce a different value")
     }
 }

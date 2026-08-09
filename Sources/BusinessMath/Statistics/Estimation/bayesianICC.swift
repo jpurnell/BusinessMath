@@ -3,26 +3,43 @@ import Numerics
 
 // MARK: - Seed Management
 
-/// A simple linear congruential generator for producing deterministic seed sequences.
+/// The random source for one Gibbs chain.
 ///
-/// Given an initial `UInt64` seed, generates a sequence of `Double` values in [0, 1]
-/// for use with the library's distribution functions.
-private struct SeedSequence: Sendable {
-    private var state: UInt64
+/// A chain with a seed runs on ``DeterministicRNG`` (`xoshiro256**`) and reproduces
+/// exactly; a chain without one runs on the system generator and is non-reproducible
+/// *by contract*. One generator threads through every draw of the sweep, which is what
+/// makes the seeded case actually reproducible.
+///
+/// This replaced a local LCG that handed each draw a fixed array of pre-drawn uniforms —
+/// ten of them per variance component. ``sampleInverseGamma`` consumes a data-dependent
+/// number of uniforms, because the gamma sampler underneath it rejects, so a chain that
+/// needed an eleventh silently finished the draw on the *global* generator and the seed
+/// stopped meaning anything from that point on. Nothing reported it. Threading a
+/// generator removes the budget, and with it the failure.
+private struct GibbsRNG: RandomNumberGenerator {
+    private var deterministic: DeterministicRNG?
+    private var system = SystemRandomNumberGenerator() // stochastic:exempt — the unseeded path; set `GibbsConfig.seed` for reproducibility
 
-    init(seed: UInt64) {
-        self.state = seed
+    init(seed: UInt64?) {
+        if let seed {
+            deterministic = DeterministicRNG(seed: seed)
+        }
     }
 
-    mutating func next() -> Double {
-        // LCG constants (Numerical Recipes)
-        state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
-        // Map to [0, 1]
-        return Double(state >> 11) / Double(1 << 53) // fp-safety:disable
+    mutating func next() -> UInt64 {
+        guard var generator = deterministic else {
+            return system.next()
+        }
+        let value = generator.next()
+        deterministic = generator
+        return value
     }
 
-    mutating func nextArray(count: Int) -> [Double] {
-        (0..<count).map { _ in next() }
+    /// Two uniforms in (0, 1), in stream order — the pair Box-Muller wants.
+    mutating func nextPair() -> (Double, Double) {
+        let u1 = Double.random(in: 0...1, using: &self)
+        let u2 = Double.random(in: 0...1, using: &self)
+        return (u1, u2)
     }
 }
 
@@ -113,10 +130,9 @@ public func bayesianICC<T: Real>(
     var allChainICC: [[T]] = []
 
     for chain in 0..<config.chains {
-        var seedGen: SeedSequence?
-        if let seed = config.seed {
-            seedGen = SeedSequence(seed: seed &+ UInt64(chain) &* 999_983)
-        }
+        // One stream per chain. Chains are offset by a large odd stride so that
+        // `chains: 4` explores four different sequences rather than four copies of one.
+        var rng = GibbsRNG(seed: config.seed.map { $0 &+ UInt64(chain) &* 999_983 })
 
         // Initialize chain state
         var mu = grandMean
@@ -152,13 +168,8 @@ public func bayesianICC<T: Real>(
             let muPostVar = T(1) / (totalNT / sigmaE + T(1) / tauSquared)
             let muPostMean = muPostVar * (residualSum / sigmaE + grandMean / tauSquared)
 
-            if var sg = seedGen {
-                let seeds = sg.nextArray(count: 2)
-                seedGen = sg
-                mu = distributionNormal(mean: muPostMean, variance: muPostVar, seeds[0], seeds[1])
-            } else {
-                mu = distributionNormal(mean: muPostMean, variance: muPostVar)
-            }
+            let (u1, u2) = rng.nextPair()
+            mu = distributionNormal(mean: muPostMean, variance: muPostVar, u1, u2)
 
             // --- 2. Sample s_i | rest ---
             for i in 0..<n {
@@ -169,13 +180,8 @@ public func bayesianICC<T: Real>(
                 let vPost = T(1) / (kT / sigmaE + T(1) / sigmaS)
                 let sPost = vPost * sumResid / sigmaE
 
-                if var sg = seedGen {
-                    let seeds = sg.nextArray(count: 2)
-                    seedGen = sg
-                    s[i] = distributionNormal(mean: sPost, variance: vPost, seeds[0], seeds[1])
-                } else {
-                    s[i] = distributionNormal(mean: sPost, variance: vPost)
-                }
+                let (u1, u2) = rng.nextPair()
+                s[i] = distributionNormal(mean: sPost, variance: vPost, u1, u2)
             }
 
             // --- 3. Sample r_j | rest ---
@@ -187,13 +193,8 @@ public func bayesianICC<T: Real>(
                 let vPost = T(1) / (nT / sigmaE + T(1) / sigmaR)
                 let rPost = vPost * sumResid / sigmaE
 
-                if var sg = seedGen {
-                    let seeds = sg.nextArray(count: 2)
-                    seedGen = sg
-                    r[j] = distributionNormal(mean: rPost, variance: vPost, seeds[0], seeds[1])
-                } else {
-                    r[j] = distributionNormal(mean: rPost, variance: vPost)
-                }
+                let (u1, u2) = rng.nextPair()
+                r[j] = distributionNormal(mean: rPost, variance: vPost, u1, u2)
             }
 
             // --- 4. Sample sigma_s^2 | s ---
@@ -204,20 +205,9 @@ public func bayesianICC<T: Real>(
             let shapeS = subjectPrior.shape + nT / T(2)
             let scaleS = subjectPrior.scale + ssSub / T(2)
 
-            if var sg = seedGen {
-                var idx = 0
-                let seeds = sg.nextArray(count: 10)
-                seedGen = sg
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: seeds, seedIndex: &idx) {
-                    sigmaS = sampled
-                }
-            } else {
-                var idx = 0
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: nil, seedIndex: &idx) {
-                    sigmaS = sampled
-                }
+            // silent: MCMC sampling — retain previous value on rare numerical failure
+            if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, using: &rng) {
+                sigmaS = sampled
             }
 
             // --- 5. Sample sigma_r^2 | r ---
@@ -228,20 +218,9 @@ public func bayesianICC<T: Real>(
             let shapeR = raterPrior.shape + kT / T(2)
             let scaleR = raterPrior.scale + ssRat / T(2)
 
-            if var sg = seedGen {
-                var idx = 0
-                let seeds = sg.nextArray(count: 10)
-                seedGen = sg
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: seeds, seedIndex: &idx) {
-                    sigmaR = sampled
-                }
-            } else {
-                var idx = 0
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: nil, seedIndex: &idx) {
-                    sigmaR = sampled
-                }
+            // silent: MCMC sampling — retain previous value on rare numerical failure
+            if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, using: &rng) {
+                sigmaR = sampled
             }
 
             // --- 6. Sample sigma_e^2 | rest ---
@@ -255,20 +234,9 @@ public func bayesianICC<T: Real>(
             let shapeE = errorPrior.shape + T(totalN) / T(2)
             let scaleE = errorPrior.scale + ssErr / T(2)
 
-            if var sg = seedGen {
-                var idx = 0
-                let seeds = sg.nextArray(count: 10)
-                seedGen = sg
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: seeds, seedIndex: &idx) {
-                    sigmaE = sampled
-                }
-            } else {
-                var idx = 0
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: nil, seedIndex: &idx) {
-                    sigmaE = sampled
-                }
+            // silent: MCMC sampling — retain previous value on rare numerical failure
+            if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, using: &rng) {
+                sigmaE = sampled
             }
 
             // --- Collect post-burn-in samples ---
@@ -466,10 +434,9 @@ public func bayesianICC<T: Real>(
     var allChainICC: [[T]] = []
 
     for chain in 0..<config.chains {
-        var seedGen: SeedSequence?
-        if let seed = config.seed {
-            seedGen = SeedSequence(seed: seed &+ UInt64(chain) &* 999_983)
-        }
+        // One stream per chain. Chains are offset by a large odd stride so that
+        // `chains: 4` explores four different sequences rather than four copies of one.
+        var rng = GibbsRNG(seed: config.seed.map { $0 &+ UInt64(chain) &* 999_983 })
 
         var mu = grandMean
         var s = [T](repeating: T.zero, count: n)
@@ -499,13 +466,8 @@ public func bayesianICC<T: Real>(
             let muPostVar = T(1) / (totalObsT / sigmaE + T(1) / tauSquared)
             let muPostMean = muPostVar * (residualSum / sigmaE + grandMean / tauSquared)
 
-            if var sg = seedGen {
-                let seeds = sg.nextArray(count: 2)
-                seedGen = sg
-                mu = distributionNormal(mean: muPostMean, variance: muPostVar, seeds[0], seeds[1])
-            } else {
-                mu = distributionNormal(mean: muPostMean, variance: muPostVar)
-            }
+            let (u1, u2) = rng.nextPair()
+            mu = distributionNormal(mean: muPostMean, variance: muPostVar, u1, u2)
 
             // --- 2. Sample s_i | rest ---
             for i in 0..<n {
@@ -521,13 +483,8 @@ public func bayesianICC<T: Real>(
                 let vPost = T(1) / (ki / sigmaE + T(1) / sigmaS)
                 let sPost = vPost * sumResid / sigmaE
 
-                if var sg = seedGen {
-                    let seeds = sg.nextArray(count: 2)
-                    seedGen = sg
-                    s[i] = distributionNormal(mean: sPost, variance: vPost, seeds[0], seeds[1])
-                } else {
-                    s[i] = distributionNormal(mean: sPost, variance: vPost)
-                }
+                let (u1, u2) = rng.nextPair()
+                s[i] = distributionNormal(mean: sPost, variance: vPost, u1, u2)
             }
 
             // --- 3. Sample r_j | rest ---
@@ -544,13 +501,8 @@ public func bayesianICC<T: Real>(
                 let vPost = T(1) / (nj / sigmaE + T(1) / sigmaR)
                 let rPost = vPost * sumResid / sigmaE
 
-                if var sg = seedGen {
-                    let seeds = sg.nextArray(count: 2)
-                    seedGen = sg
-                    r[j] = distributionNormal(mean: rPost, variance: vPost, seeds[0], seeds[1])
-                } else {
-                    r[j] = distributionNormal(mean: rPost, variance: vPost)
-                }
+                let (u1, u2) = rng.nextPair()
+                r[j] = distributionNormal(mean: rPost, variance: vPost, u1, u2)
             }
 
             // --- 4. Sample sigma_s^2 ---
@@ -561,20 +513,9 @@ public func bayesianICC<T: Real>(
             let shapeS = subjectPrior.shape + nT / T(2)
             let scaleS = subjectPrior.scale + ssSub / T(2)
 
-            if var sg = seedGen {
-                var idx = 0
-                let seeds = sg.nextArray(count: 10)
-                seedGen = sg
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: seeds, seedIndex: &idx) {
-                    sigmaS = sampled
-                }
-            } else {
-                var idx = 0
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, seeds: nil, seedIndex: &idx) {
-                    sigmaS = sampled
-                }
+            // silent: MCMC sampling — retain previous value on rare numerical failure
+            if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, using: &rng) {
+                sigmaS = sampled
             }
 
             // --- 5. Sample sigma_r^2 ---
@@ -585,20 +526,9 @@ public func bayesianICC<T: Real>(
             let shapeR = raterPrior.shape + kT / T(2)
             let scaleR = raterPrior.scale + ssRat / T(2)
 
-            if var sg = seedGen {
-                var idx = 0
-                let seeds = sg.nextArray(count: 10)
-                seedGen = sg
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: seeds, seedIndex: &idx) {
-                    sigmaR = sampled
-                }
-            } else {
-                var idx = 0
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, seeds: nil, seedIndex: &idx) {
-                    sigmaR = sampled
-                }
+            // silent: MCMC sampling — retain previous value on rare numerical failure
+            if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, using: &rng) {
+                sigmaR = sampled
             }
 
             // --- 6. Sample sigma_e^2 ---
@@ -614,20 +544,9 @@ public func bayesianICC<T: Real>(
             let shapeE = errorPrior.shape + T(totalObs) / T(2)
             let scaleE = errorPrior.scale + ssErr / T(2)
 
-            if var sg = seedGen {
-                var idx = 0
-                let seeds = sg.nextArray(count: 10)
-                seedGen = sg
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: seeds, seedIndex: &idx) {
-                    sigmaE = sampled
-                }
-            } else {
-                var idx = 0
-                // silent: MCMC sampling — retain previous value on rare numerical failure
-                if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, seeds: nil, seedIndex: &idx) {
-                    sigmaE = sampled
-                }
+            // silent: MCMC sampling — retain previous value on rare numerical failure
+            if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, using: &rng) {
+                sigmaE = sampled
             }
 
             // --- Collect post-burn-in samples ---

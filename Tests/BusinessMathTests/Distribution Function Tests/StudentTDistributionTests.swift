@@ -19,25 +19,15 @@ import OSLog
 struct StudentTDistributionTests {
 	let logger = Logger(subsystem: "com.justinpurnell.businessMath.StudentTDistributionTests", category: #function)
 
-	// Helper function to generate seed sets for t-distribution using SeededRNG
-	// Each t-distribution sample needs ~10 seeds (2 for normal, up to 8 for gamma)
-	// Uses a seeded pseudo-random generator to create random-looking but deterministic sequences
-	static func seedSetsForT(count: Int, seedsPerSample: Int = 10) -> [[Double]] {
-		let rng = SeededRNG(seed: 12345)
-		var seedSets: [[Double]] = []
-
-		for _ in 0..<count {
-			var seedSet: [Double] = []
-			for _ in 0..<seedsPerSample {
-				// Generate pseudo-random value in (0,1), avoiding exact 0 or 1
-				var seed = rng.next()
-				seed = max(0.0001, min(0.9999, seed))
-				seedSet.append(seed)
-			}
-			seedSets.append(seedSet)
-		}
-
-		return seedSets
+	// Deterministic seeds for the distribution's `seed:` parameter. Each element seeds a
+	// private xoshiro256** stream, which sizes itself to whatever the sampler asks for.
+	// This used to hand out fixed-length `[Double]` budgets of pre-drawn uniforms; the
+	// sampler consumes a data-dependent number of them and silently finished on the
+	// global generator once a budget ran out, so the "deterministic" tests below were
+	// only mostly deterministic.
+	static func seedSetsForT(count: Int) -> [UInt64] {
+		var rng = DeterministicRNG(seed: 12345)
+		return (0..<count).map { _ in rng.next() }
 	}
 
 	@Test("t-distribution function produces reasonable values")
@@ -51,7 +41,7 @@ struct StudentTDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: df, seed: seedSets[i])
 			#expect(sample.isFinite, "t-distribution values must be finite")
 			#expect(!sample.isNaN, "t-distribution values must not be NaN")
 			samples.append(sample)
@@ -76,7 +66,7 @@ struct StudentTDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -94,16 +84,10 @@ struct StudentTDistributionTests {
 	@Test("t-distribution struct random() method")
 	func tStructRandom() {
 		let df = 10
-		let seedCount: Int = df + 1
-		let totalSeeds: Double = Double(100 * seedCount + 1)
 
 		// Test that seeded function produces finite values
 		for i in 0..<100 {
-			let seeds: [Double] = (0..<seedCount).map { j in
-				let numerator: Double = Double(i * seedCount + j + 1)
-				return numerator / totalSeeds
-			}
-			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seeds)
+			let sample: Double = distributionT(degreesOfFreedom: df, seed: UInt64(i) &+ 1)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
 		}
@@ -120,7 +104,7 @@ struct StudentTDistributionTests {
 		// Test that next() produces finite values
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: 20, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: 20, seed: seedSets[i])
 			samples.append(sample)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
@@ -143,7 +127,7 @@ struct StudentTDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -171,7 +155,7 @@ struct StudentTDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -196,7 +180,7 @@ struct StudentTDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: dfHigh, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: dfHigh, seed: seedSets[i])
 			samples.append(sample)
 		}
 
@@ -221,7 +205,7 @@ struct StudentTDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
@@ -245,7 +229,7 @@ struct StudentTDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionT(degreesOfFreedom: df, seeds: seedSets[i])
+			let sample: Double = distributionT(degreesOfFreedom: df, seed: seedSets[i])
 			samples.append(sample)
 			#expect(sample.isFinite, "Sample should be finite")
 			#expect(!sample.isNaN, "Sample should not be NaN")
@@ -275,8 +259,8 @@ struct StudentTDistributionTests {
 		var samplesDF30: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesDF5.append(distributionT(degreesOfFreedom: 5, seeds: seedSets[i]))
-			samplesDF30.append(distributionT(degreesOfFreedom: 30, seeds: seedSets[i]))
+			samplesDF5.append(distributionT(degreesOfFreedom: 5, seed: seedSets[i]))
+			samplesDF30.append(distributionT(degreesOfFreedom: 30, seed: seedSets[i]))
 		}
 
 		// Count extreme values (beyond 2.5 SD)
@@ -297,7 +281,7 @@ struct StudentTDistributionTests {
 		// Generate samples and verify consistency
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionT(degreesOfFreedom: df, seeds: seedSets[i]))
+			samples.append(distributionT(degreesOfFreedom: df, seed: seedSets[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
