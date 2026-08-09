@@ -425,4 +425,41 @@ struct DifferentialEvolutionTests {
         // Initial population + generations
         #expect(result.evaluations <= config.populationSize * (config.generations + 1))
     }
+
+    // MARK: - Search Space Bounds
+
+    @Test("Search space bounds survive as given and are not collapsed to [0, 1]")
+    func searchSpaceBoundsAreRespected() throws {
+        // Minimum at (105, 205) — well outside the unit square. If the bounds were
+        // ever rewritten to [0, 1] the optimizer would be pinned at the upper corner
+        // and could not get near the true optimum.
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
+            let dx = v[0] - 105.0
+            let dy = v[1] - 205.0
+            return dx * dx + dy * dy
+        }
+
+        let config = DifferentialEvolutionConfig(
+            populationSize: 40,
+            generations: 200,
+            seed: 4242
+        )
+
+        let optimizer = DifferentialEvolution<VectorN<Double>>(
+            config: config,
+            searchSpace: [(100.0, 110.0), (200.0, 210.0)]
+        )
+
+        let result = optimizer.optimizeDetailed(objective: objective)
+        let solution = result.solution.toArray()
+
+        // Every component stays inside the box that was actually supplied.
+        #expect(solution[0] >= 100.0 && solution[0] <= 110.0)
+        #expect(solution[1] >= 200.0 && solution[1] <= 210.0)
+
+        // And the optimizer actually finds the interior optimum.
+        #expect(abs(solution[0] - 105.0) < 0.5)
+        #expect(abs(solution[1] - 205.0) < 0.5)
+        #expect(result.fitness < 0.5)
+    }
 }

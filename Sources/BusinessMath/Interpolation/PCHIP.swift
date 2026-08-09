@@ -31,7 +31,7 @@ import Numerics
 /// )
 /// interp(2.5)   // smooth, no overshoot
 /// ```
-public struct PCHIPInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct PCHIPInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates and values.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).

@@ -232,12 +232,7 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
                 accepted = true
             } else {
                 // Probabilistically accept worse solutions
-                // Convert deltaE to Double for exp calculation using safe conversion
-                let deltaEDouble: Double
-                if let d = deltaE as? Double { deltaEDouble = d }
-                else if let f = deltaE as? Float { deltaEDouble = Double(f) }
-                else { deltaEDouble = Double("\(deltaE)") ?? 0.0 }
-                let probability = exp(-deltaEDouble / temperature) // fp-safety:disable — temperature > finalTemperature > 0 per loop condition
+                let probability = Self.acceptanceProbability(deltaE: deltaE, temperature: temperature)
                 // Fixed: UInt32.max is 2^32 - 1, but shifted value ranges 0 to 2^32 - 1
                 // Divide by 2^32 (1 << 32) to get proper [0, 1) range
                 let randomValue = Double(rng.next() >> 32) / Double(1 << 32) // fp-safety:disable
@@ -301,6 +296,30 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
             rejectedMoves: rejectedMoves,
             convergenceHistory: convergenceHistory
         )
+    }
+
+    // MARK: - Metropolis Criterion
+
+    /// Probability of accepting a candidate move under the Metropolis criterion.
+    ///
+    /// An improving (or neutral) move is always accepted. A worsening move is accepted
+    /// with probability `exp(-ΔE / T)`, so the tolerance for worse solutions falls as
+    /// the temperature falls.
+    ///
+    /// The arithmetic is done in `Double` because the temperature schedule
+    /// (``SimulatedAnnealingConfig``) is expressed in `Double`. Widening `deltaE` from
+    /// `V.Scalar` is exact for every `BinaryFloatingPoint` scalar narrower than or equal
+    /// to `Double`, so nothing is lost relative to computing in the scalar type — and
+    /// unlike a runtime cast it cannot fail and silently substitute a value.
+    ///
+    /// - Parameters:
+    ///   - deltaE: Energy change of the candidate move (positive means worse).
+    ///   - temperature: Current annealing temperature, strictly positive.
+    /// - Returns: Acceptance probability in `[0, 1]`.
+    static func acceptanceProbability(deltaE: V.Scalar, temperature: Double) -> Double {
+        guard deltaE > V.Scalar.zero else { return 1.0 }
+        guard temperature > 0 else { return 0.0 }
+        return exp(-Double(deltaE) / temperature)
     }
 
     // MARK: - Private Helpers

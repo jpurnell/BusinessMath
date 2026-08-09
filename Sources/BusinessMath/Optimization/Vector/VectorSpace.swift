@@ -35,8 +35,12 @@ import Numerics
 /// ```
 public protocol VectorSpace: AdditiveArithmetic, Hashable, Codable, Sendable {
 	/// The scalar type over which the vector space is defined.
-	/// Must conform to `Real` for mathematical operations.
-	associatedtype Scalar: Real & Sendable & Codable
+	///
+	/// Must conform to `Real` for mathematical operations and to
+	/// `BinaryFloatingPoint` so that scalars convert to and from the concrete
+	/// floating-point types (`Double`, `Float`) used by GPU kernels, reporting
+	/// and interop — a total, exact conversion rather than a runtime cast.
+	associatedtype Scalar: Real & BinaryFloatingPoint & Sendable & Codable
 	
 	/// The zero vector of the vector space.
 	/// - Returns: The additive identity element.
@@ -203,11 +207,12 @@ public extension VectorSpace {
 /// let dot = v1.dot(v2)       // 1.25
 /// let norm = v1.norm         // 2.5  (|2.5|)
 /// ```
-public struct Vector1D<T: Real & Sendable & Codable>: VectorSpace {
+public struct Vector1D<T: Real & BinaryFloatingPoint & Sendable & Codable>: VectorSpace {
     /// The scalar type over which this 1D vector space is defined.
     ///
-    /// Must conform to `Real`, `Sendable`, and `Codable` for mathematical
-    /// operations, concurrency safety, and serialization.
+    /// Must conform to `Real`, `BinaryFloatingPoint`, `Sendable`, and `Codable` for
+    /// mathematical operations, exact floating-point conversion, concurrency safety,
+    /// and serialization.
     public typealias Scalar = T
 
     /// The single component of this 1D vector.
@@ -285,11 +290,12 @@ public struct Vector1D<T: Real & Sendable & Codable>: VectorSpace {
 /// # Performance
 /// Faster than `VectorN` for 2D operations due to compile-time optimization
 /// and avoidance of array bounds checking.
-public struct Vector2D<T: Real & Sendable & Codable>: VectorSpace {
+public struct Vector2D<T: Real & BinaryFloatingPoint & Sendable & Codable>: VectorSpace {
 	/// The scalar type over which this 2D vector space is defined.
 	///
-	/// Must conform to `Real`, `Sendable`, and `Codable` for mathematical operations,
-	/// concurrency safety, and serialization.
+	/// Must conform to `Real`, `BinaryFloatingPoint`, `Sendable`, and `Codable` for
+	/// mathematical operations, exact floating-point conversion, concurrency safety,
+	/// and serialization.
 	public typealias Scalar = T
 	
 	/// The x-component of the vector.
@@ -403,11 +409,12 @@ public struct Vector2D<T: Real & Sendable & Codable>: VectorSpace {
 ///
 /// # Performance
 /// Faster than `VectorN` for 3D operations due to compile-time optimization.
-public struct Vector3D<T: Real & Sendable & Codable>: VectorSpace {
+public struct Vector3D<T: Real & BinaryFloatingPoint & Sendable & Codable>: VectorSpace {
 	/// The scalar type over which this 3D vector space is defined.
 	///
-	/// Must conform to `Real`, `Sendable`, and `Codable` for mathematical operations,
-	/// concurrency safety, and serialization.
+	/// Must conform to `Real`, `BinaryFloatingPoint`, `Sendable`, and `Codable` for
+	/// mathematical operations, exact floating-point conversion, concurrency safety,
+	/// and serialization.
 	public typealias Scalar = T
 	
 	/// The x-component of the vector.
@@ -531,11 +538,12 @@ public struct Vector3D<T: Real & Sendable & Codable>: VectorSpace {
 /// # Performance
 /// More flexible than fixed-dimension vectors but has array bounds checking overhead.
 /// Use `Vector2D` or `Vector3D` when dimension is known at compile time.
-public struct VectorN<T: Real & Sendable & Codable>: VectorSpace {
+public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: VectorSpace {
 	/// The scalar type over which this vector space is defined.
 	///
-	/// Must conform to `Real`, `Sendable`, and `Codable` for mathematical operations,
-	/// concurrency safety, and serialization.
+	/// Must conform to `Real`, `BinaryFloatingPoint`, `Sendable`, and `Codable` for
+	/// mathematical operations, exact floating-point conversion, concurrency safety,
+	/// and serialization.
 	public typealias Scalar = T
 	
 	/// The components of the vector.

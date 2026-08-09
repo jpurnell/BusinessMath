@@ -147,7 +147,7 @@ public struct FinancialCovenant {
     }
 
     /// Check if this covenant is compliant for a given period
-    public func isCompliant<T: Real & Sendable>(
+    public func isCompliant<T: Real & BinaryFloatingPoint & Sendable>(
         incomeStatement: IncomeStatement<T>,
         balanceSheet: BalanceSheet<T>,
         period: Period
@@ -164,7 +164,7 @@ public struct FinancialCovenant {
     ///
     /// Returns a positive number indicating how much the metric can deteriorate before
     /// violating the covenant. Negative headroom indicates the covenant is already violated.
-    public func headroom<T: Real & Sendable>(
+    public func headroom<T: Real & BinaryFloatingPoint & Sendable>(
         incomeStatement: IncomeStatement<T>,
         balanceSheet: BalanceSheet<T>,
         period: Period
@@ -297,7 +297,7 @@ public struct CovenantMonitor {
     }
 
     /// Check compliance for all covenants
-    public func checkCompliance<T: Real & Sendable>(
+    public func checkCompliance<T: Real & BinaryFloatingPoint & Sendable>(
         incomeStatement: IncomeStatement<T>,
         balanceSheet: BalanceSheet<T>,
         period: Period
@@ -312,7 +312,7 @@ public struct CovenantMonitor {
         }
     }
 
-    private func checkCovenant<T: Real & Sendable>(
+    private func checkCovenant<T: Real & BinaryFloatingPoint & Sendable>(
         _ covenant: FinancialCovenant,
         incomeStatement: IncomeStatement<T>,
         balanceSheet: BalanceSheet<T>,
@@ -397,7 +397,7 @@ public struct CovenantMonitor {
         }
     }
 
-    private func calculateMetric<T: Real & Sendable>(
+    private func calculateMetric<T: Real & BinaryFloatingPoint & Sendable>(
         _ metric: FinancialCovenant.FinancialMetric,
         incomeStatement: IncomeStatement<T>,
         balanceSheet: BalanceSheet<T>,
@@ -406,11 +406,7 @@ public struct CovenantMonitor {
     ) -> Double where T: Codable {
         func toDouble(_ value: T?) -> Double {
             guard let val = value else { return 0.0 }
-            // Safe conversion: try Double first, then Float, then parse from string representation
-            if let d = val as? Double { return d }
-            if let f = val as? Float { return Double(f) }
-            // Fallback: use string representation for other Real types
-            return Double("\(val)") ?? 0.0
+            return Double(val)
         }
 
         switch metric {
@@ -483,7 +479,7 @@ public struct CovenantMonitor {
     }
 
     // Helper methods to convert generic financial statements to Double-based ones
-    private func convertToDoubleIncomeStatement<T: Real & Sendable>(_ incomeStatement: IncomeStatement<T>) -> IncomeStatement<Double> where T: Codable {
+    private func convertToDoubleIncomeStatement<T: Real & BinaryFloatingPoint & Sendable>(_ incomeStatement: IncomeStatement<T>) -> IncomeStatement<Double> where T: Codable {
         // Safe cast: if T is already Double, return directly; otherwise this custom check requires Double
         if let doubleStatement = incomeStatement as? IncomeStatement<Double> {
             return doubleStatement
@@ -492,7 +488,7 @@ public struct CovenantMonitor {
         preconditionFailure("Custom covenants require IncomeStatement<Double>. Use Double-typed financial statements for custom covenant checks.")
     }
 
-    private func convertToDoubleBalanceSheet<T: Real & Sendable>(_ balanceSheet: BalanceSheet<T>) -> BalanceSheet<Double> where T: Codable {
+    private func convertToDoubleBalanceSheet<T: Real & BinaryFloatingPoint & Sendable>(_ balanceSheet: BalanceSheet<T>) -> BalanceSheet<Double> where T: Codable {
         // Safe cast: if T is already Double, return directly
         if let doubleSheet = balanceSheet as? BalanceSheet<Double> {
             return doubleSheet
@@ -503,18 +499,14 @@ public struct CovenantMonitor {
 }
 
 /// Calculate interest coverage ratio
-public func calculateInterestCoverage<T: Real & Sendable>(
+public func calculateInterestCoverage<T: Real & BinaryFloatingPoint & Sendable>(
     incomeStatement: IncomeStatement<T>,
     balanceSheet: BalanceSheet<T>,
     period: Period
 ) -> Double where T: Codable {
     func toDouble(_ value: T?) -> Double {
         guard let val = value else { return 0.0 }
-        // Safe conversion: try Double first, then Float, then parse from string representation
-        if let d = val as? Double { return d }
-        if let f = val as? Float { return Double(f) }
-        // Fallback: use string representation for other Real types
-        return Double("\(val)") ?? 0.0
+        return Double(val)
     }
 
     let operatingIncome = toDouble(incomeStatement.operatingIncome[period])

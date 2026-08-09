@@ -368,4 +368,30 @@ struct XNPVTests {
 			let v2 = try xnpv(rate: rate, dates: dates2, cashFlows: flows2)
 			#expect(abs(v - v2) < 1e-8)
 		}
+
+	// MARK: - Non-Double Scalars
+
+	@Test("XNPV keeps fractional years for a Float scalar")
+	func xnpvFloatKeepsFractionalYears() throws {
+		// Behaviour change: `years` used to be produced by `yearsDouble as? T` with a
+		// `T(Int(yearsDouble))` fallback. For T == Float the cast failed and the offset
+		// was truncated to whole years — a cash flow at 0.5y was discounted as if at 0y,
+		// and one at 1.5y as if at 1y. It is now converted exactly.
+		func d(_ y: Int, _ m: Int, _ day: Int) -> Date {
+			var c = DateComponents()
+			c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)
+			return Calendar(identifier: .gregorian).date(from: c)!
+		}
+
+		let dates = [d(2025, 1, 1), d(2025, 7, 2)]  // ~0.5 years apart
+		let rate: Float = 0.10
+
+		let asFloat = try xnpv(rate: rate, dates: dates, cashFlows: [Float(-1000), Float(1000)])
+		let asDouble = try xnpv(rate: 0.10, dates: dates, cashFlows: [-1000.0, 1000.0])
+
+		// The Float answer now tracks the Double answer instead of collapsing to the
+		// truncated-to-zero-years value of 0.0.
+		#expect(abs(Double(asFloat) - asDouble) < 1e-3)
+		#expect(abs(Double(asFloat)) > 20.0, "A half-year discount must not be truncated away")
+	}
 }

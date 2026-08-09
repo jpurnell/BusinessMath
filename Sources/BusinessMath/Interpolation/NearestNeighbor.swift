@@ -28,7 +28,7 @@ import Numerics
 /// interp(0.6)   // 1  (closest to xs[1] = 1)
 /// interp(2.5)   // 4  (tie — resolves to lower index, xs[2] = 2)
 /// ```
-public struct NearestNeighborInterpolator<T: Real & Sendable & Codable>: Interpolator {
+public struct NearestNeighborInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codable>: Interpolator {
     /// The scalar type for coordinates and values.
     public typealias Scalar = T
     /// Input point type (1D scalar wrapped in ``Vector1D``).

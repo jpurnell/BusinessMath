@@ -89,7 +89,7 @@ public enum XNPVError: Error, Sendable {
 /// - Uses 365 days per year (not accounting for leap years in fractional calculation)
 /// - First date is used as the reference point (time 0)
 /// - Dates should generally be in chronological order
-public func xnpv<T: Real>(
+public func xnpv<T: Real & BinaryFloatingPoint>(
 	rate: T,
 	dates: [Date],
 	cashFlows: [T]
@@ -113,13 +113,9 @@ public func xnpv<T: Real>(
 		let secondsPerYear = 365.0 * 24.0 * 60.0 * 60.0
 		let yearsDouble = timeInterval / secondsPerYear
 
-		// Convert to T type
-		let years: T
-		if let d = yearsDouble as? T {
-			years = d
-		} else {
-			years = T(Int(yearsDouble))  // Fallback for types that don't support Double conversion
-		}
+		// Convert to T type. Exact for Double, correctly rounded for narrower scalars —
+		// crucially the fractional part of the offset survives.
+		let years = T(yearsDouble)
 
 		// Discount cash flow: CF / (1 + r)^years
 		let discountFactor = T.pow(T(1) + rate, years)
@@ -216,7 +212,7 @@ public func xnpv<T: Real>(
 /// - Throws `.insufficientData` if fewer than 2 cash flows provided.
 /// - Throws `.mismatchedArrays` if dates and cash flows have different lengths.
 /// - Throws `.convergenceFailed` if Newton-Raphson doesn't converge.
-public func xirr<T: Real>(
+public func xirr<T: Real & BinaryFloatingPoint>(
 	dates: [Date],
 	cashFlows: [T],
 	guess: T? = nil,
@@ -280,7 +276,7 @@ public func xirr<T: Real>(
 /// ```
 /// dXNPV/dr = -Σ(years_i × CF_i / (1+r)^(years_i+1))
 /// ```
-private func calculateXNPVDerivative<T: Real>(
+private func calculateXNPVDerivative<T: Real & BinaryFloatingPoint>(
 	rate: T,
 	dates: [Date],
 	cashFlows: [T]
@@ -294,13 +290,8 @@ private func calculateXNPVDerivative<T: Real>(
 		let secondsPerYear = 365.0 * 24.0 * 60.0 * 60.0
 		let yearsDouble = timeInterval / secondsPerYear
 
-		// Convert to T type
-		let years: T
-		if let d = yearsDouble as? T {
-			years = d
-		} else {
-			years = T(Int(yearsDouble))
-		}
+		// Convert to T type (see `xnpv` — the fractional part must survive).
+		let years = T(yearsDouble)
 
 		// Skip zero years (derivative term is 0)
 		let minYears = T(1) / T(10000)  // 0.0001

@@ -565,14 +565,8 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         // Convert population to Float array for GPU
         var populationData: [Float] = []
         for individual in population {
-            let genes = individual.genes.toArray()
-            for gene in genes {
-                // Safe conversion: try Double, Float, then string representation
-                let doubleValue: Double
-                if let d = gene as? Double { doubleValue = d }
-                else if let f = gene as? Float { doubleValue = Double(f) }
-                else { doubleValue = Double("\(gene)") ?? 0.0 }
-                populationData.append(Float(doubleValue))
+            for gene in individual.genes.toArray() {
+                populationData.append(Float(gene))
             }
         }
 
@@ -582,11 +576,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         // Upload fitness to GPU
         let fitnessData: [Float] = population.compactMap { individual -> Float? in
             guard let fitness = individual.fitness else { return nil }
-            let doubleFitness: Double
-            if let d = fitness as? Double { doubleFitness = d }
-            else if let f = fitness as? Float { doubleFitness = Double(f) }
-            else { doubleFitness = Double("\(fitness)") ?? 0.0 }
-            return Float(doubleFitness)
+            return Float(fitness)
         }
         buffers.uploadFitness(fitnessData)
 
@@ -645,17 +635,8 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         encoder.setBytes(&mutStrength, length: MemoryLayout<Float>.stride, index: 4)
 
         // Convert search space to float2 array for GPU
-        // V.Scalar should be Double (GPU path requires VectorN<Double>)
         var searchSpaceGPU: [SIMD2<Float>] = searchSpace.map { bounds in
-            let lower: Double
-            if let d = bounds.lower as? Double { lower = d }
-            else if let f = bounds.lower as? Float { lower = Double(f) }
-            else { lower = Double("\(bounds.lower)") ?? 0.0 }
-            let upper: Double
-            if let d = bounds.upper as? Double { upper = d }
-            else if let f = bounds.upper as? Float { upper = Double(f) }
-            else { upper = Double("\(bounds.upper)") ?? 1.0 }
-            return SIMD2<Float>(Float(lower), Float(upper))
+            SIMD2<Float>(Float(bounds.lower), Float(bounds.upper))
         }
         encoder.setBytes(&searchSpaceGPU, length: searchSpaceGPU.count * MemoryLayout<SIMD2<Float>>.stride, index: 5)
         encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
@@ -669,20 +650,12 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         let resultData = buffers.downloadPopulation(from: buffers.populationA)
 
         // Convert back to population
-        // V.Scalar should be Double for GPU path
         var newPopulation: [Individual<V>] = []
         for i in 0..<config.populationSize {
             let offset = i * dimension
             var genes: [V.Scalar] = []
             for j in 0..<dimension {
-                let doubleValue = Double(resultData[offset + j])
-                // Safe cast: if V.Scalar is Double, this will succeed
-                if let scalar = doubleValue as? V.Scalar {
-                    genes.append(scalar)
-                } else {
-                    // Fallback: try to construct from integer approximation
-                    genes.append(V.Scalar(Int(doubleValue)))
-                }
+                genes.append(V.Scalar(resultData[offset + j]))
             }
 
             guard let vector = V.fromArray(genes) else { continue }
