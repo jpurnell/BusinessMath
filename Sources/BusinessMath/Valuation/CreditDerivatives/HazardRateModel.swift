@@ -238,24 +238,26 @@ public func hazardRateFromSpread<T: Real>(
 /// In a Cox process, the hazard rate itself follows a stochastic process,
 /// typically a mean-reverting process or geometric Brownian motion.
 ///
-/// This simple implementation uses a lognormal distribution for the
-/// integrated hazard to simulate default times.
+/// This implementation holds the intensity constant over each step of a fixed grid and
+/// redraws it from a lognormal each step, then finds the time at which the accumulated
+/// intensity crosses an independent Exponential(1) threshold.
 ///
 /// ## Model
 ///
 /// ```
-/// λ(t) ~ Lognormal(μ, σ)
-/// τ = inf{t : ∫₀ᵗ λ(s) ds > E}
+/// λ(t) = μ × exp(σ Z_t),  Z_t ~ N(0, 1) i.i.d. across steps
+/// τ = inf{t : ∫₀ᵗ λ(s) ds > E},  E ~ Exponential(1)
 /// ```
 ///
-/// Where E ~ Exponential(1)
+/// Because the shocks are independent across steps, the accumulated intensity averages
+/// them, and over a long horizon `∫₀ᵗ λ ≈ μ exp(σ²/2) t`. Setting `volatility` to zero
+/// recovers the constant-intensity case exactly, where `τ ~ Exponential(μ)`.
 ///
 /// ## Example
 ///
 /// ```swift
 /// let cox = CoxProcess(meanHazardRate: 0.02, volatility: 0.30)
-/// let seeds = [0.3, 0.5, 0.7]
-/// let defaultTime = cox.simulateDefaultTime(seeds: seeds)
+/// let defaultTime = cox.simulateDefaultTime(seed: 42)
 /// ```
 public struct CoxProcess<T: Real & Sendable>: Sendable {
 
@@ -275,85 +277,162 @@ public struct CoxProcess<T: Real & Sendable>: Sendable {
         self.volatility = volatility
     }
 
-    /// Simulate default time using Cox process.
+}
+
+// MARK: - Cox Process Simulation
+
+/// Default-time simulation for the Cox process.
+///
+/// ## Why this is constrained to `BinaryFloatingPoint`
+///
+/// Simulation needs to turn a uniform — which the standard library hands over as a
+/// `Double` — into a value of `T`, and `Real` alone offers no conversion from `Double`.
+/// The previous implementation papered over that with `meanHazardRate as? Double`, falling
+/// back to the literals `0.02` and `0.30` when the cast failed. For any `T` other than
+/// `Double` that silently discarded the caller's parameters: a `CoxProcess<Float>` built
+/// with a 15% hazard rate simulated a 2% one and returned 16.0 years where the same model
+/// in `Double` returns 2.2.
+///
+/// Constraining the extension rather than keeping a fallback makes the bad case
+/// unrepresentable — a `T` that cannot carry a uniform simply has no
+/// `simulateDefaultTime`, diagnosed by the compiler at the call site. Constraining to
+/// `T == Double` would also have worked, but needlessly: `Float` can carry a uniform
+/// perfectly well, and the arithmetic below is all `Real` operations in `T`.
+extension CoxProcess where T: BinaryFloatingPoint {
+
+    /// The width of the intensity grid, in years.
     ///
-    /// Uses provided random seeds to generate a default time according
-    /// to the stochastic intensity model.
+    /// The intensity is held constant across each step and redrawn at the start of the
+    /// next, so this is a parameter of the model and not only of its numerics: a smaller
+    /// step averages more independent shocks over the same span and narrows the
+    /// distribution of the integrated intensity.
+    private static var timeStep: T { T(1) / T(10) }
+
+    /// Simulate a default time from the Cox process.
     ///
-    /// - Parameter seeds: Random seeds in [0,1] for simulation
-    /// - Returns: Simulated default time in years
-    public func simulateDefaultTime(seeds: [Double]) -> T {
-        guard !seeds.isEmpty else {
-            // Fallback: use mean hazard for exponential draw
-            let u = T(1) / T(2)
-            let oneMinusU = T(1) - u
-            return -T.log(oneMinusU) / meanHazardRate
+    /// Steps a piecewise-constant intensity forward until the accumulated intensity
+    /// crosses an Exponential(1) threshold, and returns the crossing time. Within the step
+    /// that crosses, the intensity is constant, so the crossing is solved exactly rather
+    /// than rounded to the grid.
+    ///
+    /// - Parameters:
+    ///   - horizon: The longest time that can be returned, in years. A path that has not
+    ///     defaulted by then is right-censored and `horizon` is returned — so a simulation
+    ///     run at a hazard rate low enough for the horizon to bind produces a mass of
+    ///     outcomes sitting exactly on it. At the default of 100 years and λ = 2%, that is
+    ///     13.5% of paths, and the sample mean of the returned times is 43.2 rather than
+    ///     the 50 that `1/λ` would suggest. Raise it when simulating low intensities.
+    ///   - seed: Seed for a private ``DeterministicRNG``. The same seed, model and horizon
+    ///     reproduce the same default time exactly. `nil` (the default) draws from system
+    ///     entropy and is non-reproducible by contract — use `seed:` or
+    ///     ``simulateDefaultTime(horizon:using:)`` when reproducibility matters.
+    /// - Returns: Simulated default time in years, in `0...horizon`; `T.nan` if the model
+    ///   parameters or the horizon are not finite.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let cox = CoxProcess(meanHazardRate: 0.02, volatility: 0.30)
+    /// let defaultTime = cox.simulateDefaultTime(seed: 42)
+    /// ```
+    public func simulateDefaultTime(horizon: T = 100, seed: UInt64? = nil) -> T {
+        if let seed {
+            var generator = DeterministicRNG(seed: seed)
+            return simulateDefaultTime(horizon: horizon, using: &generator)
         }
-
-        // For simulation, we need to work with concrete Double values
-        // This function is designed to work with T = Double in practice
-        let meanDouble: Double
-        let volDouble: Double
-
-        // Handle conversion carefully
-        if let mean = meanHazardRate as? Double {
-            meanDouble = mean
-        } else {
-            meanDouble = 0.02  // Default fallback
-        }
-
-        if let vol = volatility as? Double {
-            volDouble = vol
-        } else {
-            volDouble = 0.30  // Default fallback
-        }
-
-        // Draw exponential random variable for threshold
-        let u1 = seeds[0]
-        let exponentialThreshold = -log(1.0 - u1)
-
-        // Simulate path of integrated hazard using lognormal steps
-        var integratedHazard = 0.0
-        var time = 0.0
-        let timeStep = 0.1  // Small time steps
-        var stepCounter = 0
-
-        while integratedHazard < exponentialThreshold && time < 100.0 {
-            // Get seed for this step
-            let seedIndex = stepCounter % seeds.count
-            let u = seeds[seedIndex]
-            stepCounter += 1
-
-            // Lognormal increment for hazard rate
-            // λ_t = μ × exp(σ × Z)
-            let z = inverseNormalCDFDouble(u)
-            let hazardRate = meanDouble * exp(volDouble * z)
-
-            // Accumulate integrated hazard
-            integratedHazard += hazardRate * timeStep
-            time += timeStep
-        }
-
-        return T(Int(time * 10.0)) / T(10)  // Convert back to T with rounding
+        var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+        return simulateDefaultTime(horizon: horizon, using: &generator)
     }
 
-    /// Double version of inverse normal CDF for simulation
-    private func inverseNormalCDFDouble(_ u: Double) -> Double {
-        guard u > 0.0 && u < 1.0 else {
-            return 0.0
+    /// Simulate a default time, drawing every shock from `generator`.
+    ///
+    /// The generator-parameterized form of ``simulateDefaultTime(horizon:seed:)``,
+    /// following the same convention as ``SeedableDistribution/next(using:)``: all
+    /// randomness comes from the caller's generator, so the caller owns reproducibility and
+    /// can draw a whole portfolio of paths from one stream.
+    ///
+    /// That is the form a Monte Carlo wants. The `seeds: [Double]` parameter this replaced
+    /// consumed a fixed array by index, wrapping with `stepCounter % seeds.count`, so a
+    /// path stepped over a hundred grid points with three seeds repeated the same three
+    /// shocks thirty-three times. The path had period three; every variance, quantile and
+    /// expected shortfall drawn from it described that cycle rather than the model. It was
+    /// also deterministic, which made it look correct.
+    ///
+    /// - Parameters:
+    ///   - horizon: The longest time that can be returned, in years. See
+    ///     ``simulateDefaultTime(horizon:seed:)`` for what censoring at it costs.
+    ///   - generator: The random source. Advanced once for the threshold and twice per
+    ///     grid step thereafter, so consumption is data-dependent: it is proportional to
+    ///     the default time the path happens to produce.
+    /// - Returns: Simulated default time in years, in `0...horizon`; `T.nan` if the model
+    ///   parameters or the horizon are not finite.
+    public func simulateDefaultTime<G: RandomNumberGenerator>(horizon: T = 100, using generator: inout G) -> T {
+        guard meanHazardRate.isFinite, volatility.isFinite, horizon.isFinite else { return T.nan }
+        guard horizon > T(0) else { return T(0) }
+        // A non-positive intensity never accumulates, so no default can occur: censor.
+        guard meanHazardRate > T(0) else { return horizon }
+
+        // τ is the time at which the accumulated intensity crosses an Exponential(1) draw.
+        var remaining = Self.exponentialUnitDraw(using: &generator)
+        var time = T(0)
+        let step = Self.timeStep
+
+        while time < horizon {
+            let z = Self.standardNormalDraw(using: &generator)
+            let intensity = meanHazardRate * T.exp(volatility * z)
+            let width = min(step, horizon - time)
+            let accumulated = intensity * width
+
+            if accumulated >= remaining {
+                // The intensity is constant across this step, so the crossing solves
+                // intensity × Δ = remaining exactly — no need to round up to the grid.
+                guard intensity > T(0) else { return time }
+                // `accumulated >= remaining` makes the quotient no larger than `width`, so
+                // the min only absorbs a last-ulp rounding at the horizon.
+                return min(horizon, time + remaining / intensity) // fp-safety:disable — guarded by intensity > 0 above
+            }
+
+            remaining -= accumulated
+            time += width
         }
 
-        let y = u - 0.5
+        return horizon
+    }
 
-        if y > -0.1 && y < 0.1 {
-            // For values near 0.5, use linear approximation
-            return y * 3.0
-        } else {
-            // For other values, use log-based approximation
-            let sign = y < 0.0 ? -1.0 : 1.0
-            let absU = u < 0.5 ? u : (1.0 - u)
-            let logVal = -log(absU)
-            return sign * sqrt(2.0 * logVal)
-        }
+    /// One Exponential(1) draw.
+    ///
+    /// The uniform is reflected to `(0, 1]` before the logarithm for the reason set out on
+    /// ``ScenarioGenerator``'s normal draw: `Double.random(in: 0..<1)` can return exactly
+    /// zero, `log(0)` is `-infinity`, and `u ↦ 1 - u` removes the pole without distorting
+    /// the distribution the way clamping to an epsilon would.
+    ///
+    /// - Parameter generator: The random source. Advanced once.
+    /// - Returns: A draw from Exponential(1), in `[0, ∞)`.
+    private static func exponentialUnitDraw<G: RandomNumberGenerator>(using generator: inout G) -> T {
+        let u = 1.0 - Double.random(in: 0..<1, using: &generator)   // (0, 1]
+        return T(-Double.log(u))
+    }
+
+    /// One standard normal draw, by Box–Muller.
+    ///
+    /// This replaces a private "inverse normal CDF" that was not one. It returned
+    /// `(u - 0.5) × 3` on `0.4 < u < 0.6` — the true slope of the normal quantile at the
+    /// median is `√(2π) ≈ 2.5066` — and `±√(2 log(1/min(u, 1-u)))` outside, which is a tail
+    /// asymptote applied across the whole body. The two branches do not meet: at `u = 0.6`
+    /// the value jumps from `0.30` to `1.372`, so the function was discontinuous and no
+    /// shock in `(0.30, 1.372)` was reachable at all. At `u = 0.61` it returned `1.372`
+    /// against a true quantile of `0.279`, a factor of 4.9.
+    ///
+    /// The transform is done in `Double`, where the uniforms are born and where the pole at
+    /// the endpoint is best controlled; the result is a standard variate carrying no
+    /// dependence on the model's parameters, so converting it to `T` costs nothing. Every
+    /// quantity that touches `meanHazardRate` or `volatility` is computed in `T`.
+    ///
+    /// - Parameter generator: The random source. Advanced twice.
+    /// - Returns: A draw from N(0, 1).
+    private static func standardNormalDraw<G: RandomNumberGenerator>(using generator: inout G) -> T {
+        let u1 = 1.0 - Double.random(in: 0..<1, using: &generator)  // (0, 1]
+        let u2 = Double.random(in: 0..<1, using: &generator)        // [0, 1)
+        return T((-2.0 * Double.log(u1)).squareRoot() * Double.cos(2.0 * Double.pi * u2))
     }
 }

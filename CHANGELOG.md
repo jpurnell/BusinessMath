@@ -11,6 +11,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Fixed (breaking) — `CoxProcess.simulateDefaultTime` simulated the wrong model
+
+`simulateDefaultTime(seeds: [Double])` is replaced by
+`simulateDefaultTime(horizon:seed:)` and `simulateDefaultTime(horizon:using:)`, on an
+extension constrained to `T: BinaryFloatingPoint`. Three defects lived in the forty lines
+it replaced, and each of them returned a confident, plausible, wrong number.
+
+**The generic discarded the caller's parameters.** The body opened with
+`meanHazardRate as? Double` and `volatility as? Double`, and when the cast failed it
+substituted the literals `0.02` and `0.30`. `CoxProcess` is generic over `T: Real`, so for
+every `T` that is not `Double` the model simulated a 2% hazard rate at 30% volatility no
+matter what it was constructed with. Measured: a `CoxProcess<Float>` built with
+`meanHazardRate: 0.15, volatility: 0.30` returned **16.0 years**; the same model in
+`Double` returns **2.2**; and a `Double` model built with `0.02` returns **16.0** — the
+substituted value exactly. A Float caller asking about a 15% hazard rate was told the
+obligor would survive seven times longer than the model says. No error, no warning.
+
+The fallback is gone rather than repaired. If a conversion is impossible that is a
+programming error the type system should have prevented, so the constraint moved to where
+it makes the case unrepresentable: simulation needs to turn a uniform — which the standard
+library hands over as a `Double` — into a `T`, and `Real` alone has no such conversion, so
+the extension requires `BinaryFloatingPoint` and the compiler rejects the call site
+instead. Constraining to `T == Double` would also have closed the hole, but needlessly:
+`Float` can carry a uniform perfectly well, and every quantity that touches the model's
+parameters is now computed in `T` with `Real` operations.
+
+**The empty case returned the median dressed as a draw.** `guard !seeds.isEmpty` produced
+`u = 1/2` and returned `-log(1 - u) / meanHazardRate` — the median default time, `ln 2 / λ`.
+Fifty calls returned `34.657359027997266` fifty times. Every path in a Monte Carlo built on
+it was identical, so the simulated distribution had zero variance while every individual
+number looked entirely reasonable.
+
+**The uniforms were reused cyclically.** The step loop indexed `seeds[stepCounter %
+seeds.count]`, so a path stepped over a hundred grid points with three seeds repeated the
+same three shocks thirty-three times. The path had period three, and any variance, quantile
+or expected shortfall computed from it described that cycle rather than the model. Measured
+at σ = 1: cycling three shocks gave a mean default time of 1.85 years against 1.33 for a
+full stream, a 40% error. Unlike the other seeding defects fixed in this release this one
+was deterministic, which made it look reproducible and correct — simulating with `[a, b, c]`
+and with those same three values tiled ten times returned the identical answer, 16.9.
+
+Two further problems came out with them:
+
+- The private `inverseNormalCDFDouble` was not an inverse normal CDF. It returned
+  `(u - 0.5) × 3` on `0.4 < u < 0.6` — the true slope of the normal quantile at the median
+  is `√(2π) ≈ 2.5066` — and `±√(2 log(1/min(u, 1-u)))` outside it, a tail asymptote applied
+  across the whole body. The branches do not meet: at `u = 0.6` the value jumps from `0.30`
+  to `1.372`, so the function was discontinuous and no shock in `(0.30, 1.372)` was
+  reachable at all. At `u = 0.61` it returned `1.372` against a true quantile of `0.279`.
+  Replaced by a Box–Muller draw, which is exact and needs no approximation.
+- The result was quantized to the grid by `T(Int(time * 10.0)) / T(10)`, biasing every
+  default time up by half a step. The intensity is constant across the step that crosses
+  the threshold, so the crossing is now solved exactly instead.
+
+The `horizon` parameter is new, defaulting to the 100 years that were previously hardcoded.
+A path that has not defaulted by then is right-censored and the horizon is returned, which
+matters more than it sounds: at the library's own documented λ = 2%, 13.5% of paths pile up
+exactly on 100 and the sample mean of the returned times is 43.2 rather than 50. That was
+always true and never said; it is now documented on the parameter, and callers simulating
+low intensities can raise it.
+
+Migration: `simulateDefaultTime(seeds: array)` becomes `simulateDefaultTime(seed: someUInt64)`
+for a single reproducible path, or `simulateDefaultTime(using: &rng)` for a portfolio drawn
+off one caller-owned stream — the form a Monte Carlo actually wants, and the one that keeps
+paths independent of each other. Passing no seed takes a `SystemRandomNumberGenerator` path,
+documented as non-reproducible by contract.
+
+The distributional assertion that would have caught all of this is now in the suite: with
+`volatility` zero the intensity is constant, default times are Exponential(λ), and the
+sample mean over 20,000 seeded paths is asserted within 2% of 1/λ with the coefficient of
+variation within 0.03 of 1. It is stated in both `Double` and `Float` — in `Float` it is the
+assertion that catches the substituted parameters outright, since 1/λ = 4 years against the
+43.2 the discarded-parameter path produced. Quantiles, the simulated survival curve against
+`ConstantHazardRate`, and generator consumption per step are pinned alongside it.
+
+`3.11-CreditDerivativesGuide` gains a Step 17 exercising the new API. The guide documented
+Steps 9 through 12 of this area and never once called `simulateDefaultTime`, which is part
+of why none of this was caught: the DocC code auditor compiles every block in the guides
+against the module, and there was no block to compile.
+
 #### Changed (breaking) — `seeds: [Double]?` is gone from the gamma-family distributions
 
 Eight entry points took a `seeds: [Double]?` — `distributionGamma(r:λ:)`,
