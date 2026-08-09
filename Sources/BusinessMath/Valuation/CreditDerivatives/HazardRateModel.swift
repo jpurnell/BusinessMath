@@ -105,7 +105,20 @@ public struct ConstantHazardRate<T: Real & Sendable>: Sendable {
 /// S(t) = exp(-∫₀ᵗ λ(s) ds)
 /// ```
 ///
-/// The integral is computed numerically from the hazard rate curve.
+/// The integral is computed numerically from the hazard rate curve, by the
+/// trapezoidal rule across each period the curve actually spans.
+///
+/// ## The curve's periods set the timescale
+///
+/// Each point of the curve is a rate that applies across its own ``Period``, and the
+/// integral advances by that period's length. A twelve-point monthly curve therefore
+/// describes one year, not twelve. The ``dayCount`` convention decides what "length"
+/// means, and defaults to ``DayCountConvention/actual365``, under which a common
+/// calendar year is worth exactly 1.0.
+///
+/// Periods are not assumed to be uniform: a curve may be quarterly at the short end
+/// and annual further out, and may contain a ``PeriodType/custom`` transition stub.
+/// Each point contributes its own width.
 ///
 /// ## Example
 ///
@@ -116,17 +129,38 @@ public struct ConstantHazardRate<T: Real & Sendable>: Sendable {
 ///
 /// let model = TimeVaryingHazardRate(hazardRates: hazardCurve)
 /// let survival3yr = model.survivalProbability(time: 3.0)
+///
+/// // A curve bootstrapped from CDS quotes accrues on ACT/360; say so.
+/// let cdsBasis = TimeVaryingHazardRate(hazardRates: hazardCurve, dayCount: .actual360)
 /// ```
 public struct TimeVaryingHazardRate<T: Real & Sendable>: Sendable {
 
     /// Time series of hazard rates
     public let hazardRates: TimeSeries<T>
 
+    /// The convention used to convert each period of the curve into a year fraction.
+    ///
+    /// Defaults to ``DayCountConvention/actual365``. The choice is material: over a
+    /// 365-day year ``DayCountConvention/actual360`` accrues 1.389% more hazard than
+    /// ``DayCountConvention/actual365`` for the same quoted rates, so a curve
+    /// integrated on the wrong basis produces a survival probability that is wrong
+    /// by more than most of the spread being modelled.
+    public let dayCount: DayCountConvention
+
     /// Initialize with a hazard rate curve.
     ///
-    /// - Parameter hazardRates: Time series of hazard rates by period
-    public init(hazardRates: TimeSeries<T>) {
+    /// - Parameters:
+    ///   - hazardRates: Time series of hazard rates by period. Each rate is quoted
+    ///     per annum and applies across its own period; the periods need not all be
+    ///     the same length.
+    ///   - dayCount: How each period is converted into a year fraction. Defaults to
+    ///     ``DayCountConvention/actual365``. Use ``DayCountConvention/actual360`` for
+    ///     a curve bootstrapped from CDS quotes, whose premium leg accrues on that
+    ///     basis, and ``DayCountConvention/thirty360`` for one derived from US
+    ///     corporate bond spreads.
+    public init(hazardRates: TimeSeries<T>, dayCount: DayCountConvention = .actual365) {
         self.hazardRates = hazardRates
+        self.dayCount = dayCount
     }
 
     /// Calculate survival probability at time t.
@@ -149,15 +183,37 @@ public struct TimeVaryingHazardRate<T: Real & Sendable>: Sendable {
         return T(1) - survivalProbability(time: time)
     }
 
-    /// Integrate hazard rate from 0 to t using trapezoidal rule
+    /// Integrate the hazard curve from 0 to `time` by the trapezoidal rule.
+    ///
+    /// Each point of the curve advances the clock by the length of *its own* period,
+    /// measured with ``dayCount``. The previous implementation discarded
+    /// `hazardRates.periods` entirely and stepped by a hardcoded `T(1)`, so every
+    /// curve was read as though its points were a year apart. A twelve-point monthly
+    /// curve was integrated over twelve years: on a monthly curve ramping 2% to 24%
+    /// across 2025, that put the whole term structure's cumulative hazard at 1.45
+    /// against a true 0.1214, a factor of 11.9 — and, at the one-year horizon a
+    /// caller would actually ask about, returned the January rate alone and reported
+    /// a 2.0% default probability where the curve says 11.4%. Neither number looks
+    /// wrong on its own.
+    ///
+    /// The shape of the rule is unchanged: the first period is a rectangle at its own
+    /// rate, each later period a trapezoid between its rate and the previous one, and
+    /// a horizon beyond the end of the curve extrapolates flat at the last rate. Only
+    /// the widths are now real.
+    ///
+    /// The curve is assumed to be contiguous — each period taken to begin where the
+    /// last ended — which is what a term structure is. Gaps between periods are not
+    /// detected.
     private func integrateHazardRate(upTo time: T) -> T {
         let rates = hazardRates.valuesArray
-        _ = hazardRates.periods  // Not used in integration
+        let periods = hazardRates.periods
 
         guard !rates.isEmpty else { return T.zero }
+        // `valuesArray` is built by looking each period up in `values`, so the two are
+        // the same length for any series that can be constructed. Belt and braces: a
+        // mismatch would index out of bounds below.
+        guard periods.count == rates.count else { return T.zero }
 
-        // Assume annual periods for simplicity
-        let timeStep = T(1)
         var integral = T.zero
         var currentTime = T.zero
 
@@ -168,6 +224,7 @@ public struct TimeVaryingHazardRate<T: Real & Sendable>: Sendable {
                 break
             }
 
+            let timeStep: T = dayCount.yearFraction(of: periods[i])
             let nextTime = min(currentTime + timeStep, time)
             let duration = nextTime - currentTime
 
@@ -210,10 +267,36 @@ public struct TimeVaryingHazardRate<T: Real & Sendable>: Sendable {
 ///
 /// This is exact for continuous-time models with flat term structure.
 ///
+/// ## Why this returns an optional
+///
+/// The division has no answer at the edges of its domain, and the answers it used to
+/// give there were worse than none. A recovery rate of exactly 1.0 makes the loss
+/// given default zero and the quotient `±infinity`, which then propagates silently
+/// into every survival probability computed from it. A recovery rate above 1.0 makes
+/// the loss given default *negative* and returns a **negative hazard rate** — a
+/// number that is not merely inaccurate but meaningless, since `exp(-λt)` with λ < 0
+/// is a survival probability greater than one. Both cases arrive as ordinary
+/// `Double`s that no downstream check catches.
+///
+/// `Optional` rather than `throws`, following the reasoning recorded for
+/// ``PeriodType/convert(_:to:)``: this has a single failure mode — the inputs are not
+/// a well-formed spread and recovery rate — so a typed error would carry nothing a
+/// `nil` does not, and `nil` composes with `??` and `map` in the expression positions
+/// this function is used in. Contrast
+/// ``calibrateMertonModel(equityValue:equityVolatility:debtFaceValue:riskFreeRate:maturity:)``
+/// next door, which throws because it has two distinguishable failures — bad inputs
+/// and non-convergence — and the caller needs to know which.
+///
 /// - Parameters:
-///   - spread: Credit spread as decimal (e.g., 0.0150 for 150 bps)
-///   - recoveryRate: Expected recovery rate (default: 0.40)
-/// - Returns: Implied hazard rate
+///   - spread: Credit spread as decimal (e.g., 0.0150 for 150 bps). Must be finite
+///     and non-negative; a negative spread does not imply a negative default
+///     intensity, it implies the quote is not a credit spread.
+///   - recoveryRate: Expected recovery rate as a fraction of par (default: 0.40).
+///     Must be finite and in `0..<1`. At 1.0 there is no loss to compensate for and
+///     no spread can imply an intensity; above 1.0 or below 0.0 it is not a recovery
+///     rate.
+/// - Returns: The implied hazard rate, or `nil` if the inputs do not determine a
+///   finite, non-negative one.
 ///
 /// ## Example
 ///
@@ -222,13 +305,22 @@ public struct TimeVaryingHazardRate<T: Real & Sendable>: Sendable {
 /// let recovery = 0.40
 /// let hazard = hazardRateFromSpread(spread: spread, recoveryRate: recovery)
 /// // hazard ≈ 0.025 (2.5% annual)
+///
+/// // Full recovery leaves nothing for a spread to compensate.
+/// let undefined = hazardRateFromSpread(spread: spread, recoveryRate: 1.0)  // nil
 /// ```
 public func hazardRateFromSpread<T: Real>(
     spread: T,
     recoveryRate: T = T(40) / T(100)
-) -> T {
+) -> T? {
+    guard spread.isFinite, spread >= T.zero else { return nil }
+    guard recoveryRate.isFinite, recoveryRate >= T.zero, recoveryRate < T(1) else { return nil }
+
     let lossGivenDefault = T(1) - recoveryRate
-    return spread / lossGivenDefault
+    // `recoveryRate < 1` makes this strictly positive, and a strictly positive
+    // divisor cannot produce an infinity from a finite numerator.
+    guard lossGivenDefault > T.zero else { return nil }
+    return spread / lossGivenDefault // fp-safety:disable — guarded non-zero above
 }
 
 // MARK: - Cox Process (Stochastic Hazard Rate)

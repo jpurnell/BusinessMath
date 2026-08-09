@@ -134,14 +134,14 @@ struct HazardRateModelTests {
     // MARK: - Hazard Rate from Spread Tests
 
     @Test("Extract hazard rate from credit spread")
-    func hazardFromSpread() {
+    func hazardFromSpread() throws {
         let spread = 0.0150  // 150 bps
         let recovery = 0.40
 
-        let hazard = hazardRateFromSpread(
+        let hazard = try #require(hazardRateFromSpread(
             spread: spread,
             recoveryRate: recovery
-        )
+        ))
 
         // Hazard should be positive
         #expect(hazard > 0)
@@ -152,21 +152,21 @@ struct HazardRateModelTests {
     }
 
     @Test("Higher spread implies higher hazard rate")
-    func spreadVsHazard() {
+    func spreadVsHazard() throws {
         let recovery = 0.40
 
-        let hazardLow = hazardRateFromSpread(spread: 0.0100, recoveryRate: recovery)
-        let hazardHigh = hazardRateFromSpread(spread: 0.0300, recoveryRate: recovery)
+        let hazardLow = try #require(hazardRateFromSpread(spread: 0.0100, recoveryRate: recovery))
+        let hazardHigh = try #require(hazardRateFromSpread(spread: 0.0300, recoveryRate: recovery))
 
         #expect(hazardHigh > hazardLow)
     }
 
     @Test("Higher recovery implies higher hazard for same spread")
-    func recoveryVsHazard() {
+    func recoveryVsHazard() throws {
         let spread = 0.0150
 
-        let hazardHighRecovery = hazardRateFromSpread(spread: spread, recoveryRate: 0.60)
-        let hazardLowRecovery = hazardRateFromSpread(spread: spread, recoveryRate: 0.30)
+        let hazardHighRecovery = try #require(hazardRateFromSpread(spread: spread, recoveryRate: 0.60))
+        let hazardLowRecovery = try #require(hazardRateFromSpread(spread: spread, recoveryRate: 0.30))
 
         // Higher recovery → lower LGD → higher hazard needed to produce same spread
         // Formula: λ = spread / (1 - R), so higher R means higher λ
@@ -246,11 +246,11 @@ struct HazardRateModelTests {
     }
 
     @Test("Hazard rate extracted from spread produces consistent CDS pricing")
-    func hazardSpreadConsistency() {
+    func hazardSpreadConsistency() throws {
         let spread = 0.0150
         let recovery = 0.40
 
-        let hazard = hazardRateFromSpread(spread: spread, recoveryRate: recovery)
+        let hazard = try #require(hazardRateFromSpread(spread: spread, recoveryRate: recovery))
 
         // Use hazard in survival calculation
         let constantHazard = ConstantHazardRate(hazardRate: hazard)
