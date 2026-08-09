@@ -617,6 +617,12 @@ public struct SimplexSolver: Sendable {
             }
         }
 
+        // The starting infeasibility: the sum of the artificial variables before
+        // any pivoting, which carries the magnitude of the constraint right-hand
+        // sides. Captured here because it is the only honest yardstick for the
+        // residual left at the end — see the feasibility test below.
+        let initialInfeasibility = abs(workingTableau.table[numRows][numCols - 1])
+
         // Run simplex iterations
         let result = try simplexIterations(tableau: workingTableau)
 
@@ -635,7 +641,27 @@ public struct SimplexSolver: Sendable {
         //     }
         // }
 
-        if abs(objectiveValue) > tolerance {
+        // Feasibility is judged on the residual *relative to where Phase I started*,
+        // never on an absolute figure.
+        //
+        // The artificial sum inherits the magnitude of the right-hand sides, so an
+        // absolute threshold makes the verdict depend on the units the problem
+        // happens to be written in. A DEA model over marketplace listings — costs in
+        // thousands beside RAM in tens — left a residual of 5.65e-10 against a 1e-10
+        // tolerance and was declared infeasible; dividing every value by 1,000 made
+        // the identical model solve. That relative error is ~250x machine epsilon,
+        // which is accumulated rounding over several thousand pivots and nothing
+        // more. An input-oriented DEA model always admits θ = 1 for the unit under
+        // evaluation, so "infeasible" was not merely unhelpful there — it was
+        // provably wrong.
+        //
+        // Scaling by the initial infeasibility keeps real violations caught: a
+        // genuine contradiction leaves a residual on the order of the constraint
+        // gap, which is orders of magnitude above this threshold rather than a
+        // close call. `max(1, ...)` keeps the bound from ever tightening below the
+        // configured tolerance for small problems.
+        let feasibilityThreshold = tolerance * max(1.0, initialInfeasibility)
+        if abs(objectiveValue) > feasibilityThreshold {
             // Artificial variables are still in basis with nonzero value = infeasible
             return (result.tableau, .infeasible, result.iterations)
         }

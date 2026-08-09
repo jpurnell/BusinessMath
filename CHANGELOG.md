@@ -11,6 +11,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Fixed — feasibility depended on the units a problem was written in
+
+Phase I of the two-phase simplex minimises the sum of the artificial variables and
+compared the result to an **absolute** tolerance (`1e-10`). That sum inherits the
+magnitude of the constraint right-hand sides, so the feasibility verdict was tied
+to the scale of the data: the same model expressed in dollars and in thousands of
+dollars is the same model, and one of them was declared `.infeasible`.
+
+Found in a DEA run over marketplace listings, where benchmark scores (~10⁴) sit
+beside RAM in gigabytes (~10¹). At 120 units with four outputs the Phase I residual
+settled at `5.65e-10` against the `1e-10` bound — a *relative* error near `5.6e-14`,
+roughly 250× machine epsilon, which is accumulated rounding across several thousand
+pivots and nothing else. Dividing every value by 1,000 made the identical problem
+solve.
+
+The verdict was not merely unhelpful, it was provably wrong: an input-oriented DEA
+model always admits θ = 1 for the unit under evaluation, so no such unit can be
+infeasible.
+
+Feasibility is now judged on the residual **relative to where Phase I started**
+(`tolerance * max(1, initialInfeasibility)`). Genuine violations leave a residual on
+the order of the constraint gap — orders of magnitude above the threshold, not a
+close call — and tests pin that at magnitudes of 1, 10³ and 10⁶, plus a violation
+that is proportionally small but real. `max(1, ...)` keeps the bound from ever
+tightening below the configured tolerance on small problems.
+
+Symptoms scaled with both problem size and dimension count, because both mean more
+pivots and so more accumulated error. Affects `SimplexSolver` and everything built
+on it — `DEASolver`, `AsyncDEASolver`, `SimplexRelaxationSolver` — on any problem
+whose coefficients span several orders of magnitude.
+
+#### Fixed — exact float equality in `FormulaEvaluatorTests`
+
+Two `#expect(x == 0.1)` assertions failed the test-quality audit; now tolerance-based.
+
 ### [2.5.2] - 2026-08-07
 
 #### Fixed — `AsyncDEASolver` silently ignored super-efficiency
