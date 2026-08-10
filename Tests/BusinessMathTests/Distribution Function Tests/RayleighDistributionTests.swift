@@ -36,12 +36,12 @@ struct RayleighDistributionTests {
 
 	@Test("Rayleigh distribution function produces non-negative values")
 	func rayleighFunctionNonNegative() {
-		let mean = 1.0
+		let scale = 1.0
 		let sampleCount = 1000
 		let seeds = Self.seedsForRayleigh(count: sampleCount)
 
 		for i in 0..<sampleCount {
-			let sample: Double = distributionRayleigh(mean: mean, seed: seeds[i])
+			let sample: Double = distributionRayleigh(scale: scale, seed: seeds[i])
 			#expect(sample >= 0, "Rayleigh values must be non-negative")
 			#expect(sample.isFinite, "Rayleigh values must be finite")
 			#expect(!sample.isNaN, "Rayleigh values must not be NaN")
@@ -59,8 +59,8 @@ struct RayleighDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			// Note: the function parameter is "mean" but internally uses it as scale
-			let sample: Double = distributionRayleigh(mean: scale, seed: seeds[i])
+			// The parameter is the scale σ, and is named for it.
+			let sample: Double = distributionRayleigh(scale: scale, seed: seeds[i])
 			samples.append(sample)
 		}
 
@@ -72,13 +72,13 @@ struct RayleighDistributionTests {
 
 	@Test("Rayleigh distribution always positive")
 	func rayleighAlwaysPositive() {
-		let mean = 5.0
+		let scale = 5.0
 		let sampleCount = 5000
 		let seeds = Self.seedsForRayleigh(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionRayleigh(mean: mean, seed: seeds[i]))
+			samples.append(distributionRayleigh(scale: scale, seed: seeds[i]))
 		}
 
 		// All values must be positive
@@ -91,13 +91,13 @@ struct RayleighDistributionTests {
 
 	@Test("Rayleigh distribution right-skewed")
 	func rayleighRightSkewed() {
-		let mean = 10.0
+		let scale = 10.0
 		let sampleCount = 5000
 		let seeds = Self.seedsForRayleigh(count: sampleCount)
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionRayleigh(mean: mean, seed: seeds[i]))
+			samples.append(distributionRayleigh(scale: scale, seed: seeds[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -117,7 +117,7 @@ struct RayleighDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionRayleigh(mean: scale, seed: seeds[i]))
+			samples.append(distributionRayleigh(scale: scale, seed: seeds[i]))
 		}
 
 		// Create histogram to find mode
@@ -144,13 +144,13 @@ struct RayleighDistributionTests {
 
 	@Test("Rayleigh distribution struct random() method")
 	func rayleighStructRandom() {
-		let mean = 5.0
+		let scale = 5.0
 
 		let sampleCount = 1000
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
 			let seed = Double(i + 1) / Double(sampleCount + 1)
-			let sample: Double = distributionRayleigh(mean: mean, seed: seed)
+			let sample: Double = distributionRayleigh(scale: scale, seed: seed)
 			samples.append(sample)
 			#expect(sample > 0)
 			#expect(sample.isFinite)
@@ -162,8 +162,8 @@ struct RayleighDistributionTests {
 
 	@Test("Rayleigh distribution struct next() method")
 	func rayleighStructNext() {
-		let mean = 8.0
-		let dist = DistributionRayleigh(mean: mean)
+		let scale = 8.0
+		let dist = DistributionRayleigh(scale: scale)
 
 		let sampleCount = 2000
 		var samples: [Double] = []
@@ -187,8 +187,8 @@ struct RayleighDistributionTests {
 		var samplesScale10: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesScale2.append(distributionRayleigh(mean: 2.0, seed: seeds[i]))
-			samplesScale10.append(distributionRayleigh(mean: 10.0, seed: seeds[i]))
+			samplesScale2.append(distributionRayleigh(scale: 2.0, seed: seeds[i]))
+			samplesScale10.append(distributionRayleigh(scale: 10.0, seed: seeds[i]))
 		}
 
 		let mean2 = samplesScale2.reduce(0, +) / Double(samplesScale2.count)
@@ -213,7 +213,7 @@ struct RayleighDistributionTests {
 
 		var windSpeeds: [Double] = []
 		for i in 0..<sampleCount {
-			windSpeeds.append(distributionRayleigh(mean: scale, seed: seeds[i]))
+			windSpeeds.append(distributionRayleigh(scale: scale, seed: seeds[i]))
 		}
 
 		// All wind speeds should be positive
@@ -242,7 +242,7 @@ struct RayleighDistributionTests {
 
 		var rayleighSamples: [Double] = []
 		for i in 0..<sampleCount {
-			rayleighSamples.append(distributionRayleigh(mean: σ, seed: seeds[i]))
+			rayleighSamples.append(distributionRayleigh(scale: σ, seed: seeds[i]))
 		}
 
 		// All should be positive
@@ -265,7 +265,7 @@ struct RayleighDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionRayleigh(mean: σ, seed: seeds[i]))
+			samples.append(distributionRayleigh(scale: σ, seed: seeds[i]))
 		}
 
 		// Count values <= σ
@@ -279,7 +279,7 @@ struct RayleighDistributionTests {
 
 	@Test("Rayleigh distribution seeding produces deterministic results")
 	func rayleighDeterministicSeeding() {
-		let mean = 10.0
+		let scale = 10.0
 		let seeds = Self.seedsForRayleigh(count: 100)
 
 		// Generate sequence twice with same seeds
@@ -287,17 +287,17 @@ struct RayleighDistributionTests {
 		var samples2: [Double] = []
 
 		for i in 0..<100 {
-			samples1.append(distributionRayleigh(mean: mean, seed: seeds[i]))
-			samples2.append(distributionRayleigh(mean: mean, seed: seeds[i]))
+			samples1.append(distributionRayleigh(scale: scale, seed: seeds[i]))
+			samples2.append(distributionRayleigh(scale: scale, seed: seeds[i]))
 		}
 
 		#expect(samples1 == samples2, "Same seeds should produce identical sequences")
 	}
 
-	@Test("Rayleigh distribution struct stores mean parameter")
+	@Test("Rayleigh distribution struct stores scale parameter")
 	func rayleighStructParameters() {
-		let mean = 12.0
-		let dist = DistributionRayleigh(mean: mean)
+		let scale = 12.0
+		let dist = DistributionRayleigh(scale: scale)
 
 		let sampleCount = 2000
 		var samples: [Double] = []
@@ -322,7 +322,7 @@ struct RayleighDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionRayleigh(mean: σ, seed: seeds[i]))
+			samples.append(distributionRayleigh(scale: σ, seed: seeds[i]))
 		}
 
 		let sorted = samples.sorted()
@@ -346,7 +346,7 @@ struct RayleighDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionRayleigh(mean: σ, seed: seeds[i]))
+			samples.append(distributionRayleigh(scale: σ, seed: seeds[i]))
 		}
 
 		// Should see some values much larger than mode
@@ -363,20 +363,20 @@ struct RayleighDistributionTests {
 
 	@Test("Rayleigh distribution invalid parameters return NaN")
 	func rayleighInvalidParameters() {
-		// Test negative mean
-		let negativeMeanResult = distributionRayleigh(mean: -1.0, seed: 0.5)
-		#expect(negativeMeanResult.isNaN, "Negative mean should return NaN")
+		// Test negative scale
+		let negativeScaleResult = distributionRayleigh(scale: -1.0, seed: 0.5)
+		#expect(negativeScaleResult.isNaN, "Negative scale should return NaN")
 
-		// Test zero mean
-		let zeroMeanResult = distributionRayleigh(mean: 0.0, seed: 0.5)
-		#expect(zeroMeanResult.isNaN, "Zero mean should return NaN")
+		// Test zero scale
+		let zeroScaleResult = distributionRayleigh(scale: 0.0, seed: 0.5)
+		#expect(zeroScaleResult.isNaN, "Zero scale should return NaN")
 
-		// Test NaN mean
-		let nanMeanResult = distributionRayleigh(mean: Double.nan, seed: 0.5)
-		#expect(nanMeanResult.isNaN, "NaN mean should return NaN")
+		// Test NaN scale
+		let nanScaleResult = distributionRayleigh(scale: Double.nan, seed: 0.5)
+		#expect(nanScaleResult.isNaN, "NaN scale should return NaN")
 
-		// Test infinite mean
-		let infMeanResult = distributionRayleigh(mean: Double.infinity, seed: 0.5)
-		#expect(infMeanResult.isNaN, "Infinite mean should return NaN")
+		// Test infinite scale
+		let infScaleResult = distributionRayleigh(scale: Double.infinity, seed: 0.5)
+		#expect(infScaleResult.isNaN, "Infinite scale should return NaN")
 	}
 }

@@ -18,21 +18,32 @@ import Numerics
 ///   - µ: The average number of occurrences in the given interval (mean of the Poisson distribution). This must be a non-negative number.
 /// - Returns: The cumulative probability `P(X ≤ x)` where `X` is a Poisson random variable.
 ///
-/// - Note: The input `x` is cast to a `Double` and then floored to obtain the integer part for calculations. The function sums the probabilities
-///   for values from `0` to `floor(x)` to obtain the cumulative distribution function. It uses the exponential function and the power function to
-///   calculate each term in the sum and the factorial function to normalize the probability.
+/// - Note: The function sums the probabilities for values from `0` to `floor(x)` to obtain the cumulative distribution function. It uses the
+///   exponential function and the power function to calculate each term in the sum and the factorial function to normalize the probability.
+///
+/// - Note: A degenerate Poisson (`µ = 0`) is the point mass at zero, so the CDF is `1` for every `k ≥ 0`. That case is written out rather than
+///   summed, because the general term evaluates `pow(0, 0)`, which is `NaN` here rather than the `1` the limit requires.
 public func poissonCDF<T: Real>(_ x: T, µ: T) -> T {
 	guard x >= 0 else { return T(0) }
-	// Find floor(x) by counting up from 0 until we exceed x
-	// This works for any Real type without requiring type conversion
-	var floorInt = 0
-	var counter = T(0)
-	// Cap at reasonable maximum - Poisson CDF converges quickly for practical µ values
-	while counter < x && floorInt < 10000 {
-		floorInt += 1
-		counter += T(1)
+	// A negative or NaN rate is not a Poisson; the sum would evaluate pow(negative, k),
+	// which is already NaN, so say so directly rather than by accident.
+	guard µ >= 0 else { return T.nan }
+	// The degenerate distribution: all of the mass sits at zero, so the CDF is 1
+	// everywhere on the support. Taken before the sum can reach pow(0, 0).
+	guard µ > 0 else { return T(1) }
+	// floor(x), the real one. This used to count up while `counter < x`, which
+	// overshoots by one at every exact integer: for x = 3 the loop ran to counter = 3,
+	// stopped, and took `floorInt - 1` = 2, so the sum ran k = 0...2 and the function
+	// returned P(X ≤ 2). Non-integer arguments were unaffected, which is why a test on
+	// any half-integer grid passed. `Real` refines `FloatingPoint`, so `.rounded(.down)`
+	// is available for every conforming type.
+	let floored = x.rounded(.down)
+	// Convert that floor to an `Int` for the factorial. `Real` gives no numeric
+	// conversion to `Int`, so this counts *up to* the floor and stops there. The cap
+	// bounds the work; the Poisson CDF is 1 to within double precision long before it.
+	var n = 0
+	while T(n) < floored && n < 10_000 {
+		n += 1
 	}
-	// counter is now > x or we hit limit, so floorInt-1 is floor(x) (or 0 if x < 1)
-	let n = max(0, floorInt - 1)
 	return T.exp(-1 * µ) * (0...n).map({T.pow(µ, T($0)) / T($0.factorial())}).reduce(T(0), +)
 }

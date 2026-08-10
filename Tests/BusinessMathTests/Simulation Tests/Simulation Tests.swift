@@ -65,10 +65,10 @@ import Glibc
 
 	@Test("DistributionRayleighFunction") func LDistributionRayleighFunction() {
 		// Test the function variant
-		// Note: The parameter is the scale parameter σ, not the distribution mean
+		// The parameter is the scale parameter σ, not the distribution mean
 		// The actual mean of a Rayleigh(σ) distribution is σ × sqrt(π/2) ≈ 1.253σ
 		let sigma = 5.0
-		let result: Double = distributionRayleigh(mean: sigma)
+		let result: Double = distributionRayleigh(scale: sigma)
 
 		// Rayleigh distribution should produce non-negative values
 		#expect(result >= 0.0, "Rayleigh values must be non-negative")
@@ -76,7 +76,7 @@ import Glibc
 		// Test multiple samples to ensure reasonable distribution
 		var samples: [Double] = []
 		for _ in 0..<1000 {
-			let sample: Double = distributionRayleigh(mean: sigma)
+			let sample: Double = distributionRayleigh(scale: sigma)
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -95,18 +95,18 @@ import Glibc
 		let sigma = 10.0
 
 		// Test with seeded function variant
-		let result1: Double = distributionRayleigh(mean: sigma, seed: 0.42)
+		let result1: Double = distributionRayleigh(scale: sigma, seed: 0.42)
 		#expect(result1 >= 0.0)
 
 		// Test with different seed
-		let result2: Double = distributionRayleigh(mean: sigma, seed: 0.73)
+		let result2: Double = distributionRayleigh(scale: sigma, seed: 0.73)
 		#expect(result2 >= 0.0)
 
 		// Verify multiple samples have reasonable distribution using seeded function
 		var samples: [Double] = []
 		for i in 0..<1000 {
 			let seed = Double(i + 1) / 1001.0
-			samples.append(distributionRayleigh(mean: sigma, seed: seed))
+			samples.append(distributionRayleigh(scale: sigma, seed: seed))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -117,10 +117,10 @@ import Glibc
 		#expect(empiricalMean < expectedMean + tolerance)
 	}
 
-	@Test("DistributionRayleighSmallMean") func LDistributionRayleighSmallMean() {
-		// Test with small mean value
-		let mean = 0.5
-		let distribution = DistributionRayleigh(mean: mean)
+	@Test("DistributionRayleighSmallScale") func LDistributionRayleighSmallScale() {
+		// Test with small scale value
+		let scale = 0.5
+		let distribution = DistributionRayleigh(scale: scale)
 
 		var samples: [Double] = []
 		for _ in 0..<500 {
