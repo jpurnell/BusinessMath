@@ -7,6 +7,22 @@
 //  This header ensures consistent type definitions across all Monte Carlo
 //  Metal shader files, preventing compilation issues from mismatched structs.
 //
+//  AHEAD-OF-TIME COPY — KEEP IN STEP WITH MonteCarloMSL.swift
+//
+//  Nothing in this package compiles this file. The three .metal files that
+//  #include it are all listed in Package.swift's exclude:, so SPM skips them and
+//  no Metal toolchain is required to build. Every kernel that actually runs is
+//  compiled at launch from the Swift string in MonteCarloMSL.swift.
+//
+//  That is exactly how the two came to disagree: this header's nextNormal had no
+//  pole guard at all while the string clamped with max(u1, 1e-10f), and nobody
+//  comparing them would have noticed, because building the package never touches
+//  this text. A header and a Swift string literal cannot share source without a
+//  build step that embeds one in the other, which would reintroduce the toolchain
+//  dependency the exclude: exists to avoid. So this is a hand-maintained mirror,
+//  and the guard below is the one from MonteCarloMSL.swift — read the reasoning
+//  there, not here.
+//
 
 #ifndef MONTE_CARLO_COMMON_H
 #define MONTE_CARLO_COMMON_H
@@ -120,9 +136,20 @@ inline float nextUniform(device RNGState* state) {
     return float(state->s0 + state->s1) * 5.421010862427522e-20f;
 }
 
+/// Move a uniform onto (0, 1], the interval Box-Muller requires.
+///
+/// `nextUniform` scales a ulong by 2^-64 through a float, and the conversion keeps
+/// only 24 bits, so states near ULONG_MAX round up to exactly 1.0f: the interval is
+/// closed. `1 - u` is therefore not safe here the way it is in Double. Moving only
+/// the degenerate point is: u = 1 has radius 0, one point of measure zero mapped
+/// onto another, where `max(u, eps)` would collapse an interval and leave an atom.
+inline float boxMullerUniform(float u) {
+    return u > 0.0f ? u : 1.0f;
+}
+
 /// Generate normal pair using Box-Muller transform
 inline float2 nextNormal(device RNGState* state, float mean, float stdDev) {
-    float u1 = nextUniform(state);
+    float u1 = boxMullerUniform(nextUniform(state));
     float u2 = nextUniform(state);
     float r = sqrt(-2.0f * log(u1));
     float theta = 2.0f * M_PI_F * u2;

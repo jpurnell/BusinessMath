@@ -13,39 +13,36 @@ import Numerics
 /// The Rayleigh distribution is a continuous probability distribution for non-negative-valued random variables.
 ///
 /// - Parameter mean: The mean of the Rayleigh distribution.
-/// - Parameter seed: Optional seed for reproducibility
+/// - Parameter seed: Optional seed for reproducibility, a uniform on `[0, 1]`.
 /// - Returns: A random value sampled from the Rayleigh distribution.
+///
+/// - Note: A Rayleigh variate is the *radius* of the Box-Muller transform, so this
+///   is ``boxMullerRadius(_:)`` scaled by `mean`. Routing through the shared radius
+///   rather than the shared pair matters: the pair would consume a second uniform
+///   and compute a sine and a cosine only to discard them.
 public func distributionRayleigh<T: Real>(mean: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
 	// Validate parameters - return NaN for invalid inputs
 	guard mean > T(0), !mean.isNaN, mean.isFinite else { return T.nan }
 
-	// Rayleigh is the *radius* of the Box-Muller transform, so it meets the same
-	// `log(0)` pole and needs the same guard — this one had none, and returned
-	// `+infinity` whenever the uniform came out zero. `distributionUniform`
-	// quantizes to a multiple of 1e-7, so that was every seed below 1e-7, one
-	// draw in ten million, not the vanishing probability the pole has in exact
-	// arithmetic.
+	// Two things this used to do for itself and no longer needs to.
 	//
-	// The guard is `1 - u` rather than a clamp, matching `d247691`: for any
-	// representable `u < 1`, IEEE subtraction gives `1 - u > 0` exactly, and
-	// `u ↦ 1 - u` is measure-preserving, so the draw stays exactly uniform on
-	// `(0, 1]`. A clamp would instead pile an atom of probability on the clamp
-	// value. Only one variate is needed here, so `boxMullerSeed` — which returns
-	// a pair and would compute a second sine and cosine to discard them — is not
-	// the right shared routine to call.
-	let raw: T
-	if let seed = seed {
-		raw = distributionUniform(min: T(0), max: T(1), seed)
-	} else {
-		raw = distributionUniform(min: T(0), max: T(1))
+	// It ran the seed through `distributionUniform`, which quantizes to multiples
+	// of 1e-7. That is what made the `log(0)` pole a real event rather than a
+	// vanishing one: every seed below 1e-7 — one draw in ten million — landed on
+	// exactly zero and returned `+infinity`. Seeds now reach the transform at full
+	// precision, so a seed of 1e-9 is the legitimate 6.07-sigma radius it should
+	// always have been, and only an exact zero is degenerate.
+	//
+	// And it folded the uniform as `1 - u`, which was the right guard for a
+	// quantized [0, 1] with a fat atom at the bottom. With the quantization gone
+	// the shared rule applies instead: only the single point `u = 0` moves, to 1,
+	// which is a set of measure zero mapped onto another. The seeded *values*
+	// change because a seed now indexes the distribution the other way round; the
+	// distribution itself is identical.
+	if let seed {
+		return mean * boxMullerRadius(seed)
 	}
-	// `distributionUniform` is documented half-open but returns a closed [0, 1]:
-	// its lattice is k/10_000_000 for k in 0...10_000_000, and the top point
-	// arises only from a seed of exactly 1.0, which `Double.random(in: 0...1)`
-	// can produce. Fold that one spurious point back onto the lattice's first,
-	// so `1 - raw` lands in (0, 1] for every input the API accepts.
-	let u = raw < T(1) ? T(1) - raw : T(1)
-    return mean * T.sqrt(T(-2) * T.log(u))
+	return mean * boxMullerRadius()
 }
 
 /// A type that represents a Rayleigh distribution.
@@ -87,6 +84,9 @@ extension DistributionRayleigh: SeedableDistribution {
     /// - Parameter generator: The random source for the uniform draw.
     /// - Returns: A random value sampled from the Rayleigh distribution
     public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-        return distributionRayleigh(mean: mean, seed: Double.random(in: 0...1, using: &generator))
+        // Straight to the shared radius rather than through the seed form: the
+        // generator path draws `1 - Double.random(in: 0..<1)`, which is exact on
+        // (0, 1] and never has to remap anything.
+        return mean * boxMullerRadius(using: &generator)
     }
 }

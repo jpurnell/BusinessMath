@@ -101,11 +101,19 @@ internal final class MetalDevice: @unchecked Sendable {
 
     /// Get embedded Metal shader source.
     ///
-    /// In production, this should be loaded from the Shaders.metal file.
-    /// For now, we embed it as a string for SPM compatibility.
+    /// This string *is* the shader source. It is embedded rather than loaded from a
+    /// `.metal` file because compiling one would require a Metal toolchain at build
+    /// time, which the package deliberately does not: it is compiled here at launch by
+    /// `makeLibrary(source:)` instead.
+    ///
+    /// There used to be a `Shaders.metal` alongside this file carrying the same eight
+    /// kernels, kept for the day the TODO here got done. It was in `Package.swift`'s
+    /// `exclude:`, nothing loaded it as a resource, and it had drifted — its Box-Muller
+    /// still clamped `u1 = max(u1, 1e-8)`, a guard this string stopped using. A copy
+    /// that never compiles is a copy nothing can tell you is wrong, so it was deleted
+    /// rather than repaired. What the two GPU kernel families genuinely share now lives
+    /// in ``MetalShaderSource`` and is interpolated in below.
     private static func getShaderSource() -> String {
-        // TODO: Load from Shaders.metal file as a resource
-        // For now, return embedded source
         return """
         #include <metal_stdlib>
         using namespace metal;
@@ -121,6 +129,8 @@ internal final class MetalDevice: @unchecked Sendable {
             uint hash = pcg_hash(seed + index);
             return float(hash) / 4294967296.0;
         }
+
+        \(MetalShaderSource.boxMullerUniform)
 
         // Crossover Kernel
         kernel void crossoverPopulation(
@@ -172,14 +182,19 @@ internal final class MetalDevice: @unchecked Sendable {
 
                 if (r < mutationRate) {
                     // Box-Muller. This is Metal Shading Language compiled for the
-                    // GPU, so it cannot call the package's shared boxMuellerSeed;
-                    // the arithmetic has to stay inline and in Float32. The pole
-                    // guard matches the Swift one: random_float returns
-                    // float(hash) / 4294967296.0, a half-open [0, 1), so 1 - u
-                    // lands in (0, 1] exactly and never reaches log(0). The
-                    // previous `u1 = max(u1, 1e-8)` was a clamp, which put an
-                    // atom of probability on radius sqrt(-2·log(1e-8)) = 6.07.
-                    float u1 = 1.0f - random_float(seed, uint(i) * 2 + 1);
+                    // GPU, so it cannot call the package's shared boxMullerSeed;
+                    // the arithmetic has to stay inline and in Float32. The guard
+                    // is the shared one, interpolated above from
+                    // MetalShaderSource.boxMullerUniform.
+                    //
+                    // It was `1.0f - random_float(...)` on the reasoning that
+                    // random_float is a half-open [0, 1). It is not, once Float32
+                    // gets hold of it: random_float returns float(hash) / 2^32, and
+                    // float(hash) rounds up to exactly 2^32 for the top 128 uint
+                    // values, so u = 1.0f is attainable and 1 - u is exactly zero —
+                    // the pole. About 3e-8 of draws, which clamp() then swallowed
+                    // into a bound, so nothing visible ever came of it.
+                    float u1 = boxMullerUniform(random_float(seed, uint(i) * 2 + 1));
                     float u2 = random_float(seed, uint(i) * 2 + 2);
 
                     float gaussian = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI_F * u2);

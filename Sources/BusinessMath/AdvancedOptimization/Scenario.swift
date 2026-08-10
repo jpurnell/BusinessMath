@@ -245,9 +245,13 @@ public struct ScenarioGenerator {
 	///
 	/// The second uniform sits under a cosine, which is total, so it is used as drawn.
 	private static func standardNormal<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		let u1 = 1.0 - Double.random(in: 0..<1, using: &generator)   // (0, 1]
-		let u2 = Double.random(in: 0..<1, using: &generator)         // [0, 1)
-		return (-2.0 * Foundation.log(u1)).squareRoot() * Foundation.cos(2.0 * Double.pi * u2)
+		// The shared transform. It draws the same two uniforms this used to draw for
+		// itself — `1 - Double.random(in: 0..<1)` and `Double.random(in: 0..<1)` — and
+		// `z2` is the cosine branch, so the output is bit-identical to what stood here.
+		// The reasoning above is now recorded in `boxMuellerSeed.swift`, where every
+		// caller can find it instead of one caller keeping it.
+		let (_, z): (Double, Double) = boxMullerSeed(using: &generator)
+		return z
 	}
 
 	// MARK: - Bootstrap

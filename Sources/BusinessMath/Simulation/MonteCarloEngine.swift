@@ -247,8 +247,16 @@ public struct MonteCarloEngine: Sendable {
     /// - Parameter rng: A mutable random number generator.
     /// - Returns: A standard normal variate (Z ~ N(0,1)).
     private static func nextNormalDraw(using rng: inout DeterministicRNG) -> Double {
-        let u1 = max(Double.random(in: 0.0..<1.0, using: &rng), 1e-15)
+        // The shared transform, via the seed-taking form rather than
+        // `boxMullerSeed(using:)`. The generator form draws `u₁ = 1 - random`, which
+        // would reflect this engine's uniform and change every pinned price it has
+        // ever produced; handing it the raw draw keeps the stream exactly where it was.
+        // What changes is the guard: `max(u1, 1e-15)` was a clamp with an atom at
+        // radius 8.31, reachable for u₁ below 1e-15 — about one draw in 10¹⁵ — and the
+        // shared rule moves only the exact zero, one draw in 2⁵³.
+        let u1 = Double.random(in: 0.0..<1.0, using: &rng)
         let u2 = Double.random(in: 0.0..<1.0, using: &rng)
-        return (-2.0 * Double.log(u1)).squareRoot() * Foundation.cos(2.0 * Double.pi * u2)
+        let (_, z): (Double, Double) = boxMullerSeed(u1, u2)
+        return z
     }
 }

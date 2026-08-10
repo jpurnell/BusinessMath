@@ -735,13 +735,21 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
                 let (lower, upper) = searchSpace[i]
                 let range = upper - lower
 
-                // Box-Muller transform for Gaussian mutation
-                let u1Raw = rng.next()
-                let u2Raw = rng.next()
-                // Fixed: Divide by 2^32 for proper [0, 1) range (was UInt32.max = 2^32-1)
-                let u1 = V.Scalar(Int(u1Raw >> 32)) / V.Scalar(Int(1 << 32)) // fp-safety:disable
-                let u2 = V.Scalar(Int(u2Raw >> 32)) / V.Scalar(Int(1 << 32)) // fp-safety:disable
-                let gaussian = V.Scalar.sqrt(-V.Scalar(2) * V.Scalar.log(u1)) * V.Scalar.cos(V.Scalar(2) * V.Scalar.pi * u2)
+                // Gaussian mutation via the package's shared Box-Muller transform.
+                //
+                // The uniforms are unchanged — the top 32 bits of a draw over 2^32,
+                // the half-open [0, 1) this file already got right. What the shared
+                // routine adds is a pole guard, which this site had none of: u1 is
+                // exactly 0 whenever those 32 bits are all zero, one draw in 2^32,
+                // and log(0) is -infinity. The gaussian then came out non-finite and
+                // was clamped to a search-space bound below, so a mutation that was
+                // meant to be a small perturbation silently became "jump to the edge".
+                //
+                // `z2` is the cosine branch, the one this site computed, so every
+                // other draw is unchanged.
+                let u1 = Double(Int(rng.next() >> 32)) / Double(Int(1 << 32)) // fp-safety:disable — divisor is the constant 2^32
+                let u2 = Double(Int(rng.next() >> 32)) / Double(Int(1 << 32)) // fp-safety:disable — divisor is the constant 2^32
+                let (_, gaussian): (V.Scalar, V.Scalar) = boxMullerSeed(u1, u2)
 
                 // Convert mutation strength from Double to V.Scalar
                 let strengthInt = Int(config.mutationStrength * 1_000_000)

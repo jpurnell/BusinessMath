@@ -100,10 +100,13 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         // Include all kernel code inline
         // (In production, this would reference the .metal files)
 
-        struct RNGState {
-            ulong s0;
-            ulong s1;
-        };
+        // RNGState, nextUniform and nextNormal come from MetalShaderSource, the
+        // package's single MSL definition of them. They used to be written out here
+        // and again in MonteCarloCommon.h, and the two had already diverged: the
+        // header's nextNormal had no pole guard at all while this copy clamped with
+        // max(u1, 1e-10f). See MetalShaderSource for why the shared guard is neither
+        // of those.
+        \(MetalShaderSource.randomNumberGeneration)
 
         struct DistributionParams {
             float param1;
@@ -119,42 +122,6 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
 
         constant int MAX_INPUTS = 32;
         constant int MAX_STACK = 32;
-
-        // RNG - thread address space
-        inline float nextUniform(thread RNGState* state) {
-            ulong s1 = state->s0;
-            ulong s0 = state->s1;
-            state->s0 = s0;
-            s1 ^= s1 << 23;
-            state->s1 = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
-            return float(state->s0 + state->s1) * 5.421010862427522e-20f;
-        }
-
-        // RNG - device address space (for kernel buffers)
-        inline float nextUniform(device RNGState* state) {
-            ulong s1 = state->s0;
-            ulong s0 = state->s1;
-            state->s0 = s0;
-            s1 ^= s1 << 23;
-            state->s1 = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
-            return float(state->s0 + state->s1) * 5.421010862427522e-20f;
-        }
-
-        inline float2 nextNormal(thread RNGState* state, float mean, float stdDev) {
-            float u1 = max(nextUniform(state), 1e-10f);  // Prevent log(0)
-            float u2 = nextUniform(state);
-            float r = sqrt(-2.0f * log(u1));
-            float theta = 2.0f * M_PI_F * u2;
-            return float2(mean + stdDev * r * cos(theta), mean + stdDev * r * sin(theta));
-        }
-
-        inline float2 nextNormal(device RNGState* state, float mean, float stdDev) {
-            float u1 = max(nextUniform(state), 1e-10f);  // Prevent log(0)
-            float u2 = nextUniform(state);
-            float r = sqrt(-2.0f * log(u1));
-            float theta = 2.0f * M_PI_F * u2;
-            return float2(mean + stdDev * r * cos(theta), mean + stdDev * r * sin(theta));
-        }
 
         // Distributions - thread address space
         inline float sampleDistribution(thread RNGState* state, constant DistributionParams* params, int distType) {

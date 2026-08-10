@@ -523,8 +523,9 @@ extension CoxProcess where T: BinaryFloatingPoint {
     /// - Parameter generator: The random source. Advanced twice.
     /// - Returns: A draw from N(0, 1).
     private static func standardNormalDraw<G: RandomNumberGenerator>(using generator: inout G) -> T {
-        let u1 = 1.0 - Double.random(in: 0..<1, using: &generator)  // (0, 1]
-        let u2 = Double.random(in: 0..<1, using: &generator)        // [0, 1)
-        return T((-2.0 * Double.log(u1)).squareRoot() * Double.cos(2.0 * Double.pi * u2))
+        // The shared transform, which draws the same two uniforms this used to draw
+        // for itself and takes the same cosine branch, so the output is bit-identical.
+        let (_, z): (Double, Double) = boxMullerSeed(using: &generator)
+        return T(z)
     }
 }
