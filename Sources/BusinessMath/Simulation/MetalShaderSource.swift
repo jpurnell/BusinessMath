@@ -71,17 +71,81 @@ internal enum MetalShaderSource {
 	}
 	"""
 
-	/// `RNGState`, `nextUniform`, and `nextNormal`, in both the `thread` and `device`
-	/// address spaces, with ``boxMullerUniform`` included.
+	/// `RNGState`, `seedRNGState`, `nextUniform`, and `nextNormal`, in both the `thread`
+	/// and `device` address spaces, with ``boxMullerUniform`` included.
 	///
 	/// Interpolate into a kernel source string after `#include <metal_stdlib>` and
 	/// `using namespace metal;`. Both address-space overloads are always emitted; MSL
 	/// discards the unused `inline` definitions.
+	///
+	/// ## Why the seeding is here and not at the call site
+	///
+	/// The generator and the way its state is initialised are one subject, and splitting
+	/// them is what allowed the package to ship a sound xorshift128+ seeded in a way that
+	/// made adjacent threads dependent. `seedRNGState` is emitted alongside the generator
+	/// so a kernel cannot obtain one without the other, and so the three test kernels
+	/// that measure this cannot measure a seeding production does not use.
 	static let randomNumberGeneration = """
 	struct RNGState {
 	    ulong s0;
 	    ulong s1;
 	};
+
+	// SplitMix64's mixing function, from Steele, Lea and Flood (2014). A bijection on
+	// the 64-bit words with avalanche good enough that consecutive counter values give
+	// unrelated outputs — which is the property the seeding below is buying.
+	inline ulong splitmix64(thread ulong* x) {
+	    ulong z = (*x += 0x9E3779B97F4A7C15UL);
+	    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+	    z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+	    return z ^ (z >> 31);
+	}
+
+	// One xorshift128+ stream per thread, from one base seed.
+	//
+	// Every GPU thread here is one Monte Carlo iteration, so "thread t's stream" and
+	// "iteration t" are the same thing and a dependence between neighbouring threads is
+	// a dependence between neighbouring iterations of the simulation.
+	//
+	// This used to be `s0 = baseSeed ^ tid`, `s1 = (baseSeed >> 32) ^ (tid << 32)`, with
+	// ten warm-up draws. Xorshift128+ is GF(2)-linear in its state, so the difference
+	// between two threads seeded that way is itself a xorshift trajectory starting from
+	// a one- or two-bit delta, and it does not diffuse: measured cross-thread lag-1
+	// correlation was +0.26, and warm-up moved it around (+0.10 at 20 rounds, +0.17 at
+	// 50, -0.10 at 100) rather than decaying it. Base seed 0 was worse still — thread 0
+	// got s0 = s1 = 0, xorshift128+'s absorbing state, and emitted 0.0f forever.
+	//
+	// SplitMix64 seed-splitting is the standard remedy and is what xoshiro's authors
+	// specify. Each thread's counter starts a full golden-ratio step from its
+	// neighbour's and the two 64-bit words come from separate mixes, so the states are
+	// unrelated before the first draw. Measured on the same statistic: median |rho|
+	// 0.002 at every lag from 1 to 5.
+	//
+	// There is no warm-up loop, and that is deliberate rather than an omission. Warm-up
+	// bought nothing here even before the fix, and after it there is nothing left to
+	// warm up: over twelve base seeds the median cross-thread |rho| is 0.0021 with zero
+	// rounds against 0.0035 with ten, and the per-statistic RMSE of a 10,000-iteration
+	// N(0, 1) dispatch matches its theoretical sampling error either way. Keeping the
+	// loop would have kept a mitigation that never worked, over a defect that is gone.
+	//
+	// The zero-state guard is unreachable and kept anyway. splitmix64 is a bijection
+	// with mix(0) == 0, so s0 == 0 requires the counter to be zero after its first
+	// increment, and the second mix then returns mix(0x9E3779B97F4A7C15), which is not
+	// zero. The guard costs one comparison and stops a future change to the mixing from
+	// silently reintroducing an absorbing state.
+	inline void seedRNGState(thread RNGState* state, ulong baseSeed, uint tid) {
+	    ulong x = baseSeed + ulong(tid) * 0x9E3779B97F4A7C15UL;
+	    state->s0 = splitmix64(&x);
+	    state->s1 = splitmix64(&x);
+	    if (state->s0 == 0 && state->s1 == 0) { state->s1 = 1; }
+	}
+
+	inline void seedRNGState(device RNGState* state, ulong baseSeed, uint tid) {
+	    ulong x = baseSeed + ulong(tid) * 0x9E3779B97F4A7C15UL;
+	    state->s0 = splitmix64(&x);
+	    state->s1 = splitmix64(&x);
+	    if (state->s0 == 0 && state->s1 == 0) { state->s1 = 1; }
+	}
 
 	// Xorshift128+. The scale is 2^-64; note that converting a ulong to float keeps
 	// only 24 bits, so the result is a *closed* [0, 1] — 1.0f is attainable.

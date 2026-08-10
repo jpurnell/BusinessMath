@@ -21,11 +21,15 @@ using namespace metal;
 
 /// Initialize RNG states for all GPU threads
 ///
-/// Each thread receives a unique seed derived from the base seed and thread ID.
-/// This ensures independent random streams across threads while maintaining reproducibility.
+/// Each thread receives its own stream, split off the base seed with SplitMix64 by
+/// `seedRNGState` in MonteCarloCommon.h. Same base seed, same streams.
 ///
-/// The RNG is "warmed up" by discarding the first 10 samples, which improves
-/// statistical quality by avoiding initial state correlation.
+/// This used to read `s0 = baseSeed ^ tid` with a ten-draw warm-up, and the two
+/// sentences above this line used to claim that gave "independent random streams
+/// across threads" and that the warm-up "eliminates correlation in early outputs".
+/// Neither was true: the measured cross-thread lag-1 correlation was +0.26 with the
+/// warm-up in place, and more rounds moved it around rather than down. There is no
+/// warm-up now because there is nothing left for it to do.
 ///
 /// - Parameters:
 ///   - states: Output buffer for RNG states (one per thread)
@@ -36,16 +40,7 @@ kernel void initializeRNG(
     constant ulong& baseSeed [[buffer(1)]],
     uint tid [[thread_position_in_grid]]
 ) {
-    // Initialize state with thread-specific seeds
-    // Uses bit mixing to ensure independence between threads
-    states[tid].s0 = baseSeed ^ tid;
-    states[tid].s1 = (baseSeed >> 32) ^ (ulong(tid) << 32);
-
-    // Warm up the RNG by discarding initial samples
-    // This eliminates correlation in early outputs
-    for (int i = 0; i < 10; i++) {
-        nextUniform(&states[tid]);
-    }
+    seedRNGState(&states[tid], baseSeed, tid);
 }
 
 // MARK: - Test/Debug Kernels

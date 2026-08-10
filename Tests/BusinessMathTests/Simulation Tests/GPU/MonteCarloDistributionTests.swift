@@ -149,11 +149,10 @@ struct MonteCarloDistributionTests {
             // the end of both allocations, and when another GPU test is running
             // concurrently the overrun lands in whatever was allocated next.
             if (tid >= count) { return; }
-            states[tid].s0 = baseSeed ^ tid;
-            states[tid].s1 = (baseSeed >> 32) ^ (ulong(tid) << 32);
-            for (int i = 0; i < 10; i++) {
-                nextUniform(&states[tid]);
-            }
+            // seedRNGState, not a copy of it — see MetalShaderSource. A copy here is
+            // how this kernel would keep sampling the old `baseSeed ^ tid` streams
+            // after production stopped using them.
+            seedRNGState(&states[tid], baseSeed, tid);
         }
 
         kernel void sampleDistributions(

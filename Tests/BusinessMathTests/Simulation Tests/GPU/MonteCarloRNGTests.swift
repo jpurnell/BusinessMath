@@ -76,13 +76,12 @@ struct MonteCarloRNGTests {
 
     /// The production seeding, verbatim, so these tests exercise the real streams.
     ///
-    /// Kept in one place because it appears in both sampler kernels and because it
-    /// is the subject of ``adjacentThreadFirstDrawsAreCorrelated()``.
+    /// This is ``MetalShaderSource/randomNumberGeneration``'s `seedRNGState`, not a
+    /// copy of it. A copy is how the defect in ``adjacentThreadFirstDrawsAreIndependent()``
+    /// could have been fixed in production and left unmeasured here.
     private static let seedAndWarmUp = """
     inline void seedState(thread RNGState* state, ulong baseSeed, uint tid) {
-        state->s0 = baseSeed ^ tid;
-        state->s1 = (baseSeed >> 32) ^ (ulong(tid) << 32);
-        for (int i = 0; i < 10; i++) { nextUniform(state); }
+        seedRNGState(state, baseSeed, tid);
     }
     """
 
@@ -161,7 +160,7 @@ struct MonteCarloRNGTests {
     ///
     /// This is the dispatch shape a real Monte Carlo run uses — one draw per thread,
     /// read back in thread order. It is a sample across streams, not along one, and
-    /// only ``adjacentThreadFirstDrawsAreCorrelated()`` interprets it.
+    /// only the cross-thread tests interpret it.
     private func firstDrawPerThread(count: Int, seed: UInt64) throws -> [Float]? {
         guard let gpu = gpuContext() else { return nil }
 
@@ -211,6 +210,60 @@ struct MonteCarloRNGTests {
         commands.waitUntilCompleted()
 
         let values = output.contents().bindMemory(to: Float.self, capacity: count)
+        return (0..<count).map { values[$0] }
+    }
+
+    /// The seeded `RNGState` of each of `count` threads, before any draw is taken.
+    ///
+    /// Reading the state rather than a variate is what lets ``seedingNeverProducesTheAbsorbingState()``
+    /// assert on `(0, 0)` directly. Inferring it from output would not: a thread stuck
+    /// in the absorbing state emits `0.0f`, and `0.0f` is also a legitimate draw.
+    private func seededStates(count: Int, seed: UInt64) throws -> [SIMD2<UInt64>]? {
+        guard let gpu = gpuContext() else { return nil }
+
+        let source = """
+        #include <metal_stdlib>
+        using namespace metal;
+
+        \(MetalShaderSource.randomNumberGeneration)
+
+        \(Self.seedAndWarmUp)
+
+        kernel void seededStates(
+            device ulong2* outputs [[buffer(0)]],
+            constant ulong& baseSeed [[buffer(1)]],
+            constant uint& count [[buffer(2)]],
+            uint tid [[thread_position_in_grid]]
+        ) {
+            if (tid >= count) { return; }
+            thread RNGState state;
+            seedState(&state, baseSeed, tid);
+            outputs[tid] = ulong2(state.s0, state.s1);
+        }
+        """
+
+        let library = try gpu.device.makeLibrary(source: source, options: nil)
+        let function = try #require(library.makeFunction(name: "seededStates"))
+        let pipeline = try gpu.device.makeComputePipelineState(function: function)
+        let output = try #require(gpu.device.makeBuffer(length: count * MemoryLayout<SIMD2<UInt64>>.stride,
+                                                        options: .storageModeShared))
+        var baseSeed = seed
+        var sampleCount = UInt32(count)
+
+        let commands = try #require(gpu.queue.makeCommandBuffer())
+        let encoder = try #require(commands.makeComputeCommandEncoder())
+        encoder.setComputePipelineState(pipeline)
+        encoder.setBuffer(output, offset: 0, index: 0)
+        encoder.setBytes(&baseSeed, length: MemoryLayout<UInt64>.stride, index: 1)
+        encoder.setBytes(&sampleCount, length: MemoryLayout<UInt32>.stride, index: 2)
+        let perGroup = MTLSize(width: min(count, 256), height: 1, depth: 1)
+        let groups = MTLSize(width: (count + perGroup.width - 1) / perGroup.width, height: 1, depth: 1)
+        encoder.dispatchThreadgroups(groups, threadsPerThreadgroup: perGroup)
+        encoder.endEncoding()
+        commands.commit()
+        commands.waitUntilCompleted()
+
+        let values = output.contents().bindMemory(to: SIMD2<UInt64>.self, capacity: count)
         return (0..<count).map { values[$0] }
     }
 
@@ -343,34 +396,128 @@ struct MonteCarloRNGTests {
         #expect(abs(lag2) < 0.05, "Lag-2 autocorrelation \(lag2) should be close to 0")
     }
 
-    /// Adjacent threads' first draws, which are **not** independent.
+    /// Base seeds for the cross-thread statistics, chosen to include the degenerate
+    /// shapes as well as ordinary ones.
     ///
-    /// `initializeRNG` seeds thread `t` as `s0 = baseSeed ^ t`, `s1 = (baseSeed >> 32)
-    /// ^ (t << 32)`, so neighbouring threads start one or two bits apart. Xorshift128+
-    /// is GF(2)-linear in its state, which means the difference between two threads'
-    /// states evolves as its own xorshift trajectory seeded by that tiny delta — and a
-    /// one-bit delta takes far more than ten rounds to diffuse. The ten warm-up rounds
-    /// are not enough, and adding more does not fix it: measured on an M1 Max, the
-    /// cross-thread lag-1 correlation is +0.29 at 10 rounds, +0.09 at 20, +0.17 at 50,
-    /// −0.10 at 100 and +0.08 at 1000. It moves around; it does not decay.
-    ///
-    /// The individual streams are fine — ``testIndependenceWithinStream()`` passes with
-    /// |ρ| ≈ 0.001 — so this is the seeding, not the generator. The standard remedy is
-    /// SplitMix64 seed-splitting, which brings the same measurement to |ρ| < 0.008
-    /// across twelve random base seeds and removes the need for warm-up entirely. That
-    /// change moves every seeded GPU result in the package, so it is not made here.
-    ///
-    /// Recorded as a known issue rather than deleted: the property is one the package
-    /// should have, and `withKnownIssue` fails if it ever starts holding, so fixing the
-    /// seeding cannot leave this comment quietly wrong.
-    @Test("Adjacent threads' first draws are independent (known issue: baseSeed ^ tid seeding)")
-    func adjacentThreadFirstDrawsAreCorrelated() throws {
-        guard let samples = try firstDrawPerThread(count: 50_000, seed: Self.fixedSeed) else { return }
+    /// `0` and `1` matter specifically: under the previous `s0 = baseSeed ^ tid`
+    /// seeding, base seed `0` gave thread `0` the state `(0, 0)`, which is xorshift128+'s
+    /// absorbing state. Low seeds are the ones a caller actually types.
+    private static let crossThreadSeeds: [UInt64] = [
+        0x9E37_79B9_7F4A_7C15,
+        0x0123_4567_89AB_CDEF,
+        0xDEAD_BEEF_CAFE_BABE,
+        0x5555_5555_5555_5555,
+        0x0000_0000_0000_0000,
+        0x0000_0000_0000_0001
+    ]
 
-        withKnownIssue("`s0 = baseSeed ^ tid` correlates neighbouring streams at ρ ≈ +0.26; changing it moves every seeded GPU result and is not this test's call.") {
-            let crossStream = autocorrelation(samples: samples, lag: 1)
+    /// Adjacent threads' first draws, which must be independent.
+    ///
+    /// Each GPU thread is one Monte Carlo iteration, so a correlation here is a
+    /// correlation between adjacent iterations of a simulation — it shows up directly
+    /// in every percentile and VaR the GPU path reports.
+    ///
+    /// This is the test the seeding fix was made for, and it was written to fail while
+    /// the defect stood. `initializeRNG` used to seed thread `t` as `s0 = baseSeed ^ t`,
+    /// `s1 = (baseSeed >> 32) ^ (t << 32)`, so neighbouring threads started one or two
+    /// bits apart. Xorshift128+ is GF(2)-linear in its state, so the difference between
+    /// two threads evolves as its own trajectory from that tiny delta and never
+    /// diffuses. Measured here on an M1 Max over these six base seeds plus six more,
+    /// the old seeding gave median |ρ| of 0.26 at lag 1 and 0.32 at lag 4 — and warm-up
+    /// did not help, wandering to +0.10 at 20 rounds, +0.17 at 50, −0.10 at 100.
+    ///
+    /// SplitMix64 seed-splitting brings the same measurement to a median |ρ| of 0.0030
+    /// over 12 base seeds × 5 lags, with the worst of those 60 pairs at 0.0103. The
+    /// 0.05 bar below is about 11 standard errors for n = 50,000 and roughly five times
+    /// the worst value observed, so it fails on the defect and does not fail on
+    /// sampling noise.
+    ///
+    /// Lags 2 to 5 are checked as well because the old seeding was worse at lag 4 than
+    /// at lag 1: a lag-1-only assertion could be satisfied by a seeding that merely
+    /// moved the structure one step out.
+    @Test("Adjacent threads' first draws are independent", arguments: MonteCarloRNGTests.crossThreadSeeds)
+    func adjacentThreadFirstDrawsAreIndependent(seed: UInt64) throws {
+        guard let samples = try firstDrawPerThread(count: 50_000, seed: seed) else { return }
+
+        for lag in 1...5 {
+            let crossStream = autocorrelation(samples: samples, lag: lag)
             #expect(abs(crossStream) < 0.05,
-                    "Correlation \(crossStream) between the first draws of adjacent threads should be ~0")
+                    "Lag-\(lag) correlation \(crossStream) across threads, base seed \(seed), should be ~0")
+        }
+    }
+
+    /// The cross-thread marginal, at the sample size where the defect was visible.
+    ///
+    /// The count is load-bearing and is not 50,000. The old seeding produced a
+    /// *stratified* set of first draws, not a merely non-uniform one: at n = 50,000 its
+    /// K-S statistic was 0.0014 to 0.0053, which is *below* the 0.0038 expected of an
+    /// honest sample and passes any critical value. At n = 10,000 the same seeding gives
+    /// 0.0207 to 0.0271 against a 0.0163 critical value and fails every time. Asserting
+    /// at 50,000 would have measured nothing.
+    ///
+    /// With SplitMix64 seeding the statistic at n = 10,000 is 0.0057 to 0.0117 over
+    /// twelve base seeds, comfortably inside the α = 0.01 value.
+    @Test("Cross-thread first draws are uniform (K-S)", arguments: MonteCarloRNGTests.crossThreadSeeds)
+    func crossThreadFirstDrawsAreUniform(seed: UInt64) throws {
+        let count = 10_000
+        guard let samples = try firstDrawPerThread(count: count, seed: seed) else { return }
+
+        let ksStatistic = kolmogorovSmirnovTest(samples: samples) { x in x }
+        let critical = ksCritical01(count)
+
+        #expect(ksStatistic < critical,
+                "Cross-thread K-S \(ksStatistic) at base seed \(seed) should be below the α = 0.01 value \(critical)")
+    }
+
+    /// A seeded dispatch is a function of its seed and nothing else.
+    ///
+    /// Reproducibility is the whole reason the seed is a parameter, and it is the
+    /// property most easily lost by a seeding change — a seeding that read anything
+    /// per-dispatch would still pass every statistic above.
+    ///
+    /// Compared as bit patterns rather than as `Float`s. The claim is that the second
+    /// dispatch reproduced the first exactly, which is a statement about the bits; `==`
+    /// on `Float` would additionally have to be reasoned about for NaN and for signed
+    /// zero, neither of which is what is being asserted.
+    @Test("The same base seed gives the same draws, a different one does not")
+    func seededDispatchIsReproducible() throws {
+        guard let first = try firstDrawPerThread(count: 4096, seed: Self.fixedSeed) else { return }
+        let second = try #require(try firstDrawPerThread(count: 4096, seed: Self.fixedSeed))
+        let other = try #require(try firstDrawPerThread(count: 4096, seed: Self.fixedSeed &+ 1))
+
+        let bits: ([Float]) -> [UInt32] = { $0.map(\.bitPattern) }
+        #expect(bits(first) == bits(second),
+                "the same base seed must reproduce the same draws exactly")
+        #expect(bits(first) != bits(other),
+                "a different base seed must not reproduce the same draws")
+    }
+
+    /// `(0, 0)` is absorbing for xorshift128+, and no thread may be seeded into it.
+    ///
+    /// From `s0 = s1 = 0` the recurrence keeps both words zero forever, so that thread
+    /// emits `0.0f` for the life of the simulation. The previous seeding could reach it:
+    /// base seed `0`, thread `0` gave `s0 = 0 ^ 0` and `s1 = 0 ^ 0`.
+    ///
+    /// SplitMix64 cannot, and the argument is exact rather than statistical. Its output
+    /// function is a bijection with `mix(0) = 0`, so `s0 == 0` requires the internal
+    /// counter to be exactly `0` after its first increment — which happens for one base
+    /// seed and thread, `baseSeed = -0x9E3779B97F4A7C15` at `tid = 0`. The counter is
+    /// then `0`, the second call mixes `0x9E3779B97F4A7C15`, and `s1` is not zero. That
+    /// one case is constructed below rather than hoped for, alongside a sweep wide
+    /// enough to catch a seeding that reached the state some other way.
+    @Test("Seeding never produces xorshift128+'s absorbing state")
+    func seedingNeverProducesTheAbsorbingState() throws {
+        // The unique (baseSeed, tid) that drives SplitMix64's counter to zero.
+        let adversarial = UInt64(0) &- 0x9E37_79B9_7F4A_7C15
+        guard let constructed = try seededStates(count: 1, seed: adversarial) else { return }
+        #expect(constructed[0].x == 0, "the constructed case should be the one that zeroes s0")
+        #expect(constructed[0].y != 0, "s1 must not also be zero — that state is absorbing")
+
+        for seed in Self.crossThreadSeeds + [adversarial] {
+            let states = try #require(try seededStates(count: 100_000, seed: seed))
+            let absorbing = states.filter { $0.x == 0 && $0.y == 0 }
+            #expect(absorbing.isEmpty,
+                    "\(absorbing.count) threads at base seed \(seed) were seeded into (0, 0)")
         }
     }
 
