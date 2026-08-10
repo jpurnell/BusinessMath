@@ -526,11 +526,17 @@ public actor ModelDebugger {
 
     /// Validate a financial model.
     ///
-    /// Performs comprehensive validation including:
-    /// - Missing data detection
-    /// - Circular dependency detection
-    /// - Data quality checks
-    /// - Period alignment verification
+    /// Checks exactly three things, and no others:
+    /// - the model has at least one revenue or cost component
+    /// - a model with costs also has revenue
+    /// - no revenue time series carries a `NaN`
+    ///
+    /// It does **not** detect dependency cycles between accounts. A ``FinancialModel``'s
+    /// components hold time series rather than formulas, so no account can refer to another
+    /// and there is nothing here for a cycle walk to traverse. Cycles arise a layer up, in
+    /// whatever defines each account's formula; ``FormulaEvaluator/accountNames(in:)``
+    /// reports a formula's dependencies without evaluating it, which is enough to walk those
+    /// definitions yourself and throw ``BusinessMathError/circularDependency(path:)``.
     ///
     /// - Parameter model: The model to validate
     /// - Returns: Validation report with issues and suggestions
@@ -632,28 +638,6 @@ public actor ModelDebugger {
         }
 
         return missing
-    }
-
-    /// Detect circular dependencies in a financial model.
-    ///
-    /// Note: Current implementation is basic and focuses on simple cases.
-    /// More complex dependency analysis would require formula parsing.
-    ///
-    /// - Parameter model: The model to analyze
-    /// - Returns: Array of detected circular dependencies
-    ///
-    /// Example:
-    /// ```swift
-    /// let cycles = await debugger.detectCircularDependencies(in: model)
-    /// for cycle in cycles {
-    ///     print("Cycle: \(cycle.path.joined(separator: " → "))")
-    /// }
-    /// ```
-    public func detectCircularDependencies(in model: FinancialModel) -> [CircularDependency] {
-        // Basic implementation - would need formula parsing for full detection
-        // For now, return empty array as most models built with ModelBuilder
-        // don't have explicit circular dependencies
-        return []
     }
 
     // MARK: - Model Snapshot
@@ -1321,21 +1305,4 @@ public struct DebuggerTrace: Sendable {
         }
         return output
     }
-}
-
-// MARK: - Dependency Detection
-
-/// A circular dependency in a model.
-public struct CircularDependency: Sendable {
-    /// Unique identifier for this cycle
-    public let id: Int
-
-    /// Path of account names forming the cycle
-    public let path: [String]
-
-    /// Severity of the issue
-    public let severity: String
-
-    /// Suggested fix
-    public let suggestion: String
 }
