@@ -11,6 +11,129 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Fixed — `poissonCDF` returned `P(X ≤ k−1)` at every integer argument
+
+`poissonCDF(_:µ:)` found `floor(x)` by counting up while `counter < x`. At an exact integer
+that loop runs one step past the answer, so the sum ran `k = 0 … floor(x) − 1` and the
+function returned the CDF one place to the left. Every value a caller would look up in a
+Poisson table was wrong.
+
+Measured against the arbitrary-precision sum `e^(−µ) Σ µᵏ/k!`:
+
+| call | before | after / reference | absolute error |
+|------|--------|-------------------|----------------|
+| `poissonCDF(1, µ: 1)` | 0.36787944117144233 | 0.7357588823428847 | **0.368** |
+| `poissonCDF(2, µ: 3)` | 0.19914827347145578 | 0.42319008112684353 | 0.224 |
+| `poissonCDF(3, µ: 3)` | 0.42319008112684353 | 0.6472318887822313 | 0.224 |
+| `poissonCDF(5, µ: 3)` | 0.8152632445237721 | 0.9160820579686966 | 0.101 |
+
+The error is exactly `P(X = k)`, so it peaks near the mode and is worst at small µ.
+Non-integer arguments were already correct — `poissonCDF(1.5, µ: 3)` matched `P(X ≤ 1)` —
+which is why a test grid that never landed on an integer saw nothing. The floor is now
+`x.rounded(.down)`.
+
+Two degenerate cases along with it: `poissonCDF(k, µ: 0)` returned **`NaN`** for every `k`,
+from `pow(0, 0)` in the first term. A Poisson with `µ = 0` is the point mass at zero, so the
+answer is **1** for every `k ≥ 0`, and that case is now written out rather than summed. A
+negative `µ` now returns `NaN` deliberately rather than as a side effect of `pow(negative, k)`.
+
+#### Fixed (breaking) — `distributionPareto` returned `+infinity` for a zero uniform
+
+The pole guard was dead code:
+
+```swift
+let epsilon: T = T(Int(1e-10))  // 1e-10
+```
+
+`Int(1e-10)` is **0**, so `u > epsilon` read `u > 0` and clamped nothing. A uniform of
+exactly zero — which `distributionUniform(min:max:_:)` returns for a seed of zero, and for
+every seed below its 1e-7 quantum — produced `scale / 0^(1/α)` = `+infinity`. One such draw
+poisons the mean, the variance and every percentile above it for the whole run.
+
+Repairing the constant would have been the wrong fix. A clamp maps an interval of draws onto
+one value and leaves a point mass at `scale·ε^(−1/α)` — at α = 3, ε = 1e-10, an atom alone at
+2154·xₘ. The uniform is now drawn on `(0, 1]` by the same shared remap the Box-Muller sites
+use (`git show d247691`): only `u = 0` moves, to `u = 1`, a set of measure zero mapped onto
+another.
+
+**Numeric consequence:** `distributionPareto` is now finite and `>= scale` for every seed. A
+seed of 0 returns `scale` (was `+infinity`); a seed of 1e-300 returns `scale` (was
+`+infinity`). Values for every `u > 1e-7` are bit-for-bit unchanged — `seed: 0.5, shape: 3`
+is still 1.2599210498948732.
+
+The internal helper `boxMullerUniform(seed:)` is renamed `openUnitUniform(seed:)`, since two
+unrelated inverse transforms now share it.
+
+#### Changed (breaking) — `distributionRayleigh`'s parameter is `scale:`, not `mean:`
+
+`distributionRayleigh(mean:seed:)` and `DistributionRayleigh(mean:)` documented their
+parameter as "the mean of the Rayleigh distribution" and computed `mean * boxMullerRadius()`.
+The Box-Muller radius is a *standard* Rayleigh variate, whose mean is `√(π/2)` = 1.2533 — not
+1. So the parameter was the scale σ the whole time.
+
+**Numeric consequence:** none. The arithmetic does not change and no existing call produces a
+different number. What changes is the label, so the build fails where callers must decide.
+Measured over 400,000 seeded draws with the old `mean: 2.0`: sample mean **2.5039** against a
+documented 2.0, a **25.2% overshoot**, and sample variance **1.7175** against
+`(4−π)/2·σ² = 1.7168` — confirming σ = 2 rather than mean = 2. Those are the numbers callers
+have been getting all along; they were correct Rayleigh(2) draws under an incorrect name.
+
+The alternative — keeping `mean:` and dividing by `√(π/2)` — was rejected. It would have
+changed every existing caller's numbers by −20.2% *silently*, because the code would still
+compile. It also would have put Rayleigh at odds with the rest of the family: the scale
+families here take `scale:` (`distributionWeibull(shape:scale:)`, of which Rayleigh is the
+k = 2 case, and `distributionPareto(scale:shape:)`), while `mean:` is reserved for the
+location families where the parameter genuinely is the mean (`distributionNormal(mean:stdDev:)`,
+`distributionLogistic(_:_:seed:)`). Rayleigh has no location parameter at all. The package's
+own Rayleigh tests had already worked this out — they name the argument `scale` and `σ` and
+assert `mean ≈ σ√(π/2)` — so only the label and the prose were ever wrong.
+
+**Migration:** `distributionRayleigh(mean: x)` → `distributionRayleigh(scale: x)` for
+identical results. A caller who genuinely wanted a mean of `m` should pass
+`scale: m / 1.2533141373155003`.
+
+#### Removed (breaking) — the two circular-dependency detectors
+
+`ModelDebugger.detectCircularDependencies(in:)` and `ModelInspector.detectCircularReferences()`
+are deleted, along with the `CircularDependency` struct that existed only as the first one's
+return type.
+
+Neither could detect anything. `detectCircularDependencies(in:)` was `return []`,
+unconditionally, under a comment saying full detection "would need formula parsing".
+`detectCircularReferences()` walked `buildDependencyGraph()` looking for an account listed among
+its own dependencies, but that graph assigns `graph[revenue.name] = []` for every revenue
+component and gives cost components only revenue names, so no entry can ever contain itself: the
+function returned `false` for every model ever passed to it.
+
+That is worse than a wrong number. A user following `1.6-DebuggingGuide` — which taught both
+functions and printed a sample *detected* cycle — was told their model was clean by a function
+that says that about every model, and had no reason to check.
+
+The condition is not currently representable, which is why the fix is retraction rather than
+repair. `FormulaEvaluator` maps account names to already-computed `TimeSeries`, not to formulas,
+and `FinancialModel` holds `RevenueComponent`/`CostComponent`, neither of which carries a
+formula. No account can name another account, so no built model can contain a cycle for a
+detector to find. Real detection needs formula-holding accounts, a graph walk and a fixed-point
+evaluator — a feature, not a bug fix, and not worth blocking the retraction on.
+
+What remains, and is honest:
+
+- `BusinessMathError.circularDependency(path:)` (E201) is **kept**, as caller-facing vocabulary.
+  A user modelling interdependent accounts raises it from their own guard.
+- Its `recoverySuggestion` no longer advises "using an iterative solver" — BusinessMath ships no
+  such type, and never did. It now names `FormulaEvaluator.accountNames(in:)`, which reports a
+  formula's dependencies without evaluating it and is a real building block for a caller-side
+  cycle walk.
+- `ModelDebugger.validate(_:)`'s doc comment claimed circular-dependency detection and period
+  alignment verification among "comprehensive validation". It performs three checks; it now says
+  which three.
+- `1.6-DebuggingGuide`'s "Circular Dependency Detection" section is replaced by "Finding
+  Dependency Cycles", which states plainly that the library does not do this and shows a
+  depth-first walk over your own definitions built on `accountNames(in:)`. The troubleshooting
+  entry points at the same helper. The article's fabricated sample validation output — an
+  `[Error] Circular dependency: Account A → Account B → Account A` that `validate(_:)` cannot
+  emit — is replaced with output it can actually produce.
+
 #### Changed (breaking) — `VectorSpace.Scalar` now requires `BinaryFloatingPoint`
 
 `Real` gives no way to convert a scalar to `Double`. Twenty-three sites across the optimizers,
@@ -1751,7 +1874,8 @@ Added `ModelInspector` for comprehensive financial model analysis:
 
 - **Dependency Analysis**
   - `buildDependencyGraph()` - Visualize component relationships
-  - `detectCircularReferences()` - Find circular dependencies
+  - ~~`detectCircularReferences()` - Find circular dependencies~~ — it never could; removed in
+    [Unreleased], see "Removed (breaking) — the two circular-dependency detectors"
   - `identifyUnusedComponents()` - Locate orphaned components
 
 - **Model Validation**

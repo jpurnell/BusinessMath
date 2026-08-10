@@ -31,9 +31,6 @@ public enum BalanceSheetError: Error, Sendable {
 	/// Wrong account type (expected asset, liability, or equity)
 	// LIVE: public API enum case for consumer error handling
 	case invalidAccountType(expected: AccountType, actual: AccountType)
-
-	/// Accounting equation not satisfied: Assets != Liabilities + Equity
-	case accountingEquationViolation(period: Period, assets: Double, liabilitiesAndEquity: Double)
 }
 
 // MARK: - BalanceSheet
@@ -901,12 +898,11 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 
 // MARK: - Validation
 
-/// The accounting-equation check reports the offending figures as `Double` in its
-/// error, so it needs an exact, total conversion out of the scalar type. `T:
-/// BinaryFloatingPoint` supplies one; `Real` alone does not. Every concrete `Real`
-/// (`Float`, `Double`, `Float80`) satisfies it, so nothing that could call `validate`
-/// before has lost the ability to.
-extension BalanceSheet where T: BinaryFloatingPoint {
+/// The accounting-equation check reports the offending figures in the error message
+/// rather than as `Double` payloads, so it no longer needs an exact conversion out of
+/// the scalar type. The `T: BinaryFloatingPoint` constraint that requirement imposed is
+/// gone; `validate` is now available on every `BalanceSheet`.
+extension BalanceSheet {
 
 	/// Validates the accounting equation: Assets = Liabilities + Equity.
 	///
@@ -914,8 +910,9 @@ extension BalanceSheet where T: BinaryFloatingPoint {
 	/// within the specified tolerance.
 	///
 	/// - Parameter tolerance: Maximum acceptable difference
-	/// - Throws: ``BalanceSheetError/accountingEquationViolation(period:assets:liabilitiesAndEquity:)``
-	///   if the equation is violated for any period
+	/// - Throws: ``BusinessMathError/inconsistentData(description:)`` (E202) for the first period
+	///   where the equation is violated. The message carries the period, both sides of the
+	///   equation, the difference and the tolerance it exceeded.
 	///
 	/// ## Example
 	/// ```swift
@@ -937,10 +934,8 @@ extension BalanceSheet where T: BinaryFloatingPoint {
 			let difference = abs(assetValue - liabilitiesAndEquity)
 
 			if difference > tolerance {
-				throw BalanceSheetError.accountingEquationViolation(
-					period: period,
-					assets: Double(assetValue),
-					liabilitiesAndEquity: Double(liabilitiesAndEquity)
+				throw BusinessMathError.inconsistentData(
+					description: "Accounting equation violated for \(period.label): assets \(assetValue) ≠ liabilities plus equity \(liabilitiesAndEquity) (difference \(difference), tolerance \(tolerance))"
 				)
 			}
 		}

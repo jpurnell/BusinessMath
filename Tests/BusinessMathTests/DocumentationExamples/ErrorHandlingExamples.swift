@@ -87,6 +87,27 @@ struct ErrorHandlingExamples {
         }
     }
 
+    @Test("E004: Numerical Instability - IRR with a vanishing derivative")
+    func numericalInstabilityIRR() throws {
+        // Source: ErrorHandlingGuide.md - Numerical Instability section
+        // A single inflow 400 periods out: at the default 10% guess the discount factor is
+        // ~1e16, so dNPV/dr underflows the step floor while NPV is still ~-1.
+        let distantPayoff: [Double] = [-1.0] + Array(repeating: 0.0, count: 399) + [1000.0]
+
+        do {
+            _ = try irr(cashFlows: distantPayoff)
+            Issue.record("Should have thrown")
+        } catch let error as BusinessMathError {
+            if case .numericalInstability(let message, let suggestions) = error {
+                #expect(error.code == "E004")
+                #expect(message.contains("Derivative"))
+                #expect(!suggestions.isEmpty)
+            } else {
+                Issue.record("Wrong error type: \(error)")
+            }
+        }
+    }
+
     // MARK: - Data Errors (E100-E199)
 
     @Test("E100: Mismatched Dimensions - TimeSeries")

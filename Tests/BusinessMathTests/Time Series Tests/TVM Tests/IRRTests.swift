@@ -179,6 +179,28 @@ struct IRRTests {
 		}
 	}
 
+	@Test("IRR reports a vanishing derivative as numerical instability, not calculation failure")
+	func irrVanishingDerivativeIsNumericalInstability() throws {
+		// A single distant inflow: at the default guess of 10% the discount factor
+		// (1.1)^400 is ~1e16, so dNPV/dr collapses below the 1e-6 floor while NPV is
+		// still ~-1. The Newton step is undefined — that is instability, not a
+		// calculation that merely failed to finish.
+		let cashFlows: [Double] = [-1.0] + Array(repeating: 0.0, count: 399) + [1000.0]
+
+		do {
+			_ = try irr(cashFlows: cashFlows)
+			Issue.record("Expected irr to throw on a vanishing derivative")
+		} catch let error as BusinessMathError {
+			guard case .numericalInstability(let message, let suggestions) = error else {
+				Issue.record("Expected .numericalInstability, got \(error)")
+				return
+			}
+			#expect(message.contains("Derivative"))
+			#expect(!suggestions.isEmpty)
+			#expect(error.code == "E004")
+		}
+	}
+
 	// MARK: - Real-World Scenarios
 
 	@Test("Real estate investment IRR")

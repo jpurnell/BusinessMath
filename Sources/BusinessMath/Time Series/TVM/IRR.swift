@@ -80,6 +80,9 @@ import Numerics
 /// ## Error Cases
 /// - Throws `.insufficientData` if fewer than 2 cash flows provided.
 /// - Throws `.calculationFailed` if all cash flows are positive or all negative.
+/// - Throws `.numericalInstability` (E004) if the NPV derivative collapses below 1e-6, which makes
+///   the Newton-Raphson step undefined. Typically a single cash flow far enough in the future that
+///   its discount factor dominates.
 /// - Throws `.calculationFailed` if Newton-Raphson doesn't converge within max iterations.
 public func irr<T: Real>(
 	cashFlows: [T],
@@ -133,9 +136,8 @@ public func irr<T: Real>(
 		// Avoid division by zero
 		let minDerivative = T(1) / T(1000000)  // 0.000001
 		guard abs(derivative) > minDerivative else {
-			throw BusinessMathError.calculationFailed(
-				operation: "IRR",
-				reason: "Derivative too small - numerical instability detected",
+			throw BusinessMathError.numericalInstability(
+				message: "IRR: Derivative of NPV is too small at rate \(rate) - the Newton-Raphson step is numerically unstable",
 				suggestions: [
 					"Try a different initial guess (current: \(actualGuess))",
 					"Check if cash flows have unusual patterns that might cause instability",

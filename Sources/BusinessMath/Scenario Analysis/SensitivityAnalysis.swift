@@ -742,7 +742,16 @@ public struct TornadoDiagramAnalysis: Sendable {
 ///
 /// - Returns: A ``TornadoDiagramAnalysis`` with inputs ranked by impact.
 ///
-/// - Throws: Any errors from the builder function.
+/// - Throws: ``BusinessMathError/invalidDriver(name:reason:)`` (E200) if any name in `inputDrivers`
+///   is absent from `baseCase.driverOverrides`. The check runs before any projection, and the
+///   error names every absent driver, not only the first. Also rethrows any error from `builder`.
+///
+/// ## Unknown driver names
+/// A tornado diagram is a *ranked comparison*: every bar is only meaningful relative to the others.
+/// A driver that cannot be varied therefore has no defensible representation — omitting it yields a
+/// chart that looks complete and is missing a bar, and a zero-height bar asserts "this driver does
+/// not matter", which is a different and worse claim. So a name that is not in the base case is
+/// rejected outright.
 ///
 /// ## Example
 /// ```swift
@@ -785,6 +794,21 @@ public func runTornadoAnalysis(
 	builder: @escaping ScenarioRunner.StatementBuilder,
 	outputExtractor: @Sendable @escaping (FinancialProjection) -> Double
 ) throws -> TornadoDiagramAnalysis {
+	// Reject unknown driver names before doing any work. Every name is checked, so a
+	// caller with several typos learns about all of them from one run rather than one
+	// per run; the first unknown name carries the typed payload.
+	let unknownDrivers = inputDrivers.filter { baseCase.driverOverrides[$0] == nil }
+	if let firstUnknown = unknownDrivers.first {
+		let available = baseCase.driverOverrides.keys.sorted().joined(separator: ", ")
+		let missing = unknownDrivers.joined(separator: ", ")
+		throw BusinessMathError.invalidDriver(
+			name: firstUnknown,
+			reason: unknownDrivers.count == 1
+				? "not present in scenario '\(baseCase.name)'. Available drivers: \(available)"
+				: "not present in scenario '\(baseCase.name)'. Unknown names: \(missing). Available drivers: \(available)"
+		)
+	}
+
 	// Run base case to get baseline output
 	let runner = ScenarioRunner()
 	let baseProjection = try runner.run(
@@ -801,9 +825,14 @@ public func runTornadoAnalysis(
 	var highValues: [String: Double] = [:]
 
 	for inputDriver in inputDrivers {
-		// Get base value for this input
+		// Get base value for this input. The pre-flight check above guarantees the
+		// lookup succeeds; rethrowing rather than skipping keeps that guarantee from
+		// silently degrading into a dropped bar if the check is ever moved.
 		guard let baseDriverAny = baseCase.driverOverrides[inputDriver] else {
-			continue
+			throw BusinessMathError.invalidDriver(
+				name: inputDriver,
+				reason: "not present in scenario '\(baseCase.name)'"
+			)
 		}
 		let baseValue = baseDriverAny.sample(for: periods[0])
 
