@@ -22,7 +22,7 @@ public protocol FinancialValidationRule {
 // MARK: - ValidationReport
 
 /// A comprehensive report of validation results.
-public struct ValidationReport {
+public struct ValidationReport: Sendable {
 	/// Whether the validation passed (no errors).
 	public let isValid: Bool
 
