@@ -177,24 +177,6 @@ public struct ModelInspector: Sendable {
         return graph
     }
 
-    /// Detect circular references in the model
-    ///
-    /// - Returns: True if circular references are detected
-    public func detectCircularReferences() -> Bool {
-        // Current model structure doesn't allow circular references
-        // This is a placeholder for more complex models
-        let graph = buildDependencyGraph()
-
-        // Simple check: if any component depends on itself directly
-        for (component, dependencies) in graph {
-            if dependencies.contains(component) {
-                return true
-            }
-        }
-
-        return false
-    }
-
     // MARK: - Unused Component Detection
 
     /// Identify components that are defined but not used
