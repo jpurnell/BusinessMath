@@ -114,6 +114,18 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
     /// Step size for numerical gradient.
     public let stepSize: T
 
+    /// The clock that stamps each emitted ``AsyncOptimizationProgress``.
+    ///
+    /// Read afresh at every emission rather than captured once at entry: a progress
+    /// stream reports a *sequence* of moments, and each yielded update is its own
+    /// logical operation. Capturing one reading would give every update on a real clock
+    /// the same timestamp, which is the opposite of what the field is for.
+    ///
+    /// This clock does **not** drive the progress-reporting *interval* — that is
+    /// `ContinuousClock`, a monotonic source, because an interval measured by
+    /// differencing wall-clock readings can go backwards under an NTP correction.
+    public let clock: any WallClock
+
     // MARK: - Initialization
 
     /// Creates an async gradient descent optimizer.
@@ -125,13 +137,15 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
     ///   - momentum: Momentum coefficient. Defaults to 0.9.
     ///   - useNesterov: Whether to use Nesterov Accelerated Gradient. Defaults to false.
     ///   - stepSize: Step size for numerical gradient. Defaults to 0.0001.
+    ///   - clock: Stamps each emitted progress update. Defaults to the system clock.
     public init(
         learningRate: T,
         tolerance: T,
         maxIterations: Int = 1000,
         momentum: T,
         useNesterov: Bool = false,
-        stepSize: T
+        stepSize: T,
+        clock: any WallClock = SystemWallClock()
     ) {
         // Check momentum bounds (clamp to valid range)
         let maxMomentum = T(797734375) / T(1000000000)
@@ -143,6 +157,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
         self.momentum = clampedMomentum
         self.useNesterov = useNesterov
         self.stepSize = stepSize
+        self.clock = clock
     }
 
     // MARK: - AsyncOptimizer Protocol
@@ -206,7 +221,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
                     objectiveValue: previousObjective,
                     gradient: nil,
                     hasConverged: false,
-                    timestamp: Date(),
+                    timestamp: clock.now,
                     phase: .initialization
                 )
                 continuation.yield(initialProgress)
@@ -244,7 +259,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
                             objectiveValue: currentObjective,
                             gradient: gradient,
                             hasConverged: false,
-                            timestamp: Date(),
+                            timestamp: clock.now,
                             phase: .optimization
                         )
                         continuation.yield(progress)
@@ -260,7 +275,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
                             objectiveValue: currentObjective,
                             gradient: gradient,
                             hasConverged: true,
-                            timestamp: Date(),
+                            timestamp: clock.now,
                             phase: .finalization
                         )
                         continuation.yield(finalProgress)
@@ -326,7 +341,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
                             objectiveValue: currentObjective,
                             gradient: gradient,
                             hasConverged: false,
-                            timestamp: Date(),
+                            timestamp: clock.now,
                             phase: .finalization
                         )
                         continuation.yield(finalProgress)
@@ -343,7 +358,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
                             objectiveValue: objective(x),
                             gradient: gradient,
                             hasConverged: true,
-                            timestamp: Date(),
+                            timestamp: clock.now,
                             phase: .finalization
                         )
                         continuation.yield(finalProgress)
@@ -362,7 +377,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
                     objectiveValue: objective(x),
                     gradient: numericalGradient(objective, at: x),
                     hasConverged: converged,
-                    timestamp: Date(),
+                    timestamp: clock.now,
                     phase: .finalization
                 )
                 continuation.yield(finalProgress)
@@ -481,13 +496,15 @@ extension AsyncGradientDescentOptimizer where T == Double {
     ///   - momentum: Momentum coefficient. Defaults to 0.797734375.
     ///   - useNesterov: Whether to use Nesterov Accelerated Gradient. Defaults to false.
     ///   - stepSize: Step size for numerical gradient. Defaults to 0.0001.
+    ///   - clock: Stamps each emitted progress update. Defaults to the system clock.
     public init(
         learningRate: Double = 0.01,
         tolerance: Double = 0.0001,
         maxIterations: Int = 1000,
         momentum: Double = 797734375.0 / 1000000000.0,
         useNesterov: Bool = false,
-        stepSize: Double = 0.0001
+        stepSize: Double = 0.0001,
+        clock: any WallClock = SystemWallClock()
     ) {
         let maxMomentum = 797734375.0 / 1000000000.0
         let clampedMomentum = max(0.0, min(momentum, maxMomentum))
@@ -497,5 +514,6 @@ extension AsyncGradientDescentOptimizer where T == Double {
         self.momentum = clampedMomentum
         self.useNesterov = useNesterov
         self.stepSize = stepSize
+        self.clock = clock
     }
 }

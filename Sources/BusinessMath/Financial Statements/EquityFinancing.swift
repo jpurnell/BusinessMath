@@ -178,11 +178,25 @@ public struct CapTable {
     /// - Later stage: 5-10% of fully diluted shares
     public var optionPool: Double
 
+    /// The clock that stamps `investmentDate` on shareholders this table creates.
+    ///
+    /// Round modelling mints new shareholders — an option grantee, a round investor, a
+    /// down-round investor — and each records the moment it was created. Left to its
+    /// default this is the system clock, exactly as before; supplied a
+    /// ``FixedWallClock`` it makes those dates an exact, assertable value.
+    ///
+    /// Carried through every table this one derives, so a clock injected once survives
+    /// a chain of rounds rather than being silently replaced at the first intermediate
+    /// `CapTable`.
+    public var clock: any WallClock
+
     /// Creates a cap table with shareholders and an option pool.
     ///
     /// - Parameters:
     ///   - shareholders: Array of shareholders with their ownership details
     ///   - optionPool: Number of shares reserved for employee options
+    ///   - clock: Supplies the `investmentDate` for shareholders this table creates.
+    ///     Defaults to the system clock.
     ///
     /// ## Usage Example
     /// ```swift
@@ -196,9 +210,14 @@ public struct CapTable {
     ///     optionPool: 2_000_000  // 16.7% option pool
     /// )
     /// ```
-    public init(shareholders: [Shareholder], optionPool: Double) {
+    public init(
+        shareholders: [Shareholder],
+        optionPool: Double,
+        clock: any WallClock = SystemWallClock()
+    ) {
         self.shareholders = shareholders
         self.optionPool = optionPool
+        self.clock = clock
     }
 
     /// Total shares outstanding (including option pool)
@@ -263,13 +282,14 @@ public struct CapTable {
         let newShareholder = Shareholder(
             name: recipient,
             shares: shares,
-            investmentDate: Date(),
+            investmentDate: clock.now,
             pricePerShare: strikePrice
         )
 
         return CapTable(
             shareholders: shareholders + [newShareholder],
-            optionPool: optionPool - shares
+            optionPool: optionPool - shares,
+            clock: clock
         )
     }
 
@@ -291,7 +311,7 @@ public struct CapTable {
         let investor = Shareholder(
             name: "Down Round Investor",
             shares: investorShares,
-            investmentDate: Date(),
+            investmentDate: clock.now,
             pricePerShare: pricePerShare
         )
 
@@ -299,7 +319,8 @@ public struct CapTable {
         // For now, simple dilution
         return CapTable(
             shareholders: shareholders + [investor],
-            optionPool: optionPool
+            optionPool: optionPool,
+            clock: clock
         )
     }
 
@@ -376,7 +397,7 @@ public struct CapTable {
         let investor = Shareholder(
             name: investorName,
             shares: investorShares,
-            investmentDate: Date(),
+            investmentDate: clock.now,
             pricePerShare: pricePerShare
         )
 
@@ -401,7 +422,8 @@ public struct CapTable {
 
         return CapTable(
             shareholders: shareholders + [investor],
-            optionPool: newOptionPool
+            optionPool: newOptionPool,
+            clock: clock
         )
     }
 }

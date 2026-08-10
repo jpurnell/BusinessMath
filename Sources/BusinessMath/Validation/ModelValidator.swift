@@ -105,13 +105,26 @@ public struct ModelValidator<T> where T: Real & Sendable & Codable & Comparable 
 	/// Custom financial validation rules.
 	private let financialRules: [any FinancialValidationRule]
 
+	/// The clock that stamps the ``ValidationReport`` this validator returns.
+	///
+	/// A report's `timestamp` made the returned value depend on the moment validation
+	/// ran, so two runs over identical input were never equal. Supplying a
+	/// ``FixedWallClock`` makes them so.
+	public let clock: any WallClock
+
 	// MARK: - Initialization
 
 	/// Creates a model validator.
 	///
-	/// - Parameter financialRules: Optional custom financial validation rules.
-	public init(financialRules: [any FinancialValidationRule] = []) {
+	/// - Parameters:
+	///   - financialRules: Optional custom financial validation rules.
+	///   - clock: Stamps the reports this validator returns. Defaults to the system clock.
+	public init(
+		financialRules: [any FinancialValidationRule] = [],
+		clock: any WallClock = SystemWallClock()
+	) {
 		self.financialRules = financialRules
+		self.clock = clock
 	}
 
 	// MARK: - Validation
@@ -206,7 +219,7 @@ public struct ModelValidator<T> where T: Real & Sendable & Codable & Comparable 
 			errors: allErrors,
 			warnings: allWarnings,
 			summary: summary,
-			timestamp: Date()
+			timestamp: clock.now
 		)
 	}
 }

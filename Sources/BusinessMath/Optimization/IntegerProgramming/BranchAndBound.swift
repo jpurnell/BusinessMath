@@ -374,7 +374,10 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             }
         }
 
-        let startTime = Date()
+        // Monotonic: every use below is an elapsed interval or a time-limit check, and a
+        // wall clock can be adjusted mid-solve. See ``Duration/inSeconds``.
+        let clock = ContinuousClock()
+        let startTime = clock.now
         var queue = NodeQueue<V>(strategy: nodeSelection, minimize: minimize)
         var incumbent: (solution: V, value: Double)? = nil
         var bestBound = minimize ? -Double.infinity : Double.infinity
@@ -434,7 +437,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 relativeGap: .infinity,
                 nodesExplored: nodesExplored,
                 status: .infeasible,  // No integer solutions found
-                solveTime: Date().timeIntervalSince(startTime),
+                solveTime: (clock.now - startTime).inSeconds,
                 integerSpec: integerSpec,
                 cuttingPlaneStats: nil
             )
@@ -473,13 +476,13 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     relativeGap: gap,
                     nodesExplored: nodesExplored,
                     status: .nodeLimit,
-                    solveTime: Date().timeIntervalSince(startTime),
+                    solveTime: (clock.now - startTime).inSeconds,
                     integerSpec: integerSpec,
                     cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
                 )
             }
 
-            if Date().timeIntervalSince(startTime) > timeLimit {
+            if (clock.now - startTime) > .seconds(timeLimit) {
                 let gap = incumbent.map { abs($0.value - bestBound) / max(abs($0.value), 1.0) } ?? .infinity
 
                 // Unshift solution if variable shifting was applied
@@ -497,7 +500,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     relativeGap: gap,
                     nodesExplored: nodesExplored,
                     status: .timeLimit,
-                    solveTime: Date().timeIntervalSince(startTime),
+                    solveTime: (clock.now - startTime).inSeconds,
                     integerSpec: integerSpec,
                     cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
                 )
@@ -549,7 +552,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             relativeGap: gap,
                             nodesExplored: nodesExplored,
                             status: .optimal,
-                            solveTime: Date().timeIntervalSince(startTime),
+                            solveTime: (clock.now - startTime).inSeconds,
                             integerSpec: integerSpec,
                     cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
                         )
@@ -597,7 +600,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             relativeGap: gap,
                             nodesExplored: nodesExplored,
                             status: .optimal,
-                            solveTime: Date().timeIntervalSince(startTime),
+                            solveTime: (clock.now - startTime).inSeconds,
                             integerSpec: integerSpec,
                             cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
                         )
@@ -683,7 +686,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 relativeGap: .infinity,
                 nodesExplored: nodesExplored,
                 status: .infeasible,
-                solveTime: Date().timeIntervalSince(startTime),
+                solveTime: (clock.now - startTime).inSeconds,
                 integerSpec: integerSpec,
                     cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
             )
@@ -739,7 +742,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             relativeGap: gap,
             nodesExplored: nodesExplored,
             status: status,
-            solveTime: Date().timeIntervalSince(startTime),
+            solveTime: (clock.now - startTime).inSeconds,
             integerSpec: integerSpec,
             cuttingPlaneStats: stats
         )
