@@ -38,11 +38,17 @@ public struct TraceStep: Sendable {
     ///   - category: The category of calculation (revenue, costs, or profit).
     ///   - description: Human-readable description of this calculation step.
     ///   - value: The calculated value, or nil if not applicable.
-    public init(category: TraceCategory, description: String, value: Double?) {
+    ///   - clock: Supplies this step's timestamp. Defaults to the system clock.
+    public init(
+        category: TraceCategory,
+        description: String,
+        value: Double?,
+        clock: any WallClock = SystemWallClock()
+    ) {
         self.category = category
         self.description = description
         self.value = value
-        self.timestamp = Date()
+        self.timestamp = clock.now
     }
 }
 
@@ -79,6 +85,12 @@ public final class CalculationTrace: Sendable {
     /// Recorded calculation steps
     private let _steps: ThreadSafeArray<TraceStep>
 
+    /// The clock that stamps every ``TraceStep`` this trace records.
+    ///
+    /// Read afresh per step rather than once per trace: the steps are a sequence of
+    /// moments, and collapsing them to one reading would misreport a real clock.
+    public let clock: any WallClock
+
     /// Access to recorded calculation steps
     public var steps: [TraceStep] {
         _steps.array
@@ -91,10 +103,13 @@ public final class CalculationTrace: Sendable {
     /// The trace starts empty. Call calculation methods like ``calculateProfit()`` to
     /// populate the trace with calculation steps.
     ///
-    /// - Parameter model: The financial model to trace.
-    public init(model: FinancialModel) {
+    /// - Parameters:
+    ///   - model: The financial model to trace.
+    ///   - clock: Stamps each recorded step. Defaults to the system clock.
+    public init(model: FinancialModel, clock: any WallClock = SystemWallClock()) {
         self.model = model
         self._steps = ThreadSafeArray<TraceStep>()
+        self.clock = clock
     }
 
     // MARK: - Calculation Methods with Tracing
@@ -110,14 +125,16 @@ public final class CalculationTrace: Sendable {
             _steps.append(TraceStep(
                 category: .revenue,
                 description: "Revenue: \(component.name) = $\(amount.currency())",
-                value: amount
+                value: amount,
+                clock: clock
             ))
         }
 
         _steps.append(TraceStep(
             category: .revenue,
             description: "Total Revenue = $\(total.currency())",
-            value: total
+            value: total,
+            clock: clock
         ))
 
         return total
@@ -142,14 +159,16 @@ public final class CalculationTrace: Sendable {
             _steps.append(TraceStep(
                 category: .costs,
                 description: "Cost (\(typeDescription)): \(component.name) = $\(amount.currency())",
-                value: amount
+                value: amount,
+                clock: clock
             ))
         }
 
         _steps.append(TraceStep(
             category: .costs,
             description: "Total Costs = $\(total.currency())",
-            value: total
+            value: total,
+            clock: clock
         ))
 
         return total
@@ -164,7 +183,8 @@ public final class CalculationTrace: Sendable {
         _steps.append(TraceStep(
             category: .profit,
             description: "Profit = Revenue (\(revenue.currency())) - Costs (\(costs.currency())) = \(profit.currency())",
-            value: profit
+            value: profit,
+            clock: clock
         ))
 
         return profit

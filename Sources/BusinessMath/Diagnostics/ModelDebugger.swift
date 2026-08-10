@@ -40,7 +40,26 @@ final class DebugContext: @unchecked Sendable {
         isEnabled = false
     }
 
-    func recordStep(operation: String, input: String, output: String) {
+    /// Records one traced step, stamped by `clock`.
+    ///
+    /// The clock is a parameter rather than stored state because this context is a
+    /// process-wide singleton: a stored, settable clock would be global mutable state
+    /// shared across every test in the suite, which is a worse problem than the one it
+    /// solves. Callers in production omit it and get the system clock.
+    ///
+    /// - Parameters:
+    ///   - operation: The operation being recorded.
+    ///   - input: A rendering of the operation's inputs.
+    ///   - output: A rendering of the operation's result.
+    ///   - clock: Supplies the step's timestamp. Defaults to the system clock.
+    func recordStep(
+        operation: String,
+        input: String,
+        output: String,
+        clock: any WallClock = SystemWallClock()
+    ) {
+        let now = clock.now
+
         lock.lock()
         defer { lock.unlock() }
         guard isEnabled else { return }
@@ -54,7 +73,7 @@ final class DebugContext: @unchecked Sendable {
             operation: operation,
             input: input,
             output: output,
-            timestamp: Date()
+            timestamp: now
         ))
     }
 
@@ -110,8 +129,23 @@ public actor ModelDebugger {
     private let logger = Logger.validation
     #endif
 
-    /// Initialize a new model debugger
-    public init() {}
+    /// The clock that stamps the reports this debugger returns.
+    ///
+    /// Every report type here carries a `timestamp`, which made each returned value
+    /// depend on when it was produced. Supplying a ``FixedWallClock`` pins it.
+    ///
+    /// Note that this clock is *not* used for the `duration` recorded by the `trace`
+    /// methods. A duration is elapsed time, and differencing two wall-clock readings is
+    /// the wrong way to obtain one whoever supplies them.
+    public let clock: any WallClock
+
+    /// Initialize a new model debugger.
+    ///
+    /// - Parameter clock: Stamps the reports this debugger returns. Defaults to the
+    ///   system clock.
+    public init(clock: any WallClock = SystemWallClock()) {
+        self.clock = clock
+    }
 
     // MARK: - Calculation Tracing
 
@@ -136,7 +170,13 @@ public actor ModelDebugger {
         value: String,
         calculation: () throws -> T
     ) -> DebugTrace<T> where T: Sendable {
-        let start = Date()
+        // The moment recorded on the returned trace: read once, so both the success and
+        // the failure path report the same instant.
+        let startedAt = clock.now
+        // A separate, monotonic anchor for `duration`: an interval must not come from
+        // differencing wall-clock readings, which an NTP correction can move backwards.
+        let timer = ContinuousClock()
+        let start = timer.now
 
         do {
             #if canImport(OSLog)
@@ -144,7 +184,7 @@ public actor ModelDebugger {
             #endif
 
             let result = try calculation()
-            let duration = Date().timeIntervalSince(start)
+            let duration = (timer.now - start).inSeconds
 
             #if canImport(OSLog)
             logger.calculationCompleted(value, result: result, duration: duration)
@@ -155,10 +195,10 @@ public actor ModelDebugger {
                 result: result,
                 error: nil,
                 duration: duration,
-                timestamp: start
+                timestamp: startedAt
             )
         } catch {
-            let duration = Date().timeIntervalSince(start)
+            let duration = (timer.now - start).inSeconds
 
             #if canImport(OSLog)
             logger.calculationFailed(value, error: error)
@@ -169,7 +209,7 @@ public actor ModelDebugger {
                 result: nil,
                 error: error,
                 duration: duration,
-                timestamp: start
+                timestamp: startedAt
             )
         }
     }
@@ -203,14 +243,18 @@ public actor ModelDebugger {
         formula: String,
         calculation: () throws -> T
     ) throws -> DetailedDebugTrace<T> where T: Sendable {
-        let start = Date()
+        // Recorded on the returned trace.
+        let startedAt = clock.now
+        // Monotonic anchor for `duration` — see the sibling `trace` above.
+        let timer = ContinuousClock()
+        let start = timer.now
 
         #if canImport(OSLog)
         logger.calculationStarted(value, context: dependencies)
         #endif
 
         let result = try calculation()
-        let duration = Date().timeIntervalSince(start)
+        let duration = (timer.now - start).inSeconds
 
         #if canImport(OSLog)
         logger.calculationCompleted(value, result: result, duration: duration)
@@ -222,7 +266,7 @@ public actor ModelDebugger {
             formula: formula,
             dependencies: dependencies,
             duration: duration,
-            timestamp: start
+            timestamp: startedAt
         )
     }
 
@@ -307,7 +351,7 @@ public actor ModelDebugger {
         }
 
         return DiagnosticReport(
-            timestamp: Date(),
+            timestamp: clock.now,
             modelName: context,
             issues: issues,
             warnings: warnings,
@@ -352,7 +396,7 @@ public actor ModelDebugger {
         }
 
         return DebugValidationReport(
-            timestamp: Date(),
+            timestamp: clock.now,
             fieldName: name,
             value: value,
             errors: errors
@@ -551,7 +595,7 @@ public actor ModelDebugger {
             errors: errors,
             warnings: warnings,
             summary: summary,
-            timestamp: Date()
+            timestamp: clock.now
         )
     }
 
@@ -682,7 +726,7 @@ public actor ModelDebugger {
         let entityName = model.entity?.name ?? "Financial Model"
 
         return ModelSnapshot(
-            timestamp: Date(),
+            timestamp: clock.now,
             modelName: entityName,
             revenueAccounts: revenueSnapshots,
             expenseAccounts: expenseSnapshots,

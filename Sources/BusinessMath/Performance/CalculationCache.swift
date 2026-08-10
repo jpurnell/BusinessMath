@@ -182,17 +182,37 @@ public final class CalculationCache: @unchecked Sendable {
 	private let maxSize: Int
 	private let ttl: TimeInterval
 	private var nextAccessId: UInt64 = 0
-	
+
+	/// The clock that decides whether an entry has outlived its TTL.
+	///
+	/// This is the one place in BusinessMath where behaviour depends on time *passing*
+	/// rather than on a single recorded instant, so it is the one place a
+	/// ``ManualWallClock`` earns its keep: `advance(by:)` steps a test past the TTL
+	/// boundary without sleeping for it, which would be both slow and dependent on how
+	/// loaded the machine is.
+	///
+	/// It stays a `WallClock` rather than a monotonic clock because an entry's age is
+	/// compared against a `createdAt` that is itself a `Date` — the two readings must
+	/// come from the same timeline.
+	private let clock: any WallClock
+
 	/// Creates a calculation cache with specified size and TTL limits.
 	///
 	/// - Parameters:
 	///   - maxSize: Maximum number of cached entries (default: 1000)
 	///   - ttl: Time-to-live for cached values in seconds (default: 300 = 5 minutes)
 	///   - seenKeysCapacity: Maximum size of admission history (default: max(maxSize, maxSize * 10))
-	public init(maxSize: Int = 1000, ttl: TimeInterval = 300, seenKeysCapacity: Int? = nil) {
+	///   - clock: Decides when an entry has outlived its TTL. Defaults to the system clock.
+	public init(
+		maxSize: Int = 1000,
+		ttl: TimeInterval = 300,
+		seenKeysCapacity: Int? = nil,
+		clock: any WallClock = SystemWallClock()
+	) {
 		self.maxSize = maxSize
 		self.ttl = ttl
 		self.seenKeysCap = seenKeysCapacity ?? max(maxSize, maxSize * 10)
+		self.clock = clock
 	}
 	
 	private func bumpAccessId() -> UInt64 {
@@ -240,7 +260,9 @@ public final class CalculationCache: @unchecked Sendable {
 	// LIVE: core cache API used by financial model computation pipelines
 	public func getOrCalculate<T: Sendable>(key: String, calculation: () -> T) -> T {
 		lock.lock()
-		let now = Date()
+		// One reading for the whole operation: the age check, the post-wait recheck and
+		// the `createdAt` of anything admitted must all agree on when "now" was.
+		let now = clock.now
 
 		// 1) Cache hit path
 		if var entry = cache[key] {
@@ -419,17 +441,26 @@ actor CalculationCacheAsync {
 		return nextAccessId
 	}
 	
-	init(maxSize: Int = 1000, ttl: TimeInterval = 300, seenKeysCapacity: Int? = nil) {
+	/// Decides when an entry has outlived its TTL — see ``CalculationCache/clock``.
+	private let clock: any WallClock
+
+	init(
+		maxSize: Int = 1000,
+		ttl: TimeInterval = 300,
+		seenKeysCapacity: Int? = nil,
+		clock: any WallClock = SystemWallClock()
+	) {
 		self.maxSize = maxSize
 		self.ttl = ttl
 		self.seenKeysCap = seenKeysCapacity ?? max(maxSize, maxSize * 10)
+		self.clock = clock
 	}
 	
 		// MARK: - Public API
 	
 	func getOrCalculate<T: Sendable>(key: String, calculation: @Sendable () async -> T) async -> T {
 		let k = augmentedKey(key, T.self)
-		let now = Date()
+		let now = clock.now
 		
 			// 1) Fast hit path
 		if var entry = cache[k], now.timeIntervalSince(entry.createdAt) < ttl, let value = entry.value as? T {
@@ -444,7 +475,7 @@ actor CalculationCacheAsync {
 				inflight[k]?.waiters.append(cont)
 			}
 				// After leader signals, prefer cached value
-			if var entry = cache[k], Date().timeIntervalSince(entry.createdAt) < ttl, let value = entry.value as? T {
+			if var entry = cache[k], clock.now.timeIntervalSince(entry.createdAt) < ttl, let value = entry.value as? T {
 				entry.lastAccessId = bumpAccessId()
 				cache[k] = entry
 				return value
@@ -468,7 +499,7 @@ actor CalculationCacheAsync {
 		inflight[k] = InflightEntry()
 		let value = await calculation()
 		
-		await admitIfNeeded(key: k, value: value, now: Date())
+		await admitIfNeeded(key: k, value: value, now: clock.now)
 		
 			// Publish result to waiters
 		if var entry = inflight[k] {
@@ -575,7 +606,7 @@ actor CalculationCacheAsync {
 		if inflight[key] == nil {
 			inflight[key] = InflightEntry()
 			let value = await calc()
-			await admitIfNeeded(key: key, value: value, now: Date())
+			await admitIfNeeded(key: key, value: value, now: clock.now)
 			
 			if var entry = inflight[key] {
 				entry.result = value
@@ -595,7 +626,7 @@ actor CalculationCacheAsync {
 			inflight[key]?.waiters.append(cont)
 		}
 		
-		if var entry = cache[key], Date().timeIntervalSince(entry.createdAt) < ttl, let value = entry.value as? T {
+		if var entry = cache[key], clock.now.timeIntervalSince(entry.createdAt) < ttl, let value = entry.value as? T {
 			entry.lastAccessId = bumpAccessId()
 			cache[key] = entry
 			return value
@@ -612,7 +643,7 @@ actor CalculationCacheAsync {
 		
 			// Final fallback
 		let value = await calc()
-		await admitIfNeeded(key: key, value: value, now: Date())
+		await admitIfNeeded(key: key, value: value, now: clock.now)
 		return value
 	}
 }

@@ -58,8 +58,20 @@ public actor ModelProfiler {
     /// Performance threshold for warnings (in seconds)
     private var warningThreshold: TimeInterval = 1.0
 
-    /// Initialize a new profiler
-    public init() {}
+    /// The clock that stamps the reports this profiler returns.
+    ///
+    /// Used only for the `timestamp` on ``PerformanceReport`` — the moment the report
+    /// was produced. The *durations* the report summarises are elapsed time and are not
+    /// measured with this clock; see ``measure(operation:category:block:)``.
+    public let clock: any WallClock
+
+    /// Initialize a new profiler.
+    ///
+    /// - Parameter clock: Stamps the reports this profiler returns. Defaults to the
+    ///   system clock.
+    public init(clock: any WallClock = SystemWallClock()) {
+        self.clock = clock
+    }
 
     // MARK: - Performance Measurement
 
@@ -85,12 +97,17 @@ public actor ModelProfiler {
         category: String? = nil,
         block: @Sendable () throws -> T
     ) rethrows -> T {
-        let start = Date()
+        // The moment recorded on the metric.
+        let startedAt = clock.now
+        // A separate, monotonic anchor for `duration`: an interval must not come from
+        // differencing wall-clock readings, which an NTP correction can move backwards.
+        let timer = ContinuousClock()
+        let start = timer.now
         let startMemory = currentMemoryUsage()
 
         let result = try block()
 
-        let duration = Date().timeIntervalSince(start)
+        let duration = (timer.now - start).inSeconds
         let endMemory = currentMemoryUsage()
         let memoryDelta = endMemory - startMemory
 
@@ -99,7 +116,7 @@ public actor ModelProfiler {
             category: category,
             duration: duration,
             memoryUsed: memoryDelta,
-            timestamp: start
+            timestamp: startedAt
         )
 
         // Store metric
@@ -135,12 +152,17 @@ public actor ModelProfiler {
         category: String? = nil,
         block: @Sendable () async throws -> T
     ) async rethrows -> T {
-        let start = Date()
+        // The moment recorded on the metric.
+        let startedAt = clock.now
+        // A separate, monotonic anchor for `duration`: an interval must not come from
+        // differencing wall-clock readings, which an NTP correction can move backwards.
+        let timer = ContinuousClock()
+        let start = timer.now
         let startMemory = currentMemoryUsage()
 
         let result = try await block()
 
-        let duration = Date().timeIntervalSince(start)
+        let duration = (timer.now - start).inSeconds
         let endMemory = currentMemoryUsage()
         let memoryDelta = endMemory - startMemory
 
@@ -149,7 +171,7 @@ public actor ModelProfiler {
             category: category,
             duration: duration,
             memoryUsed: memoryDelta,
-            timestamp: start
+            timestamp: startedAt
         )
 
         if metrics[operation] == nil {
@@ -227,7 +249,7 @@ public actor ModelProfiler {
             operations: operationStats,
             totalOperations: operationStats.reduce(0) { $0 + $1.executionCount },
             totalTime: operationStats.reduce(0) { $0 + $1.totalTime },
-            timestamp: Date()
+            timestamp: clock.now
         )
     }
 

@@ -249,7 +249,11 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 		constraints: [MultivariateConstraint<V>] = []
 	) throws -> RunResult {
 
-		let startTime = Date().timeIntervalSinceReferenceDate
+		// Monotonic, not wall-clock: this is a duration, and a wall clock can be adjusted
+		// mid-measurement — far enough backwards to report a negative execution time.
+		// See ``Duration/inSeconds``.
+		let clock = ContinuousClock()
+		let startTime = clock.now
 
 		let result = try optimizer.optimize(
 			objective: objective,
@@ -257,8 +261,7 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 			constraints: constraints
 		)
 
-		let endTime = Date().timeIntervalSinceReferenceDate
-		let executionTime = endTime - startTime
+		let executionTime = (clock.now - startTime).inSeconds
 
 		return RunResult(
 			solution: result.solution,

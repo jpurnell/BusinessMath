@@ -405,11 +405,24 @@ public actor TemplateRegistry {
     /// Storage for registered templates
     private var templates: [String: (template: any TemplateProtocol, metadata: TemplateMetadata, registeredAt: Date)] = [:]
 
+    /// The clock that stamps registration, export and validation times.
+    ///
+    /// Four values this registry produces carry a moment: a template's `registeredAt`,
+    /// an exported package's `createdAt`, an imported template's `registeredAt`, and a
+    /// validation report's `validatedAt`. Each was `Date()`, which meant an exported
+    /// package differed byte-for-byte between two otherwise identical exports.
+    public let clock: any WallClock
+
     /// Shared singleton instance
     public static let shared = TemplateRegistry()
 
-    /// Initialize a new registry
-    public init() {}
+    /// Initialize a new registry.
+    ///
+    /// - Parameter clock: Stamps registration, export and validation times. Defaults to
+    ///   the system clock.
+    public init(clock: any WallClock = SystemWallClock()) {
+        self.clock = clock
+    }
 
     // MARK: - Registration
 
@@ -445,7 +458,7 @@ public actor TemplateRegistry {
         }
 
         // Store template
-        templates[metadata.name] = (template, metadata, Date())
+        templates[metadata.name] = (template, metadata, clock.now)
     }
 
     /// Unregister a template
@@ -545,7 +558,7 @@ public actor TemplateRegistry {
             metadata: metadata,
             templateJSON: templateJSON,
             checksum: checksum,
-            createdAt: Date()
+            createdAt: clock.now
         )
     }
 
@@ -591,7 +604,7 @@ public actor TemplateRegistry {
         return RegisteredTemplate(
             identifier: importedTemplate.identifier,
             metadata: package.metadata,
-            registeredAt: Date(),
+            registeredAt: clock.now,
             schema: schema
         )
     }
@@ -658,7 +671,7 @@ public actor TemplateRegistry {
             templateName: metadata.name,
             isValid: issues.isEmpty,
             issues: issues,
-            validatedAt: Date()
+            validatedAt: clock.now
         )
     }
 

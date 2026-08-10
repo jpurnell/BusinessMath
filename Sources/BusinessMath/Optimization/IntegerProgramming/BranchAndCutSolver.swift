@@ -101,7 +101,10 @@ public struct BranchAndCutSolver<V: VectorSpace> where V.Scalar == Double, V: Se
         minimize: Bool = true
     ) throws -> BranchAndCutResult<V> {
 
-        let startTime = Date()
+        // Monotonic: every use below is an elapsed interval or a time-limit check, and a
+        // wall clock can be adjusted mid-solve. See ``Duration/inSeconds``.
+        let clock = ContinuousClock()
+        let startTime = clock.now
 
         // Use underlying Branch-and-Bound solver with cutting plane callback
         let bbSolver = BranchAndBoundSolver<V>(
@@ -139,7 +142,7 @@ public struct BranchAndCutSolver<V: VectorSpace> where V.Scalar == Double, V: Se
             totalCutsGenerated = 0  // Would be populated by actual cut generation
         }
 
-        let solveTime = Date().timeIntervalSince(startTime)
+        let solveTime = (clock.now - startTime).inSeconds
 
         // Determine success and termination reason from status
         let success = (result.status == .optimal || result.status == .feasible)
