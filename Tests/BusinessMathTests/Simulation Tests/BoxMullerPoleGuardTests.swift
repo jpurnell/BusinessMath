@@ -55,8 +55,8 @@ struct BoxMullerPoleGuardTests {
 	@Test("Rayleigh is finite for every seed, including the ones that quantize to zero",
 		  arguments: [0.0, 1e-12, 1e-9, 1e-8, 5e-8, 9.99e-8, 1e-7, 0.25, 0.5, 1.0])
 	func rayleighIsFiniteAtThePole(seed: Double) {
-		let value: Double = distributionRayleigh(mean: 1.0, seed: seed)
-		#expect(value.isFinite, "distributionRayleigh(mean: 1, seed: \(seed)) = \(value)")
+		let value: Double = distributionRayleigh(scale: 1.0, seed: seed)
+		#expect(value.isFinite, "distributionRayleigh(scale: 1, seed: \(seed)) = \(value)")
 		#expect(value >= 0.0, "Rayleigh is non-negative by definition; got \(value)")
 	}
 
@@ -68,7 +68,7 @@ struct BoxMullerPoleGuardTests {
 		var total = 0.0
 		let n = 200_000
 		for _ in 0..<n {
-			total += distributionRayleigh(mean: 1.0, seed: rng.next()) as Double
+			total += distributionRayleigh(scale: 1.0, seed: rng.next()) as Double
 		}
 		let mean = total / Double(n)
 		let expected = (Double.pi / 2).squareRoot()

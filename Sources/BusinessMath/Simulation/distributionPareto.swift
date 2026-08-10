@@ -41,13 +41,21 @@ import Numerics
 /// ## Implementation
 ///
 /// This function uses the inverse transform method:
-/// If U ~ Uniform(0,1), then X = xₘ / U^(1/α) ~ Pareto(xₘ, α)
+/// If U ~ Uniform(0, 1], then X = xₘ / U^(1/α) ~ Pareto(xₘ, α)
+///
+/// The interval is half-open at zero on purpose. `u = 0` is the pole of the transform
+/// and returns `+infinity`; a seed of zero, and every seed below the 1e-7 quantum of
+/// ``distributionUniform(min:max:_:)``, reaches it. Only that single point is remapped,
+/// to `u = 1`, so the result is always finite and always at least `scale`. See
+/// `openUnitUniform(seed:)` in `boxMuellerSeed.swift` for why this is a remap and not
+/// a clamp.
 ///
 /// - Parameters:
 ///   - scale: The scale parameter xₘ (minimum value, xₘ > 0)
 ///   - shape: The shape parameter α (α > 0, controls inequality)
-///   - seed: Optional seed for reproducibility
-/// - Returns: A random value sampled from the Pareto(xₘ, α) distribution
+///   - seed: Optional seed for reproducibility, a uniform on `[0, 1]`
+/// - Returns: A random value sampled from the Pareto(xₘ, α) distribution, always
+///   finite and always `>= scale`
 ///
 /// ## Example
 ///
@@ -66,19 +74,30 @@ public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil)
 	guard shape > T(0), !shape.isNaN, shape.isFinite else { return T.nan }
 
 	// Use inverse transform method: X = xₘ / U^(1/α)
-	// where U ~ Uniform(0,1)
-	let u: T
+	// where U ~ Uniform(0, 1]
+	let drawn: T
 	if let seed = seed {
-		u = distributionUniform(min: T(0), max: T(1), seed)
+		drawn = distributionUniform(min: T(0), max: T(1), seed)
 	} else {
-		u = distributionUniform(min: T(0), max: T(1))
+		drawn = distributionUniform(min: T(0), max: T(1))
 	}
 
-	// Avoid division by very small numbers
-	let epsilon: T = T(Int(1e-10))  // 1e-10
-	let adjustedU = u > epsilon ? u : epsilon
+	// `u = 0` is the pole of this transform: `0^(1/α)` is zero and the variate is
+	// `+infinity`, which poisons the mean, the variance and every percentile above it
+	// in whatever Monte Carlo run the draw lands in. It is not a rare accident —
+	// `distributionUniform` quantizes to multiples of 1e-7, so every seed below the
+	// quantum arrives here as exactly zero.
+	//
+	// This used to try to clamp, with `let epsilon: T = T(Int(1e-10))`. `Int(1e-10)` is
+	// **0**, so the guard read `u > 0` and did nothing whatsoever. Repairing the
+	// constant would have been the wrong fix anyway: a clamp maps a whole interval of
+	// draws onto one value and leaves a point mass at `scale·ε^(-1/α)` — at α = 3 and
+	// ε = 1e-10, an atom sitting alone at 2154·xₘ. Drawing on (0, 1] instead moves only
+	// the single point `u = 0`, to 1, which is a set of measure zero mapped onto
+	// another. The same rule the Box-Muller sites settled on; see `git show d247691`.
+	let u = openUnitUniform(seed: drawn)
 
-	return scale / T.pow(adjustedU, T(1) / shape)
+	return scale / T.pow(u, T(1) / shape)
 }
 
 /// A type that represents a Pareto distribution.

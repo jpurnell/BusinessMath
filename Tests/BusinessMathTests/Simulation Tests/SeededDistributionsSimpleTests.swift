@@ -131,13 +131,13 @@ struct SeededDistributionsSimpleTests {
 
 	@Test("DistributionRayleigh: same seed yields identical sample stream")
 	func rayleighDeterministicStream() {
-		let dist = DistributionRayleigh(mean: 2.0)
+		let dist = DistributionRayleigh(scale: 2.0)
 		#expect(samples(dist, seed: 42, count: 50) == samples(dist, seed: 42, count: 50))
 	}
 
 	@Test("DistributionRayleigh: different seeds yield different streams")
 	func rayleighSeedsDiverge() {
-		let dist = DistributionRayleigh(mean: 2.0)
+		let dist = DistributionRayleigh(scale: 2.0)
 		#expect(samples(dist, seed: 1, count: 50) != samples(dist, seed: 2, count: 50))
 	}
 
@@ -146,7 +146,7 @@ struct SeededDistributionsSimpleTests {
 		// The implementation samples X = m·sqrt(-2·ln U), i.e. a Rayleigh with
 		// scale σ = m, so: mean σ·sqrt(π/2), variance (2 - π/2)·σ².
 		let m = 2.0
-		let dist = DistributionRayleigh(mean: m)
+		let dist = DistributionRayleigh(scale: m)
 		let s = samples(dist, seed: 99, count: 20_000)
 		let expectedMean = m * Foundation.sqrt(Double.pi / 2.0)
 		let expectedVariance = (2.0 - Double.pi / 2.0) * m * m

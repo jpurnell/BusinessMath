@@ -79,17 +79,24 @@ import Numerics
 
 // MARK: - Shared arithmetic
 
-/// Maps a seed on the closed interval `[0, 1]` onto `(0, 1]`, the interval the
-/// transform requires.
+/// Maps a seed on the closed interval `[0, 1]` onto `(0, 1]`.
 ///
 /// Only `0` moves, and it moves to `1`. That is a set of measure zero mapped onto
 /// another, so the draw stays exactly uniform — unlike a clamp, which collapses an
 /// interval and leaves a point mass behind.
 ///
 /// Values outside the documented `[0, 1]` contract, including `NaN`, also return `1`
-/// (radius zero) rather than propagating a non-finite result to the caller.
+/// rather than propagating a non-finite result to the caller.
+///
+/// This lives beside Box-Muller because that is where the pole was first a problem,
+/// but nothing about it is Box-Muller-specific: every inverse transform whose
+/// generator function is singular at `u = 0` — the Box-Muller radius through
+/// `log u`, ``distributionPareto(scale:shape:seed:)`` through `u^(-1/α)` — needs
+/// the same half-open interval and should ask for it here rather than invent its
+/// own guard. The guards those sites used to write for themselves did not agree
+/// with each other, and one of them (`T(Int(1e-10))`, which is zero) did nothing at all.
 @usableFromInline
-internal func boxMullerUniform<T>(seed: T) -> T where T: BinaryFloatingPoint {
+internal func openUnitUniform<T>(seed: T) -> T where T: BinaryFloatingPoint {
 	guard seed > 0 else { return T(1) }
 	return seed <= T(1) ? seed : T(1)
 }
@@ -97,7 +104,7 @@ internal func boxMullerUniform<T>(seed: T) -> T where T: BinaryFloatingPoint {
 /// The shared radius, `sqrt(-2 · ln u)`.
 ///
 /// - Parameter uniform: A uniform on `(0, 1]`. Callers holding a seed on the closed
-///   `[0, 1]` should pass it through ``boxMullerUniform(seed:)`` first.
+///   `[0, 1]` should pass it through ``openUnitUniform(seed:)`` first.
 @usableFromInline
 internal func boxMullerRadius<T: Real>(uniform: T) -> T where T: BinaryFloatingPoint {
 	T.sqrt(T(-2) * T.log(uniform))
@@ -162,7 +169,7 @@ public func boxMullerSeed<T: Real, G: RandomNumberGenerator>(using generator: in
 ///
 /// - Parameters:
 ///   - u1Seed: A uniform on `[0, 1]`, setting the radius. Zero is the `log(0)` pole
-///     and is remapped to 1 (radius 0); see `boxMullerUniform(seed:)` for why that
+///     and is remapped to 1 (radius 0); see `openUnitUniform(seed:)` for why that
 ///     is not a clamp.
 ///   - u2Seed: A uniform on `[0, 1]`, setting the angle.
 /// - Returns: A tuple of two independent standard normal values `(z1, z2)`.
@@ -171,7 +178,7 @@ public func boxMullerSeed<T: Real, G: RandomNumberGenerator>(using generator: in
 ///   ``distributionUniform(_:)`` and quantized to multiples of 1e-7, so two seeds
 ///   closer together than that produced identical output.
 public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint { // stochastic:exempt
-	boxMullerPair(uniform: boxMullerUniform(seed: T(u1Seed)), angleUniform: T(u2Seed))
+	boxMullerPair(uniform: openUnitUniform(seed: T(u1Seed)), angleUniform: T(u2Seed))
 }
 
 // MARK: - Radius only
@@ -179,7 +186,7 @@ public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), 
 /// Generates a Box-Muller radius, drawing its single uniform from `generator`.
 ///
 /// The radius `sqrt(-2 · ln u)` is a Rayleigh variate with unit scale, and it is the
-/// quantity ``distributionRayleigh(mean:seed:)`` wants. Asking ``boxMullerSeed(using:)``
+/// quantity ``distributionRayleigh(scale:seed:)`` wants. Asking ``boxMullerSeed(using:)``
 /// for it instead would consume two uniforms and compute a sine and a cosine only to
 /// discard both.
 ///
@@ -196,5 +203,5 @@ public func boxMullerRadius<T: Real, G: RandomNumberGenerator>(using generator: 
 ///   to 1 (radius 0).
 /// - Returns: A non-negative Rayleigh(1) variate.
 public func boxMullerRadius<T: Real>(_ uSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
-	boxMullerRadius(uniform: boxMullerUniform(seed: T(uSeed)))
+	boxMullerRadius(uniform: openUnitUniform(seed: T(uSeed)))
 }
