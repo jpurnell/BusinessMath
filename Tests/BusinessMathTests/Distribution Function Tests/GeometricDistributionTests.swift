@@ -39,7 +39,7 @@ struct GeometricDistributionTests {
 		for i in 0..<sampleCount {
 			let sample: Double = distributionGeometric(p, seed: seedArrays[i])
 			#expect(sample >= 1, "Geometric values must be >= 1")
-			#expect(sample == floor(sample), "Geometric values must be integers")
+			#expect(identical(sample, floor(sample)), "Geometric values must be integers")
 			#expect(sample.isFinite, "Geometric values must be finite")
 			#expect(!sample.isNaN, "Geometric values must not be NaN")
 		}
@@ -161,7 +161,7 @@ struct GeometricDistributionTests {
 		for i in 0..<100 {
 			let sample: Double = distributionGeometric(p, seed: UInt64(i) &+ 1)
 			#expect(sample >= 1)
-			#expect(sample == floor(sample))
+			#expect(identical(sample, floor(sample)))
 			#expect(sample.isFinite)
 		}
 	}

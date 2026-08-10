@@ -162,7 +162,7 @@ public func boxMullerSeed<T: Real, G: RandomNumberGenerator>(using generator: in
 ///
 /// - Parameters:
 ///   - u1Seed: A uniform on `[0, 1]`, setting the radius. Zero is the `log(0)` pole
-///     and is remapped to 1 (radius 0); see ``boxMullerUniform(seed:)`` for why that
+///     and is remapped to 1 (radius 0); see `boxMullerUniform(seed:)` for why that
 ///     is not a clamp.
 ///   - u2Seed: A uniform on `[0, 1]`, setting the angle.
 /// - Returns: A tuple of two independent standard normal values `(z1, z2)`.

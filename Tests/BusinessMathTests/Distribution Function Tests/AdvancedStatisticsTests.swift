@@ -131,28 +131,28 @@ import Glibc
 
     @Test("Combinations") func LCombinations() {
         // Test: C(5,3) = 10
-        let result = combination(5, c: 3)
-        #expect(result == 10)
+        let fiveChooseThree: Int = combination(5, c: 3)
+        #expect(fiveChooseThree == 10)
 
         // Test: C(10,2) = 45
-        let result2 = combination(10, c: 2)
-        #expect(result2 == 45)
+        let tenChooseTwo: Int = combination(10, c: 2)
+        #expect(tenChooseTwo == 45)
     }
 
     @Test("Permutations") func LPermutations() {
         // Test: P(5,3) = 60
-        let result = permutation(5, p: 3)
-        #expect(result == 60)
+        let fivePermuteThree: Int = permutation(5, p: 3)
+        #expect(fivePermuteThree == 60)
 
         // Test: P(10,2) = 90
-        let result2 = permutation(10, p: 2)
-        #expect(result2 == 90)
+        let tenPermuteTwo: Int = permutation(10, p: 2)
+        #expect(tenPermuteTwo == 90)
     }
 
     @Test("Factorial") func LFactorial() {
         // Test: 5! = 120
-        let result = factorial(5)
-        #expect(result == 120)
+        let fiveFactorial: Int = factorial(5)
+        #expect(fiveFactorial == 120)
 
         // Test: 0! = 1
         let result2 = factorial(0)

@@ -518,6 +518,7 @@ struct SimulatedAnnealingTests {
         // worse solution. A non-Double scalar must still give the analytic value.
         let p = SimulatedAnnealing<VectorN<Float>>.acceptanceProbability(deltaE: Float(2.0), temperature: 4.0)
         #expect(abs(p - 0.6065306597126334) < 1e-12)
-        #expect(p != 1.0)
+        // Not the sentinel the broken ΔE conversion produced: exp(-0/T) is exactly 1.
+        #expect(!exactlyEqual(p, 1.0))
     }
 }

@@ -80,7 +80,7 @@ struct DistributionSeedingTests {
 		let value1: Double = distributionUniform(Self.SEED_PRIMARY)
 		let value2: Double = distributionUniform(Self.SEED_PRIMARY)
 
-		#expect(value1 == value2, "Same seed should produce identical values")
+		#expect(identical(value1, value2), "Same seed should produce identical values")
 		#expect(abs(value1 - Self.SEED_PRIMARY) < 0.0000001, "Seeded value should match input seed")
 	}
 
@@ -89,7 +89,7 @@ struct DistributionSeedingTests {
 		let value1: Double = distributionUniform(Self.SEED_PRIMARY)
 		let value2: Double = distributionUniform(Self.SEED_SECONDARY)
 
-		#expect(value1 != value2, "Different seeds should produce different values")
+		#expect(!identical(value1, value2), "Different seeds should produce different values")
 	}
 
 	@Test("distributionUniform with seed produces deterministic sequence")
@@ -152,7 +152,7 @@ struct DistributionSeedingTests {
 		let normal1: Double = boxMullerSeed(u1, u2).z1
 		let normal2: Double = boxMullerSeed(u1, u2).z1
 
-		#expect(normal1 == normal2, "Same seeded uniforms should produce identical normals")
+		#expect(identical(normal1, normal2), "Same seeded uniforms should produce identical normals")
 	}
 
 	// MARK: - Distribution Struct Seeding
@@ -172,7 +172,7 @@ struct DistributionSeedingTests {
 		let z2 = boxMullerSeed(Self.SEED_BASE, Self.SEED_BASE).z1 as Double
 		let normal2 = (stdDev * z2) + mean
 
-		#expect(normal1 == normal2, "Same seed should produce identical normal values")
+		#expect(identical(normal1, normal2), "Same seed should produce identical normal values")
 	}
 
 	// MARK: - Sequence Generation
@@ -294,9 +294,9 @@ struct DistributionSeedingTests {
 		#expect(v3.isFinite && v3 >= 0 && v3 <= 1, "Middle seed should produce valid value")
 
 		// Verify they're different
-		#expect(v1 != v2, "Different seeds should produce different values")
-		#expect(v2 != v3, "Different seeds should produce different values")
-		#expect(v1 != v3, "Different seeds should produce different values")
+		#expect(!identical(v1, v2), "Different seeds should produce different values")
+		#expect(!identical(v2, v3), "Different seeds should produce different values")
+		#expect(!identical(v1, v3), "Different seeds should produce different values")
 	}
 
 	@Test("Box-Muller with boundary uniform values")
@@ -462,8 +462,10 @@ struct DistributionSeedingTests {
 		let forwardSeeds = Self.seedArray(count: 1000)
 		let reversedSeeds = Array(forwardSeeds.reversed())
 
-		#expect(u1 == forwardSeeds, "u1 should match forward seed array")
-		#expect(u2 == reversedSeeds, "u2 should match reversed seed array")
+		#expect(u1.count == forwardSeeds.count && zip(u1, forwardSeeds).allSatisfy { identical($0, $1) },
+			   "u1 should match forward seed array")
+		#expect(u2.count == reversedSeeds.count && zip(u2, reversedSeeds).allSatisfy { identical($0, $1) },
+			   "u2 should match reversed seed array")
 	}
 
 	@Test("Monte Carlo with seed array produces exact results")
@@ -525,7 +527,7 @@ struct DistributionSeedingTests {
 		let normal1_2 = (10.0 * z_2) + 50.0
 		let normal2_2 = (20.0 * z_2) + 100.0
 
-		#expect(normal1 == normal1_2, "Same seed should produce identical N(50,10)")
-		#expect(normal2 == normal2_2, "Same seed should produce identical N(100,20)")
+		#expect(identical(normal1, normal1_2), "Same seed should produce identical N(50,10)")
+		#expect(identical(normal2, normal2_2), "Same seed should produce identical N(100,20)")
 	}
 }

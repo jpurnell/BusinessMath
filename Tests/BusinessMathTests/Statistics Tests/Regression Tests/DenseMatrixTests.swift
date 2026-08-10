@@ -338,8 +338,8 @@ struct DenseMatrixTests {
                     [small * 3, small * 4]]
         let matrix = try DenseMatrix(data)
 
-        #expect(matrix[0, 0] == small)
-        #expect(matrix[1, 1] == small * 4)
+        #expect(identical(matrix[0, 0], small))
+        #expect(identical(matrix[1, 1], small * 4))
 
         // Operations should preserve magnitude
         let transposed = matrix.transposed()
@@ -353,7 +353,7 @@ struct DenseMatrixTests {
                     [large * 3, large * 4]]
         let matrix = try DenseMatrix(data)
 
-        #expect(matrix[0, 0] == large)
+        #expect(identical(matrix[0, 0], large))
 
         // Should not overflow
         let transposed = matrix.transposed()

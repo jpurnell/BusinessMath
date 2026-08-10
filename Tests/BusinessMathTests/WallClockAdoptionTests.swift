@@ -499,7 +499,7 @@ struct WallClockAdoptionTests {
 	}
 
 	@Test("A traced calculation that throws still reports a well-formed duration")
-	func debuggerFailedTraceDurationIsWellFormed() async {
+	func debuggerFailedTraceDurationIsWellFormed() async throws {
 		struct Boom: Error {}
 		let debugger = ModelDebugger()
 
@@ -507,7 +507,11 @@ struct WallClockAdoptionTests {
 
 		#expect(trace.duration >= 0)
 		#expect(trace.duration.isFinite)
-		#expect(trace.error != nil)
+		// The error the closure threw, not merely *an* error: a debugger that swallowed
+		// `Boom` and reported one of its own would still be non-nil here.
+		let recorded = try #require(trace.error)
+		#expect(recorded is Boom, "trace reported \(recorded), not the Boom the closure threw")
+		#expect(trace.result == nil, "a throwing calculation has no result")
 	}
 
 	@Test("Branch and bound reports a well-formed solve time")

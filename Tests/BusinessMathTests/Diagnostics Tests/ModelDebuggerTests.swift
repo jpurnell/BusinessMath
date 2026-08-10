@@ -526,7 +526,9 @@ struct ModelDebuggerTests {
                     let trace = await debugger.trace(value: "Calc \(index)") {
                         Double(index) * 2.0
                     }
-                    #expect(trace.result == Double(index) * 2.0)
+                    let expectedResult = Double(index) * 2.0
+                    #expect(trace.result.map { identical($0, expectedResult) } ?? false,
+                            "trace \(index) returned \(String(describing: trace.result)), expected \(expectedResult)")
 
                     let validation = await debugger.validate(
                         value: Double(index),

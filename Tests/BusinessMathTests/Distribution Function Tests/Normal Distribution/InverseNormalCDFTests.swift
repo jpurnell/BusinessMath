@@ -313,7 +313,9 @@ struct InverseNormalCDFTests {
     @Test("Works for Float as well as Double")
     func genericOverReal() {
         #expect(abs(inverseNormalCDF(p: Float(0.975)) - Float(1.959964)) < 1e-5)
-        #expect(inverseNormalCDF(p: Float(0.5)) == Float(0))
+        // IEEE equality rather than a bit comparison: the median of a symmetric distribution
+        // is zero, and either sign of zero is a correct answer for it.
+        #expect(exactlyEqual(inverseNormalCDF(p: Float(0.5)), Float(0)))
         #expect(inverseNormalCDF(p: Float(0)) == -Float.infinity)
         #expect(inverseNormalCDF(p: Float(1)) == Float.infinity)
         // Must use the computed complement: 1 - Float(0.9) is 0.100000024, which

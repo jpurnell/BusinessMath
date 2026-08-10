@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 /// Tests for LinearFunction protocol and StandardLinearFunction implementation
@@ -128,8 +129,8 @@ struct LinearFunctionTests {
         )
 
         // Verify coefficients are stored exactly
-        #expect(f.coefficients[0] == π)
-        #expect(f.coefficients[1] == e)
+        #expect(identical(f.coefficients[0], π))
+        #expect(identical(f.coefficients[1], e))
     }
 
     // MARK: - Single Variable Tests

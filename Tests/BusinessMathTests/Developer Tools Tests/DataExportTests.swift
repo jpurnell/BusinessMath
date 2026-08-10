@@ -351,7 +351,8 @@ import TestSupport  // identical(_:_:) — bit-for-bit comparison
         #expect(observations[0]["value"] as? Double == 1000)
         let negInf = try #require(observations[1]["value"])
         #expect(negInf is NSNull, "-Infinity should be null, was \(negInf)")
-        #expect(observations[1]["period"] as? String != nil, "The period label must survive")
+        #expect(observations[1]["period"] as? String == "2024",
+                "The period label must survive, and stay the one it was: \(json)")
         let nan = try #require(observations[2]["value"])
         #expect(nan is NSNull, "NaN should be null, was \(nan)")
     }
@@ -379,7 +380,13 @@ import TestSupport  // identical(_:_:) — bit-for-bit comparison
 
         // Then: The good cash flow is fully intact — including its derived present value
         #expect(cashFlows[0]["amount"] as? Double == 15_000)
-        #expect(cashFlows[0]["present_value"] as? Double != nil)
+        // 15,000 discounted one period at 10%. The JSON round-trip itself is exact —
+        // JSONSerialization writes the shortest decimal that reparses to the same Double —
+        // so the only rounding is pow(1.10, 1.0), measured at 0 ulp against 15_000 / 1.10.
+        // 1e-9 is roughly 550 ulp of headroom at this magnitude.
+        let presentValue0 = try #require(cashFlows[0]["present_value"] as? Double)
+        #expect(approximatelyEqual(presentValue0, 15_000 / 1.10, tolerance: 1e-9),
+                "present value \(presentValue0), expected \(15_000 / 1.10)")
 
         // And: The bad one nulls both the amount and the present value derived from it
         let amount = try #require(cashFlows[1]["amount"])

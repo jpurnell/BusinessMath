@@ -561,7 +561,8 @@ struct VectorSpaceTests {
 		#expect(Double.fromArray([1.0, 2.0]) == nil)
 		
 			// Dimension
-		#expect(Double.dimension == 1)
+		let doubleDimension: Int = Double.dimension
+		#expect(doubleDimension == 1)
 		
 			// Is finite
 		#expect(d1.isFinite == true)
@@ -577,7 +578,8 @@ struct VectorSpaceTests {
 		#expect(abs(2.0 * f1 - 6.0) < 1e-6)
 		#expect(abs(f1.norm - 3.0) < 1e-6)
 		#expect(abs(f1.dot(f2) - 12.0) < 1e-6)
-		#expect(Float.dimension == 1)
+		let floatDimension: Int = Float.dimension
+		#expect(floatDimension == 1)
 	}
 	
 		// MARK: - Performance Tests
@@ -952,7 +954,7 @@ struct VectorSpaceTests {
 			// Ones vector
 		let ones = try #require(VectorN<Double>.filled(with: 1.0, dimension: dimension))
 		#expect(ones.count == dimension)
-		#expect(ones.sum == Double(dimension))
+		#expect(identical(ones.sum, Double(dimension)))
 
 			// Custom filled vector
 		let sevens = try #require(VectorN<Double>.filled(with: 7.0, dimension: 3))

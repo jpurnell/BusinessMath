@@ -24,6 +24,7 @@
 
 import Foundation
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Numerics
 
 @testable import BusinessMath
@@ -197,9 +198,9 @@ struct DistributionGeneratorStreamTests {
 		let fSolo: Double = distributionF(df1: 5, df2: 5, seed: 42)
 
 		// The first draw off a fresh seed-42 stream is the same either way.
-		#expect(chiThreaded == chiSolo)
+		#expect(identical(chiThreaded, chiSolo))
 		// The second is not: `fSolo` restarts the stream, `fThreaded` continues it.
-		#expect(fThreaded != fSolo)
+		#expect(!identical(fThreaded, fSolo))
 	}
 
 	@Test("A chi-squared drawn from seed 42 equals the F numerator drawn from seed 42")
@@ -211,7 +212,7 @@ struct DistributionGeneratorStreamTests {
 		let chi: Double = distributionChiSquared(degreesOfFreedom: 7, seed: 42)
 		var rng = DeterministicRNG(seed: 42)
 		let numerator = gammaVariate(shape: 3.5, scale: 2.0, using: &rng) as Double
-		#expect(chi == numerator)
+		#expect(identical(chi, numerator))
 	}
 }
 
@@ -279,7 +280,7 @@ struct DistributionSeedExhaustionTests {
 		var rng = DeterministicRNG(seed: 4_294_967_311)
 		let viaGenerator = distributionT(degreesOfFreedom: 3, using: &rng) as Double
 		let viaSeed: Double = distributionT(degreesOfFreedom: 3, seed: 4_294_967_311)
-		#expect(viaGenerator == viaSeed)
+		#expect(identical(viaGenerator, viaSeed))
 	}
 
 	@Test("Seeds above Int.max are legal and distinct")
@@ -289,8 +290,8 @@ struct DistributionSeedExhaustionTests {
 		let a: Double = distributionChiSquared(degreesOfFreedom: 5, seed: UInt64.max)
 		let b: Double = distributionChiSquared(degreesOfFreedom: 5, seed: UInt64.max)
 		let c: Double = distributionChiSquared(degreesOfFreedom: 5, seed: UInt64.max &- 1)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 }
 

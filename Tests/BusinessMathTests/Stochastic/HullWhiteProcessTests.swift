@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 @Suite("HullWhiteProcess")
@@ -69,7 +70,7 @@ struct HullWhiteProcessTests {
             rate2 = hw.step(from: rate2, dt: dt, normalDraws: rng2.nextNormal())
         }
 
-        #expect(rate1 == rate2, "Same RNG seed should produce identical paths")
+        #expect(identical(rate1, rate2), "Same RNG seed should produce identical paths")
     }
 
     // MARK: - Mean Reversion

@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Foundation
 @testable import BusinessMath
 
@@ -95,9 +96,9 @@ struct InverseGammaSamplerTests {
     func testDeterministicSeeds() throws {
         let val1: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seed: 424_242)
         let val2: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seed: 424_242)
-        #expect(val1 == val2, "The same seed must produce identical values")
+        #expect(identical(val1, val2), "The same seed must produce identical values")
 
         let other: Double = try sampleInverseGamma(shape: 3.0, scale: 2.0, seed: 424_243)
-        #expect(val1 != other, "A different seed must produce a different value")
+        #expect(!identical(val1, other), "A different seed must produce a different value")
     }
 }

@@ -232,8 +232,8 @@ struct LogNormalCDFTests {
 		let probStdDev15: Double = logNormalCDF(2.0, mean: mean, stdDev: 1.5)
 
 		// Different σ should produce different probabilities
-		#expect(probStdDev05 != probStdDev10, "Different σ should give different CDF")
-		#expect(probStdDev10 != probStdDev15, "Different σ should give different CDF")
+		#expect(!identical(probStdDev05, probStdDev10), "Different σ should give different CDF")
+		#expect(!identical(probStdDev10, probStdDev15), "Different σ should give different CDF")
 
 		// All should be valid probabilities
 		#expect(probStdDev05 >= 0.0 && probStdDev05 <= 1.0)
