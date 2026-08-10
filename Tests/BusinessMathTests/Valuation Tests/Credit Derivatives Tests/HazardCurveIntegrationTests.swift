@@ -26,18 +26,14 @@ struct HazardCurveIntegrationTests {
     /// Actual days in each quarter of 2025: 31+28+31, 30+31+30, 31+31+30, 31+30+31.
     static let daysPerQuarter2025: [Double] = [90, 91, 92, 92]
 
-    /// Bit-for-bit equality between two `Double` values.
-    ///
-    /// Several assertions below are claims of *exactness*, not of closeness: that
-    /// ACT/365 makes a common calendar year worth precisely 1.0, that January is
-    /// precisely the ratio 31/365, that an annual curve produces the identical bits
-    /// the hardcoded one-year step produced. A tolerance would let every one of them
-    /// pass while being quietly wrong by a fraction of a percent — which is the exact
-    /// failure mode this change exists to remove. Comparing bit patterns states the
-    /// claim being made and keeps it off floating-point `==`.
-    static func identical(_ lhs: Double, _ rhs: Double) -> Bool {
-        return lhs.bitPattern == rhs.bitPattern
-    }
+    // Several assertions below are claims of *exactness*, not of closeness: that
+    // ACT/365 makes a common calendar year worth precisely 1.0, that January is
+    // precisely the ratio 31/365, that an annual curve produces the identical bits
+    // the hardcoded one-year step produced. A tolerance would let every one of them
+    // pass while being quietly wrong by a fraction of a percent — which is the exact
+    // failure mode this change exists to remove. `identical(_:_:)` from TestSupport
+    // states that claim as a bit-pattern comparison; see its documentation for how it
+    // differs from `==` on signed zeros and NaN.
 
     static func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
         var components = DateComponents()
@@ -140,30 +136,30 @@ struct HazardCurveIntegrationTests {
         let model = TimeVaryingHazardRate(hazardRates: curve)
 
         let integral = 0.01 * 1.0 + 0.015 * 1.0 + 0.025 * 1.0
-        #expect(Self.identical(model.survivalProbability(time: 3.0), exp(-integral)))
+        #expect(identical(model.survivalProbability(time: 3.0), exp(-integral)))
 
         // And at a horizon inside the curve, where the last step is a partial year.
         let partial = 0.01 * 1.0 + 0.015 * 1.0 + 0.025 * 0.5
-        #expect(Self.identical(model.survivalProbability(time: 2.5), exp(-partial)))
+        #expect(identical(model.survivalProbability(time: 2.5), exp(-partial)))
 
         // Beyond the curve, extrapolating flat at the last rate.
         let extrapolated = integral + 0.03 * 2.0
-        #expect(Self.identical(model.survivalProbability(time: 5.0), exp(-extrapolated)))
+        #expect(identical(model.survivalProbability(time: 5.0), exp(-extrapolated)))
 
         // A width of exactly one year is what makes that true.
         let width: Double = DayCountConvention.actual365.yearFraction(of: Period.year(2025))
-        #expect(Self.identical(width, 1.0))
+        #expect(identical(width, 1.0))
     }
 
     @Test("A leap year is 366/365 of a year, which the old code also got wrong")
     func leapYearIsLongerUnderActual365() {
         let leap: Double = DayCountConvention.actual365.yearFraction(of: Period.year(2024))
-        #expect(Self.identical(leap, 366.0 / 365.0))
+        #expect(identical(leap, 366.0 / 365.0))
         #expect(leap > 1.0)
 
         // 30/360 is the convention under which a leap year is still exactly one year.
         let bondBasis: Double = DayCountConvention.thirty360.yearFraction(of: Period.year(2024))
-        #expect(Self.identical(bondBasis, 1.0))
+        #expect(identical(bondBasis, 1.0))
     }
 
     // MARK: - Mixed frequency
@@ -258,7 +254,7 @@ struct HazardCurveIntegrationTests {
 
         // 30/360 counts the same stub as 180 days: 30 × 6 months, ignoring July's and
         // August's 31sts.
-        #expect(Self.identical(DayCountConvention.thirty360.days(in: stub), 180.0))
+        #expect(identical(DayCountConvention.thirty360.days(in: stub), 180.0))
     }
 
     // MARK: - Conventions
@@ -275,36 +271,36 @@ struct HazardCurveIntegrationTests {
         let act360: Double = DayCountConvention.actual360.yearFraction(of: january)
         let bond: Double = DayCountConvention.thirty360.yearFraction(of: january)
 
-        #expect(Self.identical(act365, 31.0 / 365.0))
-        #expect(Self.identical(act360, 31.0 / 360.0))
-        #expect(Self.identical(bond, 30.0 / 360.0))
+        #expect(identical(act365, 31.0 / 365.0))
+        #expect(identical(act360, 31.0 / 360.0))
+        #expect(identical(bond, 30.0 / 360.0))
         #expect(act360 > act365)
         #expect(act365 > bond)
 
         // February — where the actual conventions are short and the bond basis is not.
         let february = Period.month(year: 2025, month: 2)
-        #expect(Self.identical(DayCountConvention.actual365.days(in: february), 28.0))
-        #expect(Self.identical(DayCountConvention.thirty360.days(in: february), 30.0))
+        #expect(identical(DayCountConvention.actual365.days(in: february), 28.0))
+        #expect(identical(DayCountConvention.thirty360.days(in: february), 30.0))
         let bondFebruary: Double = DayCountConvention.thirty360.yearFraction(of: february)
-        #expect(Self.identical(bondFebruary, 1.0 / 12.0))
+        #expect(identical(bondFebruary, 1.0 / 12.0))
 
         // A quarter: 90 actual days in Q1 2025, 90 under 30/360 in every quarter.
         let firstQuarter = Period.quarter(year: 2025, quarter: 1)
-        #expect(Self.identical(DayCountConvention.actual365.days(in: firstQuarter), 90.0))
-        #expect(Self.identical(DayCountConvention.thirty360.days(in: firstQuarter), 90.0))
+        #expect(identical(DayCountConvention.actual365.days(in: firstQuarter), 90.0))
+        #expect(identical(DayCountConvention.thirty360.days(in: firstQuarter), 90.0))
         let bondQuarter: Double = DayCountConvention.thirty360.yearFraction(of: firstQuarter)
-        #expect(Self.identical(bondQuarter, 0.25))
+        #expect(identical(bondQuarter, 0.25))
 
         // Every calendar year is exactly one year under 30/360, leap or not.
         for year in 2023...2028 {
             let fraction: Double = DayCountConvention.thirty360.yearFraction(of: Period.year(year))
-            #expect(Self.identical(fraction, 1.0), "30/360 made \(year) worth \(fraction) years")
+            #expect(identical(fraction, 1.0), "30/360 made \(year) worth \(fraction) years")
         }
 
         // A day count convention survives a daylight-saving transition: March 2025 is
         // 31 days, not the 30.958 that dividing elapsed seconds by 86,400 would give.
-        #expect(Self.identical(DayCountConvention.actual365.days(in: Period.month(year: 2025, month: 3)), 31.0))
-        #expect(Self.identical(DayCountConvention.actual365.days(in: Period.month(year: 2025, month: 11)), 30.0))
+        #expect(identical(DayCountConvention.actual365.days(in: Period.month(year: 2025, month: 3)), 31.0))
+        #expect(identical(DayCountConvention.actual365.days(in: Period.month(year: 2025, month: 11)), 30.0))
     }
 
     @Test("ACT/365 against ACT/360 is a real difference, not rounding")
@@ -343,9 +339,9 @@ struct HazardCurveIntegrationTests {
         // 30/360 makes every one of these years exactly 1.0, so on an annual curve of
         // common years it agrees with ACT/365 exactly — and the agreement is a fact
         // about annual periods, not about the two conventions.
-        #expect(Self.identical(bond.survivalProbability(time: 3.0), act365.survivalProbability(time: 3.0)))
+        #expect(identical(bond.survivalProbability(time: 3.0), act365.survivalProbability(time: 3.0)))
         let monthly = TimeSeries(periods: Self.monthsOf2025, values: (1...12).map { 0.02 * Double($0) })
-        #expect(!Self.identical(
+        #expect(!identical(
             TimeVaryingHazardRate(hazardRates: monthly, dayCount: .thirty360).survivalProbability(time: 0.5),
             TimeVaryingHazardRate(hazardRates: monthly, dayCount: .actual365).survivalProbability(time: 0.5)
         ))
@@ -358,7 +354,7 @@ struct HazardCurveIntegrationTests {
         let explicitDefault = TimeVaryingHazardRate(hazardRates: curve, dayCount: .actual365)
 
         #expect(implicit.dayCount == .actual365)
-        #expect(Self.identical(implicit.survivalProbability(time: 1.0), explicitDefault.survivalProbability(time: 1.0)))
+        #expect(identical(implicit.survivalProbability(time: 1.0), explicitDefault.survivalProbability(time: 1.0)))
     }
 
     // MARK: - Degenerate curves
@@ -366,15 +362,15 @@ struct HazardCurveIntegrationTests {
     @Test("An empty curve integrates to nothing")
     func emptyCurve() {
         let model = TimeVaryingHazardRate(hazardRates: TimeSeries<Double>(periods: [], values: []))
-        #expect(Self.identical(model.survivalProbability(time: 5.0), 1.0))
-        #expect(Self.identical(model.defaultProbability(time: 5.0), 0.0))
+        #expect(identical(model.survivalProbability(time: 5.0), 1.0))
+        #expect(identical(model.defaultProbability(time: 5.0), 0.0))
     }
 
     @Test("A zero-length stub contributes nothing and does not stall the walk")
     func zeroLengthStub() {
         let instant = Self.date(2025, 7, 1)
         let empty = Period.custom(start: instant, end: instant)
-        #expect(Self.identical(DayCountConvention.actual365.days(in: empty), 0.0))
+        #expect(identical(DayCountConvention.actual365.days(in: empty), 0.0))
 
         let periods = [Period.quarter(year: 2025, quarter: 1), empty]
         let model = TimeVaryingHazardRate(hazardRates: TimeSeries(periods: periods, values: [0.02, 0.05]))
@@ -418,12 +414,12 @@ struct HazardCurveIntegrationTests {
 
     @Test("Well-formed inputs are unchanged")
     func hazardFromSpreadStillWorks() throws {
-        #expect(Self.identical(try #require(hazardRateFromSpread(spread: 0.0150, recoveryRate: 0.40)), 0.0150 / 0.60))
+        #expect(identical(try #require(hazardRateFromSpread(spread: 0.0150, recoveryRate: 0.40)), 0.0150 / 0.60))
         // The documented default recovery of 40%.
-        #expect(Self.identical(try #require(hazardRateFromSpread(spread: 0.0150)), 0.0150 / (1.0 - 0.40)))
+        #expect(identical(try #require(hazardRateFromSpread(spread: 0.0150)), 0.0150 / (1.0 - 0.40)))
         // Zero recovery is a legitimate assumption, not a degenerate one.
-        #expect(Self.identical(try #require(hazardRateFromSpread(spread: 0.0150, recoveryRate: 0.0)), 0.0150))
+        #expect(identical(try #require(hazardRateFromSpread(spread: 0.0150, recoveryRate: 0.0)), 0.0150))
         // A zero spread implies a zero intensity, which is a real answer.
-        #expect(Self.identical(try #require(hazardRateFromSpread(spread: 0.0, recoveryRate: 0.40)), 0.0))
+        #expect(identical(try #require(hazardRateFromSpread(spread: 0.0, recoveryRate: 0.40)), 0.0))
     }
 }

@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 #if canImport(Metal)
 import Metal
 #endif
@@ -118,8 +119,14 @@ struct MetalShaderSourceTests {
 		for i in 0..<count {
 			let pair = values[i]
 			#expect(pair.x.isFinite && pair.y.isFinite, "draw \(i) was \(pair)")
-			#expect(pair.x == 7.0 && pair.y == 7.0, // fp-safety:disable — exact by construction: radius is 0
-					"u₁ = 1 has radius 0, so both variates are the mean; got \(pair)")
+			// Exact by construction, so compared bit-for-bit: the radius is 0, and
+			// `7.0f + 3.0f * 0` is 7.0f with no rounding. A tolerance here would accept
+			// a radius that was merely small — which is the unguarded pole's other
+			// failure mode, and the one this test exists to exclude.
+			#expect(identical(pair.x, 7.0),
+					"u₁ = 1 has radius 0, so z₁ is the mean; got \(pair)")
+			#expect(identical(pair.y, 7.0),
+					"u₁ = 1 has radius 0, so z₂ is the mean; got \(pair)")
 		}
 	}
 

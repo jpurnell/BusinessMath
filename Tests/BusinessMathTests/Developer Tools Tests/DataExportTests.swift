@@ -9,6 +9,7 @@
 import Foundation
 import Testing
 import RealModule
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 /// Tests for Data Export developer tools.
@@ -426,7 +427,11 @@ import RealModule
         #expect(parsed["positiveInfinity"] is NSNull)
         #expect(parsed["negativeInfinity"] is NSNull)
         #expect(parsed["float"] is NSNull, "Float is walked too, not only Double")
-        #expect(parsed["finite"] as? Double == 42.0, "Finite numbers are untouched")
+        // "Untouched" is a claim about the bits, not about proximity: the sanitizer must
+        // hand a finite number straight through, and a tolerance would let it round-trip
+        // the value through a lossy path and still pass.
+        let finite = try #require(parsed["finite"] as? Double)
+        #expect(identical(finite, 42.0), "Finite numbers are untouched")
         #expect(parsed["text"] as? String == "unchanged", "Non-numeric values are untouched")
 
         let nested = try #require(parsed["nested"] as? [String: Any])
