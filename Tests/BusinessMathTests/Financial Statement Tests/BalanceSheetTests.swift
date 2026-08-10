@@ -437,8 +437,22 @@ struct BalanceSheetTests {
 			accounts: [cash, ap, equity]
 		)
 
-		#expect(throws: BalanceSheetError.self) {
+		do {
 			try balanceSheet.validate(tolerance: 0.01)
+			Issue.record("Expected validate to throw on an unbalanced balance sheet")
+		} catch let error as BusinessMathError {
+			guard case .inconsistentData(let description) = error else {
+				Issue.record("Expected .inconsistentData, got \(error)")
+				return
+			}
+			#expect(error.code == "E202")
+			// The message has to say which period and by how much, or the caller has
+			// to re-derive the failure themselves.
+			#expect(description.contains(periods[0].label))
+			#expect(description.contains("100000") || description.contains("100,000") || description.contains("100000.0"))
+			#expect(description.contains("80000") || description.contains("80,000") || description.contains("80000.0"))
+			// E202 carries a recovery suggestion; the local error it replaced carried none.
+			#expect(error.recoverySuggestion?.contains("consistency") == true)
 		}
 	}
 

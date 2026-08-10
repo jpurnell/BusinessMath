@@ -119,10 +119,7 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 	/// - Returns: The resulting series.
 	/// - Throws: ``FormulaError``.
 	public func evaluate(_ formula: String) throws -> TimeSeries<T> {
-		var parser = Parser(tokens: try Self.tokenise(formula))
-		let node = try parser.parseExpression()
-		try parser.expectEnd()
-		return try resolve(node)
+		try resolve(try Self.parseTree(of: formula))
 	}
 
 	/// The account names a formula refers to, without evaluating it.

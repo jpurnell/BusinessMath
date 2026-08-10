@@ -192,8 +192,16 @@ struct BusinessMathErrorTests {
         #expect(error.errorDescription?.contains("Circular dependency detected") == true)
         #expect(error.errorDescription?.contains("Revenue → COGS → GrossProfit → Revenue") == true)
         #expect(error.recoverySuggestion?.contains("Reordering calculations") == true)
-        #expect(error.recoverySuggestion?.contains("iterative solver") == true)
         #expect(error.recoverySuggestion?.contains("intermediate value") == true)
+        #expect(error.recoverySuggestion?.contains("intermediate value") == true)
+        // The recovery points at a symbol that exists. It previously advised an
+        // "iterative solver"; BusinessMath ships none, so the advice was unfollowable.
+        // It then advised "the prior period's value", which the formula language cannot
+        // express — there is no lag operator (FormulaEvaluator.swift:99). Both are pinned
+        // absent so neither unfollowable suggestion can return.
+        #expect(error.recoverySuggestion?.contains("ModelDefinition.dependencyReport()") == true)
+        #expect(error.recoverySuggestion?.contains("iterative solver") == false)
+        #expect(error.recoverySuggestion?.contains("prior period") == false)
     }
 
     @Test("Inconsistent data error")
@@ -485,7 +493,12 @@ struct BusinessMathErrorTests {
 
         // Verify recovery suggestions include multiple options
         #expect(recovery.contains("Reordering calculations"))
-        #expect(recovery.contains("iterative solver"))
         #expect(recovery.contains("intermediate value"))
+        #expect(recovery.contains("intermediate value"))
+
+        // Every option named must be one the caller can actually reach from this library.
+        #expect(recovery.contains("ModelDefinition.dependencyReport()"))
+        #expect(!recovery.contains("iterative solver"))
+        #expect(!recovery.contains("prior period"))
     }
 }

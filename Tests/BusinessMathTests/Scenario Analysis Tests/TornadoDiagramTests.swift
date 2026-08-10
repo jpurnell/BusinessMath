@@ -508,7 +508,153 @@ struct TornadoDiagramTests {
 			#expect(currentImpact >= nextImpact)
 		}
 	}
+
+	// MARK: - Unknown Driver Names
+
+	@Test("A misspelled driver name is rejected, not silently dropped")
+	func tornadoRejectsUnknownDriverName() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 100.0))
+		baseOverrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 1000.0))
+		baseOverrides["Cost"] = AnyDriver(DeterministicDriver(name: "Cost", value: 60.0))
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		let builder = createMultiDriverBuilder(entity: entity, periods: periods)
+
+		do {
+			// "Volme" is a typo. Before this was checked, the analysis returned three
+			// ranked inputs with no impact recorded for the typo — a chart that looks
+			// complete and is missing a bar.
+			_ = try runTornadoAnalysis(
+				baseCase: baseScenario,
+				entity: entity,
+				periods: periods,
+				inputDrivers: ["Price", "Volme", "Cost"],
+				variationPercent: 0.20,
+				steps: 3,
+				builder: builder
+			) { projection in
+				projection.incomeStatement.netIncome[periods[0]]!
+			}
+			Issue.record("Expected runTornadoAnalysis to reject the unknown driver name")
+		} catch let error as BusinessMathError {
+			guard case .invalidDriver(let name, let reason) = error else {
+				Issue.record("Expected .invalidDriver, got \(error)")
+				return
+			}
+			#expect(name == "Volme")
+			#expect(error.code == "E200")
+			// The message must name the drivers that do exist, so the typo is fixable
+			// from the error alone.
+			#expect(reason.contains("Price"))
+			#expect(reason.contains("Volume"))
+			#expect(reason.contains("Cost"))
+		}
+	}
+
+	@Test("Every unknown driver name is reported, not just the first")
+	func tornadoReportsAllUnknownDriverNames() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 100.0))
+		baseOverrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 1000.0))
+		baseOverrides["Cost"] = AnyDriver(DeterministicDriver(name: "Cost", value: 60.0))
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		let builder = createMultiDriverBuilder(entity: entity, periods: periods)
+
+		do {
+			_ = try runTornadoAnalysis(
+				baseCase: baseScenario,
+				entity: entity,
+				periods: periods,
+				inputDrivers: ["Price", "Volme", "Cost", "Costs"],
+				variationPercent: 0.20,
+				steps: 3,
+				builder: builder
+			) { projection in
+				projection.incomeStatement.netIncome[periods[0]]!
+			}
+			Issue.record("Expected runTornadoAnalysis to reject the unknown driver names")
+		} catch let error as BusinessMathError {
+			guard case .invalidDriver(let name, let reason) = error else {
+				Issue.record("Expected .invalidDriver, got \(error)")
+				return
+			}
+			#expect(name == "Volme")
+			// One run should surface both typos; fixing them one per run is the same
+			// defect at a slower pace.
+			#expect(reason.contains("Volme"))
+			#expect(reason.contains("Costs"))
+		}
+	}
+
+	@Test("Unknown driver names are rejected before any projection is run")
+	func tornadoRejectsUnknownDriverBeforeAnyWork() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 100.0))
+		baseOverrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 1000.0))
+		baseOverrides["Cost"] = AnyDriver(DeterministicDriver(name: "Cost", value: 60.0))
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		// A builder that refuses to run. If the name check happens first, the caller
+		// sees .invalidDriver; if the base case is projected first, the caller sees
+		// BuilderRan instead — and has paid for a projection to learn about a typo.
+		let refusingBuilder: ScenarioRunner.StatementBuilder = { _, _ in
+			throw BuilderRan()
+		}
+
+		do {
+			_ = try runTornadoAnalysis(
+				baseCase: baseScenario,
+				entity: entity,
+				periods: periods,
+				inputDrivers: ["Price", "Volme"],
+				variationPercent: 0.20,
+				steps: 3,
+				builder: refusingBuilder
+			) { projection in
+				projection.incomeStatement.netIncome[periods[0]]!
+			}
+			Issue.record("Expected runTornadoAnalysis to throw")
+		} catch is BuilderRan {
+			Issue.record("The typo should be caught before the base case is projected")
+		} catch let error as BusinessMathError {
+			guard case .invalidDriver(let name, _) = error else {
+				Issue.record("Expected .invalidDriver, got \(error)")
+				return
+			}
+			#expect(name == "Volme")
+			#expect(error.code == "E200")
+		}
+	}
 }
+
+/// Sentinel thrown by a statement builder that must never be invoked.
+private struct BuilderRan: Error {}
 
 @Suite("Tornado Diagram Additional Tests")
 struct TornadoDiagramAdditionalTests {
