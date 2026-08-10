@@ -106,10 +106,24 @@ struct CoxProcessSimulationTests {
 
     @Test("Repeated unseeded simulations are not all the same number")
     func unseededSimulationsVary() {
+        let horizon = 100.0
         let cox = CoxProcess<Double>(meanHazardRate: 0.02, volatility: 0.30)
 
-        let draws = (0..<50).map { _ in cox.simulateDefaultTime() }
-        #expect(Set(draws).count > 40, "\(Set(draws).count) distinct values in 50 draws")
+        let draws = (0..<50).map { _ in cox.simulateDefaultTime(horizon: horizon) }
+
+        // Censored draws are all exactly `horizon`, so the distribution has an atom there
+        // and counting distinct values over the whole sample is not a test of anything.
+        // At λ=0.02 the cumulative hazard over 100 years is ≈ 2, so ≈ e⁻² ≈ 13.5% of draws
+        // land on it — about seven of fifty, with a binomial tail that put the old
+        // `Set(draws).count > 40` assertion over the line roughly once in forty runs.
+        //
+        // Below the horizon the distribution is continuous, so those draws are distinct
+        // with probability one. That is the exact claim, and it does not depend on how
+        // many happened to be censored.
+        let uncensored = draws.filter { $0 < horizon }
+        #expect(Set(uncensored).count == uncensored.count,
+                "\(uncensored.count - Set(uncensored).count) repeated values among \(uncensored.count) uncensored draws")
+        #expect(uncensored.count > 20, "\(uncensored.count) of 50 draws below the horizon — expected ≈ 43")
 
         // Specifically not the median, ln(2)/λ, which the old empty-seeds path returned
         // on every single call.
