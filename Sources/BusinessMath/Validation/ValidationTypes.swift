@@ -13,7 +13,7 @@ import Foundation
 ///
 /// Provides metadata about the field being validated, including optional
 /// entity, period, and custom metadata.
-public struct ValidationContext {
+public struct ValidationContext: Sendable {
 	/// The name of the field being validated.
 	public let fieldName: String
 
@@ -24,7 +24,7 @@ public struct ValidationContext {
 	public let period: Period?
 
 	/// Additional metadata for validation context.
-	public let metadata: [String: Any]
+	public let metadata: [String: any Sendable]
 
 	/// Creates a validation context.
 	///
@@ -37,7 +37,7 @@ public struct ValidationContext {
 		fieldName: String,
 		entity: Entity? = nil,
 		period: Period? = nil,
-		metadata: [String: Any] = [:]
+		metadata: [String: any Sendable] = [:]
 	) {
 		self.fieldName = fieldName
 		self.entity = entity
@@ -49,7 +49,7 @@ public struct ValidationContext {
 // MARK: - ValidationError
 
 /// An error encountered during validation.
-public struct ValidationError: Error, CustomStringConvertible {
+public struct ValidationError: Error, CustomStringConvertible, Sendable {
 	/// The field that failed validation.
 	public let field: String
 
@@ -101,7 +101,7 @@ public struct ValidationError: Error, CustomStringConvertible {
 // MARK: - ValidationResult
 
 /// The result of a validation operation.
-public enum ValidationResult {
+public enum ValidationResult: Sendable {
 	/// Validation passed.
 	case valid
 

@@ -200,11 +200,27 @@ struct WallClockAdoptionTests {
 		#expect(report.timestamp == Self.instant)
 	}
 
-	// `ModelDebugger.validate(_ model:)` is converted too, but has no test here: its
-	// `ValidationReport` is not `Sendable`, so the result cannot cross out of the actor
-	// at all — not into a test, and not into any other caller. That is a pre-existing
-	// concurrency defect in the method's signature, unrelated to the clock, and fixing
-	// it is a separate change. Recorded rather than worked around.
+	/// The companion to the above, and the reason `ValidationReport` had to become
+	/// `Sendable`.
+	///
+	/// `validate(_ model:)` is actor-isolated and returns a `ValidationReport`. Until that
+	/// type conformed to `Sendable` the result could not leave the actor — not into a test,
+	/// and not into any other caller either, which made the method unreachable rather than
+	/// merely untested. Every stored property was already a value type, and
+	/// `ValidationError.value` was already declared `any Sendable`; only the conformance
+	/// itself was missing.
+	@Test("A model validation report carries the injected instant")
+	func debuggerModelValidationTimestamp() async {
+		let debugger = ModelDebugger(clock: FixedWallClock(at: Self.instant))
+		let model = FinancialModel {
+			Revenue { Product("Widget Sales").price(50).quantity(1000) }
+			Costs { Fixed("Overhead", 10_000) }
+		}
+
+		let report = await debugger.validate(model)
+
+		#expect(report.timestamp == Self.instant)
+	}
 
 	@Test("Model snapshots carry the injected instant")
 	func debuggerSnapshotTimestamp() async {
