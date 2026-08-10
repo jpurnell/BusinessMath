@@ -71,25 +71,18 @@ public func generateRandomReturns<G: RandomNumberGenerator>(
 	using generator: inout G
 ) -> VectorN<Double> {
 	let returns = (0..<count).map { _ in
-		// Box-Muller transform for normal distribution.
+		// The shared Box-Muller transform. This used to be written out here, with
+		// the reason recorded that the shared routine quantized its seeds to
+		// multiples of 1e-7 while these uniforms carried the full 53-bit
+		// significand. That is no longer true: `boxMullerSeed(using:)` draws
+		// `1 - Double.random(in: 0..<1)` for u₁ and `Double.random(in: 0..<1)` for
+		// u₂ from the caller's generator, which is exactly what stood here.
 		//
-		// `1 - Double.random(in: 0..<1)` puts u1 in (0, 1], which is the interval
-		// the transform requires. The previous guard,
-		// `u1 == 0 ? Double.leastNormalMagnitude : u1`, is a clamp: it mapped the
-		// degenerate draw onto 2.2e-308, whose radius is
-		// sqrt(-2·log(2.2e-308)) = 37.64 — a 37-sigma sample emitted as a point
-		// mass. Subtraction is exact for every representable u < 1 and
-		// `u ↦ 1 - u` is measure-preserving, so the draw stays exactly uniform
-		// and no value carries an atom. See `git show d247691`.
-		//
-		// This does not call the shared `boxMuller`: that routine runs its seeds
-		// through `distributionUniform`, which quantizes to a multiple of 1e-7.
-		// These uniforms carry the full 53-bit significand, and routing them
-		// through a 10-million-point lattice would be a measurable loss of
-		// resolution in the tail — see the note in `boxMuellerSeed`.
-		let u1 = 1.0 - Double.random(in: 0.0..<1.0, using: &generator)
-		let u2 = Double.random(in: 0.0..<1.0, using: &generator)
-		let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2)
+		// `z2` rather than `z1` because `z2` is the cosine branch — the one this
+		// site computed. The two are equally standard normal, but taking the same
+		// branch makes the output bit-identical to what it was, so adopting the
+		// shared routine changes no value any caller has seen.
+		let (_, z): (Double, Double) = boxMullerSeed(using: &generator)
 		return mean + stdDev * z
 	}
 	return VectorN(returns)

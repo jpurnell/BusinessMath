@@ -155,9 +155,17 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
                 let u1Bits = jumpSeed
                 jumpSeed = jumpSeed &* 6364136223846793005 &+ 1442695040888963407
                 let u2Bits = jumpSeed
-                let u1 = max(Double(u1Bits) / Double(UInt64.max), 1e-15) // fp-safety:disable — UInt64.max is constant
+                let u1 = Double(u1Bits) / Double(UInt64.max) // fp-safety:disable — UInt64.max is constant
                 let u2 = Double(u2Bits) / Double(UInt64.max) // fp-safety:disable — UInt64.max is constant
-                let z = (-2.0 * Double.log(u1)).squareRoot() * Double.cos(2.0 * .pi * u2)
+                // The shared transform, taking `z2` — the cosine branch this site
+                // already computed, so every value it has ever produced is
+                // unchanged. What the shared routine replaces is the local pole
+                // guard `max(u1, 1e-15)`, a clamp that would have put an atom at
+                // radius 8.31; `boxMullerSeed` remaps only the single point u₁ = 0
+                // and leaves the rest of the draw exactly uniform. Reachable only
+                // when `u1Bits` is exactly zero, one LCG state in 2⁶⁴, so no output
+                // moves in practice — the guard is right rather than merely rare.
+                let (_, z): (Double, Double) = boxMullerSeed(u1, u2)
                 jumpComponent += jumpMean + jumpVolatility * z
             }
         }

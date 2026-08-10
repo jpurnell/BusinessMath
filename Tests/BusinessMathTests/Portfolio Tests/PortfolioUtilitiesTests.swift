@@ -33,25 +33,26 @@ struct PortfolioUtilitiesTests {
 		// from the system RNG) was previously the cause of this test
 		// flaking when an unlucky 5σ+ tail value was drawn — see
 		// 09_TEST_DRIVEN_DEVELOPMENT.md "Deterministic Randomness Standard".
-		let rng = SeededRNG(seed: 42)
+		//
+		// This used to reinstate Box-Muller inline — its own uniforms, its own
+		// `u1 == 0 ? Double.leastNormalMagnitude : u1` pole guard — and then
+		// assert bounds on the result. That tested the copy in the test, not
+		// the function it was named after: `generateRandomReturns` could have
+		// returned anything at all and this would still have passed. It now
+		// calls the function under test.
 		let count = 1000
 		let mean = 0.10
 		let stdDev = 0.05
-		var returns: [Double] = []
-		returns.reserveCapacity(count)
-		for _ in 0..<count {
-			let u1 = rng.next()
-			let u2 = rng.next()
-			// Avoid log(0) — SeededRNG returns values in [0, 1) so u1 may be 0
-			let safeU1 = u1 == 0 ? Double.leastNormalMagnitude : u1
-			let z = sqrt(-2.0 * log(safeU1)) * cos(2.0 * .pi * u2)
-			returns.append(mean + stdDev * z)
-		}
+		var rng = DeterministicRNG(seed: 42)
+		let returns = generateRandomReturns(count: count, mean: mean, stdDev: stdDev, using: &rng)
 
-		// With seed 42 the realized extremes are well within these bounds.
-		// Because the seed is fixed, this assertion is deterministic — it
-		// will either always pass or always fail.
-		for r in returns {
+		#expect(returns.dimension == count)
+
+		// With this seed the realized extremes are within ±4σ. Because the seed
+		// is fixed, the assertion is deterministic — it will either always pass
+		// or always fail, and it is a claim about `generateRandomReturns`.
+		for r in returns.toArray() {
+			#expect(r.isFinite, "Return should be finite")
 			#expect(r > -0.10, "Return shouldn't be too negative")
 			#expect(r < 0.30, "Return shouldn't be too high")
 		}

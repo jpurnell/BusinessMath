@@ -5,6 +5,7 @@
 //  Created by Justin Purnell on 2025-12-29.
 //
 
+import BusinessMath
 import Foundation
 import Numerics
 
@@ -376,10 +377,13 @@ public enum Distribution {
     public func sample() -> Double {
         switch self {
         case .normal(let mean, let stdDev):
-            // Box-Muller transform
-            let u1 = Double.random(in: 0..<1) // stochastic:exempt
-            let u2 = Double.random(in: 0..<1) // stochastic:exempt
-            let z = sqrt(-2 * log(u1)) * cos(2 * .pi * u2) // fp-safety:disable — u1 from random in [0,1)
+            // The shared Box-Muller transform. The copy that stood here had no pole
+            // guard at all: `Double.random(in: 0..<1)` includes 0, `log(0)` is
+            // -infinity, and one draw in 2⁵³ came out non-finite. The `fp-safety`
+            // suppression on that line gave "u1 from random in [0,1)" as the reason it
+            // was safe, which is the interval that contains the pole.
+            var generator = SystemRandomNumberGenerator() // stochastic:exempt
+            let (_, z): (Double, Double) = boxMullerSeed(using: &generator)
             return mean + stdDev * z
 
         case .uniform(let min, let max):
