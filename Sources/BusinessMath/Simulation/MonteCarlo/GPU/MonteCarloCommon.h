@@ -7,12 +7,12 @@
 //  This header ensures consistent type definitions across all Monte Carlo
 //  Metal shader files, preventing compilation issues from mismatched structs.
 //
-//  AHEAD-OF-TIME COPY — KEEP IN STEP WITH MonteCarloMSL.swift
+//  AHEAD-OF-TIME COPY — KEEP IN STEP WITH MetalShaderSource.swift
 //
 //  Nothing in this package compiles this file. The three .metal files that
 //  #include it are all listed in Package.swift's exclude:, so SPM skips them and
 //  no Metal toolchain is required to build. Every kernel that actually runs is
-//  compiled at launch from the Swift string in MonteCarloMSL.swift.
+//  compiled at launch from the Swift string in MetalShaderSource.swift.
 //
 //  That is exactly how the two came to disagree: this header's nextNormal had no
 //  pole guard at all while the string clamped with max(u1, 1e-10f), and nobody
@@ -20,7 +20,7 @@
 //  this text. A header and a Swift string literal cannot share source without a
 //  build step that embeds one in the other, which would reintroduce the toolchain
 //  dependency the exclude: exists to avoid. So this is a hand-maintained mirror,
-//  and the guard below is the one from MonteCarloMSL.swift — read the reasoning
+//  and the guard below is the one from MetalShaderSource.swift — read the reasoning
 //  there, not here.
 //
 
@@ -134,6 +134,30 @@ inline float nextUniform(device RNGState* state) {
     s1 ^= s1 << 23;
     state->s1 = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
     return float(state->s0 + state->s1) * 5.421010862427522e-20f;
+}
+
+/// SplitMix64's mixing function — a bijection with avalanche good enough that
+/// consecutive counter values give unrelated outputs.
+inline ulong splitmix64(thread ulong* x) {
+    ulong z = (*x += 0x9E3779B97F4A7C15UL);
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+    return z ^ (z >> 31);
+}
+
+/// Give thread `tid` its own xorshift128+ stream, derived from `baseSeed`.
+///
+/// This was `s0 = baseSeed ^ tid`, `s1 = (baseSeed >> 32) ^ (tid << 32)` with ten
+/// warm-up draws. Xorshift128+ is GF(2)-linear in its state, so the difference
+/// between two threads seeded that way is itself a xorshift trajectory from a
+/// one-bit delta and does not diffuse — measured cross-thread lag-1 correlation was
+/// +0.26, and warm-up wandered rather than decayed. Base seed 0 also gave thread 0
+/// the all-zero state, which is absorbing. Read the reasoning in MetalShaderSource.
+inline void seedRNGState(device RNGState* state, ulong baseSeed, uint tid) {
+    ulong x = baseSeed + ulong(tid) * 0x9E3779B97F4A7C15UL;
+    state->s0 = splitmix64(&x);
+    state->s1 = splitmix64(&x);
+    if (state->s0 == 0 && state->s1 == 0) { state->s1 = 1; }
 }
 
 /// Move a uniform onto (0, 1], the interval Box-Muller requires.

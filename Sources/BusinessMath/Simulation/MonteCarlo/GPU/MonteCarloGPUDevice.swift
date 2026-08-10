@@ -100,9 +100,10 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         // Include all kernel code inline
         // (In production, this would reference the .metal files)
 
-        // RNGState, nextUniform and nextNormal come from MetalShaderSource, the
-        // package's single MSL definition of them. They used to be written out here
-        // and again in MonteCarloCommon.h, and the two had already diverged: the
+        // RNGState, seedRNGState, nextUniform and nextNormal come from
+        // MetalShaderSource, the package's single MSL definition of them. They used to
+        // be written out here and again in MonteCarloCommon.h, and the two had
+        // already diverged: the
         // header's nextNormal had no pole guard at all while this copy clamped with
         // max(u1, 1e-10f). See MetalShaderSource for why the shared guard is neither
         // of those.
@@ -213,9 +214,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             constant ulong& baseSeed [[buffer(1)]],
             uint tid [[thread_position_in_grid]]
         ) {
-            states[tid].s0 = baseSeed ^ tid;
-            states[tid].s1 = (baseSeed >> 32) ^ (ulong(tid) << 32);
-            for (int i = 0; i < 10; i++) { nextUniform(&states[tid]); }
+            seedRNGState(&states[tid], baseSeed, tid);
         }
 
         kernel void monteCarloIteration(
