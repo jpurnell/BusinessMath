@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Foundation
 @testable import BusinessMath
 
@@ -144,7 +145,7 @@ struct StressTestingTests {
 		let shock = 0.0
 		let shockedValue = baseValue * (1.0 + shock)
 
-		#expect(shockedValue == baseValue)
+		#expect(identical(shockedValue, baseValue))
 	}
 
 	// MARK: - Scenario Severity Tests

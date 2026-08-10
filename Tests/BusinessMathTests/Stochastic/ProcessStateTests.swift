@@ -13,7 +13,8 @@ struct ProcessStateTests {
 
     @Test("Double dimension is 1")
     func doubleDimension() {
-        #expect(Double.dimension == 1)
+        let doubleDimension: Int = Double.dimension
+        #expect(doubleDimension == 1)
     }
 
     @Test("Double Scalar is Double")

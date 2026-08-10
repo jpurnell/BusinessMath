@@ -10,6 +10,7 @@
 //
 
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Foundation
 @testable import BusinessMath
 
@@ -57,7 +58,7 @@ struct MonteCarloIntegrationSeedTests {
 		var g2 = SplitMix64(seed: 7)
 		let a: Double = integrate(square, iterations: 10_000, using: &g1)
 		let b: Double = integrate(square, iterations: 10_000, using: &g2)
-		#expect(a == b)
+		#expect(identical(a, b))
 	}
 
 	/// A single sample is already the estimate: the accumulator must not carry a
@@ -69,7 +70,7 @@ struct MonteCarloIntegrationSeedTests {
 		var g2 = SplitMix64(seed: 11)
 		let estimate: Double = integrate(square, iterations: 1, using: &g1)
 		let sample: Double = distributionUniform(Double.random(in: 0..<1, using: &g2))
-		#expect(estimate == square(sample))
+		#expect(identical(estimate, square(sample)))
 	}
 
 	@Test("Non-positive iteration counts return zero")

@@ -91,7 +91,7 @@ struct ClusteringTypesTests {
 		#expect(result.clusters[0] == cluster1)
 		#expect(result.clusters[1] == cluster2)
 		#expect(result.assignments == assignments)
-		#expect(result.wcss == wcss)
+		#expect(identical(result.wcss, wcss))
 		#expect(result.iterations == iterations)
 		#expect(result.converged == converged)
 	}

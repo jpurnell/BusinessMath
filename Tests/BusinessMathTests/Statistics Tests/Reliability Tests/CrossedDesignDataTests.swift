@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Foundation
 @testable import BusinessMath
 
@@ -48,7 +49,7 @@ struct CrossedDesignDataTests {
             for j in 0..<dims[1] {
                 for k in 0..<dims[2] {
                     let expectedFlat = i * dims[1] * dims[2] + j * dims[2] + k
-                    #expect(data.value(at: [i, j, k]) == Double(expectedFlat))
+                    #expect(identical(data.value(at: [i, j, k]), Double(expectedFlat)))
                 }
             }
         }

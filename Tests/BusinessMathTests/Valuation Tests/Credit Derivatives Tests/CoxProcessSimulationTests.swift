@@ -228,10 +228,13 @@ struct CoxProcessSimulationTests {
         let cox = CoxProcess<Double>(meanHazardRate: 0.08, volatility: 0.25)
         let expected = cox.simulateDefaultTime(seed: 4242)
 
+        // The contending tasks need only be *other* streams, not unpredictable ones, so
+        // their seeds are enumerated rather than drawn: the test keeps the concurrency it
+        // is about and loses the run-to-run variation it never needed.
         let results = await withTaskGroup(of: Double.self) { group in
-            for _ in 0..<32 {
+            for index in 0..<32 {
                 group.addTask { cox.simulateDefaultTime(seed: 4242) }
-                group.addTask { cox.simulateDefaultTime(seed: UInt64.random(in: 1...1_000_000)) }
+                group.addTask { cox.simulateDefaultTime(seed: 900_001 &+ UInt64(index)) }
             }
             var all: [Double] = []
             for await value in group { all.append(value) }

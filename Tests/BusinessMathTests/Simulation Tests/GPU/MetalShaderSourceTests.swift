@@ -66,7 +66,10 @@ struct MetalShaderSourceTests {
 		"""
 
 		let library = try device.makeLibrary(source: source, options: nil)
-		#expect(library.makeFunction(name: "drawNormals") != nil)
+		let drawNormals = try #require(library.makeFunction(name: "drawNormals"),
+									   "the kernel that uses the shared RNG source did not link")
+		#expect(drawNormals.functionType == .kernel,
+				"drawNormals linked as \(drawNormals.functionType), not a kernel entry point")
 	}
 
 	/// The guard, executed on the GPU rather than reasoned about.
@@ -136,12 +139,31 @@ struct MetalShaderSourceTests {
 	/// these return `nil` rather than throwing, and every other GPU test in the
 	/// package reads that `nil` as "no GPU here" and passes.
 	@Test("Both production kernel libraries still build")
-	func productionKernelsCompile() {
+	func productionKernelsCompile() throws {
 		guard compiler() != nil else { return }
-		#expect(MonteCarloGPUDevice() != nil,
-				"the Monte Carlo kernel source failed to compile — the GPU path is silently off")
-		#expect(MetalDevice.shared != nil,
-				"the heuristic kernel source failed to compile — the GPU path is silently off")
+
+		// Compiling is necessary but not sufficient: a library that builds and then
+		// exposes none of the entry points the package dispatches to is the same silent
+		// fallback. So each device is unwrapped and then asked to do its actual work.
+		let monteCarlo = try #require(MonteCarloGPUDevice(),
+									  "the Monte Carlo kernel source failed to compile — the GPU path is silently off")
+		let draws = try monteCarlo.runSimulation(
+			distributions: [(0, (0.0, 1.0, 0.0))],   // N(0, 1)
+			modelBytecode: [(4, 0, 0.0)],            // emit input 0 unchanged
+			iterations: 4096,
+			seed: 20_260_810)
+		#expect(draws.count == 4096, "the kernel returned \(draws.count) draws, not 4096")
+		#expect(draws.allSatisfy { $0.isFinite }, "the compiled kernel produced a non-finite draw")
+		#expect(Set(draws).count > 4000,
+				"only \(Set(draws).count) distinct draws — the kernel compiled but is not drawing")
+
+		let heuristics = try #require(MetalDevice.shared,
+									  "the heuristic kernel source failed to compile — the GPU path is silently off")
+		let dispatched = ["crossoverPopulation", "mutatePopulation", "tournamentSelection",
+						  "deMutation", "deCrossover", "deSelection", "psoUpdateParticles"]
+		let missing = dispatched.filter { !heuristics.library.functionNames.contains($0) }
+		#expect(missing.isEmpty,
+				"the heuristic library is missing \(missing) — every one of those dispatches falls back silently")
 	}
 
 	#endif

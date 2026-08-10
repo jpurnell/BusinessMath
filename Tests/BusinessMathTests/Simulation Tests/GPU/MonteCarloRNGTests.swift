@@ -511,7 +511,12 @@ struct MonteCarloRNGTests {
         let adversarial = UInt64(0) &- 0x9E37_79B9_7F4A_7C15
         guard let constructed = try seededStates(count: 1, seed: adversarial) else { return }
         #expect(constructed[0].x == 0, "the constructed case should be the one that zeroes s0")
-        #expect(constructed[0].y != 0, "s1 must not also be zero — that state is absorbing")
+        // s1 is mix(0x9E3779B97F4A7C15) — SplitMix64's output for a counter that has just
+        // wrapped to zero. The value follows from the mixing constants above rather than
+        // from observation, so asserting it, instead of merely "not zero", also fails if
+        // the mixing itself is changed.
+        #expect(constructed[0].y == 0xE220_A839_7B1D_CDAF,
+                "s1 must be mix(0x9E3779B97F4A7C15), not \(constructed[0].y) — and above all not zero, which is the absorbing state")
 
         for seed in Self.crossThreadSeeds + [adversarial] {
             let states = try #require(try seededStates(count: 100_000, seed: seed))

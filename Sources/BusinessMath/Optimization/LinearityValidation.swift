@@ -20,7 +20,7 @@ private let linearityValidationSeed: UInt64 = 0x5EED_11EA_2_ADD
 ///
 /// ## Why the sample points are fixed
 ///
-/// The verdict has to be the same on every run. This function is a gate — ``BranchAndBound``
+/// The verdict has to be the same on every run. This function is a gate — ``BranchAndBoundSolver``
 /// calls it before it will accept a closure as a MILP objective or constraint — and a gate
 /// that samples afresh each time can wave through, on one run, a model it rejected on the
 /// last. `f(x) = |x|` is the case that showed it: coefficients extracted at x = 0.5 describe

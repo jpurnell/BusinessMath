@@ -480,13 +480,13 @@ struct ChiSquaredDistributionTests {
 		let sample2: Double = distributionChiSquared(degreesOfFreedom: df, seed: seed)
 		let sample3: Double = distributionChiSquared(degreesOfFreedom: df, seed: seed)
 
-		#expect(sample1 == sample2 && sample2 == sample3,
+		#expect(identical(sample1, sample2) && identical(sample2, sample3),
 			   "Same seed should produce identical results")
 
 		// Different seeds should produce different results
 		let differentSample: Double = distributionChiSquared(degreesOfFreedom: df, seed: 910)
 
-		#expect(sample1 != differentSample,
+		#expect(!identical(sample1, differentSample),
 			   "Different seeds should produce different results")
 	}
 }

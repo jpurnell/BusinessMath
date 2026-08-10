@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Foundation
 @testable import BusinessMath
 
@@ -89,9 +90,16 @@ struct MINLPIntegrationTests {
         let sum = result.integerSolution[0] + result.integerSolution[1]
         #expect(sum >= 3, "Constraint violated: x + y = \(sum) < 3")
 
-        // Verify all integer
-        for val in result.integerSolution {
-            #expect(Double(val) == Double(Int(val)), "Not integer: \(val)")
+        // Verify all integer. `integerSolution` is already `[Int]` — it rounds — so
+        // comparing it against its own rounding asserts nothing that could fail. The claim
+        // belongs on the vector the solver actually returned. The bound is the solver's own
+        // integralityTolerance, whose default is 1e-6: anything looser the solver would
+        // itself have called fractional and branched on. Measured here at 1.42e-07 and
+        // 6.25e-07 — inside the bound, but far enough outside exactness that a bit-for-bit
+        // check would fail. That is the size of what the old assertion was not looking at.
+        for value in result.solution.toArray() {
+            #expect(approximatelyEqual(value, value.rounded(), tolerance: 1e-6),
+                    "Not integer: \(value)")
         }
     }
 

@@ -191,7 +191,7 @@ struct NormalDistributionTests_SwiftTesting {
 	func degenerateNormal() {
 		for mu in [-10.0, 0.0, 1.2345] {
 			let x = distributionNormal(mean: mu, stdDev: 0)
-			#expect(x == mu)
+			#expect(identical(x, mu))
 		}
 	}
 }

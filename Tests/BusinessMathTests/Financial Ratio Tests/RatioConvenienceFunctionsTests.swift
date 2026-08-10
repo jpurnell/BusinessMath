@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Foundation
 @testable import BusinessMath
 
@@ -747,7 +748,8 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let bookEquityQ1 = 1_850_000.0
 								let pbExpected = marketCapQ1 / bookEquityQ1 // ≈ 27.027...
 
-								#expect(valuation.marketCap[q1] == marketCapQ1)
+								let marketCap = try #require(valuation.marketCap[q1])
+								#expect(identical(marketCap, marketCapQ1))
 								#expect(abs(valuation.priceToEarnings[q1]! - peExpected) < 1e-6)
 								#expect(abs(valuation.priceToSales[q1]! - psExpected) < 1e-9)
 								#expect(abs(valuation.priceToBook[q1]! - pbExpected) < 1e-9)

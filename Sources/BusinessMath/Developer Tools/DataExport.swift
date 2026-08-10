@@ -7,6 +7,10 @@
 
 import Foundation
 import Numerics
+#if canImport(os)
+import os
+private let logger = Logger(subsystem: "com.businessmath", category: "DataExport")
+#endif
 
 // MARK: - CSV Non-Finite Values
 
@@ -98,7 +102,7 @@ public struct DataExporter: Sendable {
     /// - Returns: CSV-formatted string with model components
     ///
     /// Non-finite values are written as the lowercase ASCII tokens `nan`, `inf` and `-inf` —
-    /// see ``csvNonFiniteToken(_:)``. Every numeric column uses the same token for the same
+    /// see `csvNonFiniteToken(_:)`. Every numeric column uses the same token for the same
     /// condition, and no column ever contains a display glyph such as `∞`.
     public func exportToCSV() -> String {
         var lines: [String] = []
@@ -223,7 +227,7 @@ public struct TimeSeriesExporter<T: Real & Sendable>: Sendable {
     /// - Returns: CSV-formatted string with period and value columns
     ///
     /// Non-finite values are written as the lowercase ASCII tokens `nan`, `inf` and `-inf` —
-    /// see ``csvNonFiniteToken(_:)``. Every numeric column uses the same token for the same
+    /// see `csvNonFiniteToken(_:)`. Every numeric column uses the same token for the same
     /// condition, and no column ever contains a display glyph such as `∞`.
     public func exportToCSV() -> String {
         var lines: [String] = []
@@ -300,7 +304,7 @@ public struct InvestmentExporter: Sendable {
     /// - Returns: CSV-formatted string with investment metrics and cash flows
     ///
     /// Non-finite values are written as the lowercase ASCII tokens `nan`, `inf` and `-inf` —
-    /// see ``csvNonFiniteToken(_:)``. Every numeric column uses the same token for the same
+    /// see `csvNonFiniteToken(_:)`. Every numeric column uses the same token for the same
     /// condition, and no column ever contains a display glyph such as `∞`.
     public func exportToCSV() -> String {
         var lines: [String] = []
@@ -462,6 +466,11 @@ private func dictToJson(_ dict: [String: Any]) -> String {
         )
         return String(decoding: jsonData, as: UTF8.self)
     } catch {
+        // Logged before the trap because a precondition message is not always where the
+        // failure is read from — a crash report keeps the message, a log keeps the error.
+        #if canImport(os)
+        logger.error("JSON export failed to serialize an object isValidJSONObject accepted: \(error.localizedDescription, privacy: .public)")
+        #endif
         preconditionFailure(
             "BusinessMath JSON export failed to serialize an object that isValidJSONObject "
             + "accepted: \(error). This is a bug in DataExport.swift."

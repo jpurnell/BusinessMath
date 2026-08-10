@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Numerics
 @testable import BusinessMath
 
@@ -479,7 +480,7 @@ struct FinancialProjectionAdditionalTests {
 			let exp = incomeStmt.totalExpenses[p]!
 			let net = incomeStmt.netIncome[p]!
 				// totalRev = 1000+100, 1100+100, ...
-			#expect(totalRev == Double(1100 + 100 * i))
+			#expect(identical(totalRev, Double(1100 + 100 * i)))
 			#expect(net == totalRev - exp)
 		}
 	}

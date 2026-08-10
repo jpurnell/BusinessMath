@@ -1,124 +1,120 @@
-# Handoff — 2026-08-09
+# Handoff — 2026-08-10
 
-**70 of 73 DocC articles now compile as one program.** Nothing is committed beyond `68b91dd`.
+**The DocC catalogue compiles, and the checker that proves it now ships in the gate.**
+
+Nothing is pushed. Fifteen commits on `fix/simplex-scale-relative-feasibility`, all verified by
+direct runs rather than agent reports.
 
 ---
 
-## Git state
+## State
 
-Branch `fix/simplex-scale-relative-feasibility`, two commits ahead of `origin/main`, unpushed:
-
-| commit | what |
+| | |
 |---|---|
-| `817ea6f` | simplex scale-invariance fix (the follow-on WIP was deliberately reverted — the committed fix stands) |
-| `68b91dd` | `docs(1.5)`: first article made to compile as one program |
+| tests | 6,278 in 553 suites |
+| build | 0 warnings |
+| DocC articles | 73/73, 1,219 fences checked, 86 exempt |
+| quality gate | **in progress** — was 54 errors / 10 warnings after the gate redeploy |
 
-Everything else is **uncommitted in the working tree**: ~70 `.docc` articles, plus the source
-changes below. Separable — `git add Sources/BusinessMath/BusinessMath.docc` takes only the docs.
-
----
-
-## What landed
-
-### Source (tested, full suite green)
-- **`OptimizationError` gained `dimensionMismatch` and `numericalInstability`**
-  (`Valuation/Debt/BondPricing.swift:1031`), with doc comments explaining why each is distinct
-  from its neighbour. Four throw sites converted:
-  `Optimization/NumericalDifferentiation.swift` (empty vs ragged vs wrong-length; exact
-  singularity vs near-zero pivot) and `Optimization/LinearityValidation.swift:61`.
-- **`Tests/BusinessMathTests/Optimization Tests/OptimizationErrorPrecisionTests.swift`** — 7 tests,
-  green. Note the near-singular fixture must have a *whole column* small
-  (`[[1e-12, 1], [1e-13, 2]]`): partial pivoting swaps away a small leading entry, so
-  `[[1e-12, 1], [1, 1]]` solves fine.
-
-### Documentation
-- **Part 1 complete** — all ten articles, 197 blocks, 2 exemptions.
-- 70 of 73 overall green.
-
-### Elsewhere
-- **quality-gate-swift** `docs/doc-code-example-rules` branch → guidelines commit (see below).
-  `project/plans/proposals/DocCodeAuditor.md` — the living design doc, now with §8a (the four-rule
-  family) and the `--stage`-as-default decision.
-- **development-guidelines** (canonical: `Tools/development-guidelines`) — branch
-  `docs/doc-code-example-rules`, commit `13b45a3`. Adds the one-program rule, the
-  `docs:illustrative` marker, Rule 5 (never shadow a public module symbol), Rule 6 (no playground
-  scaffolding), and "regenerate expected output, never hand-edit". Unpushed, untagged; suggest
-  `v2.2.0` since it makes existing projects newly non-compliant.
-- **`project/plans/proposals/IntendedSurface.md`** (this repo) — the design doc on API the
-  documentation promises and we do not have.
+The gate number is not a regression. Redeploying brought in a unified `fp-equality` rule that
+closed a coverage hole: the old test-quality rule required a float *literal* adjacent to `==`, so
+comparisons between two computed `Double`s were invisible. The 54 are that class, newly visible.
+Most are seeded-reproducibility assertions where `==` is genuinely the wrong operator — it reports
+`NaN != NaN`, so a NaN in the stream lets the assertion pass while broken.
 
 ---
 
-## The three outstanding articles
+## What landed today
 
-| article | why |
-|---|---|
-| `5.8-IntegerProgramming` | 86 blocks; never assigned in the original waves. Agent in flight. |
-| `3.16-FinancialStatementsReference` | being rewritten around a **generator** (see below). Agent in flight. |
-| `3.15-DataIngestionGuide` | **blocked on a product decision**, not effort. |
+**Documentation.** 73 articles from 6 passing / 2,092 errors to all green. `3.16` is now generated
+from the role enums by *executing* them (`docref`), so its tables cannot drift. `3.15` went 986 →
+332 lines: it documented an ingestion subsystem that does not exist, and the boundary that does is
+that the model graph is already `Codable`.
 
-`3.15` documents an ingestion subsystem that does not exist — the library is export-only
-(`Developer Tools/DataExport.swift:47,83`). It fails on one error, `Period.custom(start:end:)`,
-which is the same decision. Do not rewrite it until §2.1 of `IntendedSurface.md` is called: build
-ingestion and 3.15 largely survives as the spec; don't, and it becomes a short "getting data in
-with what exists" plus a design doc. Rewriting now is throwaway either way.
+**Determinism, both halves.** RNG: `integrate`'s seed was inert (erased before the second sample);
+`ScenarioGenerator` used process-global `srand48`, so seeds did not survive parallel execution
+(measured: 20/20 runs failed, 96.1% of assertions); `seeds: [Double]?` silently fell through to the
+global generator when exhausted, removed across 9 entry points and 152 call sites; the GPU seeded
+threads `baseSeed ^ tid`, correlating adjacent Monte Carlo iterations at ρ ≈ 0.26. Clock:
+`WallClock` injected at 21 timestamp sites, `ContinuousClock` at 22 elapsed-time sites.
+
+**Numerical.** One inverse normal CDF (was three, one discontinuous) at 1.8e-15. One Box-Muller
+(was ten, six different pole guards). One empirical quantile (was five, two different algorithms) —
+`DriverProjection.percentile(0.10)` was returning the p5 value, 37% off. Exact `erf` in
+BlackScholes. `OptimizationError` gained `dimensionMismatch` and `numericalInstability`.
+
+**Correctness bugs found and fixed.** A MILP gate that accepted nonlinear objectives one run in a
+thousand (measured 23/20,000). A Cox simulator with six defects, including a generic that
+substituted `0.02` for the caller's hazard rate. A JSON export that terminated the process on a
+NaN. A hazard curve integrated as though every period were a year.
 
 ---
 
-## The tooling
+## Open, and each is a decision rather than effort
 
-`quality-gate-swift/project/plans/proposals/DocCodeAuditor-prototype/` — SwiftPM, tools 6.0,
-SwiftSyntax/SwiftParser. Two executables:
+- **`IntendedSurface.md`** (`project/plans/proposals/`) — API the documentation promises that does
+  not exist. The one to read first: `BusinessMathError.circularDependency.recoverySuggestion` tells
+  users to resolve cycles "using an iterative solver", two tests assert on that string, and no such
+  type exists. Meanwhile `ModelDebugger.detectCircularDependencies` returns `[]` and
+  `ModelInspector.detectCircularReferences` can only return `false`, while `1.6-DebuggingGuide`
+  teaches both.
+- **Seven `BusinessMathError` cases have no producer.** Most are wireable —
+  `numericalInstability` is already detected in ~11 places and mislabelled every time.
+- **`normalCDF` loses precision in the lower tail** — `(1 + erf(x/√2))/2` cancels; 2.2e-5 relative
+  at p=1e-12 where `erfc(-x/√2)/2` gives ~1e-15. Left alone: it moves expectations across the suite.
+- **`Period.<` compares granularity before start date**, so a `TimeSeries` mixing annual and
+  quarterly points is stored out of chronological order. Pinned in a test, not fixed.
+- **`TestQualityAuditor` has no warning-only state**, so the gate exits 1 at zero errors if any
+  test-quality warning exists. One line, in quality-gate-swift.
 
-- **`doccollisions`** — `[--json] <module-search-path> <article.md>…`. Exit 0 = clean.
-  Stateless and parallel-safe (`NSTemporaryDirectory()/docaudit-<UUID>`), so N agents can audit N
-  articles at once.
-- **`docref`** — the generator + freshness check for `3.16` (in flight).
+---
+
+## Tooling
+
+`doc-code` ships in quality-gate-swift (`Sources/DocCodeAuditor`, 46 tests). **Opt-in**:
 
 ```sh
-cd <prototype> && swift build -c release
-.build/release/doccollisions <BM>/.build/debug <BM>/Sources/BusinessMath/BusinessMath.docc/1.2-TimeSeries.md
+quality-gate --check doc-code
 ```
 
-**Before folding into quality-gate-swift:** `Package.swift` points at swift-syntax via an absolute
-path into *BusinessMath's* `.build/checkouts`. Replace with `.package(url:from: "600.0.0")` —
-verified 2026-08-09 that both resolve to revision `0687f719`, so it is a no-op at resolution time.
+It needs the module built (unbuilt → `.skipped` with its reason) and reads the language mode from
+the manifest. ~55s for 1,305 fences. Expect a first run on any documented project to produce a
+lot — quality-gate-swift's own catalogue produces 76, mostly ✅/❌ contrast pairs needing
+`<!-- docs:illustrative -->`.
+
+Branch `docs/auditor-proposals` in quality-gate-swift carries it plus the `fp-equality`
+unification, merged at `bd222f6`. **Local `main` (`f7a4e05`) and `origin/main` (`fe14122`) have
+diverged** — the local line predates the newline-split remediation and fails the gate with 62
+pre-existing errors. Anything new should branch from `origin/main`.
 
 ---
 
-## Hard-won lessons — do not relearn these
+## Lessons that cost something
 
-- **Never bulk-rename with regex.** It rewrote prose (`// Create a retail model` →
-  `// Create a retail saasModel`) and renamed correctly-scoped loop bindings.
-- **Fix collisions first, re-run, and only then look at type errors.** Routinely 40-90% of
-  diagnostics are cascade. Errors that read as API drift are usually a shadowed variable.
-- **Never satisfy `cannot find X in scope` with the nearest type-compatible symbol.** It compiles
-  and prints a wrong number.
+- **Fix collisions first, re-run, and only then read the type errors.** 40-90% of diagnostics are
+  cascade, and errors that read as API drift are usually a shadowed variable.
 - **A green auditor does not mean the references landed on the right object.** Renaming re-binds
-  blocks that use a name without declaring it. In `MultipleLinearRegressionGuide` six blocks
-  re-bound to a one-predictor model while printing VIF and t-tests.
+  blocks that use a name without declaring it.
 - **Labels are mechanical; *meanings* are not.** `shape:scale:` → `r:λ:` compiles and is wrong by
-  9× because λ is a rate. `min:mode:max:` → `low:high:base:` invites a positional swap that
-  returns `NaN`.
-- **Compile barriers make error counts meaningless.** `3.15` ranked "1 error" and was ~27;
-  `5.18` reported 14 while all 20 blocks were unchecked behind a bad import.
-- **Prefer resolving a barrier to exempting past it** — an exemption at a barrier hides
-  everything behind it.
-- **Verify "this symbol does not exist" case-insensitively.** `percentileLocation` is real; it is
-  `PercentileLocation`.
-- **Check the working directory before believing a count.** A classifier run from the wrong cwd
-  reported 3,504 phantom missing symbols; the real number was 672.
+  9× because λ is a rate.
+- **A property test only catches what its axes vary.** `E[τ] → 1/λ` passes on a simulator with six
+  defects if you only test `Double` at σ=0.
+- **Exercising a parameter is not testing it.** A tolerance assertion on a converging estimator
+  passes whether or not the seed works.
+- **Check under the same rules the build uses.** Weaker hides defects; stricter invents them. I did
+  both today.
+- **Verify a claim before relaying it.** Several of today's characterisations were wrong and got
+  acted on.
 
 ---
 
 ## First action on resume
 
-`git -C . log --oneline -3` should show `817ea6f` / `68b91dd`. Then run the full sweep:
-
 ```sh
-cd Sources/BusinessMath/BusinessMath.docc
-<prototype>/.build/release/doccollisions <BM>/.build/debug *.md | grep '^✗'
+git -C . log --oneline -5          # expect efb89d3 at or near HEAD
+/usr/local/custom/bin/quality-gate # target: 0 errors, 0 warnings
+quality-gate --check doc-code      # target: 73/73
+swift test                         # target: 6278+
 ```
 
-Nothing is pushed. Decide committing strategy before anything else — the working tree holds a
-day's work across ~70 files.
+Then decide on pushing — fifteen commits are unpushed, and `IntendedSurface.md` is waiting on you.

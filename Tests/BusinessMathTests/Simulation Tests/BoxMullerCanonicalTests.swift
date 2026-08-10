@@ -163,13 +163,18 @@ struct BoxMullerCanonicalTests {
 	@Test("No non-finite output over a large seeded run")
 	func generatorPathIsAlwaysFinite() {
 		var rng = DeterministicRNG(seed: 8_675_309)
+		// The first offending draw, if there is one, and then stop: half a million more
+		// reports of the same defect say nothing the first does not.
+		var firstNonFinite: (z1: Double, z2: Double)?
 		for _ in 0..<500_000 {
 			let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
-			guard z1.isFinite, z2.isFinite else {
-				Issue.record("non-finite draw (\(z1), \(z2))")
-				return
+			if !z1.isFinite || !z2.isFinite {
+				firstNonFinite = (z1, z2)
+				break
 			}
 		}
+		#expect(firstNonFinite == nil,
+				"non-finite draw \(String(describing: firstNonFinite)) over 500,000 seeded draws")
 	}
 
 	/// A generator stuck on zero words is the pole itself: `Double.random(in: 0..<1)`

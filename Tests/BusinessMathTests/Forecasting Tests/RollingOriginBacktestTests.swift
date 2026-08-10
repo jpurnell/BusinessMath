@@ -10,6 +10,7 @@
 //
 
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 import Numerics
 @testable import BusinessMath
 
@@ -55,8 +56,8 @@ struct RollingOriginBacktestTests {
             NaiveForecaster<Double>(),
             config: BacktestConfig(initialTrainSize: 5, horizon: 1, step: 1))
         for fold in report.folds {
-            #expect(fold.forecast.valuesArray[0] == Double(fold.originIndex - 1))
-            #expect(fold.actual.valuesArray[0] == Double(fold.originIndex))
+            #expect(identical(fold.forecast.valuesArray[0], Double(fold.originIndex - 1)))
+            #expect(identical(fold.actual.valuesArray[0], Double(fold.originIndex)))
         }
     }
 
@@ -72,7 +73,7 @@ struct RollingOriginBacktestTests {
             lengthReporter, config: BacktestConfig(initialTrainSize: 3, horizon: 1, step: 1, window: .expanding))
         // expanding training length at origin o == o
         for fold in expanding.folds {
-            #expect(fold.forecast.valuesArray[0] == Double(fold.originIndex))
+            #expect(identical(fold.forecast.valuesArray[0], Double(fold.originIndex)))
         }
         let sliding = try indexSeries(10).backtest(
             lengthReporter, config: BacktestConfig(initialTrainSize: 3, horizon: 1, step: 1, window: .sliding(length: 2)))
