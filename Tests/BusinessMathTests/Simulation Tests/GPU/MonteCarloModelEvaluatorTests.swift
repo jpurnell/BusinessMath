@@ -123,10 +123,10 @@ struct MonteCarloModelEvaluatorTests {
         }
         """
 
-        guard let library = try? device.makeLibrary(source: kernelSource, options: nil),
-              let evalFunc = library.makeFunction(name: "evaluateModels") else {
-            return [] // Skip if compilation fails
-        }
+        // Throw on a compile failure. `try?` here would report a broken shader
+        // as an absent GPU and let the test pass without running.
+        let library = try device.makeLibrary(source: kernelSource, options: nil)
+        let evalFunc = try #require(library.makeFunction(name: "evaluateModels"))
 
         let evalPipeline = try device.makeComputePipelineState(function: evalFunc)
 

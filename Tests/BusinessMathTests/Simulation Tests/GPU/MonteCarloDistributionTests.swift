@@ -79,41 +79,26 @@ struct MonteCarloDistributionTests {
             return []
         }
 
-        // Compile kernel with RNG + distribution sampling
+        // Compile kernel with RNG + distribution sampling.
+        //
+        // The RNG comes from MetalShaderSource, the same text production compiles.
+        // This file used to carry its own copy, which declared only the `thread`
+        // overload of nextUniform and then called it with a `device RNGState*` —
+        // so it never compiled, `try?` swallowed the error, and every test below
+        // skipped on the empty result. The copy also scaled by 1.08420217e-19f
+        // (2⁻⁶³, twice the shipping 2⁻⁶⁴), which would have put its "uniforms" on
+        // [0, 2) had it ever run.
         let kernelSource = """
         #include <metal_stdlib>
         using namespace metal;
 
-        struct RNGState {
-            ulong s0;
-            ulong s1;
-        };
+        \(MetalShaderSource.randomNumberGeneration)
 
         struct DistributionParams {
             float param1;
             float param2;
             float param3;
         };
-
-        inline float nextUniform(thread RNGState* state) {
-            ulong s1 = state->s0;
-            ulong s0 = state->s1;
-            state->s0 = s0;
-            s1 ^= s1 << 23;
-            state->s1 = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
-            return float(state->s0 + state->s1) * 1.08420217e-19f;
-        }
-
-        inline float2 nextNormal(thread RNGState* state, float mean, float stdDev) {
-            float u1 = nextUniform(state);
-            float u2 = nextUniform(state);
-            float r = sqrt(-2.0f * log(u1));
-            float theta = 2.0f * M_PI_F * u2;
-            return float2(
-                mean + stdDev * r * cos(theta),
-                mean + stdDev * r * sin(theta)
-            );
-        }
 
         inline float sampleNormal(thread RNGState* state, constant DistributionParams* params) {
             return nextNormal(state, params->param1, params->param2).x;
@@ -156,8 +141,14 @@ struct MonteCarloDistributionTests {
         kernel void initializeRNG(
             device RNGState* states [[buffer(0)]],
             constant ulong& baseSeed [[buffer(1)]],
+            constant uint& count [[buffer(2)]],
             uint tid [[thread_position_in_grid]]
         ) {
+            // ceil(count / 256) * 256 threads are dispatched, so the tail
+            // threads must not touch the buffers. Without this they write past
+            // the end of both allocations, and when another GPU test is running
+            // concurrently the overrun lands in whatever was allocated next.
+            if (tid >= count) { return; }
             states[tid].s0 = baseSeed ^ tid;
             states[tid].s1 = (baseSeed >> 32) ^ (ulong(tid) << 32);
             for (int i = 0; i < 10; i++) {
@@ -170,17 +161,26 @@ struct MonteCarloDistributionTests {
             constant DistributionParams* params [[buffer(1)]],
             constant int& distType [[buffer(2)]],
             device float* outputs [[buffer(3)]],
+            constant uint& count [[buffer(4)]],
             uint tid [[thread_position_in_grid]]
         ) {
-            outputs[tid] = sampleDistribution(&states[tid], params, distType);
+            if (tid >= count) { return; }
+            // The samplers above are declared in the `thread` address space, so the
+            // state is copied in and written back rather than duplicating all four
+            // of them for `device`. Production duplicates instead; either is fine,
+            // and here one copy is cheaper to read.
+            thread RNGState state = states[tid];
+            outputs[tid] = sampleDistribution(&state, params, distType);
+            states[tid] = state;
         }
         """
 
-        guard let library = try? device.makeLibrary(source: kernelSource, options: nil),
-              let initFunc = library.makeFunction(name: "initializeRNG"),
-              let sampleFunc = library.makeFunction(name: "sampleDistributions") else {
-            return [] // Skip if compilation fails
-        }
+        // A compilation failure is a broken shader, not an absent GPU. Throwing is
+        // what makes it visible: the `try?` this replaces returned [], every test
+        // read that as "no Metal here", and the suite passed without running.
+        let library = try device.makeLibrary(source: kernelSource, options: nil)
+        let initFunc = try #require(library.makeFunction(name: "initializeRNG"))
+        let sampleFunc = try #require(library.makeFunction(name: "sampleDistributions"))
 
         let initPipeline = try device.makeComputePipelineState(function: initFunc)
         let samplePipeline = try device.makeComputePipelineState(function: sampleFunc)
@@ -202,6 +202,8 @@ struct MonteCarloDistributionTests {
         encoder1.setComputePipelineState(initPipeline)
         encoder1.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder1.setBytes(&seed, length: MemoryLayout<UInt64>.stride, index: 1)
+        var sampleCount = UInt32(count)
+        encoder1.setBytes(&sampleCount, length: MemoryLayout<UInt32>.stride, index: 2)
 
         let threadsPerGroup = MTLSize(width: min(count, 256), height: 1, depth: 1)
         let threadGroups = MTLSize(
@@ -225,6 +227,7 @@ struct MonteCarloDistributionTests {
         encoder2.setBytes(&params, length: MemoryLayout<(Float, Float, Float)>.stride, index: 1)
         encoder2.setBytes(&distTypeVar, length: MemoryLayout<Int32>.stride, index: 2)
         encoder2.setBuffer(outputBuffer, offset: 0, index: 3)
+        encoder2.setBytes(&sampleCount, length: MemoryLayout<UInt32>.stride, index: 4)
         encoder2.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
         encoder2.endEncoding()
         commandBuffer2.commit()

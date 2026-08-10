@@ -66,15 +66,10 @@ struct MonteCarloGPUDeviceTests {
         """
 
         // Compile kernel
-        guard let library = try? device.makeLibrary(source: kernelSource, options: nil) else {
-            #expect(Bool(false), "Failed to compile kernel source")
-            return
-        }
-
-        guard let function = library.makeFunction(name: "testKernel") else {
-            #expect(Bool(false), "Failed to find kernel function")
-            return
-        }
+        // Throw on a compile failure. `try?` here would report a broken shader
+        // as an absent GPU and let the test pass without running.
+        let library = try device.makeLibrary(source: kernelSource, options: nil)
+        let function = try #require(library.makeFunction(name: "testKernel"))
 
         // Create pipeline state
         let pipeline = try device.makeComputePipelineState(function: function)
@@ -145,10 +140,10 @@ struct MonteCarloGPUDeviceTests {
         """
 
         // Compile kernel
-        guard let library = try? device.makeLibrary(source: kernelSource, options: nil),
-              let function = library.makeFunction(name: "doubleValues") else {
-            return // Skip if compilation fails
-        }
+        // Throw on a compile failure. `try?` here would report a broken shader
+        // as an absent GPU and let the test pass without running.
+        let library = try device.makeLibrary(source: kernelSource, options: nil)
+        let function = try #require(library.makeFunction(name: "doubleValues"))
 
         let pipeline = try device.makeComputePipelineState(function: function)
 
@@ -195,30 +190,29 @@ struct MonteCarloGPUDeviceTests {
         let commandQueue = metalDevice.commandQueue
         let count = 1000
 
-        // Kernel source with RNG initialization
+        // Kernel source with RNG initialization.
+        //
+        // From MetalShaderSource, the text production compiles. The local copy this
+        // replaces declared only the `thread` overload of nextUniform and called it
+        // with a `device RNGState*`, so it never compiled — `try?` turned that into
+        // "no GPU here" and the test passed without running.
         let kernelSource = """
         #include <metal_stdlib>
         using namespace metal;
 
-        struct RNGState {
-            ulong s0;
-            ulong s1;
-        };
-
-        inline float nextUniform(thread RNGState* state) {
-            ulong s1 = state->s0;
-            ulong s0 = state->s1;
-            state->s0 = s0;
-            s1 ^= s1 << 23;
-            state->s1 = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5);
-            return float(state->s0 + state->s1) * 1.08420217e-19f;
-        }
+        \(MetalShaderSource.randomNumberGeneration)
 
         kernel void initializeRNG(
             device RNGState* states [[buffer(0)]],
             constant ulong& baseSeed [[buffer(1)]],
+            constant uint& count [[buffer(2)]],
             uint tid [[thread_position_in_grid]]
         ) {
+            // ceil(count / 256) * 256 threads are dispatched, so the tail
+            // threads must not touch the buffers. Without this they write past
+            // the end of both allocations, and when another GPU test is running
+            // concurrently the overrun lands in whatever was allocated next.
+            if (tid >= count) { return; }
             states[tid].s0 = baseSeed ^ tid;
             states[tid].s1 = (baseSeed >> 32) ^ (ulong(tid) << 32);
 
@@ -231,17 +225,19 @@ struct MonteCarloGPUDeviceTests {
         kernel void generateSamples(
             device RNGState* states [[buffer(0)]],
             device float* outputs [[buffer(1)]],
+            constant uint& count [[buffer(2)]],
             uint tid [[thread_position_in_grid]]
         ) {
+            if (tid >= count) { return; }
             outputs[tid] = nextUniform(&states[tid]);
         }
         """
 
-        guard let library = try? device.makeLibrary(source: kernelSource, options: nil),
-              let initFunc = library.makeFunction(name: "initializeRNG"),
-              let sampleFunc = library.makeFunction(name: "generateSamples") else {
-            return // Skip if compilation fails
-        }
+        // Throw on a compile failure. `try?` here would report a broken shader
+        // as an absent GPU and let the test pass without running.
+        let library = try device.makeLibrary(source: kernelSource, options: nil)
+        let initFunc = try #require(library.makeFunction(name: "initializeRNG"))
+        let sampleFunc = try #require(library.makeFunction(name: "generateSamples"))
 
         let initPipeline = try device.makeComputePipelineState(function: initFunc)
         let samplePipeline = try device.makeComputePipelineState(function: sampleFunc)
@@ -262,6 +258,8 @@ struct MonteCarloGPUDeviceTests {
         encoder1.setComputePipelineState(initPipeline)
         encoder1.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder1.setBytes(&seed, length: MemoryLayout<UInt64>.stride, index: 1)
+        var sampleCount = UInt32(count)
+        encoder1.setBytes(&sampleCount, length: MemoryLayout<UInt32>.stride, index: 2)
 
         let threadsPerGroup = MTLSize(width: min(count, 256), height: 1, depth: 1)
         let threadGroups = MTLSize(width: (count + 255) / 256, height: 1, depth: 1)
@@ -276,6 +274,7 @@ struct MonteCarloGPUDeviceTests {
         encoder2.setComputePipelineState(samplePipeline)
         encoder2.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder2.setBuffer(outputBuffer, offset: 0, index: 1)
+        encoder2.setBytes(&sampleCount, length: MemoryLayout<UInt32>.stride, index: 2)
         encoder2.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
         encoder2.endEncoding()
         commandBuffer2.commit()
@@ -285,7 +284,8 @@ struct MonteCarloGPUDeviceTests {
         let pointer = outputBuffer.contents().bindMemory(to: Float.self, capacity: count)
         let samples = (0..<count).map { pointer[$0] }
 
-        #expect(samples.allSatisfy { $0 >= 0.0 && $0 < 1.0 }, "All samples should be in [0, 1)")
+        // nextUniform's range is a closed [0, 1] once rounded to Float32 — see MetalShaderSource.
+        #expect(samples.allSatisfy { $0 >= 0.0 && $0 <= 1.0 }, "All samples should be in [0, 1]")
 
         // Check some basic randomness (not all same)
         let uniqueCount = Set(samples.map { Int($0 * 100) }).count
@@ -321,10 +321,10 @@ struct MonteCarloGPUDeviceTests {
         }
         """
 
-        guard let library = try? device.makeLibrary(source: kernelSource, options: nil),
-              let function = library.makeFunction(name: "addVectors") else {
-            return
-        }
+        // Throw on a compile failure. `try?` here would report a broken shader
+        // as an absent GPU and let the test pass without running.
+        let library = try device.makeLibrary(source: kernelSource, options: nil)
+        let function = try #require(library.makeFunction(name: "addVectors"))
 
         let pipeline = try device.makeComputePipelineState(function: function)
 
