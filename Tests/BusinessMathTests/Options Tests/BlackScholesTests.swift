@@ -438,7 +438,12 @@ struct BlackScholesNormalCDFAccuracyTests {
 		// 1e-9 rather than 0. An option struck exactly at its forward therefore
 		// had a delta that was not 0.5 and a call/put pair that was not
 		// symmetric, at a point where both are exact by symmetry.
-		#expect(normalCDF(x: 0.0) == 0.5)
+		//
+		// Bit-for-bit, because "exactly one half" is the claim. The defect this replaced
+		// was 5e-10 off — inside any tolerance anyone would reach for here, and still
+		// enough to break put-call parity at the forward. Stating it as a bit pattern is
+		// the only phrasing that fails when the property fails.
+		#expect(identical(normalCDF(x: 0.0), 0.5))
 	}
 
 	@Test("Deep-tail CDF stays monotone and bounded")

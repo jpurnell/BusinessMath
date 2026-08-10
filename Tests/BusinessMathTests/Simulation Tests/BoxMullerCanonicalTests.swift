@@ -182,7 +182,16 @@ struct BoxMullerCanonicalTests {
 		for _ in 0..<100 {
 			let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
 			#expect(z1.isFinite && z2.isFinite, "(\(z1), \(z2))")
-			#expect(z1 == 0.0 && z2 == 0.0, "u₁ = 1 has radius 0; got (\(z1), \(z2))")
+			// Exactly zero, not near zero: a tolerance would also pass for a radius that
+			// was merely tiny, which is what the *almost*-correct guard produces —
+			// `log(u + 1e-10)` instead of `1 - u` — and is the failure this excludes.
+			//
+			// IEEE equality rather than a bit comparison, because the sign of this zero
+			// is not part of the claim and is not positive: `log 1` is `+0.0`, so the
+			// radius is `sqrt(-2 · +0.0)` = `sqrt(-0.0)` = `-0.0`, and both products
+			// inherit that sign. `-0.0` is the mean just as much as `+0.0` is.
+			#expect(exactlyEqual(z1, 0.0), "u₁ = 1 has radius 0; got z₁ = \(z1)")
+			#expect(exactlyEqual(z2, 0.0), "u₁ = 1 has radius 0; got z₂ = \(z2)")
 		}
 	}
 

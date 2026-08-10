@@ -135,7 +135,11 @@ struct BoxMullerPoleGuardTests {
 
 		// What the old expression did at the top of its range.
 		let closedForm = Double(allOnes >> 32) / Double(UInt32.max)
-		#expect(closedForm == 1.0, "the old denominator made u = 1 attainable")
+		// Exactly 1, not near it: numerator and denominator are the same integer, so
+		// the quotient is 1.0 with no rounding. The whole point of the assertion is that
+		// the endpoint is *attained*, which a tolerance could not distinguish from
+		// merely approached.
+		#expect(identical(closedForm, 1.0), "the old denominator made u = 1 attainable")
 		#expect((-2.0 * Foundation.log(closedForm + 1e-10)).squareRoot().isNaN,
 				"log(1 + 1e-10) > 0, so the radius was the square root of a negative number")
 

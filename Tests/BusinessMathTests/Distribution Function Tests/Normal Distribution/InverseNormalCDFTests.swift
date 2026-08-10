@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 import Numerics
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 
 @testable import BusinessMath
 
@@ -42,7 +43,14 @@ struct InverseNormalCDFTests {
         #expect(abs(inverseNormalCDF(p: 0.975) - 1.959963985) < 1e-9)
         #expect(abs(inverseNormalCDF(p: 0.99) - 2.326347874) < 1e-9)
         #expect(abs(inverseNormalCDF(p: 0.999) - 3.090232306) < 1e-9)
-        #expect(inverseNormalCDF(p: 0.5) == 0.0)
+        // The median is the one quantile that is exact rather than approximated: the
+        // implementation short-circuits p = 0.5 to zero without entering the refinement,
+        // and everything above it is mirrored about that point. So this is exact
+        // equality, not a tolerance — the bisection body it replaced missed by 2.5e-5
+        // here, which no honest epsilon would exclude while still admitting the rest of
+        // this suite. Not a bit comparison: `-0.0` is the median too, and pinning the
+        // sign would fail a rewrite that reached zero by mirroring instead.
+        #expect(exactlyEqual(inverseNormalCDF(p: 0.5), 0.0))
     }
 
     @Test("Full-precision reference quantiles")

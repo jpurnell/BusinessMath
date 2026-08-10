@@ -503,8 +503,12 @@ struct SimulatedAnnealingTests {
 
     @Test("Metropolis always accepts an improving move")
     func metropolisAcceptsImprovements() throws {
-        #expect(SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: -1.0, temperature: 1.0) == 1.0)
-        #expect(SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: 0.0, temperature: 1.0) == 1.0)
+        // "Always", not "with probability close to 1": the guard returns the literal
+        // 1.0 for any ΔE ≤ 0 without evaluating `exp`, so this is a bit-pattern claim.
+        // A tolerance would accept `exp(-ε/T)` for a small ε — which is what the
+        // scalar-conversion defect produced, and is not the same rule.
+        #expect(identical(SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: -1.0, temperature: 1.0), 1.0))
+        #expect(identical(SimulatedAnnealing<VectorN<Double>>.acceptanceProbability(deltaE: 0.0, temperature: 1.0), 1.0))
     }
 
     @Test("Metropolis acceptance probability is exact for a Float scalar")

@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 /// Pins every empirical-percentile entry point in the library to the single
@@ -72,17 +73,24 @@ struct QuantileConsistencyTests {
 	@Test("FinancialSimulation clamps out-of-range p instead of trapping")
 	func financialSimulationClampsOutOfRange() {
 		// Previously p < 0 or p > 1 computed an out-of-bounds index and trapped.
+		// Clamping hands back the extreme order statistic itself, so these are
+		// bit-for-bit claims: a value merely near 10 would mean the clamp interpolated.
 		let values = [10.0, 20.0, 30.0, 40.0]
 		let simulation = FinancialSimulation(projections: [])
-		#expect(simulation.percentileFromSorted(-0.5, values: values) == 10.0)
-		#expect(simulation.percentileFromSorted(1.5, values: values) == 40.0)
+		#expect(identical(simulation.percentileFromSorted(-0.5, values: values), 10.0))
+		#expect(identical(simulation.percentileFromSorted(1.5, values: values), 40.0))
 	}
 
 	@Test("FinancialSimulation still returns zero for an empty sample")
 	func financialSimulationEmptySample() {
 		// FinancialSimulation(projections: []) is publicly constructible, and
 		// this entry point has always answered 0 rather than NaN for it.
+		//
+		// The claim is "zero", not "positively signed zero" — the guard happens to
+		// return the literal `0.0` today, but a `-0.0` would answer the question the
+		// test is asking just as well, so this is IEEE equality rather than a bit
+		// comparison. What must not pass is NaN, which `==` rejects.
 		let simulation = FinancialSimulation(projections: [])
-		#expect(simulation.percentileFromSorted(0.5, values: []) == 0.0)
+		#expect(exactlyEqual(simulation.percentileFromSorted(0.5, values: []), 0.0))
 	}
 }

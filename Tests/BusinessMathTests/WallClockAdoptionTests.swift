@@ -5,6 +5,7 @@
 
 import Foundation
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 
 @testable import BusinessMath
 
@@ -23,10 +24,6 @@ struct WallClockAdoptionTests {
 	/// fixture. This mirrors SwiftDeterminism's `Date.fixture`, restated locally because
 	/// only the clock types themselves are re-exported.
 	static let instant = Date(timeIntervalSince1970: 1_767_225_600)
-
-	/// How far a defaulted (system-clock) timestamp may sit from `Date()` and still be
-	/// credibly "now". Generous, because it only has to exclude a *stopped* clock.
-	static let systemClockSlack: TimeInterval = 60
 
 	// MARK: - CapTable
 
@@ -120,12 +117,17 @@ struct WallClockAdoptionTests {
 	@Test("A cap table left to its default uses the system clock")
 	func capTableDefaultsToSystemClock() throws {
 		let table = CapTable(shareholders: [], optionPool: 1_000)
-		let before = Date()
 
+		// Bracketed rather than given a tolerance. The property is that the instant came
+		// from the system clock, and an instant between two readings of that clock is
+		// exactly that claim — true no matter how slow the machine is. A slack window
+		// asserts a duration instead, which is a different thing and can be unlucky.
+		let before = Date()
 		let granted = table.grantOptions(recipient: "Alice", shares: 100, strikePrice: 0.01)
+		let after = Date()
 
 		let alice = try #require(granted.shareholders.first { $0.name == "Alice" })
-		#expect(abs(alice.investmentDate.timeIntervalSince(before)) < Self.systemClockSlack)
+		#expect(alice.investmentDate >= before && alice.investmentDate <= after)
 	}
 
 	// MARK: - AsyncGradientDescentOptimizer
@@ -176,8 +178,10 @@ struct WallClockAdoptionTests {
 			if first == nil { first = progress.timestamp }
 		}
 
+		let after = Date()
+
 		let recorded = try #require(first)
-		#expect(abs(recorded.timeIntervalSince(before)) < Self.systemClockSlack)
+		#expect(recorded >= before && recorded <= after)
 	}
 
 	// MARK: - ModelDebugger
@@ -241,8 +245,9 @@ struct WallClockAdoptionTests {
 		let before = Date()
 
 		let report = await debugger.diagnose(value: 1.0, expected: 1.0)
+		let after = Date()
 
-		#expect(abs(report.timestamp.timeIntervalSince(before)) < Self.systemClockSlack)
+		#expect(report.timestamp >= before && report.timestamp <= after)
 	}
 
 	@Test("Recorded debug steps carry the injected instant")
@@ -279,8 +284,9 @@ struct WallClockAdoptionTests {
 		let before = Date()
 
 		let report = await profiler.report()
+		let after = Date()
 
-		#expect(abs(report.timestamp.timeIntervalSince(before)) < Self.systemClockSlack)
+		#expect(report.timestamp >= before && report.timestamp <= after)
 	}
 
 	// MARK: - ModelValidator
@@ -300,8 +306,9 @@ struct WallClockAdoptionTests {
 		let before = Date()
 
 		let report = validator.validate(projection: try Self.makeProjection())
+		let after = Date()
 
-		#expect(abs(report.timestamp.timeIntervalSince(before)) < Self.systemClockSlack)
+		#expect(report.timestamp >= before && report.timestamp <= after)
 	}
 
 	// MARK: - CalculationTrace
@@ -332,7 +339,8 @@ struct WallClockAdoptionTests {
 		_ = trace.calculateProfit()
 
 		let first = try #require(trace.steps.first)
-		#expect(abs(first.timestamp.timeIntervalSince(before)) < Self.systemClockSlack)
+		let after = Date()
+		#expect(first.timestamp >= before && first.timestamp <= after)
 	}
 
 	// MARK: - TemplateRegistry
@@ -389,7 +397,8 @@ struct WallClockAdoptionTests {
 
 		let all = await registry.allTemplates()
 		let registered = try #require(all.first?.registeredAt)
-		#expect(abs(registered.timeIntervalSince(before)) < Self.systemClockSlack)
+		let after = Date()
+		#expect(registered >= before && registered <= after)
 	}
 
 	// MARK: - CalculationCache (time *passing*, not a single instant)
@@ -525,9 +534,13 @@ struct WallClockAdoptionTests {
 	func durationConvertsToSeconds() {
 		// The instrument changed; the reported unit did not. These pin the conversion at
 		// the reporting boundary, which is the only place precision could silently shift.
+		// The first three are exact: 3 and 0.25 are both representable, and the
+		// attosecond term contributes nothing to them, so a tolerance would hide exactly
+		// the drift being watched for. The sub-microsecond cases below are not exact —
+		// 1e-18 is not representable — so they get a tolerance.
 		#expect(Duration.seconds(0).inSeconds == 0)
-		#expect(Duration.seconds(3).inSeconds == 3.0)
-		#expect(Duration.milliseconds(250).inSeconds == 0.25)
+		#expect(identical(Duration.seconds(3).inSeconds, 3.0))
+		#expect(identical(Duration.milliseconds(250).inSeconds, 0.25))
 		#expect(abs(Duration.microseconds(1).inSeconds - 1e-6) < 1e-15)
 		#expect(abs(Duration.nanoseconds(1).inSeconds - 1e-9) < 1e-18)
 	}
