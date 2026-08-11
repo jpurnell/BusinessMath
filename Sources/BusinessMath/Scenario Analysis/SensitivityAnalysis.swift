@@ -367,7 +367,16 @@ public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 ///
 /// - Returns: A ``ScenarioSensitivityAnalysis`` containing the input values tested and corresponding outputs.
 ///
-/// - Throws: Any errors from the builder function.
+/// - Throws: ``BusinessMathError/invalidDriver(name:reason:)`` (E200) if `inputDriver` is absent from
+///   `baseCase.driverOverrides`. The check runs before any projection. Also rethrows any error from
+///   `builder`.
+///
+/// ## Unknown driver names
+/// An unrecognised name is *inserted* into the overrides rather than replacing an existing driver, so
+/// the builder — which reads drivers by name — never looks at it. Every point on the curve is then the
+/// base case, and the caller gets a perfectly flat line. That is worse than no answer: a flat
+/// sensitivity curve reads as the finding that the driver does not matter, and nothing about it looks
+/// wrong. So a name that is not in the base case is rejected outright.
 ///
 /// ## Example
 /// ```swift
@@ -415,6 +424,14 @@ public func runSensitivity(
 		preconditionFailure("Steps must be at least 1")
 	}
 
+	// Reject an unknown driver name before doing any work, so a typo costs nothing.
+	guard baseCase.driverOverrides[inputDriver] != nil else {
+		throw BusinessMathError.invalidDriver(
+			name: inputDriver,
+			reason: "not present in scenario '\(baseCase.name)'. Available drivers: \(baseCase.driverOverrides.keys.sorted().joined(separator: ", "))"
+		)
+	}
+
 	// Generate input values
 	let inputValues = generateSteps(from: inputRange.lowerBound, to: inputRange.upperBound, steps: steps)
 
@@ -424,7 +441,16 @@ public func runSensitivity(
 	outputValues.reserveCapacity(steps)
 
 	for inputValue in inputValues {
-		// Create scenario with this input value (reuse base overrides)
+		// Create scenario with this input value (reuse base overrides). The pre-flight
+		// check above guarantees the name is already present, so this replaces a driver
+		// rather than inserting one; rethrowing rather than inserting keeps that
+		// guarantee from silently degrading back into a flat curve if the check moves.
+		guard baseCase.driverOverrides[inputDriver] != nil else {
+			throw BusinessMathError.invalidDriver(
+				name: inputDriver,
+				reason: "not present in scenario '\(baseCase.name)'"
+			)
+		}
 		let driver = DeterministicDriver(name: inputDriver, value: inputValue)
 		var overrides = baseCase.driverOverrides
 		overrides[inputDriver] = AnyDriver(driver)
@@ -478,7 +504,15 @@ public func runSensitivity(
 ///
 /// - Returns: A ``TwoWayScenarioSensitivityAnalysis`` containing the data table of results.
 ///
-/// - Throws: Any errors from the builder function.
+/// - Throws: ``BusinessMathError/invalidDriver(name:reason:)`` (E200) if either `inputDriver1` or
+///   `inputDriver2` is absent from `baseCase.driverOverrides`. Both names are checked before any
+///   projection, and the error names both if both are unknown. Also rethrows any error from `builder`.
+///
+/// ## Unknown driver names
+/// As in ``runSensitivity(baseCase:entity:periods:inputDriver:inputRange:steps:builder:outputExtractor:)``,
+/// an unrecognised name is inserted into the overrides and then ignored by the builder. In two
+/// dimensions that produces a table constant along one axis — or, with both names wrong, a table of
+/// one repeated number — which reads as a genuine finding rather than as a mistake.
 ///
 /// ## Example
 /// ```swift
@@ -527,6 +561,20 @@ public func runTwoWaySensitivity(
 		preconditionFailure("Steps must be at least 1 for both dimensions")
 	}
 
+	// Reject unknown driver names before doing any work. Both are checked, so a caller
+	// who mistyped both learns about both from one run; the first carries the payload.
+	let unknownDrivers = [inputDriver1, inputDriver2].filter { baseCase.driverOverrides[$0] == nil }
+	if let firstUnknown = unknownDrivers.first {
+		let available = baseCase.driverOverrides.keys.sorted().joined(separator: ", ")
+		let missing = unknownDrivers.joined(separator: ", ")
+		throw BusinessMathError.invalidDriver(
+			name: firstUnknown,
+			reason: unknownDrivers.count == 1
+				? "not present in scenario '\(baseCase.name)'. Available drivers: \(available)"
+				: "not present in scenario '\(baseCase.name)'. Unknown names: \(missing). Available drivers: \(available)"
+		)
+	}
+
 	// Generate input values
 	let inputValues1 = generateSteps(from: inputRange1.lowerBound, to: inputRange1.upperBound, steps: steps1)
 	let inputValues2 = generateSteps(from: inputRange2.lowerBound, to: inputRange2.upperBound, steps: steps2)
@@ -537,7 +585,22 @@ public func runTwoWaySensitivity(
 
 	for (i, inputValue1) in inputValues1.enumerated() {
 		for (j, inputValue2) in inputValues2.enumerated() {
-			// Create scenario with both input values
+			// Create scenario with both input values. The pre-flight check above
+			// guarantees both names are already present, so these replace drivers
+			// rather than inserting them; rethrowing rather than inserting keeps that
+			// guarantee from degrading back into a constant row or column.
+			guard baseCase.driverOverrides[inputDriver1] != nil else {
+				throw BusinessMathError.invalidDriver(
+					name: inputDriver1,
+					reason: "not present in scenario '\(baseCase.name)'"
+				)
+			}
+			guard baseCase.driverOverrides[inputDriver2] != nil else {
+				throw BusinessMathError.invalidDriver(
+					name: inputDriver2,
+					reason: "not present in scenario '\(baseCase.name)'"
+				)
+			}
 			let driver1 = DeterministicDriver(name: inputDriver1, value: inputValue1)
 			let driver2 = DeterministicDriver(name: inputDriver2, value: inputValue2)
 			var overrides = baseCase.driverOverrides
