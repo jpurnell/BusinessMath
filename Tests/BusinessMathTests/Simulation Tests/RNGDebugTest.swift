@@ -82,10 +82,16 @@ struct RNGDebugTests {
             (type: 1, params: (1000.0, 2000.0, 0.0))  // Uniform(1000, 2000)
         ]
 
+        // Seeded, because the assertion below is a sample mean over 100 draws. For
+        // Uniform(1000, 2000) the standard error of that mean is ~28.9, so the
+        // [1400, 1600] bound is 3.5 standard errors — unseeded it fails by chance
+        // roughly one run in 2,000, which is rare enough to look stable and frequent
+        // enough to bite CI. `seed:` was available all along and simply not passed.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: 100
+            iterations: 100,
+            seed: 0x5EED_1234
         )
 
         print("First 10 passthrough results:")

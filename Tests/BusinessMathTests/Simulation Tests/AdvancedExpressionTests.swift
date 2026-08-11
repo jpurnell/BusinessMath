@@ -266,12 +266,12 @@ struct AdvancedExpressionTests {
         }
 
         // GPU simulation
-        var gpuSim = MonteCarloSimulation(iterations: 20_000, enableGPU: true, expressionModel: model)
+        var gpuSim = MonteCarloSimulation(iterations: 20_000, enableGPU: true, seed: 0x5EED_1234, expressionModel: model)
         gpuSim.addInput(SimulationInput(name: "Income", distribution: DistributionUniform(0, 150_000)))
         let gpuResults = try gpuSim.run()
 
         // CPU simulation
-        var cpuSim = MonteCarloSimulation(iterations: 20_000, enableGPU: false, expressionModel: model)
+        var cpuSim = MonteCarloSimulation(iterations: 20_000, enableGPU: false, seed: 0x5EED_1234, expressionModel: model)
         cpuSim.addInput(SimulationInput(name: "Income", distribution: DistributionUniform(0, 150_000)))
         let cpuResults = try cpuSim.run()
 
