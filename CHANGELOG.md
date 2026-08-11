@@ -76,6 +76,36 @@ moved the behaviour degrades to an error rather than back to a silent flat curve
 `1.7-ErrorHandlingGuide`'s E200 section now names the three APIs that raise it; it previously
 described only caller-side use, and had been silent about `runTornadoAnalysis` since that landed.
 
+#### Changed (breaking) — two errors that were detected correctly and reported as something else
+
+`BusinessMathError` carried cases with no producer while the conditions they describe were
+being thrown as something vaguer. Two of them are now wired to the sites that already
+detected them.
+
+**`irr` throws ``BusinessMathError/numericalInstability(message:suggestions:)`` (E004)** when
+the NPV derivative collapses below `1e-6` and the Newton-Raphson step becomes undefined —
+typically a single cash flow far enough out that its discount factor dominates. It previously
+threw `.calculationFailed` with the reason string `"Derivative too small - numerical
+instability detected"`, so the condition was named correctly in prose and mis-typed in the
+error. Callers matching on `.calculationFailed` for this case need to match
+`.numericalInstability` instead; the message now also reports the rate at which the step
+failed.
+
+**`BalanceSheet.validate(tolerance:)` throws ``BusinessMathError/inconsistentData(description:)``
+(E202)** for the first period where assets do not equal liabilities plus equity. It previously
+threw `BalanceSheetError.accountingEquationViolation(period:assets:liabilitiesAndEquity:)`, a
+locally-declared error with no error code, no recovery suggestion and no help anchor — so this
+one failure mode sat outside the vocabulary every other error in the library belongs to. That
+case is removed. The message carries the period, both sides of the equation, the difference,
+and the tolerance it exceeded.
+
+Removing it also **widens where `validate` is available**. Reporting the offending figures as
+`Double` payloads required an exact, total conversion out of the scalar type, which `Real`
+alone does not supply, so `validate` lived on an `extension BalanceSheet where T:
+BinaryFloatingPoint`. Reporting them in the message instead removes that requirement:
+`validate` is now available on **every** `BalanceSheet`, and nothing that could call it before
+has lost the ability to.
+
 #### Fixed (breaking) — four constants that `T(Int(...))` had truncated to zero or one
 
 The idiom converts to `Int` *before* `T`, so any fractional constant written that way collapses.
