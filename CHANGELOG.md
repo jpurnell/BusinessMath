@@ -11,6 +11,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+Nothing yet.
+
+### [2.6.0] - 2026-08-11
+
+#### Results that change
+
+No signature in this list is the reason to read it — several of these entries change what a
+call *returns* without changing what it looks like, which is the part a reader skims past. The
+detail, and how each number was measured, is in the entry named beside it.
+
+| symbol | what moved |
+|--------|-----------|
+| `poissonCDF(_:µ:)` | returned `P(X ≤ k−1)` at every integer argument. `poissonCDF(1, µ: 1)`: **0.36787944117144233 → 0.7357588823428847**. `µ = 0` returned `NaN`; it is now `1`. |
+| `normalCDF` | the lower tail was quantised to multiples of 1.1e-16 and flushed to zero below about `x = −8.3`. Relative error at `x = −8`: **1.8e-02 → 5.9e-15**; at `x = −10`, **1.0 → 8.9e-15**. Everything downstream of it inherited that. |
+| Black-Scholes deep-OTM prices | **311 negative prices** across four parameter sets became none, and the prices now agree with a 100-digit reference to ~5e-15. No Black-Scholes code was changed — the terms were noise because Φ was noise. |
+| `DriverProjection.percentile(_:)` | snapped to the nearest of five stored summaries. At `p = 0.10`: **11,272.97 → 15,435.43**, 37% off and biased toward overstating downside risk. `p = 0.40` and `p = 0.60` both returned the median. |
+| `correctedStdErr(_:population:)` | the finite-population branch had never executed in any released version, and the comparison guarding it was inverted. At `n/N = 0.5`: **−28.9%**. Samples at or below 5% of their population are unchanged. |
+| `standardErrorProbabilistic(_:observation:totalObservations:)` | above the 5% threshold it returned **exactly 0**. `standardErrorProbabilistic(0.5, observation: 10, totalObservations: 100)`: **0.0 → 0.15075567228888181**. |
+| `zScore(fisherR:items:)` | every z-score was too large by `sqrt(1.06)` — **2.956%** — at every `n` and every `r`. |
+| `correlationBreakpoint(_:probability:)` | every breakpoint was **~2.9% too small**, understating the correlation needed to clear the threshold. |
+| `VectorN.random(in:dimension:)` | a random vector on `0...1` was **the zero vector**, every component, every call. |
+| `distributionPareto(scale:shape:)` | returned **`+infinity`** for a uniform of exactly zero, poisoning the mean and every percentile above it for the whole run. Now finite and `>= scale` for every seed; values for every `u > 1e-7` are bit-for-bit unchanged. |
+| `SimplexResult.dualValues` | every shadow price carried the wrong **sign**. Wyndor Glass: **`(-0, -1.5, -1)` → `(0, 1.5, 1)`**. Magnitudes were always correct. |
+| `distributionRayleigh` | **no number changes.** The parameter is renamed `mean:` → `scale:` because that is what it always was: 400,000 seeded draws at `mean: 2.0` had a sample mean of **2.5039**, a 25.2% overshoot against the documented figure and exactly `σ√(π/2)`. |
+
+`CoxProcess.simulateDefaultTime`, the gamma-family distributions, `xnpv`/`xirr` on non-`Double`
+scalars, `bayesianICC`, and the seeded paths through `integrate` and `ScenarioGenerator` all
+return different numbers too, but they do so through changed signatures or documented
+non-reproducibility — see below.
+
+#### Added — correlated sampling accepts a seed
+
+`MonteCarloSimulation.runCorrelated` gained `seed: UInt64? = nil`, and setting a
+`correlationMatrix` no longer makes a seeded run throw. Both overloads of `run()`
+previously guarded `seed == nil` and threw
+``SimulationError/seedingUnsupported(inputName:details:)`` with
+`"Correlated sampling does not support seeded runs yet"`, so a correlated simulation
+could not be made reproducible at all.
+
+The capability had shipped and gone unused. `CorrelatedNormals.sample(using:)` already
+existed as a seeded overload, documented with "given the same seed, the sequence of
+samples is identical"; only the wiring was missing. That is the fourth instance this
+release of a correct abstraction shipping while its callers kept the old path — see
+also `quantileR7`, `T.erf` and `inverseNormalCDF`.
+
+Both randomness sources now draw from a single `Xoshiro256StarStar` in a fixed order —
+all independent samples, then all correlated ranks — so one seed reproduces the whole
+sample. Seeding only the first would have produced a deterministic set of values in a
+non-deterministic order, which is reproducible enough to look correct. Seeded runs
+resolve every input up front, so an input that cannot honor the seed fails before any
+sampling rather than yielding a half-deterministic run; custom-sampler inputs still
+throw, unchanged.
+
+Source-compatible: `seed` defaults to `nil`, and every existing caller keeps its
+behaviour.
+
+This retired the last known flaky assertion. `testZeroCorrelation` compared two
+independent unseeded 10,000-iteration runs against a bound of 3.54 standard errors,
+failing by chance roughly one run in 2,500 — the same order as the `RNGDebugTest`
+flake fixed earlier in this release. Seeded, it measures 0.102 against a bound of 0.5.
+No tolerance was widened.
+
 #### Fixed — an unbalanced tableau reported `.unbounded` for a bounded model
 
 Constraint rows now reach the simplex equilibrated: each is divided by the largest
@@ -734,6 +796,128 @@ a sweep over the `lambda*dt == 30` boundary are bit-identical. Its only consumer
 function is the normal approximation inside `poissonInverseCDF`, whose result is rounded to
 an `Int`; the underlying continuous value moved by at most 4.0e-07, which is far too small
 to cross a rounding boundary in any sampled case.
+
+#### Fixed — `normalCDF` lost the lower tail to cancellation, and everything downstream inherited it
+
+`normalCDF` computed `(1 + erf(x/√2))/2`. For negative `x`, `erf(x/√2)` is `-1 + ε`, and adding
+1 discards every bit of `ε` below the ulp of 1. The answer could only land on a multiple of
+1.1e-16 however small it truly was, and below about `x = -8.3` it landed on zero. It is now
+`erfc(-x/√2)/2` — the same quantity by the identity `erfc(z) = 1 - erf(z)`, computed without ever
+forming the cancelling sum. An algebraic identity, not a different approximation.
+
+Relative error against an 80-digit evaluation of the Mills-ratio continued fraction, which
+reproduces the published `Φ(-5)`…`Φ(-8)` to every digit printed:
+
+| x | Φ(x) | before | after |
+|---|------|--------|-------|
+| −5 | 2.87e-07 | 3.9e-11 | 2.0e-15 |
+| −7 | 1.28e-12 | 2.3e-06 | 1.6e-16 |
+| −8 | 6.22e-16 | 1.8e-02 | 5.9e-15 |
+| −10 | 7.62e-24 | **1.0** | 8.9e-15 |
+| −37 | 5.73e-300 | **1.0** | 9.8e-14 |
+
+A relative error of 1.0 is what "returned zero" looks like. The round trip
+`normalCDF(inverseNormalCDF(p))` goes from 2.2e-05 to 5.3e-15 at `p = 1e-12`.
+
+The upper half does not regress: over `0 <= x <= 8` at 80,001 points the new form is bit-exact
+against the well-conditioned `1 - erfc(x/√2)/2` at every point, while the old one differed by 1 ulp
+at 9,065 of them. Past about `x = -15` the limit is no longer `erfc` but the rounding of `x/√2`
+into a `Double` before `erfc` sees it.
+
+**Two Black-Scholes defects resolved with no Black-Scholes code changed.** The tests blamed
+cancellation between `S·Φ(d1)` and `K·e^(−rT)·Φ(d2)` and proposed a clamp at zero; the measured
+cancellation is 48×, nowhere near catastrophic. The terms were noise because `Φ` was noise. Across
+four parameter sets at 8,000 spots each, **311 negative prices became none**, and both pinned cases
+now agree with a 100-digit reference to ~5e-15. A clamp would have produced the right sign from the
+wrong number and left the tail quantised everywhere else.
+
+`percentile(zScore:)` held a fourth private copy of the same wrong formula and now delegates.
+`zScore(percentile:)` was the same defect in the inverse direction — `√2·erfInv(2p−1)`, refined
+against an `erf` that saturates at ±1, so the residual underflows and the correction stalls. No
+tolerance could have fixed that, only the routing; it now delegates to `inverseNormalCDF`, and
+absolute error in `z` at `p = 1e-12` goes **2.1e-06 → 0**. `normSInv` and `erfInv` are public and
+were not deleted; `erfInv` now routes through `inverseNormalCDF` from the smaller side, since
+`1 - y` is exact by Sterbenz for `y >= 0.5` where the function is most sensitive — worst relative
+residual over the domain **5.3e-13 → 2.3e-15**. `T.erf` no longer appears anywhere in `Sources`;
+the only two call sites left are `T.erfc`.
+
+One reference value in the suite was itself read at the wrong argument: `1e-12` was used as `Φ` at
+`z = -7.034483825301132` on the grounds that `z` is the 1e-12 quantile. It is that only to within
+`z`'s own rounding — the true value at that binary argument is 9.9999999999999878e-13, a 1.2e-14
+relative offset, invisible against the 2.2e-05 error it was measuring and dominant against the
+6.5e-15 that replaced it.
+
+#### Fixed — five empirical quantiles, one of which snapped to five points
+
+Five private R-7 implementations existed — in `Percentiles`, `FinancialSimulation`, `RiskMetrics`,
+`kernelWeights`, and `DriverProjection`. Four agreed; one did not. Three copies of the inverse
+normal CDF are how a broken one survived earlier in this release, and this is the same shape with
+more copies.
+
+**`quantile(sorted:p:)` is now public**, next to `median`, which is its `p = 0.5` case. Input must
+be sorted and is not checked — a caller computing many quantiles should pay the sort once, and the
+doc says so. It is total: empty gives `nan` matching `median`, a single element gives itself for
+every `p`, and `p` outside `[0, 1]` clamps.
+
+`DriverProjection.percentile` was snapping to the nearest of five stored summaries. Measured on a
+realistic profit projection at 100,000 iterations, `p = 0.10` returned the p5 value — **11,272.97
+against a true 15,435.43, 37% off**, biased toward overstating downside risk — and `p = 0.40` and
+`p = 0.60` both returned the median exactly. The premise that this needed the sample re-retained
+was wrong: `Percentiles` already stores a private `sortedValues`, so the data that would have
+answered exactly was sitting there the whole time.
+
+**No existing test had to be changed, and that is the finding.** Every assertion touching this was
+an ordering check — p5 < p50 < p95, downside < expected < upside — all of which still hold under
+the defect. Nothing ever asserted a value.
+
+`FinancialSimulation` was already R-7, confirmed numerically over nine sample sizes and 10,001
+probabilities at 2.6e-12 maximum relative difference. Its only behaviour change is that a `p`
+outside `[0, 1]` used to compute an out-of-bounds index and trap; it now clamps.
+
+`4.1-MonteCarloTimeSeriesGuide` hand-rolled an interpolation between p5 and p25 because arbitrary
+percentiles were not available, and its published output showed the 90%, 95% and 99% confidence
+intervals all printing identically. The defect was visible in the documentation.
+
+Still divergent, deliberately: `BusinessMathDSL`'s `ScenarioAnalysis.percentile` uses
+truncated-index nearest-rank, so `percentile(50)` of `[1, 2, 3, 4]` is 2.0 where R-7 gives 2.5.
+Different module, different signature.
+
+#### Removed (breaking) — three deprecated functions that computed the wrong quantity
+
+`chi2cdf(x:dF:)` was `1 - chi2pdf(x:dF:)`. A CDF is not one minus a PDF, and its own deprecation
+message said so. `pValueStudent(_:dFr:)` computes a t-distribution *density* and was named a
+p-value. `pValue(_:_:)` called `pValueStudent`, inherited the same error, and was the only caller
+keeping it alive.
+
+All three were already deprecated, none had a call site outside its own doc example, and correct
+replacements ship and are tested: `chiSquaredCDF(x:df:)`, `studentTPDF(t:df:)`, `tPValue(t:df:)`.
+
+The tests were the more interesting half — each asserted something weak enough to survive the
+defect it covered. The `chi2cdf` test asserted `0 <= p <= 1` and `small != large`, under a comment
+reading "this test documents the known defect rather than asserting correct behavior"; it now
+asserts monotonicity and reference values, including the closed form `1 - e^(−1)` at `x = 2,
+df = 2`, which holds independently of any series. `StudentTPDFTests` asserted agreement with
+`pValueStudent`, which was never evidence of correctness, only that two expressions matched.
+"`pValueStudent` with large df remains within (0,1)" tested nothing about df — every df satisfies
+it — and now asserts convergence to the standard normal.
+
+#### Fixed — template export dropped the identifier and import invented one
+
+`TemplatePackage` never serialised the template identifier — neither `TemplateMetadata` nor
+`TemplateSchema` carried such a field — so `import` fabricated one from `package.metadata.name`, a
+*display* name. A template exported as `com.businessmath.templates.saas` was imported as
+"SaaS Template", silently changing what the registry registered it under and retrieved it by.
+
+`TemplateSchema` now carries the identifier: it is what export serialises, and the package checksum
+is computed over the schema JSON, so identity is covered by the same integrity check as everything
+else rather than riding alongside it unprotected.
+
+It surfaced from an unused `let found` in a test named "SaaS template export and import" that only
+checked that something came back. A formatting-style cleanup would have deleted the variable and
+the evidence with it.
+
+Alongside it: a marketplace template with no buyers reported `NaN` rather than nothing, and the
+four remaining divisions by a seller count are now guarded.
 
 ### [2.5.2] - 2026-08-07
 
@@ -5606,4 +5790,9 @@ None (initial release - all tests passing).
 
 ---
 
-**For detailed implementation history, see [04_IMPLEMENTATION_CHECKLIST.md](Time%20Series/04_IMPLEMENTATION_CHECKLIST.md)**
+**For detailed implementation history, see [04_IMPLEMENTATION_CHECKLIST.md](project/archive/Time%20Series/04_IMPLEMENTATION_CHECKLIST.md)** — the file moved into `project/archive/` when the planning tree was reorganised, and this link had been pointing at the old top-level `Time Series/` path.
+
+This file carries no link-reference definitions. Every `[x.y.z]` heading above is a literal
+bracketed version, not a Markdown reference, and there is no compare-URL block at the foot — so
+2.6.0 needs no link added. If that convention ever changes, it has to change for all forty-odd
+entries at once, not just the newest one.
