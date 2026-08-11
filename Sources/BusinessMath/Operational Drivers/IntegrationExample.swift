@@ -349,9 +349,16 @@ public struct SaaSFinancialModel {
 	/// let quarters = Period.year(2025).quarters()
 	/// let projections = model.projectDeterministic(periods: quarters)
 	///
-	/// print("Q1 Users: \(projections["users"]![quarters[0]]!)")
-	/// print("Q1 Revenue: $\(projections["revenue"]![quarters[0]]!)")
-	/// print("Q1 Profit: $\(projections["profit"]![quarters[0]]!)")
+	/// // Component names are the keys of the returned dictionary; bind them
+	/// // optionally so adapting this model to your own components cannot trap.
+	/// let q1 = quarters[0]
+	/// if let users = projections["users"]?[q1],
+	///    let revenue = projections["revenue"]?[q1],
+	///    let profit = projections["profit"]?[q1] {
+	///     print("Q1 Users: \(users)")
+	///     print("Q1 Revenue: $\(revenue)")
+	///     print("Q1 Profit: $\(profit)")
+	/// }
 	/// ```
 	public func projectDeterministic(periods: [Period]) -> [String: TimeSeries<Double>] {
 		return [
@@ -385,15 +392,16 @@ public struct SaaSFinancialModel {
 	///
 	/// // Analyze Q1 profit uncertainty
 	/// let q1 = quarters[0]
-	/// let profitStats = results["profit"]!.statistics[q1]!
-	/// let profitPctiles = results["profit"]!.percentiles[q1]!
-	///
-	/// print("Q1 Profit Analysis:")
-	/// print("  Expected: $\(Int(profitStats.mean))")
-	/// print("  Std Dev: $\(Int(profitStats.stdDev))")
-	/// print("  Worst Case (P5): $\(Int(profitPctiles.p5))")
-	/// print("  Median (P50): $\(Int(profitPctiles.p50))")
-	/// print("  Best Case (P95): $\(Int(profitPctiles.p95))")
+	/// if let profit = results["profit"],
+	///    let profitStats = profit.statistics[q1],
+	///    let profitPctiles = profit.percentiles[q1] {
+	///     print("Q1 Profit Analysis:")
+	///     print("  Expected: $\(Int(profitStats.mean))")
+	///     print("  Std Dev: $\(Int(profitStats.stdDev))")
+	///     print("  Worst Case (P5): $\(Int(profitPctiles.p5))")
+	///     print("  Median (P50): $\(Int(profitPctiles.p50))")
+	///     print("  Best Case (P95): $\(Int(profitPctiles.p95))")
+	/// }
 	/// ```
 	public func projectMonteCarlo(
 		periods: [Period],
@@ -599,9 +607,10 @@ public struct SaaSFinancialModel {
 /// let results = model.projectMonteCarlo(periods: quarters, iterations: 10_000)
 ///
 /// // Check if outputs are reasonable
-/// let profitStats = results["profit"]!.statistics[quarters[0]]!
-/// assert(profitStats.mean > 0, "Expected positive profit")
-/// assert(profitStats.stdDev < profitStats.mean, "Std dev shouldn't exceed mean")
+/// if let profitStats = results["profit"]?.statistics[quarters[0]] {
+///     assert(profitStats.mean > 0, "Expected positive profit")
+///     assert(profitStats.stdDev < profitStats.mean, "Std dev shouldn't exceed mean")
+/// }
 /// ```
 ///
 /// ## 5. Document Assumptions

@@ -132,6 +132,35 @@ public struct SumDriver<T: Real & Sendable>: Driver, Sendable {
 	}
 }
 
+// MARK: - Seeded Sampling
+
+extension SumDriver: SeedableDriver {
+	/// Whether both operands can honor a seed.
+	///
+	/// A sum is reproducible exactly when both of its operands are — a seeded leaf under an
+	/// unseeded one buys nothing. This is a stored-value check rather than a conditional
+	/// conformance because ``SumDriver`` erases its operands to ``AnyDriver`` at
+	/// initialization; there is no operand generic parameter left to constrain on.
+	public var supportsSeeding: Bool { lhs.supportsSeeding && rhs.supportsSeeding }
+
+	/// Generates a sample by adding two seeded samples, both drawn from `generator`.
+	///
+	/// The left operand is drawn first, then the right, so the stream a given seed produces
+	/// is stable across runs.
+	///
+	/// - Parameters:
+	///   - period: The time period for which to generate a value.
+	///   - generator: The random source.
+	/// - Returns: The sum of the two seeded driver samples.
+	/// - Throws: `SimulationError.seedingUnsupported`, naming the operand that could not
+	///   honor the seed.
+	public func sample(for period: Period, using generator: inout Xoshiro256StarStar) throws -> T {
+		let left = try lhs.sample(for: period, using: &generator)
+		let right = try rhs.sample(for: period, using: &generator)
+		return left + right
+	}
+}
+
 // MARK: - Convenience Operators
 
 extension Driver {
@@ -170,28 +199,52 @@ extension Driver {
 	/// let profit = revenue - cost  // Creates SumDriver with negated cost
 	/// ```
 	public static func - <R: Driver>(lhs: Self, rhs: R) -> SumDriver<Value> where R.Value == Value {
-		let negatedRhs = ScalarDriver(name: "-\(rhs.name)") { period in
-			-rhs.sample(for: period)
-		}
+		let negatedRhs = ScalarDriver(name: "-\(rhs.name)", negating: rhs)
 		return SumDriver(name: "\(lhs.name) - \(rhs.name)", lhs: lhs, rhs: negatedRhs)
 	}
 }
 
 // MARK: - Helper: ScalarDriver
 
-/// A driver that applies a custom transformation.
+/// A driver that negates another driver's samples.
 ///
-/// This is an internal helper used by operators like subtraction.
+/// This is an internal helper used by subtraction. It carries the negated driver's seeded
+/// path as well as its unseeded one, so `revenue - cost` stays reproducible when both
+/// operands are — without it, subtraction would be the one arithmetic operator that
+/// silently dropped determinism.
 private struct ScalarDriver<T: Real & Sendable>: Driver, Sendable {
 	let name: String
 	private let transform: @Sendable (Period) -> T
+	private let seededTransform: (@Sendable (Period, inout Xoshiro256StarStar) throws -> T)?
 
-	init(name: String, transform: @escaping @Sendable (Period) -> T) {
+	/// Wraps `base`, negating every sample it produces.
+	init<Base: Driver>(name: String, negating base: Base) where Base.Value == T {
 		self.name = name
-		self.transform = transform
+		self.transform = { period in -base.sample(for: period) }
+		if let seedable = base as? any SeedableDriver<T>, seedable.supportsSeeding {
+			self.seededTransform = { period, generator in
+				-(try seedable.sample(for: period, using: &generator))
+			}
+		} else {
+			self.seededTransform = nil
+		}
 	}
 
 	func sample(for period: Period) -> T {
 		return transform(period)
+	}
+}
+
+extension ScalarDriver: SeedableDriver {
+	var supportsSeeding: Bool { seededTransform != nil }
+
+	func sample(for period: Period, using generator: inout Xoshiro256StarStar) throws -> T {
+		guard let seededTransform else {
+			throw SimulationError.seedingUnsupported(
+				inputName: name,
+				details: "Driver does not support seeded sampling"
+			)
+		}
+		return try seededTransform(period, &generator)
 	}
 }

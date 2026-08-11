@@ -189,7 +189,81 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 			}
 		}
 
-		// Compute statistics for each period
+		return summarize(allSamples)
+	}
+
+	/// Projects the driver using Monte Carlo simulation, reproducibly.
+	///
+	/// Identical to ``projectMonteCarlo(iterations:)`` except that every draw is taken from
+	/// a single ``Xoshiro256StarStar`` seeded with `seed`, in period order within each
+	/// iteration. The same seed reproduces the whole run — statistics, percentiles and the
+	/// retained samples underneath them — and a different seed does not.
+	///
+	/// The driver must be able to honor the seed. Every built-in distribution conforms to
+	/// ``SeedableDistribution``, so drivers built through ``ProbabilisticDriver/normal(name:mean:stdDev:)``
+	/// and its siblings qualify, as do composites of such drivers. A driver whose randomness
+	/// comes from a source the generator does not control makes this method throw rather than
+	/// return a result that looks reproducible and is not — the same rule
+	/// ``MonteCarloSimulation`` applies to its inputs.
+	///
+	/// - Parameters:
+	///   - iterations: The number of Monte Carlo iterations to run.
+	///   - seed: The seed making the run reproducible.
+	/// - Returns: Projection results containing statistics for each period.
+	/// - Throws: `SimulationError.seedingUnsupported` when the driver — or one of its
+	///   operands — cannot source its randomness from the seeded generator.
+	///
+	/// ## Memory
+	///
+	/// Identical to ``projectMonteCarlo(iterations:)``; see the memory note there before
+	/// sizing `iterations`.
+	///
+	/// ## Example
+	/// ```swift
+	/// let growth = ProbabilisticDriver<Double>.normal(name: "Growth", mean: 0.10, stdDev: 0.05)
+	/// let projection = DriverProjection(driver: growth, periods: quarters)
+	///
+	/// let results = try projection.projectMonteCarlo(iterations: 10_000, seed: 42)
+	/// let again = try projection.projectMonteCarlo(iterations: 10_000, seed: 42)
+	/// // results.statistics == again.statistics, exactly
+	/// ```
+	public func projectMonteCarlo(iterations: Int, seed: UInt64) throws -> ProjectionResults<T> where T: BinaryFloatingPoint {
+		guard iterations > 0 else {
+			preconditionFailure("iterations must be positive")
+		}
+
+		guard driver.supportsSeeding else {
+			throw SimulationError.seedingUnsupported(
+				inputName: driver.name,
+				details: "Driver does not support seeded sampling"
+			)
+		}
+
+		// Store all samples: [period index][iteration]
+		var allSamples: [[T]] = Array(repeating: [], count: periods.count)
+		for i in 0..<periods.count {
+			allSamples[i].reserveCapacity(iterations)
+		}
+
+		var generator = Xoshiro256StarStar(seed: seed)
+		for _ in 0..<iterations {
+			for (periodIndex, period) in periods.enumerated() {
+				let sample = try driver.sample(for: period, using: &generator)
+				allSamples[periodIndex].append(sample)
+			}
+		}
+
+		return summarize(allSamples)
+	}
+
+	/// Reduces per-period samples to the statistics and percentiles a projection reports.
+	///
+	/// Shared by the seeded and unseeded Monte Carlo paths so the two cannot drift in how
+	/// they summarize an identical set of draws.
+	///
+	/// - Parameter allSamples: Samples indexed by period index, then by iteration.
+	/// - Returns: Projection results over ``periods``.
+	private func summarize(_ allSamples: [[T]]) -> ProjectionResults<T> where T: BinaryFloatingPoint {
 		var statistics: [Period: SimulationStatistics] = [:]
 		var percentiles: [Period: Percentiles] = [:]
 

@@ -110,6 +110,15 @@ public struct ProbabilisticDriver<T>: Driver, Sendable where T: Real, T: BinaryF
 	/// The underlying distribution from which values are sampled.
 	private let sampleFunction: @Sendable () -> Double
 
+	/// The seeded sampling function, when the underlying distribution supports one.
+	///
+	/// Non-`nil` only when the driver was built from a distribution conforming to
+	/// ``SeedableDistribution``; drawing through it sources every uniform from the
+	/// caller's generator, so a seeded ``Xoshiro256StarStar`` reproduces the identical
+	/// stream. `nil` for distributions that own their randomness, which is what makes
+	/// ``supportsSeeding`` a run-time question rather than a type-level one.
+	private let seededSampleFunction: (@Sendable (inout Xoshiro256StarStar) -> Double)?
+
 	// MARK: - Initialization
 
 	/// Creates a probabilistic driver that samples from the given distribution.
@@ -128,6 +137,36 @@ public struct ProbabilisticDriver<T>: Driver, Sendable where T: Real, T: BinaryF
 	public init<D: DistributionRandom & Sendable>(name: String, distribution: D) where D.T == Double {
 		self.name = name
 		self.sampleFunction = { distribution.next() }
+		// Only the SeedableDistribution overload can honor a seed
+		self.seededSampleFunction = nil
+	}
+
+	/// Creates a probabilistic driver over a distribution that supports seeded sampling.
+	///
+	/// Swift prefers this overload whenever the concrete distribution conforms to
+	/// ``SeedableDistribution``, capturing a seeded sampler alongside the ordinary one so
+	/// the driver can take part in reproducible runs through ``SeedableDriver``. Callers
+	/// write the same call either way — the built-in distributions all conform, so the
+	/// convenience initializers ``normal(name:mean:stdDev:)``,
+	/// ``triangular(name:low:high:base:)`` and ``uniform(name:min:max:)`` land here.
+	///
+	/// - Parameters:
+	///   - name: The name of this driver for reporting and debugging.
+	///   - distribution: The probability distribution to sample from.
+	///
+	/// ## Example
+	/// ```swift
+	/// let driver = ProbabilisticDriver<Double>(
+	///     name: "Sales Volume",
+	///     distribution: DistributionNormal(mean: 1000.0, stdDev: 100.0)
+	/// )
+	/// #expect(driver.supportsSeeding)
+	/// ```
+	public init<D: SeedableDistribution & Sendable>(name: String, distribution: D) where D.T == Double {
+		self.name = name
+		self.sampleFunction = { distribution.next() }
+		// Seeded sampling: every draw flows from the caller's generator
+		self.seededSampleFunction = { generator in distribution.next(using: &generator) }
 	}
 
 	// MARK: - Driver Protocol
@@ -154,6 +193,54 @@ public struct ProbabilisticDriver<T>: Driver, Sendable where T: Real, T: BinaryF
 	public func sample(for period: Period) -> T {
 		let doubleValue = sampleFunction()
 		return T(doubleValue)
+	}
+}
+
+// MARK: - Seeded Sampling
+
+extension ProbabilisticDriver: SeedableDriver {
+	/// Whether this driver's distribution can source its randomness from a caller's generator.
+	///
+	/// `true` when the driver was built over a ``SeedableDistribution`` — which every
+	/// built-in distribution and every convenience initializer here is. `false` for a
+	/// distribution that conforms only to ``DistributionRandom`` and therefore owns its
+	/// own randomness.
+	public var supportsSeeding: Bool { seededSampleFunction != nil }
+
+	/// Generates a sample drawn entirely from `generator`.
+	///
+	/// The same seed reproduces the same sequence; a different seed does not. The draw
+	/// follows the identical probability law as ``sample(for:)`` — only the randomness
+	/// source differs.
+	///
+	/// - Parameters:
+	///   - period: The time period (not used for distribution sampling; a probabilistic
+	///     driver is time-invariant).
+	///   - generator: The random source.
+	/// - Returns: A random sample from the distribution.
+	/// - Throws: `SimulationError.seedingUnsupported` when the underlying distribution does
+	///   not conform to ``SeedableDistribution``, rather than silently returning a draw the
+	///   caller's generator did not produce.
+	///
+	/// ## Example
+	/// ```swift
+	/// let driver = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
+	/// let q1 = Period.quarter(year: 2025, quarter: 1)
+	///
+	/// var generator = Xoshiro256StarStar(seed: 42)
+	/// let first = try driver.sample(for: q1, using: &generator)
+	///
+	/// var replay = Xoshiro256StarStar(seed: 42)
+	/// let again = try driver.sample(for: q1, using: &replay)  // identical to `first`
+	/// ```
+	public func sample(for period: Period, using generator: inout Xoshiro256StarStar) throws -> T {
+		guard let seededSampleFunction else {
+			throw SimulationError.seedingUnsupported(
+				inputName: name,
+				details: "Driver uses a distribution that does not conform to SeedableDistribution"
+			)
+		}
+		return T(seededSampleFunction(&generator))
 	}
 }
 
