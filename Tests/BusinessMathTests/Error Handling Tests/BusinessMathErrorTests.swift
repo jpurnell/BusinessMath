@@ -191,7 +191,11 @@ struct BusinessMathErrorTests {
         #expect(error.code == "E201")
         #expect(error.errorDescription?.contains("Circular dependency detected") == true)
         #expect(error.errorDescription?.contains("Revenue → COGS → GrossProfit → Revenue") == true)
-        #expect(error.recoverySuggestion?.contains("Reordering calculations") == true)
+        // The advice now leads with solving the cycle, because ModelDefinition.solve
+        // can. This string previously advised an "iterative solver" that the library
+        // did not ship; asserting the symbol's name is what keeps the advice honest.
+        #expect(error.recoverySuggestion?.contains("ModelDefinition.solve(settings:)") == true)
+        #expect(error.recoverySuggestion?.contains("Reorder calculations") == true)
         #expect(error.recoverySuggestion?.contains("intermediate value") == true)
         #expect(error.recoverySuggestion?.contains("intermediate value") == true)
         // The recovery points at a symbol that exists. It previously advised an
@@ -492,7 +496,8 @@ struct BusinessMathErrorTests {
         #expect(description.contains("Revenue → Cost → Margin → Revenue"))
 
         // Verify recovery suggestions include multiple options
-        #expect(recovery.contains("Reordering calculations"))
+        #expect(recovery.contains("ModelDefinition.solve(settings:)"))
+        #expect(recovery.contains("Reorder calculations"))
         #expect(recovery.contains("intermediate value"))
         #expect(recovery.contains("intermediate value"))
 

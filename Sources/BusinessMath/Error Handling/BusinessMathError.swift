@@ -263,10 +263,18 @@ public enum BusinessMathError: LocalizedError, Sendable, Equatable {
 
         case .circularDependency(let path):
             return """
-            Break the circular dependency by:
-            • Reordering calculations so each account reads only values already computed
-            • Introducing an intermediate value that closes the loop explicitly
-            • Substituting an input for one account in the cycle
+            Solve the cycle, or break it.
+
+            To solve it: ModelDefinition.solve(settings:) resolves cycles instead of
+            refusing them. A cycle that is linear in its own members is solved exactly;
+            one that is not is iterated to a fixed point, and reports whether it
+            converged rather than returning a number that has not settled.
+            DependencyReport.isExactlySolvable says which kind you have before you run it.
+
+            To break it:
+            • Reorder calculations so each account reads only values already computed
+            • Introduce an intermediate value that closes the loop explicitly
+            • Substitute an input for one account in the cycle
 
             ModelDefinition.dependencyReport() names every cycle and the accounts in it.
 

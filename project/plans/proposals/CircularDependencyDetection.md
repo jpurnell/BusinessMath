@@ -1,6 +1,6 @@
 # Design Proposal: circular-dependency detection
 
-**Status:** proposal, for argument. Nothing here is implemented.
+**Status:** implemented in `87a717e`. `ModelDefinition`, `DependencyReport`, `DependencyCycle` and its `Form` ship in `Sources/BusinessMath/Model Definition/`. Kept for the reasoning behind the SCC-based classification, which is what makes the member-versus-coefficient rule exact rather than a heuristic.
 
 **Last updated:** 2026-08-10
 
