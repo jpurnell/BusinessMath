@@ -110,6 +110,10 @@ public struct PiotroskiScore {
 
 	/// Individual signal results (true = 1 point, false = 0 points).
 	///
+	/// All nine signals below are always present: `piotroskiScore(...)` assigns every
+	/// key unconditionally. Subscripting with one of these literal names is therefore
+	/// safe to force-unwrap; any other key is `nil`.
+	///
 	/// ## Profitability Signals
 	/// - `positiveNetIncome`: Net income > 0
 	/// - `positiveOperatingCashFlow`: Operating cash flow > 0
@@ -366,7 +370,8 @@ public func altmanZScore<T: Real>(
 /// print("  Leverage: \(score.leverage)/3")
 /// print("  Efficiency: \(score.efficiency)/2")
 ///
-/// // Check individual signals
+/// // Check individual signals. The nine F-Score signal names are a fixed set that
+/// // is always populated, so these literal keys are safe to unwrap.
 /// if score.signals["qualityEarnings"]! {
 ///     print("✓ High-quality earnings (OCF > NI)")
 /// }

@@ -29,9 +29,17 @@ import Numerics
 ///     entity: company,
 ///     periods: periods
 /// ) { drivers, periods in
-///     // Build financial statements from drivers
-///     let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
-///     let costValues = periods.map { drivers["Costs"]!.sample(for: $0) }
+///     // Build financial statements from drivers. The builder is throwing, so a
+///     // driver the scenario never defined is reported by name rather than trapping.
+///     guard let revenue = drivers["Revenue"] else {
+///         throw ScenarioError.unknownInput(scenario: scenario.name, inputName: "Revenue")
+///     }
+///     guard let costs = drivers["Costs"] else {
+///         throw ScenarioError.unknownInput(scenario: scenario.name, inputName: "Costs")
+///     }
+///
+///     let revenueValues = periods.map { revenue.sample(for: $0) }
+///     let costValues = periods.map { costs.sample(for: $0) }
 ///
 ///     // Create accounts and statements
 ///     // ... (see detailed example below)
@@ -70,10 +78,24 @@ import Numerics
 ///     entity: entity,
 ///     periods: periods
 /// ) { drivers, periods in
+///     // Look up each override by name. The builder is throwing, so a driver the
+///     // scenario never defined is reported by name instead of trapping — which
+///     // matters because these keys must match the `overrides` dictionary exactly.
+///     func driver(_ name: String) throws -> AnyDriver<Double> {
+///         guard let match = drivers[name] else {
+///             throw ScenarioError.unknownInput(scenario: scenario.name, inputName: name)
+///         }
+///         return match
+///     }
+///
+///     let revenue = try driver("Revenue")
+///     let cogs = try driver("COGS")
+///     let opex = try driver("OpEx")
+///
 ///     // Sample driver values for each period
-///     let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
-///     let cogsValues = periods.map { drivers["COGS"]!.sample(for: $0) }
-///     let opexValues = periods.map { drivers["OpEx"]!.sample(for: $0) }
+///     let revenueValues = periods.map { revenue.sample(for: $0) }
+///     let cogsValues = periods.map { cogs.sample(for: $0) }
+///     let opexValues = periods.map { opex.sample(for: $0) }
 ///
 ///     // Create time series
 ///     let revenueSeries = TimeSeries(periods: periods, values: revenueValues)
@@ -227,8 +249,12 @@ public struct ScenarioRunner: Sendable {
 	/// ## Example
 	/// ```swift
 	/// let builder: ScenarioRunner.StatementBuilder = { drivers, periods in
-	///     // Sample drivers
-	///     let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
+	///     // Sample drivers. The builder is throwing, so report a driver the
+	///     // scenario never defined by name rather than trapping on the lookup.
+	///     guard let revenue = drivers["Revenue"] else {
+	///         throw ScenarioError.unknownInput(scenario: "Base Case", inputName: "Revenue")
+	///     }
+	///     let revenueValues = periods.map { revenue.sample(for: $0) }
 	///
 	///     // Create time series
 	///     let revenueSeries = TimeSeries(periods: periods, values: revenueValues)
