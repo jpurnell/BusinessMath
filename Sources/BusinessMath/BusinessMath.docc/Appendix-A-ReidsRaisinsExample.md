@@ -269,7 +269,9 @@ Find the open-market grape price where profit equals zero using Goal Seek optimi
 
 ```swift
 // Define profit as a function of open-market price
-@MainActor func profitFunction(openMarketPrice: Double) -> Double {
+// `baseCase` is captured by value, so the closure carries no shared state and
+// satisfies the optimizer's `@Sendable` objective parameter.
+let profitFunction: @Sendable (Double) -> Double = { [baseCase] openMarketPrice in
 	var model = baseCase
 	model.openMarketPrice = openMarketPrice
 	return model.calculateProfit()
