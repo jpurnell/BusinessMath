@@ -136,6 +136,9 @@ struct GeneralizedDStudyTests {
 
         // The existing two-facet gStudy uses different internal labeling
         // but the variance components should produce consistent D-study results.
+        #expect(abs(genD.generalizabilityCoefficient - existingD.generalizabilityCoefficient) < 1e-10)
+        #expect(abs(genD.dependabilityCoefficient - existingD.dependabilityCoefficient) < 1e-10)
+
         // Both should be in valid range.
         #expect(genD.generalizabilityCoefficient >= 0.0)
         #expect(genD.generalizabilityCoefficient <= 1.0)

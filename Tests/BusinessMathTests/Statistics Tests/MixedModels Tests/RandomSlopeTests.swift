@@ -1,4 +1,5 @@
 import Testing
+import RealModule
 @testable import BusinessMath
 
 @Suite("Random Slope LME Model")
@@ -184,6 +185,9 @@ struct RandomSlopeTests {
 			grouping: grouping, slopeColumn: 1)
 		let result = try fitRandomSlope(model)
 
+		// Guard the loop below: on an empty array it would pass without asserting
+		// anything. X is [1, x], so there must be exactly two standard errors.
+		#expect(result.standardErrors.count == 2)
 		for se in result.standardErrors {
 			#expect(se > 0.0)
 		}

@@ -102,6 +102,7 @@ struct GeneralLMETests {
 		// G matrix diagonal corresponds to intercept and slope variance
 		#expect(abs(genResult.gMatrix[0, 0] - rsResult.varianceIntercept) < 10.0)
 		#expect(abs(genResult.gMatrix[1, 1] - rsResult.varianceSlope) < 2.0)
+		#expect(genResult.observations == N)
 	}
 
 	// MARK: - Test 3: Basic convergence
@@ -154,6 +155,7 @@ struct GeneralLMETests {
 		// Population intercept ~ 17.5, slope ~ 1.25
 		#expect(abs(result.beta[0] - 17.5) < 3.0)
 		#expect(abs(result.beta[1] - 1.25) < 0.5)
+		#expect(result.observations == N)
 	}
 
 	// MARK: - Test 5: BLUPs reflect group deviations
@@ -179,6 +181,7 @@ struct GeneralLMETests {
 		// Group 0 slope (2.0) should have higher random slope BLUP than group 1 (0.5)
 		// randomEffects is m x r, row g, col 1 is slope BLUP
 		#expect(result.randomEffects[0, 1] > result.randomEffects[1, 1])
+		#expect(result.observations == N)
 	}
 
 	// MARK: - Test 6: G matrix is symmetric
@@ -201,7 +204,10 @@ struct GeneralLMETests {
 			response: y, grouping: grouping, randomEffectsPerGroup: 2)
 		let result = try fitGeneralLME(model)
 
+		#expect(result.observations == N)
 		let r = result.randomEffectsPerGroup
+		// Guard the loops below: at r == 0 they would pass without asserting anything.
+		#expect(r == 2)
 		for i in 0..<r {
 			for j in 0..<r {
 				#expect(abs(result.gMatrix[i, j] - result.gMatrix[j, i]) < 1e-10)
@@ -229,6 +235,9 @@ struct GeneralLMETests {
 			response: y, grouping: grouping, randomEffectsPerGroup: 2)
 		let result = try fitGeneralLME(model)
 
+		#expect(result.observations == N)
+		// Guard the loop below: at 0 it would pass without asserting anything.
+		#expect(result.randomEffectsPerGroup == 2)
 		for i in 0..<result.randomEffectsPerGroup {
 			#expect(result.gMatrix[i, i] >= 0.0)
 		}
@@ -254,6 +263,7 @@ struct GeneralLMETests {
 			response: y, grouping: grouping, randomEffectsPerGroup: 2)
 		let result = try fitGeneralLME(model)
 
+		#expect(result.observations == N)
 		let residSum = result.residuals.reduce(0.0, +)
 		#expect(abs(residSum) < 1.0)
 	}
@@ -278,7 +288,8 @@ struct GeneralLMETests {
 			response: y, grouping: grouping, randomEffectsPerGroup: 2)
 		let result = try fitGeneralLME(model)
 
-		for i in 0..<y.count {
+		#expect(result.observations == N)
+		for i in 0..<N {
 			#expect(abs(result.fittedValues[i] + result.residuals[i] - y[i]) < 1e-8)
 		}
 	}
@@ -303,6 +314,7 @@ struct GeneralLMETests {
 			response: y, grouping: grouping, randomEffectsPerGroup: 2)
 		let result = try fitGeneralLME(model)
 
+		#expect(result.observations == N)
 		#expect(result.aic.isFinite)
 		#expect(result.bic.isFinite)
 	}
@@ -327,6 +339,10 @@ struct GeneralLMETests {
 			response: y, grouping: grouping, randomEffectsPerGroup: 2)
 		let result = try fitGeneralLME(model)
 
+		#expect(result.observations == N)
+		// Guard the loop below: on an empty array it would pass without asserting
+		// anything. X is [1, x], so there must be exactly two standard errors.
+		#expect(result.standardErrors.count == 2)
 		for se in result.standardErrors {
 			#expect(se > 0.0)
 		}
@@ -402,6 +418,7 @@ struct GeneralLMETests {
 
 		#expect(result.converged)
 		#expect(result.iterations <= 30)
+		#expect(result.observations == N)
 	}
 
 	// MARK: - Test 16: Non-convergence with maxIterations=1
@@ -426,6 +443,8 @@ struct GeneralLMETests {
 
 		#expect(!result.converged)
 		#expect(result.iterations == 1)
+		// A non-converged fit must still report the correct problem dimensions.
+		#expect(result.observations == N)
 	}
 
 	// MARK: - Test 17: Unbalanced design

@@ -60,6 +60,9 @@ struct LMEDiagnosticsTests {
 		// Verify by reconstructing: pResid[i] * sqrt(totalVar) should equal marginalResiduals[i].
 		let totalVar = result.varianceRandom + result.varianceResidual
 		let scale = (totalVar).squareRoot()
+		// Guard the loop below: at 0 observations it would pass without asserting
+		// anything. The fixture supplies 12.
+		#expect(result.observations == 12)
 		for i in 0..<result.observations {
 			let reconstructed = pResid[i] * scale
 			#expect(abs(reconstructed - result.marginalResiduals[i]) < 1e-10)
@@ -81,6 +84,8 @@ struct LMEDiagnosticsTests {
 		let (result, _) = try fittedModel()
 		let stdResid = standardizedResiduals(result)
 		let qq = qqNormalData(stdResid)
+		// Guard the loop below: at count <= 1 it would pass without comparing anything.
+		#expect(qq.count == 12)
 		for i in 1..<qq.count {
 			#expect(qq[i].theoretical >= qq[i - 1].theoretical)
 		}
@@ -117,6 +122,9 @@ struct LMEDiagnosticsTests {
 	func groupInfluenceNonNegative() throws {
 		let (result, grouping) = try fittedModel()
 		let influence = groupInfluence(result, grouping: grouping)
+		// Guard the loop below: on an empty array it would pass without asserting
+		// anything. The fixture has 4 groups.
+		#expect(influence.count == 4)
 		for d in influence {
 			#expect(d >= 0.0)
 		}
@@ -185,7 +193,6 @@ struct LMEDiagnosticsTests {
 	@Test("Autocorrelation handles single-obs groups gracefully")
 	func autocorrelationSingleObsGroups() throws {
 		// Mix of group sizes: groups with 1 obs should be skipped
-		let y: [Double] = [10.0, 20.0, 20.5, 30.0, 30.5, 30.0]
 		let groups = [0, 1, 1, 2, 2, 2]
 		let grouping = try GroupingFactor(groups)
 		let residuals: [Double] = [0.1, -0.2, 0.3, 0.1, -0.1, 0.0]
