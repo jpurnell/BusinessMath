@@ -62,15 +62,32 @@ public actor ModelProfiler {
     ///
     /// Used only for the `timestamp` on ``PerformanceReport`` — the moment the report
     /// was produced. The *durations* the report summarises are elapsed time and are not
-    /// measured with this clock; see ``measure(operation:category:block:)``.
+    /// measured with this clock; they come from ``elapsedTime``.
     public let clock: any WallClock
+
+    /// The monotonic counter every measured duration is read from.
+    ///
+    /// Separate from ``clock`` because a duration and a timestamp want different
+    /// instruments: wall time can be corrected backwards mid-measurement, which is how a
+    /// benchmark ends up reporting a negative interval. See ``ElapsedTimeSource``.
+    ///
+    /// Injecting a ``ManualElapsedTimeSource`` lets a test state the durations it is
+    /// reasoning about instead of sleeping for them.
+    public let elapsedTime: any ElapsedTimeSource
 
     /// Initialize a new profiler.
     ///
-    /// - Parameter clock: Stamps the reports this profiler returns. Defaults to the
-    ///   system clock.
-    public init(clock: any WallClock = SystemWallClock()) {
+    /// - Parameters:
+    ///   - clock: Stamps the reports this profiler returns. Defaults to the system clock.
+    ///   - elapsedTime: Supplies the readings every measured duration is the difference
+    ///     of. Defaults to the system's monotonic counter, which is what a profiler
+    ///     should be measuring against unless a test needs to name the durations itself.
+    public init(
+        clock: any WallClock = SystemWallClock(),
+        elapsedTime: any ElapsedTimeSource = SystemElapsedTimeSource()
+    ) {
         self.clock = clock
+        self.elapsedTime = elapsedTime
     }
 
     // MARK: - Performance Measurement
@@ -101,13 +118,12 @@ public actor ModelProfiler {
         let startedAt = clock.now
         // A separate, monotonic anchor for `duration`: an interval must not come from
         // differencing wall-clock readings, which an NTP correction can move backwards.
-        let timer = ContinuousClock()
-        let start = timer.now
+        let start = elapsedTime.now
         let startMemory = currentMemoryUsage()
 
         let result = try block()
 
-        let duration = (timer.now - start).inSeconds
+        let duration = (elapsedTime.now - start).inSeconds
         let endMemory = currentMemoryUsage()
         let memoryDelta = endMemory - startMemory
 
@@ -156,13 +172,12 @@ public actor ModelProfiler {
         let startedAt = clock.now
         // A separate, monotonic anchor for `duration`: an interval must not come from
         // differencing wall-clock readings, which an NTP correction can move backwards.
-        let timer = ContinuousClock()
-        let start = timer.now
+        let start = elapsedTime.now
         let startMemory = currentMemoryUsage()
 
         let result = try await block()
 
-        let duration = (timer.now - start).inSeconds
+        let duration = (elapsedTime.now - start).inSeconds
         let endMemory = currentMemoryUsage()
         let memoryDelta = endMemory - startMemory
 

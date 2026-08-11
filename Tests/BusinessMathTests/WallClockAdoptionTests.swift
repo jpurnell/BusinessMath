@@ -449,13 +449,35 @@ struct WallClockAdoptionTests {
 	// MARK: - Elapsed time (ContinuousClock, not WallClock)
 
 	// These assertions are deliberately weaker than the ones above, and that asymmetry is
-	// the point. A recorded timestamp can be pinned exactly because the clock is injected;
-	// a measured duration cannot, because the real elapsed time *is* the thing being
-	// measured — a fake clock there would make the number meaningless rather than
-	// testable. So what is asserted is what a monotonic source guarantees and a
-	// wall-clock difference does not: never negative, always finite, and ordered.
+	// still the point — but not for the reason first recorded here.
 	//
-	// No assertion here pins a specific duration. That would be a flake by construction.
+	// What this comment used to say: a recorded timestamp can be pinned exactly because
+	// the clock is injected, whereas a measured duration cannot be, because the real
+	// elapsed time *is* the thing being measured, so a fake source there "would make the
+	// number meaningless rather than testable."
+	//
+	// That was half right, and the wrong half cost something. It is true of the tests
+	// below. It is false of most timing assertions in this library, and while it stood,
+	// thirteen tests in `ModelProfilerTests` manufactured durations by sleeping for them —
+	// which sets a floor on elapsed time and no ceiling at all. Two of them flipped under
+	// load: a "fast" operation that slept 1 ms outlasted a "slow" one that slept 50 ms.
+	// Nothing about sorting, thresholds, or percentiles is a claim about how long the
+	// machine took, so nothing about them needed a real duration. `ElapsedTimeSource` now
+	// makes the monotonic reading injectable alongside the clock, and those tests supply
+	// the durations they reason about via `ManualElapsedTimeSource`.
+	//
+	// What survives is the narrow claim the injected source cannot make on its own: that
+	// the *default*, unconfigured source advances at all, forward, and yields a
+	// well-formed interval. A test that drives the counter proves nothing about the
+	// counter. So these stay on the real source, and assert only what a monotonic source
+	// guarantees and a wall-clock difference does not: never negative, always finite, and
+	// ordered. `ModelDebugger` is not injectable at all — it still constructs its own
+	// `ContinuousClock` — so for the trace below this is the only assertion available.
+	//
+	// No assertion here pins a specific duration. That would be a flake by construction,
+	// and no ordering claim is made against the real clock either — that was the last
+	// residual risk in this file, and it is gone. What is left asserts only what a
+	// monotonic source guarantees under any scheduling.
 
 	@Test("A measured duration is never negative and always finite")
 	func profilerDurationIsWellFormed() async throws {
@@ -471,21 +493,48 @@ struct WallClockAdoptionTests {
 		#expect(stats.averageTime.isFinite)
 	}
 
-	@Test("A slower operation measures longer than a faster one")
-	func profilerOrdersDurations() async throws {
-		let profiler = ModelProfiler()
+	/// This used to assert that two million square roots measured longer than `1 + 1`,
+	/// and the comment above called it "the residual risk" — an ordering claim against
+	/// the real clock, kept safe only by a margin.
+	///
+	/// The margin was not as safe as it read. Two million square roots is on the order
+	/// of ten milliseconds; the preemptions that flipped two `ModelProfilerTests` cases
+	/// earlier were longer than fifty. A pause inside the `1 + 1` bracket inverts the
+	/// comparison, and the assertion says nothing about this library when it does —
+	/// whether `ContinuousClock` advances in proportion to work is a claim about the
+	/// standard library, and ordering *logic* is now covered exactly, with supplied
+	/// durations, in `ModelProfilerTests.reportSortingTotalTime`.
+	///
+	/// What is worth asserting against the real source is the property that made it the
+	/// right instrument in the first place, and which a `WallClock` cannot promise:
+	/// readings never go backwards. An NTP correction can move wall-clock time
+	/// backwards mid-measurement and yield a negative interval; a monotonic source
+	/// cannot, however long the machine stalls between readings. That holds under any
+	/// scheduling, so it is checkable rather than merely usually true.
+	@Test("The real elapsed-time source never runs backwards")
+	func profilerElapsedSourceIsMonotonic() async throws {
+		let source = SystemElapsedTimeSource()
 
-		_ = await profiler.measure(operation: "fast") { 1 + 1 }
-		_ = await profiler.measure(operation: "slow") {
+		var previous = source.now
+		for _ in 0..<1_000 {
+			let current = source.now
+			#expect(current >= previous)
+			previous = current
+		}
+
+		// And the profiler built on it never reports a negative interval, whatever the
+		// scheduler did between the two readings that bracket the block.
+		let profiler = ModelProfiler()
+		_ = await profiler.measure(operation: "work") {
 			var total = 0.0
-			for i in 1...2_000_000 { total += Double(i).squareRoot() }
+			for i in 1...100_000 { total += Double(i).squareRoot() }
 			return total
 		}
 
 		let report = await profiler.report()
-		let fast = try #require(report.operations.first { $0.operation == "fast" })
-		let slow = try #require(report.operations.first { $0.operation == "slow" })
-		#expect(slow.totalTime > fast.totalTime)
+		let stats = try #require(report.operations.first { $0.operation == "work" })
+		#expect(stats.totalTime >= 0)
+		#expect(stats.totalTime.isFinite)
 	}
 
 	@Test("A traced calculation reports a well-formed duration")
