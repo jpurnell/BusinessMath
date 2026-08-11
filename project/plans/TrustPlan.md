@@ -80,14 +80,39 @@ structured logging. Each is "build it or retract it" — the same test as 1.1.
 
 ## Phase 2 — say when a number is inexact
 
-### 2.1 `normalCDF` in the lower tail
+### ~~2.1 `normalCDF` in the lower tail~~ — done
 
-Computes `(1 + erf(x/√2))/2`, which cancels catastrophically for negative `x`: fed an exact
-quantile it returns **2.2e-5 relative error at p = 1e-12**. `erfc(-x/√2)/2` gives ~1e-15.
+~~Computes `(1 + erf(x/√2))/2`, which cancels catastrophically for negative `x`: fed an exact
+quantile it returns **2.2e-5 relative error at p = 1e-12**. `erfc(-x/√2)/2` gives ~1e-15.~~
 
-Nothing fails today, which is the problem — every tail-risk figure inherits it. Deferred once
+~~Nothing fails today, which is the problem — every tail-risk figure inherits it. Deferred once
 already because it moves expectations across the suite; that is a reason to schedule it, not to
-skip it.
+skip it.~~
+
+Fixed. `normalCDF` is `erfc(-x/√2)/2`; measured **2.2e-5 → 5.3e-15** relative at p = 1e-12, and
+the function now reaches x = -37 instead of flushing to zero below x = -8.3. The upper half does
+not regress — it is bit-exact against `1 - erfc(x/√2)/2` at all 80,001 sampled points, where the
+sum form differed by 1 ulp at 9,065 of them.
+
+Three things it turned up that the plan did not predict:
+
+- **`percentile(zScore:)` was a second copy** of the same wrong formula, one line of it, in a
+  different directory. The recurring shape: a correct implementation ships while a caller keeps a
+  private worse one. It now delegates.
+- **The Black-Scholes negative prices resolved as a consequence**, and the diagnosis recorded in
+  `BlackScholesReferenceTests` was wrong. The deep-OTM cancellation is only 48×, not catastrophic;
+  the terms were noise because Φ was noise. The proposed clamp at zero would have produced the
+  right sign from the wrong number. No Black-Scholes code was changed. 311 negative prices across
+  four parameter sets, now zero, and the prices agree with a 100-digit reference to ~1e-13.
+- **One reference value in the new differential suite was itself wrong** — Φ at the exact `Double`
+  quantile of 1e-12 is 9.9999999999999878e-13, not 1e-12, a 1.2e-14 relative offset that only
+  became visible once the error under test dropped below it. §2.2's own warning about reading a
+  reference at the wrong argument, one test away from where it was written.
+
+`zScore(percentile:)` was the same defect in the inverse direction — `√2·erfInv(2p-1)`, refining
+against an `erf` that saturates in the tail — and now delegates to `inverseNormalCDF`:
+**2.1e-6 → 0.0** absolute at p = 1e-12. `normSInv` and `erfInv` are public, so neither was deleted;
+`erfInv` routes through the canonical quantile from the smaller side, `5.3e-13 → 2.3e-15`.
 
 ### 2.2 Differential testing against published references
 
@@ -131,7 +156,10 @@ error because it was copied from Quick Help.
    `BalanceSheet` → E202. Small, independent, each closes a real gap.
 3. **2.2 differential tests** — highest ratio of defects-found to effort, and it is the safety net
    for everything in Phase 2.
-4. **2.1 `normalCDF`** — schedule deliberately; it moves expectations.
+4. ~~**2.1 `normalCDF`** — schedule deliberately; it moves expectations.~~ Done. It moved five
+   expectations, all of them recorded from this library's own output rather than from a source,
+   and it closed five of the suite's nine known issues — the three it was scheduled for and two
+   Black-Scholes ones nobody had connected to it.
 5. **`doc-comment-code`** — larger corpus, upstream of the catalogue.
 6. **Phase 3 run-and-compare** — the expensive one, last.
 
