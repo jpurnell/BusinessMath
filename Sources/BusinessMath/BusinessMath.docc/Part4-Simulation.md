@@ -84,13 +84,17 @@ This gives you a complete probability distribution instead of a single point est
 Structure thinking around discrete, internally consistent future states. Each scenario can mix **fixed values** (deterministic) with **probability distributions** (uncertain):
 
 ```swift
+// The model lives in its own `let` so the reproducible runner below can be handed the
+// same function `ScenarioAnalysis` was built with
+let growthModel: @Sendable ([Double]) -> Double = { inputs in
+    let revenue = 1_000_000 * (1 + inputs[0])
+    let margin = 0.20 + inputs[1]
+    return revenue * margin
+}
+
 var analysis = ScenarioAnalysis(
     inputNames: ["Revenue Growth", "Margin Expansion"],
-    model: { inputs in
-        let revenue = 1_000_000 * (1 + inputs[0])
-        let margin = 0.20 + inputs[1]
-        return revenue * margin
-    },
+    model: growthModel,
     iterations: 1_000
 )
 
@@ -112,7 +116,55 @@ analysis.addScenario(Scenario(name: "Downside") { config in
     config.setDistribution(DistributionNormal(-0.01, 0.005), forInput: "Margin Expansion")
 })
 
-let scenarioResults = try analysis.run()
+/// Runs one `Scenario` reproducibly.
+///
+/// `ScenarioAnalysis.run()` builds each scenario's `MonteCarloSimulation` without a
+/// seed — `ScenarioAnalysis` has no `seed:` parameter and samples its distributions
+/// through the unseeded `DistributionRandom.next()` — so its figures move on every run.
+/// A `Scenario` is only data, though, so you can run it yourself: one seed per
+/// scenario, and every input added through `SimulationInput(name:distribution:)`, whose
+/// `SeedableDistribution` overload draws from the simulation's seeded generator. A fixed
+/// value becomes a degenerate uniform, which honors the seed and always returns
+/// that value.
+func runReproducibly(
+    _ scenario: Scenario,
+    inputNames: [String],
+    iterations: Int,
+    seed: UInt64,
+    model: @escaping @Sendable ([Double]) -> Double
+) throws -> SimulationResults {
+    var simulation = MonteCarloSimulation(iterations: iterations, seed: seed, model: model)
+    for name in inputNames {
+        if let fixedValue = scenario.inputValues[name] {
+            simulation.addInput(SimulationInput(
+                name: name,
+                distribution: DistributionUniform(fixedValue, fixedValue)
+            ))
+        } else if let normal = scenario.inputDistributions[name] as? DistributionNormal {
+            simulation.addInput(SimulationInput(name: name, distribution: normal))
+        }
+    }
+    return try simulation.run()
+}
+
+// A seed per scenario, so adding one never renumbers the others
+let growthSeeds: [String: UInt64] = [
+    "Base Case": 5101,
+    "Upside": 5102,
+    "Downside": 5103
+]
+
+var scenarioResults: [String: SimulationResults] = [:]
+for scenario in analysis.scenarios {
+    scenarioResults[scenario.name] = try runReproducibly(
+        scenario,
+        inputNames: analysis.inputNames,
+        iterations: analysis.iterations,
+        seed: growthSeeds[scenario.name]!,
+        model: growthModel
+    )
+}
+
 let scenarioComparison = ScenarioComparison(results: scenarioResults)
 let best = scenarioComparison.bestScenario(by: .mean)
 print("Best scenario: \(best.name)")
@@ -200,29 +252,31 @@ Test how models perform under extreme but plausible conditions. Real stress test
 import BusinessMath
 
 // Realistic business model with multiple revenue streams and cost components
+let stressModel: @Sendable ([Double]) -> Double = { inputs in
+    let volume = inputs[0]
+    let price = inputs[1]
+    let cogsMargin = inputs[2]
+    let opex = inputs[3]
+    let interestRate = inputs[4]
+
+    // Revenue
+    let revenue = volume * price
+
+    // Costs
+    let cogs = revenue * cogsMargin
+    let operatingExpenses = opex
+
+    // Debt servicing (assume $2M debt)
+    let debtBalance = 2_000_000.0
+    let interestExpense = debtBalance * interestRate
+
+    // Net income
+    return revenue - cogs - operatingExpenses - interestExpense
+}
+
 var stressTest = ScenarioAnalysis(
     inputNames: ["Sales Volume", "Unit Price", "COGS Margin", "OpEx", "Interest Rate"],
-    model: { inputs in
-        let volume = inputs[0]
-        let price = inputs[1]
-        let cogsMargin = inputs[2]
-        let opex = inputs[3]
-        let interestRate = inputs[4]
-
-        // Revenue
-        let revenue = volume * price
-
-        // Costs
-        let cogs = revenue * cogsMargin
-        let operatingExpenses = opex
-
-        // Debt servicing (assume $2M debt)
-        let debtBalance = 2_000_000.0
-        let interestExpense = debtBalance * interestRate
-
-        // Net income
-        return revenue - cogs - operatingExpenses - interestExpense
-    },
+    model: stressModel,
     iterations: 5_000
 )
 
@@ -262,8 +316,29 @@ stressTest.addScenario(Scenario(name: "Price War") { config in
     config.setValue(0.05, forInput: "Interest Rate")
 })
 
-// Run all scenarios
-let results_stress = try stressTest.run()
+// Run all scenarios, each from its own seed (see `runReproducibly` above)
+let stressSeeds: [String: UInt64] = [
+    "Base Case": 5201,
+    "Recession": 5202,
+    "Supply Shock": 5203,
+    "Price War": 5204
+]
+
+var results_stress: [String: SimulationResults] = [:]
+for scenario in stressTest.scenarios {
+    results_stress[scenario.name] = try runReproducibly(
+        scenario,
+        inputNames: stressTest.inputNames,
+        iterations: stressTest.iterations,
+        seed: stressSeeds[scenario.name]!,
+        model: stressModel
+    )
+}
+
+// `results_stress` is a Dictionary, and Swift randomises hash order per process — walking
+// it directly would print the scenarios in a different order on every run. Walk them in
+// the order they were defined instead, which is also the order a reader expects.
+let scenarioOrder = stressTest.scenarios.map(\.name)
 
 // MARK: - Analysis & Interpretation
 
@@ -271,7 +346,8 @@ print("=== STRESS TEST RESULTS ===\n")
 
 // 1. Compare expected outcomes
 print("Expected Net Income by Scenario:")
-for (name, result) in results_stress {
+for name in scenarioOrder {
+    let result = results_stress[name]!
     let mean = result.statistics.mean
     let p5 = result.percentiles.p5
     let p95 = result.percentiles.p95
@@ -295,7 +371,8 @@ print()
 
 // 3. Calculate probability of losses in each scenario
 print("Probability of Negative Net Income:")
-for (name, result) in results_stress {
+for name in scenarioOrder {
+    let result = results_stress[name]!
     let probLoss = result.probabilityBelow(0)
     print("  \(name): \(probLoss.percent(1))")
 }
@@ -304,7 +381,8 @@ print()
 // 4. Check survival thresholds (e.g., minimum cash flow needed)
 let minimumRequired = 100_000.0
 print("Probability of Meeting Minimum Threshold (\(minimumRequired.currency(0))):")
-for (name, result) in results_stress {
+for name in scenarioOrder {
+    let result = results_stress[name]!
     let probSurvive = result.probabilityAbove(minimumRequired)
     print("  \(name): \(probSurvive.percent(1))")
 }
@@ -312,7 +390,8 @@ print()
 
 // 5. Risk-adjusted metrics
 print("Risk-Adjusted Metrics:")
-for (name, result) in results_stress {
+for name in scenarioOrder {
+    let result = results_stress[name]!
     let mean = result.statistics.mean
     let stdDev = result.statistics.stdDev
     let sharpeRatio = stdDev > 0 ? mean / stdDev : 0
@@ -321,53 +400,58 @@ for (name, result) in results_stress {
 }
 ```
 
-**Expected Output:**
+**Expected Output** (reproducible from the seeds above):
 ```
 === STRESS TEST RESULTS ===
 
 Expected Net Income by Scenario:
 Base Case:
-  Mean: $282,500
-  90% CI: [$228,000, $337,000]
-  Std Dev: $33,000
+  Mean: $237,991
+  90% CI: [$168,266, $308,699]
+  Std Dev: $43,109
 
 Recession:
-  Mean: -$48,000
-  90% CI: [-$168,000, $71,000]
-  Std Dev: $72,000
+  Mean: ($93,762)
+  90% CI: [($206,783), $32,349]
+  Std Dev: $73,114
 
 Supply Shock:
-  Mean: $96,000
-  90% CI: [$8,000, $184,000]
-  Std Dev: $54,000
+  Mean: $63,605
+  90% CI: [($45,972), $181,757]
+  Std Dev: $69,591
 
 Price War:
-  Mean: $38,000
-  90% CI: [-$48,000, $124,000]
-  Std Dev: $52,000
+  Mean: $71,876
+  90% CI: [($22,984), $168,803]
+  Std Dev: $58,312
 
 Worst-Case Analysis:
-  Lowest mean outcome: Recession (-$48,000)
-  Worst 5th percentile: Recession (-$168,000)
+  Lowest mean outcome: Recession ($93,762)
+  Worst 5th percentile: Recession ($206,783)
 
 Probability of Negative Net Income:
   Base Case: 0.0%
-  Recession: 76.2%
-  Supply Shock: 18.5%
-  Price War: 42.3%
+  Recession: 89.4%
+  Supply Shock: 18.6%
+  Price War: 10.9%
 
 Probability of Meeting Minimum Threshold ($100,000):
-  Base Case: 99.8%
-  Recession: 2.1%
-  Supply Shock: 46.2%
-  Price War: 27.8%
+  Base Case: 100.0%
+  Recession: 0.9%
+  Supply Shock: 29.2%
+  Price War: 31.4%
 
 Risk-Adjusted Metrics:
-  Base Case: Sharpe-like ratio = 8.56
-  Recession: Sharpe-like ratio = -0.67
-  Supply Shock: Sharpe-like ratio = 1.78
-  Price War: Sharpe-like ratio = 0.73
+  Base Case: Sharpe-like ratio = 5.52
+  Recession: Sharpe-like ratio = -1.28
+  Supply Shock: Sharpe-like ratio = 0.91
+  Price War: Sharpe-like ratio = 1.23
 ```
+
+Sanity-check the base case by hand before trusting any of the rest: 50,000 units at
+$25 is $1.25M of revenue, 55% of which survives COGS ($687,500), less $350,000 of OpEx
+and $100,000 of interest, leaves $237,500. The simulated mean sits $491 away from that,
+which is the sampling error you would expect from 5,000 draws.
 
 **★ Insight ─────────────────────────────────────**
 Why this stress test is more realistic:
@@ -376,7 +460,7 @@ Why this stress test is more realistic:
 
 2. **Distributions Within Scenarios:** Even within the "Recession" scenario, there's uncertainty. Sales might be down 20-40% (not exactly 30%), creating a **distribution of outcomes within each scenario**.
 
-3. **Asymmetric Risks:** Notice the wide confidence intervals in stress scenarios (Recession: -$168K to +$71K) versus base case ($228K to $337K). This asymmetry shows **fat downside tails** - the hallmark of real financial risk.
+3. **Asymmetric Risks:** Notice the wide confidence intervals in stress scenarios (Recession: -$207K to +$32K, a $239K span) versus base case ($168K to $309K, a $141K span). Stress does not just move the mean down; it widens the range around it.
 
 4. **Multiple Risk Metrics:** We analyze:
    - Mean (expected outcome)
@@ -386,12 +470,12 @@ Why this stress test is more realistic:
    - Risk-adjusted returns (reward per unit of risk)
 
 5. **Business Interpretation:**
-   - Recession is catastrophic (76% chance of losses)
-   - Supply shock is manageable (18% loss probability, can pass costs to customers)
-   - Price war is dangerous (42% loss risk despite volume gains)
+   - Recession is catastrophic (89% chance of losses, and only a 0.9% chance of clearing the $100K threshold)
+   - Supply shock is manageable (19% loss probability, because the price increase passes most of the cost on)
+   - Price war rarely produces an outright loss (11%), but it costs 70% of expected profit — $238K down to $72K. A scenario can be dangerous without being loss-making
    - Base case has nearly zero loss probability but plan for stress scenarios!
 
-This is how CFOs present stress tests to boards: "Under recession, we have a 76% probability of losses with expected negative $48K, but only a 2% chance of meeting our minimum cash flow target."
+This is how CFOs present stress tests to boards: "Under recession, we have an 89% probability of losses with expected negative $94K, and less than a 1% chance of meeting our minimum cash flow target."
 **─────────────────────────────────────────────────**
 
 ## When to Use Each Approach

@@ -58,14 +58,16 @@ print("p-value = \(result.pValues[1])")  // Significance of advertising coeffici
 
 **Output:**
 ```
-Sales = 20.0 + 6.25 × Advertising
+Sales = 70.00000000000207 + 4.999999999999927 × Advertising
 R² = 1.0
-p-value = 0.000001
+p-value = 0.0
 ```
 
 **Interpretation:**
-- For every $1,000 increase in advertising, sales increase by $6,250
-- R² = 1.0 indicates perfect fit (all variance explained)
+- The exact fit is `Sales = 70 + 5 × Advertising`; the trailing digits are floating-point noise
+  from the normal-equation solve, not a real difference from the round numbers
+- For every $1,000 increase in advertising, sales increase by $5,000
+- R² = 1.0 indicates perfect fit (all variance explained) — this data lies exactly on a line
 - p-value < 0.05 confirms advertising significantly predicts sales
 
 > **Note**: The ``linearRegression(x:y:confidenceLevel:)`` function is a convenience wrapper for single-predictor regression. For maximum control, use ``multipleLinearRegression(X:y:confidenceLevel:)`` with `X = advertisingSpend.map { [$0] }`.
@@ -281,11 +283,17 @@ print("VIF values: \(diagnosticsResult.vif)")
 
 ### Example: Detecting Multicollinearity
 
+Note the word *highly*, not *perfectly*. Predictors that are exact linear functions of one
+another — say, `education` rising by 2 and `occupation` by 1 at every single observation — make
+XᵀX singular rather than merely ill-conditioned, and ``multipleLinearRegression(X:y:confidenceLevel:)``
+throws ``RegressionError/singularMatrix(message:)`` instead of returning inflated VIFs. The data
+below is strongly but imperfectly correlated, which is the case VIF is designed to diagnose.
+
 ```swift
 // Income, Education Years, and Occupation Level (highly correlated)
-let income = [40.0, 55.0, 70.0, 85.0, 100.0, 115.0, 130.0]
-let education = [12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0]
-let occupation = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]  // Highly correlated with education!
+let income = [34.0, 55.0, 69.0, 87.0, 103.0, 115.0, 130.0]
+let education = [10.0, 14.0, 14.0, 16.0, 22.0, 22.0, 23.0]
+let occupation = [2.0, 2.0, 3.0, 5.0, 6.0, 7.0, 8.0]  // Highly correlated with education!
 let productivity = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
 
 let multicollinearityX = (0..<income.count).map { i in
@@ -404,8 +412,14 @@ func standardize(_ x: [Double]) -> [Double] {
     return x.map { ($0 - mean) / std }
 }
 
-let standardizedX = X.map { row in
-    row.map { standardize([$0])[0] }
+// Standardize each predictor *column* across all observations, then reassemble the rows.
+// Standardizing one value at a time would divide by a zero standard deviation.
+let predictorColumns = (0..<X[0].count).map { column in
+    standardize(X.map { $0[column] })
+}
+
+let standardizedX = (0..<X.count).map { row in
+    predictorColumns.map { $0[row] }
 }
 ```
 
