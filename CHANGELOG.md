@@ -34,6 +34,10 @@ detail, and how each number was measured, is in the entry named beside it.
 | `VectorN.random(in:dimension:)` | a random vector on `0...1` was **the zero vector**, every component, every call. |
 | `distributionPareto(scale:shape:)` | returned **`+infinity`** for a uniform of exactly zero, poisoning the mean and every percentile above it for the whole run. Now finite and `>= scale` for every seed; values for every `u > 1e-7` are bit-for-bit unchanged. |
 | `SimplexResult.dualValues` | every shadow price carried the wrong **sign**. Wyndor Glass: **`(-0, -1.5, -1)` → `(0, 1.5, 1)`**. Magnitudes were always correct. |
+| `HazardRateModel` survival curve | integrated as though every period were a year, whatever its length. A one-year default probability of **1.98% against a true 11.43%** — understating credit risk 5.8×. |
+| GPU Monte Carlo streams | every thread seeded `baseSeed ^ tid`, and xorshift128+ is GF(2)-linear, so adjacent iterations correlated. Cross-thread lag-1 ρ: **+0.250…+0.264 → −0.0088…+0.0107**. Every seeded GPU result moves. |
+| `ScenarioGenerator`, `integrate` | seeded output moves. Both drew from process-global state that did not survive parallel execution; `integrate`'s seed is now a `UInt64?` and reaches the sampler. A signature change, so callers see it. |
+| `distributionRayleigh(scale:seed:)` | the per-seed value moves — it indexes the distribution the other way — with a maximum delta of **5.63**. The distribution itself is unchanged; a given seed now lands elsewhere in it. |
 | `distributionRayleigh` | **no number changes.** The parameter is renamed `mean:` → `scale:` because that is what it always was: 400,000 seeded draws at `mean: 2.0` had a sample mean of **2.5039**, a 25.2% overshoot against the documented figure and exactly `σ√(π/2)`. |
 
 `CoxProcess.simulateDefaultTime`, the gamma-family distributions, `xnpv`/`xirr` on non-`Double`
@@ -918,6 +922,737 @@ the evidence with it.
 
 Alongside it: a marketplace template with no buyers reported `NaN` rather than nothing, and the
 four remaining divisions by a seller count are now guarded.
+
+#### Fixed (breaking) — hazard-curve integration treated every period as a year
+
+`integrateHazardRate` discarded the periods it was handed. The line read
+`_ = hazardRates.periods` under the comment "Not used in integration", and the step was
+`let timeStep = T(1) // Assume annual periods`. A monthly curve was therefore integrated as
+though each of its points spanned a year.
+
+Measured on twelve monthly points ramping 2% to 24%: cumulative hazard over the whole curve
+read **1.45 against a true 0.121**, the ~12× the stretch predicts. The one-year default
+probability moved the *other* way and is the worse number — **1.98% against a true 11.43%** —
+because a curve stretched to twelve years hands a caller asking about one year nothing but
+January's rate.
+
+A flat monthly curve is completely immune, which is why it survived. The old loop truncated
+at `time`, so for constant λ the integral is λt whatever the step width, and the first red
+test written for this used a flat curve and passed against the broken code. The defect lives
+only in where the rate changes are placed — the same lesson as `CoxProcess`, one axis further
+along.
+
+**`DayCountConvention` is new** (ACT/365 default, ACT/360, 30/360), and it sits at the
+`Valuation/` root rather than inside `CreditDerivatives/` because eight other files hardcode
+a divisor — three `T(365)` in `FinancialRatios`, and 365.25 in `LeaseAccounting`,
+`BondPricing`, `CallableBond`, `CreditSpreadModel`, `TimeSeriesAnalytics` and `XNPV` — and can
+adopt it later without a second copy. It deliberately does not use `Period.durationInDays`,
+which returns the ladder's nominal average (365.25 for any annual period): that is the right
+answer to "how long is a period of this type" and the wrong one for a convention whose
+numerator is actual days, under which no calendar year would be exactly 1.0. Whole days come
+from calendar arithmetic rather than elapsed seconds, because dividing seconds by 86,400
+reports March 2025 as 30.958 days across the DST transition.
+
+The annual case is byte-identical and pinned by bit pattern rather than tolerance. One real
+change beyond the step width: a leap year is now 366/365, where the old code was wrong by
+0.274%.
+
+`hazardRateFromSpread` returns `T?` rather than dividing by `1 - recoveryRate` unguarded. A
+recovery of 1.0 returned `+infinity`; a recovery of 1.2 returned a hazard rate of **−0.075**,
+which makes `exp(-λt)` a survival probability above one. Optional rather than throwing, for
+the reason given under the period conversion tables above: one failure mode, so a typed error
+carries nothing a `nil` does not.
+
+Known and pinned rather than fixed: `Period.<` compares granularity before start date, so a
+`TimeSeries` holding an annual point and a quarterly point stores them out of chronological
+order, and the integration walks stored order.
+
+#### Fixed — Black-Scholes priced through a private `erf` accurate to ~1.5e-7
+
+`BlackScholes` carried its own Abramowitz & Stegun `erf` and used it for option pricing while
+an exact `T.erf` sat in the library. Measured against a 120-digit `Decimal` oracle sharing
+arithmetic with neither: the old CDF was off by up to **6.92e-08** over `x` in `[-6, 6]`, and
+`N_old(0)` was **0.500000000500** rather than 0.5. Largest price move, **6.252e-04** on an
+index-scale put at 227.11; typical at-the-money move 8.16e-06. The error oscillates in sign,
+so it was noise rather than bias. `normalPDF` was bit-identical, so the greeks' density path
+did not move.
+
+`MertonModel` defined `cumulativeNormal` twice in one file, both duplicating the public
+`normalCDF`. `defaultProbability` and `distanceToDefault` are bit-identical across 200,001
+points — both copies reduced to `(1 + erf(x/√2))/2`, which is what `normalCDF` already is at
+mean 0. `equityValue` moved **$6.88 on a $25.4M claim**, 2.71e-07 relative, because it
+delegates to `BlackScholes`.
+
+No test was pinning the old inaccuracy: the tightest existing assertion was put-call parity
+under 0.01, orders of magnitude looser than the largest move. No tolerance was loosened and
+the new pins are tighter.
+
+This is the smaller of the two Black-Scholes results that moved this release. The larger one
+is in `normalCDF` above, and needed no Black-Scholes code at all.
+
+#### Changed — ten Box-Muller implementations, with six different pole guards, became one
+
+Consolidation, with three defects removed on the way. The library exists to get a thing right
+once and have every caller share it, and Box-Muller had drifted into ten places in `Sources`
+where each site's guard was invented locally and none could see the others — two of them
+having no guard at all.
+
+Three of the copies were producing wrong or fatal values:
+
+- **`boxMuellerSeed`'s second variate was not normal.** The two variates share a radius and
+  differ only in angle, but the code computed `cos(2π)` — a full turn, the constant 1 — and
+  scaled by `u₂`, so `z2` was the radius times a uniform: neither normal nor independent of
+  `z1`. `z1` was correct and no in-tree caller used `z2`, but the tuple is public.
+- **`SimulatedAnnealing`'s inline copy could terminate the process.** Its uniform was
+  `Double(raw >> 32) / Double(UInt32.max)` — a *closed* `[0, 1]` — and its guard was
+  `log(u1 + 1e-10)`, so at `u1 = 1` it took the square root of a negative, produced `NaN`, and
+  reached `Int(gaussian * 1_000_000)`. `Int(NaN)` traps in Swift; confirmed out of band with
+  SIGTRAP, exit 133. A 1-in-2³² process kill per draw, in a file that already had the correct
+  `/ 2^32` twenty lines earlier.
+- **`GeneticAlgorithm`'s copy had no guard at all**, so `u₁ = 0` gave `-infinity` and a
+  perturbation silently became "jump to the search bound".
+
+`distributionRayleigh` also had no pole guard and returned `+infinity`; because
+`distributionUniform` quantizes to multiples of 1e-7 that was one draw in ten million rather
+than a measure-zero event.
+
+The canonical routine gained full precision first, so it is at least as good as everything it
+absorbs. Its seed-taking form used to route through `distributionUniform`, which quantizes to
+multiples of 1e-7 — but a seed is already a uniform, so that discarded 46 bits of it.
+Removing the quantization moves `|Δz₁|` by a median of **2.05e-7** and closes a gap above
+`|z| = 5.6777` covering 1.37e-8 of a standard normal, about a thousandth of a draw in a
+10,000-iteration run. Negligible in itself, and closed only because `PortfolioUtilities`
+already drew full 53-bit uniforms and must not lose them by adopting a shared routine.
+
+The pole is handled differently in the two cases, which is the part worth reading. When the
+routine draws its own uniform it uses `1 - random(in: 0..<1)`: exact for every representable
+`u < 1`, and measure-preserving. When a caller hands in a fixed seed nothing can be subtracted
+from it without changing the distribution, so only the exact point 0 moves, and it moves to 1
+— measure zero onto measure zero, no interval collapsed and no atom left behind, which is what
+a clamp does. This is the remap `distributionPareto` adopted as `openUnitUniform(seed:)`.
+
+**Numeric consequence:** `PortfolioUtilities`, `Scenario`, `HazardRateModel` and
+`JumpDiffusion` are bit-identical over 10⁶ draws. `distributionRayleigh` is the one site whose
+output moves: dropping the quantization removed the reason for its `1 - u` fold, so a seed now
+indexes the distribution the other way, maximum per-seed delta **5.63**. The distribution
+itself is unchanged and marginally closer to analytic — mean **1.25266** against 1.25332
+exact, previously 1.25432.
+
+On the GPU side the four MSL copies now share one definition in `MetalShaderSource.swift`. A
+`.h` and a Swift string literal cannot share text without a build step, so
+`MonteCarloCommon.h` is a labelled mirror rather than a second source of truth. And `1 - u` is
+wrong in Float32, verified on device: `float(UInt64.max) * 2^-64` and
+`float(UInt32.max) / 2^32` are both exactly `1.0f`, so the GPU uniforms are closed and `1 - u`
+is itself the pole. The shared guard is `u > 0 ? u : 1`, correct in both precisions.
+
+`Shaders.metal` was dead — excluded in `Package.swift`, no resource load, no project file, its
+eight kernels duplicated in `MetalDevice`'s live string with a staler guard. Deleted, and the
+exclude entry with it.
+
+#### Changed (breaking) — `integrate`'s seed is a `UInt64?`, and it now does something
+
+`integrate(_:iterations:seed:)` accepted a `Double?` seed and could not use it. The
+accumulator *started* at the seed value, then the first loop iteration computed
+`m += (f(x) - m)/1`, which is `m = f(x)` — erasing the seed before the second sample. Samples
+came from the global generator, so results were never reproducible. Seeding the running mean
+was also a bias bug in its own right, independent of reproducibility.
+
+The parameter is now `seed: UInt64?` defaulting to `nil`, with a new
+`integrate(_:iterations:using:)` overload taking an `inout` `RandomNumberGenerator` — the
+shape the library uses everywhere else for caller-owned streams. The accumulator starts at
+zero, so the estimate is the plain average and unbiased for any `n >= 1`.
+
+A deliberate public break. A `Double` in `[0, 1]` is not a seed for a stream generator, and
+nothing can depend on the old semantics because there were none; integer literals still
+compile.
+
+Seed 42 twice now gives bit-identical **0.3298584702960523**. Mean error across ten seeds at
+n = 100,000 is −2.6e-4 against a standard error of 3.0e-4, and a test pins `n == 1` returning
+exactly `f(sample)` — the case where any contamination would be the whole answer rather than
+1/n of it.
+
+The test that covered this passed a seed on every run and asserted only
+`abs(result - 1/3) < 0.015`. A tolerance assertion on a converging estimator passes
+identically whether the seed is honoured or ignored. Exercising a parameter is not testing it:
+for anything whose only observable effect is reproducibility, a single-run assertion cannot
+detect failure.
+
+#### Fixed — `ScenarioGenerator`'s seeds did not survive being run twice at once
+
+Its three generators accepted a seed and then used `srand48` and `drand48` — one
+process-global stream. Two seeded generations running at the same time interleave draws from
+it, so neither is reproducible. This needed no contrived concurrency test to expose: Swift
+Testing runs tests in parallel by default, so the plain serial "same seed twice" test failed
+because sibling tests were drawing from the same stream. Measured before the fix, **20 of 20
+isolated runs failed, 1,537 of 1,600 assertions — 96.1%**. After: 0 of 25.
+
+`Int(seed)` also trapped for any seed above `Int.max`, taking the host process down for a
+legal `UInt64` — the test for it crashed the runner with signal 5. And `srand48` keeps 48
+bits, so most of a `UInt64` was silently discarded and distinct seeds could collide.
+
+Each generator now threads a `RandomNumberGenerator`. The existing `seed:` entry points are
+unchanged and delegate to a new `using:` overload, so a caller can drive several blocks from
+one stream — which matters beyond tidiness: with only `seed:`, generating a normal block and a
+uniform block from seed 42 draws both from the same underlying uniforms, a correlation nobody
+asked for whose only workaround is caller-invented seed arithmetic. The bootstrap index moves
+to `Int.random(in: 0..<count, using:)`, exactly uniform rather than inheriting rounding at the
+interval edges from `Int(drand48() * count)`.
+
+Its Box-Muller carried a suppression comment whose premise was false — "u1 from drand48 in
+(0,1)", where `drand48` returns `[0.0, 1.0)`, so zero is included, `log(0)` is `-infinity` and
+`z` comes out non-finite. Six suppression markers are deleted in total; two of the
+`fp-safety:disable` ones were suppressing nothing at all, since that auditor flags only
+fp-equality and fp-division-unguarded, neither of which occurs on a `sqrt`/`log`/`cos` line.
+
+No prose claimed thread safety, but the types did: `MonteCarloScenario` is `Sendable` and
+`StochasticOptimizer` takes an `@Sendable` generator closure, which together assert this
+composes concurrently. It did not. A "Seeds and concurrency" section now states what holds.
+
+#### Fixed — a MILP gate admitted nonlinear objectives about one run in a thousand
+
+`validateLinearModel` extracts linear coefficients by finite difference, then refutes them
+against sample points. Those points came from the unseeded system generator.
+
+`f(x) = |x|` linearises at `x = 0.5` to exactly `f(x) = x` — correct for every non-negative
+sample and wrong only for negative ones. The model survived iff all ten draws landed `>= 0`,
+which is 1/1024. **Measured over 20,000 trials: 23 misses, rate 0.00115 against a predicted
+0.00098.**
+
+Not a test problem. `BranchAndBound.solve` calls this function to gate every closure objective
+and constraint before admitting it to the MILP solver, so roughly one run in a thousand a
+kinked objective was accepted and silently replaced by a linear approximation wrong across
+half its domain. The intermittent test failure was the symptom.
+
+Sample points now come from a seeded `DeterministicRNG`, so a function gets the same verdict
+every run, and they are drawn in reflected pairs — sample 2k+1 is the componentwise negation
+of sample 2k. Each point's marginal distribution is still uniform over `[-10, 10]`, so no
+coverage is lost, but every variable is now guaranteed to be probed on both sides of zero
+rather than merely likely to be. Determinism alone would have made the failure reproducible;
+the pairing moves the whole kink-at-origin class — `abs`, ReLU, `max(0, x)` — from caught 999
+times in 1,000 to caught always.
+
+The `stochastic:exempt` marker is deleted rather than retargeted. The auditor recognises
+seeded injection, so the seeded call needs no exemption; the marker was sitting on the defect.
+
+#### Fixed — every GPU thread started one bit from its neighbour
+
+`initializeRNG` seeded thread *t* as `s0 = baseSeed ^ tid`. Xorshift128+ is GF(2)-linear in
+its state, so two threads differing by one bit have a difference that evolves as its own
+trajectory, and neighbours start nearly identical. Each GPU thread is one Monte Carlo
+iteration, so adjacent iterations were correlated. SplitMix64 now splits the base seed into
+one independent stream per thread.
+
+Measured over 50,000 threads and 12 base seeds, cross-thread lag-1 ρ falls from
+**+0.250…+0.264 (0 of 12 under 0.05) to −0.0088…+0.0107 (12 of 12)**. The defect was worse at
+other lags than at lag 1 — median |ρ| 0.322 at lag 4 against 0.261 at lag 1 — so the test now
+checks lags 1 through 5; a lag-1-only assertion could be satisfied by a seeding that moved the
+structure one step out.
+
+Percentile RMSE over 100 base seeds at 10,000 iterations, against theoretical:
+
+|          | theory | old    | new    | old/theory | new/theory |
+|----------|--------|--------|--------|-----------|-----------|
+| mean     | 0.0100 | 0.0016 | 0.0086 | 0.16      | 0.86      |
+| stdDev   | 0.0071 | 0.0177 | 0.0075 | 2.50      | 1.06      |
+| P50      | 0.0125 | 0.0006 | 0.0108 | 0.05      | 0.86      |
+| P95      | 0.0211 | 0.0541 | 0.0224 | 2.56      | 1.06      |
+| P99      | 0.0373 | 0.0692 | 0.0437 | 1.85      | 1.17      |
+
+Halving the tail error is the headline; the theoretical column is the finding. Every new ratio
+sits at 1.0 — the path is now an honest sample. The old one was structured in both directions:
+its mean and median RMSE were 6× and 20× too small to be real sampling error while its tails
+were twice too large. Anyone validating the GPU path by its mean would have concluded it was
+unusually accurate.
+
+A second defect goes with it. `(0, 0)` is absorbing for xorshift128+ — a thread seeded there
+emits `0.0f` forever — and the old scheme reached it at base seed 0, thread 0, confirmed on
+device. Under SplitMix64 it is unreachable, and the argument is exact rather than statistical:
+the mix is a bijection with `mix(0) = 0`, so `s0 == 0` requires a zero counter after the first
+increment, which is one `(baseSeed, tid)` pair, and the second mix then returns a non-zero
+value. The guard is kept and documented as unreachable so a future change to the mixing cannot
+quietly reintroduce it.
+
+The ten-round warm-up loop is removed. It existed to compensate for the seeding and never
+worked — ρ was 0.26 at ten rounds and wandered to +0.10, +0.17, −0.10 at 20, 50, 100. With the
+seeding fixed, zero rounds and ten are statistically indistinguishable. Prose in
+`MonteCarloRNG.metal` claiming the old scheme "ensures independent random streams across
+threads" and that warm-up "eliminates correlation in early outputs" was measurably untrue and
+is rewritten.
+
+`MetalDevice`'s genetic-algorithm path was checked rather than assumed and does not share the
+defect: it hashes CPU-supplied seeds through a full avalanche, measuring ρ +0.0020 in
+production shape and −0.0005 even when fed seeds set literally to `tid`. No pinned expectation
+moved — every tight tolerance on the GPU path is on RNG-independent bytecode or a degenerate
+distribution, every GPU/CPU comparison is a loose statistical bound, and the reproducibility
+tests assert run-to-run identity, which is preserved.
+
+**None of this was visible because the tests could not run.** `MonteCarloRNGTests` and
+`MonteCarloDistributionTests` declared `nextUniform(thread RNGState*)` and called it with a
+`device RNGState*`, so the MSL never compiled; `makeLibrary` was wrapped in `try?`, the helper
+returned `[]`, and every test guarded `!samples.isEmpty`. Not a vacuous assertion — a vacuous
+suite. Compiling every MSL literal in the GPU test directory with `xcrun metal` found 12 tests
+across 3 files in that state, and a fourth file sat behind the identical
+`try?` → `return []` → `isEmpty` structure, one shader edit from joining them. All four now use
+`try` with `#require`, and "no samples" means "this machine has no runtime shader compiler",
+established by compiling a trivial kernel first, rather than standing in for every possible
+failure. Running them also exposed `threadGroups = ceil(count/256)` dispatching up to 255
+threads past the end of both buffers — at `count = 1000`, 24 threads writing 96 bytes past a
+4,000-byte output buffer, harmless in isolation and not harmless under parallel execution
+where the overrun lands in another test's allocation. Guarded in all three kernels.
+
+#### Fixed — a NaN amount killed the host process, and both export formats now carry non-finite values
+
+`dictToJson` guarded serialization with `try?` and returned `"{}"` on failure, commented
+"best-effort". That fallback never fires for the failure that matters: `JSONSerialization`
+raises an Objective-C `NSInvalidArgumentException` on a non-finite number, which is not a Swift
+error, so `try?` does not catch it and the process aborts. Reproduced directly — the pre-fix
+test did not fail, it killed the test runner with signal 6.
+
+Reachable, not theoretical. `FormulaEvaluator` deliberately returns a non-finite value for a
+zero denominator rather than throwing, and division-derived amounts flow into revenue and cost
+components.
+
+The dictionary is now pre-checked with `isValidJSONObject`, which reports non-finite numbers
+without raising. **JSON writes `null`**, because JSON has no literal for these values: it is
+legal, standard, and self-documenting in place — the reader sees that a number was unavailable
+in the record where it belonged. **CSV writes the ASCII tokens `nan` / `inf` / `-inf`**, which
+round-trip through `Double(_:String)`, `strtod`, Python's `float()` and pandas, and are
+locale-invariant.
+
+Only one CSV column was wrong: amounts and time-series values already emitted these tokens,
+while variable-cost percentages routed through `percent()`, a *display* formatter, which
+renders infinity as the glyph `∞`. No numeric parser accepts it, and the same model was
+emitting `nan` in one column and `∞` in another. The same defect existed in
+`CalculationCache`'s `exportToCSVOptimized`, whose equivalence test covered only revenue
+components and so could not have caught the divergence.
+
+The two formats are deliberately not equally faithful — CSV distinguishes `NaN` from
+`±infinity`, JSON cannot. What JSON does keep is the key, so "computed, unrepresentable" stays
+distinct from "never computed".
+
+**`exportToJSON` is not throwing.** An intermediate step in this release made the three
+methods `throws`, on the reasoning that plausible-looking output for invalid data is worse
+than failing. That was right about the crash and wrong about the remedy: throwing discards an
+entire export because one field is bad. The signatures are unchanged from 2.5.2.
+
+Output is byte-identical for every finite model, pinned in both formats. The regression test
+asserts the mechanism rather than the symptom — it first checks that the hostile fixture
+really is rejected by `isValidJSONObject`, so if the hazard ever changes the test fails loudly
+instead of quietly becoming a tautology.
+
+Alongside it, three doc comments that documented an API we do not have: `Account.isFixedCost`
+used `.rent` and `isVariableCost` used `.costOfRevenue`, neither of which is a case of
+`IncomeStatementRole`, and all three sites passed `timeSeries` before the role, which is not
+the declared order. Those are the examples Quick Help hands a reader for a core type.
+
+#### Added — semiannual periods, and the odd-length stubs a cadence change creates
+
+US legislation may move public reporting from quarterly to semiannual. That needs two things,
+and the second is the one that is easy to miss: a company switching cadence emits one
+odd-length period at the boundary, as does a fiscal-year-end change. Those stubs are irregular
+by nature and cannot be expressed on a granularity ladder.
+
+Ordering had to be decoupled from raw value first. `PeriodType.<` compared `rawValue`, so the
+raw values *were* the ladder — appending `semiannual = 8` would have sorted it above `annual`,
+and every comparison involving one would have been silently wrong. Raw values cannot be
+renumbered because `Codable` encodes them, so **`granularityRank` now carries the order** and
+raw values are append-only, load-bearing for persistence alone.
+
+`semiannual` gets full sibling parity: all three conversion tables, a factory, `"2025-H1"`
+labels, `next()`/`advanced()`/`distance()`, `semiannuals()`, fiscal-half support, sequences,
+and `aggregate(to:)`.
+
+`custom` stores the interval verbatim in a new internal `explicitEnd`, `nil` for every ladder
+type, so `Hashable` and `==` are unchanged for existing periods. `Codable` is hand-written to
+stay compatible: a ladder period still emits exactly `{type, date}`, byte-identical to the
+synthesized form, and old payloads decode as before. A stray `end` on a ladder type is ignored
+rather than honoured, so two encodings of the same quarter cannot disagree. Pinned against
+literal JSON rather than encode-then-decode, which would pass even if the format moved.
+
+An arbitrary range has no type-level duration, so the instance-level `durationInDays`,
+`durationInMilliseconds` and `durationInMonths` consult the interval for `.custom` and the
+type table otherwise. No public signature changed here — the type-level tables became optional
+separately, and that entry is above.
+
+What cannot answer for `.custom` refuses instead of guessing: stepping traps, `distance`
+throws, fiscal mapping and the steppable variants return `nil`, and `PeriodRange` refuses at
+construction rather than several frames later inside its iterator. `Period.<` gained an
+`endDate` tie-break so distinct same-start ranges do not compare equal — a latent bug waiting
+for the first custom period, not a style choice.
+
+17 exhaustive switches updated, 48 new tests.
+
+#### Added — `OptimizationError.dimensionMismatch` and `.numericalInstability`
+
+`OptimizationError.invalidInput` covered everything from a zero-length vector to a missing
+Metal function, so catching it told a caller nothing they could act on. Two conditions in the
+numerical code are specific enough to deserve cases, and a caller can respond to each
+differently.
+
+- **`dimensionMismatch(message:)`** — two dimensions that disagree, as against a dimension that
+  is absent or nonsensical. A mismatch is a bug at the call site, so the message names both
+  counts. `solveLinearSystem`'s single guard is split three ways; an empty matrix stays
+  `invalidInput`, because nothing disagrees with anything.
+- **`numericalInstability(message:)`** — values still finite but no longer trustworthy. The
+  pivot guard previously threw `singularMatrix` for "singular or nearly singular", which
+  conflated two conditions with different remedies: an exactly zero column is singular and
+  rescaling cannot help, while a tiny-but-nonzero pivot is invertible in exact arithmetic and
+  fails only in floating point, so reformulating may succeed. Both sides now say what they
+  mean.
+
+These are the names `5.4-VectorOperations` documented all along. The docs were right and the
+enum was missing them. Breaking only for an exhaustive `switch` over `OptimizationError`, and
+for a caller matching `singularMatrix` on a near-singular pivot.
+
+The near-singular test fixture needs the whole column small — `[[1e-12, 1], [1e-13, 2]]`,
+determinant 1.9e-12. Partial pivoting swaps a large entry into place, so `[[1e-12, 1], [1, 1]]`
+solves perfectly well: the guard fires on the largest available pivot, not on the diagonal
+entry as written.
+
+These three failure modes are what `ModelDefinition.solve(settings:)` reports in modelling
+terms — see `CycleSolverError` above.
+
+#### Fixed — `ValidationReport` was not `Sendable`, so `ModelDebugger.validate` could not return
+
+`ModelDebugger.validate(_:)` is actor-isolated and returns a `ValidationReport`. Because that
+type did not conform to `Sendable` the result could not cross out of the actor — not into a
+test, and not into any other caller either. **The method was unreachable, not merely
+untested**, and the gap only surfaced when the clock work tried to assert its timestamp.
+
+Nothing had to change to make it conform. Every stored property was already a value type and
+`ValidationError.value` was already declared `any Sendable`, so the author had clearly
+considered this; only the conformance itself was missing, on `ValidationReport`,
+`ValidationError`, `ValidationResult` and `ValidationContext`.
+
+One real fix came with it: `ValidationContext.metadata` was `[String: Any]`, the single
+genuinely non-`Sendable` member in the group. It is now `[String: any Sendable]`, matching the
+precedent `ValidationError.value` set in the same file.
+
+#### Added — the clock is injectable, and elapsed time is measured monotonically
+
+SwiftDeterminism has been a dependency for a while and ships `WallClock`, `SystemWallClock`,
+`FixedWallClock` and `ManualWallClock`. BusinessMath used none of them and called `Date()`
+directly. The RNG half of determinism was adopted across the library this release; this is the
+clock half.
+
+Of 112 occurrences, 34 are doc-comment examples, leaving 78 real sites: 21 timestamps recorded
+on a value, 22 elapsed-time measurements, and 35 others of which 7 were converted and 28 left
+alone.
+
+**Timestamps take `clock: any WallClock = SystemWallClock()`**, defaulted, so no existing call
+site breaks — ten public initialisers gained the parameter and nothing else in the suite needed
+editing. They can now be asserted with `FixedWallClock` to exact equality rather than a
+tolerance, which is the point of the abstraction and was not possible before.
+
+**Elapsed time is a different instrument, not a different clock.** `Date` is subject to NTP
+adjustment and can run backwards, so a benchmark built on it can report a negative interval no
+matter who supplies the `Date`. Those sites use `ContinuousClock`, keeping `Duration`'s exact
+seconds-and-attoseconds and converting to `Double` only at the reporting boundary. Published
+units and types are unchanged: `executionTime`, `solveTime` and `duration` are still `Double`
+seconds.
+
+Four sites conflated the two jobs, which the split did not anticipate: `ModelDebugger.trace`
+and `ModelProfiler.measure`/`measureAsync` used one `let start = Date()` as both the elapsed
+anchor and the timestamp recorded on the result. Each is now a recorded `clock.now` and a
+separate monotonic anchor.
+
+One genuine robustness gain came with it. `BranchAndBound`'s time limit was
+`Date().timeIntervalSince(startTime) > timeLimit` and is now an exact `Duration` comparison
+against a monotonic reading — a solve can no longer be cut short or run long because the wall
+clock moved underneath it.
+
+Exactly one site needed `ManualWallClock` rather than `FixedWallClock`: `CalculationCache`'s
+TTL expiry, the only place where behaviour depends on time *passing* rather than on a recorded
+instant. Its tests step across the 60-second boundary with `advance(by:)` instead of sleeping,
+so they are neither slow nor load-sensitive.
+
+Twenty-eight sites are deliberately unconverted. They are `asOf: Date = Date()` defaulted
+parameters, mostly in bond pricing, which are already injectable — a test passes an explicit
+date today. Adding a clock would put a second parameter on 22 public signatures for no
+testability gain.
+
+#### Added — `ElapsedTimeSource`, and `ModelProfiler`'s measured durations are injectable
+
+Thirteen of the twenty-five tests in `ModelProfilerTests` manufactured durations by sleeping
+for them, which sets a floor on elapsed time and no ceiling at all. Two flipped under load: an
+operation that slept 1 ms outlasted one that slept 50 ms at load average 78–113, and the
+gate's own flake detector identified the second as scheduler-dependent rather than a
+regression.
+
+Nothing about sorting, thresholds, statistics or percentiles is a claim about how long the
+machine took, so none of them needed a real duration. **`ElapsedTimeSource` now makes the
+monotonic reading injectable alongside the existing `WallClock`**, with `SystemElapsedTimeSource`
+as the default and `ManualElapsedTimeSource` for tests that state the durations they reason
+about. The suite went from 1.119s to 0.006s, and most assertions got *stronger* rather than
+weaker: the threshold test now checks *which* operation was the bottleneck rather than only how
+many, the statistics tests pin the values rather than their ordering, and the async test gained
+an upper bound that was impossible against a real sleep.
+
+The protocol vends an instant rather than an interval, mirroring `WallClock.now`, so the
+default path stays exactly `ContinuousClock().now` differenced against itself — no arithmetic
+added and no timing change to a profiler. `ManualElapsedTimeSource` ignores negative advances:
+a monotonic counter that can be driven backwards would let a test assert something the real
+source cannot produce. One test stays on the real source deliberately, because every other
+timing assertion now supplies its own durations and so none of them would notice if the
+default source stopped advancing.
+
+Note that `ContinuousClock` is *not* injectable in the benchmark sites converted above: there
+the real elapsed time is the measurement, so a fake clock would make it meaningless rather than
+testable, and those timing assertions are correspondingly weak by design — non-negative,
+finite, slow-op greater than fast-op — with none asserting a specific duration.
+
+`WallClockAdoptionTests`' last scheduler-dependent assertion is retired with it. It claimed
+that two million square roots measure longer than `1 + 1`; the margin was about ten
+milliseconds against preemptions that ran past fifty, and whether `ContinuousClock` advances in
+proportion to work is a claim about the standard library rather than about this library. It now
+asserts what a monotonic source guarantees under any scheduling and a wall clock does not:
+readings never go backwards, and a bracketed interval is never negative.
+
+#### Fixed — the `.localOnly` test trait skipped on exactly one CI provider
+
+The condition read `CI == nil || GITHUB_ACTIONS != "true"`, which parses as "not in CI" and is
+not. On any runner that sets `CI` but not `GITHUB_ACTIONS` — GitLab, Jenkins, Xcode Cloud — the
+second clause evaluates `nil != "true"` as true, the disjunction is true, and the test runs. The
+trait skipped on GitHub Actions while appearing to skip everywhere, which is the more expensive
+kind of wrong: the tests it guards are the ones that fail on contended hardware, and a contended
+runner is exactly where they would have run.
+
+It now requires both variables absent and states a reason, so a skip reports why instead of
+vanishing — matching `requiresParallelHardware` directly below it. Verified in both directions:
+the probe runs locally and skips under `CI=true`.
+
+The doc comment now also says what the trait is *not* for. A timing assertion that fails on a
+contended runner fails on a contended laptop too, so moving it out of CI only moves where the
+failure is noticed — which is how `ModelProfilerTests` came to carry it, and why it no longer
+needs it now that its durations are injectable.
+
+#### Changed — the seed that was available everywhere and passed almost nowhere
+
+Ninety-four test sites and twenty-seven documentation examples constructed seedable APIs
+without a seed. None of it needed new API; the defaulted `seed: UInt64? = nil` was what made
+unseeded the path of least resistance, and the stochastic-determinism checker could not see an
+argument that was never written.
+
+Two of them were failing by chance, which is what started the sweep:
+
+- `RNGDebugTest`'s passthrough test took the mean of 100 draws from `Uniform(1000, 2000)` and
+  required it in `[1400, 1600]`. The standard error of that mean is ~28.9, so the bound is 3.5
+  standard errors — it fails about **one run in 2,000**, rare enough to look stable and frequent
+  enough to bite CI.
+- `AdvancedExpressionTests` compared GPU and CPU means over 20,000 iterations each within 2%.
+  Unseeded, that compares two independent samples, so the assertion measured sampling noise
+  rather than GPU/CPU equivalence.
+
+The sweep then ran in three passes. Forty-five further sites: 32 multi-line constructions the
+first grep never saw — it matched `MonteCarloSimulation(iterations:` and so found only
+single-line calls — plus 13 `runCorrelated` sites that became seedable only with the correlated
+seeding above. `testZeroCorrelation` was the one that mattered there, and is recorded with that
+entry. Standard-error counts for the rest of that batch: `testExpressionModelGPUvsCPU` 13.7
+(mean) / 11.2 (stdDev), `GPUPerformanceBenchmark` 9.5,
+`MultiVariableMonteCarloTests.independentVariables` 12.7 / 13.4, `positiveCorrelation` 24.7, the
+correlation-variance tests 28.8 to 112.
+
+Forty-seven more surfaced when the checker gained a rule for calls that omit an available
+`seed:` and stopped skipping test files: 37 unseeded calls to seedable APIs — only nine of them
+`MonteCarloSimulation`, the rest `runSimulation`, `KMeans`, `SimulatedAnnealingConfig` and the
+inventory simulator, none of which any manual sweep had reached — and 10 `srand48`/`drand48`
+calls in three stress-test helpers. **Honestly summarised: the tightest bound in that batch is
+5.4 standard errors, with exponential skewness at 6.0.** Neither is near the 3.5-SE territory
+that produced the two real flakes, so most of it was hygiene wearing a statistical costume —
+seeding it makes failures investigable rather than fixing failures. One genuine flake was in
+it: `SimulatedAnnealingTests.reheatingEscapesLocalMinima` asserted `result.value < 0.0` about
+where an unseeded random walk over a multi-modal surface happened to land, a claim with no
+bound to compute a standard error against.
+
+The three `srand48` helpers became structs owning a `SplitMix64` and drawing through
+`Double.random(in:using:)`. This changes the sequences they draw, so those stress tests now
+exercise different randomized cases; all still pass. It also removed three `@unchecked
+Sendable` declarations rather than trading one auditor's warning for another's.
+
+**An API trap worth recording:** `distributionExponential(λ:seed:)` and
+`distributionRayleigh(scale:seed:)` take a `seed: Double?` that is *the quantile the inverse
+transform consumes*, not an RNG seed. A constant returns the same variate every iteration, and
+`i/n` gives a stratified sample with the wrong variance. Loops over those functions now drive a
+local `SplitMix64` and pass a fresh uniform per draw.
+
+The documentation was upstream of all of it. Twenty-six unseeded `MonteCarloSimulation`
+constructions across seven articles, plus `QUICK_START_EXAMPLE.swift` — the file the README
+labels "start here" — which ran 100,000 unseeded iterations while its own prose quoted specific
+figures. The tests were written unseeded because the guides taught unseeded. One site needed
+more than a seed: `Part4-Simulation.md`'s forecast example called `Double.random(in:)` *inside*
+the model closure — the system generator, not the run's — so adding `seed:` would have produced
+an example that looked reproducible and was not, in the guide that teaches the pattern. The
+model already declared a "Volatility" input it then ignored in favour of the out-of-stream
+draw; the shock now comes from the input stream. Seeds vary by article rather than repeating one
+value, so no reader infers that 42 is required.
+
+Fourteen test sites carry a `// Justification:` instead of a seed. Eight are custom-sampler
+tests where `resolveSeededSamplers` throws `seedingUnsupported`, so seeding is impossible rather
+than merely undesirable; six have unseeded behaviour as their subject, including two —
+`ChiSquaredDistributionTests` and `CoxProcessSimulationTests` — that no manual audit had
+identified.
+
+One of those unseeded-by-subject tests was itself wrong. `unseededSimulationsVary` counted
+distinct values over 50 draws and required more than 40, but `simulateDefaultTime` right-censors
+at the horizon, so every censored draw is exactly 100.0 and the distribution has an atom there.
+At λ = 0.02 roughly **13.5%** of draws land on it — about seven of fifty — and the binomial tail
+put the assertion over the line about once in forty runs. Counting distinct values only means
+something for a continuous distribution, so the test now filters to the uncensored draws and
+requires *those* to be pairwise distinct, which they are with probability one. That claim does
+not depend on how many happened to be censored, so it has no failure rate.
+
+#### Changed — assertions now name which kind of exactness they claim
+
+The quality gate's exact-float-comparison rule was unified across two implementations this
+release. The old test-quality copy required a float literal adjacent to `==`, so a comparison
+between two computed `Double`s was invisible to it — which is the dominant real case. Turning
+the unified rule on reported 54 findings, then 92 more, none of them new breakage.
+
+Three different claims were hiding under `==`, and they need different comparisons. `TestSupport`
+now names all three, with collection overloads that delegate to their scalar counterparts so
+there is one definition of what each claim means:
+
+| helper | claim |
+|--------|-------|
+| `identical(a, b)` | bit patterns; NaN-safe, which `==` is not |
+| `exactlyEqual(a, b)` | IEEE `==`; `±0.0` compare equal |
+| `approximatelyEqual(a, b, t)` | computed, rounding expected |
+
+**The reproducibility case is what motivated it.** `#expect(streamA == streamB)` for "the same
+seed reproduces the stream" is the wrong operator for the claim: `==` reports NaN as unequal to
+itself, so two runs that both went NaN in the same place *fail* an assertion the streams
+actually satisfy — and `#expect(a != c)` on a stream that silently went NaN *passes*, satisfying
+the assertion for exactly the reason it was written to exclude.
+
+Of the 92, all 92 became `identical()`; none needed `exactlyEqual` and none needed a tolerance,
+which is the result worth recording, because had any been genuinely computed a tolerance would
+have been required and `==` would have been wrong in the other direction. Of the earlier 54, 35
+became `identical` and 10 `!identical`. Of the 21 found in files written this release, 17 became
+bit-for-bit and 4 stayed IEEE-equal — and those four matter: `log(1)` is `+0.0`, so the
+Box-Muller radius is `sqrt(-2 · +0.0) = sqrt(-0.0) = -0.0` and both variates inherit the sign, so
+a bit-pattern comparison there would have broken a correct test. Verified on device rather than
+reasoned about.
+
+Two epsilons were introduced, both measured rather than picked. `MINLPIntegrationTests` asserted
+`Double(val) == Double(Int(val))` over an `[Int]` — a rounding compared against itself, which
+could not fail; moved onto the vector the solver actually returns, where residuals measure
+**1.42e-07 and 6.25e-07**, inside the solver's declared `integralityTolerance` and exactly the
+gap the old assertion was not looking at. `DataExportTests` uses 1e-9 on a present value whose
+only rounding is `pow(1.10, 1.0)`, measured at 0 ulp.
+
+Six findings were the rule being wrong rather than the code: `looksLikeFloatingPoint` treats any
+member access on a `Double` base as floating-point and tracks variable names file-wide, so
+`Double.dimension == 1` and three `Int` combinatorics results were flagged because unrelated
+tests in the same file declare `let result: Double`. Rather than suppress, the types are now
+visible — explicit `: Int` and type-honest names.
+
+Ten warnings were weak assertions standing in for real ones. `!= nil` on a GPU library became:
+the shared kernel must link as an entry point, the device must dispatch 4,096 finite and
+distinct N(0,1) draws, and `MetalDevice` must expose all seven kernels the package dispatches
+to. `!= 0` on a seeded state became the exact value `mix(0x9E3779B97F4A7C15)`, so the assertion
+now also fails if the mixing changes. Both GPU assertions were mutation-checked, since a
+guard-and-skip would have made them decorative.
+
+The helpers are predicates used inside `#expect` rather than expect-prefixed functions that
+assert internally. `TestQualityAuditor` counts assertions by matching macro names, so wrapping
+the assertion would have emptied seven test functions of macros and traded 21 fp-equality errors
+for seven missing-assertion warnings. `#expect(identical(a, b))` keeps the macro visible and
+still puts the claim in the call, which is the point: a named comparison states the property and
+cannot drift from it, where a suppression marker asserts intent and can be wrong forever. A
+false `// fp-safety:disable` at `MetalShaderSourceTests:121` is removed — it was suppressing a
+different checker than the one reporting.
+
+Also five pre-existing dangling DocC links: three internal symbols that cannot be linked from
+public documentation, and ``BranchAndBound``, which is ``BranchAndBoundSolver``.
+
+#### Changed — every DocC article now compiles as one program
+
+Nothing compiled the examples, so they drifted. A sweep of 73 articles found **333 name
+collisions and 2,092 errors; six articles passed.** Sixty-six are now green, and 1,214 blocks
+typecheck against the built module.
+
+The convention: every `swift` block in an article concatenates, in order, into one program, so a
+reader can paste a whole article into a playground and run it. That is the acceptance test, not
+a style preference. The one opt-out is an HTML comment, `<!-- docs:illustrative -->`, for blocks
+never meant to compile — a quoted library declaration, deliberate pseudo-code, a ✅/❌ contrast
+whose duplicate declaration is the lesson. 87 blocks carry it, 7.2%, and most are type
+quotations that would shadow the real type if compiled.
+
+Most of the volume was mechanical — renaming a second `result` to `diagnosticsResult`. But the
+compiler was not the only thing wrong, and some of what it found it could not have flagged:
+
+- `MultipleLinearRegressionGuide` called `multipleLinearRegression(X:y:)` where `y` was declared
+  280 lines away in an unrelated example — 8 observations against a 6-row matrix. It compiled,
+  and would have trapped.
+- `4.1` printed "Total Growth over 2 years: 62.3%" where the code yields **113.9%**. It read the
+  wrong variable, and the published figure had been wrong long enough to look authoritative.
+- `5.7` force-unwrapped `resourceUtilization["machine_hours"]` in a scenario whose resources are
+  `assembly_hours`/`testing_hours`/`materials_kg`, and zipped an ordered array of projects
+  against an unordered dictionary of allocations, so each project displayed another's funding
+  percentage.
+- `2.2` was 63 errors from 5 root causes, 52 of them one missing setup block. Choosing
+  TTM-at-quarter-end over discrete quarters mattered: the day-count ratios divide by a
+  hard-coded 365, so quarterly flows would have taught that a healthy manufacturer collects
+  receivables in 219 days.
+
+**`3.16` is no longer hand-maintained.** Its role tables had drifted to ten wrong case names
+while omitting a dozen real ones, so they are now generated from the enums by executing them —
+`allCases` against the built module, categories read from the real `isRevenue` /
+`isOperatingExpense` predicates. A table cannot hold an opinion the code disagrees with.
+Regenerating surfaced two facts no prose review would have: `ownerLoans` satisfies neither
+`isDebt` nor `isWorkingCapital`, and `incomeTaxExpense` has no category predicate at all.
+
+**`3.15` went from 986 lines to 332.** It described a CSV/JSON ingestion subsystem in working
+detail; the library has none — it is export-only, and `Integration/` is six protocol files with
+no conformers. Every parser in the article was snippet-local, so it read as shipped API and was
+not. Worse, it hand-wrote code that was already redundant: the role enums are `String`-raw-valued
+with no explicit raw values, so each raw value is its case name and `IncomeStatementRole(rawValue:)`
+has always worked. The article transcribed a `switch` instead, and that transcription is exactly
+where `3.16`'s ten wrong role names came from. What replaces it is the boundary that is real —
+the whole model graph is already `Codable`, so JSON round-trips for free; your adapter owns
+format, vocabulary, scale and the unknown-row decision, and BusinessMath owns validation and
+computation. The JSON shown was produced by encoding a real `Account` and diffing the result
+rather than hand-written, and the eleven blocks were run, so the inline output comments are
+observed rather than asserted.
+
+`1.5` was the first article brought under the convention: six names were declared twice or more
+at file scope, renamed for what each thing actually is rather than disambiguated with suffixes.
+One was not a collision — `var highGrowth = baseModel` carries the comment "Cannot mutate - it's
+immutable", a deliberate counter-example sharing a block with the working version — and is now
+split into two blocks with the broken one marked illustrative, which reads as a clearer
+do-this-not-that than it did before.
+
+`4.5-DeterministicSimulationGuide` no longer says correlated sampling is "not yet seedable", and
+the `seed` doc comments on both `run()` overloads and on `SimulationError` no longer describe the
+old limitation — those are the comments a caller reads at the call site before deciding whether
+to pass one. `IterativeSolver.md` and `CircularDependencyDetection.md` both still read "Status:
+proposal, for argument. Nothing here is implemented."; both are implemented, and each now records
+what shipped and why it is worth keeping.
+
+A new `IntendedSurface.md` catalogues API the documentation described in working detail that the
+library does not have. It exists because of one finding: `circularDependency`'s recovery
+suggestion told users to resolve the cycle "using an iterative solver", and two tests asserted on
+that string, while no such type existed anywhere. Seven error cases have zero throw sites and no
+history of ever having had one; three of them were wired up this release, and the rest are
+recorded rather than left to be rediscovered.
+
+Final state: **73 articles, 1,310 fences, 0 errors.**
+
+#### Notes
+
+- **6,498 tests in 565 suites.** Quality gate at 0 errors, 0 warnings.
+- **Documentation coverage 100% — 6,456 of 6,456 public APIs**, measured rather than asserted.
+- `master_plan.md` replaces a generated stub that claimed "TestSupport — Not yet implemented"
+  (it exists, and this release's assertions depend on it) and "Known Issues: None currently".
+  The known-issues list is now the real one.
+- The README's platform minimums were wrong in the direction that hurts: it claimed iOS 14 /
+  macOS 13 / tvOS 14 / watchOS 7 while `Package.swift` declares iOS 17 / macOS 14 / tvOS 17 /
+  watchOS 10 / visionOS 1, so a reader on iOS 15 was told they were supported and would have hit
+  a resolution failure. The manifest was right the whole time and only the prose was wrong,
+  which is the failure mode a doc auditor cannot see. Fourteen further stale claims were
+  corrected alongside it, including a Swift 6.0 badge against a 6.2 manifest, `from: "2.0.0"` in
+  the SPM snippet, and two unfalsifiable claims — "every tutorial example has been validated in
+  Xcode Playgrounds" and sub-millisecond timings with no benchmark in the repo behind them.
 
 ### [2.5.2] - 2026-08-07
 
