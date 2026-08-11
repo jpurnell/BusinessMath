@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // unboundedSolverTimeLimit
 import Foundation
 @testable import BusinessMath
 
@@ -42,7 +43,7 @@ struct BranchAndBoundTests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 1000,
-            timeLimit: 10.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let result = try solver.solve(
@@ -164,7 +165,7 @@ struct BranchAndBoundTests {
         // Set very low node limit
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 5,
-            timeLimit: 60.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let result = try solver.solve(
@@ -532,7 +533,7 @@ struct BranchAndBoundTests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 100,
-            timeLimit: 10.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let result = try solver.solve(
@@ -573,7 +574,7 @@ struct BranchAndBoundTests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 1000,
-            timeLimit: 10.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let result = try solver.solve(
@@ -623,7 +624,7 @@ struct BranchAndBoundTests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 100,
-            timeLimit: 10.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let result = try solver.solve(
@@ -701,7 +702,7 @@ struct BranchAndBoundTests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 100,
-            timeLimit: 10.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let result = try solver.solve(
@@ -827,7 +828,7 @@ struct BranchAndBoundTests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 3000,
-            timeLimit: 30.0,
+            timeLimit: unboundedSolverTimeLimit,
             nodeSelection: .bestBound
         )
 

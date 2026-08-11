@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // unboundedSolverTimeLimit
 import Foundation
 @testable import BusinessMath
 
@@ -248,7 +249,7 @@ struct FormattedOptimizationResultTests {
 
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 3000,
-            timeLimit: 30.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let result = try solver.solve(

@@ -64,7 +64,7 @@ struct MINLPIntegrationTests {
     func testQuadraticObjectiveInteger() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 5000,
-            timeLimit: 30.0,
+            timeLimit: unboundedSolverTimeLimit,
             relaxationSolver: NonlinearRelaxationSolver()
         )
 

@@ -482,7 +482,14 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 )
             }
 
-            if (clock.now - startTime) > .seconds(timeLimit) {
+            // `timeLimit > 0` guards the documented "0 for no limit" contract. Without it
+            // the comparison reads `elapsed > .seconds(0)`, which is true as soon as the
+            // clock advances at all — so a zero budget expired at the first node instead of
+            // never. That is not a slow solver but a silent one, and it reached callers:
+            // BranchAndCutSolver's `timeLimit` *defaults* to 0, so a default-constructed
+            // solver returned `success: false` with the objective at infinity for every
+            // problem it was ever given. Nothing caught it because no test constructed one.
+            if timeLimit > 0 && (clock.now - startTime) > .seconds(timeLimit) {
                 let gap = incumbent.map { abs($0.value - bestBound) / max(abs($0.value), 1.0) } ?? .infinity
 
                 // Unshift solution if variable shifting was applied
