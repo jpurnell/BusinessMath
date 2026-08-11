@@ -1,6 +1,6 @@
 # Design Proposal: `IterativeSolver` — resolving a cycle to a fixed point
 
-**Status:** proposal, for argument. Nothing here is implemented.
+**Status:** implemented in `87a717e`. `IterativeCycleSolver`, `IterationSettings`, `InitialValues` and `ConvergenceState` ship in `Sources/BusinessMath/Model Definition/`; `CycleSolver.solve` routes nonlinear cycles here. Kept for the reasoning in §4 (the method), §5 (where to depart from Excel) and §9 (the argument against iterating at all), none of which is recoverable from the code.
 
 **Last updated:** 2026-08-10
 
