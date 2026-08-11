@@ -466,16 +466,11 @@ public struct MonteCarloSimulation: Sendable {
 
 		// If correlation matrix is set, use correlated sampling (CPU only)
 		if let corrMatrix = correlationMatrix {
-			guard seed == nil else {
-				throw SimulationError.seedingUnsupported(
-					inputName: "correlationMatrix",
-					details: "Correlated sampling does not support seeded runs yet"
-				)
-			}
 			return try runCorrelated(
 				inputs: inputs,
 				correlationMatrix: corrMatrix,
 				iterations: iterations,
+				seed: seed,
 				calculation: model
 			)
 		}
@@ -537,16 +532,11 @@ public struct MonteCarloSimulation: Sendable {
 
 		// If correlation matrix is set, use correlated sampling (CPU only)
 		if let corrMatrix = correlationMatrix {
-			guard seed == nil else {
-				throw SimulationError.seedingUnsupported(
-					inputName: "correlationMatrix",
-					details: "Correlated sampling does not support seeded runs yet"
-				)
-			}
 			return try runCorrelated(
 				inputs: inputs,
 				correlationMatrix: corrMatrix,
 				iterations: iterations,
+				seed: seed,
 				calculation: model
 			)
 		}
@@ -605,6 +595,17 @@ public struct MonteCarloSimulation: Sendable {
 
 	/// Resolves every input's seeded sampler, throwing when any input cannot honor the seed.
 	private func resolveSeededSamplers() throws -> [@Sendable (inout Xoshiro256StarStar) -> Double] {
+		try Self.resolveSeededSamplers(for: inputs)
+	}
+
+	/// Resolves seeded samplers for an arbitrary input list.
+	///
+	/// ``runCorrelated(inputs:correlationMatrix:iterations:seed:calculation:)`` takes its
+	/// inputs as a parameter rather than reading ``inputs``, so the resolution rule lives
+	/// here where both callers can reach it and neither can drift from the other.
+	private static func resolveSeededSamplers(
+		for inputs: [SimulationInput]
+	) throws -> [@Sendable (inout Xoshiro256StarStar) -> Double] {
 		try inputs.map { input in
 			guard let sampler = input.seededSampler else {
 				throw SimulationError.seedingUnsupported(
@@ -714,17 +715,30 @@ public struct MonteCarloSimulation: Sendable {
 	/// }
 	/// ```
 	///
+	/// ## Determinism
+	///
+	/// Pass `seed` to make the run reproducible. Both randomness sources — the independent
+	/// draws from each input's distribution and the correlated normals that rank them — are
+	/// taken from a single seeded ``Xoshiro256StarStar``, in that order, so the same seed
+	/// reproduces the whole sample. Every input's distribution must conform to
+	/// ``SeedableDistribution``; an input built from a custom sampler throws
+	/// `SimulationError.seedingUnsupported` rather than silently losing determinism, which
+	/// is the same rule the uncorrelated path applies.
+	///
 	/// - Parameters:
 	///   - inputs: Array of uncertain input variables
 	///   - correlationMatrix: n×n correlation matrix where n = inputs.count
 	///   - iterations: Number of simulation iterations to run
+	///   - seed: Optional seed making the run reproducible; `nil` draws from the system source
 	///   - calculation: Function that computes outcome from correlated samples
 	/// - Returns: Complete simulation results with statistics and percentiles
-	/// - Throws: `SimulationError` if validation fails or calculation produces invalid results
+	/// - Throws: `SimulationError` if validation fails, an input cannot honor `seed`, or the
+	///   calculation produces invalid results
 	public func runCorrelated(
 		inputs: [SimulationInput],
 		correlationMatrix: [[Double]],
 		iterations: Int,
+		seed: UInt64? = nil,
 		calculation: @Sendable ([Double]) -> Double
 	) throws -> SimulationResults {
 		// Validate parameters
@@ -751,13 +765,29 @@ public struct MonteCarloSimulation: Sendable {
 		// 2. Generate correlated ranks using CorrelatedNormals
 		// 3. Reorder samples according to correlated ranks
 
+		// Seeded runs resolve every input up front, so an input that cannot honor the
+		// seed fails before any sampling rather than producing a half-deterministic run.
+		// `nil` here is what selects the unseeded path below.
+		let seededSamplers = seed == nil
+			? nil
+			: try Self.resolveSeededSamplers(for: inputs)
+
+		// Both randomness sources below draw from this one generator, in a fixed order
+		// (all independent samples, then all correlated ranks), which is what makes the
+		// whole run reproducible from `seed` alone. Unused when `seededSamplers` is nil.
+		var generator = Xoshiro256StarStar(seed: seed ?? 0)
+
 		// Step 1: Generate independent samples for each input
 		var independentSamples: [[Double]] = []
-		for input in inputs {
+		for (inputIndex, input) in inputs.enumerated() {
 			var samples: [Double] = []
 			samples.reserveCapacity(iterations)
 			for _ in 0..<iterations {
-				samples.append(input.sample())
+				if let seededSamplers {
+					samples.append(seededSamplers[inputIndex](&generator))
+				} else {
+					samples.append(input.sample())
+				}
 			}
 			// Sort samples to enable rank-based reordering
 			samples.sort()
@@ -778,7 +808,12 @@ public struct MonteCarloSimulation: Sendable {
 		}
 
 		for _ in 0..<iterations {
-			let correlatedSample = correlatedNormals.sample()
+			// Seeded runs continue the same stream the independent samples came from, so
+			// the ranks that induce the correlation are reproducible too — seeding only
+			// step 1 would give a deterministic sample set in a non-deterministic order.
+			let correlatedSample = seededSamplers == nil
+				? correlatedNormals.sample()
+				: correlatedNormals.sample(using: &generator)
 			for i in 0..<inputs.count {
 				// Convert standard normal to uniform [0,1]
 				let uniformValue = normalCDF(x: correlatedSample[i])
