@@ -211,14 +211,19 @@ public struct DriverOptimization: Sendable {
 ///     drivers: drivers,
 ///     targets: targets,
 ///     model: { driverValues in
-///         let price = driverValues["price"]!
-///         let volume = driverValues["volume"]!
+///         // The model closure is non-throwing. Returning no metrics for an
+///         // unresolved name leaves the target unfulfilled and `feasible == false`,
+///         // which is reported back — unlike a trap, which ends the process.
+///         guard let price = driverValues["price"],
+///               let volume = driverValues["volume"] else { return [:] }
 ///         return ["revenue": price * volume]
 ///     }
 /// )
 ///
 /// print("Optimized drivers: \(result.optimizedDrivers)")
-/// print("Revenue: \(result.achievedMetrics["revenue"]!)")
+/// if let revenue = result.achievedMetrics["revenue"] {
+///     print("Revenue: \(revenue)")
+/// }
 /// ```
 public struct DriverOptimizer: Sendable {
 

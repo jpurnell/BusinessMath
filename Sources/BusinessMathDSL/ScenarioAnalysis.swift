@@ -40,8 +40,15 @@ import Numerics
 ///
 /// // Evaluate with custom function
 /// let results = analysis.evaluate { scenario in
-///     let revenue = scenario.parameters["revenue"]!
-///     let growth = scenario.parameters["growth"]!
+///     // The evaluation closure is non-throwing, so bind parameters optionally and
+///     // name the one that is missing — every scenario you evaluate must declare
+///     // the parameter names this closure reads.
+///     guard let revenue = scenario.parameters["revenue"] else {
+///         preconditionFailure("Scenario '\(scenario.name)' has no 'revenue' parameter")
+///     }
+///     guard let growth = scenario.parameters["growth"] else {
+///         preconditionFailure("Scenario '\(scenario.name)' has no 'growth' parameter")
+///     }
 ///     return revenue * (1 + growth)
 /// }
 /// // results["Conservative"] → 840,000
@@ -60,8 +67,15 @@ import Numerics
 /// // Creates 5 scenarios with growth: [5%, 10%, 15%, 20%, 25%]
 ///
 /// let stats = analysis.statistics { scenario in
-///     let revenue = scenario.parameters["revenue"]!
-///     let growth = scenario.parameters["growth"]!
+///     // `Vary` copies the base scenario's parameters and adds the varied one, so
+///     // both names resolve here. Bind optionally anyway: the closure is written
+///     // apart from the scenario declarations and the two drift easily.
+///     guard let revenue = scenario.parameters["revenue"] else {
+///         preconditionFailure("Scenario '\(scenario.name)' has no 'revenue' parameter")
+///     }
+///     guard let growth = scenario.parameters["growth"] else {
+///         preconditionFailure("Scenario '\(scenario.name)' has no 'growth' parameter")
+///     }
 ///     return revenue * growth  // Simple metric
 /// }
 /// print("Mean: \(stats.mean), Median: \(stats.median)")
@@ -128,13 +142,22 @@ import Numerics
 ///
 /// // Use scenario parameters to build cash flow model
 /// let netIncome = scenarios.evaluate { scenario in
+///     // Resolve parameters through one helper so a name the scenario never
+///     // declared is reported by name, not swallowed inside the result builder.
+///     func parameter(_ name: String) -> Double {
+///         guard let value = scenario.parameters[name] else {
+///             preconditionFailure("Scenario '\(scenario.name)' has no '\(name)' parameter")
+///         }
+///         return value
+///     }
+///
 ///     let projection = CashFlowModel(
 ///         revenue: Revenue {
-///             Base(scenario.parameters["baseRevenue"]!)
-///             GrowthRate(scenario.parameters["growthRate"]!)
+///             Base(parameter("baseRevenue"))
+///             GrowthRate(parameter("growthRate"))
 ///         },
 ///         expenses: Expenses {
-///             Variable(percentage: scenario.parameters["expenseRate"]!)
+///             Variable(percentage: parameter("expenseRate"))
 ///         },
 ///         taxes: Taxes {
 ///             CorporateRate(0.21)

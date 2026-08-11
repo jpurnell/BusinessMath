@@ -16,6 +16,9 @@ import Foundation
 /// )
 ///
 /// var capTable = CapTable(shareholders: [founder], optionPool: 0)
+/// // Unwrapping is safe here only because "Alice" is the sole shareholder added on
+/// // the line above, so `ownership()` is keyed by exactly that name. Look up a
+/// // shareholder you did not just create with `if let` instead.
 /// print(capTable.ownership()["Alice"]!)  // 1.0 (100%)
 ///
 /// // Model a financing round
