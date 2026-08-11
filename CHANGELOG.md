@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
-### [2.6.0] - 2026-08-11
+### [2.6.0] — unreleased
 
 #### Results that change
 
@@ -967,9 +967,10 @@ Known and pinned rather than fixed: `Period.<` compares granularity before start
 `TimeSeries` holding an annual point and a quarterly point stores them out of chronological
 order, and the integration walks stored order.
 
-#### Fixed — Black-Scholes priced through a private `erf` accurate to ~1.5e-7
+#### Fixed — Black-Scholes priced through a private, less accurate `erf`
 
-`BlackScholes` carried its own Abramowitz & Stegun `erf` and used it for option pricing while
+`BlackScholes` carried its own Abramowitz & Stegun `erf`, accurate to about 1.5e-7, and used it
+for option pricing while
 an exact `T.erf` sat in the library. Measured against a 120-digit `Decimal` oracle sharing
 arithmetic with neither: the old CDF was off by up to **6.92e-08** over `x` in `[-6, 6]`, and
 `N_old(0)` was **0.500000000500** rather than 0.5. Largest price move, **6.252e-04** on an

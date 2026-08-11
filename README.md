@@ -10,9 +10,10 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Current release: 2.6.0
+## Next release: 2.6.0 (unreleased)
 
-2.6.0 is a correctness release. It changes very few signatures and a great many *numbers* —
+2.6.0 is a correctness release, and is not yet tagged — `from: "2.5.2"` below is
+what resolves today. It It changes very few signatures and a great many *numbers* —
 `poissonCDF` returned `P(X ≤ k−1)` at every integer argument, `normalCDF` lost its entire lower
 tail to cancellation, `DriverProjection.percentile(0.10)` returned the p5 value, and one branch of
 `correctedStdErr` had never executed in any released version. The CHANGELOG opens with a table of
@@ -158,7 +159,7 @@ Add BusinessMath to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.6.0")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.5.2")
 ]
 ```
 
