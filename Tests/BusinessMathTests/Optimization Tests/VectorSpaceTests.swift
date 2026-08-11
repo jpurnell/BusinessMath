@@ -1245,4 +1245,65 @@ struct VectorSpaceTests {
 		// Weights already sum to 1.0 (0.4 + 0.4 + 0.2 = 1.0)
 	#expect(abs(weights.sum - 1.0) < 1e-10)
 	}
+
+	// MARK: - Random Vectors
+
+	@Test("A random vector on the unit interval is not the zero vector")
+	func randomVectorOnUnitIntervalIsNotZero() throws {
+		// `T(Int(x))` truncated every draw toward zero, so on 0...1 every component
+		// came back as exactly 0.0 — a "random" vector that was the zero vector every
+		// time, for every dimension.
+		var rng = DeterministicRNG(seed: 20260810)
+		let v = try #require(VectorN<Double>.random(in: 0.0...1.0, dimension: 64, using: &rng))
+		#expect(v.count == 64)
+
+		let components = v.toArray()
+		#expect(components.allSatisfy { $0 >= 0.0 && $0 <= 1.0 })
+		#expect(components.contains { $0 > 0.0 })
+		// Truncation also collapsed distinct draws onto the same integer, so distinctness
+		// is the property that fails first: 64 draws once yielded exactly one value.
+		#expect(Set(components.map { $0.description }).count == 64)
+	}
+
+	@Test("A random vector spans the range it was asked for")
+	func randomVectorSpansItsRange() throws {
+		// The non-Double path built its value as `c - (c - r/1000)`, which is `r/1000`
+		// — a draw on [0, 0.999] with the requested range algebraically cancelled out.
+		// On -1...1 that path could never return a negative component.
+		var rng = DeterministicRNG(seed: 20260810)
+		let v = try #require(VectorN<Double>.random(in: -1.0...1.0, dimension: 256, using: &rng))
+		let components = v.toArray()
+
+		#expect(components.allSatisfy { $0 >= -1.0 && $0 <= 1.0 })
+		#expect(components.contains { $0 < 0.0 })
+		#expect(components.contains { $0 > 0.0 })
+
+		// A uniform on [-1, 1] has mean 0 and sd 0.5774; over 256 draws the standard
+		// error is 0.036, so 0.25 is nearly seven sigma. Fixed seed, so this is a pinned
+		// value rather than a probabilistic claim.
+		let mean = components.reduce(0.0, +) / Double(components.count)
+		#expect(abs(mean) < 0.25)
+	}
+
+	@Test("A random vector on a shifted range stays inside it")
+	func randomVectorOnShiftedRange() throws {
+		var rng = DeterministicRNG(seed: 20260810)
+		let v = try #require(VectorN<Double>.random(in: 10.0...11.0, dimension: 64, using: &rng))
+		let components = v.toArray()
+		#expect(components.allSatisfy { $0 >= 10.0 && $0 <= 11.0 })
+		// Truncation put every component at exactly 10.0.
+		#expect(components.contains { $0 > 10.0 })
+		#expect(Set(components.map { $0.description }).count == 64)
+	}
+
+	@Test("A seeded random vector is reproducible")
+	func randomVectorIsReproducibleFromASeed() throws {
+		var first = DeterministicRNG(seed: 7)
+		var second = DeterministicRNG(seed: 7)
+		let a = try #require(VectorN<Double>.random(in: 0.0...1.0, dimension: 16, using: &first))
+		let b = try #require(VectorN<Double>.random(in: 0.0...1.0, dimension: 16, using: &second))
+		let lhs = a.toArray()
+		let rhs = b.toArray()
+		#expect(lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.bitPattern == $1.bitPattern })
+	}
 }

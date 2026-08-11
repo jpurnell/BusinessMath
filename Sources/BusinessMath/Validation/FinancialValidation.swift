@@ -25,9 +25,12 @@ public enum FinancialValidation {
 			
 			@inline(__always)
 			private func withinTolerance(_ diff: T, tolerance tol: T, scale: T) -> Bool {
-				// Epsilon is at least one ulp at the current scale, or a tiny fraction of tol
-				// Avoid Double literal conversion: compute 1e-12 as 1 / 1_000_000_000 in T
-				let rel = tol * (T(Int(1e-12)))
+				// Epsilon is at least one ulp at the current scale, or a tiny fraction of tol.
+				// Fixed: this was `T(Int(1e-12))`, and `Int(1e-12)` is 0, so `rel` was always
+				// zero and the relative term contributed nothing. `T` is only constrained to
+				// `FloatingPoint`, so 1e-12 is built as a quotient of two integer-valued `T`s
+				// rather than converted from a `Double` literal.
+				let rel = tol * (T(1) / T(1_000_000_000_000))
 				// Scale-aware epsilon: at least one ulp at this scale, or a tiny fraction of tolerance
 				let eps = max(T.ulpOfOne * scale, rel)
 				return diff <= tol + eps

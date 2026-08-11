@@ -1133,36 +1133,55 @@ extension VectorN {
 		return linearSpace(from: logStart, to: logEnd, count: count).map { T.exp($0) }
 	}
 
+    /// Create a random vector with components uniformly sampled from a range, drawing from
+    /// a caller-supplied generator.
+    ///
+    /// This is the implementation; the unseeded ``random(in:dimension:)`` delegates to it with
+    /// the system generator. Seed a `DeterministicRNG` and pass it here when the draw has to
+    /// be reproducible.
+    ///
+    /// - Parameters:
+    ///   - range: Closed range to sample from (inclusive)
+    ///   - dimension: Number of components
+    ///   - generator: The source of randomness.
+    /// - Returns: A random vector, or nil if dimension is negative.
+    public static func random<G: RandomNumberGenerator>(
+        in range: ClosedRange<T>,
+        dimension: Int,
+        using generator: inout G
+    ) -> VectorN<T>? {
+        guard dimension >= 0 else { return nil }
+        // If dimension is zero, return empty vector
+        if dimension == 0 { return VectorN<T>([]) }
+
+        // Fixed: both branches of this were wrong, in different ways.
+        //
+        // The `ClosedRange<Double>` fast path returned `T(Int(x))`, truncating each draw
+        // toward zero — so a vector on 0...1 was the zero vector, every component, every
+        // call, and a vector on any range was a vector of integers.
+        //
+        // The fallback computed `continuous - (continuous - r / 1000)`, which is just
+        // `r / 1000`: the requested range cancelled algebraically, and every component
+        // came back on [0, 0.999] regardless of what was asked for.
+        //
+        // One path now serves both. `T` is `BinaryFloatingPoint`, so the fraction converts
+        // exactly when `T` is `Double` and is correctly rounded otherwise.
+        let span = range.upperBound - range.lowerBound
+        let values: [T] = (0..<dimension).map { _ in
+            let fraction = T(Double.random(in: 0...1, using: &generator))
+            return range.lowerBound + fraction * span
+        }
+        return VectorN<T>(values)
+    }
+
     /// Create a random vector with components uniformly sampled from a range.
     /// - Parameters:
     ///   - range: Closed range to sample from (inclusive)
     ///   - dimension: Number of components
     /// - Returns: A random vector, or nil if dimension is negative.
 	public static func random(in range: ClosedRange<T>, dimension: Int) -> VectorN<T>? {
-        guard dimension >= 0 else { return nil }
-        // If dimension is zero, return empty vector
-        if dimension == 0 { return VectorN<T>([]) }
-
-        let values: [T]
-        // Try to cast to ClosedRange<Double> for efficient random generation
-        if let doubleRange = range as? ClosedRange<Double> {
-            values = (0..<dimension).map { _ in
-                let x = Double.random(in: doubleRange) // stochastic:exempt
-                return T(Int(x))
-            }
-        } else {
-            // Fallback for non-Double Real types: use linear interpolation
-            // with a random fraction generated from Int.random
-            let span = range.upperBound - range.lowerBound
-            values = (0..<dimension).map { _ in
-                let fraction = T(Int.random(in: 0..<1_000_000)) / T(1_000_000) // stochastic:exempt fp-safety:disable
-                let continuous = range.lowerBound + fraction * span
-                // Approximate floor by subtracting fractional part
-                let intPart = continuous - (continuous - T(Int.random(in: 0...999)) / T(1000)) // stochastic:exempt fp-safety:disable
-                return intPart
-            }
-        }
-        return VectorN<T>(values)
+        var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `using:` for reproducibility
+        return random(in: range, dimension: dimension, using: &generator)
     }
 
     /// Create a random vector with a default dimension of 3.

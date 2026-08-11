@@ -161,23 +161,26 @@ struct UnassortedTests {
 
 	@Test("Corrected standard error for finite population")
 	func testCorrectedStandardError() {
-		// Test corrected standard error for finite population
-		let sample: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
-		let population = 100
+		// The finite-population correction applies when the sample is a *large* fraction of
+		// the population. The rule of thumb is n/N > 5%: below that, sqrt((N − n)/(N − 1))
+		// is within a couple of percent of 1 and is conventionally ignored.
+		//
+		// This test previously asserted the opposite — correction below 5%, none above —
+		// and passed only because both branches were unreachable: `T(x.count / population)`
+		// and `T(Int(5) / Int(100))` were both Int division and both evaluated to 0, so the
+		// function returned `standardError(x)` for every input it had ever been given.
 
-		// When sample is less than 5% of population, should apply finite population correction
-		let result = correctedStdErr(sample, population: population)
-		let uncorrected = standardError(sample)
+		// 4% of 100: below the threshold, no correction.
+		let smallSample: [Double] = [1.0, 2.0, 3.0, 4.0]
+		#expect(correctedStdErr(smallSample, population: 100).isEqual(to: standardError(smallSample)))
 
-		// Corrected SE should be less than or equal to uncorrected SE
-		#expect(result <= uncorrected)
-
-		// Test when sample is >= 5% of population - should return uncorrected SE
-		let largeSample = Array(repeating: 1.0, count: 10)
-		let smallPopulation = 100
-		let resultLarge = correctedStdErr(largeSample, population: smallPopulation)
-		let uncorrectedLarge = standardError(largeSample)
-		#expect(resultLarge == uncorrectedLarge)
+		// 10% of 100: above the threshold, so the correction applies and must shrink the
+		// standard error by exactly sqrt(90/99).
+		let largeSample: [Double] = (1...10).map { Double($0) }
+		let corrected = correctedStdErr(largeSample, population: 100)
+		let uncorrected = standardError(largeSample)
+		#expect(corrected < uncorrected)
+		#expect(abs(corrected / uncorrected - (90.0 / 99.0).squareRoot()) < 1e-12)
 	}
 
 	@Test("Correlation breakpoint calculation")

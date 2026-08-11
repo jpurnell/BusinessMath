@@ -28,7 +28,9 @@ import Numerics
 ///
 /// Use this function when you need to find a threshold splitting a dataset into two segments with different correlation properties.
 public func correlationBreakpoint<T: Real>(_ items: Int, probability: T) -> T {
-    let zComponents = T.sqrt(T(items - 3)/T(Int(106) / Int(100)))
+    // Fixed: Integer division T(Int(106) / Int(100)) was always T(1), dropping the
+    // 1.06 of Fisher's rank-correlation standard error SE(z) = sqrt(1.06 / (n - 3)).
+    let zComponents = T.sqrt(T(items - 3) / (T(106) / T(100)))
     let fisherR = inverseNormalCDF(p: probability) / zComponents
     return rho(from: fisherR)
 }
