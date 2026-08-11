@@ -75,10 +75,15 @@ struct MonteCarloTheoryCrossValidationTests {
 		let theoreticalMean = 1.0 / lambda
 		let theoreticalVariance = 1.0 / (lambda * lambda)
 
+		// Seeded. `distributionExponential`'s `seed:` is the uniform the inverse transform
+		// consumes, so the draws come from one locally seeded stream rather than a constant.
+		// At n = 100,000 the mean's standard error is 2/√n = 0.00632 against a 5% bound of
+		// 0.1 — 15.8 SE — and the variance's measures 0.037 against a bound of 0.2, 5.4 SE.
+		var rng = SplitMix64(seed: 0xE7_02_11_A3)
 		var samples: [Double] = []
 		samples.reserveCapacity(sampleCount)
 		for _ in 0..<sampleCount {
-			let value: Double = distributionExponential(λ: lambda)
+			let value: Double = distributionExponential(λ: lambda, seed: Double.random(in: 0.0..<1.0, using: &rng))
 			samples.append(value)
 		}
 

@@ -173,7 +173,9 @@ struct KMeansTests {
 	@Test("Empty dataset throws error")
 	func emptyDatasetThrows() {
 		let data: [Vector2D<Double>] = []
-		let kmeans = KMeans<Vector2D<Double>>(useGPU: false)
+		// Seeded for reproducibility only: `fit` rejects the empty dataset before any
+		// centroid is initialized, so no draw is taken and the assertion cannot vary.
+		let kmeans = KMeans<Vector2D<Double>>(seed: 0x4B_4D_01_01, useGPU: false)
 
 		#expect(throws: ClusteringError.emptyDataset) {
 			try kmeans.fit(data: data, k: 2)
@@ -187,7 +189,9 @@ struct KMeansTests {
 			Vector2D(x: 2.0, y: 2.0)
 		]
 
-		let kmeans = KMeans<Vector2D<Double>>(useGPU: false)
+		// Seeded for reproducibility only: `fit` rejects k ≤ 0 before any centroid is
+		// initialized, so no draw is taken and the assertion cannot vary.
+		let kmeans = KMeans<Vector2D<Double>>(seed: 0x4B_4D_01_02, useGPU: false)
 
 		// k = 0 should throw
 		#expect(throws: ClusteringError.invalidK(k: 0)) {
@@ -208,7 +212,9 @@ struct KMeansTests {
 			Vector2D(x: 3.0, y: 3.0)
 		]
 
-		let kmeans = KMeans<Vector2D<Double>>(useGPU: false)
+		// Seeded for reproducibility only: `fit` rejects k > n before any centroid is
+		// initialized, so no draw is taken and the assertion cannot vary.
+		let kmeans = KMeans<Vector2D<Double>>(seed: 0x4B_4D_01_03, useGPU: false)
 
 		// k > n should throw
 		#expect(throws: ClusteringError.tooManyClusters(k: 5, dataPoints: 3)) {
@@ -439,7 +445,9 @@ struct KMeansTests {
 			Vector2D(x: 3.0, y: 3.0)
 		]
 
-		let kmeans = KMeans<Vector2D<Double>>(useGPU: false)
+		// Seeded for reproducibility only: with k = 1 every point lands in the single
+		// cluster whatever the initial centroid, so all three assertions hold for any draw.
+		let kmeans = KMeans<Vector2D<Double>>(seed: 0x4B_4D_01_04, useGPU: false)
 		let result = try kmeans.fit(data: data, k: 1)
 
 		#expect(result.clusters.count == 1)

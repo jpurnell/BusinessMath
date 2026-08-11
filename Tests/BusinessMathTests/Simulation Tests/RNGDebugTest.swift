@@ -37,10 +37,13 @@ struct RNGDebugTests {
             (type: 0, params: (1000.0, 100.0, 0.0))  // Normal(1000, 100)
         ]
 
+        // Seeded for reproducibility only: the model is a constant, so `allEqual` and
+        // `nanCount == 0` hold for every draw. Nothing here could fail by chance.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: 100
+            iterations: 100,
+            seed: 0x2A_C0_45_71
         )
 
         print("First 10 constant results:")
@@ -141,10 +144,13 @@ struct RNGDebugTests {
             (type: 0, params: (1000.0, 100.0, 0.0))
         ]
 
+        // Seeded for reproducibility only: the model is CONST + CONST, so the 300.0
+        // assertion holds for every draw. Nothing here could fail by chance.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: 100
+            iterations: 100,
+            seed: 0x12_C0_45_72
         )
 
         print("First 10 addition results:")

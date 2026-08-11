@@ -14,18 +14,21 @@ import RealModule
 // MARK: - Seeded RNG Helper (Optimization)
 
 /// A simple seeded random number generator for reproducible optimization stress tests.
-/// Marked @unchecked Sendable because stress tests run serialized.
-private final class OptSeededRNG: @unchecked Sendable {
-    // Justification: Tests run serialized; no concurrent access to drand48 state.
+///
+/// This used to call `srand48`/`drand48`. Those are reproducible only as long as nothing
+/// else in the process touches the seed, which is not a property a test can hold: any
+/// other test calling `srand48` moves this stream underneath it. The generator is now
+/// owned by the instance, so the sequence depends on nothing outside this file.
+private struct OptSeededRNG {
+    private var generator: SplitMix64
+
     init(seed: Int) {
-        srand48(seed)
+        generator = SplitMix64(seed: UInt64(bitPattern: Int64(seed)))
     }
 
     /// Returns a uniform random Double in [low, high).
-    func nextDouble(in range: ClosedRange<Double>) -> Double {
-        let low = range.lowerBound
-        let high = range.upperBound
-        return low + (high - low) * drand48()
+    mutating func nextDouble(in range: ClosedRange<Double>) -> Double {
+        Double.random(in: range, using: &generator)
     }
 }
 
@@ -79,7 +82,7 @@ struct OptimizationIntegrationStressTests {
 
     @Test("Randomized starting points on sphere function - 100 iterations")
     func randomizedStartingPointsQuadratic() throws {
-        let rng = OptSeededRNG(seed: 42)
+        var rng = OptSeededRNG(seed: 42)
 
         let optimizer = MultivariateGradientDescent<VectorN<Double>>(
             learningRate: 0.1,
@@ -120,7 +123,7 @@ struct OptimizationIntegrationStressTests {
 
     @Test("Randomized starting points on Rosenbrock - 50 iterations")
     func randomizedStartingPointsRosenbrock() throws {
-        let rng = OptSeededRNG(seed: 42)
+        var rng = OptSeededRNG(seed: 42)
 
         // Rosenbrock is harder; use more iterations
         let optimizer = MultivariateGradientDescent<VectorN<Double>>(
@@ -159,7 +162,7 @@ struct OptimizationIntegrationStressTests {
 
     @Test("Curated test functions with random starts - 4 functions x 10 starts")
     func curatedTestFunctions() throws {
-        let rng = OptSeededRNG(seed: 42)
+        var rng = OptSeededRNG(seed: 42)
 
         struct NamedFunction {
             let name: String

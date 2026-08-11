@@ -10,11 +10,14 @@ struct InventorySimulatorTests {
 	@Test("Simulation produces valid results")
 	func simulationProducesResults() throws {
 		let demand = Array(repeating: 10.0, count: 60)
+		// Seeded for reproducibility only: demand is the constant 10, so every path is
+		// identical and all four assertions hold for any draw.
 		let result = try InventorySimulator.simulate(
 			demandHistory: demand,
 			meanLeadTime: 7.0,
 			serviceLevel: 0.95,
-			iterations: 1_000
+			iterations: 1_000,
+			seed: 0x1_11_5E_01
 		)
 		#expect(result.reorderPoint > 0)
 		#expect(result.safetyStock >= 0)
@@ -182,10 +185,13 @@ struct InventorySimulatorTests {
 	@Test("Rejects empty demand history")
 	func rejectsEmptyHistory() {
 		#expect(throws: OperationsError.self) {
+			// Seeded for reproducibility only: the empty history is rejected before any
+			// path is drawn, so the assertion cannot vary.
 			_ = try InventorySimulator.simulate(
 				demandHistory: [],
 				meanLeadTime: 7.0,
-				serviceLevel: 0.95
+				serviceLevel: 0.95,
+				seed: 0x1_11_5E_02
 			)
 		}
 	}
@@ -193,10 +199,13 @@ struct InventorySimulatorTests {
 	@Test("Rejects invalid service level")
 	func rejectsInvalidServiceLevel() {
 		#expect(throws: OperationsError.self) {
+			// Seeded for reproducibility only: the invalid service level is rejected
+			// before any path is drawn, so the assertion cannot vary.
 			_ = try InventorySimulator.simulate(
 				demandHistory: Array(repeating: 10.0, count: 30),
 				meanLeadTime: 7.0,
-				serviceLevel: 1.5
+				serviceLevel: 1.5,
+				seed: 0x1_11_5E_03
 			)
 		}
 	}

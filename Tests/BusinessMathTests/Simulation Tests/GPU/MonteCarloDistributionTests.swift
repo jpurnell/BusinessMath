@@ -193,8 +193,11 @@ struct MonteCarloDistributionTests {
             return [] // Skip if allocation fails
         }
 
-        // Initialize RNG
-        var seed: UInt64 = UInt64(arc4random()) << 32 | UInt64(arc4random())
+        // Initialize RNG. This used to be two `arc4random()` calls: process-global state
+        // that no test could pin, feeding every statistical assertion in this suite —
+        // GPU/CPU mean and stdDev agreement, uniform bounds, triangular mode ordering.
+        // A fixed seed makes each of those a fixed quantity that either holds or does not.
+        var seed: UInt64 = 0x9E37_79B9_7F4A_7C15
 
         let commandBuffer1 = commandQueue.makeCommandBuffer()!
         let encoder1 = commandBuffer1.makeComputeCommandEncoder()!

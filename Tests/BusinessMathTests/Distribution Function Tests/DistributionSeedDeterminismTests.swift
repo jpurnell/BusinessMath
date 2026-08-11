@@ -156,7 +156,9 @@ struct DistributionSeedReproducibilityTests {
 	func nilSeedIsNotReproducible() {
 		// The documented unseeded path. Twenty draws with no seed must not repeat —
 		// if they did, `seed:` would be doing nothing and the whole contract is a lie.
+		// Justification: the documented unseeded path is the subject, and any seed here would make the assertion false.
 		let a = (0..<20).map { _ in distributionChiSquared(degreesOfFreedom: 5) as Double }
+		// Justification: the documented unseeded path is the subject, and any seed here would make the assertion false.
 		let b = (0..<20).map { _ in distributionChiSquared(degreesOfFreedom: 5) as Double }
 		#expect(a != b)
 	}

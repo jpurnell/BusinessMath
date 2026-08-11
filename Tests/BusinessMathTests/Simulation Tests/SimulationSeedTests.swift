@@ -130,6 +130,7 @@ struct SimulationSeedTests {
 		// test, and its counterpart above asserts that the seeded variant throws.
 		// Adding a `seed:` would invert the assertion. The only claim made here is
 		// `values.count == 100`, which no draw can falsify.
+		// Justification: unseeded custom-sampler support is the subject here, and a seed would invert the assertion.
 		var simulation = MonteCarloSimulation(iterations: 100, enableGPU: false) { inputs in
 			inputs[0]
 		}

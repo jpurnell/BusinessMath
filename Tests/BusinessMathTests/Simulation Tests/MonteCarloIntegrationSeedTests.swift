@@ -48,6 +48,7 @@ struct MonteCarloIntegrationSeedTests {
 
 	@Test("Unseeded runs still integrate correctly")
 	func unseededEstimateIsUnbiased() {
+		// Justification: the subject of this test is the unseeded path, which a seed would replace entirely.
 		let estimate = integrate(square, iterations: 100_000)
 		#expect(abs(estimate - 1.0 / 3.0) < 0.01)
 	}

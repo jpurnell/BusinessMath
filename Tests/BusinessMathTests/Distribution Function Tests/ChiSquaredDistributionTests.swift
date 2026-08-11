@@ -460,6 +460,7 @@ struct ChiSquaredDistributionTests {
 		}
 
 		// A valid df with no seed uses system entropy — still a well-formed variate.
+		// Justification: this line exists to exercise the system-entropy path, which a seed would bypass entirely.
 		let unseeded: Double = distributionChiSquared(degreesOfFreedom: 5)
 		#expect(unseeded.isFinite, "The unseeded path should still produce a finite variate")
 

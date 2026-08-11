@@ -253,7 +253,11 @@ struct SimulatedAnnealingTests {
                 maxIterations: 2000,
                 perturbationScale: 0.5,
                 reheatInterval: 200, // Reheat every 200 iterations
-                reheatTemperature: 10.0
+                reheatTemperature: 10.0,
+                // Seeded: `result.value < 0.0` is a claim about where an unseeded random
+                // walk happens to land, so it was true for some runs and not others.
+                // With a seed the trajectory is fixed and the assertion is a fact.
+                seed: 0x5A_11_01
             ),
             searchSpace: [(-10.0, 10.0)]
         )
@@ -347,7 +351,10 @@ struct SimulatedAnnealingTests {
                 initialTemperature: 10.0,
                 finalTemperature: 0.1,
                 coolingRate: 0.5, // Fast cooling
-                maxIterations: 10000 // High max
+                maxIterations: 10000, // High max
+                // Seeded for reproducibility only: the iteration count is set by the
+                // cooling schedule, which does not depend on the draws.
+                seed: 0x5A_11_02
             ),
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )
@@ -370,7 +377,10 @@ struct SimulatedAnnealingTests {
                 initialTemperature: 100.0,
                 finalTemperature: 0.0001, // Very low
                 coolingRate: 0.9999, // Very slow cooling
-                maxIterations: 50 // Low max
+                maxIterations: 50, // Low max
+                // Seeded for reproducibility only: the `iterations <= 50` cap is enforced
+                // by the loop bound, not by the draws.
+                seed: 0x5A_11_03
             ),
             searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
         )

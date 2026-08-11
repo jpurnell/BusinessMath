@@ -228,7 +228,18 @@ struct SimulationStatisticsTests {
 	@Test("SimulationStatistics with exponential distribution")
 	func simulationStatisticsExponentialDistribution() {
 		// Exponential distribution with lambda = 0.5 (mean = 2.0)
-		let values = (0..<10_000).map { _ in distributionExponential(λ: 0.5) }
+		//
+		// Seeded. `distributionExponential`'s `seed:` is the uniform the inverse transform
+		// consumes, not an RNG seed, so a constant would return the same variate 10,000
+		// times; the draws come from one locally seeded stream instead. The bounds below
+		// are ±0.2 on a mean whose standard error is 2/√10,000 = 0.02 — 10 SE; ±0.2 on a
+		// stdDev whose standard error measures 0.031 — 6.5 SE; and ±0.5 on a skewness
+		// whose standard error measures 0.084 — 6.0 SE, the tightest of the three, and
+		// tighter still in practice because the skewness estimator is itself right-skewed.
+		var rng = SplitMix64(seed: 0x51_A7_1C_E5)
+		let values: [Double] = (0..<10_000).map { _ in
+			distributionExponential(λ: 0.5, seed: Double.random(in: 0.0..<1.0, using: &rng))
+		}
 		let stats = SimulationStatistics(values: values)
 
 		// Theoretical: mean = 1/lambda = 2.0, stdDev = 1/lambda = 2.0
