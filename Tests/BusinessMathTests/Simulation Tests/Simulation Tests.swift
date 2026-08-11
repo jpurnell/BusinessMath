@@ -158,11 +158,17 @@ struct NormalDistributionTests_SwiftTesting {
 
 	@Test("Standard normal moments within reasonable tolerance")
 	func standardNormalMoments() {
+		// Seeded. The bound below is 3 sigma, which fails by chance about one run in 370
+		// — arithmetic, not bad luck, and it duly failed after enough runs today. The free
+		// `distributionNormal(mean:stdDev:)` takes no seed; `DistributionNormal` conforms
+		// to `SeedableDistribution`, so the same law is available reproducibly.
 		let n = 5_000
+		var rng = SplitMix64(seed: 0x51A1_0001)
+		let normal = DistributionNormal(0, 1)
 		var xs = [Double]()
 		xs.reserveCapacity(n)
 		for _ in 0..<n {
-			xs.append(distributionNormal(mean: 0, stdDev: 1))
+			xs.append(normal.next(using: &rng))
 		}
 		let m = mean(xs)
 		let s = stdDev(xs)
@@ -180,9 +186,12 @@ struct NormalDistributionTests_SwiftTesting {
 		let n = 5_000
 		let mu = 2.5
 		let sd = 3.0
+		// Seeded, for the same reason as `standardNormalMoments` above.
+		var rng = SplitMix64(seed: 0x51A1_0002)
+		let normal = DistributionNormal(mu, sd)
 		var xs = [Double]()
 		for _ in 0..<n {
-			xs.append(distributionNormal(mean: mu, stdDev: sd))
+			xs.append(normal.next(using: &rng))
 		}
 		let m = mean(xs)
 		let s = stdDev(xs)
@@ -190,7 +199,7 @@ struct NormalDistributionTests_SwiftTesting {
 		let meanTol = 3.0 * sd / sqrt(Double(n)) // 3σ bound on mean
 		#expect(abs(m - mu) <= meanTol)
 
-		// sd estimate tolerance (10%) for unseeded tests
+		// sd estimate tolerance (10%)
 		#expect(abs(s - sd) <= 0.10 * sd)
 	}
 
