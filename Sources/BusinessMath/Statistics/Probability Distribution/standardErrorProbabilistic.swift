@@ -60,7 +60,10 @@ public func standardErrorProbabilistic<T: Real>(_ prob: T, observation n: Int, t
     if T(n) / T(total) <= T(5) / T(100) {
         return standardErrorProbabilistic(prob, observations: n)
     } else {
-        return standardErrorProbabilistic(prob, observations: n) * (T.sqrt(T ((total - n)/(total - 1))))
+        // Fixed: `T((total - n)/(total - 1))` was Int division, so the finite-population
+        // factor was sqrt(0) = 0 whenever `total - n < total - 1` — that is, for every
+        // n > 1 — and this branch returned zero rather than a corrected standard error.
+        return standardErrorProbabilistic(prob, observations: n) * (T.sqrt(T(total - n) / T(total - 1)))
     }
 }
 

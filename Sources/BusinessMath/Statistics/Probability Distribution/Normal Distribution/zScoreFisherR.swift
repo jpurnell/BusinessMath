@@ -20,5 +20,8 @@ import Numerics
 ///
 ///     let z = zScore(fisherR: 0.68, items: 7)
 public func zScore<T: Real>(fisherR: T, items: Int) -> T {
-    return T.sqrt(T(items - 3)/T(Int(106) / 100)) * fisherR
+    // Fixed: Integer division T(Int(106) / 100) was always T(1), dropping the 1.06 of
+    // Fisher's rank-correlation standard error SE(z) = sqrt(1.06 / (n - 3)). Matches
+    // the spelling already used by `zScore(rho:items:)`.
+    return T.sqrt(T(items - 3) / (T(106) / T(100))) * fisherR
 }

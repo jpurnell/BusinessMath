@@ -631,4 +631,96 @@ struct FinancialValidationAdditionalTests {
 		#expect(result.isValid)
 		#expect(result.errors.isEmpty)
 	}
+
+	// MARK: - Balance Sheet Epsilon
+
+	/// `BalanceSheetBalances` accepts `diff <= tolerance + eps`, where `eps` is the larger
+	/// of one ulp at the balance sheet's scale and a relative term `tolerance × 1e-12`.
+	/// The relative term was written `tolerance * T(Int(1e-12))`, and `Int(1e-12)` is 0, so
+	/// it contributed nothing and only the ulp term was ever in play.
+	///
+	/// The term matters exactly when `tolerance × 1e-12 > ulpOfOne × scale`, i.e. when the
+	/// tolerance exceeds roughly 0.022% of the largest number on the statement. This case
+	/// is deliberately in that regime: a tolerance of 1.0 against balances of order 2, with
+	/// a difference 5e-13 past the tolerance — inside the restored 1e-12 band and far
+	/// outside the 4.4e-16 ulp band that was the only one operating before.
+	@Test("Balance sheet epsilon includes the relative term")
+	func balanceSheetRelativeEpsilonIsNotZero() throws {
+		let entity = makeEntity()
+		let periods = make3Periods()
+
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			balanceSheetRole: .cashAndEquivalents,
+			timeSeries: TimeSeries(periods: periods, values: [2.0000000000005, 2.0000000000005, 2.0000000000005])
+		)
+		let debt = try Account(
+			entity: entity,
+			name: "Debt",
+			balanceSheetRole: .longTermDebt,
+			timeSeries: TimeSeries(periods: periods, values: [0.0, 0.0, 0.0])
+		)
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			balanceSheetRole: .commonStock,
+			timeSeries: TimeSeries(periods: periods, values: [1.0, 1.0, 1.0])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			accounts: [cash, debt, equity]
+		)
+
+		// The difference is 1.0 + 5e-13 against a tolerance of 1.0.
+		let diff = 2.0000000000005 - 1.0
+		#expect(diff > 1.0 + Double.ulpOfOne * 2.0000000000005)
+		#expect(diff <= 1.0 + 1e-12)
+
+		let rule = FinancialValidation.BalanceSheetBalances<Double>(tolerance: 1.0)
+		let result = rule.validate(balanceSheet, context: ValidationContext(fieldName: "Balance Sheet"))
+
+		// Pre-fix: rejected, because eps was 4.44e-16 rather than 1e-12.
+		#expect(result.isValid)
+		#expect(result.errors.isEmpty)
+	}
+
+	/// The relative term widens the band; it must not swallow a genuine imbalance.
+	@Test("Balance sheet epsilon still rejects a real imbalance")
+	func balanceSheetRelativeEpsilonDoesNotSwallowRealDifferences() throws {
+		let entity = makeEntity()
+		let periods = make3Periods()
+
+		let cash = try Account(
+			entity: entity,
+			name: "Cash",
+			balanceSheetRole: .cashAndEquivalents,
+			timeSeries: TimeSeries(periods: periods, values: [2.1, 2.1, 2.1])
+		)
+		let debt = try Account(
+			entity: entity,
+			name: "Debt",
+			balanceSheetRole: .longTermDebt,
+			timeSeries: TimeSeries(periods: periods, values: [0.0, 0.0, 0.0])
+		)
+		let equity = try Account(
+			entity: entity,
+			name: "Equity",
+			balanceSheetRole: .commonStock,
+			timeSeries: TimeSeries(periods: periods, values: [1.0, 1.0, 1.0])
+		)
+
+		let balanceSheet = try BalanceSheet(
+			entity: entity,
+			periods: periods,
+			accounts: [cash, debt, equity]
+		)
+
+		let rule = FinancialValidation.BalanceSheetBalances<Double>(tolerance: 1.0)
+		let result = rule.validate(balanceSheet, context: ValidationContext(fieldName: "Balance Sheet"))
+
+		#expect(!result.isValid)
+	}
 }
