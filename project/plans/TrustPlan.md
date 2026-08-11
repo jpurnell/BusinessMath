@@ -131,8 +131,11 @@ record the measured accuracy in each doc comment as `inverseNormalCDF` now does.
 
 `doc-code` typechecks the articles; it does not run them. So the class it cannot see:
 
-- `4.1` documented **"Total Growth over 2 years: 62.3%"** where the code yields **113.9%** — it
-  read the wrong variable, and the published figure was wrong long enough to look authoritative.
+- `4.1` documented **"Total Growth over 2 years: 62.3%"** — and the cause was worse than a stale
+  figure. The code indexed `statistics2Years[quarters.last!]`, where `quarters` is Example 1's
+  *four-quarter* array, so the program genuinely printed the one-year mean under a two-year label.
+  Fixed: the article is seeded and every figure regenerated from the seeded run, and the two-year
+  growth is **113.5%**. (The 113.9% recorded here previously was the unseeded draw.)
 - `4.1`'s confidence intervals printed **90%, 95% and 99% identically**, because arbitrary
   percentiles were unavailable and the example hand-rolled an interpolation.
 - `2.2` would have taught that a healthy manufacturer collects receivables in **219 days**, had
