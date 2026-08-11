@@ -174,17 +174,18 @@ struct SimplexScaleInvarianceTests {
             // Duals scale inversely with the constraint they price: writing a row
             // 10⁶ times larger makes each unit of it worth 10⁶ times less.
             //
-            // Asserted against this solver's existing sign convention, which
-            // returns shadow prices **negated** — the textbook values here are
-            // (0, 1.5, 1) and it reports (-0, -1.5, -1). That inversion predates
-            // equilibration and is unchanged by it; it is called out in the
-            // changelog rather than quietly corrected here, because flipping a
-            // published sign is a breaking change for every existing caller.
+            // The textbook duals for Wyndor Glass are (0, 1.5, 1), and they are
+            // positive for a reason rather than by convention: a shadow price is
+            // the rate at which the optimum improves per unit of the constraint
+            // relaxed. Relaxing `2y ≤ 12` by one unit raises the objective by
+            // 1.5, so the price of that unit is +1.5. A negative shadow price on
+            // a binding `≤` row in a maximisation would assert the opposite —
+            // that being given more of a scarce resource makes you worse off.
             let duals = try #require(result.dualValues)
             let tolerance = 1e-9 / magnitude
             #expect(abs(duals[0] - 0.0) < tolerance, "dual 0 at \(magnitude)")
-            #expect(abs(duals[1] + 1.5 / magnitude) < tolerance, "dual 1 at \(magnitude)")
-            #expect(abs(duals[2] + 1.0 / magnitude) < tolerance, "dual 2 at \(magnitude)")
+            #expect(abs(duals[1] - 1.5 / magnitude) < tolerance, "dual 1 at \(magnitude)")
+            #expect(abs(duals[2] - 1.0 / magnitude) < tolerance, "dual 2 at \(magnitude)")
         }
     }
 

@@ -41,13 +41,27 @@ into a 10⁻² threshold, declares the LP relaxation optimal prematurely, and dr
 branch-and-bound to its iteration limit. Fixing the conditioning at the source
 leaves every downstream tolerance intact.
 
-#### Known issue — dual values carry an inverted sign
+#### Fixed (breaking) — `dualValues` reported every shadow price with the wrong sign
 
-`dualValues` returns shadow prices negated: the Wyndor Glass problem's textbook duals
-are `(0, 1.5, 1)` and the solver reports `(-0, -1.5, -1)`. Magnitudes are correct.
-Left as-is because flipping a published sign is a breaking change for every existing
-caller; pinned by test at its current convention so the behaviour is at least
-deliberate rather than accidental.
+`SimplexResult.dualValues` negated the slack coefficient it read from the objective
+row, so the Wyndor Glass problem's textbook duals `(0, 1.5, 1)` came back as
+`(-0, -1.5, -1)`.
+
+The sign is not a convention here, it is the claim. A shadow price is the rate at
+which the optimum improves per unit of the constraint relaxed; relaxing `2y ≤ 12` by
+one unit raises the objective by 1.5, so that unit is worth `+1.5`. A negative shadow
+price on a binding `≤` row in a maximisation asserts the opposite — that being given
+more of a scarce resource makes you worse off — which is why this cannot be read as
+"the other convention".
+
+Magnitudes were always correct, which is why it survived: the only other test that
+touched `dualValues` checked that each one was finite and that there was one per
+constraint. Anything that ranked constraints by `abs(dual)`, or read the duals only to
+compare them, was unaffected. Anything that used the sign to decide whether a
+constraint was worth relaxing had it backwards.
+
+Now pinned against Wyndor Glass at magnitudes spanning `10⁶`, alongside the
+equilibration round trip, so the sign and the scale are asserted together.
 
 #### Fixed (breaking) — an unknown driver name produced a flat sensitivity curve
 

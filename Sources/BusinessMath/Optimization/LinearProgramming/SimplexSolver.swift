@@ -589,7 +589,13 @@ public struct SimplexSolver: Sendable {
         let numConstraints = phaseIIResult.tableau.table.count - 1
         var dualValues: [Double] = []
         if phaseIIResult.status == .optimal, let objectiveRow = phaseIIResult.tableau.table.last {
-            // Dual values are negatives of slack variable coefficients in objective row
+            // A shadow price is the rate at which the optimum improves per unit of the
+            // constraint relaxed, so for a binding `≤` row in a maximisation it is
+            // positive: being given more of a scarce resource cannot make you worse off.
+            // The slack coefficient in the objective row already carries that sign, and
+            // this negated it — reporting Wyndor Glass's textbook (0, 1.5, 1) as
+            // (-0, -1.5, -1). Magnitudes were right, so the error survived any test that
+            // only checked how large a dual was.
             for i in 0..<numConstraints {
                 let slackIndex = numOriginalVars + i
                 if slackIndex < objectiveRow.count - 1 {
@@ -601,7 +607,7 @@ public struct SimplexSolver: Sendable {
                     // because nothing about the number looks unusual.
                     let scale = i < phaseIIResult.tableau.rowScales.count
                         ? phaseIIResult.tableau.rowScales[i] : 1.0
-                    dualValues.append(-objectiveRow[slackIndex] / scale)
+                    dualValues.append(objectiveRow[slackIndex] / scale)
                 }
             }
         }
