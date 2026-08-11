@@ -181,9 +181,13 @@ public struct MonteCarloSimulation: Sendable {
 	/// `SimulationResults.executionNotes`).
 	///
 	/// Seeded runs require every input to support seeding
-	/// (``SimulationInput/supportsSeeding``); custom-closure inputs and correlated
-	/// sampling throw `SimulationError.seedingUnsupported` rather than silently
-	/// losing determinism. `nil` (the default) preserves non-deterministic behavior.
+	/// (``SimulationInput/supportsSeeding``); custom-closure inputs throw
+	/// `SimulationError.seedingUnsupported` rather than silently losing determinism.
+	/// `nil` (the default) preserves non-deterministic behavior.
+	///
+	/// Correlated runs (``correlationMatrix``) honor the seed as well: both the
+	/// independent draws and the correlated ranks that reorder them come from one
+	/// seeded generator, so the induced correlation is reproduced along with the values.
 	public var seed: UInt64?
 
 	#if canImport(Metal)
