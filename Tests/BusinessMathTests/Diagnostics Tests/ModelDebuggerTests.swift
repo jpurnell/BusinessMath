@@ -53,19 +53,6 @@ struct ModelDebuggerTests {
         let _ = try #require(trace.error)
     }
 
-	@Test(.disabled("Trace timing is captured"))
-    func traceTimingCaptured() async {
-        let debugger = ModelDebugger()
-
-        let trace = await debugger.trace(value: "Slow Operation") {
-            Thread.sleep(forTimeInterval: 0.01) // 10ms
-            return 42.0
-        }
-
-        #expect(trace.duration >= 0.01)
-        #expect(trace.duration < 1.0) // Should complete quickly
-    }
-
     // MARK: - Detailed Calculation Tracing
 
     @Test("Detailed trace captures dependencies")
@@ -104,9 +91,15 @@ struct ModelDebuggerTests {
         #expect(abs(trace.result - 100.0) < 1e-6)
     }
 
-	@Test("Detailed trace captures complex calculations", .localOnly)
+	@Test("Detailed trace captures complex calculations")
     func detailedTraceComplex() async throws {
-        let debugger = ModelDebugger()
+        // Was `.localOnly` for one assertion: `duration > 0` against a real clock, for a
+        // calculation of five multiplications. Whether that registers above the clock's
+        // resolution is a claim about the machine, not about the debugger. The duration is
+        // now supplied, so the assertion states what the trace should report and holds
+        // anywhere.
+        let time = ManualElapsedTimeSource()
+        let debugger = ModelDebugger(elapsedTime: time)
 
         let principal = 100_000.0
         let rate = 0.08
@@ -121,10 +114,57 @@ struct ModelDebuggerTests {
             ],
             formula: "principal * (1 + rate)^periods"
         ) {
-            principal * pow(1 + rate, Double(periods))
+            defer { time.advance(by: .milliseconds(3)) }
+            return principal * pow(1 + rate, Double(periods))
         }
 
         #expect(abs(trace.result - 146_932.808) < 0.01)
+        #expect(abs(trace.duration - 0.003) < 1e-12)
+    }
+
+    @Test("Traced duration comes from the injected elapsed-time source")
+    func traceDurationFromInjectedSource() async {
+        let time = ManualElapsedTimeSource()
+        let debugger = ModelDebugger(elapsedTime: time)
+
+        let trace = await debugger.trace(value: "Slow Operation") {
+            time.advance(by: .milliseconds(10))
+            return 42.0
+        }
+
+        #expect(abs(trace.duration - 0.01) < 1e-12)
+        #expect(abs((trace.result ?? .nan) - 42.0) < 1e-6)
+    }
+
+    @Test("A failed trace reports the duration it took to fail")
+    func traceDurationOnFailure() async throws {
+        struct TestError: Error {
+            let message: String
+        }
+
+        let time = ManualElapsedTimeSource()
+        let debugger = ModelDebugger(elapsedTime: time)
+
+        let trace: DebugTrace<Int> = await debugger.trace(value: "Doomed") {
+            time.advance(by: .milliseconds(7))
+            throw TestError(message: "Test error")
+        }
+
+        _ = try #require(trace.error)
+        #expect(abs(trace.duration - 0.007) < 1e-12)
+    }
+
+    @Test("An unconfigured debugger measures against the real monotonic counter")
+    func traceDefaultsToSystemElapsedTime() async {
+        // The counterweight to the three tests above: every one of them supplies its own
+        // durations, so none would notice if the default source stopped advancing. This
+        // one would.
+        let debugger = ModelDebugger()
+
+        let trace = await debugger.trace(value: "Real Work") {
+            (0..<200_000).reduce(0.0) { $0 + Double($1).squareRoot() }
+        }
+
         #expect(trace.duration > 0)
     }
 

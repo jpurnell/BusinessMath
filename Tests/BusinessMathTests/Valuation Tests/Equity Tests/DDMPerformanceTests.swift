@@ -384,7 +384,13 @@ struct DDMPerformanceTests {
 
     // MARK: - Comparison with Manual Calculation
 
-	@Test("Performance vs manual calculation", .localOnly)
+    /// This is a benchmark and stays one: the ratio of struct-based to manual arithmetic is
+    /// a claim about the machine. It carried `.localOnly` on top of the suite's
+    /// `RUN_BENCHMARKS` gate, which was redundant in the case that matters — with the
+    /// variable unset the whole suite is skipped anyway — and wrong in the case that does
+    /// not: it singled out one of these fourteen benchmarks to stay skipped even when
+    /// someone had asked for benchmarks explicitly. The gate is the honest guard here.
+	@Test("Performance vs manual calculation")
     func performanceVsManualCalculation() throws {
         // Compare struct-based Gordon Growth vs manual formula calculation
         let dividend = 2.5

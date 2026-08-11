@@ -259,6 +259,11 @@ import RealModule
         // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 10.0, "Should complete 1000 model creations in < 10s (got \((elapsed * 1000).number(2))ms)")
     }
+	/// Keeps `.localOnly` deliberately. The assertion is `elapsed < 25s`, which is a claim
+	/// about how fast the machine is and nothing else — there is no correctness statement
+	/// underneath it to preserve. The only way to un-skip it is to stop asserting what it
+	/// asserts, and a test that runs in CI and checks nothing is worse than one honestly
+	/// skipped. Injecting a clock would not help: here the elapsed time *is* the result.
 	@Test("Performance_TimeSeriesMemoryEfficiency", .localOnly)
 	func LPerformance_TimeSeriesMemoryEfficiency() {
         let start = Date()

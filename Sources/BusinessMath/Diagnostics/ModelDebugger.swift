@@ -136,15 +136,33 @@ public actor ModelDebugger {
     ///
     /// Note that this clock is *not* used for the `duration` recorded by the `trace`
     /// methods. A duration is elapsed time, and differencing two wall-clock readings is
-    /// the wrong way to obtain one whoever supplies them.
+    /// the wrong way to obtain one whoever supplies them; those durations come from
+    /// ``elapsedTime``.
     public let clock: any WallClock
+
+    /// The monotonic counter every traced duration is read from.
+    ///
+    /// Separate from ``clock`` because a duration and a timestamp want different
+    /// instruments: wall time can be corrected backwards mid-measurement, which is how a
+    /// trace ends up reporting a negative interval. See ``ElapsedTimeSource``.
+    ///
+    /// Injecting a ``ManualElapsedTimeSource`` lets a test state the duration it is
+    /// reasoning about instead of sleeping for it and hoping the machine agreed.
+    public let elapsedTime: any ElapsedTimeSource
 
     /// Initialize a new model debugger.
     ///
-    /// - Parameter clock: Stamps the reports this debugger returns. Defaults to the
-    ///   system clock.
-    public init(clock: any WallClock = SystemWallClock()) {
+    /// - Parameters:
+    ///   - clock: Stamps the reports this debugger returns. Defaults to the system clock.
+    ///   - elapsedTime: Supplies the readings every traced duration is the difference of.
+    ///     Defaults to the system's monotonic counter, which is what a debugger should be
+    ///     measuring against unless a test needs to name the duration itself.
+    public init(
+        clock: any WallClock = SystemWallClock(),
+        elapsedTime: any ElapsedTimeSource = SystemElapsedTimeSource()
+    ) {
         self.clock = clock
+        self.elapsedTime = elapsedTime
     }
 
     // MARK: - Calculation Tracing
@@ -175,8 +193,7 @@ public actor ModelDebugger {
         let startedAt = clock.now
         // A separate, monotonic anchor for `duration`: an interval must not come from
         // differencing wall-clock readings, which an NTP correction can move backwards.
-        let timer = ContinuousClock()
-        let start = timer.now
+        let start = elapsedTime.now
 
         do {
             #if canImport(OSLog)
@@ -184,7 +201,7 @@ public actor ModelDebugger {
             #endif
 
             let result = try calculation()
-            let duration = (timer.now - start).inSeconds
+            let duration = (elapsedTime.now - start).inSeconds
 
             #if canImport(OSLog)
             logger.calculationCompleted(value, result: result, duration: duration)
@@ -198,7 +215,7 @@ public actor ModelDebugger {
                 timestamp: startedAt
             )
         } catch {
-            let duration = (timer.now - start).inSeconds
+            let duration = (elapsedTime.now - start).inSeconds
 
             #if canImport(OSLog)
             logger.calculationFailed(value, error: error)
@@ -246,15 +263,14 @@ public actor ModelDebugger {
         // Recorded on the returned trace.
         let startedAt = clock.now
         // Monotonic anchor for `duration` — see the sibling `trace` above.
-        let timer = ContinuousClock()
-        let start = timer.now
+        let start = elapsedTime.now
 
         #if canImport(OSLog)
         logger.calculationStarted(value, context: dependencies)
         #endif
 
         let result = try calculation()
-        let duration = (timer.now - start).inSeconds
+        let duration = (elapsedTime.now - start).inSeconds
 
         #if canImport(OSLog)
         logger.calculationCompleted(value, result: result, duration: duration)
