@@ -54,7 +54,8 @@ Before diving into simulation and uncertainty quantification, you should complet
 Instead of a single forecast, generate thousands of possible futures:
 
 ```swift
-var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+// `seed:` makes the run reproducible; omit it for a fresh draw each time
+var simulation = MonteCarloSimulation(iterations: 10_000, seed: 2317) { inputs in
 	let baseRevenue = inputs[0]
 	let growthRate = inputs[1]
 	return baseRevenue * (1 + growthRate)
@@ -158,14 +159,17 @@ Create forecasts that communicate uncertainty clearly:
 
 ```swift
 // Forecast next 12 months with uncertainty
-var forecastSimulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+var forecastSimulation = MonteCarloSimulation(iterations: 10_000, seed: 2318) { inputs in
 	let baseRevenue = inputs[0]
 	let growthRate = inputs[1]
-	let volatility = inputs[2]
+
+	// Every random quantity the model uses comes from `inputs`, so the seed
+	// above governs the whole run. A `Double.random` call inside this closure
+	// would draw from the system generator instead and silently break that.
+	let randomShock = inputs[2]
 
 	// Simple revenue forecast with uncertainty
 	let trend = baseRevenue * (1 + growthRate)
-	let randomShock = volatility * (Double.random(in: -1...1))
 	return trend + randomShock
 }
 
@@ -178,8 +182,8 @@ forecastSimulation.addInput(SimulationInput(
 	distribution: DistributionNormal(0.10, 0.03)
 ))
 forecastSimulation.addInput(SimulationInput(
-	name: "Volatility",
-	distribution: DistributionNormal( 0, 2_000)
+	name: "Revenue Shock",
+	distribution: DistributionNormal(0, 2_000)
 ))
 
 let forecastResults = try forecastSimulation.run()

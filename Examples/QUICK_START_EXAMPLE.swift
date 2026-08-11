@@ -69,8 +69,13 @@ let uncertainty = 0.15
 print("🎲 Monte Carlo Risk Analysis (10,000 iterations)")
 print("   Modeling ±\(uncertainty.percent(0)) uncertainty in each year's cash flows\n")
 
-	// Create simulation with 10,000 iterations
-var simulation = MonteCarloSimulation(iterations: 100_000) { inputs in
+	// Create simulation with 100,000 iterations.
+	//
+	// Seeded, so this example prints the same figures every time you run it. That
+	// matters more here than in most places: the text below quotes specific numbers,
+	// and an unseeded run would drift away from them. Drop `seed:` when you want a
+	// fresh draw — it is legal and documented as non-deterministic.
+var simulation = MonteCarloSimulation(iterations: 100_000, seed: 42) { inputs in
 		// Model uncertain cash flows: base case ± 20% volatility
 	let year1 = 30_000 * (1 + inputs[0])
 	let year2 = 40_000 * (1 + inputs[1])
