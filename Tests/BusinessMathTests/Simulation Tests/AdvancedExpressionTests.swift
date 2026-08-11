@@ -162,6 +162,7 @@ struct AdvancedExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 1_000,
             enableGPU: false,  // Force CPU
+            seed: 0x51A2_51A2,
             expressionModel: model
         )
 
@@ -204,6 +205,7 @@ struct AdvancedExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: true,
+            seed: 0x52B3_52B3,
             expressionModel: model
         )
 

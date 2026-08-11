@@ -34,6 +34,7 @@ struct MonteCarloGPUPerformanceTests {
         var cpuSim = MonteCarloSimulation(
             iterations: 1_000,
             enableGPU: false,
+            seed: 0x31A2_31A2,
             expressionModel: model
         )
         cpuSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -46,6 +47,7 @@ struct MonteCarloGPUPerformanceTests {
         var gpuSim = MonteCarloSimulation(
             iterations: 1_000,
             enableGPU: true,
+            seed: 0x32B3_32B3,
             expressionModel: model
         )
         gpuSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -83,6 +85,7 @@ struct MonteCarloGPUPerformanceTests {
         var cpuSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x33C4_33C4,
             expressionModel: model
         )
         cpuSim.addInput(SimulationInput(name: "Revenue", distribution: DistributionNormal(1_000_000, 100_000)))
@@ -96,6 +99,7 @@ struct MonteCarloGPUPerformanceTests {
         var gpuSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: true,
+            seed: 0x34D5_34D5,
             expressionModel: model
         )
         gpuSim.addInput(SimulationInput(name: "Revenue", distribution: DistributionNormal(1_000_000, 100_000)))
@@ -141,6 +145,7 @@ struct MonteCarloGPUPerformanceTests {
         var cpuSim = MonteCarloSimulation(
             iterations: 100_000,
             enableGPU: false,
+            seed: 0x35E6_35E6,
             expressionModel: model
         )
         cpuSim.addInput(SimulationInput(name: "Units", distribution: DistributionNormal(10_000, 1_000)))
@@ -155,6 +160,7 @@ struct MonteCarloGPUPerformanceTests {
         var gpuSim = MonteCarloSimulation(
             iterations: 100_000,
             enableGPU: true,
+            seed: 0x36F7_36F7,
             expressionModel: model
         )
         gpuSim.addInput(SimulationInput(name: "Units", distribution: DistributionNormal(10_000, 1_000)))
@@ -196,6 +202,7 @@ struct MonteCarloGPUPerformanceTests {
         var cpuSim = MonteCarloSimulation(
             iterations: 1_000_000,
             enableGPU: false,
+            seed: 0x3708_3708,
             expressionModel: model
         )
         cpuSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -210,6 +217,7 @@ struct MonteCarloGPUPerformanceTests {
         var gpuSim = MonteCarloSimulation(
             iterations: 1_000_000,
             enableGPU: true,
+            seed: 0x3819_3819,
             expressionModel: model
         )
         gpuSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -248,7 +256,7 @@ struct MonteCarloGPUPerformanceTests {
         }
 
         let simpleStart = Date()
-        var simpleSim = MonteCarloSimulation(iterations: iterations, enableGPU: true, expressionModel: simpleModel)
+        var simpleSim = MonteCarloSimulation(iterations: iterations, enableGPU: true, seed: 0x81D7_057A, expressionModel: simpleModel)
         simpleSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
         simpleSim.addInput(SimulationInput(name: "B", distribution: DistributionNormal(50, 5)))
         _ = try simpleSim.run()
@@ -265,7 +273,7 @@ struct MonteCarloGPUPerformanceTests {
         }
 
         let complexStart = Date()
-        var complexSim = MonteCarloSimulation(iterations: iterations, enableGPU: true, expressionModel: complexModel)
+        var complexSim = MonteCarloSimulation(iterations: iterations, enableGPU: true, seed: 0x92E8_168B, expressionModel: complexModel)
         complexSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
         complexSim.addInput(SimulationInput(name: "B", distribution: DistributionNormal(2, 0.2)))
         complexSim.addInput(SimulationInput(name: "C", distribution: DistributionNormal(50, 5)))
