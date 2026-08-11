@@ -11,6 +11,174 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Fixed — an unbalanced tableau reported `.unbounded` for a bounded model
+
+Constraint rows now reach the simplex equilibrated: each is divided by the largest
+magnitude among its own coefficients. Dividing a constraint by a positive constant
+is a restatement, not a relaxation — the feasible set and the optimum are untouched
+— but it makes every tolerance inside the tableau mean what it says. A tolerance is
+a judgement about whether a value is genuinely non-zero or is leftover rounding, and
+that judgement is incoherent when one row carries coefficients of 10⁴ and the next
+carries 1.
+
+Found in DEA. **BCC specifically**: the variable-returns model adds a convexity row
+(Σλ = 1) whose coefficients are all 1.0, sitting beside data rows built from raw
+measurements. At 200 units that reported `.unbounded` — impossible for an
+input-oriented model, which is bounded below by θ = 0. CCR, which has no convexity
+row, solved the same 200 units without complaint.
+
+Dual values are divided back by their row's factor on the way out. A dual prices the
+constraint *as the caller wrote it*, so a shadow price read off an equilibrated
+tableau is otherwise wrong by exactly that factor — silently, which is worse than a
+failure because nothing about the number looks unusual. Primal solutions, objective
+values and reduced costs are unaffected: reduced costs are invariant because the
+dual correction and the row factor cancel.
+
+Equilibration is deliberately preferred to widening the pivot-selection tolerances.
+That alternative was implemented and rejected: scaling the entering-variable
+threshold by local magnitude turns a branch-and-cut problem with 10⁸ coefficients
+into a 10⁻² threshold, declares the LP relaxation optimal prematurely, and drives
+branch-and-bound to its iteration limit. Fixing the conditioning at the source
+leaves every downstream tolerance intact.
+
+#### Known issue — dual values carry an inverted sign
+
+`dualValues` returns shadow prices negated: the Wyndor Glass problem's textbook duals
+are `(0, 1.5, 1)` and the solver reports `(-0, -1.5, -1)`. Magnitudes are correct.
+Left as-is because flipping a published sign is a breaking change for every existing
+caller; pinned by test at its current convention so the behaviour is at least
+deliberate rather than accidental.
+
+#### Fixed (breaking) — an unknown driver name produced a flat sensitivity curve
+
+`runSensitivity` and `runTwoWaySensitivity` *inserted* the requested driver into the base case's
+overrides. An unrecognised name therefore added an entry the builder never reads, so every point on
+the curve was the base case and the caller got a perfectly flat line — or, in two dimensions, a
+table constant along one axis, or a single repeated number if both names were wrong.
+
+That is worse than a missing answer. A flat sensitivity curve is a *finding*: it says this driver
+does not move the output. Nothing about the result looks wrong, so nothing prompts the caller to
+check the spelling.
+
+Both now validate every driver name against `baseCase.driverOverrides` **before** any projection
+runs, and throw ``BusinessMathError/invalidDriver(name:reason:)`` (E200) naming the unknown driver
+and listing the ones that exist. `runTwoWaySensitivity` reports both names when both are wrong, so
+one run surfaces both typos. This is the same treatment `runTornadoAnalysis` received earlier in
+this release, for the same reason and with the same wording.
+
+Both functions were **already `throws`**, and every call site already used `try` — nine in the
+sensitivity tests, one inside `runTornadoAnalysis`, and the examples in `4.2-ScenarioAnalysisGuide`.
+No signature changes, and no call site needs editing. It is breaking only in the sense that a call
+that used to return a flat curve now throws.
+
+The in-loop lookups became throws rather than being deleted, so if the pre-flight check is ever
+moved the behaviour degrades to an error rather than back to a silent flat curve.
+`1.7-ErrorHandlingGuide`'s E200 section now names the three APIs that raise it; it previously
+described only caller-side use, and had been silent about `runTornadoAnalysis` since that landed.
+
+#### Fixed (breaking) — four constants that `T(Int(...))` had truncated to zero or one
+
+The idiom converts to `Int` *before* `T`, so any fractional constant written that way collapses.
+`distributionPareto` had one repaired earlier in this release; three other sites carry comments
+recording the same defect being found and fixed before. These four were still live, and each one
+changes a shipped number:
+
+| site | written | evaluated to | now | effect on a representative call |
+|------|---------|--------------|-----|--------------------------------|
+| `zScore(fisherR:items:)` | `T(Int(106) / 100)` | `1` | `1.06` | `zScore(fisherR: 0.68, items: 7)`: **1.36 → 1.3209487728058793** |
+| `correlationBreakpoint(_:probability:)` | `T(Int(106) / Int(100))` | `1` | `1.06` | `correlationBreakpoint(100, probability: 0.95)`: **0.16547395781714794 → 0.17027211388345986** |
+| `correctedStdErr(_:population:)` | `T(Int(5) / Int(100))` | `0` | `0.05` | `correctedStdErr(1...10, population: 100)`: **0.9574271077563381 → 0.9128709291752769** (see below — the comparison was also inverted) |
+| `FinancialValidation.BalanceSheetBalances` | `T(Int(1e-12))` | `0` | `1e-12` | acceptance epsilon, when `tolerance > 2.2e-4 × scale` |
+
+**Fisher's 1.06.** The standard error of the Fisher z-transform of a *rank* correlation is
+`sqrt(1.06 / (n − 3))`; with the divisor truncated to 1 the code was computing the *Pearson*
+standard error instead. The whole effect is the constant, so every z-score was too large by exactly
+`sqrt(1.06)` — **2.956%** — at every `n` and every `r`. `correlationBreakpoint` inverts the same
+statistic, so every breakpoint was **~2.9% too small**: it understated the correlation needed to
+clear the threshold, at every sample size and confidence level tested (2.76% at n = 30, 2.90% at
+n = 100, 2.95% at n = 1000). `zScore(rho:items:)` had already been repaired and so silently
+disagreed with `zScore(fisherR:items:)` by that margin; they now agree exactly, which they must,
+since one is defined as the other applied to `fisher(rho)`.
+
+**The 5% threshold.** `correctedStdErr` had *three* integer divisions, not one. `percentage` was
+`T(x.count / population)` — Int division, so zero for every sample smaller than its population,
+which the precondition requires — and the threshold was `T(Int(5) / Int(100))`, also zero. The test
+read `0 >= 0`, always true, so **the finite-population branch has never executed in any released
+version**: `correctedStdErr` has only ever returned `standardError(x)` unchanged. Had that branch
+run it would have been wrong too — its factor was `sqrt(T(num/den))`, Int division again, which is
+`sqrt(0)` for any sample of more than one element, so it would have returned exactly zero. All three
+are now floating-point.
+
+**The comparison was also inverted**, which the truncated constants had hidden. The code skipped the
+correction when the sample was *at or above* 5% of the population and applied it below — backwards.
+The finite population correction `sqrt((N − n) / (N − 1))` matters precisely when the sample is a
+large fraction of the population, and is negligible when it is small: at n/N = 0.5 the factor is
+0.711, at n/N = 0.04 it is 0.985. Repairing only the constants would have made a reachable branch
+out of one that corrects where correction does not matter, while leaving the case that needs it
+uncorrected. The comparison is now `<=`, matching
+`standardErrorProbabilistic(_:observation:totalObservations:)` in the same directory, which had the
+direction right all along — so two functions implementing the same rule of thumb no longer disagree
+with each other.
+
+**Numeric consequence.** Samples at or below 5% of their population are unchanged, and match every
+value the function has ever returned. Above 5%, the correction now applies:
+
+| sample | population | before | after | change |
+|--------|-----------|--------|-------|--------|
+| 1…6 | 100 | 0.7637626158259734 | 0.7442258083888612 | −2.6% |
+| 1…10 | 100 | 0.9574271077563381 | 0.9128709291752769 | −4.7% |
+| 1…20 | 100 | 1.3228756555322954 | 1.1891767800211261 | −10.1% |
+| 1…50 | 100 | 2.0615528128088303 | 1.4650817883192209 | −28.9% |
+| 1…100 | 1000 | 2.9011491975882016 | 2.7536489577617880 | −5.1% |
+
+The library's own test asserted the inverted direction in prose — "when sample is less than 5% of
+population, should apply finite population correction" — and passed only because neither branch was
+reachable, so both of its claims were vacuous. It now pins the corrected direction and the exact
+factor.
+
+**The relative epsilon.** `BalanceSheetBalances` accepts `diff <= tolerance + eps`, where `eps` is
+the larger of one ulp at the statement's scale and a relative term `tolerance × 1e-12`. The relative
+term was always zero, so only the ulp term was ever in play. It is restored, and matters only when
+`tolerance × 1e-12 > ulpOfOne × scale` — a tolerance above roughly 0.022% of the largest number on
+the statement. At the default `tolerance: .zero` nothing changes; at `tolerance: 0.01` on a
+million-dollar balance sheet nothing changes, because the ulp term (2.2e-10) still dominates. It
+changes only small-magnitude statements carrying a loose tolerance.
+
+#### Fixed — the same idiom, found in `standardErrorProbabilistic` and `VectorN.random`
+
+Two more sites of the same shape, both of which returned degenerate values rather than merely
+inaccurate ones. One was outside the `T(Int(` grep entirely — the truncation is in a bare `T(a/b)`
+with two `Int` operands — and the other was in it but had been read as harmless.
+
+`standardErrorProbabilistic(_:observation:totalObservations:)` had had its 5% threshold repaired
+previously, but not the quotient inside its correction factor: `T((total - n)/(total - 1))` is Int
+division, evaluating to 0 for every `n > 1`. So the finite-population branch — the one taken
+whenever the sample exceeds 5% of the total — returned `base × sqrt(0)`, **exactly zero**.
+`standardErrorProbabilistic(0.5, observation: 10, totalObservations: 100)`: **0.0 → 0.15075567228888181**.
+Below the threshold the correction is skipped and always was, so those callers are unaffected.
+
+`VectorN.random(in:dimension:)` was broken in both of its branches. The `ClosedRange<Double>` fast
+path returned `T(Int(x))`, truncating each draw toward zero — so a random vector on `0...1` was **the
+zero vector**, every component, every call, and a random vector on any range was a vector of
+integers. The fallback for non-`Double` scalars computed `continuous - (continuous - r / 1000)`,
+which is algebraically just `r / 1000`: the requested range cancelled out entirely and every
+component came back on `[0, 0.999]` regardless of what was asked for. One correct path now serves
+both. The function had no in-package callers and its only tests were commented out — and would have
+passed anyway, since they asserted only that the components fell inside the requested range, which
+the zero vector does.
+
+**Added alongside it:** `VectorN.random(in:dimension:using:)`, taking `inout some
+RandomNumberGenerator`. The existing unseeded `random(in:dimension:)` delegates to it. The package
+had no way to draw a reproducible random vector, so the repaired behaviour could not be pinned by a
+deterministic test — seed a `DeterministicRNG` and pass it here. This follows the seeded/unseeded
+pair the distribution functions already use.
+
+The remaining eighteen `T(Int(...))` occurrences were checked individually and are sound: thirteen
+are `T(Int(timeInterval))` in `BondPricing` (ten), `CreditSpreadModel` (two) and `CallableBond`
+(one), discarding sub-second precision from a date difference before dividing by seconds-per-year —
+a relative error below 3e-8 in the resulting year fraction — and five are comments recording earlier
+repairs of this same idiom.
+
 #### Fixed — `poissonCDF` returned `P(X ≤ k−1)` at every integer argument
 
 `poissonCDF(_:µ:)` found `floor(x)` by counting up while `counter < x`. At an exact integer
@@ -91,6 +259,73 @@ assert `mean ≈ σ√(π/2)` — so only the label and the prose were ever wron
 **Migration:** `distributionRayleigh(mean: x)` → `distributionRayleigh(scale: x)` for
 identical results. A caller who genuinely wanted a mean of `m` should pass
 `scale: m / 1.2533141373155003`.
+
+#### Added — dependency cycles: found, classified, and solved exactly where an exact answer exists
+
+The counterpart to the retraction below. Two functions claimed to detect circular dependencies and
+could not; the capability is now real, and for the first time the condition is *representable*.
+
+`ModelDefinition<T>` holds accounts as formula strings rather than as computed series, which is what
+a cycle needs in order to exist at all — `FormulaEvaluator` maps names to already-evaluated
+`TimeSeries`, so mutual reference could not previously be constructed. A model is a set of
+`AccountDefinition` values (`name`, `formula`) plus `inputs: [String: TimeSeries<T>]`, built with
+`define(_:as:)` or the non-mutating `defining(_:as:)`. `requiredInputs()` reports what the formulas
+read and nothing defines; `evaluationOrder()` gives a topological order, or throws if there isn't
+one; `evaluate()` runs an acyclic model.
+
+- **`dependencyReport()`** runs Tarjan over the graph whose edges come from
+  `FormulaEvaluator.accountNames(in:)` — a public API that until now had no production call site.
+  `DependencyReport` carries `components` (the strongly connected components, in evaluation order),
+  `cycles`, `requiredInputs`, `isAcyclic`, and `evaluationOrder` (`nil` when a cycle exists).
+- **`DependencyCycle`** carries `accounts`, a representative `path`, and a `form`. Its identity is
+  its account *set*, never its path: a cycle and its rotations are the same cycle, and which
+  rotation you see depends on entry order, so `==` and `hash(into:)` are defined on the set. Anything
+  keyed on a path stops matching after a rename.
+- **`DependencyCycle.Form`** is `.linear` or `.nonlinear`, and the classification is *decidable*
+  rather than heuristic — the formula grammar is only `+ − × ÷`, so a three-valued degree carried up
+  the parse tree settles it. The SCC is what makes the member-versus-coefficient rule exact: an
+  account outside a component cannot depend on anything inside it, or it would be in the component,
+  so `interest = debt * rate` is provably linear in `debt` when `rate` is supplied data. Doubt
+  resolves toward `.nonlinear`, which costs an iteration; the other direction would return a
+  confident wrong number. A formula that could not be parsed is not classified at all.
+- **`DependencyReport.isExactlySolvable`** is true when every cycle is `.linear` — the question a
+  caller actually has before deciding whether to budget for iteration.
+- **`solve(settings:)`** solves each component in order. Linear cycles are solved *exactly*, per
+  period, by rewriting each member into affine form and handing `(I − A)m = c` to
+  `solveLinearSystem`: symbolic, not numerical — no perturbation, no step size, no truncation, and a
+  test substitutes the answer back to pin that the only error is the rounding of the same arithmetic
+  done by hand. Gross-ups, profit-share accruals and the three-account debt loop are all this shape.
+- **`CycleSolverError`** reports the three failure modes in modelling terms rather than matrix ones:
+  `underdetermined(accounts:period:detail:)` (a singular system, naming the period it first happened
+  in), `illConditioned(accounts:period:detail:)`, and `notConverged(...)`, which carries the
+  iterations spent, the last sweep's largest change, the accounts still moving, and a
+  `ConvergenceState`.
+- **`ConvergenceState`** distinguishes `.diverging`, `.oscillating` and `.exhausted`, because
+  "did not converge" sends all three to the same wrong remedy. Oscillation is tested *before* growth,
+  since a growing oscillation is the one damping can rescue.
+- **`IterationSettings<T>`** (`maxIterations`, `absoluteTolerance`, `relativeTolerance`,
+  `relaxation`, `initialValues`) and **`InitialValues<T>`** (`.zero`, `.supplied(_:)`) apply only to
+  cycles that must be iterated; a `.linear` cycle reads none of them. Settings are passed to
+  `solve(settings:)` rather than stored on the model: an iteration budget is a property of the
+  question, not of the thing being modelled.
+
+Non-convergence **throws**. The library had already chosen this twice and disagreed with itself —
+`Solver`/`GoalSeek` throws where `GoalSeekOptimizer` returns the last iterate with
+`converged: false`. A non-converged answer that looks like a model result is the worst version of
+every defect this release removes.
+
+Determinism is structural, not incidental: adjacency comes from sorted account names, roots from
+sorted graph keys, sweep order from sorted membership, so evaluation order is a function of the
+formulas alone and independent of insertion order. It is pinned against fixed expectations rather
+than checked for stability — Swift seeds hashing per process, so an implementation that lets `Set`
+order through fails on the first run with a different seed instead of intermittently.
+
+`1.6-DebuggingGuide`'s "Finding Dependency Cycles" section is rewritten around the real API. It
+contains **no circular-interest example**, and says so in its own paragraph: that is the canonical
+case and it cannot be written, because the formula language has no cross-period reference and
+`TimeSeries` has no lag operator, so `openingDebt(t) = closingDebt(t−1)` is inexpressible.
+Documenting new machinery with an example that does not work would be a quieter version of what this
+release removes.
 
 #### Removed (breaking) — the two circular-dependency detectors
 
