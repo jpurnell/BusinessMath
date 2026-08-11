@@ -471,8 +471,9 @@ struct WallClockAdoptionTests {
 	// well-formed interval. A test that drives the counter proves nothing about the
 	// counter. So these stay on the real source, and assert only what a monotonic source
 	// guarantees and a wall-clock difference does not: never negative, always finite, and
-	// ordered. `ModelDebugger` is not injectable at all — it still constructs its own
-	// `ContinuousClock` — so for the trace below this is the only assertion available.
+	// never running backwards. `ModelDebugger` is not injectable at all — it still
+	// constructs its own `ContinuousClock` — so for the trace below this is the only
+	// assertion available.
 	//
 	// No assertion here pins a specific duration. That would be a flake by construction,
 	// and no ordering claim is made against the real clock either — that was the last

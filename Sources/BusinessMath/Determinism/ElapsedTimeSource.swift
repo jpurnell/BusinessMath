@@ -7,7 +7,7 @@ import Foundation
 
 /// The monotonic counter a measurement reads, made injectable.
 ///
-/// ``ElapsedTime`` argues that a duration must come from a monotonic source rather than
+/// `ElapsedTime.swift` argues that a duration must come from a monotonic source rather than
 /// from differencing two `Date` readings, and the code that measures durations here
 /// follows that: it constructs a `ContinuousClock` and subtracts two of its instants.
 /// That is correct, and it was also unreachable. A test that wanted a 50 ms measurement
