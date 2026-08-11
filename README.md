@@ -4,26 +4,27 @@
 
 Build DCF models, optimize portfolios, run Monte Carlo simulations, and value securities—with industry-standard implementations (ISDA, Black-Scholes) that work out of the box.
 
-[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20|%20macOS%20|%20Linux-lightgrey.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 🎉 Version 2.0 Released!
+## Current release: 2.6.0
 
-**Major milestone:** Production-ready API with role-based financial statements, GPU-accelerated optimization, multiple linear regression, and comprehensive operator tools.
+2.6.0 is a correctness release. It changes very few signatures and a great many *numbers* —
+`poissonCDF` returned `P(X ≤ k−1)` at every integer argument, `normalCDF` lost its entire lower
+tail to cancellation, `DriverProjection.percentile(0.10)` returned the p5 value, and one branch of
+`correctedStdErr` had never executed in any released version. The CHANGELOG opens with a table of
+every result that moved and by how much; read that before upgrading.
 
-- ✅ **Role-Based Financial Statements:** Multi-statement account support for accurate financial modeling
-- ✅ **GPU Acceleration:** 10-100× speedup for genetic algorithms (populations ≥ 1,000) on Apple Silicon
-- ✅ **Consistent API:** `initialGuess` parameter everywhere, `@Sendable` closures for Swift 6 concurrency
-- ✅ **Constraint Support:** Equality and inequality constraints via penalty method
-- ✅ **Multiple Linear Regression:** GPU-accelerated matrix backends (CPU / Accelerate / Metal) for statistical modeling
-- ✅ **Operator Helpers:** Contribution margin, debt classification, pro forma adjustments, working capital tracking
-- ✅ **100% Documentation Coverage:** All public APIs fully documented
-- ✅ **4,882+ Tests:** All passing with strict concurrency compliance
-
-**Current Status:** v2.1.5 - NASA-inspired reliability hardening
+| | |
+|---|---|
+| tests | 6,494 in 565 suites, all passing under strict concurrency |
+| build | 0 warnings, library and test target |
+| documentation coverage | 100% — 6,447 of 6,447 public APIs documented |
+| DocC catalogue | 73 articles, every code block compiled against the module |
+| toolchain | Swift 6.2 (`swift-tools-version: 6.2`) |
 
 **See what's new:** [CHANGELOG.md](CHANGELOG.md)
 
@@ -31,13 +32,13 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ## Why BusinessMath?
 
-**Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real>`) and strict concurrency for thread safety. All examples include `@Sendable` closures and proper `PlaygroundSupport` integration.
+**Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real & Sendable>`) and strict concurrency for thread safety. Model closures are `@Sendable`. As of 2.6.0 the vector and optimizer types require `Real & BinaryFloatingPoint` rather than `Real` alone — the conversion that constraint supplies used to be faked with a runtime-cast ladder that answered `0.0` when it failed.
 
-**Complete**: 61 comprehensive guides, 4,882+ tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every tutorial example has been validated** to work correctly in Xcode Playgrounds and production code.
+**Complete**: 73 comprehensive guides, 6,494 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
 
-**Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and validated against real-world use cases. Documentation examples reflect actual API behavior with realistic tradeoffs (mean-variance optimization, risk constraints, budget limits).
+**Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and — where a result is an approximation — a measured accuracy recorded in the doc comment rather than an assurance. `inverseNormalCDF` is 2 ulp over `1e-12 ≤ p ≤ 1 − 1e-12`; `normalCDF` holds ~1e-14 relative down to `x = −37`. Numbers that changed in 2.6.0 are tabulated in the CHANGELOG with the measurement that found them.
 
-**Fast**: Sub-millisecond NPV/IRR calculations, complete forecasts in <50ms, optimized for interactive dashboards and real-time analysis.
+**Fast**: GPU-accelerated genetic algorithms (10-100× for populations ≥ 1,000 on Apple Silicon), parallel and adaptive optimizer selection, and a benchmarking guide that shows how to measure your own workload rather than trusting a headline number — see [Performance Benchmarking](Sources/BusinessMath/BusinessMath.docc/5.11-PerformanceBenchmarking.md) and [Monte Carlo Performance](Sources/BusinessMath/BusinessMath.docc/4.4-MonteCarloPerformanceGuide.md).
 
 **Ergonomic**: Fluent APIs that read like financial prose. Risk-aware examples that demonstrate real tradeoffs, not trivial solutions. Clear error messages and comprehensive debugging guides.
 
@@ -74,7 +75,12 @@ for (rate, npvResult) in sensitivityTable {
 // Shows NPV ranges from $57K (5% rate) to $23K (15% rate)
 
 // 3. Risk assessment: Monte Carlo simulation for uncertain cash flows
-var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+//
+// Pass a `seed` unless you have a reason not to. If any input can't honor it —
+// a custom-closure input, or correlated sampling — `run()` throws
+// `SimulationError.seedingUnsupported` rather than quietly handing back a
+// non-reproducible answer that looks fine.
+var simulation = MonteCarloSimulation(iterations: 10_000, seed: 42) { inputs in
   // Model uncertain cash flows with ±20% volatility
   let year1 = 30_000 * (1 + inputs[0])
   let year2 = 40_000 * (1 + inputs[1])
@@ -84,7 +90,9 @@ var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
   return npv(discountRate: 0.10, cashFlows: [-100_000, year1, year2, year3, year4])
 }
 
-// Add uncertainty inputs (normal distribution with 20% std dev)
+// Add uncertainty inputs (normal distribution with 20% std dev).
+// `DistributionNormal` conforms to `SeedableDistribution`, so each input draws
+// from the run's generator and the seed above actually reaches the samples.
 for year in 1...4 {
   simulation.addInput(SimulationInput(
     name: "Year \(year) Return Variance",
@@ -99,6 +107,11 @@ print("\nRisk Analysis:")
 print("Expected NPV: \(results.statistics.mean.currency())")
 print("95% VaR: \(abs(var95).currency()) (worst case with 95% confidence)")
 print("Probability of loss: \((results.probabilityBelow(0) * 100).number())%")
+
+// Reproducibility is guaranteed per execution path: a seeded GPU run and a
+// seeded CPU run are each internally reproducible but produce different
+// streams, and a GPU failure falls back to the seeded CPU path, recorded in
+// `results.executionNotes`. Set `enableGPU: false` to pin one path.
 
 // → Decision: Approve investment ✓
 //    Strong positive NPV, profitable across rate scenarios, low probability of loss
@@ -145,18 +158,20 @@ Add BusinessMath to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.0.0")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.6.0")
 ]
 ```
 
 **Or in Xcode:** File → Add Package Dependencies → Enter repository URL
+
+The package vends three products: **`BusinessMath`** (the library), **`BusinessMathDSL`** (a declarative result-builder surface for expressing models and scenarios), and **`BusinessMathMacros`** (macro declarations backed by a SwiftSyntax plugin; not built on Linux). `BusinessMath` does not depend on the macros, so a Playground can import it without loading a compiler plugin.
 
 ---
 
 ## Getting Started
 
 ### 📚 Documentation
-**61 comprehensive guides** organized into 5 parts (Basics, Analysis, Modeling, Simulation, Optimization):
+**73 comprehensive guides** organized into 5 parts (Basics, Analysis, Modeling, Simulation, Optimization):
 
 - **[Documentation Home](Sources/BusinessMath/BusinessMath.docc/BusinessMath.md)** - Complete structure and index
 - **[Learning Path Guide](Sources/BusinessMath/BusinessMath.docc/LearningPath.md)** - Four specialized tracks:
@@ -171,7 +186,7 @@ dependencies: [
 
 - **[QUICK_START_EXAMPLE.swift](Examples/QUICK_START_EXAMPLE.swift)** - 🚀 Copy-paste investment analysis example (start here!)
 - **[EXAMPLES.md](Documentation/EXAMPLES.md)** - Time series, forecasting, loans, securities, risk, optimization
-- **[All DocC Tutorials](Sources/BusinessMath/BusinessMath.docc/)** - 61 comprehensive guides with runnable examples
+- **[All DocC Tutorials](Sources/BusinessMath/BusinessMath.docc/)** - 73 comprehensive guides with compiled examples
 
 ## What's Included
 
@@ -192,20 +207,24 @@ dependencies: [
 - ✅ **Financial ratios** (profitability, leverage, efficiency)
 - ✅ **Real options** (Black-Scholes, binomial trees, Greeks)
 - ✅ **Multiple linear regression** (OLS with QR decomposition; CPU, Accelerate, and Metal matrix backends)
+- ✅ **Data envelopment analysis** (CCR and BCC, super-efficiency, async solver)
 - ✅ **Hypothesis testing** (t-tests, chi-square, F-tests, A/B testing)
 - ✅ **Model validation** (fake-data simulation, parameter recovery)
+- ✅ **Reproducible simulation** (`seed: UInt64?` or `using: inout G` across the distribution family, Monte Carlo, scenario generation and the GPU path; unseeded paths are documented as non-reproducible by contract rather than left ambiguous)
+- ✅ **Dependency cycles** (detection over formula-holding models, decidable linear/nonlinear classification, and exact solution of linear cycles rather than iteration)
 
 ### Documentation & Testing
-- 📚 **61 comprehensive guides** (48,000+ lines of DocC documentation)
-- ✅ **4,882+ tests** across 392+ test suites (100% pass rate)
+- 📚 **73 comprehensive guides** (~50,900 lines of DocC documentation), every code block compiled against the module
+- ✅ **100% documentation coverage** — 6,447 of 6,447 public APIs documented
+- ✅ **6,494 tests** across 565 test suites (100% pass rate, 0 known issues)
 - 📊 **Performance benchmarks** for typical use cases
 - 🎓 **Learning paths** for different roles
 
 ## Requirements
 
-- **Swift 6.0** or later
-- **Platforms**: iOS 14+ / macOS 13+ / tvOS 14+ / watchOS 7+ / visionOS 1+ / Linux
-- **Dependencies**: [Swift Numerics](https://github.com/apple/swift-numerics) (for `Real` protocol)
+- **Swift 6.2** or later — the manifest declares `swift-tools-version: 6.2`
+- **Platforms**: iOS 17+, macOS 14+, tvOS 17+, watchOS 10+, visionOS 1+, as declared in `Package.swift`. Linux and Android build too, with `BusinessMathMacros` excluded on Linux; Metal-backed GPU paths require Apple Silicon and fall back to CPU elsewhere.
+- **Dependencies**: [Swift Numerics](https://github.com/apple/swift-numerics) (for `Real`), [Swift Collections](https://github.com/apple/swift-collections), [swift-docc-plugin](https://github.com/swiftlang/swift-docc-plugin), SwiftDeterminism (seeded generators), and [swift-crypto](https://github.com/apple/swift-crypto) — linked only where CryptoKit is absent (Linux, Android)
 
 ---
 
@@ -222,7 +241,7 @@ dependencies: [
 
 ## Release Notes
 
-📢 **[Release history](CHANGELOG.md)** - Complete what's new guide for the 2.0 release
+📢 **[Release history](CHANGELOG.md)** - Every release back to 1.0.0. The 2.6.0 entry opens with a table of the results that changed, since most of that release moves numbers without moving signatures.
 
 ## Contributing
 
