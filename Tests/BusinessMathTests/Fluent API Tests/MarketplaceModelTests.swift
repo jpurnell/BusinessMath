@@ -324,4 +324,50 @@ import RealModule
         #expect(abs(highRevenue - 315_000) < 100.0)
         #expect(abs(highRevenue / lowRevenue - 2.0) < 0.1)
     }
+
+    // MARK: - Degenerate Inputs
+
+    /// The snapshot initialiser derives `monthlyTransactionsPerBuyer` by dividing
+    /// transactions by buyers. With no buyers that quotient is `+infinity`, and the
+    /// infinity does not stay put: every downstream figure multiplies by it, and
+    /// `0 * .infinity` is `NaN`, so a marketplace with no buyers reported its
+    /// transaction count and its GMV as "not a number" rather than as nothing.
+    ///
+    /// Zero is the right value here rather than a convenience: with no buyers there
+    /// are no transactions, and `buyers * 0` gives exactly that.
+    @Test("A marketplace with no buyers reports nothing, not NaN")
+    func snapshotWithNoBuyersIsFinite() {
+        let model = MarketplaceModel(
+            numberOfBuyers: 0,
+            numberOfSellers: 100,
+            transactionsPerMonth: 0,
+            averageOrderValue: 150,
+            takeRate: 0.15,
+            buyerAcquisitionCost: 25,
+            sellerAcquisitionCost: 100
+        )
+
+        #expect(model.monthlyTransactionsPerBuyer.isFinite)
+        #expect(model.calculateTotalTransactions(forMonth: 1).isFinite)
+        #expect(model.calculateGMV(forMonth: 1).isFinite)
+        #expect(model.calculateRevenue(forMonth: 1).isFinite)
+    }
+
+    /// The same divisor at zero with a non-zero numerator, which yields `+infinity`
+    /// directly rather than by way of a `NaN`.
+    @Test("No buyers but non-zero transactions is still finite")
+    func snapshotWithNoBuyersButTransactionsIsFinite() {
+        let model = MarketplaceModel(
+            numberOfBuyers: 0,
+            numberOfSellers: 100,
+            transactionsPerMonth: 5_000,
+            averageOrderValue: 150,
+            takeRate: 0.15,
+            buyerAcquisitionCost: 25,
+            sellerAcquisitionCost: 100
+        )
+
+        #expect(model.monthlyTransactionsPerBuyer.isFinite)
+        #expect(model.calculateGMV(forMonth: 1).isFinite)
+    }
 }

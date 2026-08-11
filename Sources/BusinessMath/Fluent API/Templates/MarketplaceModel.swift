@@ -182,7 +182,15 @@ public struct MarketplaceModel: Sendable {
         // Calculate derived values for growth model properties
         self.initialBuyers = numberOfBuyers
         self.initialSellers = numberOfSellers
-        self.monthlyTransactionsPerBuyer = transactionsPerMonth / numberOfBuyers
+        // A marketplace with no buyers has no transactions-per-buyer to speak of, and
+        // the unguarded quotient does not stay put: it is `+infinity`, every downstream
+        // figure multiplies by it, and `0 * .infinity` is `NaN` — so the transaction
+        // count and the GMV both came back "not a number" rather than nothing. Zero is
+        // the answer that makes the downstream arithmetic right, since `buyers * 0` is
+        // exactly the nothing that actually happened.
+        self.monthlyTransactionsPerBuyer = numberOfBuyers > 0
+            ? transactionsPerMonth / numberOfBuyers
+            : 0
         self.newBuyersPerMonth = 0
         self.newSellersPerMonth = 0
         self.buyerChurnRate = 0
