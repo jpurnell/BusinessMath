@@ -41,7 +41,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: correlationMatrix,
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x61A2_61A2
 		) { samples in
 			// Profit = Revenue - Cost
 			return samples[0] - samples[1]
@@ -81,7 +82,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: correlationMatrix,
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x62B3_62B3
 		) { samples in
 			return samples[0] + samples[1]
 		}
@@ -120,7 +122,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: correlationMatrix,
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x63C4_63C4
 		) { samples in
 			return samples[0] * samples[1]  // Revenue = Sales × Price
 		}
@@ -162,7 +165,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2, input3],
 			correlationMatrix: correlationMatrix,
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x64D5_64D5
 		) { samples in
 			// Sum all three
 			return samples[0] + samples[1] + samples[2]
@@ -202,7 +206,8 @@ struct MultiVariableMonteCarloTests {
 			_ = try simulation.runCorrelated(
 				inputs: [input1, input2, input3],
 				correlationMatrix: correlationMatrix,
-				iterations: 1000
+				iterations: 1000,
+				seed: 0x65E6_65E6
 			) { samples in
 				return samples.reduce(0, +)
 			}
@@ -233,7 +238,8 @@ struct MultiVariableMonteCarloTests {
 			_ = try simulation.runCorrelated(
 				inputs: [input1, input2],
 				correlationMatrix: invalidMatrix,
-				iterations: 1000
+				iterations: 1000,
+				seed: 0x66F7_66F7
 			) { samples in
 				return samples[0] + samples[1]
 			}
@@ -264,7 +270,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: correlationMatrix,
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x6708_6708
 		) { samples in
 			return samples[0] + samples[1]
 		}
@@ -297,7 +304,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: correlationMatrix,
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x6819_6819
 		) { samples in
 			return samples[0] + samples[1]
 		}
@@ -324,7 +332,8 @@ struct MultiVariableMonteCarloTests {
 		let resultsIndependent = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: [[1.0, 0.0], [0.0, 1.0]],
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x692A_692A
 		) { samples in
 			return samples[0] - samples[1]
 		}
@@ -333,7 +342,8 @@ struct MultiVariableMonteCarloTests {
 		let resultsCorrelated = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: [[1.0, 0.9], [0.9, 1.0]],
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x6A3B_6A3B
 		) { samples in
 			return samples[0] - samples[1]
 		}
@@ -370,7 +380,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: correlationMatrix,
-			iterations: iterations
+			iterations: iterations,
+			seed: 0x6B4C_6B4C
 		) { samples in
 			return samples[0] + samples[1]
 		}
@@ -400,7 +411,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: inputs,
 			correlationMatrix: correlationMatrix,
-			iterations: 5000
+			iterations: 5000,
+			seed: 0x6C5D_6C5D
 		) { samples in
 			// Sum all four
 			return samples.reduce(0, +)
@@ -432,7 +444,8 @@ struct MultiVariableMonteCarloTests {
 		let results = try simulation.runCorrelated(
 			inputs: [input1, input2],
 			correlationMatrix: correlationMatrix,
-			iterations: 10000
+			iterations: 10000,
+			seed: 0x6D6E_6D6E
 		) { samples in
 			return samples[0] + samples[1]
 		}

@@ -87,8 +87,15 @@ struct MonteCarloIntegrationStressTests {
                 )
             }
 
-            // Build and run a single-input simulation (identity model)
-            var simulation = MonteCarloSimulation(iterations: simulationIterations, enableGPU: false) { inputs in
+            // Build and run a single-input simulation (identity model).
+            // The distribution *parameters* were already reproducible via SeededRNG;
+            // the draws were not. A per-pass seed keeps the 100 passes distinct while
+            // making each one reproducible.
+            var simulation = MonteCarloSimulation(
+                iterations: simulationIterations,
+                enableGPU: false,
+                seed: 0x3C82_B015 &+ UInt64(i)
+            ) { inputs in
                 inputs[0]
             }
             simulation.addInput(input)
@@ -137,7 +144,13 @@ struct MonteCarloIntegrationStressTests {
                 }
             }
 
-            var simulation = MonteCarloSimulation(iterations: simulationIterations, enableGPU: false, model: model)
+            // Per-pass seed: distinct across the 50 passes, reproducible within each.
+            var simulation = MonteCarloSimulation(
+                iterations: simulationIterations,
+                enableGPU: false,
+                seed: 0x4D93_C126 &+ UInt64(i),
+                model: model
+            )
 
             // Add random inputs
             for j in 0..<inputCount {
@@ -252,8 +265,13 @@ struct MonteCarloIntegrationStressTests {
             ),
         ]
 
-        for edgeCase in edgeCases {
-            var simulation = MonteCarloSimulation(iterations: simulationIterations, enableGPU: false) { inputs in
+        for (caseIndex, edgeCase) in edgeCases.enumerated() {
+            // Per-case seed: distinct across the 10 cases, reproducible within each.
+            var simulation = MonteCarloSimulation(
+                iterations: simulationIterations,
+                enableGPU: false,
+                seed: 0x5EA4_D237 &+ UInt64(caseIndex)
+            ) { inputs in
                 inputs[0]
             }
             simulation.addInput(edgeCase.input)

@@ -21,6 +21,7 @@ struct CorrelationExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 1_000,
             enableGPU: false,
+            seed: 0x11A2_11A2,
             expressionModel: model
         )
 
@@ -48,6 +49,7 @@ struct CorrelationExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 1_000,
             enableGPU: false,
+            seed: 0x12B3_12B3,
             expressionModel: model
         )
 
@@ -73,6 +75,7 @@ struct CorrelationExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 1_000,
             enableGPU: false,
+            seed: 0x13C4_13C4,
             expressionModel: model
         )
 
@@ -102,6 +105,7 @@ struct CorrelationExpressionTests {
         var independentSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x14D5_14D5,
             expressionModel: model
         )
         independentSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -112,6 +116,7 @@ struct CorrelationExpressionTests {
         var correlatedSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x15E6_15E6,
             expressionModel: model
         )
         correlatedSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -150,6 +155,7 @@ struct CorrelationExpressionTests {
         var independentSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x16F7_16F7,
             expressionModel: model
         )
         independentSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -160,6 +166,7 @@ struct CorrelationExpressionTests {
         var correlatedSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x1708_1708,
             expressionModel: model
         )
         correlatedSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -197,6 +204,7 @@ struct CorrelationExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 20_000,
             enableGPU: false,
+            seed: 0x1819_1819,
             expressionModel: model
         )
 
@@ -245,6 +253,7 @@ struct CorrelationExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x192A_192A,
             expressionModel: model
         )
 
@@ -288,6 +297,7 @@ struct CorrelationExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x1A3B_1A3B,
             expressionModel: model
         )
 
@@ -324,6 +334,7 @@ struct CorrelationExpressionTests {
         var simulation = MonteCarloSimulation(
             iterations: 5_000,
             enableGPU: false,
+            seed: 0x1B4C_1B4C,
             expressionModel: model
         )
 
@@ -356,6 +367,7 @@ struct CorrelationExpressionTests {
         var independentSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x1C5D_1C5D,
             expressionModel: model
         )
         independentSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -366,6 +378,7 @@ struct CorrelationExpressionTests {
         var zeroCorSim = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: false,
+            seed: 0x1D6E_1D6E,
             expressionModel: model
         )
         zeroCorSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))

@@ -35,6 +35,7 @@ struct GPUPerformanceBenchmark {
             var gpuSim = MonteCarloSimulation(
                 iterations: iterations,
                 enableGPU: true,
+                seed: 0x41A2_41A2,
                 expressionModel: model
             )
             gpuSim.addInput(SimulationInput(
@@ -54,6 +55,7 @@ struct GPUPerformanceBenchmark {
             var cpuSim = MonteCarloSimulation(
                 iterations: iterations,
                 enableGPU: false,
+                seed: 0x42B3_42B3,
                 expressionModel: model
             )
             cpuSim.addInput(SimulationInput(

@@ -50,7 +50,7 @@ struct MonteCarloSimulationTests {
 	@Test("MonteCarloSimulation basic initialization")
 	func monteCarloSimulationInitialization() {
 			// Create a simple simulation
-		let simulation = MonteCarloSimulation(iterations: 1_000) { inputs in
+		let simulation = MonteCarloSimulation(iterations: 1_000, seed: 0x1F0A_3C51) { inputs in
 			return inputs[0] + inputs[1]  // Sum of two inputs
 		}
 		
@@ -60,10 +60,10 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation adding inputs")
 	func monteCarloSimulationAddingInputs() {
-		var simulation = MonteCarloSimulation(iterations: 100) { inputs in
+		var simulation = MonteCarloSimulation(iterations: 100, seed: 0x2B71_9E04) { inputs in
 			return inputs[0]
 		}
-		
+
 		let input1 = SimulationInput(name: "Input1", distribution: DistributionNormal(100.0, 10.0))
 		simulation.addInput(input1)
 		
@@ -79,7 +79,7 @@ struct MonteCarloSimulationTests {
 	@Test("MonteCarloSimulation simple model execution")
 	func monteCarloSimulationSimpleExecution() throws {
 			// Simple model: constant value
-		var simulation = MonteCarloSimulation(iterations: 100) { inputs in
+		var simulation = MonteCarloSimulation(iterations: 100, seed: 0x3C82_AF15) { inputs in
 			return 42.0
 		}
 		
@@ -97,10 +97,15 @@ struct MonteCarloSimulationTests {
 	func monteCarloSimulationSumOfNormals() throws {
 			// Model: sum of two normal distributions
 			// N(100, 15) + N(50, 10) should give N(150, sqrt(15^2 + 10^2)) = N(150, 18.03)
-		var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+			// Seeded: the assertions below are on a sample mean and a sample stdDev.
+			// The sum is N(150, 18.03), so over 10,000 draws the mean has a standard
+			// error of 0.180 (the ±5 bound is 27.7 SE) and the stdDev has a standard
+			// error of 0.128 (the ±2 bound is 15.9 SE). Both are far from the edge,
+			// but seeded they are fixed quantities rather than draws.
+		var simulation = MonteCarloSimulation(iterations: 10_000, seed: 0x4D93_B026) { inputs in
 			return inputs[0] + inputs[1]
 		}
-		
+
 		simulation.addInput(SimulationInput(name: "X1", distribution: DistributionNormal(100.0, 15.0)))
 		simulation.addInput(SimulationInput(name: "X2", distribution: DistributionNormal(50.0, 10.0)))
 		
@@ -114,7 +119,10 @@ struct MonteCarloSimulationTests {
 	@Test("MonteCarloSimulation revenue minus costs model")
 	func monteCarloSimulationRevenueCostsModel() throws {
 			// Real-world model: Profit = Revenue - Costs
-		var simulation = MonteCarloSimulation(iterations: 5_000) { inputs in
+			// Seeded: profit is N(300_000, 111_803), so over 5,000 draws the mean has a
+			// standard error of 1,581 and the ±50,000 bound is 31.6 SE. The loss
+			// probability is 0.0037 against a 0.05 ceiling — 54 SE on a proportion.
+		var simulation = MonteCarloSimulation(iterations: 5_000, seed: 0x5EA4_C137) { inputs in
 			let revenue = inputs[0]
 			let costs = inputs[1]
 			return revenue - costs
@@ -135,6 +143,9 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation convergence with iterations")
 	func monteCarloSimulationConvergence() throws {
+		// No `seed:` here, and none is needed: the inputs are custom samplers reading
+		// precomputed values, which is already fully deterministic. A seeded run rejects
+		// custom-sampler inputs with SimulationError.seedingUnsupported.
 		// Test that more iterations lead to lower standard error using deterministic values
 		// Use Box-Muller to generate proper normal distribution samples
 		let seed: UInt64 = 55555
@@ -188,6 +199,8 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation with custom sampling function")
 	func monteCarloSimulationCustomSampler() throws {
+			// No `seed:`: the input is a custom sampler (constant 5.0), which is both
+			// already deterministic and rejected by the seeded path.
 		var simulation = MonteCarloSimulation(iterations: 1_000) { inputs in
 			return inputs[0] * 2.0
 		}
@@ -206,10 +219,10 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation error handling - no inputs")
 	func monteCarloSimulationNoInputs() {
-		let simulation = MonteCarloSimulation(iterations: 100) { inputs in
+		let simulation = MonteCarloSimulation(iterations: 100, seed: 0x6FB5_D248) { inputs in
 			return 42.0
 		}
-		
+
 			// Should throw error when run without inputs
 		#expect(throws: SimulationError.self) {
 			try simulation.run()
@@ -218,7 +231,7 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation error handling - zero iterations")
 	func monteCarloSimulationZeroIterations() {
-		var simulation = MonteCarloSimulation(iterations: 0) { inputs in
+		var simulation = MonteCarloSimulation(iterations: 0, seed: 0x70C6_E359) { inputs in
 			return inputs[0]
 		}
 		
@@ -231,7 +244,7 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation with single iteration")
 	func monteCarloSimulationSingleIteration() throws {
-		var simulation = MonteCarloSimulation(iterations: 1) { inputs in
+		var simulation = MonteCarloSimulation(iterations: 1, seed: 0x81D7_F46A) { inputs in
 			return inputs[0] + inputs[1]
 		}
 		
@@ -247,7 +260,10 @@ struct MonteCarloSimulationTests {
 	@Test("MonteCarloSimulation complex financial model")
 	func monteCarloSimulationComplexModel() throws {
 			// Complex model: NPV = (Revenue * (1 - CostRate) - FixedCosts) * (1 + GrowthRate)
-		var simulation = MonteCarloSimulation(iterations: 5_000) { inputs in
+			// Seeded: `mean > 0` is a sample-mean assertion. The adjusted profit has
+			// mean ≈ 2.2M and stdDev ≈ 588K, so over 5,000 draws the standard error is
+			// ≈ 8.3K and zero sits 264 SE below the mean — safe, but now fixed.
+		var simulation = MonteCarloSimulation(iterations: 5_000, seed: 0x92E8_057B) { inputs in
 			let revenue = inputs[0]
 			let costRate = inputs[1]
 			let fixedCosts = inputs[2]
@@ -279,7 +295,7 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation performance - 10K iterations")
 	func monteCarloSimulationPerformance10K() throws {
-		var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+		var simulation = MonteCarloSimulation(iterations: 10_000, seed: 0xA3F9_168C) { inputs in
 			return inputs[0] + inputs[1] + inputs[2]
 		}
 		
@@ -296,7 +312,10 @@ struct MonteCarloSimulationTests {
 	@Test("MonteCarloSimulation with triangular distribution")
 	func monteCarloSimulationTriangularDist() throws {
 			// Project estimation using triangular (PERT) distribution
-		var simulation = MonteCarloSimulation(iterations: 2_000) { inputs in
+			// Seeded: the assertion is on a sample mean. The PERT estimate has mean
+			// ≈ 20.67 and stdDev ≈ 1.47, so over 2,000 draws the standard error is
+			// ≈ 0.033 and the nearer bound (30) is 284 SE away.
+		var simulation = MonteCarloSimulation(iterations: 2_000, seed: 0xB40A_279D) { inputs in
 			let optimistic = inputs[0]
 			let mostLikely = inputs[1]
 			let pessimistic = inputs[2]
@@ -317,7 +336,10 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation multiple independent runs with different seeds")
 	func monteCarloSimulationMultipleRuns() throws {
-		// Verify that runs with different seeds give different but statistically similar results
+		// Verify that runs with different seeds give different but statistically similar results.
+		// The two seeds live in the precomputed feeds below, not in `MonteCarloSimulation.seed`:
+		// custom-sampler inputs are rejected by the seeded path, and the feeds already make
+		// both runs — and the |mean difference| < 10 assertion — deterministic.
 		let iterations = 1_000
 
 		// Generate two deterministic sequences with different seeds
@@ -350,7 +372,9 @@ struct MonteCarloSimulationTests {
 	
 	@Test("MonteCarloSimulation input order matters")
 	func monteCarloSimulationInputOrder() throws {
-			// Test that model receives inputs in the order they were added
+			// Test that model receives inputs in the order they were added.
+			// No `seed:`: both inputs are constant custom samplers — deterministic already,
+			// and rejected by the seeded path.
 		var simulation = MonteCarloSimulation(iterations: 100) { inputs in
 				// Return difference to verify order
 			return inputs[0] - inputs[1]
@@ -367,7 +391,10 @@ struct MonteCarloSimulationTests {
 	@Test("MonteCarloSimulation with weibull reliability analysis")
 	func monteCarloSimulationWeibullReliability() throws {
 			// Model: reliability analysis for component failure
-		var simulation = MonteCarloSimulation(iterations: 5_000) { inputs in
+			// Seeded: the assertion is on a sample mean. min(Weibull(2, 1000),
+			// Weibull(1.5, 1200)) has mean ≈ 560 and stdDev ≈ 330, so over 5,000 draws
+			// the standard error is ≈ 4.7 and the 1,000 ceiling is ≈ 94 SE above it.
+		var simulation = MonteCarloSimulation(iterations: 5_000, seed: 0xC51B_38AE) { inputs in
 			let component1Life = inputs[0]
 			let component2Life = inputs[1]
 			
@@ -392,6 +419,8 @@ struct MonteCarloSimulationAdditionalTests {
 	func deterministicRun() throws {
 		let iterations = 1_000
 		
+			// Determinism here comes from the precomputed feeds, not `MonteCarloSimulation.seed`:
+			// the custom-sampler inputs this test exists to exercise are rejected by the seeded path.
 			// Precompute deterministic sequences for both inputs
 		let uA = deterministicUniforms(seed: 12345, count: iterations)
 		let uB = deterministicUniforms(seed: 98765, count: iterations)

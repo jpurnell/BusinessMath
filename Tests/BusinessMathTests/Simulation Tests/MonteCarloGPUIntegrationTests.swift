@@ -106,8 +106,15 @@ struct MonteCarloGPUIntegrationTests {
             seed: 12345
         )
 
-        // CPU execution (using existing MonteCarloSimulation)
-        var cpuSimulation = MonteCarloSimulation(iterations: iterations) { inputs in
+        // CPU execution (using existing MonteCarloSimulation).
+        // Seeded, because the assertion below compares this sample's mean against the
+        // (already seeded) GPU mean. A - B is N(50, 18.03), so over 10,000 draws the CPU
+        // mean has a standard error of 0.180 and the 2% relative bound is ≈ 1.0 absolute,
+        // i.e. ≈ 5.5 SE. Unseeded that assertion measured sampling noise, not GPU/CPU
+        // agreement; seeded, the difference is a fixed quantity. The seed differs from the
+        // GPU's on purpose — the two use different generators, so a shared value would
+        // imply a shared stream that does not exist.
+        var cpuSimulation = MonteCarloSimulation(iterations: iterations, seed: 0xA3F9_279C) { inputs in
             return inputs[0] - inputs[1]
         }
         cpuSimulation.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100.0, 15.0)))
@@ -287,6 +294,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: true,
+            seed: 0x21A2_21A2,
             expressionModel: model
         )
 
@@ -332,6 +340,7 @@ struct MonteCarloGPUIntegrationTests {
         var gpuSim = MonteCarloSimulation(
             iterations: 50_000,
             enableGPU: true,
+            seed: 0x22B3_22B3,
             expressionModel: model
         )
         gpuSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -344,6 +353,7 @@ struct MonteCarloGPUIntegrationTests {
         var cpuSim = MonteCarloSimulation(
             iterations: 50_000,
             enableGPU: false,  // Force CPU
+            seed: 0x23C4_23C4,
             expressionModel: model
         )
         cpuSim.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 10)))
@@ -387,6 +397,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 500,
             enableGPU: true,  // Even though GPU is enabled, should use CPU for small simulation
+            seed: 0x24D5_24D5,
             expressionModel: model
         )
 
@@ -419,6 +430,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: true,
+            seed: 0x25E6_25E6,
             expressionModel: model
         )
 
@@ -446,6 +458,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: true,  // GPU enabled
+            seed: 0x26F7_26F7,
             model: { inputs in
                 return inputs[0] - inputs[1]  // Closure cannot be compiled to GPU
             }
@@ -486,6 +499,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 100_000,
             enableGPU: true,
+            seed: 0x2708_2708,
             expressionModel: model
         )
 
@@ -546,6 +560,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: true,
+            seed: 0x2819_2819,
             expressionModel: model
         )
 
@@ -588,6 +603,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 10_000,
             enableGPU: true,
+            seed: 0x292A_292A,
             expressionModel: model
         )
 
@@ -637,6 +653,7 @@ struct MonteCarloGPUIntegrationTests {
         var simulation = MonteCarloSimulation(
             iterations: 20_000,
             enableGPU: true,
+            seed: 0x2A3B_2A3B,
             expressionModel: model
         )
 
