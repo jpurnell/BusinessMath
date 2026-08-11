@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 @Suite("Student's t-Distribution PDF")
@@ -13,14 +14,25 @@ struct StudentTPDFTests {
 		#expect(abs(result - 0.3891) < 0.001)
 	}
 
-	@Test("studentTPDF matches legacy pValueStudent for same inputs")
-	func testMatchesLegacy() throws {
-		let inputs: [(Double, Int)] = [(0.0, 10), (1.5, 5), (2.0, 20), (-1.0, 3)]
-		for (tVal, dfVal) in inputs {
-			let newResult: Double = try studentTPDF(t: tVal, df: dfVal)
-			let legacyResult: Double = pValueStudent(tVal, dFr: Double(dfVal))
-			#expect(abs(newResult - legacyResult) < 1e-12,
-				"Mismatch at t=\(tVal), df=\(dfVal): \(newResult) vs \(legacyResult)")
+	/// Was "studentTPDF matches legacy pValueStudent for same inputs", which anchored
+	/// this implementation to a deleted one. Agreement with `pValueStudent` was never
+	/// evidence of correctness — it was evidence that two functions computed the same
+	/// expression, and only one of them worked in log-space.
+	///
+	/// The four input pairs are kept, now measured against
+	/// `Γ((ν+1)/2) / (√(νπ)·Γ(ν/2)) · (1 + t²/ν)^(-(ν+1)/2)` evaluated independently.
+	@Test("studentTPDF matches an independent evaluation of the density")
+	func testMatchesReferenceValues() throws {
+		let cases: [(t: Double, df: Int, expected: Double)] = [
+			(0.0, 10, 0.3891083840),
+			(1.5, 5, 0.1245173446),
+			(2.0, 20, 0.0580872152),
+			(-1.0, 3, 0.2067483358)
+		]
+		for entry in cases {
+			let result: Double = try studentTPDF(t: entry.t, df: entry.df)
+			#expect(approximatelyEqual(result, entry.expected, tolerance: 1e-9),
+				"Mismatch at t=\(entry.t), df=\(entry.df): \(result) vs \(entry.expected)")
 		}
 	}
 

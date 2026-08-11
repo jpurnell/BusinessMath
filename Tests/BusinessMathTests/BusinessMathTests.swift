@@ -131,32 +131,33 @@ struct UnassortedTests {
 		#expect(largeResult <= largeN)
 	}
 
+	/// Same inputs the deleted `chi2cdf` test used, now asserting what a CDF actually
+	/// has to do rather than documenting that it didn't.
+	///
+	/// `chi2cdf` was `1 - chi2pdf(x:dF:)`, which is not a CDF by any reading, and the
+	/// test it replaced said so in a comment while asserting only `0 ≤ p ≤ 1` and
+	/// `small != large` — both of which nonsense satisfies. The function is gone; these
+	/// are the values `chiSquaredCDF` is required to produce.
 	@Test("Chi-squared CDF")
-	func testChi2cdf() {
-		// Test chi-squared cumulative distribution function
-		// chi2cdf is implemented as 1 - chi2pdf, which is an approximation
+	func testChiSquaredCDF() throws {
+		// x = 2, df = 2 has the closed form 1 - e^(-x/2), so this one is exact
+		// independently of any series implementation.
+		let atTwo: Double = try chiSquaredCDF(x: 2.0, df: 2)
+		#expect(approximatelyEqual(atTwo, 1 - Double.exp(-1.0), tolerance: 1e-12))
 
-		// Test that function returns valid probability values (between 0 and 1)
-		let result1 = chi2cdf(x: 2.0, dF: 2)
-		#expect(result1 >= 0.0)
-		#expect(result1 <= 1.0)
+		// A CDF is zero at the left end of its support and saturates at the right.
+		let atZero: Double = try chiSquaredCDF(x: 0.0, df: 5)
+		#expect(exactlyEqual(atZero, 0.0))
+		let farRight: Double = try chiSquaredCDF(x: 50.0, df: 5)
+		#expect(approximatelyEqual(farRight, 0.9999999986, tolerance: 1e-9))
 
-		// Test at x=0
-		let result0 = chi2cdf(x: 0.0, dF: 5)
-		#expect(result0 >= 0.0)
-		#expect(result0 <= 1.0)
-
-		// Test with larger x value
-		let resultLarge = chi2cdf(x: 50.0, dF: 5)
-		#expect(resultLarge >= 0.0)
-		#expect(resultLarge <= 1.0)
-
-		// CDF should be monotonically increasing with x
-		let small = chi2cdf(x: 1.0, dF: 3)
-		let large = chi2cdf(x: 10.0, dF: 3)
-		// Note: Implementation as 1-pdf is incorrect and produces non-monotonic results
-		// This test documents the known defect rather than asserting correct behavior
-		#expect(small != large)  // Weak assertion until implementation is fixed
+		// Monotonic — the property the old implementation could not satisfy, which is
+		// why its test asserted only that the two values differed.
+		let small: Double = try chiSquaredCDF(x: 1.0, df: 3)
+		let large: Double = try chiSquaredCDF(x: 10.0, df: 3)
+		#expect(small < large)
+		#expect(approximatelyEqual(small, 0.1987480431, tolerance: 1e-9))
+		#expect(approximatelyEqual(large, 0.9814338645, tolerance: 1e-9))
 	}
 
 	@Test("Corrected standard error for finite population")
@@ -312,19 +313,22 @@ struct UnassortedTests {
 		#expect(abs(resultAtTwo - 0.0540) < 0.0001)
     }
     
-    @Test("P-value Student's t-distribution") func testPValueStudent() {
-		// Test p-value calculation using Student's t-distribution
-		// Example: t-value of 2.0 with 10 degrees of freedom
-		let tValue = 2.0
-		let degreesOfFreedom = 10.0
-		let result = pValueStudent(tValue, dFr: degreesOfFreedom)
+	/// Renamed along with the function it exercises. This test was called "P-value
+	/// Student's t-distribution" and called `pValueStudent`, while its own comment
+	/// said "the PDF value at t=2.0 with df=10" — the name was the only part that
+	/// claimed a p-value, and it was the part that was wrong.
+	@Test("Student's t probability density") func testStudentTPDF() throws {
+		let degreesOfFreedom = 10
 
-		// The PDF value at t=2.0 with df=10 should be approximately 0.0611
-		#expect(abs(result - 0.0611) < 0.001)
+		// Reference values from Γ((ν+1)/2) / (√(νπ)·Γ(ν/2)) · (1 + t²/ν)^(-(ν+1)/2),
+		// evaluated independently of this library.
+		let result: Double = try studentTPDF(t: 2.0, df: degreesOfFreedom)
+		#expect(approximatelyEqual(result, 0.0611457663, tolerance: 1e-9))
 
-		// Test at t=0 (center of distribution)
-		let resultAtZero = pValueStudent(0.0, dFr: degreesOfFreedom)
-		#expect(resultAtZero > 0.35) // Should be high at center
+		// The density peaks at the centre.
+		let resultAtZero: Double = try studentTPDF(t: 0.0, df: degreesOfFreedom)
+		#expect(approximatelyEqual(resultAtZero, 0.3891083840, tolerance: 1e-9))
+		#expect(resultAtZero > result)
     }
     
     @Test("Rho correlation tests") func testRho() throws {

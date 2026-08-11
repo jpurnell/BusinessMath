@@ -7,6 +7,7 @@
 
 import Testing
 import Numerics
+import TestSupport
 @testable import BusinessMath
 
 @Suite("t Distribution Tests")
@@ -27,28 +28,34 @@ struct TDistributionTests {
 		#expect(abs(tStatDefault - 1.0) < 1e-6) // (1 - 0) / 1
 	}
 
-	@Test("pValueStudent is within (0,1)")
-	func pValue_bounds() throws {
-		let tValue = 2.0
-		let dF = 10.0
-		let pVal = pValueStudent(tValue, dFr: dF)
-		#expect(pVal > 0.0)
-		#expect(pVal < 1.0)
+	// These three pinned real properties of the t density and were only ever named
+	// after a p-value, so they moved to `studentTPDF` rather than being deleted with
+	// `pValueStudent`. Note the density is bounded above by its own peak, not by 1 —
+	// "within (0,1)" was true here by accident of ν, not by definition.
+
+	@Test("studentTPDF is a positive density bounded by its peak")
+	func density_bounds() throws {
+		let value: Double = try studentTPDF(t: 2.0, df: 10)
+		let peak: Double = try studentTPDF(t: 0.0, df: 10)
+		#expect(value > 0.0)
+		#expect(value < peak)
 	}
 
-	@Test("pValueStudent at t=0 is higher than at t=2 (PDF peak at center)")
-	func pValue_center_higher() throws {
-		let dF = 10.0
-		let pValAtZero = pValueStudent(0.0, dFr: dF)
-		let pValAtTwo = pValueStudent(2.0, dFr: dF)
-		#expect(pValAtZero > pValAtTwo)
+	@Test("studentTPDF at t=0 is higher than at t=2 (density peaks at centre)")
+	func density_center_higher() throws {
+		let atZero: Double = try studentTPDF(t: 0.0, df: 10)
+		let atTwo: Double = try studentTPDF(t: 2.0, df: 10)
+		#expect(atZero > atTwo)
 	}
 
-	@Test("pValueStudent with large df remains within (0,1)")
-	func pValue_large_df() throws {
-		let tValue = 2.0
-		let pValLargeDf = pValueStudent(tValue, dFr: 100.0)
-		#expect(pValLargeDf > 0.0)
-		#expect(pValLargeDf < 1.0)
+	@Test("studentTPDF with large df approaches the standard normal density")
+	func density_large_df() throws {
+		// As ν → ∞ the t density tends to the standard normal, which is the property
+		// worth asserting at df = 100 — the old test only checked the value was
+		// inside (0,1), which every df satisfies and so tested nothing about df.
+		let atTwo: Double = try studentTPDF(t: 2.0, df: 100)
+		let normalAtTwo = Double.exp(-2.0) / Double.sqrt(2.0 * Double.pi)
+		#expect(atTwo > 0.0)
+		#expect(approximatelyEqual(atTwo, normalAtTwo, tolerance: 2e-3))
 	}
 }
