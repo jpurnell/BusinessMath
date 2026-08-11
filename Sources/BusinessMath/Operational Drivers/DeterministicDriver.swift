@@ -101,6 +101,25 @@ public struct DeterministicDriver<T: Real & Sendable>: Driver, Sendable {
 	}
 }
 
+// MARK: - Seeded Sampling
+
+extension DeterministicDriver: SeedableDriver {
+	/// Returns the fixed value, consuming nothing from `generator`.
+	///
+	/// A fixed value is reproducibility in its strongest form: it is the same on every run
+	/// under every seed. The generator is left untouched, so a deterministic operand inside
+	/// a seeded composite does not shift the stream the probabilistic operands draw from —
+	/// which is what lets `SumDriver(lhs: fixedCost, rhs: variableCost)` be seeded at all.
+	///
+	/// - Parameters:
+	///   - period: The time period (ignored for deterministic drivers).
+	///   - generator: The random source (not read).
+	/// - Returns: The fixed value.
+	public func sample(for period: Period, using generator: inout Xoshiro256StarStar) throws -> T {
+		return value
+	}
+}
+
 // MARK: - Convenience Extensions
 
 extension DeterministicDriver {

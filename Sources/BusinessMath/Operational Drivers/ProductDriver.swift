@@ -132,6 +132,34 @@ public struct ProductDriver<T: Real & Sendable>: Driver, Sendable {
 	}
 }
 
+// MARK: - Seeded Sampling
+
+extension ProductDriver: SeedableDriver {
+	/// Whether both operands can honor a seed.
+	///
+	/// A product is reproducible exactly when both of its operands are. Like ``SumDriver``,
+	/// this is a stored-value check rather than a conditional conformance, because the
+	/// operands are erased to ``AnyDriver`` at initialization.
+	public var supportsSeeding: Bool { lhs.supportsSeeding && rhs.supportsSeeding }
+
+	/// Generates a sample by multiplying two seeded samples, both drawn from `generator`.
+	///
+	/// The left operand is drawn first, then the right, so the stream a given seed produces
+	/// is stable across runs.
+	///
+	/// - Parameters:
+	///   - period: The time period for which to generate a value.
+	///   - generator: The random source.
+	/// - Returns: The product of the two seeded driver samples.
+	/// - Throws: `SimulationError.seedingUnsupported`, naming the operand that could not
+	///   honor the seed.
+	public func sample(for period: Period, using generator: inout Xoshiro256StarStar) throws -> T {
+		let left = try lhs.sample(for: period, using: &generator)
+		let right = try rhs.sample(for: period, using: &generator)
+		return left * right
+	}
+}
+
 // MARK: - Convenience Operators
 
 extension Driver {

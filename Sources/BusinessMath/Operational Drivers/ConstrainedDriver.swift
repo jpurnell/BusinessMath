@@ -143,6 +143,48 @@ public struct ConstrainedDriver<Base: Driver>: Driver, Sendable where Base.Value
 	}
 }
 
+// MARK: - Seeded Sampling
+
+/// A constrained driver is seedable exactly when its base driver is.
+///
+/// This is the one composite in the library that can say so in the type system rather than
+/// at run time: ``ConstrainedDriver`` stores its base unerased, as the generic parameter
+/// `Base`, so the conformance can be conditional. ``SumDriver`` and ``ProductDriver`` erase
+/// their operands to ``AnyDriver`` and have to check at run time instead.
+///
+/// A constraint is a pure function of the sampled value, so applying one to a reproducible
+/// draw leaves it reproducible — clamping never introduces randomness of its own.
+extension ConstrainedDriver: SeedableDriver where Base: SeedableDriver {
+	/// Whether the base driver can honor a seed.
+	///
+	/// The conditional conformance already establishes that `Base` *has* a seeded path;
+	/// this forwards the base's own run-time answer, which matters when the base is a
+	/// ``ProbabilisticDriver`` over a distribution that is not seedable.
+	public var supportsSeeding: Bool { base.supportsSeeding }
+
+	/// Samples the base driver from `generator` and applies the constraint.
+	///
+	/// - Parameters:
+	///   - period: The time period for which to generate a value.
+	///   - generator: The random source.
+	/// - Returns: The constrained value.
+	/// - Throws: `SimulationError.seedingUnsupported` when the base driver cannot honor
+	///   the seed.
+	///
+	/// ## Example
+	/// ```swift
+	/// let growth = ProbabilisticDriver<Double>.normal(name: "Growth", mean: 0.0, stdDev: 1.0)
+	/// let bounded = growth.clamped(min: -0.5, max: 0.5)
+	///
+	/// var generator = Xoshiro256StarStar(seed: 8)
+	/// let value = try bounded.sample(for: quarter, using: &generator)
+	/// ```
+	public func sample(for period: Period, using generator: inout Xoshiro256StarStar) throws -> Base.Value {
+		let rawValue = try base.sample(for: period, using: &generator)
+		return constraint(rawValue)
+	}
+}
+
 // MARK: - Convenience Extensions
 
 extension Driver where Value: BinaryFloatingPoint {
