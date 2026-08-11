@@ -45,15 +45,17 @@ import TestSupport  // identical, exactlyEqual, approximatelyEqual
 ///
 /// | tolerance | used for | justification |
 /// |---|---|---|
-/// | `1e-15` abs | A&S 26.1 CDF values | the table prints 15 decimals, so the entry itself carries ±5e-16; `Double` ulp near 1 is 2.2e-16. Measured worst case here: **1.1e-16**. |
+/// | `1e-15` abs | A&S 26.1 CDF values | the table prints 15 decimals, so the entry itself carries ±5e-16; `Double` ulp near 1 is 2.2e-16. Measured worst case here: **4.4e-16**, at `x = 3.5`, and it is the table's truncation rather than the code's error — the same 4.4e-16 before and after the §2.1 fix. |
 /// | `1e-9` abs | A&S 26.2 quantiles | the table prints 9 decimals; this is the reference's precision, not the code's. Measured worst case: **4.4e-16**. |
 /// | `1e-14` abs | extended-precision quantiles, \|z\| ≤ 4 | `inverseNormalCDF`'s documented worst case is 1.8e-15 (2 ulp) over `1e-12 ≤ p ≤ 1-1e-12`; 1e-14 leaves ~5× for cross-platform `erfc`/`exp` ulp drift (Darwin vs Linux libm). |
-/// | `1e-16` abs | `normalCDF` absolute accuracy, all `x` | `(1 + erf(x/√2))/2` forms `1 + erf` where `erf → -1`, so the absolute error is bounded by half an ulp at 1, ≈ 5.6e-17, *however small the result is*. Measured worst case over the whole sweep: **2.9e-17**. |
-/// | `1e-15` rel | `normalCDF` relative accuracy, `Φ(x) ≥ 1e-3` | follows from the 1e-16 absolute bound. |
+/// | `1e-16` abs | `normalCDF` absolute accuracy, all `x` | held for the old `(1 + erf(x/√2))/2` because `1 + erf` bounds the absolute error at half an ulp at 1, ≈ 5.6e-17, *however small the result is* — measured 2.8e-17. It holds more comfortably for the `erfc(-x/√2)/2` form now in place, which is relatively accurate: measured **6.9e-18**. |
+/// | `1e-13` rel | `normalCDF` relative accuracy in the lower tail | the bound §2.1 said the fix had to make true, carried over unchanged from the `withKnownIssue` it used to sit inside. Measured worst case to `x = -8`: **6.5e-15**. |
 ///
 /// No tolerance in this file was chosen by loosening one that failed. Where the
-/// library disagrees with the reference the test is marked `withKnownIssue` with
-/// the measured magnitude, so that fixing the defect makes the marker fail.
+/// library disagreed with the reference the test was marked `withKnownIssue` with
+/// the measured magnitude, so that fixing the defect made the marker fail. Three
+/// such markers — §2.1's two `normalCDF` tail claims and the duplicate quantile —
+/// were removed when the defects were fixed, not when they became inconvenient.
 @Suite("Normal CDF and quantile vs published references")
 struct NormalReferenceTests {
 
@@ -336,10 +338,15 @@ struct NormalReferenceTests {
 
 	@Test("normalCDF's absolute error is under 1e-16 everywhere, including the far tail")
 	func lowerTailAbsoluteAccuracy() {
-		// This is the claim that survives §2.1 being fixed, so it is asserted
-		// plainly rather than marked. `(1 + erf(x/√2))/2` forms `1 + erf` where
-		// erf → -1, so whatever cancels, the absolute error cannot exceed about
-		// half an ulp at 1 (5.6e-17). Measured worst case below: 2.9e-17.
+		// The claim that held before §2.1 was fixed and still holds after, which is
+		// why it was asserted plainly rather than marked. The old
+		// `(1 + erf(x/√2))/2` formed `1 + erf` where erf → -1, so the absolute error
+		// could not exceed about half an ulp at 1 (5.6e-17) however small the result
+		// was — it was the *relative* error that was unbounded. Measured worst case
+		// then: 2.8e-17. The `erfc(-x/√2)/2` form now in place is relatively
+		// accurate, so its absolute error here is smaller still: 6.9e-18, and it
+		// falls away with the tail instead of staying flat (3.8e-30 at z = -8,
+		// against the sum form's 1.1e-17).
 		let cases: [(z: Double, phi: Double)] = [
 			(-1.0, 0.15865525393145705),
 			(-2.0, 0.022750131948179207),
@@ -359,116 +366,186 @@ struct NormalReferenceTests {
 		}
 	}
 
-	@Test("normalCDF's relative error in the lower tail (TrustPlan §2.1)")
-	func lowerTailRelativeAccuracyIsPoor() {
-		// TrustPlan §2.1: `(1 + erf(x/√2))/2` cancels catastrophically for negative
-		// x. `erfc(-x/√2)/2` computes the same quantity to ~1e-15 relative. This
-		// test records the gap; it does not close it — closing it is §2.1's own
-		// work, and it moves expectations across the whole suite.
+	@Test("normalCDF holds relative precision in the lower tail (TrustPlan §2.1)")
+	func lowerTailRelativeAccuracy() {
+		// TrustPlan §2.1, now closed. `(1 + erf(x/√2))/2` cancelled catastrophically
+		// for negative x: `erf(x/√2)` is `-1 + ε` there, and adding 1 discards every
+		// bit of ε below the ulp of 1, so the answer could only land on a multiple of
+		// 1.1e-16 however small the true value was. `erfc(-x/√2)/2` is the same
+		// quantity by the identity `erfc(z) = 1 - erf(z)` and never forms the
+		// cancelling sum.
 		//
-		// Measured today, relative error against the arbitrary-precision reference:
+		// Relative error against the arbitrary-precision reference, before and after:
 		//
-		//   z = -5.0        Φ = 2.87e-07   rel = 3.9e-11
-		//   z = -6.0        Φ = 9.87e-10   rel = 1.3e-10
-		//   z = -7.0        Φ = 1.28e-12   rel = 2.3e-06
-		//   z = -7.0344838  Φ = 1.00e-12   rel = 2.2e-05   <- the figure in §2.1
-		//   z = -8.0        Φ = 6.22e-16   rel = 1.8e-02
+		//   z = -5.0        Φ = 2.87e-07   3.9e-11  ->  2.0e-15
+		//   z = -6.0        Φ = 9.87e-10   1.3e-10  ->  3.4e-15
+		//   z = -7.0        Φ = 1.28e-12   2.3e-06  ->  1.6e-16
+		//   z = -7.0344838  Φ = 1.00e-12   2.2e-05  ->  6.5e-15   <- the figure in §2.1
+		//   z = -8.0        Φ = 6.22e-16   1.8e-02  ->  5.9e-15
 		//
-		// The pattern is the 1e-16 absolute bound divided by Φ, so the relative
-		// error grows without limit as the tail deepens.
-		let cases: [(z: Double, phi: Double, measuredRelative: Double)] = [
-			(-7.0, 1.279812543885835e-12, 2.31e-6),
-			(-7.034483825301132, 1e-12, 2.22e-5),
-			(-8.0, 6.220960574271782e-16, 1.85e-2)
+		// The old pattern was the 1e-16 absolute bound divided by Φ, so the relative
+		// error grew without limit as the tail deepened. The new one is flat.
+		//
+		// **One reference moved, and it was the reference that was wrong.** The
+		// entry at z = -7.034483825301132 read `1e-12`, on the reasoning that this z
+		// is the quantile of p = 1e-12. It is the quantile of 1e-12 only to within
+		// the rounding of z to a `Double`: Φ at that exact binary z is
+		// 9.9999999999999878e-13, which is 1.2e-14 *relative* away from 1e-12. That
+		// was invisible against a 2.2e-05 error and is the dominant term against a
+		// 6.5e-15 one. The value below is the true Φ at that argument.
+		//
+		// The bound is 1e-13 and not the measured 6.5e-15 for the same reason the
+		// quantile tests leave headroom: `erfc` is a libm entry point and its last
+		// ulp differs between Darwin and Linux. It is *not* a loosened tolerance —
+		// 1e-13 is the value that was already written here, inside `withKnownIssue`,
+		// as the claim this fix had to make true.
+		let cases: [(z: Double, phi: Double)] = [
+			(-5.0, 2.8665157187919391e-7),
+			(-6.0, 9.8658764503769814e-10),
+			(-7.0, 1.2798125438858350e-12),
+			(-7.034483825301132, 9.9999999999999878e-13),
+			(-8.0, 6.2209605742717841e-16)
 		]
 		for entry in cases {
 			let got = normalCDF(x: entry.z)
 			let relative = abs(got - entry.phi) / entry.phi
-			// The upper bound is the measured value with 15% of headroom. It is an
-			// observation of current behaviour, and it stays true if §2.1 improves
-			// the function — an erfc formulation lands four orders below it.
 			#expect(
-				relative < entry.measuredRelative * 1.15,
-				"normalCDF(x: \(entry.z)) relative error \(relative) exceeded the recorded \(entry.measuredRelative)"
+				relative < 1e-13,
+				"normalCDF(x: \(entry.z)) relative error \(relative), reference \(entry.phi), got \(got)"
 			)
-			// And the claim that fails today and must start passing when §2.1 lands.
-			withKnownIssue(
-				"TrustPlan §2.1: normalCDF loses relative precision in the lower tail. Measured \(entry.measuredRelative) relative at z = \(entry.z); an erfc(-x/√2)/2 formulation gives ~1e-15. Do not loosen this tolerance — fix the formulation."
-			) {
-				#expect(relative < 1e-13)
-			}
 		}
 	}
 
-	@Test("Round-tripping an exact tail quantile shows the same loss")
-	func roundTripInTheTail() {
-		// normalCDF(inverseNormalCDF(p)) == p is exact in the body (tested above)
-		// and is where §2.1 becomes visible to a caller: the quantile is right to
-		// the last ulp, and the CDF cannot get back.
+	@Test("normalCDF reaches the tail the sum form could not represent at all")
+	func lowerTailDoesNotFlushToZero() {
+		// `(1 + erf(x/√2))/2` returns a hard zero below about x = -8.3, because the
+		// true value drops under half an ulp at 1 and the addition swallows it. That
+		// is not a small error, it is the loss of the entire quantity, and it is the
+		// region a tail-risk model actually asks about. The erfc form carries to the
+		// underflow limit of the type — about x = -38 for `Double`.
 		//
-		// Measured relative error of the round trip:
-		//   p = 1e-06   2.9e-11
-		//   p = 1e-09   2.8e-08
-		//   p = 1e-12   2.2e-05
-		let cases: [(p: Double, measuredRelative: Double)] = [
-			(1e-6, 2.88e-11),
-			(1e-9, 2.83e-8),
-			(1e-12, 2.22e-5)
+		// References are the Mills-ratio continued fraction
+		// `Q(z) = φ(z) / (z + 1/(z + 2/(z + 3/(z + …))))` evaluated in 80-digit
+		// decimal. It converges (unlike the usual asymptotic series) and it
+		// reproduces this file's existing mpmath entries at z = -5, -6, -7 and -8 to
+		// every digit they print, which is what makes it usable as a source here.
+		//
+		// ## Why the bound is 1e-12 and not the measured 1e-13
+		//
+		// Not libm slack — arithmetic. `normalCDF` forms `x/√2` in `Double` before
+		// `erfc` sees it, and `Q ~ e^(-a²)` in its argument `a`, so a half-ulp error
+		// in `a` becomes a relative error of about `2a·ulp(a)` in the result. That
+		// floor is 3.6e-15 at z = -9 but 1.4e-14 at z = -20 and 7.3e-14 at z = -37,
+		// and no amount of accuracy in `erfc` can go below it without a
+		// double-double argument reduction. Measured, against the floor:
+		//
+		//   z = -9     1.7e-15   (floor 3.6e-15)
+		//   z = -10    8.9e-15   (floor 3.5e-15)
+		//   z = -20    3.5e-14   (floor 1.4e-14)
+		//   z = -37    9.8e-14   (floor 7.3e-14)
+		//
+		// A tighter bound here would be pinning the last ulp of one platform's
+		// `erfc` at an argument where the input itself is only known to 7e-14.
+		let cases: [(z: Double, phi: Double)] = [
+			(-9.0, 1.1285884059538406e-19),
+			(-10.0, 7.6198530241605261e-24),
+			(-20.0, 2.7536241186062337e-89),
+			(-37.0, 5.7255712225245768e-300)
 		]
 		for entry in cases {
-			let back = normalCDF(x: inverseNormalCDF(p: entry.p))
-			let relative = abs(back - entry.p) / entry.p
+			let got = normalCDF(x: entry.z)
+			#expect(got > 0, "normalCDF(x: \(entry.z)) = \(got), which is the flush-to-zero §2.1 describes")
 			#expect(
-				relative < entry.measuredRelative * 1.15,
-				"round trip at p = \(entry.p) returned \(back), relative error \(relative)"
+				abs(got - entry.phi) / entry.phi < 1e-12,
+				"normalCDF(x: \(entry.z)) = \(got), reference \(entry.phi), relative error \(abs(got - entry.phi) / entry.phi)"
 			)
-			withKnownIssue(
-				"TrustPlan §2.1: the round trip loses \(entry.measuredRelative) relative at p = \(entry.p), entirely in normalCDF."
-			) {
-				#expect(relative < 1e-13)
-			}
+		}
+	}
+
+	@Test("Round-tripping an exact tail quantile returns the probability")
+	func roundTripInTheTail() {
+		// normalCDF(inverseNormalCDF(p)) == p is exact in the body (tested above)
+		// and this is where §2.1 was visible to a caller: the quantile was right to
+		// the last ulp, and the CDF could not get back. The loss was entirely in
+		// normalCDF, so it went away when the formulation did — `inverseNormalCDF`
+		// was not touched.
+		//
+		// Relative error of the round trip, before and after:
+		//   p = 1e-06   2.9e-11  ->  4.0e-15
+		//   p = 1e-09   2.8e-08  ->  7.0e-15
+		//   p = 1e-12   2.2e-05  ->  5.3e-15
+		//   p = 1e-15   8.0e-04  ->  1.2e-14
+		//   p = 1e-20   1.0e+00  ->  9.3e-15   (the old form returned a flat zero)
+		//   p = 1e-30   1.0e+00  ->  2.8e-14
+		//
+		// The last two are the interesting ones: a relative error of exactly 1.0 is
+		// what "returned zero" looks like, and 1e-20 is inside the range
+		// `inverseNormalCDF` documents itself as accurate over.
+		//
+		// Bound 1e-13, as in `lowerTailRelativeAccuracy`. Below p = 1e-15 the
+		// argument-rounding floor described in `lowerTailDoesNotFlushToZero` applies
+		// to the return leg as well, which is why 1e-30 sits an order above the rest.
+		let cases: [Double] = [1e-6, 1e-9, 1e-12, 1e-15, 1e-20, 1e-30]
+		for p in cases {
+			let back = normalCDF(x: inverseNormalCDF(p: p))
+			let relative = abs(back - p) / p
+			#expect(
+				relative < 1e-13,
+				"round trip at p = \(p) returned \(back), relative error \(relative)"
+			)
 		}
 	}
 
 	// MARK: - Two implementations of the same function
 
-	/// `inverseNormalCDF` and `zScore(percentile:)` are separate quantile
+	/// `inverseNormalCDF` and `zScore(percentile:)` were separate quantile
 	/// implementations. Comparing them is exactly the test that would have
-	/// exposed the discontinuity.
-	@Test("The two quantile implementations agree in the body")
+	/// exposed the discontinuity; it is also what showed one of them was worse,
+	/// which is why `zScore(percentile:)` now delegates rather than duplicating.
+	@Test("The two quantile entry points agree in the body")
 	func quantileImplementationsAgreeInBody() {
-		// `zScore(percentile:)` — and `normSInv`, which delegates to it — computes
-		// √2·erfInv(2p-1) with two Newton steps against `erf`. `inverseNormalCDF`
-		// uses an Acklam seed with one Halley step against `erfc`. Different code,
-		// same function; in the body they must agree to a few ulp.
+		// `zScore(percentile:)` — and `normSInv`, which delegates to it — computed
+		// √2·erfInv(2p-1) with two Newton steps against `erf`, against
+		// `inverseNormalCDF`'s Acklam seed and one Halley step against `erfc`. In
+		// the body the two agreed to 4.4e-16, which is why the divergence in the
+		// tail (below) was the only thing that gave the second one away.
 		//
-		// Tolerance 1e-15: measured worst case over 0.01 ≤ p ≤ 0.99 is 4.4e-16.
+		// Now that `zScore(percentile:)` delegates, agreement is bit-exact rather
+		// than approximate. The 1e-15 tolerance is kept rather than tightened to
+		// `identical`, because this test's job is to catch a *reintroduced* second
+		// implementation, and one that agrees to 1e-15 in the body is exactly the
+		// kind that would survive a bit test being deleted as too strict.
 		for p in [0.01, 0.025, 0.05, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 0.95, 0.975, 0.99] {
 			let acklam = inverseNormalCDF(p: p)
-			let erfBased = zScore(percentile: p)
+			let shim = zScore(percentile: p)
 			#expect(
-				approximatelyEqual(acklam, erfBased, tolerance: 1e-15),
-				"at p = \(p): inverseNormalCDF gives \(acklam), zScore(percentile:) gives \(erfBased)"
+				approximatelyEqual(acklam, shim, tolerance: 1e-15),
+				"at p = \(p): inverseNormalCDF gives \(acklam), zScore(percentile:) gives \(shim)"
 			)
 		}
 	}
 
-	@Test("In the tail the two implementations diverge, and erfInv is the wrong one")
+	@Test("In the tail the quantile entry points no longer diverge")
 	func quantileImplementationsDivergeInTail() {
 		// Against the arbitrary-precision reference, `inverseNormalCDF` is exact to
-		// the last bit at all three points and `zScore(percentile:)` is not. The
-		// cause is structural: erfInv refines against `erf`, whose argument
-		// saturates at ±1 in the tail, so the Newton correction has nothing left to
-		// work with.
+		// the last bit at all three points and `zScore(percentile:)` was not. The
+		// cause was structural: `erfInv` refined against `erf`, whose value
+		// saturates at ±1 in the tail, so the residual `erf(x) - y` underflowed and
+		// the Newton correction had nothing left to work with. No tolerance could
+		// have fixed that; only the routing.
 		//
-		//   p       reference z          inverseNormalCDF err   zScore(percentile:) err
-		//   1e-06   -4.753424308822899   0.0                    4.6e-12
-		//   1e-09   -5.997807015007687   0.0                    5.1e-09
-		//   1e-12   -7.034483825301132   0.0                    2.1e-06
-		let cases: [(p: Double, z: Double, erfInvError: Double)] = [
-			(1e-6, -4.753424308822899, 4.58e-12),
-			(1e-9, -5.997807015007687, 5.08e-9),
-			(1e-12, -7.034483825301132, 2.14e-6)
+		//   p       reference z          inverseNormalCDF   zScore(percentile:)
+		//   1e-06   -4.753424308822899   0.0                4.6e-12  ->  0.0
+		//   1e-09   -5.997807015007687   0.0                5.1e-09  ->  8.9e-16
+		//   1e-12   -7.034483825301132   0.0                2.1e-06  ->  0.0
+		//
+		// The residual 8.9e-16 at p = 1e-09 is one ulp of z and is `inverseNormalCDF`'s
+		// own, not a difference between the two: both entry points return the same
+		// bits now.
+		let cases: [(p: Double, z: Double)] = [
+			(1e-6, -4.753424308822899),
+			(1e-9, -5.997807015007687),
+			(1e-12, -7.034483825301132)
 		]
 		for entry in cases {
 			// The Acklam/Halley path is correct — asserted, not marked.
@@ -476,17 +553,17 @@ struct NormalReferenceTests {
 				approximatelyEqual(inverseNormalCDF(p: entry.p), entry.z, tolerance: 1e-14),
 				"inverseNormalCDF(p: \(entry.p)) = \(inverseNormalCDF(p: entry.p)), reference \(entry.z)"
 			)
-			let erfBased = zScore(percentile: entry.p)
-			let error = abs(erfBased - entry.z)
+			let shim = zScore(percentile: entry.p)
 			#expect(
-				error < entry.erfInvError,
-				"zScore(percentile: \(entry.p)) error \(error) exceeded the recorded \(entry.erfInvError)"
+				abs(shim - entry.z) < 1e-13,
+				"zScore(percentile: \(entry.p)) = \(shim), reference \(entry.z), error \(abs(shim - entry.z))"
 			)
-			withKnownIssue(
-				"zScore(percentile:) / normSInv / erfInv is a second, less accurate quantile implementation: \(entry.erfInvError) absolute error at p = \(entry.p) where inverseNormalCDF is exact. Route it through inverseNormalCDF rather than loosening this."
-			) {
-				#expect(error < 1e-13)
-			}
+			// And the claim that stops a second implementation being reintroduced
+			// under this name: the shim must be the canonical function, bit for bit.
+			#expect(
+				identical(shim, inverseNormalCDF(p: entry.p)),
+				"zScore(percentile: \(entry.p)) = \(shim) but inverseNormalCDF gives \(inverseNormalCDF(p: entry.p))"
+			)
 		}
 	}
 

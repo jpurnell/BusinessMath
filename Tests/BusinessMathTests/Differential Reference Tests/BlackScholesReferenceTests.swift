@@ -312,53 +312,96 @@ struct BlackScholesReferenceTests {
 		}
 	}
 
-	@Test("Deep out of the money, the price is negative")
-	func deepOutOfTheMoneyPricesGoNegative() {
-		// `S·Φ(d₁) - K·e^(-rT)·Φ(d₂)` subtracts two quantities that are each about
-		// 1e-14 when the option is far enough out of the money, and the difference
-		// is dominated by their rounding. The result is a **negative option price**.
+	@Test("Deep out of the money, the price is small and positive")
+	func deepOutOfTheMoneyPricesStayPositive() {
+		// This test used to be called `deepOutOfTheMoneyPricesGoNegative`, and it
+		// recorded exactly that: `S·Φ(d₁) - K·e^(-rT)·Φ(d₂)` returned a **negative
+		// option price** far out of the money. With K = 60, T = 0.5, r = 3%,
+		// σ = 25%:
 		//
-		// Measured with K = 60, T = 0.5, r = 3%, σ = 25%:
-		//
-		//   S = 8 … 13   call = 0.0        (underflow — defensible)
+		//   S = 8 … 13   call = 0.0        (looked like underflow)
 		//   S = 14       call = -1.12e-15  (negative)
-		//   S = 15       call = +1.93e-15
+		//   S = 225      put  = +6.17e-14
+		//   S = 250      put  = -8.07e-15  (negative)
+		//   S ≥ 275      put  = 0.0
 		//
-		// and the mirror on the put side, with S far above the strike:
+		// The diagnosis written here was cancellation between two near-equal
+		// near-zero terms, and the proposed fix was a clamp at zero in
+		// BlackScholes.swift. **The diagnosis was wrong, and no Black-Scholes code
+		// was changed.** The two Φ values deep out of the money are precisely the
+		// lower tail of the normal CDF, and `normalCDF` was computing that tail as
+		// `(1 + erf(x/√2))/2`, which quantises the answer to multiples of 1.1e-16
+		// however small it truly is (TrustPlan §2.1). Both terms were therefore
+		// rounding noise, and their difference was noise with an arbitrary sign.
 		//
-		//   S = 225      put = +6.17e-14
-		//   S = 250      put = -8.07e-15  (negative)
-		//   S >= 275     put = 0.0
+		// Correcting `normalCDF` to `erfc(-x/√2)/2` fixed the prices as a
+		// consequence. The remaining cancellation is mild — the two terms are only
+		// 48× the price, not 1e16× it — so once the inputs carry full relative
+		// precision the difference does too:
 		//
-		// The magnitude is a rounding error; the *sign* is not. A negative premium
-		// is an arbitrage the model does not admit, and it is the kind of value that
-		// stops being harmless the moment something downstream takes its logarithm —
-		// an implied-volatility solver, or a log-return.
+		//   S = 14   call  -1.12e-15  ->  +1.1226367325332006e-16
+		//   S = 250  put   -8.07e-15  ->  +4.3496311540928126e-16
 		//
-		// The fix is a clamp at zero, or a formulation that does not difference two
-		// near-equal near-zero terms. Either is a change to BlackScholes.swift.
+		// Both agree with a 100-digit reference (Black-Scholes evaluated in decimal
+		// with Φ from the Mills-ratio continued fraction) to 4.2e-15 and 5.4e-15
+		// relative. The S = 8…13 zeros were not underflow either; they are now
+		// 1.9e-30 … 3.0e-18, each correct to ~1e-13.
+		//
+		// A clamp would have hidden this. It would have produced the right sign from
+		// the wrong number, and left every tail-risk figure in the library still
+		// quantised.
 		let call = BlackScholesModel<Double>.price(
 			optionType: .call, spotPrice: 14, strikePrice: 60,
 			timeToExpiry: 0.5, riskFreeRate: 0.03, volatility: 0.25
 		)
-		#expect(call < 0, "recorded behaviour: deep-OTM call price is \(call)")
-		#expect(abs(call) < 1e-14, "the magnitude is rounding-scale: \(call)")
-		withKnownIssue(
-			"BlackScholesModel.price returns a negative call price (\(call)) deep out of the money, from cancellation between S·Φ(d₁) and K·e^(-rT)·Φ(d₂). Clamp at zero rather than widening any bound."
-		) {
-			#expect(call >= 0)
-		}
+		#expect(call > 0, "deep-OTM call price is \(call)")
+		#expect(
+			abs(call - 1.1226367325331959e-16) / 1.1226367325331959e-16 < 1e-12,
+			"deep-OTM call price \(call) against the 100-digit reference 1.1226367325331959e-16"
+		)
 
 		let put = BlackScholesModel<Double>.price(
 			optionType: .put, spotPrice: 250, strikePrice: 60,
 			timeToExpiry: 0.5, riskFreeRate: 0.03, volatility: 0.25
 		)
-		#expect(put < 0, "recorded behaviour: deep-OTM put price is \(put)")
-		#expect(abs(put) < 1e-13, "the magnitude is rounding-scale: \(put)")
-		withKnownIssue(
-			"BlackScholesModel.price returns a negative put price (\(put)) deep out of the money, from the same cancellation."
-		) {
-			#expect(put >= 0)
+		#expect(put > 0, "deep-OTM put price is \(put)")
+		#expect(
+			abs(put - 4.3496311540927894e-16) / 4.3496311540927894e-16 < 1e-12,
+			"deep-OTM put price \(put) against the 100-digit reference 4.3496311540927894e-16"
+		)
+
+		// The sign is the claim worth sweeping, because two sampled points is how
+		// the original defect stayed narrow. Measured out of band over these four
+		// parameter sets at 8,000 points each — spots from 0 to 0.8·K for calls and
+		// K to 9·K for puts — the old formulation produced 311 negative prices
+		// (80, 10, 115, 106) and this one produces none. The sweep below covers the
+		// same intervals at 800 points per set, which is enough to catch a
+		// reintroduction without adding a second of runtime.
+		for (strike, expiry, rate, sigma) in [
+			(100.0, 0.25, 0.05, 0.2),
+			(50.0, 1.0, 0.02, 0.4),
+			(60.0, 0.5, 0.03, 0.25),
+			(1000.0, 2.0, 0.045, 0.15)
+		] {
+			var negatives = 0
+			for step in 1...400 {
+				let spot = strike * 0.002 * Double(step)
+				if BlackScholesModel<Double>.price(
+					optionType: .call, spotPrice: spot, strikePrice: strike,
+					timeToExpiry: expiry, riskFreeRate: rate, volatility: sigma
+				) < 0 { negatives += 1 }
+			}
+			for step in 1...400 {
+				let spot = strike * (1 + 0.02 * Double(step))
+				if BlackScholesModel<Double>.price(
+					optionType: .put, spotPrice: spot, strikePrice: strike,
+					timeToExpiry: expiry, riskFreeRate: rate, volatility: sigma
+				) < 0 { negatives += 1 }
+			}
+			#expect(
+				negatives == 0,
+				"K = \(strike), T = \(expiry), r = \(rate), σ = \(sigma): \(negatives) of 800 prices were negative"
+			)
 		}
 	}
 

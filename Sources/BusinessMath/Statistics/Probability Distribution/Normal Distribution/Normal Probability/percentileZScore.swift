@@ -1,6 +1,6 @@
 //
 //  percentileZScore.swift
-//  
+//
 //
 //  Created by Justin Purnell on 3/21/22.
 //
@@ -17,6 +17,16 @@ import Numerics
 /// - Returns: The percentile corresponding to the given Z-Score.
 ///
 ///     let percentileValue = percentile(zScore: 1.96)
+///
+/// This is the standard normal CDF under another name, so it delegates to
+/// ``normalCDF(x:mean:stdDev:)`` rather than restating the formula. It carried its
+/// own copy of `(1 + erf(z/√2))/2` until that formulation was corrected, which made
+/// it a second implementation with the tail cancellation the canonical one no
+/// longer has. See ``normalCDF(x:mean:stdDev:)`` for the measured accuracy.
+///
+/// The delegation is bit-exact, not merely close: at the default `mean = 0` and
+/// `stdDev = 1` the subtraction and the division are both exact, so this returns
+/// the identical `Double` to `normalCDF(x: z)`.
 public func percentile<T: Real>(zScore z: T) -> T {
-    return (1 + T.erf(z / T.sqrt(2))) / T(2)
+    return normalCDF(x: z)
 }
