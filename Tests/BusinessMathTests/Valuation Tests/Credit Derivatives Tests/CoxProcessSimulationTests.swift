@@ -109,6 +109,7 @@ struct CoxProcessSimulationTests {
         let horizon = 100.0
         let cox = CoxProcess<Double>(meanHazardRate: 0.02, volatility: 0.30)
 
+        // Justification: that every unseeded call is a fresh draw is exactly the claim under test here.
         let draws = (0..<50).map { _ in cox.simulateDefaultTime(horizon: horizon) }
 
         // Censored draws are all exactly `horizon`, so the distribution has an atom there

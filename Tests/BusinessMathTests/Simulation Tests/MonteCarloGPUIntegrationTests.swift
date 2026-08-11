@@ -65,10 +65,14 @@ struct MonteCarloGPUIntegrationTests {
         let bytecode = createAdditionBytecode()
         let iterations = 10_000
 
+        // Seeded: the assertion is a sample mean over 10,000 draws of Normal(100, 10) +
+        // Normal(50, 5), whose stdDev is √125 = 11.18, so the standard error is 0.1118.
+        // The ±2.0 bound around 150 is 17.9 standard errors.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: iterations
+            iterations: iterations,
+            seed: 0x64_71_11_01
         )
 
         #expect(results.count == iterations)
@@ -151,10 +155,15 @@ struct MonteCarloGPUIntegrationTests {
         let bytecode = createRevenueCostsBytecode()
         let iterations = 50_000
 
+        // Seeded: profit = Revenue × Uniform(0.9, 1.1) − Costs has stdDev ≈ 125,964, so
+        // over 50,000 draws the standard error of the mean is ≈563 and the ±100,000 bound
+        // around 300,000 is ≈178 SE. The risk-of-loss assertion is a proportion whose true
+        // value is ≈0.0086 with standard error 0.00041 — the 0.05 ceiling is ≈100 SE away.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: iterations
+            iterations: iterations,
+            seed: 0x64_71_11_02
         )
 
         // Calculate statistics
@@ -224,10 +233,14 @@ struct MonteCarloGPUIntegrationTests {
             (2, 0, 0.0)   // MUL
         ]
 
+        // Seeded: (Normal(100, 10) + Uniform(0.8, 1.2)) × Triangular(50, 100, 70) has mean
+        // ≈7,407 and stdDev ≈1,275, so over 20,000 draws the standard error is ≈9.0. The
+        // [5,000, 15,000] window is ≈267 SE below and ≈842 SE above the mean.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: 20_000
+            iterations: 20_000,
+            seed: 0x64_71_11_03
         )
 
         // Validate results are finite and reasonable
@@ -259,10 +272,13 @@ struct MonteCarloGPUIntegrationTests {
             (2, 0, 0.0)     // MUL
         ]
 
+        // Seeded for reproducibility only: Uniform(5, 5) is degenerate, so the 10.0
+        // assertion holds for every draw. Nothing here could fail by chance.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: 1000
+            iterations: 1000,
+            seed: 0x64_71_11_04
         )
 
         // All results should be exactly 10.0 (5 × 2)

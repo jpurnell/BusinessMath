@@ -13,18 +13,21 @@ import Testing
 // MARK: - Seeded RNG Helper (Financial)
 
 /// A simple seeded random number generator for reproducible financial stress tests.
-/// Marked @unchecked Sendable because stress tests run serialized.
-private final class FinSeededRNG: @unchecked Sendable {
-    // Justification: Tests run serialized; no concurrent access to drand48 state.
+///
+/// This used to call `srand48`/`drand48`. Those are reproducible only as long as nothing
+/// else in the process touches the seed, which is not a property a test can hold: any
+/// other test calling `srand48` moves this stream underneath it. The generator is now
+/// owned by the instance, so the sequence depends on nothing outside this file.
+private struct FinSeededRNG {
+    private var generator: SplitMix64
+
     init(seed: Int) {
-        srand48(seed)
+        generator = SplitMix64(seed: UInt64(bitPattern: Int64(seed)))
     }
 
     /// Returns a uniform random Double in [low, high).
-    func nextDouble(in range: ClosedRange<Double>) -> Double {
-        let low = range.lowerBound
-        let high = range.upperBound
-        return low + (high - low) * drand48()
+    mutating func nextDouble(in range: ClosedRange<Double>) -> Double {
+        Double.random(in: range, using: &generator)
     }
 }
 
@@ -44,7 +47,7 @@ struct FinancialStatementIntegrationStressTests {
 
     @Test("Randomized revenue and cost scenarios - 100 iterations")
     func randomizedRevenueAndCostScenarios() throws {
-        let rng = FinSeededRNG(seed: 42)
+        var rng = FinSeededRNG(seed: 42)
         let periods = quarterlyPeriods(year: 2025)
 
         for i in 0..<100 {
@@ -133,7 +136,7 @@ struct FinancialStatementIntegrationStressTests {
 
     @Test("Ratio consistency with random financial data - 50 iterations")
     func ratioConsistency() throws {
-        let rng = FinSeededRNG(seed: 42)
+        var rng = FinSeededRNG(seed: 42)
         let periods = quarterlyPeriods(year: 2025)
 
         for i in 0..<50 {

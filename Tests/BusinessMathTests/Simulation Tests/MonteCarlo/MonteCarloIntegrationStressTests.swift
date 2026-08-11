@@ -13,32 +13,32 @@ import Testing
 // MARK: - Seeded RNG Helper
 
 /// A simple seeded random number generator for reproducible stress tests.
-/// Uses drand48/srand48 which are seeded globally.
-/// Marked @unchecked Sendable because stress tests run serialized.
-private final class SeededRNG: @unchecked Sendable {
-    // Justification: Tests run serialized; no concurrent access to drand48 state.
+///
+/// This used to call `srand48`/`drand48`. Those are reproducible only as long as nothing
+/// else in the process touches the seed, which is not a property a test can hold: any
+/// other test calling `srand48` moves this stream underneath it. The generator is now
+/// owned by the instance, so the sequence depends on nothing outside this file.
+private struct SeededRNG {
+    private var generator: SplitMix64
+
     init(seed: Int) {
-        srand48(seed)
+        generator = SplitMix64(seed: UInt64(bitPattern: Int64(seed)))
     }
 
     /// Returns a uniform random Double in [0, 1).
-    func nextDouble() -> Double {
-        drand48()
+    mutating func nextDouble() -> Double {
+        Double.random(in: 0.0..<1.0, using: &generator)
     }
 
     /// Returns a uniform random Double in [low, high).
-    func nextDouble(in range: ClosedRange<Double>) -> Double {
-        let low = range.lowerBound
-        let high = range.upperBound
-        return low + (high - low) * drand48()
+    mutating func nextDouble(in range: ClosedRange<Double>) -> Double {
+        Double.random(in: range, using: &generator)
     }
 
     /// Returns a random Int in [low, high].
-    func nextInt(in range: ClosedRange<Int>) -> Int {
-        let low = range.lowerBound
-        let high = range.upperBound
-        guard high > low else { return low }
-        return low + Int(drand48() * Double(high - low + 1))
+    mutating func nextInt(in range: ClosedRange<Int>) -> Int {
+        guard range.upperBound > range.lowerBound else { return range.lowerBound }
+        return Int.random(in: range, using: &generator)
     }
 }
 
@@ -51,7 +51,7 @@ struct MonteCarloIntegrationStressTests {
 
     @Test("Randomized distribution types stress test - 100 iterations")
     func randomizedDistributionTypes() throws {
-        let rng = SeededRNG(seed: 42)
+        var rng = SeededRNG(seed: 42)
         let simulationIterations = 1000
 
         for i in 0..<100 {
@@ -121,7 +121,7 @@ struct MonteCarloIntegrationStressTests {
 
     @Test("Randomized multi-input models stress test - 50 iterations")
     func randomizedMultiInputModels() throws {
-        let rng = SeededRNG(seed: 42)
+        var rng = SeededRNG(seed: 42)
         let simulationIterations = 1000
 
         for i in 0..<50 {

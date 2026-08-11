@@ -85,11 +85,15 @@ struct GPUDebugTests {
             print("  [\(i)] opcode=\(op.opcode), arg1=\(op.arg1), arg2=\(op.arg2)")
         }
 
-        // Run simulation
+        // Run simulation. Seeded: the assertion below is a sample mean over 1,000 draws
+        // of Normal(1M, 100K) − Normal(700K, 50K), whose stdDev is √(1e10 + 2.5e9) ≈
+        // 111,803, so the standard error is ≈3,536. The ±100,000 bound around 300,000 is
+        // 28 standard errors — wide, but it was measuring an unpinned stream.
         let results = try gpuDevice.runSimulation(
             distributions: distributions,
             modelBytecode: bytecode,
-            iterations: 1000
+            iterations: 1000,
+            seed: 0x6D_B0_D3_11
         )
 
         // Check first few results

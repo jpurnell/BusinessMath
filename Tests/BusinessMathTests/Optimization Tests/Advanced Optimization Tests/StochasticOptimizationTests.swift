@@ -71,8 +71,11 @@ import Testing
 			DiscreteScenario(name: "Bear", probability: 0.20, parameters: ["stock_return": -0.05, "bond_return": 0.06])
 		]
 
+		// Seeded for reproducibility only: the three scenarios are enumerated explicitly,
+		// so nothing here is sampled and every assertion holds for any draw.
 		let optimizer = try StochasticOptimizer<VectorN<Double>>(
 			numberOfSamples: scenarios.count,
+			seed: 0x0D_15_C2_E7,
 			maxIterations: 500,
 			tolerance: 1e-5
 		)

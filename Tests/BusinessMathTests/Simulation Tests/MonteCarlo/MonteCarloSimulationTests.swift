@@ -172,9 +172,11 @@ struct MonteCarloSimulationTests {
 		let feed1000 = SamplerFeed(values: values1000)
 		let feed10000 = SamplerFeed(values: values10000)
 
+		// Justification: the inputs are custom samplers over precomputed feeds, which the seeded path rejects with seedingUnsupported.
 		var simulation1000 = MonteCarloSimulation(iterations: values1000.count) { inputs in
 			return inputs[0]
 		}
+		// Justification: the inputs are custom samplers over precomputed feeds, which the seeded path rejects with seedingUnsupported.
 		var simulation10000 = MonteCarloSimulation(iterations: values10000.count) { inputs in
 			return inputs[0]
 		}
@@ -201,6 +203,7 @@ struct MonteCarloSimulationTests {
 	func monteCarloSimulationCustomSampler() throws {
 			// No `seed:`: the input is a custom sampler (constant 5.0), which is both
 			// already deterministic and rejected by the seeded path.
+		// Justification: the only input is a constant custom sampler, already deterministic and rejected by the seeded path.
 		var simulation = MonteCarloSimulation(iterations: 1_000) { inputs in
 			return inputs[0] * 2.0
 		}
@@ -349,9 +352,11 @@ struct MonteCarloSimulationTests {
 		let feed1 = SamplerFeed(values: values1)
 		let feed2 = SamplerFeed(values: values2)
 
+		// Justification: both seeds live in the precomputed feeds below, which the seeded path rejects as custom samplers.
 		var simulation1 = MonteCarloSimulation(iterations: iterations) { inputs in
 			return inputs[0]
 		}
+		// Justification: both seeds live in the precomputed feeds below, which the seeded path rejects as custom samplers.
 		var simulation2 = MonteCarloSimulation(iterations: iterations) { inputs in
 			return inputs[0]
 		}
@@ -375,6 +380,7 @@ struct MonteCarloSimulationTests {
 			// Test that model receives inputs in the order they were added.
 			// No `seed:`: both inputs are constant custom samplers — deterministic already,
 			// and rejected by the seeded path.
+		// Justification: both inputs are constant custom samplers, already deterministic and rejected by the seeded path.
 		var simulation = MonteCarloSimulation(iterations: 100) { inputs in
 				// Return difference to verify order
 			return inputs[0] - inputs[1]
@@ -436,6 +442,7 @@ struct MonteCarloSimulationAdditionalTests {
 		let inputA1 = SimulationInput(name: "A") { feedA1.next() }
 		let inputB1 = SimulationInput(name: "B") { feedB1.next() }
 		
+		// Justification: determinism comes from the precomputed feeds, and the seeded path rejects custom-sampler inputs.
 		var sim1 = MonteCarloSimulation(iterations: iterations) { inputs in
 			inputs[0] + inputs[1]
 		}
@@ -449,6 +456,7 @@ struct MonteCarloSimulationAdditionalTests {
 		let inputA2 = SimulationInput(name: "A") { feedA2.next() }
 		let inputB2 = SimulationInput(name: "B") { feedB2.next() }
 		
+		// Justification: determinism comes from the precomputed feeds, and the seeded path rejects custom-sampler inputs.
 		var sim2 = MonteCarloSimulation(iterations: iterations) { inputs in
 			inputs[0] + inputs[1]
 		}
@@ -473,7 +481,7 @@ struct MonteCarloSimulationAdditionalTests {
 		]
 		let sim = MonteCarloSimulation()
 		#expect(throws: SimulationError.self) {
-			_ = try sim.runCorrelated(inputs: [x, y], correlationMatrix: corr, iterations: 1000) { samples in
+			_ = try sim.runCorrelated(inputs: [x, y], correlationMatrix: corr, iterations: 1000, seed: 0x51_9C_1A_11) { samples in
 				samples[0] + samples[1]
 			}
 		}

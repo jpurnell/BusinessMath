@@ -68,7 +68,14 @@ import Glibc
 		// The parameter is the scale parameter σ, not the distribution mean
 		// The actual mean of a Rayleigh(σ) distribution is σ × sqrt(π/2) ≈ 1.253σ
 		let sigma = 5.0
-		let result: Double = distributionRayleigh(scale: sigma)
+		// Seeded. `distributionRayleigh`'s `seed:` is the uniform that sets the radius,
+		// not an RNG seed, so a constant would return one repeated variate; the draws come
+		// from a locally seeded stream. `result >= 0` holds for every draw — this is
+		// reproducibility hygiene. The empirical-mean bound below is the statistical one:
+		// Rayleigh(5) has mean 6.2666 and stdDev 3.2757, so over 1,000 draws the standard
+		// error is 0.1036 and the ±20% tolerance (±1.253) is 12.1 standard errors.
+		var rng = SplitMix64(seed: 0xAA_1E_16_04)
+		let result: Double = distributionRayleigh(scale: sigma, seed: Double.random(in: 0.0..<1.0, using: &rng))
 
 		// Rayleigh distribution should produce non-negative values
 		#expect(result >= 0.0, "Rayleigh values must be non-negative")
@@ -76,7 +83,7 @@ import Glibc
 		// Test multiple samples to ensure reasonable distribution
 		var samples: [Double] = []
 		for _ in 0..<1000 {
-			let sample: Double = distributionRayleigh(scale: sigma)
+			let sample: Double = distributionRayleigh(scale: sigma, seed: Double.random(in: 0.0..<1.0, using: &rng))
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
