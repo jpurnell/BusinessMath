@@ -321,13 +321,28 @@ struct MINLPIntegrationTests {
         #expect(abs(result.objectiveValue - 4.0) < 1e-3, "Expected obj = 4, got \(result.objectiveValue)")
     }
 
-    // MARK: - Performance Tests
+    // MARK: - Tractability
 
-    @Test("MINLP: Small problem completes quickly")
-    func testPerformanceSmallProblem() throws {
+    /// Renamed from "Small problem completes quickly", which was never what it checked.
+    ///
+    /// Nothing here read a clock. The only thing the old name's claim rested on was the
+    /// solver's own `timeLimit: 10.0`, and `.timeLimit` was in the list of accepted
+    /// statuses — so the machine running out of budget was a *pass*. A slow run and a
+    /// correct run were indistinguishable, and the constraint check below sat behind
+    /// `if result.status == .optimal`, so a timeout asserted nothing at all. The failure
+    /// mode is worse than a flake: a red test gets looked at, a green one that checked
+    /// nothing does not.
+    ///
+    /// The real claim is tractability — a three-variable quadratic with one linear
+    /// constraint reaches the proven optimum inside a small node budget. `maxNodes` is
+    /// the machine-independent way to say that, so the clock is removed entirely and
+    /// `.optimal` is the only accepted status. The optimum is x = y = z = 1, objective 3;
+    /// asserting it unconditionally is what makes the status assertion worth having.
+    @Test("MINLP: Small problem reaches the optimum within a small node budget")
+    func testSmallProblemReachesOptimumWithinNodeBudget() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 1000,
-            timeLimit: 10.0,  // Should complete well under 10 seconds
+            timeLimit: unboundedSolverTimeLimit,
             relaxationSolver: NonlinearRelaxationSolver()
         )
 
@@ -351,13 +366,15 @@ struct MINLPIntegrationTests {
             integerSpec: .allInteger(dimension: 3)
         )
 
-        #expect(result.status == .optimal || result.status == .nodeLimit || result.status == .timeLimit)
+        #expect(result.status == .optimal,
+            "1000 nodes should prove optimality here; got \(result.status)")
 
-        // If optimal, verify constraint
-        if result.status == .optimal {
-            let sum = result.integerSolution[0] + result.integerSolution[1] + result.integerSolution[2]
-            #expect(sum >= 3, "Constraint violated: sum = \(sum)")
-        }
+        let sum = result.integerSolution[0] + result.integerSolution[1] + result.integerSolution[2]
+        #expect(sum >= 3, "Constraint violated: sum = \(sum)")
+        // Minimising a sum of squares under x + y + z >= 3 spreads the mass evenly:
+        // (1, 1, 1) at 3 beats any (3, 0, 0) at 9.
+        #expect(abs(result.objectiveValue - 3.0) < 1e-3,
+            "Expected obj = 3 at (1, 1, 1), got \(result.objectiveValue)")
     }
 
     // MARK: - Correctness Validation
