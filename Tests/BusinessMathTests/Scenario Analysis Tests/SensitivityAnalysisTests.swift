@@ -518,4 +518,237 @@ struct ScenarioSensitivityAnalysisTests {
 		let range = sensitivity.inputValues.last! - sensitivity.inputValues.first!
 		#expect(abs(range - 20.0) < 1e-6)
 	}
+
+	// MARK: - Unknown Driver Names
+
+	@Test("A misspelled driver name is rejected, not returned as a flat curve")
+	func sensitivityRejectsUnknownDriverName() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		let baseRevenue = DeterministicDriver(name: "Revenue", value: 1000.0)
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Revenue"] = AnyDriver(baseRevenue)
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		let builder = createSimpleBuilder(entity: entity, periods: periods)
+
+		do {
+			// "Revenu" is a typo. Before this was checked, the driver was *inserted*
+			// into the overrides, the builder did not recognise the name and ignored
+			// it, and every one of the nine points came back at the base case value.
+			// A flat sensitivity curve is not a missing answer — it reads as the
+			// finding that this driver does not matter.
+			let sensitivity = try runSensitivity(
+				baseCase: baseScenario,
+				entity: entity,
+				periods: periods,
+				inputDriver: "Revenu",
+				inputRange: 800.0...1200.0,
+				steps: 9,
+				builder: builder
+			) { projection in
+				let q1 = Period.quarter(year: 2025, quarter: 1)
+				return projection.incomeStatement.netIncome[q1]!
+			}
+			// If this ever stops throwing, at minimum it must not have produced the
+			// silent flat curve that motivated the check.
+			let distinct = Set(sensitivity.outputValues.map { $0.description })
+			Issue.record(
+				"Expected runSensitivity to reject the unknown driver name; got \(distinct.count) distinct output(s) across 9 points"
+			)
+		} catch let error as BusinessMathError {
+			guard case .invalidDriver(let name, let reason) = error else {
+				Issue.record("Expected .invalidDriver, got \(error)")
+				return
+			}
+			#expect(name == "Revenu")
+			#expect(error.code == "E200")
+			// The message must name the drivers that do exist, so the typo is fixable
+			// from the error alone.
+			#expect(reason.contains("Revenue"))
+		}
+	}
+
+	@Test("An unknown driver name is rejected before any projection is run")
+	func sensitivityRejectsUnknownDriverBeforeAnyWork() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Revenue"] = AnyDriver(DeterministicDriver(name: "Revenue", value: 1000.0))
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		// A builder that refuses to run. If the name check happens first the caller
+		// sees .invalidDriver; if a projection is attempted first the caller has paid
+		// for one to learn about a typo.
+		let refusingBuilder: ScenarioRunner.StatementBuilder = { _, _ in
+			throw SensitivityBuilderRan()
+		}
+
+		do {
+			_ = try runSensitivity(
+				baseCase: baseScenario,
+				entity: entity,
+				periods: periods,
+				inputDriver: "Revenu",
+				inputRange: 800.0...1200.0,
+				steps: 5,
+				builder: refusingBuilder
+			) { projection in
+				projection.incomeStatement.netIncome[periods[0]]!
+			}
+			Issue.record("Expected runSensitivity to throw")
+		} catch is SensitivityBuilderRan {
+			Issue.record("The typo should be caught before any projection is run")
+		} catch let error as BusinessMathError {
+			guard case .invalidDriver(let name, _) = error else {
+				Issue.record("Expected .invalidDriver, got \(error)")
+				return
+			}
+			#expect(name == "Revenu")
+			#expect(error.code == "E200")
+		}
+	}
+
+	@Test("A known driver name is still accepted, and still moves the output")
+	func sensitivityAcceptsKnownDriverName() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Revenue"] = AnyDriver(DeterministicDriver(name: "Revenue", value: 1000.0))
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		let builder = createSimpleBuilder(entity: entity, periods: periods)
+
+		let sensitivity = try runSensitivity(
+			baseCase: baseScenario,
+			entity: entity,
+			periods: periods,
+			inputDriver: "Revenue",
+			inputRange: 800.0...1200.0,
+			steps: 9,
+			builder: builder
+		) { projection in
+			projection.incomeStatement.netIncome[periods[0]]!
+		}
+
+		// The counterpart to the flat-curve check: a driver the builder does read
+		// produces nine distinct outputs.
+		#expect(Set(sensitivity.outputValues.map { $0.description }).count == 9)
+	}
+
+	@Test("Two-way sensitivity rejects a misspelled first driver")
+	func twoWaySensitivityRejectsUnknownFirstDriver() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Revenue"] = AnyDriver(DeterministicDriver(name: "Revenue", value: 1000.0))
+		baseOverrides["Costs"] = AnyDriver(DeterministicDriver(name: "Costs", value: 600.0))
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		let builder = createSimpleBuilder(entity: entity, periods: periods)
+
+		do {
+			_ = try runTwoWaySensitivity(
+				baseCase: baseScenario,
+				entity: entity,
+				periods: periods,
+				inputDriver1: "Revenu",
+				inputRange1: 800.0...1200.0,
+				steps1: 3,
+				inputDriver2: "Costs",
+				inputRange2: 400.0...800.0,
+				steps2: 3,
+				builder: builder
+			) { projection in
+				projection.incomeStatement.netIncome[periods[0]]!
+			}
+			Issue.record("Expected runTwoWaySensitivity to reject the unknown driver name")
+		} catch let error as BusinessMathError {
+			guard case .invalidDriver(let name, let reason) = error else {
+				Issue.record("Expected .invalidDriver, got \(error)")
+				return
+			}
+			#expect(name == "Revenu")
+			#expect(error.code == "E200")
+			#expect(reason.contains("Revenue"))
+			#expect(reason.contains("Costs"))
+		}
+	}
+
+	@Test("Two-way sensitivity reports both misspelled driver names at once")
+	func twoWaySensitivityReportsBothUnknownDrivers() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+
+		var baseOverrides: [String: AnyDriver<Double>] = [:]
+		baseOverrides["Revenue"] = AnyDriver(DeterministicDriver(name: "Revenue", value: 1000.0))
+		baseOverrides["Costs"] = AnyDriver(DeterministicDriver(name: "Costs", value: 600.0))
+
+		let baseScenario = FinancialScenario(
+			name: "Base Case",
+			description: "Base scenario",
+			driverOverrides: baseOverrides
+		)
+
+		// Refuses to run, so reaching the builder at all is the failure.
+		let refusingBuilder: ScenarioRunner.StatementBuilder = { _, _ in
+			throw SensitivityBuilderRan()
+		}
+
+		do {
+			_ = try runTwoWaySensitivity(
+				baseCase: baseScenario,
+				entity: entity,
+				periods: periods,
+				inputDriver1: "Revenu",
+				inputRange1: 800.0...1200.0,
+				steps1: 3,
+				inputDriver2: "Cost",
+				inputRange2: 400.0...800.0,
+				steps2: 3,
+				builder: refusingBuilder
+			) { projection in
+				projection.incomeStatement.netIncome[periods[0]]!
+			}
+			Issue.record("Expected runTwoWaySensitivity to reject the unknown driver names")
+		} catch is SensitivityBuilderRan {
+			Issue.record("The typos should be caught before any projection is run")
+		} catch let error as BusinessMathError {
+			guard case .invalidDriver(let name, let reason) = error else {
+				Issue.record("Expected .invalidDriver, got \(error)")
+				return
+			}
+			#expect(name == "Revenu")
+			// One run should surface both typos; fixing them one per run is the same
+			// defect at a slower pace.
+			#expect(reason.contains("Unknown names: Revenu, Cost"))
+		}
+	}
 }
+
+/// Sentinel thrown by a statement builder that must never be invoked.
+private struct SensitivityBuilderRan: Error {}
