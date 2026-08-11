@@ -99,8 +99,10 @@ The honest list. Sources: `project/plans/TrustPlan.md`, and the gate's own outpu
   Help. `doc-code` covers the catalogue; `doc-comment-code` does not exist yet.
 - **Published outputs are typechecked but not executed.** `doc-code` proves the articles compile;
   it does not prove that a `// prints:` claim is what the code prints. `4.1` published "Total
-  Growth over 2 years: 62.3%" where the code yields 113.9%, and its 90/95/99% confidence intervals
-  printed identically. Both are fixed; the class is not closed.
+  Growth over 2 years: 62.3%" while indexing the one-year array, and its 90/95/99% confidence
+  intervals printed identically. Both are fixed, and 4.1 is now seeded end to end with every figure
+  regenerated — two-year growth reads 113.5%. The class is not closed: nothing executes the
+  articles, so the next such claim will be found the same way, by hand.
 - **The 2.6.0 CHANGELOG entry does not cover every code-affecting commit on the branch.** Roughly
   half the 45 commits have a corresponding entry. The numerically significant ones now do.
 
