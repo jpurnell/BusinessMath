@@ -18,6 +18,18 @@ import Foundation
 /// - Bottleneck detection works
 /// - Memory tracking functions (on supported platforms)
 /// - Actor isolation is maintained
+///
+/// ## Where the durations come from
+///
+/// Tests that assert on a *duration* — sorting, thresholds, statistics, percentiles —
+/// inject a ``ManualElapsedTimeSource`` and advance it inside the measured block, so the
+/// measurement reports the duration the test named. They used to sleep for it, which sets
+/// a floor on elapsed time and no ceiling: under load a block that slept 1 ms could outlast
+/// one that slept 50 ms, and two of these tests flipped for exactly that reason. None of
+/// those tests was ever a claim about how long the machine took.
+///
+/// `measureOperationWithWork` is the exception and stays on the real clock; see the note
+/// there.
 @Suite("ModelProfiler Tests")
 struct ModelProfilerTests {
 
@@ -39,6 +51,12 @@ struct ModelProfilerTests {
         #expect(report.operations[0].executionCount == 1)
     }
 
+    /// Deliberately left on the real monotonic source.
+    ///
+    /// Every other timing assertion here supplies its own durations, which means none of
+    /// them would notice if the default source stopped advancing. This one would: it is
+    /// the claim that real work, measured by a profiler nobody configured, registers a
+    /// duration above zero. A manual source would turn that into a tautology.
     @Test("Measure operation with work")
     func measureOperationWithWork() async {
         let profiler = ModelProfiler()
@@ -102,10 +120,12 @@ struct ModelProfilerTests {
 
     @Test("Measure async operation")
     func measureAsyncOperation() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
         let result = await profiler.measureAsync(operation: "AsyncOp") {
-            try? await Task.sleep(nanoseconds: 1_000_000) // 1ms
+            await Task.yield()
+            time.advance(by: .milliseconds(1))
             return 42
         }
 
@@ -113,17 +133,21 @@ struct ModelProfilerTests {
 
         let report = await profiler.report()
         #expect(report.operations.count == 1)
-        #expect(report.operations[0].averageTime >= 0.001) // At least 1ms
+        // Was: sleep 1ms and assert "at least 1ms", which a slow machine could only
+        // overshoot. The same lower bound holds, and now an upper one does too.
+        #expect(report.operations[0].averageTime >= 0.001)
+        #expect(report.operations[0].averageTime < 0.002)
     }
 
     // MARK: - Statistics
 
     @Test("Statistics calculation for single measurement")
     func singleMeasurementStatistics() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
         await profiler.measure(operation: "Single") {
-            Thread.sleep(forTimeInterval: 0.001) // 1ms
+            time.advance(by: .milliseconds(1))
         }
 
         let report = await profiler.report()
@@ -132,16 +156,19 @@ struct ModelProfilerTests {
         #expect(stats.minTime == stats.maxTime)
         #expect(stats.minTime == stats.averageTime)
         #expect(stats.medianTime == stats.averageTime)
+        // The value they all agree on is now known, not merely self-consistent.
+        #expect(abs(stats.minTime - 0.001) < 1e-12)
     }
 
     @Test("Statistics calculation for multiple measurements")
     func multipleMeasurementStatistics() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
         // Create measurements with varying durations
         for delay in [1, 2, 3, 4, 5] {
             await profiler.measure(operation: "Varying") {
-                Thread.sleep(forTimeInterval: Double(delay) / 1000.0)
+                time.advance(by: .milliseconds(delay))
             }
         }
 
@@ -153,16 +180,24 @@ struct ModelProfilerTests {
         #expect(stats.averageTime > stats.minTime)
         #expect(stats.averageTime < stats.maxTime)
         #expect(stats.medianTime > 0)
+        // 1, 2, 3, 4, 5 ms: the ordering claims above, plus the values they order.
+        #expect(abs(stats.minTime - 0.001) < 1e-12)
+        #expect(abs(stats.maxTime - 0.005) < 1e-12)
+        #expect(abs(stats.averageTime - 0.003) < 1e-12)
+        #expect(abs(stats.medianTime - 0.003) < 1e-12)
+        #expect(abs(stats.totalTime - 0.015) < 1e-12)
     }
 
     @Test("Percentile calculations")
     func percentileCalculations() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
-        // Create 100 measurements with known distribution
+        // Create 100 measurements with known distribution: 10µs, 20µs, ... 1ms.
+        // The same ramp the sleeps described, now actually delivered.
         for i in 1...100 {
 			let _ = await profiler.measure(operation: "Distribution") {
-                Thread.sleep(forTimeInterval: Double(i) / 100000.0)
+                time.advance(by: .microseconds(i * 10))
                 return i
             }
         }
@@ -174,6 +209,13 @@ struct ModelProfilerTests {
         #expect(stats.percentile95 > stats.medianTime)
         #expect(stats.percentile99 > stats.percentile95)
         #expect(stats.percentile99 <= stats.maxTime)
+
+        // The distribution the ramp defines, which sleeping never guaranteed.
+        #expect(abs(stats.minTime - 0.000_01) < 1e-12)
+        #expect(abs(stats.maxTime - 0.001) < 1e-12)
+        #expect(abs(stats.medianTime - 0.000_505) < 1e-12) // mean of the 50th and 51st
+        #expect(stats.percentile95 >= 0.000_95)
+        #expect(stats.percentile99 >= 0.000_99)
     }
 
     // MARK: - Report Generation
@@ -218,16 +260,17 @@ struct ModelProfilerTests {
 
     @Test("Report sorting by total time")
     func reportSortingTotalTime() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
         // Fast operation
         await profiler.measure(operation: "Fast") {
-            Thread.sleep(forTimeInterval: 0.001)
+            time.advance(by: .milliseconds(1))
         }
 
-        // Slow operation (wide margin to avoid scheduling jitter flips)
+        // Slow operation
         await profiler.measure(operation: "Slow") {
-            Thread.sleep(forTimeInterval: 0.05)
+            time.advance(by: .milliseconds(50))
         }
 
         let report = await profiler.report(sortBy: .totalTime)
@@ -274,16 +317,17 @@ struct ModelProfilerTests {
 
     @Test("Detect bottlenecks with default threshold")
     func detectBottlenecksDefault() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
-        // Fast operation (under threshold)
+        // Fast operation (under the 1s default threshold)
         await profiler.measure(operation: "Fast") {
-            Thread.sleep(forTimeInterval: 0.01)
+            time.advance(by: .milliseconds(10))
         }
 
-        // Slow operation (over threshold)
+        // Slow operation (over it) — no longer at the cost of a real 1.1s wait
         await profiler.measure(operation: "Slow") {
-            Thread.sleep(forTimeInterval: 1.1)
+            time.advance(by: .milliseconds(1_100))
         }
 
         let bottlenecks = await profiler.bottlenecks()
@@ -294,19 +338,19 @@ struct ModelProfilerTests {
 
     @Test("Detect bottlenecks with custom threshold")
     func detectBottlenecksCustom() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
         await profiler.measure(operation: "Op1") {
-            // Intentionally no sleep — near-zero execution time
+            // Intentionally no advance — this operation takes exactly zero
             let _ = (0..<100).reduce(0, +)
         }
 
         await profiler.measure(operation: "Op2") {
-            Thread.sleep(forTimeInterval: 0.100)
+            time.advance(by: .milliseconds(100))
         }
 
-        // With 50ms threshold, only Op2 (~100ms) should be flagged
-        // Op1 is compute-only (sub-millisecond) — safe from CI jitter
+        // With 50ms threshold, only Op2 (100ms exactly) should be flagged
         let bottlenecks = await profiler.bottlenecks(threshold: 0.05)
 
         #expect(bottlenecks.count == 1)
@@ -362,21 +406,25 @@ struct ModelProfilerTests {
 
     // MARK: - Warning Threshold
 
-	@Test("Custom warning threshold", .localOnly)
+	@Test("Custom warning threshold")
     func customWarningThreshold() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
         await profiler.setWarningThreshold(0.050) // 50ms
 
         await profiler.measure(operation: "Fast") {
-            Thread.sleep(forTimeInterval: 0.001)
+            time.advance(by: .milliseconds(1))
         }
 
         await profiler.measure(operation: "Slow") {
-            Thread.sleep(forTimeInterval: 0.1)
+            time.advance(by: .milliseconds(100))
         }
 
+        // The threshold now sits between two durations the test chose, rather than
+        // between two sleeps whose order the scheduler was free to reverse.
         let bottlenecks = await profiler.bottlenecks()
         #expect(bottlenecks.count == 1)
+        #expect(bottlenecks[0].operation == "Slow")
     }
 
     // MARK: - Error Handling
@@ -406,13 +454,14 @@ struct ModelProfilerTests {
 
     @Test("Concurrent measurements")
     func concurrentMeasurements() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
         await withTaskGroup(of: Void.self) { group in
             for i in 1...50 {
                 group.addTask {
                     await profiler.measure(operation: "Concurrent\(i % 5)") {
-                        Thread.sleep(forTimeInterval: 0.0001)
+                        time.advance(by: .milliseconds(1))
                     }
                 }
             }
@@ -420,6 +469,10 @@ struct ModelProfilerTests {
 
         let report = await profiler.report()
         #expect(report.totalOperations == 50)
+        // Fifty tasks contending on one shared source, and every measurement still
+        // brackets exactly its own advance: none lost, none double-counted. The old
+        // sleep produced contention but no way to check what the contention did.
+        #expect(abs(report.totalTime - 0.050) < 1e-9)
     }
 
     // MARK: - Memory Tracking
@@ -446,11 +499,12 @@ struct ModelProfilerTests {
 
     @Test("Complete profiling workflow")
     func completeWorkflow() async {
-        let profiler = ModelProfiler()
+        let time = ManualElapsedTimeSource()
+        let profiler = ModelProfiler(elapsedTime: time)
 
         // Simulate a financial model execution
         await profiler.measure(operation: "LoadData", category: "IO") {
-            Thread.sleep(forTimeInterval: 0.002)
+            time.advance(by: .milliseconds(2))
         }
 
         for _ in 1...10 {
@@ -464,7 +518,7 @@ struct ModelProfilerTests {
         }
 
         await profiler.measure(operation: "SaveResults", category: "IO") {
-            Thread.sleep(forTimeInterval: 0.001)
+            time.advance(by: .milliseconds(1))
         }
 
         let report = await profiler.report()
@@ -473,6 +527,10 @@ struct ModelProfilerTests {
 
         let ioOps = report.operations.filter { $0.category == "IO" }
         #expect(ioOps.count == 2)
+        // The IO half of the workflow cost 2ms + 1ms; the compute half, being pure
+        // computation against a manual source, cost nothing.
+        #expect(abs(ioOps.reduce(0) { $0 + $1.totalTime } - 0.003) < 1e-12)
+        #expect(abs(report.totalTime - 0.003) < 1e-12)
     }
 }
 
