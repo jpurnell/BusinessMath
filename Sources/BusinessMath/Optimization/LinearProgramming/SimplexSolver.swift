@@ -415,15 +415,47 @@ public struct SimplexSolver: Sendable {
         var artificialVars: [Int] = []
         var surplusVars: [(row: Int, surplusCol: Int, coefficients: [Double], rhs: Double)] = []  // Track surplus variables
 
+        // Row equilibration: each constraint is divided by the largest magnitude
+        // among its own coefficients, so every row reaches the simplex at a
+        // comparable scale.
+        //
+        // Dividing a constraint by a positive constant leaves the feasible set and
+        // the optimum untouched — it is a restatement, not a relaxation. What it
+        // changes is the arithmetic. Every tolerance inside the tableau is a
+        // judgement about whether a value is genuinely non-zero or is leftover
+        // rounding, and that judgement is meaningless when one row carries
+        // coefficients of 10⁴ and the next carries 1. A BCC/DEA model is exactly
+        // that shape: the convexity row (Σλ = 1) sits beside data rows built from
+        // raw measurements, and at 200 units it drove the solve to report
+        // `.unbounded` for a model bounded below by construction.
+        //
+        // Equilibrating here rather than widening tolerances at each comparison is
+        // deliberate: scaling the pivot-selection thresholds by local magnitude was
+        // tried and rejected, because on a well-scaled branch-and-cut problem with
+        // 10⁸ coefficients it declared the LP relaxation optimal prematurely and
+        // sent branch-and-bound to its iteration limit. Fixing the conditioning at
+        // the source leaves every downstream tolerance meaning what it says.
+        //
+        // The scale factors are kept because a dual belongs to the constraint the
+        // caller wrote, not to the one the solver found convenient — see the dual
+        // extraction in `solve`.
+        let rowScales: [Double] = constraints.map { constraint in
+            let magnitude = constraint.coefficients.reduce(0.0) { Swift.max($0, abs($1)) }
+            // A row of all zeros carries no scale to speak of; leave it alone.
+            return magnitude.isFinite && magnitude > 0 ? magnitude : 1.0
+        }
+
         // Fill constraint rows
         for (row, constraint) in constraints.enumerated() {
+            let scale = rowScales[row]
+
             // Original variables
             for (col, coef) in constraint.coefficients.enumerated() {
-                tableau[row][col] = coef
+                tableau[row][col] = coef / scale
             }
 
             // RHS
-            tableau[row][totalVars] = constraint.rhs
+            tableau[row][totalVars] = constraint.rhs / scale
 
             // Handle negative RHS (multiply row by -1)
             if constraint.rhs < 0 {
@@ -495,7 +527,8 @@ public struct SimplexSolver: Sendable {
             numOriginalVars: numVars,
             artificialVars: artificialVars,
             originalObjective: originalObjectiveRow,
-            surplusVars: surplusVars
+            surplusVars: surplusVars,
+            rowScales: rowScales
         )
     }
 
@@ -560,7 +593,15 @@ public struct SimplexSolver: Sendable {
             for i in 0..<numConstraints {
                 let slackIndex = numOriginalVars + i
                 if slackIndex < objectiveRow.count - 1 {
-                    dualValues.append(-objectiveRow[slackIndex])
+                    // Divided back by the row's equilibration factor. The tableau
+                    // priced a constraint the solver rescaled for its own numerical
+                    // comfort; the caller is owed the price of the constraint they
+                    // actually wrote. Skipping this would return a shadow price off
+                    // by that factor — silently wrong, and worse than a failure
+                    // because nothing about the number looks unusual.
+                    let scale = i < phaseIIResult.tableau.rowScales.count
+                        ? phaseIIResult.tableau.rowScales[i] : 1.0
+                    dualValues.append(-objectiveRow[slackIndex] / scale)
                 }
             }
         }
@@ -939,4 +980,10 @@ private struct InternalSimplexTableau {
     let artificialVars: [Int]      // Indices of artificial variables
     let originalObjective: [Double] // Original objective row (before Phase I)
     let surplusVars: [(row: Int, surplusCol: Int, coefficients: [Double], rhs: Double)] // Surplus constraint metadata
+    /// Divisor applied to each constraint row when the tableau was built.
+    ///
+    /// Needed on the way out: a dual value prices the constraint *as the caller
+    /// wrote it*, so the value read off an equilibrated tableau has to be divided
+    /// by the same factor to mean what the caller expects.
+    let rowScales: [Double]
 }

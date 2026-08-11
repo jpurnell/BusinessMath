@@ -89,6 +89,132 @@ struct SimplexScaleInvarianceTests {
         }
     }
 
+    /// At 200 units the same conditioning resurfaces in Phase II as a spurious
+    /// `.unbounded`: a reduced cost that is noise at the problem's scale is chosen
+    /// as an entering variable, and the ratio test then finds no positive pivot in
+    /// a column that is likewise noise. `.unbounded` is as impossible here as
+    /// `.infeasible` — an input-oriented model is bounded below by θ = 0.
+    @Test("two hundred units with raw magnitudes solve without a spurious unbounded")
+    func twoHundredUnitsAtRawMagnitudes() throws {
+        let solver = DEASolver()
+        let result = try solver.solve(dmus: listings(count: 200, scale: 1.0),
+                                      model: .ccr, orientation: .inputOriented)
+
+        #expect(result.scores.count == 200)
+        #expect(result.scores.allSatisfy { $0.efficiency > 0 && $0.efficiency <= 1.0 + 1e-9 })
+    }
+
+    /// BCC is the case that actually broke, and for a reason worth recording: the
+    /// variable-returns model adds a convexity row (Σλ = 1) whose coefficients are
+    /// all 1.0, sitting in a tableau whose other rows are built from raw
+    /// measurements around 10⁴. One row four orders of magnitude away from its
+    /// neighbours is precisely the shape equilibration exists to fix — and CCR,
+    /// which has no such row, solved the same 200 units without complaint.
+    @Test("BCC at two hundred units solves despite its convexity row")
+    func bccAtTwoHundredUnits() throws {
+        let solver = DEASolver()
+        let result = try solver.solve(dmus: listings(count: 200, scale: 1.0),
+                                      model: .bcc, orientation: .inputOriented)
+
+        #expect(result.scores.count == 200)
+        #expect(result.scores.allSatisfy { $0.efficiency > 0 && $0.efficiency <= 1.0 + 1e-9 })
+    }
+
+    @Test("scores at two hundred units are invariant to a change of units")
+    func twoHundredUnitsAreInvariant() throws {
+        let solver = DEASolver()
+        let raw = try solver.solve(dmus: listings(count: 200, scale: 1.0),
+                                   model: .ccr, orientation: .inputOriented)
+        let rescaled = try solver.solve(dmus: listings(count: 200, scale: 0.001),
+                                        model: .ccr, orientation: .inputOriented)
+
+        for (left, right) in zip(raw.scores, rescaled.scores) {
+            #expect(abs(left.efficiency - right.efficiency) < 1e-6, "\(left.name)")
+        }
+    }
+
+    // MARK: - Equilibration must not change what is reported
+
+    /// Wyndor Glass (Hillier & Lieberman), whose duals are textbook:
+    ///
+    ///     maximize  3x + 5y
+    ///     s.t.       x       ≤  4     → dual 0
+    ///               2y       ≤ 12     → dual 1.5
+    ///              3x + 2y   ≤ 18     → dual 1
+    ///
+    /// Optimum x = 2, y = 6, objective 36.
+    ///
+    /// Scaling a constraint row is an internal convenience, and a dual is attached
+    /// to the constraint *as the caller wrote it*. Divide a row by 10⁶ inside the
+    /// solver and its dual comes back 10⁶ times too large unless it is scaled back
+    /// on the way out — a silently wrong shadow price, which is worse than a
+    /// failure because nothing about it looks wrong.
+    @Test("dual values are reported for the constraint as written, at any magnitude")
+    func dualsSurviveEquilibration() throws {
+        let solver = SimplexSolver()
+
+        for magnitude in [1.0, 1_000.0, 1_000_000.0] {
+            let result = try solver.maximize(
+                objective: [3.0, 5.0],
+                subjectTo: [
+                    SimplexConstraint(coefficients: [1.0 * magnitude, 0.0],
+                                      relation: .lessOrEqual, rhs: 4.0 * magnitude),
+                    SimplexConstraint(coefficients: [0.0, 2.0 * magnitude],
+                                      relation: .lessOrEqual, rhs: 12.0 * magnitude),
+                    SimplexConstraint(coefficients: [3.0 * magnitude, 2.0 * magnitude],
+                                      relation: .lessOrEqual, rhs: 18.0 * magnitude)
+                ])
+
+            #expect(result.status == SimplexStatus.optimal)
+            // The primal is untouched by how the constraints were written.
+            #expect(abs(result.solution[0] - 2.0) < 1e-6, "x at magnitude \(magnitude)")
+            #expect(abs(result.solution[1] - 6.0) < 1e-6, "y at magnitude \(magnitude)")
+            #expect(abs(result.objectiveValue - 36.0) < 1e-6, "objective at \(magnitude)")
+
+            // Duals scale inversely with the constraint they price: writing a row
+            // 10⁶ times larger makes each unit of it worth 10⁶ times less.
+            //
+            // Asserted against this solver's existing sign convention, which
+            // returns shadow prices **negated** — the textbook values here are
+            // (0, 1.5, 1) and it reports (-0, -1.5, -1). That inversion predates
+            // equilibration and is unchanged by it; it is called out in the
+            // changelog rather than quietly corrected here, because flipping a
+            // published sign is a breaking change for every existing caller.
+            let duals = try #require(result.dualValues)
+            let tolerance = 1e-9 / magnitude
+            #expect(abs(duals[0] - 0.0) < tolerance, "dual 0 at \(magnitude)")
+            #expect(abs(duals[1] + 1.5 / magnitude) < tolerance, "dual 1 at \(magnitude)")
+            #expect(abs(duals[2] + 1.0 / magnitude) < tolerance, "dual 2 at \(magnitude)")
+        }
+    }
+
+    @Test("reduced costs and the objective are unchanged by internal scaling")
+    func reducedCostsSurviveEquilibration() throws {
+        let solver = SimplexSolver()
+
+        // A problem with a non-basic variable at optimum, so a reduced cost is
+        // actually non-zero and there is something to get wrong.
+        let plain = try solver.maximize(
+            objective: [1.0, 2.0],
+            subjectTo: [SimplexConstraint(coefficients: [1.0, 1.0],
+                                          relation: .lessOrEqual, rhs: 10.0)])
+        let scaled = try solver.maximize(
+            objective: [1.0, 2.0],
+            subjectTo: [SimplexConstraint(coefficients: [1e6, 1e6],
+                                          relation: .lessOrEqual, rhs: 1e7)])
+
+        #expect(abs(plain.objectiveValue - 20.0) < 1e-6)
+        #expect(abs(scaled.objectiveValue - 20.0) < 1e-6)
+
+        let plainCosts = try #require(plain.reducedCosts)
+        let scaledCosts = try #require(scaled.reducedCosts)
+        // Reduced costs of the original variables are invariant under row scaling:
+        // the dual correction and the row factor cancel.
+        for (left, right) in zip(plainCosts, scaledCosts) {
+            #expect(abs(left - right) < 1e-6)
+        }
+    }
+
     // MARK: - The fix must not swallow real infeasibility
 
     /// A relative tolerance widens the feasibility threshold in proportion to the
