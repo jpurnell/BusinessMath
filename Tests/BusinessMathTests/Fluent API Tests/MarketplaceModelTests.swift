@@ -370,4 +370,55 @@ import RealModule
         #expect(model.monthlyTransactionsPerBuyer.isFinite)
         #expect(model.calculateGMV(forMonth: 1).isFinite)
     }
+
+    /// The three per-seller figures divide by a seller count that reaches zero
+    /// whenever a marketplace starts with no sellers and acquires none — or churns
+    /// its way there. Each quotient is `+infinity` with a live numerator.
+    ///
+    /// `calculateLiquidity` is the one that matters most, because it is a figure
+    /// people threshold on. "Buyers per seller above 2 is healthy" is satisfied by
+    /// `+infinity`, so a marketplace with no sellers at all would read as the
+    /// healthiest one on the books.
+    @Test("Per-seller figures with no sellers report nothing, not infinity")
+    func perSellerFiguresWithNoSellersAreFinite() {
+        let model = MarketplaceModel(
+            initialBuyers: 10_000,
+            initialSellers: 0,
+            monthlyTransactionsPerBuyer: 2,
+            averageOrderValue: 150,
+            takeRate: 0.15,
+            newBuyersPerMonth: 500,
+            newSellersPerMonth: 0,
+            buyerChurnRate: 0.05,
+            sellerChurnRate: 0.03
+        )
+
+        #expect(model.calculateSellers(forMonth: 1) == 0, "precondition: no sellers")
+
+        #expect(model.calculateTransactionsPerSeller(forMonth: 1).isFinite)
+        #expect(model.calculateAverageSellerRevenue(forMonth: 1).isFinite)
+        #expect(model.calculateLiquidity(forMonth: 1).isFinite)
+
+        // A marketplace with no sellers is not infinitely liquid; it is not a
+        // marketplace. Zero is what a threshold test needs to see.
+        #expect(model.calculateLiquidity(forMonth: 1) == 0)
+    }
+
+    /// `calculateBuyerSellerRatio` guarded absence but not zero — a snapshot that
+    /// names its seller count as `0` passes the `let` binding and divides by it.
+    @Test("Buyer-seller ratio with a stated zero seller count is finite")
+    func buyerSellerRatioWithZeroSellersIsFinite() {
+        let model = MarketplaceModel(
+            numberOfBuyers: 10_000,
+            numberOfSellers: 0,
+            transactionsPerMonth: 5_000,
+            averageOrderValue: 150,
+            takeRate: 0.15,
+            buyerAcquisitionCost: 25,
+            sellerAcquisitionCost: 100
+        )
+
+        #expect(model.calculateBuyerSellerRatio().isFinite)
+        #expect(model.calculateBuyerSellerRatio() == 0)
+    }
 }
