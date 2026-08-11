@@ -59,8 +59,11 @@ public enum SimulationError: Error, Sendable {
 	///
 	/// Seeded runs require every input's distribution to conform to
 	/// ``SeedableDistribution`` so all randomness flows from the seeded generator.
-	/// Custom-closure inputs and correlated sampling do not support seeding; the
-	/// simulation throws rather than silently losing determinism.
+	/// Custom-closure inputs do not support seeding; the simulation throws rather than
+	/// silently losing determinism. Correlated sampling honors a seed as of the change
+	/// that added `seed:` to
+	/// ``MonteCarloSimulation/runCorrelated(inputs:correlationMatrix:iterations:seed:calculation:)``,
+	/// but applies the same rule to each of its inputs.
 	///
 	/// - Parameters:
 	///   - inputName: The name of the offending input, or a configuration label
