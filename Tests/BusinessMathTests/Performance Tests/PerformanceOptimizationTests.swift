@@ -259,13 +259,30 @@ import RealModule
         // TIMING: intentional wall-clock perf benchmark
         #expect(elapsed < 10.0, "Should complete 1000 model creations in < 10s (got \((elapsed * 1000).number(2))ms)")
     }
-	/// Keeps `.localOnly` deliberately. The assertion is `elapsed < 25s`, which is a claim
-	/// about how fast the machine is and nothing else — there is no correctness statement
-	/// underneath it to preserve. The only way to un-skip it is to stop asserting what it
-	/// asserts, and a test that runs in CI and checks nothing is worse than one honestly
-	/// skipped. Injecting a clock would not help: here the elapsed time *is* the result.
-	@Test("Performance_TimeSeriesMemoryEfficiency", .localOnly)
-	func LPerformance_TimeSeriesMemoryEfficiency() {
+	// MARK: - Throughput Benchmarks
+
+	/// Renamed from `Performance_TimeSeriesMemoryEfficiency`, which promised a memory
+	/// claim it never made: the sole assertion is `elapsed < 25s`.
+	///
+	/// The memory claim is not merely unasserted, it is unassertable here.
+	/// `TimeSeries<Double>` is a struct over two `Array`s of trivial elements. There is
+	/// no reference to retain, no cycle to form, and nothing whose lifetime differs from
+	/// the value's — ARC releases the buffers at the end of each iteration whether or not
+	/// this test exists. A resident-set reading around the loop would measure how eagerly
+	/// malloc returns pages to the kernel, which is a fact about the allocator and not
+	/// about this library. So there is no honest memory assertion to write, and pretending
+	/// otherwise would swap one wrong instrument for a noisier one.
+	///
+	/// What is left is a benchmark, and the trait now says so. `.localOnly` was pointed
+	/// the wrong way: it skips where `CI` is set and runs everywhere else, so it did not
+	/// cover the routine local quality-gate run — parallel execution, load average
+	/// 78–113 — which is where this flipped. The margin was never the problem either;
+	/// 0.668s against 25s is 37× and it still went red, the same way 0.431s against 10s
+	/// did in `MINLPIntegrationTests`. Under that much contention no fixed multiple of a
+	/// wall clock is a bound, which is the argument for an explicit opt-in rather than a
+	/// wider budget.
+	@Test("Benchmark_TimeSeriesCreationThroughput", .benchmarkOnly)
+	func LBenchmark_TimeSeriesCreationThroughput() {
         let start = Date()
         #if canImport(Darwin)
         autoreleasepool {
