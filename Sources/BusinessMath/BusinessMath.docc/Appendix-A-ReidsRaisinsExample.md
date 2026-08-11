@@ -576,7 +576,8 @@ This captures uncertainty in customer orders while keeping other parameters at t
 print("\n=== Monte Carlo Simulation: Uncertain Demand ===\n")
 
 // Create Monte Carlo simulation directly with inline model
-var simulation = MonteCarloSimulation(iterations: 10_000) { inputs in
+// `seed:` makes the run reproducible; omit it for a fresh draw each time
+var simulation = MonteCarloSimulation(iterations: 10_000, seed: 3061) { inputs in
 	let demand = inputs[0]
 
 	// Create model for this iteration

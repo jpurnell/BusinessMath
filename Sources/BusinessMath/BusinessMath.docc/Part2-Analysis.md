@@ -156,7 +156,8 @@ Quantifying risk lets you move from "what if?" questions to probabilistic statem
 
 ```swift
 // Simulate a 60/40 portfolio, then read the tail off the distribution
-var portfolio = MonteCarloSimulation(iterations: 10_000) { inputs in
+// `seed:` makes the run reproducible; omit it for a fresh draw each time
+var portfolio = MonteCarloSimulation(iterations: 10_000, seed: 1042) { inputs in
     0.6 * inputs[0] + 0.4 * inputs[1]
 }
 portfolio.addInput(SimulationInput(
