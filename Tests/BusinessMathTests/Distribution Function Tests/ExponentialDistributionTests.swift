@@ -337,7 +337,10 @@ struct ExponentialDistributionTests {
 			samples2.append(distributionExponential(λ: λ, seed: seeds[i]))
 		}
 
-		#expect(samples1 == samples2, "Same seeds should produce identical sequences")
+		// Reproducibility is a bit-for-bit claim, and `==` cannot make it: it reports
+		// NaN as unequal to itself, so two runs that both went NaN in the same place
+		// would fail an assertion the streams actually satisfy.
+		#expect(identical(samples1, samples2), "Same seeds should produce identical sequences")
 	}
 
 	@Test("Exponential distribution struct stores rate parameter")

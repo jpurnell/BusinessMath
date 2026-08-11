@@ -215,7 +215,7 @@ struct LinearityValidationTests {
         let first = try probedPoints()
         let second = try probedPoints()
 
-        #expect(first == second, """
+        #expect(first.count == second.count && zip(first, second).allSatisfy { identical($0, $1) }, """
             The validator sampled different points on two calls with identical arguments. \
             A validator whose sample set varies can return a different verdict for the same \
             function on different runs — accepting a nonlinear model into a MILP solver.

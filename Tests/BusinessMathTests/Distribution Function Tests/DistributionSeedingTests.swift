@@ -99,7 +99,7 @@ struct DistributionSeedingTests {
 		let sequence1 = seeds.map { distributionUniform($0) as Double }
 		let sequence2 = seeds.map { distributionUniform($0) as Double }
 
-		#expect(sequence1 == sequence2, "Same seeds should produce identical sequences")
+		#expect(identical(sequence1, sequence2), "Same seeds should produce identical sequences")
 
 		// Verify each value matches its seed (within precision)
 		for (seed, value) in zip(seeds, sequence1) {
@@ -214,7 +214,7 @@ struct DistributionSeedingTests {
 			sequence2.append(normal)
 		}
 
-		#expect(sequence1 == sequence2, "Same seeds should produce identical sequences")
+		#expect(identical(sequence1, sequence2), "Same seeds should produce identical sequences")
 	}
 
 	@Test("Deterministic sequence has expected statistical properties")
@@ -273,7 +273,7 @@ struct DistributionSeedingTests {
 		#expect(sampleStdDev == sampleStdDev2, "Same seeds should produce identical standard deviation")
 		#expect(minValue == minValue2, "Same seeds should produce identical minimum")
 		#expect(maxValue == maxValue2, "Same seeds should produce identical maximum")
-		#expect(values == values2, "Same seeds should produce identical value sequences")
+		#expect(identical(values, values2), "Same seeds should produce identical value sequences")
 	}
 
 	// MARK: - Seed Range Validation
@@ -406,7 +406,7 @@ struct DistributionSeedingTests {
 		// With seeding, values should be EXACTLY equal (not just close)
 		#expect(var95_1 == var95_2, "Seeded VaR should be exactly identical")
 		#expect(cvar95_1 == cvar95_2, "Seeded CVaR should be exactly identical")
-		#expect(values1 == values2, "Seeded sequences should be exactly identical")
+		#expect(identical(values1, values2), "Seeded sequences should be exactly identical")
 	}
 
 	// MARK: - Seed Array Validation
@@ -496,7 +496,7 @@ struct DistributionSeedingTests {
 			values2.append(normal)
 		}
 
-		#expect(values1 == values2, "Same seed array should produce identical values")
+		#expect(identical(values1, values2), "Same seed array should produce identical values")
 
 		// Verify statistical properties are exact
 		let mean1 = values1.reduce(0, +) / Double(values1.count)

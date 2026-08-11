@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 /// Tests for Streaming Statistics (Phase 2.2)
@@ -177,7 +178,9 @@ struct StreamingStatisticsTests {
             sums.append(sum)
         }
 
-        #expect(sums == [1.0, 3.0, 6.0, 10.0, 15.0])
+        // Running totals of 1…5: every partial sum is a small integer, so each addition
+        // is exact and the expected values are the answers, not approximations of them.
+        #expect(identical(sums, [1.0, 3.0, 6.0, 10.0, 15.0]))
     }
 
     // MARK: - Exponential Moving Average Tests

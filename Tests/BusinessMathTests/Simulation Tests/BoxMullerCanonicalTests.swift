@@ -114,8 +114,12 @@ struct BoxMullerCanonicalTests {
 				return [z1, z2]
 			}
 		}
-		#expect(draw(7) == draw(7))
-		#expect(draw(7) != draw(8))
+		// Reproducibility is a bit-for-bit claim. Written with `==` it would be weaker in
+		// both directions: two runs that both went NaN in the same place would *fail* the
+		// first assertion, and the second would *pass* on a stream that had silently gone
+		// NaN throughout — satisfied for exactly the reason it was written to exclude.
+		#expect(identical(draw(7), draw(7)))
+		#expect(!identical(draw(7), draw(8)))
 	}
 
 	@Test("One generator threaded through many calls does not repeat itself")

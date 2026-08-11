@@ -70,8 +70,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = block({ distributionGamma(r: 4, λ: 2.0, seed: $0) }, seed: 42)
 		let b = block({ distributionGamma(r: 4, λ: 2.0, seed: $0) }, seed: 42)
 		let c = block({ distributionGamma(r: 4, λ: 2.0, seed: $0) }, seed: 43)
-		#expect(a == b, "Seed 42 must reproduce exactly")
-		#expect(a != c, "Seed 43 must not reproduce seed 42")
+		#expect(identical(a, b), "Seed 42 must reproduce exactly")
+		#expect(!identical(a, c), "Seed 43 must not reproduce seed 42")
 	}
 
 	@Test("gammaVariate: same seed reproduces, different seeds diverge")
@@ -79,8 +79,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = block({ gammaVariate(shape: 2.5, scale: 1.5, seed: $0) }, seed: 42)
 		let b = block({ gammaVariate(shape: 2.5, scale: 1.5, seed: $0) }, seed: 42)
 		let c = block({ gammaVariate(shape: 2.5, scale: 1.5, seed: $0) }, seed: 43)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("distributionBeta: same seed reproduces, different seeds diverge")
@@ -88,8 +88,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = block({ distributionBeta(alpha: 2.0, beta: 5.0, seed: $0) }, seed: 42)
 		let b = block({ distributionBeta(alpha: 2.0, beta: 5.0, seed: $0) }, seed: 42)
 		let c = block({ distributionBeta(alpha: 2.0, beta: 5.0, seed: $0) }, seed: 43)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("distributionGeometric: same seed reproduces, different seeds diverge")
@@ -97,8 +97,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = block({ distributionGeometric(0.2, seed: $0) }, seed: 42)
 		let b = block({ distributionGeometric(0.2, seed: $0) }, seed: 42)
 		let c = block({ distributionGeometric(0.2, seed: $0) }, seed: 43)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("distributionChiSquared: same seed reproduces, different seeds diverge")
@@ -106,8 +106,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = block({ distributionChiSquared(degreesOfFreedom: 5, seed: $0) }, seed: 42)
 		let b = block({ distributionChiSquared(degreesOfFreedom: 5, seed: $0) }, seed: 42)
 		let c = block({ distributionChiSquared(degreesOfFreedom: 5, seed: $0) }, seed: 43)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("distributionChiSquaredThrowing: same seed reproduces, different seeds diverge")
@@ -118,8 +118,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = try draw(42)
 		let b = try draw(42)
 		let c = try draw(4200)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("distributionF: same seed reproduces, different seeds diverge")
@@ -127,8 +127,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = block({ distributionF(df1: 5, df2: 20, seed: $0) }, seed: 42)
 		let b = block({ distributionF(df1: 5, df2: 20, seed: $0) }, seed: 42)
 		let c = block({ distributionF(df1: 5, df2: 20, seed: $0) }, seed: 43)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("distributionT: same seed reproduces, different seeds diverge")
@@ -136,8 +136,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = block({ distributionT(degreesOfFreedom: 10, seed: $0) }, seed: 42)
 		let b = block({ distributionT(degreesOfFreedom: 10, seed: $0) }, seed: 42)
 		let c = block({ distributionT(degreesOfFreedom: 10, seed: $0) }, seed: 43)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("sampleInverseGamma: same seed reproduces, different seeds diverge")
@@ -148,8 +148,8 @@ struct DistributionSeedReproducibilityTests {
 		let a = try draw(42)
 		let b = try draw(42)
 		let c = try draw(4200)
-		#expect(a == b)
-		#expect(a != c)
+		#expect(identical(a, b))
+		#expect(!identical(a, c))
 	}
 
 	@Test("nil seed is non-reproducible by contract")

@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 /// Iterating the cycles that have no exact answer, and refusing to pretend when they do not
@@ -230,7 +231,7 @@ struct IterativeCycleSolverTests {
 		)
 
 		#expect(try value(fromZero, "a") == 0)
-		#expect(try value(fromOne, "a") == 1)
+		#expect(try identical(value(fromOne, "a"), 1))
 	}
 
 	// MARK: - Alongside the exact path

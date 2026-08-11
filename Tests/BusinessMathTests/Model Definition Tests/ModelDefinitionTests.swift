@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 /// A model whose accounts hold formulas rather than answers.
@@ -406,6 +407,7 @@ struct ModelDefinitionTests {
 			.defining("Gross Margin", as: "[Gross Profit] / [Total Revenue]")
 
 		#expect(try model.evaluationOrder() == ["Gross Profit", "Gross Margin"])
-		#expect(try model.evaluate()["Gross Margin"]?.valuesArray == [0.6, 0.6, 0.6])
+		let margin = try #require(model.evaluate()["Gross Margin"]?.valuesArray)
+		#expect(identical(margin, [0.6, 0.6, 0.6]))
 	}
 }

@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 /// Formulas as configuration.
@@ -54,7 +55,7 @@ struct FormulaEvaluatorTests {
 		let loose = try evaluator().evaluate("  ( ( revenue - cogs ) / revenue )  ")
 
 		#expect(tight.valuesArray == loose.valuesArray)
-		#expect(tight.valuesArray == [0.6, 0.6, 0.6])
+		#expect(identical(tight.valuesArray, [0.6, 0.6, 0.6]))
 	}
 
 	// MARK: - Names as they actually appear
