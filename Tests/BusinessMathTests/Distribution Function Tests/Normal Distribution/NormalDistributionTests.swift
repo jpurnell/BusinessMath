@@ -322,7 +322,10 @@ struct NormalDistributionTests {
 			samples2.append(distributionNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
-		#expect(samples1 == samples2, "Same seeds should produce identical sequences")
+		// Reproducibility is a bit-for-bit claim, and `==` cannot make it: it reports
+		// NaN as unequal to itself, so two runs that both went NaN in the same place
+		// would fail an assertion the streams actually satisfy.
+		#expect(identical(samples1, samples2), "Same seeds should produce identical sequences")
 	}
 
 	@Test("Normal distribution z-score properties")

@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 /// Solving a linear cycle exactly, rather than iterating towards it.
@@ -127,7 +128,7 @@ struct LinearCycleSolverTests {
 			.defining("margin", as: "netIncome / revenue")
 			.solve()
 
-		#expect(try value(solved, "ebit") == 1_000)
+		#expect(try identical(value(solved, "ebit"), 1_000))
 		#expect(try abs(value(solved, "netIncome") - 1_000 / 1.15) <= 1e-12)
 		#expect(try abs(value(solved, "margin") - 1_000 / 1.15 / 2_000) <= 1e-15)
 	}

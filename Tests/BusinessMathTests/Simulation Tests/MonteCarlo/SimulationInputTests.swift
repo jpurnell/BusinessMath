@@ -236,7 +236,7 @@ struct SimulationInputTests {
 		#expect(abs(mean - 50.0) < 2.0, "Bimodal distribution mean should be ~50")
 
 		// Verify deterministic behavior
-		#expect(samples == bimodalValues, "Custom sampler should produce deterministic results")
+		#expect(identical(samples, bimodalValues), "Custom sampler should produce deterministic results")
 	}
 
 	@Test("SimulationInput integration with multiple distribution types")

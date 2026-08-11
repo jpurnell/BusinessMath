@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 /// Tests for Core Streaming Infrastructure (Phase 2.1)
@@ -32,7 +33,8 @@ struct StreamingInfrastructureTests {
 
         let collected = collector.getItems()
 
-        #expect(collected == values)
+        // The stream hands each element back untouched, so the claim is bit-for-bit.
+        #expect(identical(collected, values))
     }
 
     @Test("Create infinite stream with generator")
@@ -55,7 +57,8 @@ struct StreamingInfrastructureTests {
 
         let collected = collector.getItems()
 
-        #expect(collected == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
+        // Counting by one from zero in Double is exact through 2^53; no rounding to allow for.
+        #expect(identical(collected, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]))
     }
 
     // MARK: - Windowing Tests
@@ -74,9 +77,10 @@ struct StreamingInfrastructureTests {
 
         // Expected: [1,2,3], [4,5,6], [7,8] (last window may be incomplete)
         #expect(windows.count == 3)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
-        #expect(windows[1] == [4.0, 5.0, 6.0])
-        #expect(windows[2] == [7.0, 8.0])
+        // Windowing only regroups the elements; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
+        #expect(identical(windows[1], [4.0, 5.0, 6.0]))
+        #expect(identical(windows[2], [7.0, 8.0]))
     }
 
     @Test("Sliding window of fixed size")
@@ -93,9 +97,10 @@ struct StreamingInfrastructureTests {
 
         // Expected: [1,2,3], [2,3,4], [3,4,5]
         #expect(windows.count == 3)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
-        #expect(windows[1] == [2.0, 3.0, 4.0])
-        #expect(windows[2] == [3.0, 4.0, 5.0])
+        // Windowing only regroups the elements; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
+        #expect(identical(windows[1], [2.0, 3.0, 4.0]))
+        #expect(identical(windows[2], [3.0, 4.0, 5.0]))
     }
 
     @Test("Sliding window with step size")
@@ -112,10 +117,11 @@ struct StreamingInfrastructureTests {
 
         // Expected: [1,2,3], [3,4,5], [5,6,7], [7,8]
         #expect(windows.count == 4)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
-        #expect(windows[1] == [3.0, 4.0, 5.0])
-        #expect(windows[2] == [5.0, 6.0, 7.0])
-        #expect(windows[3] == [7.0, 8.0])
+        // Windowing only regroups the elements; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
+        #expect(identical(windows[1], [3.0, 4.0, 5.0]))
+        #expect(identical(windows[2], [5.0, 6.0, 7.0]))
+        #expect(identical(windows[3], [7.0, 8.0]))
     }
 
     // MARK: - Buffering Tests
@@ -134,9 +140,10 @@ struct StreamingInfrastructureTests {
 
         // Expected: [1,2,3], [4,5,6], [7,8]
         #expect(buffers.count == 3)
-        #expect(buffers[0] == [1.0, 2.0, 3.0])
-        #expect(buffers[1] == [4.0, 5.0, 6.0])
-        #expect(buffers[2] == [7.0, 8.0])
+        // Buffering only regroups the elements; each is the literal that went in.
+        #expect(identical(buffers[0], [1.0, 2.0, 3.0]))
+        #expect(identical(buffers[1], [4.0, 5.0, 6.0]))
+        #expect(identical(buffers[2], [7.0, 8.0]))
     }
 
     // @Test("Buffer elements with time window")
@@ -158,7 +165,9 @@ struct StreamingInfrastructureTests {
 
         let collected = collector.getItems()
 
-        #expect(collected == [2.0, 4.0, 6.0, 8.0, 10.0])
+        // Doubling a small integer is exact in binary floating point — a scaling by 2 only
+        // moves the exponent — so the map's output is the literal, bit for bit.
+        #expect(identical(collected, [2.0, 4.0, 6.0, 8.0, 10.0]))
     }
 
     @Test("Filter stream values")
@@ -173,7 +182,8 @@ struct StreamingInfrastructureTests {
 
         let collected = collector.getItems()
 
-        #expect(collected == [3.0, 4.0, 5.0])
+        // Filtering selects elements without touching them.
+        #expect(identical(collected, [3.0, 4.0, 5.0]))
     }
 
     @Test("Compact map stream values")

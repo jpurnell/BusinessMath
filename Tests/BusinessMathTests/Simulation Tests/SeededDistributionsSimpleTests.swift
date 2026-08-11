@@ -8,6 +8,7 @@
 
 import Testing
 import Foundation
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 @Suite("SeedableDistribution simple conformances")
@@ -35,13 +36,13 @@ struct SeededDistributionsSimpleTests {
 	@Test("DistributionUniform: same seed yields identical sample stream")
 	func uniformDeterministicStream() {
 		let dist = DistributionUniform(2.0, 10.0)
-		#expect(samples(dist, seed: 42, count: 50) == samples(dist, seed: 42, count: 50))
+		#expect(identical(samples(dist, seed: 42, count: 50), samples(dist, seed: 42, count: 50)))
 	}
 
 	@Test("DistributionUniform: different seeds yield different streams")
 	func uniformSeedsDiverge() {
 		let dist = DistributionUniform(2.0, 10.0)
-		#expect(samples(dist, seed: 1, count: 50) != samples(dist, seed: 2, count: 50))
+		#expect(!identical(samples(dist, seed: 1, count: 50), samples(dist, seed: 2, count: 50)))
 	}
 
 	@Test("DistributionUniform: seeded samples match analytic moments")
@@ -59,13 +60,13 @@ struct SeededDistributionsSimpleTests {
 	@Test("DistributionTriangular: same seed yields identical sample stream")
 	func triangularDeterministicStream() {
 		let dist = DistributionTriangular(low: 0.0, high: 10.0, base: 4.0)
-		#expect(samples(dist, seed: 42, count: 50) == samples(dist, seed: 42, count: 50))
+		#expect(identical(samples(dist, seed: 42, count: 50), samples(dist, seed: 42, count: 50)))
 	}
 
 	@Test("DistributionTriangular: different seeds yield different streams")
 	func triangularSeedsDiverge() {
 		let dist = DistributionTriangular(low: 0.0, high: 10.0, base: 4.0)
-		#expect(samples(dist, seed: 1, count: 50) != samples(dist, seed: 2, count: 50))
+		#expect(!identical(samples(dist, seed: 1, count: 50), samples(dist, seed: 2, count: 50)))
 	}
 
 	@Test("DistributionTriangular: seeded samples match analytic moments")
@@ -83,13 +84,13 @@ struct SeededDistributionsSimpleTests {
 	@Test("DistributionExponential: same seed yields identical sample stream")
 	func exponentialDeterministicStream() {
 		let dist = DistributionExponential(0.5)
-		#expect(samples(dist, seed: 42, count: 50) == samples(dist, seed: 42, count: 50))
+		#expect(identical(samples(dist, seed: 42, count: 50), samples(dist, seed: 42, count: 50)))
 	}
 
 	@Test("DistributionExponential: different seeds yield different streams")
 	func exponentialSeedsDiverge() {
 		let dist = DistributionExponential(0.5)
-		#expect(samples(dist, seed: 1, count: 50) != samples(dist, seed: 2, count: 50))
+		#expect(!identical(samples(dist, seed: 1, count: 50), samples(dist, seed: 2, count: 50)))
 	}
 
 	@Test("DistributionExponential: seeded samples match analytic moments")
@@ -106,13 +107,13 @@ struct SeededDistributionsSimpleTests {
 	@Test("DistributionLogNormal: same seed yields identical sample stream")
 	func logNormalDeterministicStream() {
 		let dist = DistributionLogNormal(0.0, 0.5)
-		#expect(samples(dist, seed: 42, count: 50) == samples(dist, seed: 42, count: 50))
+		#expect(identical(samples(dist, seed: 42, count: 50), samples(dist, seed: 42, count: 50)))
 	}
 
 	@Test("DistributionLogNormal: different seeds yield different streams")
 	func logNormalSeedsDiverge() {
 		let dist = DistributionLogNormal(0.0, 0.5)
-		#expect(samples(dist, seed: 1, count: 50) != samples(dist, seed: 2, count: 50))
+		#expect(!identical(samples(dist, seed: 1, count: 50), samples(dist, seed: 2, count: 50)))
 	}
 
 	@Test("DistributionLogNormal: seeded samples match analytic moments")
@@ -132,13 +133,13 @@ struct SeededDistributionsSimpleTests {
 	@Test("DistributionRayleigh: same seed yields identical sample stream")
 	func rayleighDeterministicStream() {
 		let dist = DistributionRayleigh(scale: 2.0)
-		#expect(samples(dist, seed: 42, count: 50) == samples(dist, seed: 42, count: 50))
+		#expect(identical(samples(dist, seed: 42, count: 50), samples(dist, seed: 42, count: 50)))
 	}
 
 	@Test("DistributionRayleigh: different seeds yield different streams")
 	func rayleighSeedsDiverge() {
 		let dist = DistributionRayleigh(scale: 2.0)
-		#expect(samples(dist, seed: 1, count: 50) != samples(dist, seed: 2, count: 50))
+		#expect(!identical(samples(dist, seed: 1, count: 50), samples(dist, seed: 2, count: 50)))
 	}
 
 	@Test("DistributionRayleigh: seeded samples match analytic moments")

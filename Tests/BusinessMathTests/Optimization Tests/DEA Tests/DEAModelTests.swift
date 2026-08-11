@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 // MARK: - Input Validation Tests
@@ -136,8 +137,8 @@ struct DMUTypeTests {
     func dmuCreation() {
         let dmu = DMU(name: "TestUnit", inputs: [1.0, 2.0], outputs: [3.0, 4.0])
         #expect(dmu.name == "TestUnit")
-        #expect(dmu.inputs == [1.0, 2.0])
-        #expect(dmu.outputs == [3.0, 4.0])
+        #expect(identical(dmu.inputs, [1.0, 2.0]))
+        #expect(identical(dmu.outputs, [3.0, 4.0]))
     }
 
     @Test("DMU conforms to Sendable")

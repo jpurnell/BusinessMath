@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 /// Tests for Stream Composition (Phase 2.5)
@@ -64,7 +65,8 @@ struct StreamingCompositionTests {
             values.append(value)
         }
 
-        #expect(values == [1.0, 2.0, 3.0])
+        // Merging routes elements; it does not touch them.
+        #expect(identical(values, [1.0, 2.0, 3.0]))
     }
 
     // MARK: - Zip Tests
@@ -199,7 +201,8 @@ struct StreamingCompositionTests {
         }
 
         // Should only emit when value changes
-        #expect(distinct == [1.0, 2.0, 3.0, 2.0])
+        // `distinct` drops elements; the survivors are the literals that went in.
+        #expect(identical(distinct, [1.0, 2.0, 3.0, 2.0]))
     }
 
     @Test("DistinctUntilChanged with custom comparator")
@@ -230,7 +233,8 @@ struct StreamingCompositionTests {
             values.append(value)
         }
 
-        #expect(values == [1.0, 2.0, 3.0, 4.0])
+        // `startWith` prepends the literal it was given and forwards the rest unchanged.
+        #expect(identical(values, [1.0, 2.0, 3.0, 4.0]))
     }
 
     // MARK: - Sample Tests
@@ -269,7 +273,8 @@ struct StreamingCompositionTests {
             values.append(value)
         }
 
-        #expect(values == [1.0, 2.0, 3.0])
+        // `take` truncates; the elements kept are the literals that went in.
+        #expect(identical(values, [1.0, 2.0, 3.0]))
     }
 
     @Test("Skip first N elements")
@@ -281,7 +286,8 @@ struct StreamingCompositionTests {
             values.append(value)
         }
 
-        #expect(values == [3.0, 4.0, 5.0])
+        // `skip` drops a prefix; the elements kept are the literals that went in.
+        #expect(identical(values, [3.0, 4.0, 5.0]))
     }
 
     @Test("TakeWhile condition holds")
@@ -293,7 +299,8 @@ struct StreamingCompositionTests {
             values.append(value)
         }
 
-        #expect(values == [1.0, 2.0, 3.0])
+        // `takeWhile` truncates; the elements kept are the literals that went in.
+        #expect(identical(values, [1.0, 2.0, 3.0]))
     }
 
     @Test("SkipWhile condition holds")
@@ -305,7 +312,8 @@ struct StreamingCompositionTests {
             values.append(value)
         }
 
-        #expect(values == [3.0, 4.0, 5.0])
+        // `skipWhile` drops a prefix; the elements kept are the literals that went in.
+        #expect(identical(values, [3.0, 4.0, 5.0]))
     }
 
     // MARK: - Timeout Tests
@@ -319,7 +327,8 @@ struct StreamingCompositionTests {
             for try await value in stream.timeout(duration: .seconds(1)) {
                 values.append(value)
             }
-            #expect(values == [1.0, 2.0, 3.0])
+            // `timeout` forwards elements unchanged when it does not fire.
+            #expect(identical(values, [1.0, 2.0, 3.0]))
         } catch {
             Issue.record("Should not timeout for fast stream")
         }

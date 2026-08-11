@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 /// Tests for time-based windowing operators (Phase 2.5 — Gap 2)
@@ -54,8 +55,9 @@ struct TimeWindowedTests {
         }
 
         #expect(windows.count == 2)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
-        #expect(windows[1] == [4.0, 5.0, 6.0])
+        // Windowing only groups the values by timestamp; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
+        #expect(identical(windows[1], [4.0, 5.0, 6.0]))
     }
 
     @Test("Tumbling window: partial final window emitted on stream end")
@@ -73,8 +75,9 @@ struct TimeWindowedTests {
         }
 
         #expect(windows.count == 2)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
-        #expect(windows[1] == [4.0, 5.0])
+        // Windowing only groups the values by timestamp; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
+        #expect(identical(windows[1], [4.0, 5.0]))
     }
 
     @Test("Tumbling window: empty stream yields no windows")
@@ -105,7 +108,8 @@ struct TimeWindowedTests {
         }
 
         #expect(windows.count == 1)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
+        // Windowing only groups the values by timestamp; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
     }
 
     @Test("Tumbling window: irregular arrival rates")
@@ -125,8 +129,9 @@ struct TimeWindowedTests {
         // Window 1 [0ms, 300ms): values at 0, 10, 20 → [1, 2, 3]
         // Window 2 [300ms, 600ms): values at 300, 310 → [4, 5]
         #expect(windows.count == 2)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
-        #expect(windows[1] == [4.0, 5.0])
+        // Windowing only groups the values by timestamp; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
+        #expect(identical(windows[1], [4.0, 5.0]))
     }
 
     // MARK: - Sliding Window Tests
@@ -167,8 +172,9 @@ struct TimeWindowedTests {
 
         // Should behave like tumbling — non-overlapping windows
         #expect(windows.count == 2)
-        #expect(windows[0] == [1.0, 2.0, 3.0])
-        #expect(windows[1] == [4.0, 5.0, 6.0])
+        // Windowing only groups the values by timestamp; each is the literal that went in.
+        #expect(identical(windows[0], [1.0, 2.0, 3.0]))
+        #expect(identical(windows[1], [4.0, 5.0, 6.0]))
     }
 
     @Test("Sliding window: empty stream yields no windows")
@@ -196,7 +202,8 @@ struct TimeWindowedTests {
 
         // Single element should appear in at least one window
         #expect(windows.count >= 1)
-        #expect(windows[0] == [42.0])
+        // Windowing only groups the values by timestamp; this is the literal that went in.
+        #expect(identical(windows[0], [42.0]))
     }
 
     // MARK: - Edge Case Tests (Tumbling)
@@ -212,7 +219,8 @@ struct TimeWindowedTests {
         }
 
         #expect(windows.count == 1)
-        #expect(windows[0] == [99.0])
+        // Windowing only groups the values by timestamp; this is the literal that went in.
+        #expect(identical(windows[0], [99.0]))
     }
 
     @Test("Tumbling window: very short duration (1 nanosecond) produces many single-element windows")
