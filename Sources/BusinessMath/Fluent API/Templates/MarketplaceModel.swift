@@ -314,6 +314,9 @@ public struct MarketplaceModel: Sendable {
     public func calculateTransactionsPerSeller(forMonth month: Int) -> Double {
         let totalTransactions = calculateTotalTransactions(forMonth: month)
         let sellers = calculateSellers(forMonth: month)
+        // No sellers, so nothing is being sold per seller. Ungarded this is
+        // `+infinity`, which then poisons any total or average built from it.
+        guard sellers > 0 else { return 0 }
         return totalTransactions / sellers
     }
 
@@ -326,6 +329,9 @@ public struct MarketplaceModel: Sendable {
     public func calculateAverageSellerRevenue(forMonth month: Int) -> Double {
         let gmv = calculateGMV(forMonth: month)
         let sellers = calculateSellers(forMonth: month)
+        // No sellers to average over. Unguarded this is `+infinity`, which reads as
+        // unbounded revenue per seller for a marketplace that has none.
+        guard sellers > 0 else { return 0 }
         return gmv / sellers
     }
 
@@ -343,14 +349,22 @@ public struct MarketplaceModel: Sendable {
     public func calculateLiquidity(forMonth month: Int) -> Double {
         let buyers = calculateBuyers(forMonth: month)
         let sellers = calculateSellers(forMonth: month)
+        // This is the guard that matters most, because liquidity is a figure people
+        // threshold on. Unguarded, a marketplace with no sellers returns `+infinity`,
+        // which satisfies "buyers per seller above 2 is healthy" — so the one
+        // marketplace where nothing can be bought reads as the healthiest on the books.
+        guard sellers > 0 else { return 0 }
         return buyers / sellers
     }
 
     /// Calculate buyer-seller ratio using snapshot data.
     ///
-    /// - Returns: Buyer-seller ratio, or 0 if using growth model
+    /// - Returns: Buyer-seller ratio, or 0 if using growth model or there are no sellers
     public func calculateBuyerSellerRatio() -> Double {
-        guard let buyers = numberOfBuyers, let sellers = numberOfSellers else { return 0 }
+        // The `let` binding guards absence, which is a different question from zero:
+        // a snapshot that names its seller count as 0 passes this guard and divides
+        // by it. Same `+infinity`, reached one step later.
+        guard let buyers = numberOfBuyers, let sellers = numberOfSellers, sellers > 0 else { return 0 }
         return buyers / sellers
     }
 
