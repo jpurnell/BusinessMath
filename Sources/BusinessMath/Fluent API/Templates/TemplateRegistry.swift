@@ -146,6 +146,16 @@ public struct TemplateSchema: Codable, Sendable {
         }
     }
 
+    /// Reverse-DNS identifier of the template this schema describes.
+    ///
+    /// Carried here rather than alongside it in ``TemplatePackage`` for two reasons: the
+    /// schema is what `export` serialises, so the identifier travels with the thing it
+    /// identifies; and the package checksum is computed over the schema JSON, so the
+    /// identifier is covered by the same integrity check as everything else. A package
+    /// whose identifier was altered in transit fails `verifyIntegrity()` rather than
+    /// importing under a different identity.
+    public let identifier: String
+
     /// Array of parameter definitions
     public let parameters: [Parameter]
 
@@ -154,12 +164,16 @@ public struct TemplateSchema: Codable, Sendable {
 
     /// Creates a template parameter schema.
     /// - Parameters:
+    ///   - identifier: Reverse-DNS identifier of the template being described,
+    ///     e.g. `com.businessmath.templates.saas`
     ///   - parameters: Array of parameter definitions
     ///   - examples: Named example parameter sets for documentation (default: empty)
     public init(
+        identifier: String,
         parameters: [Parameter],
         examples: [String: [String: String]] = [:]
     ) {
+        self.identifier = identifier
         self.parameters = parameters
         self.examples = examples
     }
@@ -593,7 +607,12 @@ public actor TemplateRegistry {
 
         // Create imported template wrapper
         let importedTemplate = ImportedTemplate(
-            identifier: package.metadata.name,
+            // The schema carries the template's own identifier. This previously used
+            // `package.metadata.name`, which is a display name, not an identity: a
+            // template exported as `com.businessmath.templates.saas` was imported as
+            // "SaaS Template". Round-tripping silently changed what the registry
+            // registered and retrieved it by.
+            identifier: schema.identifier,
             templateSchema: schema,
             metadata: package.metadata
         )

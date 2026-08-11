@@ -40,6 +40,7 @@ struct TemplateRegistryTests {
 
         func schema() -> TemplateSchema {
             TemplateSchema(
+                identifier: identifier,
                 parameters: [
                     TemplateSchema.Parameter(
                         name: "testValue",
@@ -568,6 +569,7 @@ struct TemplateRegistryTests {
     @Test("Schema with examples")
     func schemaWithExamples() throws {
         let schema = TemplateSchema(
+            identifier: "com.businessmath.tests.schema-with-examples",
             parameters: [
                 TemplateSchema.Parameter(
                     name: "revenue",
@@ -582,9 +584,16 @@ struct TemplateRegistryTests {
             ]
         )
 
+        // Assert what the examples *are*, not merely that keys exist. An example set
+        // that survived with the wrong values would satisfy a presence check while
+        // documenting the wrong usage.
         #expect(schema.examples.count == 2)
-        let _ = try #require(schema.examples["basic"])
-        let _ = try #require(schema.examples["advanced"])
+        #expect(schema.examples["basic"] == ["revenue": "1000000"])
+        #expect(schema.examples["advanced"] == ["revenue": "5000000"])
+
+        // The identifier survives construction, which is the property the export /
+        // import round trip depends on.
+        #expect(schema.identifier == "com.businessmath.tests.schema-with-examples")
     }
 
     // MARK: - Utility Tests

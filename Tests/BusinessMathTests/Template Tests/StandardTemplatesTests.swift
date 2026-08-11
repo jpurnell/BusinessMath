@@ -32,6 +32,8 @@ struct StandardTemplatesTests {
         try await registry.register(template, metadata: metadata)
 
         let found = try #require(await registry.template(named: "SaaS Template"))
+        // Registration must return the template that was registered, not merely something.
+        #expect(found.identifier == template.identifier)
     }
 
     @Test("SaaS template creates valid model")
@@ -112,6 +114,8 @@ struct StandardTemplatesTests {
 
         // Verify imported
         let found = try #require(await registry2.template(named: "SaaS Template"))
+        // The round-trip must preserve template identity, not just produce some entry.
+        #expect(found.identifier == template.identifier)
     }
 
     // MARK: - Retail Template Tests

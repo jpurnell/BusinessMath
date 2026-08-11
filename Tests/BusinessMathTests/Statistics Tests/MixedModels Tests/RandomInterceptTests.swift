@@ -1,4 +1,5 @@
 import Testing
+import RealModule
 @testable import BusinessMath
 
 @Suite("Random Intercept LME Model")
@@ -178,6 +179,9 @@ struct RandomInterceptTests {
 			fixedEffects: testData.X, response: testData.y, grouping: grouping)
 		let result = try fitRandomIntercept(model)
 
+		// Guard the loop below: on an empty array it would pass without asserting
+		// anything. X is intercept-only, so there must be exactly one standard error.
+		#expect(result.standardErrors.count == 1)
 		for se in result.standardErrors {
 			#expect(se > 0.0)
 		}

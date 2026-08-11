@@ -584,6 +584,7 @@ struct WallClockAdoptionTests {
 
 		func schema() -> TemplateSchema {
 			TemplateSchema(
+				identifier: identifier,
 				parameters: [
 					TemplateSchema.Parameter(
 						name: "value",

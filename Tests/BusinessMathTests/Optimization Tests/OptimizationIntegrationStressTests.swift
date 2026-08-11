@@ -8,6 +8,7 @@
 
 import Foundation
 import Testing
+import RealModule
 @testable import BusinessMath
 
 // MARK: - Seeded RNG Helper (Optimization)
@@ -98,6 +99,8 @@ struct OptimizationIntegrationStressTests {
 
             // Assert: solution values are finite (no NaN)
             let solutionArray = result.solution.toArray()
+            // Guard the loop: on an empty array it asserts nothing. 2-D problem.
+            #expect(solutionArray.count == 2)
             for component in solutionArray {
                 #expect(component.isFinite)
             }
@@ -138,6 +141,8 @@ struct OptimizationIntegrationStressTests {
 
             // Assert: solution values are finite
             let solutionArray = result.solution.toArray()
+            // Guard the loop: on an empty array it asserts nothing. 2-D problem.
+            #expect(solutionArray.count == 2)
             for component in solutionArray {
                 #expect(component.isFinite)
             }
@@ -215,6 +220,8 @@ struct OptimizationIntegrationStressTests {
 
                     // Assert: solution values are finite
                     let solutionArray = result.solution.toArray()
+                    // Guard the loop: on an empty array it asserts nothing. 2-D problem.
+                    #expect(solutionArray.count == 2)
                     for component in solutionArray {
                         #expect(component.isFinite)
                     }

@@ -684,9 +684,12 @@ struct CreditMetricsTests {
 			"increasingAssetTurnover"
 		]
 
-		for signal in expectedSignals {
-			let _ = try #require(score.signals[signal], "Signal '\(signal)' should be present")
-		}
+		// Presence, not truth: a signal may legitimately be `false` (see the
+		// distressed-company tests), so this asserts which keys exist rather than what
+		// they say. Stated as set equality rather than a per-key `!= nil` loop because
+		// that also catches a signal appearing that should not — the F-score is exactly
+		// these nine, and a tenth would mean the scale had changed underneath the test.
+		#expect(Set(score.signals.keys) == Set(expectedSignals))
 
 		// Verify score components sum correctly
 		#expect(

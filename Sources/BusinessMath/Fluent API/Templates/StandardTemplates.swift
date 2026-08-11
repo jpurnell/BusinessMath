@@ -109,6 +109,7 @@ public struct SaaSTemplate: TemplateProtocol {
     /// - ``validate(parameters:)``
     public func schema() -> TemplateSchema {
         TemplateSchema(
+            identifier: identifier,
             parameters: [
                 TemplateSchema.Parameter(
                     name: "initialMRR",
@@ -386,6 +387,7 @@ public struct RetailTemplate: TemplateProtocol {
     /// - Returns: Template schema with parameter definitions.
     public func schema() -> TemplateSchema {
         TemplateSchema(
+            identifier: identifier,
             parameters: [
                 TemplateSchema.Parameter(
                     name: "initialInventoryValue",
@@ -497,6 +499,7 @@ public struct ManufacturingTemplate: TemplateProtocol {
     /// Returns the schema defining required parameters.
     public func schema() -> TemplateSchema {
         TemplateSchema(
+            identifier: identifier,
             parameters: [
                 TemplateSchema.Parameter(
                     name: "productionCapacity",
@@ -619,6 +622,7 @@ public struct MarketplaceTemplate: TemplateProtocol {
     /// Returns the schema defining required parameters.
     public func schema() -> TemplateSchema {
         TemplateSchema(
+            identifier: identifier,
             parameters: [
                 TemplateSchema.Parameter(
                     name: "initialBuyers",
@@ -801,6 +805,7 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
     /// Returns the schema defining required parameters.
     public func schema() -> TemplateSchema {
         TemplateSchema(
+            identifier: identifier,
             parameters: [
                 TemplateSchema.Parameter(
                     name: "initialSubscribers",
@@ -963,6 +968,7 @@ public struct RealEstateTemplate: TemplateProtocol {
     /// Includes example parameter sets for single-family and multifamily properties.
     public func schema() -> TemplateSchema {
         TemplateSchema(
+            identifier: identifier,
             parameters: [
                 TemplateSchema.Parameter(
                     name: "purchasePrice",
