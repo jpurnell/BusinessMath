@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // unboundedSolverTimeLimit
 import Foundation
 @testable import BusinessMath
 
@@ -141,7 +142,7 @@ struct BranchAndBoundRefactoringTests {
         // Old API: create solver without specifying relaxation solver
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 10_000,
-            timeLimit: 300.0
+            timeLimit: unboundedSolverTimeLimit
         )
 
         let objective: @Sendable (VectorN<Double>) -> Double = { v in
