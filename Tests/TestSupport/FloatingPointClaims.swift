@@ -71,3 +71,74 @@ public func exactlyEqual<T: BinaryFloatingPoint>(_ lhs: T, _ rhs: T) -> Bool {
 public func approximatelyEqual<T: BinaryFloatingPoint>(_ lhs: T, _ rhs: T, tolerance: T) -> Bool {
     return abs(lhs - rhs) < tolerance
 }
+
+// MARK: - Collections
+//
+// `==` on two collections of floating-point values compares them elementwise with `==`,
+// so every caveat of the scalar operator applies to every element — and the count is
+// part of the claim too. These say which comparison is meant, once, for the whole
+// sequence.
+//
+// Each delegates to its scalar counterpart above rather than restating the rule, so
+// there is one definition of what each claim means.
+
+/// Bit-for-bit equality of two sequences: same length, and each pair the *same number*
+/// down to the encoding.
+///
+/// This is the comparison a reproducibility claim wants. A seeded generator asked for
+/// the same stream twice must return the same bits, and `==` cannot express that: it
+/// reports `NaN != NaN`, so `#expect(a == b)` on two runs that both went NaN in the
+/// same place *fails*, while `#expect(a != b)` on a stream that silently produced NaNs
+/// **passes** — the assertion holds for exactly the reason it was written to exclude.
+///
+/// - Parameters:
+///   - lhs: The sequence the code under test produced.
+///   - rhs: The sequence it is claimed to reproduce, exactly.
+/// - Returns: `true` when both have the same count and every corresponding pair is
+///   ``identical(_:_:)``.
+public func identical<C: Collection>(_ lhs: C, _ rhs: C) -> Bool
+where C.Element: BinaryFloatingPoint {
+    return lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { identical($0, $1) }
+}
+
+/// IEEE equality of two sequences, chosen on purpose rather than reached for by habit.
+///
+/// Use where the values are exact but their *encodings* are not pinned — most often a
+/// vector that may carry `-0.0` in positions where `+0.0` is equally correct. Exactly as
+/// strong as writing `==` inline; what it adds is that the reader can see the choice was
+/// made. Where the encoding is pinned, prefer ``identical(_:_:)-(C,C)``, which says more.
+///
+/// - Parameters:
+///   - lhs: The sequence the code under test produced.
+///   - rhs: The sequence it is claimed to equal.
+/// - Returns: `true` when both have the same count and every corresponding pair compares
+///   equal under IEEE 754. `false` if either contains a NaN at any position.
+public func exactlyEqual<C: Collection>(_ lhs: C, _ rhs: C) -> Bool
+where C.Element: BinaryFloatingPoint {
+    return lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { exactlyEqual($0, $1) }
+}
+
+/// Elementwise equality within a stated tolerance, for sequences that are genuinely
+/// approximate.
+///
+/// The tolerance is a parameter and not a default because it should come from a
+/// measurement of the implementation's accuracy or from the precision of the reference
+/// values, not from a habit. Note that a NaN anywhere makes the comparison `false`,
+/// since `abs(nan - x) < tolerance` is `false` — which is the right answer, but means
+/// this cannot double as a reproducibility check.
+///
+/// - Parameters:
+///   - lhs: The sequence the code under test produced.
+///   - rhs: The reference sequence.
+///   - tolerance: The largest absolute difference that still counts as agreement, applied
+///     to each element independently.
+/// - Returns: `true` when both have the same count and every corresponding pair differs
+///   by less than `tolerance`.
+public func approximatelyEqual<C: Collection>(
+    _ lhs: C,
+    _ rhs: C,
+    tolerance: C.Element
+) -> Bool where C.Element: BinaryFloatingPoint {
+    return lhs.count == rhs.count
+        && zip(lhs, rhs).allSatisfy { approximatelyEqual($0, $1, tolerance: tolerance) }
+}
