@@ -101,6 +101,14 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 	/// Maximum iterations for underlying optimizer
 	public let maxIterations: Int
 
+	/// Outer penalty escalations allowed in the underlying augmented Lagrangian.
+	///
+	/// Distinct from ``maxIterations``, which bounds total solver work. Each outer step
+	/// multiplies the penalty weight tenfold, so passing a caller's four-digit budget
+	/// here walks it out of the representable range rather than buying accuracy. Matches
+	/// the underlying optimizer's own default.
+	private static var outerIterationBudget: Int { 100 }
+
 	/// Convergence tolerance
 	public let tolerance: Double
 
@@ -172,6 +180,17 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 			return total / probSum // fp-safety:disable — probSum > 0 (scenarios nonempty, probabilities > 0)
 		}
 
+		// The solvers below all minimise, so maximising means minimising the negation and
+		// nothing else. Without this the `minimize` flag was accepted, documented and
+		// discarded: a caller asking to maximise expected profit got the production plan
+		// that *minimises* it, converged, with no error and no warning. On the newsvendor
+		// that is q = 0 at −517 rather than q ≈ 106 at +790.
+		//
+		// Reported statistics stay in the caller's own sign convention, because they are
+		// computed further down from `objective` rather than from this.
+		let negatedObjective: @Sendable (V) -> Double = { point in -saaObjective(point) }
+		let directedObjective: @Sendable (V) -> Double = minimize ? saaObjective : negatedObjective
+
 		// Choose optimizer based on constraints
 		let hasInequality = constraints.contains { !$0.isEquality }
 
@@ -182,11 +201,11 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 			let optimizer = InequalityOptimizer<V>(
 				constraintTolerance: V.Scalar(tolerance),
 				gradientTolerance: V.Scalar(tolerance),
-				maxIterations: maxIterations,
-				maxInnerIterations: 1000
+				maxIterations: Self.outerIterationBudget,
+				maxInnerIterations: maxIterations
 			)
 			result = try optimizer.minimize(
-				saaObjective,
+				directedObjective,
 				from: initialSolution,
 				subjectTo: constraints
 			)
@@ -195,11 +214,11 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 			let optimizer = ConstrainedOptimizer<V>(
 				constraintTolerance: V.Scalar(tolerance),
 				gradientTolerance: V.Scalar(tolerance),
-				maxIterations: maxIterations,
-				maxInnerIterations: 1000
+				maxIterations: Self.outerIterationBudget,
+				maxInnerIterations: maxIterations
 			)
 			result = try optimizer.minimize(
-				saaObjective,
+				directedObjective,
 				from: initialSolution,
 				subjectTo: constraints
 			)
@@ -277,16 +296,16 @@ extension StochasticOptimizer {
 			let optimizer = InequalityOptimizer<V>(
 				constraintTolerance: V.Scalar(tolerance),
 				gradientTolerance: V.Scalar(tolerance),
-				maxIterations: maxIterations,
-				maxInnerIterations: 1000
+				maxIterations: Self.outerIterationBudget,
+				maxInnerIterations: maxIterations
 			)
 			result = try optimizer.minimize(saaObjective, from: initialSolution, subjectTo: constraints)
 		} else {
 			let optimizer = ConstrainedOptimizer<V>(
 				constraintTolerance: V.Scalar(tolerance),
 				gradientTolerance: V.Scalar(tolerance),
-				maxIterations: maxIterations,
-				maxInnerIterations: 1000
+				maxIterations: Self.outerIterationBudget,
+				maxInnerIterations: maxIterations
 			)
 			result = try optimizer.minimize(saaObjective, from: initialSolution, subjectTo: constraints)
 		}
