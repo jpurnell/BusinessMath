@@ -208,6 +208,38 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 			)
 		}
 
+		// MARK: Exact dual counterpart
+		//
+		// When the objective is affine in the uncertain parameters and the set is a box,
+		// the worst case has a closed form and the sampling below is not needed at all —
+		// nor is it as good, since a sample only ever bounds the worst case from below and
+		// can therefore report a robust solution that is optimistic.
+		if let dual = try dualRobustCounterpart(
+			objective: objective,
+			nominalParameters: nominalParameters,
+			initialSolution: initialSolution,
+			constraints: constraints,
+			minimize: minimize
+		) {
+			let worst = Self.worstCase(
+				at: dual.solution,
+				objective: objective,
+				uncertaintyPoints: uncertaintyPoints,
+				nominalParameters: nominalParameters,
+				minimize: minimize
+			)
+			// The reported worst case is the closed-form one, not the best of the samples:
+			// the samples are a subset of the set the answer was actually chosen against.
+			return RobustResult(
+				solution: dual.solution,
+				worstCaseObjective: dual.worstCaseObjective,
+				nominalObjective: objective(dual.solution, nominalParameters),
+				worstCaseParameters: dual.worstCaseParameters.isEmpty ? worst.parameters : dual.worstCaseParameters,
+				converged: true,
+				iterations: dual.iterations
+			)
+		}
+
 		// MARK: Linear fast path
 		//
 		// When the objective is linear in the decision variables at every sampled
@@ -342,6 +374,246 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 			converged: augmentedResult.converged,
 			iterations: augmentedResult.iterations
 		)
+	}
+
+	// MARK: - Exact dual counterpart
+
+	/// Solves the robust counterpart in closed form, when the model admits one.
+	///
+	/// For an objective affine in the uncertain parameters,
+	/// `f(x, ω) = f(x, ω̄) + Σᵢ aᵢ(x)·(ωᵢ − ω̄ᵢ)`, and over a box the inner maximisation is
+	/// immediate: each `(ωᵢ − ω̄ᵢ)` is free within `±δᵢ`, so it takes the sign of `aᵢ(x)`
+	/// and contributes `δᵢ|aᵢ(x)|`. The robust objective is therefore
+	///
+	///     f(x, ω̄) + Σᵢ δᵢ|aᵢ(x)|
+	///
+	/// which is piecewise linear and lifts to a linear program with one auxiliary variable
+	/// per uncertain parameter. No sampling, no iteration, and the answer is a *bound*
+	/// rather than the best of whatever scenarios happened to be drawn.
+	///
+	/// That distinction is the point. A sampled worst case is a lower bound on the true
+	/// one, so a solution chosen against it can be optimistic in exactly the situation the
+	/// caller reached for robust optimization to avoid. Under this path the reported worst
+	/// case does not move when `samplesPerIteration` does, because the sample is not
+	/// involved.
+	///
+	/// Returns `nil` when the model does not qualify — a non-box set, an objective that is
+	/// not affine in `ω`, or a coefficient that is not linear in `x` — so those fall
+	/// through to the general path.
+	private func dualRobustCounterpart(
+		objective: @escaping @Sendable (V, [Double]) -> Double,
+		nominalParameters: [Double],
+		initialSolution: V,
+		constraints: [MultivariateConstraint<V>],
+		minimize: Bool
+	) throws -> (solution: V, worstCaseObjective: Double, worstCaseParameters: [Double], iterations: Int)? {
+
+		guard let box = uncertaintySet as? BoxUncertaintySet else { return nil }
+		let parameterCount = box.nominal.count
+		guard parameterCount == nominalParameters.count, parameterCount > 0 else { return nil }
+
+		let dimension = initialSolution.toArray().count
+		guard dimension > 0 else { return nil }
+
+		// f(·, ω̄), which must be linear in the decision variables.
+		let nominalObjective: (V) -> Double = { point in objective(point, box.nominal) }
+		guard let nominalModel = try? validateLinearModel(nominalObjective, dimension: dimension, at: initialSolution),
+			  nominalModel.coefficients.count == dimension else {
+			return nil
+		}
+
+		// aᵢ(x) = ∂f/∂ωᵢ, recovered by a central difference in ωᵢ, and itself required to
+		// be linear in x.
+		let probe = 1e-6
+		var sensitivities: [(coefficients: [Double], constant: Double)] = []
+		sensitivities.reserveCapacity(parameterCount)
+
+		for i in 0..<parameterCount {
+			var raised = box.nominal
+			var lowered = box.nominal
+			raised[i] += probe
+			lowered[i] -= probe
+
+			let sensitivity: (V) -> Double = { point in
+				let rise = objective(point, raised) - objective(point, lowered)
+				return rise / (2 * probe)
+			}
+
+			// Recovered with unit steps in x, not by handing this to
+			// `validateLinearModel`. That routine differentiates with a step of 1e-8, and
+			// `sensitivity` is *already* a difference quotient carrying roughly 1e-10 of
+			// cancellation noise — differencing it again at 1e-8 leaves a signal and a
+			// noise floor of the same order, and the linearity check correctly rejects
+			// the result. Stepping by one instead puts the signal eight orders above the
+			// noise.
+			guard let model = Self.affineModel(of: sensitivity, at: initialSolution, dimension: dimension) else {
+				return nil
+			}
+			sensitivities.append(model)
+		}
+
+		// Affine in ω is an assumption so far, not a finding. Check it: at a corner of the
+		// box the first-order prediction must reproduce the objective, or the closed form
+		// above is simply wrong and this path must decline.
+		var corner = box.nominal
+		for i in 0..<parameterCount { corner[i] += box.deviations[i] }
+		let actualAtCorner = objective(initialSolution, corner)
+		var predictedAtCorner = nominalObjective(initialSolution)
+		let startComponents = initialSolution.toArray()
+		for i in 0..<parameterCount {
+			var slope = sensitivities[i].constant
+			for j in 0..<dimension { slope += sensitivities[i].coefficients[j] * startComponents[j] }
+			predictedAtCorner += slope * box.deviations[i]
+		}
+		let affineMargin = Swift.max(1e-7, abs(actualAtCorner) * 1e-6)
+		guard abs(actualAtCorner - predictedAtCorner) <= affineMargin else { return nil }
+
+		// Caller constraints, linearised.
+		var linearConstraints: [(coefficients: [Double], constant: Double, isEquality: Bool)] = []
+		for constraint in constraints {
+			let evaluate: (V) -> Double = { point in constraint.evaluate(at: point) }
+			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: initialSolution),
+				  model.coefficients.count == dimension else {
+				return nil
+			}
+			linearConstraints.append((model.coefficients, model.constant, constraint.isEquality))
+		}
+
+		// Columns: [x₀⁺, x₀⁻, …, u₀, …], the auxiliary variables being non-negative by
+		// construction since each bounds an absolute value.
+		let auxiliaryBase = 2 * dimension
+		let variableCount = auxiliaryBase + parameterCount
+
+		var rows: [SimplexConstraint] = []
+
+		// uᵢ ≥ aᵢ(x) and uᵢ ≥ −aᵢ(x)
+		for i in 0..<parameterCount {
+			var upper = [Double](repeating: 0, count: variableCount)
+			var lower = [Double](repeating: 0, count: variableCount)
+			for j in 0..<dimension {
+				let coefficient = sensitivities[i].coefficients[j]
+				upper[j] = coefficient
+				upper[dimension + j] = -coefficient
+				lower[j] = -coefficient
+				lower[dimension + j] = coefficient
+			}
+			upper[auxiliaryBase + i] = -1
+			lower[auxiliaryBase + i] = -1
+			rows.append(SimplexConstraint(coefficients: upper, relation: .lessOrEqual, rhs: -sensitivities[i].constant))
+			rows.append(SimplexConstraint(coefficients: lower, relation: .lessOrEqual, rhs: sensitivities[i].constant))
+		}
+
+		for constraint in linearConstraints {
+			var row = [Double](repeating: 0, count: variableCount)
+			for j in 0..<dimension {
+				row[j] = constraint.coefficients[j]
+				row[dimension + j] = -constraint.coefficients[j]
+			}
+			let relation: ConstraintRelation = constraint.isEquality ? .equal : .lessOrEqual
+			rows.append(SimplexConstraint(coefficients: row, relation: relation, rhs: -constraint.constant))
+		}
+
+		// Minimising the worst case costs `+δᵢuᵢ`; maximising it costs the same, because
+		// the inner optimisation flips with the outer one and the penalty is positive
+		// either way. Only the nominal term changes sign.
+		var objectiveCoefficients = [Double](repeating: 0, count: variableCount)
+		for j in 0..<dimension {
+			let coefficient = minimize ? nominalModel.coefficients[j] : -nominalModel.coefficients[j]
+			objectiveCoefficients[j] = coefficient
+			objectiveCoefficients[dimension + j] = -coefficient
+		}
+		for i in 0..<parameterCount {
+			objectiveCoefficients[auxiliaryBase + i] = box.deviations[i]
+		}
+
+		let solver = SimplexSolver(tolerance: Self.linearisationTolerance)
+		let solved = try solver.minimize(objective: objectiveCoefficients, subjectTo: rows)
+		guard solved.status == .optimal, solved.solution.count >= variableCount else { return nil }
+
+		var components: [Double] = []
+		components.reserveCapacity(dimension)
+		for j in 0..<dimension {
+			components.append(solved.solution[j] - solved.solution[dimension + j])
+		}
+
+		let feasibilityLimit = Swift.max(tolerance, Self.linearisationTolerance)
+		for constraint in linearConstraints {
+			let residual = zip(constraint.coefficients, components).reduce(constraint.constant) {
+				$0 + $1.0 * $1.1
+			}
+			let breach = constraint.isEquality ? abs(residual) : residual
+			guard breach <= feasibilityLimit else { return nil }
+		}
+
+		guard let solution = V.fromArray(components) else { return nil }
+
+		// The realising parameter vector, read off the signs rather than searched for.
+		var worstParameters = box.nominal
+		for i in 0..<parameterCount {
+			var slope = sensitivities[i].constant
+			for j in 0..<dimension { slope += sensitivities[i].coefficients[j] * components[j] }
+			let towardWorse = minimize ? slope : -slope
+			worstParameters[i] += towardWorse >= 0 ? box.deviations[i] : -box.deviations[i]
+		}
+
+		return (solution, objective(solution, worstParameters), worstParameters, solved.iterations)
+	}
+
+	/// Recovers `f(x) = c·x + d` using unit steps, and verifies the fit away from them.
+	///
+	/// Exists because ``validateLinearModel(_:dimension:at:numSamples:tolerance:)``
+	/// differentiates at 1e-8, which is the wrong instrument for a function that is itself
+	/// a difference quotient: the inner cancellation noise then dominates the outer signal.
+	/// A unit step is safe here because the caller only applies this to functions already
+	/// expected to be affine, so there is no truncation error to trade against — an affine
+	/// function is recovered exactly at any step size.
+	///
+	/// Returns `nil` if the function does not reproduce the fitted model at points away
+	/// from the ones it was fitted on, which is what disqualifies a non-affine objective
+	/// from this path.
+	private static func affineModel(
+		of function: (V) -> Double,
+		at point: V,
+		dimension: Int
+	) -> (coefficients: [Double], constant: Double)? {
+
+		let base = point.toArray()
+		let baseValue = function(point)
+		guard baseValue.isFinite else { return nil }
+
+		var coefficients: [Double] = []
+		coefficients.reserveCapacity(dimension)
+		for j in 0..<dimension {
+			var stepped = base
+			stepped[j] += 1
+			guard let steppedPoint = V.fromArray(stepped) else { return nil }
+			let value = function(steppedPoint)
+			guard value.isFinite else { return nil }
+			coefficients.append(value - baseValue)
+		}
+
+		var constant = baseValue
+		for j in 0..<dimension { constant -= coefficients[j] * base[j] }
+
+		// Two probes away from the unit axes the model was built on. An affine function
+		// reproduces exactly; anything curved does not, and is refused rather than
+		// linearised and quietly solved as something it is not.
+		for scale in [2.5, -1.5] {
+			var probe = base
+			for j in 0..<dimension { probe[j] += scale * Double(j + 1) }
+			guard let probePoint = V.fromArray(probe) else { return nil }
+
+			let actual = function(probePoint)
+			guard actual.isFinite else { return nil }
+
+			var predicted = constant
+			for j in 0..<dimension { predicted += coefficients[j] * probe[j] }
+
+			let margin = Swift.max(1e-6, abs(actual) * 1e-6)
+			guard abs(actual - predicted) <= margin else { return nil }
+		}
+
+		return (coefficients, constant)
 	}
 
 	// MARK: - Linear robust counterpart
