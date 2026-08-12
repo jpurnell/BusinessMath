@@ -101,6 +101,8 @@ public func generateRandomReturns<G: RandomNumberGenerator>(
 ///   - size: Number of assets (matrix dimension)
 ///   - avgCorrelation: Average correlation between assets (0.0 to 1.0)
 ///   - volatility: Asset volatility range (min, max)
+///   - seed: Fixes the per-asset volatilities and the per-pair correlation jitter, so
+///     the same seed returns the same matrix. `nil` (the default) draws fresh values.
 /// - Returns: size × size covariance matrix
 ///
 /// ## Example
@@ -203,6 +205,8 @@ public func generateCovarianceMatrix<G: RandomNumberGenerator>(
 ///   - sparsity: Fraction of off-diagonal elements that are zero (0.0 to 1.0).
 ///     For example, 0.95 means 95% of correlations are zero.
 ///   - volatility: Asset volatility range (min, max)
+///   - seed: Fixes the volatilities and the within-cluster correlations, so the same
+///     seed returns the same matrix. `nil` (the default) draws fresh values.
 /// - Returns: size × size sparse covariance matrix
 ///
 /// ## Example
@@ -428,6 +432,8 @@ public func simplifiedPortfolioVariance(
 ///   - count: Number of assets
 ///   - minVolatility: Minimum volatility (default: 0.10 for 10%)
 ///   - maxVolatility: Maximum volatility (default: 0.30 for 30%)
+///   - seed: Fixes the draws, so the same seed returns the same volatilities. `nil`
+///     (the default) draws fresh values.
 /// - Returns: Vector of asset volatilities
 ///
 /// ## Example

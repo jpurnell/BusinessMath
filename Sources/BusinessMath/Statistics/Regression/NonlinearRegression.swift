@@ -260,7 +260,10 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 	}
 
 	/// Simulate with specific x values (instead of random)
-	/// - Parameter xValues: Specific predictor values
+	/// - Parameters:
+	///   - xValues: Specific predictor values
+	///   - seed: Fixes the residual draws, so the same seed returns the same responses
+	///     at the same predictors. `nil` (the default) draws fresh.
 	/// - Returns: Array of (x, y) data points
 	public func simulate(xValues: [T], seed: UInt64? = nil) -> [DataPoint] {
 		if let seed {
