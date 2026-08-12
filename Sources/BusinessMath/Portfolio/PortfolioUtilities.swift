@@ -39,7 +39,7 @@ public func generateRandomReturns(
 	mean: Double,
 	stdDev: Double
 ) -> VectorN<Double> {
-	var generator = SystemRandomNumberGenerator() // stochastic:exempt
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
 	return generateRandomReturns(count: count, mean: mean, stdDev: stdDev, using: &generator)
 }
 
@@ -126,11 +126,45 @@ public func generateRandomReturns<G: RandomNumberGenerator>(
 public func generateCovarianceMatrix(
 	size: Int,
 	avgCorrelation: Double,
-	volatility: (min: Double, max: Double) = (0.10, 0.30)
+	volatility: (min: Double, max: Double) = (0.10, 0.30),
+	seed: UInt64? = nil
+) -> [[Double]] {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return generateCovarianceMatrix(
+			size: size, avgCorrelation: avgCorrelation, volatility: volatility, using: &generator
+		)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return generateCovarianceMatrix(
+		size: size, avgCorrelation: avgCorrelation, volatility: volatility, using: &generator
+	)
+}
+
+/// Generates a covariance matrix, drawing every value from `generator`.
+///
+/// The generator-parameterized form of
+/// ``generateCovarianceMatrix(size:avgCorrelation:volatility:seed:)``. Both the
+/// per-asset volatilities and the per-pair correlation jitter come from the same
+/// stream, so one seed fixes the whole matrix.
+///
+/// - Parameters:
+///   - size: Number of assets.
+///   - avgCorrelation: Mean pairwise correlation, jittered by ±0.05 per pair.
+///   - volatility: Bounds of the per-asset volatility draw.
+///   - generator: The random source.
+/// - Returns: A symmetric `size × size` covariance matrix.
+public func generateCovarianceMatrix<G: RandomNumberGenerator>(
+	size: Int,
+	avgCorrelation: Double,
+	volatility: (min: Double, max: Double) = (0.10, 0.30),
+	using generator: inout G
 ) -> [[Double]] {
 	// Generate random volatilities for each asset
-	let volatilities = (0..<size).map { _ in
-		Double.random(in: volatility.min...volatility.max) // stochastic:exempt
+	var volatilities: [Double] = []
+	volatilities.reserveCapacity(size)
+	for _ in 0..<size {
+		volatilities.append(Double.random(in: volatility.min...volatility.max, using: &generator))
 	}
 
 	// Create covariance matrix: Cov(i,j) = ρ * σᵢ * σⱼ
@@ -146,7 +180,7 @@ public func generateCovarianceMatrix(
 		for j in (i+1)..<size {
 			// Off-diagonal: covariance = ρ * σᵢ * σⱼ
 			// Add small random variation to correlation
-			let correlation = avgCorrelation + Double.random(in: -0.05...0.05) // stochastic:exempt
+			let correlation = avgCorrelation + Double.random(in: -0.05...0.05, using: &generator)
 			let clampedCorrelation = max(0.0, min(1.0, correlation))
 			let covariance = clampedCorrelation * volatilities[i] * volatilities[j]
 
@@ -204,11 +238,44 @@ public func generateCovarianceMatrix(
 public func generateSparseCovarianceMatrix(
 	size: Int,
 	sparsity: Double,
-	volatility: (min: Double, max: Double) = (0.10, 0.30)
+	volatility: (min: Double, max: Double) = (0.10, 0.30),
+	seed: UInt64? = nil
+) -> [[Double]] {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return generateSparseCovarianceMatrix(
+			size: size, sparsity: sparsity, volatility: volatility, using: &generator
+		)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return generateSparseCovarianceMatrix(
+		size: size, sparsity: sparsity, volatility: volatility, using: &generator
+	)
+}
+
+/// Generates a sparse covariance matrix, drawing every value from `generator`.
+///
+/// The generator-parameterized form of
+/// ``generateSparseCovarianceMatrix(size:sparsity:volatility:seed:)``. Volatilities and
+/// within-cluster correlations come from the same stream, so one seed fixes the matrix.
+///
+/// - Parameters:
+///   - size: Number of assets.
+///   - sparsity: Fraction of off-diagonal entries left at zero.
+///   - volatility: Bounds of the per-asset volatility draw.
+///   - generator: The random source.
+/// - Returns: A symmetric `size × size` covariance matrix with a block structure.
+public func generateSparseCovarianceMatrix<G: RandomNumberGenerator>(
+	size: Int,
+	sparsity: Double,
+	volatility: (min: Double, max: Double) = (0.10, 0.30),
+	using generator: inout G
 ) -> [[Double]] {
 	// Generate random volatilities
-	let volatilities = (0..<size).map { _ in
-		Double.random(in: volatility.min...volatility.max) // stochastic:exempt
+	var volatilities: [Double] = []
+	volatilities.reserveCapacity(size)
+	for _ in 0..<size {
+		volatilities.append(Double.random(in: volatility.min...volatility.max, using: &generator))
 	}
 
 	// Create matrix
@@ -232,7 +299,7 @@ public func generateSparseCovarianceMatrix(
 		for i in startIdx..<endIdx {
 			for j in (i+1)..<endIdx {
 				// Random correlation within cluster (0.2 to 0.5)
-				let correlation = Double.random(in: 0.20...0.50) // stochastic:exempt
+				let correlation = Double.random(in: 0.20...0.50, using: &generator)
 				let covariance = correlation * volatilities[i] * volatilities[j]
 				matrix[i][j] = covariance
 				matrix[j][i] = covariance  // Symmetric
@@ -372,10 +439,42 @@ public func simplifiedPortfolioVariance(
 public func generateRandomVolatilities(
 	count: Int,
 	minVolatility: Double = 0.10,
-	maxVolatility: Double = 0.30
+	maxVolatility: Double = 0.30,
+	seed: UInt64? = nil
 ) -> VectorN<Double> {
-	let volatilities = (0..<count).map { _ in
-		Double.random(in: minVolatility...maxVolatility) // stochastic:exempt
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return generateRandomVolatilities(
+			count: count, minVolatility: minVolatility, maxVolatility: maxVolatility, using: &generator
+		)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return generateRandomVolatilities(
+		count: count, minVolatility: minVolatility, maxVolatility: maxVolatility, using: &generator
+	)
+}
+
+/// Generates random volatilities, drawing every value from `generator`.
+///
+/// The generator-parameterized form of
+/// ``generateRandomVolatilities(count:minVolatility:maxVolatility:seed:)``.
+///
+/// - Parameters:
+///   - count: Number of volatilities to generate.
+///   - minVolatility: Lower bound of the uniform draw.
+///   - maxVolatility: Upper bound of the uniform draw.
+///   - generator: The random source.
+/// - Returns: A vector of `count` volatilities.
+public func generateRandomVolatilities<G: RandomNumberGenerator>(
+	count: Int,
+	minVolatility: Double = 0.10,
+	maxVolatility: Double = 0.30,
+	using generator: inout G
+) -> VectorN<Double> {
+	var volatilities: [Double] = []
+	volatilities.reserveCapacity(count)
+	for _ in 0..<count {
+		volatilities.append(Double.random(in: minVolatility...maxVolatility, using: &generator))
 	}
 	return VectorN(volatilities)
 }

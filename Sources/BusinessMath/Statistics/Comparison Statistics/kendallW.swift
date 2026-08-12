@@ -444,13 +444,43 @@ public func concordanceAnalysisNA<T: Real & Sendable>(_ rankings: [[T?]]) throws
 /// Shuffles each judge's rankings independently to build a null distribution,
 /// then computes the proportion of permuted W values that meet or exceed the observed W.
 ///
+/// The null distribution is built by shuffling, so the p-value is an estimate that
+/// moves with the draw. Unseeded, the same rankings can land either side of a
+/// significance threshold on consecutive calls — a reported significance that is not
+/// reproducible is not a result anyone can act on. Pass `seed:` to fix it.
+///
 /// - Parameters:
 ///   - rankings: A 2D array where rows are judges and columns are items.
 ///   - permutations: Number of random permutations (default 10,000).
+///   - seed: Fixes the permutations, and therefore the p-value.
 /// - Returns: A tuple of the observed W and its permutation-based p-value.
 /// - Throws: `BusinessMathError.invalidInput` if W cannot be computed from the rankings.
 public func concordancePermutationTest<T: Real & Sendable>(
-    _ rankings: [[T]], permutations: Int = 10000
+    _ rankings: [[T]], permutations: Int = 10000, seed: UInt64? = nil
+) throws -> (w: T, pValue: T) {
+    if let seed {
+        var generator = DeterministicRNG(seed: seed)
+        return try concordancePermutationTest(rankings, permutations: permutations, using: &generator)
+    }
+    var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+    return try concordancePermutationTest(rankings, permutations: permutations, using: &generator)
+}
+
+/// Estimates the p-value of Kendall's W, drawing every permutation from `generator`.
+///
+/// The generator-parameterized form of
+/// ``concordancePermutationTest(_:permutations:seed:)``, following the same convention
+/// as ``integrate(_:iterations:using:)``: all randomness comes from the caller's
+/// generator, so the caller owns reproducibility.
+///
+/// - Parameters:
+///   - rankings: A 2D array where rows are judges and columns are items.
+///   - permutations: Number of random permutations.
+///   - generator: The random source for the shuffles.
+/// - Returns: A tuple of the observed W and its permutation-based p-value.
+/// - Throws: `BusinessMathError.invalidInput` if W cannot be computed from the rankings.
+public func concordancePermutationTest<T: Real & Sendable, G: RandomNumberGenerator>(
+    _ rankings: [[T]], permutations: Int = 10000, using generator: inout G
 ) throws -> (w: T, pValue: T) {
     let observedW = kendallW(rankings)
 
@@ -465,7 +495,7 @@ public func concordancePermutationTest<T: Real & Sendable>(
     for _ in 0..<permutations {
         var permuted = rankings
         for i in 0..<permuted.count {
-            permuted[i].shuffle() // stochastic:exempt
+            permuted[i].shuffle(using: &generator)
         }
         let permW = kendallW(permuted)
         if permW >= observedW {

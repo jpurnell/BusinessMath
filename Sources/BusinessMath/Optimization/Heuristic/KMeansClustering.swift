@@ -383,7 +383,18 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 		iteration: Int
 	) throws -> [V] {
 		var newCentroids: [V] = []
-		var rng = SystemRandomNumberGenerator() // stochastic:exempt
+
+		// An empty cluster is replaced by a randomly chosen data point, and that draw
+		// has to honour ``seed`` like every other: a configured seed that reproduces a
+		// run only until two clusters merge is not a seed the caller can rely on.
+		// Offsetting by the iteration keeps successive rounds from replaying the same
+		// choice while leaving the whole sequence a function of the seed alone.
+		var rng: any RandomNumberGenerator
+		if let seed {
+			rng = DeterministicRNG(seed: seed &+ UInt64(bitPattern: Int64(iteration)))
+		} else {
+			rng = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+		}
 
 		for clusterIndex in 0..<k {
 			// Find all points assigned to this cluster

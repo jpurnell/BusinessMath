@@ -21,7 +21,7 @@ import Numerics
 ///   let randomValue: Double = distributionUniform()
 ///   // randomValue will be a uniform random number between 0.0 and 1.0
 ///   ```
-public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
+public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	let scale = 10_000_000.0  // Use 10 million to provide sufficient precision while avoiding 32-bit overflow
 	let quantized = (randomSeed * scale).rounded(.down) / scale // fp-safety:disable — scale is constant 10_000_000
 	return T(quantized)
@@ -47,7 +47,7 @@ public func distributionUniform<T: Real>(_ randomSeed: Double = Double.random(in
 ///   let randomValue: Double = distributionUniform(min: lowerBound, max: upperBound)
 ///   // randomValue will be a uniform random number between 5.0 and 10.0
 ///   ```
-public func distributionUniform<T: Real>(min l: T, max h: T, _ randomSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
+public func distributionUniform<T: Real>(min l: T, max h: T, _ randomSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
     let lower = T.minimum(l, h)
     let upper = T.maximum(l, h)
     return ((upper - lower) * distributionUniform(randomSeed)) + lower
@@ -76,7 +76,7 @@ public struct DistributionUniform: DistributionRandom, Sendable {
 	/// Generates a random value from the uniform distribution with an optional seed.
 	/// - Parameter randomSeed: Random seed value in [0, 1] (default: newly generated random value)
 	/// - Returns: A random Double uniformly distributed between min and max
-	public func random(_ randomSeed: Double = Double.random(in: 0...1)) -> Double { // stochastic:exempt
+	public func random(_ randomSeed: Double = Double.random(in: 0...1)) -> Double { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 		distributionUniform(min: min, max: max, randomSeed)
 	}
 

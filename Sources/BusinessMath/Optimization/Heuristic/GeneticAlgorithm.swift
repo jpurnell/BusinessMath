@@ -183,7 +183,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         if let seed = config.seed {
             self.rng = RNGWrapper(generator: SeededRandomNumberGenerator(seed: seed))
         } else {
-            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator()) // stochastic:exempt
+            self.rng = RNGWrapper(generator: SystemRandomNumberGenerator()) // stochastic:exempt — the documented unseeded path; set `config.seed` for reproducibility
         }
     }
 

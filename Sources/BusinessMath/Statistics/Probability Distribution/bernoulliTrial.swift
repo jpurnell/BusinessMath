@@ -25,14 +25,35 @@ import Numerics
 ///    print(outcome)
 ///
 /// Use this function when you're dealing with events that only have two possible outcomes, like tossing a coin, answering a true-or-false question, etc.
-public func bernoulliTrial<T: Real>(p: T) -> Int {
+public func bernoulliTrial<T: Real>(p: T, seed: UInt64? = nil) -> Int {
+    if let seed {
+        var generator = DeterministicRNG(seed: seed)
+        return bernoulliTrial(p: p, using: &generator)
+    }
+    var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+    return bernoulliTrial(p: p, using: &generator)
+}
+
+/// Performs a Bernoulli trial, drawing from `generator`.
+///
+/// The generator-parameterized form of ``bernoulliTrial(p:seed:)``, following the same
+/// convention as ``integrate(_:iterations:using:)``: all randomness comes from the
+/// caller's generator, so the caller owns reproducibility and can interleave this draw
+/// with others on one stream.
+///
+/// - Parameters:
+///   - p: Probability of success. Values at or below zero always fail; at or above one,
+///     always succeed.
+///   - generator: The random source for the draw.
+/// - Returns: `1` on success, `0` on failure.
+public func bernoulliTrial<T: Real, G: RandomNumberGenerator>(p: T, using generator: inout G) -> Int {
     // Fixed: Previous code `T(Int(Double.random(...) * 1e9 / 1e9))` always truncated to 0
     // because Int() truncates decimals. Now correctly compares random value to probability.
     //
     // Generate random integer in large range and compare scaled values.
     // This avoids floating-point precision issues and type conversion problems.
     let scale = 1_000_000_000
-    let randomInt = Int.random(in: 0..<scale) // stochastic:exempt
+    let randomInt = Int.random(in: 0..<scale, using: &generator)
     let threshold = T(scale)  // Real has init from Int
     // p * scale compared to randomInt
     // If p * scale > randomInt, return success

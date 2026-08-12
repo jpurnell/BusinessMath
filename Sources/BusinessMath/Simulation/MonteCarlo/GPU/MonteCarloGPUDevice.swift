@@ -499,7 +499,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             commandBuffer: commandBuffer,
             buffer: buffers.rngStates,
             iterations: iterations,
-            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt
+            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt — the documented unseeded fallback; pass `seed:` for reproducibility
         )
 
         // Step 2: Encode Monte Carlo iterations in same command buffer
@@ -537,7 +537,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             commandBuffer: commandBuffer,
             buffer: buffers.rngStates,
             iterations: iterations,
-            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt
+            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt — the documented unseeded fallback; pass `seed:` for reproducibility
         )
 
         try encodeMonteCarloIterations(
