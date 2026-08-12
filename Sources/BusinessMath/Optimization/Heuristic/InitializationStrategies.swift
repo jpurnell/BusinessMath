@@ -112,7 +112,7 @@ public struct RandomInitialization: CentroidInitialization {
 		if let seed = seed {
 			rng = SeededRandomNumberGenerator(seed: seed)
 		} else {
-			rng = SystemRandomNumberGenerator() // stochastic:exempt
+			rng = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
 		}
 
 		// Randomly select k distinct indices
@@ -187,7 +187,7 @@ public struct ForgyInitialization: CentroidInitialization {
 		if let seed = seed {
 			rng = SeededRandomNumberGenerator(seed: seed)
 		} else {
-			rng = SystemRandomNumberGenerator() // stochastic:exempt
+			rng = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
 		}
 
 		// Randomly assign each point to a cluster
@@ -289,7 +289,7 @@ public struct KMeansPlusPlusInitialization: CentroidInitialization {
 		if let seed = seed {
 			rng = SeededRandomNumberGenerator(seed: seed)
 		} else {
-			rng = SystemRandomNumberGenerator() // stochastic:exempt
+			rng = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
 		}
 
 		var centroids: [V] = []

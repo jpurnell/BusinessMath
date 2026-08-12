@@ -194,30 +194,63 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 	/// - Parameters:
 	///   - n: Number of observations to generate
 	///   - xRange: Range for uniform sampling of x values
+	///   - seed: Fixes both the predictor draws and the residual draws
 	/// - Returns: Array of (x, y) data points
-	public func simulate(n: Int, xRange: ClosedRange<T>) -> [DataPoint] {
+	public func simulate(n: Int, xRange: ClosedRange<T>, seed: UInt64? = nil) -> [DataPoint] {
+		if let seed {
+			var generator = DeterministicRNG(seed: seed)
+			return simulate(n: n, xRange: xRange, using: &generator)
+		}
+		var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+		return simulate(n: n, xRange: xRange, using: &generator)
+	}
+
+	/// Simulate data from the model, drawing everything from `generator`.
+	///
+	/// The generator-parameterized form of ``simulate(n:xRange:seed:)``. Note that each
+	/// observation consumes *three* uniforms, not one: the predictor, and the two that
+	/// ``distributionNormal(mean:stdDev:_:_:)`` needs for its Box-Muller pair. Those two
+	/// arrive as default arguments when omitted, and those defaults are themselves
+	/// `Double.random(in: 0...1)` — so seeding the predictor alone would leave the
+	/// residuals unseeded while looking, at the call site, entirely deterministic.
+	///
+	/// - Parameters:
+	///   - n: Number of observations to generate
+	///   - xRange: Range for uniform sampling of x values
+	///   - generator: The random source for predictors and residuals alike
+	/// - Returns: Array of (x, y) data points
+	public func simulate<G: RandomNumberGenerator>(
+		n: Int,
+		xRange: ClosedRange<T>,
+		using generator: inout G
+	) -> [DataPoint] {
 		var data: [DataPoint] = []
 		data.reserveCapacity(n)
 
 		for _ in 0..<n {
 			// Generate x uniformly
-			let u = T(Double.random(in: 0...1)) // stochastic:exempt
+			let u = T(Double.random(in: 0...1, using: &generator))
 			let x = xRange.lowerBound + u * (xRange.upperBound - xRange.lowerBound)
 
 			// Compute mean response
 			let mu = ReciprocalRegressionModel.predictedMean(x: x, params: parameters)
 
+			// The Box-Muller pair, drawn from the caller's stream rather than left to
+			// the defaults.
+			let u1 = Double.random(in: 0...1, using: &generator)
+			let u2 = Double.random(in: 0...1, using: &generator)
+
 			// Generate y from Normal(mu, sigma)
 			let y: T
 			if T.self == Double.self { // fp-safety:disable
-				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma)))
+				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma), u1, u2))
 			} else if T.self == Float.self { // fp-safety:disable
-				y = T(Float(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma))))
+				y = T(Float(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma), u1, u2)))
 			} else {
 				// Fallback for other Real types
 				let doubleMean = Double(mu)
 				let doubleSigma = Double(parameters.sigma)
-				y = T(distributionNormal(mean: doubleMean, stdDev: doubleSigma))
+				y = T(distributionNormal(mean: doubleMean, stdDev: doubleSigma, u1, u2))
 			}
 
 			data.append(DataPoint(x: x, y: y))

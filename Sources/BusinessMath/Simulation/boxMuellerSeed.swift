@@ -177,7 +177,7 @@ public func boxMullerSeed<T: Real, G: RandomNumberGenerator>(using generator: in
 /// - Note: Seeds are used at full precision. Before this they were routed through
 ///   ``distributionUniform(_:)`` and quantized to multiples of 1e-7, so two seeds
 ///   closer together than that produced identical output.
-public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint { // stochastic:exempt
+public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	boxMullerPair(uniform: openUnitUniform(seed: T(u1Seed)), angleUniform: T(u2Seed))
 }
 
@@ -202,6 +202,6 @@ public func boxMullerRadius<T: Real, G: RandomNumberGenerator>(using generator: 
 /// - Parameter uSeed: A uniform on `[0, 1]`. Zero is the `log(0)` pole and is remapped
 ///   to 1 (radius 0).
 /// - Returns: A non-negative Rayleigh(1) variate.
-public func boxMullerRadius<T: Real>(_ uSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt
+public func boxMullerRadius<T: Real>(_ uSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	boxMullerRadius(uniform: openUnitUniform(seed: T(uSeed)))
 }

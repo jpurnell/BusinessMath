@@ -374,7 +374,26 @@ public enum Distribution {
     case triangular(min: Double, mode: Double, max: Double)
 
     /// Generate a random value from this distribution
-    public func sample() -> Double {
+    ///
+    /// - Parameter seed: Fixes the draw. Omit for a fresh value each call.
+    public func sample(seed: UInt64? = nil) -> Double {
+        if let seed {
+            var generator = DeterministicRNG(seed: seed)
+            return sample(using: &generator)
+        }
+        var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+        return sample(using: &generator)
+    }
+
+    /// Generate a random value from this distribution, drawing from `generator`.
+    ///
+    /// The generator-parameterized form of ``sample(seed:)``. A scenario draws many
+    /// values, and taking them all from one caller-owned stream is what lets a whole
+    /// scenario run reproduce, rather than each variable reproducing on its own.
+    ///
+    /// - Parameter generator: The random source.
+    /// - Returns: One value from this distribution.
+    public func sample<G: RandomNumberGenerator>(using generator: inout G) -> Double {
         switch self {
         case .normal(let mean, let stdDev):
             // The shared Box-Muller transform. The copy that stood here had no pole
@@ -382,15 +401,14 @@ public enum Distribution {
             // -infinity, and one draw in 2⁵³ came out non-finite. The `fp-safety`
             // suppression on that line gave "u1 from random in [0,1)" as the reason it
             // was safe, which is the interval that contains the pole.
-            var generator = SystemRandomNumberGenerator() // stochastic:exempt
             let (_, z): (Double, Double) = boxMullerSeed(using: &generator)
             return mean + stdDev * z
 
         case .uniform(let min, let max):
-            return Double.random(in: min...max) // stochastic:exempt
+            return Double.random(in: min...max, using: &generator)
 
         case .triangular(let min, let mode, let max):
-            let u = Double.random(in: 0..<1) // stochastic:exempt
+            let u = Double.random(in: 0..<1, using: &generator)
             let fc = (mode - min) / (max - min) // fp-safety:disable — triangular requires max > min
             if u < fc {
                 return min + sqrt(u * (max - min) * (mode - min))
