@@ -313,10 +313,22 @@ standard form of a standard problem.
 
 ## 15. Open Questions
 
-1. **Sequencing against `RobustScenarioGeneration`.** That proposal's dualization step is
-   independent, but its cutting-plane step *is* this master. Building the master here and
-   having robust consume it avoids writing the loop twice — but inverts the previously
-   agreed build order.
+**Resolved in review, 2026-08-12 — the shared engine is approved.** The master is built
+once, here, and `RobustScenarioGeneration`'s cutting-plane step consumes it rather than
+carrying its own loop. This inverts the build order previously agreed in that proposal;
+the revised order is:
+
+1. Dualization fast path (`RobustScenarioGeneration` §13, Alternative 1) — independent of
+   the master, exact, and removes the loop for the common case.
+2. `CuttingPlaneMaster` + `CutOracle` — built here.
+3. Robust scenario generation as a `CutOracle` conformance.
+4. Nonsmooth descent as a second `CutOracle` conformance.
+
+Steps 3 and 4 are then conformances rather than algorithms, which is the point of the
+decision: one convergence test, one round budget, one place where the stopping rule can be
+wrong.
+
+Remaining open:
 2. **A principled default for `proximalWeight`.** Bundle literature offers adaptive
    schemes; is one worth implementing initially, or is a fixed weight with a documented
    tuning note enough for a first release?
