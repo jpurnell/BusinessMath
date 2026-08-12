@@ -91,7 +91,7 @@ struct ParallelOptimizerSeedTests {
 
 	@Test("Omitting the seed leaves the optimizer unseeded and working")
 	func testUnseededPathStillWorks() async throws {
-		let unseeded = ParallelOptimizer<VectorN<Double>>(
+		let unseeded = ParallelOptimizer<VectorN<Double>>( // Justification: this test verifies the unseeded path, so omitting the seed is the assertion rather than an oversight
 			algorithm: .gradientDescent(learningRate: 0.05),
 			numberOfStarts: 6,
 			maxIterations: 200

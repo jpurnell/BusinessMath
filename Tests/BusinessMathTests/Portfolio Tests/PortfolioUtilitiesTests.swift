@@ -62,7 +62,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Generate covariance matrix with correct dimensions")
 	func generateCovarianceMatrixDimensions() {
-		let matrix = generateCovarianceMatrix(size: 10, avgCorrelation: 0.30)
+		let matrix = generateCovarianceMatrix(size: 10, avgCorrelation: 0.30, seed: 20260812)
 
 		#expect(matrix.count == 10, "Should have 10 rows")
 		#expect(matrix[0].count == 10, "Should have 10 columns")
@@ -70,7 +70,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Covariance matrix is symmetric")
 	func covarianceSymmetry() {
-		let matrix = generateCovarianceMatrix(size: 5, avgCorrelation: 0.25)
+		let matrix = generateCovarianceMatrix(size: 5, avgCorrelation: 0.25, seed: 20260812)
 
 		for i in 0..<5 {
 			for j in 0..<5 {
@@ -81,7 +81,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Covariance matrix has positive diagonal")
 	func covarianceDiagonal() {
-		let matrix = generateCovarianceMatrix(size: 10, avgCorrelation: 0.30)
+		let matrix = generateCovarianceMatrix(size: 10, avgCorrelation: 0.30, seed: 20260812)
 
 		for i in 0..<10 {
 			#expect(matrix[i][i] > 0.0, "Diagonal elements (variances) should be positive")
@@ -91,7 +91,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Covariance reflects correlation structure")
 	func covarianceCorrelation() {
-		let matrix = generateCovarianceMatrix(size: 10, avgCorrelation: 0.30, volatility: (0.20, 0.20))
+		let matrix = generateCovarianceMatrix(size: 10, avgCorrelation: 0.30, volatility: (0.20, 0.20), seed: 20260812)
 
 		// With constant volatility 0.20, covariance ≈ correlation * 0.04
 		// Check a few off-diagonal elements
@@ -108,7 +108,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Sparse covariance has correct sparsity")
 	func sparseCovarianceSparsity() {
-		let matrix = generateSparseCovarianceMatrix(size: 100, sparsity: 0.90)
+		let matrix = generateSparseCovarianceMatrix(size: 100, sparsity: 0.90, seed: 20260812)
 
 		// Count non-zero off-diagonal elements
 		var nonZeroCount = 0
@@ -132,7 +132,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Sparse covariance is symmetric")
 	func sparseCovarianceSymmetry() {
-		let matrix = generateSparseCovarianceMatrix(size: 20, sparsity: 0.80)
+		let matrix = generateSparseCovarianceMatrix(size: 20, sparsity: 0.80, seed: 20260812)
 
 		for i in 0..<20 {
 			for j in 0..<20 {
@@ -146,7 +146,7 @@ struct PortfolioUtilitiesTests {
 	@Test("Portfolio variance with equal weights")
 	func portfolioVarianceEqualWeights() {
 		let size = 10
-		let matrix = generateCovarianceMatrix(size: size, avgCorrelation: 0.30, volatility: (0.20, 0.20))
+		let matrix = generateCovarianceMatrix(size: size, avgCorrelation: 0.30, volatility: (0.20, 0.20), seed: 20260812)
 		let weights = VectorN<Double>.equalWeights(dimension: size)
 
 		let variance = portfolioVariance(weights: weights, covarianceMatrix: matrix)
@@ -159,7 +159,7 @@ struct PortfolioUtilitiesTests {
 	@Test("Portfolio variance with single asset")
 	func portfolioVarianceSingleAsset() {
 		let size = 5
-		let matrix = generateCovarianceMatrix(size: size, avgCorrelation: 0.30)
+		let matrix = generateCovarianceMatrix(size: size, avgCorrelation: 0.30, seed: 20260812)
 
 		// 100% weight in first asset
 		let weights = VectorN([1.0, 0.0, 0.0, 0.0, 0.0])
@@ -176,7 +176,7 @@ struct PortfolioUtilitiesTests {
 	func sharpeRatioCalculation() {
 		let size = 10
 		let returns = VectorN((0..<size).map { _ in 0.12 })  // 12% return for all assets
-		let matrix = generateCovarianceMatrix(size: size, avgCorrelation: 0.30, volatility: (0.15, 0.15))
+		let matrix = generateCovarianceMatrix(size: size, avgCorrelation: 0.30, volatility: (0.15, 0.15), seed: 20260812)
 		let weights = VectorN<Double>.equalWeights(dimension: size)
 
 		let sharpe = sharpeRatio(
@@ -231,7 +231,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Generate random volatilities")
 	func generateVolatilities() {
-		let vols = generateRandomVolatilities(count: 100)
+		let vols = generateRandomVolatilities(count: 100, seed: 20260812)
 
 		#expect(vols.dimension == 100, "Should have 100 volatilities")
 
@@ -244,7 +244,7 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Custom volatility range")
 	func customVolatilityRange() {
-		let vols = generateRandomVolatilities(count: 50, minVolatility: 0.05, maxVolatility: 0.15)
+		let vols = generateRandomVolatilities(count: 50, minVolatility: 0.05, maxVolatility: 0.15, seed: 20260812)
 
 		for vol in vols.toArray() {
 			#expect(vol >= 0.05, "Volatility should be >= 0.05")
@@ -259,7 +259,7 @@ struct PortfolioUtilitiesTests {
 		// Generate 50-asset portfolio
 		let numAssets = 50
 		let returns = generateRandomReturns(count: numAssets, mean: 0.10, stdDev: 0.05)
-		let covMatrix = generateCovarianceMatrix(size: numAssets, avgCorrelation: 0.30)
+		let covMatrix = generateCovarianceMatrix(size: numAssets, avgCorrelation: 0.30, seed: 20260812)
 		let weights = VectorN<Double>.equalWeights(dimension: numAssets)
 
 		// Calculate metrics

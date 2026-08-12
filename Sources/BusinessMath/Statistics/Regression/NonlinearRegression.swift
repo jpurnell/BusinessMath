@@ -262,17 +262,38 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 	/// Simulate with specific x values (instead of random)
 	/// - Parameter xValues: Specific predictor values
 	/// - Returns: Array of (x, y) data points
-	public func simulate(xValues: [T]) -> [DataPoint] {
-		xValues.map { x in
-			let mu = ReciprocalRegressionModel.predictedMean(x: x, params: parameters)
-			let y: T
-			if T.self == Double.self { // fp-safety:disable
-				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma)))
-			} else {
-				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma)))
-			}
-			return DataPoint(x: x, y: y)
+	public func simulate(xValues: [T], seed: UInt64? = nil) -> [DataPoint] {
+		if let seed {
+			var generator = DeterministicRNG(seed: seed)
+			return simulate(xValues: xValues, using: &generator)
 		}
+		var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+		return simulate(xValues: xValues, using: &generator)
+	}
+
+	/// Simulate at fixed predictors, drawing the residuals from `generator`.
+	///
+	/// The predictors are the caller's, but the responses are not: each `y` is a draw from
+	/// `Normal(µ(x), σ)`. Only the residuals consume randomness here, two uniforms per
+	/// point for the Box-Muller pair.
+	///
+	/// - Parameters:
+	///   - xValues: Predictor values to simulate at.
+	///   - generator: The random source for the residuals.
+	/// - Returns: Array of (x, y) data points, one per predictor.
+	public func simulate<G: RandomNumberGenerator>(xValues: [T], using generator: inout G) -> [DataPoint] {
+		var data: [DataPoint] = []
+		data.reserveCapacity(xValues.count)
+
+		for x in xValues {
+			let mu = ReciprocalRegressionModel.predictedMean(x: x, params: parameters)
+			let u1 = Double.random(in: 0...1, using: &generator)
+			let u2 = Double.random(in: 0...1, using: &generator)
+			let y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma), u1, u2))
+			data.append(DataPoint(x: x, y: y))
+		}
+
+		return data
 	}
 }
 

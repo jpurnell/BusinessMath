@@ -198,7 +198,7 @@ struct ModelValidationEdgeCaseTests {
 	func reciprocalFitting_PoorInitialization() throws {
 		// Test with initialization far from true values
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
-		let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
+		let data = simulator.simulate(n: 100, xRange: 1.0...10.0, seed: 20260812)
 
 		let fitter = ReciprocalRegressionFitter<Double>()
 
@@ -223,7 +223,7 @@ struct ModelValidationEdgeCaseTests {
 	func reciprocalFitting_DifferentLearningRates() throws {
 		// Test that different learning rates affect convergence
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
-		let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
+		let data = simulator.simulate(n: 100, xRange: 1.0...10.0, seed: 20260812)
 
 		let fitter = ReciprocalRegressionFitter<Double>()
 		let initialGuess = ReciprocalRegressionModel<Double>.Parameters(a: 0.5, b: 0.5, sigma: 0.5)
@@ -260,7 +260,7 @@ struct ModelValidationEdgeCaseTests {
 	func reciprocalSimulation_VeryNarrowXRange() {
 		// X values in tiny range - less information about slope
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.1)
-		let data = simulator.simulate(n: 100, xRange: 5.0...5.1)
+		let data = simulator.simulate(n: 100, xRange: 5.0...5.1, seed: 20260812)
 
 		#expect(data.count == 100)
 
@@ -275,7 +275,7 @@ struct ModelValidationEdgeCaseTests {
 	func reciprocalSimulation_VeryWideXRange() {
 		// X values spanning large range - tests numerical stability
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.05)
-		let data = simulator.simulate(n: 100, xRange: 1.0...100.0)
+		let data = simulator.simulate(n: 100, xRange: 1.0...100.0, seed: 20260812)
 
 		#expect(data.count == 100)
 

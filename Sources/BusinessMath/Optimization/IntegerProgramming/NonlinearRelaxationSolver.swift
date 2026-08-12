@@ -271,7 +271,7 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
             guard violation > 0.0 else { continue }
 
             let gradientNorm: Double
-            if let gradient = try? constraint.gradient(at: point) {
+            if let gradient = try? constraint.gradient(at: point) { // silent: a constraint without an analytic gradient is differenced numerically instead
                 let norm = gradient.toArray().reduce(0.0) { max($0, abs($1)) }
                 gradientNorm = norm.isFinite ? norm : 1.0
             } else {

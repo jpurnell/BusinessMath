@@ -17,7 +17,7 @@ struct NonlinearRegressionTests {
 	@Test("Reciprocal simulation generates correct number of points")
 	func reciprocalSimulationGeneratesPoints() {
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
-		let data = simulator.simulate(n: 100, xRange: 0.0...10.0)
+		let data = simulator.simulate(n: 100, xRange: 0.0...10.0, seed: 20260812)
 
 		#expect(data.count == 100, "Should generate exactly n data points")
 	}
@@ -25,7 +25,7 @@ struct NonlinearRegressionTests {
 	@Test("Reciprocal simulation x values in range")
 	func reciprocalSimulationXValues() {
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
-		let data = simulator.simulate(n: 100, xRange: 2.0...8.0)
+		let data = simulator.simulate(n: 100, xRange: 2.0...8.0, seed: 20260812)
 
 		for point in data {
 			#expect(point.x >= 2.0, "X values should be >= 2.0")
@@ -37,7 +37,7 @@ struct NonlinearRegressionTests {
 	func reciprocalSimulationSpecificXValues() {
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.001)
 		let xValues = [1.0, 2.0, 3.0, 4.0, 5.0]
-		let data = simulator.simulate(xValues: xValues)
+		let data = simulator.simulate(xValues: xValues, seed: 20260812)
 
 		#expect(data.count == xValues.count, "Should generate one point per x value")
 
@@ -111,7 +111,7 @@ struct NonlinearRegressionTests {
 	func fittingCompletes () throws {
 		// This test verifies fitting completes without errors
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.5, b: 0.5, sigma: 0.1)
-		let data = simulator.simulate(n: 100, xRange: 1.0...10.0)
+		let data = simulator.simulate(n: 100, xRange: 1.0...10.0, seed: 20260812)
 
 		let fitter = ReciprocalRegressionFitter<Double>()
 		let result = try fitter.fit(
@@ -356,7 +356,7 @@ struct NonlinearRegressionTests {
 	func reciprocalRegressionSmallN() throws {
 		// With very small n, fitting may struggle
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
-		let data = simulator.simulate(n: 10, xRange: 1.0...10.0)
+		let data = simulator.simulate(n: 10, xRange: 1.0...10.0, seed: 20260812)
 
 		let fitter = ReciprocalRegressionFitter<Double>()
 
@@ -376,7 +376,7 @@ struct NonlinearRegressionTests {
 	func reciprocalRegressionHighSigma () {
 		// Test with very high sigma relative to signal
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 5.0)
-		let data = simulator.simulate(n: 50, xRange: 1.0...10.0)
+		let data = simulator.simulate(n: 50, xRange: 1.0...10.0, seed: 20260812)
 
 		#expect(data.count == 50, "Should generate all points even with high noise")
 

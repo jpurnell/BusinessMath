@@ -417,7 +417,7 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 
 		// f(·, ω̄), which must be linear in the decision variables.
 		let nominalObjective: (V) -> Double = { point in objective(point, box.nominal) }
-		guard let nominalModel = try? validateLinearModel(nominalObjective, dimension: dimension, at: initialSolution),
+		guard let nominalModel = try? validateLinearModel(nominalObjective, dimension: dimension, at: initialSolution), // silent: a throw means "not linear", a routing decision rather than a failure
 			  nominalModel.coefficients.count == dimension else {
 			return nil
 		}
@@ -472,7 +472,7 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 		var linearConstraints: [(coefficients: [Double], constant: Double, isEquality: Bool)] = []
 		for constraint in constraints {
 			let evaluate: (V) -> Double = { point in constraint.evaluate(at: point) }
-			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: initialSolution),
+			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: initialSolution), // silent: a throw means "not linear", a routing decision rather than a failure
 				  model.coefficients.count == dimension else {
 				return nil
 			}
@@ -660,7 +660,7 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 		scenarios.reserveCapacity(uncertaintyPoints.count)
 		for omega in uncertaintyPoints {
 			let scenario: (V) -> Double = { point in objective(point, omega) }
-			guard let model = try? validateLinearModel(scenario, dimension: dimension, at: initialSolution) else {
+			guard let model = try? validateLinearModel(scenario, dimension: dimension, at: initialSolution) else { // silent: a throw means "not linear", a routing decision rather than a failure
 				return nil
 			}
 			guard model.coefficients.count == dimension else { return nil }
@@ -671,7 +671,7 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 		linearConstraints.reserveCapacity(constraints.count)
 		for constraint in constraints {
 			let evaluate: (V) -> Double = { point in constraint.evaluate(at: point) }
-			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: initialSolution) else {
+			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: initialSolution) else { // silent: a throw means "not linear", a routing decision rather than a failure
 				return nil
 			}
 			guard model.coefficients.count == dimension else { return nil }

@@ -31,7 +31,8 @@ struct ParallelOptimizerTests {
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 5,
 			maxIterations: 100,
-			tolerance: 1e-6
+			tolerance: 1e-6,
+			seed: 20260812
 		)
 
 		// Search region: [-10, 10] × [-10, 10]
@@ -66,7 +67,8 @@ struct ParallelOptimizerTests {
 		let singleStart = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.01),
 			numberOfStarts: 1,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let singleResult = try await singleStart.optimize(
@@ -82,7 +84,8 @@ struct ParallelOptimizerTests {
 		let multiStart = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.01),
 			numberOfStarts: 10,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let multiResult = try await multiStart.optimize(
@@ -117,7 +120,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 7,
-			maxIterations: 50
+			maxIterations: 50,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -144,7 +148,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 10,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -176,7 +181,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 6,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -208,7 +214,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 3,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -234,7 +241,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .newtonRaphson,
 			numberOfStarts: 3,
-			maxIterations: 50
+			maxIterations: 50,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -272,7 +280,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .constrained,
 			numberOfStarts: 4,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -314,7 +323,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .inequality,
 			numberOfStarts: 4,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		// Use search region that starts in feasible region
@@ -345,7 +355,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 1,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -372,7 +383,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 5,
-			maxIterations: 50
+			maxIterations: 50,
+			seed: 20260812
 		)
 
 		// Very narrow region: [4.9, 5.1]
@@ -401,7 +413,8 @@ struct ParallelOptimizerTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.1),
 			numberOfStarts: 5,
-			maxIterations: 100
+			maxIterations: 100,
+			seed: 20260812
 		)
 
 		let result = try await optimizer.optimize(
@@ -445,7 +458,8 @@ struct ParallelOptimizerPerformanceTests {
 		let optimizer = ParallelOptimizer<VectorN<Double>>(
 			algorithm: .gradientDescent(learningRate: 0.01),
 			numberOfStarts: 8,
-			maxIterations: 50
+			maxIterations: 50,
+			seed: 20260812
 		)
 
 		let startTime = Date()
