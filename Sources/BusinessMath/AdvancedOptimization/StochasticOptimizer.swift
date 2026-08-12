@@ -118,7 +118,9 @@ public struct StochasticOptimizer<V: VectorSpace>: Sendable where V.Scalar == Do
 	///
 	/// - Parameters:
 	///   - numberOfSamples: Number of Monte Carlo scenarios (default: 1000)
-	///   - seed: Random seed for reproducibility (default: nil)
+	///   - seed: Random seed for reproducibility. The same seed reproduces the same
+	///     scenario draws exactly. `nil` (the default) draws from system entropy and
+	///     does not reproduce.
 	///   - maxIterations: Maximum iterations (default: 500)
 	///   - tolerance: Convergence tolerance (default: 1e-6)
 	public init(

@@ -12,7 +12,10 @@ import Numerics
 ///
 /// Bernoulli trials are experiments with exactly two possible outcomes, "success" and "failure", in which the probability of success is the same every time the experiment is conducted. In this function, success is encoded as `1`, and failure is encoded as `0`. The outcome is determined based on the provided probability of success (p).
 ///
-/// - Parameter p: The probability of success for the Bernoulli trial. It should adhere to the `Real` type (a protocol in the Swift Standard Library defining a common API for all types that can represent real numbers).
+/// - Parameters:
+///   - p: The probability of success for the Bernoulli trial. It should adhere to the `Real` type (a protocol in the Swift Standard Library defining a common API for all types that can represent real numbers).
+///   - seed: Fixes the draw, so the same seed returns the same outcome. `nil` (the
+///     default) draws fresh.
 ///
 /// - Returns: An `Int` representing the outcome of the Bernoulli trial (`1` for success, `0` for failure).
 ///
