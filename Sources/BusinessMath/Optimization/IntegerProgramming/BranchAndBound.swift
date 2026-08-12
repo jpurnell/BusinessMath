@@ -1650,10 +1650,19 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             return nil
         }
 
-        // Check constraint feasibility
+        // Check constraint feasibility.
+        //
+        // `value > tolerance` is the test for an inequality g(x) ≤ 0. An equality
+        // h(x) = 0 is violated in *either* direction, and rounding is exactly the
+        // operation that breaks equalities: on `x + y = 4` the fractional point
+        // (1.4, 2.4) rounds to (1, 2), where h = −1. Reading that as "no violation"
+        // hands branch-and-bound an incumbent outside the feasible set, and because
+        // an incumbent is what the solver ultimately returns, the answer is reported
+        // as optimal. Measure |h(x)| for equalities and max(0, g(x)) for inequalities.
         for constraint in constraints {
             let value = constraint.evaluate(at: roundedSolution)
-            if value > lpTolerance {
+            let violation = constraint.isEquality ? abs(value) : value
+            if violation > lpTolerance {
                 // Constraint violated - rounded solution is infeasible
                 return nil
             }
@@ -1713,11 +1722,16 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         }
 
         // Check 3: Constraint satisfaction
+        //
+        // For an inequality g(x) ≤ 0 the violation is max(0, g(x)); for an equality
+        // h(x) = 0 it is |h(x)|. Using the inequality rule for both made this
+        // verification blind to the one failure mode it exists to catch — a returned
+        // solution that misses an equality on the low side.
         for (idx, constraint) in constraints.enumerated() {
             let value = constraint.evaluate(at: solution)
-            // For constraints g(x) ≤ 0, violation is max(0, g(x))
-            if value > lpTolerance {
-                violations.append("Constraint[\(idx)] violated: g(x) = \(value) > 0")
+            let violation = constraint.isEquality ? abs(value) : value
+            if violation > lpTolerance {
+                violations.append("Constraint[\(idx)] violated: residual = \(value)")
             }
         }
 

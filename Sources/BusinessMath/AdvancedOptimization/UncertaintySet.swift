@@ -7,6 +7,22 @@
 
 import Foundation
 
+/// The seed behind the sample points every ``UncertaintySet`` draws.
+///
+/// Sampling an uncertainty set is how a continuous set is turned into the finite
+/// collection of scenarios a solver can actually work with — it is a property of the
+/// numerical method, not randomness the caller requested, and there is no seed
+/// parameter on ``UncertaintySet/samplePoints(numberOfSamples:)`` because there is
+/// nothing the caller would sensibly vary.
+///
+/// Drawn from the system generator instead, every call returns a different scenario
+/// set, so two runs of the same robust optimization solve two different problems. The
+/// answer moves, and a test over it passes or fails on the draw rather than on the
+/// code. Fixing the seed makes the approximation a fixed one, which is the property
+/// worth having; the same reasoning and the same generator back
+/// ``validateLinearModel(_:dimension:at:numSamples:tolerance:)``.
+private let uncertaintySamplingSeed: UInt64 = 0x5EED_11EA_2_5E7
+
 // MARK: - Uncertainty Set Protocol
 
 /// Protocol for uncertainty sets in robust optimization.
@@ -113,15 +129,21 @@ public struct BoxUncertaintySet: UncertaintySet {
 			}
 		}
 
-		// Add random points from the box
+		// Fill the remainder from a seeded generator. These points are a numerical
+		// detail of how the set is approximated, not randomness the caller asked for,
+		// and drawing them from the system generator makes every solve a different
+		// problem: a robust optimization over 100 scenarios of which 92 are redrawn
+		// per run cannot converge to a stable answer, and its tests pass or fail on
+		// the draw rather than on the code.
 		let remaining = max(0, numberOfSamples - points.count)
+		var generator = DeterministicRNG(seed: uncertaintySamplingSeed)
 		for _ in 0..<remaining {
 			var point: [Double] = []
 			for j in 0..<dimension {
 				// Sample uniformly within [nominal - deviation, nominal + deviation]
 				let lower = nominal[j] - deviations[j]
 				let upper = nominal[j] + deviations[j]
-				point.append(Double.random(in: lower...upper)) // stochastic:exempt
+				point.append(Double.random(in: lower...upper, using: &generator))
 			}
 			points.append(point)
 		}
@@ -254,13 +276,18 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 
 		// For simplicity, approximate ellipsoid with random samples
 		// In production, would use Cholesky decomposition for proper sampling
+		//
+		// Seeded for the same reason as the box: which points approximate the set is
+		// an implementation detail, and redrawing them per run makes each solve a
+		// different problem.
+		var generator = DeterministicRNG(seed: uncertaintySamplingSeed)
 		for _ in 0..<numberOfSamples {
 			var point = nominal
 			// Sample random direction and scale by radius
 			var direction: [Double] = []
 			var normSquared = 0.0
 			for _ in 0..<dimension {
-				let value = Double.random(in: -1...1) // stochastic:exempt
+				let value = Double.random(in: -1...1, using: &generator)
 				direction.append(value)
 				normSquared += value * value
 			}
@@ -268,7 +295,7 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 			// Normalize and scale
 			let norm = sqrt(normSquared)
 			if norm > 0 {
-				let scale = Double.random(in: 0...radius) / norm // stochastic:exempt fp-safety:disable — norm > 0 from enclosing if
+				let scale = Double.random(in: 0...radius, using: &generator) / norm // fp-safety:disable — norm > 0 from enclosing if
 				for i in 0..<dimension {
 					// Simple diagonal approximation (would use full covariance in production)
 					let stdDev = sqrt(covariance[i][i])

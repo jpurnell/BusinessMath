@@ -366,8 +366,15 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 				lambda[i] = lambda[i] + mu * constraintValues[i]
 			}
 
-			// Increase penalty parameter
-			mu = mu * penaltyIncrease
+			// Increase penalty parameter, capped so it stays representable. The
+			// escalation is tenfold per outer step, so a caller passing a large
+			// iteration budget walks μ past the floating-point range in a few hundred
+			// steps; the penalty term μh² then evaluates to infinity and the
+			// finite-difference gradient throws rather than reporting non-convergence.
+			// Past 1/ulpOfOne the penalty already dominates the objective by more than
+			// the mantissa can represent, so the cap costs no achievable accuracy.
+			let escalated: V.Scalar = mu * penaltyIncrease
+			mu = Swift.min(escalated, V.Scalar(1) / V.Scalar.ulpOfOne)
 		}
 
 		// Did not converge

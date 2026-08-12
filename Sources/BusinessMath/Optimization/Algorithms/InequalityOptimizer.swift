@@ -21,16 +21,36 @@ import Numerics
 ///
 /// ## Method
 ///
-/// Uses an **augmented Lagrangian with quadratic penalties**:
-/// - Equality constraints: Augmented Lagrangian with multiplier updates
-/// - Inequality constraints: Quadratic penalty on violations only
+/// Uses an **augmented Lagrangian** (Powell–Hestenes–Rockafellar) with multiplier
+/// estimates for *both* constraint kinds:
 ///
-/// The modified objective becomes:
 /// ```
-/// L(x,λ,μ,ρ) = f(x) + Σλᵢhᵢ(x) + (ρ/2)Σhᵢ(x)² + (ρ/2)Σmax(0, gⱼ(x))²
+/// L(x,λ,μ,ρ) = f(x) + Σᵢ[λᵢhᵢ(x) + (ρ/2)hᵢ(x)²]
+///                   + (1/2ρ)Σⱼ[max(0, μⱼ + ρgⱼ(x))² − μⱼ²]
 /// ```
 ///
-/// As ρ → ∞, the solution approaches the constrained optimum.
+/// with `λᵢ ← λᵢ + ρhᵢ(x)` and `μⱼ ← max(0, μⱼ + ρgⱼ(x))` between outer iterations.
+/// Because the multipliers absorb the constraint forces, the penalty ρ stays
+/// bounded and the inner subproblem stays well conditioned. A pure quadratic
+/// penalty (μ ≡ 0) is only accurate to O(1/ρ) at an active inequality, so it must
+/// drive ρ → ∞ — and long before that the inner minimisation becomes unsolvable.
+///
+/// The outer loop follows the LANCELOT schedule (Nocedal & Wright, *Numerical
+/// Optimization* 2e, Framework 17.3 / Algorithm 17.4): a decreasing inner gradient
+/// tolerance ωₖ paired with a constraint-violation tolerance ηₖ. Final accuracy is
+/// asserted by the **outer** test — both the KKT stationarity residual and the
+/// constraint violation must clear the configured tolerances.
+///
+/// ## Scaling
+///
+/// The problem is solved in equilibrated coordinates: the variables are divided by
+/// the magnitude of the initial guess, and the objective and each constraint by
+/// their own gradient magnitude there. Dividing a constraint by a positive constant
+/// is a restatement, not a relaxation — it leaves the feasible set and the optimum
+/// untouched — but it makes every tolerance below dimensionless, so `1e-6` means
+/// "six digits" rather than "one millionth of whatever unit the caller chose".
+/// Multipliers are unscaled on the way out, so a reported shadow price belongs to
+/// the constraint the caller wrote.
 ///
 /// ## Usage Example
 /// ```swift
@@ -47,10 +67,19 @@ import Numerics
 /// ```
 public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 
-	/// Convergence tolerance for constraint satisfaction
+	/// Convergence tolerance for constraint satisfaction.
+	///
+	/// Judged on the **equilibrated** constraint, so it reads as a relative
+	/// tolerance: a residual small compared with the magnitude of the constraint
+	/// the caller wrote, not small compared with the number 1.
 	public let constraintTolerance: V.Scalar
 
-	/// Convergence tolerance for gradient norm
+	/// Convergence tolerance for the KKT stationarity residual.
+	///
+	/// This is the final target ω\* of the decreasing inner tolerance sequence, and
+	/// it is checked by the outer loop against the gradient of the augmented
+	/// Lagrangian — the stationarity half of the KKT conditions. Like
+	/// ``constraintTolerance`` it applies in equilibrated coordinates.
 	public let gradientTolerance: V.Scalar
 
 	/// Maximum number of outer iterations
@@ -126,7 +155,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		return result.negated()
 	}
 
-	// MARK: - Quadratic Penalty Method
+	// MARK: - Augmented Lagrangian
 
 	private func optimizeWithQuadraticPenalty(
 		objective: @escaping @Sendable (V) -> V.Scalar,
@@ -135,42 +164,97 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		inequalityConstraints: [MultivariateConstraint<V>]
 	) throws -> ConstrainedOptimizationResult<V> {
 
-		var x = initialGuess
-		var lambdaEq = [V.Scalar](repeating: V.Scalar(0), count: equalityConstraints.count)
-		var rho = initialPenalty
+		let zero = V.Scalar(0)
+		let one = V.Scalar(1)
+		let two = V.Scalar(2)
+
+		// MARK: Equilibration
+		//
+		// Solve in coordinates where the variables, the objective and every
+		// constraint are O(1) at the starting point. Dividing an inequality
+		// g(x) ≤ 0 by a positive constant leaves the feasible set exactly as it
+		// was, and the same is true of an equality — this is a restatement of the
+		// model, not a relaxation of it. What it buys is that the tolerances below
+		// stop depending on the units the caller happened to write the model in.
+		let xScale = Self.magnitudeScale(of: initialGuess)
+		let fScale = Self.functionScale(objective, at: initialGuess, variableScale: xScale)
+		let eqScales = equalityConstraints.map {
+			Self.functionScale(Self.evaluator(for: $0), at: initialGuess, variableScale: xScale)
+		}
+		let ineqScales = inequalityConstraints.map {
+			Self.functionScale(Self.evaluator(for: $0), at: initialGuess, variableScale: xScale)
+		}
+
+		let scaledObjective: @Sendable (V) -> V.Scalar = { point in
+			objective(xScale * point) / fScale
+		}
+		let scaledEqualities: [@Sendable (V) -> V.Scalar] = zip(equalityConstraints, eqScales).map { pair in
+			let (constraint, scale) = pair
+			return { point in constraint.evaluate(at: xScale * point) / scale }
+		}
+		let scaledInequalities: [@Sendable (V) -> V.Scalar] = zip(inequalityConstraints, ineqScales).map { pair in
+			let (constraint, scale) = pair
+			return { point in constraint.evaluate(at: xScale * point) / scale }
+		}
+
+		guard let scaledStart = V.fromArray(initialGuess.toArray().map { $0 / xScale }) else {
+			throw OptimizationError.invalidInput(message: "Failed to rescale the initial guess")
+		}
+
+		// MARK: LANCELOT schedule
+		//
+		// ωₖ is the inner gradient target, ηₖ the constraint-violation target. Both
+		// start loose and tighten only as the method earns it: a fixed ωₖ of 1e-6
+		// against an augmented Lagrangian whose gradient carries ρ is unreachable by
+		// construction once ρ has grown, and the inner solve then burns its whole
+		// iteration budget on every outer step. Clamping at the configured
+		// tolerances stops the schedule chasing accuracy the caller never asked for.
+		var rho = Swift.max(one, initialPenalty)
+		var omega = Swift.max(gradientTolerance, one / rho)
+		var eta = Swift.max(constraintTolerance, one / V.Scalar.pow(rho, one / V.Scalar(10)))
+
+		var lambdaEq = [V.Scalar](repeating: zero, count: equalityConstraints.count)
+		var muIneq = [V.Scalar](repeating: zero, count: inequalityConstraints.count)
+		var scaledX = scaledStart
 		var history: [(Int, V, V.Scalar, V.Scalar)] = []
+		var outerIterations = 0
 
 		for outerIter in 0..<maxIterations {
-			// Create immutable snapshots for Sendable closure
-			let lambdaEqSnapshot = lambdaEq
+			outerIterations = outerIter + 1
+
+			// Immutable snapshots for the Sendable closure
+			let lambdaSnapshot = lambdaEq
+			let muSnapshot = muIneq
 			let rhoSnapshot = rho
 
-			// Build augmented Lagrangian with quadratic penalties
 			let augmentedLagrangian: @Sendable (V) -> V.Scalar = { point in
-				var value = objective(point)
+				var value = scaledObjective(point)
 
-				// Equality constraints: λᵢhᵢ(x) + (ρ/2)hᵢ(x)²
-				for (i, constraint) in equalityConstraints.enumerated() {
-					let h = constraint.evaluate(at: point)
-					value = value + lambdaEqSnapshot[i] * h + (rhoSnapshot / V.Scalar(2)) * h * h
+				// Equality: λᵢhᵢ(x) + (ρ/2)hᵢ(x)²
+				for (i, h) in scaledEqualities.enumerated() {
+					let hValue = h(point)
+					value = value + lambdaSnapshot[i] * hValue + (rhoSnapshot / two) * hValue * hValue
 				}
 
-				// Inequality constraints: (ρ/2)Σmax(0, gⱼ(x))²
-				// Only penalize violations (g > 0), satisfied constraints contribute 0
-				for constraint in inequalityConstraints {
-					let g = constraint.evaluate(at: point)
-					if g > V.Scalar(0) {
-						value = value + (rhoSnapshot / V.Scalar(2)) * g * g
-					}
+				// Inequality: (1/2ρ)[max(0, μⱼ + ρgⱼ(x))² − μⱼ²]
+				//
+				// With μ = 0 this is the plain (ρ/2)max(0, g)² penalty. With μ > 0 the
+				// kink sits at g = −μ/ρ, strictly inside the feasible region, so an
+				// active constraint is approached from the smooth side instead of
+				// being pinned against a ridge the finite-difference gradient
+				// straddles.
+				for (j, g) in scaledInequalities.enumerated() {
+					let shifted = muSnapshot[j] + rhoSnapshot * g(point)
+					let active = Swift.max(zero, shifted)
+					value = value + (active * active - muSnapshot[j] * muSnapshot[j]) / (two * rhoSnapshot)
 				}
 
 				return value
 			}
 
-			// Minimize augmented Lagrangian
 			let innerOptimizer = MultivariateNewtonRaphson<V>(
 				maxIterations: maxInnerIterations,
-				tolerance: gradientTolerance,
+				tolerance: omega,
 				useLineSearch: true,
 				recordHistory: false
 			)
@@ -178,58 +262,267 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 			let innerResult = try innerOptimizer.minimizeBFGS(
 				function: augmentedLagrangian,
 				gradient: { point in try numericalGradient(augmentedLagrangian, at: point) },
-				initialGuess: x
+				initialGuess: scaledX
 			)
-			x = innerResult.solution
+			scaledX = innerResult.solution
 
-			// Evaluate constraints
-			let eqViolations = equalityConstraints.map { abs($0.evaluate(at: x)) }
-			let ineqViolations = inequalityConstraints.map { Swift.max(0, $0.evaluate(at: x)) }
-			let maxEqViolation = eqViolations.max() ?? V.Scalar(0)
-			let maxIneqViolation = ineqViolations.max() ?? V.Scalar(0)
-			let maxViolation = Swift.max(maxEqViolation, maxIneqViolation)
+			// First-order multiplier estimates at the new iterate. These are exactly
+			// what the update below banks, so computing them once here lets the
+			// convergence test judge the same multipliers the method carries forward.
+			let eqEstimates: [V.Scalar] = zip(lambdaEq, scaledEqualities).map { pair in
+				let (lambda, h) = pair
+				return lambda + rho * h(scaledX)
+			}
+			let ineqEstimates: [V.Scalar] = zip(muIneq, scaledInequalities).map { pair in
+				let (mu, g) = pair
+				let shifted: V.Scalar = mu + rho * g(scaledX)
+				return Swift.max(zero, shifted)
+			}
 
-			// Record history
+			let stationarity = try Self.kktResidual(
+				at: scaledX,
+				objective: scaledObjective,
+				equalities: scaledEqualities,
+				inequalities: scaledInequalities,
+				equalityMultipliers: eqEstimates,
+				inequalityMultipliers: ineqEstimates
+			)
+
+			// Violation in equilibrated units drives the schedule; the caller is told
+			// the violation of the constraint they actually wrote.
+			let scaledViolation = Self.maxViolation(
+				equalities: scaledEqualities.map { $0(scaledX) },
+				inequalities: scaledInequalities.map { $0(scaledX) }
+			)
+
+			let complementarity = Self.complementarityResidual(
+				inequalityValues: scaledInequalities.map { $0(scaledX) },
+				multipliers: ineqEstimates
+			)
+
+			let x = xScale * scaledX
 			let objValue = objective(x)
-			history.append((outerIter, x, objValue, maxViolation))
+			let violation = Self.maxViolation(
+				equalities: equalityConstraints.map { $0.evaluate(at: x) },
+				inequalities: inequalityConstraints.map { $0.evaluate(at: x) }
+			)
+			history.append((outerIter, x, objValue, violation))
 
-			// Check convergence
-			if maxViolation < constraintTolerance {
+			// The outer test is the whole KKT system: primal feasibility, stationarity
+			// of the Lagrangian, *and* complementary slackness. All three are needed,
+			// and the third is not decoration. Stationarity here is measured against
+			// the first-order multiplier estimates recomputed just above, and those
+			// are exactly the multipliers for which the residual equals ∇L_A — so it
+			// falls to ~0 whenever the inner solve converges, whatever the iterate.
+			// On its own it therefore certifies "the inner BFGS finished", not "this
+			// is a KKT point", and the method would stop at the second outer iteration
+			// with the penalty method's O(1/ρ) offset still in the answer. Requiring
+			// complementarity keeps ρ climbing until an inactive constraint actually
+			// carries no price, which is what drives that offset out.
+			if scaledViolation <= constraintTolerance
+				&& stationarity <= gradientTolerance
+				&& complementarity <= constraintTolerance {
 				return ConstrainedOptimizationResult(
 					solution: x,
 					objectiveValue: objValue,
-					lagrangeMultipliers: lambdaEq,
-					iterations: outerIter + 1,
+					lagrangeMultipliers: Self.unscaled(lambdaEq, objectiveScale: fScale, constraintScales: eqScales),
+					iterations: outerIterations,
 					converged: true,
 					history: history,
-					constraintViolation: maxViolation
+					constraintViolation: violation
 				)
 			}
 
-			// Update Lagrange multipliers for equality constraints
-			for i in 0..<lambdaEq.count {
-				lambdaEq[i] = lambdaEq[i] + rho * equalityConstraints[i].evaluate(at: x)
+			if scaledViolation <= eta {
+				// Good enough on feasibility: bank it in the multipliers and ask for
+				// more accuracy next time, leaving ρ where it is. This is what keeps
+				// the inner subproblem conditioned.
+				lambdaEq = eqEstimates
+				muIneq = ineqEstimates
+				eta = Swift.max(constraintTolerance, eta / V.Scalar.pow(rho, V.Scalar(9) / V.Scalar(10)))
+				omega = Swift.max(gradientTolerance, omega / rho)
+			} else {
+				// Feasibility is not improving fast enough: lean harder on the penalty
+				// and reset both targets to what the new ρ can support. The escalation
+				// is capped: ρ multiplies tenfold per outer step, so a caller passing a
+				// four-digit iteration budget drives it past the representable range in
+				// a few hundred steps, at which point the penalty term ρh² evaluates to
+				// infinity and the finite-difference gradient throws. Failing to
+				// converge is a result the caller can act on; a non-finite value raised
+				// several layers down is not.
+				let escalated: V.Scalar = rho * penaltyIncrease
+				rho = Swift.min(escalated, Self.maximumPenalty)
+				eta = Swift.max(constraintTolerance, one / V.Scalar.pow(rho, one / V.Scalar(10)))
+				omega = Swift.max(gradientTolerance, one / rho)
 			}
-
-			// Increase penalty parameter
-			rho = rho * penaltyIncrease
 		}
 
 		// Did not converge
-		let finalObjValue = objective(x)
-		let finalEqViolation = equalityConstraints.map { abs($0.evaluate(at: x)) }.max() ?? V.Scalar(0)
-		let finalIneqViolation = inequalityConstraints.map { Swift.max(0, $0.evaluate(at: x)) }.max() ?? V.Scalar(0)
-		let finalViolation = Swift.max(finalEqViolation, finalIneqViolation)
+		let finalX = xScale * scaledX
+		let finalObjValue = objective(finalX)
+		let finalViolation = Self.maxViolation(
+			equalities: equalityConstraints.map { $0.evaluate(at: finalX) },
+			inequalities: inequalityConstraints.map { $0.evaluate(at: finalX) }
+		)
 
 		return ConstrainedOptimizationResult(
-			solution: x,
+			solution: finalX,
 			objectiveValue: finalObjValue,
-			lagrangeMultipliers: lambdaEq,
-			iterations: maxIterations,
+			lagrangeMultipliers: Self.unscaled(lambdaEq, objectiveScale: fScale, constraintScales: eqScales),
+			iterations: outerIterations,
 			converged: false,
 			history: history,
 			constraintViolation: finalViolation
 		)
+	}
+
+	// MARK: - Equilibration Helpers
+
+	/// Wraps a constraint's evaluation as a plain function.
+	private static func evaluator(for constraint: MultivariateConstraint<V>) -> @Sendable (V) -> V.Scalar {
+		{ point in constraint.evaluate(at: point) }
+	}
+
+	/// The characteristic magnitude of a point: the largest component, or 1 when the
+	/// point is the origin and offers no scale of its own.
+	private static func magnitudeScale(of point: V) -> V.Scalar {
+		let largest = point.toArray().reduce(V.Scalar(0)) { Swift.max($0, abs($1)) }
+		guard largest.isFinite, largest > V.Scalar(0) else { return V.Scalar(1) }
+		return largest
+	}
+
+	/// The characteristic magnitude of a function over the region of interest.
+	///
+	/// Taken from the gradient rather than the value, because it is the gradient that
+	/// the inner solver's step lengths and tolerances are measured against: dividing
+	/// by `‖∇f(x₀)‖∞ · xScale` leaves the scaled function with an O(1) gradient in
+	/// scaled coordinates. Falls back to the function value where the gradient
+	/// vanishes or cannot be taken, and to 1 where neither is usable.
+	private static func functionScale(
+		_ function: @escaping @Sendable (V) -> V.Scalar,
+		at point: V,
+		variableScale: V.Scalar
+	) -> V.Scalar {
+		// A step proportional to the variables themselves — an absolute 1e-6 probe
+		// against components of 1e6 is differencing in the noise.
+		let epsilon = variableScale / V.Scalar(1_000_000)
+		if let gradient = try? numericalGradient(function, at: point, epsilon: epsilon) {
+			let largest = gradient.toArray().reduce(V.Scalar(0)) { Swift.max($0, abs($1)) }
+			let scale = largest * variableScale
+			if scale.isFinite && scale > V.Scalar(0) { return scale }
+		}
+		let value = abs(function(point))
+		if value.isFinite && value > V.Scalar(0) { return value }
+		return V.Scalar(1)
+	}
+
+	/// The first-order KKT residual `‖∇f + Σλᵢ∇hᵢ + Σμⱼ∇gⱼ‖` at `point`.
+	///
+	/// The objective and each constraint are differentiated separately and combined
+	/// analytically, rather than differencing the augmented Lagrangian as one
+	/// composite. The composite carries a `max(0, ·)` whose kink sits at
+	/// `g = −μ/ρ`, which is the constraint boundary itself whenever the multiplier
+	/// is zero — a weakly active bound, where the constraint holds with equality and
+	/// still costs nothing. A central difference straddling that kink reports a
+	/// spurious `ρh/4` per such constraint: on `minimize x² + y², x, y ≥ 0` from a
+	/// feasible start it reads 3.54e-6 at the exact solution and stays there, which
+	/// no absolute tolerance of 1e-6 can ever clear. Every term differenced here is
+	/// smooth at the solution, so the residual goes to zero when the KKT conditions
+	/// actually hold.
+	private static func kktResidual(
+		at point: V,
+		objective: @Sendable (V) -> V.Scalar,
+		equalities: [@Sendable (V) -> V.Scalar],
+		inequalities: [@Sendable (V) -> V.Scalar],
+		equalityMultipliers: [V.Scalar],
+		inequalityMultipliers: [V.Scalar]
+	) throws -> V.Scalar {
+		var residual = try numericalGradient(objective, at: point)
+
+		for (i, h) in equalities.enumerated() {
+			let gradient = try numericalGradient(h, at: point)
+			residual = residual + (equalityMultipliers[i] * gradient)
+		}
+
+		// An inactive inequality carries a zero multiplier, so it drops out of the
+		// sum without a special case — complementary slackness by construction.
+		for (j, g) in inequalities.enumerated() {
+			let gradient = try numericalGradient(g, at: point)
+			residual = residual + (inequalityMultipliers[j] * gradient)
+		}
+
+		return residual.norm
+	}
+
+	/// The largest penalty weight worth applying, derived rather than chosen.
+	///
+	/// Past `1/ulpOfOne` the penalty term is so much larger than the objective that
+	/// adding the objective to it changes nothing a `Scalar` can represent, so
+	/// further escalation buys no feasibility and only degrades the conditioning of
+	/// the inner subproblem. It also sits far below the point where `ρh²` would
+	/// overflow, which is what makes the cap safe as well as useful.
+	private static var maximumPenalty: V.Scalar {
+		V.Scalar(1) / V.Scalar.ulpOfOne
+	}
+
+	/// The complementary-slackness residual `maxⱼ min(−gⱼ(x), μⱼ)`, relative to the
+	/// multiplier scale.
+	///
+	/// At a KKT point every inequality is either active, so its slack `−g` is zero,
+	/// or unpriced, so its multiplier `μ` is zero; the elementwise minimum is zero
+	/// either way, and a weakly active constraint — active with a zero multiplier —
+	/// satisfies it on both counts. A strictly interior constraint still carrying a
+	/// positive price fails it, which is the case a stationarity test built from the
+	/// same multipliers cannot see: the residual it forms is `∇L_A`, which the inner
+	/// solve has already driven to zero. Both arguments are non-negative at a
+	/// feasible point, so clamping the running maximum at zero costs nothing and
+	/// keeps an infeasible iterate — judged separately — from reading as a negative
+	/// residual here.
+	///
+	/// The worst element is reported relative to the largest multiplier in play,
+	/// for the same reason every other tolerance in this type is applied in
+	/// equilibrated coordinates: a model whose multipliers are naturally large would
+	/// otherwise be held to a stricter standard than an identical model written in
+	/// different units. Judged absolutely, this test is also punishing in exactly
+	/// the case a reformulation is most likely to produce — an epigraph lift turns
+	/// one non-smooth term into one inequality per sample, and requiring every
+	/// inactive sample's price to reach an absolute floor makes the outer loop pay
+	/// for constraints that were never binding.
+	private static func complementarityResidual(
+		inequalityValues: [V.Scalar],
+		multipliers: [V.Scalar]
+	) -> V.Scalar {
+		let largestMultiplier = multipliers.reduce(V.Scalar(0)) { Swift.max($0, abs($1)) }
+		let multiplierScale = Swift.max(V.Scalar(1), largestMultiplier)
+
+		let worstElement = zip(inequalityValues, multipliers).reduce(V.Scalar(0)) { worst, pair in
+			let (constraintValue, multiplier) = pair
+			let slack = -constraintValue
+			return Swift.max(worst, Swift.min(slack, multiplier))
+		}
+
+		return worstElement / multiplierScale
+	}
+
+	/// The largest constraint violation: `|h|` for equalities, `max(0, g)` for inequalities.
+	private static func maxViolation(equalities: [V.Scalar], inequalities: [V.Scalar]) -> V.Scalar {
+		let equalityWorst = equalities.reduce(V.Scalar(0)) { Swift.max($0, abs($1)) }
+		let inequalityWorst = inequalities.reduce(V.Scalar(0)) { Swift.max($0, $1) }
+		return Swift.max(equalityWorst, inequalityWorst)
+	}
+
+	/// Returns multipliers in the caller's units.
+	///
+	/// The solve happens on `f/fScale` and `h/hScale`, so a multiplier found there is
+	/// `hScale/fScale` times the one belonging to the constraint as written. A shadow
+	/// price that silently carries the solver's convenience scaling is worse than a
+	/// failure, because nothing about the number looks unusual.
+	private static func unscaled(
+		_ multipliers: [V.Scalar],
+		objectiveScale: V.Scalar,
+		constraintScales: [V.Scalar]
+	) -> [V.Scalar] {
+		zip(multipliers, constraintScales).map { $0 * objectiveScale / $1 }
 	}
 }
 

@@ -409,14 +409,45 @@ public struct CovenantMonitor {
             return Double(val)
         }
 
+        // A balance sheet ratio series omits any period whose denominator is zero,
+        // because the ratio has no value there. Absence therefore means one of two
+        // different things, and `toDouble` collapses both to `0.0`: for a period with
+        // no data that is the reading this function already gives everywhere else, but
+        // for a zero denominator it is the wrong answer in the direction that matters —
+        // a minimum current-ratio covenant would be breached by a company that owes
+        // nothing short-term, and a maximum debt-to-equity covenant would be passed by
+        // a company with no equity at all. Unbounded coverage is already written as
+        // `Double.infinity` in this file (see `.debtToEBITDA` and
+        // `.debtServiceCoverage`), and it gives both covenants the right verdict.
+        func ratioMetric(
+            _ ratio: TimeSeries<T>,
+            _ numerator: TimeSeries<T>,
+            over denominator: TimeSeries<T>
+        ) -> Double {
+            if let value = ratio[period] { return Double(value) }
+            guard let bottom = denominator[period], bottom == T(0) else { return 0.0 }
+            // Zero underneath. With nothing on top either, the entity is empty and
+            // there is nothing to report; with something on top the figure is unbounded.
+            let top = numerator[period] ?? T(0)
+            return top == T(0) ? 0.0 : .infinity
+        }
+
         switch metric {
         case .currentRatio:
-				let ratio = toDouble(balanceSheet.currentRatio[period])
+				let ratio = ratioMetric(
+					balanceSheet.currentRatio,
+					balanceSheet.currentAssets,
+					over: balanceSheet.currentLiabilities
+				)
 //				logger.debug("got current ratio of \(ratio)")
             return ratio
 
         case .debtToEquity:
-            return toDouble(balanceSheet.debtToEquity[period])
+            return ratioMetric(
+                balanceSheet.debtToEquity,
+                balanceSheet.interestBearingDebt,
+                over: balanceSheet.totalEquity
+            )
 
         case .interestCoverage:
             return calculateInterestCoverage(
@@ -457,7 +488,11 @@ public struct CovenantMonitor {
         case .quickRatio:
             // Simplified: Quick Ratio ≈ Current Ratio for now
             // (Would need inventory account identification for accurate calculation)
-            return toDouble(balanceSheet.currentRatio[period])
+            return ratioMetric(
+                balanceSheet.currentRatio,
+                balanceSheet.currentAssets,
+                over: balanceSheet.currentLiabilities
+            )
 
         case .tangibleNetWorth:
             // Simplified: Tangible Net Worth ≈ Total Equity for now

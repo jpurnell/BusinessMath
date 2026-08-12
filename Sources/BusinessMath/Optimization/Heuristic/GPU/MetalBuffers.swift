@@ -27,7 +27,8 @@ import Foundation
 /// let buffers = try MetalBuffers(
 ///     device: device.device,
 ///     populationSize: 1000,
-///     dimension: 10
+///     dimension: 10,
+///     randomSeeds: (0..<1000).map { _ in UInt32(rng.next() & 0xFFFFFFFF) }
 /// )
 ///
 /// // Upload initial population
@@ -69,8 +70,24 @@ internal final class MetalBuffers {
     ///   - device: Metal device
     ///   - populationSize: Number of individuals
     ///   - dimension: Number of genes per individual
+    ///   - randomSeeds: RNG state for the GPU kernels, one seed per individual, drawn by
+    ///     the caller from whatever generator the caller was configured with. This is a
+    ///     parameter rather than something this type produces because the seeds *are* the
+    ///     GPU's randomness: every tournament, crossover point, and mutation the kernels
+    ///     perform is a hash of `randomSeeds[id]`. Filling them here from the system
+    ///     generator would mean `GeneticAlgorithmConfig.seed` reproduced a run below the
+    ///     GPU threshold and not above it — the same API, the same seed, silently
+    ///     non-reproducible. There is deliberately no default: a caller must say where
+    ///     its randomness comes from.
     /// - Throws: `OptimizationError` if allocation fails
-    init(device: MTLDevice, populationSize: Int, dimension: Int) throws {
+    /// - Precondition: `randomSeeds.count == populationSize`
+    init(device: MTLDevice, populationSize: Int, dimension: Int, randomSeeds seedValues: [UInt32]) throws {
+        guard seedValues.count == populationSize else {
+            throw OptimizationError.invalidInput(
+                message: "Seed count mismatch: expected \(populationSize), got \(seedValues.count)"
+            )
+        }
+
         self.device = device
         self.populationSize = populationSize
         self.dimension = dimension
@@ -93,16 +110,19 @@ internal final class MetalBuffers {
         self.fitness = fit
         self.randomSeeds = seeds
 
-        // Initialize random seeds for GPU RNG
-        initializeRandomSeeds()
+        // Initialize random seeds for GPU RNG from the caller's generator
+        uploadRandomSeeds(seedValues)
     }
 
     // MARK: - Random Seed Initialization
 
-    private func initializeRandomSeeds() {
+    /// Copy the caller's RNG state into the seed buffer.
+    ///
+    /// - Parameter seedValues: One seed per individual, already drawn by the caller.
+    private func uploadRandomSeeds(_ seedValues: [UInt32]) {
         let seedPointer = randomSeeds.contents().bindMemory(to: UInt32.self, capacity: populationSize)
-        for i in 0..<populationSize {
-            seedPointer[i] = UInt32.random(in: 0...UInt32.max) // stochastic:exempt
+        for (i, seed) in seedValues.enumerated() {
+            seedPointer[i] = seed
         }
     }
 

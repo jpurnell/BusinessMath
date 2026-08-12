@@ -121,6 +121,35 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 
 	/// Optimize for worst-case performance.
 	///
+	/// ## Epigraph reformulation
+	///
+	/// The problem as written is a minimax:
+	/// ```
+	/// minimize  max{ω ∈ Ω} f(x, ω)
+	/// ```
+	/// Handing that pointwise maximum to a gradient-based optimizer as a single
+	/// objective does not work. At a minimax optimum the argmax generically *ties* —
+	/// that is what makes it the optimum — so the objective has a kink exactly at the
+	/// solution. A central finite difference straddling that kink reports a gradient
+	/// that never decays, so the solver's KKT stationarity test can never be met and
+	/// it burns its whole iteration budget before reporting `converged == false`.
+	///
+	/// The maximum is therefore lifted into the constraints, which is exact rather
+	/// than approximate:
+	/// ```
+	/// minimize  t
+	/// subject to  f(x, ωₖ) − t ≤ 0   for every sampled ωₖ
+	/// ```
+	/// (and `t − f(x, ωₖ) ≤ 0` with objective `−t` when maximizing the worst case).
+	/// The objective is now linear, every constraint is as smooth as the caller's own
+	/// `f`, and the tie at the optimum becomes several simultaneously active
+	/// constraints — the case an augmented-Lagrangian method is built for.
+	///
+	/// The extra variable `t` cannot be appended to an arbitrary `V`, so the augmented
+	/// problem is solved in `VectorN<Double>` and projected back through
+	/// ``VectorSpace/fromArray(_:)``. The projection is verified once, up front,
+	/// against the initial solution's own components.
+	///
 	/// - Parameters:
 	///   - objective: Objective function f(x, ω) depending on decision and parameters
 	///   - nominalParameters: Nominal (center) parameter values
@@ -128,7 +157,9 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 	///   - constraints: Constraints on decision variables (must hold for all ω)
 	///   - minimize: Whether to minimize worst-case (true) or maximize worst-case (false)
 	/// - Returns: Robust optimization result
-	/// - Throws: OptimizationError if optimization fails
+	/// - Throws: ``OptimizationError`` if the initial solution cannot be rebuilt from
+	///   its own components, if the objective is not finite there, or if the
+	///   underlying constrained solve fails.
 	public func optimize(
 		objective: @escaping @Sendable (V, [Double]) -> Double,
 		nominalParameters: [Double],
@@ -164,68 +195,312 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 			return worstValue
 		}
 
-		// Choose optimizer based on constraints
-		let hasInequality = constraints.contains { !$0.isEquality }
+		// MARK: Epigraph reformulation
+		//
+		// See the doc comment above: the pointwise max is lifted into the constraints
+		// so that nothing handed to the solver has a kink at the solution.
+		let baseComponents = initialSolution.toArray()
+		let dimension = baseComponents.count
 
-		let result: ConstrainedOptimizationResult<V>
-
-		if hasInequality {
-			let optimizer = InequalityOptimizer<V>(
-				constraintTolerance: V.Scalar(tolerance),
-				gradientTolerance: V.Scalar(tolerance),
-				maxIterations: maxIterations,
-				maxInnerIterations: 1000
-			)
-			result = try optimizer.minimize(
-				worstCaseObjective,
-				from: initialSolution,
-				subjectTo: constraints
-			)
-		} else {
-			let optimizer = ConstrainedOptimizer<V>(
-				constraintTolerance: V.Scalar(tolerance),
-				gradientTolerance: V.Scalar(tolerance),
-				maxIterations: maxIterations,
-				maxInnerIterations: 1000
-			)
-			result = try optimizer.minimize(
-				worstCaseObjective,
-				from: initialSolution,
-				subjectTo: constraints
+		guard dimension > 0 else {
+			throw OptimizationError.invalidInput(
+				message: "Initial solution has zero dimensions"
 			)
 		}
 
-		// Find worst-case parameters at the solution
-		let solution = result.solution
+		// MARK: Linear fast path
+		//
+		// When the objective is linear in the decision variables at every sampled
+		// realization and the caller's constraints are linear too, the epigraph
+		// problem below *is* a linear program, and handing it to a penalty method is
+		// both far slower and less accurate than solving it outright. Try that first;
+		// a nil result means some piece is genuinely nonlinear and the general path
+		// takes over.
+		if let linear = try linearRobustCounterpart(
+			objective: objective,
+			uncertaintyPoints: uncertaintyPoints,
+			initialSolution: initialSolution,
+			constraints: constraints,
+			minimize: minimize
+		) {
+			let worst = Self.worstCase(
+				at: linear.solution,
+				objective: objective,
+				uncertaintyPoints: uncertaintyPoints,
+				nominalParameters: nominalParameters,
+				minimize: minimize
+			)
+			return RobustResult(
+				solution: linear.solution,
+				worstCaseObjective: worst.value,
+				nominalObjective: objective(linear.solution, nominalParameters),
+				worstCaseParameters: worst.parameters,
+				converged: true,
+				iterations: linear.iterations
+			)
+		}
+
+		// The projection back from the augmented space is the one thing this
+		// reformulation depends on that the `VectorSpace` protocol allows to fail.
+		// Establish it once here, on components of exactly the length every later
+		// projection will see, rather than discovering it inside a closure that has no
+		// way to report the failure.
+		guard V.fromArray(baseComponents) != nil else {
+			throw OptimizationError.invalidInput(
+				message: "Initial solution cannot be rebuilt from its own components; the epigraph reformulation requires a round-trippable vector type"
+			)
+		}
+
+		let project: @Sendable (VectorN<Double>) -> V? = { augmented in
+			let head = Array(augmented.toArray().prefix(dimension))
+			guard head.count == dimension else { return nil }
+			return V.fromArray(head)
+		}
+
+		let epigraphIndex = dimension
+		let startValue = worstCaseObjective(initialSolution)
+
+		guard startValue.isFinite else {
+			throw OptimizationError.nonFiniteValue(
+				message: "Worst-case objective is not finite at the initial solution"
+			)
+		}
+
+		let augmentedStart = VectorN<Double>(baseComponents + [startValue])
+
+		// Objective: the epigraph variable itself. Minimizing the worst case minimizes
+		// t; maximizing it maximizes t, which is minimizing −t.
+		let epigraphObjective: @Sendable (VectorN<Double>) -> Double = { point in
+			let t = point[epigraphIndex]
+			return minimize ? t : -t
+		}
+
+		var augmentedConstraints: [MultivariateConstraint<VectorN<Double>>] = []
+		augmentedConstraints.reserveCapacity(uncertaintyPoints.count + constraints.count)
+
+		// One constraint per sampled parameter realization: t dominates (or is
+		// dominated by) f(x, ωₖ).
+		for omega in uncertaintyPoints {
+			augmentedConstraints.append(.inequality { point in
+				// Unreachable: arity was verified against `initialSolution` above, and
+				// every point the solver builds keeps that arity. Infinity is reported
+				// rather than a plausible value so a broken projection can only ever
+				// look infeasible, never converged.
+				guard let x = project(point) else { return Double.infinity }
+				let value = objective(x, omega)
+				let t = point[epigraphIndex]
+				return minimize ? (value - t) : (t - value)
+			})
+		}
+
+		// The caller's own constraints, evaluated on the projected decision vector so
+		// the epigraph variable is invisible to them.
+		for constraint in constraints {
+			let evaluate: @Sendable (VectorN<Double>) -> Double = { point in
+				guard let x = project(point) else { return Double.infinity }
+				return constraint.evaluate(at: x)
+			}
+			if constraint.isEquality {
+				augmentedConstraints.append(.equality(evaluate))
+			} else {
+				augmentedConstraints.append(.inequality(evaluate))
+			}
+		}
+
+		let optimizer = InequalityOptimizer<VectorN<Double>>(
+			constraintTolerance: tolerance,
+			gradientTolerance: tolerance,
+			maxIterations: maxIterations,
+			maxInnerIterations: 1000
+		)
+
+		let augmentedResult = try optimizer.minimize(
+			epigraphObjective,
+			from: augmentedStart,
+			subjectTo: augmentedConstraints
+		)
+
+		guard let solution = project(augmentedResult.solution) else {
+			throw OptimizationError.invalidInput(
+				message: "Solution of the epigraph problem could not be projected back onto the decision space"
+			)
+		}
+
+		let worst = Self.worstCase(
+			at: solution,
+			objective: objective,
+			uncertaintyPoints: uncertaintyPoints,
+			nominalParameters: nominalParameters,
+			minimize: minimize
+		)
+
+		return RobustResult(
+			solution: solution,
+			worstCaseObjective: worst.value,
+			nominalObjective: objective(solution, nominalParameters),
+			worstCaseParameters: worst.parameters,
+			converged: augmentedResult.converged,
+			iterations: augmentedResult.iterations
+		)
+	}
+
+	// MARK: - Linear robust counterpart
+
+	/// Accuracy of the coefficients recovered by linearisation, and therefore the
+	/// tightest tolerance the resulting linear program can honestly be solved to.
+	///
+	/// `validateLinearModel` recovers coefficients by finite differences with a step
+	/// of 1e-8, so they are good to about that; a decimal order of margin above it
+	/// leaves the comparison meaningful without asking for precision the data does
+	/// not carry.
+	private static var linearisationTolerance: Double { 1e-7 }
+
+	/// Solves the robust counterpart exactly as a linear program, when it is one.
+	///
+	/// The epigraph form `min t s.t. f(x, ωₖ) ≤ t` is a linear program whenever `f`
+	/// is linear in `x` at every sampled `ωₖ` and the caller's constraints are
+	/// linear. That is the common case for portfolio and allocation models, and it
+	/// is worth detecting: the general path spends an augmented-Lagrangian outer loop
+	/// and a quasi-Newton inner loop rediscovering numerically what the simplex
+	/// method returns exactly, and it rediscovers it in minutes rather than
+	/// microseconds. Sampling the uncertainty set also only ever bounds the true
+	/// worst case from below, so the slower route is not the more accurate one.
+	///
+	/// Returns `nil` — rather than throwing — when any piece fails to linearise, so
+	/// that a genuinely nonlinear model falls through to the general solver. The only
+	/// errors propagated are those raised while building the linear program after
+	/// linearity has already been established.
+	///
+	/// Every variable is split into non-negative positive and negative parts, because
+	/// the simplex solver assumes `x ≥ 0` while both the decision variables and the
+	/// epigraph variable are free.
+	private func linearRobustCounterpart(
+		objective: @escaping @Sendable (V, [Double]) -> Double,
+		uncertaintyPoints: [[Double]],
+		initialSolution: V,
+		constraints: [MultivariateConstraint<V>],
+		minimize: Bool
+	) throws -> (solution: V, iterations: Int)? {
+		let dimension = initialSolution.toArray().count
+		guard dimension > 0, !uncertaintyPoints.isEmpty else { return nil }
+
+		var scenarios: [(coefficients: [Double], constant: Double)] = []
+		scenarios.reserveCapacity(uncertaintyPoints.count)
+		for omega in uncertaintyPoints {
+			let scenario: (V) -> Double = { point in objective(point, omega) }
+			guard let model = try? validateLinearModel(scenario, dimension: dimension, at: initialSolution) else {
+				return nil
+			}
+			guard model.coefficients.count == dimension else { return nil }
+			scenarios.append(model)
+		}
+
+		var linearConstraints: [(coefficients: [Double], constant: Double, isEquality: Bool)] = []
+		linearConstraints.reserveCapacity(constraints.count)
+		for constraint in constraints {
+			let evaluate: (V) -> Double = { point in constraint.evaluate(at: point) }
+			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: initialSolution) else {
+				return nil
+			}
+			guard model.coefficients.count == dimension else { return nil }
+			linearConstraints.append((model.coefficients, model.constant, constraint.isEquality))
+		}
+
+		// Layout: [x₀⁺ … xₙ₋₁⁺, x₀⁻ … xₙ₋₁⁻, t⁺, t⁻], every entry non-negative.
+		let positiveEpigraph = 2 * dimension
+		let negativeEpigraph = positiveEpigraph + 1
+		let variableCount = negativeEpigraph + 1
+
+		var rows: [SimplexConstraint] = []
+		rows.reserveCapacity(scenarios.count + linearConstraints.count)
+
+		// Minimising: f(x, ωₖ) − t ≤ 0. Maximising: t − f(x, ωₖ) ≤ 0.
+		for scenario in scenarios {
+			var row = [Double](repeating: 0, count: variableCount)
+			for i in 0..<dimension {
+				let coefficient = minimize ? scenario.coefficients[i] : -scenario.coefficients[i]
+				row[i] = coefficient
+				row[dimension + i] = -coefficient
+			}
+			row[positiveEpigraph] = minimize ? -1 : 1
+			row[negativeEpigraph] = minimize ? 1 : -1
+			let rhs = minimize ? -scenario.constant : scenario.constant
+			rows.append(SimplexConstraint(coefficients: row, relation: .lessOrEqual, rhs: rhs))
+		}
+
+		// The caller writes constraints as g(x) ≤ 0 or h(x) = 0, so the linearised
+		// constant moves to the right-hand side with its sign flipped.
+		for constraint in linearConstraints {
+			var row = [Double](repeating: 0, count: variableCount)
+			for i in 0..<dimension {
+				let coefficient = constraint.coefficients[i]
+				row[i] = coefficient
+				row[dimension + i] = -coefficient
+			}
+			let relation: ConstraintRelation = constraint.isEquality ? .equal : .lessOrEqual
+			rows.append(SimplexConstraint(coefficients: row, relation: relation, rhs: -constraint.constant))
+		}
+
+		var objectiveCoefficients = [Double](repeating: 0, count: variableCount)
+		objectiveCoefficients[positiveEpigraph] = 1
+		objectiveCoefficients[negativeEpigraph] = -1
+
+		// The rows above are built from finite-difference coefficients, which carry
+		// roughly the differencing step's worth of error — far coarser than the
+		// solver's default 1e-10. Left at that default, Phase I cannot drive the
+		// artificial variables of an equality row below a residual the input noise
+		// alone accounts for, and a plainly feasible program is reported infeasible.
+		// The solver is told how good the data actually is.
+		let solver = SimplexSolver(tolerance: Self.linearisationTolerance)
+		let solved = minimize
+			? try solver.minimize(objective: objectiveCoefficients, subjectTo: rows)
+			: try solver.maximize(objective: objectiveCoefficients, subjectTo: rows)
+
+		// An unbounded or infeasible linear program is a statement about the model,
+		// not about this shortcut, but the general solver reports those differently
+		// and its answer is the one the caller's tests are written against.
+		guard solved.status == .optimal, solved.solution.count >= variableCount else { return nil }
+
+		var components: [Double] = []
+		components.reserveCapacity(dimension)
+		for i in 0..<dimension {
+			let positivePart = solved.solution[i]
+			let negativePart = solved.solution[dimension + i]
+			components.append(positivePart - negativePart)
+		}
+
+		guard let solution = V.fromArray(components) else { return nil }
+		return (solution, solved.iterations)
+	}
+
+	// MARK: - Worst case over the sampled realizations
+
+	/// The worst sampled realization at `point`, and the parameters that produce it.
+	///
+	/// "Worst" is the largest value when minimizing and the smallest when
+	/// maximizing, matching the sense the caller asked for. Reported over the same
+	/// sampled set the solve used, so the value returned is the one the solution was
+	/// actually chosen against rather than a bound taken over a different set.
+	private static func worstCase(
+		at point: V,
+		objective: (V, [Double]) -> Double,
+		uncertaintyPoints: [[Double]],
+		nominalParameters: [Double],
+		minimize: Bool
+	) -> (value: Double, parameters: [Double]) {
 		var worstValue = minimize ? -Double.infinity : Double.infinity
 		var worstParameters = nominalParameters
 
 		for omega in uncertaintyPoints {
-			let value = objective(solution, omega)
-			if minimize {
-				if value > worstValue {
-					worstValue = value
-					worstParameters = omega
-				}
-			} else {
-				if value < worstValue {
-					worstValue = value
-					worstParameters = omega
-				}
+			let value = objective(point, omega)
+			let isWorse = minimize ? (value > worstValue) : (value < worstValue)
+			if isWorse {
+				worstValue = value
+				worstParameters = omega
 			}
 		}
 
-		// Evaluate at nominal parameters
-		let nominalValue = objective(solution, nominalParameters)
-
-		return RobustResult(
-			solution: solution,
-			worstCaseObjective: worstValue,
-			nominalObjective: nominalValue,
-			worstCaseParameters: worstParameters,
-			converged: result.converged,
-			iterations: result.iterations
-		)
+		return (worstValue, worstParameters)
 	}
 }
 
