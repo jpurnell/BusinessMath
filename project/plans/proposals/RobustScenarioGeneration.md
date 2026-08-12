@@ -4,8 +4,17 @@
 **Author:** Session of 2026-08-12
 **Target:** `Sources/BusinessMath/AdvancedOptimization/`
 
-**Build order:** dualization fast path first, cutting-plane loop second, default policy
-decided by measurement afterwards. See §15.
+**Build order:** dualization fast path first, then the shared `CuttingPlaneMaster` from
+[NonsmoothOptimization](NonsmoothOptimization.md), which this proposal's scenario
+generation consumes as a `CutOracle` conformance rather than reimplementing. Default
+policy decided by measurement afterwards. See §15 here and §15 there.
+
+**Revised in review, 2026-08-12.** The cutting-plane loop described below is no longer
+built by this proposal. Both proposals were separately specifying a piecewise-linear
+lower model, an LP master and a cut, differing only in where the cut comes from; that
+would have produced two masters with two convergence tests and two round budgets. The
+master is built once in `NonsmoothOptimization`, and everything below that describes the
+loop should be read as describing the *oracle* this proposal supplies to it.
 
 **Governing rule for this feature:** never silently degrade — the label is the contract.
 A worst case that is not proven over the whole uncertainty set must say so.
