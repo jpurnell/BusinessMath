@@ -395,7 +395,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             }
 
             // Create next generation
-            population = evolvePopulation(population)
+            population = try evolvePopulation(population)
         }
 
         // Return final result - use best individual if found, else first population member
@@ -466,13 +466,39 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     /// 1. Sort by fitness
     /// 2. Preserve elite individuals
     /// 3. Generate offspring via selection, crossover, mutation
-    private func evolvePopulation(_ population: [Individual<V>]) -> [Individual<V>] {
+    private func evolvePopulation(_ population: [Individual<V>]) throws -> [Individual<V>] {
         // Check if GPU acceleration should be used
         #if canImport(Metal)
         if shouldUseGPU() {
-            // Try GPU path, fall back to CPU on error
-            if let gpuResult = try? evolvePopulationGPU(population) { // silent: GPU failure falls back to CPU path
-                return gpuResult
+            // The GPU path draws its kernel seeds from `rng` before the first operation
+            // that can fail — buffer allocation, pipeline construction, acquiring a
+            // command buffer — so abandoning it partway leaves the generator advanced by
+            // one draw per individual. Falling back to the CPU from there resumes the
+            // stream somewhere no seed predicts, which is why a seeded run reproduced
+            // only when the GPU happened to succeed both times.
+            let checkpoint = rng.snapshot()
+            do {
+                if let gpuResult = try evolvePopulationGPU(population) {
+                    return gpuResult
+                }
+                rng.restore(checkpoint)
+            } catch {
+                rng.restore(checkpoint)
+
+                // A caller who set a seed asked for reproducibility, and quietly running a
+                // different implementation — the CPU kernels compute in Double where the
+                // GPU computes in Float — does not deliver it. Unseeded runs keep the
+                // fallback, because there resilience is worth more than a promise nobody
+                // made.
+                if config.seed != nil {
+                    throw OptimizationError.invalidInput(
+                        message: """
+                            GPU evolution failed on a seeded run and falling back to the CPU \
+                            path would return a different answer for the same seed. Underlying \
+                            error: \(error)
+                            """
+                    )
+                }
             }
         }
         #endif
@@ -809,6 +835,24 @@ internal final class RNGWrapper {
 
     func next() -> UInt64 {
         return generator.next()
+    }
+
+    /// The generator's current state, for restoring after an abandoned attempt.
+    ///
+    /// Every generator behind this wrapper is a value type, so handing one out copies it
+    /// rather than aliasing the live stream.
+    func snapshot() -> any RandomNumberGenerator {
+        return generator
+    }
+
+    /// Rewinds to a previously taken ``snapshot()``.
+    ///
+    /// Needed because work that draws from the stream can still fail afterwards. Without
+    /// this, an abandoned attempt leaves the generator advanced by however many values it
+    /// happened to consume before giving up, and the retry — or the fallback — continues
+    /// from somewhere no seed predicts.
+    func restore(_ snapshot: any RandomNumberGenerator) {
+        generator = snapshot
     }
 }
 
