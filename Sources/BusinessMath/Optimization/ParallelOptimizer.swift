@@ -23,7 +23,8 @@ import Numerics
 /// let optimizer = ParallelOptimizer(
 ///     algorithm: .gradientDescent(learningRate: 0.01),
 ///     numberOfStarts: 10,
-///     maxIterations: 1000
+///     maxIterations: 1000,
+///     seed: 42  // omit for non-deterministic starts
 /// )
 ///
 /// let result = try await optimizer.optimize(
@@ -65,6 +66,21 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 	/// Convergence tolerance
 	public let tolerance: Double
 
+	/// Random seed for reproducible starting points (optional).
+	///
+	/// The starting points are the only randomness in a multi-start run: every algorithm
+	/// this type dispatches to is deterministic given its initial guess. Set this and two
+	/// runs draw the same starts and return bit-identical results. Leave it `nil` and the
+	/// starts come from the system generator, which is the historical behaviour — and the
+	/// reason a run that failed could not be told apart from a run that merely drew badly.
+	///
+	/// - Note: The seed belongs to the optimizer rather than to a single call because both
+	///   entry points need it, and one of them cannot take it: ``minimize(_:from:constraints:)``
+	///   is a ``MultivariateOptimizer`` requirement with a fixed signature. Seeding at
+	///   configuration time is the only shape that makes the async and synchronous paths
+	///   reproducible under one rule.
+	public let seed: UInt64?
+
 	// MARK: - Initialization
 
 	/// Create a parallel multi-start optimizer.
@@ -74,16 +90,20 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 	///   - numberOfStarts: Number of random starting points (default: 10)
 	///   - maxIterations: Maximum iterations per attempt (default: 1000)
 	///   - tolerance: Convergence tolerance (default: 1e-6)
+	///   - seed: Random seed for reproducible starting points (default: nil, meaning
+	///     non-deterministic starts as before)
 	public init(
 		algorithm: Algorithm,
 		numberOfStarts: Int = 10,
 		maxIterations: Int = 1000,
-		tolerance: Double = 1e-6
+		tolerance: Double = 1e-6,
+		seed: UInt64? = nil
 	) {
 		self.algorithm = algorithm
 		self.numberOfStarts = numberOfStarts
 		self.maxIterations = maxIterations
 		self.tolerance = tolerance
+		self.seed = seed
 	}
 
 	// MARK: - Optimization
@@ -179,10 +199,33 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 
 	// MARK: - Helper Methods
 
-	/// Generate random starting points within search region
+	/// Generate random starting points within search region.
+	///
+	/// Resolves ``seed`` to a generator and defers to ``sampleStartingPoints(count:region:using:)``,
+	/// so the seeded and unseeded paths differ only in where the bits come from.
 	private func generateStartingPoints(
 		count: Int,
 		region: (lower: V, upper: V)
+	) -> [V] {
+		if let seed {
+			var generator = Xoshiro256StarStar(seed: seed)
+			return sampleStartingPoints(count: count, region: region, using: &generator)
+		}
+		var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+		return sampleStartingPoints(count: count, region: region, using: &generator)
+	}
+
+	/// Draw starting points uniformly from the search region using an explicit generator.
+	///
+	/// - Parameters:
+	///   - count: Number of starting points to draw
+	///   - region: Bounds to draw within
+	///   - generator: Source of randomness; a seeded one makes the draw reproducible
+	/// - Returns: The starting points, in draw order
+	private func sampleStartingPoints<G: RandomNumberGenerator>(
+		count: Int,
+		region: (lower: V, upper: V),
+		using generator: inout G
 	) -> [V] {
 		let lowerArray = region.lower.toArray()
 		let upperArray = region.upper.toArray()
@@ -194,7 +237,7 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 			for d in 0..<dimension {
 				let lower = lowerArray[d]
 				let upper = upperArray[d]
-				let random = Double.random(in: 0...1) // stochastic:exempt
+				let random = Double.random(in: 0...1, using: &generator)
 				let value = lower + random * (upper - lower)
 				coordinates.append(value)
 			}

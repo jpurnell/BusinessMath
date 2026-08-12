@@ -213,7 +213,9 @@ public struct ReciprocalParameterRecoveryCheck {
 	///   - n: Number of observations to simulate (default: 100)
 	///   - xRange: Range for x values (default: 0...10)
 	///   - tolerance: Relative tolerance for parameter recovery (default: 0.1 = 10%)
-	///   - learningRate: Optimization learning rate (default: 0.001)
+	///   - learningRate: Step size on the per-observation objective (default: 0.1). See
+	///     ``ReciprocalRegressionFitter/fit(data:initialGuess:learningRate:maxIterations:tolerance:)``
+	///     for why this is not the `0.001` it used to be.
 	///   - maxIterations: Maximum optimization iterations (default: 1000)
 	/// - Returns: Detailed validation report
 	/// - Throws: Optimization errors if fitting fails
@@ -224,7 +226,7 @@ public struct ReciprocalParameterRecoveryCheck {
 		n: Int = 100,
 		xRange: ClosedRange<T> = T(0)...T(10),
 		tolerance: T = T(0.1),
-		learningRate: T = T(0.001),
+		learningRate: T = T(0.1),
 		maxIterations: Int = 1000
 	) throws -> ParameterRecoveryReport<T> where T: BinaryFloatingPoint {
 		// Step 1: Simulate data with true parameters

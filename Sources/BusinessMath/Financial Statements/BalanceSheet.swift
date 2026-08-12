@@ -719,6 +719,10 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 				let currentWC = nwc[period] ?? T(0)
 				let priorWC = nwc[periods[index - 1]] ?? T(0)
 				let averageWC = (currentWC + priorWC) / T(2)
+				// The first-period branch above already guards its divisor; this one did
+				// not, so a period whose working capital averaged to zero returned
+				// `+infinity`. Same guard, same answer, for consistency within the method.
+				guard averageWC != T(0) else { return T(0) }
 				return currentRevenue / averageWC
 			}
 		}
@@ -728,28 +732,85 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 
 	// MARK: - Financial Ratios
 
+	/// Divides one series by another, leaving out every period where the divisor is zero.
+	///
+	/// A ratio with a zero denominator has no value, and the two candidate answers are
+	/// both false in the direction that matters. `+infinity` — what the unguarded
+	/// division returns — is not representable in JSON, so it does not merely read
+	/// wrong: it takes the whole enclosing snapshot down with it at encoding time.
+	/// Zero is worse, because it is plausible: a current ratio of zero on a company
+	/// that owes nothing short-term fails every minimum-coverage threshold, so the
+	/// strongest balance sheet on the books would read as the weakest. The same in
+	/// reverse for leverage, where zero debt-to-equity on a company with no equity at
+	/// all reads as unlevered.
+	///
+	/// Absence is the answer the library already gives elsewhere for this question.
+	/// The scalar ``currentRatio(currentAssets:currentLiabilities:)`` throws rather than
+	/// return a number for zero current liabilities, and `TimeSeries` already omits
+	/// periods it cannot compute — `diff(lag:)` drops the first one for the same reason.
+	///
+	/// Only an exact zero is treated as undefined. A negative denominator is unusual
+	/// but arithmetically meaningful — negative equity from an accumulated deficit is
+	/// ordinary — and silently dropping those periods would hide real figures.
+	///
+	/// - Parameters:
+	///   - numerator: The series on top of the ratio.
+	///   - denominator: The series underneath it.
+	/// - Returns: The element-wise quotient over the periods present in both series,
+	///   minus any period where the denominator is exactly zero.
+	private func ratio(_ numerator: TimeSeries<T>, over denominator: TimeSeries<T>) -> TimeSeries<T> {
+		var definedPeriods: [Period] = []
+		var values: [T] = []
+		definedPeriods.reserveCapacity(numerator.periods.count)
+		values.reserveCapacity(numerator.periods.count)
+
+		for period in numerator.periods {
+			guard let top = numerator[period],
+				  let bottom = denominator[period],
+				  bottom != T(0) else {
+				continue
+			}
+			definedPeriods.append(period)
+			values.append(top / bottom)
+		}
+
+		return TimeSeries(periods: definedPeriods, values: values)
+	}
+
 	/// Current ratio (current assets / current liabilities).
 	///
 	/// Measures ability to pay short-term obligations. A ratio above 1.0
 	/// indicates sufficient current assets to cover current liabilities.
+	///
+	/// A period with no current liabilities has no value in the result: there is
+	/// nothing to cover, so there is no number of times over it is covered. Read the
+	/// series with the optional subscript and treat `nil` as "not applicable" — not as
+	/// zero, which would report the strongest short-term position as the weakest.
 	public var currentRatio: TimeSeries<T> {
-		return currentAssets / currentLiabilities
+		return ratio(currentAssets, over: currentLiabilities)
 	}
 
 	/// Debt-to-equity ratio (interest-bearing debt / total equity).
 	///
 	/// Measures financial leverage using only interest-bearing debt (excludes non-interest liabilities
 	/// like accounts payable). Higher ratios indicate more debt relative to equity, which increases financial risk.
+	///
+	/// A period with no equity has no value in the result. Leverage against nothing is
+	/// unbounded, not zero, and a company financed entirely by debt is the last one
+	/// that should read as unlevered.
 	public var debtToEquity: TimeSeries<T> {
-		return interestBearingDebt / totalEquity
+		return ratio(interestBearingDebt, over: totalEquity)
 	}
 
 	/// Equity ratio (total equity / total assets).
 	///
 	/// Measures the proportion of assets financed by equity. Higher ratios
 	/// indicate lower financial risk.
+	///
+	/// A period with no assets has no value in the result: there is no composition to
+	/// take a proportion of.
 	public var equityRatio: TimeSeries<T> {
-		return totalEquity / totalAssets
+		return ratio(totalEquity, over: totalAssets)
 	}
 
 	/// Quick ratio (acid-test ratio) - ability to pay current liabilities with liquid assets.
@@ -810,7 +871,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		#endif
 		// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
 		let quickAssets = currentAssets - inventory
-		return quickAssets / currentLiabilities
+		return ratio(quickAssets, over: currentLiabilities)
 	}
 
 	/// Cash ratio - most conservative liquidity measure.
@@ -850,7 +911,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	public var cashRatio: TimeSeries<T> {
 		// Cash Ratio = Cash / Current Liabilities
 		// Use the cashAndEquivalents property which handles aggregation and missing accounts
-		return cashAndEquivalents / currentLiabilities
+		return ratio(cashAndEquivalents, over: currentLiabilities)
 	}
 
 	/// Debt ratio - proportion of assets financed by debt.
@@ -891,7 +952,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// print("Debt Ratio: \(debtRatio[q1]! * 100)%")  // e.g., "Debt Ratio: 45.0%"
 	/// ```
 	public var debtRatio: TimeSeries<T> {
-		return totalLiabilities / totalAssets
+		return ratio(totalLiabilities, over: totalAssets)
 	}
 
 }

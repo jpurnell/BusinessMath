@@ -555,11 +555,22 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
 
         let dimension = searchSpace.count
 
+        // Draw the GPU's RNG state from this optimizer's generator, so a configured
+        // `seed` reaches the kernels. This mirrors DifferentialEvolution's GPU path,
+        // and is why the seed reproduces a 1000-individual run and not only a 999-
+        // individual one: the seeds are the only randomness the kernels have.
+        var seedValues = [UInt32]()
+        seedValues.reserveCapacity(config.populationSize)
+        for _ in 0..<config.populationSize {
+            seedValues.append(UInt32(rng.next() & 0xFFFFFFFF))
+        }
+
         // Create buffers
         let buffers = try MetalBuffers(
             device: metalDevice.device,
             populationSize: config.populationSize,
-            dimension: dimension
+            dimension: dimension,
+            randomSeeds: seedValues
         )
 
         // Convert population to Float array for GPU

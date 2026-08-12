@@ -129,8 +129,10 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
     /// - Important: For linear problems, use ``SimplexRelaxationSolver`` instead for much better
     ///   performance (O(n²) vs O(n³)). Only use this solver when nonlinearity is essential.
     ///
-    /// - Note: The solution may violate constraints by up to `tolerance` due to numerical precision.
-    ///   Solutions with violation > tolerance are automatically rejected as infeasible.
+    /// - Note: Feasibility is judged *relative* to the size of each constraint, not against an
+    ///   absolute residual. A solution is rejected only when some constraint is violated by more
+    ///   than `tolerance` times that constraint's own characteristic magnitude. Equality
+    ///   constraints are measured as `|h(x)|` and inequalities as `max(0, g(x))`.
     ///
     /// - SeeAlso:
     ///   - ``SimplexRelaxationSolver``
@@ -144,9 +146,16 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
         minimize: Bool
     ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable {
 
-        // Create InequalityOptimizer for continuous NLP
+        // Create InequalityOptimizer for continuous NLP.
+        //
+        // Both tolerances come from the caller. Leaving `gradientTolerance` at its
+        // default silently held the stationarity half of the KKT test at 1e-6 no
+        // matter what accuracy the caller asked for — a caller loosening `tolerance`
+        // to 1e-3 for speed still paid for 1e-6 stationarity, and a caller tightening
+        // it never got the tighter test it asked for.
         let optimizer = InequalityOptimizer<V>(
             constraintTolerance: V.Scalar(tolerance),
+            gradientTolerance: V.Scalar(tolerance),
             maxIterations: 100,  // Outer iterations
             maxInnerIterations: maxIterations  // Inner iterations
         )
@@ -158,13 +167,12 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
                 : try optimizer.maximize(objective, from: initialGuess, subjectTo: constraints)
 
             // Check feasibility by evaluating constraints at solution
-            var maxViolation = 0.0
-            for constraint in constraints {
-                let violation = max(0.0, constraint.evaluate(at: result.solution))
-                maxViolation = max(maxViolation, violation)
-            }
+            let maxViolation = Self.maxRelativeViolation(
+                at: result.solution,
+                constraints: constraints
+            )
 
-            guard maxViolation < tolerance else {
+            guard maxViolation <= tolerance else {
                 // Solution violates constraints - treat as infeasible
                 return RelaxationResult(
                     solution: nil,
@@ -182,6 +190,12 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
                 solution = VectorN(result.solution.toArray())
             }
 
+            // `result.converged` is deliberately not used as a rejection criterion.
+            // ``RelaxationStatus`` has no "feasible but unproven" case, so the only
+            // thing this method could do with a non-converged solve is call it
+            // `.infeasible` — which would throw away a point that is in the feasible
+            // set and delete the whole subtree hanging off this node. A feasible
+            // point with a soft bound is strictly more information than none.
             return RelaxationResult(
                 solution: solution,
                 objectiveValue: result.objectiveValue,
@@ -199,5 +213,79 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
                 status: .infeasible
             )
         }
+    }
+
+    // MARK: - Feasibility
+
+    /// The largest constraint violation at `point`, measured relative to the size of the
+    /// constraint that was violated.
+    ///
+    /// Two things were wrong with the absolute `max(0, g(x))` test this replaces, and each
+    /// one on its own produced a wrong answer rather than a slow one.
+    ///
+    /// **Equalities are not inequalities.** `max(0, ·)` is the violation rule for `g(x) ≤ 0`.
+    /// Applied to an equality `h(x) = 0` it reads every *negative* residual as no violation at
+    /// all, so a point that misses the equality on the low side passed the gate and was
+    /// certified `.optimal`. On `minimize xy subject to x + y = 4` that is the difference
+    /// between reporting the optimum and reporting a point that is not in the feasible set.
+    /// The rule is `|h(x)|` for an equality and `max(0, g(x))` for an inequality — the same
+    /// split ``MultivariateConstraint/isSatisfied(at:tolerance:)`` already makes.
+    ///
+    /// **The tolerance has units.** ``InequalityOptimizer`` solves in equilibrated
+    /// coordinates: it divides each constraint by its own characteristic magnitude and judges
+    /// `constraintTolerance` there. What it guarantees on return is therefore
+    /// `violation ≤ tolerance · scale`, not `violation ≤ tolerance`. Re-testing the raw
+    /// residual against the raw tolerance demands an accuracy the optimizer never promised and
+    /// cannot deliver, and the penalty for missing it is not a warning — the node is discarded
+    /// as infeasible. `minimize x² subject to 2 ≤ x ≤ 5` converged to `x = 1.9999986`, a
+    /// residual of 1.35e-6 against a constraint of magnitude 2; the absolute test called the
+    /// root relaxation of a trivially feasible problem infeasible, and branch-and-bound
+    /// returned the caller's initial guess with an objective of infinity.
+    ///
+    /// The scale used here is `‖∇g(x)‖∞ · ‖x‖∞`, floored at 1 so that a constraint which is
+    /// genuinely O(1) is still held to an absolute tolerance and so that the divisor can never
+    /// be zero. Where the gradient cannot be taken the scale falls back to 1, which is the
+    /// conservative direction: it makes the test stricter, never laxer.
+    ///
+    /// - Parameters:
+    ///   - point: Point at which to measure feasibility.
+    ///   - constraints: Constraints defining the feasible region.
+    /// - Returns: The largest relative violation over all constraints; 0 when every constraint
+    ///   is satisfied.
+    static func maxRelativeViolation<V: VectorSpace>(
+        at point: V,
+        constraints: [MultivariateConstraint<V>]
+    ) -> Double where V.Scalar == Double, V: Sendable {
+
+        let components = point.toArray()
+        let largestComponent = components.reduce(0.0) { max($0, abs($1)) }
+        let pointScale = max(1.0, largestComponent)
+
+        var worst = 0.0
+
+        for constraint in constraints {
+            let residual = constraint.evaluate(at: point)
+            let violation = constraint.isEquality ? abs(residual) : max(0.0, residual)
+
+            // Satisfied constraints cost nothing and need no gradient.
+            guard violation > 0.0 else { continue }
+
+            let gradientNorm: Double
+            if let gradient = try? constraint.gradient(at: point) {
+                let norm = gradient.toArray().reduce(0.0) { max($0, abs($1)) }
+                gradientNorm = norm.isFinite ? norm : 1.0
+            } else {
+                gradientNorm = 1.0
+            }
+
+            // Floored at 1, so the division below is always by a value ≥ 1.
+            let magnitude: Double = gradientNorm * pointScale
+            let scale = max(1.0, magnitude)
+            let relative = violation / scale
+
+            worst = max(worst, relative)
+        }
+
+        return worst
     }
 }

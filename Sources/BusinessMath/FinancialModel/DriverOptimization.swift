@@ -239,6 +239,32 @@ public struct DriverOptimizer: Sendable {
 
 	/// Optimize driver values to achieve financial targets.
 	///
+	/// ## Epigraph reformulation
+	///
+	/// Both the "cost of change" objective and the soft target penalty are written
+	/// with `abs` and `max(0, ·)`, and their kinks sit exactly where the answer does:
+	/// `|x − current|` bends where a driver does not move, and `max(0, target −
+	/// actual)` bends where the target is met. A central finite difference straddling
+	/// such a kink reports a gradient that never decays, so the solver's KKT
+	/// stationarity test can never be met — it exhausts its iteration budget and
+	/// reports `converged == false` even when sitting on the right answer.
+	///
+	/// Each of those terms is therefore lifted into an auxiliary variable, which is an
+	/// exact restatement rather than a smoothing:
+	/// - `|xᵢ − cᵢ|` becomes `tᵢ` with `xᵢ − cᵢ − tᵢ ≤ 0` and `cᵢ − xᵢ − tᵢ ≤ 0`;
+	///   minimizing a non-negative cost times `tᵢ` drives `tᵢ` down to `|xᵢ − cᵢ|`.
+	/// - `max(0, v(x))` becomes `sⱼ` with `v(x) − sⱼ ≤ 0` and `−sⱼ ≤ 0`; the penalty
+	///   uses `sⱼ²`, which is increasing in `sⱼ ≥ 0`, so `sⱼ` is driven down to
+	///   `max(0, v(x))`.
+	///
+	/// The optimum and the reported drivers are unchanged; what changes is that every
+	/// function handed to the solver is now smooth at the solution. `.exact` targets
+	/// need no auxiliary variable — `((actual − target)/scale)²` is already smooth.
+	///
+	/// - Note: A model with `s` one-sided targets is evaluated once per objective
+	///   evaluation plus once per slack constraint, so an expensive model costs
+	///   proportionally more than the previous single-penalty formulation.
+	///
 	/// - Parameters:
 	///   - drivers: Array of optimizable drivers
 	///   - targets: Array of financial targets to achieve
@@ -261,19 +287,44 @@ public struct DriverOptimizer: Sendable {
 			throw OptimizationError.invalidInput(message: "No targets provided")
 		}
 
+		// Variable layout of the smooth problem actually handed to the optimizer
+		let layout = Self.buildLayout(
+			drivers: drivers,
+			targets: targets,
+			objective: objective
+		)
+
 		// Build objective function
 		let objectiveFunction = buildObjectiveFunction(
 			drivers: drivers,
 			targets: targets,
 			model: model,
-			objective: objective
+			objective: objective,
+			layout: layout
 		)
 
 		// Build constraints
-		let constraints = buildConstraints(drivers: drivers)
+		let constraints = buildConstraints(
+			drivers: drivers,
+			model: model,
+			layout: layout
+		)
 
-		// Initial guess: start from current values
-		let initialValues = buildInitialValues(drivers: drivers)
+		// Initial guess: start from current values, with each auxiliary variable set to
+		// the value its own epigraph constraints force it to at that point.
+		let initialValues = buildInitialValues(
+			drivers: drivers,
+			model: model,
+			layout: layout
+		)
+
+		// The objective and the constraints index the auxiliary blocks by offset, so a
+		// starting vector of the wrong width would silently read zeros rather than fail.
+		guard initialValues.count == layout.variableCount else {
+			throw OptimizationError.invalidInput(
+				message: "Initial values (\(initialValues.count)) do not match the reformulated problem (\(layout.variableCount) variables)"
+			)
+		}
 
 		// Run optimization (minimize objective)
 		let optimizer = InequalityOptimizer<VectorN<Double>>(maxIterations: maxIterations)
@@ -289,9 +340,193 @@ public struct DriverOptimizer: Sendable {
 			targets: targets,
 			values: result.solution,
 			model: model,
+			layout: layout,
 			converged: result.converged,
 			iterations: result.iterations
 		)
+	}
+
+	// MARK: - Epigraph Reformulation
+
+	/// One auxiliary variable standing in for a one-sided target violation.
+	///
+	/// The original penalty charged `max(0, v(x))²`. Here `v(x)` is pushed into a
+	/// constraint and the variable carries the `max`, so the objective sees only `s²`.
+	private struct TargetSlack: Sendable {
+		/// Metric this slack watches.
+		let metric: String
+		/// The bound the metric is measured against.
+		let bound: Double
+		/// Normalizer, `max(|bound|, 1)` — never zero, so the division below is safe.
+		let denominator: Double
+		/// `true` when the violation is `(bound − actual)`, `false` when `(actual − bound)`.
+		let measuresShortfall: Bool
+		/// Weight the target carried.
+		let weight: Double
+	}
+
+	/// Variable layout of the smooth problem handed to the optimizer.
+	///
+	/// Components are laid out as `[drivers | change magnitudes | target slacks]`.
+	/// The driver block always comes first, so every consumer that reads only
+	/// `values[0..<drivers.count]` keeps working unchanged.
+	///
+	/// Drivers are held in *normalised* coordinates: component `i` is `xᵢ / scaleᵢ`,
+	/// where `scaleᵢ` is the largest magnitude driver `i` can take. Without this a
+	/// model mixing a conversion rate near `0.03` with a traffic figure near `10 000`
+	/// is handed to the solver with a Hessian spanning ten orders of magnitude, and
+	/// the solver's own equilibration cannot repair it: it divides every variable by a
+	/// *single* scalar (the largest component), which leaves the ratios between
+	/// variables exactly as bad as they were. Normalising per driver is a change of
+	/// variables — the feasible set and the optimum are untouched — but it is the
+	/// difference between the augmented Lagrangian converging in single-digit outer
+	/// iterations and it exhausting its budget.
+	private struct ProblemLayout: Sendable {
+		/// Number of decision drivers — also the offset of the first auxiliary block.
+		let driverCount: Int
+		/// Per-driver normalisation factor. Strictly positive.
+		let scales: [Double]
+		/// Each driver's current value in normalised coordinates, `cᵢ / scaleᵢ`.
+		let centres: [Double]
+		/// Offset of the `|xᵢ − cᵢ|` block. Meaningful only when ``usesChangeMagnitudes``.
+		let changeOffset: Int
+		/// Whether the `|xᵢ − cᵢ|` epigraph block is present (`.minimizeCost` only).
+		let usesChangeMagnitudes: Bool
+		/// Offset of the target-slack block.
+		let slackOffset: Int
+		/// One entry per slack variable, in component order.
+		let slacks: [TargetSlack]
+		/// Whether any `.exact` target remains in the objective (it needs no slack).
+		let hasExactTargets: Bool
+		/// Total number of components in the augmented decision vector.
+		let variableCount: Int
+	}
+
+	/// The normalisation factor for one driver: the largest magnitude it can take.
+	///
+	/// Falls back to `1` for a driver pinned at zero, which is the only case where the
+	/// magnitudes above are all zero and the division would not be safe.
+	private static func normalisationScale(for driver: OptimizableDriver) -> Double {
+		let currentMagnitude = abs(driver.currentValue)
+		let lowerMagnitude = abs(driver.range.lowerBound)
+		let upperMagnitude = abs(driver.range.upperBound)
+		let boundsMagnitude = Swift.max(lowerMagnitude, upperMagnitude)
+		let largest = Swift.max(currentMagnitude, boundsMagnitude)
+		guard largest.isFinite, largest > 0 else { return 1.0 }
+		return largest
+	}
+
+	/// The penalty the original formulation charged for a metric the model does not
+	/// produce was a flat `1000 · weight`. A slack of `√1000` reproduces it exactly
+	/// through the `s² · weight` term.
+	private static let missingMetricSlack: Double = Double(1000).squareRoot()
+
+	private static func buildLayout(
+		drivers: [OptimizableDriver],
+		targets: [FinancialTarget],
+		objective: DriverObjective
+	) -> ProblemLayout {
+
+		let driverCount = drivers.count
+		let scales = drivers.map { normalisationScale(for: $0) }
+		let centres = zip(drivers, scales).map { $0.currentValue / $1 }
+
+		// `.custom` hands the caller's own function to the optimizer untouched and
+		// ignores the targets, so there is nothing here to reformulate. The driver
+		// normalisation still applies — it is a change of variables, not a change of
+		// objective, and the caller's function still sees real driver values.
+		if case .custom = objective {
+			return ProblemLayout(
+				driverCount: driverCount,
+				scales: scales,
+				centres: centres,
+				changeOffset: driverCount,
+				usesChangeMagnitudes: false,
+				slackOffset: driverCount,
+				slacks: [],
+				hasExactTargets: false,
+				variableCount: driverCount
+			)
+		}
+
+		var usesChangeMagnitudes = false
+		if case .minimizeCost = objective {
+			usesChangeMagnitudes = true
+		}
+
+		let changeOffset = driverCount
+		let slackOffset = usesChangeMagnitudes ? (driverCount + driverCount) : driverCount
+
+		var slacks: [TargetSlack] = []
+		var hasExactTargets = false
+
+		for target in targets {
+			switch target.target {
+			case .exact:
+				// ((actual − target)/scale)² is smooth everywhere; no lift needed.
+				hasExactTargets = true
+			case .minimum(let value):
+				slacks.append(TargetSlack(
+					metric: target.metric,
+					bound: value,
+					denominator: Swift.max(abs(value), 1.0),
+					measuresShortfall: true,
+					weight: target.weight
+				))
+			case .maximum(let value):
+				slacks.append(TargetSlack(
+					metric: target.metric,
+					bound: value,
+					denominator: Swift.max(abs(value), 1.0),
+					measuresShortfall: false,
+					weight: target.weight
+				))
+			case .range(let minValue, let maxValue):
+				// Falling below the floor and rising above the ceiling are mutually
+				// exclusive, so summing the two squared slacks reproduces the single
+				// piecewise violation the original penalty computed.
+				slacks.append(TargetSlack(
+					metric: target.metric,
+					bound: minValue,
+					denominator: Swift.max(abs(minValue), 1.0),
+					measuresShortfall: true,
+					weight: target.weight
+				))
+				slacks.append(TargetSlack(
+					metric: target.metric,
+					bound: maxValue,
+					denominator: Swift.max(abs(maxValue), 1.0),
+					measuresShortfall: false,
+					weight: target.weight
+				))
+			}
+		}
+
+		let variableCount = slackOffset + slacks.count
+
+		return ProblemLayout(
+			driverCount: driverCount,
+			scales: scales,
+			centres: centres,
+			changeOffset: changeOffset,
+			usesChangeMagnitudes: usesChangeMagnitudes,
+			slackOffset: slackOffset,
+			slacks: slacks,
+			hasExactTargets: hasExactTargets,
+			variableCount: variableCount
+		)
+	}
+
+	/// The normalized violation a slack variable must dominate.
+	private static func slackViolation(
+		_ slack: TargetSlack,
+		metrics: [String: Double]
+	) -> Double {
+		guard let actual = metrics[slack.metric] else {
+			return missingMetricSlack
+		}
+		let gap: Double = slack.measuresShortfall ? (slack.bound - actual) : (actual - slack.bound)
+		return gap / slack.denominator
 	}
 
 	// MARK: - Private Helpers
@@ -300,52 +535,59 @@ public struct DriverOptimizer: Sendable {
 		drivers: [OptimizableDriver],
 		targets: [FinancialTarget],
 		model: @escaping @Sendable ([String: Double]) -> [String: Double],
-		objective: DriverObjective
+		objective: DriverObjective,
+		layout: ProblemLayout
 	) -> @Sendable (VectorN<Double>) -> Double {
 
 		// Create local copies for Sendable closures
 		let driversCopy = drivers
 		let targetsCopy = targets
 		let modelCopy = model
+		let layoutCopy = layout
 
 		switch objective {
 		case .minimizeChange:
 			return { [self] values in
-				// Sum of squared normalized changes: Σ((new - current) / current)²
-				var totalChange = 0.0
-				for (i, driver) in driversCopy.enumerated() {
-					let change = values[i] - driver.currentValue
-					let normalizedChange = change / max(abs(driver.currentValue), 1e-6)
-					totalChange += normalizedChange * normalizedChange
-				}
+				let totalChange = Self.changeCost(
+					values: values,
+					drivers: driversCopy,
+					layout: layoutCopy
+				)
 
-				// Add soft penalty for missing targets
-				let penalty = self.calculateTargetPenalty(
+				// Soft penalty for missing targets, now read off the slack variables
+				let penalty = self.smoothTargetPenalty(
 					values: values,
 					drivers: driversCopy,
 					targets: targetsCopy,
-					model: modelCopy
+					model: modelCopy,
+					layout: layoutCopy
 				)
 
 				return totalChange + 100.0 * penalty  // Heavy penalty for missing targets
 			}
 
 		case .minimizeCost(let costs):
+			let changeOffset = layout.changeOffset
+			let scales = layout.scales
 			return { [self] values in
-				// Weighted sum of absolute changes
+				// Weighted sum of the |change| epigraph variables. Those live in
+				// normalised coordinates, so each is restored to real driver units
+				// before the caller's per-unit cost is applied.
 				var totalCost = 0.0
 				for (i, driver) in driversCopy.enumerated() {
-					let change = abs(values[i] - driver.currentValue)
+					let magnitude = values[changeOffset + i]
+					let realMagnitude = magnitude * scales[i]
 					let cost = costs[driver.name] ?? 1.0
-					totalCost += change * cost
+					totalCost += realMagnitude * cost
 				}
 
-				// Add soft penalty for missing targets (high weight to ensure feasibility)
-				let penalty = self.calculateTargetPenalty(
+				// Soft penalty for missing targets (high weight to ensure feasibility)
+				let penalty = self.smoothTargetPenalty(
 					values: values,
 					drivers: driversCopy,
 					targets: targetsCopy,
-					model: modelCopy
+					model: modelCopy,
+					layout: layoutCopy
 				)
 
 				return totalCost + 10000.0 * penalty
@@ -354,80 +596,121 @@ public struct DriverOptimizer: Sendable {
 		case .maximizeFeasibility:
 			return { [self] values in
 				// Just the penalty (minimize penalty = maximize feasibility)
-				self.calculateTargetPenalty(
+				self.smoothTargetPenalty(
 					values: values,
 					drivers: driversCopy,
 					targets: targetsCopy,
-					model: modelCopy
+					model: modelCopy,
+					layout: layoutCopy
 				)
 			}
 
 		case .custom(let customFunction):
 			return { [self] values in
-				let driverDict = self.buildDriverDictionary(drivers: driversCopy, values: values)
+				let driverDict = self.buildDriverDictionary(drivers: driversCopy, values: values, layout: layoutCopy)
 				return customFunction(driverDict)
 			}
 		}
 	}
 
-	private func calculateTargetPenalty(
+	/// Sum of squared normalized driver changes: `Σ((new − current)/current)²`.
+	///
+	/// The change is taken in normalised coordinates and scaled back up, not the other
+	/// way round. `(cᵢ/scaleᵢ)·scaleᵢ` is not exactly `cᵢ` in binary floating point, and
+	/// at the starting point — where the change is genuinely zero — that round-trip
+	/// leaves a residue near 1e-15. The solver reads the objective's scale off its
+	/// finite-difference gradient there, accepts the residue as a real gradient, and
+	/// divides the whole objective by ~1e-16, after which no stationarity test can ever
+	/// be met. Differencing `values[i] − centre[i]` is exact when the driver has not
+	/// moved, so a zero change reads as exactly zero.
+	private static func changeCost(
+		values: VectorN<Double>,
+		drivers: [OptimizableDriver],
+		layout: ProblemLayout
+	) -> Double {
+		var totalChange = 0.0
+		for (i, driver) in drivers.enumerated() {
+			let offset = values[i] - layout.centres[i]
+			let change = offset * layout.scales[i]
+			let normalizedChange = change / Swift.max(abs(driver.currentValue), 1e-6)
+			totalChange += normalizedChange * normalizedChange
+		}
+		return totalChange
+	}
+
+	/// Target penalty in reformulated coordinates.
+	///
+	/// One-sided targets contribute `sⱼ² · weight` where `sⱼ` is the slack variable
+	/// the epigraph constraints pin to `max(0, violation)`. `.exact` targets are
+	/// already smooth and are evaluated directly from the model.
+	private func smoothTargetPenalty(
 		values: VectorN<Double>,
 		drivers: [OptimizableDriver],
 		targets: [FinancialTarget],
-		model: @escaping ([String: Double]) -> [String: Double]
+		model: @escaping ([String: Double]) -> [String: Double],
+		layout: ProblemLayout
 	) -> Double {
-
-		let driverDict = buildDriverDictionary(drivers: drivers, values: values)
-		let metrics = model(driverDict)
 
 		var penalty = 0.0
 
+		for (j, slack) in layout.slacks.enumerated() {
+			let s = values[layout.slackOffset + j]
+			let squared: Double = s * s
+			penalty += squared * slack.weight
+		}
+
+		// Only `.exact` targets still need the model here; skipping the call otherwise
+		// keeps the common case at one model evaluation per constraint, not two.
+		guard layout.hasExactTargets else { return penalty }
+
+		let driverDict = buildDriverDictionary(drivers: drivers, values: values, layout: layout)
+		let metrics = model(driverDict)
+
 		for target in targets {
+			guard case .exact(let value) = target.target else { continue }
+
 			guard let actual = metrics[target.metric] else {
 				penalty += 1000.0 * target.weight  // Large penalty for missing metric
 				continue
 			}
 
-			let violation: Double
-			switch target.target {
-			case .exact(let value):
-				violation = abs(actual - value) / max(abs(value), 1.0)
-			case .minimum(let value):
-				violation = max(0, value - actual) / max(abs(value), 1.0)
-			case .maximum(let value):
-				violation = max(0, actual - value) / max(abs(value), 1.0)
-			case .range(let minValue, let maxValue):
-				if actual < minValue {
-					violation = (minValue - actual) / max(abs(minValue), 1.0)
-				} else if actual > maxValue {
-					violation = (actual - maxValue) / max(abs(maxValue), 1.0)
-				} else {
-					violation = 0
-				}
-			}
-
-			penalty += violation * violation * target.weight
+			let denominator = Swift.max(abs(value), 1.0)
+			let normalized: Double = (actual - value) / denominator
+			let squared: Double = normalized * normalized
+			penalty += squared * target.weight
 		}
 
 		return penalty
 	}
 
 	private func buildConstraints(
-		drivers: [OptimizableDriver]
+		drivers: [OptimizableDriver],
+		model: @escaping @Sendable ([String: Double]) -> [String: Double],
+		layout: ProblemLayout
 	) -> [MultivariateConstraint<VectorN<Double>>] {
 
 		var constraints: [MultivariateConstraint<VectorN<Double>>] = []
 
+		// Every bound below is divided by the driver's own normalisation scale, which
+		// is strictly positive — a restatement of the same constraint in the
+		// coordinates the solver actually works in, not a relaxation of it.
+		let scales = layout.scales
+		let centres = layout.centres
+
 		// Range constraints for each driver
 		for (i, driver) in drivers.enumerated() {
-			// Lower bound: x[i] ≥ range.lowerBound  =>  range.lowerBound - x[i] ≤ 0
+			let scale = scales[i]
+			let lower = driver.range.lowerBound / scale
+			let upper = driver.range.upperBound / scale
+
+			// Lower bound: z[i] ≥ lower  =>  lower - z[i] ≤ 0
 			constraints.append(.inequality { values in
-				driver.range.lowerBound - values[i]
+				lower - values[i]
 			})
 
-			// Upper bound: x[i] ≤ range.upperBound  =>  x[i] - range.upperBound ≤ 0
+			// Upper bound: z[i] ≤ upper  =>  z[i] - upper ≤ 0
 			constraints.append(.inequality { values in
-				values[i] - driver.range.upperBound
+				values[i] - upper
 			})
 		}
 
@@ -435,28 +718,36 @@ public struct DriverOptimizer: Sendable {
 		for (i, driver) in drivers.enumerated() {
 			guard let changeConstraint = driver.changeConstraint else { continue }
 
+			let scale = scales[i]
+			let centre = centres[i]
+
 			switch changeConstraint {
 			case .absoluteChange(let max):
 				// |new - current| ≤ max
-				// Enforce as two constraints:
-				// new - current ≤ max  =>  new - current - max ≤ 0
+				// Enforce as two constraints, in normalised coordinates:
+				let allowance = max / scale
+				// new - current ≤ max
 				constraints.append(.inequality { values in
-					values[i] - driver.currentValue - max
+					let change = values[i] - centre
+					return change - allowance
 				})
-				// current - new ≤ max  =>  current - new - max ≤ 0
+				// current - new ≤ max
 				constraints.append(.inequality { values in
-					driver.currentValue - values[i] - max
+					let change = centre - values[i]
+					return change - allowance
 				})
 
 			case .percentageChange(let max):
 				// |new/current - 1| ≤ max
-				// new/current ≤ 1 + max  =>  new ≤ current * (1 + max)
+				let upperCentre = centre * (1.0 + max)
+				let lowerCentre = centre * (1.0 - max)
+				// new ≤ current * (1 + max)
 				constraints.append(.inequality { values in
-					values[i] - driver.currentValue * (1.0 + max)
+					values[i] - upperCentre
 				})
-				// new/current ≥ 1 - max  =>  new ≥ current * (1 - max)
+				// new ≥ current * (1 - max)
 				constraints.append(.inequality { values in
-					driver.currentValue * (1.0 - max) - values[i]
+					lowerCentre - values[i]
 				})
 
 			case .stepSize:
@@ -466,24 +757,105 @@ public struct DriverOptimizer: Sendable {
 			}
 		}
 
+		// Epigraph constraints for |xᵢ − cᵢ|: tᵢ ≥ zᵢ − centreᵢ and tᵢ ≥ centreᵢ − zᵢ,
+		// with tᵢ carried in the same normalised units as zᵢ.
+		if layout.usesChangeMagnitudes {
+			let changeOffset = layout.changeOffset
+			for i in drivers.indices {
+				let centre = centres[i]
+				// zᵢ − centreᵢ − tᵢ ≤ 0
+				constraints.append(.inequality { values in
+					let change = values[i] - centre
+					return change - values[changeOffset + i]
+				})
+				// centreᵢ − zᵢ − tᵢ ≤ 0
+				constraints.append(.inequality { values in
+					let change = centre - values[i]
+					return change - values[changeOffset + i]
+				})
+			}
+		}
+
+		// Epigraph constraint for max(0, violation): sⱼ ≥ violationⱼ(x).
+		//
+		// `sⱼ ≥ 0` is *not* stated. It would be redundant and actively harmful: the
+		// objective charges `sⱼ²`, whose minimum over `sⱼ ≥ violation` is already
+		// `max(0, violation)` — a negative `sⱼ` costs more than zero does, so nothing
+		// drives it below zero. Stating it anyway adds a constraint that is weakly
+		// active, with a zero multiplier, at exactly the solutions where a target is
+		// comfortably met (`sⱼ = 0`), which is the degenerate case the KKT residual has
+		// the hardest time certifying.
+		let slackOffset = layout.slackOffset
+		let driversCopy = drivers
+		for (j, slack) in layout.slacks.enumerated() {
+			let slackIndex = slackOffset + j
+			constraints.append(.inequality { values in
+				let dict = Self.driverDictionary(drivers: driversCopy, values: values, layout: layout)
+				let metrics = model(dict)
+				let violation = Self.slackViolation(slack, metrics: metrics)
+				return violation - values[slackIndex]
+			})
+		}
+
 		return constraints
 	}
 
-	private func buildInitialValues(drivers: [OptimizableDriver]) -> VectorN<Double> {
-		// Start from current values (likely feasible)
-		let values = drivers.map { $0.currentValue }
+	private func buildInitialValues(
+		drivers: [OptimizableDriver],
+		model: @escaping @Sendable ([String: Double]) -> [String: Double],
+		layout: ProblemLayout
+	) -> VectorN<Double> {
+		// Start from current values (likely feasible), in normalised coordinates
+		var values = layout.centres
+
+		// Every change magnitude starts at |cᵢ − cᵢ| = 0, its exact epigraph value here.
+		if layout.usesChangeMagnitudes {
+			values.append(contentsOf: [Double](repeating: 0.0, count: layout.driverCount))
+		}
+
+		// Each slack starts at max(0, violation) at the current drivers, so the
+		// starting point is feasible for its own epigraph constraints.
+		if !layout.slacks.isEmpty {
+			var dict: [String: Double] = [:]
+			for driver in drivers {
+				dict[driver.name] = driver.currentValue
+			}
+			let metrics = model(dict)
+			for slack in layout.slacks {
+				let violation = Self.slackViolation(slack, metrics: metrics)
+				values.append(Swift.max(0.0, violation))
+			}
+		}
+
 		return VectorN(values)
+	}
+
+	/// Driver values in real units, from a vector in normalised coordinates.
+	///
+	/// Written as `current + offset·scale` rather than `value·scale` so that a driver
+	/// sitting at its starting point reproduces `currentValue` bit for bit; the direct
+	/// product does not, and the residue shows up in reported results and in
+	/// finite-difference gradients alike.
+	private static func driverDictionary(
+		drivers: [OptimizableDriver],
+		values: VectorN<Double>,
+		layout: ProblemLayout
+	) -> [String: Double] {
+		var dict: [String: Double] = [:]
+		for (i, driver) in drivers.enumerated() {
+			let offset = values[i] - layout.centres[i]
+			let change = offset * layout.scales[i]
+			dict[driver.name] = driver.currentValue + change
+		}
+		return dict
 	}
 
 	private func buildDriverDictionary(
 		drivers: [OptimizableDriver],
-		values: VectorN<Double>
+		values: VectorN<Double>,
+		layout: ProblemLayout
 	) -> [String: Double] {
-		var dict: [String: Double] = [:]
-		for (i, driver) in drivers.enumerated() {
-			dict[driver.name] = values[i]
-		}
-		return dict
+		Self.driverDictionary(drivers: drivers, values: values, layout: layout)
 	}
 
 	private func buildResult(
@@ -491,16 +863,20 @@ public struct DriverOptimizer: Sendable {
 		targets: [FinancialTarget],
 		values: VectorN<Double>,
 		model: ([String: Double]) -> [String: Double],
+		layout: ProblemLayout,
 		converged: Bool,
 		iterations: Int
 	) -> DriverOptimization {
 
-		// Build driver dictionaries
-		let optimizedDrivers = buildDriverDictionary(drivers: drivers, values: values)
+		// Build driver dictionaries, back in the caller's own units
+		let optimizedDrivers = buildDriverDictionary(drivers: drivers, values: values, layout: layout)
 
 		var driverChanges: [String: Double] = [:]
 		for (i, driver) in drivers.enumerated() {
-			driverChanges[driver.name] = values[i] - driver.currentValue
+			// Differenced in normalised coordinates so an untouched driver reports
+			// exactly 0.0 rather than the residue of a round-trip through its scale.
+			let offset = values[i] - layout.centres[i]
+			driverChanges[driver.name] = offset * layout.scales[i]
 		}
 
 		// Run model with optimized drivers

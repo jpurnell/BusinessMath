@@ -39,11 +39,109 @@ detail, and how each number was measured, is in the entry named beside it.
 | `ScenarioGenerator`, `integrate` | seeded output moves. Both drew from process-global state that did not survive parallel execution; `integrate`'s seed is now a `UInt64?` and reaches the sampler. A signature change, so callers see it. |
 | `distributionRayleigh(scale:seed:)` | the per-seed value moves — it indexes the distribution the other way — with a maximum delta of **5.63**. The distribution itself is unchanged; a given seed now lands elsewhere in it. |
 | `distributionRayleigh` | **no number changes.** The parameter is renamed `mean:` → `scale:` because that is what it always was: 400,000 seeded draws at `mean: 2.0` had a sample mean of **2.5039**, a 25.2% overshoot against the documented figure and exactly `σ√(π/2)`. |
+| `UncertaintySet.samplePoints(numberOfSamples:)` | drew its fill points from the system generator, so **every call returned a different scenario set** and two runs of the same robust optimization solved two different problems. For a 3-dimensional box at 100 samples, 92 of the 100 were redrawn per call. Now seeded: three consecutive runs are byte-identical. Any result that depended on the old draw moves. |
+| `RobustOptimizer.optimize` | a model linear in its decision variables is now solved exactly by the simplex method instead of by a sampled penalty solve. `5.14`'s quick start: **6,986.8 s → 1.04 s**, and the answer is the exact closed form `[0, 1, 0]` at a worst case of `−0.09`, where sampling only ever bounded it from below. |
+| `MultiPeriodConstraint.turnoverLimit(_:)` | the `Σ|Δᵢ| ≤ max` bound was handed to the solver as written, and its absolute values are not differentiable at the optimum — where an unmoved asset sits at `Δ = 0`. `5.13` Example 1 returned `converged: false` with weights of **−1.9e13** against a model requiring them non-negative and summing to one. It now converges, with turnover binding at exactly **0.20** in every transition. |
+| `InequalityOptimizer` | `converged: true` now requires complementary slackness in addition to feasibility and stationarity. A point holding an inactive constraint at a positive price — satisfying every constraint, stationary in the augmented Lagrangian, and not a KKT point — previously reported success. Affects every caller: `RobustOptimizer`, `StochasticOptimizer`, `MultiPeriodOptimizer`, `DriverOptimization`, `NonlinearRelaxationSolver`. |
 
 `CoxProcess.simulateDefaultTime`, the gamma-family distributions, `xnpv`/`xirr` on non-`Double`
 scalars, `bayesianICC`, and the seeded paths through `integrate` and `ScenarioGenerator` all
 return different numbers too, but they do so through changed signatures or documented
 non-reproducibility — see below.
+
+#### Fixed — an optimizer that could not tell "the inner solve finished" from "this is the answer"
+
+`InequalityOptimizer` declared convergence on feasibility plus the gradient norm of the
+augmented Lagrangian. That norm is computed by central differences, and the augmented
+Lagrangian carries a `max(0, μ + ρg)` whose kink sits on the constraint boundary itself
+whenever the multiplier is zero — a weakly active bound. Differencing across it reports a
+spurious `ρh/4` per such constraint. On `minimize x² + y²` subject to `x, y ≥ 0` from a
+feasible start, that read **3.5357779e-06** at the exact solution and stayed there for
+100 outer iterations, against a tolerance of `1e-6` it could never reach. The predicted
+value for two active constraints is `2 · ρh/4 · √2 = 3.5355e-06`.
+
+Stationarity is now measured as a KKT residual — objective and constraints differenced
+separately and combined analytically — so nothing with a kink is differenced. That alone
+was not enough: built from the freshly recomputed multipliers, the residual *equals*
+`∇L_A`, so it falls to zero whenever the inner solve converges, whatever the iterate.
+The test therefore also requires complementary slackness, relative to the multiplier
+scale. Without it the method stopped at the second outer iteration carrying the penalty
+method's `O(1/ρ)` offset: measured at ρ = 1, 10, 100, 1000 the boundary error was 1.0,
+5.5e-3, 5.1e-5, 4.4e-7.
+
+The penalty is also capped. It multiplies tenfold per outer step, so a caller passing a
+four-digit iteration budget walked it out of the representable range in a few hundred
+steps, at which point `ρh²` evaluated to infinity and the finite-difference gradient
+threw. `5.13` Example 1 failed this way in 3.6 s with
+`.nonFiniteValue("Function returned non-finite value at point")`. `MultiPeriodOptimizer`
+was passing its own 1,000-iteration budget as the *outer* count; outer and inner budgets
+are now distinct, and `ConstrainedOptimizer` carried the same uncapped escalation.
+
+#### Fixed — models the solver was asked to differentiate and could not
+
+Three call sites handed `InequalityOptimizer` an objective or constraint that is not
+differentiable at its own optimum, which no gradient method can certify.
+
+`RobustOptimizer` built a pointwise `max` over sampled realizations; a minimax optimum is
+generically where the argmax ties. It now solves the epigraph form — `min t` subject to
+`f(x, ωₖ) ≤ t` — which is smooth. `conservativeAllocation` went from failing after
+roughly 22 minutes to passing in 0.82 s.
+
+`DriverOptimization` built its objective from `abs` and `max(0, ·)`, whose kinks sit
+exactly where a target is met. Lifted the same way, plus per-driver normalization: the
+solver equilibrates by dividing all variables by one scalar, which cannot reconcile a
+conversion rate near `0.03` with traffic near `10,000`. The suite went from 9/12 in 170 s
+to **12/12 in 0.64 s**.
+
+`MultiPeriodConstraint.turnoverLimit` is now carried as its own case and expanded by the
+optimizer into `s·Δ ≤ max` over every sign vector `s ∈ {−1, +1}ⁿ` — the same feasible
+set, described by linear half-spaces. Above ten state components the expansion throws
+rather than truncating, because dropping half-spaces relaxes the caller's stated budget
+instead of enforcing it. Existing call sites are unchanged.
+
+#### Added — linear robust models are solved exactly, not approximated
+
+When a robust model's objective is linear in its decision variables at every sampled
+realization and its constraints are linear, the epigraph problem *is* a linear program.
+`RobustOptimizer` now detects that and hands it to `SimplexSolver` rather than to a
+penalty method. Measured on `5.14`'s quick start: **104 rows and 0.0111 s** for the
+sampled formulation against the same answer, with the whole test dropping from 6,986.8 s
+to 1.04 s.
+
+The linear program is built from finite-difference coefficients accurate to about `1e-8`,
+so the solver is given a tolerance of `1e-7` rather than its `1e-10` default. At the
+default, Phase I cannot drive an equality row's artificial variables below a residual the
+input noise alone accounts for, and a plainly feasible program is reported infeasible.
+
+`NonlinearRelaxationSolver` compared a raw constraint residual against a relative
+tolerance, while `InequalityOptimizer` guarantees `violation ≤ tolerance · scale` in
+equilibrated coordinates. `minimize x² s.t. 2 ≤ x ≤ 5` converged to `x = 1.9999986`, was
+rejected over a **1.35e-6** residual, and branch-and-bound returned the initial guess with
+an infinite objective. The same file, and `BranchAndBound`'s `roundingHeuristic` and
+`verifySolution`, applied the inequality rule `max(0, h)` to equality constraints, which
+reads any negative residual as zero violation — two of those were live wrong-answer paths
+that no failing test had reached.
+
+#### Fixed — a robust optimization that solved a different problem on every run
+
+`UncertaintySet.samplePoints(numberOfSamples:)` drew its fill points from the system
+generator under a bare `// stochastic:exempt`. Sampling an uncertainty set is how a
+continuous set becomes the finite scenario collection a solver works on — a property of
+the numerical method, not randomness the caller asked for — and there is no seed
+parameter because there is nothing a caller would sensibly vary. Both the box and
+ellipsoidal sets now draw from a seeded `DeterministicRNG`, as
+`validateLinearModel` already did.
+
+This is the second instance of the shape in one release: `MetalBuffers.swift:105` filled
+GPU RNG state from `UInt32.random(in:)` under the same bare marker, making
+`GeneticAlgorithmConfig.seed` silently inert above the GPU threshold. That line, and
+`ParallelOptimizer`'s complete absence of a seed, are also fixed here.
+
+Seeding made two failures reproducible that had been intermittent, exposing a genuine
+constraint-accuracy defect: `worstCasePortfolioWithBoxUncertainty` and
+`convergenceWithSampleSizes` both satisfy `Σw = 1` only to **3.7e-3** against a `1e-3`
+tolerance. That is not fixed here and is recorded as known-failing; previously it passed
+or failed on the draw.
 
 #### Added — correlated sampling accepts a seed
 

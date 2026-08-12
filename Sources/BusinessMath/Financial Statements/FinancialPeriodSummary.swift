@@ -274,6 +274,15 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - < 1.0: May face liquidity challenges
 	/// - Typical healthy range: 1.5 - 3.0
 	///
+	/// ## Undefined Periods
+	///
+	/// This is a non-optional snapshot, so a ratio that has no value for the period —
+	/// ``BalanceSheet/currentRatio`` omits periods with no current liabilities, because
+	/// there is nothing to cover — is recorded here as `0`. That is a lossy boundary,
+	/// not a reading: it does not mean the company could cover nothing. Take the ratio
+	/// from ``BalanceSheet/currentRatio`` directly, where absence is representable, if
+	/// the distinction matters.
+	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/currentRatio``
 	public let currentRatio: T
@@ -317,6 +326,12 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - < 1.0: More equity than debt (conservative)
 	/// - > 1.0: More debt than equity (aggressive)
 	/// - Typical range: 0.3 - 2.0 depending on industry
+	///
+	/// ## Undefined Periods
+	///
+	/// ``BalanceSheet/debtToEquity`` omits periods with no equity, where leverage is
+	/// unbounded rather than zero. This non-optional snapshot records that as `0`; read
+	/// the balance sheet series directly if the distinction matters.
 	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/debtToEquity``

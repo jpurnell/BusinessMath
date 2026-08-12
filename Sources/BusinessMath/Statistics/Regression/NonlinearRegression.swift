@@ -126,6 +126,29 @@ public struct ReciprocalRegressionModel<T: Real & Sendable & Codable> where T: B
 	public static func negativeLogLikelihood(data: [DataPoint], params: Parameters) -> T {
 		-totalLogLikelihood(data: data, params: params)
 	}
+
+	/// Mean negative log-likelihood per observation (the descent objective).
+	///
+	/// The summed negative log-likelihood grows with the sample, and so does its
+	/// gradient: doubling the data doubles every partial derivative. A gradient step
+	/// of fixed size therefore moves twice as far on twice the data, which is why the
+	/// same call that fits at `n = 50` overshoots at `n = 500`. Dividing by `n` makes
+	/// the objective — and its gradient — a per-observation quantity, so a learning
+	/// rate means the same thing at every sample size.
+	///
+	/// Dividing by a constant does not move the minimum, so this is the same
+	/// estimator as ``negativeLogLikelihood(data:params:)``; only the step scale
+	/// changes.
+	///
+	/// - Parameters:
+	///   - data: Array of observed (x, y) pairs. Must not be empty.
+	///   - params: Model parameters
+	/// - Returns: The negative log-likelihood divided by the number of observations,
+	///   or zero for empty data.
+	public static func meanNegativeLogLikelihood(data: [DataPoint], params: Parameters) -> T {
+		guard !data.isEmpty else { return T(0) }
+		return negativeLogLikelihood(data: data, params: params) / T(data.count)
+	}
 }
 
 // MARK: - Simulation
@@ -233,7 +256,7 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 /// let result = try fitter.fit(
 ///     data: observedData,
 ///     initialGuess: Parameters(a: 0.5, b: 0.5, sigma: 0.5),
-///     learningRate: 0.001,
+///     learningRate: 0.1,
 ///     maxIterations: 1000
 /// )
 ///
@@ -250,6 +273,34 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 	/// Model parameters (a, b, sigma).
 	public typealias Parameters = ReciprocalRegressionModel<T>.Parameters
 
+	/// Why ``fit(data:initialGuess:learningRate:maxIterations:tolerance:)`` stopped.
+	///
+	/// `converged` on its own says only whether the fit succeeded. This says what
+	/// happened when it did not, which is the difference between "give it more
+	/// iterations" and "these parameters are not a fit at all".
+	public enum TerminationReason: Sendable, Equatable {
+		/// The gradient of the per-observation objective fell below the tolerance at
+		/// finite parameters that fit the data better than a constant would. This is
+		/// the only reason for which `converged` is `true`.
+		case converged
+
+		/// The iteration limit was reached while the gradient was still above the
+		/// tolerance. The returned parameters are the best point visited, and are
+		/// usually worth resuming from with a larger `maxIterations`.
+		case maxIterations
+
+		/// The objective or its gradient stopped being a number. The returned
+		/// parameters are the best point visited before that happened.
+		case numericalInstability
+
+		/// The descent left the region where the model is identifiable: `a` and `b`
+		/// grew until `1 / (a + b·x)` was numerically zero across the observed range,
+		/// where the likelihood surface is flat and the gradient test passes at
+		/// parameters that are wrong by any margin you care to name. A diverged fit
+		/// predicts the data worse than its own mean does, which is how it is caught.
+		case diverged
+	}
+
 	/// Result of model fitting
 	public struct FitResult: Sendable {
 		/// Estimated parameters
@@ -264,8 +315,20 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		/// Number of optimization iterations
 		public let iterations: Int
 
-		/// Whether optimization converged
+		/// Whether the fit converged.
+		///
+		/// `true` means all of: the gradient of the per-observation negative
+		/// log-likelihood fell below the tolerance, the parameters at that point are
+		/// finite, and the fitted model predicts the data better than the best
+		/// constant would. Anything else is `false`, and ``terminationReason`` says
+		/// which.
 		public let converged: Bool
+
+		/// Why the fit stopped.
+		///
+		/// ``converged`` is `true` exactly when this is
+		/// ``ReciprocalRegressionFitter/TerminationReason/converged``.
+		public let terminationReason: TerminationReason
 
 		/// Standard errors of parameter estimates (if available)
 		public let standardErrors: Parameters?
@@ -274,7 +337,39 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		/// - Parameters:
 		///   - parameters: Estimated model parameters
 		///   - logLikelihood: Log-likelihood at the solution
-		///   - negativeLogLikelihood: Negative log-likelihood (optimization objective)
+		///   - negativeLogLikelihood: Negative log-likelihood at the solution, summed
+		///     over the data
+		///   - iterations: Number of optimization iterations performed
+		///   - terminationReason: Why the fit stopped. `converged` is derived from it.
+		///   - standardErrors: Standard errors of estimates (optional)
+		public init(
+			parameters: Parameters,
+			logLikelihood: T,
+			negativeLogLikelihood: T,
+			iterations: Int,
+			terminationReason: TerminationReason,
+			standardErrors: Parameters? = nil
+		) {
+			self.parameters = parameters
+			self.logLikelihood = logLikelihood
+			self.negativeLogLikelihood = negativeLogLikelihood
+			self.iterations = iterations
+			self.terminationReason = terminationReason
+			self.converged = terminationReason == .converged
+			self.standardErrors = standardErrors
+		}
+
+		/// Creates a fit result from a plain convergence flag.
+		///
+		/// Retained for callers that construct results themselves. `true` maps to
+		/// ``ReciprocalRegressionFitter/TerminationReason/converged`` and `false` to
+		/// ``ReciprocalRegressionFitter/TerminationReason/maxIterations``; to record
+		/// divergence or instability, use the `terminationReason:` initializer.
+		///
+		/// - Parameters:
+		///   - parameters: Estimated model parameters
+		///   - logLikelihood: Log-likelihood at the solution
+		///   - negativeLogLikelihood: Negative log-likelihood at the solution
 		///   - iterations: Number of optimization iterations performed
 		///   - converged: Whether the optimization converged
 		///   - standardErrors: Standard errors of estimates (optional)
@@ -286,34 +381,64 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 			converged: Bool,
 			standardErrors: Parameters? = nil
 		) {
-			self.parameters = parameters
-			self.logLikelihood = logLikelihood
-			self.negativeLogLikelihood = negativeLogLikelihood
-			self.iterations = iterations
-			self.converged = converged
-			self.standardErrors = standardErrors
+			self.init(
+				parameters: parameters,
+				logLikelihood: logLikelihood,
+				negativeLogLikelihood: negativeLogLikelihood,
+				iterations: iterations,
+				terminationReason: converged ? .converged : .maxIterations,
+				standardErrors: standardErrors
+			)
 		}
 	}
 	
 	/// Initializes the Fitter
 	public init() {}
 
-	/// Fit the model to data using gradient-based optimization
+	/// Fit the model to data using gradient-based optimization.
+	///
+	/// The descent minimises the **mean** negative log-likelihood rather than the sum.
+	/// The gradient of a sum scales with the sample size while `learningRate` does not,
+	/// so a step that fits at `n = 50` overshoots at `n = 500` — and what it overshoots
+	/// into is the region where `a` and `b` are large enough that `1 / (a + b·x)` is
+	/// numerically zero for every observed `x`. That region is flat, so the gradient
+	/// test passes there, and the fit was reported as converged while being wrong by
+	/// eleven orders of magnitude. Dividing by `n` does not move the optimum; it makes
+	/// `learningRate` mean the same thing at every sample size.
+	///
+	/// `converged` is `true` only when the gradient test passed at finite parameters
+	/// **and** the fitted model predicts the data better than the best constant does.
+	/// When it is `false`, ``FitResult/parameters`` still carries the best point the
+	/// descent visited, and ``FitResult/terminationReason`` says whether that was an
+	/// iteration limit, a numerical breakdown, or a run that left the identifiable
+	/// region entirely.
+	///
 	/// - Parameters:
-	///   - data: Observed (x, y) data points
+	///   - data: Observed (x, y) data points. Must not be empty.
 	///   - initialGuess: Starting parameter values (default: a=0.5, b=0.5, sigma=0.5)
-	///   - learningRate: Step size for gradient descent (default: 0.001)
+	///   - learningRate: Step size for gradient descent on the per-observation
+	///     objective (default: 0.1). The old default of `0.001` was calibrated against
+	///     a summed objective at roughly a hundred observations, where it amounted to a
+	///     per-observation step of about `0.1`; carried over unchanged it would have
+	///     made the fitter a hundred times too slow to fit anything at all. The step
+	///     now means the same thing at every sample size, which is the point of the
+	///     change.
 	///   - maxIterations: Maximum optimization iterations (default: 1000)
-	///   - tolerance: Convergence tolerance (default: 1e-6)
+	///   - tolerance: Convergence tolerance on the gradient norm (default: 1e-6)
 	/// - Returns: Fitted parameters and diagnostic information
-	/// - Throws: OptimizationError if fitting fails
+	/// - Throws: ``OptimizationError/invalidInput(message:)`` if `data` is empty, or any
+	///   error raised by the underlying optimizer.
 	public func fit(
 		data: [DataPoint],
 		initialGuess: Parameters = Parameters(a: T(0.5), b: T(0.5), sigma: T(0.5)),
-		learningRate: T = T(0.001),
+		learningRate: T = T(0.1),
 		maxIterations: Int = 1000,
 		tolerance: T = T(1e-6)
 	) throws -> FitResult {
+		guard !data.isEmpty else {
+			throw OptimizationError.invalidInput(message: "Cannot fit a reciprocal regression to no data")
+		}
+
 		// IMPORTANT: Optimize in log-space to enforce positivity naturally
 		// This avoids max() discontinuities that break numerical gradients
 		//
@@ -328,7 +453,9 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 			let sigma = T.exp(logParams[2])
 
 			let modelParams = Parameters(a: a, b: b, sigma: sigma)
-			return ReciprocalRegressionModel.negativeLogLikelihood(data: data, params: modelParams)
+			// Per observation, not summed: the gradient of a sum grows with n while
+			// the step size does not, so a fixed learning rate diverges on large data.
+			return ReciprocalRegressionModel.meanNegativeLogLikelihood(data: data, params: modelParams)
 		}
 
 		// Numerical gradient (now computed in log-space where objective is smooth)
@@ -366,6 +493,14 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		let clampedLogB = max(minLogValue, min(maxLogValue, result.solution[1]))
 		let clampedLogSigma = max(minLogValue, min(maxLogValue, result.solution[2]))
 
+		// Clamping is not a rescue: if it fired, the descent left the range the model
+		// can express and the parameters being returned are not the ones the optimizer
+		// arrived at. Record that rather than reporting the clamped value as a fit.
+		let wasClamped = (0..<3).contains { index in
+			let solved = result.solution[index]
+			return !solved.isFinite || solved > maxLogValue || solved < minLogValue
+		}
+
 		let fittedA = T.exp(clampedLogA)
 		let fittedB = T.exp(clampedLogB)
 		let fittedSigma = T.exp(clampedLogSigma)
@@ -375,13 +510,110 @@ public struct ReciprocalRegressionFitter<T: Real & Sendable & Codable> where T: 
 		// Compute log-likelihood
 		let logLik = ReciprocalRegressionModel.totalLogLikelihood(data: data, params: fittedParams)
 
+		let reason = Self.terminationReason(
+			optimizerConverged: result.converged,
+			wasClamped: wasClamped,
+			parameters: fittedParams,
+			logLikelihood: logLik,
+			data: data
+		)
+
 		return FitResult(
 			parameters: fittedParams,
 			logLikelihood: logLik,
-			negativeLogLikelihood: result.value,
+			// The optimizer's objective is per-observation; report the summed figure,
+			// which is what `logLikelihood` above is the negation of.
+			negativeLogLikelihood: -logLik,
 			iterations: result.iterations,
-			converged: result.converged
+			terminationReason: reason
 		)
+	}
+
+	// MARK: - Convergence
+
+	/// Decides what actually happened, given what the optimizer reported.
+	///
+	/// The gradient test is a local statement, and the reciprocal model has a region
+	/// where it is locally true and globally worthless: as `a` and `b` grow,
+	/// `1 / (a + b·x)` goes to zero for every observed `x`, the likelihood stops
+	/// depending on either parameter, and the gradient norm falls below any tolerance.
+	/// A fit there is not merely imprecise — it is the model having collapsed to a
+	/// constant zero mean.
+	///
+	/// The check is a comparison against the best constant model, `y ~ Normal(ȳ, s)`,
+	/// which is the same reciprocal family at `b = 0, a = 1/ȳ`. A fitted model that
+	/// cannot beat the mean of the data has not found the relationship, whatever the
+	/// gradient says. It costs one pass over the data.
+	///
+	/// - Parameters:
+	///   - optimizerConverged: Whether the gradient norm fell below the tolerance.
+	///   - wasClamped: Whether the log-space solution had to be clamped to stay finite.
+	///   - parameters: The fitted parameters.
+	///   - logLikelihood: Log-likelihood of the data under `parameters`.
+	///   - data: The observations that were fitted.
+	/// - Returns: The reason to report, from which `converged` is derived.
+	private static func terminationReason(
+		optimizerConverged: Bool,
+		wasClamped: Bool,
+		parameters: Parameters,
+		logLikelihood: T,
+		data: [DataPoint]
+	) -> TerminationReason {
+		guard parameters.a.isFinite,
+			  parameters.b.isFinite,
+			  parameters.sigma.isFinite,
+			  logLikelihood.isFinite else {
+			return .numericalInstability
+		}
+
+		guard !wasClamped else { return .diverged }
+
+		if isDegenerate(parameters: parameters, logLikelihood: logLikelihood, data: data) {
+			return .diverged
+		}
+
+		return optimizerConverged ? .converged : .maxIterations
+	}
+
+	/// Whether the fitted model does worse than the mean of the data.
+	///
+	/// - Parameters:
+	///   - parameters: The fitted parameters.
+	///   - logLikelihood: Log-likelihood of the data under `parameters`.
+	///   - data: The observations that were fitted.
+	/// - Returns: `true` when the constant model `y ~ Normal(ȳ, s)` explains the data
+	///   strictly better than the fit does, which is the signature of a run that left
+	///   the identifiable region. `false` when the comparison cannot be made — a single
+	///   observation, a constant `y`, a non-positive mean — since absence of evidence
+	///   for divergence is not evidence of it.
+	private static func isDegenerate(
+		parameters: Parameters,
+		logLikelihood: T,
+		data: [DataPoint]
+	) -> Bool {
+		guard data.count > 1 else { return false }
+
+		let n = T(data.count)
+		let yMean = data.reduce(T(0)) { $0 + $1.y } / n
+		let squaredDeviation = data.reduce(T(0)) { sum, point in
+			let deviation = point.y - yMean
+			return sum + deviation * deviation
+		}
+		let standardDeviation = T.sqrt(squaredDeviation / n)
+
+		// The constant model is only in this family for a positive mean, and a sample
+		// with no spread gives it infinite likelihood. Neither is a divergence.
+		guard yMean > T(0), standardDeviation > T(0) else { return false }
+
+		let constantModel = Parameters(a: T(1) / yMean, b: T(0), sigma: standardDeviation)
+		let constantLogLikelihood = ReciprocalRegressionModel.totalLogLikelihood(
+			data: data,
+			params: constantModel
+		)
+
+		guard constantLogLikelihood.isFinite else { return false }
+
+		return logLikelihood < constantLogLikelihood
 	}
 }
 

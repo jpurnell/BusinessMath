@@ -72,6 +72,22 @@ public enum MultiPeriodConstraint<V: VectorSpace>: Sendable where V.Scalar == Do
 		isEquality: Bool = false
 	)
 
+	/// Bound on the L1 distance between consecutive states: `Σᵢ|xₜ₊₁ᵢ − xₜᵢ| ≤ max`.
+	///
+	/// Carried as its own case rather than as a `.transition` closure because the
+	/// absolute values make that closure non-differentiable exactly where a
+	/// turnover-limited optimum sits — any asset that does not move has `Δ = 0`, which
+	/// is the kink. A finite-difference gradient straddling it reports a slope that
+	/// never decays, so the solver cannot certify the point and walks away from it.
+	///
+	/// Kept as a description of the constraint instead of an implementation of it, the
+	/// optimizer can substitute the equivalent smooth form: the L1 ball is the
+	/// intersection of the half-spaces `s·(xₜ₊₁ − xₜ) ≤ max` over every sign vector
+	/// `s ∈ {−1, +1}ⁿ`, each of which is linear. Same feasible set, no kink.
+	///
+	/// - Parameter maxTurnover: Largest total absolute change permitted per transition.
+	case turnover(maxTurnover: Double)
+
 	// MARK: - Terminal Constraints
 
 	/// Constraint applying only to the final period.
@@ -122,6 +138,9 @@ public enum MultiPeriodConstraint<V: VectorSpace>: Sendable where V.Scalar == Do
 			 .terminal(_, let isEquality),
 			 .trajectory(_, let isEquality):
 			return isEquality
+		case .turnover:
+			// A bound, never an equality: turnover is capped, not pinned.
+			return false
 		}
 	}
 
@@ -154,6 +173,19 @@ public enum MultiPeriodConstraint<V: VectorSpace>: Sendable where V.Scalar == Do
 		case .trajectory(let function, _):
 			// Evaluate once for entire trajectory
 			return [function(trajectory)]
+
+		case .turnover(let maxTurnover):
+			// Reported as the L1 excess per transition. This is the constraint as
+			// written, which is what a caller checking feasibility wants; the smooth
+			// half-space expansion exists for the solver's benefit, not the reader's,
+			// and describes the same feasible set.
+			guard trajectory.count > 1 else { return [] }
+			return (0..<trajectory.count - 1).map { t in
+				let current = trajectory[t].toArray()
+				let next = trajectory[t + 1].toArray()
+				let moved = zip(current, next).map { abs($1 - $0) }.reduce(0.0, +)
+				return moved - maxTurnover
+			}
 		}
 	}
 
@@ -209,15 +241,13 @@ extension MultiPeriodConstraint {
 	///
 	/// Limits the L1 norm of portfolio changes: ||xₜ₊₁ - xₜ||₁ ≤ maxTurnover
 	///
+	/// The optimizer expands this into the equivalent set of linear half-spaces, so
+	/// the solver never differentiates an absolute value. See ``turnover(maxTurnover:)``.
+	///
 	/// - Parameter maxTurnover: Maximum allowed turnover (default: 0.20 = 20%)
-	/// - Returns: Transition constraint
+	/// - Returns: Turnover constraint
 	public static func turnoverLimit(_ maxTurnover: Double = 0.20) -> MultiPeriodConstraint {
-		.transition { _, xₜ, xₜ₊₁ in
-			// L1 norm of difference (sum of absolute changes)
-			let changes = zip(xₜ.toArray(), xₜ₊₁.toArray()).map { abs($1 - $0) }
-			let turnover = changes.reduce(0.0, +)
-			return turnover - maxTurnover
-		}
+		.turnover(maxTurnover: maxTurnover)
 	}
 
 	/// Transaction cost penalty in objective (modeled as constraint).

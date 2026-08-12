@@ -98,7 +98,22 @@ public enum AllocationObjective: Sendable {
 	/// Maximize value per dollar spent (efficiency)
 	case maximizeValuePerDollar
 
-	/// Maximize weighted combination of value and strategic importance
+	/// Maximize a weighted combination of financial value and strategic importance.
+	///
+	/// `strategicWeight` is a fraction in `0...1`: the share of the ranking decided by
+	/// ``AllocationOption/strategicValue`` rather than by
+	/// ``AllocationOption/expectedValue``. `0` ranks purely on money, `1` purely on
+	/// strategy, `0.5` splits the decision evenly.
+	///
+	/// Both criteria are normalised against the largest magnitude in the option set
+	/// before they are blended, so the weight means the same thing whether the values
+	/// are stated in dollars, in millions, or in yen. Without that normalisation the
+	/// blend would add a six-figure NPV to a 0–10 score, and the currency's magnitude —
+	/// not the weight — would decide the ranking.
+	///
+	/// Normalising the ranking does not change what is reported:
+	/// ``AllocationResult/totalValue`` is still the expected value actually bought, in
+	/// the caller's own units.
 	case maximizeWeightedValue(strategicWeight: Double)
 
 	/// Maximize risk-adjusted value
@@ -303,12 +318,25 @@ public struct ResourceAllocationOptimizer: Sendable {
 			}
 
 		case .maximizeWeightedValue(let strategicWeight):
+			// `(1 - w) * expectedValue + w * strategicValue` adds dollars to a 0–10
+			// score. Those terms are not in the same units, so `w` never set the
+			// balance between them — the magnitude of the currency did. At NPVs in the
+			// hundreds of thousands a weight of 0.99 still ranked purely on money;
+			// expressed in millions the same weight ranked purely on strategy.
+			//
+			// Each criterion is divided by the largest magnitude of that criterion
+			// across the option set, which puts both in [-1, 1] without changing the
+			// order within either, and leaves `w` as what it is documented to be: the
+			// share of the decision given to strategy. A criterion that is zero for
+			// every option contributes nothing rather than dividing by zero.
+			let valueScale = optionsCopy.map { abs($0.expectedValue) }.max() ?? 0.0
+			let strategicScale = optionsCopy.map { abs($0.strategicValue ?? 0.0) }.max() ?? 0.0
+
 			return { allocation in
-				// Weighted sum: (1-w)*value + w*strategic
 				var totalValue = 0.0
 				for (i, option) in optionsCopy.enumerated() {
-					let value = option.expectedValue
-					let strategic = option.strategicValue ?? 0.0
+					let value = valueScale > 0 ? option.expectedValue / valueScale : 0.0
+					let strategic = strategicScale > 0 ? (option.strategicValue ?? 0.0) / strategicScale : 0.0
 					let weighted = (1.0 - strategicWeight) * value + strategicWeight * strategic
 					totalValue += weighted * allocation[i]
 				}

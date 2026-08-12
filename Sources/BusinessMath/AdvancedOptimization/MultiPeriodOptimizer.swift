@@ -93,6 +93,14 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 	/// Maximum iterations for underlying optimizer
 	public let maxIterations: Int
 
+	/// Outer penalty escalations allowed in the underlying augmented Lagrangian.
+	///
+	/// Distinct from ``maxIterations``, which bounds total solver work. Each outer
+	/// step multiplies the penalty weight by ten, so this bounds the weight rather
+	/// than the effort; it matches the underlying optimizer's own default so that
+	/// routing through this type does not silently change the penalty schedule.
+	private static var outerIterationBudget: Int { 100 }
+
 	/// Convergence tolerance
 	public let tolerance: Double
 
@@ -195,12 +203,16 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 		let result: ConstrainedOptimizationResult<VectorN<Double>>
 
 		if hasInequality {
-			// Use inequality optimizer
+			// `maxIterations` is this type's budget for total solver work, which is
+			// what the augmented Lagrangian spends on its *inner* subproblem. Handing
+			// it to the outer loop instead buys nothing and costs correctness: the
+			// outer loop escalates the penalty tenfold per step, so a four-digit budget
+			// walks ρ out of the representable range long before the budget is spent.
 			let optimizer = InequalityOptimizer<VectorN<Double>>(
 				constraintTolerance: tolerance,
 				gradientTolerance: tolerance,
-				maxIterations: maxIterations,
-				maxInnerIterations: 500
+				maxIterations: Self.outerIterationBudget,
+				maxInnerIterations: maxIterations
 			)
 			result = try optimizer.minimize(
 				flatObjective,
@@ -208,12 +220,14 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 				subjectTo: flatConstraints
 			)
 		} else {
-			// Use equality-only optimizer
+			// Same split as the inequality branch: this optimizer escalates its own
+			// penalty on the same tenfold schedule, so the outer count bounds the
+			// penalty weight and the caller's budget bounds the inner effort.
 			let optimizer = ConstrainedOptimizer<VectorN<Double>>(
 				constraintTolerance: tolerance,
 				gradientTolerance: tolerance,
-				maxIterations: maxIterations,
-				maxInnerIterations: 500
+				maxIterations: Self.outerIterationBudget,
+				maxInnerIterations: maxIterations
 			)
 			result = try optimizer.minimize(
 				flatObjective,
@@ -276,6 +290,74 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 		return trajectory
 	}
 
+	/// The largest state dimension for which the turnover bound is expanded exactly.
+	///
+	/// The expansion below is one half-space per sign vector, so it doubles with each
+	/// added component. Ten is where that stops being free — 1,024 rows per transition
+	/// — and matches the bound `BoxUncertaintySet` already uses for the same
+	/// enumerate-the-corners reason.
+	private static var maximumExpandedTurnoverDimension: Int { 10 }
+
+	/// The turnover bound as linear half-spaces, one per sign vector per transition.
+	///
+	/// `Σᵢ|Δᵢ| ≤ M` holds exactly when `s·Δ ≤ M` for every `s ∈ {−1, +1}ⁿ`, because the
+	/// sign vector matching `Δ`'s own signs realises the L1 norm and every other choice
+	/// gives something no larger. Each half-space is linear, so nothing the solver
+	/// differentiates has a kink — which matters because a turnover-limited optimum
+	/// generically leaves some component unmoved, and `Δᵢ = 0` is precisely where the
+	/// absolute value is not differentiable.
+	///
+	/// Above ``maximumExpandedTurnoverDimension`` the enumeration is refused rather
+	/// than truncated: a subset of the half-spaces is a *weaker* constraint, so
+	/// silently keeping some would return allocations that breach the caller's stated
+	/// turnover budget while reporting success.
+	private func turnoverConstraints(
+		maxTurnover: Double,
+		dimension: Int
+	) throws -> [MultivariateConstraint<VectorN<Double>>] {
+		guard dimension > 0 else { return [] }
+
+		guard dimension <= Self.maximumExpandedTurnoverDimension else {
+			throw OptimizationError.invalidInput(
+				message: """
+					Turnover limits are expanded exactly into 2^n half-spaces and are \
+					supported up to \(Self.maximumExpandedTurnoverDimension) state \
+					components; this model has \(dimension). Dropping or truncating the \
+					expansion would relax the bound rather than enforce it, so the solve \
+					is refused instead.
+					"""
+			)
+		}
+
+		guard numberOfPeriods > 1 else { return [] }
+
+		var constraints: [MultivariateConstraint<VectorN<Double>>] = []
+		let signVectorCount = 1 << dimension
+
+		for t in 0..<(numberOfPeriods - 1) {
+			let currentOffset = t * dimension
+			let nextOffset = currentOffset + dimension
+
+			for pattern in 0..<signVectorCount {
+				let signs: [Double] = (0..<dimension).map { i in
+					((pattern >> i) & 1) == 1 ? 1.0 : -1.0
+				}
+				constraints.append(.inequality { flat in
+					let values = flat.toArray()
+					guard values.count >= nextOffset + dimension else { return Double.infinity }
+					var weighted = 0.0
+					for i in 0..<dimension {
+						let change = values[nextOffset + i] - values[currentOffset + i]
+						weighted += signs[i] * change
+					}
+					return weighted - maxTurnover
+				})
+			}
+		}
+
+		return constraints
+	}
+
 	/// Convert multi-period constraints to flattened single-vector constraints.
 	private func convertConstraints(
 		_ constraints: [MultiPeriodConstraint<V>],
@@ -328,6 +410,11 @@ public struct MultiPeriodOptimizer<V: VectorSpace>: Sendable where V.Scalar == D
 					isEquality: isEquality
 				)
 				flatConstraints.append(flat)
+
+			case .turnover(let maxTurnover):
+				flatConstraints.append(
+					contentsOf: try turnoverConstraints(maxTurnover: maxTurnover, dimension: dimension)
+				)
 			}
 		}
 
