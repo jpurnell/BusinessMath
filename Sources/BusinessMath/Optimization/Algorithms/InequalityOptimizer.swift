@@ -406,7 +406,7 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		// A step proportional to the variables themselves — an absolute 1e-6 probe
 		// against components of 1e6 is differencing in the noise.
 		let epsilon = variableScale / V.Scalar(1_000_000)
-		if let gradient = try? numericalGradient(function, at: point, epsilon: epsilon) {
+		if let gradient = try? numericalGradient(function, at: point, epsilon: epsilon) { // silent: an unusable gradient falls back to the magnitude below
 			let largest = gradient.toArray().reduce(V.Scalar(0)) { Swift.max($0, abs($1)) }
 			let scale = largest * variableScale
 			if scale.isFinite && scale > V.Scalar(0) { return scale }

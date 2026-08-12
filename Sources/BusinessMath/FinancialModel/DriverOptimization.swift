@@ -357,12 +357,25 @@ public struct DriverOptimizer: Sendable {
 		let metric: String
 		/// The bound the metric is measured against.
 		let bound: Double
-		/// Normalizer, `max(|bound|, 1)` — never zero, so the division below is safe.
-		let denominator: Double
+		/// Normalizer, never below one.
+		///
+		/// Clamped here rather than at each construction site so the guarantee belongs to
+		/// the type. Four call sites each writing `max(abs(x), 1)` is a convention, and a
+		/// fifth that forgets is a division by zero; a private setter and a clamping
+		/// initialiser make the invariant hold by construction instead.
+		private(set) var denominator: Double
 		/// `true` when the violation is `(bound − actual)`, `false` when `(actual − bound)`.
 		let measuresShortfall: Bool
 		/// Weight the target carried.
 		let weight: Double
+
+		init(metric: String, bound: Double, denominator: Double, measuresShortfall: Bool, weight: Double) {
+			self.metric = metric
+			self.bound = bound
+			self.denominator = Swift.max(abs(denominator), 1.0)
+			self.measuresShortfall = measuresShortfall
+			self.weight = weight
+		}
 	}
 
 	/// Variable layout of the smooth problem handed to the optimizer.
@@ -526,6 +539,7 @@ public struct DriverOptimizer: Sendable {
 			return missingMetricSlack
 		}
 		let gap: Double = slack.measuresShortfall ? (slack.bound - actual) : (actual - slack.bound)
+		guard slack.denominator != 0 else { return gap }
 		return gap / slack.denominator
 	}
 

@@ -82,7 +82,7 @@ struct UnassortedTests {
 
 	@Test("Bernoulli trial")
 	func testBernoulliTrial() {
-		let result = bernoulliTrial(p: 0.5)
+		let result = bernoulliTrial(p: 0.5, seed: 20260812)
 		#expect(result == 0 || result == 1)
 	}
 

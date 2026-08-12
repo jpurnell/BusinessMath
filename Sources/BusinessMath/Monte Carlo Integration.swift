@@ -14,11 +14,11 @@ import Numerics
 /// The Monte Carlo method uses random sampling to numerically estimate the value of an integral. In this implementation, the function is evaluated at uniformly distributed random points and the average value is used as the estimate of the integral.
 ///
 /// - Parameters:
-///	- f: The function to be integrated. The function should take a single parameter of type `T` and return a value of type `T`.
-///	- n: The number of iterations to perform for the Monte Carlo estimation. A higher number of iterations generally leads to a more accurate estimate. Defaults to 10,000
-///	- seed: Seed for the deterministic generator. Passing the same seed with the
-///	  same `f` and `n` reproduces the estimate exactly. `nil` (the default) draws
-///	  from system entropy, so the estimate differs run to run.
+///   - f: The function to be integrated. The function should take a single parameter of type `T` and return a value of type `T`.
+///   - n: The number of iterations to perform for the Monte Carlo estimation. A higher number of iterations generally leads to a more accurate estimate. Defaults to 10,000
+///   - seed: Seed for the deterministic generator. Passing the same seed with the
+///     same `f` and `n` reproduces the estimate exactly. `nil` (the default) draws
+///     from system entropy, so the estimate differs run to run.
 /// - Returns: The estimated value of the integral.
 ///
 /// - Note:

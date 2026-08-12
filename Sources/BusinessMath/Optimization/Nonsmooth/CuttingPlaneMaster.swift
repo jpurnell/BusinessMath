@@ -138,7 +138,7 @@ public struct CuttingPlaneMaster<V: VectorSpace>: Sendable where V.Scalar == Dou
 		var linearConstraints: [(coefficients: [Double], constant: Double, isEquality: Bool)] = []
 		for constraint in constraints {
 			let evaluate: (V) -> Double = { point in constraint.evaluate(at: point) }
-			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: start),
+			guard let model = try? validateLinearModel(evaluate, dimension: dimension, at: start), // silent: a throw means "not linear"; the guard turns it into an explicit refusal
 				  model.coefficients.count == dimension else {
 				throw OptimizationError.invalidInput(
 					message: "CuttingPlaneMaster handles linear constraints; one of the supplied constraints is not linear"
