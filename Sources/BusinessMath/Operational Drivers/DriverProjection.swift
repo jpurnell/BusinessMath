@@ -18,7 +18,7 @@ import Numerics
 ///
 /// ```swift
 /// let quarters = Period.documentationQuarters
-/// let sales = ProbabilisticDriver.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
+/// let sales = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 /// let periods = Period.year(2025).quarters()
 /// let projection = DriverProjection(driver: sales, periods: periods)
 ///
@@ -56,8 +56,8 @@ import Numerics
 /// ```swift
 /// let periods = Period.documentationQuarters
 /// // Revenue = Quantity × Price (both uncertain)
-/// let quantity = ProbabilisticDriver.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
-/// let price = ProbabilisticDriver.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
+/// let quantity = ProbabilisticDriver<Double>.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
+/// let price = ProbabilisticDriver<Double>.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
 /// let revenue = quantity * price
 ///
 /// let quarters = Period.year(2025).quarters()
@@ -95,7 +95,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let sales = ProbabilisticDriver.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
+	/// let sales = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 	/// let periods = Period.year(2025).months()
 	/// let projection = DriverProjection(driver: sales, periods: periods)
 	/// ```

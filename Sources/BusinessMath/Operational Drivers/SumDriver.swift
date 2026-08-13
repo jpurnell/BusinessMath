@@ -21,8 +21,8 @@ import Numerics
 ///
 /// ```swift
 /// // Total Cost = Fixed Costs + Variable Costs
-/// let fixedCosts = DeterministicDriver(name: "Fixed Costs", value: 10_000.0)
-/// let variableCosts = ProbabilisticDriver.normal(
+/// let fixedCosts = DeterministicDriver<Double>(name: "Fixed Costs", value: 10_000.0)
+/// let variableCosts = ProbabilisticDriver<Double>.normal(
 ///     name: "Variable Costs",
 ///     mean: 50_000.0,
 ///     stdDev: 5_000.0
@@ -36,8 +36,8 @@ import Numerics
 ///
 /// ```swift
 /// // Both drivers have uncertainty
-/// let revenueA = ProbabilisticDriver.normal(name: "Revenue A", mean: 100_000.0, stdDev: 10_000.0)
-/// let revenueB = ProbabilisticDriver.normal(name: "Revenue B", mean: 80_000.0, stdDev: 8_000.0)
+/// let revenueA = ProbabilisticDriver<Double>.normal(name: "Revenue A", mean: 100_000.0, stdDev: 10_000.0)
+/// let revenueB = ProbabilisticDriver<Double>.normal(name: "Revenue B", mean: 80_000.0, stdDev: 8_000.0)
 /// let totalRevenue = SumDriver(name: "Total Revenue", lhs: revenueA, rhs: revenueB)
 ///
 /// // Expected value: E[A] + E[B] = 100,000 + 80,000 = 180,000
@@ -49,8 +49,8 @@ import Numerics
 ///
 /// ```swift
 /// // Profit = Revenue - Cost
-/// let revenue = ProbabilisticDriver.normal(name: "Revenue", mean: 100_000.0, stdDev: 10_000.0)
-/// let cost = ProbabilisticDriver.normal(name: "Cost", mean: 70_000.0, stdDev: 7_000.0)
+/// let revenue = ProbabilisticDriver<Double>.normal(name: "Revenue", mean: 100_000.0, stdDev: 10_000.0)
+/// let cost = ProbabilisticDriver<Double>.normal(name: "Cost", mean: 70_000.0, stdDev: 7_000.0)
 /// let profit = revenue - cost  // Uses convenience operator
 ///
 /// // Expected profit: 100,000 - 70,000 = 30,000
@@ -61,10 +61,10 @@ import Numerics
 ///
 /// ```swift
 /// // Total Cost = (Variable Cost per Unit × Units) + Fixed Costs
-/// let variableCostPerUnit = DeterministicDriver(name: "Variable Cost/Unit", value: 50.0)
-/// let units = ProbabilisticDriver.normal(name: "Units", mean: 1000.0, stdDev: 100.0)
+/// let variableCostPerUnit = DeterministicDriver<Double>(name: "Variable Cost/Unit", value: 50.0)
+/// let units = ProbabilisticDriver<Double>.normal(name: "Units", mean: 1000.0, stdDev: 100.0)
 /// let variableCosts = ProductDriver(name: "Variable Costs", lhs: variableCostPerUnit, rhs: units)
-/// let fixedCosts = DeterministicDriver(name: "Fixed Costs", value: 10_000.0)
+/// let fixedCosts = DeterministicDriver<Double>(name: "Fixed Costs", value: 10_000.0)
 /// let totalCost = SumDriver(name: "Total Cost", lhs: variableCosts, rhs: fixedCosts)
 ///
 /// // Or using operators:
@@ -101,8 +101,8 @@ public struct SumDriver<T: Real & Sendable>: Driver, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let fixedCost = DeterministicDriver(name: "Fixed", value: 10_000.0)
-	/// let variableCost = ProbabilisticDriver.normal(name: "Variable", mean: 50_000.0, stdDev: 5_000.0)
+	/// let fixedCost = DeterministicDriver<Double>(name: "Fixed", value: 10_000.0)
+	/// let variableCost = ProbabilisticDriver<Double>.normal(name: "Variable", mean: 50_000.0, stdDev: 5_000.0)
 	/// let totalCost = SumDriver(name: "Total Cost", lhs: fixedCost, rhs: variableCost)
 	/// ```
 	public init<L: Driver, R: Driver>(name: String, lhs: L, rhs: R) where L.Value == T, R.Value == T {
@@ -120,8 +120,8 @@ public struct SumDriver<T: Real & Sendable>: Driver, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let fixed = DeterministicDriver(name: "Fixed", value: 10_000.0)
-	/// let variable = DeterministicDriver(name: "Variable", value: 5_000.0)
+	/// let fixed = DeterministicDriver<Double>(name: "Fixed", value: 10_000.0)
+	/// let variable = DeterministicDriver<Double>(name: "Variable", value: 5_000.0)
 	/// let total = SumDriver(name: "Total", lhs: fixed, rhs: variable)
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -175,8 +175,8 @@ extension Driver {
 	///
 	/// ## Example
 	/// ```swift
-	/// let revenueA = ProbabilisticDriver.normal(name: "Revenue A", mean: 100_000.0, stdDev: 10_000.0)
-	/// let revenueB = ProbabilisticDriver.normal(name: "Revenue B", mean: 80_000.0, stdDev: 8_000.0)
+	/// let revenueA = ProbabilisticDriver<Double>.normal(name: "Revenue A", mean: 100_000.0, stdDev: 10_000.0)
+	/// let revenueB = ProbabilisticDriver<Double>.normal(name: "Revenue B", mean: 80_000.0, stdDev: 8_000.0)
 	/// let totalRevenue = revenueA + revenueB  // Creates SumDriver
 	/// ```
 	public static func + <R: Driver>(lhs: Self, rhs: R) -> SumDriver<Value> where R.Value == Value {
@@ -194,8 +194,8 @@ extension Driver {
 	///
 	/// ## Example
 	/// ```swift
-	/// let revenue = ProbabilisticDriver.normal(name: "Revenue", mean: 100_000.0, stdDev: 10_000.0)
-	/// let cost = ProbabilisticDriver.normal(name: "Cost", mean: 70_000.0, stdDev: 7_000.0)
+	/// let revenue = ProbabilisticDriver<Double>.normal(name: "Revenue", mean: 100_000.0, stdDev: 10_000.0)
+	/// let cost = ProbabilisticDriver<Double>.normal(name: "Cost", mean: 70_000.0, stdDev: 7_000.0)
 	/// let profit = revenue - cost  // Creates SumDriver with negated cost
 	/// ```
 	public static func - <R: Driver>(lhs: Self, rhs: R) -> SumDriver<Value> where R.Value == Value {

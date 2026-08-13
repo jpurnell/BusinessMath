@@ -29,7 +29,7 @@ import Numerics
 /// let periods = Period.year(2025).quarters()
 ///
 /// // Base case scenario
-/// let baseRevenue = DeterministicDriver(name: "Revenue", value: 100_000.0)
+/// let baseRevenue = DeterministicDriver<Double>(name: "Revenue", value: 100_000.0)
 /// var overrides: [String: AnyDriver<Double>] = [:]
 /// overrides["Revenue"] = AnyDriver(baseRevenue)
 ///
@@ -81,9 +81,10 @@ import Numerics
 ///
 /// ```swift
 /// let tornado = TornadoDiagramAnalysis.documentationFixture
-/// let revenueSensitivity = try runSensitivity(...)  // Vary revenue ±20%
-/// let costSensitivity = try runSensitivity(...)     // Vary costs ±20%
-/// let priceSensitivity = try runSensitivity(...)    // Vary price ±20%
+/// // One `runSensitivity` result per input; the fixture stands in for the run.
+/// let revenueSensitivity = ScenarioSensitivityAnalysis.documentationFixture
+/// let costSensitivity = ScenarioSensitivityAnalysis.documentationFixture
+/// let priceSensitivity = ScenarioSensitivityAnalysis.documentationFixture
 ///
 /// // Calculate impact ranges
 /// let revenueImpact = revenueSensitivity.outputRange
@@ -278,7 +279,7 @@ extension ScenarioSensitivityAnalysis {
 /// `inputValues1[i]` and `inputValues2[j]`:
 ///
 /// ```swift
-/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
+/// let sensitivity = TwoWayScenarioSensitivityAnalysis.documentationFixture
 /// // Print data table
 /// print("         ", terminator: "")
 /// for cost in sensitivity.inputValues2 {
@@ -289,7 +290,7 @@ extension ScenarioSensitivityAnalysis {
 /// for (i, revenue) in sensitivity.inputValues1.enumerated() {
 ///     print(revenue.number(0).paddingLeft(to: 8), terminator: "")
 ///     for j in 0..<sensitivity.inputValues2.count {
-///         print(sensitivity.results[i][j].number(0).paddingLeft(to: 12)), terminator: "")
+///         print(sensitivity.results[i][j].number(0).paddingLeft(to: 12), terminator: "")
 ///     }	
 ///     print()
 /// }

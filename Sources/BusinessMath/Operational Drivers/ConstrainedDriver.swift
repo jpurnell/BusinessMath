@@ -52,7 +52,7 @@ import Numerics
 /// Use the convenient extension methods on any `Driver`:
 ///
 /// ```swift
-/// let basePrice = ProbabilisticDriver.normal(name: "Price", mean: 100.0, stdDev: 20.0)
+/// let basePrice = ProbabilisticDriver<Double>.normal(name: "Price", mean: 100.0, stdDev: 20.0)
 ///
 /// // Ensure price is always positive (clamp negatives to 0)
 /// let positivePrice = basePrice.positive()
@@ -65,12 +65,12 @@ import Numerics
 ///
 /// ```swift
 /// // Quantity: must be positive integer
-/// let quantity = ProbabilisticDriver.normal(name: "Units", mean: 1000.0, stdDev: 100.0)
+/// let quantity = ProbabilisticDriver<Double>.normal(name: "Units", mean: 1000.0, stdDev: 100.0)
 ///     .positive()
 ///     .rounded()
 ///
 /// // Price: must be between $50 and $150
-/// let price = ProbabilisticDriver.triangular(name: "Price", low: 80.0, high: 120.0, base: 100.0)
+/// let price = ProbabilisticDriver<Double>.triangular(name: "Price", low: 80.0, high: 120.0, base: 100.0)
 ///     .clamped(min: 50.0, max: 150.0)
 ///
 /// // Revenue automatically inherits constraints
@@ -87,7 +87,7 @@ import Numerics
 /// let values = [100.0, 110.0, 120.0, 130.0]
 /// let periods = Period.documentationQuarters
 /// let quarters = Period.documentationQuarters
-/// let uncertainValue = ProbabilisticDriver.normal(name: "Value", mean: 10.0, stdDev: 5.0)
+/// let uncertainValue = ProbabilisticDriver<Double>.normal(name: "Value", mean: 10.0, stdDev: 5.0)
 ///     .positive()  // Clamp negatives
 ///
 /// let projection = DriverProjection(driver: uncertainValue, periods: quarters)
@@ -127,7 +127,7 @@ public struct ConstrainedDriver<Base: Driver>: Driver, Sendable where Base.Value
 	///
 	/// ## Example
 	/// ```swift
-	/// let base = ProbabilisticDriver.normal(name: "Value", mean: 100.0, stdDev: 20.0)
+	/// let base = ProbabilisticDriver<Double>.normal(name: "Value", mean: 100.0, stdDev: 20.0)
 	/// let constrained = ConstrainedDriver(base: base) { value in
 	///     max(0.0, value)  // Ensure non-negative
 	/// }
