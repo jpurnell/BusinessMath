@@ -96,7 +96,7 @@ public struct ExpressionMatrix: Sendable {
     /// ```swift
     /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
-    /// let covariance = builder.matrix(rows: 3, cols: 3, values: [ ... ])
+    /// let covariance = builder.matrix(rows: 3, cols: 3, values: [[1.0, 0.5, 0.5], [0.5, 1.0, 0.5], [0.5, 0.5, 1.0]])
     /// let variance = covariance.quadraticForm(weights)
     /// ```
     public func quadraticForm(_ vector: ExpressionArray) -> ExpressionProxy {
@@ -124,8 +124,8 @@ public struct ExpressionMatrix: Sendable {
     /// ## Example
     /// ```swift
     /// let builder = ExpressionBuilder()
-    /// let A = builder.matrix(rows: 2, cols: 3, values: [ ... ])
-    /// let B = builder.matrix(rows: 3, cols: 2, values: [ ... ])
+    /// let A = builder.matrix(rows: 2, cols: 3, values: [[1.0, 0.5, 0.5], [0.5, 1.0, 0.5]])
+    /// let B = builder.matrix(rows: 3, cols: 2, values: [[1.0, 0.5], [0.5, 1.0], [0.5, 0.5]])
     /// let C = A.multiply(B)  // 2×2 result
     /// ```
     public func multiply(_ other: ExpressionMatrix) -> ExpressionMatrix {
@@ -159,8 +159,8 @@ public struct ExpressionMatrix: Sendable {
     /// ## Example
     /// ```swift
     /// let builder = ExpressionBuilder()
-    /// let A = builder.matrix(rows: 2, cols: 2, values: [ ... ])
-    /// let B = builder.matrix(rows: 2, cols: 2, values: [ ... ])
+    /// let A = builder.matrix(rows: 2, cols: 2, values: [[1.0, 0.5], [0.5, 1.0]])
+    /// let B = builder.matrix(rows: 2, cols: 2, values: [[1.0, 0.5], [0.5, 1.0]])
     /// let C = A.add(B)
     /// ```
     public func add(_ other: ExpressionMatrix) -> ExpressionMatrix {
@@ -180,7 +180,7 @@ public struct ExpressionMatrix: Sendable {
     /// ## Example
     /// ```swift
     /// let builder = ExpressionBuilder()
-    /// let A = builder.matrix(rows: 2, cols: 3, values: [ ... ])
+    /// let A = builder.matrix(rows: 2, cols: 3, values: [[1.0, 0.5, 0.5], [0.5, 1.0, 0.5]])
     /// let AT = A.transpose()  // 3×2
     /// ```
     public func transpose() -> ExpressionMatrix {
@@ -205,7 +205,7 @@ public struct ExpressionMatrix: Sendable {
     /// ## Example
     /// ```swift
     /// let builder = ExpressionBuilder()
-    /// let matrix = builder.matrix(rows: 3, cols: 3, values: [ ... ])
+    /// let matrix = builder.matrix(rows: 3, cols: 3, values: [[1.0, 0.5, 0.5], [0.5, 1.0, 0.5], [0.5, 0.5, 1.0]])
     /// let trace = matrix.trace()
     /// ```
     public func trace() -> ExpressionProxy {
@@ -226,7 +226,7 @@ public struct ExpressionMatrix: Sendable {
     /// ## Example - Asset Variances
     /// ```swift
     /// let builder = ExpressionBuilder()
-    /// let covariance = builder.matrix(rows: 3, cols: 3, values: [ ... ])
+    /// let covariance = builder.matrix(rows: 3, cols: 3, values: [[1.0, 0.5, 0.5], [0.5, 1.0, 0.5], [0.5, 0.5, 1.0]])
     /// let variances = covariance.diagonal()
     /// let volatilities = variances.map { $0.sqrt() }
     /// ```
@@ -246,7 +246,7 @@ public struct ExpressionMatrix: Sendable {
     /// ## Example
     /// ```swift
     /// let builder = ExpressionBuilder()
-    /// let matrix = builder.matrix(rows: 3, cols: 3, values: [ ... ])
+    /// let matrix = builder.matrix(rows: 3, cols: 3, values: [[1.0, 0.5, 0.5], [0.5, 1.0, 0.5], [0.5, 0.5, 1.0]])
     /// let covar12 = matrix[1, 2]  // Covariance between assets 1 and 2
     /// ```
     public subscript(row: Int, col: Int) -> ExpressionProxy {
