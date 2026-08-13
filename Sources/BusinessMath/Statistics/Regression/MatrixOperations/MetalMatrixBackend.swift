@@ -148,6 +148,20 @@ public struct MetalMatrixBackend: MatrixBackend {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
+        // `.error` is a terminal state, so `waitUntilCompleted()` returns either way and the
+        // read below would hand back the buffer's previous contents — indistinguishable from
+        // a successful run that computed different numbers. GeneticAlgorithm gained this
+        // check earlier in the session; these paths did not, and the gpu-safety checker
+        // found them.
+        guard commandBuffer.status != .error else {
+            // `OptimizationError.invalidInput` rather than a `MatrixError` case: this file's
+            // enum has no case for a failed dispatch, and adding one to a public enum breaks
+            // exhaustive switches. This matches how `GeneticAlgorithm` reports Metal failures.
+            throw OptimizationError.invalidInput(
+                message: "Metal matrix multiply did not complete: \(commandBuffer.error?.localizedDescription ?? "unknown Metal failure")"
+            )
+        }
+
         // Extract results from Float buffer and convert to Double
         let resultPointer = bufferC.contents().bindMemory(to: Float.self, capacity: flatC.count)
         flatC = Array(UnsafeBufferPointer(start: resultPointer, count: flatC.count))

@@ -569,6 +569,15 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
+        // `.error` is a terminal state, so `waitUntilCompleted()` returns either way and the
+        // read below would hand back the buffer's previous contents — indistinguishable from
+        // a successful run that computed different numbers. GeneticAlgorithm gained this
+        // check earlier in the session; these paths did not, and the gpu-safety checker
+        // found them.
+        guard commandBuffer.status != .error else {
+            return nil
+        }
+
         // Read back results
         let newVelocitiesPointer = newVelocitiesBuffer.contents().bindMemory(to: Float.self, capacity: swarmSize * dimension)
         let newPositionsPointer = newPositionsBuffer.contents().bindMemory(to: Float.self, capacity: swarmSize * dimension)
