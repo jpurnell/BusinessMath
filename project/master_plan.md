@@ -38,16 +38,19 @@ suite depends on it.
 
 ## Current Status
 
-Cutting **2.6.0** (previous tag `v2.5.2`), from
-`fix/simplex-scale-relative-feasibility`.
+Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 96 commits since the tag, all pushed.
 
 | | |
 |---|---|
-| tests | 6,520 in 567 suites, 0 known issues |
+| tests | **6,582 in 579 suites**, 0 known issues, ~29s |
 | build | **0 warnings**, library and test target |
-| quality gate | **0 errors, 0 warnings** across 36 checkers (`--no-cache`; a cached run executes 10) |
-| documentation coverage | 100% — 6,471 of 6,471 public APIs |
+| quality gate | **0 errors, 0 warnings** across 37 checkers (`--no-cache`; a cached run executes 10) |
+| CI | green — 4/4 jobs, including `Linux release compile check` |
+| nightly (Release Tests) | green — Ubuntu release, macOS release, and Thread Sanitizer (6,582 in 347s) |
+| documentation coverage | 100% — 6,508 of 6,508 public APIs |
 | DocC catalogue | **73 articles**, all compiling as one program under `quality-gate --check doc-code` |
+| `doc-comment-code` | **852 errors** ← the tag gate |
+| `doc-claims` | **8 errors**, all in `1.2-TimeSeries.md` |
 | toolchain | `swift-tools-version: 6.2`, Swift 6 strict concurrency |
 
 The test figure is measured. A `--bootstrap --check status` run estimates 7,818 by counting
@@ -59,7 +62,7 @@ The honest list. Sources: `project/plans/TrustPlan.md`, and the gate's own outpu
 
 **In the gate**
 
-The gate is at **0 errors, 0 warnings across 36 checkers**. What follows is not currently firing.
+The gate is at **0 errors, 0 warnings across 37 checkers**. What follows is not currently firing.
 
 - **A cached run executes 10 of 36 checkers and prints the same summary line.** Measured. Only
   `--no-cache` reaches `unreachable`, `doc-coverage`, `recursion`, `concurrency` and
@@ -84,6 +87,16 @@ The gate is at **0 errors, 0 warnings across 36 checkers**. What follows is not 
 - **`Performance_MemoryEfficiency` asserts elapsed time and is named for memory.** ~1100× margin,
   so not a flake risk — the same name-versus-instrument defect as the test renamed
   `Benchmark_TimeSeriesCreationThroughput`, left for the same sweep as the three above.
+- **~~`.timeLimit` traits sized against a test's runtime~~ — fixed 2026-08-13, `22d22a0`.** All 46
+  `.timeLimit(.minutes(2))` sites now use `testHangGuard` (20 minutes). Recorded because the
+  mechanism generalises: Swift Testing measures **elapsed wall clock per test, not work
+  performed**, and tests run concurrently, so an `async` test that awaits is descheduled while
+  others hold the cores and its clock keeps running. Tests reporting ~25s in a full run take
+  **0.014s alone**. The binding number was therefore never any test's runtime — it was the whole
+  suite's, because a test that starts early and awaits spans the entire run. Under
+  `--sanitize thread` this suite takes ~347s against ~29s, and the 120s limit sat below that;
+  `fiftyDMUsModerateScale` failed at 281s elapsed for 33ms of work. A limit tuned near observed
+  runtime will fire for a busy machine long before it fires for a hang.
 
 **In the library**
 
@@ -110,16 +123,27 @@ The gate is at **0 errors, 0 warnings across 36 checkers**. What follows is not 
 
 **In the documentation**
 
-- **The `///` doc-comment corpus is unchecked.** 1,394 fenced code blocks against the catalogue's
-  ~1,291, and it is *upstream* of the catalogue — `RiskMetrics.swift` documents an initialiser
-  that does not exist, and article `4.3` had the identical error because it was copied from Quick
-  Help. `doc-code` covers the catalogue; `doc-comment-code` does not exist yet.
-- **Published outputs are typechecked but not executed** — *closing*. `doc-run` (rung 2) is
-  committed in quality-gate-swift and `doc-claims` (rung 3) is in build. Until they ship and clear
-  this codebase, the only evidence is by hand: executing five articles found four real defects
-  that all pass `doc-code`, and `4.1`'s headline figure was wrong because the code indexed the
-  one-year array under a two-year label. That article is now seeded end to end with all 170 figures
-  regenerated; two-year growth reads 113.5%.
+- **The `///` doc-comment corpus is checked now, and failing.** `doc-comment-code` landed (opt-in,
+  not in the default run) and reports **852 errors**, down from 1,515. It compiles every ```swift
+  fence in isolation against Foundation and this module only. The corpus is *upstream* of the
+  catalogue — `RiskMetrics.swift` documented an initialiser that does not exist, and article `4.3`
+  carried the identical error because it was copied out of Quick Help. **This is the tag gate.**
+  Remaining shape: ~445 undefined references, the rest compile failures; the head of the tail is
+  `builder` (29), `model` (26), `optimizer` (21), `result` (11), each needing a per-file
+  constructor rather than a shared fixture. 33 fences contain literal `...` elision and cannot
+  compile as written.
+- **Published outputs are executed now.** `doc-run` (rung 2) and `doc-claims` (rung 3) both
+  landed. `doc-claims` reports **8 errors**, all in `1.2-TimeSeries.md` — documented figures that
+  disagree with what the code produces (`2025.0 ± 0.5` against `2026.0`; `1.0 ± 0.5` against
+  `4.0`). Each needs deciding which side is wrong before either is edited; the checker cannot tell
+  a numerical improvement from a regression, and editing the comment to match output is the repair
+  that always works and sometimes means nothing. `4.1`'s headline figure was wrong because the code
+  indexed the one-year array under a two-year label; that article is seeded end to end with all 170
+  figures regenerated, and two-year growth reads 113.5%.
+- **`doc-generated` landed and passes** — 0 regions found, 10 generators unused. It is not
+  currently doing anything for this codebase.
+- **`doc-symbol-link` has not landed.** The fourth of the four; still outstanding in
+  quality-gate-swift.
 - **One line in `4.1` cannot be made deterministic.** `Compute time` comes from
   `Date().timeIntervalSince(start)`. Named in the article rather than hidden, and it is the case
   `doc-claims` has to handle gracefully.
@@ -128,29 +152,38 @@ The gate is at **0 errors, 0 warnings across 36 checkers**. What follows is not 
 
 ## Current Priorities
 
-**2.6.0 is written and deliberately unshipped.** The code, the CHANGELOG and the README are done;
-the tag is being held until three checkers land and clear this codebase. The reasoning is that the
-last two days found defects in documentation nothing was checking — a runtime trap in `4.2`
-inherited from `ScenarioRunner`'s own `///` comments, two published figures that were simply wrong,
-and a headline percentage computed off the wrong array. Shipping before the checkers exist means
-shipping whatever else is in that class.
+**2.6.0 is written and deliberately unshipped**, and the reason has narrowed. The checkers have
+largely landed; what remains is clearing this codebase under them. The original reasoning still
+holds: the work that produced this release found defects in documentation nothing was checking — a
+runtime trap in `4.2` inherited from `ScenarioRunner`'s own `///` comments, two published figures
+that were simply wrong, and a headline percentage computed off the wrong array. Shipping before the
+codebase is clean means shipping whatever else is in that class.
 
-Until then the CHANGELOG heading reads `[2.6.0] — unreleased` and the README advertises `2.5.2`,
-which is what resolves today. Both revert at tag time. `release-readiness` passes on that basis;
-it failed, correctly, while they claimed otherwise.
+Until then the CHANGELOG heading reads `[2.6.0] — unreleased` and the README advertises `2.5.2`.
+Both revert at tag time. `release-readiness` passes on that basis.
 
-1. **Land the four `doc-*` checkers, in the order the proposal argues for.** `doc-comment-code`
-   first, because it is upstream: repairing the catalogue while Quick Help still hands out the
-   wrong signature guarantees the drift returns. Then `doc-symbol-link`, `doc-generated`, and
-   `doc-claims` (rung 3; `doc-run` is already committed).
-2. **Clear this codebase under all four.** That is the gate on the tag, not the checkers existing.
-3. **Cut 2.6.0** — tag, revert the two version strings, push. 64 commits are unpushed.
-4. **Differential testing against published references** (TrustPlan §2.2) — the highest ratio of
-   defects-found to effort in the plan. It is how the discontinuous `inverseNormalCDF`, the
-   `normalCDF` lower tail and the Black-Scholes negative prices were all found. Remaining targets:
-   the distribution family, `irr`/`npv`/`xirr`, the greeks.
+1. **~~Land the four `doc-*` checkers~~ — 3 of 4 done.** `doc-comment-code`, `doc-generated` and
+   `doc-claims` have landed, joining `doc-run`. **`doc-symbol-link` is still outstanding.** The
+   ordering argument held up: `doc-comment-code` is upstream, and repairing the catalogue while
+   Quick Help still hands out the wrong signature would have let the drift return.
+2. **Clear this codebase under them. This is the gate on the tag.**
+   - `doc-comment-code`: **852**, from 1,515. The live work.
+   - `doc-claims`: **8**, all `1.2-TimeSeries.md`. Small, and each one needs a judgement about
+     which side is wrong rather than an edit.
+   - `doc-generated`: clean.
+3. **Cut 2.6.0** — tag, revert the two version strings. Nothing is unpushed; `main` and
+   `origin/main` agree at 96 commits past `v2.5.2`.
+4. **Differential testing against published references** (TrustPlan §2.2) — still the highest
+   ratio of defects-found to effort in the plan. It is how the discontinuous `inverseNormalCDF`,
+   the `normalCDF` lower tail and the Black-Scholes negative prices were all found. Remaining
+   targets: the distribution family, `irr`/`npv`/`xirr`, the greeks.
 5. **Split the three timed correctness tests**, so a wall clock stops gating a claim about the
-   library.
+   library. Still open — `22d22a0` fixed the `.timeLimit` *traits*, which is a different
+   instrument from the `#expect(elapsed < N)` assertions inside those three.
+6. **`v3.0.0` scope**, at `project/plans/upcoming/v3.0.0_SCOPE.md`. `DifferentialEvolution` and
+   `ParticleSwarmOptimization` cannot refuse a seeded CPU fallback because `optimizeDetailed` is
+   non-throwing; fixing that is source-breaking and forces a major, so the major should carry the
+   rest of the breaking work with it. Three open questions in §4.
 
 ---
 
@@ -185,11 +218,16 @@ the corpus first: 101 output claims across 16 of the 73 articles, in three spell
 - [x] Seed every Monte Carlo example in the catalogue — a precondition, not a nicety. An unseeded
       example has no pinned output, so rung 3 cannot verify it at all. There were 29 this morning.
 - [x] `doc-run` (rung 2): execute the assembled article. Committed in quality-gate-swift.
-- [ ] `doc-claims` (rung 3): compare printed output against the documented claims. **No `--fix`,
-      ever** — an autofixer that rewrites a documented number to match the program launders
-      regressions into documentation, and this release produced the case that proves it.
-- [ ] `doc-comment-code`: the `///` corpus, 1,394 blocks and upstream of the catalogue
-- [ ] `doc-symbol-link`, `doc-generated`: the other two rules from the same proposal
+- [x] `doc-claims` (rung 3): compare printed output against the documented claims. Landed;
+      **8 errors outstanding**, all in `1.2-TimeSeries.md`. **No `--fix`, ever** — an autofixer
+      that rewrites a documented number to match the program launders regressions into
+      documentation, and this release produced the case that proves it. The shipped checker
+      states this in its own diagnostic: *"editing the comment to match the output is the one
+      repair that always works and sometimes means nothing."*
+- [x] `doc-comment-code`: the `///` corpus, upstream of the catalogue. Landed as opt-in;
+      **852 errors outstanding**, from 1,515. This is the gate on the 2.6.0 tag.
+- [x] `doc-generated`: landed, passes — 0 regions found, 10 generators unused.
+- [ ] `doc-symbol-link`: the last of the four, still outstanding in quality-gate-swift.
 
 The known limit, recorded rather than resolved: rung 3 is a change detector, not a truth detector.
 Fixing `normalCDF` moved five expectations that had been recorded from this library's own output —
@@ -205,11 +243,40 @@ lie".
 
 ---
 
-**Last Updated:** 2026-08-11 — reconciled against the tree after the 2.6.0 work, not against
-the previous revision. Closed as done: the `weak-assertion` cluster (0 in the gate), the unseeded
-`MonteCarloSimulation` audit (all 22 remaining constructions verified correct — 13 pass their seed
-to `runCorrelated`, the rest are custom-sampler tests the seeded path rejects by design), and the
-CHANGELOG backfill (29 commits that had no entry now do). Added: the cached-gate coverage gap, the
-`release-readiness` heading false positive, the `BusinessMathDSL` accessor gap, and three timed
-correctness tests needing splitting. Roadmap Phase 3 rewritten around the four `doc-*` checkers,
-which are now the gate on the tag.
+## A recurring shape
+
+Recorded here rather than in a session summary, because it has now produced defects in three
+unrelated subsystems and will produce more.
+
+**A check that appears to assert a property of the code, while actually measuring the
+environment.** Each of these passed for months, then failed when the environment moved — never
+when the code did:
+
+| the check | appeared to assert | actually measured |
+|---|---|---|
+| `.timeLimit(.minutes(2))` | this test is not pathologically slow | how busy the runner is |
+| `seed: 42` on the optimizer, `seed: nil` on its scenarios | this optimization is reproducible | one draw from an unseeded stream |
+| GPU path with silent CPU fallback | this seed reproduces | whether the GPU happened to succeed |
+| a cached `quality-gate` run | 37 checkers pass | 10 checkers pass |
+| `grep -c '❌ error:'` on a failed invocation | zero errors | the command did not run |
+
+The tell is the same every time: the failing and passing runs are **byte-identical in the code
+under test**. When that is true, no property of that code can be the cause, and the search should
+start at the instrument.
+
+This is the same family as the 2026-08-11 table of checkers reporting honestly on an input
+narrower than anyone believed (build checker never compiling the test target; the diagnostic
+parser never matching a coloured line; `stochastic-determinism` skipping test files entirely).
+The earlier table was about *scope*; this one is about *what is being measured*.
+
+---
+
+**Last Updated:** 2026-08-13 — reconciled against the tree and against CI, not against the
+previous revision. Counts corrected throughout: 6,520→**6,582** tests in 579 suites, 36→**37**
+checkers, 6,471→**6,508** documented APIs, and "64 commits unpushed"→**0** (96 past `v2.5.2`,
+all pushed). Closed as done: three of the four `doc-*` checkers landed (`doc-comment-code`,
+`doc-claims`, `doc-generated`), so Priority 1 and three Phase 3 items are struck; the `.timeLimit`
+sizing defect (`22d22a0`). Added: `doc-comment-code` at 852 and `doc-claims` at 8 as the concrete
+tag gate, `doc-symbol-link` as the one checker still outstanding, the v3.0.0 scope as Priority 6,
+CI and nightly status rows, and "A recurring shape" above. Corrected: the documentation section
+claimed `doc-comment-code` "does not exist yet" and `doc-claims` was "in build"; both shipped.
