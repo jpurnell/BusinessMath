@@ -646,13 +646,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             )
         }
 
-        // Configure threadgroups
-        let threadsPerGroup = MTLSize(width: min(config.populationSize, 256), height: 1, depth: 1)
-        let threadGroups = MTLSize(
-            width: (config.populationSize + threadsPerGroup.width - 1) / threadsPerGroup.width,
-            height: 1,
-            depth: 1
-        )
+        // Exactly one thread per individual — see MetalDispatch.swift.
 
         // 1. Tournament Selection (popA → popB)
         encoder.setComputePipelineState(selectionPipeline)
@@ -666,7 +660,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         encoder.setBytes(&dimInt, length: MemoryLayout<Int32>.stride, index: 4)
         encoder.setBytes(&tournSize, length: MemoryLayout<Int32>.stride, index: 5)
         encoder.setBytes(&popSize, length: MemoryLayout<Int32>.stride, index: 6)
-        encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
+        encoder.dispatchExactly(config.populationSize)
 
         // 2. Crossover (popB → popA)
         encoder.setComputePipelineState(crossoverPipeline)
@@ -678,7 +672,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         var crossRate = Float(config.crossoverRate)
         encoder.setBytes(&crossRate, length: MemoryLayout<Float>.stride, index: 5)
         encoder.setBytes(&popSize, length: MemoryLayout<Int32>.stride, index: 6)
-        encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
+        encoder.dispatchExactly(config.populationSize)
 
         // 3. Mutation (popA in-place)
         encoder.setComputePipelineState(mutationPipeline)
@@ -696,7 +690,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         }
         encoder.setBytes(&searchSpaceGPU, length: searchSpaceGPU.count * MemoryLayout<SIMD2<Float>>.stride, index: 5)
         encoder.setBytes(&popSize, length: MemoryLayout<Int32>.stride, index: 6)
-        encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
+        encoder.dispatchExactly(config.populationSize)
 
         // Execute GPU work
         encoder.endEncoding()

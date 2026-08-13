@@ -658,9 +658,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         var popSizeInt = Int32(popSize)
         encoder.setBytes(&popSizeInt, length: MemoryLayout<Int32>.stride, index: 8)
 
-        let threadsPerGroup = MTLSize(width: min(popSize, 256), height: 1, depth: 1)
-        let numGroups = MTLSize(width: (popSize + 255) / 256, height: 1, depth: 1)
-        encoder.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
+        encoder.dispatchExactly(popSize)
 
         // 2. Crossover
         encoder.setComputePipelineState(crossoverPipeline)
@@ -672,7 +670,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         var crossRateFloat = Float(config.crossoverRate)
         encoder.setBytes(&crossRateFloat, length: MemoryLayout<Float>.stride, index: 5)
         encoder.setBytes(&popSizeInt, length: MemoryLayout<Int32>.stride, index: 6)
-        encoder.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
+        encoder.dispatchExactly(popSize)
 
         encoder.endEncoding()
         commandBuffer.commit()

@@ -599,15 +599,8 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         var initIterationCount = UInt32(iterations)
         encoder.setBytes(&initIterationCount, length: MemoryLayout<UInt32>.stride, index: 2)
 
-        // OPTIMIZATION: Use larger thread groups for better GPU utilization
-        let threadsPerGroup = MTLSize(width: min(iterations, 1024), height: 1, depth: 1)
-        let threadGroups = MTLSize(
-            width: (iterations + threadsPerGroup.width - 1) / threadsPerGroup.width, // fp-safety:disable — width is min(iterations, 1024) >= 1
-            height: 1,
-            depth: 1
-        )
 
-        encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
+        encoder.dispatchExactly(iterations, width: 1024)
         encoder.endEncoding()
     }
 
@@ -641,14 +634,8 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         encoder.setBytes(&iterationCountVar, length: MemoryLayout<UInt32>.stride, index: 7)
 
         // OPTIMIZATION: Use larger thread groups (1024 vs 256) for better occupancy
-        let threadsPerGroup = MTLSize(width: min(iterations, 1024), height: 1, depth: 1)
-        let threadGroups = MTLSize(
-            width: (iterations + threadsPerGroup.width - 1) / threadsPerGroup.width, // fp-safety:disable — width is min(iterations, 1024) >= 1
-            height: 1,
-            depth: 1
-        )
 
-        encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
+        encoder.dispatchExactly(iterations, width: 1024)
         encoder.endEncoding()
     }
 }

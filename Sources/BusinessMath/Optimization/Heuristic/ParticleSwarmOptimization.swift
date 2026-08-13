@@ -556,14 +556,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         var swarmSizeInt = Int32(swarmSize)
         encoder.setBytes(&swarmSizeInt, length: MemoryLayout<Int32>.stride, index: 14)
 
-        // Dispatch threads
-        let threadsPerThreadgroup = MTLSize(width: min(swarmSize, 256), height: 1, depth: 1)
-        let threadgroups = MTLSize(
-            width: (swarmSize + threadsPerThreadgroup.width - 1) / threadsPerThreadgroup.width,
-            height: 1,
-            depth: 1
-        )
-        encoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+        // Exactly one thread per particle — see MetalDispatch.swift.
+        encoder.dispatchExactly(swarmSize)
 
         encoder.endEncoding()
         commandBuffer.commit()
