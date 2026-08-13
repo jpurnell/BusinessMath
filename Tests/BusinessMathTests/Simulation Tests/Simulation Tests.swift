@@ -228,8 +228,14 @@ struct UniformDistributionTests {
 		var xs = [Double]()
 		xs.reserveCapacity(n)
 
+		// Seeded. The moment checks below are a 3-sigma bound on an unseeded draw, which
+		// fails about one run in 370 by construction — a red suite for reasons that have
+		// nothing to do with the code under test. `distributionUniform` takes its uniform
+		// as an argument precisely so this can be pinned.
+		var generator = DeterministicRNG(seed: 20260813)
 		for _ in 0..<n {
-			let x = distributionUniform(min: minVal, max: maxVal)
+			let u = Double.random(in: 0...1, using: &generator)
+			let x = distributionUniform(min: minVal, max: maxVal, u)
 			#expect(x >= minVal && x <= maxVal)
 			xs.append(x)
 		}

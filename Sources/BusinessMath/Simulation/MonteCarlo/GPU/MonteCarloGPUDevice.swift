@@ -212,8 +212,16 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         kernel void initializeRNG(
             device RNGState* states [[buffer(0)]],
             constant ulong& baseSeed [[buffer(1)]],
+            constant uint& iterationCount [[buffer(2)]],
             uint tid [[thread_position_in_grid]]
         ) {
+            // Threadgroups are dispatched rounded up — (iterations + w - 1) / w — so the
+            // last group runs threads past the end of every buffer here. Unguarded, they
+            // seed RNG state and write outputs outside their allocations, which is
+            // undefined behaviour and varies run to run. The same defect in the genetic
+            // algorithm's kernels is what made a seeded run reproduce only sometimes.
+            if (tid >= iterationCount) { return; }
+
             seedRNGState(&states[tid], baseSeed, tid);
         }
 
@@ -225,8 +233,16 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             device float* outputs [[buffer(4)]],
             constant int& numInputs [[buffer(5)]],
             constant int& numOps [[buffer(6)]],
+            constant uint& iterationCount [[buffer(7)]],
             uint tid [[thread_position_in_grid]]
         ) {
+            // Threadgroups are dispatched rounded up — (iterations + w - 1) / w — so the
+            // last group runs threads past the end of every buffer here. Unguarded, they
+            // seed RNG state and write outputs outside their allocations, which is
+            // undefined behaviour and varies run to run. The same defect in the genetic
+            // algorithm's kernels is what made a seeded run reproduce only sometimes.
+            if (tid >= iterationCount) { return; }
+
             thread float inputs[MAX_INPUTS];
             for (int i = 0; i < numInputs; i++) {
                 inputs[i] = sampleDistribution(&rngStates[tid], &distributions[i], distTypes[i]);
@@ -580,6 +596,8 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         encoder.setBuffer(buffer, offset: 0, index: 0)
         var seedVar = seed
         encoder.setBytes(&seedVar, length: MemoryLayout<UInt64>.stride, index: 1)
+        var initIterationCount = UInt32(iterations)
+        encoder.setBytes(&initIterationCount, length: MemoryLayout<UInt32>.stride, index: 2)
 
         // OPTIMIZATION: Use larger thread groups for better GPU utilization
         let threadsPerGroup = MTLSize(width: min(iterations, 1024), height: 1, depth: 1)
@@ -619,6 +637,8 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         var numOpsVar = Int32(numOps)
         encoder.setBytes(&numInputsVar, length: MemoryLayout<Int32>.stride, index: 5)
         encoder.setBytes(&numOpsVar, length: MemoryLayout<Int32>.stride, index: 6)
+        var iterationCountVar = UInt32(iterations)
+        encoder.setBytes(&iterationCountVar, length: MemoryLayout<UInt32>.stride, index: 7)
 
         // OPTIMIZATION: Use larger thread groups (1024 vs 256) for better occupancy
         let threadsPerGroup = MTLSize(width: min(iterations, 1024), height: 1, depth: 1)
