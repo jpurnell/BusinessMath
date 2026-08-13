@@ -649,9 +649,15 @@ struct AdditionalFinancialSimulationTests {
 
 			let sd = stdDev(values)
 
-			// 3-sigma/sqrt(n) bound for mean
+			// `runFinancialSimulation` takes no seed — it is one of the seedless wrappers
+			// over seeded primitives recorded in the master plan — so this draw is fresh
+			// every run and the bound is a distributional claim rather than a fixed one.
+			// At 3 sigma it fails about one run in 370 with nothing wrong, which is a red
+			// suite for reasons unrelated to any change under test. Five sigma still
+			// catches a sampler that is broken (wrong mean, wrong scale) and is spurious
+			// about one run in 3.5 million.
 			let se = 100.0 / pow(Double(n), 0.5)
-			#expect(abs(mean(values) - 1000.0) < 3.0 * se)
+			#expect(abs(mean(values) - 1000.0) < 5.0 * se)
 			// Stddev within ~15%
 			#expect(abs(sd - 100.0) < 15.0)
 		}
