@@ -694,6 +694,7 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 ///
 /// ## Example
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// let stream = AsyncValueStream([100, 102, 98, 105, 103, 107])
 /// for try await forecast in stream.movingAverageForecast(window: 3) {
 ///     print("Next forecast: \(forecast)")

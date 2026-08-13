@@ -171,6 +171,7 @@ extension ConstrainedOptimizationResult where V.Scalar == Double {
 ///
 /// ## Usage Example
 /// ```swift
+/// let weights = [0.4, 0.35, 0.25]
 /// let optimizer = ConstrainedOptimizer<VectorN<Double>>(
 ///     tolerance: 1e-6,
 ///     maxIterations: 1000

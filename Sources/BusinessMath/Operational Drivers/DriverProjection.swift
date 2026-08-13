@@ -306,6 +306,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 /// ## Accessing Results
 ///
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// let projection = try FinancialProjection.documentationFixture
 /// let results = projection.projectMonteCarlo(iterations: 10_000)
 ///
@@ -434,6 +435,7 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters
 	/// let uncertainty = results.standardDeviation()
 	/// // Higher values indicate more uncertain periods

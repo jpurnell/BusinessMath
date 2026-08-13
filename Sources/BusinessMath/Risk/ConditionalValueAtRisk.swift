@@ -33,6 +33,7 @@ import Numerics
 /// ## Example: Portfolio Risk
 ///
 /// ```swift
+/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 /// let var95 = ValueAtRisk.var95(values: returns)    // -5%
 /// let cvar95 = ConditionalValueAtRisk.cvar95(values: returns)  // -7%
 ///
@@ -87,6 +88,7 @@ public struct ConditionalValueAtRisk {
 	/// ## Example
 	///
 	/// ```swift
+	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 	/// let cvar95 = ConditionalValueAtRisk.cvar95(values: returns)
 	/// ```
 	public static func cvar95<T: Real & Sendable & BinaryFloatingPoint>(
@@ -103,6 +105,7 @@ public struct ConditionalValueAtRisk {
 	/// ## Example
 	///
 	/// ```swift
+	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 	/// let cvar99 = ConditionalValueAtRisk.cvar99(values: returns)
 	/// ```
 	public static func cvar99<T: Real & Sendable & BinaryFloatingPoint>(

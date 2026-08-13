@@ -73,6 +73,7 @@ import Numerics
 /// ## Combining Probabilistic Drivers
 ///
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// // Revenue with uncertainty in both quantity and price
 /// let quantity = ProbabilisticDriver<Double>(
 ///     name: "Quantity",

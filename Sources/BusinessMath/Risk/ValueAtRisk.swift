@@ -86,6 +86,7 @@ public struct ValueAtRisk {
 	/// ## Example
 	///
 	/// ```swift
+	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 	/// let var95 = ValueAtRisk.var95(values: returns)
 	/// ```
 	public static func var95<T: Real & Sendable & BinaryFloatingPoint>(
@@ -102,6 +103,7 @@ public struct ValueAtRisk {
 	/// ## Example
 	///
 	/// ```swift
+	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 	/// let var99 = ValueAtRisk.var99(values: returns)
 	/// ```
 	public static func var99<T: Real & Sendable & BinaryFloatingPoint>(

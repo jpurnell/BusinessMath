@@ -82,6 +82,7 @@ public struct Timestamped<Value: Sendable>: Sendable {
 ///
 /// ## Usage Example
 /// ```swift
+/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let values = AsyncValueStream([1.0, 2.0, 3.0])
 /// for try await ts in values.timestamped() {
 ///     print("\(ts.value) arrived at \(ts.timestamp)")
@@ -145,6 +146,7 @@ extension AsyncSequence where Element: Sendable {
     ///
     /// ## Usage Example
     /// ```swift
+    /// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let rrIntervals = AsyncValueStream([832.0, 845.0, 812.0])
     /// for try await ts in rrIntervals.timestamped() {
     ///     print("\(ts.value)ms at \(ts.timestamp)")

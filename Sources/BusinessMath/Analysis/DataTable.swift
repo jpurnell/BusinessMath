@@ -203,6 +203,7 @@ extension DataTable where Output: CustomStringConvertible {
     /// ## Example
     ///
     /// ```swift
+    /// let prices = [100.0, 102.5, 99.0, 105.0]
     /// // Format as currency with 2 decimal places
     /// let formatted = DataTable<Double, Double>.formatTwoVariable(
     ///     costMatrix,

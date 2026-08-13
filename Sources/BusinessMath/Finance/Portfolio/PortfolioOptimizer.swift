@@ -187,6 +187,7 @@ public enum OptimizationStrategy {
 ///
 /// ## Algorithm Selection
 /// ```swift
+/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 /// // Use adaptive algorithm selection
 /// let adaptiveOptimizer = PortfolioOptimizer(strategy: .adaptive)
 /// let portfolio = try adaptiveOptimizer.minimumVariancePortfolio(

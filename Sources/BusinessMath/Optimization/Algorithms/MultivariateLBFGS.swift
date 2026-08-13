@@ -27,6 +27,7 @@ import Numerics
 ///
 /// ## Example
 /// ```swift
+/// let weights = [0.4, 0.35, 0.25]
 /// // Optimize 1,000-asset portfolio
 /// let numAssets = 1_000
 /// let returns = VectorN<Double>((0..<numAssets).map { _ in Double.random(in: 0.05...0.15) })

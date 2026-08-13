@@ -13,6 +13,7 @@ import Foundation
 ///
 /// ## Example
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// // Use formatted output everywhere (default)
 /// await FormattingConfiguration.setUseFormattedOutput(true)
 ///

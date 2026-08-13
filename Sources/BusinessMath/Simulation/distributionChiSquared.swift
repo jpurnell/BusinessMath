@@ -56,6 +56,8 @@ import OSLog
 /// ## Example
 ///
 /// ```swift
+/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// // Generate chi-squared values for goodness-of-fit test
 /// let chiSq: Double = distributionChiSquared(degreesOfFreedom: 10)
 /// print("Chi-squared statistic: \(chiSq)")

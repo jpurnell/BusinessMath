@@ -40,6 +40,7 @@ import Numerics
 /// ## Usage Example
 ///
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// let entity = Entity.documentationFixture
 /// // Three trading desks with individual 95% VaR values
 /// let individualVaRs: [Double] = [100_000, 80_000, 120_000]

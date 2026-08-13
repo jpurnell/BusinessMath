@@ -406,6 +406,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Covenant Calculations
 	///
 	/// ```swift
+	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// // Senior leverage ratio (excludes mezzanine)
 	/// let seniorDebtTypes: Set<BalanceSheetRole> = [
 	///     .revolvingCreditFacility,

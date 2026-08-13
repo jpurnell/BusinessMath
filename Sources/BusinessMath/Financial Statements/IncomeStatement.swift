@@ -405,6 +405,8 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters
 	/// let company = Entity.documentationFixture
 	/// let entity = Entity.documentationFixture
@@ -446,6 +448,8 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters
 	/// let company = Entity.documentationFixture
 	/// let entity = Entity.documentationFixture
@@ -492,6 +496,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Revenue: $1,000,000
 	/// // Variable Costs: $600,000 (60% of revenue)
@@ -537,6 +542,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Product A: 70% contribution margin
@@ -585,6 +591,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Company with high fixed costs:

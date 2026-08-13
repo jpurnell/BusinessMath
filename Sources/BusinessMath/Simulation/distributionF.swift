@@ -56,6 +56,7 @@ import OSLog
 /// ## Example
 ///
 /// ```swift
+/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 /// // Test variance ratio in ANOVA
 /// let fStat: Double = distributionF(df1: 5, df2: 20)
 /// print("F-statistic: \(fStat)")
