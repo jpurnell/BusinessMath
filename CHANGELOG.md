@@ -49,6 +49,49 @@ scalars, `bayesianICC`, and the seeded paths through `integrate` and `ScenarioGe
 return different numbers too, but they do so through changed signatures or documented
 non-reproducibility — see below.
 
+#### Fixed — four expressions that did not compile on Linux
+
+`inverseNormalCDF` and `ParticleSwarmOptimization` each contained generic expressions the
+Swift 6.2.1 type-checker on Ubuntu rejects with "unable to type-check this expression in
+reasonable time". macOS compiles all four, so the package **did not build on Linux in release
+configuration** while appearing healthy locally. Three nested Horner chains and one velocity
+initialiser, split into one binding per step.
+
+Bit-exact: the split preserves the multiply-add order, and `inverseNormalCDF` feeds Monte
+Carlo sampling where a one-ulp change would move every seeded result in the library. Verified
+by comparing bit patterns of 16 values across both branches and the 0.02425 breakpoint before
+and after — identical in all 16.
+
+Note for contributors: the documented pre-push check does not catch this class. A local
+release build at `-solver-expression-time-threshold=100`, five times stricter than the value
+in CLAUDE.md, still compiles them clean on macOS. Only CI confirms it.
+
+#### Added — documentation fixtures, so an example can be both runnable and about its subject
+
+`Period.documentationQuarters`, `Entity.documentationFixture`, and `documentationFixture` on
+`BalanceSheet`, `IncomeStatement`, `CashFlowStatement`, `FinancialScenario`,
+`FinancialProjection`, `FinancialSimulation`, `ScenarioSensitivityAnalysis`, and
+`TornadoDiagramAnalysis`.
+
+Doc-comment examples are compiled with nothing imported but Foundation and this module,
+because a reader copying one panel out of Quick Help gets the fence and nothing else. That
+left every example wanting a balance sheet building an entity, four periods and a dozen
+accounts before showing the one line it was about. These collapse that to a line.
+
+The fixtures assert their own usefulness rather than merely constructing: the balance sheet
+balances in every period against non-zero totals, revenue moves across periods so derived
+ratios are not flat, the projection agrees with the statements it is composed from, and the
+simulation spreads — `p10 < p50 < p90`. That last one is the point of the exercise. Nine
+copies of one projection would have satisfied the checker while reporting the same number for
+the 10th and 90th percentile, which is a distribution example demonstrating that there is no
+distribution.
+
+The name is long deliberately. `BalanceSheet.fixture` reads like something you might reach for
+in production; in a financial library, a sample balance sheet reaching a real report is worse
+than a verbose doc line.
+
+`doc-comment-code` errors: **1,515 → 852**.
+
 #### Fixed — a seeded GPU run that quietly answered with a different algorithm
 
 `GeneticAlgorithm`, `DifferentialEvolution`, and `ParticleSwarmOptimization` accelerate on

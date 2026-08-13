@@ -21,7 +21,7 @@ every result that moved and by how much; read that before upgrading.
 
 | | |
 |---|---|
-| tests | 6,494 in 565 suites, all passing under strict concurrency |
+| tests | 6,582 in 579 suites, all passing under strict concurrency |
 | build | 0 warnings, library and test target |
 | documentation coverage | 100% — 6,447 of 6,447 public APIs documented |
 | DocC catalogue | 73 articles, every code block compiled against the module |
@@ -35,7 +35,7 @@ every result that moved and by how much; read that before upgrading.
 
 **Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real & Sendable>`) and strict concurrency for thread safety. Model closures are `@Sendable`. As of 2.6.0 the vector and optimizer types require `Real & BinaryFloatingPoint` rather than `Real` alone — the conversion that constraint supplies used to be faked with a runtime-cast ladder that answered `0.0` when it failed.
 
-**Complete**: 73 comprehensive guides, 6,494 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
+**Complete**: 73 comprehensive guides, 6,582 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
 
 **Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and — where a result is an approximation — a measured accuracy recorded in the doc comment rather than an assurance. `inverseNormalCDF` is 2 ulp over `1e-12 ≤ p ≤ 1 − 1e-12`; `normalCDF` holds ~1e-14 relative down to `x = −37`. Numbers that changed in 2.6.0 are tabulated in the CHANGELOG with the measurement that found them.
 
@@ -217,7 +217,7 @@ The package vends three products: **`BusinessMath`** (the library), **`BusinessM
 ### Documentation & Testing
 - 📚 **73 comprehensive guides** (~50,900 lines of DocC documentation), every code block compiled against the module
 - ✅ **100% documentation coverage** — 6,447 of 6,447 public APIs documented
-- ✅ **6,494 tests** across 565 test suites (100% pass rate, 0 known issues)
+- ✅ **6,582 tests** across 579 test suites (100% pass rate, 0 known issues)
 - 📊 **Performance benchmarks** for typical use cases
 - 🎓 **Learning paths** for different roles
 
