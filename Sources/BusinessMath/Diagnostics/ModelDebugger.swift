@@ -512,6 +512,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let model = FinancialModel()
     /// let debugger = ModelDebugger()
     /// await debugger.enableTracing()
     /// let result = model.totalRevenue(for: period)
@@ -567,6 +568,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let model = FinancialModel()
     /// let debugger = ModelDebugger()
     /// let validation = await debugger.validate(model)
     /// if !validation.isValid {
@@ -639,6 +641,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let model = FinancialModel()
     /// let debugger = ModelDebugger()
     /// let periods = Period.documentationQuarters
     /// let missing = await debugger.findMissingData(in: model)
@@ -679,6 +682,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let model = FinancialModel()
     /// let debugger = ModelDebugger()
     /// let snapshot = await debugger.snapshot(of: model)
     /// print(snapshot.summary)

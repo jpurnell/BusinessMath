@@ -114,6 +114,7 @@ public struct FinancialModel: Sendable {
     ///
     /// Example:
     /// ```swift
+    /// let model = FinancialModel()
     /// let revenue2024 = model.totalRevenue(for: .year(2024))
     /// ```
     public func totalRevenue(for period: Period) -> Double {
@@ -147,6 +148,7 @@ public struct FinancialModel: Sendable {
     ///
     /// Example:
     /// ```swift
+    /// let model = FinancialModel()
     /// let expenses2024 = model.totalExpenses(for: .year(2024))
     /// ```
     public func totalExpenses(for period: Period) -> Double {
@@ -181,6 +183,7 @@ public struct FinancialModel: Sendable {
     ///
     /// Example:
     /// ```swift
+    /// let model = FinancialModel()
     /// let profit2024 = model.profit(for: .year(2024))
     /// ```
     public func profit(for period: Period) -> Double {
@@ -200,6 +203,7 @@ public struct FinancialModel: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let model = FinancialModel()
     /// do {
     ///     let revenue = try model.getValue(account: "Product Sales", period: "2025-Q1")
     ///     print("Q1 Revenue: $\(revenue)")
@@ -251,6 +255,7 @@ public struct FinancialModel: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let model = FinancialModel()
     /// do {
     ///     let q1 = Period.quarter(year: 2025, quarter: 1)
     ///     let revenue = try model.getValue(account: "Product Sales", period: q1)

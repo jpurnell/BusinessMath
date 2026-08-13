@@ -150,6 +150,7 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let model = FCFEModel(operatingCashFlow: TimeSeries(periods: Period.documentationQuarters, values: [120, 130, 140, 150]), capitalExpenditures: TimeSeries(periods: Period.documentationQuarters, values: [40, 40, 40, 40]), netBorrowing: nil, costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// let values = [100.0, 110.0, 120.0, 130.0]
     /// let periods = Period.documentationQuarters
     /// let fcfe = model.fcfe()
@@ -212,6 +213,7 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let model = FCFEModel(operatingCashFlow: TimeSeries(periods: Period.documentationQuarters, values: [120, 130, 140, 150]), capitalExpenditures: TimeSeries(periods: Period.documentationQuarters, values: [40, 40, 40, 40]), netBorrowing: nil, costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// let equityValue = try model.equityValue()
     /// print("Total equity value: $\(equityValue)M")
     /// ```
@@ -269,6 +271,7 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let model = FCFEModel(operatingCashFlow: TimeSeries(periods: Period.documentationQuarters, values: [120, 130, 140, 150]), capitalExpenditures: TimeSeries(periods: Period.documentationQuarters, values: [40, 40, 40, 40]), netBorrowing: nil, costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// // If equity value is $5,000M and 100M shares outstanding
     /// let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
     /// // Returns: $50 per share
@@ -288,6 +291,17 @@ public struct FCFEModel<T: Real> where T: Sendable {
     ///
     /// - Complexity: O(1) after equity value calculation
     public func valuePerShare(sharesOutstanding: T) throws -> T {
+        // Same guard, same reason as `ResidualIncomeModel.valuePerShare(sharesOutstanding:)`.
+        // These two bodies were byte-identical and both declared `throws` without ever
+        // throwing, so the defect was duplicated along with the code.
+        guard sharesOutstanding > T(0) else {
+            throw ValuationError.invalidModelAssumptions(
+                "Shares outstanding (\(sharesOutstanding)) must be greater than zero. " +
+                "A per-share value divided by zero shares is infinite, and by a negative " +
+                "count is a negative price; neither is a valuation."
+            )
+        }
+
         let totalEquityValue = try equityValue()
         return totalEquityValue / sharesOutstanding
     }
