@@ -1,0 +1,1513 @@
+{
+  "files_with_tests" : [
+    {
+      "source" : "AdvancedOptimization\/Scenario.swift",
+      "test" : "Tests\/BusinessMathTests\/Scenario Analysis Tests\/ScenarioTests.swift"
+    },
+    {
+      "source" : "Audit\/AuditTrail.swift",
+      "test" : "Tests\/BusinessMathTests\/Audit Tests\/AuditTrailTests.swift"
+    },
+    {
+      "source" : "BusinessMath.swift",
+      "test" : "Tests\/BusinessMathTests\/BusinessMathTests.swift"
+    },
+    {
+      "source" : "BusinessOptimization\/CapitalBudgeting.swift",
+      "test" : "Tests\/BusinessMathTests\/Integer Programming Tests\/CapitalBudgetingTests.swift"
+    },
+    {
+      "source" : "BusinessOptimization\/ProductionPlanning.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/Business Optimization Tests\/ProductionPlanningTests.swift"
+    },
+    {
+      "source" : "BusinessOptimization\/ResourceAllocation.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/Business Optimization Tests\/ResourceAllocationTests.swift"
+    },
+    {
+      "source" : "Developer Tools\/CalculationTrace.swift",
+      "test" : "Tests\/BusinessMathTests\/Developer Tools Tests\/CalculationTraceTests.swift"
+    },
+    {
+      "source" : "Developer Tools\/DataExport.swift",
+      "test" : "Tests\/BusinessMathTests\/Developer Tools Tests\/DataExportTests.swift"
+    },
+    {
+      "source" : "Diagnostics\/ModelDebugger.swift",
+      "test" : "Tests\/BusinessMathTests\/Diagnostics Tests\/ModelDebuggerTests.swift"
+    },
+    {
+      "source" : "Diagnostics\/ModelProfiler.swift",
+      "test" : "Tests\/BusinessMathTests\/Diagnostics Tests\/ModelProfilerTests.swift"
+    },
+    {
+      "source" : "Error Handling\/BusinessMathError.swift",
+      "test" : "Tests\/BusinessMathTests\/Error Handling Tests\/BusinessMathErrorTests.swift"
+    },
+    {
+      "source" : "Finance\/Portfolio\/PortfolioOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Portfolio Tests\/PortfolioOptimizerTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/Account.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/AccountTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/AccountType.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/AccountTypeTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/BalanceSheet.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/BalanceSheetTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/BalanceSheetRole.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/BalanceSheetRoleTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/CapitalStructure.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/CapitalStructureTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/CashFlowRole.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/CashFlowRoleTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/CashFlowStatement.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/CashFlowStatementTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/CreditMetrics.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/CreditMetricsTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/DebtCovenants.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/DebtCovenantsTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/DebtInstrument.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/DebtInstrumentTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/DuPontAnalysis.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/DuPontAnalysisTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/Entity.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/EntityTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/EquityFinancing.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/EquityFinancingTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/FinancialRatios.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/FinancialRatiosTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/IncomeStatement.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/IncomeStatementTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/IncomeStatementRole.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/IncomeStatementRoleTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/LeaseAccounting.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/LeaseAccountingTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/MultiPeriodReport.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/MultiPeriodReportTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/OperationalMetrics.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/OperationalMetricsTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/ValuationMetrics.swift",
+      "test" : "Tests\/BusinessMathTests\/Financial Statement Tests\/ValuationMetricsTests.swift"
+    },
+    {
+      "source" : "FinancialModel\/DriverOptimization.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/Business Optimization Tests\/DriverOptimizationTests.swift"
+    },
+    {
+      "source" : "Fluent API\/InvestmentBuilder.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/InvestmentBuilderTests.swift"
+    },
+    {
+      "source" : "Fluent API\/ModelBuilder.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/ModelBuilderTests.swift"
+    },
+    {
+      "source" : "Fluent API\/ScenarioBuilder.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/ScenarioBuilderTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/ManufacturingModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/ManufacturingModelTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/MarketplaceModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/MarketplaceModelTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/RetailModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/RetailModelTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/SaaSModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/SaaSModelTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/StandardTemplates.swift",
+      "test" : "Tests\/BusinessMathTests\/Template Tests\/StandardTemplatesTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/SubscriptionBoxModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/SubscriptionBoxModelTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/TemplateRegistry.swift",
+      "test" : "Tests\/BusinessMathTests\/Template Tests\/TemplateRegistryTests.swift"
+    },
+    {
+      "source" : "Fluent API\/TimeSeriesBuilder.swift",
+      "test" : "Tests\/BusinessMathTests\/Fluent API Tests\/TimeSeriesBuilderTests.swift"
+    },
+    {
+      "source" : "Forecasting\/AnomalyDetection.swift",
+      "test" : "Tests\/BusinessMathTests\/Forecasting Tests\/AnomalyDetectionTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/ConstrainedDriver.swift",
+      "test" : "Tests\/BusinessMathTests\/Operational Drivers Tests\/ConstrainedDriverTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/Driver.swift",
+      "test" : "Tests\/BusinessMathTests\/Operational Drivers Tests\/DriverTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/DriverProjection.swift",
+      "test" : "Tests\/BusinessMathTests\/Operational Drivers Tests\/DriverProjectionTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/IntegrationExample.swift",
+      "test" : "Tests\/BusinessMathTests\/Operational Drivers Tests\/IntegrationExampleTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/TimeVaryingDriver.swift",
+      "test" : "Tests\/BusinessMathTests\/Operational Drivers Tests\/TimeVaryingDriverTests.swift"
+    },
+    {
+      "source" : "Optimization\/AdaptiveOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Performance Tests\/AdaptiveOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/AdaptiveProgress.swift",
+      "test" : "Tests\/BusinessMathTests\/Async Tests\/AdaptiveProgressTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/ConstrainedOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/ConstrainedOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/InequalityOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/InequalityOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/MultivariateGradientDescent.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/MultivariateGradientDescentTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/MultivariateLBFGS.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/MultivariateLBFGSTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/MultivariateNewtonRaphson.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/MultivariateNewtonRaphsonTests.swift"
+    },
+    {
+      "source" : "Optimization\/AsyncGradientDescentOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/AsyncGradientDescentOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/AsyncOptimization.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/AsyncOptimizationTests.swift"
+    },
+    {
+      "source" : "Optimization\/Constraint.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/ConstraintTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/ClusteringTypes.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/Heuristic Tests\/ClusteringTypesTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/DifferentialEvolution.swift",
+      "test" : "Tests\/BusinessMathTests\/Heuristic Tests\/DifferentialEvolutionTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/GeneticAlgorithm.swift",
+      "test" : "Tests\/BusinessMathTests\/Heuristic Tests\/GeneticAlgorithmTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/IslandModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Heuristic Tests\/IslandModelTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/NelderMead.swift",
+      "test" : "Tests\/BusinessMathTests\/Heuristic Tests\/NelderMeadTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/ParticleSwarmOptimization.swift",
+      "test" : "Tests\/BusinessMathTests\/Heuristic Tests\/ParticleSwarmOptimizationTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/SimulatedAnnealing.swift",
+      "test" : "Tests\/BusinessMathTests\/Heuristic Tests\/SimulatedAnnealingTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/BranchAndBound.swift",
+      "test" : "Tests\/BusinessMathTests\/Integer Programming Tests\/BranchAndBoundTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/IntegerSpecification.swift",
+      "test" : "Tests\/BusinessMathTests\/Integer Programming Tests\/IntegerSpecificationTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/NonlinearRelaxationSolver.swift",
+      "test" : "Tests\/BusinessMathTests\/Integer Programming Tests\/NonlinearRelaxationSolverTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/RelaxationSolver.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/RelaxationSolverTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/SimplexRelaxationSolver.swift",
+      "test" : "Tests\/BusinessMathTests\/Integer Programming Tests\/SimplexRelaxationSolverTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/VariableShift.swift",
+      "test" : "Tests\/BusinessMathTests\/Integer Programming Tests\/VariableShiftTests.swift"
+    },
+    {
+      "source" : "Optimization\/LinearFunction.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/LinearFunctionTests.swift"
+    },
+    {
+      "source" : "Optimization\/LinearProgramming\/AsyncSimplexSolver.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/AsyncSimplexSolverTests.swift"
+    },
+    {
+      "source" : "Optimization\/LinearProgramming\/SimplexSolver.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/SimplexSolverTests.swift"
+    },
+    {
+      "source" : "Optimization\/LinearityValidation.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/LinearityValidationTests.swift"
+    },
+    {
+      "source" : "Optimization\/MultiStartOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/MultiStartOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/NumericalDifferentiation.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/NumericalDifferentiationTests.swift"
+    },
+    {
+      "source" : "Optimization\/Optimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/OptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/ParallelOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Performance Tests\/ParallelOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/PerformanceBenchmark.swift",
+      "test" : "Tests\/BusinessMathTests\/Performance Tests\/PerformanceBenchmarkTests.swift"
+    },
+    {
+      "source" : "Optimization\/SparseMatrix.swift",
+      "test" : "Tests\/BusinessMathTests\/Performance Tests\/SparseMatrixTests.swift"
+    },
+    {
+      "source" : "Optimization\/Vector\/VectorSpace.swift",
+      "test" : "Tests\/BusinessMathTests\/Optimization Tests\/VectorSpaceTests.swift"
+    },
+    {
+      "source" : "Options\/BinomialTree.swift",
+      "test" : "Tests\/BusinessMathTests\/Options Tests\/BinomialTreeTests.swift"
+    },
+    {
+      "source" : "Options\/BlackScholes.swift",
+      "test" : "Tests\/BusinessMathTests\/Options Tests\/BlackScholesTests.swift"
+    },
+    {
+      "source" : "Options\/RealOptions.swift",
+      "test" : "Tests\/BusinessMathTests\/Options Tests\/RealOptionsTests.swift"
+    },
+    {
+      "source" : "Portfolio\/Portfolio.swift",
+      "test" : "Tests\/BusinessMathTests\/Portfolio Tests\/PortfolioTests.swift"
+    },
+    {
+      "source" : "Portfolio\/PortfolioUtilities.swift",
+      "test" : "Tests\/BusinessMathTests\/Portfolio Tests\/PortfolioUtilitiesTests.swift"
+    },
+    {
+      "source" : "Portfolio\/RiskParity.swift",
+      "test" : "Tests\/BusinessMathTests\/Portfolio Tests\/RiskParityTests.swift"
+    },
+    {
+      "source" : "Risk\/RiskAggregation.swift",
+      "test" : "Tests\/BusinessMathTests\/Risk Tests\/RiskAggregationTests.swift"
+    },
+    {
+      "source" : "Risk\/StressTesting.swift",
+      "test" : "Tests\/BusinessMathTests\/Risk Tests\/StressTestingTests.swift"
+    },
+    {
+      "source" : "Scenario Analysis\/FinancialProjection.swift",
+      "test" : "Tests\/BusinessMathTests\/Scenario Analysis Tests\/FinancialProjectionTests.swift"
+    },
+    {
+      "source" : "Scenario Analysis\/FinancialSimulation.swift",
+      "test" : "Tests\/BusinessMathTests\/Scenario Analysis Tests\/FinancialSimulationTests.swift"
+    },
+    {
+      "source" : "Scenario Analysis\/ScenarioRunner.swift",
+      "test" : "Tests\/BusinessMathTests\/Scenario Analysis Tests\/ScenarioRunnerTests.swift"
+    },
+    {
+      "source" : "Scenario Analysis\/SensitivityAnalysis.swift",
+      "test" : "Tests\/BusinessMathTests\/Scenario Analysis Tests\/SensitivityAnalysisTests.swift"
+    },
+    {
+      "source" : "Schema\/DataSchema.swift",
+      "test" : "Tests\/BusinessMathTests\/Schema Tests\/DataSchemaTests.swift"
+    },
+    {
+      "source" : "Schema\/SchemaMigration.swift",
+      "test" : "Tests\/BusinessMathTests\/Schema Tests\/SchemaMigrationTests.swift"
+    },
+    {
+      "source" : "Simulation\/CorrelatedNormals.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/MonteCarlo\/CorrelatedNormalsTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/BytecodeCompiler.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/Compilation\/BytecodeCompilerTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/BytecodeOptimizer.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/Compilation\/BytecodeOptimizerTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/ExpressionBuilder.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/Compilation\/ExpressionBuilderTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/MonteCarloExpressionModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/Compilation\/MonteCarloExpressionModelTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/GPU\/MonteCarloGPUDevice.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/GPU\/MonteCarloGPUDeviceTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/MonteCarloSimulation.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/MonteCarlo\/MonteCarloSimulationTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Percentiles.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/MonteCarlo\/PercentilesTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/RiskMetrics.swift",
+      "test" : "Tests\/BusinessMathTests\/Risk Tests\/RiskMetricsTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/ScenarioAnalysis.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/MonteCarlo\/ScenarioAnalysisTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/SimulationInput.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/MonteCarlo\/SimulationInputTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/SimulationResults.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/MonteCarlo\/SimulationResultsTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/SimulationStatistics.swift",
+      "test" : "Tests\/BusinessMathTests\/Simulation Tests\/MonteCarlo\/SimulationStatisticsTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/MatrixOperations\/DenseMatrix.swift",
+      "test" : "Tests\/BusinessMathTests\/Statistics Tests\/Regression Tests\/DenseMatrixTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/MultipleLinearRegression.swift",
+      "test" : "Tests\/BusinessMathTests\/Statistics Tests\/Regression Tests\/MultipleLinearRegressionTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/NonlinearRegression.swift",
+      "test" : "Tests\/BusinessMathTests\/Statistics Tests\/NonlinearRegressionTests.swift"
+    },
+    {
+      "source" : "Streaming\/StreamingAnomalyDetection.swift",
+      "test" : "Tests\/BusinessMathTests\/StreamingTests\/StreamingAnomalyDetectionTests.swift"
+    },
+    {
+      "source" : "Streaming\/StreamingComposition.swift",
+      "test" : "Tests\/BusinessMathTests\/StreamingTests\/StreamingCompositionTests.swift"
+    },
+    {
+      "source" : "Streaming\/StreamingForecasting.swift",
+      "test" : "Tests\/BusinessMathTests\/StreamingTests\/StreamingForecastingTests.swift"
+    },
+    {
+      "source" : "Streaming\/StreamingStatistics.swift",
+      "test" : "Tests\/BusinessMathTests\/StreamingTests\/StreamingStatisticsTests.swift"
+    },
+    {
+      "source" : "Time Series\/FiscalCalendar.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/FiscalCalendarTests.swift"
+    },
+    {
+      "source" : "Time Series\/Growth\/GrowthRate.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/Growth Tests\/GrowthRateTests.swift"
+    },
+    {
+      "source" : "Time Series\/Growth\/Seasonality.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/Growth Tests\/SeasonalityTests.swift"
+    },
+    {
+      "source" : "Time Series\/Growth\/TrendModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/Growth Tests\/TrendModelTests.swift"
+    },
+    {
+      "source" : "Time Series\/Period.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/PeriodTests.swift"
+    },
+    {
+      "source" : "Time Series\/PeriodArithmetic.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/PeriodArithmeticTests.swift"
+    },
+    {
+      "source" : "Time Series\/PeriodType.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/PeriodTypeTests.swift"
+    },
+    {
+      "source" : "Time Series\/TVM\/FutureValue.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TVM Tests\/FutureValueTests.swift"
+    },
+    {
+      "source" : "Time Series\/TVM\/IRR.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TVM Tests\/IRRTests.swift"
+    },
+    {
+      "source" : "Time Series\/TVM\/NPV.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TVM Tests\/NPVTests.swift"
+    },
+    {
+      "source" : "Time Series\/TVM\/Payment.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TVM Tests\/PaymentTests.swift"
+    },
+    {
+      "source" : "Time Series\/TVM\/PresentValue.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TVM Tests\/PresentValueTests.swift"
+    },
+    {
+      "source" : "Time Series\/TVM\/XNPV.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TVM Tests\/XNPVTests.swift"
+    },
+    {
+      "source" : "Time Series\/TimeSeries.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TimeSeriesTests.swift"
+    },
+    {
+      "source" : "Time Series\/TimeSeriesAnalytics.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TimeSeriesAnalyticsTests.swift"
+    },
+    {
+      "source" : "Time Series\/TimeSeriesOperations.swift",
+      "test" : "Tests\/BusinessMathTests\/Time Series Tests\/TimeSeriesOperationsTests.swift"
+    },
+    {
+      "source" : "Utilities\/Formatting\/FloatingPointFormatter.swift",
+      "test" : "Tests\/BusinessMathTests\/Utilities Tests\/FloatingPointFormatterTests.swift"
+    },
+    {
+      "source" : "Validation\/FinancialValidation.swift",
+      "test" : "Tests\/BusinessMathTests\/Validation Tests\/FinancialValidationTests.swift"
+    },
+    {
+      "source" : "Validation\/ModelValidator.swift",
+      "test" : "Tests\/BusinessMathTests\/Validation Tests\/ModelValidatorTests.swift"
+    },
+    {
+      "source" : "Valuation\/CreditDerivatives\/CDSPricing.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Credit Derivatives Tests\/CDSPricingTests.swift"
+    },
+    {
+      "source" : "Valuation\/CreditDerivatives\/CreditTermStructure.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Credit Derivatives Tests\/CreditTermStructureTests.swift"
+    },
+    {
+      "source" : "Valuation\/CreditDerivatives\/HazardRateModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Credit Derivatives Tests\/HazardRateModelTests.swift"
+    },
+    {
+      "source" : "Valuation\/CreditDerivatives\/MertonModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Credit Derivatives Tests\/MertonModelTests.swift"
+    },
+    {
+      "source" : "Valuation\/Debt\/BondPricing.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Debt Tests\/BondPricingTests.swift"
+    },
+    {
+      "source" : "Valuation\/Debt\/CallableBond.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Debt Tests\/CallableBondTests.swift"
+    },
+    {
+      "source" : "Valuation\/Debt\/NelsonSiegel.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/NelsonSiegelTests.swift"
+    },
+    {
+      "source" : "Valuation\/Debt\/RecoveryModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Debt Tests\/RecoveryModelTests.swift"
+    },
+    {
+      "source" : "Valuation\/Equity\/DividendDiscountModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Equity Tests\/DividendDiscountModelTests.swift"
+    },
+    {
+      "source" : "Valuation\/Equity\/EnterpriseValueBridge.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Equity Tests\/EnterpriseValueBridgeTests.swift"
+    },
+    {
+      "source" : "Valuation\/Equity\/FCFEModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Equity Tests\/FCFEModelTests.swift"
+    },
+    {
+      "source" : "Valuation\/Equity\/ResidualIncomeModel.swift",
+      "test" : "Tests\/BusinessMathTests\/Valuation Tests\/Equity Tests\/ResidualIncomeModelTests.swift"
+    },
+    {
+      "source" : "Visualization\/CommandLineVisualization.swift",
+      "test" : "Tests\/BusinessMathTests\/Visualization Tests\/CommandLineVisualizationTests.swift"
+    }
+  ],
+  "files_without_tests" : [
+    {
+      "source" : "AB Test.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/AB TestTests.swift"
+    },
+    {
+      "source" : "AdvancedOptimization\/MultiPeriodConstraint.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MultiPeriodConstraintTests.swift"
+    },
+    {
+      "source" : "AdvancedOptimization\/MultiPeriodOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MultiPeriodOptimizerTests.swift"
+    },
+    {
+      "source" : "AdvancedOptimization\/RobustOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/RobustOptimizerTests.swift"
+    },
+    {
+      "source" : "AdvancedOptimization\/ScenarioOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ScenarioOptimizerTests.swift"
+    },
+    {
+      "source" : "AdvancedOptimization\/StochasticOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/StochasticOptimizerTests.swift"
+    },
+    {
+      "source" : "AdvancedOptimization\/UncertaintySet.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/UncertaintySetTests.swift"
+    },
+    {
+      "source" : "Analysis\/DataTable.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DataTableTests.swift"
+    },
+    {
+      "source" : "Bayes\/Bayes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/BayesTests.swift"
+    },
+    {
+      "source" : "Combination and Permutation\/combination.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/combinationTests.swift"
+    },
+    {
+      "source" : "Combination and Permutation\/factorial.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/factorialTests.swift"
+    },
+    {
+      "source" : "Combination and Permutation\/permutation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/permutationTests.swift"
+    },
+    {
+      "source" : "Core\/Collections\/RingBuffer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/RingBufferTests.swift"
+    },
+    {
+      "source" : "Developer Tools\/ModelInspector.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ModelInspectorTests.swift"
+    },
+    {
+      "source" : "Diagnostics\/BusinessMathLogger.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/BusinessMathLoggerTests.swift"
+    },
+    {
+      "source" : "Error Handling\/ValidationFramework.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ValidationFrameworkTests.swift"
+    },
+    {
+      "source" : "Errors\/ArrayError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ArrayErrorTests.swift"
+    },
+    {
+      "source" : "Errors\/MathError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MathErrorTests.swift"
+    },
+    {
+      "source" : "Extensions\/TestEntity.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/TestEntityTests.swift"
+    },
+    {
+      "source" : "Extensions\/extensionArray.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/extensionArrayTests.swift"
+    },
+    {
+      "source" : "Extensions\/extensionFormatted.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/extensionFormattedTests.swift"
+    },
+    {
+      "source" : "Extensions\/extensionString.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/extensionStringTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/AccountAdjustment.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/AccountAdjustmentTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/ConsolidatedStatements.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ConsolidatedStatementsTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/FinancialModelError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/FinancialModelErrorTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/FinancialPeriodSummary.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/FinancialPeriodSummaryTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/FinancialStatementHelpers.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/FinancialStatementHelpersTests.swift"
+    },
+    {
+      "source" : "Financial Statements\/TimeSeriesExtensions.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/TimeSeriesExtensionsTests.swift"
+    },
+    {
+      "source" : "Fluent API\/Templates\/RealEstateModel.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/RealEstateModelTests.swift"
+    },
+    {
+      "source" : "Forecasting\/ForecastTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ForecastTypesTests.swift"
+    },
+    {
+      "source" : "Forecasting\/HoltWintersModel.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/HoltWintersModelTests.swift"
+    },
+    {
+      "source" : "Forecasting\/MovingAverageModel.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MovingAverageModelTests.swift"
+    },
+    {
+      "source" : "Integration\/FinancialsProvider.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/FinancialsProviderTests.swift"
+    },
+    {
+      "source" : "Integration\/MarketDataError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MarketDataErrorTests.swift"
+    },
+    {
+      "source" : "Integration\/MarketDataProvider.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MarketDataProviderTests.swift"
+    },
+    {
+      "source" : "Integration\/MarketMetrics.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MarketMetricsTests.swift"
+    },
+    {
+      "source" : "Integration\/MarketMetricsProvider.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MarketMetricsProviderTests.swift"
+    },
+    {
+      "source" : "Integration\/StockPriceProvider.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/StockPriceProviderTests.swift"
+    },
+    {
+      "source" : "Monte Carlo Integration.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/Monte Carlo IntegrationTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/DeterministicDriver.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DeterministicDriverTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/ProbabilisticDriver.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ProbabilisticDriverTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/ProductDriver.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ProductDriverTests.swift"
+    },
+    {
+      "source" : "Operational Drivers\/SumDriver.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SumDriverTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/AsyncConjugateGradientOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/AsyncConjugateGradientOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/AsyncLBFGSOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/AsyncLBFGSOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/Algorithms\/NewtonRaphsonOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/NewtonRaphsonOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/CapitalAllocationOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/CapitalAllocationOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/GoalSeekOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/GoalSeekOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/GradientDescentOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/GradientDescentOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/DifferentialEvolutionTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DifferentialEvolutionTypesTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/GPU\/MetalBuffers.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MetalBuffersTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/GPU\/MetalDevice.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MetalDeviceTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/GeneticAlgorithmTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/GeneticAlgorithmTypesTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/InitializationStrategies.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/InitializationStrategiesTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/IslandModelTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/IslandModelTypesTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/KMeansClustering.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/KMeansClusteringTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/NelderMeadTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/NelderMeadTypesTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/ParticleSwarmOptimizationTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ParticleSwarmOptimizationTypesTests.swift"
+    },
+    {
+      "source" : "Optimization\/Heuristic\/SimulatedAnnealingTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SimulatedAnnealingTypesTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/BranchAndCutSolver.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/BranchAndCutSolverTests.swift"
+    },
+    {
+      "source" : "Optimization\/IntegerProgramming\/CuttingPlaneGenerator.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/CuttingPlaneGeneratorTests.swift"
+    },
+    {
+      "source" : "Optimization\/MultivariateOptimizer.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MultivariateOptimizerTests.swift"
+    },
+    {
+      "source" : "Optimization\/SparseSolver.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SparseSolverTests.swift"
+    },
+    {
+      "source" : "Performance\/CalculationCache.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/CalculationCacheTests.swift"
+    },
+    {
+      "source" : "Ratios\/AssetTurnover.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/AssetTurnoverTests.swift"
+    },
+    {
+      "source" : "Ratios\/CurrentRatio.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/CurrentRatioTests.swift"
+    },
+    {
+      "source" : "Ratios\/DebtToEquity.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DebtToEquityTests.swift"
+    },
+    {
+      "source" : "Ratios\/InterestCoverage.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/InterestCoverageTests.swift"
+    },
+    {
+      "source" : "Ratios\/InventoryTurnover.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/InventoryTurnoverTests.swift"
+    },
+    {
+      "source" : "Ratios\/ProfitMargin.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ProfitMarginTests.swift"
+    },
+    {
+      "source" : "Ratios\/QuickRatio.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/QuickRatioTests.swift"
+    },
+    {
+      "source" : "Ratios\/ROE.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ROETests.swift"
+    },
+    {
+      "source" : "Ratios\/ROI.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ROITests.swift"
+    },
+    {
+      "source" : "Risk\/ComprehensiveRiskMetrics.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ComprehensiveRiskMetricsTests.swift"
+    },
+    {
+      "source" : "Risk\/ConditionalValueAtRisk.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ConditionalValueAtRiskTests.swift"
+    },
+    {
+      "source" : "Risk\/Kurtosis.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/KurtosisTests.swift"
+    },
+    {
+      "source" : "Risk\/MaxDrawdown.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MaxDrawdownTests.swift"
+    },
+    {
+      "source" : "Risk\/SharpeRatio.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SharpeRatioTests.swift"
+    },
+    {
+      "source" : "Risk\/Skewness.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SkewnessTests.swift"
+    },
+    {
+      "source" : "Risk\/SortinoRatio.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SortinoRatioTests.swift"
+    },
+    {
+      "source" : "Risk\/TailRisk.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/TailRiskTests.swift"
+    },
+    {
+      "source" : "Risk\/ValueAtRisk.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ValueAtRiskTests.swift"
+    },
+    {
+      "source" : "Scenario Analysis\/FinancialScenario.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/FinancialScenarioTests.swift"
+    },
+    {
+      "source" : "Simulation\/CorrelationMatrix.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/CorrelationMatrixTests.swift"
+    },
+    {
+      "source" : "Simulation\/DistributionRandom.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DistributionRandomTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/Expression.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ExpressionTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/ExpressionArray.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ExpressionArrayTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/ExpressionFunction.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ExpressionFunctionTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/Compilation\/ExpressionMatrix.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ExpressionMatrixTests.swift"
+    },
+    {
+      "source" : "Simulation\/MonteCarlo\/SimulationError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SimulationErrorTests.swift"
+    },
+    {
+      "source" : "Simulation\/boxMuellerSeed.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/boxMuellerSeedTests.swift"
+    },
+    {
+      "source" : "Simulation\/boxMuellerTransform.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/boxMuellerTransformTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionBeta.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionBetaTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionChiSquared.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionChiSquaredTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionExponential.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionExponentialTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionFTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionGamma.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionGammaTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionGeometric.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionGeometricTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionLogNormal.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionLogNormalTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionLogistic.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionLogisticTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionNormal.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionNormalTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionPareto.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionParetoTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionRayleigh.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionRayleighTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionT.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionTTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionTriangular.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionTriangularTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionUniform.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionUniformTests.swift"
+    },
+    {
+      "source" : "Simulation\/distributionWeibull.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/distributionWeibullTests.swift"
+    },
+    {
+      "source" : "Simulation\/randomDistributionExtension.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/randomDistributionExtensionTests.swift"
+    },
+    {
+      "source" : "Solver\/Derivative.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DerivativeTests.swift"
+    },
+    {
+      "source" : "Solver\/GoalSeek.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/GoalSeekTests.swift"
+    },
+    {
+      "source" : "Statistics\/Comparison Statistics\/Array2D.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/Array2DTests.swift"
+    },
+    {
+      "source" : "Statistics\/Comparison Statistics\/dValue.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/dValueTests.swift"
+    },
+    {
+      "source" : "Statistics\/Comparison Statistics\/fStatistic.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/fStatisticTests.swift"
+    },
+    {
+      "source" : "Statistics\/Comparison Statistics\/friedmanChiSquare.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/friedmanChiSquareTests.swift"
+    },
+    {
+      "source" : "Statistics\/Comparison Statistics\/kendallW.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/kendallWTests.swift"
+    },
+    {
+      "source" : "Statistics\/Comparison Statistics\/nemenyiCD.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/nemenyiCDTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/Katz's Statistic.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/Katz's StatisticTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/arithmeticGeometricMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/arithmeticGeometricMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/arithmeticHarmonicMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/arithmeticHarmonicMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/contraharmonicMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/contraharmonicMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/geometricMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/geometricMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/harmonicMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/harmonicMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/identricMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/identricMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/logarithmicMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/logarithmicMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/mean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/meanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/median.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/medianTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/mode.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/modeTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Central Tendency\/weightedAverage.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/weightedAverageTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Covariance and Correlation\/Covariance\/covariance.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/covarianceTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Covariance and Correlation\/Covariance\/population covariance.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/population covarianceTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Covariance and Correlation\/Covariance\/sample covariance.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/sample covarianceTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Covariance and Correlation\/correlation coefficient\/correlationCoefficient.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/correlationCoefficientTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Covariance and Correlation\/correlation coefficient\/population correlation coefficient.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/population correlation coefficientTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Covariance and Correlation\/correlation coefficient\/sample correlation coefficient.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/sample correlation coefficientTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/Population.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/PopulationTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/coefficientOfVariation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/coefficientOfVariationTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/indexOfDispersion.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/indexOfDispersionTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/standard deviation\/population standard deviation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/population standard deviationTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/standard deviation\/sample standard deviation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/sample standard deviationTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/standard deviation\/stdDev.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/stdDevTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/sumOfSquared.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/sumOfSquaredTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/tStatistic.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/tStatisticTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/variance\/population variance.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/population varianceTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/variance\/sample variance.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/sample varianceTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/variance\/t-distribution.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/t-distributionTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Dispersion Around the Mean\/variance\/variance.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/varianceTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/KahanSum.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/KahanSumTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Kurtosis\/kurt.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/kurtTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Linear Regression\/Intercept.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/InterceptTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Linear Regression\/Slope.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/SlopeTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Linear Regression\/linearRegression.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/linearRegressionTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Linear Regression\/multiply.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/multiplyTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Linear Regression\/rSquared.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/rSquaredTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Linear Regression\/rSquaredAdjusted.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/rSquaredAdjustedTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Skewness\/cSkew.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/cSkewTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/Skewness\/skew.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/skewTests.swift"
+    },
+    {
+      "source" : "Statistics\/Descriptors\/descriptives.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/descriptivesTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Discrete Distribution\/meanDiscrete.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/meanDiscreteTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Discrete Distribution\/varianceDiscrete.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/varianceDiscreteTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Normal Deviate\/inverseNormalCDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/inverseNormalCDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Normal Deviate\/normInv.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/normInvTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Normal Probability\/normalCDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/normalCDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Normal Probability\/normdist.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/normdistTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Normal Probability\/normsdist.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/normsdistTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Normal Probability\/percentileZScore.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/percentileZScoreTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Standard Normal Deviate\/normSInv.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/normSInvTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Standard Normal Deviate\/zScorePercentile.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/zScorePercentileTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Standardized Score\/standardize.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/standardizeTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/Standardized Score\/zStatistic.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/zStatisticTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/zScore.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/zScoreTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/zScoreCI.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/zScoreCITests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/zScoreFisherR.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/zScoreFisherRTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Normal Distribution\/zScoreRho.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/zScoreRhoTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Percentile\/percentileLocation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/percentileLocationTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Percentile\/percentileMeanStdDev.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/percentileMeanStdDevTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Poisson Distribution\/DistributionPoisson.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DistributionPoissonTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Poisson Distribution\/poissonCDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/poissonCDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/Poisson Distribution\/poissonDistribution.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/poissonDistributionTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/bernoulliTrial.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/bernoulliTrialTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/binomial.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/binomialTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/binomialDescriptors\/meanBinomial.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/meanBinomialTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/binomialDescriptors\/stdDevBinomial.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/stdDevBinomialTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/binomialDescriptors\/varianceBinomial.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/varianceBinomialTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/binomialPMF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/binomialPMFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/chi2cdf.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/chi2cdfTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/chi2pdf.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/chi2pdfTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/confidenceInterval.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/confidenceIntervalTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/confidenceIntervalProbabilistic.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/confidenceIntervalProbabilisticTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/correctedStandardError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/correctedStandardErrorTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/correlationBreakpoint.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/correlationBreakpointTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/derivativeOf.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/derivativeOfTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/empiricalCDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/empiricalCDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/erfInverse.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/erfInverseTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/estMean.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/estMeanTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/exponentialCDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/exponentialCDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/exponentialPDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/exponentialPDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/fisherR.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/fisherRTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/hyperGeometric.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/hyperGeometricTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/interestingObservation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/interestingObservationTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/logNormalCDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/logNormalCDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/logNormalPDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/logNormalPDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/marginOfError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/marginOfErrorTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/normalProbabilityDistributionFunction.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/normalProbabilityDistributionFunctionTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/pValue.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/pValueTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/pValueStudent.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/pValueStudentTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/requiredSampleSize.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/requiredSampleSizeTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/rho.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/rhoTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/spearmansRho.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/spearmansRhoTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/standardError.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/standardErrorTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/standardErrorProbabilistic.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/standardErrorProbabilisticTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/tStatisticRho.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/tStatisticRhoTests.swift"
+    },
+    {
+      "source" : "Statistics\/Probability Distribution\/uniformCDF.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/uniformCDFTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/MatrixOperations\/AccelerateMatrixBackend.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/AccelerateMatrixBackendTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/MatrixOperations\/CPUMatrixBackend.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/CPUMatrixBackendTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/MatrixOperations\/MatrixBackend.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MatrixBackendTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/MatrixOperations\/MetalMatrixBackend.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/MetalMatrixBackendTests.swift"
+    },
+    {
+      "source" : "Statistics\/Regression\/ModelValidation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ModelValidationTests.swift"
+    },
+    {
+      "source" : "Streaming\/AsyncValueStream.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/AsyncValueStreamTests.swift"
+    },
+    {
+      "source" : "Streaming\/DurationCompat.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DurationCompatTests.swift"
+    },
+    {
+      "source" : "Utilities\/Formatting\/DoubleExtensions.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/DoubleExtensionsTests.swift"
+    },
+    {
+      "source" : "Utilities\/Formatting\/FormattedValue.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/FormattedValueTests.swift"
+    },
+    {
+      "source" : "Utilities\/Formatting\/FormattingConfiguration.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/FormattingConfigurationTests.swift"
+    },
+    {
+      "source" : "Validation\/StandardValidation.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/StandardValidationTests.swift"
+    },
+    {
+      "source" : "Validation\/ValidationTypes.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/ValidationTypesTests.swift"
+    },
+    {
+      "source" : "Valuation\/Debt\/CreditSpreadModel.swift",
+      "suggested_test" : "Tests\/BusinessMathTests\/CreditSpreadModelTests.swift"
+    }
+  ],
+  "summary" : {
+    "coverage_percent" : 40,
+    "files_with_tests" : 150,
+    "files_without_tests" : 225,
+    "total_files" : 375
+  },
+  "timestamp" : "2026-03-25T03:02:35Z"
+}

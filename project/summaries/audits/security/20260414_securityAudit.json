@@ -1,0 +1,50 @@
+[
+  {
+    "rule_id": "swift/no-path-traversal",
+    "severity": "high",
+    "cwe": "CWE-22",
+    "description": "FileManager operation with dynamic path — validate and sanitize to prevent path traversal",
+    "file": "./Sources/BusinessMath/Audit/AuditTrail.swift",
+    "line": 377,
+    "column": 9,
+    "end_line": 377,
+    "end_column": 57,
+    "snippet": "\t\tguard FileManager.default.fileExists(atPath: url.path) else {"
+  },
+  {
+    "rule_id": "swift/no-sql-injection",
+    "severity": "critical",
+    "cwe": "CWE-89",
+    "description": "SQL query with string interpolation — use parameterized queries to prevent SQL injection",
+    "file": "./Sources/BusinessMath/Optimization/Heuristic/ClusteringTypes.swift",
+    "line": 237,
+    "column": 15,
+    "end_line": 237,
+    "end_column": 66,
+    "snippet": "///     print(\"Cannot create \\(k) clusters from \\(n) data points\")"
+  },
+  {
+    "rule_id": "swift/no-sql-injection",
+    "severity": "critical",
+    "cwe": "CWE-89",
+    "description": "SQL query with string interpolation — use parameterized queries to prevent SQL injection",
+    "file": "./Sources/BusinessMath/Simulation/MonteCarlo/SimulationResults.swift",
+    "line": 112,
+    "column": 16,
+    "end_line": 112,
+    "end_column": 80,
+    "snippet": "\t\t\t\tfatalError(\"Failed to create Percentiles with fallback value [0]: \\(error)\")"
+  },
+  {
+    "rule_id": "swift/no-sql-injection",
+    "severity": "critical",
+    "cwe": "CWE-89",
+    "description": "SQL query with string interpolation — use parameterized queries to prevent SQL injection",
+    "file": "./Sources/BusinessMath/Time Series/Period.swift",
+    "line": 261,
+    "column": 15,
+    "end_line": 261,
+    "end_column": 84,
+    "snippet": "\t\t\tfatalError(\"Unable to create date from components: year=\\(year), month=\\(month)\")"
+  }
+]

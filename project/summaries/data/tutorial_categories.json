@@ -1,0 +1,515 @@
+{
+  "articles" : [
+    {
+      "category" : "Getting Started",
+      "code_examples" : 12,
+      "file" : "1.1-GettingStarted.md",
+      "lines" : 310,
+      "title" : "Getting Started with BusinessMath"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 20,
+      "file" : "1.2-TimeSeries.md",
+      "lines" : 512,
+      "title" : "Time Series Analysis"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 28,
+      "file" : "1.3-TimeValueOfMoney.md",
+      "lines" : 666,
+      "title" : "Time Value of Money"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 28,
+      "file" : "1.4-FluentAPIGuide.md",
+      "lines" : 1095,
+      "title" : "Fluent API Guide"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 20,
+      "file" : "1.5-TemplateGuide.md",
+      "lines" : 857,
+      "title" : "Model Templates Guide"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 27,
+      "file" : "1.6-DebuggingGuide.md",
+      "lines" : 925,
+      "title" : "Debugging Financial Models"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 34,
+      "file" : "1.7-ErrorHandlingGuide.md",
+      "lines" : 904,
+      "title" : "Error Handling Best Practices"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 17,
+      "file" : "1.8-StatisticalDistributionsGuide.md",
+      "lines" : 504,
+      "title" : "Statistical Distributions & Descriptive Statistics"
+    },
+    {
+      "category" : "Financial Analysis",
+      "code_examples" : 18,
+      "file" : "2.1-DataTableAnalysis.md",
+      "lines" : 882,
+      "title" : "Data Table Analysis"
+    },
+    {
+      "category" : "Financial Analysis",
+      "code_examples" : 9,
+      "file" : "2.2-FinancialRatiosGuide.md",
+      "lines" : 499,
+      "title" : "Financial Ratios & Metrics"
+    },
+    {
+      "category" : "Financial Analysis",
+      "code_examples" : 15,
+      "file" : "2.3-RiskAnalyticsGuide.md",
+      "lines" : 491,
+      "title" : "Risk Analytics and Stress Testing"
+    },
+    {
+      "category" : "Financial Analysis",
+      "code_examples" : 8,
+      "file" : "2.4-VisualizationGuide.md",
+      "lines" : 587,
+      "title" : "Command-Line Visualization"
+    },
+    {
+      "category" : "Financial Analysis",
+      "code_examples" : 13,
+      "file" : "2.5-ModelValidationGuide.md",
+      "lines" : 447,
+      "title" : "Model Validation with Fake-Data Simulation"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 31,
+      "file" : "3.1-GrowthModeling.md",
+      "lines" : 715,
+      "title" : "Growth Modeling and Forecasting"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 11,
+      "file" : "3.10-BondValuationGuide.md",
+      "lines" : 744,
+      "title" : "Bond Valuation & Credit Analysis Guide"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 17,
+      "file" : "3.11-CreditDerivativesGuide.md",
+      "lines" : 819,
+      "title" : "Credit Derivatives & Default Modeling Guide"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 11,
+      "file" : "3.12-RealOptionsGuide.md",
+      "lines" : 371,
+      "title" : "Real Options Valuation"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 16,
+      "file" : "3.13-EquityFinancingGuide.md",
+      "lines" : 479,
+      "title" : "Equity Financing and Cap Table Modeling"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 23,
+      "file" : "3.14-DebtAndFinancingGuide.md",
+      "lines" : 797,
+      "title" : "Debt & Financing Models"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 10,
+      "file" : "3.15-DataIngestionGuide.md",
+      "lines" : 961,
+      "title" : "Loading Financial Data from External Sources"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 41,
+      "file" : "3.16-FinancialStatementsReference.md",
+      "lines" : 1148,
+      "title" : "Financial Statements API Reference"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 10,
+      "file" : "3.2-ForecastingGuide.md",
+      "lines" : 395,
+      "title" : "Time Series Forecasting"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 10,
+      "file" : "3.3-BuildingRevenueModel.md",
+      "lines" : 445,
+      "title" : "Building a Revenue Forecasting Model"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 14,
+      "file" : "3.4-BuildingFinancialReports.md",
+      "lines" : 491,
+      "title" : "Building Multi-Period Financial Reports"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 12,
+      "file" : "3.5-FinancialStatementsGuide.md",
+      "lines" : 931,
+      "title" : "Building Financial Statements"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 22,
+      "file" : "3.6-LeaseAccountingGuide.md",
+      "lines" : 628,
+      "title" : "Lease Accounting (IFRS 16 \/ ASC 842)"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 9,
+      "file" : "3.7-LoanAmortization.md",
+      "lines" : 513,
+      "title" : "Loan Amortization Analysis"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 9,
+      "file" : "3.8-InvestmentAnalysis.md",
+      "lines" : 588,
+      "title" : "Investment Analysis"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 9,
+      "file" : "3.9-EquityValuationGuide.md",
+      "lines" : 614,
+      "title" : "Equity Valuation Guide"
+    },
+    {
+      "category" : "Simulation",
+      "code_examples" : 13,
+      "file" : "4.1-MonteCarloTimeSeriesGuide.md",
+      "lines" : 970,
+      "title" : "Monte Carlo Simulation with Time Series"
+    },
+    {
+      "category" : "Simulation",
+      "code_examples" : 11,
+      "file" : "4.2-ScenarioAnalysisGuide.md",
+      "lines" : 631,
+      "title" : "Scenario & Sensitivity Analysis"
+    },
+    {
+      "category" : "Simulation",
+      "code_examples" : 24,
+      "file" : "4.3-MonteCarloExpressionModelsGuide.md",
+      "lines" : 1021,
+      "title" : "GPU-Accelerated Monte Carlo with Expression Models"
+    },
+    {
+      "category" : "Simulation",
+      "code_examples" : 28,
+      "file" : "4.4-MonteCarloPerformanceGuide.md",
+      "lines" : 820,
+      "title" : "Monte Carlo Performance Guide"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 16,
+      "file" : "5.1-OptimizationGuide.md",
+      "lines" : 628,
+      "title" : "Optimization and Numerical Solvers"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 7,
+      "file" : "5.1.5-MultivariateOptimizerGuide.md",
+      "lines" : 354,
+      "title" : "MultivariateOptimizer Protocol"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 38,
+      "file" : "5.10-ParallelOptimization.md",
+      "lines" : 1220,
+      "title" : "Parallel Multi-Start Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 32,
+      "file" : "5.11-PerformanceBenchmarking.md",
+      "lines" : 930,
+      "title" : "Performance Benchmarking"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 11,
+      "file" : "5.12-SparseMatrix.md",
+      "lines" : 458,
+      "title" : "Sparse Matrix Infrastructure"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 22,
+      "file" : "5.13-MultiPeriod.md",
+      "lines" : 944,
+      "title" : "Multi-Period Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 46,
+      "file" : "5.14-RobustOptimization.md",
+      "lines" : 1456,
+      "title" : "Robust Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 11,
+      "file" : "5.15-InequalityConstraints.md",
+      "lines" : 342,
+      "title" : "Inequality Constraints Tutorial"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 20,
+      "file" : "5.16-GPUAccelerationTutorial.md",
+      "lines" : 639,
+      "title" : "GPU Acceleration Tutorial"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 18,
+      "file" : "5.17-DifferentialEvolutionTutorial.md",
+      "lines" : 697,
+      "title" : "Differential Evolution Tutorial"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 20,
+      "file" : "5.18-IslandModelTutorial.md",
+      "lines" : 1215,
+      "title" : "Island Model Genetic Algorithm Tutorial"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 20,
+      "file" : "5.19-ParticleSwarmOptimizationTutorial.md",
+      "lines" : 908,
+      "title" : "Particle Swarm Optimization Tutorial"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 16,
+      "file" : "5.2-PortfolioOptimizationGuide.md",
+      "lines" : 519,
+      "title" : "Portfolio Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 10,
+      "file" : "5.20-LBFGSOptimizationTutorial.md",
+      "lines" : 439,
+      "title" : "L-BFGS Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 13,
+      "file" : "5.21-ConjugateGradientTutorial.md",
+      "lines" : 478,
+      "title" : "Conjugate Gradient Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 13,
+      "file" : "5.22-SimulatedAnnealingTutorial.md",
+      "lines" : 536,
+      "title" : "Simulated Annealing Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 18,
+      "file" : "5.23-NelderMeadTutorial.md",
+      "lines" : 569,
+      "title" : "Nelder-Mead Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 16,
+      "file" : "5.24-K-MeansTutorial.md",
+      "lines" : 701,
+      "title" : "K-Means Clustering Tutorial"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 27,
+      "file" : "5.3-CoreOptimization.md",
+      "lines" : 690,
+      "title" : "Core Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 33,
+      "file" : "5.4-VectorOperations.md",
+      "lines" : 1060,
+      "title" : "VectorSpace Foundation"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 33,
+      "file" : "5.5-MultivariateOptimization.md",
+      "lines" : 930,
+      "title" : "Multivariate Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 28,
+      "file" : "5.6-ConstrainedOptimization.md",
+      "lines" : 658,
+      "title" : "Constrained Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 29,
+      "file" : "5.7-BusinessOptimization.md",
+      "lines" : 1281,
+      "title" : "Business Optimization"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 86,
+      "file" : "5.8-IntegerProgramming.md",
+      "lines" : 4022,
+      "title" : "Integer Programming"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 32,
+      "file" : "5.9-AdaptiveSelection.md",
+      "lines" : 821,
+      "title" : "Adaptive Algorithm Selection"
+    },
+    {
+      "category" : "Reference",
+      "code_examples" : 10,
+      "file" : "Appendix-A-ReidsRaisinsExample.md",
+      "lines" : 757,
+      "title" : "Reid's Raisins: Complete Decision Analysis"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 0,
+      "file" : "BusinessMath.md",
+      "lines" : 180,
+      "title" : "BusinessMath"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 0,
+      "file" : "LearningPath.md",
+      "lines" : 325,
+      "title" : "Recommended Learning Path"
+    },
+    {
+      "category" : "Statistics",
+      "code_examples" : 18,
+      "file" : "MultipleLinearRegressionGuide.md",
+      "lines" : 558,
+      "title" : "Multiple Linear Regression Guide"
+    },
+    {
+      "category" : "Getting Started",
+      "code_examples" : 2,
+      "file" : "Part1-Basics.md",
+      "lines" : 171,
+      "title" : "Part I: Basics & Foundations"
+    },
+    {
+      "category" : "Financial Analysis",
+      "code_examples" : 7,
+      "file" : "Part2-Analysis.md",
+      "lines" : 252,
+      "title" : "Part II: Analysis & Statistics"
+    },
+    {
+      "category" : "Financial Modeling",
+      "code_examples" : 5,
+      "file" : "Part3-Modeling.md",
+      "lines" : 213,
+      "title" : "Part III: Modeling"
+    },
+    {
+      "category" : "Simulation",
+      "code_examples" : 6,
+      "file" : "Part4-Simulation.md",
+      "lines" : 474,
+      "title" : "Part IV: Simulation & Uncertainty"
+    },
+    {
+      "category" : "Optimization",
+      "code_examples" : 4,
+      "file" : "Part5-Optimization.md",
+      "lines" : 372,
+      "title" : "Part V: Optimization"
+    }
+  ],
+  "summary" : {
+    "categories" : [
+      {
+        "article_count" : 26,
+        "code_examples" : 619,
+        "name" : "Optimization"
+      },
+      {
+        "article_count" : 17,
+        "code_examples" : 260,
+        "name" : "Financial Modeling"
+      },
+      {
+        "article_count" : 11,
+        "code_examples" : 188,
+        "name" : "Getting Started"
+      },
+      {
+        "article_count" : 6,
+        "code_examples" : 70,
+        "name" : "Financial Analysis"
+      },
+      {
+        "article_count" : 5,
+        "code_examples" : 82,
+        "name" : "Simulation"
+      },
+      {
+        "article_count" : 1,
+        "code_examples" : 10,
+        "name" : "Reference"
+      },
+      {
+        "article_count" : 1,
+        "code_examples" : 18,
+        "name" : "Statistics"
+      }
+    ],
+    "total_articles" : 67,
+    "total_code_examples" : 1247
+  },
+  "timestamp" : "2026-03-25T03:37:27Z"
+}

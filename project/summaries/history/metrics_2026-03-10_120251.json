@@ -1,0 +1,50 @@
+{
+  "build_health" : {
+    "dependencies" : 3,
+    "errors" : 0,
+    "status" : "✅ Success",
+    "warnings" : 0
+  },
+  "code_metrics" : {
+    "modules" : 4,
+    "public_apis" : 4577,
+    "source_files" : 394,
+    "source_lines" : 113060,
+    "test_files" : 292,
+    "test_lines" : 114714,
+    "test_to_code_ratio" : 1.0146294003184151,
+    "total_lines" : 227774
+  },
+  "documentation_coverage" : {
+    "coverage_percent" : 110.0502512562814,
+    "documented_apis" : 5037,
+    "missing_docs" : -460,
+    "total_public_apis" : 4577
+  },
+  "git_stats" : {
+    "branch" : "main",
+    "contributors" : 0,
+    "last_commit" : "34 minutes ago",
+    "total_commits" : 477
+  },
+  "health_score" : {
+    "components" : {
+      "build" : 100,
+      "documentation" : 110.0502512562814,
+      "test_coverage" : 80.438882009552458,
+      "test_ratio" : 100
+    },
+    "grade" : "A",
+    "overall" : 97.146739979750166
+  },
+  "performance" : {
+    "benchmark_tests" : 7
+  },
+  "test_coverage" : {
+    "coverage_percent" : null,
+    "covered_lines" : null,
+    "executable_lines" : null,
+    "total_tests" : 817
+  },
+  "timestamp" : "2026-03-10T16:02:51Z"
+}
