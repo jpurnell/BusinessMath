@@ -178,8 +178,22 @@ private func acklamSeed<T: Real>(_ q: T) -> T {
     if q < lowerBreak {
         // Tail branch, in terms of r = sqrt(-2 ln q).
         let r = T.sqrt(-2 * T.log(q))
-        let numerator = (((((c1 * r + c2) * r + c3) * r + c4) * r + c5) * r + c6)
-        let denominator = ((((d1 * r + d2) * r + d3) * r + d4) * r + 1)
+
+        // Horner, one step per binding. Written out rather than nested because the
+        // nested form is a single generic expression of ten operators, and the Linux
+        // 6.2.1 type-checker gives up on it under `-O` while macOS does not — the
+        // failure appears only in CI. Each step is the same multiply-add in the same
+        // order, so the result is bit-for-bit what the nested form produced.
+        let cStep1: T = c1 * r + c2
+        let cStep2: T = cStep1 * r + c3
+        let cStep3: T = cStep2 * r + c4
+        let cStep4: T = cStep3 * r + c5
+        let numerator: T = cStep4 * r + c6
+
+        let dStep1: T = d1 * r + d2
+        let dStep2: T = dStep1 * r + d3
+        let dStep3: T = dStep2 * r + d4
+        let denominator: T = dStep3 * r + 1
         // |denominator| >= 23.6 for all q in (0, 0.02425).
         return guardedQuotient(numerator, denominator, fallback: -r)
     }
@@ -188,8 +202,20 @@ private func acklamSeed<T: Real>(_ q: T) -> T {
     let half = T(1) / T(2)
     let u = q - half
     let r = u * u
-    let numerator = (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * u
-    let denominator = (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1)
+    // Horner, one step per binding — same reason as the tail branch above, same
+    // arithmetic in the same order.
+    let aStep1: T = a1 * r + a2
+    let aStep2: T = aStep1 * r + a3
+    let aStep3: T = aStep2 * r + a4
+    let aStep4: T = aStep3 * r + a5
+    let aStep5: T = aStep4 * r + a6
+    let numerator: T = aStep5 * u
+
+    let bStep1: T = b1 * r + b2
+    let bStep2: T = bStep1 * r + b3
+    let bStep3: T = bStep2 * r + b4
+    let bStep4: T = bStep3 * r + b5
+    let denominator: T = bStep4 * r + 1
     // |denominator| >= 2.6e-3 for all q in [0.02425, 0.5).
     return guardedQuotient(numerator, denominator, fallback: 0)
 }
