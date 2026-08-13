@@ -63,7 +63,7 @@ import Numerics
 /// )
 ///
 /// // Minimize f(x) = x^2
-/// let objective = { (x: Double) -> Double in
+/// let objective = { @Sendable (x: Double) -> Double in
 ///     return x * x
 /// }
 ///

@@ -132,7 +132,7 @@ extension StandardLinearFunction {
     /// ## Example
     ///
     /// ```swift
-    /// let closure: (VectorN<Double>) -> Double = { v in
+    /// let closure: @Sendable (VectorN<Double>) -> Double = { v in
     ///     3.0 * v[0] + 2.0 * v[1] + 1.0
     /// }
     ///

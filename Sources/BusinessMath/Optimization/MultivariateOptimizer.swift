@@ -26,7 +26,7 @@ import Numerics
 ///     tolerance: 0.0001
 /// )
 ///
-/// let objective = { (v: VectorN<Double>) -> Double in
+/// let objective = { @Sendable (v: VectorN<Double>) -> Double in
 ///     v.dot(v)  // f(x,y) = x² + y²
 /// }
 ///
@@ -149,7 +149,7 @@ public protocol MultivariateOptimizer<V> {
     ///     MultivariateGradientDescent(learningRate: 0.01, maxIterations: 1000)
     ///
     /// // Minimize f(x,y) = x² + y²
-    /// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let objective = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     ///
     /// // Unconstrained optimization
     /// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
@@ -224,7 +224,7 @@ extension MultivariateOptimizer {
     /// let optimizer: any MultivariateOptimizer<VectorN<Double>> =
     ///     MultivariateGradientDescent(learningRate: 0.01, maxIterations: 1000)
     ///
-    /// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let objective = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     ///
     /// // Cleaner syntax - no need to specify constraints parameter
     /// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))

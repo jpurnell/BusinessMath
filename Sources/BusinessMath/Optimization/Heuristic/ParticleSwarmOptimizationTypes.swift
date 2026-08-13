@@ -209,7 +209,7 @@ public struct ParticleSwarmConfig: Sendable {
 ///     searchSpace: [(-10, 10), (-10, 10)]
 /// )
 ///
-/// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+/// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
 /// let result = try optimizer.optimizeDetailed(objective: sphere)
 ///
 /// print("Solution: \(result.solution)")

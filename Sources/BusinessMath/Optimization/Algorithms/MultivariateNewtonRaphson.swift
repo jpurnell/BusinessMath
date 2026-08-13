@@ -22,7 +22,7 @@ import Numerics
 /// ## Example
 /// ```swift
 /// // Minimize quadratic: f(x,y) = x² + y²
-/// let quadratic: (VectorN<Double>) -> Double = { v in
+/// let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 ///     v[0]*v[0] + v[1]*v[1]
 /// }
 ///
@@ -447,7 +447,7 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	/// ## Example
 	/// ```swift
 	/// // Minimize f(x, y) = x² + y² - 2x - 2y
-	/// let objective: (VectorN<Double>) -> Double = { v in
+	/// let objective: @Sendable (VectorN<Double>) -> Double = { v in
 	///     let x = v[0], y = v[1]
 	///     return x*x + y*y - 2*x - 2*y
 	/// }
@@ -543,7 +543,7 @@ extension MultivariateNewtonRaphson: MultivariateOptimizer {
 	///     tolerance: 0.0001
 	/// )
 	///
-	/// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+	/// let objective = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
 	/// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
 	/// ```
 	///
