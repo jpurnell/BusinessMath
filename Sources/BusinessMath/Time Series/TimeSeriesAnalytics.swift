@@ -145,6 +145,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let jan2020 = Period.month(year: 2020, month: 1)
 	/// let jan2025 = Period.month(year: 2025, month: 1)
 	/// let cagr = revenue.cagr(from: jan2020, to: jan2025)
@@ -265,6 +269,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let smoothed = revenue.movingAverage(window: 3)
 	/// ```
 	public func movingAverage(window: Int) -> TimeSeries<T> {
@@ -328,6 +336,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let ema = revenue.exponentialMovingAverage(alpha: 0.3)
 	/// ```
 	public func exponentialMovingAverage(alpha: T) -> TimeSeries<T> {
@@ -393,6 +405,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let change = revenue.diff(lag: 1)  // Period-over-period change
 	/// ```
 	public func diff(lag: Int = 1) -> TimeSeries<T> {
@@ -427,6 +443,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let pctChange = revenue.percentChange(lag: 1)
 	/// ```
 	public func percentChange(lag: Int = 1) -> TimeSeries<T> {
@@ -443,6 +463,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let rolling3Month = revenue.rollingSum(window: 3)
 	/// ```
 	public func rollingSum(window: Int) -> TimeSeries<T> {
@@ -502,6 +526,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let rollingMin = revenue.rollingMin(window: 3)
 	/// ```
 	public func rollingMin(window: Int) -> TimeSeries<T> {
@@ -546,6 +574,10 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenue = TimeSeries<Double>(
+	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
+	///     values: (1...12).map { 100.0 * Double($0) }
+	/// )
 	/// let rollingMax = revenue.rollingMax(window: 3)
 	/// ```
 	public func rollingMax(window: Int) -> TimeSeries<T> {
