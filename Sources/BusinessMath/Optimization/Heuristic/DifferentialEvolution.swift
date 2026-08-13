@@ -579,6 +579,21 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             return nil
         }
 
+        // Every failure from here on abandons the GPU attempt and returns nil, and the
+        // caller then runs the same generation on the CPU. The seeds below are drawn
+        // before the first operation that can fail, so without rewinding, the abandoned
+        // attempt leaves the generator advanced by one draw per individual and the CPU
+        // path resumes at a position no seed predicts. That is what makes a seeded run
+        // reproduce only when the GPU happens to succeed every time — and it succeeds
+        // every time right up until the machine is busy.
+        let checkpoint = rng.snapshot()
+        var gpuSucceeded = false
+        defer {
+            if !gpuSucceeded {
+                rng.restore(checkpoint)
+            }
+        }
+
         // Generate random seeds for crossover
         var randomSeeds = [UInt32]()
         randomSeeds.reserveCapacity(popSize)
@@ -697,6 +712,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             }
         }
 
+        gpuSucceeded = true
         return (population: newPopulation, fitness: newFitness, bestIndex: newBestIndex)
     }
     #endif

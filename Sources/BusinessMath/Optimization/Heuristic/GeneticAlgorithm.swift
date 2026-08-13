@@ -622,10 +622,26 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         let crossoverPipeline = try metalDevice.getCrossoverPipeline()
         let mutationPipeline = try metalDevice.getMutationPipeline()
 
-        // Create command buffer
+        // Create command buffer.
+        //
+        // This throws rather than returning nil, and the distinction is the whole point:
+        // a nil return means "the GPU was never applicable" and is only reachable above,
+        // before this function has drawn from `rng` or touched the population. By here
+        // the seeds are drawn and the buffers are filled, so failing is a mid-flight
+        // abort — the same event the caller's `catch` treats as fatal for a seeded run.
+        // Returning nil from here would route it to the silent CPU fallback instead,
+        // where the answer differs because the CPU kernels compute in Double against the
+        // GPU's Float. The RNG restore makes that fallback seed-consistent, which is
+        // exactly what makes it hard to see: both runs agree on every draw and still
+        // disagree on the result.
+        //
+        // A queue that cannot vend a command buffer is transient resource exhaustion,
+        // which is why this surfaced only under a full parallel test run.
         guard let commandBuffer = metalDevice.commandQueue.makeCommandBuffer(),
               let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            return nil
+            throw OptimizationError.invalidInput(
+                message: "Metal command queue could not vend a command buffer for GA evolution"
+            )
         }
 
         // Configure threadgroups
@@ -682,6 +698,25 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         encoder.endEncoding()
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
+
+        // `waitUntilCompleted()` returns when the command buffer reaches a terminal
+        // state, and `.error` is one of them. Without this check the download below
+        // proceeds regardless and reads whatever the shared buffer happens to hold —
+        // for a failed dispatch, the population as it stood before the kernels ran, or
+        // partial output from the kernels that did. The result is a plausible-looking
+        // population that no seed predicts, returned with no error raised anywhere.
+        //
+        // A command buffer fails here under GPU resource pressure, which is why two
+        // seeded runs of the same population agreed in isolation and disagreed inside a
+        // full parallel test run.
+        if commandBuffer.status == .error {
+            throw OptimizationError.invalidInput(
+                message: """
+                    GPU evolution did not complete: \
+                    \(commandBuffer.error?.localizedDescription ?? "unknown Metal failure")
+                    """
+            )
+        }
 
         // Download results from GPU
         let resultData = buffers.downloadPopulation(from: buffers.populationA)

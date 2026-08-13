@@ -476,6 +476,21 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             velocityLimitsFlat = Array(repeating: SIMD2(x: 0, y: 0), count: dimension)
         }
 
+        // Every failure from here on abandons the GPU attempt and returns nil, and the
+        // caller then runs the same iteration on the CPU. The seeds below are drawn
+        // before the first operation that can fail, so without rewinding, the abandoned
+        // attempt leaves the generator advanced by one draw per particle and the CPU
+        // path resumes at a position no seed predicts. That is what makes a seeded run
+        // reproduce only when the GPU happens to succeed every time — and it succeeds
+        // every time right up until the machine is busy.
+        let checkpoint = rng.snapshot()
+        var gpuSucceeded = false
+        defer {
+            if !gpuSucceeded {
+                rng.restore(checkpoint)
+            }
+        }
+
         // Random seeds for each particle
         var randomSeeds = [UInt32]()
         randomSeeds.reserveCapacity(swarmSize)
@@ -577,6 +592,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             if let pos = V.fromArray(pComponents) { newPositions.append(pos) }
         }
 
+        gpuSucceeded = true
         return (velocities: newVelocities, positions: newPositions)
     }
     #endif
