@@ -23,13 +23,13 @@ import Numerics
 /// ```swift
 /// let prices = [100.0, 102.5, 99.0, 105.0]
 /// let entity = Entity(name: "Acme Corp", ticker: "ACME")
-/// let incomeStatement = try IncomeStatement(...)
-/// let balanceSheet = try BalanceSheet(...)
-/// let cashFlowStatement = try CashFlowStatement(...)
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 ///
 /// // Calculate Altman Z-Score
-/// let marketPrice = TimeSeries(...) // Stock prices
-/// let sharesOutstanding = TimeSeries(...) // Share count
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130]) // Stock prices
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130]) // Share count
 ///
 /// let zScore = altmanZScore(
 ///     incomeStatement: incomeStatement,

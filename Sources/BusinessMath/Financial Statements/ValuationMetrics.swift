@@ -23,12 +23,12 @@ import Numerics
 /// ```swift
 /// let prices = [100.0, 102.5, 99.0, 105.0]
 /// let entity = Entity(name: "Acme Corp", ticker: "ACME")
-/// let incomeStatement = try IncomeStatement(...)
-/// let balanceSheet = try BalanceSheet(...)
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 ///
 /// // Market data (TimeSeries to support buybacks/issuances)
-/// let marketPrice = TimeSeries(...) // Stock prices over time
-/// let sharesOutstanding = TimeSeries(...) // Shares (changes with buybacks)
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130]) // Stock prices over time
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130]) // Shares (changes with buybacks)
 ///
 /// // Calculate P/E ratio
 /// let pe = priceToEarnings(

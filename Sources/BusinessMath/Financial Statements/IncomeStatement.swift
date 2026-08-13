@@ -742,7 +742,7 @@ extension IncomeStatement {
 ///
 /// ## Example
 /// ```swift
-/// let statement = IncomeStatement(...)
+/// let statement = try IncomeStatement<Double>.documentationFixture
 /// let json = try JSONEncoder().encode(statement)
 /// let decoded = try JSONDecoder().decode(IncomeStatement<Double>.self, from: json)
 /// ```

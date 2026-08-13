@@ -27,8 +27,8 @@ private let logger = Logger(subsystem: "com.businessmath", category: "FinancialR
 ///
 /// ```swift
 /// let entity = Entity(name: "Acme Corp", ticker: "ACME")
-/// let incomeStatement = try IncomeStatement(...)
-/// let balanceSheet = try BalanceSheet(...)
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 ///
 /// // Calculate return on assets
 /// let roa = returnOnAssets(
