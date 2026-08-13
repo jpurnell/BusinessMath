@@ -53,6 +53,7 @@ import Numerics
 /// ## Usage Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Calculate enterprise value from FCFF
 /// let fcff = TimeSeries(
 ///     periods: [Period.year(2024), Period.year(2025)],
@@ -177,6 +178,7 @@ public struct EnterpriseValueBridge<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let company = Entity.documentationFixture
     /// // Company with $500M debt and $100M cash
     /// let netDebt = bridge.netDebt()  // Returns 400.0
     ///

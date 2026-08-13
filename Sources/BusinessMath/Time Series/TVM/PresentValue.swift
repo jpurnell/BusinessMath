@@ -18,6 +18,7 @@ import Numerics
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let pv = presentValueAnnuity(
 ///     payment: 1000.0,
 ///     rate: 0.05,
@@ -55,6 +56,7 @@ public enum AnnuityType: Sendable, Codable {
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // What is $1000 in 5 years worth today at 10% discount rate?
 /// let pv = presentValue(futureValue: 1000.0, rate: 0.10, periods: 5)
 /// // Result: $620.92
@@ -103,6 +105,7 @@ public func presentValue<T: Real>(futureValue: T, rate: T, periods: Int) -> T {
 ///
 /// ## Examples
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Ordinary annuity: $100/year for 5 years at 10%
 /// let pvOrdinary = presentValueAnnuity(
 ///     payment: 100.0,
@@ -126,6 +129,7 @@ public func presentValue<T: Real>(futureValue: T, rate: T, periods: Int) -> T {
 ///
 /// **Loan Payments:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Car loan: $30,000 for 60 months at 5% APR
 /// let monthlyRate = 0.05 / 12.0
 /// let pvOf1PerMonth = presentValueAnnuity(
@@ -139,6 +143,7 @@ public func presentValue<T: Real>(futureValue: T, rate: T, periods: Int) -> T {
 ///
 /// **Retirement Planning:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // How much needed to generate $50k/year for 30 years at 4%?
 /// let neededAtRetirement = presentValueAnnuity(
 ///     payment: 50000.0,
@@ -151,6 +156,7 @@ public func presentValue<T: Real>(futureValue: T, rate: T, periods: Int) -> T {
 ///
 /// **Bond Valuation:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Bond pays $50/year for 10 years, then $1000 at maturity (6% yield)
 /// let couponPV = presentValueAnnuity(
 ///     payment: 50.0,

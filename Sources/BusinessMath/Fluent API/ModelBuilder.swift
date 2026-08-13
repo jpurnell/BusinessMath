@@ -532,6 +532,7 @@ public struct Revenue: ModelComponent {
     ///
     /// Example:
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// Revenue("Subscription Services", periods: months, values: [5_000, 5_500, 6_000])
     /// ```
     public init(_ name: String, periods: [Period], values: [Double]) {
@@ -1122,6 +1123,9 @@ public func CostAmount(_ name: String, _ amount: Double) -> CostComponent {
 ///
 /// Example:
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
+/// let company = Entity.documentationFixture
 /// let model = buildModel(for: company) {
 ///     Revenue("Sales", periods: quarters, values: [100_000, 110_000, 120_000, 130_000])
 ///     Expense("COGS", periods: quarters, values: [60_000, 66_000, 72_000, 78_000], type: .costOfGoodsSold)

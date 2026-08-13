@@ -39,6 +39,7 @@ import Numerics
 /// Deterministic drivers always return the same value for all periods and all samples:
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
 /// let driver = DeterministicDriver(name: "Rent", value: 10_000.0)
 /// let periods = Period.year(2025).quarters()
 /// let projection = DriverProjection(driver: driver, periods: periods)

@@ -246,6 +246,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let trace = debugger.trace(
     ///     value: "NPV",
     ///     dependencies: ["rate": "0.08", "periods": "10"],
@@ -630,6 +631,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let missing = await debugger.findMissingData(in: model)
     /// for (account, periods) in missing {
     ///     print("\(account): missing \(periods.count) periods")

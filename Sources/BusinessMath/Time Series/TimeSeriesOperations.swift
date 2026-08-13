@@ -281,6 +281,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let company = Entity.documentationFixture
 	/// // Aggregate monthly to quarterly
 	/// let quarterly = monthly.aggregate(to: .quarterly, method: .sum)
 	///

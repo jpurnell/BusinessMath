@@ -146,6 +146,7 @@ public struct AuditReport: Sendable {
 /// ## Basic Usage
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// let manager = AuditTrailManager()
 ///
 /// // Record a change

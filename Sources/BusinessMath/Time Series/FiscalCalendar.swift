@@ -81,6 +81,7 @@ public struct MonthDay: Codable, Equatable, Hashable, Sendable {
 /// ## Using Fiscal Calendars
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
 ///
 /// // January 15, 2025 is in Apple's FY2025

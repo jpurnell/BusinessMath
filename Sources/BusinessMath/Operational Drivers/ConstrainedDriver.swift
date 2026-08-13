@@ -76,6 +76,8 @@ import Numerics
 /// reflect the constrained distribution:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// let uncertainValue = ProbabilisticDriver.normal(name: "Value", mean: 10.0, stdDev: 5.0)
 ///     .positive()  // Clamp negatives
 ///

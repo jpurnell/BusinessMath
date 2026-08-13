@@ -58,6 +58,7 @@ extension ThreeWayCollar: HedgeInstrument {
 /// ## Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// var program = HedgingProgram<Double>()
 ///
 /// program.addSwap(CommoditySwap(

@@ -43,6 +43,7 @@ import Numerics
 ///
 /// **Basic Loan:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // $10,000 loan at 5% annual (0.4167%/month) for 60 months
 /// let pmt = payment(presentValue: 10000.0, rate: 0.05/12, periods: 60)
 /// // Result: $188.71/month
@@ -59,6 +60,7 @@ import Numerics
 ///
 /// **Loan with Balloon Payment:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // $10,000 loan with $2,000 balloon at end
 /// let pmt = payment(
 ///     presentValue: 10000.0,

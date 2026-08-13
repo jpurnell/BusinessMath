@@ -24,6 +24,7 @@ import Numerics
 /// 2. **Project** future values based on the fitted model
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// var model = LinearTrend<Double>()
 /// try model.fit(to: historicalData)
 /// let forecast = try model.project(periods: 12)  // 12-period forecast
@@ -131,6 +132,8 @@ public enum TrendModelError: Error, Sendable {
 ///
 /// **Revenue Forecasting:**
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// // Historical quarterly revenue
 /// let revenue = TimeSeries(
 ///     periods: [.quarter(2024, 1), .quarter(2024, 2), .quarter(2024, 3)],
@@ -148,6 +151,7 @@ public enum TrendModelError: Error, Sendable {
 ///
 /// **Headcount Planning:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let employees = TimeSeries(
 ///     periods: [.year(2020), .year(2021), .year(2022)],
 ///     values: [50.0, 65.0, 80.0],
@@ -263,6 +267,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(values: [1.0, 2.5, 3.8, 5.2, 6.1])
 	/// let futureValues = model.projectValues(steps: 3)  // Returns [T] without periods
@@ -360,6 +365,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(to: historicalRevenue)
 	/// if let forecast = try model.project(periods: 12) {
@@ -417,6 +423,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(to: historical)
 	///
@@ -553,6 +560,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 ///
 /// **User Growth:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let users = TimeSeries(
 ///     periods: [.month(2024, 1), .month(2024, 2), .month(2024, 3)],
 ///     values: [1000.0, 1500.0, 2250.0],
@@ -568,6 +576,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 ///
 /// **Investment Returns:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let portfolio = TimeSeries(
 ///     periods: [.year(2020), .year(2021), .year(2022)],
 ///     values: [10000.0, 11000.0, 12100.0],  // 10% annual growth
@@ -759,6 +768,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = ExponentialTrend<Double>()
 	/// let users = TimeSeries(periods: [...], values: [1000, 1150, 1323])
 	/// try model.fit(to: users)
@@ -821,6 +831,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: historicalUsers)
 	/// if let forecast = try model.project(periods: 12) {
@@ -877,6 +888,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: historical)
 	///
@@ -990,6 +1002,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 ///
 /// **Market Penetration:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let marketShare = TimeSeries(
 ///     periods: [.year(2020), .year(2021), .year(2022)],
 ///     values: [5.0, 15.0, 30.0],  // Percentage of market
@@ -1006,6 +1019,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 ///
 /// **Product Adoption:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let users = TimeSeries(
 ///     periods: [.quarter(2024, 1), .quarter(2024, 2), .quarter(2024, 3)],
 ///     values: [10_000.0, 50_000.0, 150_000.0],
@@ -1159,6 +1173,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = LogisticTrend<Double>(capacity: 100_000.0)
 	/// let users = TimeSeries(periods: [...], values: [1000, 5000, 15000])
 	/// try model.fit(to: users)
@@ -1225,6 +1240,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = LogisticTrend<Double>(capacity: 1_000_000.0)
 	/// try model.fit(to: userGrowth)
 	/// if let forecast = try model.project(periods: 12) {
@@ -1281,6 +1297,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = LogisticTrend<Double>(capacity: 1000.0)
 	/// try model.fit(to: historical)
 	///
@@ -1391,6 +1408,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 ///
 /// **Quadratic Growth:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let data = TimeSeries(
 ///     periods: [.year(2020), .year(2021), .year(2022)],
 ///     values: [1.0, 4.0, 9.0],
@@ -1419,6 +1437,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 ///
 /// **Piecewise Function:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Different growth rates for different periods
 /// var model = CustomTrend<Double> { t in
 ///     if t < 10.0 {
@@ -1512,6 +1531,7 @@ public struct CustomTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = CustomTrend<Double> { t in t * t }
 	/// try model.fit(to: historicalData)
 	/// if let forecast = try model.project(periods: 12) {
@@ -1566,6 +1586,7 @@ public struct CustomTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = CustomTrend<Double> { t in 100.0 * pow(1.05, t) }
 	/// try model.fit(to: historical)
 	/// if let forecast = try model.project(periods: 12) {

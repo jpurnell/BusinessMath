@@ -30,6 +30,7 @@ import Numerics
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // What will $1000 grow to in 5 years at 10% interest?
 /// let fv = futureValue(presentValue: 1000.0, rate: 0.10, periods: 5)
 /// // Result: $1,610.51
@@ -78,6 +79,7 @@ public func futureValue<T: Real>(presentValue: T, rate: T, periods: Int) -> T {
 ///
 /// ## Examples
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Ordinary annuity: $100/year for 5 years at 10%
 /// let fvOrdinary = futureValueAnnuity(
 ///     payment: 100.0,
@@ -129,6 +131,7 @@ public func futureValue<T: Real>(presentValue: T, rate: T, periods: Int) -> T {
 ///
 /// **Savings Account:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // $200/month deposits at 0.5%/month interest
 /// let savingsFV = futureValueAnnuity(
 ///     payment: 200.0,
@@ -143,6 +146,7 @@ public func futureValue<T: Real>(presentValue: T, rate: T, periods: Int) -> T {
 ///
 /// Future Value and Present Value are reciprocal:
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let fv = futureValue(presentValue: pv, rate: rate, periods: periods)
 /// let backToPV = presentValue(futureValue: fv, rate: rate, periods: periods)
 /// // backToPV ≈ pv

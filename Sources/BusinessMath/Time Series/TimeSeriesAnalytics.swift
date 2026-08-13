@@ -22,6 +22,7 @@ import Numerics
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let actual = TimeSeries(periods: periods, values: [100, 110, 120])
 /// let forecast = TimeSeries(periods: periods, values: [98, 112, 118])
 ///
@@ -103,6 +104,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries(periods: months, values: [100, 110, 121])
 	/// let growth = revenue.growthRate(lag: 1)  // [nil, 0.10, 0.10]
 	/// ```
@@ -145,6 +147,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
@@ -194,6 +197,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let actual = TimeSeries(periods: periods, values: [100, 110, 120, 130])
 	/// let forecast = TimeSeries(periods: periods, values: [98, 112, 118, 132])
 	///
@@ -269,6 +273,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
@@ -336,6 +341,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
@@ -405,6 +411,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
@@ -443,6 +450,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
@@ -463,6 +471,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
@@ -526,6 +535,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
@@ -574,6 +584,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }

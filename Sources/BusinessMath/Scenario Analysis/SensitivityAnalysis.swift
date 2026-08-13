@@ -20,6 +20,8 @@ import Numerics
 /// function, which varies a single driver across a range and measures the impact:
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// let periods = Period.year(2025).quarters()
 ///
@@ -236,6 +238,9 @@ extension ScenarioSensitivityAnalysis {
 /// Two-way analyses are created using ``runTwoWaySensitivity(baseCase:entity:periods:inputDriver1:inputRange1:steps1:inputDriver2:inputRange2:steps2:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let sensitivity = try runTwoWaySensitivity(
 ///     baseCase: baseCase,
 ///     entity: entity,
@@ -380,6 +385,9 @@ public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let sensitivity = try runSensitivity(
 ///     baseCase: baseCase,
 ///     entity: entity,
@@ -516,6 +524,9 @@ public func runSensitivity(
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let sensitivity = try runTwoWaySensitivity(
 ///     baseCase: baseCase,
 ///     entity: entity,
@@ -651,6 +662,9 @@ public func runTwoWaySensitivity(
 /// Tornado diagrams are created using ``runTornadoAnalysis(baseCase:entity:periods:inputDrivers:variationPercent:steps:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let tornado = try runTornadoAnalysis(
 ///     baseCase: baseCase,
 ///     entity: entity,
@@ -818,6 +832,9 @@ public struct TornadoDiagramAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let tornado = try runTornadoAnalysis(
 ///     baseCase: baseCase,
 ///     entity: entity,

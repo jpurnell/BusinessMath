@@ -19,6 +19,8 @@ import Numerics
 /// Simulations are created using ``runFinancialSimulation(scenario:entity:periods:iterations:builder:)``:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
 /// // Create scenario with uncertain revenue
 /// let uncertainRevenue = ProbabilisticDriver(
 ///     name: "Revenue",
@@ -49,6 +51,7 @@ import Numerics
 /// Extract any metric from the projections and analyze its distribution:
 ///
 /// ```swift
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
 ///
 /// // Percentiles
@@ -145,6 +148,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let meanNetIncome = simulation.mean { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
 	///     return projection.incomeStatement.netIncome[q1]!
@@ -169,6 +173,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Calculate median (50th percentile) net income
 	/// let medianNetIncome = simulation.percentile(0.50) { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -207,6 +212,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let ci = simulation.confidenceInterval(0.95) { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
 	///     return projection.incomeStatement.netIncome[q1]!
@@ -248,6 +254,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // 95% VaR: there's a 5% chance net income will be below this value
 	/// let var95 = simulation.valueAtRisk(0.95) { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -274,6 +281,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let cvar95 = simulation.conditionalValueAtRisk(0.95) { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
 	///     return projection.incomeStatement.netIncome[q1]!
@@ -315,6 +323,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let probLoss = simulation.probabilityOfLoss { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
 	///     return projection.incomeStatement.netIncome[q1]!
@@ -343,6 +352,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Probability that revenue is below $80,000
 	/// let prob = simulation.probabilityBelow(80_000.0) { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -373,6 +383,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Probability that net income exceeds $50,000
 	/// let prob = simulation.probabilityAbove(50_000.0) { projection in
 	///     let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -408,6 +419,9 @@ extension FinancialSimulation {
 ///
 /// ## Example
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Create scenario with uncertain drivers
 /// let uncertainRevenue = ProbabilisticDriver(
 ///     name: "Revenue",

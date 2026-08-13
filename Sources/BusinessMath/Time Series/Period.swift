@@ -27,6 +27,7 @@ private let cachedCalendar = Calendar.current
 /// Use factory methods to create periods:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Create specific periods
 /// let today = Period.day(Date())
 /// let jan2025 = Period.month(year: 2025, month: 1)
@@ -357,6 +358,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let quarters = Period.documentationQuarters
 	/// let h1 = Period.semiannual(year: 2025, half: 1)
 	/// print(h1.label)              // "2025-H1"
 	/// print(h1.months().count)     // 6
@@ -396,6 +398,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let company = Entity.documentationFixture
 	/// // A company moving from quarterly to semiannual reporting emits a
 	/// // five-month stub between its last quarter and its first half.
 	/// let stub = Period.custom(start: aprilFirst, end: augustThirtyFirst)

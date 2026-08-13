@@ -51,6 +51,7 @@ import Numerics
 /// ## Monte Carlo Projection
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
 /// let salesDriver = ProbabilisticDriver<Double>(
 ///     name: "Sales",
 ///     distribution: DistributionNormal(1000.0, 100.0)

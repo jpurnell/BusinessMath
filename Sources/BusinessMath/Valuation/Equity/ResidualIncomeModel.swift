@@ -217,6 +217,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let ri = model.residualIncome()
     /// for (period, value) in zip(ri.periods, ri.valuesArray) {
     ///     if value > 0 {
@@ -427,6 +428,7 @@ extension ResidualIncomeModel {
     /// ## Example
     ///
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let roe = model.returnOnEquity()
     /// for (period, roeValue) in zip(roe.periods, roe.valuesArray) {
     ///     print("\(period): ROE = \(roeValue * 100)%")
@@ -467,6 +469,7 @@ extension ResidualIncomeModel {
     /// ## Example
     ///
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let spread = model.roeSpread()
     /// for (period, spreadValue) in zip(spread.periods, spread.valuesArray) {
     ///     if spreadValue > 0 {

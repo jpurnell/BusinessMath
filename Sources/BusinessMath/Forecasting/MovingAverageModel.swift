@@ -19,6 +19,7 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// var model = MovingAverageModel<Double>(window: 12)
 /// try model.train(on: historicalData)
 ///
@@ -68,6 +69,7 @@ public struct MovingAverageModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = MovingAverageModel<Double>(window: 3)
 	/// try model.train(values: [10, 12, 15, 18, 20])
 	/// let futureValues = model.predictValues(periods: 3)  // All values = avg(15, 18, 20)
@@ -95,6 +97,7 @@ public struct MovingAverageModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = MovingAverageModel<Double>(window: 3)
 	/// try model.train(on: salesData)
 	/// if let forecast = model.predict(periods: 3) {
@@ -120,6 +123,7 @@ public struct MovingAverageModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = MovingAverageModel<Double>(window: 3)
 	/// try model.train(values: [10, 12, 15, 18, 20])
 	/// let futureValues = model.predictValues(periods: 3)  // [17.67, 17.67, 17.67]
@@ -145,6 +149,7 @@ public struct MovingAverageModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = MovingAverageModel<Double>(window: 3)
 	/// try model.train(on: salesData)
 	/// if let forecast = model.predict(periods: 3) {
