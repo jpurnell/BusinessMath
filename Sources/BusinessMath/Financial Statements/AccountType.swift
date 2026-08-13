@@ -268,6 +268,7 @@ public enum EquityType: String, Codable, Equatable, Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let type = AccountType.revenue
 /// let category = type.category  // .incomeStatement
 /// ```
@@ -289,6 +290,8 @@ extension AccountType {
 	///
 	/// ## Example
 	/// ```swift
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// AccountType.revenue.category  // .incomeStatement
 	/// AccountType.asset.category    // .balanceSheet
 	/// AccountType.operating.category // .cashFlowStatement

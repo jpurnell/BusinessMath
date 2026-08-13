@@ -30,6 +30,9 @@ import Numerics
 /// ## Example Usage
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let q1 = Period.documentationQuarters[0]
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Quality of Earnings: Add back one-time legal settlement
 /// let legalSettlement = AccountAdjustment(
 ///     adjustmentType: .addback,
@@ -42,12 +45,15 @@ import Numerics
 /// let adjustedLegal = legalExpense.applying(adjustment: legalSettlement)
 ///
 /// // Calculate adjusted EBITDA
-/// let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: [legalSettlement])
+/// let adjustedEBITDA = incomeStatement.adjustedEBITDA(adjustments: [legalSettlement])
 /// ```
 ///
 /// ## LBO Use Case
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let q1 = Period.documentationQuarters[0]
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Normalize owner compensation for market rates
 /// let ownerSalary = AccountAdjustment(
 ///     adjustmentType: .ownerCompensation,
@@ -65,7 +71,7 @@ import Numerics
 /// )
 ///
 /// // Calculate normalized EBITDA for valuation
-/// let normalizedEBITDA = incomeStmt.adjustedEBITDA(
+/// let normalizedEBITDA = incomeStatement.adjustedEBITDA(
 ///     adjustments: [ownerSalary, acquisitionCosts]
 /// )
 /// ```
@@ -205,6 +211,10 @@ extension Account {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let q1 = Period.documentationQuarters[0]
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// // Original legal expense: $500K (includes $250K one-time settlement)
 	/// let legalExpense = try Account(
 	///     entity: company,
@@ -266,6 +276,10 @@ extension Account {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let q1 = Period.documentationQuarters[0]
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// // G&A expense with multiple one-time items
 	/// let gnaExpense = try Account(
 	///     entity: company,
@@ -357,7 +371,11 @@ extension IncomeStatement {
 	/// ## Example: Quality of Earnings Analysis
 	///
 	/// ```swift
-	/// let incomeStmt = try IncomeStatement(entity: target, periods: periods, accounts: accounts)
+	/// let periods = Period.documentationQuarters
+	/// let q1 = Period.documentationQuarters[0]
+	/// let q4 = Period.documentationQuarters[3]
+	/// let entity = Entity.documentationFixture
+	/// let incomeStatement = try IncomeStatement(entity: target, periods: periods, accounts: accounts)
 	///
 	/// // Define pro forma adjustments
 	/// let adjustments = [
@@ -382,8 +400,8 @@ extension IncomeStatement {
 	/// ]
 	///
 	/// // Calculate metrics
-	/// let reportedEBITDA = incomeStmt.ebitda
-	/// let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: adjustments)
+	/// let reportedEBITDA = incomeStatement.ebitda
+	/// let adjustedEBITDA = incomeStatement.adjustedEBITDA(adjustments: adjustments)
 	///
 	/// // LBO valuation at 6.0× adjusted EBITDA
 	/// let valuationMultiple = 6.0
@@ -393,12 +411,13 @@ extension IncomeStatement {
 	/// ## Investor Presentation
 	///
 	/// ```swift
+	/// let q4 = Period.documentationQuarters[3]
 	/// // Bridge from reported to adjusted EBITDA
-	/// print("Reported EBITDA: $\(reportedEBITDA[q4]!)")
+	/// print("Reported EBITDA: $\(reportedEBITDA[q4] ?? 0)")
 	/// for adjustment in adjustments {
-	///     print("  + \(adjustment.description): $\(adjustment.amount[q4] ?? 0)")
+	///     print("  + \(adjustment.description): $\((adjustment.amount[q4] ?? 0))")
 	/// }
-	/// print("Adjusted EBITDA: $\(adjustedEBITDA[q4]!)")
+	/// print("Adjusted EBITDA: $\(adjustedEBITDA[q4] ?? 0)")
 	/// ```
 	///
 	/// ## Important Notes

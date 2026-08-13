@@ -73,6 +73,7 @@ public enum BalanceSheetError: Error, Sendable {
 /// ## Validating the Accounting Equation
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// // Check if Assets = Liabilities + Equity
 /// try balanceSheet.validate(tolerance: 0.01)
 /// ```
@@ -80,6 +81,7 @@ public enum BalanceSheetError: Error, Sendable {
 /// ## Accessing Metrics
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// // Totals
 /// let totalAssets = balanceSheet.totalAssets
 /// let totalLiabilities = balanceSheet.totalLiabilities
@@ -288,7 +290,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// let cash = balanceSheet.cashAndEquivalents
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
-	/// print("Cash: $\(cash[q1]!)")  // e.g., "Cash: $500,000"
+	/// print("Cash: $\(cash[q1] ?? 0)")  // e.g., "Cash: $500,000"
 	/// ```
 	public var cashAndEquivalents: TimeSeries<T> {
 		let cashAccounts = assetAccounts.filter {
@@ -348,7 +350,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// let debt = balanceSheet.interestBearingDebt
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
-	/// print("Total Debt: $\(debt[q1]!)")  // e.g., "Total Debt: $2,000,000"
+	/// print("Total Debt: $\(debt[q1] ?? 0)")  // e.g., "Total Debt: $2,000,000"
 	/// ```
 	public var interestBearingDebt: TimeSeries<T> {
 		// Find debt accounts by role
@@ -382,15 +384,17 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let q1 = Period.documentationQuarters[0]
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let debtBreakdown = balanceSheet.interestBearingDebtByType
 	///
 	/// // Access specific debt types
 	/// if let revolver = debtBreakdown[.revolvingCreditFacility] {
-	///     print("Revolver balance: \(revolver[q1]!)")
+	///     print("Revolver balance: \(revolver[q1] ?? 0)")
 	/// }
 	///
 	/// if let termLoan = debtBreakdown[.termLoanLongTerm] {
-	///     print("Term loan balance: \(termLoan[q1]!)")
+	///     print("Term loan balance: \(termLoan[q1] ?? 0)")
 	/// }
 	///
 	/// // Calculate senior vs subordinated debt
@@ -509,14 +513,19 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let q1 = Period.documentationQuarters[0]
+	/// let q2 = Period.documentationQuarters[1]
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// let balanceSheet = try BalanceSheet(entity: company, periods: periods, accounts: accounts)
 	///
 	/// // Check working capital position
 	/// let nwc = balanceSheet.netWorkingCapital
-	/// print("Q1 NWC: $\(nwc[q1]!)") // e.g., $2.5M
+	/// print("Q1 NWC: $\(nwc[q1] ?? 0)") // e.g., $2.5M
 	///
 	/// // Monitor trend over time
-	/// let nwcChange = nwc[q2]! - nwc[q1]!  // Increase/decrease in NWC
+	/// let nwcChange = (nwc[q2] ?? 0) - (nwc[q1] ?? 0)  // Increase/decrease in NWC
 	/// ```
 	///
 	/// ## Interpretation
@@ -551,6 +560,10 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let q1 = Period.documentationQuarters[0]
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// let balanceSheet = try BalanceSheet(entity: company, periods: periods, accounts: accounts)
 	///
 	/// // Get working capital breakdown
@@ -558,28 +571,31 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	///
 	/// // Analyze major drivers
 	/// if let ar = components[.accountsReceivable] {
-	///     print("AR (Q1): $\(ar[q1]!)")  // e.g., $3.5M
+	///     print("AR (Q1): $\(ar[q1] ?? 0)")  // e.g., $3.5M
 	/// }
 	/// if let ap = components[.accountsPayable] {
-	///     print("AP (Q1): $\(ap[q1]!)")  // e.g., -$1.2M (negative = liability)
+	///     print("AP (Q1): $\(ap[q1] ?? 0)")  // e.g., -$1.2M (negative = liability)
 	/// }
 	/// if let inventory = components[.inventory] {
-	///     print("Inventory (Q1): $\(inventory[q1]!)")  // e.g., $2.1M
+	///     print("Inventory (Q1): $\(inventory[q1] ?? 0)")  // e.g., $2.1M
 	/// }
 	///
 	/// // Calculate AR as % of total current assets
 	/// let currentAssets = balanceSheet.currentAssets
-	/// let arPercent = (ar[q1]! / currentAssets[q1]!) * 100  // e.g., 58%
+	/// let arPercent = (ar[q1] ?? 0 / (currentAssets[q1] ?? 0)) * 100  // e.g., 58%
 	/// ```
 	///
 	/// ## LBO Working Capital Build/Release Modeling
 	///
 	/// ```swift
+	/// let q1 = Period.documentationQuarters[0]
+	/// let q2 = Period.documentationQuarters[1]
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// // Track component changes period-over-period
 	/// let components = balanceSheet.workingCapitalComponents
 	///
 	/// if let ar = components[.accountsReceivable] {
-	///     let arChange = ar[q2]! - ar[q1]!
+	///     let arChange = (ar[q2] ?? 0) - (ar[q1] ?? 0)
 	///     if arChange > 0 {
 	///         print("AR increased by $\(arChange) - use of cash")
 	///     } else {
@@ -661,13 +677,17 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let q2 = Period.documentationQuarters[1]
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// let balanceSheet = try BalanceSheet(entity: company, periods: periods, accounts: accounts)
-	/// let incomeStmt = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
+	/// let incomeStatement = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
 	///
 	/// // Calculate turnover
-	/// let turnover = balanceSheet.workingCapitalTurnover(revenue: incomeStmt.totalRevenue)
+	/// let turnover = balanceSheet.workingCapitalTurnover(revenue: incomeStatement.totalRevenue)
 	///
-	/// print("Q2 WC Turnover: \(turnover[q2]!)×")  // e.g., 5.2×
+	/// print("Q2 WC Turnover: \(turnover[q2] ?? 0)×")  // e.g., 5.2×
 	/// // Interpretation: Every $1 of working capital generates $5.20 in revenue
 	/// ```
 	///
@@ -682,9 +702,11 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## LBO Use Case
 	///
 	/// ```swift
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Assess working capital efficiency post-acquisition
-	/// let baselineTurnover = turnover[acquisitionDate]!
-	/// let currentTurnover = turnover[latestQuarter]!
+	/// let baselineTurnover = (turnover[acquisitionDate] ?? 0)
+	/// let currentTurnover = (turnover[latestQuarter] ?? 0)
 	///
 	/// if currentTurnover > baselineTurnover {
 	///     let improvement = ((currentTurnover / baselineTurnover) - 1) * 100
@@ -692,9 +714,9 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// }
 	///
 	/// // Calculate freed cash from working capital improvement
-	/// let revenue = incomeStmt.totalRevenue[latestQuarter]!
+	/// let revenue = (incomeStatement.totalRevenue[latestQuarter] ?? 0)
 	/// let optimalWC = revenue / industryBenchmarkTurnover  // e.g., 8×
-	/// let actualWC = balanceSheet.netWorkingCapital[latestQuarter]!
+	/// let actualWC = (balanceSheet.netWorkingCapital[latestQuarter] ?? 0)
 	/// let excessWC = actualWC - optimalWC
 	/// print("Potential cash release: $\(excessWC)")
 	/// ```
@@ -844,7 +866,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// let quickRatio = balanceSheet.quickRatio
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
-	/// print("Quick Ratio: \(quickRatio[q1]!)")  // e.g., "Quick Ratio: 1.2"
+	/// print("Quick Ratio: \(quickRatio[q1] ?? 0)")  // e.g., "Quick Ratio: 1.2"
 	/// ```
 	public var quickRatio: TimeSeries<T> {
 		// Find inventory in current assets
@@ -906,7 +928,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// let cashRatio = balanceSheet.cashRatio
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
-	/// print("Cash Ratio: \(cashRatio[q1]!)")  // e.g., "Cash Ratio: 0.35"
+	/// print("Cash Ratio: \(cashRatio[q1] ?? 0)")  // e.g., "Cash Ratio: 0.35"
 	/// ```
 	public var cashRatio: TimeSeries<T> {
 		// Cash Ratio = Cash / Current Liabilities
@@ -949,7 +971,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// let debtRatio = balanceSheet.debtRatio
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
-	/// print("Debt Ratio: \(debtRatio[q1]! * 100)%")  // e.g., "Debt Ratio: 45.0%"
+	/// print("Debt Ratio: \(debtRatio[q1] ?? 0 * 100)%")  // e.g., "Debt Ratio: 45.0%"
 	/// ```
 	public var debtRatio: TimeSeries<T> {
 		return ratio(totalLiabilities, over: totalAssets)
@@ -977,6 +999,7 @@ extension BalanceSheet {
 	///
 	/// ## Example
 	/// ```swift
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// try balanceSheet.validate(tolerance: 0.01)
 	/// ```
 	public func validate(tolerance: T) throws {
@@ -1015,13 +1038,15 @@ extension BalanceSheet {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let materialized = balanceSheet.materialize()
 	///
 	/// // Metrics are pre-computed, not recalculated on each access
 	/// for period in materialized.periods {
 	///     print("Period: \(period)")
-	///     print("  Current Ratio: \(materialized.currentRatio[period] ?? 0)")
-	///     print("  Debt/Equity: \(materialized.debtToEquity[period] ?? 0)")
+	///     print("  Current Ratio: \((materialized.currentRatio[period] ?? 0))")
+	///     print("  Debt/Equity: \((materialized.debtToEquity[period] ?? 0))")
 	/// }
 	/// ```
 	public struct Materialized: Sendable {

@@ -22,6 +22,8 @@ import OSLog
 ///
 /// ## Example
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let covenant = FinancialCovenant(
 ///     name: "Minimum Current Ratio",
 ///     requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5),
@@ -276,6 +278,9 @@ public struct CovenantComplianceResult {
 ///
 /// ## Example
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let covenants = [
 ///     FinancialCovenant(name: "Min Current Ratio", requirement: .minimumRatio(metric: .currentRatio, threshold: 1.5)),
 ///     FinancialCovenant(name: "Max Debt/Equity", requirement: .maximumRatio(metric: .debtToEquity, threshold: 2.0))

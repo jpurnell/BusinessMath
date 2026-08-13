@@ -25,6 +25,8 @@ import Numerics
 ///
 /// **E-commerce:**
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let entity = Entity.documentationFixture
 /// let metrics = OperationalMetrics<Double>(
 ///     entity: entity,
 ///     period: q1,
@@ -39,6 +41,8 @@ import Numerics
 ///
 /// **SaaS:**
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let entity = Entity.documentationFixture
 /// let metrics = OperationalMetrics<Double>(
 ///     entity: entity,
 ///     period: q1,
@@ -53,6 +57,8 @@ import Numerics
 ///
 /// **Oil & Gas:**
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let entity = Entity.documentationFixture
 /// let metrics = OperationalMetrics<Double>(
 ///     entity: entity,
 ///     period: q1,
@@ -70,6 +76,7 @@ import Numerics
 /// Use `OperationalMetricsTimeSeries` to track metrics over multiple periods:
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// let quarters = Period.year(2025).quarters()
 /// let metricsList = try [
 ///     OperationalMetrics(entity: entity, period: quarters[0], metrics: [...]),
@@ -194,6 +201,7 @@ public struct OperationalMetricsMetadata: Codable, Sendable {
 /// ## Example
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// let quarters = Period.year(2025).quarters()
 /// let metricsList = [
 ///     OperationalMetrics(entity: entity, period: quarters[0], metrics: ["units_sold": 10_000]),

@@ -64,6 +64,7 @@ public enum CashFlowStatementError: Error, Sendable {
 /// ## Accessing Metrics
 ///
 /// ```swift
+/// let cashFlowStmt = try CashFlowStatement<Double>.documentationFixture
 /// // Cash flows by category
 /// let operatingCF = cashFlowStmt.operatingCashFlow
 /// let investingCF = cashFlowStmt.investingCashFlow
@@ -287,6 +288,10 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let q2 = Period.documentationQuarters[1]
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// let cashFlowStmt = try CashFlowStatement(entity: company, periods: periods, accounts: accounts)
 	///
 	/// // Get detailed working capital breakdown
@@ -294,7 +299,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	///
 	/// // Analyze AR changes
 	/// if let arChanges = wcComponents[.changeInAccountsReceivable] {
-	///     let q2Change = arChanges[q2]!
+	///     let q2Change = (arChanges[q2] ?? 0)
 	///     if q2Change > 0 {
 	///         print("AR increased by $\(q2Change) - use of cash")
 	///         print("Collections are slowing - review AR aging")
@@ -306,7 +311,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	///
 	/// // Analyze inventory changes
 	/// if let invChanges = wcComponents[.changeInInventory] {
-	///     let q2Change = invChanges[q2]!
+	///     let q2Change = (invChanges[q2] ?? 0)
 	///     if q2Change > 0 {
 	///         print("Inventory increased by $\(q2Change) - use of cash")
 	///         print("Building inventory (growth or inefficiency?)")
@@ -315,7 +320,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	///
 	/// // Analyze AP changes
 	/// if let apChanges = wcComponents[.changeInAccountsPayable] {
-	///     let q2Change = apChanges[q2]!
+	///     let q2Change = (apChanges[q2] ?? 0)
 	///     if q2Change > 0 {
 	///         print("AP increased by $\(q2Change) - source of cash")
 	///         print("Taking longer to pay suppliers")
@@ -326,21 +331,26 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## LBO Cash Flow Modeling
 	///
 	/// ```swift
+	/// let q2 = Period.documentationQuarters[1]
+	/// let q3 = Period.documentationQuarters[2]
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	/// let cashFlowStmt = try CashFlowStatement<Double>.documentationFixture
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let wcComponents = cashFlowStmt.workingCapitalChangesByComponent
 	///
 	/// // Model working capital as % of revenue
-	/// let revenue = incomeStmt.totalRevenue
+	/// let revenue = incomeStatement.totalRevenue
 	///
 	/// // Calculate AR as days sales outstanding (DSO)
 	/// if let arChanges = wcComponents[.changeInAccountsReceivable],
 	///    let arBalance = balanceSheet.accountsReceivableBalance {
-	///     let dso = (arBalance[q2]! / revenue[q2]!) * 365
+	///     let dso = (arBalance[q2] ?? 0 / (revenue[q2] ?? 0)) * 365
 	///     print("DSO: \(dso) days")
 	///
 	///     // Forecast future AR based on target DSO
 	///     let targetDSO = 45.0  // days
-	///     let targetAR = (revenue[q3]! / 365) * targetDSO
-	///     let projectedARChange = targetAR - arBalance[q2]!
+	///     let targetAR = (revenue[q3] ?? 0 / 365) * targetDSO
+	///     let projectedARChange = targetAR - (arBalance[q2] ?? 0)
 	///     print("Projected AR change Q3: $\(projectedARChange)")
 	/// }
 	///
@@ -352,11 +362,14 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Identifying Working Capital Efficiency Opportunities
 	///
 	/// ```swift
+	/// let q1 = Period.documentationQuarters[0]
+	/// let q2 = Period.documentationQuarters[1]
+	/// let cashFlowStmt = try CashFlowStatement<Double>.documentationFixture
 	/// let wcComponents = cashFlowStmt.workingCapitalChangesByComponent
 	///
 	/// // Compare changes to identify trends
 	/// for (role, changes) in wcComponents {
-	///     let q1toQ2 = changes[q2]! - changes[q1]!
+	///     let q1toQ2 = (changes[q2] ?? 0) - (changes[q1] ?? 0)
 	///
 	///     switch role {
 	///     case .changeInAccountsReceivable:
@@ -435,13 +448,15 @@ extension CashFlowStatement {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let cashFlowStmt = try CashFlowStatement<Double>.documentationFixture
 	/// let materialized = cashFlowStmt.materialize()
 	///
 	/// // Metrics are pre-computed, not recalculated on each access
 	/// for period in materialized.periods {
 	///     print("Period: \(period)")
-	///     print("  Operating CF: \(materialized.operatingCashFlow[period] ?? 0)")
-	///     print("  Free CF: \(materialized.freeCashFlow[period] ?? 0)")
+	///     print("  Operating CF: \((materialized.operatingCashFlow[period] ?? 0))")
+	///     print("  Free CF: \((materialized.freeCashFlow[period] ?? 0))")
 	/// }
 	/// ```
 	public struct Materialized: Sendable {

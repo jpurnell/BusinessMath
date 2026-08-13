@@ -31,6 +31,7 @@ import Foundation
 /// # Usage
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// // Create an operating cash flow account
 /// let cashFromOpsAccount = try Account(
 ///     entity: myEntity,
@@ -105,6 +106,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Sales tax payable balance sheet account
     /// let salesTaxBS = try Account(
     ///     entity: retailStore,
@@ -142,6 +144,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Payroll liability balance sheet account
     /// let payrollBS = try Account(
     ///     entity: serviceCompany,
@@ -176,6 +179,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Customer deposits balance sheet account
     /// let depositsBS = try Account(
     ///     entity: customShop,
@@ -210,6 +214,8 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let company = Entity.documentationFixture
+    /// let entity = Entity.documentationFixture
     /// // Accrued expenses balance sheet account
     /// let accrualsBS = try Account(
     ///     entity: company,
@@ -296,6 +302,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Owner distributions for an S-corp
     /// let distributions = try Account(
     ///     entity: sCorp,
@@ -324,6 +331,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Owner capital contribution
     /// let contributions = try Account(
     ///     entity: startupLLC,
@@ -351,6 +359,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // LOC drawdown
     /// let locDraw = try Account(
     ///     entity: manufacturingCo,
@@ -379,6 +388,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // LOC repayment
     /// let locRepay = try Account(
     ///     entity: manufacturingCo,

@@ -222,6 +222,7 @@ public struct Lease {
     ///
     /// ## Usage Example
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let months = (1...60).map { Period.month(year: 2025, month: $0) }
     /// let paymentSeries = TimeSeries(periods: months, values: Array(repeating: 3_500.0, count: 60))
     ///
@@ -673,6 +674,7 @@ public struct Lease {
 ///
 /// ## Usage Example
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Calculate lease PV
 /// let leasePV = leasePaymentsPV(
 ///     periodicPayment: 5_000,

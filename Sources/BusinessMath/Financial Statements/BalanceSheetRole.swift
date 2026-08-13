@@ -26,6 +26,7 @@ import Foundation
 /// # Usage
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// // Create a cash account
 /// let cashAccount = try Account(
 ///     entity: myEntity,
@@ -142,6 +143,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Sales tax liability
     /// let salesTax = try Account(
     ///     entity: retailStore,
@@ -171,6 +173,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Payroll liability
     /// let payroll = try Account(
     ///     entity: serviceCompany,
@@ -201,6 +204,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Line of credit for working capital
     /// let loc = try Account(
     ///     entity: manufacturingCo,
@@ -233,6 +237,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Customer deposits for a custom manufacturer
     /// let deposits = try Account(
     ///     entity: customShop,
@@ -264,6 +269,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// // Owner loan to provide working capital
     /// let ownerLoan = try Account(
     ///     entity: familyBusiness,
@@ -311,6 +317,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// let revolver = try Account(
     ///     entity: portfolio,
     ///     name: "Revolving Credit Facility",
@@ -344,6 +351,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// let shortTermLoan = try Account(
     ///     entity: portfolio,
     ///     name: "Short-Term Term Loan",
@@ -378,6 +386,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// let termLoan = try Account(
     ///     entity: portfolio,
     ///     name: "First Lien Term Loan",
@@ -413,6 +422,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// let mezz = try Account(
     ///     entity: portfolio,
     ///     name: "Subordinated Mezzanine Notes",
@@ -445,6 +455,7 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let entity = Entity.documentationFixture
     /// let convertible = try Account(
     ///     entity: growthCo,
     ///     name: "Convertible Notes",
@@ -611,6 +622,8 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let company = Entity.documentationFixture
+    /// let entity = Entity.documentationFixture
     /// let account = try Account(
     ///     entity: company,
     ///     name: "Sales Tax Payable",

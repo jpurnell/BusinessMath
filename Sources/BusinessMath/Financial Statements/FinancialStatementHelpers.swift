@@ -29,6 +29,7 @@ enum FinancialStatementHelpers {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let accounts = [revenueAccount1, revenueAccount2, revenueAccount3]
 	/// let totalRevenue = FinancialStatementHelpers.aggregateAccounts(accounts, periods: periods)
 	/// ```

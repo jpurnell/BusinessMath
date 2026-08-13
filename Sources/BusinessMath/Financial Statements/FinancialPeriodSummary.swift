@@ -17,6 +17,8 @@ import Numerics
 /// ## Example Usage
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc")
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
 ///
@@ -747,6 +749,9 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 ///
 /// ## Usage Example
 /// ```swift
+/// let entity = Entity.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let periods = [Period.quarter(year: 2025, quarter: 1)]
 /// let priceData = TimeSeries(periods: periods, values: [150.0])
 /// let sharesData = TimeSeries(periods: periods, values: [1_000_000_000.0])
@@ -794,6 +799,7 @@ public struct MarketData<T: Real & Sendable>: Codable, Sendable where T: Codable
 	///
 	/// ## Usage Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let quarters = [
 	///     Period.quarter(year: 2024, quarter: 1),
 	///     Period.quarter(year: 2024, quarter: 2),
