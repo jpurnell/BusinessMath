@@ -24,7 +24,7 @@ import Numerics
 /// - Example:
 ///   ```swift
 ///   let values: [Double] = [1.0, 2.0, 4.0]
-///   let result = harmonicMean(values)
+///   let result = try harmonicMean(values)
 ///   // result should be the harmonic mean of the dataset `values`
 ///   // result should be 1.7142857142857142
 

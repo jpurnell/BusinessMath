@@ -65,7 +65,7 @@ public struct StochasticResult<V: VectorSpace> where V.Scalar == Double {
 ///
 /// ## Example: Portfolio with Uncertain Returns
 /// ```swift
-/// let optimizer = StochasticOptimizer<VectorN<Double>>(
+/// let optimizer = try StochasticOptimizer<VectorN<Double>>(
 ///     numberOfSamples: 1000,
 ///     seed: 42
 /// )

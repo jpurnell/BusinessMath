@@ -25,7 +25,7 @@ import Foundation
 ///
 /// ```swift
 /// // Define model using expression builder
-/// let model = MonteCarloExpressionModel { builder in
+/// let model = try MonteCarloExpressionModel { builder in
 ///     let revenue = builder[0]
 ///     let costs = builder[1]
 ///     return revenue - costs
@@ -36,7 +36,7 @@ import Foundation
 /// let gpuBytecode = model.gpuBytecode()
 ///
 /// // Or evaluate on CPU
-/// let result = model.evaluate(inputs: [1_000_000, 700_000])
+/// let result = try model.evaluate(inputs: [1_000_000, 700_000])
 /// // result = 300_000
 /// ```
 ///
@@ -44,7 +44,7 @@ import Foundation
 ///
 /// ```swift
 /// // Profit model with multiple variables
-/// let profitModel = MonteCarloExpressionModel { builder in
+/// let profitModel = try MonteCarloExpressionModel { builder in
 ///     let units = builder[0]
 ///     let price = builder[1]
 ///     let fixedCosts = builder[2]
@@ -75,7 +75,7 @@ public struct MonteCarloExpressionModel: Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let model = MonteCarloExpressionModel { builder in
+    /// let model = try MonteCarloExpressionModel { builder in
     ///     let a = builder[0]
     ///     let b = builder[1]
     ///     let c = builder[2]
@@ -131,7 +131,7 @@ public struct MonteCarloExpressionModel: Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let model = MonteCarloExpressionModel { b in b[0] + b[1] }
+    /// let model = try MonteCarloExpressionModel { b in b[0] + b[1] }
     /// let result = try model.evaluate(inputs: [10.0, 20.0])
     /// // result = 30.0
     /// ```
@@ -148,7 +148,7 @@ public struct MonteCarloExpressionModel: Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let exprModel = MonteCarloExpressionModel { b in b[0] * b[1] }
+    /// let exprModel = try MonteCarloExpressionModel { b in b[0] * b[1] }
     /// let closureModel = exprModel.toClosure()
     ///
     /// let sim = MonteCarloSimulation(iterations: 10_000, model: closureModel)

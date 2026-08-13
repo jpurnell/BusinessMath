@@ -59,7 +59,7 @@ public struct RobustResult<V: VectorSpace> where V.Scalar == Double {
 ///
 /// ## Example: Worst-Case Portfolio
 /// ```swift
-/// let uncertaintySet = BoxUncertaintySet(
+/// let uncertaintySet = try BoxUncertaintySet(
 ///     nominal: [0.10, 0.12, 0.08, 0.04],
 ///     deviations: [0.02, 0.03, 0.02, 0.01]
 /// )

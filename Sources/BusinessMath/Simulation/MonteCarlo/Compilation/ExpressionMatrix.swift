@@ -20,7 +20,7 @@ import Foundation
 /// ## Usage - Portfolio Variance
 ///
 /// ```swift
-/// let model = MonteCarloExpressionModel { builder in
+/// let model = try MonteCarloExpressionModel { builder in
 ///     // 3-asset portfolio
 ///     let w1 = builder[0]
 ///     let w2 = builder[1]

@@ -25,7 +25,7 @@ import Numerics
 /// try model.train(on: historicalData)
 ///
 /// let forecast = model.predict(periods: 12)
-/// let withConfidence = model.predictWithConfidence(periods: 12, confidenceLevel: 0.95)
+/// let withConfidence = try model.predictWithConfidence(periods: 12, confidenceLevel: 0.95)
 /// ```
 public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 

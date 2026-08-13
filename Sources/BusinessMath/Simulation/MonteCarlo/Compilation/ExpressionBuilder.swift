@@ -379,7 +379,7 @@ extension ExpressionProxy {
     /// ## Example - Revenue-Based Bonus
     ///
     /// ```swift
-    /// let model = MonteCarloExpressionModel { builder in
+    /// let model = try MonteCarloExpressionModel { builder in
     ///     let revenue = builder[0]
     ///     let baseProfit = builder[1]
     ///
@@ -395,7 +395,7 @@ extension ExpressionProxy {
     /// ## Example - Capacity Constraints
     ///
     /// ```swift
-    /// let model = MonteCarloExpressionModel { builder in
+    /// let model = try MonteCarloExpressionModel { builder in
     ///     let demand = builder[0]
     ///     let capacity = builder[1]
     ///

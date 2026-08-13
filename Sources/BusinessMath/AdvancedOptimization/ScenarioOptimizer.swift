@@ -157,7 +157,7 @@ public struct ScenarioOptimizationResult<V: VectorSpace> where V.Scalar == Doubl
 ///     )
 /// ]
 ///
-/// let optimizer = ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
+/// let optimizer = try ScenarioOptimizer<VectorN<Double>>(scenarios: scenarios)
 ///
 /// let result = try optimizer.optimize(
 ///     objective: { weights, scenario in

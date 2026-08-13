@@ -26,7 +26,7 @@ import Numerics
 /// - Example:
 ///   ```swift
 ///   let values: [Double] = [1.0, 3.0, 5.0, 7.0, 9.0]
-///   let result = arithmeticHarmonicMean(values)
+///   let result = try arithmeticHarmonicMean(values)
 ///   // result should be the arithmetic-harmonic mean of the dataset `values`
 
 /// - Throws: `ArrayError.emptyArray` if the array is empty.

@@ -106,8 +106,8 @@ import Numerics
 /// }
 ///
 /// // Calculate total equity value
-/// let equityValue = model.equityValue()
-/// let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
+/// let equityValue = try model.equityValue()
+/// let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
 ///
 /// print("Book Value: $1,000M")
 /// print("Equity Value: $\(equityValue)M")

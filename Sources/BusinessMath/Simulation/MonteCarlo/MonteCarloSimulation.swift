@@ -93,7 +93,7 @@ import Numerics
 ///
 /// ```swift
 /// // Define model using expression builder (GPU-compatible)
-/// let model = MonteCarloExpressionModel { builder in
+/// let model = try MonteCarloExpressionModel { builder in
 ///     let revenue = builder[0]
 ///     let costs = builder[1]
 ///     return revenue - costs
@@ -254,7 +254,7 @@ public struct MonteCarloSimulation: Sendable {
 	///
 	/// ```swift
 	/// // Define model using expression builder
-	/// let model = MonteCarloExpressionModel { builder in
+	/// let model = try MonteCarloExpressionModel { builder in
 	///     let revenue = builder[0]
 	///     let costs = builder[1]
 	///     return revenue - costs
@@ -382,7 +382,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// ## Example - Correlated Revenue and Costs
 	///
 	/// ```swift
-	/// let model = MonteCarloExpressionModel { builder in
+	/// let model = try MonteCarloExpressionModel { builder in
 	///     let revenue = builder[0]
 	///     let costs = builder[1]
 	///     return revenue - costs

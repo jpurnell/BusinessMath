@@ -27,7 +27,7 @@ import Numerics
 ///   ```swift
 ///   let x: Double = 3.0
 ///   let y: Double = 4.0
-///   let result = logarithmicMean(x, y)
+///   let result = try logarithmicMean(x, y)
 ///   // result should be the logarithmic mean of x and y
 
 /// - Returns: When x equals y, returns x (the limit of the formula).

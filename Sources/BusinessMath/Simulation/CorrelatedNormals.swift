@@ -63,7 +63,7 @@ public enum CorrelatedNormalsError: Error {
 /// }
 ///
 /// // Verify correlation
-/// let empiricalCorr = correlationCoefficient(samples1, samples2)
+/// let empiricalCorr = try correlationCoefficient(samples1, samples2)
 /// print("Target: 0.7, Empirical: \(empiricalCorr)")
 /// ```
 ///

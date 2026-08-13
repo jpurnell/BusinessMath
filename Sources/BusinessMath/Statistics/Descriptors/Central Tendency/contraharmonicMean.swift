@@ -55,7 +55,7 @@ public func contraharmonicMean<T: Real>(_ x: T, _ y: T) throws -> T {
 /// - Example:
 ///   ```swift
 ///   let values: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
-///   let result = contraharmonicMean(values)
+///   let result = try contraharmonicMean(values)
 ///   // result should be the contraharmonic mean of the dataset `values`
 
 /// - Throws: `BusinessMathError.divisionByZero` if the sum of values is zero.

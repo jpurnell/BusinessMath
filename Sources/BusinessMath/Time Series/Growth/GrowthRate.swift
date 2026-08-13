@@ -63,19 +63,19 @@ public enum CompoundingFrequency: Sendable {
 ///
 /// **Positive Growth:**
 /// ```swift
-/// let growth = growthRate(from: 100.0, to: 110.0)
+/// let growth = try growthRate(from: 100.0, to: 110.0)
 /// // Result: 0.10 (10% growth)
 /// ```
 ///
 /// **Negative Growth:**
 /// ```swift
-/// let decline = growthRate(from: 100.0, to: 80.0)
+/// let decline = try growthRate(from: 100.0, to: 80.0)
 /// // Result: -0.20 (-20% decline)
 /// ```
 ///
 /// **No Change:**
 /// ```swift
-/// let noGrowth = growthRate(from: 100.0, to: 100.0)
+/// let noGrowth = try growthRate(from: 100.0, to: 100.0)
 /// // Result: 0.0 (0% growth)
 /// ```
 ///
