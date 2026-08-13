@@ -34,7 +34,7 @@ import Numerics
 /// let riskAversion = 2.0
 ///
 /// // Mean-variance objective: -μ + λσ²
-/// let objective: (VectorN<Double>) -> Double = { weights in
+/// let objective: @Sendable (VectorN<Double>) -> Double = { weights in
 ///     let expectedReturn = weights.dot(returns)
 ///     let variance = weights.dot(weights)  // Simplified
 ///     return -(expectedReturn - riskAversion * variance)
@@ -106,7 +106,7 @@ public struct MultivariateLBFGS<V: VectorSpace> where V.Scalar: Real {
 	///
 	/// ## Example
 	/// ```swift
-	/// let rosenbrock: (VectorN<Double>) -> Double = { v in
+	/// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 	///     let x = v[0], y = v[1]
 	///     return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 	/// }
@@ -222,7 +222,7 @@ public struct MultivariateLBFGS<V: VectorSpace> where V.Scalar: Real {
 	///
 	/// ## Example
 	/// ```swift
-	/// let sphere: (VectorN<Double>) -> Double = { v in
+	/// let sphere: @Sendable (VectorN<Double>) -> Double = { v in
 	///     v.toArray().reduce(0.0) { $0 + $1 * $1 }
 	/// }
 	///
@@ -499,7 +499,7 @@ extension MultivariateLBFGS: MultivariateOptimizer {
 	/// // Use as protocol type for algorithm flexibility
 	/// let optimizer: any MultivariateOptimizer<VectorN<Double>> = MultivariateLBFGS<VectorN<Double>>.largeScale()
 	///
-	/// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+	/// let objective = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
 	/// let result = try optimizer.minimize(objective, from: VectorN(repeating: 5.0, count: 1000))
 	/// ```
 	public func minimize(

@@ -52,7 +52,7 @@ import Metal
 /// )
 ///
 /// // Minimize Rosenbrock function
-/// let rosenbrock = { (v: VectorN<Double>) -> Double in
+/// let rosenbrock = { @Sendable (v: VectorN<Double>) -> Double in
 ///     let x = v[0], y = v[1]
 ///     return (1 - x) * (1 - x) + 100 * (y - x * x) * (y - x * x)
 /// }
@@ -70,7 +70,7 @@ import Metal
 /// ```swift
 /// let optimizer = GeneticAlgorithm<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
 /// // Minimize x² + y² subject to x + y = 1
-/// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+/// let objective = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
 /// let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in
 ///     v[0] + v[1] - 1.0  // x + y = 1
 /// }
@@ -205,7 +205,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     ///
     /// ```swift
     /// let optimizer = GeneticAlgorithm<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
-    /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
@@ -328,7 +328,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     ///
     /// ```swift
     /// let optimizer = GeneticAlgorithm<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
-    /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.optimizeDetailed(objective: sphere)
     ///
     /// // Access GA-specific information

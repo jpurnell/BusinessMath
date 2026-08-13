@@ -172,7 +172,7 @@ extension MultivariateOptimizationResult where V.Scalar == Double {
 /// ## Example
 /// ```swift
 /// // Minimize Rosenbrock function: f(x,y) = (1-x)² + 100(y-x²)²
-/// let rosenbrock: (VectorN<Double>) -> Double = { v in
+/// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 ///     let x = v[0], y = v[1]
 ///     return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 /// }
@@ -376,7 +376,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	/// ## Example
 	/// ```swift
 	/// // Minimize f(x, y) = x² + y² - 2x - 2y
-	/// let objective: (VectorN<Double>) -> Double = { v in
+	/// let objective: @Sendable (VectorN<Double>) -> Double = { v in
 	///     let x = v[0], y = v[1]
 	///     return x*x + y*y - 2*x - 2*y
 	/// }
@@ -559,7 +559,7 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 	/// ## Example
 	/// ```swift
 	/// // Minimize Rosenbrock: f(x,y) = (1-x)² + 100(y-x²)²
-	/// let rosenbrock: (VectorN<Double>) -> Double = { v in
+	/// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 	///     let x = v[0], y = v[1]
 	///     return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 	/// }
@@ -715,7 +715,7 @@ extension MultivariateGradientDescent: MultivariateOptimizer {
 	///     maxIterations: 1000
 	/// )
 	///
-	/// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
+	/// let objective = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
 	/// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
 	/// ```
 	///

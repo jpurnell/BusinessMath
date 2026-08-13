@@ -21,7 +21,7 @@ import Numerics
 /// ## Example
 /// ```swift
 /// // Minimize f(x,y) = x² + y²
-/// let rosenbrock: (VectorN<Double>) -> Double = { v in
+/// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in
 ///     let x = v[0], y = v[1]
 ///     return (1 - x) * (1 - x) + 100 * (y - x*x) * (y - x*x)
 /// }
@@ -97,7 +97,7 @@ public func numericalGradient<V: VectorSpace>(
 /// ## Example
 /// ```swift
 /// // For f(x,y) = x² + y², the Hessian is [[2, 0], [0, 2]]
-/// let quadratic: (VectorN<Double>) -> Double = { v in
+/// let quadratic: @Sendable (VectorN<Double>) -> Double = { v in
 ///     v[0]*v[0] + v[1]*v[1]
 /// }
 ///

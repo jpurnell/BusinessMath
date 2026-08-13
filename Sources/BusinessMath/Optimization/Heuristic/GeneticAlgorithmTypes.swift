@@ -184,7 +184,7 @@ public struct GeneticAlgorithmConfig: Sendable {
 ///     searchSpace: [(-10, 10), (-10, 10)]
 /// )
 ///
-/// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+/// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
 /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
 ///
 /// print("Solution: \(result.solution)")

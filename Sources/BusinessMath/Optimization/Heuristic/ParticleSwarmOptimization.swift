@@ -39,7 +39,7 @@ import Metal
 ///     searchSpace: [(-5.0, 5.0), (-5.0, 5.0)]
 /// )
 ///
-/// let rosenbrock = { (v: VectorN<Double>) -> Double in
+/// let rosenbrock = { @Sendable (v: VectorN<Double>) -> Double in
 ///     let x = v[0], y = v[1]
 ///     return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
 /// }
@@ -179,7 +179,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     ///
     /// ```swift
     /// let optimizer = ParticleSwarmOptimization<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
-    /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(

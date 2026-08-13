@@ -37,7 +37,7 @@
 	/// )
 	///
 	/// // Minimize f(x) = (x - 5)^2
-	/// let objective = { (x: Double) -> Double in
+	/// let objective = { @Sendable (x: Double) -> Double in
 	///     return (x - 5.0) * (x - 5.0)
 	/// }
 	///

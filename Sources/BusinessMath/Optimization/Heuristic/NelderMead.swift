@@ -30,7 +30,7 @@ import Numerics
 /// // Minimize Rosenbrock function
 /// let optimizer = NelderMead<VectorN<Double>>(config: .default)
 ///
-/// let rosenbrock = { (v: VectorN<Double>) -> Double in
+/// let rosenbrock = { @Sendable (v: VectorN<Double>) -> Double in
 ///     let x = v[0], y = v[1]
 ///     return (1.0 - x) * (1.0 - x) + 100.0 * (y - x * x) * (y - x * x)
 /// }
@@ -106,7 +106,7 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
     ///
     /// ```swift
     /// let optimizer = NelderMead<VectorN<Double>>(config: .default)
-    /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
     public func minimize(
