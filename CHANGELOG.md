@@ -49,6 +49,49 @@ scalars, `bayesianICC`, and the seeded paths through `integrate` and `ScenarioGe
 return different numbers too, but they do so through changed signatures or documented
 non-reproducibility — see below.
 
+#### Fixed — a seeded GPU run that quietly answered with a different algorithm
+
+`GeneticAlgorithm`, `DifferentialEvolution`, and `ParticleSwarmOptimization` accelerate on
+Metal above a population of 1000, and all three draw one kernel seed per individual before
+the first operation that can fail. Abandoning the attempt after that point left two ways to
+be wrong, and the library managed both.
+
+Not rewinding leaves the generator advanced by one draw per individual, so the CPU fallback
+resumes where no seed predicts. Rewinding and then running the CPU anyway fixes the stream
+and still returns a different answer, because the kernels compute in `Float` where the CPU
+computes in `Double` — and that one is far harder to see, because the run now agrees with
+the GPU on every random draw while disagreeing on the result. Nothing about the symptom
+points at seeding.
+
+Three separate holes, all closed:
+
+- `GeneticAlgorithm` guarded only its `catch`. The `return nil` at the command-buffer guard,
+  in the same function, fell back silently. It now throws.
+- `DifferentialEvolution` and `ParticleSwarmOptimization` had no guard at all — no rewind,
+  no refusal, seven post-draw `return nil` sites between them.
+- **No GPU path in the library checked `commandBuffer.status` after `waitUntilCompleted()`.**
+  `.error` is a terminal state, so the download proceeded and read whatever the shared
+  buffer held: the pre-kernel population, or partial output from the kernels that ran.
+
+The rule now lives in a type — `RNGWrapper.attemptGPU(seeded:_:)` owns the rewind and
+returns an outcome with no case meaning "abandoned, and you may ignore that", so a call site
+cannot decline to implement it. It had previously been written once, as a comment, in one
+branch of one file, which is why neither sibling optimizer inherited it.
+
+**Behaviour change, seeded runs only.** `GeneticAlgorithm` now throws where it used to
+return a CPU answer. `DifferentialEvolution` and `ParticleSwarmOptimization` decline the GPU
+outright when `config.seed` is set, because their `optimizeDetailed` is non-throwing public
+API and cannot refuse; those signatures become `throws` in 3.0.0, after which GPU and seed
+work together again. Unseeded runs are unaffected and keep the fallback — that caller asked
+for resilience, not reproducibility. See `project/plans/proposals/GPUAttemptSeedContract.md`
+and `project/plans/upcoming/v3.0.0_SCOPE.md`.
+
+A determinism test existed for `GeneticAlgorithm` and for neither sibling, which is why
+their copy went unseen. Both now have one, crossing the threshold at 999 and 1000, verified
+against a probe that Metal really does engage at 1000 so they are not passing vacuously on
+the CPU. The contract itself is tested directly, without a GPU, by a body that draws and
+then fails — the assertion that would have caught this in all three at once.
+
 #### Fixed — an optimizer that could not tell "the inner solve finished" from "this is the answer"
 
 `InequalityOptimizer` declared convergence on feasibility plus the gradient norm of the

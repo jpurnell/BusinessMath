@@ -1,6 +1,6 @@
 # Design Proposal — A GPU attempt that cannot break the seed promise
 
-**Status:** Proposed
+**Status:** Accepted — abstraction implemented in 2.6.0; §4 deferred to 3.0.0
 **Author:** Session of 2026-08-12
 **Area:** `Optimization/Heuristic` (GPU fallback paths)
 
@@ -163,8 +163,22 @@ options, in order of preference:
 3. **Refuse the GPU entirely on seeded runs.** Deterministic and simple, and gives up the
    acceleration precisely for the callers most likely to be running something large.
 
-Recommendation: **(1) now, (2) at the next major.** (1) closes the silence without
-holding up the release; (2) is the right end state and should be scheduled, not skipped.
+**Decision (2026-08-12):** (2) is the end state, but it makes the release a major, and a
+major should carry all the breaking work at once rather than one item that happened to
+surface first. So (2) moves to 3.0.0, and 2.6.0 ships **(3) as the interim**: DE and PSO
+decline the GPU outright when a seed is set.
+
+(3) was rejected above as giving up acceleration for the callers most likely to want it.
+That reasoning holds for a permanent answer and not for an interim one, because the
+caller it costs — someone who set a seed *and* has a population over 1000 — is asking for
+reproducibility, which is a testing and audit posture rather than a throughput one. It is
+also the only option that needs no new API, so 3.0.0 inherits no interim surface to
+deprecate: the guard is deleted when the throwing signature lands, and GPU plus seed work
+together again.
+
+Chosen over (1) because (1) adds a public property to two result types purely as a
+staging step, and a flag a caller can forget to check is a weaker guarantee than a run
+that is deterministic by construction.
 
 ---
 

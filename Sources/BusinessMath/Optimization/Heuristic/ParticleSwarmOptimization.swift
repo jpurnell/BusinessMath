@@ -396,6 +396,19 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     /// Check if GPU acceleration should be used for this swarm size.
     private func shouldUseGPU() -> Bool {
         #if canImport(Metal)
+        // A seeded run cannot accept a CPU fallback: the kernels compute in Float where
+        // the CPU path computes in Double, so falling back returns a different answer
+        // under a seed that promises otherwise. `GeneticAlgorithm` refuses that fallback
+        // by throwing, but `optimizeDetailed` here is non-throwing public API and cannot.
+        //
+        // Until it can — the throwing signature is scheduled for 3.0.0, see
+        // project/plans/proposals/GPUAttemptSeedContract.md — a seeded run declines the
+        // GPU outright. That is determinism by construction rather than by vigilance, and
+        // it costs acceleration only for callers who asked for reproducibility.
+        guard config.seed == nil else {
+            return false
+        }
+
         return MetalDevice.shouldUseGPU(populationSize: config.swarmSize)
         #else
         return false
@@ -474,21 +487,6 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             hasVelocityClamp = false
             // Provide dummy data
             velocityLimitsFlat = Array(repeating: SIMD2(x: 0, y: 0), count: dimension)
-        }
-
-        // Every failure from here on abandons the GPU attempt and returns nil, and the
-        // caller then runs the same iteration on the CPU. The seeds below are drawn
-        // before the first operation that can fail, so without rewinding, the abandoned
-        // attempt leaves the generator advanced by one draw per particle and the CPU
-        // path resumes at a position no seed predicts. That is what makes a seeded run
-        // reproduce only when the GPU happens to succeed every time — and it succeeds
-        // every time right up until the machine is busy.
-        let checkpoint = rng.snapshot()
-        var gpuSucceeded = false
-        defer {
-            if !gpuSucceeded {
-                rng.restore(checkpoint)
-            }
         }
 
         // Random seeds for each particle
@@ -592,7 +590,6 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             if let pos = V.fromArray(pComponents) { newPositions.append(pos) }
         }
 
-        gpuSucceeded = true
         return (velocities: newVelocities, positions: newPositions)
     }
     #endif

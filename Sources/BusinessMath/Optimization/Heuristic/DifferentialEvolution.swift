@@ -494,6 +494,19 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             return false
         }
 
+        // A seeded run cannot accept a CPU fallback: the kernels compute in Float where
+        // the CPU path computes in Double, so falling back returns a different answer
+        // under a seed that promises otherwise. `GeneticAlgorithm` refuses that fallback
+        // by throwing, but `optimizeDetailed` here is non-throwing public API and cannot.
+        //
+        // Until it can — the throwing signature is scheduled for 3.0.0, see
+        // project/plans/proposals/GPUAttemptSeedContract.md — a seeded run declines the
+        // GPU outright. That is determinism by construction rather than by vigilance, and
+        // it costs acceleration only for callers who asked for reproducibility.
+        guard config.seed == nil else {
+            return false
+        }
+
         // Check if Metal device available and population large enough
         return MetalDevice.shouldUseGPU(populationSize: config.populationSize)
         #else
@@ -577,21 +590,6 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             options: .storageModeShared
         ) else {
             return nil
-        }
-
-        // Every failure from here on abandons the GPU attempt and returns nil, and the
-        // caller then runs the same generation on the CPU. The seeds below are drawn
-        // before the first operation that can fail, so without rewinding, the abandoned
-        // attempt leaves the generator advanced by one draw per individual and the CPU
-        // path resumes at a position no seed predicts. That is what makes a seeded run
-        // reproduce only when the GPU happens to succeed every time — and it succeeds
-        // every time right up until the machine is busy.
-        let checkpoint = rng.snapshot()
-        var gpuSucceeded = false
-        defer {
-            if !gpuSucceeded {
-                rng.restore(checkpoint)
-            }
         }
 
         // Generate random seeds for crossover
@@ -712,7 +710,6 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
             }
         }
 
-        gpuSucceeded = true
         return (population: newPopulation, fitness: newFitness, bestIndex: newBestIndex)
     }
     #endif

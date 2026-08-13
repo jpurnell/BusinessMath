@@ -104,11 +104,15 @@ extension IncomeStatement where T == Double {
 	/// - Throws: `AccountError` if a fixture account is malformed.
 	public static var documentationFixture: IncomeStatement<Double> {
 		get throws {
-			try documentationFixture(revenueScaledBy: 1.0)
+			try scaledDocumentationFixture(revenueBy: 1.0)
 		}
 	}
 
 	/// The documentation income statement with revenue scaled by `factor`.
+	///
+	/// Named apart from ``documentationFixture`` rather than overloading it: a computed
+	/// property whose getter calls a function of the same base name reads as self-
+	/// referential, to a static auditor and to a reader.
 	///
 	/// Costs are held flat while revenue moves, so scaling changes net income by more
 	/// than it changes revenue — operating leverage, which is what makes a simulation
@@ -116,7 +120,7 @@ extension IncomeStatement where T == Double {
 	///
 	/// - Parameter factor: The multiple applied to every revenue period.
 	/// - Throws: `AccountError` if a fixture account is malformed.
-	public static func documentationFixture(revenueScaledBy factor: Double) throws -> IncomeStatement<Double> {
+	public static func scaledDocumentationFixture(revenueBy factor: Double) throws -> IncomeStatement<Double> {
 		let entity = Entity.documentationFixture
 		let periods = Period.documentationQuarters
 
@@ -229,7 +233,7 @@ extension FinancialSimulation {
 			let projections = try factors.map { factor in
 				FinancialProjection(
 					scenario: FinancialScenario.documentationFixture,
-					incomeStatement: try IncomeStatement<Double>.documentationFixture(revenueScaledBy: factor),
+					incomeStatement: try IncomeStatement<Double>.scaledDocumentationFixture(revenueBy: factor),
 					balanceSheet: balanceSheet,
 					cashFlowStatement: cashFlowStatement
 				)
