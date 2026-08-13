@@ -438,6 +438,7 @@ public func seasonallyAdjust<T: Real & Sendable>(
 ///
 /// **Reconstruct Original Data:**
 /// ```swift
+/// let indices = [0, 1, 2]
 /// let original = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let adjusted = try seasonallyAdjust(timeSeries: original, indices: indices)
 /// let reconstructed = try applySeasonal(timeSeries: adjusted, indices: indices)

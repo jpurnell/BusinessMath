@@ -84,6 +84,7 @@ import Metal
 /// ### GPU Configuration
 ///
 /// ```swift
+/// let bounds = [(-10.0, 10.0), (-10.0, 10.0)]
 /// // Large swarm automatically uses GPU
 /// let optimizer = ParticleSwarmOptimization<VectorN<Double>>(
 ///     config: .highPerformance,  // 1000 particles, 500 iterations
@@ -218,6 +219,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     /// ## Usage Example
     ///
     /// ```swift
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let optimizer = ParticleSwarmOptimization<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let result = optimizer.optimizeDetailed(objective: sphere)
     /// print("Converged: \(result.converged)")

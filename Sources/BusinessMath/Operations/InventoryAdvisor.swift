@@ -17,6 +17,7 @@ import Numerics
 /// reasoning for each recommendation.
 ///
 /// ```swift
+/// let dailySales = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let profile = InventoryAdvisor.DataProfile(
 ///     demandHistory: dailySales,
 ///     leadTimeMean: 7.0,

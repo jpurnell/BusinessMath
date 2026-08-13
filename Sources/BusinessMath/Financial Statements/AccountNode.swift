@@ -40,6 +40,7 @@ import Numerics
 /// Use ``find(id:)`` to locate a node anywhere in the hierarchy via breadth-first search:
 ///
 /// ```swift
+/// let period = Period.documentationQuarters[0]
 /// if let node = root.find(id: "service") {
 ///     print(node.total(for: period))
 /// }

@@ -194,6 +194,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
     /// ## Usage Example
     ///
     /// ```swift
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let optimizer = DifferentialEvolution<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let result = optimizer.optimizeDetailed(objective: sphere)
     /// print("Converged: \(result.converged)")

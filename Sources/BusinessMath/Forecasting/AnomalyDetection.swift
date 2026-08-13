@@ -80,6 +80,7 @@ public struct Anomaly<T: Real & Sendable & Codable>: Sendable {
 /// ## Usage
 ///
 /// ```swift
+/// let timeSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let detector = ZScoreAnomalyDetector<Double>(windowSize: 30)
 /// let anomalies = detector.detect(in: timeSeries, threshold: 3.0)
 ///

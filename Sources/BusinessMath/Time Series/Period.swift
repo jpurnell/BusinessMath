@@ -1126,6 +1126,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let period = Period.documentationQuarters[0]
 	/// guard let following = period.nextIfSteppable() else {
 	///     // A transition stub — the caller has to supply the next boundary itself.
 	///     return

@@ -512,6 +512,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let period = Period.documentationQuarters[0]
     /// let model = FinancialModel()
     /// let debugger = ModelDebugger()
     /// await debugger.enableTracing()

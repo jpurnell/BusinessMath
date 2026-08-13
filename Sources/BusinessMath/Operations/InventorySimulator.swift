@@ -16,6 +16,7 @@ import Foundation
 /// lead time variability, and their interaction.
 ///
 /// ```swift
+/// let dailySales = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let result = try InventorySimulator.simulate(
 ///     demandHistory: dailySales,
 ///     meanLeadTime: 7.0,
