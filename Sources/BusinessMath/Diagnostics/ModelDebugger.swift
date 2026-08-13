@@ -111,15 +111,17 @@ final class DebugContext: @unchecked Sendable {
 /// let debugger = ModelDebugger()
 ///
 /// // Trace a calculation
-/// let trace = debugger.trace(value: "NPV") {
-///     calculateNPV(cashFlows: flows, discountRate: 0.08)
+/// let flows = [-100_000.0, 30_000, 40_000, 50_000]
+/// let trace = await debugger.trace(value: "NPV") {
+///     npv(discountRate: 0.08, cashFlows: flows)
 /// }
-/// print(trace.number())
+/// print(trace.result ?? 0)
 ///
 /// // Diagnose issues
-/// let report = debugger.diagnose(value: npv, expected: 50_000, tolerance: 0.01)
+/// let computedNPV = npv(discountRate: 0.08, cashFlows: flows)
+/// let report = await debugger.diagnose(value: computedNPV, expected: 50_000, tolerance: 0.01)
 /// if report.hasIssues {
-///     print(report.number())
+///     print(report.formatted())
 /// }
 /// ```
 public actor ModelDebugger {
@@ -181,7 +183,9 @@ public actor ModelDebugger {
     /// Example:
     /// ```swift
     /// let debugger = ModelDebugger()
-    /// let trace = debugger.trace(value: "Revenue") {
+    /// let price = 25.0
+    /// let quantity = 400.0
+    /// let trace = await debugger.trace(value: "Revenue") {
     ///     price * quantity
     /// }
     /// ```
@@ -249,12 +253,12 @@ public actor ModelDebugger {
     /// ```swift
     /// let debugger = ModelDebugger()
     /// let periods = Period.documentationQuarters
-    /// let trace = debugger.trace(
+    /// let trace = await debugger.trace(
     ///     value: "NPV",
     ///     dependencies: ["rate": "0.08", "periods": "10"],
     ///     formula: "PV / (1 + rate)^periods"
     /// ) {
-    ///     presentValue / pow(1.08, 10)
+    ///     100_000.0 / Foundation.pow(1.08, 10.0)
     /// }
     /// ```
     public func trace<T>(
@@ -307,7 +311,8 @@ public actor ModelDebugger {
     /// Example:
     /// ```swift
     /// let debugger = ModelDebugger()
-    /// let report = debugger.diagnose(
+    /// let calculatedNPV = 48_500.0
+    /// let report = await debugger.diagnose(
     ///     value: calculatedNPV,
     ///     expected: 50_000,
     ///     tolerance: 0.05,  // 5% tolerance
@@ -396,7 +401,8 @@ public actor ModelDebugger {
     /// Example:
     /// ```swift
     /// let debugger = ModelDebugger()
-    /// let report = debugger.validate(
+    /// let discountRate = 0.08
+    /// let report = await debugger.validate(
     ///     value: discountRate,
     ///     name: "discountRate",
     ///     constraints: [.positive, .range(0.0, 1.0), .finite]
@@ -441,7 +447,7 @@ public actor ModelDebugger {
     /// Example:
     /// ```swift
     /// let debugger = ModelDebugger()
-    /// let explanation = debugger.explain(
+    /// let explanation = await debugger.explain(
     ///     actual: 90_000,
     ///     expected: 100_000,
     ///     context: "Revenue"
@@ -573,8 +579,8 @@ public actor ModelDebugger {
     /// let debugger = ModelDebugger()
     /// let validation = await debugger.validate(model)
     /// if !validation.isValid {
-    ///     for issue in validation.issues {
-    ///         print("[\(issue.severity)] \(issue.description)")
+    ///     for issue in validation.errors + validation.warnings {
+    ///         print("[\(issue.rule)] \(issue.field)")
     ///     }
     /// }
     /// ```
