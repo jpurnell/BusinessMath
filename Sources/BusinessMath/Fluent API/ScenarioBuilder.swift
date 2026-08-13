@@ -116,6 +116,7 @@ public struct ScenarioConfig: Sendable {
     ///
     /// Example:
     /// ```swift
+    /// let scenario = FinancialScenario.documentationFixture
     /// let growthRate = scenario["Revenue Growth"] ?? 0.10
     /// ```
     public subscript(parameterName: String) -> Double? {

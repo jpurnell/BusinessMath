@@ -31,21 +31,24 @@ import Foundation
 /// # Usage
 ///
 /// ```swift
+/// let myEntity = Entity.documentationFixture
+/// let netIncomeData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let receivablesBalanceData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity.documentationFixture
 /// // Create an operating cash flow account
 /// let cashFromOpsAccount = try Account(
 ///     entity: myEntity,
 ///     name: "Net Income",
-///     timeSeries: netIncomeData,
-///     cashFlowRole: .netIncome
+///     cashFlowRole: .netIncome,
+///     timeSeries: netIncomeData
 /// )
 ///
 /// // Create a working capital account that uses balance changes
 /// let receivablesChangeAccount = try Account(
 ///     entity: myEntity,
 ///     name: "Change in Receivables",
+///     cashFlowRole: .changeInReceivables    // Will auto-calculate diff(),
 ///     timeSeries: receivablesBalanceData,  // Balance sheet data
-///     cashFlowRole: .changeInReceivables    // Will auto-calculate diff()
 /// )
 /// ```
 public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, StatementRole {
@@ -106,21 +109,23 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let retailStore = Entity.documentationFixture
+    /// let salesTaxBalances = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Sales tax payable balance sheet account
     /// let salesTaxBS = try Account(
     ///     entity: retailStore,
     ///     name: "Sales Tax Payable",
+    ///     balanceSheetRole: .salesTaxPayable,
     ///     timeSeries: salesTaxBalances,  // Balance sheet data
-    ///     balanceSheetRole: .salesTaxPayable
     /// )
     ///
     /// // Cash flow statement will auto-calculate diff()
     /// let salesTaxCF = try Account(
     ///     entity: retailStore,
     ///     name: "Change in Sales Tax Payable",
+    ///     cashFlowRole: .changeInSalesTaxPayable  // Uses diff() automatically,
     ///     timeSeries: salesTaxBalances,  // Same balance data
-    ///     cashFlowRole: .changeInSalesTaxPayable  // Uses diff() automatically
     /// )
     ///
     /// assert(salesTaxCF.cashFlowRole?.usesChangeInBalance == true)
@@ -144,21 +149,23 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let serviceCompany = Entity.documentationFixture
+    /// let payrollBalances = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Payroll liability balance sheet account
     /// let payrollBS = try Account(
     ///     entity: serviceCompany,
     ///     name: "Payroll Liabilities",
-    ///     timeSeries: payrollBalances,
-    ///     balanceSheetRole: .payrollLiabilities
+    ///     balanceSheetRole: .payrollLiabilities,
+    ///     timeSeries: payrollBalances
     /// )
     ///
     /// // Cash flow impact (auto-calculated via diff())
     /// let payrollCF = try Account(
     ///     entity: serviceCompany,
     ///     name: "Change in Payroll Liabilities",
-    ///     timeSeries: payrollBalances,
-    ///     cashFlowRole: .changeInPayrollLiabilities
+    ///     cashFlowRole: .changeInPayrollLiabilities,
+    ///     timeSeries: payrollBalances
     /// )
     /// ```
     ///
@@ -179,21 +186,23 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let customShop = Entity.documentationFixture
+    /// let depositBalances = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Customer deposits balance sheet account
     /// let depositsBS = try Account(
     ///     entity: customShop,
     ///     name: "Customer Deposits",
-    ///     timeSeries: depositBalances,
-    ///     balanceSheetRole: .customerDeposits
+    ///     balanceSheetRole: .customerDeposits,
+    ///     timeSeries: depositBalances
     /// )
     ///
     /// // Cash flow impact
     /// let depositsCF = try Account(
     ///     entity: customShop,
     ///     name: "Change in Customer Deposits",
-    ///     timeSeries: depositBalances,
-    ///     cashFlowRole: .changeInCustomerDeposits
+    ///     cashFlowRole: .changeInCustomerDeposits,
+    ///     timeSeries: depositBalances
     /// )
     /// ```
     ///
@@ -214,22 +223,23 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let accrualBalances = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let company = Entity.documentationFixture
     /// let entity = Entity.documentationFixture
     /// // Accrued expenses balance sheet account
     /// let accrualsBS = try Account(
     ///     entity: company,
     ///     name: "Accrued Expenses",
-    ///     timeSeries: accrualBalances,
-    ///     balanceSheetRole: .accruedLiabilities
+    ///     balanceSheetRole: .accruedLiabilities,
+    ///     timeSeries: accrualBalances
     /// )
     ///
     /// // Cash flow impact
     /// let accrualsCF = try Account(
     ///     entity: company,
     ///     name: "Change in Accrued Expenses",
-    ///     timeSeries: accrualBalances,
-    ///     cashFlowRole: .changeInAccruedExpenses
+    ///     cashFlowRole: .changeInAccruedExpenses,
+    ///     timeSeries: accrualBalances
     /// )
     /// ```
     case changeInAccruedExpenses
@@ -302,13 +312,15 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let sCorp = Entity.documentationFixture
+    /// let distributionData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Owner distributions for an S-corp
     /// let distributions = try Account(
     ///     entity: sCorp,
     ///     name: "Owner Distributions",
+    ///     cashFlowRole: .ownerDistributions,
     ///     timeSeries: distributionData,  // Negative values (cash outflow)
-    ///     cashFlowRole: .ownerDistributions
     /// )
     ///
     /// assert(distributions.cashFlowRole?.isFinancingActivity == true)
@@ -331,13 +343,15 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let startupLLC = Entity.documentationFixture
+    /// let contributionData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Owner capital contribution
     /// let contributions = try Account(
     ///     entity: startupLLC,
     ///     name: "Owner Contributions",
+    ///     cashFlowRole: .ownerContributions,
     ///     timeSeries: contributionData,  // Positive values (cash inflow)
-    ///     cashFlowRole: .ownerContributions
     /// )
     ///
     /// assert(contributions.cashFlowRole?.isFinancingActivity == true)
@@ -359,13 +373,15 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let manufacturingCo = Entity.documentationFixture
+    /// let drawData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // LOC drawdown
     /// let locDraw = try Account(
     ///     entity: manufacturingCo,
     ///     name: "LOC Draws",
+    ///     cashFlowRole: .drawOnLineOfCredit,
     ///     timeSeries: drawData,  // Positive values (cash inflow)
-    ///     cashFlowRole: .drawOnLineOfCredit
     /// )
     ///
     /// assert(locDraw.cashFlowRole?.isFinancingActivity == true)
@@ -388,13 +404,15 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// ## Example Usage
     ///
     /// ```swift
+    /// let manufacturingCo = Entity.documentationFixture
+    /// let repaymentData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // LOC repayment
     /// let locRepay = try Account(
     ///     entity: manufacturingCo,
     ///     name: "LOC Repayments",
+    ///     cashFlowRole: .repaymentOfLineOfCredit,
     ///     timeSeries: repaymentData,  // Negative values (cash outflow)
-    ///     cashFlowRole: .repaymentOfLineOfCredit
     /// )
     ///
     /// assert(locRepay.cashFlowRole?.isFinancingActivity == true)

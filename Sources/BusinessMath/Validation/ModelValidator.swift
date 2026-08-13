@@ -74,6 +74,7 @@ public struct ValidationReport: Sendable {
 /// ## Basic Usage
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let validator = ModelValidator<Double>()
 /// let report = validator.validate(projection: financialProjection)
 ///
@@ -87,6 +88,7 @@ public struct ValidationReport: Sendable {
 /// ## Custom Rules
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// struct MinimumRevenueRule: FinancialValidationRule {
 ///     let minimumRevenue: Double
 ///

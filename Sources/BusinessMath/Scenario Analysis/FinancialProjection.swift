@@ -42,6 +42,7 @@ import Numerics
 /// Once created, you can access any metric from the underlying statements:
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Income statement metrics
@@ -64,6 +65,7 @@ import Numerics
 /// A common use case is comparing projections from different scenarios:
 ///
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let baseProjection = runner.run(scenario: baseCase, ...)
 /// let optimisticProjection = runner.run(scenario: optimistic, ...)
@@ -86,6 +88,8 @@ import Numerics
 /// providing full traceability:
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
+/// let scenario = FinancialScenario.documentationFixture
 /// print("Scenario: \(projection.scenario.name)")
 /// print("Description: \(projection.scenario.description)")
 ///
@@ -134,6 +138,8 @@ public struct FinancialProjection: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = try FinancialProjection.documentationFixture
+	/// let scenario = FinancialScenario.documentationFixture
 	/// print("Scenario: \(projection.scenario.name)")
 	/// print("Description: \(projection.scenario.description)")
 	/// print("Overrides: \(projection.scenario.overrideCount)")
@@ -148,6 +154,7 @@ public struct FinancialProjection: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let revenue = projection.incomeStatement.totalRevenue
 	/// let netIncome = projection.incomeStatement.netIncome
@@ -165,6 +172,7 @@ public struct FinancialProjection: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = try FinancialProjection.documentationFixture
 	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let assets = projection.balanceSheet.totalAssets
 	/// let liabilities = projection.balanceSheet.totalLiabilities
@@ -183,6 +191,7 @@ public struct FinancialProjection: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let operatingCF = projection.cashFlowStatement.totalOperatingCashFlow
 	/// let freeCF = projection.cashFlowStatement.freeCashFlow

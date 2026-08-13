@@ -63,8 +63,25 @@ struct DocumentationFixtureTests {
 		#expect(last > first, "revenue should move across periods so derived ratios are not flat")
 	}
 
-	/// Same seed, same fixture — these are values, and examples that print them should
-	/// print the same thing every time.
+	/// The projection is composed from the three statement fixtures, so a reader who
+	/// reaches a statement through it must see the same numbers as one who reaches the
+	/// statement directly. Two fixtures that disagreed would make two examples about the
+	/// same company print different figures.
+	@Test("The projection agrees with the statements it is composed from")
+	func projectionIsConsistent() throws {
+		let projection = try FinancialProjection.documentationFixture
+		let balanceSheet = try BalanceSheet<Double>.documentationFixture
+		let period = Period.documentationQuarters[0]
+
+		#expect(
+			projection.balanceSheet.totalAssets[period] == balanceSheet.totalAssets[period],
+			"the projection's balance sheet must be the balance sheet fixture"
+		)
+		#expect(projection.scenario.name == FinancialScenario.documentationFixture.name)
+	}
+
+	/// These are values, and examples that print them should print the same thing every
+	/// time they are read.
 	@Test("Fixtures are stable across accesses")
 	func fixturesAreStable() throws {
 		let first = try BalanceSheet<Double>.documentationFixture

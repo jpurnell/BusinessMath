@@ -29,6 +29,7 @@ import Numerics
 /// ## Monte Carlo Projection
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// // Run 10,000 simulations
 /// let results = projection.projectMonteCarlo(iterations: 10_000)
@@ -163,6 +164,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = try FinancialProjection.documentationFixture
 	/// let periods = Period.documentationQuarters
 	/// let results = projection.projectMonteCarlo(iterations: 10_000)
 	///
@@ -304,6 +306,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 /// ## Accessing Results
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let results = projection.projectMonteCarlo(iterations: 10_000)
 ///
 /// // Statistics for specific period
@@ -357,6 +360,7 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = try FinancialProjection.documentationFixture
 	/// let results = projection.projectMonteCarlo(iterations: 10_000)
 	/// let expectedRevenue = results.expected()
 	/// ```
