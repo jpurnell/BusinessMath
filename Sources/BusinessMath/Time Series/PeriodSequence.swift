@@ -17,6 +17,7 @@ import Numerics
 /// ## Period Generation
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Monthly periods for 2026
 /// let months = PeriodSequence.monthly(
 ///     from: .month(year: 2026, month: 1),

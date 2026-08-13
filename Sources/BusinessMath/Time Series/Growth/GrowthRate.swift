@@ -206,12 +206,14 @@ public func cagr<T: Real>(beginningValue: T, endingValue: T, years: T) -> T {
 ///
 /// **Annual Compounding:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let projection = applyGrowth(baseValue: 1000.0, rate: 0.10, periods: 3, compounding: .annual)
 /// // Result: [1000, 1100, 1210, 1331]
 /// ```
 ///
 /// **Monthly Compounding:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Project 12 months at 12% annual rate
 /// let monthly = applyGrowth(baseValue: 1000.0, rate: 0.12, periods: 12, compounding: .monthly)
 /// // Monthly rate = 0.12/12 = 0.01
@@ -220,6 +222,7 @@ public func cagr<T: Real>(beginningValue: T, endingValue: T, years: T) -> T {
 ///
 /// **Continuous Compounding:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let continuous = applyGrowth(baseValue: 1000.0, rate: 0.05, periods: 10, compounding: .continuous)
 /// // Result: Values following exponential curve e^(0.05t)
 /// ```
@@ -228,6 +231,7 @@ public func cagr<T: Real>(beginningValue: T, endingValue: T, years: T) -> T {
 ///
 /// **Revenue Projections:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let currentRevenue = 1_000_000.0
 /// let growthRate = 0.15  // 15% annual growth
 /// let projection = applyGrowth(baseValue: currentRevenue, rate: growthRate, periods: 5, compounding: .annual)
@@ -236,6 +240,7 @@ public func cagr<T: Real>(beginningValue: T, endingValue: T, years: T) -> T {
 ///
 /// **Investment Growth:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let principal = 10_000.0
 /// let annualReturn = 0.07
 /// let growth = applyGrowth(baseValue: principal, rate: annualReturn, periods: 10, compounding: .annual)
@@ -244,6 +249,7 @@ public func cagr<T: Real>(beginningValue: T, endingValue: T, years: T) -> T {
 ///
 /// **Inflation Adjustment:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let currentCost = 100.0
 /// let inflation = 0.03
 /// let futureCosts = applyGrowth(baseValue: currentCost, rate: inflation, periods: 20, compounding: .annual)

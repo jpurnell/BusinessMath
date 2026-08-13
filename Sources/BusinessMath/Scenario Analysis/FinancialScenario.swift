@@ -89,6 +89,9 @@ import Numerics
 /// financial projections:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let runner = ScenarioRunner()
 /// let projection = runner.run(
 ///     scenario: baseCase,

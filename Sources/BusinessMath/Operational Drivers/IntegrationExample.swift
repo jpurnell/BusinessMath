@@ -44,6 +44,7 @@ import Numerics
 /// ## Usage Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// import BusinessMath
 ///
 /// // Create the model
@@ -345,6 +346,7 @@ public struct SaaSFinancialModel {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let model = SaaSFinancialModel()
 	/// let quarters = Period.year(2025).quarters()
 	/// let projections = model.projectDeterministic(periods: quarters)
@@ -386,6 +388,7 @@ public struct SaaSFinancialModel {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let model = SaaSFinancialModel()
 	/// let quarters = Period.year(2025).quarters()
 	/// let results = model.projectMonteCarlo(periods: quarters, iterations: 10_000)
@@ -603,6 +606,8 @@ public struct SaaSFinancialModel {
 /// ## 4. Validate Model Outputs
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// // Run sanity checks
 /// let results = model.projectMonteCarlo(periods: quarters, iterations: 10_000)
 ///

@@ -150,6 +150,7 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let fcfe = model.fcfe()
     /// for (period, value) in zip(fcfe.periods, fcfe.values) {
     ///     print("\(period): $\(value)M")

@@ -40,6 +40,7 @@ import Numerics
 /// ## Projecting Over Time
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
 /// let periods = Period.year(2025).quarters()
 /// let projection = DriverProjection(driver: revenue, periods: periods)
 ///

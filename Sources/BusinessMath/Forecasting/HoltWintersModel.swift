@@ -21,6 +21,7 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// var model = HoltWintersModel<Double>(seasonalPeriods: 12)  // Monthly data
 /// try model.train(on: historicalData)
 ///
@@ -94,6 +95,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
 	/// try model.train(values: monthlyData)
 	/// let futureValues = model.predictValues(periods: 6)
@@ -165,6 +167,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
 	/// try model.train(on: monthlySales)
 	/// if let forecast = model.predict(periods: 6) {
@@ -189,6 +192,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
 	/// try model.train(values: monthlyData)
 	/// let futureValues = model.predictValues(periods: 6)
@@ -225,6 +229,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
 	/// try model.train(on: monthlySales)
 	/// if let forecast = model.predict(periods: 6) {

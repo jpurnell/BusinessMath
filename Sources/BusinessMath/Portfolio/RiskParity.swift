@@ -90,6 +90,7 @@ public struct RiskParityOptimizer<T: Real & BinaryFloatingPoint & Sendable & Cod
 	/// ## Usage Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// // Build multi-asset portfolio
 	/// let assets = ["US Stocks", "Intl Stocks", "US Bonds", "Commodities"]
 	///

@@ -95,6 +95,8 @@ public enum DecompositionMethod: Sendable {
 /// ## Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// // Quarterly sales data with seasonality
 /// let sales = TimeSeries(
 ///     periods: quarters,
@@ -263,6 +265,8 @@ public func seasonalIndices<T: Real & Sendable>(
 ///
 /// **Quarterly Business Cycle:**
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// // Sales data with Q4 holiday spike
 /// let sales = TimeSeries(
 ///     periods: quarters,
@@ -323,6 +327,8 @@ public func seasonalIndices<T: Real & Sendable>(
 ///
 /// **Remove Holiday Seasonality:**
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// let sales = TimeSeries(periods: quarters, values: [100, 120, 80, 100, ...])
 /// let indices = try seasonalIndices(timeSeries: sales, periodsPerYear: 4)
 /// let adjusted = try seasonallyAdjust(timeSeries: sales, indices: indices)
@@ -418,6 +424,7 @@ public func seasonallyAdjust<T: Real & Sendable>(
 ///
 /// **Add Seasonality to Forecast:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Start with trend-only forecast
 /// let trendForecast = try linearTrend.project(periods: 4)
 ///
@@ -509,6 +516,8 @@ public func applySeasonal<T: Real & Sendable>(
 ///
 /// **Quarterly Sales Analysis:**
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// let sales = TimeSeries(periods: quarters, values: salesData)
 ///
 /// let decomp = try decomposeTimeSeries(
@@ -524,6 +533,7 @@ public func applySeasonal<T: Real & Sendable>(
 ///
 /// **Monthly Website Traffic:**
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let traffic = TimeSeries(periods: months, values: visitorData)
 ///
 /// let decomp = try decomposeTimeSeries(

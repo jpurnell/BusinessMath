@@ -120,6 +120,7 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// logger.calculationStarted("NPV Calculation", context: ["rate": "0.08", "periods": "10"])
     /// ```
     func calculationStarted(_ name: String, context: [String: Any] = [:]) {

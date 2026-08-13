@@ -72,6 +72,7 @@ import Numerics
 /// ### Declining Uncertainty Over Time
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let forecastRevenue = TimeVaryingDriver<Double>(name: "Forecast Revenue") { period in
 ///     let meanRevenue = 100_000.0
 ///
@@ -127,6 +128,7 @@ import Numerics
 /// Time-varying drivers fully support Monte Carlo analysis:
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
 /// let periods = Period.year(2025).quarters()
 /// let projection = DriverProjection(driver: seasonalRevenue, periods: periods)
 /// let results = projection.projectMonteCarlo(iterations: 10_000)

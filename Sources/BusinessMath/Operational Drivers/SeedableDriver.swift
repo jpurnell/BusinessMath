@@ -57,6 +57,7 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
 /// let growth = ProbabilisticDriver<Double>.normal(name: "Growth", mean: 0.10, stdDev: 0.05)
 ///
 /// var generator = Xoshiro256StarStar(seed: 42)

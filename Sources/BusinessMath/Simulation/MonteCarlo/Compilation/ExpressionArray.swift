@@ -312,6 +312,7 @@ extension ExpressionBuilder {
     /// ## Example - Multi-Period Compounding
     ///
     /// ```swift
+    /// let periods = Period.documentationQuarters
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let principal = builder[0]
     ///     let rate = builder[1]

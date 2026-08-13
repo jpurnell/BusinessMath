@@ -35,6 +35,7 @@ import Foundation
 ///
 /// ### Financial Analysis
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Compare period types
 /// let monthly = PeriodType.monthly
 /// let quarterly = PeriodType.quarterly

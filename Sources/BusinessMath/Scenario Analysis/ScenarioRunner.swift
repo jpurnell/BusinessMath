@@ -17,6 +17,11 @@ import Numerics
 /// ## Basic Usage
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let company = Entity.documentationFixture
+/// let entity = Entity.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let scenario = FinancialScenario(
 ///     name: "Base Case",
 ///     description: "Expected scenario",
@@ -53,6 +58,7 @@ import Numerics
 /// Here's a complete example showing how to build financial statements from drivers:
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// let periods = Period.year(2025).quarters()
 ///
@@ -194,6 +200,9 @@ import Numerics
 /// For probabilistic drivers, each call to `run()` produces a different sample:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let uncertainRevenue = ProbabilisticDriver(
 ///     name: "Revenue",
 ///     distribution: DistributionNormal(mean: 100_000.0, standardDeviation: 10_000.0)
@@ -248,6 +257,7 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let builder: ScenarioRunner.StatementBuilder = { drivers, periods in
 	///     // Sample drivers. The builder is throwing, so report a driver the
 	///     // scenario never defined by name rather than trapping on the lookup.
@@ -319,6 +329,12 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let quarters = Period.documentationQuarters
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let runner = ScenarioRunner()
 	/// let projection = try runner.run(
 	///     scenario: scenario,

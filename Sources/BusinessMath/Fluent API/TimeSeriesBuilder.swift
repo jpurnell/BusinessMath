@@ -350,6 +350,10 @@ extension TimeSeries where T: Real & Sendable {
     ///
     /// Example:
     /// ```swift
+    /// let q1 = Period.documentationQuarters[0]
+    /// let q2 = Period.documentationQuarters[1]
+    /// let q3 = Period.documentationQuarters[2]
+    /// let q4 = Period.documentationQuarters[3]
     /// let quarterly = TimeSeries.quarterly(year: 2024) {
     ///     Quarter.q1 => 300_000
     ///     Quarter.q2 => 330_000
@@ -547,6 +551,7 @@ public func Entry<T: Real & Sendable>(_ value: T, label: String) -> SimpleEntry<
 ///
 /// Example (use GrowthFrom instead):
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// buildTimeSeries(startingAt: jan) {
 ///     GrowthFrom(startValue: 100, rate: 0.05, periods: 12)
 /// }
@@ -562,6 +567,7 @@ public func Growth<T: Real & Sendable>(rate: T, periods: Int) -> [SimpleEntry<T>
 ///
 /// Example:
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// buildTimeSeries(startingAt: jan) {
 ///     GrowthFrom(startValue: 100, rate: 0.05, periods: 12)
 /// }

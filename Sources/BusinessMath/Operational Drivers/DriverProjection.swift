@@ -17,6 +17,7 @@ import Numerics
 /// ## Basic Projection
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
 /// let sales = ProbabilisticDriver.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 /// let periods = Period.year(2025).quarters()
 /// let projection = DriverProjection(driver: sales, periods: periods)
@@ -28,6 +29,7 @@ import Numerics
 /// ## Monte Carlo Projection
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Run 10,000 simulations
 /// let results = projection.projectMonteCarlo(iterations: 10_000)
 ///
@@ -51,6 +53,7 @@ import Numerics
 /// ## Revenue Example with Uncertainty
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Revenue = Quantity × Price (both uncertain)
 /// let quantity = ProbabilisticDriver.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
 /// let price = ProbabilisticDriver.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
@@ -112,6 +115,8 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let quarters = Period.documentationQuarters
 	/// let projection = DriverProjection(driver: salesDriver, periods: quarters)
 	/// let timeSeries = projection.project()
 	/// ```
@@ -158,6 +163,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let results = projection.projectMonteCarlo(iterations: 10_000)
 	///
 	/// // Access statistics for a specific period
@@ -220,6 +226,8 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let quarters = Period.documentationQuarters
 	/// let growth = ProbabilisticDriver<Double>.normal(name: "Growth", mean: 0.10, stdDev: 0.05)
 	/// let projection = DriverProjection(driver: growth, periods: quarters)
 	///
@@ -422,6 +430,7 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periods = Period.documentationQuarters
 	/// let uncertainty = results.standardDeviation()
 	/// // Higher values indicate more uncertain periods
 	/// ```

@@ -166,6 +166,7 @@ public struct GordonGrowthModel<T: Real> where T: Sendable {
 /// ## Usage Example
 ///
 /// ```swift
+/// let company = Entity.documentationFixture
 /// // Tech company with $1 dividend, 15% growth for 5 years, then 4% stable
 /// let model = TwoStageDDM(
 ///     currentDividend: 1.00,
