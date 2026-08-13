@@ -297,7 +297,7 @@ public struct FinancialModel: Sendable {
 ///     description: "Monthly recurring revenue projections with churn"
 /// )
 ///
-/// let model = FinancialModel {
+/// var model = FinancialModel {
 ///     // ... model components
 /// }
 /// model.metadata = metadata
@@ -367,7 +367,7 @@ public struct ModelMetadata: Sendable {
 ///         Variable("Materials", 0.25)
 ///     }
 ///
-///     Scenario("Pessimistic")
+///     ModelScenario("Pessimistic")
 ///         .adjust(.revenue, by: -0.20)
 ///         .adjust(.costs, by: 0.10)
 /// }
@@ -579,6 +579,7 @@ public struct Revenue: ModelComponent {
 ///     Product("Widget").price(50).quantity(1000)
 ///     Product("Gadget").price(100).quantity(500)
 ///
+///     let includeServices = true
 ///     if includeServices {
 ///         RevenueComponent(name: "Consulting", amount: 50_000)
 ///     }
@@ -975,12 +976,14 @@ public struct Costs: ModelComponent {
 ///     Fixed("Base Salary", 50_000)
 ///     Variable("Commission", 0.10)
 ///
+///     let includeMarketing = true
 ///     if includeMarketing {
 ///         Fixed("Marketing", 15_000)
 ///     }
 ///
+///     let departments = [(name: "Sales", overhead: 8_000.0), (name: "Support", overhead: 5_000.0)]
 ///     for dept in departments {
-///         Fixed("\(dept) Overhead", dept.overhead)
+///         Fixed("\(dept.name) Overhead", dept.overhead)
 ///     }
 /// }
 /// ```
@@ -1399,7 +1402,7 @@ public func buildModel(@ModelBuilder builder: () -> [ModelComponent]) -> Financi
 ///
 /// Example:
 /// ```swift
-/// let company = Entity(name: "Acme Corp")
+/// let company = Entity(id: "ACME", primaryType: .ticker, name: "Acme Corp")
 /// let model = buildModel(for: company) {
 ///     Revenue {
 ///         Product("Product A").price(100).quantity(500)
@@ -1424,7 +1427,7 @@ public func buildModel(for entity: Entity, @ModelBuilder builder: () -> [ModelCo
 /// ```swift
 /// let periods = (1...12).map { Period.month(year: 2025, month: $0) }
 /// let prices = Array(repeating: 50.0, count: 12)
-/// let quantities = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210]
+/// let quantities: [Double] = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210]
 ///
 /// let model = buildModel {
 ///     Product("Widget")
