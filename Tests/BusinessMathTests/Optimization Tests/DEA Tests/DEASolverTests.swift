@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport
 @testable import BusinessMath
 
 // MARK: - Cooper et al. Textbook Reference Data
@@ -513,7 +514,7 @@ struct DEAStressTests {
     let solver = DEASolver()
 
     @Test("100 DMUs with 5 inputs and 5 outputs completes",
-          .timeLimit(.minutes(2)))
+          .timeLimit(testHangGuard))
     func hundredDMUs() throws {
         var dmus: [DMU] = []
         for i in 0..<100 {

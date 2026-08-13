@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport
 import Foundation
 @testable import BusinessMath
 
@@ -128,7 +129,7 @@ struct MatrixBackendBenchmarks {
 
     // MARK: - Medium Matrix Benchmarks (500×500)
 
-    @Test("CPU backend: 500×500 matrix multiplication", .timeLimit(.minutes(2)))
+    @Test("CPU backend: 500×500 matrix multiplication", .timeLimit(testHangGuard))
     func cpuMediumMultiply() throws {
         let A = randomMatrix(rows: 500, cols: 500)
         let B = randomMatrix(rows: 500, cols: 500)
@@ -182,7 +183,7 @@ struct MatrixBackendBenchmarks {
 
     // MARK: - Large Matrix Benchmarks (1000×1000)
 
-    @Test("CPU backend: 1000×1000 matrix multiplication", .timeLimit(.minutes(2)))
+    @Test("CPU backend: 1000×1000 matrix multiplication", .timeLimit(testHangGuard))
     func cpuLargeMultiply() throws {
         let A = randomMatrix(rows: 1000, cols: 1000)
         let B = randomMatrix(rows: 1000, cols: 1000)

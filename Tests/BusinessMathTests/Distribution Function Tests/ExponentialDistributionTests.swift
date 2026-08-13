@@ -530,7 +530,7 @@ struct ExponentialDistributionTests {
 			   "Minimum of n exponentials should have mean 1/(nλ)")
 	}
 	
-	@Test("Exponential distribution stress test", .timeLimit(.minutes(2)))
+	@Test("Exponential distribution stress test", .timeLimit(testHangGuard))
 	func exponentialStressTest() {
 		// Test with very large sample sizes
 		let λ = 1.0

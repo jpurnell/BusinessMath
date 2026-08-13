@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+import TestSupport
 import Numerics
 @testable import BusinessMath
 
@@ -135,7 +136,7 @@ struct MultivariateLBFGSTests {
 		#expect(result.value < 0.5, "Function value should be small")
 	}
 
-	@Test("L-BFGS on 1000-dimensional sphere", .timeLimit(.minutes(2)))
+	@Test("L-BFGS on 1000-dimensional sphere", .timeLimit(testHangGuard))
 	func lbfgs1000D() throws {
 		let dimensions = 1000
 		let sphere: @Sendable (VectorN<Double>) -> Double = { v in
@@ -230,7 +231,7 @@ struct MultivariateLBFGSTests {
 		print("50-asset portfolio: iterations=\(result.iterations), final objective=\(result.value)")
 	}
 
-	@Test("Portfolio optimization with 200 assets", .timeLimit(.minutes(2)))
+	@Test("Portfolio optimization with 200 assets", .timeLimit(testHangGuard))
 	func portfolioOptimization200Assets() throws {
 		let numAssets = 200
 
