@@ -1456,6 +1456,7 @@ public struct AsyncTakeWhileSequence<Base: AsyncSequence>: AsyncSequence {
 ///
 /// ### Example
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// let stream = AsyncValueStream([1, 3, 5, 6, 7, 9, 11])
 ///
 /// for try await value in stream.skipWhile({ $0 % 2 != 0 }) {

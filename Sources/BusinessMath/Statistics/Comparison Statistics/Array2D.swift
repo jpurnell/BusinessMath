@@ -23,6 +23,7 @@ import Numerics
 /// ## Usage Example
 ///
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// // Create a 3x4 matrix (3 columns, 4 rows) initialized with zeros
 /// var matrix = Array2D<Double>(columns: 3, rows: 4, initialValue: 0.0)
 ///

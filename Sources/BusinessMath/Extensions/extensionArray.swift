@@ -133,6 +133,7 @@ extension Array where Element: Real {
     /// ## Usage Example
     ///
     /// ```swift
+    /// let values = [100.0, 110.0, 120.0, 130.0]
     /// // No ties
     /// let noTies: [Double] = [100, 80, 60, 40, 20]
     /// let adj1 = noTies.tauAdjustment()  // Returns 0.0

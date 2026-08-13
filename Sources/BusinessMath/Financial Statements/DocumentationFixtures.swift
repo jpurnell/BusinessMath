@@ -189,3 +189,41 @@ extension FinancialProjection {
 		}
 	}
 }
+
+// MARK: - Sensitivity
+
+extension ScenarioSensitivityAnalysis {
+
+	/// A one-way sensitivity result for doc-comment examples.
+	///
+	/// Built from its memberwise initialiser rather than by running `runSensitivity`,
+	/// which needs eight arguments including two closures. An example about reading a
+	/// sensitivity result should not have to perform one first.
+	///
+	/// Output rises monotonically with the input, so examples that describe a slope or
+	/// pick a maximum show something rather than a flat line.
+	public static var documentationFixture: ScenarioSensitivityAnalysis {
+		ScenarioSensitivityAnalysis(
+			inputDriver: "growthRate",
+			inputValues: [0.02, 0.04, 0.06, 0.08, 0.10],
+			outputValues: [950.0, 1_020.0, 1_100.0, 1_190.0, 1_290.0]
+		)
+	}
+}
+
+extension TornadoDiagramAnalysis {
+
+	/// A tornado result for doc-comment examples.
+	///
+	/// Impacts are deliberately unequal and unsorted, so an example that ranks or sorts
+	/// them demonstrates something a reader can see in the output.
+	public static var documentationFixture: TornadoDiagramAnalysis {
+		TornadoDiagramAnalysis(
+			inputs: ["growthRate", "margin", "discountRate"],
+			impacts: ["growthRate": 340.0, "margin": 180.0, "discountRate": 95.0],
+			lowValues: ["growthRate": 950.0, "margin": 1_010.0, "discountRate": 1_060.0],
+			highValues: ["growthRate": 1_290.0, "margin": 1_190.0, "discountRate": 1_155.0],
+			baseCaseOutput: 1_100.0
+		)
+	}
+}

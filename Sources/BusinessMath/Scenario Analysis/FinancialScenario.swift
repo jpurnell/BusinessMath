@@ -17,6 +17,7 @@ import Numerics
 /// ## Creating Scenarios
 ///
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// let scenario = FinancialScenario.documentationFixture
 /// // Base case with expected values
 /// let basePrice = DeterministicDriver(name: "Price", value: 100.0)
@@ -92,6 +93,7 @@ import Numerics
 /// financial projections:
 ///
 /// ```swift
+/// let baseCase = FinancialScenario.documentationFixture
 /// let scenario = FinancialScenario.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture

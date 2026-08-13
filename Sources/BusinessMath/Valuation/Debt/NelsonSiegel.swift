@@ -85,6 +85,7 @@ public struct NelsonSiegelParameters: Sendable, Codable {
 /// ## Usage Example
 ///
 /// ```swift
+/// let prices = [100.0, 102.5, 99.0, 105.0]
 /// // Calibrate to market bond prices
 /// let bonds: [BondMarketData] = loadMarketData()
 /// let curve = try NelsonSiegelYieldCurve.calibrate(to: bonds)

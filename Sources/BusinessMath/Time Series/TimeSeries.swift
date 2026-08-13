@@ -85,6 +85,7 @@ public struct TimeSeriesMetadata: Codable, Equatable, Sendable {
 /// ## Accessing Values
 ///
 /// ```swift
+/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let jan = Period.month(year: 2025, month: 1)
 /// let value = ts[jan]  // Optional<Double>
 /// let valueOrDefault = ts[jan, default: 0.0]  // Double
@@ -93,6 +94,8 @@ public struct TimeSeriesMetadata: Codable, Equatable, Sendable {
 /// ## Iteration
 ///
 /// ```swift
+/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// // Iterate over values
 /// for value in ts {
 ///     print(value)
@@ -273,6 +276,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let jan = Period.month(year: 2025, month: 1)
 	/// if let value = ts[jan] {
 	///     print("January: \\(value)")
@@ -291,6 +295,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let jan = Period.month(year: 2025, month: 1)
 	/// let value = ts[jan, default: 0.0]  // Never nil
 	/// ```
@@ -305,6 +310,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// if let label = ts.label(for: jan) {
 	///     print("Label: \(label)")
 	/// }
@@ -319,6 +325,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let values = ts.valuesArray  // [100.0, 200.0, 300.0]
 	/// ```
 	public var valuesArray: [T] {
@@ -359,6 +366,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let jan = Period.month(year: 2025, month: 1)
 	/// let mar = Period.month(year: 2025, month: 3)
 	/// let subset = ts.range(from: jan, to: mar)  // Jan, Feb, Mar

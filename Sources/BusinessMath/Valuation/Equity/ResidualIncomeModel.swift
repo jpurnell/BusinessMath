@@ -377,6 +377,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     ///
     /// Compare intrinsic value per share to book value per share:
     /// ```swift
+    /// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
     /// let bookValuePerShare = model.currentBookValue / sharesOutstanding
     /// let intrinsicValuePerShare = try model.valuePerShare(sharesOutstanding: sharesOutstanding)
     /// let priceToBook = intrinsicValuePerShare / bookValuePerShare

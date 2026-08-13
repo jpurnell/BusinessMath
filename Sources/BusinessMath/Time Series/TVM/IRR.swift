@@ -190,6 +190,7 @@ public func irr<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 /// // Project with $1000 investment, $400/year returns
 /// let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
 ///

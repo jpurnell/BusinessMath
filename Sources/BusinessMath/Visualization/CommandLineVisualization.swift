@@ -190,6 +190,7 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 /// ## Example
 ///
 /// ```swift
+/// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let q1 = Period.documentationQuarters[0]

@@ -44,6 +44,7 @@ public enum ConstraintSense: Sendable {
 ///
 /// ### Equality Constraint
 /// ```swift
+/// let weights = [0.4, 0.35, 0.25]
 /// // Budget constraint: weights must sum to 1
 /// let budget: MultivariateConstraint<VectorN<Double>> = .equality { weights in
 ///     weights.sum - 1.0
@@ -52,6 +53,7 @@ public enum ConstraintSense: Sendable {
 ///
 /// ### Inequality Constraint
 /// ```swift
+/// let weights = [0.4, 0.35, 0.25]
 /// // No short-selling: first weight must be non-negative
 /// let noShortSell: MultivariateConstraint<VectorN<Double>> = .inequality { weights in
 ///     -weights[0]  // -w[0] ≤ 0  →  w[0] ≥ 0
@@ -60,6 +62,7 @@ public enum ConstraintSense: Sendable {
 ///
 /// ### With Explicit Gradient
 /// ```swift
+/// let weights = [0.4, 0.35, 0.25]
 /// // Budget constraint with analytical gradient
 /// let budget: MultivariateConstraint<VectorN<Double>> = .equality(
 ///     function: { weights in weights.sum - 1.0 },

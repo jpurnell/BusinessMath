@@ -514,6 +514,7 @@ public struct SaaSFinancialModel {
 /// - **Efficiency gains**: Improving over time (learning curve)
 ///
 /// ```swift
+/// let prices = [100.0, 102.5, 99.0, 105.0]
 /// public struct ManufacturingModel {
 ///     // Production capacity (units/month)
 ///     let capacity = TimeVaryingDriver.withGrowth(

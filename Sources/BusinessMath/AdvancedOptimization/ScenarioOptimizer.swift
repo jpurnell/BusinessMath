@@ -139,6 +139,7 @@ public struct ScenarioOptimizationResult<V: VectorSpace> where V.Scalar == Doubl
 ///
 /// ## Example: Bull/Base/Bear Markets
 /// ```swift
+/// let weights = [0.4, 0.35, 0.25]
 /// let scenario = FinancialScenario.documentationFixture
 /// let scenarios = [
 ///     NamedScenario(

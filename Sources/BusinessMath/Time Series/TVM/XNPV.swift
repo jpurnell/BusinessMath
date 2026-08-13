@@ -167,6 +167,7 @@ public func xnpv<T: Real & BinaryFloatingPoint>(
 ///
 /// **Irregular Intervals:**
 /// ```swift
+/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 /// let calendar = Calendar.current
 /// // Investment with irregular returns
 /// let dates = [

@@ -300,6 +300,7 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let baseCase = FinancialScenario.documentationFixture
 	/// let scenario = FinancialScenario.documentationFixture
 	/// let runner = ScenarioRunner()
 	///

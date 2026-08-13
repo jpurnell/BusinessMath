@@ -60,6 +60,7 @@ public struct MultiPeriodResult<V: VectorSpace>: Sendable where V.Scalar == Doub
 ///
 /// ## Example: Portfolio Rebalancing
 /// ```swift
+/// let weights = [0.4, 0.35, 0.25]
 /// let optimizer = try MultiPeriodOptimizer<VectorN<Double>>(
 ///     numberOfPeriods: 12,
 ///     discountRate: 0.08

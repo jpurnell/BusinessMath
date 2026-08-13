@@ -76,6 +76,7 @@ import Numerics
 /// reflect the constrained distribution:
 ///
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// let periods = Period.documentationQuarters
 /// let quarters = Period.documentationQuarters
 /// let uncertainValue = ProbabilisticDriver.normal(name: "Value", mean: 10.0, stdDev: 5.0)
@@ -232,6 +233,7 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let prices = [100.0, 102.5, 99.0, 105.0]
 	/// let price = uncertainPrice.positive()  // No negative prices
 	/// let quantity = uncertainQuantity.positive()  // No negative quantities
 	/// let revenue = (quantity * price).positive()  // Ensure positive revenue

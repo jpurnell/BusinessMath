@@ -59,6 +59,7 @@ import Numerics
 /// Once created, you can analyze the input-output relationship:
 ///
 /// ```swift
+/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 /// // View input values tested
 /// print("Revenue values: \(sensitivity.inputValues)")
 /// // Output: [80000, 85000, 90000, 95000, 100000, 105000, 110000, 115000, 120000]
@@ -78,6 +79,7 @@ import Numerics
 /// Run sensitivity for multiple inputs, then rank by impact:
 ///
 /// ```swift
+/// let tornado = TornadoDiagramAnalysis.documentationFixture
 /// let revenueSensitivity = try runSensitivity(...)  // Vary revenue ±20%
 /// let costSensitivity = try runSensitivity(...)     // Vary costs ±20%
 /// let priceSensitivity = try runSensitivity(...)    // Vary price ±20%
@@ -95,6 +97,7 @@ import Numerics
 /// Find the input value where output crosses a threshold:
 ///
 /// ```swift
+/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 /// // Find revenue needed for positive net income
 /// if let breakeven = sensitivity.findInput(whereOutputEquals: 0.0) {
 ///     print("Breakeven revenue: \(breakeven)")
@@ -105,6 +108,7 @@ import Numerics
 /// Understand the range of possible outcomes:
 ///
 /// ```swift
+/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 /// let worstCase = sensitivity.outputValues.min()!
 /// let bestCase = sensitivity.outputValues.max()!
 /// let baseCase = sensitivity.outputValues[sensitivity.inputValues.count / 2]
@@ -141,6 +145,7 @@ public struct ScenarioSensitivityAnalysis: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 	/// if sensitivity.inputDriver == "Revenue" {
 	///     print("Analyzing revenue sensitivity")
 	/// }
@@ -154,6 +159,8 @@ public struct ScenarioSensitivityAnalysis: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let values = [100.0, 110.0, 120.0, 130.0]
+	/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 	/// print("Revenue values tested: \(sensitivity.inputValues)")
 	/// // Output: [800.0, 900.0, 1000.0, 1100.0, 1200.0]
 	/// ```
@@ -167,6 +174,7 @@ public struct ScenarioSensitivityAnalysis: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 	/// for (input, output) in zip(sensitivity.inputValues, sensitivity.outputValues) {
 	///     print("Revenue: \(input) → Net Income: \(output)")
 	/// }
@@ -240,6 +248,7 @@ extension ScenarioSensitivityAnalysis {
 /// Two-way analyses are created using ``runTwoWaySensitivity(baseCase:entity:periods:inputDriver1:inputRange1:steps1:inputDriver2:inputRange2:steps2:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
@@ -267,6 +276,7 @@ extension ScenarioSensitivityAnalysis {
 /// `inputValues1[i]` and `inputValues2[j]`:
 ///
 /// ```swift
+/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 /// // Print data table
 /// print("         ", terminator: "")
 /// for cost in sensitivity.inputValues2 {
@@ -320,6 +330,7 @@ public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
 	/// // Access specific combination
 	/// let highRevenueLowCost = sensitivity.results[4][0]  // Last revenue, first cost
 	/// let lowRevenueHighCost = sensitivity.results[0][4]  // First revenue, last cost
@@ -388,6 +399,7 @@ public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
@@ -528,6 +540,7 @@ public func runSensitivity(
 ///
 /// ## Example
 /// ```swift
+/// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
@@ -667,6 +680,7 @@ public func runTwoWaySensitivity(
 /// Tornado diagrams are created using ``runTornadoAnalysis(baseCase:entity:periods:inputDrivers:variationPercent:steps:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
@@ -690,6 +704,7 @@ public func runTwoWaySensitivity(
 /// Inputs are ranked by impact (largest first):
 ///
 /// ```swift
+/// let tornado = TornadoDiagramAnalysis.documentationFixture
 /// print("Tornado Diagram - Ranked by Impact:")
 /// for input in tornado.inputs {
 ///     let impact = tornado.impacts[input]!
@@ -704,6 +719,7 @@ public func runTwoWaySensitivity(
 /// The data is structured for easy charting. Use `plotTornadoDiagram(_:)` for command-line visualization:
 ///
 /// ```swift
+/// let tornado = TornadoDiagramAnalysis.documentationFixture
 /// let plot = plotTornadoDiagram(tornado)
 /// print(plot)
 ///
@@ -740,6 +756,7 @@ public struct TornadoDiagramAnalysis: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let tornado = TornadoDiagramAnalysis.documentationFixture
 	/// print("Top 3 drivers:")
 	/// for input in tornado.inputs.prefix(3) {
 	///     print("- \(input): \(tornado.impacts[input]!)")
@@ -754,6 +771,7 @@ public struct TornadoDiagramAnalysis: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let tornado = TornadoDiagramAnalysis.documentationFixture
 	/// for input in tornado.inputs {
 	///     let impact = tornado.impacts[input]!
 	///     let percentImpact = (impact / tornado.baseCaseOutput) * 100.0
@@ -838,6 +856,7 @@ public struct TornadoDiagramAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture

@@ -21,6 +21,7 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let prices = [100.0, 102.5, 99.0, 105.0]
 /// let entity = Entity(name: "Acme Corp", ticker: "ACME")
 /// let incomeStatement = try IncomeStatement(...)
 /// let balanceSheet = try BalanceSheet(...)

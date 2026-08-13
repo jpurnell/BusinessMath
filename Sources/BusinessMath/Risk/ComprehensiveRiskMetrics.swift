@@ -39,6 +39,7 @@ import Numerics
 /// ## Individual Metrics (Preferred for Focused Analysis)
 ///
 /// ```swift
+/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 /// // Use individual types when you only need specific metrics
 /// let var95 = ValueAtRisk.var95(values: returns)
 /// let sharpe = SharpeRatio.calculate(values: returns, riskFreeRate: 0.03)

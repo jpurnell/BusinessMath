@@ -180,6 +180,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// let trace = debugger.trace(value: "Revenue") {
     ///     price * quantity
     /// }
@@ -246,6 +247,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// let periods = Period.documentationQuarters
     /// let trace = debugger.trace(
     ///     value: "NPV",
@@ -304,6 +306,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// let report = debugger.diagnose(
     ///     value: calculatedNPV,
     ///     expected: 50_000,
@@ -392,6 +395,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// let report = debugger.validate(
     ///     value: discountRate,
     ///     name: "discountRate",
@@ -436,6 +440,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// let explanation = debugger.explain(
     ///     actual: 90_000,
     ///     expected: 100_000,
@@ -507,6 +512,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// await debugger.enableTracing()
     /// let result = model.totalRevenue(for: period)
     /// let trace = await debugger.getTrace()
@@ -528,6 +534,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// await debugger.enableTracing()
     /// // ... perform calculations ...
     /// let trace = await debugger.getTrace()
@@ -560,6 +567,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// let validation = await debugger.validate(model)
     /// if !validation.isValid {
     ///     for issue in validation.issues {
@@ -631,6 +639,7 @@ public actor ModelDebugger {
     ///
     /// Example:
     /// ```swift
+    /// let debugger = ModelDebugger()
     /// let periods = Period.documentationQuarters
     /// let missing = await debugger.findMissingData(in: model)
     /// for (account, periods) in missing {

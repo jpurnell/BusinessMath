@@ -164,6 +164,7 @@ public struct FieldDefinition: Sendable {
 /// ## Example with Arrays
 ///
 /// ```swift
+/// let values = [100.0, 110.0, 120.0, 130.0]
 /// let schema = DataSchema(
 ///     version: 1,
 ///     requiredFields: [
