@@ -1,0 +1,29 @@
+{
+  "annual_value" : {
+    "total_annual_value" : 2012500,
+    "tracking_error_value" : 1012500,
+    "transaction_cost_savings" : 1000000
+  },
+  "baseline" : {
+    "rebalancing_time_seconds" : 18000,
+    "tracking_error_bps" : 82.5,
+    "transaction_costs_bps" : 35
+  },
+  "improvements" : {
+    "time_speedup" : 1000,
+    "tracking_error_improvement_percent" : 49.090909090909093,
+    "transaction_cost_reduction_percent" : 28.571428571428569
+  },
+  "optimized" : {
+    "rebalancing_time_seconds" : 18,
+    "tracking_error_bps" : 42,
+    "transaction_costs_bps" : 25
+  },
+  "portfolio_size" : 500,
+  "portfolio_value" : 250000000,
+  "roi" : {
+    "development_cost" : 75000,
+    "five_year_npv" : 9987500,
+    "payback_period_days" : 13
+  }
+}

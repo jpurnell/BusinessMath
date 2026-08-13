@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-02-08T15:20:00Z",
+  "code_metrics": {
+    "source_files": 376,
+    "test_files": 277,
+    "total_lines": 203546,
+    "source_lines": 96403,
+    "test_lines": 107143,
+    "public_apis": 4360,
+    "modules": 8,
+    "test_to_code_ratio": 1.11
+  },
+  "test_coverage": {
+    "total_tests": 859,
+    "coverage_percent": null,
+    "note": "Run 'swift test --enable-code-coverage' to generate coverage data"
+  },
+  "documentation_coverage": {
+    "documented_apis": 3521,
+    "total_public_apis": 4360,
+    "coverage_percent": 80.8,
+    "missing_docs": 839
+  },
+  "build_health": {
+    "status": "Not measured (run full metrics for build analysis)",
+    "warnings": null,
+    "errors": null,
+    "dependencies": 8
+  },
+  "performance": {
+    "benchmark_tests": 12
+  },
+  "git_stats": {
+    "total_commits": 7358,
+    "contributors": 2,
+    "last_commit": "current",
+    "branch": "main"
+  },
+  "health_score": {
+    "overall": 85.0,
+    "grade": "B",
+    "components": {
+      "test_coverage": "Not measured",
+      "documentation": 80.8,
+      "build": "Not measured",
+      "test_ratio": 100.0
+    },
+    "note": "Score based on available metrics (documentation and test ratio)"
+  }
+}
