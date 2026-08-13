@@ -26,7 +26,7 @@ import Numerics
 /// - Example:
 ///   ```swift
 ///   let data: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
-///   let dispersionIndex = indexOfDispersion(data)
+///   let dispersionIndex = try indexOfDispersion(data)
 ///   ```
 ///
 /// - Important:

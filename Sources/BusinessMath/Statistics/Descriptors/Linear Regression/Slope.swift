@@ -30,7 +30,7 @@ import Numerics
 ///   ```swift
 ///   let xVals: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
 ///   let yVals: [Double] = [2.0, 3.0, 5.0, 7.0, 11.0]
-///   let slopeValue = slope(xVals, yVals)
+///   let slopeValue = try slope(xVals, yVals)
 ///   print("Slope of the best-fit line: \(slopeValue)")
 ///   ```
 ///

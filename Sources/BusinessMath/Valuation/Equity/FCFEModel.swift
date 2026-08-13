@@ -77,8 +77,8 @@ import Numerics
 ///     terminalGrowthRate: 0.04
 /// )
 ///
-/// let equityValue = model.equityValue()
-/// let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
+/// let equityValue = try model.equityValue()
+/// let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
 /// ```
 ///
 /// ## Important Notes

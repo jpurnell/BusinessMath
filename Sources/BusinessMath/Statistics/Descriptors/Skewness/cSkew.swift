@@ -29,7 +29,7 @@ import Numerics
 ///   let mean: Double = 5.0
 ///   let median: Double = 4.0
 ///   let stdDev: Double = 1.5
-///   let result = coefficientOfSkew(mean: mean, median: median, stdDev: stdDev)
+///   let result = try coefficientOfSkew(mean: mean, median: median, stdDev: stdDev)
 ///   // result should be the coefficient of skewness given the mean, median, and standard deviation
 
 /// - Throws: `BusinessMathError.divisionByZero` if standard deviation is zero.
@@ -60,7 +60,7 @@ public func coefficientOfSkew<T: Real>(mean: T, median: T, stdDev: T) throws -> 
 /// - Example:
 ///   ```swift
 ///   let data: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
-///   let skewness = coefficientOfSkew(data)
+///   let skewness = try coefficientOfSkew(data)
 ///   ```
 ///
 /// - Important:

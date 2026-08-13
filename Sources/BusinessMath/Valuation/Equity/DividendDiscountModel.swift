@@ -62,7 +62,7 @@ public enum ValuationError: Error, Equatable {
 ///     requiredReturn: 0.08
 /// )
 ///
-/// let intrinsicValue = model.valuePerShare()
+/// let intrinsicValue = try model.valuePerShare()
 /// print("Intrinsic value: $\(intrinsicValue)")  // $50.00
 /// ```
 ///
@@ -175,7 +175,7 @@ public struct GordonGrowthModel<T: Real> where T: Sendable {
 ///     requiredReturn: 0.10
 /// )
 ///
-/// let value = model.valuePerShare()
+/// let value = try model.valuePerShare()
 /// print("Intrinsic value: $\(value)")
 /// ```
 ///
@@ -265,7 +265,7 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
     /// )
     ///
     /// let highGrowthValue = model.highGrowthPhaseValue()  // ~$9.18
-    /// let terminalValue = model.terminalValue()           // ~$19.27
+    /// let terminalValue = try model.terminalValue()           // ~$19.27
     /// print("High growth phase: \(highGrowthValue)")
     /// print("Terminal value: \(terminalValue)")
     /// ```
@@ -404,7 +404,7 @@ public struct TwoStageDDM<T: Real> where T: Sendable {
 ///     requiredReturn: 0.11
 /// )
 ///
-/// let value = model.valuePerShare()
+/// let value = try model.valuePerShare()
 /// print("Intrinsic value: $\(value)")
 /// ```
 ///

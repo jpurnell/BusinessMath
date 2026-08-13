@@ -30,7 +30,7 @@ import Numerics
 ///   ```swift
 ///   let xVals: [Double] = [10, 20, 30, 40, 50]
 ///   let yVals: [Double] = [15, 25, 35, 45, 55]
-///   let rho = spearmansRho(xVals, vs: yVals)
+///   let rho = try spearmansRho(xVals, vs: yVals)
 ///   print("Spearman's rank correlation coefficient: \(rho)")
 ///   ```
 ///

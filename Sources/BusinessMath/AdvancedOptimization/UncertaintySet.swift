@@ -54,7 +54,7 @@ public protocol UncertaintySet {
 ///
 /// ## Example
 /// ```swift
-/// let uncertainReturns = BoxUncertaintySet(
+/// let uncertainReturns = try BoxUncertaintySet(
 ///     nominal: [0.10, 0.12, 0.08],
 ///     deviations: [0.02, 0.03, 0.01]  // ±2%, ±3%, ±1%
 /// )
@@ -108,7 +108,7 @@ public struct BoxUncertaintySet: UncertaintySet {
 	///
 	/// ## Example
 	/// ```swift
-	/// let box = BoxUncertaintySet(nominal: [100, 200], deviations: [10, 20])
+	/// let box = try BoxUncertaintySet(nominal: [100, 200], deviations: [10, 20])
 	/// let samples = box.samplePoints(numberOfSamples: 100)
 	/// // Returns: All 4 corners plus 96 random points
 	/// ```
@@ -161,7 +161,7 @@ public struct BoxUncertaintySet: UncertaintySet {
 	///
 	/// ## Example
 	/// ```swift
-	/// let box = BoxUncertaintySet(nominal: [100], deviations: [10])
+	/// let box = try BoxUncertaintySet(nominal: [100], deviations: [10])
 	/// box.contains([105])  // true (within ±10)
 	/// box.contains([115])  // false (outside bounds)
 	/// ```
@@ -263,7 +263,7 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 	///
 	/// ## Example
 	/// ```swift
-	/// let ellipsoid = EllipsoidalUncertaintySet(
+	/// let ellipsoid = try EllipsoidalUncertaintySet(
 	///     nominal: [100, 200],
 	///     covariance: [[100, 0], [0, 400]],  // Diagonal covariance
 	///     radius: 2.0
@@ -323,7 +323,7 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 	///
 	/// ## Example
 	/// ```swift
-	/// let ellipsoid = EllipsoidalUncertaintySet(
+	/// let ellipsoid = try EllipsoidalUncertaintySet(
 	///     nominal: [100],
 	///     covariance: [[100]],
 	///     radius: 2.0
@@ -356,7 +356,7 @@ public struct EllipsoidalUncertaintySet: UncertaintySet {
 ///
 /// ## Example
 /// ```swift
-/// let uncertainDemand = DiscreteUncertaintySet(
+/// let uncertainDemand = try DiscreteUncertaintySet(
 ///     points: [
 ///         [80, 90, 100],   // Low demand
 ///         [100, 110, 120], // Medium demand
@@ -410,7 +410,7 @@ public struct DiscreteUncertaintySet: UncertaintySet {
 	///
 	/// ## Example
 	/// ```swift
-	/// let scenarios = DiscreteUncertaintySet(points: [
+	/// let scenarios = try DiscreteUncertaintySet(points: [
 	///     [80, 100],   // Pessimistic
 	///     [100, 120],  // Base case
 	///     [120, 140]   // Optimistic
@@ -437,7 +437,7 @@ public struct DiscreteUncertaintySet: UncertaintySet {
 	///
 	/// ## Example
 	/// ```swift
-	/// let scenarios = DiscreteUncertaintySet(points: [
+	/// let scenarios = try DiscreteUncertaintySet(points: [
 	///     [80, 100],
 	///     [100, 120],
 	///     [120, 140]

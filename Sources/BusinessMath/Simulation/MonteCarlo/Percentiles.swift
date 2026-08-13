@@ -117,7 +117,7 @@ public struct Percentiles: Sendable {
 	///
 	/// ```swift
 	/// let data = [10.0, 20.0, 30.0, 40.0, 50.0]
-	/// let percentiles = Percentiles(values: data)
+	/// let percentiles = try Percentiles(values: data)
 	/// print("Median: \(percentiles.p50)")  // 30.0
 	/// ```
 	public init(values: [Double]) throws {

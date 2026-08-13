@@ -30,7 +30,7 @@ import Numerics
 ///   ```swift
 ///   let xVals: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
 ///   let yVals: [Double] = [5.0, 4.0, 3.0, 2.0, 1.0]
-///   let correlation = correlationCoefficientP(xVals, yVals)
+///   let correlation = try correlationCoefficientP(xVals, yVals)
 ///   print("Population correlation coefficient: \(correlation)")
 ///   ```
 ///

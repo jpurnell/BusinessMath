@@ -28,7 +28,7 @@ import Numerics
 ///   ```swift
 ///   let vector1: [Double] = [1.0, 2.0, 3.0]
 ///   let vector2: [Double] = [4.0, 5.0, 6.0]
-///   let result = multiplyVectors(vector1, vector2)
+///   let result = try multiplyVectors(vector1, vector2)
 ///   print("Element-wise product: \(result)")
 ///   ```
 ///

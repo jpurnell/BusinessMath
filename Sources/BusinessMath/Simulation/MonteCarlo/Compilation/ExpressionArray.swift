@@ -22,7 +22,7 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
-/// let model = MonteCarloExpressionModel { builder in
+/// let model = try MonteCarloExpressionModel { builder in
 ///     // Create fixed-size array from inputs
 ///     let weights = builder.array([0, 1, 2])  // 3 portfolio weights
 ///     let returns = builder.array([
@@ -312,7 +312,7 @@ extension ExpressionBuilder {
     /// ## Example - Multi-Period Compounding
     ///
     /// ```swift
-    /// let model = MonteCarloExpressionModel { builder in
+    /// let model = try MonteCarloExpressionModel { builder in
     ///     let principal = builder[0]
     ///     let rate = builder[1]
     ///
@@ -328,7 +328,7 @@ extension ExpressionBuilder {
     /// ## Example - NPV Calculation
     ///
     /// ```swift
-    /// let model = MonteCarloExpressionModel { builder in
+    /// let model = try MonteCarloExpressionModel { builder in
     ///     let cashFlow = builder[0]
     ///     let discountRate = builder[1]
     ///
