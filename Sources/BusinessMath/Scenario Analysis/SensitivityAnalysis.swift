@@ -100,10 +100,12 @@ import Numerics
 ///
 /// ```swift
 /// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
-/// // Find revenue needed for positive net income
-/// if let breakeven = sensitivity.findInput(whereOutputEquals: 0.0) {
-///     print("Breakeven revenue: \(breakeven)")
-/// }
+/// // Find the input whose output is closest to breakeven. The type stores parallel
+/// // `inputValues` and `outputValues`, so this is a search over the pair.
+/// let breakeven = zip(sensitivity.inputValues, sensitivity.outputValues)
+///     .min { abs($0.1) < abs($1.1) }?
+///     .0
+/// print("Breakeven revenue: \(breakeven ?? 0)")
 /// ```
 ///
 /// ### Risk Assessment
@@ -221,6 +223,8 @@ extension ScenarioSensitivityAnalysis {
 	///
 	/// ## Example
 	/// ```swift
+	/// let revenueSensitivity = ScenarioSensitivityAnalysis.documentationFixture
+	/// let costSensitivity = ScenarioSensitivityAnalysis.documentationFixture
 	/// let revenueRange = revenueSensitivity.outputRange
 	/// let costRange = costSensitivity.outputRange
 	///
@@ -283,14 +287,14 @@ extension ScenarioSensitivityAnalysis {
 /// // Print data table
 /// print("         ", terminator: "")
 /// for cost in sensitivity.inputValues2 {
-///     print(cost.number(0).paddingLeft(to: 10), terminator: "")
+///     print(cost.number(0).paddingLeft(toLength: 10), terminator: "")
 /// }
 /// print()
 ///
 /// for (i, revenue) in sensitivity.inputValues1.enumerated() {
-///     print(revenue.number(0).paddingLeft(to: 8), terminator: "")
+///     print(revenue.number(0).paddingLeft(toLength: 8), terminator: "")
 ///     for j in 0..<sensitivity.inputValues2.count {
-///         print(sensitivity.results[i][j].number(0).paddingLeft(to: 12), terminator: "")
+///         print(sensitivity.results[i][j].number(0).paddingLeft(toLength: 12), terminator: "")
 ///     }	
 ///     print()
 /// }
@@ -333,10 +337,10 @@ public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let sensitivity = ScenarioSensitivityAnalysis.documentationFixture
+	/// let sensitivity = TwoWayScenarioSensitivityAnalysis.documentationFixture
 	/// // Access specific combination
-	/// let highRevenueLowCost = sensitivity.results[4][0]  // Last revenue, first cost
-	/// let lowRevenueHighCost = sensitivity.results[0][4]  // First revenue, last cost
+	/// let highRevenueLowCost = sensitivity.results[2][0]  // Last revenue, first cost
+	/// let lowRevenueHighCost = sensitivity.results[0][2]  // First revenue, last cost
 	/// ```
 	public let results: [[Double]]
 
@@ -1003,7 +1007,8 @@ public func runTornadoAnalysis(
 ///
 /// ## Example
 /// ```swift
-/// let values = generateSteps(from: 0.0, to: 100.0, steps: 5)
+/// // `generateSteps` is private to this file. It produces the same sequence as:
+/// let values = stride(from: 0.0, through: 100.0, by: 25.0).map { $0 }
 /// // Result: [0.0, 25.0, 50.0, 75.0, 100.0]
 /// ```
 @inline(__always)

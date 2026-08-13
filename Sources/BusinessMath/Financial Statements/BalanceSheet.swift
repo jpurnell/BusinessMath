@@ -426,6 +426,8 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	///     .termLoanLongTerm
 	/// ]
 	///
+	/// let debtBreakdown = balanceSheet.interestBearingDebtByType
+	/// let zeroSeries = TimeSeries(periods: Period.documentationQuarters, values: [0, 0, 0, 0])
 	/// let seniorDebt = debtBreakdown
 	///     .filter { seniorDebtTypes.contains($0.key) }
 	///     .values
@@ -598,7 +600,9 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	///
 	/// // Calculate AR as % of total current assets
 	/// let currentAssets = balanceSheet.currentAssets
-	/// let arPercent = (ar[q1] ?? 0 / (currentAssets[q1] ?? 0)) * 100  // e.g., 58%
+	/// // `ar` above is scoped to its `if let`; read the component again here.
+	/// // Parenthesised so the division binds before the `??`, which it does not by default.
+	/// let arPercent = ((components[.accountsReceivable]?[q1] ?? 0) / (currentAssets[q1] ?? 0)) * 100  // e.g., 58%
 	/// ```
 	///
 	/// ## LBO Working Capital Build/Release Modeling
@@ -722,6 +726,10 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Assess working capital efficiency post-acquisition
+	/// let turnover = balanceSheet.workingCapitalTurnover(revenue: incomeStatement.totalRevenue)
+	/// let acquisitionDate = Period.documentationQuarters[0]
+	/// let latestQuarter = Period.documentationQuarters[3]
+	/// let industryBenchmarkTurnover = 8.0
 	/// let baselineTurnover = (turnover[acquisitionDate] ?? 0)
 	/// let currentTurnover = (turnover[latestQuarter] ?? 0)
 	///
