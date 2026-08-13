@@ -33,6 +33,7 @@ import Foundation
 /// # Usage
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// // Create a revenue account
 /// let salesAccount = try Account(
 ///     entity: myEntity,

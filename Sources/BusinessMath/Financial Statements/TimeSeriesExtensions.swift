@@ -34,6 +34,7 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let totalAssets = balanceSheet.totalAssets
 /// // Q1: 100, Q2: 120, Q3: 140, Q4: 160
 ///
@@ -87,6 +88,8 @@ extension TimeSeries where T: Real {
 	/// ## Example
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let quarters = Period.documentationQuarters
 	/// let revenue = TimeSeries(periods: quarters, values: [100, 110, 121, 133.1])
 	/// let growth = revenue.periodOverPeriodGrowth()
 	/// // Q2: 0.10 (10%), Q3: 0.10 (10%), Q4: 0.10 (10%)

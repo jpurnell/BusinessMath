@@ -69,7 +69,7 @@ public enum IncomeStatementError: Error, Sendable {
 ///     timeSeries: cogsSeries
 /// )
 ///
-/// let incomeStmt = try IncomeStatement(
+/// let incomeStatement = try IncomeStatement(
 ///     entity: entity,
 ///     periods: periods,
 ///     accounts: [productRevenue, serviceRevenue, cogs]  // Single array!
@@ -79,19 +79,20 @@ public enum IncomeStatementError: Error, Sendable {
 /// ## Accessing Metrics
 ///
 /// ```swift
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Aggregated totals
-/// let totalRevenue = incomeStmt.totalRevenue
-/// let totalExpenses = incomeStmt.totalExpenses
-/// let netIncome = incomeStmt.netIncome
+/// let totalRevenue = incomeStatement.totalRevenue
+/// let totalExpenses = incomeStatement.totalExpenses
+/// let netIncome = incomeStatement.netIncome
 ///
 /// // Profitability metrics
-/// let grossProfit = incomeStmt.grossProfit
-/// let operatingIncome = incomeStmt.operatingIncome
+/// let grossProfit = incomeStatement.grossProfit
+/// let operatingIncome = incomeStatement.operatingIncome
 ///
 /// // Margin ratios
-/// let grossMargin = incomeStmt.grossMargin
-/// let operatingMargin = incomeStmt.operatingMargin
-/// let netMargin = incomeStmt.netMargin
+/// let grossMargin = incomeStatement.grossMargin
+/// let operatingMargin = incomeStatement.operatingMargin
+/// let netMargin = incomeStatement.netMargin
 /// ```
 ///
 /// ## Role-Based Filtering
@@ -99,17 +100,19 @@ public enum IncomeStatementError: Error, Sendable {
 /// Multiple accounts with the same role automatically aggregate:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let entity = Entity.documentationFixture
 /// // Two product revenue accounts from different regions
 /// let usRevenue = try Account(entity: entity, name: "US Revenue",
 ///                              incomeStatementRole: .productRevenue, timeSeries: usSeries)
 /// let euRevenue = try Account(entity: entity, name: "EU Revenue",
 ///                              incomeStatementRole: .productRevenue, timeSeries: euSeries)
 ///
-/// let incomeStmt = try IncomeStatement(entity: entity, periods: periods,
+/// let incomeStatement = try IncomeStatement(entity: entity, periods: periods,
 ///                                       accounts: [usRevenue, euRevenue])
 ///
 /// // Automatically aggregates both accounts
-/// let totalProduct = incomeStmt.totalRevenue  // US + EU
+/// let totalProduct = incomeStatement.totalRevenue  // US + EU
 /// ```
 ///
 /// ## Materialization for Performance
@@ -117,7 +120,8 @@ public enum IncomeStatementError: Error, Sendable {
 /// For repeated metric access across many companies, use materialization:
 ///
 /// ```swift
-/// let materialized = incomeStmt.materialize()
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let materialized = incomeStatement.materialize()
 ///
 /// // All metrics pre-computed
 /// let avgGrossMargin = materialized.grossMargin.valuesArray.mean()
@@ -338,8 +342,9 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Filter variable cost accounts
-	/// let variableAccounts = incomeStmt.variableCostAccounts
+	/// let variableAccounts = incomeStatement.variableCostAccounts
 	///
 	/// // Example variable costs: COGS, commissions, shipping
 	/// for account in variableAccounts {
@@ -366,8 +371,9 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Filter fixed cost accounts
-	/// let fixedAccounts = incomeStmt.fixedCostAccounts
+	/// let fixedAccounts = incomeStatement.fixedCostAccounts
 	///
 	/// // Example fixed costs: Rent, salaries, insurance
 	/// for account in fixedAccounts {
@@ -399,10 +405,13 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
-	/// let incomeStmt = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
+	/// let periods = Period.documentationQuarters
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
+	/// let incomeStatement = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
 	///
 	/// // Get total variable costs per period
-	/// let variableCosts = incomeStmt.totalVariableCosts
+	/// let variableCosts = incomeStatement.totalVariableCosts
 	///
 	/// // If no accounts have cost classification, returns zero
 	/// print("Q1 Variable Costs: \(variableCosts.values[0])")
@@ -437,10 +446,13 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
-	/// let incomeStmt = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
+	/// let periods = Period.documentationQuarters
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
+	/// let incomeStatement = try IncomeStatement(entity: company, periods: periods, accounts: accounts)
 	///
 	/// // Get total fixed costs per period
-	/// let fixedCosts = incomeStmt.totalFixedCosts
+	/// let fixedCosts = incomeStatement.totalFixedCosts
 	///
 	/// // If no accounts have cost classification, returns zero
 	/// print("Q1 Fixed Costs: \(fixedCosts.values[0])")
@@ -480,12 +492,13 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Revenue: $1,000,000
 	/// // Variable Costs: $600,000 (60% of revenue)
 	/// // Contribution Margin: $400,000 (40% of revenue)
 	///
-	/// let cm = incomeStmt.contributionMargin
-	/// let cmPercent = incomeStmt.contributionMarginPercent
+	/// let cm = incomeStatement.contributionMargin
+	/// let cmPercent = incomeStatement.contributionMarginPercent
 	///
 	/// print("Contribution Margin: \(cm.values[0])")        // $400,000
 	/// print("Contribution Margin %: \(cmPercent.values[0])")  // 0.40 (40%)
@@ -524,13 +537,15 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Product A: 70% contribution margin
 	/// // Product B: 40% contribution margin
 	/// // → Product A contributes more per dollar of sales
 	///
-	/// let cmPercent = incomeStmt.contributionMarginPercent
+	/// let cmPercent = incomeStatement.contributionMarginPercent
 	///
-	/// for (i, period) in incomeStmt.periods.enumerated() {
+	/// for (i, period) in incomeStatement.periods.enumerated() {
 	///     print("\(period): \(cmPercent.values[i] * 100)%")
 	/// }
 	/// ```
@@ -570,15 +585,17 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Company with high fixed costs:
 	/// // Contribution Margin: $500,000
 	/// // Operating Income: $100,000
 	/// // Operating Leverage: 5.0×
 	/// // → A 10% increase in revenue yields ~50% increase in operating income
 	///
-	/// let leverage = incomeStmt.operatingLeverage()
+	/// let leverage = incomeStatement.operatingLeverage()
 	///
-	/// for (i, period) in incomeStmt.periods.enumerated() {
+	/// for (i, period) in incomeStatement.periods.enumerated() {
 	///     print("\(period): \(leverage.values[i])×")
 	/// }
 	/// ```
@@ -613,14 +630,16 @@ extension IncomeStatement {
 	///
 	/// ## Example
 	/// ```swift
-	/// let materialized = incomeStmt.materialize()
+	/// let periods = Period.documentationQuarters
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+	/// let materialized = incomeStatement.materialize()
 	///
 	/// // Metrics are pre-computed, not recalculated on each access
 	/// for period in materialized.periods {
 	///     print("Period: \(period)")
-	///     print("  Gross Margin: \(materialized.grossMargin[period] ?? 0)")
-	///     print("  Operating Margin: \(materialized.operatingMargin[period] ?? 0)")
-	///     print("  Net Margin: \(materialized.netMargin[period] ?? 0)")
+	///     print("  Gross Margin: \((materialized.grossMargin[period] ?? 0))")
+	///     print("  Operating Margin: \((materialized.operatingMargin[period] ?? 0))")
+	///     print("  Net Margin: \((materialized.netMargin[period] ?? 0))")
 	/// }
 	/// ```
 	public struct Materialized: Sendable {

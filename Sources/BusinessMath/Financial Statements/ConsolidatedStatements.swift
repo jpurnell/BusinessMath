@@ -22,6 +22,7 @@ import Numerics
 /// ## Example: Peer Comparison
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// let apple = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// let microsoft = Entity(id: "MSFT", primaryType: .ticker, name: "Microsoft Corp.")
 /// let google = Entity(id: "GOOGL", primaryType: .ticker, name: "Alphabet Inc.")
@@ -42,6 +43,8 @@ import Numerics
 /// ## Example: Parent/Subsidiary Consolidation
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let entity = Entity.documentationFixture
 /// let parent = Entity(id: "PARENT", primaryType: .internal, name: "Parent Co")
 /// let sub1 = Entity(id: "SUB1", primaryType: .internal, name: "Europe Division")
 /// let sub2 = Entity(id: "SUB2", primaryType: .internal, name: "Asia Division")
@@ -357,6 +360,7 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 	///
 	/// ## Example
 	/// ```swift
+	/// let entity = Entity.documentationFixture
 	/// // Get all technology sector companies
 	/// let techCompanies = consolidated.filterEntities { entity in
 	///     entity.metadata["sector"] == "Technology"

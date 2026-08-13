@@ -38,7 +38,7 @@ private let logger = Logger(subsystem: "com.businessmath", category: "FinancialR
 ///
 /// // Analyze Q1 2025 profitability
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Q1 ROA: \(roa[q1]! * 100)%")
+/// print("Q1 ROA: \(roa[q1] ?? 0 * 100)%")
 /// ```
 
 // MARK: - Errors
@@ -92,13 +92,15 @@ public enum FinancialRatioError: Error, CustomStringConvertible {
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let roa = returnOnAssets(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("ROA: \(roa[q1]! * 100)%")  // e.g., "ROA: 12.5%"
+/// print("ROA: \(roa[q1] ?? 0 * 100)%")  // e.g., "ROA: 12.5%"
 /// ```
 ///
 /// - Parameters:
@@ -146,13 +148,15 @@ public func returnOnAssets<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let roe = returnOnEquity(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("ROE: \(roe[q1]! * 100)%")  // e.g., "ROE: 18.5%"
+/// print("ROE: \(roe[q1] ?? 0 * 100)%")  // e.g., "ROE: 18.5%"
 /// ```
 ///
 /// - Parameters:
@@ -209,6 +213,8 @@ public func returnOnEquity<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let roic = returnOnInvestedCapital(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
@@ -216,7 +222,7 @@ public func returnOnEquity<T: Real & Sendable>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("ROIC: \(roic[q1]! * 100)%")  // e.g., "ROIC: 14.2%"
+/// print("ROIC: \(roic[q1] ?? 0 * 100)%")  // e.g., "ROIC: 14.2%"
 /// ```
 ///
 /// - Parameters:
@@ -275,13 +281,15 @@ public func returnOnInvestedCapital<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let turnover = assetTurnover(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Asset Turnover: \(turnover[q1]!)x")  // e.g., "Asset Turnover: 1.5x"
+/// print("Asset Turnover: \(turnover[q1] ?? 0)x")  // e.g., "Asset Turnover: 1.5x"
 /// ```
 ///
 /// - Parameters:
@@ -327,13 +335,15 @@ public func assetTurnover<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let turnover = try inventoryTurnover(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Inventory Turnover: \(turnover[q1]!)x")  // e.g., "Inventory Turnover: 8.0x"
+/// print("Inventory Turnover: \(turnover[q1] ?? 0)x")  // e.g., "Inventory Turnover: 8.0x"
 /// ```
 ///
 /// - Parameters:
@@ -405,13 +415,15 @@ public func inventoryTurnover<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dio = try daysInventoryOutstanding(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("DIO: \(dio[q1]!) days")  // e.g., "DIO: 45.6 days"
+/// print("DIO: \(dio[q1] ?? 0) days")  // e.g., "DIO: 45.6 days"
 /// ```
 ///
 /// - Parameters:
@@ -458,13 +470,15 @@ public func daysInventoryOutstanding<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let turnover = try receivablesTurnover(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Receivables Turnover: \(turnover[q1]!)x")  // e.g., "Receivables Turnover: 6.0x"
+/// print("Receivables Turnover: \(turnover[q1] ?? 0)x")  // e.g., "Receivables Turnover: 6.0x"
 /// ```
 ///
 /// - Parameters:
@@ -526,13 +540,15 @@ public func receivablesTurnover<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dso = try daysSalesOutstanding(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("DSO: \(dso[q1]!) days")  // e.g., "DSO: 42.5 days"
+/// print("DSO: \(dso[q1] ?? 0) days")  // e.g., "DSO: 42.5 days"
 /// ```
 ///
 /// - Parameters:
@@ -588,13 +604,15 @@ public func daysSalesOutstanding<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dpo = try daysPayableOutstanding(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("DPO: \(dpo[q1]!) days")  // e.g., "DPO: 45.2 days"
+/// print("DPO: \(dpo[q1] ?? 0) days")  // e.g., "DPO: 45.2 days"
 /// ```
 ///
 /// - Parameters:
@@ -662,10 +680,11 @@ public func daysPayableOutstanding<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let coverage = try interestCoverage(incomeStatement: incomeStatement)
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Interest Coverage: \(coverage[q1]!)x")  // e.g., "Interest Coverage: 5.2x"
+/// print("Interest Coverage: \(coverage[q1] ?? 0)x")  // e.g., "Interest Coverage: 5.2x"
 /// ```
 ///
 /// - Parameter incomeStatement: Income statement containing operating income and interest expense
@@ -727,6 +746,7 @@ public func interestCoverage<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dscr = try debtServiceCoverage(
 ///     incomeStatement: incomeStatement,
 ///     principalPayments: principalSeries,
@@ -734,7 +754,7 @@ public func interestCoverage<T: Real & Sendable>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
+/// print("DSCR: \(dscr[q1] ?? 0)x")  // e.g., "DSCR: 1.8x"
 /// ```
 ///
 /// - Parameters:
@@ -771,6 +791,8 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Simple! Just pass the financial statements
 /// let dscr = try debtServiceCoverage(
 ///     incomeStatement: incomeStatement,
@@ -778,7 +800,7 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
+/// print("DSCR: \(dscr[q1] ?? 0)x")  // e.g., "DSCR: 1.8x"
 /// ```
 ///
 /// - Parameters:
@@ -864,6 +886,8 @@ public func debtServiceCoverage<T: Real & Sendable>(
 ///
 /// **Recommended approach:**
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Option 1: Use balance sheet's aggregated debt (best)
 /// let totalDebtTS = balanceSheet.interestBearingDebt  // Includes all debt
 /// let totalDebtAccount = Account(
@@ -902,6 +926,8 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Use aggregated total debt (includes LT + current portion)
 /// let totalDebtTS = balanceSheet.interestBearingDebt
 /// let debtAccount = Account(
@@ -924,7 +950,7 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("DSCR: \(dscr[q1]!)x")  // e.g., "DSCR: 1.8x"
+/// print("DSCR: \(dscr[q1] ?? 0)x")  // e.g., "DSCR: 1.8x"
 /// ```
 ///
 /// - Parameters:
@@ -976,14 +1002,16 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let profitability = profitabilityRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Gross Margin: \(profitability.grossMargin[q1]! * 100)%")
-/// print("ROE: \(profitability.roe[q1]! * 100)%")
+/// print("Gross Margin: \((profitability.grossMargin[q1] ?? 0) * 100)%")
+/// print("ROE: \((profitability.roe[q1] ?? 0) * 100)%")
 /// ```
 public struct ProfitabilityRatios<T: Real & Sendable>: Sendable where T: Codable {
 	/// Gross profit as percentage of revenue
@@ -1043,13 +1071,16 @@ public struct ProfitabilityRatios<T: Real & Sendable>: Sendable where T: Codable
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let profitability = profitabilityRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
-/// print("Gross Margin: \(profitability.grossMargin[q1]! * 100)%")
-/// print("ROE: \(profitability.roe[q1]! * 100)%")
+/// print("Gross Margin: \((profitability.grossMargin[q1] ?? 0) * 100)%")
+/// print("ROE: \((profitability.roe[q1] ?? 0) * 100)%")
 /// ```
 ///
 /// - Parameters:
@@ -1080,13 +1111,16 @@ public func profitabilityRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let profitability = profitabilityRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
 ///     taxRate: 0.25
 /// )
 ///
-/// print("ROIC: \(profitability.roic[q1]! * 100)%")
+/// print("ROIC: \((profitability.roic[q1] ?? 0) * 100)%")
 /// ```
 ///
 /// - Parameters:
@@ -1125,15 +1159,17 @@ public func profitabilityRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let efficiency = efficiencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Asset Turnover: \(efficiency.assetTurnover[q1]!)x")
+/// print("Asset Turnover: \((efficiency.assetTurnover[q1] ?? 0))x")
 /// if let ccc = efficiency.cashConversionCycle {
-///     print("Cash Conversion Cycle: \(ccc[q1]!) days")
+///     print("Cash Conversion Cycle: \(ccc[q1] ?? 0) days")
 /// }
 /// ```
 public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
@@ -1203,17 +1239,20 @@ public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let efficiency = efficiencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// // Asset turnover is always available
-/// print("Asset Turnover: \(efficiency.assetTurnover[q1]!)x")
+/// print("Asset Turnover: \((efficiency.assetTurnover[q1] ?? 0))x")
 ///
 /// // Check for optional metrics
 /// if let ccc = efficiency.cashConversionCycle {
-///     print("CCC: \(ccc[q1]!) days")
+///     print("CCC: \(ccc[q1] ?? 0) days")
 /// } else {
 ///     print("CCC not available (missing working capital accounts)")
 /// }
@@ -1261,11 +1300,12 @@ public func efficiencyRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let liquidity = liquidityRatios(balanceSheet: balanceSheet)
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Current Ratio: \(liquidity.currentRatio[q1]!)")
-/// print("Quick Ratio: \(liquidity.quickRatio[q1]!)")
+/// print("Current Ratio: \((liquidity.currentRatio[q1] ?? 0))")
+/// print("Quick Ratio: \((liquidity.quickRatio[q1] ?? 0))")
 /// ```
 public struct LiquidityRatios<T: Real & Sendable>: Sendable where T: Codable {
 	/// Current Assets / Current Liabilities
@@ -1307,10 +1347,12 @@ public struct LiquidityRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let liquidity = liquidityRatios(balanceSheet: balanceSheet)
 ///
-/// print("Current Ratio: \(liquidity.currentRatio[q1]!)")
-/// print("Working Capital: $\(liquidity.workingCapital[q1]!)")
+/// print("Current Ratio: \((liquidity.currentRatio[q1] ?? 0))")
+/// print("Working Capital: $\((liquidity.workingCapital[q1] ?? 0))")
 /// ```
 ///
 /// - Parameter balanceSheet: Balance sheet containing assets and liabilities
@@ -1339,15 +1381,17 @@ public func liquidityRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let solvency = solvencyRatios(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Debt-to-Equity: \(solvency.debtToEquity[q1]!)")
+/// print("Debt-to-Equity: \((solvency.debtToEquity[q1] ?? 0))")
 /// if let coverage = solvency.interestCoverage {
-///     print("Interest Coverage: \(coverage[q1]!)x")
+///     print("Interest Coverage: \(coverage[q1] ?? 0)x")
 /// }
 /// ```
 public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
@@ -1413,6 +1457,9 @@ public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Simple usage - DSCR automatically calculated!
 /// let solvency = solvencyRatios(
 ///     incomeStatement: incomeStatement,
@@ -1420,15 +1467,15 @@ public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// )
 ///
 /// // Leverage ratios are always available
-/// print("Debt-to-Equity: \(solvency.debtToEquity[q1]!)")
+/// print("Debt-to-Equity: \((solvency.debtToEquity[q1] ?? 0))")
 ///
 /// // Coverage ratios automatically calculated (if debt exists)
 /// if let coverage = solvency.interestCoverage {
-///     print("Interest Coverage: \(coverage[q1]!)x")
+///     print("Interest Coverage: \(coverage[q1] ?? 0)x")
 /// }
 ///
 /// if let dscr = solvency.debtServiceCoverage {
-///     print("DSCR: \(dscr[q1]!)x")  // ← Now automatically available!
+///     print("DSCR: \(dscr[q1] ?? 0)x")  // ← Now automatically available!
 /// }
 /// ```
 ///
@@ -1506,6 +1553,9 @@ public func solvencyRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Use aggregated total debt (includes LT + current portion)
 /// // This correctly captures principal payments by tracking total debt changes
 /// let totalDebtTS = balanceSheet.interestBearingDebt
@@ -1529,7 +1579,7 @@ public func solvencyRatios<T: Real & Sendable>(
 /// )
 ///
 /// // Debt service coverage is now available
-/// print("DSCR: \(solvency.debtServiceCoverage![q1]!)x")
+/// print("DSCR: \(solvency.debtServiceCoverage![q1] ?? 0)x")
 /// ```
 ///
 /// - Parameters:
@@ -1573,6 +1623,8 @@ public func solvencyRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let valuation = valuationMetrics(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
@@ -1581,8 +1633,8 @@ public func solvencyRatios<T: Real & Sendable>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("P/E Ratio: \(valuation.priceToEarnings[q1]!)")
-/// print("EV/EBITDA: \(valuation.evToEbitda[q1]!)")
+/// print("P/E Ratio: \((valuation.priceToEarnings[q1] ?? 0))")
+/// print("EV/EBITDA: \((valuation.evToEbitda[q1] ?? 0))")
 /// ```
 public struct ValuationMetrics<T: Real & Sendable>: Sendable where T: Codable {
 	/// Market capitalization (shares × price)
@@ -1642,6 +1694,9 @@ public struct ValuationMetrics<T: Real & Sendable>: Sendable where T: Codable {
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let valuation = valuationMetrics(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
@@ -1649,8 +1704,8 @@ public struct ValuationMetrics<T: Real & Sendable>: Sendable where T: Codable {
 ///     marketPrice: 50.0
 /// )
 ///
-/// print("P/E: \(valuation.priceToEarnings[q1]!)")
-/// print("EV/EBITDA: \(valuation.evToEbitda[q1]!)")
+/// print("P/E: \((valuation.priceToEarnings[q1] ?? 0))")
+/// print("EV/EBITDA: \((valuation.evToEbitda[q1] ?? 0))")
 /// ```
 ///
 /// - Parameters:

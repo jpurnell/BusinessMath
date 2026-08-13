@@ -38,7 +38,7 @@ import Numerics
 /// )
 ///
 /// let currentPeriod = Period.quarter(year: 2025, quarter: 1)
-/// if zScore[currentPeriod]! > 2.99 {
+/// if (zScore[currentPeriod] ?? 0) > 2.99 {
 ///     print("Safe zone: Low bankruptcy risk")
 /// }
 ///
@@ -80,6 +80,9 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let company = Entity.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let score = piotroskiScore(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
@@ -182,6 +185,9 @@ public struct PiotroskiScore {
 /// ## Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // For a single period
 /// let z = altmanZScore(
 ///     incomeStatement: incomeStatement,
@@ -207,7 +213,7 @@ public struct PiotroskiScore {
 ///     marketPrice: marketPriceSeries,
 ///     sharesOutstanding: sharesOutstandingSeries
 /// )
-/// let z = zScores[period]!
+/// let z = (zScores[period] ?? 0)
 /// ```
 ///
 /// - Parameters:
@@ -354,6 +360,8 @@ public func altmanZScore<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let currentPeriod = Period.quarter(year: 2025, quarter: 1)
 /// let priorPeriod = Period.quarter(year: 2024, quarter: 4)
 ///

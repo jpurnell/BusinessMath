@@ -37,7 +37,7 @@ import Numerics
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("P/E Ratio: \(pe[q1]!)x")
+/// print("P/E Ratio: \(pe[q1] ?? 0)x")
 /// ```
 
 // MARK: - Helper Functions
@@ -72,6 +72,8 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let quarters = Period.documentationQuarters
 /// let price = TimeSeries(periods: quarters, values: [50.0, 52.0, 55.0, 58.0])
 /// let shares = TimeSeries(periods: quarters, values: [100_000_000, 99_000_000, 98_000_000, 97_000_000])
 ///
@@ -139,6 +141,7 @@ public func marketCapitalization<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Basic P/E
 /// let pe = priceToEarnings(
 ///     incomeStatement: incomeStatement,
@@ -223,6 +226,7 @@ public func priceToEarnings<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let pb = priceToBook(
 ///     balanceSheet: balanceSheet,
 ///     marketPrice: marketPrice,
@@ -230,7 +234,7 @@ public func priceToEarnings<T: Real>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("P/B: \(pb[q1]!)x")
+/// print("P/B: \(pb[q1] ?? 0)x")
 /// ```
 ///
 /// - Parameters:
@@ -300,6 +304,7 @@ public func priceToBook<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let ps = priceToSales(
 ///     incomeStatement: incomeStatement,
 ///     marketPrice: marketPrice,
@@ -307,7 +312,7 @@ public func priceToBook<T: Real>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("P/S: \(ps[q1]!)x")
+/// print("P/S: \(ps[q1] ?? 0)x")
 /// ```
 ///
 /// - Parameters:
@@ -381,6 +386,7 @@ public func priceToSales<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let ev = enterpriseValue(
 ///     balanceSheet: balanceSheet,
 ///     marketPrice: marketPrice,
@@ -388,7 +394,7 @@ public func priceToSales<T: Real>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("EV: $\(ev[q1]!)")
+/// print("EV: $\(ev[q1] ?? 0)")
 /// ```
 ///
 /// - Parameters:
@@ -462,6 +468,8 @@ public func enterpriseValue<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let evEbitda = evToEbitda(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
@@ -470,7 +478,7 @@ public func enterpriseValue<T: Real>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("EV/EBITDA: \(evEbitda[q1]!)x")
+/// print("EV/EBITDA: \(evEbitda[q1] ?? 0)x")
 /// ```
 ///
 /// - Parameters:
@@ -552,6 +560,8 @@ public func evToEbitda<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let evSales = evToSales(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
@@ -560,7 +570,7 @@ public func evToEbitda<T: Real>(
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("EV/Sales: \(evSales[q1]!)x")
+/// print("EV/Sales: \(evSales[q1] ?? 0)x")
 /// ```
 ///
 /// - Parameters:

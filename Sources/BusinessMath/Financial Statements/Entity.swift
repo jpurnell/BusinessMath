@@ -88,6 +88,7 @@ public enum EntityIdentifierType: Hashable, Codable, Sendable {
 /// Entities can store multiple identifier types:
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// var entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// entity.identifiers[.cusip] = "037833100"
 /// entity.identifiers[.isin] = "US0378331005"
@@ -142,6 +143,7 @@ public struct Entity: Hashable, Codable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let entity = Entity.documentationFixture
 	/// var entity = Entity(
 	///     id: "AAPL",
 	///     primaryType: .ticker,
@@ -174,6 +176,7 @@ public struct Entity: Hashable, Codable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let entity = Entity.documentationFixture
 	/// var entity = Entity(id: "SUB01", primaryType: .internal, name: "Europe Division")
 	/// entity.metadata["region"] = "EMEA"
 	/// entity.metadata["parent"] = "PARENT_CO"

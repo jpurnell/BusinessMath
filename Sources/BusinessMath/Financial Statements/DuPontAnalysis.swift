@@ -40,16 +40,18 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dupont = dupontAnalysis(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// print("Net Margin: \(dupont.netMargin[q1]! * 100)%")
-/// print("Asset Turnover: \(dupont.assetTurnover[q1]!)")
-/// print("Equity Multiplier: \(dupont.equityMultiplier[q1]!)")
-/// print("ROE: \(dupont.roe[q1]! * 100)%")
+/// print("Net Margin: \((dupont.netMargin[q1] ?? 0) * 100)%")
+/// print("Asset Turnover: \((dupont.assetTurnover[q1] ?? 0))")
+/// print("Equity Multiplier: \((dupont.equityMultiplier[q1] ?? 0))")
+/// print("ROE: \((dupont.roe[q1] ?? 0) * 100)%")
 /// ```
 public struct DuPontAnalysis<T: Real & Sendable>: Sendable where T: Codable {
 	/// Net profit margin (Net Income / Revenue) - measures profitability
@@ -111,6 +113,8 @@ public struct DuPontAnalysis<T: Real & Sendable>: Sendable where T: Codable {
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dupont = dupontAnalysis(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
@@ -194,18 +198,21 @@ public func dupontAnalysis<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let q1 = Period.documentationQuarters[0]
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dupont5 = dupontAnalysis5Way(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet
 /// )
 ///
 /// // Operating ROA = Operating Margin × Asset Turnover
-/// let operatingROA = dupont5.operatingMargin[q1]! * dupont5.assetTurnover[q1]!
+/// let operatingROA = (dupont5.operatingMargin[q1] ?? 0) * (dupont5.assetTurnover[q1] ?? 0)
 ///
 /// // Impact of financing decisions
-/// let financingMultiplier = dupont5.taxBurden[q1]! *
-///                          dupont5.interestBurden[q1]! *
-///                          dupont5.equityMultiplier[q1]!
+/// let financingMultiplier = (dupont5.taxBurden[q1] ?? 0) *
+///                          (dupont5.interestBurden[q1] ?? 0) *
+///                          (dupont5.equityMultiplier[q1] ?? 0)
 /// ```
 public struct DuPont5WayAnalysis<T: Real & Sendable>: Sendable where T: Codable {
 	/// Tax burden (Net Income / EBT) - measures tax retention rate
@@ -281,6 +288,8 @@ public struct DuPont5WayAnalysis<T: Real & Sendable>: Sendable where T: Codable 
 /// ## Example
 ///
 /// ```swift
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let dupont5 = dupontAnalysis5Way(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet

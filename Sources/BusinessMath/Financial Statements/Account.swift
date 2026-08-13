@@ -175,6 +175,8 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// var rentMetadata = AccountMetadata()
 	/// rentMetadata.isFixedCost = true
 	///
@@ -218,6 +220,8 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let company = Entity.documentationFixture
+	/// let entity = Entity.documentationFixture
 	/// var cogsMetadata = AccountMetadata()
 	/// cogsMetadata.isVariableCost = true
 	///
@@ -316,6 +320,7 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 /// Accounts now support **multiple roles** across statements:
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// // Single role: Revenue appears only in Income Statement
 /// let revenue = try Account(
 ///     entity: apple,
@@ -355,6 +360,7 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 /// The old `AccountType` system is deprecated but still functional:
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// // Old API (deprecated, but still works)
 /// let oldAccount = try Account(
 ///     entity: apple,

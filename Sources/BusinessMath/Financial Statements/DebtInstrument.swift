@@ -17,6 +17,7 @@ import Foundation
 /// ## Usage Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// // Create a 30-year mortgage
 /// let mortgage = DebtInstrument(
 ///     principal: 250_000.0,
@@ -351,14 +352,15 @@ public enum AmortizationType {
 /// ## Usage Example
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
 /// let schedule = debtInstrument.schedule()
 ///
 /// for period in schedule.periods {
 ///     print("Period: \(period)")
-///     print("  Payment: $\(schedule.payment[period]!)")
-///     print("  Interest: $\(schedule.interest[period]!)")
-///     print("  Principal: $\(schedule.principal[period]!)")
-///     print("  Balance: $\(schedule.endingBalance[period]!)")
+///     print("  Payment: $\((schedule.payment[period] ?? 0))")
+///     print("  Interest: $\((schedule.interest[period] ?? 0))")
+///     print("  Principal: $\((schedule.principal[period] ?? 0))")
+///     print("  Balance: $\((schedule.endingBalance[period] ?? 0))")
 /// }
 ///
 /// print("\nTotal interest paid: $\(schedule.totalInterest)")

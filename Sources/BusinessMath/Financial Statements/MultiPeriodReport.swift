@@ -25,6 +25,7 @@ import Numerics
 ///
 /// **Quarterly Report (4Q + Annual):**
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// let report = try MultiPeriodReport(
 ///     entity: entity,
 ///     periodSummaries: [q1Summary, q2Summary, q3Summary, q4Summary],
@@ -41,6 +42,7 @@ import Numerics
 ///
 /// **Year-over-Year Comparison:**
 /// ```swift
+/// let entity = Entity.documentationFixture
 /// let report = try MultiPeriodReport(
 ///     entity: entity,
 ///     periodSummaries: [fy2023, fy2024, fy2025]
