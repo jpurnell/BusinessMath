@@ -16,6 +16,7 @@
 //
 
 import Testing
+import TestSupport
 import Foundation
 
 // SplitMix64 comes from BusinessMath, which re-exports SwiftDeterminism's. This file
@@ -294,7 +295,7 @@ struct RankingFunctionsTests {
 
     // MARK: - Stress Tests
 
-    @Test("rank() - Large array performance", .timeLimit(.minutes(2)))
+    @Test("rank() - Large array performance", .timeLimit(testHangGuard))
     func rankLargeArray() {
         var rng = SplitMix64(seed: 42)
         let values = (1...10000).map { Double($0) }.shuffled(using: &rng)
@@ -1306,7 +1307,7 @@ struct Array2DTests {
 
     // MARK: - Stress Tests
 
-    @Test("Array2D - Large matrix performance", .timeLimit(.minutes(2)))
+    @Test("Array2D - Large matrix performance", .timeLimit(testHangGuard))
     func array2DLargeMatrix() {
         var array = Array2D<Double>(columns: 100, rows: 100, initialValue: 1.0)
 

@@ -273,7 +273,7 @@ struct DispersionNaNInfinityTests {
 @Suite("Dispersion - Stress Tests")
 struct DispersionStressTests {
 
-	@Test("stdDev handles large dataset", .timeLimit(.minutes(2)))
+	@Test("stdDev handles large dataset", .timeLimit(testHangGuard))
 	func stdDev_large_dataset() {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = stdDev(values)
@@ -281,7 +281,7 @@ struct DispersionStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("stdDevS handles large dataset", .timeLimit(.minutes(2)))
+	@Test("stdDevS handles large dataset", .timeLimit(testHangGuard))
 	func stdDevS_large_dataset() {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = stdDevS(values)
@@ -289,7 +289,7 @@ struct DispersionStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("stdDevP handles large dataset", .timeLimit(.minutes(2)))
+	@Test("stdDevP handles large dataset", .timeLimit(testHangGuard))
 	func stdDevP_large_dataset() {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = stdDevP(values)
@@ -297,7 +297,7 @@ struct DispersionStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("varianceS handles large dataset", .timeLimit(.minutes(2)))
+	@Test("varianceS handles large dataset", .timeLimit(testHangGuard))
 	func varianceS_large_dataset() {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = varianceS(values)
@@ -305,7 +305,7 @@ struct DispersionStressTests {
 		#expect(result > 0)
 	}
 
-	@Test("varianceP handles large dataset", .timeLimit(.minutes(2)))
+	@Test("varianceP handles large dataset", .timeLimit(testHangGuard))
 	func varianceP_large_dataset() {
 		let values = (1...1_000_000).map { Double($0) }
 		let result = varianceP(values)

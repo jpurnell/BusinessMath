@@ -353,7 +353,7 @@ struct TimeWindowedTests {
     // MARK: - Stress Tests
 
     @Test("Tumbling window over 10_000 elements performs efficiently",
-          .timeLimit(.minutes(2)))
+          .timeLimit(testHangGuard))
     func tumblingLargeStreamStress() async throws {
         let count = 10_000
         let reference = ContinuousClock.now

@@ -444,7 +444,7 @@ struct StreamingStatisticsTests {
     // MARK: - Stress Tests
 
     @Test("Rolling mean over 100_000 elements completes in time",
-          .timeLimit(.minutes(2)))
+          .timeLimit(testHangGuard))
     func rollingMeanStress() async throws {
         let values = (0..<100_000).map { Double($0) }
         let stream = AsyncValueStream(values)

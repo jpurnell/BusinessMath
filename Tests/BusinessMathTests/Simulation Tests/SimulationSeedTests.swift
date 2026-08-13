@@ -7,6 +7,7 @@
 //
 
 import Testing
+import TestSupport
 import Foundation
 @testable import BusinessMath
 
@@ -199,7 +200,7 @@ struct AsyncRunTests {
 	}
 	#endif
 
-	@Test("Async CPU run surfaces cancellation promptly", .timeLimit(.minutes(2)))
+	@Test("Async CPU run surfaces cancellation promptly", .timeLimit(testHangGuard))
 	func asyncCancellation() async throws {
 		// The run checks Task.checkCancellation() at every 1024-iteration checkpoint
 		// (including iteration 0), so a cancelled task surfaces the error at its first
