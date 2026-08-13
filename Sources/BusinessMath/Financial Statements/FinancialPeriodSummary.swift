@@ -17,6 +17,7 @@ import Numerics
 /// ## Example Usage
 ///
 /// ```swift
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc")

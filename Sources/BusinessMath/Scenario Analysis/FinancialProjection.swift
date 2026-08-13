@@ -21,6 +21,7 @@ import Numerics
 /// a scenario, but can also be constructed manually for testing or custom workflows:
 ///
 /// ```swift
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let cashFlowStmt = try CashFlowStatement<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -42,6 +43,7 @@ import Numerics
 /// Once created, you can access any metric from the underlying statements:
 ///
 /// ```swift
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -192,6 +194,7 @@ public struct FinancialProjection: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let operatingCF = projection.cashFlowStatement.totalOperatingCashFlow
@@ -215,6 +218,7 @@ public struct FinancialProjection: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let cashFlowStmt = try CashFlowStatement<Double>.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture

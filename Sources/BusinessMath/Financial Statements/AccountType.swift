@@ -290,6 +290,7 @@ extension AccountType {
 	///
 	/// ## Example
 	/// ```swift
+	/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// AccountType.revenue.category  // .incomeStatement

@@ -17,6 +17,8 @@ import Numerics
 /// ## Basic Usage
 ///
 /// ```swift
+/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let company = Entity.documentationFixture
 /// let entity = Entity.documentationFixture
@@ -58,6 +60,7 @@ import Numerics
 /// Here's a complete example showing how to build financial statements from drivers:
 ///
 /// ```swift
+/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
 /// let quarters = Period.documentationQuarters
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// let periods = Period.year(2025).quarters()
@@ -258,6 +261,7 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
 	/// let scenario = FinancialScenario.documentationFixture
 	/// let periods = Period.documentationQuarters
 	/// let builder: ScenarioRunner.StatementBuilder = { drivers, periods in
@@ -333,6 +337,7 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 	/// let scenario = FinancialScenario.documentationFixture
 	/// let periods = Period.documentationQuarters
 	/// let quarters = Period.documentationQuarters

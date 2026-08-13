@@ -39,6 +39,7 @@ public enum CashFlowStatementError: Error, Sendable {
 /// ## Creating Cash Flow Statements
 ///
 /// ```swift
+/// let operatingSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// let periods = [
 ///     Period.quarter(year: 2024, quarter: 1),
@@ -288,6 +289,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 	/// let periods = Period.documentationQuarters
 	/// let q2 = Period.documentationQuarters[1]
 	/// let company = Entity.documentationFixture

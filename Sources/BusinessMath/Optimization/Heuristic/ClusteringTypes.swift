@@ -63,6 +63,7 @@ public struct Cluster<V: VectorSpace>: Equatable where V: Equatable {
 ///
 /// ## Usage Example
 /// ```swift
+/// let dataPoints = [Vector2D(x: 1.0, y: 1.0), Vector2D(x: 1.2, y: 0.9), Vector2D(x: 5.0, y: 4.8), Vector2D(x: 5.3, y: 5.1), Vector2D(x: 9.0, y: 9.2), Vector2D(x: 8.7, y: 9.4)]
 /// let kmeans = KMeans<Vector2D<Double>>(seed: 42)
 /// let result = try kmeans.fit(data: dataPoints, k: 3)
 ///

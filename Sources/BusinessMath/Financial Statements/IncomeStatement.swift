@@ -40,6 +40,10 @@ public enum IncomeStatementError: Error, Sendable {
 /// ## Creating Income Statements (New Role-Based API)
 ///
 /// ```swift
+/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
+/// let cogsSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let productSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let serviceSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// let periods = [
 ///     Period.quarter(year: 2024, quarter: 1),
@@ -100,6 +104,9 @@ public enum IncomeStatementError: Error, Sendable {
 /// Multiple accounts with the same role automatically aggregate:
 ///
 /// ```swift
+/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
+/// let euSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let usSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// // Two product revenue accounts from different regions
@@ -342,6 +349,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Filter variable cost accounts
 	/// let variableAccounts = incomeStatement.variableCostAccounts
@@ -371,6 +379,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Filter fixed cost accounts
 	/// let fixedAccounts = incomeStatement.fixedCostAccounts
@@ -405,6 +414,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
 	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters
@@ -448,6 +458,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
 	/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
 	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters

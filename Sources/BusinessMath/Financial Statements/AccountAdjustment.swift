@@ -276,6 +276,7 @@ extension Account {
 	/// ## Example
 	///
 	/// ```swift
+	/// let gnaData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let periods = Period.documentationQuarters
 	/// let q1 = Period.documentationQuarters[0]
 	/// let company = Entity.documentationFixture
@@ -371,6 +372,8 @@ extension IncomeStatement {
 	/// ## Example: Quality of Earnings Analysis
 	///
 	/// ```swift
+	/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
+	/// let target = Entity.documentationFixture
 	/// let periods = Period.documentationQuarters
 	/// let q1 = Period.documentationQuarters[0]
 	/// let q4 = Period.documentationQuarters[3]

@@ -532,6 +532,7 @@ public struct Revenue: ModelComponent {
     ///
     /// Example:
     /// ```swift
+    /// let months = Period.documentationQuarters
     /// let periods = Period.documentationQuarters
     /// Revenue("Subscription Services", periods: months, values: [5_000, 5_500, 6_000])
     /// ```

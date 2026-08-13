@@ -44,6 +44,7 @@ public enum BalanceSheetError: Error, Sendable {
 /// ## Creating Balance Sheets
 ///
 /// ```swift
+/// let cashSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 /// let periods = [
 ///     Period.quarter(year: 2024, quarter: 1),
@@ -384,6 +385,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let zeroSeries = TimeSeries(periods: Period.documentationQuarters, values: [0, 0, 0, 0])
 	/// let q1 = Period.documentationQuarters[0]
 	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let debtBreakdown = balanceSheet.interestBearingDebtByType
@@ -406,6 +408,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Covenant Calculations
 	///
 	/// ```swift
+	/// let zeroSeries = TimeSeries(periods: Period.documentationQuarters, values: [0, 0, 0, 0])
 	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// // Senior leverage ratio (excludes mezzanine)
 	/// let seniorDebtTypes: Set<BalanceSheetRole> = [
@@ -514,6 +517,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 	/// let periods = Period.documentationQuarters
 	/// let q1 = Period.documentationQuarters[0]
 	/// let q2 = Period.documentationQuarters[1]
@@ -561,6 +565,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 	/// let periods = Period.documentationQuarters
 	/// let q1 = Period.documentationQuarters[0]
 	/// let company = Entity.documentationFixture
@@ -678,6 +683,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
 	/// let periods = Period.documentationQuarters
 	/// let q2 = Period.documentationQuarters[1]
 	/// let company = Entity.documentationFixture

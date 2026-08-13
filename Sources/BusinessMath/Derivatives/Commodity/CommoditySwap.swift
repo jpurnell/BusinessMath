@@ -92,6 +92,7 @@ public struct CommoditySwap<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let swap = Period.documentationQuarters
 	/// let periods = Period.documentationQuarters
 	/// let prices = TimeSeries<Double>(
 	///     periods: swap.settlementPeriods,

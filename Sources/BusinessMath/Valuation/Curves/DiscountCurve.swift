@@ -60,6 +60,7 @@ public enum CurveInterpolation: Sendable {
 /// ## Extracting Rates
 ///
 /// ```swift
+/// let curve = DiscountCurve(asOfDate: Date(), tenors: [1.0, 2.0, 3.0, 5.0], discountFactors: [0.97, 0.94, 0.91, 0.85])
 /// let df3Y = curve.discountFactor(at: 3.0)
 /// let zero3Y = curve.zeroRate(at: 3.0)
 /// let fwd1Y2Y = curve.forwardRate(from: 1.0, to: 2.0)
