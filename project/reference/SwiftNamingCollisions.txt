@@ -1,0 +1,232 @@
+
+ I see several errors:
+
+  1. The namespace issue again - Swift is finding instance methods named cagr, growthRate, and mean instead of the global functions from
+  BusinessMath. The compiler is suggesting to use BusinessMath. prefix.
+  2. Missing growthRates in scope in the averageGrowthRate computed property - this should be accessing self.growthRates but it's being
+  called in a TimeSeries extension where that property doesn't exist directly.
+  3. Missing Plottable type - this is from Swift Charts but we need to import it properly.
+
+  Let me fix these issues:
+
+  1. For the namespace issues, I need to explicitly use BusinessMath. prefix as the compiler suggests
+  2. For the growthRates issue, I need to create a TimeSeriesGrowth wrapper first
+  3. For the Plottable issue, I need to import Charts
+
+  Let me check the imports and fix these issues
+
+--------------------------------
+
+Interesting - now the compiler says BusinessMath has no member cagr, growthRate, or mean. This suggests these are module-level
+  functions, not type members. Let me check how they're actually defined by looking at the BusinessMath package.
+
+  Actually, I think the issue is that BusinessMath is the module name, not a type. The functions are global functions in that module. I
+  need to just call them directly without any prefix, since I've already imported BusinessMath.
+
+  Let me remove the BusinessMath. prefix again and see if that works.<
+
+------------
+
+
+/Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/GrowthDat
+    aAdapter.swift:30:12: warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file;
+    this is an error in the Swift 6 language mode
+     28 |     private let timeSeries: TimeSeries<Double>
+     29 |
+     30 |     public init(timeSeries: TimeSeries<Double>) {
+        |            |- warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file; this
+     is an error in the Swift 6 language mode
+        |            `- note: The missing import of module 'RealModule' will be added implicitly
+     31 |         self.timeSeries = timeSeries
+     32 |     }
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/TimeSerie
+    sAdapter.swift:34:1: warning: extension declares a conformance of imported type 'TimeSeries' to imported protocol
+    'TimeSeriesData'; this will not behave correctly if the owners of 'BusinessMath' introduce this conformance in the future
+     32 | /// ```
+     33 | @available(iOS 16.0, macOS 14.0, *)
+     34 | extension TimeSeries: TimeSeriesData {
+        | |- warning: extension declares a conformance of imported type 'TimeSeries' to imported protocol 'TimeSeriesData'; this
+    will not behave correctly if the owners of 'BusinessMath' introduce this conformance in the future
+        | `- note: add '@retroactive' to silence this warning
+     35 |     public var values: [T] {
+     36 |         periods.compactMap { self[$0] }
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/TimeSerie
+    sAdapter.swift:60:1: warning: extension declares a conformance of imported type 'TimeSeries' to imported protocol
+    'ChartableTimeSeries'; this will not behave correctly if the owners of 'BusinessMath' introduce this conformance in the future
+     58 | /// ```
+     59 | @available(iOS 16.0, macOS 14.0, *)
+     60 | extension TimeSeries: ChartableTimeSeries where T == Double {
+        | |- warning: extension declares a conformance of imported type 'TimeSeries' to imported protocol 'ChartableTimeSeries';
+    this will not behave correctly if the owners of 'BusinessMath' introduce this conformance in the future
+        | `- note: add '@retroactive' to silence this warning
+     61 |     // ChartableTimeSeries requires BinaryFloatingPoint
+     62 |     // Default implementation from protocol extension provides dataPoints
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/TimeSerie
+    sAdapter.swift:60:1: warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file;
+    this is an error in the Swift 6 language mode
+     58 | /// ```
+     59 | @available(iOS 16.0, macOS 14.0, *)
+     60 | extension TimeSeries: ChartableTimeSeries where T == Double {
+        | |- warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file; this is an
+    error in the Swift 6 language mode
+        | `- note: The missing import of module 'RealModule' will be added implicitly
+     61 |     // ChartableTimeSeries requires BinaryFloatingPoint
+     62 |     // Default implementation from protocol extension provides dataPoints
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/TimeSerie
+    sAdapter.swift:95:9: warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file;
+    this is an error in the Swift 6 language mode
+     93 |     /// )
+     94 |     /// ```
+     95 |     var chartValues: [(Period, Double)] {
+        |         |- warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file; this is
+     an error in the Swift 6 language mode
+        |         `- note: The missing import of module 'RealModule' will be added implicitly
+     96 |         periods.compactMap { period in
+     97 |             guard let value = self[period] else { return nil }
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/TimeSerie
+    sAdapter.swift:95:9: warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file;
+    this is an error in the Swift 6 language mode
+     93 |     /// )
+     94 |     /// ```
+     95 |     var chartValues: [(Period, Double)] {
+        |         |- warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file; this is
+     an error in the Swift 6 language mode
+        |         `- note: The missing import of module 'RealModule' will be added implicitly
+     96 |         periods.compactMap { period in
+     97 |             guard let value = self[period] else { return nil }
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/TimeSerie
+    sAdapter.swift:110:1: warning: extension declares a conformance of imported type 'Period' to imported protocol 'Plottable'; this
+     will not behave correctly if the owners of 'BusinessMath' introduce this conformance in the future
+    108 | /// Periods are plotted by their chronological index.
+    109 | @available(iOS 16.0, macOS 14.0, *)
+    110 | extension Period: Plottable {
+        | |- warning: extension declares a conformance of imported type 'Period' to imported protocol 'Plottable'; this will not
+    behave correctly if the owners of 'BusinessMath' introduce this conformance in the future
+        | `- note: add '@retroactive' to silence this warning
+    111 |     public init?(primitivePlottable: Double) {
+    112 |         // Reverse mapping not meaningful for Period
+    [4/5] Compiling BusinessMathAdapters GrowthDataAdapter.swift
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/GrowthDat
+    aAdapter.swift:30:12: warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file;
+    this is an error in the Swift 6 language mode
+     28 |     private let timeSeries: TimeSeries<Double>
+     29 |
+     30 |     public init(timeSeries: TimeSeries<Double>) {
+        |            |- warning: cannot use conformance of 'Double' to 'Real' here; 'RealModule' was not imported by this file; this
+     is an error in the Swift 6 language mode
+        |            `- note: The missing import of module 'RealModule' will be added implicitly
+     31 |         self.timeSeries = timeSeries
+     32 |     }
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/GrowthDat
+    aAdapter.swift:110:20: error: use of 'cagr' refers to instance method rather than global function
+    'cagr(beginningValue:endingValue:years:)' in module 'BusinessMath'
+    108 |
+    109 |         let years = Double(self.periods.count - 1)
+    110 |         let rate = cagr(beginningValue: firstValue, endingValue: lastValue, years: years)
+        |                    |- error: use of 'cagr' refers to instance method rather than global function
+    'cagr(beginningValue:endingValue:years:)' in module 'BusinessMath'
+        |                    `- note: use 'BusinessMath.' to reference the global function in module 'BusinessMath'
+    111 |
+    112 |         return rate.isFinite ? rate : nil
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath/Sources/BusinessMath/Time
+    Series/Growth/GrowthRate.swift:157:13: note: 'cagr(beginningValue:endingValue:years:)' declared here
+    155 | /// - Negative CAGR indicates decline
+    156 | /// - Can be applied to any metric (revenue, users, etc.)
+    157 | public func cagr<T: Real>(beginningValue: T, endingValue: T, years: T) -> T {
+        |             `- note: 'cagr(beginningValue:endingValue:years:)' declared here
+    158 |       guard years != T.zero else {
+    159 |               return T.infinity
+
+    /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-Adapters/Sources/BusinessMathAdapters/GrowthDat
+    aAdapter.swift:140:24: error: use of 'growthRate' refers to instance method rather than global function 'growthRate(from:to:)'
+    in module 'BusinessMath'
+    138 |             }
+    139 |
+    140 |             let rate = growthRate(from: priorValue, to: currentValue)
+        |                        |- error: use of 'growthRate' refers to instance method rather than global function
+    'growthRate(from:to:)' in module 'BusinessMath'
+        |                        `- note: use 'BusinessMath.' to reference the global function in module 'BusinessMath'
+    141 |             if rate.isFinite {
+
+--------------------------------------------
+
+So the issue is that TimeSeries apparently has instance methods called cagr and growthRate, which are colliding with the global
+  functions from BusinessMath. The compiler is suggesting I use BusinessMath. prefix to disambiguate, but when I do that, it says
+  BusinessMath has no member.
+
+  This is a module/namespace issue. Let me check what the actual way to reference a global function in a module is. Actually, I think the
+   issue is that I need to be more explicit. Let me try using a fully qualified name or import the functions explicitly.
+
+  Actually, I think the problem is that TimeSeries itself has these methods. Let me check if I can use the global functions by being more
+   explicit about the types or by using a different approach.
+
+  One solution is to create local wrapper functions that call the global ones explicitly, or to import them more specifically. Let me try
+   using fully qualified names with the module prefix in a different way.
+
+  Actually, looking at the error message more carefully:
+  note: use 'BusinessMath.' to reference the global function in module 'BusinessMath'
+
+  But when I tried BusinessMath.cagr, it said:
+  error: type 'BusinessMath' has no member 'cagr'
+
+  This is confusing. Let me try a different approach - I'll create a type alias or use a different name for calling these functions. Or
+  maybe I need to scope them differently.
+
+  Actually, I think the issue is that in a TimeSeries extension, when I call cagr(...), it's finding the instance method first. I need to
+   explicitly call the global function. In Swift, I can do this by using the module name as a namespace... but that didn't work.
+
+  Let me try calling these functions outside of the extension context, or using a fully qualified path. Or maybe I need to import them
+  explicitly.
+
+  Wait, let me try using the function signature explicitly to disambiguate.
+
+------------------
+
+I see the problem. I'm creating a computed property called cagr in a TimeSeries extension, and then inside that property I'm trying to
+  call a global function also called cagr. This creates a naming collision.
+
+  The solution is to use explicit disambiguation. In Swift, when you have a global function and an instance property with the same name,
+  you need to be explicit. Let me use a type-level function call syntax or rename the local variables to avoid the collision.
+
+  Actually, I can fix this by calling the global function explicitly using its full type signature. Let me try calling it as
+  BusinessMath.cagr(beginningValue:endingValue:years:) - but wait, that didn't work.
+
+  Actually, the way to call a global function from a module in Swift is just to use the function name. The issue here is that we're in a
+  TimeSeries extension that has a property called cagr, so when we write cagr(...) inside that property, Swift gets confused.
+
+  The solution is to call the global function with its full module path. But Swift doesn't support BusinessMath.cagr because BusinessMath
+   is a module, not a type.
+
+  The best solution is to use a helper function or to call it differently. Let me try creating standalone helper functions that wrap the
+  global functions.
+
+  Or even better - I can import the functions explicitly with a different name using a typealias or just call them in a way that Swift
+  can disambiguate.
+
+  Actually, looking at the Swift language guide, the way to reference a global function when there's a naming collision is to be more
+  explicit about the context. One approach is to use a closure or a local function that calls the global one.
+
+  Let me try a simpler approach: I'll rename my local variables or use fully qualified references. Actually, I think the issue is that I
+  need to escape the context. Let me try this:```swift
+  let rate = { BusinessMath.cagr(beginningValue: $0, endingValue: $1, years: $2) }(firstValue, lastValue, years)
+
+
+  I can extract the calculation logic outside the computed property to avoid the naming conflict. By moving the function call to a
+  separate context, I'll eliminate the name shadowing issue and ensure Swift can correctly resolve the global function reference.
+
+  The compiler's hint suggests using the module name to qualify the function call. This approach provides a clear, unambiguous way to
+  reference the global `cagr` function from the BusinessMath module, resolving the naming collision in the TimeSeries extension.
+
+  I'll investigate whether a `BusinessMath` type exists that might be interfering with the function call. If not, the problem likely
+  stems from method name overlap between the global function and the TimeSeries extension methods.
+
+  A potential workaround involves creating a helper function or using a closure to explicitly call the global function from a different
+  context, ensuring clean and precise function resolution.

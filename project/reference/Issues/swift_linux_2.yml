@@ -1,0 +1,5 @@
+- name: Compile tests (Linux, debug with enable-testing)
+  run: |
+    set -euo pipefail
+    swift build --build-tests -c debug -Xswiftc -enable-testing -v
+  shell: /usr/bin/bash -e {0}
