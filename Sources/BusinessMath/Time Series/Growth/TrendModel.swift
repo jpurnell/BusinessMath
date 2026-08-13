@@ -24,6 +24,7 @@ import Numerics
 /// 2. **Project** future values based on the fitted model
 ///
 /// ```swift
+/// let historicalData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 /// let periods = Period.documentationQuarters
 /// var model = LinearTrend<Double>()
 /// try model.fit(to: historicalData)
@@ -307,6 +308,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let historicalRevenue = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(to: historicalRevenue)
 	/// let forecast = model.project(steps: 12)  // Returns TimeSeries<T>?
@@ -365,6 +367,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let historicalRevenue = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(to: historicalRevenue)
@@ -423,6 +426,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let historical = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(to: historical)
@@ -639,6 +643,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let users = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: users)
 	/// if let b = model.logSlope {
@@ -656,6 +661,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let users = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: users)
 	/// if let logA = model.logIntercept {
@@ -673,6 +679,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let users = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: users)
 	/// if let rate = model.growthRate {
@@ -691,6 +698,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let users = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: users)
 	/// print(model.summary)
@@ -831,6 +839,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let historicalUsers = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: historicalUsers)
@@ -888,6 +897,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let historical = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = ExponentialTrend<Double>()
 	/// try model.fit(to: historical)
@@ -1240,6 +1250,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let userGrowth = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = LogisticTrend<Double>(capacity: 1_000_000.0)
 	/// try model.fit(to: userGrowth)
@@ -1297,6 +1308,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let historical = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = LogisticTrend<Double>(capacity: 1000.0)
 	/// try model.fit(to: historical)
@@ -1531,6 +1543,7 @@ public struct CustomTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let historicalData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = CustomTrend<Double> { t in t * t }
 	/// try model.fit(to: historicalData)
@@ -1586,6 +1599,7 @@ public struct CustomTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let historical = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = CustomTrend<Double> { t in 100.0 * pow(1.05, t) }
 	/// try model.fit(to: historical)

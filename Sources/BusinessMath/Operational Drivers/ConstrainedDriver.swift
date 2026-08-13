@@ -83,6 +83,7 @@ import Numerics
 /// reflect the constrained distribution:
 ///
 /// ```swift
+/// let driver = DeterministicDriver(name: "driver", value: 100.0)
 /// let values = [100.0, 110.0, 120.0, 130.0]
 /// let periods = Period.documentationQuarters
 /// let quarters = Period.documentationQuarters
@@ -183,6 +184,7 @@ extension ConstrainedDriver: SeedableDriver where Base: SeedableDriver {
 	///
 	/// ## Example
 	/// ```swift
+	/// let quarter = Period.documentationQuarters[0]
 	/// let growth = ProbabilisticDriver<Double>.normal(name: "Growth", mean: 0.0, stdDev: 1.0)
 	/// let bounded = growth.clamped(min: -0.5, max: 0.5)
 	///
@@ -283,6 +285,7 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let productionRate = DeterministicDriver(name: "productionRate", value: 100.0)
 	/// let completedUnits = productionRate.floored()  // Conservative estimate
 	/// ```
 	public func floored() -> ConstrainedDriver<Self> {
@@ -300,6 +303,7 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let workload = DeterministicDriver(name: "workload", value: 100.0)
 	/// let requiredStaff = workload.ceiling()  // Always have enough people
 	/// ```
 	public func ceiling() -> ConstrainedDriver<Self> {
@@ -318,6 +322,7 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let driver = DeterministicDriver(name: "driver", value: 100.0)
 	/// // Apply a floor with exponential damping
 	/// let smoothed = driver.transformed { value in
 	///     value < 0 ? 0 : pow(value, 0.9)
@@ -352,6 +357,7 @@ extension Driver where Value: BinaryFloatingPoint {
 ///
 /// ## Example
 /// ```swift
+/// let basePrice = DeterministicDriver(name: "basePrice", value: 100.0)
 /// let period = Period.documentationQuarters[0]
 /// let price = basePrice.validated { value throws -> Double in
 ///     guard value > 0 else {
@@ -397,6 +403,7 @@ public struct ValidatedDriver<Base: Driver>: Sendable where Base.Value: BinaryFl
 	///
 	/// ## Example
 	/// ```swift
+	/// let uncertainPrice = DeterministicDriver(name: "uncertainPrice", value: 100.0)
 	/// enum PriceError: Error {
 	///     case negative
 	///     case tooHigh
@@ -460,6 +467,7 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let baseRevenue = DeterministicDriver(name: "baseRevenue", value: 100.0)
 	/// enum RevenueError: Error {
 	///     case unrealisticValue
 	/// }

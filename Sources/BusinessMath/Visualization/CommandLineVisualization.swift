@@ -67,6 +67,7 @@ import Foundation
 /// ## Example
 ///
 /// ```swift
+/// let revenueData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 /// let simulation = try FinancialSimulation.documentationFixture
 /// // Generate histogram from simulation results
 /// let results = SimulationResults(values: revenueData)

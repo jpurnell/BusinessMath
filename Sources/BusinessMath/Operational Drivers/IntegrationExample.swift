@@ -581,6 +581,7 @@ public struct SaaSFinancialModel {
 /// ## 1. Start Simple, Add Complexity Gradually
 ///
 /// ```swift
+/// let users = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 /// // Start with deterministic
 /// let revenue = users * pricePerUser
 ///

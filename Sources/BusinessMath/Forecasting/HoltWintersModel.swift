@@ -21,6 +21,7 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let historicalData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 /// let periods = Period.documentationQuarters
 /// var model = HoltWintersModel<Double>(seasonalPeriods: 12)  // Monthly data
 /// try model.train(on: historicalData)
@@ -95,6 +96,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let monthlyData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
 	/// try model.train(values: monthlyData)
@@ -192,6 +194,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let monthlyData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
 	/// try model.train(values: monthlyData)

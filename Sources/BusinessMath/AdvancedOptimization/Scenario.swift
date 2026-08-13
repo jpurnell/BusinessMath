@@ -16,6 +16,7 @@ import Foundation
 ///
 /// ## Example
 /// ```swift
+/// let historical = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 /// struct PortfolioScenario: OptimizationScenario {
 ///     let returns: [Double]  // Random returns for each asset
 ///     let probability: Double  // Optional: for discrete distributions
