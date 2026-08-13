@@ -8,6 +8,40 @@
 import Testing
 @testable import BusinessMath
 
+/// A reproducible scenario stream for the SAA tests in this file.
+///
+/// Passing a fixed `seed:` to `ScenarioGenerator.normal` seeds a *fresh* generator on
+/// every call, so a generator invoked once per sample hands back the same scenario every
+/// time and collapses the sample average onto a single point. That is not merely less
+/// representative, it is materially harder to solve: sampling this file's production
+/// planning problem that way converged 10 times in 60, where a real sample converged 40
+/// in 40. Holding one generator and advancing it is what makes an SAA test reproducible
+/// without changing the problem.
+///
+/// The unseeded path these replaced converged 298 times in 300 — a defensible property
+/// of the algorithm at 150 iterations, and a 1-in-150 chance of a red suite for reasons
+/// having nothing to do with the change under test.
+private final class SeededScenarioStream {
+	private var generator: DeterministicRNG
+	private let mean: [Double]
+	private let standardDeviation: [Double]
+
+	init(mean: [Double], standardDeviation: [Double], seed: UInt64) {
+		self.mean = mean
+		self.standardDeviation = standardDeviation
+		self.generator = DeterministicRNG(seed: seed)
+	}
+
+	func next() -> MonteCarloScenario {
+		ScenarioGenerator.normal(
+			mean: mean,
+			standardDeviation: standardDeviation,
+			numberOfScenarios: 1,
+			using: &generator
+		).first ?? MonteCarloScenario(parameters: [:])
+	}
+}
+
 /// Tests for stochastic optimization using Sample Average Approximation (SAA).
 @Suite struct StochasticOptimizationTests {
 
@@ -31,6 +65,7 @@ import Testing
 		var constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
 		constraints.append(contentsOf: MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3))
 
+		let scenarioStream = SeededScenarioStream(mean: meanReturns, standardDeviation: stdDevReturns, seed: 4242)
 		let result = try optimizer.optimize(
 			objective: { weights, scenario in
 				// Extract returns from scenario
@@ -38,14 +73,7 @@ import Testing
 				let returnsVector = VectorN(returns)
 				return weights.dot(returnsVector)  // Expected return
 			},
-			scenarioGenerator: {
-				ScenarioGenerator.normal(
-					mean: meanReturns,
-					standardDeviation: stdDevReturns,
-					numberOfScenarios: 1,
-					seed: nil
-				).first!
-			},
+			scenarioGenerator: { scenarioStream.next() },
 			initialSolution: VectorN([1.0/3, 1.0/3, 1.0/3]),
 			constraints: constraints,
 			minimize: false  // Maximize expected return
@@ -189,19 +217,13 @@ import Testing
 		var constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
 		constraints.append(contentsOf: MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3))
 
+		let scenarioStream = SeededScenarioStream(mean: [0.10, 0.12, 0.08], standardDeviation: [0.15, 0.20, 0.12], seed: 4243)
 		let result = try optimizer.optimize(
 			objective: { weights, scenario in
 				let returns = (0..<3).map { scenario["param_\($0)"] ?? 0.0 }
 				return weights.dot(VectorN(returns))
 			},
-			scenarioGenerator: {
-				ScenarioGenerator.normal(
-					mean: [0.10, 0.12, 0.08],
-					standardDeviation: [0.15, 0.20, 0.12],
-					numberOfScenarios: 1,
-					seed: nil
-				).first!
-			},
+			scenarioGenerator: { scenarioStream.next() },
 			initialSolution: VectorN([1.0/3, 1.0/3, 1.0/3]),
 			constraints: constraints,
 			minimize: false
@@ -339,19 +361,13 @@ import Testing
 		var constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
 		constraints.append(contentsOf: MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3))
 
+		let scenarioStream = SeededScenarioStream(mean: meanReturns, standardDeviation: stdDevReturns, seed: 4244)
 		let result = try optimizer.optimize(
 			objective: { weights, scenario in
 				let returns = (0..<3).map { scenario["param_\($0)"] ?? 0.0 }
 				return weights.dot(VectorN(returns))
 			},
-			scenarioGenerator: {
-				ScenarioGenerator.normal(
-					mean: meanReturns,
-					standardDeviation: stdDevReturns,
-					numberOfScenarios: 1,
-					seed: nil
-				).first!
-			},
+			scenarioGenerator: { scenarioStream.next() },
 			initialSolution: VectorN([1.0/3, 1.0/3, 1.0/3]),
 			constraints: constraints,
 			minimize: false
@@ -393,6 +409,7 @@ import Testing
 		let meanDemand = 100.0
 		let stdDemand = 20.0
 
+		let scenarioStream = SeededScenarioStream(mean: [meanDemand], standardDeviation: [stdDemand], seed: 4245)
 		let result = try optimizer.optimize(
 			objective: { production, scenario in
 				let demand = max(0, scenario["param_0"] ?? meanDemand)  // Ensure non-negative demand
@@ -415,14 +432,7 @@ import Testing
 
 				return revenue - productionCost - shortageCost - excessInventoryCost
 			},
-			scenarioGenerator: {
-				ScenarioGenerator.normal(
-					mean: [meanDemand],
-					standardDeviation: [stdDemand],
-					numberOfScenarios: 1,
-					seed: nil
-				).first!
-			},
+			scenarioGenerator: { scenarioStream.next() },
 			initialSolution: VectorN([110.0]),  // Start slightly above mean demand
 			constraints: [
 				.inequality(
@@ -485,19 +495,13 @@ import Testing
 		var constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
 		constraints.append(contentsOf: MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 3))
 
+		let scenarioStream = SeededScenarioStream(mean: [0.10, 0.12, 0.08], standardDeviation: [0.15, 0.20, 0.12], seed: 4246)
 		return try optimizer.optimize(
 			objective: { weights, scenario in
 				let returns = (0..<3).map { scenario["param_\($0)"] ?? 0.0 }
 				return weights.dot(VectorN(returns))
 			},
-			scenarioGenerator: {
-				ScenarioGenerator.normal(
-					mean: [0.10, 0.12, 0.08],
-					standardDeviation: [0.15, 0.20, 0.12],
-					numberOfScenarios: 1,
-					seed: nil
-				).first!
-			},
+			scenarioGenerator: { scenarioStream.next() },
 			initialSolution: VectorN([1.0/3, 1.0/3, 1.0/3]),
 			constraints: constraints,
 			minimize: false
