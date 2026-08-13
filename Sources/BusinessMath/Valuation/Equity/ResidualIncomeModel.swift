@@ -217,6 +217,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// let periods = Period.documentationQuarters
     /// let ri = model.residualIncome()
     /// for (period, value) in zip(ri.periods, ri.valuesArray) {
@@ -303,6 +304,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// let equityValue = try model.equityValue()
     /// let bookValue = model.currentBookValue
     /// let mva = equityValue - bookValue
@@ -368,6 +370,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// // If equity value is $1,714M and 100M shares outstanding
     /// let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
     /// // Returns: $17.14 per share
@@ -377,6 +380,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     ///
     /// Compare intrinsic value per share to book value per share:
     /// ```swift
+    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// let sharesOutstanding = 1_000_000.0
     /// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
     /// let bookValuePerShare = model.currentBookValue / sharesOutstanding
@@ -396,6 +400,18 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     ///
     /// - Complexity: O(1) after equity value calculation
     public func valuePerShare(sharesOutstanding: T) throws -> T {
+        // Declared `throws` and never threw. A zero or negative share count returned
+        // infinity, or a negative price, rather than saying the input was unusable —
+        // `DividendDiscountModel.valuePerShare()` has guarded its own denominator all
+        // along, so the library held both conventions at once.
+        guard sharesOutstanding > T(0) else {
+            throw ValuationError.invalidModelAssumptions(
+                "Shares outstanding (\(sharesOutstanding)) must be greater than zero. " +
+                "A per-share value divided by zero shares is infinite, and by a negative " +
+                "count is a negative price; neither is a valuation."
+            )
+        }
+
         let totalEquityValue = try equityValue()
         return totalEquityValue / sharesOutstanding
     }
@@ -430,6 +446,7 @@ extension ResidualIncomeModel {
     /// ## Example
     ///
     /// ```swift
+    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// let periods = Period.documentationQuarters
     /// let roe = model.returnOnEquity()
     /// for (period, roeValue) in zip(roe.periods, roe.valuesArray) {
@@ -471,6 +488,7 @@ extension ResidualIncomeModel {
     /// ## Example
     ///
     /// ```swift
+    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// let periods = Period.documentationQuarters
     /// let spread = model.roeSpread()
     /// for (period, spreadValue) in zip(spread.periods, spread.valuesArray) {

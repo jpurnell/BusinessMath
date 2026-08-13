@@ -94,6 +94,7 @@ public struct DependencyCycle: Sendable, Hashable {
 /// ``ModelDefinition/evaluate()`` throws ``BusinessMathError/circularDependency(path:)``.
 ///
 /// ```swift
+/// let model = ModelDefinition<Double>()
 /// let report = try model.dependencyReport()
 /// for cycle in report.cycles {
 ///     print(cycle.path.joined(separator: " → "))
@@ -351,6 +352,7 @@ extension ModelDefinition {
 	/// first run against a company.
 	///
 	/// ```swift
+	/// let model = ModelDefinition<Double>()
 	/// let report = try model.dependencyReport()
 	/// if let order = report.evaluationOrder {
 	///     print("evaluates in \(order.count) steps")

@@ -18,6 +18,7 @@ extension DependencyCycle {
 	/// parse tree answers exactly, before any figures exist.
 	///
 	/// ```swift
+	/// let model = ModelDefinition<Double>()
 	/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 	/// for cycle in try model.dependencyReport().cycles where cycle.form == .linear {
 	///     print("\(cycle.accounts.joined(separator: ", ")) has an exact answer")
