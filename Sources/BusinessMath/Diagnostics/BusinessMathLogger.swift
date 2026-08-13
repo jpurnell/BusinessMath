@@ -83,6 +83,7 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// let simulation = try FinancialSimulation.documentationFixture
     /// import OSLog
     /// Logger.performance.notice("Monte Carlo simulation completed in \(duration)s")
     /// ```

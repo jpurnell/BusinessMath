@@ -29,6 +29,7 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let simulation = try FinancialSimulation.documentationFixture
 /// // Using built-in distributions
 /// let revenueInput = SimulationInput(
 ///     name: "MonthlyRevenue",
@@ -246,6 +247,7 @@ public struct SimulationInput: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let input = SimulationInput(
 	///     name: "Revenue",
 	///     distribution: DistributionNormal(mean: 100_000, stdDev: 10_000)

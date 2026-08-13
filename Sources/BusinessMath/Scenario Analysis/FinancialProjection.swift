@@ -67,6 +67,7 @@ import Numerics
 /// A common use case is comparing projections from different scenarios:
 ///
 /// ```swift
+/// let runner = ScenarioRunner()
 /// let baseCase = FinancialScenario.documentationFixture
 /// let scenario = FinancialScenario.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

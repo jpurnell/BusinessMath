@@ -203,6 +203,8 @@ import Numerics
 /// For probabilistic drivers, each call to `run()` produces a different sample:
 ///
 /// ```swift
+/// let runner = ScenarioRunner()
+/// let simulation = try FinancialSimulation.documentationFixture
 /// let scenario = FinancialScenario.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture

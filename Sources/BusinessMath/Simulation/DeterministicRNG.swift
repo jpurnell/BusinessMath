@@ -27,6 +27,7 @@
 /// ## Usage
 ///
 /// ```swift
+/// let simulation = try FinancialSimulation.documentationFixture
 /// var rng = DeterministicRNG(seed: 42)
 ///
 /// // Use with Swift standard library random APIs

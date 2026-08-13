@@ -33,6 +33,7 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let simulation = try FinancialSimulation.documentationFixture
 /// let simulationValues = [/* 10,000 simulation results */]
 /// let percentiles = Percentiles(values: simulationValues)
 ///

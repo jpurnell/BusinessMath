@@ -80,6 +80,24 @@ struct DocumentationFixtureTests {
 		#expect(projection.scenario.name == FinancialScenario.documentationFixture.name)
 	}
 
+	/// Examples call `percentile(0.10)` and `percentile(0.90)` on this and print both.
+	/// A simulation of identical projections would answer both calls happily with the
+	/// same number, which is the one thing a distribution example must not demonstrate.
+	@Test("The simulation fixture has a distribution, not a constant")
+	func simulationSpreads() throws {
+		let simulation = try FinancialSimulation.documentationFixture
+		let q1 = Period.documentationQuarters[0]
+
+		#expect(simulation.iterations > 1, "one projection cannot show a distribution")
+
+		let p10 = simulation.percentile(0.10) { $0.incomeStatement.netIncome[q1] ?? 0 }
+		let p50 = simulation.percentile(0.50) { $0.incomeStatement.netIncome[q1] ?? 0 }
+		let p90 = simulation.percentile(0.90) { $0.incomeStatement.netIncome[q1] ?? 0 }
+
+		#expect(p10 < p50, "10th percentile \(p10) should sit below the median \(p50)")
+		#expect(p50 < p90, "median \(p50) should sit below the 90th percentile \(p90)")
+	}
+
 	/// These are values, and examples that print them should print the same thing every
 	/// time they are read.
 	@Test("Fixtures are stable across accesses")

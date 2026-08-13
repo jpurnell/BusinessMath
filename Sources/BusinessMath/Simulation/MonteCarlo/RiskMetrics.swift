@@ -131,6 +131,7 @@ extension SimulationResults {
 	/// ## Example - Risk Comparison
 	///
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let results = try simulation.run()
 	///
 	/// let var95 = results.valueAtRisk(confidenceLevel: 0.95)
