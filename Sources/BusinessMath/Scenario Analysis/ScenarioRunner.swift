@@ -68,9 +68,9 @@ import Numerics
 /// let periods = Period.year(2025).quarters()
 ///
 /// // Define drivers
-/// let revenueDriver = DeterministicDriver(name: "Revenue", value: 100_000.0)
-/// let costDriver = DeterministicDriver(name: "COGS", value: 60_000.0)
-/// let opexDriver = DeterministicDriver(name: "OpEx", value: 20_000.0)
+/// let revenueDriver = DeterministicDriver<Double>(name: "Revenue", value: 100_000.0)
+/// let costDriver = DeterministicDriver<Double>(name: "COGS", value: 60_000.0)
+/// let opexDriver = DeterministicDriver<Double>(name: "OpEx", value: 20_000.0)
 ///
 /// var overrides: [String: AnyDriver<Double>] = [:]
 /// overrides["Revenue"] = AnyDriver(revenueDriver)

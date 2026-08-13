@@ -18,13 +18,13 @@ import Numerics
 ///
 /// ```swift
 /// // Fixed annual rent
-/// let rent = DeterministicDriver(name: "Annual Rent", value: 120_000.0)
+/// let rent = DeterministicDriver<Double>(name: "Annual Rent", value: 120_000.0)
 ///
 /// // Known tax rate
-/// let taxRate = DeterministicDriver(name: "Tax Rate", value: 0.21)
+/// let taxRate = DeterministicDriver<Double>(name: "Tax Rate", value: 0.21)
 ///
 /// // Fixed headcount
-/// let employees = DeterministicDriver(name: "Employees", value: 50.0)
+/// let employees = DeterministicDriver<Double>(name: "Employees", value: 50.0)
 /// ```
 ///
 /// ## Use Cases
@@ -40,7 +40,7 @@ import Numerics
 ///
 /// ```swift
 /// let quarters = Period.documentationQuarters
-/// let driver = DeterministicDriver(name: "Rent", value: 10_000.0)
+/// let driver = DeterministicDriver<Double>(name: "Rent", value: 10_000.0)
 /// let periods = Period.year(2025).quarters()
 /// let projection = DriverProjection(driver: driver, periods: periods)
 ///
@@ -82,7 +82,7 @@ public struct DeterministicDriver<T: Real & Sendable>: Driver, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let rent = DeterministicDriver(name: "Monthly Rent", value: 10_000.0)
+	/// let rent = DeterministicDriver<Double>(name: "Monthly Rent", value: 10_000.0)
 	/// ```
 	public init(name: String, value: T) {
 		self.name = name

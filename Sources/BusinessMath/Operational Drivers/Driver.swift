@@ -25,7 +25,7 @@ import Numerics
 ///
 /// ```swift
 /// // Fixed value
-/// let rent = DeterministicDriver(name: "Rent", value: 120_000.0)
+/// let rent = DeterministicDriver<Double>(name: "Rent", value: 120_000.0)
 ///
 /// // Uncertain value
 /// let sales = ProbabilisticDriver(

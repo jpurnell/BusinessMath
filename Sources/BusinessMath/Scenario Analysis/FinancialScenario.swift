@@ -21,7 +21,7 @@ import Numerics
 /// let scenario = FinancialScenario.documentationFixture
 /// // Base case with expected values
 /// let basePrice = DeterministicDriver(name: "Price", value: 100.0)
-/// let baseVolume = DeterministicDriver(name: "Volume", value: 1000.0)
+/// let baseVolume = DeterministicDriver<Double>(name: "Volume", value: 1000.0)
 ///
 /// var baseOverrides: [String: AnyDriver<Double>] = [:]
 /// baseOverrides["Price"] = AnyDriver(basePrice)
@@ -45,8 +45,8 @@ import Numerics
 /// ```swift
 /// let scenario = FinancialScenario.documentationFixture
 /// var optimisticOverrides: [String: AnyDriver<Double>] = [:]
-/// optimisticOverrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 120.0))
-/// optimisticOverrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 1200.0))
+/// optimisticOverrides["Price"] = AnyDriver(DeterministicDriver<Double>(name: "Price", value: 120.0))
+/// optimisticOverrides["Volume"] = AnyDriver(DeterministicDriver<Double>(name: "Volume", value: 1200.0))
 ///
 /// let bestCase = FinancialScenario(
 ///     name: "Best Case",
@@ -59,9 +59,9 @@ import Numerics
 /// ```swift
 /// let scenario = FinancialScenario.documentationFixture
 /// var pessimisticOverrides: [String: AnyDriver<Double>] = [:]
-/// pessimisticOverrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 90.0))
-/// pessimisticOverrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 800.0))
-/// pessimisticOverrides["Costs"] = AnyDriver(DeterministicDriver(name: "Costs", value: 55.0))
+/// pessimisticOverrides["Price"] = AnyDriver(DeterministicDriver<Double>(name: "Price", value: 90.0))
+/// pessimisticOverrides["Volume"] = AnyDriver(DeterministicDriver<Double>(name: "Volume", value: 800.0))
+/// pessimisticOverrides["Costs"] = AnyDriver(DeterministicDriver<Double>(name: "Costs", value: 55.0))
 ///
 /// let worstCase = FinancialScenario(
 ///     name: "Worst Case",
@@ -153,7 +153,7 @@ public struct FinancialScenario: Sendable {
 	/// ## Example
 	/// ```swift
 	/// var overrides: [String: AnyDriver<Double>] = [:]
-	/// overrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 120.0))
+	/// overrides["Price"] = AnyDriver(DeterministicDriver<Double>(name: "Price", value: 120.0))
 	/// overrides["Volume"] = AnyDriver(
 	///     ProbabilisticDriver(
 	///         name: "Volume",
@@ -191,7 +191,7 @@ public struct FinancialScenario: Sendable {
 	/// ```swift
 	/// var overrides: [String: AnyDriver<Double>] = [:]
 	/// overrides["Revenue Growth"] = AnyDriver(
-	///     DeterministicDriver(name: "Revenue Growth", value: 0.15)
+	///     DeterministicDriver<Double>(name: "Revenue Growth", value: 0.15)
 	/// )
 	///
 	/// var assumptions: [String: String] = [:]

@@ -38,8 +38,8 @@ import Numerics
 ///
 /// ```swift
 /// // Both drivers have uncertainty
-/// let quantity = ProbabilisticDriver.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
-/// let price = ProbabilisticDriver.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
+/// let quantity = ProbabilisticDriver<Double>.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
+/// let price = ProbabilisticDriver<Double>.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
 /// let revenue = ProductDriver(name: "Revenue", lhs: quantity, rhs: price)
 ///
 /// // Expected value ≈ E[Quantity] × E[Price] = 1000 × 100 = 100,000
@@ -51,7 +51,7 @@ import Numerics
 /// ```swift
 /// // Fixed price × uncertain volume
 /// let price = DeterministicDriver(name: "Price", value: 100.0)
-/// let volume = ProbabilisticDriver.normal(name: "Volume", mean: 1000.0, stdDev: 100.0)
+/// let volume = ProbabilisticDriver<Double>.normal(name: "Volume", mean: 1000.0, stdDev: 100.0)
 /// let revenue = ProductDriver(name: "Revenue", lhs: price, rhs: volume)
 ///
 /// // Uncertainty comes only from volume
@@ -63,11 +63,11 @@ import Numerics
 ///
 /// ```swift
 /// // Total Cost = (Variable Cost per Unit × Units) + Fixed Costs
-/// let variableCostPerUnit = DeterministicDriver(name: "Variable Cost/Unit", value: 50.0)
-/// let units = ProbabilisticDriver.normal(name: "Units", mean: 1000.0, stdDev: 100.0)
+/// let variableCostPerUnit = DeterministicDriver<Double>(name: "Variable Cost/Unit", value: 50.0)
+/// let units = ProbabilisticDriver<Double>.normal(name: "Units", mean: 1000.0, stdDev: 100.0)
 /// let variableCost = ProductDriver(name: "Variable Cost", lhs: variableCostPerUnit, rhs: units)
 ///
-/// let fixedCost = DeterministicDriver(name: "Fixed Cost", value: 10_000.0)
+/// let fixedCost = DeterministicDriver<Double>(name: "Fixed Cost", value: 10_000.0)
 /// let totalCost = SumDriver(name: "Total Cost", lhs: variableCost, rhs: fixedCost)
 /// ```
 ///
@@ -101,7 +101,7 @@ public struct ProductDriver<T: Real & Sendable>: Driver, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let quantity = ProbabilisticDriver.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
+	/// let quantity = ProbabilisticDriver<Double>.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
 	/// let price = DeterministicDriver(name: "Price", value: 100.0)
 	/// let revenue = ProductDriver(name: "Revenue", lhs: quantity, rhs: price)
 	/// ```
@@ -121,7 +121,7 @@ public struct ProductDriver<T: Real & Sendable>: Driver, Sendable {
 	/// ## Example
 	/// ```swift
 	/// let quantity = DeterministicDriver(name: "Qty", value: 100.0)
-	/// let price = DeterministicDriver(name: "Price", value: 10.0)
+	/// let price = DeterministicDriver<Double>(name: "Price", value: 10.0)
 	/// let revenue = ProductDriver(name: "Revenue", lhs: quantity, rhs: price)
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -174,7 +174,7 @@ extension Driver {
 	///
 	/// ## Example
 	/// ```swift
-	/// let quantity = ProbabilisticDriver.normal(name: "Qty", mean: 1000.0, stdDev: 100.0)
+	/// let quantity = ProbabilisticDriver<Double>.normal(name: "Qty", mean: 1000.0, stdDev: 100.0)
 	/// let price = DeterministicDriver(name: "Price", value: 100.0)
 	/// let revenue = quantity * price  // Creates ProductDriver
 	/// ```

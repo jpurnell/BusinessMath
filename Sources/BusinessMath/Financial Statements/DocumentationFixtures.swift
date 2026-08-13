@@ -265,6 +265,32 @@ extension ScenarioSensitivityAnalysis {
 	}
 }
 
+extension TwoWayScenarioSensitivityAnalysis {
+
+	/// A two-way sensitivity grid for doc-comment examples.
+	///
+	/// Distinct from ``ScenarioSensitivityAnalysis/documentationFixture`` because the two
+	/// types share neither their members nor their shape: this one has `inputValues1`,
+	/// `inputValues2` and a `results` grid, and an example written against the one-way type
+	/// fails on every line that reads them.
+	///
+	/// Output rises with both inputs, so an example that walks the grid shows a surface
+	/// rather than a plateau.
+	public static var documentationFixture: TwoWayScenarioSensitivityAnalysis {
+		TwoWayScenarioSensitivityAnalysis(
+			inputDriver1: "revenueGrowth",
+			inputDriver2: "costGrowth",
+			inputValues1: [0.02, 0.04, 0.06],
+			inputValues2: [0.01, 0.03, 0.05],
+			results: [
+				[1_180.0, 1_120.0, 1_060.0],
+				[1_260.0, 1_200.0, 1_140.0],
+				[1_340.0, 1_280.0, 1_220.0]
+			]
+		)
+	}
+}
+
 extension TornadoDiagramAnalysis {
 
 	/// A tornado result for doc-comment examples.

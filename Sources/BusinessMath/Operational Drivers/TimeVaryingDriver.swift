@@ -49,7 +49,7 @@ import Numerics
 ///
 ///     // Sample from scaled distribution
 ///     let mean = baseRevenue * seasonalMultiplier
-///     return ProbabilisticDriver.normal(name: "Revenue", mean: mean, stdDev: 10_000.0)
+///     return ProbabilisticDriver<Double>.normal(name: "Revenue", mean: mean, stdDev: 10_000.0)
 ///         .sample(for: period)
 /// }
 /// ```
@@ -67,7 +67,7 @@ import Numerics
 ///     let inflationMultiplier = pow(1.0 + inflationRate, yearsSince2025)
 ///
 ///     let adjustedCost = baseCost * inflationMultiplier
-///     return DeterministicDriver(name: "Cost", value: adjustedCost).sample(for: period)
+///     return DeterministicDriver<Double>(name: "Cost", value: adjustedCost).sample(for: period)
 /// }
 /// ```
 ///
@@ -85,7 +85,7 @@ import Numerics
 ///     let uncertaintyMultiplier = 1.0 + (monthsOut / 12.0)  // Grows with time
 ///     let stdDev = baseStdDev * uncertaintyMultiplier
 ///
-///     return ProbabilisticDriver.normal(name: "Revenue", mean: meanRevenue, stdDev: stdDev)
+///     return ProbabilisticDriver<Double>.normal(name: "Revenue", mean: meanRevenue, stdDev: stdDev)
 ///         .sample(for: period)
 /// }
 /// ```
@@ -112,7 +112,7 @@ import Numerics
 ///         stdDev = 10_000.0
 ///     }
 ///
-///     return ProbabilisticDriver.normal(name: "Revenue", mean: mean, stdDev: stdDev)
+///     return ProbabilisticDriver<Double>.normal(name: "Revenue", mean: mean, stdDev: stdDev)
 ///         .sample(for: period)
 /// }
 /// ```
@@ -180,7 +180,7 @@ public struct TimeVaryingDriver<T>: Driver, Sendable where T: Real, T: BinaryFlo
 	///     let base = 100_000.0
 	///     let q4Boost = period.quarter == 4 ? 1.3 : 1.0
 	///     let mean = base * q4Boost
-	///     return ProbabilisticDriver.normal(name: "Sales", mean: mean, stdDev: 10_000.0)
+	///     return ProbabilisticDriver<Double>.normal(name: "Sales", mean: mean, stdDev: 10_000.0)
 	///         .sample(for: period)
 	/// }
 	/// ```
