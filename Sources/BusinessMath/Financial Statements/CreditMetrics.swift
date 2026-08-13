@@ -187,6 +187,8 @@ public struct PiotroskiScore {
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let marketPriceSeries = 45.0
 /// let sharesOutstandingSeries = 1_000_000.0
 /// let periods = Period.documentationQuarters

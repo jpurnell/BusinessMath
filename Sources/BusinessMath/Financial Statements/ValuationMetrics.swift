@@ -73,6 +73,8 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let periods = Period.documentationQuarters
 /// let quarters = Period.documentationQuarters
 /// let price = TimeSeries(periods: quarters, values: [50.0, 52.0, 55.0, 58.0])
@@ -142,8 +144,10 @@ public func marketCapitalization<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
+/// let dilutedShares = TimeSeries(periods: Period.documentationQuarters, values: [1050, 1050, 1050, 1050])
 /// let basicShares = 1_000_000.0
-/// let marketPrice = 45.0
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Basic P/E
 /// let pe = priceToEarnings(
@@ -229,8 +233,8 @@ public func priceToEarnings<T: Real>(
 /// ## Example
 ///
 /// ```swift
-/// let marketPrice = 45.0
-/// let sharesOutstanding = 1_000_000.0
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let pb = priceToBook(
 ///     balanceSheet: balanceSheet,
@@ -309,8 +313,8 @@ public func priceToBook<T: Real>(
 /// ## Example
 ///
 /// ```swift
-/// let marketPrice = 45.0
-/// let sharesOutstanding = 1_000_000.0
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let ps = priceToSales(
 ///     incomeStatement: incomeStatement,
@@ -393,8 +397,8 @@ public func priceToSales<T: Real>(
 /// ## Example
 ///
 /// ```swift
-/// let marketPrice = 45.0
-/// let sharesOutstanding = 1_000_000.0
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let ev = enterpriseValue(
 ///     balanceSheet: balanceSheet,
@@ -477,8 +481,8 @@ public func enterpriseValue<T: Real>(
 /// ## Example
 ///
 /// ```swift
-/// let marketPrice = 45.0
-/// let sharesOutstanding = 1_000_000.0
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let evEbitda = evToEbitda(
@@ -571,8 +575,8 @@ public func evToEbitda<T: Real>(
 /// ## Example
 ///
 /// ```swift
-/// let marketPrice = 45.0
-/// let sharesOutstanding = 1_000_000.0
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let evSales = evToSales(

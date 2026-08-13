@@ -53,6 +53,7 @@ import Numerics
 /// ## Usage Example
 ///
 /// ```swift
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let periods = Period.documentationQuarters
 /// // Calculate enterprise value from FCFF
 /// let fcff = TimeSeries(
@@ -249,6 +250,7 @@ public struct EnterpriseValueBridge<T: Real> where T: Sendable {
     /// ## Usage
     ///
     /// ```swift
+    /// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
     /// // If equity value is $850M and 100M shares outstanding
     /// let sharePrice = bridge.valuePerShare(sharesOutstanding: 100.0)
     /// // Returns: $8.50 per share
