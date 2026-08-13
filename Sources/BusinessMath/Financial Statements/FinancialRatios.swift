@@ -1624,6 +1624,8 @@ public func solvencyRatios<T: Real & Sendable>(
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let valuation = valuationMetrics(
@@ -1695,6 +1697,8 @@ public struct ValuationMetrics<T: Real & Sendable>: Sendable where T: Codable {
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let q1 = Period.documentationQuarters[0]
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

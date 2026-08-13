@@ -74,6 +74,7 @@ public struct CallProvision<T: Real> where T: Sendable {
 /// ## Usage Example
 ///
 /// ```swift
+/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
 /// let maturity = Calendar.current.date(from: DateComponents(year: 2034, month: 1, day: 1)) ?? Date()
 /// let today = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1)) ?? Date()
 /// let bond = Bond(
@@ -326,6 +327,7 @@ public struct CallableBond<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
     /// let today = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1)) ?? Date()
     /// let oas = try callableBond.optionAdjustedSpread(
     ///     marketPrice: 980.0,

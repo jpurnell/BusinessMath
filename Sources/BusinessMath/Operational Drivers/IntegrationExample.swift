@@ -485,21 +485,21 @@ public struct SaaSFinancialModel {
 ///     ).positive()
 ///
 ///     // Total transactions = Traffic × Stores × Conversion Rate
-///     let transactions = traffic * storeCount * conversionRate
+///     lazy var transactions = traffic * storeCount * conversionRate
 ///
 ///     // Revenue = Transactions × Avg Transaction
-///     let revenue = transactions * avgTransaction
+///     lazy var revenue = transactions * avgTransaction
 ///
 ///     // Cost of Goods Sold (70% of revenue)
 ///     let cogsRate = DeterministicDriver<Double>(name: "COGS %", value: 0.70)
-///     let cogs = revenue * cogsRate
+///     lazy var cogs = revenue * cogsRate
 ///
 ///     // Store operating costs
 ///     let costPerStore = DeterministicDriver<Double>(name: "Cost/Store", value: 20_000.0)
-///     let operatingCosts = storeCount * costPerStore
+///     lazy var operatingCosts = storeCount * costPerStore
 ///
 ///     // Gross profit = Revenue - COGS - Operating
-///     let grossProfit = revenue - cogs - operatingCosts
+///     lazy var grossProfit = revenue - cogs - operatingCosts
 /// }
 /// ```
 
@@ -533,7 +533,7 @@ public struct SaaSFinancialModel {
 ///     ).clamped(min: 0.0, max: 1.0)
 ///
 ///     // Actual production = Capacity × Utilization
-///     let unitsProduced = capacity * utilization
+///     lazy var unitsProduced = capacity * utilization
 ///
 ///     // Selling price per unit
 ///     let pricePerUnit = ProbabilisticDriver<Double>.triangular(
@@ -544,7 +544,7 @@ public struct SaaSFinancialModel {
 ///     ).positive()
 ///
 ///     // Revenue = Units × Price
-///     let revenue = unitsProduced * pricePerUnit
+///     lazy var revenue = unitsProduced * pricePerUnit
 ///
 ///     // Material cost per unit (volatile commodity prices)
 ///     let materialCost = ProbabilisticDriver<Double>.normal(
@@ -556,14 +556,14 @@ public struct SaaSFinancialModel {
 ///     // Labor efficiency (improving 2% per year - learning curve)
 ///     let laborCostPerUnit = TimeVaryingDriver<Double>(name: "Labor Cost/Unit") { period in
 ///         let yearsSince2025 = Double(period.year - 2025)
-///         let efficiencyGain = pow(0.98, yearsSince2025)  // 2% annual improvement
+///         lazy var efficiencyGain = pow(0.98, yearsSince2025)  // 2% annual improvement
 ///         let baseCost = 15.0
 ///         return baseCost * efficiencyGain
 ///     }
 ///
 ///     // Total variable costs
-///     let variableCostPerUnit = materialCost + laborCostPerUnit
-///     let totalVariableCosts = unitsProduced * variableCostPerUnit
+///     lazy var variableCostPerUnit = materialCost + laborCostPerUnit
+///     lazy var totalVariableCosts = unitsProduced * variableCostPerUnit
 ///
 ///     // Fixed factory overhead
 ///     let fixedOverhead = DeterministicDriver<Double>(
@@ -572,7 +572,7 @@ public struct SaaSFinancialModel {
 ///     )
 ///
 ///     // Gross profit = Revenue - Variable - Fixed
-///     let grossProfit = revenue - totalVariableCosts - fixedOverhead
+///     lazy var grossProfit = revenue - totalVariableCosts - fixedOverhead
 /// }
 /// ```
 

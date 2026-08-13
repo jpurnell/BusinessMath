@@ -750,6 +750,7 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 ///
 /// ## Usage Example
 /// ```swift
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let entity = Entity.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -800,6 +801,7 @@ public struct MarketData<T: Real & Sendable>: Codable, Sendable where T: Codable
 	///
 	/// ## Usage Example
 	/// ```swift
+	/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 	/// let periods = Period.documentationQuarters
 	/// let quarters = [
 	///     Period.quarter(year: 2024, quarter: 1),

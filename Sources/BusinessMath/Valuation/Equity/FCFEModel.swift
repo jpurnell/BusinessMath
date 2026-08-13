@@ -56,6 +56,7 @@ import Numerics
 /// ## Usage Example
 ///
 /// ```swift
+/// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// // Project 5 years of cash flows
 /// let periods = (2024...2028).map { Period.year($0) }
 ///
@@ -271,6 +272,7 @@ public struct FCFEModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
     /// let model = FCFEModel(operatingCashFlow: TimeSeries(periods: Period.documentationQuarters, values: [120, 130, 140, 150]), capitalExpenditures: TimeSeries(periods: Period.documentationQuarters, values: [40, 40, 40, 40]), netBorrowing: nil, costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// // If equity value is $5,000M and 100M shares outstanding
     /// let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)

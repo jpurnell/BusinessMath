@@ -285,6 +285,7 @@ extension NelsonSiegelYieldCurve {
 	///
 	/// ## Example
 	/// ```swift
+	/// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
 	/// let treasuries = [
 	///     BondMarketData(maturity: 1, couponRate: 0.05, faceValue: 100, marketPrice: 98.8),
 	///     BondMarketData(maturity: 5, couponRate: 0.06, faceValue: 100, marketPrice: 96.5),

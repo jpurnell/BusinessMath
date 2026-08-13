@@ -29,7 +29,7 @@ import Numerics
 /// ## Monte Carlo Projection
 ///
 /// ```swift
-/// let projection = try FinancialProjection.documentationFixture
+/// let projection = DriverProjection(driver: DeterministicDriver(name: "Sales", value: 100.0), periods: Period.documentationQuarters)
 /// let periods = Period.documentationQuarters
 /// // Run 10,000 simulations
 /// let results = projection.projectMonteCarlo(iterations: 10_000)
@@ -116,6 +116,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let salesDriver = DeterministicDriver(name: "Sales", value: 100.0)
 	/// let periods = Period.documentationQuarters
 	/// let quarters = Period.documentationQuarters
 	/// let projection = DriverProjection(driver: salesDriver, periods: quarters)
@@ -164,7 +165,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let projection = try FinancialProjection.documentationFixture
+	/// let projection = DriverProjection(driver: DeterministicDriver(name: "Sales", value: 100.0), periods: Period.documentationQuarters)
 	/// let periods = Period.documentationQuarters
 	/// let results = projection.projectMonteCarlo(iterations: 10_000)
 	///
@@ -307,7 +308,7 @@ public struct DriverProjection<T: Real & Sendable>: Sendable {
 ///
 /// ```swift
 /// let values = [100.0, 110.0, 120.0, 130.0]
-/// let projection = try FinancialProjection.documentationFixture
+/// let projection = DriverProjection(driver: DeterministicDriver(name: "Sales", value: 100.0), periods: Period.documentationQuarters)
 /// let results = projection.projectMonteCarlo(iterations: 10_000)
 ///
 /// // Statistics for specific period
@@ -361,7 +362,7 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let projection = try FinancialProjection.documentationFixture
+	/// let projection = DriverProjection(driver: DeterministicDriver(name: "Sales", value: 100.0), periods: Period.documentationQuarters)
 	/// let results = projection.projectMonteCarlo(iterations: 10_000)
 	/// let expectedRevenue = results.expected()
 	/// ```
@@ -396,6 +397,8 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = DriverProjection(driver: DeterministicDriver(name: "Sales", value: 100.0), periods: Period.documentationQuarters)
+	/// let results = projection.projectMonteCarlo(iterations: 1_000)
 	/// let medianRevenue = results.percentile(0.50)  // Median
 	/// let worstCase = results.percentile(0.05)  // 5th percentile (downside risk)
 	/// let bestCase = results.percentile(0.95)  // 95th percentile (upside potential)
@@ -421,6 +424,8 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = DriverProjection(driver: DeterministicDriver(name: "Sales", value: 100.0), periods: Period.documentationQuarters)
+	/// let results = projection.projectMonteCarlo(iterations: 1_000)
 	/// let medianRevenue = results.median()
 	/// ```
 	public func median() -> TimeSeries<T> where T: BinaryFloatingPoint {
@@ -435,6 +440,8 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let projection = DriverProjection(driver: DeterministicDriver(name: "Sales", value: 100.0), periods: Period.documentationQuarters)
+	/// let results = projection.projectMonteCarlo(iterations: 1_000)
 	/// let values = [100.0, 110.0, 120.0, 130.0]
 	/// let periods = Period.documentationQuarters
 	/// let uncertainty = results.standardDeviation()
