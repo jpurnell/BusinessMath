@@ -135,14 +135,9 @@ public struct MetalMatrixBackend: MatrixBackend {
         encoder.setBuffer(bufferP, offset: 0, index: 5)
 
         // Calculate optimal thread group size
-        let threadGroupSize = MTLSize(width: min(16, p), height: min(16, m), depth: 1)
-        let threadGroups = MTLSize(
-            width: (p + threadGroupSize.width - 1) / threadGroupSize.width,
-            height: (m + threadGroupSize.height - 1) / threadGroupSize.height,
-            depth: 1
-        )
 
-        encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+        // One thread per output element — see MetalDispatch.swift.
+        encoder.dispatchExactly(rows: m, columns: p)
         encoder.endEncoding()
 
         commandBuffer.commit()

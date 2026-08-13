@@ -626,8 +626,17 @@ internal final class MetalDevice: @unchecked Sendable {
     /// - **< 1000**: CPU faster (transfer overhead dominates)
     /// - **≥ 1000**: GPU faster (10-100× speedup)
     static func shouldUseGPU(populationSize: Int) -> Bool {
-        guard shared != nil else {
+        guard let device = shared else {
             return false  // Metal not available
+        }
+
+        // Without non-uniform threadgroups the only way to dispatch is to round the
+        // threadgroup count up, which puts surplus threads through every kernel. Each CPU
+        // path here is a complete implementation, so declining the GPU costs speed rather
+        // than capability — and it removes the class of defect entirely rather than relying
+        // on every kernel, present and future, to bound its own thread id.
+        guard device.device.supportsNonUniformThreadgroups else {
+            return false
         }
 
         // GPU overhead only justified for large populations
