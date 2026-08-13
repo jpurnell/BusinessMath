@@ -18,7 +18,7 @@ import Collections
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await stats in stream.rollingStatistics(window: 3) {
 ///     print("Mean: \(stats.mean), StdDev: \(stats.stdDev)")
 /// }
@@ -80,7 +80,7 @@ public struct RollingStats {
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await stats in stream.cumulativeStatistics() {
 ///     print("Mean: \(stats.mean), Count: \(stats.count)")
 /// }
@@ -217,7 +217,7 @@ extension AsyncSequence where Element == Double {
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await mean in stream.rollingMean(window: 3) {
 ///     print(mean)
 /// }
@@ -323,7 +323,7 @@ public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await mean in stream.cumulativeMean() {
 ///     print(mean)
 /// }
@@ -403,7 +403,7 @@ public struct AsyncCumulativeMeanSequence<Base: AsyncSequence>: AsyncSequence wh
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 20, 10])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 20.0, 10.0])
 /// for try await variance in stream.rollingVariance(window: 3) {
 ///     print("Variance: \(variance)")
 /// }
@@ -533,7 +533,7 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 20, 10])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 20.0, 10.0])
 /// for try await stdDev in stream.rollingStdDev(window: 3) {
 ///     print("Std Dev: \(stdDev)")
 /// }
@@ -601,7 +601,7 @@ public struct AsyncRollingStdDevSequence<Base: AsyncSequence>: AsyncSequence whe
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([15, 20, 10, 25, 12])
+/// let stream = AsyncValueStream([15.0, 20.0, 10.0, 25.0, 12.0])
 /// for try await min in stream.rollingMin(window: 3) {
 ///     print("Min: \(min)")
 /// }
@@ -686,7 +686,7 @@ public struct AsyncRollingMinSequence<Base: AsyncSequence>: AsyncSequence where 
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([15, 20, 30, 25, 18])
+/// let stream = AsyncValueStream([15.0, 20.0, 30.0, 25.0, 18.0])
 /// for try await max in stream.rollingMax(window: 3) {
 ///     print("Max: \(max)")
 /// }
@@ -780,7 +780,7 @@ public struct AsyncRollingMaxSequence<Base: AsyncSequence>: AsyncSequence where 
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await sum in stream.rollingSum(window: 3) {
 ///     print("Sum: \(sum)")
 /// }
@@ -887,7 +887,7 @@ public struct AsyncRollingSumSequence<Base: AsyncSequence>: AsyncSequence where 
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await sum in stream.cumulativeSum() {
 ///     print("Cumulative Sum: \(sum)")
 /// }
@@ -970,7 +970,7 @@ public struct AsyncCumulativeSumSequence<Base: AsyncSequence>: AsyncSequence whe
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 25, 15])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 25.0, 15.0])
 /// for try await ema in stream.exponentialMovingAverage(alpha: 0.3) {
 ///     print("EMA: \(ema)")
 /// }
@@ -1068,7 +1068,7 @@ public struct AsyncEMASequence<Base: AsyncSequence>: AsyncSequence where Base.El
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await stats in stream.rollingStatistics(window: 3) {
 ///     print("Window [mean: \(stats.mean), stdDev: \(stats.stdDev), range: \(stats.min)-\(stats.max)]")
 /// }
@@ -1208,7 +1208,7 @@ public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([10, 20, 30, 40, 50])
+/// let stream = AsyncValueStream([10.0, 20.0, 30.0, 40.0, 50.0])
 /// for try await stats in stream.cumulativeStatistics() {
 ///     print("After \(stats.count) values: mean = \(stats.mean), stdDev = \(stats.stdDev)")
 /// }

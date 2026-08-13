@@ -54,28 +54,30 @@ public enum XNPVError: Error, Sendable {
 ///
 /// **Regular Intervals:**
 /// ```swift
+/// let calendar = Calendar.current
 /// // Annual cash flows on Jan 1
 /// let dates = [
-///     Date(year: 2025, month: 1, day: 1),
-///     Date(year: 2026, month: 1, day: 1),
-///     Date(year: 2027, month: 1, day: 1)
+///     calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2027, month: 1, day: 1)) ?? Date()
 /// ]
 /// let cashFlows = [-1000.0, 600.0, 600.0]
-/// let xnpv = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
+/// let presentValue = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
 /// // Result: ~81.82 (similar to regular NPV)
 /// ```
 ///
 /// **Irregular Intervals:**
 /// ```swift
+/// let calendar = Calendar.current
 /// // Cash flows at irregular dates
 /// let dates = [
-///     Date(year: 2025, month: 1, day: 1),
-///     Date(year: 2025, month: 4, day: 15),  // ~3.5 months later
-///     Date(year: 2025, month: 9, day: 20),  // ~8.5 months from start
-///     Date(year: 2026, month: 3, day: 10)   // ~14 months from start
+///     calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2025, month: 4, day: 15)) ?? Date(),  // ~3.5 months later
+///     calendar.date(from: DateComponents(year: 2025, month: 9, day: 20)) ?? Date(),  // ~8.5 months from start
+///     calendar.date(from: DateComponents(year: 2026, month: 3, day: 10)) ?? Date()   // ~14 months from start
 /// ]
 /// let cashFlows = [-1000.0, 300.0, 400.0, 500.0]
-/// let xnpv = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
+/// let presentValue = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
 /// ```
 ///
 /// ## Use Cases
@@ -150,55 +152,59 @@ public func xnpv<T: Real & BinaryFloatingPoint>(
 ///
 /// **Regular Intervals:**
 /// ```swift
+/// let calendar = Calendar.current
 /// // Annual cash flows (should match regular IRR)
 /// let dates = [
-///     Date(year: 2025, month: 1, day: 1),
-///     Date(year: 2026, month: 1, day: 1),
-///     Date(year: 2027, month: 1, day: 1),
-///     Date(year: 2028, month: 1, day: 1)
+///     calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2027, month: 1, day: 1)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2028, month: 1, day: 1)) ?? Date()
 /// ]
 /// let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
-/// let xirr = try xirr(dates: dates, cashFlows: cashFlows)
+/// let rate = try xirr(dates: dates, cashFlows: cashFlows)
 /// // Result: ~0.0970 (9.7%, similar to regular IRR)
 /// ```
 ///
 /// **Irregular Intervals:**
 /// ```swift
+/// let calendar = Calendar.current
 /// // Investment with irregular returns
 /// let dates = [
-///     Date(year: 2025, month: 1, day: 1),
-///     Date(year: 2025, month: 5, day: 15),
-///     Date(year: 2025, month: 11, day: 30),
-///     Date(year: 2026, month: 6, day: 1)
+///     calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2025, month: 5, day: 15)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2025, month: 11, day: 30)) ?? Date(),
+///     calendar.date(from: DateComponents(year: 2026, month: 6, day: 1)) ?? Date()
 /// ]
 /// let cashFlows = [-1000.0, 200.0, 300.0, 600.0]
-/// let xirr = try xirr(dates: dates, cashFlows: cashFlows)
+/// let rate = try xirr(dates: dates, cashFlows: cashFlows)
 /// ```
 ///
 /// ## Real-World Applications
 ///
 /// **Real Estate Investment:**
 /// ```swift
+/// let calendar = Calendar.current
 /// let dates = [
-///     Date(...),  // Purchase
-///     Date(...),  // Irregular rent payment 1
-///     Date(...),  // Irregular rent payment 2
-///     Date(...),  // Sale + final rent
+///     calendar.date(from: DateComponents(year: 2025, month: 1, day: 15)) ?? Date(),  // Purchase
+///     calendar.date(from: DateComponents(year: 2025, month: 6, day: 3)) ?? Date(),   // Irregular rent payment 1
+///     calendar.date(from: DateComponents(year: 2025, month: 11, day: 22)) ?? Date(), // Irregular rent payment 2
+///     calendar.date(from: DateComponents(year: 2026, month: 4, day: 9)) ?? Date()    // Sale + final rent
 /// ]
 /// let cashFlows = [-100000.0, 3000.0, 3000.0, 105000.0]
-/// let xirr = try xirr(dates: dates, cashFlows: cashFlows)
+/// let rate = try xirr(dates: dates, cashFlows: cashFlows)
 /// ```
 ///
 /// **Venture Capital:**
 /// ```swift
+/// let calendar = Calendar.current
 /// let dates = [
-///     Date(...),  // Seed round
-///     Date(...),  // Series A
-///     Date(...),  // Series B
-///     Date(...),  // Exit
+///     calendar.date(from: DateComponents(year: 2019, month: 3, day: 1)) ?? Date(),  // Seed round
+///     calendar.date(from: DateComponents(year: 2020, month: 9, day: 15)) ?? Date(), // Series A
+///     calendar.date(from: DateComponents(year: 2022, month: 2, day: 7)) ?? Date(),  // Series B
+///     calendar.date(from: DateComponents(year: 2025, month: 8, day: 30)) ?? Date()  // Exit
 /// ]
 /// let cashFlows = [-500000.0, -1000000.0, -2000000.0, 10000000.0]
-/// let xirr = try xirr(dates: dates, cashFlows: cashFlows)
+/// let rate = try xirr(dates: dates, cashFlows: cashFlows)
 /// ```
 ///
 /// ## Important Notes

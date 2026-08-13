@@ -38,7 +38,7 @@ import Numerics
 /// **Simple Investment:**
 /// ```swift
 /// let cashFlows = [-1000.0, 600.0, 600.0]
-/// let npv = npv(discountRate: 0.10, cashFlows: cashFlows)
+/// let presentValue = npv(discountRate: 0.10, cashFlows: cashFlows)
 /// // Result: ~41.32
 /// // Interpretation: Project adds $41.32 in value at 10% discount rate
 /// ```
@@ -46,7 +46,7 @@ import Numerics
 /// **Multi-Year Project:**
 /// ```swift
 /// let cashFlows = [-10000.0, 3000.0, 4200.0, 6800.0]
-/// let npv = npv(discountRate: 0.10, cashFlows: cashFlows)
+/// let presentValue = npv(discountRate: 0.10, cashFlows: cashFlows)
 /// // Result: ~1188.44
 /// ```
 ///
@@ -146,16 +146,16 @@ public func calculateNPVDerivative<T: Real>(discountRate: T, cashFlows: [T]) -> 
 ///
 /// ```swift
 /// let periods = [
-///     Period(year: 2025, quarter: 1),
-///     Period(year: 2025, quarter: 2),
-///     Period(year: 2025, quarter: 3),
-///     Period(year: 2025, quarter: 4)
+///     Period.quarter(year: 2025, quarter: 1),
+///     Period.quarter(year: 2025, quarter: 2),
+///     Period.quarter(year: 2025, quarter: 3),
+///     Period.quarter(year: 2025, quarter: 4)
 /// ]
 /// let cashFlows = [-10000.0, 3000.0, 4000.0, 5000.0]
 /// let ts = TimeSeries(periods: periods, values: cashFlows, metadata: ...)
 ///
 /// let quarterlyRate = 0.10 / 4.0  // Convert annual to quarterly
-/// let npv = npv(rate: quarterlyRate, timeSeries: ts)
+/// let presentValue = npv(rate: quarterlyRate, timeSeries: ts)
 /// ```
 public func npv<T: Real>(rate: T, timeSeries: TimeSeries<T>) -> T {
 	return npv(discountRate: rate, cashFlows: timeSeries.valuesArray)
