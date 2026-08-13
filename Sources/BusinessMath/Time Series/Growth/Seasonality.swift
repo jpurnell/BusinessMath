@@ -281,7 +281,8 @@ public func seasonalIndices<T: Real & Sendable>(
 ///
 /// **Monthly Subscription Revenue:**
 /// ```swift
-/// let mrr = createMonthlyData(values: subscriptionData)
+/// let monthlyPeriods = (1...12).map { Period.month(year: 2024, month: $0) }
+/// let mrr = TimeSeries(periods: monthlyPeriods, values: [100, 105, 98, 102, 108, 104, 110, 106, 112, 115, 130, 160])
 /// let indices = try seasonalIndices(timeSeries: mrr, periodsPerYear: 12)
 /// // Shows which months typically have higher/lower revenue
 /// ```
@@ -327,9 +328,8 @@ public func seasonalIndices<T: Real & Sendable>(
 ///
 /// **Remove Holiday Seasonality:**
 /// ```swift
-/// let periods = Period.documentationQuarters
-/// let quarters = Period.documentationQuarters
-/// let sales = TimeSeries(periods: quarters, values: [100, 120, 80, 100, ...])
+/// let eightQuarters = (0..<8).map { Period.quarter(year: 2024 + $0 / 4, quarter: $0 % 4 + 1) }
+/// let sales = TimeSeries(periods: eightQuarters, values: [100, 120, 80, 160, 110, 130, 88, 176])
 /// let indices = try seasonalIndices(timeSeries: sales, periodsPerYear: 4)
 /// let adjusted = try seasonallyAdjust(timeSeries: sales, indices: indices)
 ///
@@ -338,6 +338,8 @@ public func seasonalIndices<T: Real & Sendable>(
 ///
 /// **Compare Year-Over-Year Growth:**
 /// ```swift
+/// let salesQ3 = 100.0, salesQ4 = 160.0
+/// let adjustedQ3 = 100.0, adjustedQ4 = 104.0
 /// // Without adjustment, Q4 always looks like huge growth
 /// let rawGrowth = (salesQ4 - salesQ3) / salesQ3  // Misleading
 ///
@@ -424,8 +426,10 @@ public func seasonallyAdjust<T: Real & Sendable>(
 ///
 /// **Add Seasonality to Forecast:**
 /// ```swift
-/// let historical = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
-/// let periods = Period.documentationQuarters
+/// let eightQuarters = (0..<8).map { Period.quarter(year: 2024 + $0 / 4, quarter: $0 % 4 + 1) }
+/// let historical = TimeSeries(periods: eightQuarters, values: [100, 120, 80, 160, 110, 130, 88, 176])
+/// var linearTrend = LinearTrendModel<Double>()
+/// try linearTrend.fit(to: historical)
 /// // Start with trend-only forecast
 /// let trendForecast = try linearTrend.project(periods: 4)
 ///
@@ -438,7 +442,7 @@ public func seasonallyAdjust<T: Real & Sendable>(
 ///
 /// **Reconstruct Original Data:**
 /// ```swift
-/// let indices = [0, 1, 2]
+/// let indices = [0.95, 1.00, 1.05, 1.60]
 /// let original = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let adjusted = try seasonallyAdjust(timeSeries: original, indices: indices)
 /// let reconstructed = try applySeasonal(timeSeries: adjusted, indices: indices)
@@ -519,10 +523,8 @@ public func applySeasonal<T: Real & Sendable>(
 ///
 /// **Quarterly Sales Analysis:**
 /// ```swift
-/// let salesData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
-/// let periods = Period.documentationQuarters
-/// let quarters = Period.documentationQuarters
-/// let sales = TimeSeries(periods: quarters, values: salesData)
+/// let eightQuarters = (0..<8).map { Period.quarter(year: 2024 + $0 / 4, quarter: $0 % 4 + 1) }
+/// let sales = TimeSeries(periods: eightQuarters, values: [100, 120, 80, 160, 110, 130, 88, 176])
 ///
 /// let decomp = try decomposeTimeSeries(
 ///     timeSeries: sales,
@@ -537,9 +539,8 @@ public func applySeasonal<T: Real & Sendable>(
 ///
 /// **Monthly Website Traffic:**
 /// ```swift
-/// let months = Period.documentationQuarters
-/// let periods = Period.documentationQuarters
-/// let traffic = TimeSeries(periods: months, values: visitorData)
+/// let monthlyPeriods = (1...12).map { Period.month(year: 2024, month: $0) }
+/// let traffic = TimeSeries(periods: monthlyPeriods, values: [100, 105, 98, 102, 108, 104, 110, 106, 112, 115, 130, 160])
 ///
 /// let decomp = try decomposeTimeSeries(
 ///     timeSeries: traffic,
@@ -548,6 +549,7 @@ public func applySeasonal<T: Real & Sendable>(
 /// )
 ///
 /// // Identify months with unusual traffic (high residuals)
+/// let threshold = 10.0
 /// let anomalies = decomp.residual.valuesArray
 ///     .enumerated()
 ///     .filter { abs($0.element) > threshold }

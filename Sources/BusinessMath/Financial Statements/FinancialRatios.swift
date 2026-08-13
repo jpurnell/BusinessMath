@@ -26,7 +26,7 @@ private let logger = Logger(subsystem: "com.businessmath", category: "FinancialR
 /// ## Usage
 ///
 /// ```swift
-/// let entity = Entity(name: "Acme Corp", ticker: "ACME")
+/// let entity = Entity(id: "ACME", primaryType: .ticker, name: "Acme Corp")
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 ///
@@ -747,6 +747,8 @@ public func interestCoverage<T: Real & Sendable>(
 ///
 /// ```swift
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let principalSeries = TimeSeries(periods: Period.documentationQuarters, values: [25, 25, 25, 25])
+/// let interestSeries = TimeSeries(periods: Period.documentationQuarters, values: [10, 10, 10, 10])
 /// let dscr = try debtServiceCoverage(
 ///     incomeStatement: incomeStatement,
 ///     principalPayments: principalSeries,
@@ -890,23 +892,23 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Option 1: Use balance sheet's aggregated debt (best)
 /// let totalDebtTS = balanceSheet.interestBearingDebt  // Includes all debt
-/// let totalDebtAccount = Account(
+/// let totalDebtAccount = try Account(
+///     entity: balanceSheet.entity,
 ///     name: "Total Interest-Bearing Debt",
-///     timeSeries: totalDebtTS,
-///     role: .longTermDebt
+///     balanceSheetRole: .longTermDebt,
+///     timeSeries: totalDebtTS
 /// )
 ///
-/// // Option 2: If balance sheet has a single "Total Debt" account
-/// let totalDebtAccount = balanceSheet.liabilityAccounts.first {
-///     $0.name.contains("Total Debt")
-/// }!
+/// // Option 2: if the balance sheet already carries a single "Total Debt" account,
+/// // take it instead of building one:
+/// // let totalDebtAccount = balanceSheet.liabilityAccounts.first { $0.name.contains("Total Debt") }
 ///
 /// // Then compute DSCR
 /// let dscr = debtServiceCoverage(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
 ///     debtAccount: totalDebtAccount,
-///     interestAccount: interestAccount
+///     interestAccount: incomeStatement.accounts.first { $0.name.contains("Interest") } ?? totalDebtAccount
 /// )
 /// ```
 ///
@@ -930,10 +932,11 @@ public func debtServiceCoverage<T: Real & Sendable>(
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Use aggregated total debt (includes LT + current portion)
 /// let totalDebtTS = balanceSheet.interestBearingDebt
-/// let debtAccount = Account(
+/// let debtAccount = try Account(
+///     entity: balanceSheet.entity,
 ///     name: "Total Interest-Bearing Debt",
-///     timeSeries: totalDebtTS,
-///     role: .longTermDebt
+///     balanceSheetRole: .longTermDebt,
+///     timeSeries: totalDebtTS
 /// )
 ///
 /// // Find interest expense account
@@ -1560,10 +1563,11 @@ public func solvencyRatios<T: Real & Sendable>(
 /// // Use aggregated total debt (includes LT + current portion)
 /// // This correctly captures principal payments by tracking total debt changes
 /// let totalDebtTS = balanceSheet.interestBearingDebt
-/// let debtAccount = Account(
+/// let debtAccount = try Account(
+///     entity: balanceSheet.entity,
 ///     name: "Total Interest-Bearing Debt",
-///     timeSeries: totalDebtTS,
-///     role: .longTermDebt
+///     balanceSheetRole: .longTermDebt,
+///     timeSeries: totalDebtTS
 /// )
 ///
 /// // Interest expense from income statement
