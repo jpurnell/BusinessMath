@@ -131,8 +131,8 @@ public enum IncomeStatementError: Error, Sendable {
 /// let materialized = incomeStatement.materialize()
 ///
 /// // All metrics pre-computed
-/// let avgGrossMargin = materialized.grossMargin.valuesArray.mean()
-/// let avgNetMargin = materialized.netMargin.valuesArray.mean()
+/// let avgGrossMargin = mean(materialized.grossMargin.valuesArray)
+/// let avgNetMargin = mean(materialized.netMargin.valuesArray)
 /// ```
 ///
 /// ## Topics
@@ -426,7 +426,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// let variableCosts = incomeStatement.totalVariableCosts
 	///
 	/// // If no accounts have cost classification, returns zero
-	/// print("Q1 Variable Costs: \(variableCosts.values[0])")
+	/// print("Q1 Variable Costs: \(variableCosts.valuesArray[0])")
 	/// ```
 	///
 	/// ## Graceful Handling
@@ -470,7 +470,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// let fixedCosts = incomeStatement.totalFixedCosts
 	///
 	/// // If no accounts have cost classification, returns zero
-	/// print("Q1 Fixed Costs: \(fixedCosts.values[0])")
+	/// print("Q1 Fixed Costs: \(fixedCosts.valuesArray[0])")
 	/// ```
 	///
 	/// ## Graceful Handling
@@ -516,8 +516,8 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// let cm = incomeStatement.contributionMargin
 	/// let cmPercent = incomeStatement.contributionMarginPercent
 	///
-	/// print("Contribution Margin: \(cm.values[0])")        // $400,000
-	/// print("Contribution Margin %: \(cmPercent.values[0])")  // 0.40 (40%)
+	/// print("Contribution Margin: \(cm.valuesArray[0])")        // $400,000
+	/// print("Contribution Margin %: \(cmPercent.valuesArray[0])")  // 0.40 (40%)
 	/// ```
 	///
 	/// ## Graceful Handling
@@ -563,7 +563,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// let cmPercent = incomeStatement.contributionMarginPercent
 	///
 	/// for (i, period) in incomeStatement.periods.enumerated() {
-	///     print("\(period): \(cmPercent.values[i] * 100)%")
+	///     print("\(period): \(cmPercent.valuesArray[i] * 100)%")
 	/// }
 	/// ```
 	///
@@ -614,7 +614,7 @@ public struct IncomeStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// let leverage = incomeStatement.operatingLeverage()
 	///
 	/// for (i, period) in incomeStatement.periods.enumerated() {
-	///     print("\(period): \(leverage.values[i])×")
+	///     print("\(period): \(leverage.valuesArray[i])×")
 	/// }
 	/// ```
 	///

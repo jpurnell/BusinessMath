@@ -25,6 +25,9 @@ import Numerics
 /// let entity = Entity.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let driverOverrides: [String: AnyDriver<Double>] = [
+///     "Revenue": AnyDriver(DeterministicDriver<Double>(name: "Revenue", value: 120_000.0))
+/// ]
 /// let scenario = FinancialScenario(
 ///     name: "Base Case",
 ///     description: "Expected scenario",
@@ -117,7 +120,7 @@ import Numerics
 ///     let revenueAccount = try Account(
 ///         entity: entity,
 ///         name: "Revenue",
-///         type: .revenue,
+///         incomeStatementRole: .revenue,
 ///         timeSeries: revenueSeries
 ///     )
 ///
@@ -126,7 +129,7 @@ import Numerics
 ///     let cogsAccount = try Account(
 ///         entity: entity,
 ///         name: "Cost of Goods Sold",
-///         type: .expense,
+///         incomeStatementRole: .costOfGoodsSold,
 ///         timeSeries: cogsSeries,
 ///         metadata: cogsMetadata
 ///     )
@@ -134,7 +137,7 @@ import Numerics
 ///     let opexAccount = try Account(
 ///         entity: entity,
 ///         name: "Operating Expenses",
-///         type: .expense,
+///         incomeStatementRole: .generalAndAdministrative,
 ///         timeSeries: opexSeries
 ///     )
 ///
@@ -151,7 +154,7 @@ import Numerics
 ///     let equityAccount = try Account(
 ///         entity: entity,
 ///         name: "Retained Earnings",
-///         type: .equity,
+///         balanceSheetRole: .commonStock,
 ///         timeSeries: netIncome
 ///     )
 ///
@@ -167,7 +170,7 @@ import Numerics
 ///     let cashAccount = try Account(
 ///         entity: entity,
 ///         name: "Operating Cash Flow",
-///         type: .operating,
+///         cashFlowRole: .netIncome,
 ///         timeSeries: netIncome  // Simplified: cash = net income
 ///     )
 ///
@@ -212,9 +215,10 @@ import Numerics
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
-/// let uncertainRevenue = ProbabilisticDriver(
+/// let uncertainRevenue = ProbabilisticDriver<Double>.normal(
 ///     name: "Revenue",
-///     distribution: DistributionNormal(mean: 100_000.0, standardDeviation: 10_000.0)
+///     mean: 100_000.0,
+///     stdDev: 10_000.0
 /// )
 ///
 /// // Run the same scenario 1000 times for Monte Carlo simulation
@@ -281,7 +285,13 @@ public struct ScenarioRunner: Sendable {
 	///     let revenueSeries = TimeSeries(periods: periods, values: revenueValues)
 	///
 	///     // Build accounts
-	///     let revenueAccount = try Account(...)
+	///     let entity = Entity.documentationFixture
+	///     let revenueAccount = try Account(
+	///         entity: entity,
+	///         name: "Revenue",
+	///         incomeStatementRole: .revenue,
+	///         timeSeries: revenueSeries
+	///     )
 	///
 	///     // Build statements
 	///     let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -314,9 +324,17 @@ public struct ScenarioRunner: Sendable {
 	/// let runner = ScenarioRunner()
 	///
 	/// // Run multiple scenarios with the same runner
-	/// let baseProjection = try runner.run(scenario: baseCase, ...)
-	/// let optimisticProjection = try runner.run(scenario: optimistic, ...)
-	/// let pessimisticProjection = try runner.run(scenario: pessimistic, ...)
+	/// let entity = Entity.documentationFixture
+	/// let optimistic = FinancialScenario(name: "Upside", description: "Growth beats plan")
+	/// let pessimistic = FinancialScenario(name: "Downside", description: "Growth misses plan")
+	/// let builder: ScenarioRunner.StatementBuilder = { _, _ in
+	///     (try IncomeStatement<Double>.documentationFixture,
+	///      try BalanceSheet<Double>.documentationFixture,
+	///      try CashFlowStatement<Double>.documentationFixture)
+	/// }
+	/// let baseProjection = try runner.run(scenario: baseCase, entity: entity, periods: Period.documentationQuarters, builder: builder)
+	/// let optimisticProjection = try runner.run(scenario: optimistic, entity: entity, periods: Period.documentationQuarters, builder: builder)
+	/// let pessimisticProjection = try runner.run(scenario: pessimistic, entity: entity, periods: Period.documentationQuarters, builder: builder)
 	/// ```
 	public init() {
 		// Stateless runner - no initialization needed
