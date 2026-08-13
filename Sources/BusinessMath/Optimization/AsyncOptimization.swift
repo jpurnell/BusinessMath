@@ -83,7 +83,14 @@ public enum OptimizationPhase: Sendable, Equatable, Hashable {
 /// ## Real-Time Monitoring
 /// Progress updates are emitted through `AsyncThrowingStream` during optimization:
 /// ```swift
-/// for try await progress in optimizer.optimizeWithProgress(...) {
+/// let optimizer = AsyncGradientDescentOptimizer<Double>()
+/// for try await progress in optimizer.optimizeWithProgress(
+///     objective: { x in (x - 5.0) * (x - 5.0) },
+///     constraints: [],
+///     initialGuess: 0.0,
+///     bounds: nil,
+///     config: .default
+/// ) {
 ///     print("Iteration \(progress.iteration): \(progress.objectiveValue)")
 ///     if progress.hasConverged {
 ///         print("Converged!")
@@ -178,13 +185,26 @@ public struct AsyncOptimizationProgress<T: Real & Sendable>: Sendable {
 ///         objective: @escaping @Sendable (Double) -> Double,
 ///         constraints: [Constraint<Double>],
 ///         initialGuess: Double,
-///         bounds: (lower: Double, upper: Double)?
+///         bounds: (lower: Double, upper: Double)?,
+///         config: OptimizationConfig
 ///     ) -> AsyncThrowingStream<AsyncOptimizationProgress<Double>, Error> {
-///         // Implementation...
+///         AsyncThrowingStream { continuation in
+///             continuation.finish()
+///         }
 ///     }
 ///
-///     func optimize(...) async throws -> OptimizationResult<Double> {
-///         // Implementation...
+///     func optimize(
+///         objective: @escaping @Sendable (Double) -> Double,
+///         constraints: [Constraint<Double>],
+///         initialGuess: Double,
+///         bounds: (lower: Double, upper: Double)?
+///     ) async throws -> OptimizationResult<Double> {
+///         OptimizationResult(
+///             optimalValue: initialGuess,
+///             objectiveValue: objective(initialGuess),
+///             iterations: 0,
+///             converged: true
+///         )
 ///     }
 /// }
 /// ```
@@ -195,7 +215,13 @@ public struct AsyncOptimizationProgress<T: Real & Sendable>: Sendable {
 /// ```swift
 /// let optimizer = AsyncGradientDescentOptimizer<Double>()
 ///
-/// for try await progress in optimizer.optimizeWithProgress(...) {
+/// for try await progress in optimizer.optimizeWithProgress(
+///     objective: { x in (x - 5.0) * (x - 5.0) },
+///     constraints: [],
+///     initialGuess: 0.0,
+///     bounds: nil,
+///     config: .default
+/// ) {
 ///     print("Iteration \(progress.iteration): f(x) = \(progress.objectiveValue)")
 ///     if progress.hasConverged {
 ///         print("Converged!")
@@ -208,12 +234,16 @@ public struct AsyncOptimizationProgress<T: Real & Sendable>: Sendable {
 /// Implementations should check `Task.isCancelled` periodically and terminate
 /// gracefully when cancelled:
 /// ```swift
-/// for iteration in 0..<maxIterations {
-///     if Task.isCancelled {
-///         continuation.finish(throwing: CancellationError())
-///         return
+/// let maxIterations = 100
+/// let stream = AsyncThrowingStream<AsyncOptimizationProgress<Double>, Error> { continuation in
+///     for iteration in 0..<maxIterations {
+///         if Task.isCancelled {
+///             continuation.finish(throwing: CancellationError())
+///             return
+///         }
+///         // ... optimization logic goes here ...
 ///     }
-///     // ... optimization logic ...
+///     continuation.finish()
 /// }
 /// ```
 ///
@@ -294,8 +324,8 @@ public protocol AsyncOptimizer: Sendable {
     ///     bounds: nil
     /// )
     ///
-    /// print("Optimal x: \(result.x)")
-    /// print("Optimal f(x): \(result.fx)")
+    /// print("Optimal x: \(result.optimalValue)")
+    /// print("Optimal f(x): \(result.objectiveValue)")
     /// ```
     func optimize(
         objective: @escaping @Sendable (T) -> T,

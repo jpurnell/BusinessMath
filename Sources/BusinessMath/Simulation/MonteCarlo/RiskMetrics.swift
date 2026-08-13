@@ -60,9 +60,9 @@ extension SimulationResults {
 	/// }
 	///
 	/// simulation.addInput(SimulationInput(name: "Stocks",
-	///     distribution: DistributionNormal(mean: 0.12, stdDev: 0.20)))
+	///     distribution: DistributionNormal(0.12, 0.20)))
 	/// simulation.addInput(SimulationInput(name: "Bonds",
-	///     distribution: DistributionNormal(mean: 0.04, stdDev: 0.05)))
+	///     distribution: DistributionNormal(0.04, 0.05)))
 	///
 	/// let results = try simulation.run()
 	///

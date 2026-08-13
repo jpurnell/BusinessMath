@@ -15,7 +15,7 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
-/// let normal = DistributionNormal(mean: 0.0, stdDev: 1.0)
+/// let normal = DistributionNormal(0.0, 1.0)
 /// let sample = normal.next()  // Random value from N(0,1)
 /// ```
 ///

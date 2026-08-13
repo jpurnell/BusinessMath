@@ -208,6 +208,35 @@ extension FinancialProjection {
 	}
 }
 
+// MARK: - Period summary
+
+extension FinancialPeriodSummary where T == Double {
+
+	/// A one-period summary for doc-comment examples.
+	///
+	/// Takes the entity and period so a comparison example can build one per company and
+	/// have the labels mean something — a peer table where every row is the same entity
+	/// demonstrates nothing about comparison.
+	///
+	/// - Parameters:
+	///   - entity: The company this summary describes.
+	///   - period: The period it covers. Must be one of ``Period/documentationQuarters``,
+	///     since the underlying statements are built over that axis.
+	/// - Throws: `AccountError` if a fixture statement is malformed.
+	public static func documentationFixture(
+		for entity: Entity = .documentationFixture,
+		period: Period = Period.documentationQuarters[0]
+	) throws -> FinancialPeriodSummary<Double> {
+		try FinancialPeriodSummary(
+			entity: entity,
+			period: period,
+			incomeStatement: try IncomeStatement<Double>.documentationFixture,
+			balanceSheet: try BalanceSheet<Double>.documentationFixture,
+			cashFlowStatement: try CashFlowStatement<Double>.documentationFixture
+		)
+	}
+}
+
 // MARK: - Simulation
 
 extension FinancialSimulation {

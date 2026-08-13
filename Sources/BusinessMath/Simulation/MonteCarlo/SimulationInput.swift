@@ -33,7 +33,7 @@ import Numerics
 /// // Using built-in distributions
 /// let revenueInput = SimulationInput(
 ///     name: "MonthlyRevenue",
-///     distribution: DistributionNormal(mean: 100_000, stdDev: 15_000),
+///     distribution: DistributionNormal(100_000, 15_000),
 ///     metadata: ["unit": "USD", "category": "income"]
 /// )
 ///
@@ -250,7 +250,7 @@ public struct SimulationInput: Sendable {
 	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let input = SimulationInput(
 	///     name: "Revenue",
-	///     distribution: DistributionNormal(mean: 100_000, stdDev: 10_000)
+	///     distribution: DistributionNormal(100_000, 10_000)
 	/// )
 	///
 	/// // Generate 10,000 samples for Monte Carlo simulation
