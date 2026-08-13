@@ -424,6 +424,7 @@ public func seasonallyAdjust<T: Real & Sendable>(
 ///
 /// **Add Seasonality to Forecast:**
 /// ```swift
+/// let historical = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let periods = Period.documentationQuarters
 /// // Start with trend-only forecast
 /// let trendForecast = try linearTrend.project(periods: 4)
@@ -437,6 +438,7 @@ public func seasonallyAdjust<T: Real & Sendable>(
 ///
 /// **Reconstruct Original Data:**
 /// ```swift
+/// let original = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let adjusted = try seasonallyAdjust(timeSeries: original, indices: indices)
 /// let reconstructed = try applySeasonal(timeSeries: adjusted, indices: indices)
 ///
@@ -533,6 +535,7 @@ public func applySeasonal<T: Real & Sendable>(
 ///
 /// **Monthly Website Traffic:**
 /// ```swift
+/// let months = Period.documentationQuarters
 /// let periods = Period.documentationQuarters
 /// let traffic = TimeSeries(periods: months, values: visitorData)
 ///

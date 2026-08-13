@@ -104,6 +104,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let months = Period.documentationQuarters
 	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries(periods: months, values: [100, 110, 121])
 	/// let growth = revenue.growthRate(lag: 1)  // [nil, 0.10, 0.10]

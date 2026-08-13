@@ -175,6 +175,7 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let rentData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let company = Entity.documentationFixture
 	/// let entity = Entity.documentationFixture
 	/// var rentMetadata = AccountMetadata()
@@ -220,6 +221,7 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 	/// ## Example Usage
 	///
 	/// ```swift
+	/// let cogsData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let company = Entity.documentationFixture
 	/// let entity = Entity.documentationFixture
 	/// var cogsMetadata = AccountMetadata()
@@ -320,6 +322,10 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 /// Accounts now support **multiple roles** across statements:
 ///
 /// ```swift
+/// let apple = Entity.documentationFixture
+/// let daSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let inventorySeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let revenueSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity.documentationFixture
 /// // Single role: Revenue appears only in Income Statement
 /// let revenue = try Account(
@@ -360,6 +366,8 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 /// The old `AccountType` system is deprecated but still functional:
 ///
 /// ```swift
+/// let apple = Entity.documentationFixture
+/// let revenueSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity.documentationFixture
 /// // Old API (deprecated, but still works)
 /// let oldAccount = try Account(

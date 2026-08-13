@@ -68,6 +68,7 @@ public struct StatementValidationResult<T: Real & Sendable>: Sendable where T: C
 /// ## Example
 ///
 /// ```swift
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let cashFlowStmt = try CashFlowStatement<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

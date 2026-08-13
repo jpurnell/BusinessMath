@@ -58,6 +58,7 @@ extension FormulaError: LocalizedError {
 /// spanning several of them needs the derivation to be data, not a compiled-in expression.
 ///
 /// ```swift
+/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 /// let evaluator = FormulaEvaluator(accounts: [
 ///     "revenue": revenue,
 ///     "cogs": costOfSales

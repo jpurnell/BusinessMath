@@ -22,6 +22,8 @@ import OSLog
 ///
 /// ## Example
 /// ```swift
+/// let balance = try BalanceSheet<Double>.documentationFixture
+/// let income = try IncomeStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let covenant = FinancialCovenant(
@@ -278,6 +280,8 @@ public struct CovenantComplianceResult {
 ///
 /// ## Example
 /// ```swift
+/// let balance = try BalanceSheet<Double>.documentationFixture
+/// let income = try IncomeStatement<Double>.documentationFixture
 /// let q1 = Period.documentationQuarters[0]
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

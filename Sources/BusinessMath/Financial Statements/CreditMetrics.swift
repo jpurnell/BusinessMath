@@ -81,6 +81,7 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let company = Entity.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -186,6 +187,8 @@ public struct PiotroskiScore {
 /// ## Example
 ///
 /// ```swift
+/// let marketPriceSeries = 45.0
+/// let sharesOutstandingSeries = 1_000_000.0
 /// let periods = Period.documentationQuarters
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -361,6 +364,7 @@ public func altmanZScore<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let currentPeriod = Period.quarter(year: 2025, quarter: 1)

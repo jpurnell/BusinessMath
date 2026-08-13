@@ -1239,6 +1239,7 @@ public struct EfficiencyRatios<T: Real & Sendable>: Sendable where T: Codable {
 /// ## Example
 ///
 /// ```swift
+/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 /// let q1 = Period.documentationQuarters[0]
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

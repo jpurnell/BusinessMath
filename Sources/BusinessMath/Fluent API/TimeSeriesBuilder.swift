@@ -518,6 +518,7 @@ public func buildTimeSeries<T: Real & Sendable>(
 ///
 /// Example:
 /// ```swift
+/// let jan = Period.month(year: 2024, month: 1)
 /// buildTimeSeries(startingAt: jan) {
 ///     Entry(100)
 ///     Entry(105)
@@ -532,6 +533,7 @@ public func Entry<T: Real & Sendable>(_ value: T) -> SimpleEntry<T> {
 ///
 /// Example:
 /// ```swift
+/// let jan = Period.month(year: 2024, month: 1)
 /// buildTimeSeries(startingAt: jan) {
 ///     Entry(100, label: "January")
 ///     Entry(105, label: "February")
@@ -551,6 +553,7 @@ public func Entry<T: Real & Sendable>(_ value: T, label: String) -> SimpleEntry<
 ///
 /// Example (use GrowthFrom instead):
 /// ```swift
+/// let jan = Period.month(year: 2024, month: 1)
 /// let periods = Period.documentationQuarters
 /// buildTimeSeries(startingAt: jan) {
 ///     GrowthFrom(startValue: 100, rate: 0.05, periods: 12)
@@ -567,6 +570,7 @@ public func Growth<T: Real & Sendable>(rate: T, periods: Int) -> [SimpleEntry<T>
 ///
 /// Example:
 /// ```swift
+/// let jan = Period.month(year: 2024, month: 1)
 /// let periods = Period.documentationQuarters
 /// buildTimeSeries(startingAt: jan) {
 ///     GrowthFrom(startValue: 100, rate: 0.05, periods: 12)

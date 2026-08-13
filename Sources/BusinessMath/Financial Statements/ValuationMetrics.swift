@@ -142,6 +142,8 @@ public func marketCapitalization<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let basicShares = 1_000_000.0
+/// let marketPrice = 45.0
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Basic P/E
 /// let pe = priceToEarnings(
@@ -227,6 +229,8 @@ public func priceToEarnings<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = 45.0
+/// let sharesOutstanding = 1_000_000.0
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let pb = priceToBook(
 ///     balanceSheet: balanceSheet,
@@ -305,6 +309,8 @@ public func priceToBook<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = 45.0
+/// let sharesOutstanding = 1_000_000.0
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let ps = priceToSales(
 ///     incomeStatement: incomeStatement,
@@ -387,6 +393,8 @@ public func priceToSales<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = 45.0
+/// let sharesOutstanding = 1_000_000.0
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let ev = enterpriseValue(
 ///     balanceSheet: balanceSheet,
@@ -469,6 +477,8 @@ public func enterpriseValue<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = 45.0
+/// let sharesOutstanding = 1_000_000.0
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let evEbitda = evToEbitda(
@@ -561,6 +571,8 @@ public func evToEbitda<T: Real>(
 /// ## Example
 ///
 /// ```swift
+/// let marketPrice = 45.0
+/// let sharesOutstanding = 1_000_000.0
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let evSales = evToSales(

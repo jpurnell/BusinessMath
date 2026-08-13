@@ -113,6 +113,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let sparseSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let allMonths = (1...12).map { Period.month(year: 2025, month: $0) }
 	/// let filled = sparseSeries.fillForward(over: allMonths)
 	/// ```
@@ -144,6 +145,7 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let sparseSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// let allMonths = (1...12).map { Period.month(year: 2025, month: $0) }
 	/// let filled = sparseSeries.fillBackward(over: allMonths)
 	/// ```
