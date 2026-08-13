@@ -636,7 +636,18 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
                 // Small random velocity: [-10%, +10%] of range
                 let randRaw = rng.next()
                 let randValue = V.Scalar(Int(randRaw >> 32)) / V.Scalar(Int(UInt32.max))
-                let velocity = (randValue - V.Scalar(1) / V.Scalar(2)) * range * V.Scalar(1) / V.Scalar(5)
+                // Five operators in one generic expression, which the Linux 6.2.1
+                // type-checker declines to solve under `-O` while macOS accepts it.
+                // Split to stay inside the three-operator rule.
+                //
+                // The `* V.Scalar(1)` in the original is dropped rather than kept:
+                // multiplying by exactly one is an identity for every finite value and
+                // for the signed zeroes, so the split is bit-exact and a seeded swarm
+                // starts from the same velocities it did before.
+                let half: V.Scalar = V.Scalar(1) / V.Scalar(2)
+                let centred: V.Scalar = randValue - half
+                let scaled: V.Scalar = centred * range
+                let velocity: V.Scalar = scaled / V.Scalar(5)
                 components.append(velocity)
             }
 
