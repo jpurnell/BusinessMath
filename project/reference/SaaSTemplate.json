@@ -1,0 +1,27 @@
+{
+  "checksum" : "3394a940ec9012abb907f5af36fe0b7f965ce87f5e71692ee4af6ae48cb7401a",
+  "createdAt" : 789578521.878622,
+  "metadata" : {
+    "author" : "BusinessMath",
+    "category" : "saas",
+    "description" : "Template for Software-as-a-Service businesses with MRR, churn, and unit economics",
+    "name" : "SaaS Business Model",
+    "optionalParameters" : [
+
+    ],
+    "requiredParameters" : [
+      "initialMRR",
+      "churnRate",
+      "newCustomersPerMonth",
+      "averageRevenuePerUser"
+    ],
+    "tags" : [
+      "saas",
+      "recurring",
+      "subscription",
+      "mrr"
+    ],
+    "version" : "1.0.0"
+  },
+  "templateJSON" : "{\n  \"examples\" : {\n    \"growth\" : {\n      \"averageRevenuePerUser\" : \"100\",\n      \"churnRate\" : \"0.03\",\n      \"grossMargin\" : \"0.85\",\n      \"initialMRR\" : \"50000\",\n      \"newCustomersPerMonth\" : \"500\"\n    },\n    \"startup\" : {\n      \"averageRevenuePerUser\" : \"100\",\n      \"churnRate\" : \"0.05\",\n      \"initialMRR\" : \"10000\",\n      \"newCustomersPerMonth\" : \"100\"\n    }\n  },\n  \"parameters\" : [\n    {\n      \"description\" : \"Initial Monthly Recurring Revenue\",\n      \"name\" : \"initialMRR\",\n      \"required\" : true,\n      \"type\" : \"number\",\n      \"validation\" : [\n        {\n          \"message\" : \"Must be positive\",\n          \"rule\" : \"min\"\n        }\n      ]\n    },\n    {\n      \"description\" : \"Monthly customer churn rate (0.0 to 1.0)\",\n      \"name\" : \"churnRate\",\n      \"required\" : true,\n      \"type\" : \"number\",\n      \"validation\" : [\n        {\n          \"message\" : \"Must be between 0.0 and 1.0\",\n          \"rule\" : \"range\"\n        }\n      ]\n    },\n    {\n      \"description\" : \"Number of new customers acquired per month\",\n      \"name\" : \"newCustomersPerMonth\",\n      \"required\" : true,\n      \"type\" : \"number\",\n      \"validation\" : [\n        {\n          \"message\" : \"Must be positive\",\n          \"rule\" : \"min\"\n        }\n      ]\n    },\n    {\n      \"description\" : \"Average revenue per user (ARPU)\",\n      \"name\" : \"averageRevenuePerUser\",\n      \"required\" : true,\n      \"type\" : \"number\",\n      \"validation\" : [\n        {\n          \"message\" : \"Must be positive\",\n          \"rule\" : \"min\"\n        }\n      ]\n    },\n    {\n      \"description\" : \"Gross margin percentage (0.0 to 1.0)\",\n      \"name\" : \"grossMargin\",\n      \"required\" : false,\n      \"type\" : \"number\",\n      \"validation\" : [\n        {\n          \"message\" : \"Must be between 0.0 and 1.0 if provided\",\n          \"rule\" : \"range\"\n        }\n      ]\n    },\n    {\n      \"description\" : \"Customer Acquisition Cost (CAC)\",\n      \"name\" : \"customerAcquisitionCost\",\n      \"required\" : false,\n      \"type\" : \"number\",\n      \"validation\" : [\n        {\n          \"message\" : \"Must be positive if provided\",\n          \"rule\" : \"min\"\n        }\n      ]\n    }\n  ]\n}"
+}

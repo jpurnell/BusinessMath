@@ -1,0 +1,855 @@
+Yes — here’s a clean summary of what’s still failing in your **Linux CI test compile** and what each category likely means.
+
+---
+
+# ✅ 1. `HTTPURLResponse` Cannot Be Constructed (Linux)
+
+### Error
+```
+'HTTPURLResponse' (aka 'AnyObject') cannot be constructed because it has no accessible initializers
+```
+
+### Why This Happens
+
+On **Linux**, `HTTPURLResponse` lives in **FoundationNetworking**, not just Foundation.
+
+If you don’t import it, Swift sees it as:
+```
+typealias HTTPURLResponse = AnyObject
+```
+which:
+- Has no public initializer
+- Cannot be constructed
+- Causes the cascade of errors you’re seeing
+
+### ✅ Fix
+
+In your test file(s) that construct `HTTPURLResponse`, add:
+
+```swift
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+```
+
+Place it at the top of:
+
+```
+MarketDataTests.swift
+```
+
+This should resolve:
+- All `HTTPURLResponse cannot be constructed`
+- Many of the cascading `nil requires contextual type` errors
+
+---
+
+# ✅ 2. `'nil' requires a contextual type`
+
+### Error
+```
+'nil' requires a contextual type
+```
+
+### Why This Happens
+
+This is a *secondary error* caused by the `HTTPURLResponse` issue.
+
+When Swift can’t resolve `HTTPURLResponse`, it can’t infer the types of:
+
+```swift
+(data, response, error)
+```
+
+So `nil` has no type context.
+
+### ✅ Fix
+
+This will likely disappear once:
+```swift
+import FoundationNetworking
+```
+is added.
+
+If any remain afterward, explicitly type your tuple:
+
+```swift
+let response: HTTPURLResponse? = ...
+let error: Error? = nil
+```
+
+But most of these should resolve automatically.
+
+---
+
+# ✅ 3. `value of tuple type '()' has no member 'divisionByZero'`
+
+### Error
+```
+value of tuple type '()' has no member 'divisionByZero'
+```
+
+File:
+```
+Dispersion Around the Mean Tests.swift:58
+```
+
+### What This Means
+
+Some function is now returning `()` (Void), but your test expects something like:
+
+```swift
+result.divisionByZero
+```
+
+That means one of these likely changed:
+
+### 🔎 Possibilities
+
+1. The function used to return something like:
+   ```swift
+   (value: Double, divisionByZero: Bool)
+   ```
+
+   But now returns:
+   ```swift
+   Void
+   ```
+
+2. The function now throws instead of returning an error flag.
+
+3. The return type was accidentally removed.
+
+---
+
+### ✅ What To Check
+
+Look at the function being tested at line 58.
+
+Compare:
+
+#### What the test expects:
+Something like:
+```swift
+let result = dispersion(...)
+XCTAssertTrue(result.divisionByZero)
+```
+
+#### What the function currently returns:
+If it's:
+```swift
+func dispersion(...) { ... }
+```
+Then it returns `Void`.
+
+---
+
+### ✅ Fix Options
+
+Depending on your intended design:
+
+#### Option A — Restore the previous return type
+
+If it used to return:
+```swift
+(value: Double, divisionByZero: Bool)
+```
+restore that signature.
+
+#### Option B — Update the test
+
+If you changed to throwing errors:
+
+Change test to:
+
+```swift
+XCTAssertThrowsError(try dispersion(...))
+```
+
+Instead of checking `.divisionByZero`.
+
+---
+
+# ✅ What’s Actually Blocking Linux CI
+
+### The real blockers are:
+
+1. ✅ Missing `FoundationNetworking` import
+2. ✅ A function signature mismatch in dispersion tests
+
+Everything else is cascading noise.
+
+---
+
+# ✅ What This Is NOT
+
+- Not a Swift 6 issue
+- Not a concurrency issue
+- Not a linker issue
+- Not a package manifest issue
+
+These are purely:
+- Linux Foundation differences
+- A return-type mismatch in one stats function
+
+---
+
+# ✅ Minimal Fix Plan
+
+1. Add this to all networking test files:
+
+```swift
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+```
+
+2. Inspect the function tested at:
+```
+Dispersion Around the Mean Tests.swift:58
+```
+
+and make sure its return type matches what the test expects.
+
+---
+
+If you’d like, you can paste:
+- The `HTTPURLResponse` construction line
+- The dispersion function signature
+
+And I’ll tell you the exact code change to apply.
+Yes — this function itself is correct ✅  
+The problem is almost certainly **how the test is calling it**.
+
+Your function now:
+
+```swift
+public func indexOfDispersion<T: Real>(_ values: [T]) throws -> T
+```
+
+### Important changes from a typical older version:
+
+- ✅ It **throws**
+- ✅ It returns `T`
+- ❌ It does *not* return a tuple
+- ❌ It does *not* return `.divisionByZero`
+
+---
+
+# 🔎 Why CI Says:
+
+```
+value of tuple type '()' has no member 'divisionByZero'
+```
+
+That error only happens when Swift thinks the result is `()` (Void).
+
+That means your test is likely doing one of these:
+
+```swift
+let result = try? indexOfDispersion(data)
+XCTAssertTrue(result.divisionByZero)
+```
+
+or
+
+```swift
+let result = indexOfDispersion(data)
+XCTAssertTrue(result.divisionByZero)
+```
+
+or possibly:
+
+```swift
+_ = try? indexOfDispersion(data)
+result.divisionByZero
+```
+
+---
+
+# ✅ What Actually Changed
+
+Previously, your function probably looked like:
+
+```swift
+func indexOfDispersion(...) -> (value: Double, divisionByZero: Bool)
+```
+
+Now it throws instead:
+
+```swift
+throws -> T
+```
+
+So your test must change accordingly.
+
+---
+
+# ✅ Correct Way to Test This Now
+
+Since the function throws:
+
+### Instead of this (old style):
+
+```swift
+let result = indexOfDispersion([0,0,0])
+XCTAssertTrue(result.divisionByZero)
+```
+
+### ✅ Do this:
+
+```swift
+XCTAssertThrowsError(try indexOfDispersion([0,0,0])) { error in
+    XCTAssertEqual(error as? BusinessMathError,
+                   .divisionByZero(context: "Index of Dispersion"))
+}
+```
+
+Or simpler:
+
+```swift
+XCTAssertThrowsError(try indexOfDispersion([0,0,0]))
+```
+
+---
+
+# ✅ Why Linux Specifically Complains
+
+On macOS, Swift sometimes gives slightly clearer diagnostics.
+
+On Linux, when:
+- `try` is missing
+- or `try?` erases the error
+- or the result isn’t assigned
+
+Swift can infer the expression as returning `()` and then you get:
+
+```
+value of tuple type '()' has no member 'divisionByZero'
+```
+
+It’s misleading — but it’s really a mismatch between:
+- a **throwing function**
+- and a test written for a **tuple-returning function**
+
+---
+
+# ✅ What To Do Next
+
+Open:
+
+```
+Dispersion Around the Mean Tests.swift
+```
+
+Go to line 58 and change the test to use:
+
+```swift
+XCTAssertThrowsError(try indexOfDispersion(...))
+```
+
+instead of checking `.divisionByZero`.
+
+---
+
+# ✅ Summary
+
+Your function is correct.  
+Your test is written for the old non-throwing API.
+
+Update the test to assert a thrown error instead of checking a tuple property.
+
+---
+
+If you'd like, paste the test at line 58 and I’ll rewrite it exactly for you.
+Thank you — this test file is actually **correct** ✅
+
+Your `IndexOfDispersion` test is written properly for a **throwing function**:
+
+```swift
+let thrown = #expect(throws: BusinessMathError.self) {
+    try indexOfDispersion([0.0, 0.0, 0.0])
+}
+```
+
+So the error is **not** coming from this test anymore.
+
+---
+
+# 🚨 Why Linux Still Reports:
+
+```
+value of tuple type '()' has no member 'divisionByZero'
+```
+
+That means:
+
+> Somewhere else in your test suite, something is still written like:
+>
+> ```swift
+> result.divisionByZero
+> ```
+
+and the function now returns `Void` or throws instead of returning a tuple.
+
+---
+
+# ✅ The Key Clue
+
+Look at your CI log:
+
+```
+Statistics Tests/Descriptor Tests/Dispersion Around the Mean Tests/Dispersion Around the Mean Tests.swift:58
+```
+
+Your pasted file shows `IndexOfDispersion` starting around line 35.
+
+That means:
+
+👉 **Linux is compiling a different copy of this file.**
+
+You likely have:
+
+```
+Dispersion Around the Mean Tests.swift
+```
+
+in more than one location.
+
+Possibilities:
+
+1. Duplicate file in another test target
+2. Old file still checked into git
+3. File renamed but old one not deleted
+4. SPM test target still including an outdated file
+5. Case-sensitivity difference (Linux is case-sensitive, macOS is not)
+
+Example:
+
+```
+Dispersion Around the Mean Tests.swift
+dispersion around the mean tests.swift
+```
+
+macOS treats those the same.
+Linux treats them as different files.
+
+---
+
+# ✅ What To Do
+
+Run this in your repo:
+
+```bash
+git ls-files | grep -i "dispersion"
+```
+
+You are likely going to see two versions of this file.
+
+Also check:
+
+```bash
+grep -R "divisionByZero" .
+```
+
+I expect you will find an old test still doing:
+
+```swift
+result.divisionByZero
+```
+
+---
+
+# ✅ Why This Only Breaks on Linux
+
+macOS:
+- Case-insensitive filesystem
+- Xcode may only compile one copy
+
+Linux CI:
+- Case-sensitive filesystem
+- SwiftPM compiles *everything*
+- Duplicate files both get compiled
+
+---
+
+# ✅ The Root Cause Summary
+
+Your function is correct.
+Your current pasted test is correct.
+
+But Linux is compiling an **older test file** that still expects:
+
+```swift
+(value: ..., divisionByZero: Bool)
+```
+
+instead of a throwing function.
+
+---
+
+# ✅ Most Likely Fix
+
+Delete the old duplicate test file and commit the removal.
+
+Then push again.
+
+---
+
+If you paste the output of:
+
+```bash
+git ls-files | grep -i dispersion
+```
+
+I can confirm immediately.
+Ah ✅ — now we’re at the real issue.
+
+The problem is this line:
+
+```swift
+if case .divisionByZero = thrown {
+```
+
+The compiler error:
+
+```
+value of tuple type '()' has no member 'divisionByZero'
+```
+
+is misleading, but here’s what’s actually happening.
+
+---
+
+# 🔎 The Real Issue
+
+This line:
+
+```swift
+let thrown = #expect(throws: BusinessMathError.self) {
+    try indexOfDispersion([0.0, 0.0, 0.0])
+}
+```
+
+does **NOT** return a `BusinessMathError`.
+
+It returns `()`.
+
+That’s how Swift Testing’s `#expect(throws:)` works.
+
+It performs the assertion internally and returns `Void`.
+
+So:
+
+```swift
+thrown
+```
+
+is actually of type:
+
+```swift
+()
+```
+
+Then this line:
+
+```swift
+if case .divisionByZero = thrown
+```
+
+is trying to pattern match an enum case on `()`.
+
+Hence the compiler says:
+
+```
+value of tuple type '()' has no member 'divisionByZero'
+```
+
+(“tuple type ()” = Void)
+
+---
+
+# ✅ Why This Compiles on macOS But Fails on Linux
+
+On macOS, the new `Testing` framework diagnostics are sometimes looser or delayed.
+
+On Linux, Swift is stricter about pattern matching and type inference in macros.
+
+So Linux exposes the real type mismatch.
+
+---
+
+# ✅ The Correct Way to Test the Error Case
+
+Swift Testing does **not** give you the thrown error back from `#expect`.
+
+So this:
+
+```swift
+let thrown = #expect(throws: BusinessMathError.self) { ... }
+```
+
+is invalid if you try to inspect `thrown`.
+
+---
+
+# ✅ Fix Option 1 (Recommended – Cleanest)
+
+Just assert that it throws:
+
+```swift
+#expect(throws: BusinessMathError.divisionByZero(context: "Index of Dispersion")) {
+    try indexOfDispersion([0.0, 0.0, 0.0])
+}
+```
+
+If `BusinessMathError` is `Equatable`, this works beautifully.
+
+---
+
+# ✅ Fix Option 2 (If You Must Inspect the Error)
+
+Use standard `do/catch`:
+
+```swift
+do {
+    _ = try indexOfDispersion([0.0, 0.0, 0.0])
+    Issue.record("Expected divisionByZero error")
+} catch let error as BusinessMathError {
+    if case .divisionByZero = error {
+        // success
+    } else {
+        Issue.record("Expected divisionByZero, got \(error)")
+    }
+} catch {
+    Issue.record("Unexpected error type: \(error)")
+}
+```
+
+---
+
+# ✅ Minimal Change for Your File
+
+Replace this block:
+
+```swift
+let thrown = #expect(throws: BusinessMathError.self) {
+    try indexOfDispersion([0.0, 0.0, 0.0])
+}
+if case .divisionByZero = thrown {
+    // Test passes
+} else {
+    Issue.record("Expected divisionByZero error, got \(thrown)")
+}
+```
+
+With:
+
+```swift
+#expect(throws: BusinessMathError.divisionByZero(context: "Index of Dispersion")) {
+    try indexOfDispersion([0.0, 0.0, 0.0])
+}
+```
+
+That should eliminate the Linux compile error entirely.
+
+---
+
+# ✅ Final Summary
+
+Your function is correct.  
+Your test logic is conceptually correct.  
+The issue is:
+
+> `#expect(throws:)` returns `Void`, not the error.
+
+Linux correctly rejects pattern matching against `()`.
+
+---
+
+After this change, your remaining Linux issues should be:
+
+- ✅ FoundationNetworking import (if not already fixed)
+- ✅ This error block
+
+Everything else was cascade noise.
+
+---
+
+If you'd like, I can also give you a small reusable helper to make error-matching cleaner in Swift Testing.
+Excellent 😄 — here’s a clean, reusable helper that works beautifully with the **Swift Testing** framework and is fully Linux‑safe.
+
+This gives you XCTest‑style error inspection but works with `Testing`.
+
+---
+
+# ✅ Goal
+
+We want to write tests like:
+
+```swift
+try expectThrows(indexOfDispersion([0,0,0])) { error in
+    if case .divisionByZero(let context) = error {
+        #expect(context == "Index of Dispersion")
+    } else {
+        Issue.record("Wrong error: \(error)")
+    }
+}
+```
+
+Clean.
+Explicit.
+Cross‑platform.
+
+---
+
+# ✅ Drop‑In Helper
+
+Put this in a shared test support file (e.g. `TestSupport/ErrorExpectations.swift`):
+
+```swift
+import Testing
+
+/// Asserts that an expression throws a specific error type,
+/// and gives you the thrown error for further inspection.
+@discardableResult
+func expectThrows<E: Error, R>(
+    _ expression: @autoclosure () throws -> R,
+    as errorType: E.Type = E.self,
+    file: StaticString = #filePath,
+    line: UInt = #line,
+    _ verify: (E) -> Void = { _ in }
+) rethrows -> E? {
+    do {
+        _ = try expression()
+        Issue.record(
+            "Expected error of type \(E.self), but no error was thrown.",
+            file: file,
+            line: line
+        )
+        return nil
+    } catch let error as E {
+        verify(error)
+        return error
+    } catch {
+        Issue.record(
+            "Expected error of type \(E.self), but got \(error).",
+            file: file,
+            line: line
+        )
+        return nil
+    }
+}
+```
+
+---
+
+# ✅ How to Use It
+
+### Basic type check
+
+```swift
+try expectThrows(indexOfDispersion([0,0,0]), as: BusinessMathError.self)
+```
+
+---
+
+### Verify specific enum case
+
+```swift
+try expectThrows(indexOfDispersion([0,0,0]), as: BusinessMathError.self) { error in
+    if case .divisionByZero(let context) = error {
+        #expect(context == "Index of Dispersion")
+    } else {
+        Issue.record("Expected divisionByZero, got \(error)")
+    }
+}
+```
+
+---
+
+### Even Cleaner (Pattern Matching Shortcut)
+
+If you don’t care about the associated value:
+
+```swift
+try expectThrows(indexOfDispersion([0,0,0]), as: BusinessMathError.self) {
+    if case .divisionByZero = $0 {
+        // success
+    } else {
+        Issue.record("Expected divisionByZero")
+    }
+}
+```
+
+---
+
+# ✅ Why This Is Better Than `#expect(throws:)`
+
+| `#expect(throws:)` | `expectThrows` helper |
+|--------------------|----------------------|
+| Returns `()`       | Returns the error    |
+| Can’t inspect error | Full pattern matching |
+| Limited flexibility | Works like XCTest    |
+| Caused your Linux issue | Fully type-safe |
+
+---
+
+# ✅ Linux Safe?
+
+Yes.
+
+No macros.
+No reflection.
+No platform differences.
+Pure Swift.
+
+---
+
+# ✅ Optional: Even Shorter Version for Enum Equality
+
+If `BusinessMathError` is `Equatable`, you can add:
+
+```swift
+func expectThrowsEqual<E: Error & Equatable, R>(
+    _ expression: @autoclosure () throws -> R,
+    _ expected: E,
+    file: StaticString = #filePath,
+    line: UInt = #line
+) {
+    do {
+        _ = try expression()
+        Issue.record("Expected error \(expected), but nothing was thrown.", file: file, line: line)
+    } catch let error as E {
+        #expect(error == expected)
+    } catch {
+        Issue.record("Unexpected error: \(error)", file: file, line: line)
+    }
+}
+```
+
+Then:
+
+```swift
+expectThrowsEqual(
+    try indexOfDispersion([0,0,0]),
+    .divisionByZero(context: "Index of Dispersion")
+)
+```
+
+Very clean.
+
+---
+
+# ✅ Final Result
+
+You now have:
+
+- ✅ Precise error inspection
+- ✅ Linux-safe test code
+- ✅ No more `tuple type '()'` confusion
+- ✅ Cleaner statistical test suite
+
+---
+
+If you'd like, I can also give you a tiny assertion helper for floating‑point tolerance that pairs nicely with this.

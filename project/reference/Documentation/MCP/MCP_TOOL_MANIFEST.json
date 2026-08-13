@@ -1,0 +1,2720 @@
+{
+  "$schema": "http://businessmath.com/schemas/mcp_tool_manifest.json",
+  "title": "BusinessMath Model Context Protocol Tool Manifest (Excerpt)",
+  "version": "v1.20.0",
+  "description": "Definitive schema for all 68 exposed BusinessMath computational tools, categorized by function. Adherence to these input schemas is mandatory for tool invocation.",
+  "categories": [
+    {
+      "name": "Time Value of Money (TVM)",
+      "tools": [
+        {
+          "name": "calculate_present_value",
+          "description": "Calculate the present value of a future amount given an interest rate and number of periods. PV = FV / (1 + r)^n",
+          "inputSchema": {
+            "required": ["futureValue", "rate", "periods"],
+            "properties": {
+              "futureValue": {
+                "type": "number",
+                "description": "The future value amount"
+              },
+              "rate": {
+                "type": "number",
+                "description": "The interest rate per period (e.g., 0.05 for 5%)"
+              },
+              "periods": {
+                "type": "number",
+                "description": "The number of periods"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_future_value",
+          "description": "Calculate the future value of a present amount given an interest rate and number of periods. FV = PV × (1 + r)^n",
+          "inputSchema": {
+            "required": ["presentValue", "rate", "periods"],
+            "properties": {
+              "presentValue": {
+                "type": "number",
+                "description": "The present value amount"
+              },
+              "rate": {
+                "type": "number",
+                "description": "The interest rate per period (e.05 for 5%)"
+              },
+              "periods": {
+                "type": "number",
+                "description": "The number of periods"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_npv",
+          "description": "Calculate Net Present Value for a series of cash flows. NPV = Σ(CF_t / (1 + r)^t) - Initial Investment",
+          "inputSchema": {
+            "required": ["rate", "cashFlows"],
+            "properties": {
+              "rate": {
+                "type": "number",
+                "description": "The discount rate per period (e.g., 0.10 for 10%)"
+              },
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flows (first is typically the initial investment as a negative number)",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_irr",
+          "description": "Calculate Internal Rate of Return for a series of cash flows. IRR is the discount rate that makes NPV = 0",
+          "inputSchema": {
+            "required": ["cashFlows"],
+            "properties": {
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flows (first is typically the initial investment as a negative number)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "guess": {
+                "type": "number",
+                "description": "Initial guess for IRR (default: 0.1 for 10%)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_payment",
+          "description": "Calculate the periodic payment for a loan or annuity given present value, interest rate, and number of periods",
+          "inputSchema": {
+            "required": ["presentValue", "rate", "periods"],
+            "properties": {
+              "presentValue": {
+                "type": "number",
+                "description": "The loan amount or present value"
+              },
+              "rate": {
+                "type": "number",
+                "description": "The interest rate per period (e.g., 0.004167 for 5% annual rate with monthly payments)"
+              },
+              "periods": {
+                "type": "number",
+                "description": "The total number of payment periods"
+              },
+              "futureValue": {
+                "type": "number",
+                "description": "The future value (default: 0)"
+              },
+              "type": {
+                "type": "string",
+                "description": "Payment timing: 'ordinary' (end of period) or 'due' (beginning of period)",
+                "enum": ["ordinary", "due"]
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_annuity_pv",
+          "description": "Calculate the present value of an annuity (series of equal payments)",
+          "inputSchema": {
+            "required": ["payment", "rate", "periods"],
+            "properties": {
+              "payment": {
+                "type": "number",
+                "description": "The payment amount per period"
+              },
+              "rate": {
+                "type": "number",
+                "description": "The interest rate per period"
+              },
+              "periods": {
+                "type": "number",
+                "description": "The number of periods"
+              },
+              "type": {
+                "type": "string",
+                "description": "Payment timing: 'ordinary' (end of period) or 'due' (beginning of period)",
+                "enum": ["ordinary", "due"]
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_annuity_fv",
+          "description": "Calculate the future value of an annuity (series of equal payments)",
+          "inputSchema": {
+            "required": ["payment", "rate", "periods"],
+            "properties": {
+              "payment": {
+                "type": "number",
+                "description": "The payment amount per period"
+              },
+              "rate": {
+                "type": "number",
+                "description": "The interest rate per period"
+              },
+              "periods": {
+                "type": "number",
+                "description": "The number of periods"
+              },
+              "type": {
+                "type": "string",
+                "description": "Payment timing: 'ordinary' (end of period) or 'due' (beginning of period)",
+                "enum": ["ordinary", "due"]
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_xnpv",
+          "description": "Calculate Net Present Value for irregular cash flows with specific dates. Use this when cash flows occur at irregular intervals (not annually). REQUIRED STRUCTURE includes cashFlows array of objects containing 'date' in ISO 8601 format and 'amount'.",
+          "inputSchema": {
+            "required": ["rate", "cashFlows"],
+            "properties": {
+              "rate": {
+                "type": "number",
+                "description": "The annual discount rate (e.g., 0.10 for 10%)"
+              },
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flow objects. Each object must have: • date (string): ISO 8601 format (e.g., \"2024-01-15T00:00:00Z\") • amount (number): Cash flow amount (negative for outflows, positive for inflows)",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_xirr",
+          "description": "Calculate Internal Rate of Return for irregular cash flows with specific dates. REQUIRED STRUCTURE includes cashFlows array of objects containing 'date' in ISO 8601 format and 'amount'.",
+          "inputSchema": {
+            "required": ["cashFlows"],
+            "properties": {
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flow objects with exact dates. Each object must have: • date (string): ISO 8601 format (e.g., \"2024-01-15T00:00:00Z\") • amount (number): Cash flow amount (first should be negative investment) Must include at least one negative and one positive cash flow.",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "guess": {
+                "type": "number",
+                "description": "Initial guess for XIRR (default: 0.1 for 10%). Only needed if calculation fails to converge."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Financial Ratios",
+      "tools": [
+        {
+          "name": "calculate_asset_turnover",
+          "description": "Calculate the asset turnover ratio. Formula: Net Sales / Average Total Assets.",
+          "inputSchema": {
+            "required": ["netSales", "averageTotalAssets"],
+            "properties": {
+              "netSales": {
+                "type": "number",
+                "description": "Net sales or revenue for the period"
+              },
+              "averageTotalAssets": {
+                "type": "number",
+                "description": "Average total assets during the period (beginning + ending) / 2"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_current_ratio",
+          "description": "Calculate the current ratio (liquidity ratio). Formula: Current Assets / Current Liabilities",
+          "inputSchema": {
+            "required": ["currentAssets", "currentLiabilities"],
+            "properties": {
+              "currentAssets": {
+                "type": "number",
+                "description": "Total current assets (cash, receivables, inventory, etc.)"
+              },
+              "currentLiabilities": {
+                "type": "number",
+                "description": "Total current liabilities (payables, short-term debt, etc.)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_quick_ratio",
+          "description": "Calculate the quick ratio (acid-test ratio). Formula: (Current Assets - Inventory) / Current Liabilities",
+          "inputSchema": {
+            "required": ["currentAssets", "inventory", "currentLiabilities"],
+            "properties": {
+              "currentAssets": {
+                "type": "number",
+                "description": "Total current assets"
+              },
+              "inventory": {
+                "type": "number",
+                "description": "Total inventory value"
+              },
+              "currentLiabilities": {
+                "type": "number",
+                "description": "Total current liabilities"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_debt_to_equity",
+          "description": "Calculate the debt to equity ratio (leverage ratio). Formula: Total Liabilities / Shareholder Equity",
+          "inputSchema": {
+            "required": ["totalLiabilities", "shareholderEquity"],
+            "properties": {
+              "totalLiabilities": {
+                "type": "number",
+                "description": "Total liabilities (short-term + long-term debt)"
+              },
+              "shareholderEquity": {
+                "type": "number",
+                "description": "Total shareholder equity (book value)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_interest_coverage",
+          "description": "Calculate the interest coverage ratio (times interest earned). Formula: EBIT / Interest Expense",
+          "inputSchema": {
+            "required": ["earningsBeforeInterestAndTax", "interestExpense"],
+            "properties": {
+              "earningsBeforeInterestAndTax": {
+                "type": "number",
+                "description": "EBIT - Earnings before interest and taxes (operating income)"
+              },
+              "interestExpense": {
+                "type": "number",
+                "description": "Total interest expense for the period"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_inventory_turnover",
+          "description": "Calculate the inventory turnover ratio. Formula: Cost of Goods Sold / Average Inventory.",
+          "inputSchema": {
+            "required": ["costOfGoodsSold", "averageInventory"],
+            "properties": {
+              "costOfGoodsSold": {
+                "type": "number",
+                "description": "Total cost of goods sold for the period"
+              },
+              "averageInventory": {
+                "type": "number",
+                "description": "Average inventory during period (beginning + ending) / 2"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_profit_margin",
+          "description": "Calculate the profit margin (Net Margin). Formula: Net Income / Total Revenue.",
+          "inputSchema": {
+            "required": ["netIncome", "revenue"],
+            "properties": {
+              "netIncome": {
+                "type": "number",
+                "description": "Net income (profit after all expenses and taxes)"
+              },
+              "revenue": {
+                "type": "number",
+                "description": "Total revenue (sales)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_roe",
+          "description": "Calculate Return on Equity (ROE). Formula: Net Income / Shareholder Equity.",
+          "inputSchema": {
+            "required": ["netIncome", "shareholderEquity"],
+            "properties": {
+              "netIncome": {
+                "type": "number",
+                "description": "Net income for the period"
+              },
+              "shareholderEquity": {
+                "type": "number",
+                "description": "Average shareholder equity (book value)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_roi",
+          "description": "Calculate Return on Investment (ROI). Formula: Gain from Investment / Cost of Investment.",
+          "inputSchema": {
+            "required": ["gainFromInvestment", "costOfInvestment"],
+            "properties": {
+              "gainFromInvestment": {
+                "type": "number",
+                "description": "Total gain or return from the investment"
+              },
+              "costOfInvestment": {
+                "type": "number",
+                "description": "Initial cost or amount invested"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Valuation Calculators",
+      "tools": [
+        {
+          "name": "calculate_earnings_per_share",
+          "description": "Calculate Earnings Per Share (EPS). Formula: Net Income / Shares Outstanding.",
+          "inputSchema": {
+            "required": ["netIncome", "sharesOutstanding"],
+            "properties": {
+              "netIncome": {
+                "type": "number",
+                "description": "Net income (profit after all expenses and taxes)"
+              },
+              "sharesOutstanding": {
+                "type": "number",
+                "description": "Number of shares outstanding"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_book_value_per_share",
+          "description": "Calculate Book Value Per Share (BVPS). Formula: Total Shareholder Equity / Shares Outstanding.",
+          "inputSchema": {
+            "required": ["totalEquity", "sharesOutstanding"],
+            "properties": {
+              "totalEquity": {
+                "type": "number",
+                "description": "Total shareholder equity (book value)"
+              },
+              "sharesOutstanding": {
+                "type": "number",
+                "description": "Number of shares outstanding"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_price_to_earnings",
+          "description": "Calculate Price-to-Earnings Ratio (P/E). Formula: Market Price per Share / Earnings per Share.",
+          "inputSchema": {
+            "required": ["marketPrice", "earningsPerShare"],
+            "properties": {
+              "marketPrice": {
+                "type": "number",
+                "description": "Current market price per share"
+              },
+              "earningsPerShare": {
+                "type": "number",
+                "description": "Earnings per share (EPS)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_price_to_book",
+          "description": "Calculate Price-to-Book Ratio (P/B). Formula: Market Price per Share / Book Value per Share.",
+          "inputSchema": {
+            "required": ["marketPrice", "bookValuePerShare"],
+            "properties": {
+              "marketPrice": {
+                "type": "number",
+                "description": "Current market price per share"
+              },
+              "bookValuePerShare": {
+                "type": "number",
+                "description": "Book value per share"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_price_to_sales",
+          "description": "Calculate Price-to-Sales Ratio (P/S). Formula: Market Cap / Total Revenue.",
+          "inputSchema": {
+            "required": ["marketCap", "totalRevenue"],
+            "properties": {
+              "marketCap": {
+                "type": "number",
+                "description": "Market capitalization"
+              },
+              "totalRevenue": {
+                "type": "number",
+                "description": "Total revenue (sales)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_market_cap",
+          "description": "Calculate Market Capitalization. Formula: Share Price × Shares Outstanding.",
+          "inputSchema": {
+            "required": ["sharePrice", "sharesOutstanding"],
+            "properties": {
+              "sharePrice": {
+                "type": "number",
+                "description": "Current share price"
+              },
+              "sharesOutstanding": {
+                "type": "number",
+                "description": "Number of shares outstanding"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_enterprise_value",
+          "description": "Calculate Enterprise Value (EV). Formula: EV = Market Cap + Total Debt - Cash & Equivalents.",
+          "inputSchema": {
+            "required": ["marketCap", "totalDebt", "cashAndEquivalents"],
+            "properties": {
+              "marketCap": {
+                "type": "number",
+                "description": "Market capitalization"
+              },
+              "totalDebt": {
+                "type": "number",
+                "description": "Total debt (short-term + long-term)"
+              },
+              "cashAndEquivalents": {
+                "type": "number",
+                "description": "Cash and cash equivalents"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_ev_to_ebitda",
+          "description": "Calculate EV/EBITDA ratio. Formula: Enterprise Value / EBITDA. Capital-structure-neutral valuation metric.",
+          "inputSchema": {
+            "required": ["enterpriseValue", "ebitda"],
+            "properties": {
+              "enterpriseValue": {
+                "type": "number",
+                "description": "Enterprise value"
+              },
+              "ebitda": {
+                "type": "number",
+                "description": "EBITDA (Earnings before interest, taxes, depreciation, amortization)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_ev_to_sales",
+          "description": "Calculate EV/Sales ratio. Formula: Enterprise Value / Total Revenue.",
+          "inputSchema": {
+            "required": ["enterpriseValue", "totalRevenue"],
+            "properties": {
+              "enterpriseValue": {
+                "type": "number",
+                "description": "Enterprise value"
+              },
+              "totalRevenue": {
+                "type": "number",
+                "description": "Total revenue (sales)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_working_capital",
+          "description": "Calculate Working Capital. Formula: Current Assets - Current Liabilities. Measures short-term liquidity buffer.",
+          "inputSchema": {
+            "required": ["currentAssets", "currentLiabilities"],
+            "properties": {
+              "currentAssets": {
+                "type": "number",
+                "description": "Total current assets"
+              },
+              "currentLiabilities": {
+                "type": "number",
+                "description": "Total current liabilities"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_debt_to_assets",
+          "description": "Calculate Debt-to-Assets Ratio. Formula: Total Debt / Total Assets. Shows proportion of assets financed by debt.",
+          "inputSchema": {
+            "required": ["totalDebt", "totalAssets"],
+            "properties": {
+              "totalDebt": {
+                "type": "number",
+                "description": "Total debt (short-term + long-term)"
+              },
+              "totalAssets": {
+                "type": "number",
+                "description": "Total assets"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_free_cash_flow",
+          "description": "Calculate Free Cash Flow (FCF). Formula: Operating Cash Flow - Capital Expenditures. Cash available after maintaining assets.",
+          "inputSchema": {
+            "required": ["operatingCashFlow", "capitalExpenditures"],
+            "properties": {
+              "operatingCashFlow": {
+                "type": "number",
+                "description": "Cash flow from operating activities"
+              },
+              "capitalExpenditures": {
+                "type": "number",
+                "description": "Capital expenditures (capex)"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Debt & Financing",
+      "tools": [
+        {
+          "name": "create_amortization_schedule",
+          "description": "Generate a complete amortization schedule for a loan showing payment breakdown by period.",
+          "inputSchema": {
+            "required": ["principal", "annualRate", "years", "frequency"],
+            "properties": {
+              "principal": {
+                "type": "number",
+                "description": "Loan amount or principal"
+              },
+              "annualRate": {
+                "type": "number",
+                "description": "Annual interest rate as decimal (e.g., 0.065 for 6.5%)"
+              },
+              "years": {
+                "type": "number",
+                "description": "Loan term in years"
+              },
+              "frequency": {
+                "type": "string",
+                "description": "Payment frequency",
+                "enum": ["monthly", "quarterly", "annual"]
+              },
+              "showFullSchedule": {
+                "type": "boolean",
+                "description": "Show full schedule (true) or summary with first/last payments (false, default)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_wacc",
+          "description": "Calculate the Weighted Average Cost of Capital (WACC).",
+          "inputSchema": {
+            "required": ["equityValue", "debtValue", "costOfEquity", "costOfDebt", "taxRate"],
+            "properties": {
+              "equityValue": {
+                "type": "number",
+                "description": "Market value of equity"
+              },
+              "debtValue": {
+                "type": "number",
+                "description": "Market value of debt"
+              },
+              "costOfEquity": {
+                "type": "number",
+                "description": "Cost of equity capital as decimal (e.g., 0.12 for 12%)"
+              },
+              "costOfDebt": {
+                "type": "number",
+                "description": "Cost of debt before tax as decimal (e.g., 0.05 for 5%)"
+              },
+              "taxRate": {
+                "type": "number",
+                "description": "Corporate tax rate as decimal (e.g., 0.25 for 25%)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_capm",
+          "description": "Calculate the expected return on equity using the Capital Asset Pricing Model (CAPM).",
+          "inputSchema": {
+            "required": ["riskFreeRate", "beta", "marketReturn"],
+            "properties": {
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Risk-free rate as decimal (e.g., 0.03 for 3% T-bill rate)"
+              },
+              "beta": {
+                "type": "number",
+                "description": "Beta coefficient (systematic risk). 1.0 = market risk, >1.0 = more volatile, <1.0 = less volatile"
+              },
+              "marketReturn": {
+                "type": "number",
+                "description": "Expected market return as decimal (e.g., 0.10 for 10%)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_dscr",
+          "description": "Calculate the Debt Service Coverage Ratio (DSCR). DSCR = Net Operating Income / Total Debt Service.",
+          "inputSchema": {
+            "required": ["netOperatingIncome", "totalDebtService"],
+            "properties": {
+              "netOperatingIncome": {
+                "type": "number",
+                "description": "Net operating income (NOI) or EBITDA"
+              },
+              "totalDebtService": {
+                "type": "number",
+                "description": "Total annual debt service (principal + interest payments)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_altman_z_score",
+          "description": "Calculate the Altman Z-Score for bankruptcy prediction (Z > 2.99 = Safe, < 1.81 = Distress).",
+          "inputSchema": {
+            "required": ["workingCapital", "retainedEarnings", "ebit", "marketValueEquity", "totalLiabilities", "totalAssets", "sales"],
+            "properties": {
+              "workingCapital": {
+                "type": "number",
+                "description": "Working capital (current assets - current liabilities)"
+              },
+              "retainedEarnings": {
+                "type": "number",
+                "description": "Retained earnings"
+              },
+              "ebit": {
+                "type": "number",
+                "description": "Earnings before interest and taxes"
+              },
+              "marketValueEquity": {
+                "type": "number",
+                "description": "Market value of equity (for public companies) or book value (for private)"
+              },
+              "totalLiabilities": {
+                "type": "number",
+                "description": "Total liabilities"
+              },
+              "totalAssets": {
+                "type": "number",
+                "description": "Total assets"
+              },
+              "sales": {
+                "type": "number",
+                "description": "Total sales/revenue"
+              }
+            }
+          }
+        },
+        {
+          "name": "compare_financing_options",
+          "description": "Compare multiple financing options (loans, leases, equity) side-by-side based on total cost, monthly payment, and effective annual rate.",
+          "inputSchema": {
+            "required": ["amount", "option1Rate", "option1Years", "option1Name", "option2Rate", "option2Years", "option2Name"],
+            "properties": {
+              "amount": {
+                "type": "number",
+                "description": "Amount to finance"
+              },
+              "option1Rate": {
+                "type": "number",
+                "description": "Annual rate for option 1 as decimal"
+              },
+              "option1Years": {
+                "type": "number",
+                "description": "Term in years for option 1"
+              },
+              "option1Name": {
+                "type": "string",
+                "description": "Name of option 1 (e.g., 'Bank Loan', 'Lease')"
+              },
+              "option2Rate": {
+                "type": "number",
+                "description": "Annual rate for option 2 as decimal"
+              },
+              "option2Years": {
+                "type": "number",
+                "description": "Term in years for option 2"
+              },
+              "option2Name": {
+                "type": "string",
+                "description": "Name of option 2"
+              },
+              "option3Rate": {
+                "type": "number",
+                "description": "Annual rate for option 3 (optional)"
+              },
+              "option3Years": {
+                "type": "number",
+                "description": "Term in years for option 3 (optional)"
+              },
+              "option3Name": {
+                "type": "string",
+                "description": "Name of option 3 (optional)"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loan Payment Analysis",
+      "tools": [
+        {
+          "name": "calculate_principal_payment",
+          "description": "Calculate the principal portion of a specific loan payment (Excel PPMT equivalent).",
+          "inputSchema": {
+            "required": ["interestRate", "period", "totalPeriods", "loanAmount"],
+            "properties": {
+              "interestRate": {
+                "type": "number",
+                "description": "Interest rate per period (e.g., 0.05/12 for 5% annual rate with monthly payments)"
+              },
+              "period": {
+                "type": "number",
+                "description": "The specific payment period to analyze (1-indexed, e.g., 1 for first payment)"
+              },
+              "totalPeriods": {
+                "type": "number",
+                "description": "Total number of payment periods (e.g., 360 for 30-year monthly mortgage)"
+              },
+              "loanAmount": {
+                "type": "number",
+                "description": "Initial loan amount (present value)"
+              },
+              "balloonPayment": {
+                "type": "number",
+                "description": "Optional balloon payment at end (future value, default: 0)"
+              },
+              "paymentTiming": {
+                "type": "string",
+                "description": "When payments occur: 'ordinary' (end of period, default) or 'due' (start of period)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_interest_payment",
+          "description": "Calculate the interest portion of a specific loan payment (Excel IPMT equivalent).",
+          "inputSchema": {
+            "required": ["interestRate", "period", "totalPeriods", "loanAmount"],
+            "properties": {
+              "interestRate": {
+                "type": "number",
+                "description": "Interest rate per period (e.g., 0.04/12 for 4% annual rate with monthly payments)"
+              },
+              "period": {
+                "type": "number",
+                "description": "The specific payment period to analyze (1-indexed)"
+              },
+              "totalPeriods": {
+                "type": "number",
+                "description": "Total number of payment periods"
+              },
+              "loanAmount": {
+                "type": "number",
+                "description": "Initial loan amount"
+              },
+              "balloonPayment": {
+                "type": "number",
+                "description": "Optional balloon payment at end (default: 0)"
+              },
+              "paymentTiming": {
+                "type": "string",
+                "description": "Payment timing: 'ordinary' (default) or 'due'"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_cumulative_interest",
+          "description": "Calculate total interest paid over a range of loan payments (Excel CUMIPMT).",
+          "inputSchema": {
+            "required": ["interestRate", "startPeriod", "endPeriod", "totalPeriods", "loanAmount"],
+            "properties": {
+              "interestRate": {
+                "type": "number",
+                "description": "Interest rate per period"
+              },
+              "startPeriod": {
+                "type": "number",
+                "description": "First period to include (1-indexed, e.g., 1 for first payment)"
+              },
+              "endPeriod": {
+                "type": "number",
+                "description": "Last period to include (e.g., 12 for first year if monthly)"
+              },
+              "totalPeriods": {
+                "type": "number",
+                "description": "Total number of payment periods in loan"
+              },
+              "loanAmount": {
+                "type": "number",
+                "description": "Initial loan amount"
+              },
+              "balloonPayment": {
+                "type": "number",
+                "description": "Optional balloon payment (default: 0)"
+              },
+              "paymentTiming": {
+                "type": "string",
+                "description": "Payment timing: 'ordinary' (default) or 'due'"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_cumulative_principal",
+          "description": "Calculate total principal paid over a range of loan payments (Excel CUMPRINC).",
+          "inputSchema": {
+            "required": ["interestRate", "startPeriod", "endPeriod", "totalPeriods", "loanAmount"],
+            "properties": {
+              "interestRate": {
+                "type": "number",
+                "description": "Interest rate per period"
+              },
+              "startPeriod": {
+                "type": "number",
+                "description": "First period to include (1-indexed)"
+              },
+              "endPeriod": {
+                "type": "number",
+                "description": "Last period to include"
+              },
+              "totalPeriods": {
+                "type": "number",
+                "description": "Total number of payment periods in loan"
+              },
+              "loanAmount": {
+                "type": "number",
+                "description": "Initial loan amount"
+              },
+              "balloonPayment": {
+                "type": "number",
+                "description": "Optional balloon payment (default: 0)"
+              },
+              "paymentTiming": {
+                "type": "string",
+                "description": "Payment timing: 'ordinary' (default) or 'due'"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Investment Metrics",
+      "tools": [
+        {
+          "name": "calculate_profitability_index",
+          "description": "Calculate Profitability Index (PI). PI > 1: Accept project (positive NPV).",
+          "inputSchema": {
+            "required": ["discountRate", "cashFlows"],
+            "properties": {
+              "discountRate": {
+                "type": "number",
+                "description": "Discount rate per period (e.g., 0.10 for 10% annual rate)"
+              },
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flows where negative = investments, positive = returns. First element is typically initial investment at t=0.",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_payback_period",
+          "description": "Calculate payback period (undiscounted) for investment recovery analysis.",
+          "inputSchema": {
+            "required": ["cashFlows"],
+            "properties": {
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flows. First element is typically negative (initial investment at t=0).",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_discounted_payback_period",
+          "description": "Calculate discounted payback period with time value of money.",
+          "inputSchema": {
+            "required": ["discountRate", "cashFlows"],
+            "properties": {
+              "discountRate": {
+                "type": "number",
+                "description": "Discount rate per period (e.g., 0.10 for 10% annual rate)"
+              },
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flows. First element is typically initial investment at t=0.",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_mirr",
+          "description": "Calculate Modified Internal Rate of Return (MIRR) for realistic return analysis, using separate finance and reinvestment rates.",
+          "inputSchema": {
+            "required": ["cashFlows", "financeRate", "reinvestmentRate"],
+            "properties": {
+              "cashFlows": {
+                "type": "array",
+                "description": "Array of cash flows (negative = investments/outflows, positive = returns/inflows). First element is typically initial investment at t=0.",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "financeRate": {
+                "type": "number",
+                "description": "Rate at which negative cash flows (investments) are financed - typically cost of capital or borrowing rate (e.g., 0.08 for 8%)"
+              },
+              "reinvestmentRate": {
+                "type": "number",
+                "description": "Rate at which positive cash flows (returns) are reinvested - typically market rate or alternative investment return (e.g., 0.06 for 6%)"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Growth Analysis",
+      "tools": [
+        {
+          "name": "calculate_growth_rate",
+          "description": "Calculate the growth rate between two values",
+          "inputSchema": {
+            "required": ["oldValue", "newValue"],
+            "properties": {
+              "oldValue": {
+                "type": "number",
+                "description": "The starting value"
+              },
+              "newValue": {
+                "type": "number",
+                "description": "The ending value"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_cagr",
+          "description": "Calculate the Compound Annual Growth Rate (CAGR) between two values over a period",
+          "inputSchema": {
+            "required": ["beginningValue", "endingValue", "periods"],
+            "properties": {
+              "beginningValue": {
+                "type": "number",
+                "description": "The starting value"
+              },
+              "endingValue": {
+                "type": "number",
+                "description": "The ending value"
+              },
+              "periods": {
+                "type": "number",
+                "description": "The number of periods (years)"
+              }
+            }
+          }
+        },
+        {
+          "name": "apply_growth_projection",
+          "description": "Project future values by applying a growth rate with specified compounding frequency. REQUIRED STRUCTURE requires baseValue, annualGrowthRate, and periods.",
+          "inputSchema": {
+            "required": ["baseValue", "annualGrowthRate", "periods"],
+            "properties": {
+              "baseValue": {
+                "type": "number",
+                "description": "Starting value at time 0 (current value)"
+              },
+              "annualGrowthRate": {
+                "type": "number",
+                "description": "Annual growth rate as decimal (e.g., 0.15 for 15% growth)"
+              },
+              "periods": {
+                "type": "number",
+                "description": "Number of periods to project (interpretation depends on compounding frequency)"
+              },
+              "compounding": {
+                "type": "string",
+                "description": "Compounding frequency: 'annual', 'semiannual', 'quarterly', 'monthly', 'daily', or 'continuous' (default: 'annual')"
+              },
+              "metricName": {
+                "type": "string",
+                "description": "Optional name for the metric being projected (e.g., 'Revenue', 'Customers')"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Time Series Analysis",
+      "tools": [
+        {
+          "name": "create_time_series",
+          "description": "Create a time series from periods and values for analysis. REQUIRED STRUCTURE details the nested period object structure including 'year', 'month'/'day' (optional), and 'type' (enum: \"annual\", \"quarterly\", \"monthly\", or \"daily\").",
+          "inputSchema": {
+            "required": ["data"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Array of time series data points. Each object must have: • period (object): Time period with fields: - year (number) - month (number) - day (number) - type (string): \"annual\", \"quarterly\", \"monthly\", or \"daily\" • value (number): Numeric value for this period",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "name": {
+                "type": "string",
+                "description": "Name of the time series (optional)"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of the time series (optional)"
+              },
+              "unit": {
+                "type": "string",
+                "description": "Unit of measurement, e.g., 'USD', 'units', 'customers' (optional)"
+              }
+            }
+          }
+        },
+        {
+          "name": "time_series_statistics",
+          "description": "Calculate descriptive statistics for a time series (mean, median, std dev, min, max)",
+          "inputSchema": {
+            "required": ["data"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data (array of objects)",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_moving_average",
+          "description": "Calculate a moving average for a time series",
+          "inputSchema": {
+            "required": ["data", "window"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data (array of objects)",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "window": {
+                "type": "number",
+                "description": "The window size for the moving average"
+              }
+            }
+          }
+        },
+        {
+          "name": "aggregate_time_series",
+          "description": "Aggregate time series data (sum, mean, min, max)",
+          "inputSchema": {
+            "required": ["data", "method"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data (array of objects)",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "method": {
+                "type": "string",
+                "description": "Aggregation method",
+                "enum": ["sum", "mean", "min", "max"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trend & Seasonality Forecasting",
+      "tools": [
+        {
+          "name": "fit_linear_trend",
+          "description": "Fit a linear trend model to time series data. Returns slope, intercept, and R-squared. Requires 'data' as an array of TimeSeries objects.",
+          "inputSchema": {
+            "required": ["data"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data with periods and values",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "fit_exponential_trend",
+          "description": "Fit an exponential trend model to time series data. Requires 'data' as an array of TimeSeries objects.",
+          "inputSchema": {
+            "required": ["data"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data with periods and values (all values must be positive)",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "fit_logistic_trend",
+          "description": "Fit a logistic (S-curve) trend model to time series data. Models growth that approaches a maximum capacity.",
+          "inputSchema": {
+            "required": ["data", "capacity"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data with periods and values",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "capacity": {
+                "type": "number",
+                "description": "Maximum capacity (L parameter) - the upper asymptote"
+              }
+            }
+          }
+        },
+        {
+          "name": "forecast_trend",
+          "description": "Project a fitted trend model forward for specified periods. Must fit a trend model first.",
+          "inputSchema": {
+            "required": ["data", "trendType", "periods"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Original time series data that was fitted",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "trendType": {
+                "type": "string",
+                "description": "Type of trend model to use",
+                "enum": ["linear", "exponential", "logistic"]
+              },
+              "periods": {
+                "type": "number",
+                "description": "Number of periods to forecast forward"
+              },
+              "capacity": {
+                "type": "number",
+                "description": "Capacity parameter (only for logistic trend)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_seasonal_indices",
+          "description": "Calculate seasonal indices from time series data. Indices show the typical pattern for each season.",
+          "inputSchema": {
+            "required": ["data", "periodsPerYear"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data with at least 2 complete years",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "periodsPerYear": {
+                "type": "number",
+                "description": "Number of periods in a year (4 for quarterly, 12 for monthly)"
+              }
+            }
+          }
+        },
+        {
+          "name": "seasonally_adjust",
+          "description": "Remove seasonal patterns from time series data using seasonal indices. This reveals the underlying trend.",
+          "inputSchema": {
+            "required": ["data", "indices"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data to adjust",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "indices": {
+                "type": "array",
+                "description": "Seasonal indices (from calculate_seasonal_indices)",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "decompose_time_series",
+          "description": "Decompose time series into trend, seasonal, and residual components. Decomposition method must be 'additive' or 'multiplicative'.",
+          "inputSchema": {
+            "required": ["data", "periodsPerYear", "method"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Time series data with at least 2 complete years",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "periodsPerYear": {
+                "type": "number",
+                "description": "Number of periods in a year (4 for quarterly, 12 for monthly)"
+              },
+              "method": {
+                "type": "string",
+                "description": "Decomposition method: 'additive' (for constant seasonal variation) or 'multiplicative' (for proportional variation)",
+                "enum": ["additive", "multiplicative"]
+              }
+            }
+          }
+        },
+        {
+          "name": "forecast_with_seasonality",
+          "description": "Create a complete forecast combining trend projection and seasonal patterns. Trend type must be 'linear' or 'exponential'.",
+          "inputSchema": {
+            "required": ["data", "periods", "periodsPerYear", "trendType"],
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "Historical time series data",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "periods": {
+                "type": "number",
+                "description": "Number of periods to forecast"
+              },
+              "periodsPerYear": {
+                "type": "number",
+                "description": "Number of periods in a year (4 for quarterly, 12 for monthly)"
+              },
+              "trendType": {
+                "type": "string",
+                "description": "Type of trend to use for projection",
+                "enum": ["linear", "exponential"]
+              }
+            }
+          }
+        },
+        {
+          "name": "forecast_linear_trend",
+          "description": "Forecast future values using linear trend analysis. Assumes constant rate of change.",
+          "inputSchema": {
+            "required": ["historicalValues", "forecastPeriods"],
+            "properties": {
+              "historicalValues": {
+                "type": "array",
+                "description": "Array of historical data values (at least 2 values required)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "forecastPeriods": {
+                "type": "number",
+                "description": "Number of periods to forecast into the future"
+              }
+            }
+          }
+        },
+        {
+          "name": "forecast_exponential_trend",
+          "description": "Forecast future values using exponential trend analysis (accelerating/decelerating growth).",
+          "inputSchema": {
+            "required": ["historicalValues", "forecastPeriods"],
+            "properties": {
+              "historicalValues": {
+                "type": "array",
+                "description": "Array of historical data values (must be positive, at least 2 values)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "forecastPeriods": {
+                "type": "number",
+                "description": "Number of periods to forecast"
+              }
+            }
+          }
+        },
+        {
+          "name": "forecast_logistic_trend",
+          "description": "Forecast future values using logistic trend (S-curve with saturation). Note: Requires capacity parameter.",
+          "inputSchema": {
+            "required": ["historicalValues", "capacity", "forecastPeriods"],
+            "properties": {
+              "historicalValues": {
+                "type": "array",
+                "description": "Array of historical data values (at least 3 values)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "capacity": {
+                "type": "number",
+                "description": "Maximum capacity (L parameter) - the saturation point"
+              },
+              "forecastPeriods": {
+                "type": "number",
+                "description": "Number of periods to forecast"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Monte Carlo Simulation & Risk",
+      "tools": [
+        {
+          "name": "create_distribution",
+          "description": "Create a probability distribution for Monte Carlo simulation. Supports 15 distributions. REQUIRED STRUCTURE requires 'type' and 'parameters' object detailing required inputs (e.g., {mean, stdDev} for normal).",
+          "inputSchema": {
+            "required": ["type", "parameters"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Distribution type",
+                "enum": ["normal", "uniform", "triangular", "exponential", "lognormal", "beta", "gamma", "weibull", "chisquared", "f", "t", "pareto", "logistic", "geometric", "rayleigh"]
+              },
+              "parameters": {
+                "type": "object",
+                "description": "Distribution parameters (varies by type, e.g., {mean, stdDev} for normal, {min, max, mode} for triangular, {degreesOfFreedom} for t/chi-squared)"
+              },
+              "sampleSize": {
+                "type": "number",
+                "description": "Number of sample values to generate for verification (default: 10)"
+              }
+            }
+          }
+        },
+        {
+          "name": "run_monte_carlo",
+          "description": "Run a Monte Carlo simulation to model uncertainty and risk. REQUIRED STRUCTURE clearly defines the 'inputs' array (name, distribution, parameters) and the 'calculation' string using input placeholders {0}, {1}, etc.",
+          "inputSchema": {
+            "required": ["inputs", "calculation"],
+            "properties": {
+              "inputs": {
+                "type": "array",
+                "description": "Array of uncertain input variables. Each object must have: • name (string) • distribution (string) (Supports: normal, uniform, triangular) • parameters (object)",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "calculation": {
+                "type": "string",
+                "description": "Formula combining inputs using {0}, {1}, {2}, etc. Example: \"{0} - {1}\" (Revenue - Costs)"
+              },
+              "iterations": {
+                "type": "number",
+                "description": "Number of simulation iterations (default: 10000, recommended: 1000-100000)"
+              }
+            }
+          }
+        },
+        {
+          "name": "analyze_simulation_results",
+          "description": "Perform detailed analysis on simulation outcome values. Provides comprehensive statistical analysis including descriptive statistics and percentiles.",
+          "inputSchema": {
+            "required": ["values"],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Simulation outcome values to analyze",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "label": {
+                "type": "string",
+                "description": "Optional label for the metric (e.g., 'Profit', 'NPV', 'Revenue')"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_value_at_risk",
+          "description": "Calculate Value at Risk (VaR) from simulation results. VaR is the maximum loss expected with X% confidence.",
+          "inputSchema": {
+            "required": ["values"],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Simulation outcome values (e.g., profit/loss, returns)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "confidenceLevel": {
+                "type": "number",
+                "description": "Confidence level (e.g., 0.95 for 95% VaR, 0.99 for 99% VaR). Default: 0.95"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_probability",
+          "description": "Calculate probability of outcomes (above, below, or between threshold) from simulation values.",
+          "inputSchema": {
+            "required": ["values", "type"],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Simulation outcome values",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "type": {
+                "type": "string",
+                "description": "Type of probability calculation",
+                "enum": ["above", "below", "between"]
+              },
+              "threshold": {
+                "type": "number",
+                "description": "Threshold value (for 'above' or 'below' types)"
+              },
+              "lower": {
+                "type": "number",
+                "description": "Lower bound (for 'between' type)"
+              },
+              "upper": {
+                "type": "number",
+                "description": "Upper bound (for 'between' type)"
+              }
+            }
+          }
+        },
+        {
+          "name": "sensitivity_analysis",
+          "description": "Perform single-variable sensitivity analysis. Tests how changes in one input variable affect the outcome by varying it across a range.",
+          "inputSchema": {
+            "required": ["baseValue", "variableRange", "calculation"],
+            "properties": {
+              "baseValue": {
+                "type": "number",
+                "description": "Base (current) value of the input variable"
+              },
+              "variableRange": {
+                "type": "object",
+                "description": "Range to test the variable. Use ONE of: {\"percentChange\": 20} or {\"min\": 80, \"max\": 120}"
+              },
+              "calculation": {
+                "type": "string",
+                "description": "Formula using {0} to reference the variable. Example: \"{0} * 1.2 - 50000\""
+              },
+              "steps": {
+                "type": "number",
+                "description": "Number of test points (default: 11). More steps = smoother analysis."
+              },
+              "variableName": {
+                "type": "string",
+                "description": "Name of the variable being tested (optional, for display)"
+              }
+            }
+          }
+        },
+        {
+          "name": "tornado_analysis",
+          "description": "Perform tornado (sensitivity) analysis across multiple variables. Ranks variables by their impact on the outcome. REQUIRED STRUCTURE uses an array of variable objects (name, baseValue, lowValue, highValue).",
+          "inputSchema": {
+            "required": ["variables", "calculation"],
+            "properties": {
+              "variables": {
+                "type": "array",
+                "description": "Array of variables to test. Each object must have: • name (string) • baseValue (number) • lowValue (number) • highValue (number)",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "calculation": {
+                "type": "string",
+                "description": "Formula using {0}, {1}, {2}, etc. to reference variables in order. Example: \"{0} - {1}\""
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Risk Analytics (Historical)",
+      "tools": [
+        {
+          "name": "run_stress_test",
+          "description": "Run stress tests on financial metrics using pre-defined or custom scenarios.",
+          "inputSchema": {
+            "required": ["scenario", "baseRevenue", "baseCosts", "baseNPV"],
+            "properties": {
+              "scenario": {
+                "type": "string",
+                "description": "Stress scenario to apply",
+                "enum": ["recession", "crisis", "supplyShock", "custom"]
+              },
+              "baseRevenue": {
+                "type": "number",
+                "description": "Baseline revenue"
+              },
+              "baseCosts": {
+                "type": "number",
+                "description": "Baseline costs/COGS"
+              },
+              "baseNPV": {
+                "type": "number",
+                "description": "Baseline NPV or profit"
+              },
+              "customShocks": {
+                "type": "object",
+                "description": "Custom shocks as percent changes (e.g., {\"Revenue\": -0.20, \"COGS\": 0.10}) - only used if scenario is 'custom'"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_value_at_risk",
+          "description": "Calculate Value at Risk (VaR) and Conditional VaR (CVaR) from historical returns.",
+          "inputSchema": {
+            "required": ["returns", "portfolioValue", "confidenceLevel"],
+            "properties": {
+              "returns": {
+                "type": "array",
+                "description": "Historical returns as decimal values (e.g., 0.08 for 8%)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "portfolioValue": {
+                "type": "number",
+                "description": "Current portfolio value"
+              },
+              "confidenceLevel": {
+                "type": "number",
+                "description": "Confidence level (e.g., 0.95 for 95%, 0.99 for 99%)"
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Risk-free rate for Sharpe/Sortino calculations (default: 0)"
+              }
+            }
+          }
+        },
+        {
+          "name": "aggregate_portfolio_risk",
+          "description": "Aggregate VaR across multiple portfolios accounting for correlations. Reveals diversification benefits.",
+          "inputSchema": {
+            "required": ["portfolioVaRs", "correlations"],
+            "properties": {
+              "portfolioVaRs": {
+                "type": "array",
+                "description": "Individual portfolio VaRs",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "portfolioNames": {
+                "type": "array",
+                "description": "Names of portfolios (optional)",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "correlations": {
+                "type": "array",
+                "description": "Correlation matrix (NxN array of arrays)",
+                "items": {
+                  "type": "array"
+                }
+              },
+              "weights": {
+                "type": "array",
+                "description": "Portfolio weights for component VaR (optional, sums to 1.0)",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_comprehensive_risk",
+          "description": "Calculate a complete risk profile including VaR, CVaR, Sharpe ratio, Sortino ratio, drawdown, and tail statistics.",
+          "inputSchema": {
+            "required": ["returns", "riskFreeRate"],
+            "properties": {
+              "returns": {
+                "type": "array",
+                "description": "Historical returns",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Risk-free rate (same period as returns)"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Optimization & Solvers",
+      "tools": [
+        {
+          "name": "newton_raphson_optimize",
+          "description": "Find the value where a function equals a target using Newton-Raphson method. Perfect for goal seek problems.",
+          "inputSchema": {
+            "required": ["expression", "initialGuess"],
+            "properties": {
+              "expression": {
+                "type": "string",
+                "description": "Mathematical expression where x is the variable to solve for. Use standard operators: +, -, *, /, ^ for power"
+              },
+              "initialGuess": {
+                "type": "number",
+                "description": "Starting value for the optimization (important for convergence)"
+              },
+              "tolerance": {
+                "type": "number",
+                "description": "Convergence tolerance (default: 0.0001). Smaller = more precise but slower"
+              },
+              "maxIterations": {
+                "type": "integer",
+                "description": "Maximum iterations before giving up (default: 100)"
+              }
+            }
+          }
+        },
+        {
+          "name": "gradient_descent_optimize",
+          "description": "Find the maximum or minimum of a multi-variable function using gradient descent. Perfect for profit maximization or cost minimization.",
+          "inputSchema": {
+            "required": ["objective", "initialValues"],
+            "properties": {
+              "objective": {
+                "type": "string",
+                "description": "Optimization goal: 'maximize' or 'minimize'",
+                "enum": ["maximize", "minimize"]
+              },
+              "initialValues": {
+                "type": "object",
+                "description": "Initial values for variables as key-value pairs (e.g., {\"price\": 100, \"marketing\": 20000})"
+              },
+              "learningRate": {
+                "type": "number",
+                "description": "Step size for gradient descent (default: 0.01). Smaller = slower but more stable"
+              },
+              "maxIterations": {
+                "type": "integer",
+                "description": "Maximum iterations (default: 1000)"
+              },
+              "tolerance": {
+                "type": "number",
+                "description": "Convergence tolerance (default: 0.0001)"
+              }
+            }
+          }
+        },
+        {
+          "name": "optimize_capital_allocation",
+          "description": "Allocate limited capital across investment opportunities to maximize total NPV. Uses greedy or optimal integer programming methods.",
+          "inputSchema": {
+            "required": ["projects", "budget"],
+            "properties": {
+              "projects": {
+                "type": "array",
+                "description": "Array of projects with name, cost, and npv fields",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "budget": {
+                "type": "number",
+                "description": "Total capital budget available"
+              },
+              "method": {
+                "type": "string",
+                "description": "Allocation method: 'greedy' (fast, good) or 'optimal' (exact but slower)",
+                "enum": ["greedy", "optimal"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Portfolio Optimization",
+      "tools": [
+        {
+          "name": "optimize_portfolio",
+          "description": "Find the optimal portfolio allocation using Modern Portfolio Theory (Markowitz optimization). Maximizes the Sharpe ratio.",
+          "inputSchema": {
+            "required": ["assets", "returns", "riskFreeRate"],
+            "properties": {
+              "assets": {
+                "type": "array",
+                "description": "Asset names",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "returns": {
+                "type": "array",
+                "description": "Historical returns for each asset (array of arrays, one per asset)",
+                "items": {
+                  "type": "array"
+                }
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Risk-free rate for Sharpe ratio calculation (use same period as returns data)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_efficient_frontier",
+          "description": "Generate the efficient frontier showing all optimal risk-return combinations.",
+          "inputSchema": {
+            "required": ["assets", "returns", "riskFreeRate"],
+            "properties": {
+              "assets": {
+                "type": "array",
+                "description": "Asset names",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "returns": {
+                "type": "array",
+                "description": "Historical returns for each asset",
+                "items": {
+                  "type": "array"
+                }
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Risk-free rate"
+              },
+              "points": {
+                "type": "integer",
+                "description": "Number of points to calculate on the frontier (default: 20)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_risk_parity",
+          "description": "Calculate risk parity allocation where each asset contributes equally to portfolio risk. Alternative to mean-variance optimization.",
+          "inputSchema": {
+            "required": ["assets", "returns"],
+            "properties": {
+              "assets": {
+                "type": "array",
+                "description": "Asset names",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "returns": {
+                "type": "array",
+                "description": "Historical returns for each asset",
+                "items": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real Options & Advanced Options",
+      "tools": [
+        {
+          "name": "price_black_scholes_option",
+          "description": "Price European options using the Black-Scholes-Merton model. REQUIRED STRUCTURE: Requires type, spotPrice, strikePrice, timeToExpiry, riskFreeRate, volatility.",
+          "inputSchema": {
+            "required": ["optionType", "spotPrice", "strikePrice", "timeToExpiry", "riskFreeRate", "volatility"],
+            "properties": {
+              "optionType": {
+                "type": "string",
+                "description": "Type of option",
+                "enum": ["call", "put"]
+              },
+              "spotPrice": {
+                "type": "number",
+                "description": "Current price of underlying asset"
+              },
+              "strikePrice": {
+                "type": "number",
+                "description": "Exercise/strike price"
+              },
+              "timeToExpiry": {
+                "type": "number",
+                "description": "Time to expiration in years (e.g., 0.5 for 6 months)"
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Annual risk-free interest rate as decimal (e.g., 0.05 for 5%)"
+              },
+              "volatility": {
+                "type": "number",
+                "description": "Annual volatility as decimal (e.g., 0.30 for 30%)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_option_greeks",
+          "description": "Calculate option Greeks (Delta, Gamma, Vega, Theta, Rho) for sensitivity analysis.",
+          "inputSchema": {
+            "required": ["optionType", "spotPrice", "strikePrice", "timeToExpiry", "riskFreeRate", "volatility"],
+            "properties": {
+              "optionType": {
+                "type": "string",
+                "description": "Type of option",
+                "enum": ["call", "put"]
+              },
+              "spotPrice": {
+                "type": "number",
+                "description": "Current price of underlying asset"
+              },
+              "strikePrice": {
+                "type": "number",
+                "description": "Exercise/strike price"
+              },
+              "timeToExpiry": {
+                "type": "number",
+                "description": "Time to expiration in years"
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Annual risk-free rate as decimal"
+              },
+              "volatility": {
+                "type": "number",
+                "description": "Annual volatility as decimal"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_binomial_tree_option",
+          "description": "Price options using binomial tree model (supports American & European options). REQUIRED STRUCTURE requires optionType, americanStyle, spotPrice, strikePrice, timeToExpiry, riskFreeRate, volatility.",
+          "inputSchema": {
+            "required": ["optionType", "americanStyle", "spotPrice", "strikePrice", "timeToExpiry", "riskFreeRate", "volatility"],
+            "properties": {
+              "optionType": {
+                "type": "string",
+                "description": "Type of option: 'call' or 'put'"
+              },
+              "americanStyle": {
+                "type": "boolean",
+                "description": "True for American (early exercise), False for European (expiration only)"
+              },
+              "spotPrice": {
+                "type": "number",
+                "description": "Current price of underlying asset"
+              },
+              "strikePrice": {
+                "type": "number",
+                "description": "Strike price of the option"
+              },
+              "timeToExpiry": {
+                "type": "number",
+                "description": "Time to expiration in years"
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Annual risk-free interest rate"
+              },
+              "volatility": {
+                "type": "number",
+                "description": "Annual volatility of underlying"
+              },
+              "steps": {
+                "type": "number",
+                "description": "Number of time steps in binomial tree (default: 100, more steps = more accurate)"
+              }
+            }
+          }
+        },
+        {
+          "name": "value_expansion_option",
+          "description": "Value a strategic expansion option as a call option on growth opportunities. Captures the value of flexibility to expand.",
+          "inputSchema": {
+            "required": ["baseNPV", "expansionCost", "expansionNPV", "volatility", "timeToDecision", "riskFreeRate"],
+            "properties": {
+              "baseNPV": {
+                "type": "number",
+                "description": "NPV of current/base business"
+              },
+              "expansionCost": {
+                "type": "number",
+                "description": "Cost to execute expansion"
+              },
+              "expansionNPV": {
+                "type": "number",
+                "description": "NPV of expansion opportunity"
+              },
+              "volatility": {
+                "type": "number",
+                "description": "Volatility/uncertainty of expansion value"
+              },
+              "timeToDecision": {
+                "type": "number",
+                "description": "Years until expansion decision must be made"
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Annual risk-free rate"
+              }
+            }
+          }
+        },
+        {
+          "name": "value_abandonment_option",
+          "description": "Value an abandonment option as a put option providing downside protection. Captures the value of being able to exit a project.",
+          "inputSchema": {
+            "required": ["projectNPV", "salvageValue", "volatility", "timeToDecision", "riskFreeRate"],
+            "properties": {
+              "projectNPV": {
+                "type": "number",
+                "description": "NPV if project is continued"
+              },
+              "salvageValue": {
+                "type": "number",
+                "description": "Value if project is abandoned (resale, salvage)"
+              },
+              "volatility": {
+                "type": "number",
+                "description": "Volatility/uncertainty of project value"
+              },
+              "timeToDecision": {
+                "type": "number",
+                "description": "Years until abandonment decision point"
+              },
+              "riskFreeRate": {
+                "type": "number",
+                "description": "Annual risk-free rate"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statistical Analysis & Descriptive Stats",
+      "tools": [
+        {
+          "name": "calculate_correlation",
+          "description": "Calculate Pearson correlation coefficient between two datasets. Measures linear relationship (-1.0 to 1.0).",
+          "inputSchema": {
+            "required": ["x", "y"],
+            "properties": {
+              "x": {
+                "type": "array",
+                "description": "First dataset (independent variable)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "description": "Second dataset (dependent variable)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "population": {
+                "type": "string",
+                "description": "Whether data represents 'sample' or 'population' (default: 'sample')",
+                "enum": ["sample", "population"]
+              }
+            }
+          }
+        },
+        {
+          "name": "linear_regression",
+          "description": "Perform linear regression analysis (y = mx + b). Returns slope, intercept, and R².",
+          "inputSchema": {
+            "required": ["x", "y"],
+            "properties": {
+              "x": {
+                "type": "array",
+                "description": "Independent variable (predictor)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "description": "Dependent variable (outcome)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "predictFor": {
+                "type": "array",
+                "description": "Optional: X values to generate predictions for",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "spearmans_correlation",
+          "description": "Calculate Spearman's rank correlation coefficient (rho). Non-parametric measure of rank correlation.",
+          "inputSchema": {
+            "required": ["x", "y"],
+            "properties": {
+              "x": {
+                "type": "array",
+                "description": "First dataset",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "description": "Second dataset",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_confidence_interval",
+          "description": "Calculate confidence interval for a population parameter based on sample data.",
+          "inputSchema": {
+            "required": [],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Sample data (use this OR use mean/stdDev/sampleSize)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "mean": {
+                "type": "number",
+                "description": "Sample mean (if not providing raw values)"
+              },
+              "stdDev": {
+                "type": "number",
+                "description": "Sample standard deviation (if not providing raw values)"
+              },
+              "sampleSize": {
+                "type": "number",
+                "description": "Sample size (if not providing raw values)"
+              },
+              "confidenceLevel": {
+                "type": "number",
+                "description": "Confidence level (e.g., 0.95 for 95% confidence). Default: 0.95"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_covariance",
+          "description": "Calculate covariance between two datasets. Measures how much two variables change together.",
+          "inputSchema": {
+            "required": ["x", "y"],
+            "properties": {
+              "x": {
+                "type": "array",
+                "description": "First dataset",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "description": "Second dataset",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "population": {
+                "type": "string",
+                "description": "Whether data represents 'sample' or 'population' (default: 'sample')",
+                "enum": ["sample", "population"]
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_z_score",
+          "description": "Calculate z-score for testing correlation significance. Quantifies how many standard deviations a correlation is from zero.",
+          "inputSchema": {
+            "required": ["x", "y"],
+            "properties": {
+              "x": {
+                "type": "array",
+                "description": "First dataset (independent variable)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "description": "Second dataset (dependent variable)",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "descriptive_stats_extended",
+          "description": "Calculate comprehensive descriptive statistics for a dataset (mean, median, std dev, variance, range, percentiles, skewness).",
+          "inputSchema": {
+            "required": ["values"],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Dataset to analyze",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hypothesis Testing",
+      "tools": [
+        {
+          "name": "hypothesis_t_test",
+          "description": "Perform a t-test to compare means (two-sample or one-sample) and determine statistical significance. REQUIRED STRUCTURE requires sample1, and either sample2 or populationMean.",
+          "inputSchema": {
+            "required": ["sample1"],
+            "properties": {
+              "sample1": {
+                "type": "array",
+                "description": "First sample data (required). Array of numbers.",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "sample2": {
+                "type": "array",
+                "description": "Second sample data (optional, for two-sample test). Array of numbers.",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "populationMean": {
+                "type": "number",
+                "description": "Known population mean (optional, for one-sample test). Number."
+              },
+              "alpha": {
+                "type": "number",
+                "description": "Significance level (default: 0.05 for 95% confidence). Common values: 0.01, 0.05, 0.10. Example: 0.05"
+              }
+            }
+          }
+        },
+        {
+          "name": "hypothesis_chi_square",
+          "description": "Perform chi-square test for independence or goodness-of-fit. Tests whether observed categorical data differs significantly from expected distributions.",
+          "inputSchema": {
+            "required": ["observed", "expected"],
+            "properties": {
+              "observed": {
+                "type": "array",
+                "description": "Observed frequencies for each category. Array of numbers. Example: [3-5]",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "expected": {
+                "type": "array",
+                "description": "Expected frequencies for each category. Must be same length as observed. Example: [5, 6]",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "alpha": {
+                "type": "number",
+                "description": "Significance level (default: 0.05). Example: 0.05"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_sample_size",
+          "description": "Calculate required sample size for statistical significance.",
+          "inputSchema": {
+            "required": ["confidence", "marginOfError", "proportion", "populationSize"],
+            "properties": {
+              "confidence": {
+                "type": "number",
+                "description": "Confidence level (0-1). Common values: 0.90 (90%), 0.95 (95%), 0.99 (99%). Example: 0.95"
+              },
+              "marginOfError": {
+                "type": "number",
+                "description": "Margin of error (0-1). Common values: 0.03 (±3%), 0.05 (±5%), 0.10 (±10%). Example: 0.05"
+              },
+              "proportion": {
+                "type": "number",
+                "description": "Expected proportion (0-1). Use 0.5 for maximum/conservative estimate. Example: 0.5"
+              },
+              "populationSize": {
+                "type": "number",
+                "description": "Total population size. Use large number (1000000+) for infinite population. Example: 10000"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_margin_of_error",
+          "description": "Calculate margin of error for confidence intervals.",
+          "inputSchema": {
+            "required": ["confidence", "standardDeviation", "sampleSize"],
+            "properties": {
+              "confidence": {
+                "type": "number",
+                "description": "Confidence level (0-1). Common: 0.90, 0.95, 0.99. Example: 0.95"
+              },
+              "standardDeviation": {
+                "type": "number",
+                "description": "Standard deviation of the sample. Example: 2.5"
+              },
+              "sampleSize": {
+                "type": "number",
+                "description": "Sample size (number of observations). Example: 100"
+              }
+            }
+          }
+        },
+        {
+          "name": "ab_test_analysis",
+          "description": "Complete A/B test analysis with statistical significance testing. REQUIRED STRUCTURE uses variantA and variantB objects containing 'observations' and 'conversions'.",
+          "inputSchema": {
+            "required": ["variantA", "variantB"],
+            "properties": {
+              "variantA": {
+                "type": "object",
+                "description": "First variant data. Object with 'observations' (total views/visits) and 'conversions' (successful outcomes). Optional 'name' field for labeling."
+              },
+              "variantB": {
+                "type": "object",
+                "description": "Second variant data. Object with 'observations' and 'conversions'. Optional 'name' field for labeling."
+              },
+              "alpha": {
+                "type": "number",
+                "description": "Significance level (default: 0.05). Example: 0.05"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_p_value",
+          "description": "Calculate p-value from test statistic (z-score or t-statistic).",
+          "inputSchema": {
+            "required": ["testStatistic"],
+            "properties": {
+              "testStatistic": {
+                "type": "number",
+                "description": "Test statistic value (z-score or t-statistic). Example: 2.45"
+              },
+              "testType": {
+                "type": "string",
+                "description": "Type of test: 'two-tailed', 'left-tailed', or 'right-tailed'. Default: 'two-tailed'",
+                "enum": ["two-tailed", "left-tailed", "right-tailed"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Advanced Statistics & Combinatorics",
+      "tools": [
+        {
+          "name": "binomial_probability",
+          "description": "Calculate the binomial probability mass function (PMF) - the probability of getting exactly k successes in n independent Bernoulli trials. REQUIRED STRUCTURE requires n, k, and p.",
+          "inputSchema": {
+            "required": ["n", "k", "p"],
+            "properties": {
+              "n": {
+                "type": "number",
+                "description": "Number of trials"
+              },
+              "k": {
+                "type": "number",
+                "description": "Number of successes"
+              },
+              "p": {
+                "type": "number",
+                "description": "Probability of success (0-1)"
+              }
+            }
+          }
+        },
+        {
+          "name": "poisson_probability",
+          "description": "Calculate the Poisson probability - the probability of observing exactly x events in a fixed interval when events occur at a constant average rate. REQUIRED STRUCTURE requires x and mu (rate).",
+          "inputSchema": {
+            "required": ["x", "mu"],
+            "properties": {
+              "x": {
+                "type": "number",
+                "description": "Number of events"
+              },
+              "mu": {
+                "type": "number",
+                "description": "Average rate (λ or μ)"
+              }
+            }
+          }
+        },
+        {
+          "name": "exponential_distribution",
+          "description": "Calculate the exponential distribution PDF - models the time between events in a Poisson process. REQUIRED STRUCTURE requires x (time) and lambda (rate).",
+          "inputSchema": {
+            "required": ["x", "lambda"],
+            "properties": {
+              "x": {
+                "type": "number",
+                "description": "Value at which to evaluate PDF"
+              },
+              "lambda": {
+                "type": "number",
+                "description": "Rate parameter (λ)"
+              }
+            }
+          }
+        },
+        {
+          "name": "hypergeometric_probability",
+          "description": "Calculate the hypergeometric probability - probability of x successes in n draws without replacement from a finite population. REQUIRED STRUCTURE requires total, successes_in_population, sample_size, successes_in_sample.",
+          "inputSchema": {
+            "required": ["total", "successes_in_population", "sample_size", "successes_in_sample"],
+            "properties": {
+              "total": {
+                "type": "number",
+                "description": "Total population size"
+              },
+              "successes_in_population": {
+                "type": "number",
+                "description": "Number of success states in population"
+              },
+              "sample_size": {
+                "type": "number",
+                "description": "Number of draws"
+              },
+              "successes_in_sample": {
+                "type": "number",
+                "description": "Number of observed successes"
+              }
+            }
+          }
+        },
+        {
+          "name": "lognormal_distribution",
+          "description": "Calculate the log-normal distribution PDF - models data that follows a normal distribution after logarithmic transformation. REQUIRED STRUCTURE requires x (value). Mean and StdDev are optional (default 0, 1).",
+          "inputSchema": {
+            "required": ["x"],
+            "properties": {
+              "x": {
+                "type": "number",
+                "description": "Value (must be positive)"
+              },
+              "mean": {
+                "type": "number",
+                "description": "Mean of ln(x) (default: 0.0)"
+              },
+              "stddev": {
+                "type": "number",
+                "description": "Std dev of ln(x) (default: 1.0)"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_combinations",
+          "description": "Calculate combinations (n choose r) - the number of ways to choose r items from n items without regard to order.",
+          "inputSchema": {
+            "required": ["n", "r"],
+            "properties": {
+              "n": {
+                "type": "number",
+                "description": "Total number of items"
+              },
+              "r": {
+                "type": "number",
+                "description": "Number of items to choose"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_permutations",
+          "description": "Calculate permutations (n P r) - the number of ways to arrange r items from n items where order matters.",
+          "inputSchema": {
+            "required": ["n", "r"],
+            "properties": {
+              "n": {
+                "type": "number",
+                "description": "Total number of items"
+              },
+              "r": {
+                "type": "number",
+                "description": "Number of items to arrange"
+              }
+            }
+          }
+        },
+        {
+          "name": "calculate_factorial",
+          "description": "Calculate the factorial of a number (n!) - the product of all positive integers less than or equal to n.",
+          "inputSchema": {
+            "required": ["n"],
+            "properties": {
+              "n": {
+                "type": "number",
+                "description": "Non-negative integer"
+              }
+            }
+          }
+        },
+        {
+          "name": "geometric_mean",
+          "description": "Calculate the geometric mean - the nth root of the product of n numbers. Useful for growth rates and ratios. REQUIRED STRUCTURE requires an array of 'values'.",
+          "inputSchema": {
+            "required": ["values"],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Array of positive numbers",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "harmonic_mean",
+          "description": "Calculate the harmonic mean - useful for averaging rates and ratios. The reciprocal of the arithmetic mean of reciprocals. REQUIRED STRUCTURE requires an array of 'values'.",
+          "inputSchema": {
+            "required": ["values"],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Array of positive numbers",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "weighted_average",
+          "description": "Calculate the weighted average (weighted mean) - average where each value has a different weight or importance. REQUIRED STRUCTURE requires parallel arrays for 'values' and 'weights'.",
+          "inputSchema": {
+            "required": ["values", "weights"],
+            "properties": {
+              "values": {
+                "type": "array",
+                "description": "Array of values to average",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "weights": {
+                "type": "array",
+                "description": "Array of weights (same length as values)",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "goal_seek",
+          "description": "Find the input value that produces a target output using Newton's method. Uses a formula type and coefficients.",
+          "inputSchema": {
+            "required": ["formula_type", "target", "initial_guess"],
+            "properties": {
+              "formula_type": {
+                "type": "string",
+                "description": "Type of formula: 'quadratic', 'exponential', 'power', 'custom'"
+              },
+              "coefficients": {
+                "type": "array",
+                "description": "Array of coefficients for the formula",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "target": {
+                "type": "number",
+                "description": "Target value"
+              },
+              "initial_guess": {
+                "type": "number",
+                "description": "Initial guess for x"
+              },
+              "tolerance": {
+                "type": "number",
+                "description": "Convergence tolerance (optional)"
+              },
+              "max_iterations": {
+                "type": "number",
+                "description": "Max iterations (optional)"
+              }
+            }
+          }
+        },
+        {
+          "name": "data_table",
+          "description": "Generate a data table showing how output varies with one or two input variables. Similar to Excel's Data Table feature.",
+          "inputSchema": {
+            "required": ["formula_type", "fixed_params"],
+            "properties": {
+              "formula_type": {
+                "type": "string",
+                "description": "Type of calculation"
+              },
+              "fixed_params": {
+                "type": "object",
+                "description": "Fixed parameters"
+              },
+              "variable_param": {
+                "type": "string",
+                "description": "Name of variable parameter"
+              },
+              "variable_values": {
+                "type": "array",
+                "description": "Array of values to test",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "variable1_param": {
+                "type": "string",
+                "description": "Name of first variable (2-var only)"
+              },
+              "variable1_values": {
+                "type": "array",
+                "description": "Values for var1 (2-var only)",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "variable2_param": {
+                "type": "string",
+                "description": "Name of second variable (2-var only)"
+              },
+              "variable2_values": {
+                "type": "array",
+                "description": "Values for var2 (2-var only)",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bayesian Statistics",
+      "tools": [
+        {
+          "name": "calculate_bayes_theorem",
+          "description": "Calculate posterior probability using Bayes' Theorem. Updates the probability of an event based on new evidence.",
+          "inputSchema": {
+            "required": ["priorProbability", "truePositiveRate", "falsePositiveRate"],
+            "properties": {
+              "priorProbability": {
+                "type": "number",
+                "description": "Prior probability P(D) - base rate before new evidence (0 to 1)"
+              },
+              "truePositiveRate": {
+                "type": "number",
+                "description": "P(T|D) - probability of positive result when event is true (sensitivity, 0 to 1)"
+              },
+              "falsePositiveRate": {
+                "type": "number",
+                "description": "P(T|¬D) - probability of positive result when event is false (1-specificity, 0 to 1)"
+              },
+              "eventName": {
+                "type": "string",
+                "description": "Optional name for the event (e.g., 'Disease', 'Spam', 'Default')"
+              },
+              "testName": {
+                "type": "string",
+                "description": "Optional name for the test/evidence (e.g., 'Medical Test', 'Contains keyword')"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

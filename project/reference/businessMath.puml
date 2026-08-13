@@ -1,0 +1,119 @@
+@startuml
+skinparam style strictuml
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam classAttributeIconSize 0
+
+title BusinessMath Project UML Overview
+
+package "Swift Package: BusinessMath" {
+  [BusinessMath] <<library>>
+  [BusinessMathMCP] <<library>>
+  [businessmath-mcp-server] <<executable>>
+}
+
+[swift-numerics/Numerics] <<external library>>
+[MCP (modelcontextprotocol/swift-sdk)] as MCP <<external library>>
+
+[BusinessMath] ..> [swift-numerics/Numerics]
+[BusinessMathMCP] ..> [BusinessMath]
+[BusinessMathMCP] ..> [swift-numerics/Numerics]
+[BusinessMathMCP] ..> MCP
+[businessmath-mcp-server] ..> [BusinessMathMCP]
+
+newpage
+
+package "Examples" {
+  class ReidsRaisinsModel <<struct>> {
+    - contractGrapePrice: Double = 0.25
+    - coatingPrice: Double = 0.55
+    - inHouseProcessingCost: Double = 0.20
+    - outsourcedProcessingCost: Double = 0.45
+    - processingCapacity: Double = 1_500_000
+    - fixedOverhead: Double = 200_000
+    - grapesPerPound: Double = 2.5
+    - coatingPerPound: Double = 0.05
+    --
+    - baseDemand: Double = 750_000
+    - basePrice: Double = 2.20
+    - demandSensitivity: Double = 15_000
+    --
+    + contractQuantity: Double
+    + raisinPrice: Double
+    + openMarketPrice: Double
+    --
+    + calculateDemand(price: Double): Double
+    + grapesNeeded(demand: Double): Double
+    + grapeCost(totalGrapesNeeded: Double): Double
+    + coatingCost(demand: Double): Double
+    + processingCost(totalGrapesNeeded: Double): Double
+    + calculateProfit(): Double
+    + profitBreakdown(): (revenue: Double, costs: [String: Double], profit: Double)
+  }
+
+  class ReidsRaisinsDemo {
+    + runReidsRaisinsDemo(): Void
+  }
+
+  class QuickStartExamples {
+    + runAllExamples(): Void
+    + example1_BasicFinancialModel(): Void
+    + example2_ModelInspection(): Void
+    + example3_CalculationTracing(): Void
+    + example4_DataExport(): Void
+    + example5_TimeSeriesAnalysis(): Void
+    + example6_InvestmentAnalysis(): Void
+    + example7_CompleteWorkflow(): Void
+  }
+}
+
+package "BusinessMath (external)" <<Frame>> {
+  class FinancialModel <<external>>
+  class Revenue <<external>>
+  class Costs <<external>>
+  class Product <<external>>
+  class RevenueComponent <<external>>
+  class ModelInspector <<external>>
+  class CalculationTrace <<external>>
+  class DataExporter <<external>>
+  class "TimeSeries<T>" as TimeSeries <<external>>
+  class TimeSeriesExporter <<external>>
+  class Investment <<external>>
+  class InitialCost <<external>>
+  class CashFlows <<external>>
+  class CashFlow <<external>>
+  class DiscountRate <<external>>
+  class "NewtonRaphsonOptimizer<T>" as NewtonRaphsonOptimizer <<external>>
+  class TornadoDiagramAnalysis <<external>>
+  class MonteCarloSimulation <<external>>
+  class SimulationInput <<external>>
+  class DistributionNormal <<external>>
+  class TornadoDiagram <<external>> {
+    + plot(analysis: TornadoDiagramAnalysis): String
+  }
+}
+
+ReidsRaisinsDemo ..> ReidsRaisinsModel : uses
+ReidsRaisinsDemo ..> NewtonRaphsonOptimizer : uses
+ReidsRaisinsDemo ..> TornadoDiagramAnalysis : builds
+ReidsRaisinsDemo ..> MonteCarloSimulation : uses
+ReidsRaisinsDemo ..> SimulationInput : uses
+ReidsRaisinsDemo ..> DistributionNormal : uses
+ReidsRaisinsDemo ..> TornadoDiagram : plots
+
+QuickStartExamples ..> FinancialModel : uses
+QuickStartExamples ..> Revenue : uses
+QuickStartExamples ..> Costs : uses
+QuickStartExamples ..> Product : uses
+QuickStartExamples ..> RevenueComponent : uses
+QuickStartExamples ..> ModelInspector : uses
+QuickStartExamples ..> CalculationTrace : uses
+QuickStartExamples ..> DataExporter : uses
+QuickStartExamples ..> TimeSeries : uses
+QuickStartExamples ..> TimeSeriesExporter : uses
+QuickStartExamples ..> Investment : uses
+QuickStartExamples ..> InitialCost : uses
+QuickStartExamples ..> CashFlows : uses
+QuickStartExamples ..> CashFlow : uses
+QuickStartExamples ..> DiscountRate : uses
+@enduml

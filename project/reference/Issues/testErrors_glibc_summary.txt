@@ -1,0 +1,115 @@
+Yes — grouping the errors by file, here are the **files where math functions (`pow`, `sqrt`, `erfc`) are not found in scope**:
+
+---
+
+## Files Missing `pow`
+
+### 1.  
+`Tests/BusinessMathTests/BusinessMathTests.swift`  
+- Lines: 573, 577
+
+### 2.  
+`Tests/BusinessMathTests/Distribution Function Tests/AdvancedStatisticsTests.swift`  
+- Lines: 31, 229
+
+### 3.  
+`Tests/BusinessMathTests/Distribution Function Tests/Inference Tests.swift`  
+- Lines: 84, 148
+
+### 4.  
+`Tests/BusinessMathTests/Statistics Tests/Descriptor Tests/Dispersion Around the Mean Tests/Dispersion Around the Mean Tests.swift`  
+- Line: 154
+
+---
+
+## Files Missing `sqrt`
+
+### 1.  
+`Tests/BusinessMathTests/Distribution Function Tests/Inference Tests.swift`  
+- Lines: 37, 46, 85, 88
+
+### 2.  
+`Tests/BusinessMathTests/Simulation Tests/Simulation Tests.swift`  
+- Lines: 147, 165, 184, 224, 230, 265
+
+---
+
+## Files Missing `erfc`
+
+### 1.  
+`Tests/BusinessMathTests/Distribution Function Tests/Inference Tests.swift`  
+- Line: 46
+
+---
+
+# ✅ Additional Non‑Math Error
+
+## Missing `URLRequest`
+
+### File:
+`Tests/BusinessMathTests/Integration Tests/MockNetworkSession.swift`  
+- Lines: 41, 47, 51
+
+---
+
+# ✅ Summary
+
+You have **7 test files total** affected:
+
+### Math-related scope errors (5 files):
+1. `BusinessMathTests.swift`
+2. `AdvancedStatisticsTests.swift`
+3. `Inference Tests.swift`
+4. `Simulation Tests.swift`
+5. `Dispersion Around the Mean Tests.swift`
+
+### Foundation type missing (1 file):
+6. `MockNetworkSession.swift`
+
+---
+
+# 🚨 Root Cause (Almost Certainly)
+
+These functions/types require imports:
+
+- `pow`, `sqrt`, `erfc` → require:
+  ```swift
+  import Foundation
+  ```
+  or on Linux sometimes:
+  ```swift
+  import Glibc
+  ```
+  or
+  ```swift
+  import Darwin
+  ```
+
+- `URLRequest` → requires:
+  ```swift
+  import Foundation
+  ```
+
+---
+
+# ✅ Most Likely Fix
+
+Add this at the top of the affected test files:
+
+```swift
+import Foundation
+```
+
+If running in Linux CI (GitHub Actions), you may instead need:
+
+```swift
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
+```
+
+---
+
+If you'd like, I can also generate a clean patch snippet that works cross‑platform for all test files.

@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://businessmath.com/schemas/fa_schemas.json",
+  "title": "Financial Analysis Configuration Schemas",
+  "description": "Formal JSON Schemas for configuring the Financial Analysis (FA) system, including Company Definitions and Account Mappings.",
+  "definitions": {
+    "CompanyInfo": {
+      "type": "object",
+      "description": "Basic company identification information.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The human-readable name of the company."
+        },
+        "ticker": {
+          "type": "string",
+          "description": "The company's stock ticker symbol (optional but recommended)."
+        },
+        "industry": {
+          "type": "string",
+          "description": "The primary industry for benchmarking (optional)."
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "DataSourceConfig": {
+      "type": "object",
+      "description": "Configuration object for a single data source.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier used to reference this source in AccountMappings."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of data source (e.g., 'csv', 'yahoo', 'json').",
+          "enum": [
+            "csv",
+            "yahoo",
+            "json"
+          ]
+        },
+        "config": {
+          "type": "object",
+          "description": "Type-specific configuration parameters (e.g., file path for CSV, API key for Yahoo Finance)."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "config"
+      ],
+      "additionalProperties": false
+    },
+    "PeriodConfig": {
+      "type": "object",
+      "description": "Defines the time range and frequency for the financial analysis.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "The period granularity (e.g., annual, quarterly, monthly).",
+          "enum": [
+            "annual",
+            "quarterly",
+            "monthly"
+          ]
+        },
+        "start": {
+          "type": "string",
+          "description": "The start period for the analysis (e.g., '2023', '2023-Q1', '2023-01')."
+        },
+        "end": {
+          "type": "string",
+          "description": "The end period for the analysis (inclusive)."
+        }
+      },
+      "required": [
+        "type",
+        "start",
+        "end"
+      ],
+      "additionalProperties": false
+    },
+    "AccountMapping": {
+      "type": "object",
+      "description": "Maps a financial account to either a source field or a calculation formula. Must include either 'sourceId'/'sourceField' OR 'formula'.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique programmatic identifier for the account (e.g., 'Revenue', 'COGS')."
+        },
+        "display": {
+          "type": "string",
+          "description": "The human-readable display name for reports (e.g., 'Total Revenue')."
+        },
+        "sourceId": {
+          "type": "string",
+          "description": "The ID of the data source configured in the 'dataSources' section from which to fetch this account's data. Required for source accounts."
+        },
+        "sourceField": {
+          "type": "string",
+          "description": "The specific field name within the data source to map to this account (e.g., 'Total Sales'). Required for source accounts."
+        },
+        "formula": {
+          "type": "string",
+          "description": "The arithmetic expression used to calculate this account. Required for calculated accounts. Formula must adhere to the grammar: supporting numbers, other ACCOUNT_NAME references, and operators +, -, *, /, and parentheses (). Future enhancements include period references (e.g., Revenue[t-1]) and functions."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "description": "Source Account Definition: Must specify where to fetch the data.",
+          "required": [
+            "sourceId",
+            "sourceField"
+          ],
+          "not": {
+            "required": [
+              "formula"
+            ]
+          }
+        },
+        {
+          "description": "Calculated Account Definition: Must specify the calculation formula.",
+          "required": [
+            "formula"
+          ],
+          "not": {
+            "required": [
+              "sourceId",
+              "sourceField"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "company": {
+      "$ref": "#/definitions/CompanyInfo",
+      "description": "Basic information about the company being analyzed."
+    },
+    "dataSources": {
+      "type": "array",
+      "description": "A list of data source configurations.",
+      "items": {
+        "$ref": "#/definitions/DataSourceConfig"
+      }
+    },
+    "accountMappings": {
+      "type": "array",
+      "description": "A list defining all source and calculated accounts.",
+      "items": {
+        "$ref": "#/definitions/AccountMapping"
+      }
+    },
+    "periods": {
+      "$ref": "#/definitions/PeriodConfig",
+      "description": "The time frame and frequency for the analysis."
+    }
+  },
+  "required": [
+    "company",
+    "dataSources",
+    "accountMappings",
+    "periods"
+  ],
+  "additionalProperties": false
+}
