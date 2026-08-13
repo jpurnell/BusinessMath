@@ -35,6 +35,7 @@ import Numerics
 /// ### Seasonal Revenue (Discrete Periods)
 ///
 /// ```swift
+/// let period = Period.documentationQuarters[0]
 /// let seasonalRevenue = TimeVaryingDriver<Double>(name: "Seasonal Revenue") { period in
 ///     let baseRevenue = 100_000.0
 ///
@@ -56,6 +57,7 @@ import Numerics
 /// ### Growth with Inflation (Continuous)
 ///
 /// ```swift
+/// let period = Period.documentationQuarters[0]
 /// let inflationaryCosts = TimeVaryingDriver<Double>(name: "Costs with Inflation") { period in
 ///     let baseCost = 50_000.0
 ///     let inflationRate = 0.03  // 3% annual
@@ -72,6 +74,7 @@ import Numerics
 /// ### Declining Uncertainty Over Time
 ///
 /// ```swift
+/// let period = Period.documentationQuarters[0]
 /// let periods = Period.documentationQuarters
 /// let forecastRevenue = TimeVaryingDriver<Double>(name: "Forecast Revenue") { period in
 ///     let meanRevenue = 100_000.0
@@ -90,6 +93,7 @@ import Numerics
 /// ### Product Lifecycle
 ///
 /// ```swift
+/// let period = Period.documentationQuarters[0]
 /// let productRevenue = TimeVaryingDriver<Double>(name: "Product Lifecycle") { period in
 ///     let monthsSinceLaunch = calculateMonthsSince(launchDate: launchDate, period: period)
 ///
@@ -171,6 +175,7 @@ public struct TimeVaryingDriver<T>: Driver, Sendable where T: Real, T: BinaryFlo
 	///
 	/// ## Example
 	/// ```swift
+	/// let period = Period.documentationQuarters[0]
 	/// let seasonal = TimeVaryingDriver<Double>(name: "Seasonal Sales") { period in
 	///     let base = 100_000.0
 	///     let q4Boost = period.quarter == 4 ? 1.3 : 1.0
