@@ -518,6 +518,7 @@ public func applySeasonal<T: Real & Sendable>(
 ///
 /// **Quarterly Sales Analysis:**
 /// ```swift
+/// let salesData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 /// let periods = Period.documentationQuarters
 /// let quarters = Period.documentationQuarters
 /// let sales = TimeSeries(periods: quarters, values: salesData)

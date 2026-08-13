@@ -19,6 +19,7 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let historicalData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 /// let periods = Period.documentationQuarters
 /// var model = MovingAverageModel<Double>(window: 12)
 /// try model.train(on: historicalData)
@@ -97,6 +98,7 @@ public struct MovingAverageModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let salesData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = MovingAverageModel<Double>(window: 3)
 	/// try model.train(on: salesData)
@@ -149,6 +151,7 @@ public struct MovingAverageModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let salesData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// let periods = Period.documentationQuarters
 	/// var model = MovingAverageModel<Double>(window: 3)
 	/// try model.train(on: salesData)
