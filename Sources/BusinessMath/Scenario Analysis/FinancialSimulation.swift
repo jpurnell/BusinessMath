@@ -51,6 +51,7 @@ import Numerics
 /// Extract any metric from the projections and analyze its distribution:
 ///
 /// ```swift
+/// let simulation = try FinancialSimulation.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
 ///
@@ -148,6 +149,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let meanNetIncome = simulation.mean { projection in
@@ -174,6 +176,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Calculate median (50th percentile) net income
@@ -214,6 +217,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let ci = simulation.confidenceInterval(0.95) { projection in
@@ -257,6 +261,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // 95% VaR: there's a 5% chance net income will be below this value
@@ -285,6 +290,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let cvar95 = simulation.conditionalValueAtRisk(0.95) { projection in
@@ -328,6 +334,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// let probLoss = simulation.probabilityOfLoss { projection in
@@ -358,6 +365,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Probability that revenue is below $80,000
@@ -390,6 +398,7 @@ extension FinancialSimulation {
 	///
 	/// ## Example
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 	/// // Probability that net income exceeds $50,000

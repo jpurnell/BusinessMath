@@ -104,26 +104,40 @@ extension IncomeStatement where T == Double {
 	/// - Throws: `AccountError` if a fixture account is malformed.
 	public static var documentationFixture: IncomeStatement<Double> {
 		get throws {
-			let entity = Entity.documentationFixture
-			let periods = Period.documentationQuarters
-
-			func account(_ name: String, _ role: IncomeStatementRole, _ values: [Double]) throws -> Account<Double> {
-				try Account(
-					entity: entity,
-					name: name,
-					incomeStatementRole: role,
-					timeSeries: TimeSeries(periods: periods, values: values)
-				)
-			}
-
-			let accounts = [
-				try account("Revenue", .revenue, [1000, 1100, 1200, 1300]),
-				try account("Cost of Goods Sold", .costOfGoodsSold, [600, 650, 700, 750]),
-				try account("General and Administrative", .generalAndAdministrative, [200, 205, 210, 215])
-			]
-
-			return try IncomeStatement(entity: entity, periods: periods, accounts: accounts)
+			try documentationFixture(revenueScaledBy: 1.0)
 		}
+	}
+
+	/// The documentation income statement with revenue scaled by `factor`.
+	///
+	/// Costs are held flat while revenue moves, so scaling changes net income by more
+	/// than it changes revenue — operating leverage, which is what makes a simulation
+	/// built from these spread out rather than merely shifted.
+	///
+	/// - Parameter factor: The multiple applied to every revenue period.
+	/// - Throws: `AccountError` if a fixture account is malformed.
+	public static func documentationFixture(revenueScaledBy factor: Double) throws -> IncomeStatement<Double> {
+		let entity = Entity.documentationFixture
+		let periods = Period.documentationQuarters
+
+		func account(_ name: String, _ role: IncomeStatementRole, _ values: [Double]) throws -> Account<Double> {
+			try Account(
+				entity: entity,
+				name: name,
+				incomeStatementRole: role,
+				timeSeries: TimeSeries(periods: periods, values: values)
+			)
+		}
+
+		let revenue = [1000.0, 1100.0, 1200.0, 1300.0].map { $0 * factor }
+
+		let accounts = [
+			try account("Revenue", .revenue, revenue),
+			try account("Cost of Goods Sold", .costOfGoodsSold, [600, 650, 700, 750]),
+			try account("General and Administrative", .generalAndAdministrative, [200, 205, 210, 215])
+		]
+
+		return try IncomeStatement(entity: entity, periods: periods, accounts: accounts)
 	}
 }
 
@@ -186,6 +200,42 @@ extension FinancialProjection {
 				balanceSheet: try BalanceSheet<Double>.documentationFixture,
 				cashFlowStatement: try CashFlowStatement<Double>.documentationFixture
 			)
+		}
+	}
+}
+
+// MARK: - Simulation
+
+extension FinancialSimulation {
+
+	/// A small Monte Carlo result for doc-comment examples.
+	///
+	/// Nine projections whose revenue is scaled across a spread, rather than nine copies
+	/// of the same projection. A simulation of identical projections would satisfy every
+	/// example that calls `percentile` while reporting the same number for the 10th and
+	/// the 90th — the one thing a distribution example must not do.
+	///
+	/// Built directly from its initialiser rather than by calling `runFinancialSimulation`,
+	/// which needs a statement-builder closure. An example about reading a simulation
+	/// should not have to run one first.
+	///
+	/// - Throws: `AccountError` if a fixture statement is malformed.
+	public static var documentationFixture: FinancialSimulation {
+		get throws {
+			let factors = [0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20]
+			let balanceSheet = try BalanceSheet<Double>.documentationFixture
+			let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
+
+			let projections = try factors.map { factor in
+				FinancialProjection(
+					scenario: FinancialScenario.documentationFixture,
+					incomeStatement: try IncomeStatement<Double>.documentationFixture(revenueScaledBy: factor),
+					balanceSheet: balanceSheet,
+					cashFlowStatement: cashFlowStatement
+				)
+			}
+
+			return FinancialSimulation(projections: projections)
 		}
 	}
 }

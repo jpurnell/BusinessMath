@@ -47,6 +47,7 @@ private nonisolated(unsafe) let globalConfidenceInterval: (Double, [Double]) -> 
 /// ## Example
 ///
 /// ```swift
+/// let simulation = try FinancialSimulation.documentationFixture
 /// // Generate 10,000 simulation results
 /// let simulationResults = (0..<10_000).map { _ in
 ///     distributionNormal(mean: 100.0, stdDev: 15.0)

@@ -31,6 +31,7 @@ import OSLog
 /// ## Example
 ///
 /// ```swift
+/// let simulation = try FinancialSimulation.documentationFixture
 /// // Run a simple revenue simulation
 /// var revenueValues: [Double] = []
 /// for _ in 0..<10_000 {
@@ -82,6 +83,7 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let results = simulation.run(iterations: 10_000)
 	/// if results.isDegraded {
 	///     print("Execution notes:")
@@ -115,6 +117,7 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// let simulationOutputs = (0..<10_000).map { _ in
 	///     // Your simulation model
 	///     distributionNormal(mean: 100, stdDev: 15)
@@ -210,6 +213,7 @@ public struct SimulationResults: Sendable {
 	/// ## Usage Example
 	///
 	/// ```swift
+	/// let simulation = try FinancialSimulation.documentationFixture
 	/// // Run profit simulation
 	/// var profitValues: [Double] = []
 	/// for _ in 0..<10_000 {

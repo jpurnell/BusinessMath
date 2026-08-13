@@ -67,6 +67,7 @@ import Foundation
 /// ## Example
 ///
 /// ```swift
+/// let simulation = try FinancialSimulation.documentationFixture
 /// // Generate histogram from simulation results
 /// let results = SimulationResults(values: revenueData)
 /// let histogram = results.histogram(bins: 20)
