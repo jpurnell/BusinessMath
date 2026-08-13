@@ -19,24 +19,31 @@ import Numerics
 ///
 /// **Ensure Positive Values:**
 /// ```swift
+/// let uncertainPrice = DeterministicDriver(name: "uncertainPrice", value: 100.0)
+/// let uncertainQuantity = DeterministicDriver(name: "uncertainQuantity", value: 100.0)
 /// let price = uncertainPrice.positive()  // Never negative
 /// let quantity = uncertainQuantity.positive()
 /// ```
 ///
 /// **Clamp to Range:**
 /// ```swift
+/// let uncertainUtilization = DeterministicDriver(name: "uncertainUtilization", value: 100.0)
+/// let uncertainGrowth = DeterministicDriver(name: "uncertainGrowth", value: 100.0)
 /// let utilization = uncertainUtilization.clamped(min: 0.0, max: 1.0)  // 0-100%
 /// let growthRate = uncertainGrowth.clamped(min: -0.5, max: 2.0)  // -50% to +200%
 /// ```
 ///
 /// **Integer Values:**
 /// ```swift
+/// let uncertainHeadcount = DeterministicDriver(name: "uncertainHeadcount", value: 100.0)
+/// let uncertainUnits = DeterministicDriver(name: "uncertainUnits", value: 100.0)
 /// let headcount = uncertainHeadcount.rounded()  // Whole employees
 /// let units = uncertainUnits.rounded()  // Can't sell 10.5 units
 /// ```
 ///
 /// **Floor Values:**
 /// ```swift
+/// let uncertainRevenue = DeterministicDriver(name: "uncertainRevenue", value: 100.0)
 /// let revenue = uncertainRevenue.clamped(min: 0.0)  // No negative revenue
 /// ```
 ///
@@ -202,6 +209,9 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let baseUtilization = DeterministicDriver(name: "baseUtilization", value: 100.0)
+	/// let baseRevenue = DeterministicDriver(name: "baseRevenue", value: 100.0)
+	/// let baseGrowth = DeterministicDriver(name: "baseGrowth", value: 100.0)
 	/// // Utilization rate between 0 and 1
 	/// let utilization = baseUtilization.clamped(min: 0.0, max: 1.0)
 	///
@@ -233,6 +243,8 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let uncertainPrice = DeterministicDriver(name: "uncertainPrice", value: 100.0)
+	/// let uncertainQuantity = DeterministicDriver(name: "uncertainQuantity", value: 100.0)
 	/// let prices = [100.0, 102.5, 99.0, 105.0]
 	/// let price = uncertainPrice.positive()  // No negative prices
 	/// let quantity = uncertainQuantity.positive()  // No negative quantities
@@ -251,6 +263,8 @@ extension Driver where Value: BinaryFloatingPoint {
 	///
 	/// ## Example
 	/// ```swift
+	/// let uncertainHeadcount = DeterministicDriver(name: "uncertainHeadcount", value: 100.0)
+	/// let uncertainUnits = DeterministicDriver(name: "uncertainUnits", value: 100.0)
 	/// let headcount = uncertainHeadcount.rounded()  // 47 or 48, never 47.3
 	/// let units = uncertainUnits.rounded()  // Whole units
 	/// ```
@@ -338,6 +352,7 @@ extension Driver where Value: BinaryFloatingPoint {
 ///
 /// ## Example
 /// ```swift
+/// let period = Period.documentationQuarters[0]
 /// let price = basePrice.validated { value throws -> Double in
 ///     guard value > 0 else {
 ///         throw ValidationError.negativePrice
