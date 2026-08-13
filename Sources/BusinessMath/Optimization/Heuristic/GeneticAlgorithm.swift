@@ -476,26 +476,25 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             // one draw per individual. Falling back to the CPU from there resumes the
             // stream somewhere no seed predicts, which is why a seeded run reproduced
             // only when the GPU happened to succeed both times.
-            let checkpoint = rng.snapshot()
-            do {
-                if let gpuResult = try evolvePopulationGPU(population) {
-                    return gpuResult
-                }
-                rng.restore(checkpoint)
-            } catch {
-                rng.restore(checkpoint)
+            // `shouldUseGPU()` above has already decided the GPU applies, so everything
+            // inside the attempt is either a result or an abort — see GPUAttempt.swift
+            // for why that distinction is the whole defect.
+            switch rng.attemptGPU(seeded: config.seed != nil, { try evolvePopulationGPU(population) }) {
+            case .completed(let gpuResult):
+                return gpuResult
 
+            case .abandoned(let abandonment):
                 // A caller who set a seed asked for reproducibility, and quietly running a
                 // different implementation — the CPU kernels compute in Double where the
                 // GPU computes in Float — does not deliver it. Unseeded runs keep the
                 // fallback, because there resilience is worth more than a promise nobody
                 // made.
-                if config.seed != nil {
+                if abandonment.seedPromiseBroken {
                     throw OptimizationError.invalidInput(
                         message: """
                             GPU evolution failed on a seeded run and falling back to the CPU \
                             path would return a different answer for the same seed. Underlying \
-                            error: \(error)
+                            error: \(abandonment.underlying.map(String.init(describing:)) ?? "no result")
                             """
                     )
                 }

@@ -25,11 +25,17 @@ struct DocumentationFixtureTests {
 		#expect(quarters[0] < quarters[3], "periods must be in chronological order")
 	}
 
-	@Test("Every fixture constructs without throwing")
+	/// Constructing without throwing is most of the point, but a fixture of no accounts
+	/// would construct happily and leave every example that reads one printing nothing.
+	@Test("Every fixture constructs, and has something in it")
 	func fixturesConstruct() throws {
-		_ = try BalanceSheet<Double>.documentationFixture
-		_ = try IncomeStatement<Double>.documentationFixture
-		_ = try CashFlowStatement<Double>.documentationFixture
+		let balanceSheet = try BalanceSheet<Double>.documentationFixture
+		let incomeStatement = try IncomeStatement<Double>.documentationFixture
+		let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
+
+		#expect(!balanceSheet.accounts.isEmpty, "examples read accounts off this fixture")
+		#expect(!incomeStatement.accounts.isEmpty, "examples read accounts off this fixture")
+		#expect(!cashFlowStatement.accounts.isEmpty, "examples read accounts off this fixture")
 	}
 
 	/// The accounting identity, per period. An unbalanced balance sheet in a doc example
