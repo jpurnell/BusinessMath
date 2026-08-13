@@ -140,8 +140,17 @@ internal final class MetalDevice: @unchecked Sendable {
             device const uint* randomSeeds [[buffer(3)]],
             constant int& dimension [[buffer(4)]],
             constant float& crossoverRate [[buffer(5)]],
+            constant int& populationSize [[buffer(6)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // Threadgroups are dispatched rounded up, so the last group runs threads past
+            // the end of the population — 80 of them at populationSize 1200. Without this
+            // they read randomSeeds[] beyond its allocation and write the output buffer
+            // past its end, which is undefined behaviour and differs run to run. That is
+            // what made a seeded run reproduce only sometimes, and only at sizes that are
+            // not a multiple of the 256-wide threadgroup.
+            if (id >= uint(populationSize)) { return; }
+
             uint seed = randomSeeds[id];
             uint offset = id * dimension;
 
@@ -172,8 +181,17 @@ internal final class MetalDevice: @unchecked Sendable {
             constant float& mutationRate [[buffer(3)]],
             constant float& mutationStrength [[buffer(4)]],
             constant float2* searchSpace [[buffer(5)]],
+            constant int& populationSize [[buffer(6)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // Threadgroups are dispatched rounded up, so the last group runs threads past
+            // the end of the population — 80 of them at populationSize 1200. Without this
+            // they read randomSeeds[] beyond its allocation and write the output buffer
+            // past its end, which is undefined behaviour and differs run to run. That is
+            // what made a seeded run reproduce only sometimes, and only at sizes that are
+            // not a multiple of the 256-wide threadgroup.
+            if (id >= uint(populationSize)) { return; }
+
             uint seed = randomSeeds[id];
             uint offset = id * dimension;
 
@@ -221,6 +239,14 @@ internal final class MetalDevice: @unchecked Sendable {
             constant int& populationSize [[buffer(6)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // Threadgroups are dispatched rounded up, so the last group runs threads past
+            // the end of the population — 80 of them at populationSize 1200. Without this
+            // they read randomSeeds[] beyond its allocation and write the output buffer
+            // past its end, which is undefined behaviour and differs run to run. That is
+            // what made a seeded run reproduce only sometimes, and only at sizes that are
+            // not a multiple of the 256-wide threadgroup.
+            if (id >= uint(populationSize)) { return; }
+
             uint seed = randomSeeds[id];
 
             int bestIndex = -1;
@@ -250,8 +276,14 @@ internal final class MetalDevice: @unchecked Sendable {
             device const float* source [[buffer(0)]],
             device float* destination [[buffer(1)]],
             constant int& dimension [[buffer(2)]],
+            constant int& elementCount [[buffer(3)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // See the note in tournamentSelection: threadgroups are dispatched rounded up,
+            // so the surplus threads in the last group index every buffer here past its
+            // end. Undefined behaviour, and it differs between runs.
+            if (id >= uint(elementCount)) { return; }
+
             uint offset = id * dimension;
             for (int i = 0; i < dimension; i++) {
                 destination[offset + i] = source[offset + i];
@@ -268,8 +300,14 @@ internal final class MetalDevice: @unchecked Sendable {
             constant float& mutationFactor [[buffer(5)]],
             constant int& strategy [[buffer(6)]],
             constant float2* searchSpace [[buffer(7)]],
+            constant int& populationSize [[buffer(8)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // See the note in tournamentSelection: threadgroups are dispatched rounded up,
+            // so the surplus threads in the last group index every buffer here past its
+            // end. Undefined behaviour, and it differs between runs.
+            if (id >= uint(populationSize)) { return; }
+
             uint offset = id * dimension;
             uint indicesOffset = id * 3;
             uint r1_idx = randomIndices[indicesOffset];
@@ -308,8 +346,14 @@ internal final class MetalDevice: @unchecked Sendable {
             device const uint* randomSeeds [[buffer(3)]],
             constant int& dimension [[buffer(4)]],
             constant float& crossoverRate [[buffer(5)]],
+            constant int& populationSize [[buffer(6)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // See the note in tournamentSelection: threadgroups are dispatched rounded up,
+            // so the surplus threads in the last group index every buffer here past its
+            // end. Undefined behaviour, and it differs between runs.
+            if (id >= uint(populationSize)) { return; }
+
             uint offset = id * dimension;
             uint seed = randomSeeds[id];
             float jRandFloat = random_float(seed, 0);
@@ -331,8 +375,14 @@ internal final class MetalDevice: @unchecked Sendable {
             device float* fitness [[buffer(2)]],
             device const float* trialFitness [[buffer(3)]],
             constant int& dimension [[buffer(4)]],
+            constant int& populationSize [[buffer(5)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // See the note in tournamentSelection: threadgroups are dispatched rounded up,
+            // so the surplus threads in the last group index every buffer here past its
+            // end. Undefined behaviour, and it differs between runs.
+            if (id >= uint(populationSize)) { return; }
+
             uint offset = id * dimension;
             if (trialFitness[id] < fitness[id]) {
                 for (int i = 0; i < dimension; i++) {
@@ -358,8 +408,14 @@ internal final class MetalDevice: @unchecked Sendable {
             constant float2* searchSpace [[buffer(11)]],
             constant float2* velocityLimits [[buffer(12)]],
             constant bool& hasVelocityClamp [[buffer(13)]],
+            constant int& swarmSize [[buffer(14)]],
             uint id [[thread_position_in_grid]]
         ) {
+            // See the note in tournamentSelection: threadgroups are dispatched rounded up,
+            // so the surplus threads in the last group index every buffer here past its
+            // end. Undefined behaviour, and it differs between runs.
+            if (id >= uint(swarmSize)) { return; }
+
             uint seed = randomSeeds[id];
             uint offset = id * dimension;
 

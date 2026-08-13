@@ -178,6 +178,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     /// ## Usage Example
     ///
     /// ```swift
+    /// let optimizer = ParticleSwarmOptimization<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
@@ -217,7 +218,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     /// ## Usage Example
     ///
     /// ```swift
-    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    /// let optimizer = ParticleSwarmOptimization<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
+    /// let result = optimizer.optimizeDetailed(objective: sphere)
     /// print("Converged: \(result.converged)")
     /// print("Reason: \(result.convergenceReason)")
     /// ```
@@ -551,6 +553,8 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
 
         var hasClamp = hasVelocityClamp
         encoder.setBytes(&hasClamp, length: MemoryLayout<Bool>.stride, index: 13)
+        var swarmSizeInt = Int32(swarmSize)
+        encoder.setBytes(&swarmSizeInt, length: MemoryLayout<Int32>.stride, index: 14)
 
         // Dispatch threads
         let threadsPerThreadgroup = MTLSize(width: min(swarmSize, 256), height: 1, depth: 1)

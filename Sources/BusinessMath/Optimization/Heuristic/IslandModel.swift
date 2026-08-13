@@ -184,6 +184,7 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
     /// ## Usage Example
     ///
     /// ```swift
+    /// let optimizer = IslandModel<VectorN<Double>>(gaConfig: .default, islandConfig: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
@@ -218,7 +219,8 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
     /// ## Usage Example
     ///
     /// ```swift
-    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    /// let optimizer = IslandModel<VectorN<Double>>(gaConfig: .default, islandConfig: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
+    /// let result = optimizer.optimizeDetailed(objective: sphere)
     /// print("Best island: \(result.bestIslandIndex)")
     /// print("Migrations: \(result.migrationCount)")
     /// ```

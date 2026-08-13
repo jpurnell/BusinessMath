@@ -68,6 +68,7 @@ import Metal
 /// Use the penalty method for constrained problems:
 ///
 /// ```swift
+/// let optimizer = GeneticAlgorithm<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
 /// // Minimize x² + y² subject to x + y = 1
 /// let objective = { (v: VectorN<Double>) -> Double in v.dot(v) }
 /// let constraint = MultivariateConstraint<VectorN<Double>>.equality { v in
@@ -203,6 +204,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     /// ## Usage Example
     ///
     /// ```swift
+    /// let optimizer = GeneticAlgorithm<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
@@ -325,6 +327,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     /// ## Usage Example
     ///
     /// ```swift
+    /// let optimizer = GeneticAlgorithm<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.optimizeDetailed(objective: sphere)
     ///
@@ -674,6 +677,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         encoder.setBytes(&dimInt, length: MemoryLayout<Int32>.stride, index: 4)
         var crossRate = Float(config.crossoverRate)
         encoder.setBytes(&crossRate, length: MemoryLayout<Float>.stride, index: 5)
+        encoder.setBytes(&popSize, length: MemoryLayout<Int32>.stride, index: 6)
         encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
 
         // 3. Mutation (popA in-place)
@@ -691,6 +695,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             SIMD2<Float>(Float(bounds.lower), Float(bounds.upper))
         }
         encoder.setBytes(&searchSpaceGPU, length: searchSpaceGPU.count * MemoryLayout<SIMD2<Float>>.stride, index: 5)
+        encoder.setBytes(&popSize, length: MemoryLayout<Int32>.stride, index: 6)
         encoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadsPerGroup)
 
         // Execute GPU work
