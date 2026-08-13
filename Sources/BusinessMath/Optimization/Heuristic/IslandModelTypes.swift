@@ -195,6 +195,7 @@ public struct IslandModelConfig: Sendable {
     /// acceleration on each island for maximum performance:
     ///
     /// ```swift
+    /// let bounds = [(-10.0, 10.0), (-10.0, 10.0)]
     /// let gaConfig = GeneticAlgorithmConfig.highPerformance  // 1000 pop/island
     /// let islandConfig = IslandModelConfig.highPerformance   // 5 islands
     ///
@@ -225,6 +226,7 @@ public struct IslandModelConfig: Sendable {
 /// ## Usage Example
 ///
 /// ```swift
+/// let bounds = [(-10.0, 10.0), (-10.0, 10.0)]
 /// let optimizer = IslandModel<VectorN<Double>>(
 ///     gaConfig: .default,
 ///     islandConfig: .default,

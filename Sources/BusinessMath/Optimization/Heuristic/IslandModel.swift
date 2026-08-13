@@ -76,6 +76,7 @@ import Metal
 /// ### GPU Configuration
 ///
 /// ```swift
+/// let bounds = [(-10.0, 10.0), (-10.0, 10.0)]
 /// // GPU-accelerated islands (each island uses GPU)
 /// let gaConfig = GeneticAlgorithmConfig(
 ///     populationSize: 1000,  // Enables GPU per island
@@ -219,6 +220,7 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
     /// ## Usage Example
     ///
     /// ```swift
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let optimizer = IslandModel<VectorN<Double>>(gaConfig: .default, islandConfig: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let result = optimizer.optimizeDetailed(objective: sphere)
     /// print("Best island: \(result.bestIslandIndex)")

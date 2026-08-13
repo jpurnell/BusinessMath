@@ -144,6 +144,7 @@ extension TimeSeries: Validatable where T: Real & Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let timeSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// do {
     ///     try timeSeries.validateAndThrow()
     ///     // TimeSeries is valid, safe to use
