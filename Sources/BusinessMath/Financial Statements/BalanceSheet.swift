@@ -44,12 +44,8 @@ public enum BalanceSheetError: Error, Sendable {
 /// ## Creating Balance Sheets
 ///
 /// ```swift
-/// let cashSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
-/// let periods = [
-///     Period.quarter(year: 2024, quarter: 1),
-///     Period.quarter(year: 2024, quarter: 2)
-/// ]
+/// let periods = Period.documentationQuarters
 ///
 /// var cashMetadata = AccountMetadata()
 /// cashMetadata.category = "Current"
@@ -57,17 +53,31 @@ public enum BalanceSheetError: Error, Sendable {
 /// let cashAccount = try Account(
 ///     entity: entity,
 ///     name: "Cash",
-///     type: .asset,
-///     timeSeries: cashSeries,
+///     balanceSheetRole: .cashAndEquivalents,
+///     timeSeries: TimeSeries(periods: periods, values: [100, 110, 120, 130]),
 ///     metadata: cashMetadata
 /// )
 ///
+/// let payablesAccount = try Account(
+///     entity: entity,
+///     name: "Accounts Payable",
+///     balanceSheetRole: .accountsPayable,
+///     timeSeries: TimeSeries(periods: periods, values: [40, 44, 48, 52])
+/// )
+///
+/// let equityAccount = try Account(
+///     entity: entity,
+///     name: "Common Stock",
+///     balanceSheetRole: .commonStock,
+///     timeSeries: TimeSeries(periods: periods, values: [60, 66, 72, 78])
+/// )
+///
+/// // One `accounts:` array — the role on each account is what sorts it into assets,
+/// // liabilities or equity.
 /// let balanceSheet = try BalanceSheet(
 ///     entity: entity,
 ///     periods: periods,
-///     assetAccounts: [cashAccount],
-///     liabilityAccounts: [apAccount],
-///     equityAccounts: [equityAccount]
+///     accounts: [cashAccount, payablesAccount, equityAccount]
 /// )
 /// ```
 ///

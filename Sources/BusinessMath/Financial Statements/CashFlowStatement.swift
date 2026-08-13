@@ -39,26 +39,36 @@ public enum CashFlowStatementError: Error, Sendable {
 /// ## Creating Cash Flow Statements
 ///
 /// ```swift
-/// let operatingSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
-/// let periods = [
-///     Period.quarter(year: 2024, quarter: 1),
-///     Period.quarter(year: 2024, quarter: 2)
-/// ]
+/// let periods = Period.documentationQuarters
 ///
 /// let operatingAccount = try Account(
 ///     entity: entity,
 ///     name: "Cash from Operations",
-///     type: .operating,
-///     timeSeries: operatingSeries
+///     cashFlowRole: .netIncome,
+///     timeSeries: TimeSeries(periods: periods, values: [100, 110, 120, 130])
 /// )
 ///
+/// let investingAccount = try Account(
+///     entity: entity,
+///     name: "Capital Expenditures",
+///     cashFlowRole: .capitalExpenditures,
+///     timeSeries: TimeSeries(periods: periods, values: [-40, -40, -40, -40])
+/// )
+///
+/// let financingAccount = try Account(
+///     entity: entity,
+///     name: "Dividends Paid",
+///     cashFlowRole: .dividendsPaid,
+///     timeSeries: TimeSeries(periods: periods, values: [-20, -20, -20, -20])
+/// )
+///
+/// // One `accounts:` array — the role on each account is what sorts it into operating,
+/// // investing or financing.
 /// let cashFlowStmt = try CashFlowStatement(
 ///     entity: entity,
 ///     periods: periods,
-///     operatingAccounts: [operatingAccount],
-///     investingAccounts: [investingAccount],
-///     financingAccounts: [financingAccount]
+///     accounts: [operatingAccount, investingAccount, financingAccount]
 /// )
 /// ```
 ///
