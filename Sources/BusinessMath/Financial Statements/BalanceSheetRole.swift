@@ -26,13 +26,15 @@ import Foundation
 /// # Usage
 ///
 /// ```swift
+/// let myEntity = Entity.documentationFixture
+/// let cashData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity.documentationFixture
 /// // Create a cash account
 /// let cashAccount = try Account(
 ///     entity: myEntity,
 ///     name: "Cash and Cash Equivalents",
-///     timeSeries: cashData,
-///     balanceSheetRole: .cashAndEquivalents
+///     balanceSheetRole: .cashAndEquivalents,
+///     timeSeries: cashData
 /// )
 ///
 /// // Check if account is a current asset
@@ -143,13 +145,15 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let retailStore = Entity.documentationFixture
+    /// let salesTaxData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Sales tax liability
     /// let salesTax = try Account(
     ///     entity: retailStore,
     ///     name: "Sales Tax Payable",
-    ///     timeSeries: salesTaxData,
-    ///     balanceSheetRole: .salesTaxPayable
+    ///     balanceSheetRole: .salesTaxPayable,
+    ///     timeSeries: salesTaxData
     /// )
     ///
     /// // Verify it's a current liability
@@ -173,13 +177,15 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let serviceCompany = Entity.documentationFixture
+    /// let payrollData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Payroll liability
     /// let payroll = try Account(
     ///     entity: serviceCompany,
     ///     name: "Payroll Liabilities",
-    ///     timeSeries: payrollData,
-    ///     balanceSheetRole: .payrollLiabilities
+    ///     balanceSheetRole: .payrollLiabilities,
+    ///     timeSeries: payrollData
     /// )
     ///
     /// // Verify classification
@@ -204,13 +210,15 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let manufacturingCo = Entity.documentationFixture
+    /// let locBalanceData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Line of credit for working capital
     /// let loc = try Account(
     ///     entity: manufacturingCo,
     ///     name: "Line of Credit",
-    ///     timeSeries: locBalanceData,
-    ///     balanceSheetRole: .lineOfCredit
+    ///     balanceSheetRole: .lineOfCredit,
+    ///     timeSeries: locBalanceData
     /// )
     ///
     /// // Verify it's current debt
@@ -237,13 +245,15 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let customShop = Entity.documentationFixture
+    /// let depositData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Customer deposits for a custom manufacturer
     /// let deposits = try Account(
     ///     entity: customShop,
     ///     name: "Customer Deposits",
-    ///     timeSeries: depositData,
-    ///     balanceSheetRole: .customerDeposits
+    ///     balanceSheetRole: .customerDeposits,
+    ///     timeSeries: depositData
     /// )
     ///
     /// // Verify working capital impact
@@ -269,13 +279,15 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let familyBusiness = Entity.documentationFixture
+    /// let ownerLoanData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// // Owner loan to provide working capital
     /// let ownerLoan = try Account(
     ///     entity: familyBusiness,
     ///     name: "Due to Owner",
-    ///     timeSeries: ownerLoanData,
-    ///     balanceSheetRole: .ownerLoans
+    ///     balanceSheetRole: .ownerLoans,
+    ///     timeSeries: ownerLoanData
     /// )
     ///
     /// // Typically current, but could be long-term
@@ -317,6 +329,8 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let portfolio = Entity.documentationFixture
+    /// let revolverData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// let revolver = try Account(
     ///     entity: portfolio,
@@ -351,6 +365,8 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let portfolio = Entity.documentationFixture
+    /// let loanData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// let shortTermLoan = try Account(
     ///     entity: portfolio,
@@ -386,6 +402,8 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let portfolio = Entity.documentationFixture
+    /// let loanData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// let termLoan = try Account(
     ///     entity: portfolio,
@@ -422,6 +440,8 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let portfolio = Entity.documentationFixture
+    /// let mezzData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// let mezz = try Account(
     ///     entity: portfolio,
@@ -455,6 +475,8 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let growthCo = Entity.documentationFixture
+    /// let convertibleData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let entity = Entity.documentationFixture
     /// let convertible = try Account(
     ///     entity: growthCo,
@@ -622,13 +644,14 @@ public enum BalanceSheetRole: String, Sendable, Hashable, Codable, CaseIterable,
     /// ## Example Usage
     ///
     /// ```swift
+    /// let salesTaxData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
     /// let company = Entity.documentationFixture
     /// let entity = Entity.documentationFixture
     /// let account = try Account(
     ///     entity: company,
     ///     name: "Sales Tax Payable",
-    ///     timeSeries: salesTaxData,
-    ///     balanceSheetRole: .salesTaxPayable
+    ///     balanceSheetRole: .salesTaxPayable,
+    ///     timeSeries: salesTaxData
     /// )
     ///
     /// if account.balanceSheetRole?.isWorkingCapital == true {

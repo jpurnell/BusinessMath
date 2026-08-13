@@ -20,6 +20,8 @@ import Numerics
 /// function, which varies a single driver across a range and measures the impact:
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
+/// let scenario = FinancialScenario.documentationFixture
 /// let quarters = Period.documentationQuarters
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
@@ -238,6 +240,7 @@ extension ScenarioSensitivityAnalysis {
 /// Two-way analyses are created using ``runTwoWaySensitivity(baseCase:entity:periods:inputDriver1:inputRange1:steps1:inputDriver2:inputRange2:steps2:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -385,6 +388,7 @@ public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -524,6 +528,7 @@ public func runSensitivity(
 ///
 /// ## Example
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -662,6 +667,7 @@ public func runTwoWaySensitivity(
 /// Tornado diagrams are created using ``runTornadoAnalysis(baseCase:entity:periods:inputDrivers:variationPercent:steps:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -832,6 +838,7 @@ public struct TornadoDiagramAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

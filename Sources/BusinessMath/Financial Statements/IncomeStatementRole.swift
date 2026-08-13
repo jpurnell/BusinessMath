@@ -33,6 +33,8 @@ import Foundation
 /// # Usage
 ///
 /// ```swift
+/// let myEntity = Entity.documentationFixture
+/// let salesData = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity.documentationFixture
 /// // Create a revenue account
 /// let salesAccount = try Account(

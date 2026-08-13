@@ -44,6 +44,7 @@ import Numerics
 /// ## Usage Example
 ///
 /// ```swift
+/// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
 /// import BusinessMath
 ///

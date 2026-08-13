@@ -19,6 +19,7 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// // Use pre-defined scenario
 /// let recession = StressScenario<Double>.recession
 ///

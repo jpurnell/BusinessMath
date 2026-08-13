@@ -437,6 +437,7 @@ public struct DiscreteUncertaintySet: UncertaintySet {
 	///
 	/// ## Example
 	/// ```swift
+	/// let scenario = FinancialScenario.documentationFixture
 	/// let scenarios = try DiscreteUncertaintySet(points: [
 	///     [80, 100],
 	///     [100, 120],

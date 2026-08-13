@@ -17,6 +17,7 @@ import Numerics
 /// ## Creating Scenarios
 ///
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// // Base case with expected values
 /// let basePrice = DeterministicDriver(name: "Price", value: 100.0)
 /// let baseVolume = DeterministicDriver(name: "Volume", value: 1000.0)
@@ -41,6 +42,7 @@ import Numerics
 ///
 /// ### Best Case / Optimistic
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// var optimisticOverrides: [String: AnyDriver<Double>] = [:]
 /// optimisticOverrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 120.0))
 /// optimisticOverrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 1200.0))
@@ -54,6 +56,7 @@ import Numerics
 ///
 /// ### Worst Case / Pessimistic
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// var pessimisticOverrides: [String: AnyDriver<Double>] = [:]
 /// pessimisticOverrides["Price"] = AnyDriver(DeterministicDriver(name: "Price", value: 90.0))
 /// pessimisticOverrides["Volume"] = AnyDriver(DeterministicDriver(name: "Volume", value: 800.0))
@@ -89,6 +92,7 @@ import Numerics
 /// financial projections:
 ///
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

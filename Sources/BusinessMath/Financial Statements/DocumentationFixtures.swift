@@ -159,3 +159,33 @@ extension CashFlowStatement where T == Double {
 		}
 	}
 }
+
+// MARK: - Scenario and projection
+
+extension FinancialScenario {
+
+	/// The scenario every projection fixture runs under.
+	public static var documentationFixture: FinancialScenario {
+		FinancialScenario(name: "Base Case", description: "Expected scenario")
+	}
+}
+
+extension FinancialProjection {
+
+	/// A projection over the three statement fixtures, for doc-comment examples.
+	///
+	/// Composed rather than hand-built, so an example that reaches through a projection
+	/// to a statement sees the same numbers as one that reaches the statement directly.
+	///
+	/// - Throws: `AccountError` if a fixture statement is malformed.
+	public static var documentationFixture: FinancialProjection {
+		get throws {
+			FinancialProjection(
+				scenario: FinancialScenario.documentationFixture,
+				incomeStatement: try IncomeStatement<Double>.documentationFixture,
+				balanceSheet: try BalanceSheet<Double>.documentationFixture,
+				cashFlowStatement: try CashFlowStatement<Double>.documentationFixture
+			)
+		}
+	}
+}

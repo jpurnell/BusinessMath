@@ -1245,6 +1245,7 @@ public struct Adjustment: Sendable {
 ///
 /// ## Usage Example
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// var scenario = ScenarioDefinition(name: "Best Case")
 /// scenario.adjustments = [
 ///     Adjustment(target: .revenue, percentage: 0.30),

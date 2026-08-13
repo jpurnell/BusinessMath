@@ -200,6 +200,7 @@ import Numerics
 /// For probabilistic drivers, each call to `run()` produces a different sample:
 ///
 /// ```swift
+/// let scenario = FinancialScenario.documentationFixture
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -257,6 +258,7 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let scenario = FinancialScenario.documentationFixture
 	/// let periods = Period.documentationQuarters
 	/// let builder: ScenarioRunner.StatementBuilder = { drivers, periods in
 	///     // Sample drivers. The builder is throwing, so report a driver the
@@ -298,6 +300,7 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let scenario = FinancialScenario.documentationFixture
 	/// let runner = ScenarioRunner()
 	///
 	/// // Run multiple scenarios with the same runner
@@ -329,6 +332,7 @@ public struct ScenarioRunner: Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let scenario = FinancialScenario.documentationFixture
 	/// let periods = Period.documentationQuarters
 	/// let quarters = Period.documentationQuarters
 	/// let company = Entity.documentationFixture
