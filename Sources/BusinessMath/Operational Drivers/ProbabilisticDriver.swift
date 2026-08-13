@@ -18,19 +18,19 @@ import Numerics
 ///
 /// ```swift
 /// // Normally distributed sales volume
-/// let sales = ProbabilisticDriver(
+/// let sales = ProbabilisticDriver<Double>(
 ///     name: "Units Sold",
-///     distribution: DistributionNormal(mean: 1000.0, stdDev: 100.0)
+///     distribution: DistributionNormal(1000.0, 100.0)
 /// )
 ///
 /// // Triangularly distributed price
-/// let price = ProbabilisticDriver(
+/// let price = ProbabilisticDriver<Double>(
 ///     name: "Unit Price",
 ///     distribution: DistributionTriangular(low: 95.0, high: 105.0, base: 100.0)
 /// )
 ///
 /// // Uniformly distributed costs
-/// let cost = ProbabilisticDriver(
+/// let cost = ProbabilisticDriver<Double>(
 ///     name: "Unit Cost",
 ///     distribution: DistributionUniform(45.0, 55.0)
 /// )
@@ -51,7 +51,7 @@ import Numerics
 /// ## Monte Carlo Projection
 ///
 /// ```swift
-/// let salesDriver = ProbabilisticDriver(
+/// let salesDriver = ProbabilisticDriver<Double>(
 ///     name: "Sales",
 ///     distribution: DistributionNormal(1000.0, 100.0)
 /// )
@@ -73,11 +73,11 @@ import Numerics
 ///
 /// ```swift
 /// // Revenue with uncertainty in both quantity and price
-/// let quantity = ProbabilisticDriver(
+/// let quantity = ProbabilisticDriver<Double>(
 ///     name: "Quantity",
 ///     distribution: DistributionNormal(1000.0, 100.0)
 /// )
-/// let price = ProbabilisticDriver(
+/// let price = ProbabilisticDriver<Double>(
 ///     name: "Price",
 ///     distribution: DistributionTriangular(low: 95.0, high: 105.0, base: 100.0)
 /// )
@@ -129,9 +129,9 @@ public struct ProbabilisticDriver<T>: Driver, Sendable where T: Real, T: BinaryF
 	///
 	/// ## Example
 	/// ```swift
-	/// let driver = ProbabilisticDriver(
+	/// let driver = ProbabilisticDriver<Double>(
 	///     name: "Sales Volume",
-	///     distribution: DistributionNormal(mean: 1000.0, stdDev: 100.0)
+	///     distribution: DistributionNormal(1000.0, 100.0)
 	/// )
 	/// ```
 	public init<D: DistributionRandom & Sendable>(name: String, distribution: D) where D.T == Double {
@@ -158,7 +158,7 @@ public struct ProbabilisticDriver<T>: Driver, Sendable where T: Real, T: BinaryF
 	/// ```swift
 	/// let driver = ProbabilisticDriver<Double>(
 	///     name: "Sales Volume",
-	///     distribution: DistributionNormal(mean: 1000.0, stdDev: 100.0)
+	///     distribution: DistributionNormal(1000.0, 100.0)
 	/// )
 	/// #expect(driver.supportsSeeding)
 	/// ```
@@ -181,7 +181,7 @@ public struct ProbabilisticDriver<T>: Driver, Sendable where T: Real, T: BinaryF
 	///
 	/// ## Example
 	/// ```swift
-	/// let driver = ProbabilisticDriver(
+	/// let driver = ProbabilisticDriver<Double>(
 	///     name: "Sales",
 	///     distribution: DistributionNormal(1000.0, 100.0)
 	/// )
@@ -258,7 +258,7 @@ extension ProbabilisticDriver {
 	///
 	/// ## Example
 	/// ```swift
-	/// let sales = ProbabilisticDriver.normal(
+	/// let sales = ProbabilisticDriver<Double>.normal(
 	///     name: "Sales Volume",
 	///     mean: 1000.0,
 	///     stdDev: 100.0
@@ -284,7 +284,7 @@ extension ProbabilisticDriver {
 	///
 	/// ## Example
 	/// ```swift
-	/// let price = ProbabilisticDriver.triangular(
+	/// let price = ProbabilisticDriver<Double>.triangular(
 	///     name: "Unit Price",
 	///     low: 95.0,
 	///     high: 105.0,
@@ -309,7 +309,7 @@ extension ProbabilisticDriver {
 	///
 	/// ## Example
 	/// ```swift
-	/// let cost = ProbabilisticDriver.uniform(
+	/// let cost = ProbabilisticDriver<Double>.uniform(
 	///     name: "Unit Cost",
 	///     min: 45.0,
 	///     max: 55.0

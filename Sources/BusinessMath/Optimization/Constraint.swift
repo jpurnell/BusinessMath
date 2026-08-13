@@ -46,7 +46,7 @@ public enum ConstraintSense: Sendable {
 /// ```swift
 /// // Budget constraint: weights must sum to 1
 /// let budget: MultivariateConstraint<VectorN<Double>> = .equality { weights in
-///     weights.sum() - 1.0
+///     weights.sum - 1.0
 /// }
 /// ```
 ///
@@ -62,7 +62,7 @@ public enum ConstraintSense: Sendable {
 /// ```swift
 /// // Budget constraint with analytical gradient
 /// let budget: MultivariateConstraint<VectorN<Double>> = .equality(
-///     function: { weights in weights.sum() - 1.0 },
+///     function: { weights in weights.sum - 1.0 },
 ///     gradient: { weights in VectorN<Double>(repeating: 1.0, count: weights.dimension) }
 /// )
 /// ```
@@ -105,10 +105,12 @@ public enum MultivariateConstraint<V: VectorSpace>: Sendable where V.Scalar: Rea
 	/// ## Example
 	/// ```swift
 	/// // x ≥ 0 (natural form - no inversion!)
-	/// .linearInequality(coefficients: [1.0], rhs: 0.0, sense: .greaterOrEqual)
+	/// let nonNegative: MultivariateConstraint<VectorN<Double>> =
+///     .linearInequality(coefficients: [1.0], rhs: 0.0, sense: .greaterOrEqual)
 	///
 	/// // x + y ≤ 10 (budget constraint)
-	/// .linearInequality(coefficients: [1.0, 1.0], rhs: 10.0, sense: .lessOrEqual)
+	/// let budget: MultivariateConstraint<VectorN<Double>> =
+///     .linearInequality(coefficients: [1.0, 1.0], rhs: 10.0, sense: .lessOrEqual)
 	/// ```
 	///
 	/// - Parameters:
@@ -128,10 +130,12 @@ public enum MultivariateConstraint<V: VectorSpace>: Sendable where V.Scalar: Rea
 	/// ## Example
 	/// ```swift
 	/// // x = 5 (fixed variable)
-	/// .linearEquality(coefficients: [1.0], rhs: 5.0)
+	/// let equality: MultivariateConstraint<VectorN<Double>> =
+///     .linearEquality(coefficients: [1.0], rhs: 5.0)
 	///
 	/// // x - y = 0 (balance constraint)
-	/// .linearEquality(coefficients: [1.0, -1.0], rhs: 0.0)
+	/// let equality: MultivariateConstraint<VectorN<Double>> =
+///     .linearEquality(coefficients: [1.0, -1.0], rhs: 0.0)
 	/// ```
 	///
 	/// - Parameters:
@@ -377,7 +381,7 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 	/// ```swift
 	/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [
 	///     .budgetConstraint
-	/// ] + .nonNegativity(dimension: 5)
+	/// ] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 5)
 	/// ```
 	///
 	/// - Parameter dimension: Number of assets (vector dimension)
@@ -403,7 +407,7 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 	/// // No single position can exceed 40% of portfolio
 	/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [
 	///     .budgetConstraint
-	/// ] + .positionLimit(0.4, dimension: 5)
+	/// ] + MultivariateConstraint<VectorN<Double>>.positionLimit(0.4, dimension: 5)
 	/// ```
 	///
 	/// - Parameters:
@@ -433,7 +437,7 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 	/// // Each position must be at least 10% of portfolio
 	/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [
 	///     .budgetConstraint
-	/// ] + .positionMinimum(0.1, dimension: 5)
+	/// ] + MultivariateConstraint<VectorN<Double>>.positionMinimum(0.1, dimension: 5)
 	/// ```
 	///
 	/// - Parameters:
@@ -463,7 +467,7 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 	/// // Each position must be between 10% and 40%
 	/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [
 	///     .budgetConstraint
-	/// ] + .boxConstraints(min: 0.1, max: 0.4, dimension: 5)
+	/// ] + MultivariateConstraint<VectorN<Double>>.boxConstraints(min: 0.1, max: 0.4, dimension: 5)
 	/// ```
 	///
 	/// - Parameters:

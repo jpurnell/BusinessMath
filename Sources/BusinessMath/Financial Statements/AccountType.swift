@@ -32,8 +32,8 @@ import Foundation
 ///
 /// ## Example
 /// ```swift
-/// let revenueAccount = Account(name: "Sales", type: .revenue, timeSeries: salesTS)
-/// let assetAccount = Account(name: "Cash", type: .asset, subtype: .cashAndEquivalents, timeSeries: cashTS)
+/// let salesType: AccountType = .revenue
+/// let cashType: AccountType = .asset
 /// ```
 public enum AccountType: String, Codable, Equatable, Sendable {
 	// MARK: - Income Statement Accounts
@@ -92,8 +92,8 @@ public enum AccountType: String, Codable, Equatable, Sendable {
 ///
 /// ## Example
 /// ```swift
-/// let cash = Account(name: "Cash", type: .asset, subtype: .cashAndEquivalents, ...)
-/// let inventory = Account(name: "Inventory", type: .asset, subtype: .inventory, ...)
+/// let cash: AssetType = .cashAndEquivalents
+/// let inventory: AssetType = .inventory
 /// ```
 public enum AssetType: String, Codable, Equatable, Sendable {
 	// MARK: - Current Assets
@@ -142,8 +142,8 @@ public enum AssetType: String, Codable, Equatable, Sendable {
 ///
 /// ## Example
 /// ```swift
-/// let debt = Account(name: "Senior Notes", type: .liability, subtype: .longTermDebt, ...)
-/// let ap = Account(name: "Accounts Payable", type: .liability, subtype: .accountsPayable, ...)
+/// let debt: LiabilityType = .longTermDebt
+/// let payables: LiabilityType = .accountsPayable
 /// ```
 public enum LiabilityType: String, Codable, Equatable, Sendable {
 	// MARK: - Current Liabilities
@@ -200,8 +200,8 @@ public enum LiabilityType: String, Codable, Equatable, Sendable {
 ///
 /// ## Example
 /// ```swift
-/// let cogs = Account(name: "Cost of Goods Sold", type: .expense, subtype: .costOfGoodsSold, ...)
-/// let interest = Account(name: "Interest Expense", type: .expense, subtype: .interestExpense, ...)
+/// let cogs: ExpenseType = .costOfGoodsSold
+/// let interest: ExpenseType = .interestExpense
 /// ```
 public enum ExpenseType: String, Codable, Equatable, Sendable {
 	/// Cost of goods sold (direct costs of production).
@@ -234,8 +234,8 @@ public enum ExpenseType: String, Codable, Equatable, Sendable {
 ///
 /// ## Example
 /// ```swift
-/// let stock = Account(name: "Common Stock", type: .equity, subtype: .commonStock, ...)
-/// let retained = Account(name: "Retained Earnings", type: .equity, subtype: .retainedEarnings, ...)
+/// let stock: EquityType = .commonStock
+/// let retained: EquityType = .retainedEarnings
 /// ```
 public enum EquityType: String, Codable, Equatable, Sendable {
 	/// Common stock (par value + additional paid-in capital).
