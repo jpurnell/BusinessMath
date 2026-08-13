@@ -79,13 +79,13 @@ import Numerics
 /// let entity = Entity.documentationFixture
 /// let quarters = Period.year(2025).quarters()
 /// let metricsList = try [
-///     OperationalMetrics(entity: entity, period: quarters[0], metrics: [...]),
-///     OperationalMetrics(entity: entity, period: quarters[1], metrics: [...]),
-///     OperationalMetrics(entity: entity, period: quarters[2], metrics: [...]),
-///     OperationalMetrics(entity: entity, period: quarters[3], metrics: [...])
+///     OperationalMetrics(entity: entity, period: quarters[0], metrics: ["units_sold": 10_000]),
+///     OperationalMetrics(entity: entity, period: quarters[1], metrics: ["units_sold": 11_000]),
+///     OperationalMetrics(entity: entity, period: quarters[2], metrics: ["units_sold": 12_100]),
+///     OperationalMetrics(entity: entity, period: quarters[3], metrics: ["units_sold": 13_310])
 /// ]
 ///
-/// let timeSeries = OperationalMetricsTimeSeries(metrics: metricsList)
+/// let timeSeries = try OperationalMetricsTimeSeries(metrics: metricsList)
 /// let unitsGrowth = timeSeries.growthRate(metric: "units_sold")
 /// ```
 public struct OperationalMetrics<T: Real & Sendable>: Codable, Sendable where T: Codable {
@@ -134,6 +134,11 @@ public struct OperationalMetrics<T: Real & Sendable>: Codable, Sendable where T:
 	/// Useful for computing ratios and per-unit metrics:
 	///
 	/// ```swift
+	/// let metrics = try OperationalMetrics(
+	///     entity: .documentationFixture,
+	///     period: Period.documentationQuarters[0],
+	///     metrics: ["total_revenue": 500_000, "customer_count": 250, "total_cost": 300_000, "units_sold": 10_000]
+	/// )
 	/// // Revenue per customer
 	/// let revenuePerCustomer = metrics.derived(
 	///     numerator: "total_revenue",
@@ -210,7 +215,7 @@ public struct OperationalMetricsMetadata: Codable, Sendable {
 ///     OperationalMetrics(entity: entity, period: quarters[3], metrics: ["units_sold": 13_310])
 /// ]
 ///
-/// let timeSeries = OperationalMetricsTimeSeries(metrics: metricsList)
+/// let timeSeries = try OperationalMetricsTimeSeries(metrics: metricsList)
 ///
 /// // Get time series for a specific metric
 /// let unitsSold = timeSeries.timeSeries(for: "units_sold")

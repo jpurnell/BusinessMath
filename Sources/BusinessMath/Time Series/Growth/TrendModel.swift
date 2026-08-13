@@ -137,7 +137,7 @@ public enum TrendModelError: Error, Sendable {
 /// let quarters = Period.documentationQuarters
 /// // Historical quarterly revenue
 /// let revenue = TimeSeries(
-///     periods: [.quarter(2024, 1), .quarter(2024, 2), .quarter(2024, 3)],
+///     periods: [.quarter(year: 2024, quarter: 1), .quarter(year: 2024, quarter: 2), .quarter(year: 2024, quarter: 3)],
 ///     values: [100_000.0, 105_000.0, 110_000.0],
 ///     metadata: TimeSeriesMetadata(name: "Revenue")
 /// )
@@ -216,6 +216,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ## Example
 	/// ```swift
 	/// var model = LinearTrend<Double>()
+	/// let revenue = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// try model.fit(to: revenue)
 	/// print("Growth rate: \(model.slopeValue ?? 0) per period")
 	/// ```
@@ -228,6 +229,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ## Example
 	/// ```swift
 	/// var model = LinearTrend<Double>()
+	/// let revenue = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// try model.fit(to: revenue)
 	/// print("Base value: \(model.interceptValue ?? 0)")
 	/// ```
@@ -241,6 +243,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ## Example
 	/// ```swift
 	/// var model = LinearTrend<Double>()
+	/// let revenue = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 	/// try model.fit(to: revenue)
 	/// print(model.summary)
 	/// // Output: "LinearTrend: y = 5000.0x + 100000.0 (fitted on 12 data points)"
@@ -311,7 +314,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// let historicalRevenue = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
 	/// var model = LinearTrend<Double>()
 	/// try model.fit(to: historicalRevenue)
-	/// let forecast = model.project(steps: 12)  // Returns TimeSeries<T>?
+	/// let forecast = try model.project(periods: 12)  // Returns TimeSeries<T>?
 	/// ```
 	public mutating func fit(to timeSeries: TimeSeries<T>) throws {
 		try fit(values: timeSeries.valuesArray)
@@ -566,7 +569,7 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 /// ```swift
 /// let periods = Period.documentationQuarters
 /// let users = TimeSeries(
-///     periods: [.month(2024, 1), .month(2024, 2), .month(2024, 3)],
+///     periods: [.month(year: 2024, month: 1), .month(year: 2024, month: 2), .month(year: 2024, month: 3)],
 ///     values: [1000.0, 1500.0, 2250.0],
 ///     metadata: TimeSeriesMetadata(name: "Active Users")
 /// )
@@ -778,7 +781,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ```swift
 	/// let periods = Period.documentationQuarters
 	/// var model = ExponentialTrend<Double>()
-	/// let users = TimeSeries(periods: [...], values: [1000, 1150, 1323])
+	/// let users = TimeSeries(periods: Array(Period.documentationQuarters.prefix(3)), values: [1000, 1150, 1323])
 	/// try model.fit(to: users)
 	/// if let forecast = try model.project(periods: 12) {
 	///     print("Growth rate: \((model.growthRate ?? 0) * 100)%")
@@ -1031,7 +1034,7 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 /// ```swift
 /// let periods = Period.documentationQuarters
 /// let users = TimeSeries(
-///     periods: [.quarter(2024, 1), .quarter(2024, 2), .quarter(2024, 3)],
+///     periods: [.quarter(year: 2024, quarter: 1), .quarter(year: 2024, quarter: 2), .quarter(year: 2024, quarter: 3)],
 ///     values: [10_000.0, 50_000.0, 150_000.0],
 ///     metadata: TimeSeriesMetadata(name: "Total Users")
 /// )
@@ -1185,7 +1188,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// ```swift
 	/// let periods = Period.documentationQuarters
 	/// var model = LogisticTrend<Double>(capacity: 100_000.0)
-	/// let users = TimeSeries(periods: [...], values: [1000, 5000, 15000])
+	/// let users = TimeSeries(periods: Array(Period.documentationQuarters.prefix(3)), values: [1000, 5000, 15000])
 	/// try model.fit(to: users)
 	/// if let forecast = try model.project(periods: 12) {
 	///     // Use forecast

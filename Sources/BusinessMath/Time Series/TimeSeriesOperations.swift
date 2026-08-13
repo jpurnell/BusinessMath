@@ -90,6 +90,7 @@ extension TimeSeries {
 	/// ## Example
 	/// ```swift
 	/// let ts1 = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+	/// let ts2 = TimeSeries(periods: Period.documentationQuarters, values: [10, 20, 30, 40])
 	/// let sum = ts1.zip(with: ts2) { $0 + $1 }
 	/// let product = ts1.zip(with: ts2) { $0 * $1 }
 	/// ```
@@ -186,6 +187,7 @@ extension TimeSeries {
 	/// ## Example
 	/// ```swift
 	/// let sparseSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+	/// let allMonths = Period.documentationQuarters
 	/// let filled = sparseSeries.fillMissing(with: 0.0, over: allMonths)
 	/// ```
 	public func fillMissing(with value: T, over targetPeriods: [Period]) -> TimeSeries<T> {
@@ -213,6 +215,7 @@ extension TimeSeries {
 	/// ## Example
 	/// ```swift
 	/// let sparseSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+	/// let allMonths = Period.documentationQuarters
 	/// let interpolated = sparseSeries.interpolate(over: allMonths)
 	/// ```
 	public func interpolate(over targetPeriods: [Period]) -> TimeSeries<T> {
@@ -396,6 +399,7 @@ extension TimeSeries {
 /// ## Example
 /// ```swift
 /// let ts1 = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let ts2 = TimeSeries(periods: Period.documentationQuarters, values: [10, 20, 30, 40])
 /// let revenue = ts1 + ts2
 /// ```
 public func + <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
@@ -409,6 +413,8 @@ public func + <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> Ti
 /// ## Example
 /// ```swift
 /// let expenses = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// // `revenue` without a binding resolves to a library function of that name.
+/// let revenue = TimeSeries(periods: Period.documentationQuarters, values: [300, 320, 340, 360])
 /// let netIncome = revenue - expenses
 /// ```
 public func - <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
@@ -422,6 +428,7 @@ public func - <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> Ti
 /// ## Example
 /// ```swift
 /// let quantity = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let price = TimeSeries(periods: Period.documentationQuarters, values: [5, 5, 6, 6])
 /// let total = quantity * price
 /// ```
 public func * <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
@@ -435,6 +442,7 @@ public func * <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> Ti
 /// ## Example
 /// ```swift
 /// let profit = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let revenue = TimeSeries(periods: Period.documentationQuarters, values: [300, 320, 340, 360])
 /// let margin = profit / revenue
 /// ```
 public func / <T: Real & Sendable>(lhs: TimeSeries<T>, rhs: TimeSeries<T>) -> TimeSeries<T> {
