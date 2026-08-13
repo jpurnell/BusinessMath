@@ -22,6 +22,7 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// let model = try MonteCarloExpressionModel { builder in
 ///     // Create fixed-size array from inputs
 ///     let weights = builder.array([0, 1, 2])  // 3 portfolio weights
@@ -45,7 +46,9 @@ import Foundation
 /// - Reduction: `sum()`, `product()`, `min()`, `max()`, `mean()`
 /// - Element-wise: `map()`, `zipWith()`
 /// - Linear algebra: `dot()`, `norm()`, `normalize()`
-/// - Statistical: `variance()`, `stdDev()`
+///
+/// For dispersion, use the canonical `stdDev(_:_:)` / `stdDevP(_:)` on the evaluated
+/// values rather than a reduction here — see the note in "Statistical Operations".
 public struct ExpressionArray: Sendable {
 
     /// The fixed-size array of expressions
@@ -67,6 +70,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let totalWeight = weights.sum()  // weights[0] + weights[1] + weights[2]
     /// ```
@@ -84,6 +88,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let factors = builder.array([1.1, 1.2, 1.05])
     /// let compound = factors.product()  // 1.1 * 1.2 * 1.05
     /// ```
@@ -101,6 +106,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let maxWeight = weights.max()
     /// ```
@@ -118,6 +124,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let prices = builder.array([0, 1, 2])
     /// let minPrice = prices.min()
     /// ```
@@ -135,6 +142,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let returns = builder.array([0, 1, 2])
     /// let avgReturn = returns.mean()
     /// ```
@@ -149,6 +157,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let prices = builder.array([0, 1, 2])
     /// let logPrices = prices.map { $0.log() }
     /// ```
@@ -160,6 +169,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let returns = builder.array([0.08, 0.10, 0.12])
     /// let products = weights.zipWith(returns) { w, r in w * r }
@@ -182,6 +192,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example - Portfolio Return
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let returns = builder.array([0.08, 0.10, 0.12])
     /// let portfolioReturn = weights.dot(returns)
@@ -199,6 +210,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let vector = builder.array([0, 1, 2])
     /// let length = vector.norm()  // sqrt(x[0]² + x[1]² + x[2]²)
     /// ```
@@ -212,6 +224,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let normalized = weights.normalize()  // Sum to 1
     /// ```
@@ -221,30 +234,16 @@ public struct ExpressionArray: Sendable {
     }
 
     // MARK: - Statistical Operations
-
-    /// Calculate variance
-    ///
-    /// ## Example
-    /// ```swift
-    /// let returns = builder.array([0, 1, 2, 3, 4])
-    /// let variance = returns.variance()
-    /// ```
-    public func variance() -> ExpressionProxy {
-        let avg = mean()
-        let deviations = map { ($0 - avg) * ($0 - avg) }
-        return deviations.sum() / Double(count) // fp-safety:disable — count is array element count, >= 1 for valid arrays
-    }
-
-    /// Calculate standard deviation
-    ///
-    /// ## Example
-    /// ```swift
-    /// let returns = builder.array([0, 1, 2, 3, 4])
-    /// let stdDev = returns.stdDev()
-    /// ```
-    public func stdDev() -> ExpressionProxy {
-        return variance().sqrt()
-    }
+    //
+    // `variance()` and `stdDev()` were removed here. They divided by `count`, which is the
+    // *population* form, under names this library gives to the *sample* form — `stdDev(_:_:)`
+    // defaults to `.sample` and `stdDevP(_:)` is the population one. The same five numbers
+    // therefore got answers 11.8% apart depending on which spelling a caller reached for, and
+    // nothing in the library or the tests called these, so the disagreement was never observed.
+    //
+    // For the standard deviation of concrete values, use the canonical `stdDev(_:_:)` or
+    // `stdDevP(_:)`. Rebuilding a *symbolic* reduction here is a deliberate piece of work with
+    // a convention to settle first, not something to reintroduce by copying the mean.
 
     // MARK: - Subscript
 
@@ -252,6 +251,7 @@ public struct ExpressionArray: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let firstWeight = weights[0]
     /// ```
@@ -312,6 +312,7 @@ extension ExpressionBuilder {
     /// ## Example - Multi-Period Compounding
     ///
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let periods = Period.documentationQuarters
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let principal = builder[0]
@@ -329,6 +330,7 @@ extension ExpressionBuilder {
     /// ## Example - NPV Calculation
     ///
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let cashFlow = builder[0]
     ///     let discountRate = builder[1]
@@ -366,6 +368,7 @@ extension ExpressionBuilder {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let finalValue = builder.forEach(0..<5, initial: 100_000.0) { year, value in
     ///     value * (1.0 + builder[0])
     /// }

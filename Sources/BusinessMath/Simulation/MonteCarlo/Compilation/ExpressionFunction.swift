@@ -18,6 +18,7 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// // Define a reusable tax calculation function
 /// let calculateTax = ExpressionFunction(inputs: 2) { builder in
 ///     let income = builder[0]
@@ -40,6 +41,7 @@ import Foundation
 /// ## Financial Function Library
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// // Black-Scholes drift term
 /// let bsDrift = ExpressionFunction(inputs: 3) { builder in
 ///     let riskFreeRate = builder[0]
@@ -91,6 +93,7 @@ public struct ExpressionFunction: Sendable {
     /// ## Example - Tax Calculation
     ///
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let calculateTax = ExpressionFunction(inputs: 2) { builder in
     ///     let income = builder[0]
     ///     let rate = builder[1]
@@ -171,6 +174,7 @@ public enum FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let oldPrice = builder[0]
     ///     let newPrice = builder[1]
@@ -188,6 +192,7 @@ public enum FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let principal = builder[0]
     ///     let rate = builder[1]
@@ -207,6 +212,7 @@ public enum FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let futureValue = builder[0]
     ///     let discountRate = builder[1]
@@ -226,6 +232,7 @@ public enum FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let profit = builder[0]
     ///     let taxRate = builder[1]
@@ -243,6 +250,7 @@ public enum FinancialFunctions {
     ///
     /// ## Example - Option Pricing
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let optionModel = try MonteCarloExpressionModel { builder in
     ///     let spot = builder[0]
     ///     let r = builder[1]
@@ -281,6 +289,7 @@ public enum FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let portfolioReturn = builder[0]
     ///     let riskFreeRate = builder[1]
@@ -300,6 +309,7 @@ public enum FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let mean = builder[0]
     ///     let stdDev = builder[1]

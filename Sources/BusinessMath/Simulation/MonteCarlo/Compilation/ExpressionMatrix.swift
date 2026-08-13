@@ -20,6 +20,7 @@ import Foundation
 /// ## Usage - Portfolio Variance
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// let model = try MonteCarloExpressionModel { builder in
 ///     // 3-asset portfolio
 ///     let w1 = builder[0]
@@ -67,6 +68,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example - Expected Portfolio Return
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let returns = builder.matrix(rows: 3, cols: 1, values: [[0.08], [0.10], [0.12]])
     /// let portfolioReturn = returns.multiply(weights)
@@ -92,6 +94,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example - Portfolio Variance
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let weights = builder.array([0, 1, 2])
     /// let covariance = builder.matrix(rows: 3, cols: 3, values: [ ... ])
     /// let variance = covariance.quadraticForm(weights)
@@ -120,6 +123,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let A = builder.matrix(rows: 2, cols: 3, values: [ ... ])
     /// let B = builder.matrix(rows: 3, cols: 2, values: [ ... ])
     /// let C = A.multiply(B)  // 2×2 result
@@ -154,6 +158,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let A = builder.matrix(rows: 2, cols: 2, values: [ ... ])
     /// let B = builder.matrix(rows: 2, cols: 2, values: [ ... ])
     /// let C = A.add(B)
@@ -174,6 +179,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let A = builder.matrix(rows: 2, cols: 3, values: [ ... ])
     /// let AT = A.transpose()  // 3×2
     /// ```
@@ -198,6 +204,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let matrix = builder.matrix(rows: 3, cols: 3, values: [ ... ])
     /// let trace = matrix.trace()
     /// ```
@@ -218,6 +225,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example - Asset Variances
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let covariance = builder.matrix(rows: 3, cols: 3, values: [ ... ])
     /// let variances = covariance.diagonal()
     /// let volatilities = variances.map { $0.sqrt() }
@@ -237,6 +245,7 @@ public struct ExpressionMatrix: Sendable {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let matrix = builder.matrix(rows: 3, cols: 3, values: [ ... ])
     /// let covar12 = matrix[1, 2]  // Covariance between assets 1 and 2
     /// ```
@@ -310,6 +319,7 @@ extension FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let portfolioVariance = ExpressionFunction(inputs: 9) { builder in
     ///     // 3 weights (inputs 0-2)
     ///     let weights = builder.array([0, 1, 2])

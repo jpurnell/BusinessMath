@@ -19,6 +19,7 @@ import Numerics
 /// Simulations are created using ``runFinancialSimulation(scenario:entity:periods:iterations:builder:)``:
 ///
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// // Create scenario with uncertain revenue
@@ -436,6 +437,7 @@ extension FinancialSimulation {
 ///
 /// ## Example
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture

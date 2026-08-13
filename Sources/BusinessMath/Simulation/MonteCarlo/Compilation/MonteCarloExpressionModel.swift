@@ -24,6 +24,7 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// // Define model using expression builder
 /// let model = try MonteCarloExpressionModel { builder in
 ///     let revenue = builder[0]
@@ -43,6 +44,7 @@ import Foundation
 /// ## Financial Model Example
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// // Profit model with multiple variables
 /// let profitModel = try MonteCarloExpressionModel { builder in
 ///     let units = builder[0]
@@ -75,6 +77,7 @@ public struct MonteCarloExpressionModel: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let a = builder[0]
     ///     let b = builder[1]
