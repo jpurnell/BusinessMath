@@ -194,6 +194,7 @@ extension Investment {
 ///
 /// ## Usage Example
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// // Manual creation
 /// let cf1 = CashFlow(period: 1, amount: 30_000)
 /// let cf2 = CashFlow(period: 2, amount: 35_000)

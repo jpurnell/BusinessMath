@@ -191,6 +191,7 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 /// ## Example
 ///
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters

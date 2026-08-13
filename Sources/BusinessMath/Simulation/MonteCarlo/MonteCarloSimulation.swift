@@ -92,6 +92,7 @@ import Numerics
 /// For large simulations (≥1000 iterations), use `MonteCarloExpressionModel` for automatic GPU acceleration:
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// // Define model using expression builder (GPU-compatible)
 /// let model = try MonteCarloExpressionModel { builder in
 ///     let revenue = builder[0]
@@ -253,6 +254,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// ## Example - GPU-Accelerated Simulation
 	///
 	/// ```swift
+	/// let builder = ExpressionBuilder()
 	/// // Define model using expression builder
 	/// let model = try MonteCarloExpressionModel { builder in
 	///     let revenue = builder[0]
@@ -382,6 +384,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// ## Example - Correlated Revenue and Costs
 	///
 	/// ```swift
+	/// let builder = ExpressionBuilder()
 	/// let model = try MonteCarloExpressionModel { builder in
 	///     let revenue = builder[0]
 	///     let costs = builder[1]

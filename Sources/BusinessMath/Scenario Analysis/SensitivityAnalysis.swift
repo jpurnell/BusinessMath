@@ -20,6 +20,7 @@ import Numerics
 /// function, which varies a single driver across a range and measures the impact:
 ///
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let projection = try FinancialProjection.documentationFixture
 /// let scenario = FinancialScenario.documentationFixture
 /// let quarters = Period.documentationQuarters
@@ -248,6 +249,7 @@ extension ScenarioSensitivityAnalysis {
 /// Two-way analyses are created using ``runTwoWaySensitivity(baseCase:entity:periods:inputDriver1:inputRange1:steps1:inputDriver2:inputRange2:steps2:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
@@ -399,6 +401,7 @@ public struct TwoWayScenarioSensitivityAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
@@ -540,6 +543,7 @@ public func runSensitivity(
 ///
 /// ## Example
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
@@ -680,6 +684,7 @@ public func runTwoWaySensitivity(
 /// Tornado diagrams are created using ``runTornadoAnalysis(baseCase:entity:periods:inputDrivers:variationPercent:steps:builder:outputExtractor:)``:
 ///
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters
@@ -856,6 +861,7 @@ public struct TornadoDiagramAnalysis: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let baseCase = FinancialScenario.documentationFixture
 /// let projection = try FinancialProjection.documentationFixture
 /// let periods = Period.documentationQuarters

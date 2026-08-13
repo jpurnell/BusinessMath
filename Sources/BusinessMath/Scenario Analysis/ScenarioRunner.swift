@@ -17,6 +17,7 @@ import Numerics
 /// ## Basic Usage
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
 /// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 /// let periods = Period.documentationQuarters
@@ -60,6 +61,7 @@ import Numerics
 /// Here's a complete example showing how to build financial statements from drivers:
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
 /// let quarters = Period.documentationQuarters
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
@@ -203,6 +205,7 @@ import Numerics
 /// For probabilistic drivers, each call to `run()` produces a different sample:
 ///
 /// ```swift
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
 /// let runner = ScenarioRunner()
 /// let simulation = try FinancialSimulation.documentationFixture
 /// let scenario = FinancialScenario.documentationFixture

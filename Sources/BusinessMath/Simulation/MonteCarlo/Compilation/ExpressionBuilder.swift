@@ -30,6 +30,7 @@ import Foundation
 /// ## Monte Carlo Integration
 ///
 /// ```swift
+/// let builder = ExpressionBuilder()
 /// var simulation = MonteCarloSimulation(iterations: 100_000) { builder in
 ///     let revenue = builder[0]
 ///     let price = builder[1]
@@ -379,6 +380,7 @@ extension ExpressionProxy {
     /// ## Example - Revenue-Based Bonus
     ///
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let revenue = builder[0]
     ///     let baseProfit = builder[1]
@@ -395,6 +397,7 @@ extension ExpressionProxy {
     /// ## Example - Capacity Constraints
     ///
     /// ```swift
+    /// let builder = ExpressionBuilder()
     /// let model = try MonteCarloExpressionModel { builder in
     ///     let demand = builder[0]
     ///     let capacity = builder[1]
