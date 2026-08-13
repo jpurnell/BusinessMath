@@ -284,9 +284,9 @@ public struct ScenarioRunner: Sendable {
 	///     let revenueAccount = try Account(...)
 	///
 	///     // Build statements
-	///     let incomeStatement = try IncomeStatement(...)
-	///     let balanceSheet = try BalanceSheet(...)
-	///     let cashFlowStatement = try CashFlowStatement(...)
+	///     let incomeStatement = try IncomeStatement<Double>.documentationFixture
+	///     let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	///     let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 	///
 	///     return (incomeStatement, balanceSheet, cashFlowStatement)
 	/// }

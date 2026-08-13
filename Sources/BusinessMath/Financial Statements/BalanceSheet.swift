@@ -287,7 +287,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let balanceSheet = try BalanceSheet(...)
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let cash = balanceSheet.cashAndEquivalents
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -347,7 +347,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let balanceSheet = try BalanceSheet(...)
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let debt = balanceSheet.interestBearingDebt
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -869,7 +869,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let balanceSheet = try BalanceSheet(...)
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let quickRatio = balanceSheet.quickRatio
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -931,7 +931,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let balanceSheet = try BalanceSheet(...)
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let cashRatio = balanceSheet.cashRatio
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -974,7 +974,7 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let balanceSheet = try BalanceSheet(...)
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let debtRatio = balanceSheet.debtRatio
 	///
 	/// let q1 = Period.quarter(year: 2025, quarter: 1)
@@ -1150,7 +1150,7 @@ extension BalanceSheet {
 ///
 /// ## Example
 /// ```swift
-/// let balanceSheet = BalanceSheet(...)
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let json = try JSONEncoder().encode(balanceSheet)
 /// let decoded = try JSONDecoder().decode(BalanceSheet<Double>.self, from: json)
 /// ```
