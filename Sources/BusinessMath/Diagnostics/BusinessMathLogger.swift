@@ -29,6 +29,7 @@ import Foundation
 ///
 /// // Or use category-specific loggers
 /// Logger.calculations.debug("NPV calculation started")
+/// let duration = 0.042
 /// Logger.performance.notice("Operation completed in \(duration)s")
 /// ```
 ///
@@ -70,6 +71,7 @@ public extension Logger {
     /// Example:
     /// ```swift
     /// import OSLog
+    /// let rate = 0.08
     /// Logger.calculations.debug("Calculating NPV with discount rate: \(rate)")
     /// ```
     static let calculations = Logger( // LIVE: category logger used by consumers for calculation tracing
@@ -85,6 +87,7 @@ public extension Logger {
     /// ```swift
     /// let simulation = try FinancialSimulation.documentationFixture
     /// import OSLog
+    /// let duration = 1.42
     /// Logger.performance.notice("Monte Carlo simulation completed in \(duration)s")
     /// ```
     static let performance = Logger( // LIVE: category logger used by consumers for performance profiling
@@ -99,6 +102,7 @@ public extension Logger {
     /// Example:
     /// ```swift
     /// import OSLog
+    /// let value = -12.5
     /// Logger.validation.warning("Negative revenue detected: \(value)")
     /// ```
     static let validation = Logger(
@@ -150,6 +154,7 @@ public extension Logger {
     /// ```swift
     /// import OSLog
     /// let logger = Logger.shared
+    /// let npv = 1_234.56
     /// logger.calculationCompleted("NPV Calculation", result: npv, duration: 0.042)
     /// ```
     func calculationCompleted(_ name: String, result: Any, duration: TimeInterval? = nil) {
@@ -171,6 +176,7 @@ public extension Logger {
     /// ```swift
     /// import OSLog
     /// let logger = Logger.shared
+    /// let error: any Error = CancellationError()
     /// logger.calculationFailed("IRR Calculation", error: error)
     /// ```
     func calculationFailed(_ name: String, error: Error) {
@@ -312,9 +318,9 @@ public extension Logger {
 /// Example:
 /// ```swift
 /// import OSLog
-/// let signpostID = OSSignpostID(log: .performance)
+/// let signpostID = OSSignpostID(log: .default)
 /// Logger.performance.beginSignpost("NPV Calculation", id: signpostID)
-/// let npv = calculateNPV()
+/// let npv = BusinessMath.npv(discountRate: 0.08, cashFlows: [-1000, 400, 400, 400])
 /// Logger.performance.endSignpost("NPV Calculation", id: signpostID)
 /// ```
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
@@ -333,6 +339,7 @@ public extension Logger {
     /// ```swift
     /// import OSLog
     /// let logger = Logger.shared
+    /// func performCalculation() {}
     /// logger.beginSignpost("Calculation")
     /// performCalculation()
     /// logger.endSignpost("Calculation")

@@ -243,7 +243,7 @@ public struct CashFlow: Sendable {
     /// let cashFlow = CashFlow(period: 1, amount: 30_000)
     ///
     /// // Or use convenience initializer
-    /// let cashFlow2 = CashFlow(year: 2, amount: 35_000)
+    /// let cashFlow2 = CashFlow(period: 2, amount: 35_000)
     ///
     /// // Or use arrow syntax
     /// let cashFlow3 = Year(3) => 40_000
@@ -380,6 +380,7 @@ public struct InvestmentBuilder {
 ///         Year(2) => 35_000
 ///
 ///         // Conditional cash flow
+///         let includeBonus = true
 ///         if includeBonus {
 ///             Year(3) => 50_000
 ///         } else {
@@ -467,8 +468,10 @@ public struct CashFlowBuilder {
 /// ```swift
 /// let investment = buildInvestment {
 ///     InitialInvestment(100_000)
-///     CashFlow(year: 1, amount: 30_000)
-///     CashFlow(year: 2, amount: 35_000)
+///     CashFlowCategory("Operating") {
+///         CashFlow(period: 1, amount: 30_000)
+///         CashFlow(period: 2, amount: 35_000)
+///     }
 ///     DiscountRate(0.10)
 /// }
 /// ```
@@ -521,13 +524,13 @@ public func Category(_ category: String) -> InvestmentComponent {
 ///     InitialInvestment(250_000)
 ///
 ///     CashFlowCategory("Cost Savings") {
-///         CashFlow(year: 1, amount: 50_000)
-///         CashFlow(year: 2, amount: 60_000)
+///         CashFlow(period: 1, amount: 50_000)
+///         CashFlow(period: 2, amount: 60_000)
 ///     }
 ///
 ///     CashFlowCategory("Revenue Growth") {
-///         CashFlow(year: 1, amount: 30_000)
-///         CashFlow(year: 2, amount: 40_000)
+///         CashFlow(period: 1, amount: 30_000)
+///         CashFlow(period: 2, amount: 40_000)
 ///     }
 ///
 ///     DiscountRate(0.12)
@@ -614,9 +617,11 @@ public struct CashFlowPeriod {
 ///     )
 /// ]
 ///
-/// let xnpv = BusinessMath.xnpv(
+/// let allFlows = [initialInvestment] + cashFlows
+/// let xnpv = try BusinessMath.xnpv(
 ///     rate: 0.10,
-///     cashFlows: [initialInvestment] + cashFlows
+///     dates: allFlows.map(\.date),
+///     cashFlows: allFlows.map(\.amount)
 /// )
 /// ```
 ///
@@ -656,7 +661,11 @@ public struct DateBasedCashFlow: Sendable {
     ///
     /// // Use with XNPV
     /// let allFlows = [initial, cashInflow]
-    /// let npv = BusinessMath.xnpv(rate: 0.10, cashFlows: allFlows)
+    /// let npv = try BusinessMath.xnpv(
+    ///     rate: 0.10,
+    ///     dates: allFlows.map(\.date),
+    ///     cashFlows: allFlows.map(\.amount)
+    /// )
     /// ```
     public init(date: Date, amount: Double) {
         self.date = date
@@ -779,6 +788,7 @@ extension Investment {
 /// When capital is limited, rank by profitability index (PI) to maximize
 /// NPV per dollar invested:
 /// ```swift
+/// let portfolio = InvestmentPortfolio(investments: [Investment { InitialInvestment(100_000); CashFlowCategory("Operating") { CashFlow(period: 1, amount: 30_000); CashFlow(period: 2, amount: 35_000) }; DiscountRate(0.10) }])
 /// let rankedByPI = portfolio.rankedByPI()
 /// var budget = 200_000.0
 /// var selectedInvestments: [Investment] = []
@@ -812,6 +822,9 @@ public struct InvestmentPortfolio: Sendable {
     /// var portfolio = InvestmentPortfolio()
     ///
     /// // Portfolio with initial investments
+    /// let projectA = Investment { InitialInvestment(100_000); CashFlowCategory("Operating") { CashFlow(period: 1, amount: 30_000); CashFlow(period: 2, amount: 35_000) }; DiscountRate(0.10) }
+    /// let projectB = Investment { InitialInvestment(80_000); CashFlowCategory("Operating") { CashFlow(period: 1, amount: 25_000); CashFlow(period: 2, amount: 30_000) }; DiscountRate(0.10) }
+    /// let projectC = Investment { InitialInvestment(120_000); CashFlowCategory("Operating") { CashFlow(period: 1, amount: 40_000); CashFlow(period: 2, amount: 45_000) }; DiscountRate(0.10) }
     /// let portfolio2 = InvestmentPortfolio(investments: [
     ///     projectA,
     ///     projectB,

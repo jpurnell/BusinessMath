@@ -36,12 +36,12 @@ import Numerics
 /// // Define uncertain variables
 /// simulation.addInput(SimulationInput(
 ///     name: "Revenue",
-///     distribution: DistributionNormal(mean: 1_000_000, stdDev: 100_000)
+///     distribution: DistributionNormal(1_000_000, 100_000)
 /// ))
 ///
 /// simulation.addInput(SimulationInput(
 ///     name: "Costs",
-///     distribution: DistributionNormal(mean: 700_000, stdDev: 50_000)
+///     distribution: DistributionNormal(700_000, 50_000)
 /// ))
 ///
 /// // Run simulation
@@ -76,7 +76,7 @@ import Numerics
 /// simulation.addInput(SimulationInput(name: "InitialCost",
 ///     distribution: DistributionTriangular(low: 800_000, high: 1_200_000, base: 1_000_000)))
 /// simulation.addInput(SimulationInput(name: "AnnualRevenue",
-///     distribution: DistributionNormal(mean: 500_000, stdDev: 50_000)))
+///     distribution: DistributionNormal(500_000, 50_000)))
 /// simulation.addInput(SimulationInput(name: "GrowthRate",
 ///     distribution: DistributionUniform(0.05, 0.15)))
 /// simulation.addInput(SimulationInput(name: "DiscountRate",
@@ -321,6 +321,9 @@ public struct MonteCarloSimulation: Sendable {
 	///
 	/// ```swift
 	/// let sim = MonteCarloSimulation()
+	/// let input1 = SimulationInput(name: "Revenue", distribution: DistributionNormal(1_000_000, 100_000))
+	/// let input2 = SimulationInput(name: "Costs", distribution: DistributionNormal(700_000, 50_000))
+	/// let correlation = [[1.0, 0.7], [0.7, 1.0]]
 	/// let results = try sim.runCorrelated(
 	///     inputs: [input1, input2],
 	///     correlationMatrix: correlation,
@@ -359,9 +362,9 @@ public struct MonteCarloSimulation: Sendable {
 	/// }
 	///
 	/// simulation.addInput(SimulationInput(name: "Revenue",
-	///     distribution: DistributionNormal(mean: 1_000_000, stdDev: 100_000)))
+	///     distribution: DistributionNormal(1_000_000, 100_000)))
 	/// simulation.addInput(SimulationInput(name: "Costs",
-	///     distribution: DistributionNormal(mean: 700_000, stdDev: 50_000)))
+	///     distribution: DistributionNormal(700_000, 50_000)))
 	/// ```
 	public mutating func addInput(_ input: SimulationInput) {
 		inputs.append(input)
@@ -401,7 +404,7 @@ public struct MonteCarloSimulation: Sendable {
 	/// simulation.addInput(SimulationInput(name: "Costs", distribution: DistributionNormal(700_000, 50_000)))
 	///
 	/// // Revenue and costs are 70% correlated (they tend to move together)
-	/// simulation.setCorrelationMatrix([
+	/// try simulation.setCorrelationMatrix([
 	///     [1.0, 0.7],
 	///     [0.7, 1.0]
 	/// ])
@@ -449,9 +452,9 @@ public struct MonteCarloSimulation: Sendable {
 	/// }
 	///
 	/// simulation.addInput(SimulationInput(name: "Revenue",
-	///     distribution: DistributionNormal(mean: 1_000_000, stdDev: 100_000)))
+	///     distribution: DistributionNormal(1_000_000, 100_000)))
 	/// simulation.addInput(SimulationInput(name: "Costs",
-	///     distribution: DistributionNormal(mean: 700_000, stdDev: 50_000)))
+	///     distribution: DistributionNormal(700_000, 50_000)))
 	///
 	/// do {
 	///     let results = try simulation.run()

@@ -27,7 +27,11 @@ import Numerics
 /// let microsoft = Entity(id: "MSFT", primaryType: .ticker, name: "Microsoft Corp.")
 /// let google = Entity(id: "GOOGL", primaryType: .ticker, name: "Alphabet Inc.")
 ///
-/// let q1_2025 = Period.quarter(year: 2025, quarter: 1)
+/// let q1_2025 = Period.documentationQuarters[0]
+///
+/// let appleSummary = try FinancialPeriodSummary.documentationFixture(for: apple, period: q1_2025)
+/// let msftSummary = try FinancialPeriodSummary.documentationFixture(for: microsoft, period: q1_2025)
+/// let googleSummary = try FinancialPeriodSummary.documentationFixture(for: google, period: q1_2025)
 ///
 /// var consolidated = ConsolidatedStatements<Double>()
 /// consolidated.add(entity: apple, period: q1_2025, summary: appleSummary)
@@ -35,8 +39,8 @@ import Numerics
 /// consolidated.add(entity: google, period: q1_2025, summary: googleSummary)
 ///
 /// // Compare metrics across peers
-/// let peGratios = consolidated.entities.map { entity in
-///     (entity.name, consolidated.summary(for: entity, period: q1_2025)?.priceToEarnings ?? 0)
+/// let netMargins = consolidated.entities.map { entity in
+///     (entity.name, consolidated.summary(for: entity, period: q1_2025)?.netMargin ?? 0)
 /// }
 /// ```
 ///
@@ -48,6 +52,10 @@ import Numerics
 /// let parent = Entity(id: "PARENT", primaryType: .internal, name: "Parent Co")
 /// let sub1 = Entity(id: "SUB1", primaryType: .internal, name: "Europe Division")
 /// let sub2 = Entity(id: "SUB2", primaryType: .internal, name: "Asia Division")
+///
+/// let parentSummary = try FinancialPeriodSummary.documentationFixture(for: parent, period: q1)
+/// let sub1Summary = try FinancialPeriodSummary.documentationFixture(for: sub1, period: q1)
+/// let sub2Summary = try FinancialPeriodSummary.documentationFixture(for: sub2, period: q1)
 ///
 /// var consolidated = ConsolidatedStatements<Double>()
 /// consolidated.add(entity: parent, period: q1, summary: parentSummary)
@@ -360,7 +368,7 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 	///
 	/// ## Example
 	/// ```swift
-	/// let entity = Entity.documentationFixture
+	/// let consolidated = ConsolidatedStatements<Double>()
 	/// // Get all technology sector companies
 	/// let techCompanies = consolidated.filterEntities { entity in
 	///     entity.metadata["sector"] == "Technology"
