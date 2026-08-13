@@ -23,7 +23,8 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
-/// let logger = Logger.businessMath
+/// import OSLog
+/// let logger = Logger.shared
 /// logger.info("Starting financial model calculation")
 ///
 /// // Or use category-specific loggers
@@ -54,6 +55,7 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
     /// Logger.modelExecution.info("Building financial model with 3 revenue streams")
     /// ```
     static let modelExecution = Logger( // LIVE: category logger used by consumers for model execution tracing
@@ -67,6 +69,7 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
     /// Logger.calculations.debug("Calculating NPV with discount rate: \(rate)")
     /// ```
     static let calculations = Logger( // LIVE: category logger used by consumers for calculation tracing
@@ -80,6 +83,7 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
     /// Logger.performance.notice("Monte Carlo simulation completed in \(duration)s")
     /// ```
     static let performance = Logger( // LIVE: category logger used by consumers for performance profiling
@@ -93,6 +97,7 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
     /// Logger.validation.warning("Negative revenue detected: \(value)")
     /// ```
     static let validation = Logger(
@@ -120,6 +125,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// let periods = Period.documentationQuarters
     /// logger.calculationStarted("NPV Calculation", context: ["rate": "0.08", "periods": "10"])
     /// ```
@@ -140,6 +147,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.calculationCompleted("NPV Calculation", result: npv, duration: 0.042)
     /// ```
     func calculationCompleted(_ name: String, result: Any, duration: TimeInterval? = nil) {
@@ -159,6 +168,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.calculationFailed("IRR Calculation", error: error)
     /// ```
     func calculationFailed(_ name: String, error: Error) {
@@ -175,6 +186,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.validationWarning("Value exceeds recommended range", field: "discountRate")
     /// ```
     func validationWarning(_ message: String, field: String? = nil) { // LIVE: public API for structured validation warning logging
@@ -193,6 +206,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.validationError("Negative value not allowed", field: "revenue")
     /// ```
     func validationError(_ message: String, field: String? = nil) { // LIVE: public API for structured validation error logging
@@ -214,6 +229,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.performance("Monte Carlo Simulation", duration: 2.34, context: "10,000 iterations")
     /// ```
     func performance(_ operation: String, duration: TimeInterval, context: String? = nil) { // LIVE: public API for structured performance metric logging
@@ -233,6 +250,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.performanceWarning("Model Building", duration: 5.2, threshold: 1.0)
     /// ```
     func performanceWarning(_ operation: String, duration: TimeInterval, threshold: TimeInterval) { // LIVE: public API for performance warning logging
@@ -249,6 +268,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.modelBuildingStarted("Financial Model", components: 5)
     /// ```
     func modelBuildingStarted(_ modelType: String, components: Int? = nil) { // LIVE: public API for model building lifecycle logging
@@ -267,6 +288,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.modelBuildingCompleted("Financial Model", duration: 0.12)
     /// ```
     func modelBuildingCompleted(_ modelType: String, duration: TimeInterval? = nil) { // LIVE: public API for model building lifecycle logging
@@ -287,6 +310,7 @@ public extension Logger {
 ///
 /// Example:
 /// ```swift
+/// import OSLog
 /// let signpostID = OSSignpostID(log: .performance)
 /// Logger.performance.beginSignpost("NPV Calculation", id: signpostID)
 /// let npv = calculateNPV()
@@ -306,6 +330,8 @@ public extension Logger {
 	///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.beginSignpost("Calculation")
     /// performCalculation()
     /// logger.endSignpost("Calculation")
@@ -331,6 +357,8 @@ public extension Logger {
     ///
     /// Example:
     /// ```swift
+    /// import OSLog
+    /// let logger = Logger.shared
     /// logger.signpostEvent("Cache Miss")
     /// ```
     func signpostEvent(_ name: StaticString, message: String? = nil) { // LIVE: public API for Instruments signpost event markers
@@ -358,6 +386,7 @@ public extension Logger {
 ///
 /// ## Example
 /// ```swift
+/// import OSLog
 /// let logger = Logger.shared
 /// logger.info("Application started")
 /// logger.warning("Low memory condition")
