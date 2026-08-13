@@ -151,6 +151,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
     /// ## Usage Example
     ///
     /// ```swift
+    /// let optimizer = DifferentialEvolution<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
@@ -193,7 +194,8 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
     /// ## Usage Example
     ///
     /// ```swift
-    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    /// let optimizer = DifferentialEvolution<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
+    /// let result = optimizer.optimizeDetailed(objective: sphere)
     /// print("Converged: \(result.converged)")
     /// print("Reason: \(result.convergenceReason)")
     /// print("Generations: \(result.generations)")
@@ -653,6 +655,8 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         }()
         encoder.setBytes(&strategyInt, length: MemoryLayout<Int32>.stride, index: 6)
         encoder.setBuffer(searchSpaceBuffer, offset: 0, index: 7)
+        var popSizeInt = Int32(popSize)
+        encoder.setBytes(&popSizeInt, length: MemoryLayout<Int32>.stride, index: 8)
 
         let threadsPerGroup = MTLSize(width: min(popSize, 256), height: 1, depth: 1)
         let numGroups = MTLSize(width: (popSize + 255) / 256, height: 1, depth: 1)
@@ -667,6 +671,7 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
         encoder.setBytes(&dimInt, length: MemoryLayout<Int32>.stride, index: 4)
         var crossRateFloat = Float(config.crossoverRate)
         encoder.setBytes(&crossRateFloat, length: MemoryLayout<Float>.stride, index: 5)
+        encoder.setBytes(&popSizeInt, length: MemoryLayout<Int32>.stride, index: 6)
         encoder.dispatchThreadgroups(numGroups, threadsPerThreadgroup: threadsPerGroup)
 
         encoder.endEncoding()

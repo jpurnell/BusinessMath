@@ -130,6 +130,7 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
     /// ## Usage Example
     ///
     /// ```swift
+    /// let optimizer = SimulatedAnnealing<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
@@ -171,6 +172,8 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
     /// ## Usage Example
     ///
     /// ```swift
+    /// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in let a = 1.0 - v[0]; let b = v[1] - v[0] * v[0]; return a * a + 100.0 * b * b }
+    /// let optimizer = SimulatedAnnealing<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
     /// let result = optimizer.optimizeDetailed(
     ///     objective: rosenbrock,
     ///     initialSolution: VectorN([0.0, 0.0])

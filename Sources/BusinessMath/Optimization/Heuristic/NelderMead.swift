@@ -105,6 +105,7 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
     /// ## Usage Example
     ///
     /// ```swift
+    /// let optimizer = NelderMead<VectorN<Double>>(config: .default)
     /// let sphere = { (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
     /// ```
@@ -146,6 +147,8 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
     /// ## Usage Example
     ///
     /// ```swift
+    /// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in let a = 1.0 - v[0]; let b = v[1] - v[0] * v[0]; return a * a + 100.0 * b * b }
+    /// let optimizer = NelderMead<VectorN<Double>>(config: .default)
     /// let result = optimizer.optimizeDetailed(
     ///     objective: rosenbrock,
     ///     initialGuess: VectorN([0.0, 0.0])

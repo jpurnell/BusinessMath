@@ -150,6 +150,8 @@ public struct NelderMeadConfig: Sendable {
 /// ## Usage Example
 ///
 /// ```swift
+/// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in let a = 1.0 - v[0]; let b = v[1] - v[0] * v[0]; return a * a + 100.0 * b * b }
+/// let optimizer = NelderMead<VectorN<Double>>(config: .default)
 /// let result = optimizer.optimizeDetailed(objective: rosenbrock, initialGuess: guess)
 ///
 /// print("Solution: \(result.solution)")
