@@ -179,8 +179,17 @@ Two open questions: what to do with the orphan, and whether the gate should scan
 
 ---
 
-## Open, beyond the 420
+## Open, beyond the fence work
 
+0. **`AsyncTimestampedSequence` cannot be passed to `aligned(with:)`.** Found while
+   clearing AsyncAlignedSequence's fences. The sequence declares no `Sendable`
+   conformance and `aligned` requires `Secondary: AsyncSequence & Sendable`, so
+   `a.timestamped().aligned(with: b.timestamped())` — which both fences documented —
+   has never compiled. The alignment tests avoid it by building `AsyncValueStream`s of
+   already-`Timestamped` values, and the fences now do the same. A conditional
+   `extension AsyncTimestampedSequence: Sendable where Base: Sendable` looks right (the
+   only stored property is `base`), but it is a concurrency change with a ConcurrencyAuditor
+   in the gate, so it wants a deliberate decision rather than a doc-pass edit.
 1. **`project/plans/upcoming/v3.0.0_SCOPE.md`.** Three places where the correct behaviour is
    refusal and the signature cannot refuse: DE and PSO's `optimizeDetailed`,
    `EnterpriseValueBridge.valuePerShare`, and `IslandModel` swallowing `GeneticAlgorithm`'s
