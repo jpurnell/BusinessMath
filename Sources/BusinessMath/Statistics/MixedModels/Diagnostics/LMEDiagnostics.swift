@@ -14,6 +14,12 @@ import Numerics
 ///   Returns an empty array if `varianceResidual` is not positive.
 ///
 /// ```swift
+/// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
+/// let y = [100.0, 105.0, 102.0, 98.0, 103.0, 100.0]
+/// let grouping = try GroupingFactor([0, 0, 0, 1, 1, 1])
+/// let model = RandomInterceptModel(fixedEffects: X, response: y, grouping: grouping)
+/// let result = try fitRandomIntercept(model)
+///
 /// let stdResid = standardizedResiduals(result)
 /// // Values approximately N(0, 1) if model is well-specified
 /// ```
@@ -39,6 +45,12 @@ public func standardizedResiduals<T: Real>(
 ///   Returns an empty array if total variance is not positive.
 ///
 /// ```swift
+/// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
+/// let y = [100.0, 105.0, 102.0, 98.0, 103.0, 100.0]
+/// let grouping = try GroupingFactor([0, 0, 0, 1, 1, 1])
+/// let model = RandomInterceptModel(fixedEffects: X, response: y, grouping: grouping)
+/// let result = try fitRandomIntercept(model)
+///
 /// let pResid = pearsonResiduals(result)
 /// ```
 public func pearsonResiduals<T: Real>(
@@ -87,6 +99,12 @@ public struct QQPoint<T: Real & Sendable>: Sendable where T: BinaryFloatingPoint
 ///   Returns an empty array if `residuals` is empty.
 ///
 /// ```swift
+/// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
+/// let y = [100.0, 105.0, 102.0, 98.0, 103.0, 100.0]
+/// let grouping = try GroupingFactor([0, 0, 0, 1, 1, 1])
+/// let model = RandomInterceptModel(fixedEffects: X, response: y, grouping: grouping)
+/// let result = try fitRandomIntercept(model)
+///
 /// let qq = qqNormalData(standardizedResiduals(result))
 /// // Plot qq.map { ($0.theoretical, $0.observed) }
 /// ```
@@ -129,6 +147,12 @@ public func qqNormalData<T: Real>(
 ///   Returns an empty array if the denominator is not positive.
 ///
 /// ```swift
+/// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
+/// let y = [100.0, 105.0, 102.0, 98.0, 103.0, 100.0]
+/// let grouping = try GroupingFactor([0, 0, 0, 1, 1, 1])
+/// let model = RandomInterceptModel(fixedEffects: X, response: y, grouping: grouping)
+/// let result = try fitRandomIntercept(model)
+///
 /// let influence = groupInfluence(result, grouping: grouping)
 /// // Flag groups where influence > 4 / groupCount
 /// ```
@@ -190,6 +214,12 @@ public struct MixedModelR2<T: Real & Sendable>: Sendable where T: BinaryFloating
 ///   Returns (0, 0) if total denominator is not positive.
 ///
 /// ```swift
+/// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
+/// let y = [100.0, 105.0, 102.0, 98.0, 103.0, 100.0]
+/// let grouping = try GroupingFactor([0, 0, 0, 1, 1, 1])
+/// let model = RandomInterceptModel(fixedEffects: X, response: y, grouping: grouping)
+/// let result = try fitRandomIntercept(model)
+///
 /// let r2 = nakagawaR2(result)
 /// print("Marginal R² = \(r2.marginal), Conditional R² = \(r2.conditional)")
 /// ```
@@ -238,6 +268,12 @@ public func nakagawaR2<T: Real>(
 ///   Returns zero if no groups have at least 2 observations.
 ///
 /// ```swift
+/// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
+/// let y = [100.0, 105.0, 102.0, 98.0, 103.0, 100.0]
+/// let grouping = try GroupingFactor([0, 0, 0, 1, 1, 1])
+/// let model = RandomInterceptModel(fixedEffects: X, response: y, grouping: grouping)
+/// let result = try fitRandomIntercept(model)
+///
 /// let rho = withinGroupAutocorrelation(
 ///     residuals: result.residuals, grouping: grouping
 /// )

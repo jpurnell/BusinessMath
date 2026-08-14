@@ -163,8 +163,15 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 	///
 	/// ## Usage Example
 	/// ```swift
-	/// let kmeans = KMeans<VectorN>(seed: 42)
-	/// let result = try kmeans.fit(data: dataPoints, k: 5)
+	/// let dataPoints: [Vector2D<Double>] = [
+	///     Vector2D(x: 1.0, y: 1.0),
+	///     Vector2D(x: 1.5, y: 2.0),
+	///     Vector2D(x: 10.0, y: 10.0),
+	///     Vector2D(x: 10.5, y: 11.0)
+	/// ]
+	///
+	/// let kmeans = KMeans<Vector2D<Double>>(seed: 42)
+	/// let result = try kmeans.fit(data: dataPoints, k: 2)
 	///
 	/// print("Found \(result.clusters.count) clusters")
 	/// print("Converged in \(result.iterations) iterations")
@@ -248,8 +255,20 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 	///
 	/// ## Usage Example
 	/// ```swift
+	/// let trainingData: [Vector2D<Double>] = [
+	///     Vector2D(x: 1.0, y: 1.0),
+	///     Vector2D(x: 1.5, y: 2.0),
+	///     Vector2D(x: 10.0, y: 10.0),
+	///     Vector2D(x: 10.5, y: 11.0)
+	/// ]
+	/// let testData: [Vector2D<Double>] = [
+	///     Vector2D(x: 1.2, y: 1.4),
+	///     Vector2D(x: 9.8, y: 10.2)
+	/// ]
+	/// let kmeans = KMeans<Vector2D<Double>>(seed: 42)
+	///
 	/// // Fit model to training data
-	/// let result = try kmeans.fit(data: trainingData, k: 3)
+	/// let result = try kmeans.fit(data: trainingData, k: 2)
 	///
 	/// // Predict cluster for new points
 	/// let centroids = result.clusters.map { $0.centroid }
@@ -284,8 +303,15 @@ public struct KMeans<V: VectorSpace> where V: Equatable, V.Scalar: BinaryFloatin
 	///
 	/// ## Usage Example
 	/// ```swift
-	/// let kmeans = KMeans<VectorN>(seed: 42)
-	/// let elbowData = try kmeans.elbowMethod(data: dataPoints, kRange: 1...10)
+	/// let dataPoints: [Vector2D<Double>] = [
+	///     Vector2D(x: 1.0, y: 1.0),
+	///     Vector2D(x: 1.5, y: 2.0),
+	///     Vector2D(x: 10.0, y: 10.0),
+	///     Vector2D(x: 10.5, y: 11.0)
+	/// ]
+	///
+	/// let kmeans = KMeans<Vector2D<Double>>(seed: 42)
+	/// let elbowData = try kmeans.elbowMethod(data: dataPoints, kRange: 1...3)
 	///
 	/// // Find elbow point (biggest drop in WCSS)
 	/// print("k\tWCSS")
