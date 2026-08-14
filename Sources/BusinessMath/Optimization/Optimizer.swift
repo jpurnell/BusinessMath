@@ -49,7 +49,12 @@ public struct IterationHistory<T: Real & Sendable & Codable>: Sendable {
 /// ## Example
 ///
 /// ```swift
-/// let result = optimizer.optimize(objective: f, initialGuess: 0.0)
+/// let result = OptimizationResult(
+///     optimalValue: 2.0,
+///     objectiveValue: 0.0,
+///     iterations: 12,
+///     converged: true
+/// )
 ///
 /// if result.converged {
 ///     print("Found minimum: \(result.optimalValue)")
@@ -226,14 +231,20 @@ public struct Constraint<T: Real & Sendable & Codable>: Sendable {
 /// ## Example Implementation
 ///
 /// ```swift
-/// struct MyOptimizer<T: Real>: Optimizer {
+/// struct MyOptimizer: Optimizer {
 ///     func optimize(
-///         objective: @escaping (T) -> T,
-///         constraints: [Constraint<T>],
-///         initialGuess: T,
-///         bounds: (lower: T, upper: T)?
-///     ) -> OptimizationResult<T> {
-///         // Implementation here
+///         objective: @escaping @Sendable (Double) -> Double,
+///         constraints: [Constraint<Double>],
+///         initialGuess: Double,
+///         bounds: (lower: Double, upper: Double)?
+///     ) -> OptimizationResult<Double> {
+///         // A real implementation iterates; this one reports the starting point
+///         OptimizationResult(
+///             optimalValue: initialGuess,
+///             objectiveValue: objective(initialGuess),
+///             iterations: 0,
+///             converged: false
+///         )
 ///     }
 /// }
 /// ```

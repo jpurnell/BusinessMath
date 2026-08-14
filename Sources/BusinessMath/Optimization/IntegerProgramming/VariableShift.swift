@@ -16,6 +16,9 @@ import Numerics
 ///
 /// ## Usage
 /// ```swift
+/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
+/// let originalPoint = VectorN<Double>([1.0, 2.0])
+///
 /// // Extract shifts from constraints
 /// let shift = try extractVariableShift(from: constraints, dimension: 2)
 ///
@@ -27,6 +30,7 @@ import Numerics
 ///     // Solve shifted problem...
 ///
 ///     // Transform solution back
+///     let shiftedSolution = shiftedPoint
 ///     let originalSolution = shift.unshiftPoint(shiftedSolution)
 /// }
 /// ```
