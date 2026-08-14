@@ -28,16 +28,31 @@ import Crypto
 /// struct MySaaSTemplate: TemplateProtocol {
 ///     var identifier: String { "com.example.saas-template" }
 ///
-///     func create(parameters: [String: Any]) throws -> FinancialModel {
-///         // Create model from parameters
+///     func create(parameters: [String: Any]) throws -> Any {
+///         // Build whatever model the parameters describe
+///         parameters
 ///     }
 ///
 ///     func schema() -> TemplateSchema {
-///         // Return parameter schema
+///         TemplateSchema(
+///             identifier: identifier,
+///             parameters: [
+///                 TemplateSchema.Parameter(
+///                     name: "mrr",
+///                     type: .number,
+///                     description: "Monthly recurring revenue"
+///                 )
+///             ]
+///         )
 ///     }
 ///
 ///     func validate(parameters: [String: Any]) throws {
-///         // Validate parameters
+///         guard parameters["mrr"] != nil else {
+///             throw BusinessMathError.invalidInput(
+///                 message: "mrr is required",
+///                 value: "nil"
+///             )
+///         }
 ///     }
 /// }
 /// ```
@@ -390,30 +405,43 @@ public struct RegisteredTemplate: Sendable {
 ///
 /// Example:
 /// ```swift
+/// struct MySaaSTemplate: TemplateProtocol {
+///     var identifier: String { "com.example.saas-template" }
+///     func create(parameters: [String: Any]) throws -> Any { parameters }
+///     func schema() -> TemplateSchema {
+///         TemplateSchema(identifier: identifier, parameters: [])
+///     }
+///     func validate(parameters: [String: Any]) throws {}
+/// }
+///
 /// let registry = TemplateRegistry()
+/// let fileURL = URL(fileURLWithPath: "/tmp/enterprise-saas.json")
 ///
-/// // Register a template
-/// await registry.register(
-///     MySaaSTemplate(),
-///     metadata: TemplateMetadata(
-///         name: "Enterprise SaaS",
-///         description: "SaaS model with enterprise features",
-///         author: "Your Name",
-///         version: "1.0.0",
-///         category: .saas,
-///         tags: ["saas", "enterprise"]
+/// // TemplateRegistry is an actor, so every call suspends
+/// Task {
+///     // Register a template
+///     try await registry.register(
+///         MySaaSTemplate(),
+///         metadata: TemplateMetadata(
+///             name: "Enterprise SaaS",
+///             description: "SaaS model with enterprise features",
+///             author: "Your Name",
+///             version: "1.0.0",
+///             category: .saas,
+///             tags: ["saas", "enterprise"]
+///         )
 ///     )
-/// )
 ///
-/// // Export for sharing
-/// let package = try await registry.export("Enterprise SaaS")
-/// let jsonData = try JSONEncoder().encode(package)
-/// try jsonData.write(to: fileURL)
+///     // Export for sharing
+///     let exported = try await registry.export("Enterprise SaaS")
+///     let jsonData = try JSONEncoder().encode(exported)
+///     try jsonData.write(to: fileURL)
 ///
-/// // Import shared template
-/// let packageData = try Data(contentsOf: sharedTemplateURL)
-/// let package = try JSONDecoder().decode(TemplatePackage.self, from: packageData)
-/// try await registry.import(package)
+///     // Import shared template
+///     let packageData = try Data(contentsOf: fileURL)
+///     let imported = try JSONDecoder().decode(TemplatePackage.self, from: packageData)
+///     _ = try await registry.import(imported)
+/// }
 /// ```
 public actor TemplateRegistry {
     /// Storage for registered templates

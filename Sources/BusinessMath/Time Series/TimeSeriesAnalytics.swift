@@ -32,6 +32,10 @@ import Numerics
 /// print("MAPE: \(metrics.mape)")
 ///
 /// // Compare models
+/// let altForecast = TimeSeries(periods: periods, values: [101, 108, 123])
+/// let model1Metrics = actual.forecastError(against: forecast)
+/// let model2Metrics = actual.forecastError(against: altForecast)
+///
 /// if model1Metrics.rmse < model2Metrics.rmse {
 ///     print("Model 1 is more accurate")
 /// }
@@ -209,6 +213,9 @@ extension TimeSeries {
 	/// print("MAPE: \(metrics.mape.percent(2))")
 	///
 	/// // Compare two forecast models
+	/// let linearForecast = TimeSeries(periods: periods, values: [99, 109, 119, 129])
+	/// let exponentialForecast = TimeSeries(periods: periods, values: [97, 111, 121, 134])
+	///
 	/// let model1Metrics = actual.forecastError(against: linearForecast)
 	/// let model2Metrics = actual.forecastError(against: exponentialForecast)
 	///
@@ -382,6 +389,9 @@ extension TimeSeries {
 	///
 	/// ## Example
 	/// ```swift
+	/// let months = (0..<12).map { Period.month(year: 2025, month: $0 + 1) }
+	/// let monthlyRevenue = TimeSeries(periods: months, values: (0..<12).map { 100.0 + Double($0) })
+	///
 	/// let ytd = monthlyRevenue.cumulative()  // Year-to-date
 	/// ```
 	public func cumulative() -> TimeSeries<T> {

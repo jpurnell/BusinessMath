@@ -23,8 +23,9 @@ import Foundation
 ///
 /// // Model a financing round
 /// capTable = capTable.modelRound(
+///     newInvestment: 5_000_000,
 ///     preMoneyValuation: 15_000_000,
-///     investment: 5_000_000,
+///     optionPoolIncrease: 0.0,
 ///     investorName: "VC Fund"
 /// )
 /// ```
@@ -128,7 +129,7 @@ public struct CapTable {
         /// ## Usage Example
         /// ```swift
         /// // Common shareholder (founder)
-        /// let founder = Shareholder(
+        /// let founder = CapTable.Shareholder(
         ///     name: "Founder",
         ///     shares: 8_000_000,
         ///     investmentDate: Date(),
@@ -136,7 +137,7 @@ public struct CapTable {
         /// )
         ///
         /// // Preferred shareholder (investor)
-        /// let investor = Shareholder(
+        /// let investor = CapTable.Shareholder(
         ///     name: "Series A Investor",
         ///     shares: 2_000_000,
         ///     investmentDate: Date(),
