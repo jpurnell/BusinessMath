@@ -23,6 +23,16 @@ import Numerics
 /// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc")
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
 ///
+/// let prices = TimeSeries(periods: Period.documentationQuarters, values: [145.0, 150, 155, 160])
+/// let shares = TimeSeries(periods: Period.documentationQuarters, values: Array(repeating: 1_000_000_000.0, count: 4))
+/// let marketData = MarketData(price: prices, sharesOutstanding: shares)
+///
+/// let operationalMetrics = OperationalMetrics(
+///     entity: entity,
+///     period: q1,
+///     metrics: ["mrr": 250_000.0, "churnRate": 0.02]
+/// )
+///
 /// let summary = try FinancialPeriodSummary(
 ///     entity: entity,
 ///     period: q1,
@@ -561,15 +571,23 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	///
 	/// ## Example Usage
 	/// ```swift
-	/// struct SaaSMetrics<T: Real>: OperationalMetrics {
-	///     let mrr: T
-	///     let churnRate: T
-	///     let ltv: T
-	///     let cac: T
-	/// }
+	/// let entity = Entity.documentationFixture
+	/// let q1 = Period.documentationQuarters[0]
+	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	///
+	/// // Industry metrics travel as a named dictionary, not a bespoke type
+	/// let saasMetrics = OperationalMetrics(
+	///     entity: entity,
+	///     period: q1,
+	///     metrics: ["mrr": 250_000.0, "churnRate": 0.02, "ltv": 12_500.0, "cac": 1_800.0]
+	/// )
 	///
 	/// let summary = try FinancialPeriodSummary(
-	///     // ... standard parameters ...
+	///     entity: entity,
+	///     period: q1,
+	///     incomeStatement: incomeStatement,
+	///     balanceSheet: balanceSheet,
 	///     operationalMetrics: saasMetrics
 	/// )
 	/// ```
@@ -811,7 +829,7 @@ public struct MarketData<T: Real & Sendable>: Codable, Sendable where T: Codable
 	/// ]
 	///
 	/// let prices = TimeSeries(periods: quarters, values: [145.0, 150.0, 155.0, 160.0])
-	/// let shares = TimeSeries(periods: quarters, values: [1_000_000_000.0] * 4)
+	/// let shares = TimeSeries(periods: quarters, values: Array(repeating: 1_000_000_000.0, count: 4))
 	///
 	/// let marketData = MarketData(price: prices, sharesOutstanding: shares)
 	/// ```

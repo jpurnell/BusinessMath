@@ -26,10 +26,23 @@ import Numerics
 /// **Quarterly Report (4Q + Annual):**
 /// ```swift
 /// let entity = Entity.documentationFixture
+/// let quarters = Period.documentationQuarters
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+///
+/// let summaries = try quarters.map { period in
+///     try FinancialPeriodSummary(
+///         entity: entity,
+///         period: period,
+///         incomeStatement: incomeStatement,
+///         balanceSheet: balanceSheet
+///     )
+/// }
+///
 /// let report = try MultiPeriodReport(
 ///     entity: entity,
-///     periodSummaries: [q1Summary, q2Summary, q3Summary, q4Summary],
-///     annualSummary: annualSummary
+///     periodSummaries: summaries,
+///     annualSummary: summaries[3]
 /// )
 ///
 /// // Access specific period
@@ -43,9 +56,22 @@ import Numerics
 /// **Year-over-Year Comparison:**
 /// ```swift
 /// let entity = Entity.documentationFixture
+/// let quarters = Period.documentationQuarters
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+///
+/// let summaries = try quarters.map { period in
+///     try FinancialPeriodSummary(
+///         entity: entity,
+///         period: period,
+///         incomeStatement: incomeStatement,
+///         balanceSheet: balanceSheet
+///     )
+/// }
+///
 /// let report = try MultiPeriodReport(
 ///     entity: entity,
-///     periodSummaries: [fy2023, fy2024, fy2025]
+///     periodSummaries: summaries
 /// )
 /// ```
 public struct MultiPeriodReport<T: Real & Sendable>: Codable, Sendable where T: Codable {
