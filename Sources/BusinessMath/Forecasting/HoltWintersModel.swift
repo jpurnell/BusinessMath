@@ -96,9 +96,10 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let monthlyData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
-	/// let periods = Period.documentationQuarters
-	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// // Two full seasonal cycles: train(values:) requires seasonalPeriods * 2
+	/// let monthlyData = [120.0, 135, 148, 160, 172, 185, 190, 178, 165, 150, 138, 125,
+	///                    128, 142, 156, 168, 181, 194, 200, 187, 173, 158, 145, 132]
+	/// var model = HoltWintersModel<Double>(alpha: 0.2, beta: 0.1, gamma: 0.1, seasonalPeriods: 12)
 	/// try model.train(values: monthlyData)
 	/// let futureValues = model.predictValues(periods: 6)
 	/// ```
@@ -169,8 +170,13 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let periods = Period.documentationQuarters
-	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// // Holt-Winters needs at least two full cycles, so 24 months of data
+	/// let months = (0..<24).map { Period.month(year: 2024 + $0 / 12, month: $0 % 12 + 1) }
+	/// let sales = [120.0, 135, 148, 160, 172, 185, 190, 178, 165, 150, 138, 125,
+	///              128, 142, 156, 168, 181, 194, 200, 187, 173, 158, 145, 132]
+	/// let monthlySales = TimeSeries(periods: months, values: sales)
+	///
+	/// var model = HoltWintersModel<Double>(alpha: 0.2, beta: 0.1, gamma: 0.1, seasonalPeriods: 12)
 	/// try model.train(on: monthlySales)
 	/// if let forecast = model.predict(periods: 6) {
 	///     // Use forecast TimeSeries
@@ -194,9 +200,10 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let monthlyData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
-	/// let periods = Period.documentationQuarters
-	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// // Two full seasonal cycles: train(values:) requires seasonalPeriods * 2
+	/// let monthlyData = [120.0, 135, 148, 160, 172, 185, 190, 178, 165, 150, 138, 125,
+	///                    128, 142, 156, 168, 181, 194, 200, 187, 173, 158, 145, 132]
+	/// var model = HoltWintersModel<Double>(alpha: 0.2, beta: 0.1, gamma: 0.1, seasonalPeriods: 12)
 	/// try model.train(values: monthlyData)
 	/// let futureValues = model.predictValues(periods: 6)
 	/// ```
@@ -232,8 +239,13 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let periods = Period.documentationQuarters
-	/// var model = HoltWintersModel<Double>(seasonalPeriods: 12, alpha: 0.2, beta: 0.1, gamma: 0.1)
+	/// // Holt-Winters needs at least two full cycles, so 24 months of data
+	/// let months = (0..<24).map { Period.month(year: 2024 + $0 / 12, month: $0 % 12 + 1) }
+	/// let sales = [120.0, 135, 148, 160, 172, 185, 190, 178, 165, 150, 138, 125,
+	///              128, 142, 156, 168, 181, 194, 200, 187, 173, 158, 145, 132]
+	/// let monthlySales = TimeSeries(periods: months, values: sales)
+	///
+	/// var model = HoltWintersModel<Double>(alpha: 0.2, beta: 0.1, gamma: 0.1, seasonalPeriods: 12)
 	/// try model.train(on: monthlySales)
 	/// if let forecast = model.predict(periods: 6) {
 	///     // Use forecast TimeSeries

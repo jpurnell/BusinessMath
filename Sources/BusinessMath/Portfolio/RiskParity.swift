@@ -19,6 +19,11 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let stockReturns = TimeSeries(periods: periods, values: [0.01, -0.02, 0.03, 0.015])
+/// let bondReturns = TimeSeries(periods: periods, values: [0.005, 0.008, -0.002, 0.006])
+/// let commodityReturns = TimeSeries(periods: periods, values: [0.01, 0.03, -0.04, 0.02])
+///
 /// let optimizer = RiskParityOptimizer<Double>()
 /// let allocation = optimizer.optimize(
 ///     assets: ["Stocks", "Bonds", "Commodities"],
@@ -96,10 +101,10 @@ public struct RiskParityOptimizer<T: Real & BinaryFloatingPoint & Sendable & Cod
 	/// let assets = ["US Stocks", "Intl Stocks", "US Bonds", "Commodities"]
 	///
 	/// // Historical returns (monthly)
-	/// let stocksUS = TimeSeries(periods: periods, values: [0.01, -0.02, 0.03, ...])
-	/// let stocksIntl = TimeSeries(periods: periods, values: [0.02, -0.01, 0.02, ...])
-	/// let bonds = TimeSeries(periods: periods, values: [0.005, 0.008, -0.002, ...])
-	/// let commodities = TimeSeries(periods: periods, values: [0.01, 0.03, -0.04, ...])
+	/// let stocksUS = TimeSeries(periods: periods, values: [0.01, -0.02, 0.03, 0.015])
+	/// let stocksIntl = TimeSeries(periods: periods, values: [0.02, -0.01, 0.02, 0.012])
+	/// let bonds = TimeSeries(periods: periods, values: [0.005, 0.008, -0.002, 0.006])
+	/// let commodities = TimeSeries(periods: periods, values: [0.01, 0.03, -0.04, 0.02])
 	///
 	/// let returns = [stocksUS, stocksIntl, bonds, commodities]
 	///
@@ -123,9 +128,9 @@ public struct RiskParityOptimizer<T: Real & BinaryFloatingPoint & Sendable & Cod
 	///
 	/// // Verify equal risk contribution
 	/// let covariance = Portfolio(assets: assets, returns: returns).covarianceMatrix
-	/// let m = matVec(covariance, allocation.weights)
 	/// for i in 0..<assets.count {
-	///     let rc = allocation.weights[i] * m[i]
+	///     let marginal = zip(covariance[i], allocation.weights).reduce(0.0) { $0 + $1.0 * $1.1 }
+	///     let rc = allocation.weights[i] * marginal
 	///     print("\(assets[i]) risk contribution: \(rc.number(6))")
 	/// }
 	/// // All risk contributions should be nearly equal

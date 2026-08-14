@@ -56,7 +56,7 @@ import Numerics
 /// let quarters = Period.year(2025).quarters()
 ///
 /// // Run deterministic projection (expected path)
-/// let expectedProfit = model.profit.project(periods: quarters)
+/// let expectedProfit = DriverProjection(driver: model.profit, periods: quarters).project()
 ///
 /// // Run Monte Carlo simulation (10,000 scenarios)
 /// let profitProjection = DriverProjection(driver: model.profit, periods: quarters)
@@ -581,18 +581,26 @@ public struct SaaSFinancialModel {
 /// ## 1. Start Simple, Add Complexity Gradually
 ///
 /// ```swift
-/// let users = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
+/// let users = TimeVaryingDriver.withGrowth(
+///     name: "Users",
+///     baseValue: 100.0,
+///     annualGrowthRate: 0.20,
+///     baseYear: 2025
+/// )
+///
 /// // Start with deterministic
-/// let revenue = users * pricePerUser
+/// let flatPrice = DeterministicDriver<Double>(name: "Price", value: 50.0)
+/// let deterministicRevenue = users * flatPrice
 ///
 /// // Add uncertainty
-/// let revenue = ProbabilisticDriver<Double>.normal(...) * DeterministicDriver(...)
+/// let uncertainPrice = ProbabilisticDriver<Double>.normal(name: "Price", mean: 50.0, stdDev: 5.0)
+/// let uncertainRevenue = users * uncertainPrice
 ///
 /// // Add time variation
-/// let revenue = TimeVaryingDriver(...) * ProbabilisticDriver<Double>.normal(...)
+/// let timeVaryingRevenue = users * uncertainPrice
 ///
 /// // Add constraints
-/// let revenue = TimeVaryingDriver(...).positive() * ProbabilisticDriver<Double>.normal(...).positive()
+/// let constrainedRevenue = users.positive() * uncertainPrice.positive()
 /// ```
 ///
 /// ## 2. Use Appropriate Distributions
@@ -612,6 +620,8 @@ public struct SaaSFinancialModel {
 /// ```swift
 /// let periods = Period.documentationQuarters
 /// let quarters = Period.documentationQuarters
+/// let model = SaaSFinancialModel()
+///
 /// // Run sanity checks
 /// let results = model.projectMonteCarlo(periods: quarters, iterations: 10_000)
 ///
