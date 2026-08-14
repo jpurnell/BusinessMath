@@ -76,7 +76,7 @@ import Numerics
 /// uncertainOverrides["Volume"] = AnyDriver(
 ///     ProbabilisticDriver(
 ///         name: "Volume",
-///         distribution: DistributionNormal(mean: 1000.0, standardDeviation: 150.0)
+///         distribution: DistributionNormal(1000.0, 150.0)
 ///     )
 /// )
 ///
@@ -98,11 +98,15 @@ import Numerics
 /// let periods = Period.documentationQuarters
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let entity = Entity.documentationFixture
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
+///
 /// let runner = ScenarioRunner()
-/// let projection = runner.run(
+/// let projection = try runner.run(
 ///     scenario: baseCase,
-///     baseDrivers: defaultDrivers,
-///     periods: periods
+///     entity: entity,
+///     periods: periods,
+///     builder: builder
 /// )
 ///
 /// // Access results
