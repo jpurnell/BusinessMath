@@ -18,10 +18,18 @@ import Numerics
 /// ## Example
 /// ```swift
 /// let optimizer = ConstrainedOptimizer<VectorN<Double>>()
+/// let initialWeights = VectorN<Double>([0.33, 0.33, 0.34])
+/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
+///
+/// // Equal-risk objective: minimise the sum of squared weights
+/// let portfolioVariance: @Sendable (VectorN<Double>) -> Double = { weights in
+///     (0..<weights.dimension).reduce(0.0) { $0 + weights[$1] * weights[$1] }
+/// }
+///
 /// let result = try optimizer.minimize(
 ///     portfolioVariance,
 ///     from: initialWeights,
-///     subjectTo: [.budgetConstraint]
+///     subjectTo: constraints
 /// )
 ///
 /// print("Optimal weights: \(result.solution)")
@@ -171,17 +179,18 @@ extension ConstrainedOptimizationResult where V.Scalar == Double {
 ///
 /// ## Usage Example
 /// ```swift
-/// let weights = [0.4, 0.35, 0.25]
 /// let optimizer = ConstrainedOptimizer<VectorN<Double>>(
-///     tolerance: 1e-6,
+///     constraintTolerance: 1e-6,
 ///     maxIterations: 1000
 /// )
 ///
+/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
+///
 /// // Portfolio optimization with budget constraint
 /// let result = try optimizer.minimize(
-///     { weights in portfolioVariance(weights) },
-///     from: VectorN([0.33, 0.33, 0.34]),
-///     subjectTo: [.budgetConstraint]
+///     { weights in (0..<weights.dimension).reduce(0.0) { $0 + weights[$1] * weights[$1] } },
+///     from: VectorN<Double>([0.33, 0.33, 0.34]),
+///     subjectTo: constraints
 /// )
 /// ```
 public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
