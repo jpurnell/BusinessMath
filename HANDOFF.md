@@ -1,100 +1,152 @@
-# Handoff — 2026-08-13
+# Handoff — 2026-08-13 (evening)
 
-**2.6.0 is still written and still unshipped**, and the reason has changed. The tag was
-previously held for DocC checkers in quality-gate-swift; those landed. It is now held on one
-thing only: `doc-comment-code` reports **852 errors**, down from 1,515, and the release should
-not go out teaching examples that do not compile.
-
-Everything is committed and pushed. There is no work in flight.
+**2.6.0 is written and unshipped, gated on one number: `doc-comment-code` is at 420.**
+Everything else is clean. Nothing is in flight; `main` and `origin/main` agree.
 
 ## State
 
 | | |
 |---|---|
 | branch | `main`, clean, **0 ahead of `origin/main`** |
-| tag | **none** — see "Why the tag is held" |
-| tests | **6,582 in 579 suites**, 0 issues, ~29s |
-| quality gate | **0 errors, 0 warnings**, 37 checkers, `--no-cache` |
-| CI | green — 4/4 jobs, including `Linux release compile check` |
-| nightly (Release Tests) | green — including Thread Sanitizer, 6,582 tests in 347s |
-| commits since `v2.5.2` | 96 |
-| `doc-comment-code` | **852 errors** ← the only thing gating the tag |
-
-## Why the tag is held
-
-`doc-comment-code` compiles every ```swift fence in isolation, with only Foundation and this
-module in scope. 852 fences still fail. The stance driving this work is explicit: examples
-should actually run. Apple ships documentation whose examples do not compile, and the decision
-here was not to do that.
-
-Progress is real but unfinished — 1,515 → 852, with the mechanism understood (below). This is
-the resume point.
+| tests | **6,597 in 581 suites**, 0 issues, ~35s |
+| quality gate | **live tree clean** — 0 errors, 0 warnings |
+| gate, worktrees | 53 errors / 24 warnings, all in `.claude/worktrees/` — see "Worktrees" |
+| CI | green, 4/4 jobs |
+| nightly (Release Tests) | green, including Thread Sanitizer |
+| commits since `v2.5.2` | 122 |
+| **`doc-comment-code`** | **420 non-macro**, +51 macro (parked) |
 
 ## First action on resume
 
 ```sh
-swift build && swift test                      # expect 6,582 / 579, exit 0
-quality-gate --no-cache                        # expect 0 errors, 0 warnings
-quality-gate --check doc-comment-code --no-cache | grep -c '❌ error:'   # expect 852
+swift build && swift test                       # 6,597 / 581, exit 0
+quality-gate --no-cache                         # live tree 0/0
+quality-gate --check doc-comment-code --no-cache | grep -c '❌ error:'   # 471 total
 ```
 
 The binary is `quality-gate`, the flag is `--check`, and it takes **no positional path**. A
 failed invocation greps as `0 errors`, indistinguishable from a clean run — guard on log
-length before trusting any count. This produced two false "clean" readings in one session.
+length before trusting any count.
 
-## Where `doc-comment-code` stands
+**Filter the macro errors out of any total.** 51 of the 471 are in
+`Sources/BusinessMathMacros/` and are not author-fixable (below). Their count is also
+unstable — it moved 37→50→51 across runs with no edits — so track the non-macro number:
 
-**What works, and scales.** Never infer a binding's type from its name; infer it from
-something the example already committed to. An argument label (`entity:`), a generic argument
-(`KMeans<Vector2D<Double>>`), or a method call (`.fillForward(`) are all parts of the API the
-author could not have varied. `model` tells you nothing; `entity: model` tells you everything.
-That technique placed 87 bindings in two passes.
+```sh
+quality-gate --check doc-comment-code --no-cache 2>&1 \
+  | grep -A1 '❌ error:' | grep '→' | grep -vc BusinessMathMacros
+```
 
-**What does not exist.** Per-area preambles. The checker's `preambleImports` returns
-`["Foundation", module]` unconditionally and ignores configuration — deliberately, since a
-reader gets the fence and nothing else. Inline one-line bindings are the only surviving form.
+---
 
-**Remaining shape of the 852.** Roughly 445 undefined references, the rest compile failures.
-The head of the tail is `builder` (29), `model` (26), `optimizer` (21), `result` (11) — these
-need a real constructor per file rather than a shared fixture, because each names the type its
-own file documents. 33 fences contain literal `...` elision and can never compile as written.
+## The remaining 420
 
-**Run each transformation as a separate pass.** Three self-inflicted regressions in one
-session all had the same shape: a multi-step edit whose output invalidated a precondition
-checked at the start. See `4b8ad7e`.
+**There is no cluster left.** 163 files, worst file has 7 errors, 241 of the 420 are
+undefined references spread over ~180 identifiers of which most appear once. Every
+mechanical pass has been spent; this is per-file reading.
 
-## What shipped this session
+Worst files, none of them large:
 
-- **GPU seed contract.** Three optimizers could silently answer a seeded run with a different
-  algorithm. `RNGWrapper.attemptGPU(seeded:_:)` now owns the rule; `GPUAttemptOutcome` has no
-  case meaning "abandoned, and you may ignore that". Also: **no GPU path in the library
-  checked `commandBuffer.status`** after `waitUntilCompleted()`.
-- **Documentation fixtures** — new public API, `doc-comment-code` 1,515 → 852.
-- **Linux release build fixed.** Four generic expressions the Ubuntu type-checker rejects.
-  The package did not build on Linux in release configuration.
-- **Two flakes closed.** Five scenario generators passed `seed: nil` while asking the
-  optimizer for `seed: 42`; measured 298/300 convergence, a 1-in-150 red suite.
-  `testHangGuard` replaced 46 `.timeLimit(.minutes(2))` sites.
+```
+ 7  Optimization/Heuristic/KMeansClustering.swift
+ 7  Statistics/MixedModels/Diagnostics/LMEDiagnostics.swift
+ 6  Financial Statements/AccountAdjustment.swift
+ 6  Financial Statements/CashFlowStatement.swift
+ 6  Forecasting/HoltWintersModel.swift
+ 6  Operational Drivers/IntegrationExample.swift
+ 6  Portfolio/RiskParity.swift
+ 6  Scenario Analysis/FinancialSimulation.swift
+ 6  Simulation/MonteCarlo/SimulationResults.swift
+ 6  Streaming/AsyncTimeWindowedSequence.swift
+ 6  Streaming/StreamingAnomalyDetection.swift
+ 6  Streaming/StreamingForecasting.swift
+```
 
-## Open
+### The method that works
 
-1. **`doc-comment-code` → 0.** Gates the tag. See above.
-2. **`project/plans/upcoming/v3.0.0_SCOPE.md`.** DE and PSO's `optimizeDetailed` must become
-   `throws` to refuse a seeded CPU fallback; that is source-breaking, so it forces a major and
-   should carry the other breaking work with it. Three open questions in §4, including whether
-   the sibling packages' bumps are planned with 3.0.0 or discovered after it.
-3. **One unexplained SEGV.** `generateRandomVolatilities` under TSan on 08-13. Did not recur
-   across three later CI runs or two local attempts. The input is fully deterministic
-   (`count: 100, seed: 20260812` through a pure xoshiro256\*\*), so no property of that code
-   can differ between the run that crashed and the ones that did not — environmental by
-   elimination. **Watch, do not fix.** If it recurs at the same site, that argument is what
-   has to be given up.
+**Read the declaration. Do not infer it from the name.** Every round trip lost this session
+came from guessing an API: `marketPrice` bound to a `Double` when the function takes
+`TimeSeries`, `projection` bound to `FinancialProjection` in a file where it is a
+`DriverProjection`, `.operatingExpense` guessed as an `IncomeStatementRole` case when the
+real ones are `.costOfGoodsSold` and `.generalAndAdministrative`.
+
+**Take the type from usage, not from the identifier.** `.zip` and `.aggregate` are TimeSeries
+methods; `.positive()` and `.sample(for:)` are Driver methods; `searchSpace:` takes bounds;
+`entity:` takes an Entity. The name tells you nothing — `model` named six different types
+across nine files.
+
+**Drive from the checker's own report.** A pass that inserted bindings wherever a plausible
+name appeared produced **205 bindings and cleared 13 errors**, because `\btimeSeries\b`
+matches the argument label in `Account(..., timeSeries:)`. Parsing the diagnostic and
+inserting only at the fence it names produced **27 bindings and cleared 17**. Fewer edits,
+better result.
+
+**Read the whole fence before inserting.** Twice a binding was added for a name the fence
+already declared — `var entity` in Entity.swift, `let q1` in BalanceSheet.swift. One
+duplicate poisons every later line in its fence, so it costs more than it fixes.
+
+### The trap worth knowing
+
+An unbound identifier that happens to name a library function does **not** fail as
+undefined. It resolves, and the error reads:
+
+```
+cannot convert value of type '@Sendable (Double) -> ScenarioParameter'
+                             to expected argument type 'TimeSeries<Double>'
+```
+
+Seen with `revenue`, `price`, `users`, `npv`, `discountRate`. It looks like a type-inference
+problem and is a missing binding. An explicit `let` shadows it.
+
+### Categories that cannot be fixed in fences
+
+- **`private` symbols.** A doc example on a private function cannot compile — nothing can
+  reference it. `generateSteps` in SensitivityAnalysis.swift is one; rewritten to show the
+  equivalent via `stride`.
+- **Macro fences** — 51 errors, all in `Sources/BusinessMathMacros/`. The checker compiles
+  them without the plugin. Proposal written; the user is working this separately.
+- **Extracted-package references** — `AlphaVantageProvider` and friends live in
+  `BusinessMathMarketData` now, so their fences cannot compile against this module.
+
+---
+
+## Worktrees
+
+The gate reports 53 errors and 24 warnings, **all in `.claude/worktrees/`**, from the new
+`gpu-safety` checker reading stale pre-fix kernel source. The live tree is clean.
+
+- Three registered worktrees carry uncommitted work — 11, 7 and 13 dirty files. Left alone.
+- `agent-a064a9af` is an **orphan** from April 14, not registered with git at all.
+
+Two open questions: what to do with the orphan, and whether the gate should scan
+`.claude/worktrees/` — the same shape as auditing `.metal` files excluded from the build.
+
+---
+
+## Open, beyond the 420
+
+1. **`project/plans/upcoming/v3.0.0_SCOPE.md`.** Three places where the correct behaviour is
+   refusal and the signature cannot refuse: DE and PSO's `optimizeDetailed`,
+   `EnterpriseValueBridge.valuePerShare`, and `IslandModel` swallowing `GeneticAlgorithm`'s
+   seed refusal with `try?`.
+2. **Two proposals awaiting the quality-gate repo**, untracked on its `feat/doc-generated`
+   branch: `GPUSafetyChecker.md` (implemented since — the checker is live and found three
+   real defects) and `DocCommentCode_MacroPlugin.md`.
+3. **Seedless wrappers over seeded primitives** — `ScenarioAnalysis`,
+   `runFinancialSimulation`, `ReciprocalParameterRecoveryCheck.run`. Two statistical tests
+   have now been loosened because of the second one.
+4. **`doc-symbol-link`** is the one checker of the four still not landed.
+
+---
 
 ## Convention notes
 
 - Run the gate with `--no-cache`. A cached run executes 10 of 37 checkers and prints an
   identical PASSED summary.
-- `--filter` passing proves nothing here. Two defects this session were visible only in the
-  full parallel suite and clean in isolation, 4/4 and 6/6.
-- Never background a `git commit`; the slow pre-commit hook is a window another session's
-  staged work slips through.
+- **Never chain `swift test` or the gate with `git commit` using `;`.** It happened twice
+  this session and both times the commit went through on a red result. Use `&&`, or verify
+  in a separate call.
+- `--filter` passing proves nothing. Two defects this session were visible only in the full
+  parallel suite and clean in isolation, 4/4 and 6/6.
+- Statistical assertions on unseeded draws fail on schedule: a 3σ bound is 1 run in 370.
+  Two were found this way; seed the stream, or widen and say why.
