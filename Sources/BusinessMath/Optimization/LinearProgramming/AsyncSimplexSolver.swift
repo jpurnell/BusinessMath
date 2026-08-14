@@ -21,6 +21,10 @@ private let logger = Logger(subsystem: "com.businessmath", category: "AsyncSimpl
 /// ## Example
 /// ```swift
 /// let solver = AsyncSimplexSolver()
+/// let constraints = [
+///     SimplexConstraint(coefficients: [1.0, 1.0], relation: .lessOrEqual, rhs: 4.0),
+///     SimplexConstraint(coefficients: [1.0, 3.0], relation: .lessOrEqual, rhs: 6.0)
+/// ]
 ///
 /// for try await progress in solver.maximizeWithProgress(
 ///     objective: [3.0, 2.0],
@@ -91,12 +95,13 @@ public struct SimplexProgress: Sendable {
 /// let solver = AsyncSimplexSolver()
 ///
 /// // Get final result directly
+/// let constraints = [
+///     SimplexConstraint(coefficients: [1.0, 1.0], relation: .lessOrEqual, rhs: 4.0),
+///     SimplexConstraint(coefficients: [2.0, 1.0], relation: .lessOrEqual, rhs: 5.0)
+/// ]
 /// let result = try await solver.maximize(
 ///     objective: [3.0, 2.0],
-///     subjectTo: [
-///         SimplexConstraint(coefficients: [1.0, 1.0], relation: .lessOrEqual, rhs: 4.0),
-///         SimplexConstraint(coefficients: [2.0, 1.0], relation: .lessOrEqual, rhs: 5.0)
-///     ]
+///     subjectTo: constraints
 /// )
 ///
 /// print("Optimal value: \(result.objectiveValue)")
@@ -108,7 +113,6 @@ public struct SimplexProgress: Sendable {
 ///     subjectTo: constraints
 /// ) {
 ///     print("Iteration \(progress.iteration): \(progress.currentPhase)")
-///     updateProgressBar(progress)
 /// }
 /// ```
 ///

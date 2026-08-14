@@ -17,9 +17,11 @@ import Collections  // For Deque with O(1) removeFirst
 ///
 /// Example:
 /// ```swift
+/// let modelId = "saas-q1"
 /// let cache = CalculationCache()
 /// let profit = cache.getOrCalculate(key: "model_profit_\(modelId)") {
-///     model.calculateProfit()
+///     // Stand-in for the expensive model computation
+///     42_000.0
 /// }
 /// ```
 
@@ -146,11 +148,12 @@ import Collections  // For Deque with O(1) removeFirst
 /// ## Usage
 ///
 /// ```swift
+/// let params = "rate=0.06,periods=40"
 /// let cache = CalculationCache(maxSize: 1000, ttl: 300)
 ///
 /// let result = cache.getOrCalculate(key: "expensive_calc_\(params)") {
 ///     // This closure runs only if not cached or expired
-///     performExpensiveCalculation(params)
+///     (0..<10_000).reduce(0.0) { $0 + Double($1) }
 /// }
 /// ```
 ///
@@ -254,7 +257,8 @@ public final class CalculationCache: @unchecked Sendable {
 	/// ```swift
 	/// let cache = CalculationCache()
 	/// let profit = cache.getOrCalculate(key: "model_profit_Q1") {
-	///     expensiveCalculation()
+	///     // Stand-in for the expensive computation
+	///     (0..<10_000).reduce(0.0) { $0 + Double($1) }
 	/// }
 	/// ```
 	// LIVE: core cache API used by financial model computation pipelines
