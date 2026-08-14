@@ -339,6 +339,9 @@ public struct CreditCurve<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let spreads = TimeSeries(periods: Period.documentationQuarters, values: [0.012, 0.018, 0.024, 0.030])
+    /// let curve = CreditCurve(spreads: spreads, recoveryRate: 0.40)
+    ///
     /// let spread3y = curve.spread(maturity: 3.0)   // Exact point
     /// let spread4y = curve.spread(maturity: 4.0)   // Interpolated
     /// ```
@@ -400,6 +403,9 @@ public struct CreditCurve<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let spreads = TimeSeries(periods: Period.documentationQuarters, values: [0.012, 0.018, 0.024, 0.030])
+    /// let curve = CreditCurve(spreads: spreads, recoveryRate: 0.40)
+    ///
     /// let cdp5y = curve.cumulativeDefaultProbability(maturity: 5.0)
     /// // If cdp5y = 0.08, there's an 8% chance of default within 5 years
     /// ```
@@ -432,6 +438,9 @@ public struct CreditCurve<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let spreads = TimeSeries(periods: Period.documentationQuarters, values: [0.012, 0.018, 0.024, 0.030])
+    /// let curve = CreditCurve(spreads: spreads, recoveryRate: 0.40)
+    ///
     /// let hazard = curve.hazardRate(maturity: 5.0)
     /// // Hazard rate at 5-year point
     /// ```

@@ -58,7 +58,10 @@ extension FormulaError: LocalizedError {
 /// spanning several of them needs the derivation to be data, not a compiled-in expression.
 ///
 /// ```swift
-/// let accounts = try BalanceSheet<Double>.documentationFixture.accounts
+/// let periods = Period.documentationQuarters
+/// let revenue = TimeSeries(periods: periods, values: [100.0, 110, 120, 130])
+/// let costOfSales = TimeSeries(periods: periods, values: [60.0, 64, 70, 75])
+///
 /// let evaluator = FormulaEvaluator(accounts: [
 ///     "revenue": revenue,
 ///     "cogs": costOfSales
@@ -71,6 +74,13 @@ extension FormulaError: LocalizedError {
 /// Real chart-of-accounts names carry spaces and punctuation, so a name can be bracketed:
 ///
 /// ```swift
+/// let periods = Period.documentationQuarters
+/// let evaluator = FormulaEvaluator(accounts: [
+///     "Total Revenue": TimeSeries(periods: periods, values: [100.0, 110, 120, 130]),
+///     "Cost of Goods Sold": TimeSeries(periods: periods, values: [60.0, 64, 70, 75]),
+///     "Sales & Marketing": TimeSeries(periods: periods, values: [12.0, 13, 14, 15])
+/// ])
+///
 /// try evaluator.evaluate("[Total Revenue] - [Cost of Goods Sold] - [Sales & Marketing]")
 /// ```
 ///

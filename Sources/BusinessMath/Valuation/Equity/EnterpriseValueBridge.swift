@@ -181,9 +181,25 @@ public struct EnterpriseValueBridge<T: Real> where T: Sendable {
     /// ```swift
     /// let company = Entity.documentationFixture
     /// // Company with $500M debt and $100M cash
+    /// let bridge = EnterpriseValueBridge(
+    ///     enterpriseValue: 1000.0,
+    ///     totalDebt: 500.0,
+    ///     cash: 100.0,
+    ///     nonOperatingAssets: 0.0,
+    ///     minorityInterest: 0.0,
+    ///     preferredStock: 0.0
+    /// )
     /// let netDebt = bridge.netDebt()  // Returns 400.0
     ///
     /// // Tech company with $100M debt and $500M cash
+    /// let techBridge = EnterpriseValueBridge(
+    ///     enterpriseValue: 1000.0,
+    ///     totalDebt: 100.0,
+    ///     cash: 500.0,
+    ///     nonOperatingAssets: 0.0,
+    ///     minorityInterest: 0.0,
+    ///     preferredStock: 0.0
+    /// )
     /// let netCash = techBridge.netDebt()  // Returns -400.0 (net cash)
     /// ```
     public func netDebt() -> T {
@@ -250,8 +266,15 @@ public struct EnterpriseValueBridge<T: Real> where T: Sendable {
     /// ## Usage
     ///
     /// ```swift
-    /// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
     /// // If equity value is $850M and 100M shares outstanding
+    /// let bridge = EnterpriseValueBridge(
+    ///     enterpriseValue: 1000.0,
+    ///     totalDebt: 200.0,
+    ///     cash: 50.0,
+    ///     nonOperatingAssets: 0.0,
+    ///     minorityInterest: 0.0,
+    ///     preferredStock: 0.0
+    /// )
     /// let sharePrice = bridge.valuePerShare(sharesOutstanding: 100.0)
     /// // Returns: $8.50 per share
     /// ```
@@ -282,6 +305,14 @@ public struct EnterpriseValueBridge<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let bridge = EnterpriseValueBridge(
+    ///     enterpriseValue: 1000.0,
+    ///     totalDebt: 500.0,
+    ///     cash: 100.0,
+    ///     nonOperatingAssets: 0.0,
+    ///     minorityInterest: 0.0,
+    ///     preferredStock: 0.0
+    /// )
     /// let breakdown = bridge.breakdown()
     /// print("Enterprise Value: $\(breakdown.enterpriseValue)M")
     /// print("Total Debt: $\(breakdown.totalDebt)M")
