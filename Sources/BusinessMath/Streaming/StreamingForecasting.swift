@@ -369,7 +369,7 @@ extension AsyncSequence where Element == ForecastPair {
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([100, 105, 103, 108, 107])
+/// let stream = AsyncValueStream<Double>([100, 105, 103, 108, 107])
 /// for try await forecast in stream.simpleExponentialSmoothing(alpha: 0.3) {
 ///     print("Smoothed forecast: \(forecast)")
 /// }
@@ -449,7 +449,7 @@ public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([100, 103, 105, 109, 112])
+/// let stream = AsyncValueStream<Double>([100, 103, 105, 109, 112])
 /// for try await forecast in stream.doubleExponentialSmoothing(alpha: 0.3, beta: 0.1) {
 ///     let nextStep = forecast.forecast(steps: 1)
 ///     print("Level: \(forecast.level), Trend: \(forecast.trend), Next: \(nextStep)")
@@ -551,7 +551,7 @@ public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([100, 110, 95, 105, 115, 100, 110, 120])
+/// let stream = AsyncValueStream<Double>([100, 110, 95, 105, 115, 100, 110, 120])
 /// for try await forecast in stream.tripleExponentialSmoothing(
 ///     alpha: 0.3, beta: 0.1, gamma: 0.2, seasonLength: 4
 /// ) {
@@ -695,7 +695,7 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 /// ## Example
 /// ```swift
 /// let values = [100.0, 110.0, 120.0, 130.0]
-/// let stream = AsyncValueStream([100, 102, 98, 105, 103, 107])
+/// let stream = AsyncValueStream<Double>([100, 102, 98, 105, 103, 107])
 /// for try await forecast in stream.movingAverageForecast(window: 3) {
 ///     print("Next forecast: \(forecast)")
 /// }
@@ -782,7 +782,7 @@ public struct AsyncMovingAverageForecastSequence<Base: AsyncSequence>: AsyncSequ
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([100, 102, 105, 108, 112, 115])
+/// let stream = AsyncValueStream<Double>([100, 102, 105, 108, 112, 115])
 /// for try await trend in stream.detectTrend(window: 5) {
 ///     print("Direction: \(trend.direction), Slope: \(trend.slope), Confidence: \(trend.confidence)")
 /// }
@@ -897,7 +897,7 @@ public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence wh
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([100, 102, 98, 105, 150, 148, 152, 155])
+/// let stream = AsyncValueStream<Double>([100, 102, 98, 105, 150, 148, 152, 155])
 /// for try await changePoint in stream.detectChangePoints(window: 3, threshold: 20) {
 ///     print("Change detected at index \(changePoint.index): \(changePoint.type)")
 ///     print("Magnitude: \(changePoint.magnitude)")

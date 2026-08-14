@@ -21,6 +21,7 @@ import Collections
 ///
 /// ## Usage Example
 /// ```swift
+/// let rrTimestamped = [832.0, 845.0, 838.0, 851.0].map { Timestamped(value: $0) }
 /// let rrIntervals = AsyncValueStream(rrTimestamped)
 /// for try await window in rrIntervals.tumblingWindow(duration: .seconds(300)) {
 ///     let values = window.map(\.value)
@@ -158,10 +159,11 @@ public struct AsyncTumblingTimeWindowSequence<Base: AsyncSequence, V: Sendable>:
 ///
 /// ## Usage Example
 /// ```swift
+/// let rrTimestamped = [832.0, 845.0, 838.0, 851.0].map { Timestamped(value: $0) }
 /// let rrIntervals = AsyncValueStream(rrTimestamped)
 /// for try await window in rrIntervals.slidingWindow(duration: .seconds(300), stride: .seconds(1)) {
-///     let rmssd = computeRMSSD(window.map(\.value))
-///     print("1-second update: RMSSD = \(rmssd)")
+///     let dispersion = stdDev(window.map(\.value))
+///     print("1-second update: RR dispersion = \(dispersion)")
 /// }
 /// ```
 ///
@@ -306,6 +308,7 @@ extension AsyncSequence {
     ///
     /// ## Usage Example
     /// ```swift
+    /// let timestampedValues = [832.0, 845.0, 838.0, 851.0].map { Timestamped(value: $0) }
     /// let rrIntervals = AsyncValueStream(timestampedValues)
     /// for try await window in rrIntervals.tumblingWindow(duration: .seconds(300)) {
     ///     print("Window has \(window.count) elements")
@@ -329,6 +332,7 @@ extension AsyncSequence {
     ///
     /// ## Usage Example
     /// ```swift
+    /// let timestampedValues = [832.0, 845.0, 838.0, 851.0].map { Timestamped(value: $0) }
     /// let rrIntervals = AsyncValueStream(timestampedValues)
     /// // 5-minute windows, updating every second
     /// for try await window in rrIntervals.slidingWindow(duration: .seconds(300), stride: .seconds(1)) {
