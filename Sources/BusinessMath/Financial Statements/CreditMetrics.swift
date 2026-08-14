@@ -22,7 +22,7 @@ import Numerics
 ///
 /// ```swift
 /// let prices = [100.0, 102.5, 99.0, 105.0]
-/// let entity = Entity(name: "Acme Corp", ticker: "ACME")
+/// let entity = Entity(id: "ACME", name: "Acme Corp")
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
@@ -85,6 +85,9 @@ import Numerics
 /// let company = Entity.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let currentPeriod = Period.documentationQuarters[1]
+/// let priorPeriod = Period.documentationQuarters[0]
+///
 /// let score = piotroskiScore(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
@@ -190,8 +193,6 @@ public struct PiotroskiScore {
 /// let period = Period.documentationQuarters[0]
 /// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
 /// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
-/// let marketPriceSeries = 45.0
-/// let sharesOutstandingSeries = 1_000_000.0
 /// let periods = Period.documentationQuarters
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
@@ -217,10 +218,10 @@ public struct PiotroskiScore {
 /// let zScores = altmanZScore(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
-///     marketPrice: marketPriceSeries,
-///     sharesOutstanding: sharesOutstandingSeries
+///     marketPrice: marketPrice,
+///     sharesOutstanding: sharesOutstanding
 /// )
-/// let z = (zScores[period] ?? 0)
+/// let zForPeriod = (zScores[period] ?? 0)
 /// ```
 ///
 /// - Parameters:

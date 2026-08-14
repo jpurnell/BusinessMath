@@ -49,7 +49,14 @@ public enum ConstraintRelation: Sendable {
 ///
 /// ## Usage with Cutting Planes
 /// ```swift
-/// let result = try solver.maximize(objective: [...], subjectTo: [...])
+/// let solver = SimplexSolver()
+/// let constraint1 = SimplexConstraint(coefficients: [1.0, 1.0], relation: .lessOrEqual, rhs: 4.0)
+/// let constraint2 = SimplexConstraint(coefficients: [1.0, 3.0], relation: .lessOrEqual, rhs: 6.0)
+///
+/// let result = try solver.maximize(
+///     objective: [3.0, 2.0],
+///     subjectTo: [constraint1, constraint2]
+/// )
 ///
 /// if let tableau = result.tableau, let basis = result.basis {
 ///     // Generate Gomory cuts from fractional basic variables
@@ -57,12 +64,18 @@ public enum ConstraintRelation: Sendable {
 ///
 ///     for (rowIndex, basicVarIndex) in basis.enumerated() {
 ///         let value = result.solution[basicVarIndex]
-///         let tableauRow = tableau.getRow(rowIndex)
+///         let coefficients = tableau.getRow(rowIndex)
+///
+///         let row = SimplexRow(
+///             rhs: value,
+///             coefficients: coefficients,
+///             nonBasicVariableIndices: Array(coefficients.indices),
+///             basicVariableIndex: basicVarIndex
+///         )
 ///
 ///         if let cut = try cutGenerator.generateGomoryCut(
-///             tableauRow: tableauRow,
-///             rhs: value,
-///             basicVariableIndex: basicVarIndex
+///             from: row,
+///             totalVariableCount: tableau.columnCount
 ///         ) {
 ///             // Add cut to LP and re-solve
 ///         }
@@ -141,12 +154,16 @@ public struct SimplexTableau: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let solver = SimplexSolver()
+/// let constraint1 = SimplexConstraint(coefficients: [1.0, 1.0], relation: .lessOrEqual, rhs: 4.0)
+/// let constraint2 = SimplexConstraint(coefficients: [1.0, 3.0], relation: .lessOrEqual, rhs: 6.0)
+///
 /// let result = try solver.maximize(
 ///     objective: [3.0, 2.0],
 ///     subjectTo: [constraint1, constraint2]
 /// )
 ///
-/// if result.status == .optimal {
+/// if result.status == SimplexStatus.optimal {
 ///     print("Optimal value: \(result.objectiveValue)")
 ///     print("Solution: \(result.solution)")
 /// }

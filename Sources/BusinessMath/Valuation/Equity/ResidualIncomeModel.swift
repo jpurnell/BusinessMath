@@ -174,6 +174,9 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let netIncomeSeries = TimeSeries(periods: Period.documentationQuarters, values: [50.0, 55, 60, 65])
+    /// let bookValueSeries = TimeSeries(periods: Period.documentationQuarters, values: [500.0, 550, 600, 650])
+    ///
     /// let model = ResidualIncomeModel(
     ///     currentBookValue: 1000.0,
     ///     netIncome: netIncomeSeries,
@@ -371,10 +374,9 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
-    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
+    /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50.0, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500.0, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
     /// // If equity value is $1,714M and 100M shares outstanding
-    /// let sharePrice = model.valuePerShare(sharesOutstanding: 100.0)
+    /// let sharePrice = try model.valuePerShare(sharesOutstanding: 100.0)
     /// // Returns: $17.14 per share
     /// ```
     ///
@@ -383,8 +385,7 @@ public struct ResidualIncomeModel<T: Real> where T: Sendable {
     /// Compare intrinsic value per share to book value per share:
     /// ```swift
     /// let model = ResidualIncomeModel(currentBookValue: 500.0, netIncome: TimeSeries(periods: Period.documentationQuarters, values: [50, 55, 60, 65]), bookValue: TimeSeries(periods: Period.documentationQuarters, values: [500, 550, 600, 650]), costOfEquity: 0.10, terminalGrowthRate: 0.02)
-    /// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
-    /// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+    /// let sharesOutstanding = 100.0
     /// let bookValuePerShare = model.currentBookValue / sharesOutstanding
     /// let intrinsicValuePerShare = try model.valuePerShare(sharesOutstanding: sharesOutstanding)
     /// let priceToBook = intrinsicValuePerShare / bookValuePerShare
