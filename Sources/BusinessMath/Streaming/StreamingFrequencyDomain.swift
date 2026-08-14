@@ -17,6 +17,7 @@ import Foundation
 ///
 /// ## Usage Example
 /// ```swift
+/// let fftOutput = (0..<512).map { i in 1.0 / Double(i + 1) }
 /// let spectrum = FrequencySpectrum(powers: fftOutput, sampleRate: 4.0, sampleCount: 1024)
 /// let lfPower = spectrum.power(in: 0.04..<0.15)   // LF band
 /// let hfPower = spectrum.power(in: 0.15..<0.40)   // HF band
@@ -70,6 +71,9 @@ public struct FrequencySpectrum: Sendable {
     ///
     /// ## Usage Example
     /// ```swift
+    /// let fftOutput = (0..<512).map { i in 1.0 / Double(i + 1) }
+    /// let spectrum = FrequencySpectrum(powers: fftOutput, sampleRate: 4.0, sampleCount: 1024)
+    ///
     /// let lfPower = spectrum.power(in: 0.04..<0.15)  // LF band for HRV
     /// let hfPower = spectrum.power(in: 0.15..<0.40)  // HF band for HRV
     /// ```
@@ -105,6 +109,8 @@ public struct FrequencySpectrum: Sendable {
 ///
 /// ## Usage Example
 /// ```swift
+/// let rrIntervals = AsyncValueStream<Double>([832, 845, 838, 851])
+///
 /// rrIntervals
 ///     .timestamped()
 ///     .tumblingWindow(duration: .seconds(300))
@@ -274,6 +280,8 @@ extension AsyncSequence where Element == [Timestamped<Double>] {
     ///
     /// ## Usage Example
     /// ```swift
+    /// let rrIntervals = AsyncValueStream<Double>([832, 845, 838, 851])
+    ///
     /// let spectra = rrIntervals
     ///     .timestamped()
     ///     .tumblingWindow(duration: .seconds(300))

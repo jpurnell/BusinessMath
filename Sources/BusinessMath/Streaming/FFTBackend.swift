@@ -30,6 +30,7 @@ import Foundation
 ///
 /// ```swift
 /// let backend = FFTBackendSelector.selectBackend()
+/// let signal = (0..<64).map { i in sin(Double(i) / 8) }
 /// let spectrum = backend.powerSpectrum(signal)
 /// ```
 ///
@@ -71,6 +72,7 @@ public protocol FFTBackend: Sendable {
     /// ## Example
     /// ```swift
     /// let backend = FFTBackendSelector.selectBackend()
+    /// let signal = (0..<64).map { i in sin(Double(i) / 8) }
     /// let mean = signal.reduce(0, +) / Double(signal.count)
     /// let zeroMean = signal.map { $0 - mean }
     /// let psd = backend.powerSpectralDensity(zeroMean, sampleRate: 4.0)
@@ -314,6 +316,7 @@ import Accelerate
 /// ## Usage Example
 /// ```swift
 /// let backend = AccelerateFFTBackend()
+/// let signal = (0..<64).map { i in sin(Double(i) / 8) }
 /// let spectrum = backend.powerSpectrum(signal)
 /// ```
 public struct AccelerateFFTBackend: FFTBackend, Sendable {
@@ -429,6 +432,7 @@ public struct AccelerateFFTBackend: FFTBackend, Sendable {
 /// ## Usage Example
 /// ```swift
 /// let backend = FFTBackendSelector.selectBackend()
+/// let signal = (0..<64).map { i in sin(Double(i) / 8) }
 /// let spectrum = backend.powerSpectrum(signal)
 /// ```
 public struct FFTBackendSelector {
