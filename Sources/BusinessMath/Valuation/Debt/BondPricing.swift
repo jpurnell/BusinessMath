@@ -109,7 +109,7 @@ public protocol BondLike {
 ///     faceValue: 1000.0,
 ///     couponRate: 0.05,
 ///     maturityDate: Date().addingTimeInterval(10 * 365 * 24 * 3600),
-///     paymentFrequency: .semiannual,
+///     paymentFrequency: .semiAnnual,
 ///     issueDate: Date()
 /// )
 ///
@@ -174,6 +174,14 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let bond = Bond(
+    ///     faceValue: 1000.0,
+    ///     couponRate: 0.05,
+    ///     maturityDate: Date().addingTimeInterval(10 * 365 * 24 * 3600),
+    ///     paymentFrequency: .semiAnnual,
+    ///     issueDate: Date()
+    /// )
+    ///
     /// let cashFlows = bond.cashFlowSchedule()
     /// for cf in cashFlows {
     ///     print("\(cf.date): $\(cf.amount) (\(cf.type))")
@@ -276,6 +284,14 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let bond = Bond(
+    ///     faceValue: 1000.0,
+    ///     couponRate: 0.05,
+    ///     maturityDate: Date().addingTimeInterval(10 * 365 * 24 * 3600),
+    ///     paymentFrequency: .semiAnnual,
+    ///     issueDate: Date()
+    /// )
+    ///
     /// let ytm = try bond.yieldToMaturity(price: 950.0)
     /// print("YTM: \(ytm * 100)%")
     /// ```
@@ -333,6 +349,14 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let bond = Bond(
+    ///     faceValue: 1000.0,
+    ///     couponRate: 0.05,
+    ///     maturityDate: Date().addingTimeInterval(10 * 365 * 24 * 3600),
+    ///     paymentFrequency: .semiAnnual,
+    ///     issueDate: Date()
+    /// )
+    ///
     /// let currentYield = bond.currentYield(price: 950.0)
     /// // If coupon is 5%, current yield = 50 / 950 ≈ 5.26%
     /// ```
@@ -411,6 +435,14 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let bond = Bond(
+    ///     faceValue: 1000.0,
+    ///     couponRate: 0.05,
+    ///     maturityDate: Date().addingTimeInterval(10 * 365 * 24 * 3600),
+    ///     paymentFrequency: .semiAnnual,
+    ///     issueDate: Date()
+    /// )
+    ///
     /// let modDur = bond.modifiedDuration(yield: 0.06)
     /// // If yield increases by 0.01 (1%), price decreases by ~modDur%
     /// ```
@@ -734,7 +766,9 @@ public struct AmortizationPayment<T: Real>: Sendable where T: Sendable {
 ///
 /// ```swift
 /// // 5-year bond with equal annual principal payments
-/// var schedule: [AmortizationPayment] = []
+/// let maturity = Date().addingTimeInterval(5 * 365 * 24 * 3600)
+///
+/// var schedule: [AmortizationPayment<Double>] = []
 /// for year in 1...5 {
 ///     let date = Date().addingTimeInterval(Double(year) * 365 * 24 * 3600)
 ///     schedule.append(AmortizationPayment(date: date, principalAmount: 200.0))
@@ -743,7 +777,7 @@ public struct AmortizationPayment<T: Real>: Sendable where T: Sendable {
 /// let bond = AmortizingBond(
 ///     faceValue: 1000.0,
 ///     couponRate: 0.06,
-///     maturityDate: schedule.last!.date,
+///     maturityDate: maturity,
 ///     paymentFrequency: .annual,
 ///     issueDate: Date(),
 ///     amortizationSchedule: schedule
