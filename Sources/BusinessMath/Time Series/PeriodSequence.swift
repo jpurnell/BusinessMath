@@ -29,6 +29,9 @@ import Numerics
 /// ## Temporal Aggregation
 ///
 /// ```swift
+/// let months = (0..<12).map { Period.month(year: 2025, month: $0 + 1) }
+/// let monthlyRevenue = TimeSeries(periods: months, values: (0..<12).map { 100.0 + Double($0) })
+///
 /// // Sum monthly revenue into quarterly totals
 /// let quarterly = PeriodSequence.aggregate(
 ///     monthlyRevenue,
@@ -135,6 +138,9 @@ public struct PeriodSequence: Sequence, Sendable {
     /// ## Example
     ///
     /// ```swift
+    /// let months = (0..<12).map { Period.month(year: 2025, month: $0 + 1) }
+    /// let monthlyRevenue = TimeSeries(periods: months, values: (0..<12).map { 100.0 + Double($0) })
+    ///
     /// // Sum monthly revenue into quarterly
     /// let quarterly = PeriodSequence.aggregate(
     ///     monthlyRevenue,
