@@ -422,7 +422,8 @@ extension AsyncSequence where Element == Double {
 ///
 /// ## Example
 /// ```swift
-/// let stream = createProcessDataStream()
+/// // In control near the 100.0 target, then a sustained shift upward
+/// let stream = AsyncValueStream<Double>([99, 101, 100, 102, 106, 107, 108, 109])
 /// for try await signal in stream.cusum(target: 100.0, drift: 1.0, threshold: 5.0) {
 ///     if signal.isSignaling {
 ///         print("Process shifted \(signal.direction) at position \(signal.index)")
@@ -538,7 +539,8 @@ public struct AsyncCUSUMSequence<Base: AsyncSequence>: AsyncSequence where Base.
 ///
 /// ## Example
 /// ```swift
-/// let stream = createProcessDataStream()
+/// // In control near the 100.0 target, then a sustained shift upward
+/// let stream = AsyncValueStream<Double>([99, 101, 100, 102, 106, 107, 108, 109])
 /// for try await signal in stream.ewma(target: 100.0, lambda: 0.2, controlLimitSigma: 3.0) {
 ///     if signal.isOutOfControl {
 ///         print("Out of control at \(signal.index): EWMA=\(signal.ewma)")
@@ -668,7 +670,7 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([98, 102, 99, 101, 150, 100])
+/// let stream = AsyncValueStream<Double>([98, 102, 99, 101, 150, 100])
 /// for try await detection in stream.detectOutliers(method: .zScore(threshold: 2.0), window: 10) {
 ///     if detection.isOutlier {
 ///         print("Outlier detected at \(detection.index): \(detection.value)")
@@ -846,7 +848,7 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([100, 102, 98, 101, 150, 152, 148, 151])
+/// let stream = AsyncValueStream<Double>([100, 102, 98, 101, 150, 152, 148, 151])
 /// for try await breakpoint in stream.detectBreakpoints(method: .binarySegmentation(minSegmentSize: 2, maxBreakpoints: 5)) {
 ///     print("Breakpoint at index \(breakpoint.index): \(breakpoint.leftMean) → \(breakpoint.rightMean)")
 /// }
@@ -1066,7 +1068,7 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
 /// ## Example
 /// ```swift
 /// // Detect weekly anomalies (period=7 for days of week)
-/// let stream = AsyncValueStream([100, 80, 85, 90, 95, 120, 110,  // Week 1
+/// let stream = AsyncValueStream<Double>([100, 80, 85, 90, 95, 120, 110,  // Week 1
 ///                                105, 82, 87, 88, 92, 150, 115]) // Week 2 (Saturday anomaly)
 /// for try await anomaly in stream.detectSeasonalAnomalies(period: 7, threshold: 2.0) {
 ///     if anomaly.isAnomaly {
@@ -1230,7 +1232,7 @@ public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence w
 ///
 /// ## Example
 /// ```swift
-/// let stream = AsyncValueStream([98, 102, 99, 101, 200, 100])
+/// let stream = AsyncValueStream<Double>([98, 102, 99, 101, 200, 100])
 /// for try await composite in stream.compositeAnomalyScore(window: 10, methods: [.zScore, .iqr, .mad]) {
 ///     print("Composite score: \(composite.score)")
 ///     print("Method scores: \(composite.methodScores)")
