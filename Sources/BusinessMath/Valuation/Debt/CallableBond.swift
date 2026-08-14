@@ -19,6 +19,8 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let callDate = Calendar.current.date(from: DateComponents(year: 2027, month: 1, day: 1)) ?? Date()
+///
 /// // Callable at 105% of par after 3 years
 /// let provision = CallProvision(
 ///     date: callDate,
@@ -84,6 +86,10 @@ public struct CallProvision<T: Real> where T: Sendable {
 ///     paymentFrequency: .semiAnnual,
 ///     issueDate: today
 /// )
+///
+/// let year3 = Calendar.current.date(from: DateComponents(year: 2027, month: 1, day: 1)) ?? Date()
+/// let year5 = Calendar.current.date(from: DateComponents(year: 2029, month: 1, day: 1)) ?? Date()
+/// let year7 = Calendar.current.date(from: DateComponents(year: 2031, month: 1, day: 1)) ?? Date()
 ///
 /// let callSchedule = [
 ///     CallProvision(date: year3, callPrice: 1050.0),
@@ -327,8 +333,22 @@ public struct CallableBond<T: Real> where T: Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
     /// let today = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1)) ?? Date()
+    /// let maturity = Calendar.current.date(from: DateComponents(year: 2034, month: 1, day: 1)) ?? Date()
+    /// let year3 = Calendar.current.date(from: DateComponents(year: 2027, month: 1, day: 1)) ?? Date()
+    ///
+    /// let bond = Bond(
+    ///     faceValue: 1000.0,
+    ///     couponRate: 0.06,
+    ///     maturityDate: maturity,
+    ///     paymentFrequency: .semiAnnual,
+    ///     issueDate: today
+    /// )
+    /// let callableBond = CallableBond(
+    ///     bond: bond,
+    ///     callSchedule: [CallProvision(date: year3, callPrice: 1050.0)]
+    /// )
+    ///
     /// let oas = try callableBond.optionAdjustedSpread(
     ///     marketPrice: 980.0,
     ///     riskFreeRate: 0.03,
@@ -432,6 +452,21 @@ public struct CallableBond<T: Real> where T: Sendable {
     ///
     /// ```swift
     /// let today = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1)) ?? Date()
+    /// let maturity = Calendar.current.date(from: DateComponents(year: 2034, month: 1, day: 1)) ?? Date()
+    /// let year3 = Calendar.current.date(from: DateComponents(year: 2027, month: 1, day: 1)) ?? Date()
+    ///
+    /// let bond = Bond(
+    ///     faceValue: 1000.0,
+    ///     couponRate: 0.06,
+    ///     maturityDate: maturity,
+    ///     paymentFrequency: .semiAnnual,
+    ///     issueDate: today
+    /// )
+    /// let callableBond = CallableBond(
+    ///     bond: bond,
+    ///     callSchedule: [CallProvision(date: year3, callPrice: 1050.0)]
+    /// )
+    ///
     /// let effDuration = callableBond.effectiveDuration(
     ///     riskFreeRate: 0.03,
     ///     spread: 0.02,
