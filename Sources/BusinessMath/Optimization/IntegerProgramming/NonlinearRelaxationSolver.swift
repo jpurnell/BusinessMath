@@ -88,6 +88,14 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
     /// // Portfolio optimization with risk constraint
     /// let solver = NonlinearRelaxationSolver(maxIterations: 1000, tolerance: 1e-6)
     ///
+    /// let n = 3
+    /// let covariance = [
+    ///     [0.040, 0.010, 0.005],
+    ///     [0.010, 0.030, 0.008],
+    ///     [0.005, 0.008, 0.020]
+    /// ]
+    /// let expectedReturns = [0.09, 0.07, 0.06]
+    ///
     /// // Minimize portfolio variance
     /// let result = try solver.solveRelaxation(
     ///     objective: { weights in
@@ -96,7 +104,10 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
     ///         var variance = 0.0
     ///         for i in 0..<w.count {
     ///             for j in 0..<w.count {
-    ///                 variance += w[i] * covariance[i][j] * w[j]
+    ///                 // Split so the type-checker does not have to solve
+    ///                 // three multiplications at once
+    ///                 let pair = w[i] * w[j]
+    ///                 variance += pair * covariance[i][j]
     ///             }
     ///         }
     ///         return variance
@@ -105,13 +116,16 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
     ///         // Weights sum to 1
     ///         .equality { w in w.toArray().reduce(0, +) - 1.0 },
     ///         // Minimum expected return
-    ///         .inequality { w in 0.08 - dot(expectedReturns, w.toArray()) }
+    ///         .inequality { w in
+    ///             let weighted = zip(expectedReturns, w.toArray()).reduce(0.0) { $0 + $1.0 * $1.1 }
+    ///             return 0.08 - weighted
+    ///         }
     ///     ],
-    ///     initialGuess: VectorN(Array(repeating: 1.0 / n, count: n)),
+    ///     initialGuess: VectorN(Array(repeating: 1.0 / Double(n), count: n)),
     ///     minimize: true
     /// )
     ///
-    /// if result.status == .optimal, let solution = result.solution {
+    /// if result.status == RelaxationStatus.optimal, let solution = result.solution {
     ///     print("Optimal weights: \(solution)")
     ///     print("Minimum variance: \(result.objectiveValue)")
     /// } else {

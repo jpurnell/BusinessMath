@@ -156,6 +156,18 @@ was 60 lines further down — cost a full round trip. The old lesson, learned ag
 
 ### Categories that cannot be fixed in fences
 
+- **`internal` symbols, same as `private`.** The fence compiles as an *external* client, so
+  anything below `public` is invisible. `MetalBuffers` is `internal final class` and its
+  one fence — 4 errors, the last of the 4-error tier — cannot be made to compile at all.
+  It is the only file left that is blocked rather than unfinished. It wants
+  `<!-- docs:illustrative -->`, which is a human edit by design and was deliberately not
+  applied. The same rule is why `RandomInterceptResult`'s synthesised memberwise init is
+  unreachable and its fences must fit a model instead.
+- **`Real` is not in the fence preamble.** The preamble is Foundation plus this module, and
+  `Real` comes from `Numerics`, which BusinessMath imports without re-exporting. Any fence
+  written `struct Foo<T: Real>` fails with `references 'Real'` followed by
+  `type 'T' does not conform to protocol 'Real'`. Write such examples concretely against
+  `Double`. Hit in `Optimizer` and `FinancialPeriodSummary`.
 - **`private` symbols.** A doc example on a private function cannot compile — nothing can
   reference it. `generateSteps` in SensitivityAnalysis.swift is one; rewritten to show the
   equivalent via `stride`.

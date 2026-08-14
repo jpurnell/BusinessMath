@@ -185,7 +185,7 @@ public struct GeneticAlgorithmConfig: Sendable {
 /// )
 ///
 /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
-/// let result = try optimizer.minimize(sphere, from: VectorN([5.0, 5.0]))
+/// let result = try optimizer.optimizeDetailed(objective: sphere)
 ///
 /// print("Solution: \(result.solution)")
 /// print("Fitness: \(result.fitness)")
@@ -259,6 +259,13 @@ public struct GeneticAlgorithmResult<V: VectorSpace> where V.Scalar: Real {
     ///
     /// Use this to visualize convergence:
     /// ```swift
+    /// let optimizer = GeneticAlgorithm<VectorN<Double>>(
+    ///     config: .default,
+    ///     searchSpace: [(-10, 10), (-10, 10)]
+    /// )
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    ///
     /// for (gen, bestFitness) in result.convergenceHistory.enumerated() {
     ///     print("Generation \(gen): Best = \(bestFitness)")
     /// }
@@ -275,7 +282,14 @@ public struct GeneticAlgorithmResult<V: VectorSpace> where V.Scalar: Real {
     ///
     /// Use this to diagnose premature convergence:
     /// ```swift
-    /// if result.diversityHistory.last! < 0.001 {
+    /// let optimizer = GeneticAlgorithm<VectorN<Double>>(
+    ///     config: .default,
+    ///     searchSpace: [(-10, 10), (-10, 10)]
+    /// )
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    ///
+    /// if let diversity = result.diversityHistory.last, diversity < 0.001 {
     ///     print("Population may have converged prematurely")
     /// }
     /// ```
