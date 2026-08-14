@@ -1,7 +1,13 @@
-# Handoff — 2026-08-13 (evening)
+# Handoff — 2026-08-14
 
-**2.6.0 is written and unshipped, gated on one number: `doc-comment-code` is at 420.**
-Everything else is clean. Nothing is in flight; `main` and `origin/main` agree.
+**2.6.0 is written and unshipped, gated on one number: `doc-comment-code` is at 288.**
+Everything else is clean. Nothing is in flight.
+
+Down from 420 in ten commits (`99f59c8` … `11816c2`). Every 6- and 7-error file is
+clear; six files still hold 5, fifteen hold 4, and the tail is 60 files holding one
+error each. Full suite green after each commit — 6,597 tests in 581 suites, exit 0.
+Method notes from that run are in "What the second pass added" below; the original
+method still stands and is still right.
 
 ## State
 
@@ -13,22 +19,22 @@ Everything else is clean. Nothing is in flight; `main` and `origin/main` agree.
 | gate, worktrees | 53 errors / 24 warnings, all in `.claude/worktrees/` — see "Worktrees" |
 | CI | green, 4/4 jobs |
 | nightly (Release Tests) | green, including Thread Sanitizer |
-| commits since `v2.5.2` | 122 |
-| **`doc-comment-code`** | **420 non-macro**, +51 macro (parked) |
+| commits since `v2.5.2` | 131 |
+| **`doc-comment-code`** | **288 non-macro**, +51 macro (parked) |
 
 ## First action on resume
 
 ```sh
 swift build && swift test                       # 6,597 / 581, exit 0
 quality-gate --no-cache                         # live tree 0/0
-quality-gate --check doc-comment-code --no-cache | grep -c '❌ error:'   # 471 total
+quality-gate --check doc-comment-code --no-cache | grep -c '❌ error:'   # 339 total
 ```
 
 The binary is `quality-gate`, the flag is `--check`, and it takes **no positional path**. A
 failed invocation greps as `0 errors`, indistinguishable from a clean run — guard on log
 length before trusting any count.
 
-**Filter the macro errors out of any total.** 51 of the 471 are in
+**Filter the macro errors out of any total.** 51 of the 339 are in
 `Sources/BusinessMathMacros/` and are not author-fixable (below). Their count is also
 unstable — it moved 37→50→51 across runs with no edits — so track the non-macro number:
 
@@ -39,27 +45,33 @@ quality-gate --check doc-comment-code --no-cache 2>&1 \
 
 ---
 
-## The remaining 420
+## The remaining 288
 
-**There is no cluster left.** 163 files, worst file has 7 errors, 241 of the 420 are
-undefined references spread over ~180 identifiers of which most appear once. Every
-mechanical pass has been spent; this is per-file reading.
+**There is no cluster left.** 139 files, worst file has 5 errors, and the tail dominates:
+60 files hold exactly one error. Every mechanical pass has been spent; this is per-file
+reading. What the second pass found is that a single file's errors usually share one
+cause — one missing fixture, one wrong label — so per-file is also the efficient unit.
 
 Worst files, none of them large:
 
 ```
- 7  Optimization/Heuristic/KMeansClustering.swift
- 7  Statistics/MixedModels/Diagnostics/LMEDiagnostics.swift
- 6  Financial Statements/AccountAdjustment.swift
- 6  Financial Statements/CashFlowStatement.swift
- 6  Forecasting/HoltWintersModel.swift
- 6  Operational Drivers/IntegrationExample.swift
- 6  Portfolio/RiskParity.swift
- 6  Scenario Analysis/FinancialSimulation.swift
- 6  Simulation/MonteCarlo/SimulationResults.swift
- 6  Streaming/AsyncTimeWindowedSequence.swift
- 6  Streaming/StreamingAnomalyDetection.swift
- 6  Streaming/StreamingForecasting.swift
+ 5  Analysis/DataTable.swift
+ 5  Diagnostics/ModelProfiler.swift
+ 5  Financial Statements/FinancialPeriodSummary.swift
+ 5  Financial Statements/MultiPeriodReport.swift
+ 5  Optimization/Algorithms/ConstrainedOptimizer.swift
+ 5  Scenario Analysis/FinancialProjection.swift
+ 4  Valuation/Equity/EnterpriseValueBridge.swift
+ 4  Valuation/Debt/CreditSpreadModel.swift
+    ... 13 more at 4
+```
+
+Regenerate the list with:
+
+```sh
+quality-gate --check doc-comment-code --no-cache 2>&1 \
+  | grep -A1 '❌ error:' | grep '→' | grep -v BusinessMathMacros \
+  | sed 's|.*Sources/BusinessMath/||' | cut -d: -f1 | sort | uniq -c | sort -rn
 ```
 
 ### The method that works
@@ -97,6 +109,50 @@ cannot convert value of type '@Sendable (Double) -> ScenarioParameter'
 
 Seen with `revenue`, `price`, `users`, `npv`, `discountRate`. It looks like a type-inference
 problem and is a missing binding. An explicit `let` shadows it.
+
+### What the second pass added
+
+**A `T` inference error is almost never a generics problem.** It is what the checker
+reports when a binding is missing or a generic type is named without its argument.
+Seen three ways: nothing bound at all (`result` in LMEDiagnostics); a bare generic type
+name (`KMeans<VectorN>` where the type is `VectorN<T>`, `[AmortizationPayment]` where it
+is `AmortizationPayment<T>`); and a generic type that cannot infer from a non-generic
+argument (`ProbabilisticDriver<T>` from a `DistributionNormal`, which is Double-only).
+Look for a missing or under-specified binding first. The same holds for
+`cannot infer key path type from context` and `cannot infer contextual base`.
+
+**The colliding name need not be in this library.** The handoff already records that an
+unbound identifier can resolve to a same-named library function. It can also resolve
+into the C standard library through Foundation. `signal` in FFTBackend resolved to POSIX
+`signal(2)` and reported as
+
+```
+cannot convert value of type '@Sendable (Int32, (@convention(c) (Int32) -> Void)?) -> ...'
+```
+
+The tell is a reported type you never wrote. `@convention(c)` in a diagnostic means the C
+library, not your code. `time`, `index`, `remainder`, `div` and `log` are the same hazard.
+
+**The smallest green edit can be the wrong edit.** `DistributionNormal(mean:standardDeviation:)`
+does not exist, and the type offers `init(mean:variance:)` one line from
+`init(_ mean:_ stdDev:)`. Renaming the label to `variance:` compiles, passes, and turns a
+15,000 standard deviation into σ ≈ 122. Nothing downstream catches it — fences are not
+executed. When a label is wrong, read both initialisers before choosing.
+
+**Fences do not share scope, including across `##` headings.** Several fences were written
+as continuations of the one above them (`AccountAdjustment`'s Investor Presentation,
+`Driver`'s projection example, `CreditMetrics`). Each needs its own fixture. Where the
+full preamble is long, a smaller fixture that still demonstrates the point is better than
+a copy.
+
+**Parse errors read as nonsense.** `values: [0.01, 0.03, ...]` reports `expected expression
+after unary operator`, because a literal `...` is a range operator with no operand.
+`guard let x = y else { return }` at fence top level reports `return invalid outside of a
+func`. Neither message mentions the actual problem.
+
+**Prefer the checker's own line numbers, but confirm which fence they name.** Binding
+`currentPeriod` into the fence that already declared it — while the fence that needed it
+was 60 lines further down — cost a full round trip. The old lesson, learned again.
 
 ### Categories that cannot be fixed in fences
 
