@@ -34,15 +34,20 @@ import OSLog
 ///
 /// ```swift
 /// let profiler = ModelProfiler()
+/// let flows = [-1000.0, 300, 400, 500, 600]
 ///
-/// // Profile a calculation
-/// let result = profiler.measure(operation: "NPV Calculation") {
-///     calculateNPV(cashFlows: flows, discountRate: 0.08)
+/// // ModelProfiler is an actor, so both calls suspend
+/// Task {
+///     // Profile a calculation
+///     let result = await profiler.measure(operation: "NPV Calculation") {
+///         npv(discountRate: 0.08, cashFlows: flows)
+///     }
+///     print("NPV = \(result)")
+///
+///     // Get performance report
+///     let report = await profiler.report()
+///     print("Measured \(report.totalOperations) operations")
 /// }
-///
-/// // Get performance report
-/// let report = profiler.report()
-/// print(report.number())
 /// ```
 public actor ModelProfiler {
 
@@ -105,8 +110,14 @@ public actor ModelProfiler {
     ///
     /// Example:
     /// ```swift
-    /// let npv = await profiler.measure(operation: "NPV") {
-    ///     calculateNPV(flows, rate: 0.08)
+    /// let profiler = ModelProfiler()
+    /// let flows = [-1000.0, 300, 400, 500, 600]
+    ///
+    /// Task {
+    ///     let result = await profiler.measure(operation: "NPV") {
+    ///         npv(discountRate: 0.08, cashFlows: flows)
+    ///     }
+    ///     print("NPV = \(result)")
     /// }
     /// ```
 	public func measure<T: Sendable>(

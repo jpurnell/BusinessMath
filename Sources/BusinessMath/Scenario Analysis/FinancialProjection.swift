@@ -58,7 +58,7 @@ import Numerics
 /// let equity = projection.balanceSheet.totalEquity
 ///
 /// // Cash flow metrics
-/// let operatingCashFlow = projection.cashFlowStatement.totalOperatingCashFlow
+/// let operatingCashFlow = projection.cashFlowStatement.operatingCashFlow
 /// let freeCashFlow = projection.cashFlowStatement.freeCashFlow
 /// ```
 ///
@@ -71,15 +71,22 @@ import Numerics
 /// let baseCase = FinancialScenario.documentationFixture
 /// let scenario = FinancialScenario.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
-/// let baseProjection = runner.run(scenario: baseCase, ...)
-/// let optimisticProjection = runner.run(scenario: optimistic, ...)
-/// let pessimisticProjection = runner.run(scenario: pessimistic, ...)
+/// let entity = Entity.documentationFixture
+/// let periods = Period.documentationQuarters
+/// let builder: ScenarioRunner.StatementBuilder = { _, _ in (try IncomeStatement<Double>.documentationFixture, try BalanceSheet<Double>.documentationFixture, try CashFlowStatement<Double>.documentationFixture) }
+///
+/// let optimistic = FinancialScenario.documentationFixture
+/// let pessimistic = FinancialScenario.documentationFixture
+///
+/// let baseProjection = try runner.run(scenario: baseCase, entity: entity, periods: periods, builder: builder)
+/// let optimisticProjection = try runner.run(scenario: optimistic, entity: entity, periods: periods, builder: builder)
+/// let pessimisticProjection = try runner.run(scenario: pessimistic, entity: entity, periods: periods, builder: builder)
 ///
 /// // Compare net income across scenarios
 /// let q1 = Period.quarter(year: 2025, quarter: 1)
-/// let baseIncome = baseProjection.incomeStatement.netIncome[q1]!
-/// let optimisticIncome = optimisticProjection.incomeStatement.netIncome[q1]!
-/// let pessimisticIncome = pessimisticProjection.incomeStatement.netIncome[q1]!
+/// let baseIncome = baseProjection.incomeStatement.netIncome[q1] ?? 0
+/// let optimisticIncome = optimisticProjection.incomeStatement.netIncome[q1] ?? 0
+/// let pessimisticIncome = pessimisticProjection.incomeStatement.netIncome[q1] ?? 0
 ///
 /// // Analyze range of outcomes
 /// let incomeRange = optimisticIncome - pessimisticIncome
@@ -198,7 +205,7 @@ public struct FinancialProjection: Sendable {
 	/// let cashFlowStatement = try CashFlowStatement<Double>.documentationFixture
 	/// let projection = try FinancialProjection.documentationFixture
 	/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
-	/// let operatingCF = projection.cashFlowStatement.totalOperatingCashFlow
+	/// let operatingCF = projection.cashFlowStatement.operatingCashFlow
 	/// let freeCF = projection.cashFlowStatement.freeCashFlow
 	///
 	/// // Calculate cash flow metrics
