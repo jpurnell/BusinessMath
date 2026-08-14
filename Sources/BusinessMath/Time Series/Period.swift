@@ -58,6 +58,8 @@ private let cachedCalendar = Calendar.current
 /// Periods are ordered first by type (shorter before longer), then by date:
 ///
 /// ```swift
+/// let someDate = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date()
+///
 /// let day = Period.day(someDate)
 /// let month = Period.month(year: 2025, month: 1)
 /// let quarter = Period.quarter(year: 2025, quarter: 1)
@@ -401,6 +403,9 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// let company = Entity.documentationFixture
 	/// // A company moving from quarterly to semiannual reporting emits a
 	/// // five-month stub between its last quarter and its first half.
+	/// let aprilFirst = Calendar.current.date(from: DateComponents(year: 2025, month: 4, day: 1)) ?? Date()
+	/// let augustThirtyFirst = Calendar.current.date(from: DateComponents(year: 2025, month: 8, day: 31)) ?? Date()
+	///
 	/// let stub = Period.custom(start: aprilFirst, end: augustThirtyFirst)
 	/// print(stub.durationInDays)   // 152.0
 	/// print(stub.months())         // [] — a stub is not divisible on the ladder
@@ -1127,9 +1132,10 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// ## Example
 	/// ```swift
 	/// let period = Period.documentationQuarters[0]
-	/// guard let following = period.nextIfSteppable() else {
+	/// if let following = period.nextIfSteppable() {
+	///     print(following.label)
+	/// } else {
 	///     // A transition stub — the caller has to supply the next boundary itself.
-	///     return
 	/// }
 	/// ```
 	public func nextIfSteppable() -> Period? {
@@ -1165,6 +1171,8 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// ## Example
 	/// ```swift
 	/// // All start on Jan 1, 2025, but ordered by type:
+	/// let someDate = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date()
+	///
 	/// let day = Period.day(someDate)
 	/// let month = Period.month(year: 2025, month: 1)
 	/// let quarter = Period.quarter(year: 2025, quarter: 1)
@@ -1303,6 +1311,9 @@ extension Period {
 	///
 	/// ## Example
 	/// ```swift
+	/// let apr1 = Calendar.current.date(from: DateComponents(year: 2025, month: 4, day: 1)) ?? Date()
+	/// let aug31 = Calendar.current.date(from: DateComponents(year: 2025, month: 8, day: 31)) ?? Date()
+	///
 	/// Period.quarter(year: 2025, quarter: 1).durationInDays   // 91.3125 (type average)
 	/// Period.custom(start: apr1, end: aug31).durationInDays   // 152.0 (actual)
 	/// ```

@@ -28,12 +28,13 @@ import Numerics
 /// let rent = DeterministicDriver<Double>(name: "Rent", value: 120_000.0)
 ///
 /// // Uncertain value
-/// let sales = ProbabilisticDriver(
+/// let sales = ProbabilisticDriver<Double>(
 ///     name: "Units Sold",
 ///     distribution: DistributionNormal(1000.0, 100.0)
 /// )
 ///
 /// // Composite driver
+/// let price = DeterministicDriver<Double>(name: "Price", value: 50.0)
 /// let revenue = ProductDriver(name: "Revenue", lhs: sales, rhs: price)
 /// ```
 ///
@@ -42,6 +43,14 @@ import Numerics
 /// ```swift
 /// let quarters = Period.documentationQuarters
 /// let periods = Period.year(2025).quarters()
+///
+/// let sales = ProbabilisticDriver<Double>(
+///     name: "Units Sold",
+///     distribution: DistributionNormal(1000.0, 100.0)
+/// )
+/// let price = DeterministicDriver<Double>(name: "Price", value: 50.0)
+/// let revenue = ProductDriver(name: "Revenue", lhs: sales, rhs: price)
+///
 /// let projection = DriverProjection(driver: revenue, periods: periods)
 ///
 /// // Deterministic projection (single path)
@@ -93,7 +102,7 @@ public protocol Driver: Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let driver = ProbabilisticDriver(
+	/// let driver = ProbabilisticDriver<Double>(
 	///     name: "Sales",
 	///     distribution: DistributionNormal(1000.0, 100.0)
 	/// )
@@ -164,7 +173,7 @@ public struct AnyDriver<T: Real & Sendable>: Driver, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let driver = ProbabilisticDriver(
+	/// let driver = ProbabilisticDriver<Double>(
 	///     name: "Sales",
 	///     distribution: DistributionNormal(1000.0, 100.0)
 	/// )
