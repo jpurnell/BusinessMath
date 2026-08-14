@@ -49,6 +49,43 @@ scalars, `bayesianICC`, and the seeded paths through `integrate` and `ScenarioGe
 return different numbers too, but they do so through changed signatures or documented
 non-reproducibility — see below.
 
+#### Fixed — every GPU kernel dispatched more threads than it had work
+
+Metal rounds a dispatch up to whole threadgroups. At a population of 1200 that is 1280
+threads for 1200 individuals, and none of the eight kernels bounded its thread id, so the
+surplus 80 read `randomSeeds[id]` past its allocation and wrote the population buffer past
+its end — undefined behaviour, and the reason a seeded genetic algorithm reproduced only
+sometimes.
+
+The failing sizes explain the symptom: 999 uses the CPU path, 1000 dispatches 1024 threads
+and 1200 dispatches 1280. Both failures were at non-multiples of the 256-wide threadgroup,
+and a test written at 1024 would have passed indefinitely.
+
+Every kernel now bounds its id, and every dispatch uses `dispatchThreads`, which sizes the
+final threadgroup to fit so the surplus does not exist. `MetalDevice.shouldUseGPU` requires
+non-uniform threadgroup support and declines the GPU without it; every GPU path here has a
+complete CPU implementation, so that costs speed rather than capability.
+
+Also closed: `DifferentialEvolution`, `ParticleSwarmOptimization` and `MetalMatrixBackend`
+read their output buffers after `waitUntilCompleted()` without checking
+`commandBuffer.status`. `.error` is a terminal state, so a failed dispatch returned the
+buffer's previous contents.
+
+**Every seeded GPU result moves**, because the previous ones were computed with surplus
+threads writing out of bounds.
+
+#### Fixed — published figures that disagreed with the code
+
+`doc-claims` reports 0 for the first time. Eight claims, three causes: a growth rate
+documented as 9.8% where 146.45/133 is 10.1%; four figures whose examples read their input
+from `Date()`, so they were true in November 2024 and drifted thereafter — the checker caught
+the XIRR pair as two values changing between two runs of the same binary; and one tolerance
+quoted to two more digits than the root finder delivers.
+
+A precedence bug in `BalanceSheet`'s documentation is fixed with them:
+`(ar[q1] ?? 0 / (currentAssets[q1] ?? 0)) * 100` divides before the `??` resolves, so the
+"58%" it claimed was never that percentage.
+
 #### Fixed — four expressions that did not compile on Linux
 
 `inverseNormalCDF` and `ParticleSwarmOptimization` each contained generic expressions the

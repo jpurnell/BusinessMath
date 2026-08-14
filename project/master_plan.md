@@ -38,19 +38,20 @@ suite depends on it.
 
 ## Current Status
 
-Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 96 commits since the tag, all pushed.
+Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 122 commits since the tag, all pushed.
 
 | | |
 |---|---|
-| tests | **6,582 in 579 suites**, 0 known issues, ~29s |
+| tests | **6,597 in 581 suites**, 0 known issues, ~35s |
 | build | **0 warnings**, library and test target |
 | quality gate | **0 errors, 0 warnings** across 37 checkers (`--no-cache`; a cached run executes 10) |
 | CI | green — 4/4 jobs, including `Linux release compile check` |
-| nightly (Release Tests) | green — Ubuntu release, macOS release, and Thread Sanitizer (6,582 in 347s) |
+| gate, worktrees | 53 errors / 24 warnings, all in `.claude/worktrees/` — stale copies, live tree clean |
+| nightly (Release Tests) | green — Ubuntu release, macOS release, and Thread Sanitizer |
 | documentation coverage | 100% — 6,508 of 6,508 public APIs |
 | DocC catalogue | **73 articles**, all compiling as one program under `quality-gate --check doc-code` |
-| `doc-comment-code` | **852 errors** ← the tag gate |
-| `doc-claims` | **8 errors**, all in `1.2-TimeSeries.md` |
+| `doc-comment-code` | **420 errors** (non-macro; +51 macro, parked) ← the tag gate |
+| `doc-claims` | **0 errors** — cleared 2026-08-13 |
 | toolchain | `swift-tools-version: 6.2`, Swift 6 strict concurrency |
 
 The test figure is measured. A `--bootstrap --check status` run estimates 7,818 by counting
@@ -64,7 +65,7 @@ The honest list. Sources: `project/plans/TrustPlan.md`, and the gate's own outpu
 
 The gate is at **0 errors, 0 warnings across 37 checkers**. What follows is not currently firing.
 
-- **A cached run executes 10 of 36 checkers and prints the same summary line.** Measured. Only
+- **A cached run executes 10 of 37 checkers and prints the same summary line.** Measured. Only
   `--no-cache` reaches `unreachable`, `doc-coverage`, `recursion`, `concurrency` and
   `release-readiness`. Every figure quoted in this document came from a `--no-cache` run; a plain
   `quality-gate` is not evidence of anything. This is the third instance of the same shape found
@@ -167,10 +168,15 @@ Both revert at tag time. `release-readiness` passes on that basis.
    ordering argument held up: `doc-comment-code` is upstream, and repairing the catalogue while
    Quick Help still hands out the wrong signature would have let the drift return.
 2. **Clear this codebase under them. This is the gate on the tag.**
-   - `doc-comment-code`: **852**, from 1,515. The live work.
-   - `doc-claims`: **8**, all `1.2-TimeSeries.md`. Small, and each one needs a judgement about
-     which side is wrong rather than an edit.
+   - `doc-comment-code`: **420 non-macro**, from 1,515. The live work, and the only thing
+     left gating the tag. No cluster remains — 163 files, worst holds 7 — so it is per-file
+     reading from here. Method and traps are in `HANDOFF.md`.
+   - `doc-claims`: **0** — cleared 2026-08-13. Three causes: one miscalculated figure, four
+     claims reading their input from the clock, one over-precise tolerance.
    - `doc-generated`: clean.
+   - 51 further `doc-comment-code` errors are in `Sources/BusinessMathMacros/` and are not
+     author-fixable: the checker compiles those fences without the macro plugin. Proposal
+     filed in the quality-gate repo; being handled separately.
 3. **Cut 2.6.0** — tag, revert the two version strings. Nothing is unpushed; `main` and
    `origin/main` agree at 96 commits past `v2.5.2`.
 4. **Differential testing against published references** (TrustPlan §2.2) — still the highest
@@ -271,7 +277,16 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-08-13 — reconciled against the tree and against CI, not against the
+**Last Updated:** 2026-08-13 (evening) — second reconciliation of the day, against the tree
+and the gate. `doc-comment-code` 852 → **420 non-macro**, and `doc-claims` 8 → **0**, so the
+tag now waits on one number rather than two. Tests 6,582 → 6,597; commits since `v2.5.2`
+96 → 122. Added: the `gpu-safety` checker is live and its findings against
+`.claude/worktrees/` are stale copies rather than live defects; the 51 macro errors are
+recorded as not author-fixable so they are not counted against the gate. The method for the
+remaining 420, and the traps that cost round trips, are in `HANDOFF.md` rather than here —
+they are resume notes, not plan.
+
+**Previously, 2026-08-13 (morning):** — reconciled against the tree and against CI, not against the
 previous revision. Counts corrected throughout: 6,520→**6,582** tests in 579 suites, 36→**37**
 checkers, 6,471→**6,508** documented APIs, and "64 commits unpushed"→**0** (96 past `v2.5.2`,
 all pushed). Closed as done: three of the four `doc-*` checkers landed (`doc-comment-code`,
