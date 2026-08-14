@@ -17,7 +17,7 @@ import Foundation
 /// ## Example
 /// ```swift
 /// let stream = AsyncValueStream([1, 2, 3, 4, 5])
-/// for await value in stream {
+/// for try await value in stream {
 ///     print(value)
 /// }
 /// ```
@@ -127,9 +127,10 @@ public struct AsyncGeneratorStream<Element: Sendable>: AsyncSequence, @unchecked
 ///
 /// ## Example
 /// ```swift
+/// let myAsyncSequence = AsyncValueStream([1, 2, 3, 4, 5])
 /// let iterator = myAsyncSequence.makeAsyncIterator()
 /// let sequence = AsyncIteratorSequence(iterator)
-/// for await value in sequence {
+/// for try await value in sequence {
 ///     print(value)
 /// }
 /// ```
@@ -454,7 +455,7 @@ extension AsyncSequence {
 ///
 /// ## Example
 /// ```swift
-/// let unreliableStream = createNetworkStream()
+/// let unreliableStream = AsyncValueStream<Double>([1.0, 2.0, 3.0])
 /// for try await value in unreliableStream.retry(maxAttempts: 3) {
 ///     print(value)  // Will retry up to 3 times on errors
 /// }
@@ -526,7 +527,7 @@ public struct AsyncRetrySequence<Base: AsyncSequence>: AsyncSequence {
 ///
 /// ## Example
 /// ```swift
-/// let stream = createDataStream()
+/// let stream = AsyncValueStream<Double>([1.0, 2.0, 3.0])
 /// for try await value in stream.catchErrors({ error in
 ///     print("Error occurred: \(error), using default value")
 ///     return 0.0  // Fallback value

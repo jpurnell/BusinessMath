@@ -66,7 +66,7 @@ public enum EntityIdentifierType: Hashable, Codable, Sendable {
 /// )
 ///
 /// // Using CUSIP as primary identifier
-/// let microsoft = Entity(
+/// var microsoft = Entity(
 ///     id: "594918104",
 ///     primaryType: .cusip,
 ///     name: "Microsoft Corporation"
@@ -75,7 +75,7 @@ public enum EntityIdentifierType: Hashable, Codable, Sendable {
 /// microsoft.identifiers[.isin] = "US5949181045"
 ///
 /// // Internal identifier for private companies
-/// let subsidiary = Entity(
+/// var subsidiary = Entity(
 ///     id: "SUB-001",
 ///     primaryType: .internal,
 ///     name: "EMEA Division"
@@ -220,7 +220,7 @@ public struct Entity: Hashable, Codable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
+	/// var entity = Entity(id: "AAPL", primaryType: .ticker, name: "Apple Inc.")
 	/// entity.identifiers[.cusip] = "037833100"
 	///
 	/// let ticker = entity.identifier(for: .ticker)  // "AAPL" (from primary)
