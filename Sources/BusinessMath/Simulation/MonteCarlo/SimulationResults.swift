@@ -83,8 +83,11 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let simulation = try FinancialSimulation.documentationFixture
-	/// let results = simulation.run(iterations: 10_000)
+	/// let results = SimulationResults(
+	///     values: [102.0, 98.0, 105.0, 97.0, 101.0],
+	///     usedGPU: false,
+	///     executionNotes: ["GPU unavailable — fell back to CPU"]
+	/// )
 	/// if results.isDegraded {
 	///     print("Execution notes:")
 	///     for note in results.executionNotes {
@@ -159,6 +162,7 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let profitValues = [420_000.0, 510_000.0, 485_000.0, -35_000.0, 560_000.0]
 	/// let results = SimulationResults(values: profitValues)
 	///
 	/// // What's the probability of profit exceeding $500k?
@@ -180,6 +184,7 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let profitValues = [420_000.0, 510_000.0, 485_000.0, -35_000.0, 560_000.0]
 	/// let results = SimulationResults(values: profitValues)
 	///
 	/// // What's the probability of a loss (profit < 0)?
@@ -317,6 +322,7 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let projectDurationDays = [28.0, 34.0, 41.0, 47.0, 38.0]
 	/// let results = SimulationResults(values: projectDurationDays)
 	///
 	/// // What's the probability of completing between 30-45 days?
@@ -343,6 +349,7 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let simulationOutputs = [102.0, 98.0, 105.0, 97.0, 101.0, 99.0, 103.0]
 	/// let results = SimulationResults(values: simulationOutputs)
 	///
 	/// // Automatic bin calculation (recommended)
@@ -469,10 +476,11 @@ public struct SimulationResults: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let revenueValues = [1_020_000.0, 980_000.0, 1_050_000.0, 995_000.0]
 	/// let results = SimulationResults(values: revenueValues)
 	///
 	/// let ci95 = results.confidenceInterval(level: 0.95)
-	/// print("95% confidence interval: [\(ci95.lower), \(ci95.upper)]")
+	/// print("95% confidence interval: [\(ci95.low), \(ci95.high)]")
 	/// print("We expect the true mean to be in this range")
 	/// ```
 	public func confidenceInterval(level: Double) -> (low: Double, high: Double) {

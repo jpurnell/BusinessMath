@@ -23,9 +23,9 @@ import Numerics
 /// let periods = Period.documentationQuarters
 /// let entity = Entity.documentationFixture
 /// // Create scenario with uncertain revenue
-/// let uncertainRevenue = ProbabilisticDriver(
+/// let uncertainRevenue = ProbabilisticDriver<Double>(
 ///     name: "Revenue",
-///     distribution: DistributionNormal(mean: 100_000.0, standardDeviation: 15_000.0)
+///     distribution: DistributionNormal(100_000.0, 15_000.0)
 ///     )
 ///
 /// var overrides: [String: AnyDriver<Double>] = [:]
@@ -442,14 +442,14 @@ extension FinancialSimulation {
 /// let entity = Entity.documentationFixture
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Create scenario with uncertain drivers
-/// let uncertainRevenue = ProbabilisticDriver(
+/// let uncertainRevenue = ProbabilisticDriver<Double>(
 ///     name: "Revenue",
-///     distribution: DistributionNormal(mean: 100_000.0, standardDeviation: 15_000.0)
+///     distribution: DistributionNormal(100_000.0, 15_000.0)
 /// )
 ///
-/// let uncertainCosts = ProbabilisticDriver(
+/// let uncertainCosts = ProbabilisticDriver<Double>(
 ///     name: "Costs",
-///     distribution: DistributionNormal(mean: 60_000.0, standardDeviation: 8_000.0)
+///     distribution: DistributionNormal(60_000.0, 8_000.0)
 /// )
 ///
 /// var overrides: [String: AnyDriver<Double>] = [:]
