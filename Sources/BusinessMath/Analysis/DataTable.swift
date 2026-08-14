@@ -28,7 +28,7 @@ import Foundation
 /// let table = DataTable.oneVariable(
 ///     inputs: rates,
 ///     calculate: { rate in
-///         loanPayment(principal: 100_000, rate: rate, periods: 360)
+///         payment(presentValue: 100_000, rate: rate / 12, periods: 360)
 ///     }
 /// )
 ///
@@ -42,13 +42,14 @@ import Foundation
 /// ```swift
 /// // Calculate profit for different price/volume combinations
 /// let prices = [10.0, 12.0, 14.0, 16.0]
-/// let volumes = [100, 200, 300, 400, 500]
+/// let volumes = [100.0, 200.0, 300.0, 400.0, 500.0]
+/// let fixedCosts = 500.0
 ///
 /// let table = DataTable.twoVariable(
 ///     rowInputs: prices,
 ///     columnInputs: volumes,
 ///     calculate: { price, volume in
-///         revenue(price: price, volume: Double(volume)) - costs
+///         price * volume - fixedCosts
 ///     }
 /// )
 ///
@@ -204,6 +205,9 @@ extension DataTable where Output: CustomStringConvertible {
     ///
     /// ```swift
     /// let prices = [100.0, 102.5, 99.0, 105.0]
+    /// let volumes = [100.0, 200.0, 300.0]
+    /// let costMatrix = prices.map { price in volumes.map { volume in price * volume } }
+    ///
     /// // Format as currency with 2 decimal places
     /// let formatted = DataTable<Double, Double>.formatTwoVariable(
     ///     costMatrix,
