@@ -42,7 +42,13 @@ import Numerics
 /// )
 ///
 /// // Apply adjustment to legal expense account
-/// let adjustedLegal = legalExpense.applying(adjustment: legalSettlement)
+/// let legalExpense = try Account(
+///     entity: Entity.documentationFixture,
+///     name: "Legal Fees",
+///     incomeStatementRole: .operatingExpenseOther,
+///     timeSeries: TimeSeries(periods: [q1], values: [500_000])
+/// )
+/// let adjustedLegal = try legalExpense.applying(adjustment: legalSettlement)
 ///
 /// // Calculate adjusted EBITDA
 /// let adjustedEBITDA = incomeStatement.adjustedEBITDA(adjustments: [legalSettlement])
@@ -231,7 +237,7 @@ extension Account {
 	/// )
 	///
 	/// // Adjusted legal expense: $250K (normalized run rate)
-	/// let adjustedLegal = legalExpense.applying(adjustment: settlement)
+	/// let adjustedLegal = try legalExpense.applying(adjustment: settlement)
 	/// ```
 	///
 	/// - Parameter adjustment: The adjustment to apply
@@ -303,7 +309,7 @@ extension Account {
 	///     )
 	/// ]
 	///
-	/// let adjustedGNA = gnaExpense.applying(adjustments: adjustments)
+	/// let adjustedGNA = try gnaExpense.applying(adjustments: adjustments)
 	/// ```
 	///
 	/// - Parameter adjustments: Array of adjustments to apply
@@ -414,7 +420,23 @@ extension IncomeStatement {
 	/// ## Investor Presentation
 	///
 	/// ```swift
+	/// let periods = Period.documentationQuarters
+	/// let q1 = Period.documentationQuarters[0]
 	/// let q4 = Period.documentationQuarters[3]
+	/// let accounts = try IncomeStatement<Double>.documentationFixture.accounts
+	/// let target = Entity.documentationFixture
+	/// let incomeStatement = try IncomeStatement(entity: target, periods: periods, accounts: accounts)
+	///
+	/// let adjustments = [
+	///     AccountAdjustment(
+	///         adjustmentType: .addback,
+	///         amount: TimeSeries(periods: [q1], values: [250_000]),
+	///         description: "Non-recurring litigation settlement"
+	///     )
+	/// ]
+	/// let reportedEBITDA = incomeStatement.ebitda
+	/// let adjustedEBITDA = incomeStatement.adjustedEBITDA(adjustments: adjustments)
+	///
 	/// // Bridge from reported to adjusted EBITDA
 	/// print("Reported EBITDA: $\(reportedEBITDA[q4] ?? 0)")
 	/// for adjustment in adjustments {
