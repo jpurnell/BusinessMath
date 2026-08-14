@@ -310,7 +310,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// let wcComponents = cashFlowStmt.workingCapitalChangesByComponent
 	///
 	/// // Analyze AR changes
-	/// if let arChanges = wcComponents[.changeInAccountsReceivable] {
+	/// if let arChanges = wcComponents[.changeInReceivables] {
 	///     let q2Change = (arChanges[q2] ?? 0)
 	///     if q2Change > 0 {
 	///         print("AR increased by $\(q2Change) - use of cash")
@@ -331,7 +331,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// }
 	///
 	/// // Analyze AP changes
-	/// if let apChanges = wcComponents[.changeInAccountsPayable] {
+	/// if let apChanges = wcComponents[.changeInPayables] {
 	///     let q2Change = (apChanges[q2] ?? 0)
 	///     if q2Change > 0 {
 	///         print("AP increased by $\(q2Change) - source of cash")
@@ -354,14 +354,14 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	/// let revenue = incomeStatement.totalRevenue
 	///
 	/// // Calculate AR as days sales outstanding (DSO)
-	/// if let arChanges = wcComponents[.changeInAccountsReceivable],
-	///    let arBalance = balanceSheet.accountsReceivableBalance {
-	///     let dso = (arBalance[q2] ?? 0 / (revenue[q2] ?? 0)) * 365
+	/// if let arChanges = wcComponents[.changeInReceivables],
+	///    let arBalance = balanceSheet.workingCapitalComponents[.accountsReceivable] {
+	///     let dso = ((arBalance[q2] ?? 0) / (revenue[q2] ?? 0)) * 365
 	///     print("DSO: \(dso) days")
 	///
 	///     // Forecast future AR based on target DSO
 	///     let targetDSO = 45.0  // days
-	///     let targetAR = (revenue[q3] ?? 0 / 365) * targetDSO
+	///     let targetAR = ((revenue[q3] ?? 0) / 365) * targetDSO
 	///     let projectedARChange = targetAR - (arBalance[q2] ?? 0)
 	///     print("Projected AR change Q3: $\(projectedARChange)")
 	/// }
@@ -384,7 +384,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	///     let q1toQ2 = (changes[q2] ?? 0) - (changes[q1] ?? 0)
 	///
 	///     switch role {
-	///     case .changeInAccountsReceivable:
+	///     case .changeInReceivables:
 	///         if q1toQ2 > 0 {
 	///             print("⚠️ AR build accelerating - review credit policies")
 	///         }
@@ -394,7 +394,7 @@ public struct CashFlowStatement<T: Real & Sendable>: Sendable where T: Codable {
 	///             print("⚠️ Inventory build accelerating - check for obsolescence")
 	///         }
 	///
-	///     case .changeInAccountsPayable:
+	///     case .changeInPayables:
 	///         if q1toQ2 < 0 {
 	///             print("⚠️ AP declining - negotiate better payment terms")
 	///         }
