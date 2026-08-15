@@ -83,8 +83,8 @@ public struct FinancialCovenant {
         ///
         /// ## Example
         /// ```swift
-        /// let metric: FinancialMetric = "Current Ratio"  // Maps to .currentRatio
-        /// let custom: FinancialMetric = "Custom Metric"  // Maps to .custom("Custom Metric")
+        /// let metric: FinancialCovenant.FinancialMetric = "Current Ratio"  // Maps to .currentRatio
+        /// let custom: FinancialCovenant.FinancialMetric = "Custom Metric"  // Maps to .custom("Custom Metric")
         /// ```
         ///
         /// - Parameter value: String representation of the metric
@@ -235,6 +235,11 @@ public struct FinancialCovenant {
 ///
 /// ## Example
 /// ```swift
+/// let covenant = FinancialCovenant(
+///     name: "Minimum Current Ratio",
+///     requirement: .minimumRatio(metric: "Current Ratio", threshold: 1.5)
+/// )
+///
 /// let result = CovenantComplianceResult(
 ///     covenant: covenant,
 ///     isCompliant: true,

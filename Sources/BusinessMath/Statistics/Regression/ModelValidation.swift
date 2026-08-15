@@ -31,31 +31,8 @@ import Numerics
 ///
 /// # Example
 /// ```swift
-/// let values = [100.0, 110.0, 120.0, 130.0]
-/// let validator = ParameterRecoveryValidator<Double>()
-///
-/// // Define true parameters
-/// let trueParams = ReciprocParam Recovery Validation
-
-/// Validates a statistical model's fitting procedure by checking parameter recovery from simulated data.
-///
-/// # Workflow
-/// 1. Specify true parameter values
-/// 2. Simulate fake data from the model with those parameters
-/// 3. Fit the model to the simulated data
-/// 4. Compare recovered parameters to true parameters
-/// 5. Check if differences are within acceptable bounds
-///
-/// This is a "sanity check" for model fitting:
-/// - If you **can't** recover parameters from your own simulated data, something is wrong
-///   (poor identification, mixing issues, coding bugs, algorithmic problems)
-/// - If you **can** recover parameters, that doesn't guarantee the model is good,
-///   but it's a necessary minimum requirement
-///
-/// # Example
-/// ```swift
 /// // Simulate and validate
-/// let report = try ReciprocParameterRecoveryCheck.run(
+/// let report = try ReciprocalParameterRecoveryCheck.run(
 ///     trueA: 0.2,
 ///     trueB: 0.3,
 ///     trueSigma: 0.2,

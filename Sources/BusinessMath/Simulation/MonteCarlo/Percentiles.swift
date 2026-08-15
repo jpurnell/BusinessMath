@@ -33,9 +33,9 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
-/// let simulation = try FinancialSimulation.documentationFixture
-/// let simulationValues = [/* 10,000 simulation results */]
-/// let percentiles = Percentiles(values: simulationValues)
+/// // Stand-in for a full simulation run
+/// let simulationValues = (0..<10_000).map { Double($0) / 100.0 }
+/// let percentiles = try Percentiles(values: simulationValues)
 ///
 /// print("Median outcome: \(percentiles.p50)")
 /// print("95% confidence: value will be above \(percentiles.p5)")
@@ -171,7 +171,8 @@ public struct Percentiles: Sendable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let percentiles = Percentiles(values: data)
+	/// let data = (0..<1_000).map { Double($0) / 10.0 }
+	/// let percentiles = try Percentiles(values: data)
 	/// let p85 = percentiles.percentile(0.85)  // 85th percentile
 	/// ```
 	public func percentile(_ p: Double) -> Double {

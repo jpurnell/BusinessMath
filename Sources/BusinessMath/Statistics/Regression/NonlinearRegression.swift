@@ -32,16 +32,16 @@ import Numerics
 /// let trueSigma = 0.2
 ///
 /// // Simulate data
-/// let simulator = ReciprocalRegressionSimulator(a: trueA, b: trueB, sigma: trueSigma)
+/// let simulator = ReciprocalRegressionSimulator<Double>(a: trueA, b: trueB, sigma: trueSigma)
 /// let data = simulator.simulate(n: 100, xRange: 0.0...10.0)
 ///
 /// // Fit the model to recover parameters
-/// let fitter = ReciprocalRegressionFitter()
+/// let fitter = ReciprocalRegressionFitter<Double>()
 /// let result = try fitter.fit(data: data)
 ///
-/// print("Recovered a: \(result.a) (true: \(trueA))")
-/// print("Recovered b: \(result.b) (true: \(trueB))")
-/// print("Recovered sigma: \(result.sigma) (true: \(trueSigma))")
+/// print("Recovered a: \(result.parameters.a) (true: \(trueA))")
+/// print("Recovered b: \(result.parameters.b) (true: \(trueB))")
+/// print("Recovered sigma: \(result.parameters.sigma) (true: \(trueSigma))")
 /// ```
 public struct ReciprocalRegressionModel<T: Real & Sendable & Codable> where T: BinaryFloatingPoint {
 	/// Parameters for the reciprocal regression model
@@ -309,10 +309,13 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 ///
 /// # Example
 /// ```swift
+/// let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.2)
+/// let observedData = simulator.simulate(n: 100, xRange: 0.0...10.0)
+///
 /// let fitter = ReciprocalRegressionFitter<Double>()
 /// let result = try fitter.fit(
 ///     data: observedData,
-///     initialGuess: Parameters(a: 0.5, b: 0.5, sigma: 0.5),
+///     initialGuess: ReciprocalRegressionModel<Double>.Parameters(a: 0.5, b: 0.5, sigma: 0.5),
 ///     learningRate: 0.1,
 ///     maxIterations: 1000
 /// )

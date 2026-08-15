@@ -418,8 +418,10 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Covenant Calculations
 	///
 	/// ```swift
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	/// let ebitda = try IncomeStatement<Double>.documentationFixture.ebitda
 	/// let zeroSeries = TimeSeries(periods: Period.documentationQuarters, values: [0, 0, 0, 0])
-	/// let values = [100.0, 110.0, 120.0, 130.0]
+	///
 	/// // Senior leverage ratio (excludes mezzanine)
 	/// let seniorDebtTypes: Set<BalanceSheetRole> = [
 	///     .revolvingCreditFacility,
@@ -427,7 +429,6 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ]
 	///
 	/// let debtBreakdown = balanceSheet.interestBearingDebtByType
-	/// let zeroSeries = TimeSeries(periods: Period.documentationQuarters, values: [0, 0, 0, 0])
 	/// let seniorDebt = debtBreakdown
 	///     .filter { seniorDebtTypes.contains($0.key) }
 	///     .values

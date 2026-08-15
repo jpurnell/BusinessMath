@@ -42,7 +42,7 @@ import Numerics
 /// ```swift
 /// // Invest $1000, receive $400/year for 3 years
 /// let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
-/// let irr = try irr(cashFlows: cashFlows)
+/// let rateOfReturn = try irr(cashFlows: cashFlows)
 /// // Result: ~0.0970 (9.7%)
 /// ```
 ///
@@ -57,7 +57,7 @@ import Numerics
 ///     12000.0,    // Year 4 rent
 ///     130000.0    // Year 5 rent + sale
 /// ]
-/// let irr = try irr(cashFlows: cashFlows)
+/// let rateOfReturn = try irr(cashFlows: cashFlows)
 /// // Result: ~0.152 (15.2%)
 /// ```
 ///
@@ -195,7 +195,7 @@ public func irr<T: Real>(
 /// let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
 ///
 /// // Finance at 12%, reinvest at 8%
-/// let mirr = try mirr(
+/// let modifiedRate = try mirr(
 ///     cashFlows: cashFlows,
 ///     financeRate: 0.12,
 ///     reinvestmentRate: 0.08
