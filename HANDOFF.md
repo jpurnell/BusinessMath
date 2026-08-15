@@ -216,6 +216,21 @@ Two open questions: what to do with the orphan, and whether the gate should scan
 
 ## Open, beyond the fence work
 
+0. **Adversarial-length tests wherever input becomes recursion.** `FormulaEvaluator` shipped
+   two unbounded recursions — `((((…))))` through `parsePrimary` and `-----…1` through
+   `parseFactor` — either of which overflows the stack and takes the process. Both are
+   bounded now, with tests verified to crash before the fix, but neither was found by
+   reasoning about the grammar. They were found by a checker pointing at the file and then
+   trying 5,000 characters.
+   Two things follow, and neither is a gate rule:
+   - Anywhere untrusted text reaches a recursive descent, there should be a test at the
+     bound. The candidates are the formula parser (done) and the DocC articles `doc-run`
+     reports as hanging — `5.9-AdaptiveSelection.md` and `5.10-ParallelOptimization.md`,
+     both killed at the deadline, which is the same family of defect one layer out.
+   - Choose the limit against the **smallest** stack the code can run on. 256 nesting
+     levels was verified by hand and still overflowed under Swift Testing, whose
+     cooperative-pool threads have far smaller stacks than the main thread.
+
 0. **Macro errors: 51 to 5. The remaining 5 are two macros that cannot work.**
    The "not author-fixable" verdict was wrong on every count. The plugin loads fine, and
    upgrading quality-gate to HEAD changes nothing — the error set was byte-identical, so
