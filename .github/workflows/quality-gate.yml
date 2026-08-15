@@ -24,7 +24,13 @@ permissions:
 
 jobs:
   quality-gate:
-    uses: jpurnell/quality-gate-swift/.github/workflows/quality-gate-reusable.yml@main
+    # DIAGNOSTIC PIN — temporary, revert after this run.
+    # 4f65852 is the last commit before 245cd20, which added `issues: write` to the
+    # callee and coincides exactly with four public repos flipping from success to
+    # startup_failure on 2026-06-18. If this run STARTS, visibility is fine and the
+    # break is 245cd20. If it still fails in 0s, the cause is constant — most likely
+    # that a public caller cannot resolve a private reusable workflow.
+    uses: jpurnell/quality-gate-swift/.github/workflows/quality-gate-reusable.yml@4f65852
     with:
       checks: "all"
       continue-on-failure: true
