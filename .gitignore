@@ -1,6 +1,7 @@
 # Hidden files and folders (all dot files/folders)
 .*
 !.gitignore
+!.quality-gate.yml
 !.github/
 !.swift-version
 !.swiftpm/

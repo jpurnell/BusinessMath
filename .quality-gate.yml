@@ -1,0 +1,37 @@
+# NOTE ON KEYS. This file is decoded against a fixed schema and unknown keys are
+# discarded without a word. Two keys here were doing nothing for as long as they
+# have existed:
+#
+#   exclude:   — there is no such config key; `--exclude` is a CLI flag only.
+#   checkers:  — the key is `enabledCheckers`.
+#
+# The second one mattered. The file read as "run everything", the gate read
+# nothing, and it fell back to its default set — which omitted `recursion`. That
+# is the checker that finds unbounded recursion, and an unbounded recursion is
+# how `FormulaEvaluator` came to be crashable by a long formula. The check was
+# never declined; it was never run.
+#
+# Both are removed rather than corrected, because correcting `checkers:` is a
+# trap of its own: `enabledCheckers` REPLACES the default set with the literal
+# ids given, and no checker is named "all". Writing `enabledCheckers: [all]`
+# would run nothing. A full run is `--check all` at the invocation.
+
+# Agent worktrees are a tool's working area, not source — the same category as
+# .build. They hold stale snapshots of files that have since been fixed on main,
+# so every finding there is a defect that no longer exists anywhere shippable,
+# counted once per worktree. Scanning them pinned the gate at 53 errors that no
+# edit to this repository could clear, which is worse than useless: a gate that
+# is permanently red teaches everyone to read FAILED as "fine".
+excludePatterns:
+  - "**/.claude/worktrees/**"
+
+consistency:
+  corpusPath: /Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/org-judgement-corpus
+  projectID: BusinessMath
+  consistencyThreshold: 0.7
+  defaultRiskTier: 2
+
+# v2 layout: the master plan is project-owned, not framework content.
+status:
+  guidelinesPath: "."
+  masterPlanPath: project/master_plan.md
