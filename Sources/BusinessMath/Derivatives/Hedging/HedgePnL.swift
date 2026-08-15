@@ -19,8 +19,20 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
+///
+/// // `swap` names a standard-library function, so bind it explicitly
+/// let hedge = CommoditySwap<Double>(
+///     underlier: "WTI",
+///     fixedPrice: 70.0,
+///     notionalVolume: 1_000.0,
+///     settlementPeriods: quarters
+/// )
+/// let spotPrices = TimeSeries(periods: quarters, values: [68.0, 74.0, 81.0, 77.0])
+/// let production = TimeSeries(periods: quarters, values: [1_200.0, 1_250.0, 1_180.0, 1_300.0])
+///
 /// var program = HedgingProgram<Double>()
-/// program.addSwap(swap)
+/// program.addSwap(hedge)
 ///
 /// let pnl = HedgePnL.calculate(
 ///     program: program,

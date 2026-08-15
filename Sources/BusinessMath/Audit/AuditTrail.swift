@@ -162,12 +162,15 @@ public struct AuditReport: Sendable {
 /// ))
 ///
 /// // Query entries
+/// let startDate = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1)) ?? Date()
+/// let endDate = Calendar.current.date(from: DateComponents(year: 2024, month: 12, day: 31)) ?? Date()
+///
 /// let recentChanges = manager.query(from: startDate, to: endDate)
 /// let aaplChanges = manager.query(entity: "AAPL")
 /// let userChanges = manager.query(user: "john.doe")
 ///
 /// // Generate report
-/// let report = manager.generateReport(for: DateInterval(start: start, end: end))
+/// let report = manager.generateReport(for: DateInterval(start: startDate, end: endDate))
 /// print(report.format())
 /// ```
 ///
@@ -179,6 +182,12 @@ public struct AuditReport: Sendable {
 /// let manager = AuditTrailManager(storageURL: fileURL)
 ///
 /// // All changes are automatically persisted
+/// let entry = AuditEntry(
+///     user: "john.doe",
+///     action: .updated,
+///     entityId: "AAPL",
+///     reason: "Corrected sales figures"
+/// )
 /// manager.record(entry)
 ///
 /// // Load from disk when creating new manager

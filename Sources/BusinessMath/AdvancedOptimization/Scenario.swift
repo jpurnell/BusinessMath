@@ -23,7 +23,8 @@ import Foundation
 ///
 ///     // Generate from historical data or Monte Carlo
 ///     static func generate() -> PortfolioScenario {
-///         let returns = sampleFromHistoricalDistribution()
+///         // A real implementation would draw from historical data
+///         let returns = [0.08, 0.05, 0.11]
 ///         return PortfolioScenario(returns: returns, probability: 1.0)
 ///     }
 /// }
@@ -140,6 +141,12 @@ public struct DiscreteScenario: OptimizationScenario {
 ///
 /// ```swift
 /// var rng = DeterministicRNG(seed: 42)
+///
+/// let mu = [0.08, 0.05, 0.11]
+/// let sigma = [0.15, 0.20, 0.12]
+/// let lo = [-0.05, -0.03, -0.08]
+/// let hi = [0.05, 0.03, 0.08]
+///
 /// let returns = ScenarioGenerator.normal(mean: mu, standardDeviation: sigma,
 ///                                        numberOfScenarios: 1_000, using: &rng)
 /// let shocks  = ScenarioGenerator.uniform(lowerBounds: lo, upperBounds: hi,

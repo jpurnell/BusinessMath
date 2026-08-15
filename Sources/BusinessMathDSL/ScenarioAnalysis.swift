@@ -124,6 +124,10 @@ import Numerics
 /// }
 ///
 /// // Compute percentiles for risk analysis
+/// let evaluateFunction: (Scenario) -> Double = { scenario in
+///     scenario.parameters["growth"] ?? 0.0
+/// }
+///
 /// let p10 = analysis.percentile(10, for: evaluateFunction)
 /// let p50 = analysis.percentile(50, for: evaluateFunction)  // Median
 /// let p90 = analysis.percentile(90, for: evaluateFunction)

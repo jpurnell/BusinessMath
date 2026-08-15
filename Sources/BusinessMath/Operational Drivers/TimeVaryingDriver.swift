@@ -94,8 +94,11 @@ import Numerics
 ///
 /// ```swift
 /// let period = Period.documentationQuarters[0]
+/// let launchDate = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date()
+///
 /// let productRevenue = TimeVaryingDriver<Double>(name: "Product Lifecycle") { period in
-///     let monthsSinceLaunch = calculateMonthsSince(launchDate: launchDate, period: period)
+///     let elapsed = Calendar.current.dateComponents([.month], from: launchDate, to: period.startDate)
+///     let monthsSinceLaunch = max(0, elapsed.month ?? 0)
 ///
 ///     let (mean, stdDev): (Double, Double)
 ///     if monthsSinceLaunch < 6 {
@@ -122,7 +125,9 @@ import Numerics
 /// Time-varying drivers work seamlessly with all operations:
 ///
 /// ```swift
-/// let seasonalQuantity = TimeVaryingDriver<Double>(...) { period in ... }
+/// let seasonalQuantity = TimeVaryingDriver<Double>(name: "Quantity") { period in
+///     period.quarter == 4 ? 1_800.0 : 1_000.0
+/// }
 /// let fixedPrice = DeterministicDriver(name: "Price", value: 100.0)
 /// let revenue = seasonalQuantity * fixedPrice  // Product still works
 /// ```
@@ -134,6 +139,10 @@ import Numerics
 /// ```swift
 /// let quarters = Period.documentationQuarters
 /// let periods = Period.year(2025).quarters()
+/// let seasonalRevenue = TimeVaryingDriver<Double>(name: "Seasonal Revenue") { period in
+///     period.quarter == 4 ? 180_000.0 : 100_000.0
+/// }
+///
 /// let projection = DriverProjection(driver: seasonalRevenue, periods: periods)
 /// let results = projection.projectMonteCarlo(iterations: 10_000)
 ///

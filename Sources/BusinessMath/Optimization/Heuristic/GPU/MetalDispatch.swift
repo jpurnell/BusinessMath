@@ -17,9 +17,15 @@ extension MTLComputeCommandEncoder {
 	/// The idiom this replaces rounds the threadgroup count up:
 	///
 	/// ```swift
+	/// import Metal
+	///
+	/// let device = MTLCreateSystemDefaultDevice()
+	/// let encoder = device?.makeCommandQueue()?.makeCommandBuffer()?.makeComputeCommandEncoder()
+	/// let count = 1200
+	///
 	/// let per    = MTLSize(width: min(count, 256), height: 1, depth: 1)
 	/// let groups = MTLSize(width: (count + 255) / 256, height: 1, depth: 1)
-	/// encoder.dispatchThreadgroups(groups, threadsPerThreadgroup: per)
+	/// encoder?.dispatchThreadgroups(groups, threadsPerThreadgroup: per)
 	/// ```
 	///
 	/// At `count = 1200` that dispatches 1280 threads for 1200 elements, and the 80 surplus

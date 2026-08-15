@@ -25,8 +25,12 @@ import Numerics
 /// )
 ///
 /// // Use with solver
+/// let solver = BranchAndCutSolver<VectorN<Double>>()
+/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
+/// let spec = IntegerProgramSpecification(integerVariables: [0, 1])
+///
 /// let result = try solver.solve(
-///     objective: objective,
+///     objective: { point in objective.evaluate(at: point) },
 ///     from: VectorN([0.5, 0.5]),
 ///     subjectTo: constraints,
 ///     integerSpec: spec

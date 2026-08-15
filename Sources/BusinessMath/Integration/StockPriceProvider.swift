@@ -21,12 +21,26 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
-/// let provider: any StockPriceProvider = YahooFinanceProvider()
-/// let prices = try await provider.fetchStockPrice(
-///     symbol: "AAPL",
-///     from: startDate,
-///     to: endDate
-/// )
+/// // Concrete providers live in the BusinessMathMarketData package; any type
+/// // conforming to the protocol works the same way.
+/// struct StubProvider: StockPriceProvider {
+///     func fetchStockPrice(symbol: String, from: Date, to: Date) async throws -> TimeSeries<Double> {
+///         TimeSeries(periods: Period.documentationQuarters, values: [45.0, 47, 49, 51])
+///     }
+/// }
+///
+/// let provider: any StockPriceProvider = StubProvider()
+/// let startDate = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date()
+/// let endDate = Calendar.current.date(from: DateComponents(year: 2025, month: 12, day: 31)) ?? Date()
+///
+/// Task {
+///     let prices = try await provider.fetchStockPrice(
+///         symbol: "AAPL",
+///         from: startDate,
+///         to: endDate
+///     )
+///     print(prices)
+/// }
 /// ```
 ///
 /// ## Protocol Composition
