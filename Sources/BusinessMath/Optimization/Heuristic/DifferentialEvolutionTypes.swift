@@ -294,6 +294,13 @@ public struct DifferentialEvolutionResult<V: VectorSpace> where V.Scalar: Real {
     ///
     /// Use this to visualize convergence:
     /// ```swift
+    /// let optimizer = DifferentialEvolution<VectorN<Double>>(
+    ///     config: .default,
+    ///     searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
+    /// )
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    ///
     /// for (gen, bestFitness) in result.convergenceHistory.enumerated() {
     ///     print("Generation \(gen): Best = \(bestFitness)")
     /// }

@@ -18,10 +18,20 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
-/// let provider: any MarketMetricsProvider = AlphaVantageProvider(configuration: config)
-/// let metrics = try await provider.fetchMetrics(symbol: "AAPL")
-/// if let pe = metrics.priceToEarnings {
-///     print("P/E: \(pe)")
+/// // Concrete providers live in the BusinessMathMarketData package
+/// struct StubProvider: MarketMetricsProvider {
+///     func fetchMetrics(symbol: String) async throws -> MarketMetrics {
+///         MarketMetrics(symbol: symbol, asOf: Date(), priceToEarnings: 28.4)
+///     }
+/// }
+///
+/// let provider: any MarketMetricsProvider = StubProvider()
+///
+/// Task {
+///     let metrics = try await provider.fetchMetrics(symbol: "AAPL")
+///     if let pe = metrics.priceToEarnings {
+///         print("P/E: \(pe)")
+///     }
 /// }
 /// ```
 ///

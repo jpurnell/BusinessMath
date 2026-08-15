@@ -18,7 +18,12 @@ import Numerics
 ///
 /// ## Usage Example
 /// ```swift
-/// let data: [Vector2D<Double>] = /* your data */
+/// let data: [Vector2D<Double>] = [
+///     Vector2D(x: 1.0, y: 1.0),
+///     Vector2D(x: 1.5, y: 2.0),
+///     Vector2D(x: 10.0, y: 10.0),
+///     Vector2D(x: 10.5, y: 11.0)
+/// ]
 /// let strategy: CentroidInitialization = KMeansPlusPlusInitialization()
 ///
 /// let initialCentroids = strategy.initialize(

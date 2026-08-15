@@ -190,7 +190,7 @@ public struct AsyncGradientDescentOptimizer<T>: Sendable, AsyncOptimizer where T
     ///     bounds: nil
     /// ) {
     ///     print("Iteration \(progress.iteration): x = \(progress.currentValue)")
-    ///     updateUI(with: progress)  // Update progress bar, chart, etc.
+    ///     // Update a progress bar, chart, etc. from `progress` here
     /// }
     /// ```
     public func optimizeWithProgress(

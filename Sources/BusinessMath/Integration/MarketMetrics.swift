@@ -19,7 +19,12 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
-/// let metrics = try await provider.fetchMetrics(symbol: "AAPL")
+/// let metrics = MarketMetrics(
+///     symbol: "AAPL",
+///     asOf: Date(),
+///     priceToEarnings: 28.4,
+///     additionalMetrics: ["returnOnEquity": 0.147]
+/// )
 ///
 /// if let pe = metrics.priceToEarnings {
 ///     print("P/E Ratio: \(pe)")
