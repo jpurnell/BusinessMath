@@ -78,12 +78,20 @@ public protocol SchemaMigration {
 /// ## Basic Usage
 ///
 /// ```swift
+/// // One step of the ladder; a real migration would transform `data`
+/// struct VersionBump: SchemaMigration {
+///     let fromVersion: Int
+///     let toVersion: Int
+///     var description: String { "v\(fromVersion) to v\(toVersion)" }
+///     func migrate(_ data: inout [String: Any]) throws {}
+/// }
+///
 /// let manager = MigrationManager()
 ///
 /// // Register migrations
-/// manager.register(Migration_v1_to_v2())
-/// manager.register(Migration_v2_to_v3())
-/// manager.register(Migration_v3_to_v4())
+/// manager.register(VersionBump(fromVersion: 1, toVersion: 2))
+/// manager.register(VersionBump(fromVersion: 2, toVersion: 3))
+/// manager.register(VersionBump(fromVersion: 3, toVersion: 4))
 ///
 /// // Migrate data from v1 to v4
 /// let data: [String: Any] = [

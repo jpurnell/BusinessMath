@@ -38,13 +38,17 @@ import Foundation
 ///
 /// ```swift
 /// // Production: the real monotonic counter, supplied by default.
-/// let profiler = ModelProfiler()
+/// let productionProfiler = ModelProfiler()
 ///
 /// // Test: durations the test chose, asserted exactly.
 /// let time = ManualElapsedTimeSource()
 /// let profiler = ModelProfiler(elapsedTime: time)
-/// await profiler.measure(operation: "Slow") { time.advance(by: .milliseconds(50)) }
-/// #expect(await profiler.report().operations[0].totalTime == 0.05)
+///
+/// Task {
+///     await profiler.measure(operation: "Slow") { time.advance(by: .milliseconds(50)) }
+///     let report = await profiler.report()
+///     assert(report.operations[0].totalTime == 0.05)
+/// }
 /// ```
 public protocol ElapsedTimeSource: Sendable {
 
@@ -86,11 +90,13 @@ public struct SystemElapsedTimeSource: ElapsedTimeSource {
 /// let time = ManualElapsedTimeSource()
 /// let profiler = ModelProfiler(elapsedTime: time)
 ///
-/// await profiler.measure(operation: "Fast") { time.advance(by: .milliseconds(1)) }
-/// await profiler.measure(operation: "Slow") { time.advance(by: .milliseconds(50)) }
+/// Task {
+///     await profiler.measure(operation: "Fast") { time.advance(by: .milliseconds(1)) }
+///     await profiler.measure(operation: "Slow") { time.advance(by: .milliseconds(50)) }
 ///
-/// let report = await profiler.report(sortBy: .totalTime)
-/// #expect(report.operations[0].operation == "Slow")
+///     let report = await profiler.report(sortBy: .totalTime)
+///     assert(report.operations[0].operation == "Slow")
+/// }
 /// ```
 ///
 /// - Note: Uses `@unchecked Sendable` with internal locking, so a source may be shared

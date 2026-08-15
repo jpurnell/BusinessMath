@@ -341,7 +341,7 @@ public struct RandomParameter {
 /// - Parameters that cluster around a central tendency
 ///
 /// ```swift
-/// .normal(mean: 0.15, stdDev: 0.05)
+/// let distribution = Distribution.normal(mean: 0.15, stdDev: 0.05)
 /// // 68% of samples within ±0.05 of 0.15 (0.10 to 0.20)
 /// // 95% of samples within ±0.10 of 0.15 (0.05 to 0.25)
 /// ```
@@ -353,7 +353,7 @@ public struct RandomParameter {
 /// - Maximum entropy when you have min/max bounds
 ///
 /// ```swift
-/// .uniform(min: 0.50, max: 0.70)
+/// let distribution = Distribution.uniform(min: 0.50, max: 0.70)
 /// // All values between 50% and 70% equally likely
 /// ```
 ///
@@ -364,7 +364,7 @@ public struct RandomParameter {
 /// - Three-point estimates (pessimistic, likely, optimistic)
 ///
 /// ```swift
-/// .triangular(min: 0.15, mode: 0.21, max: 0.30)
+/// let distribution = Distribution.triangular(min: 0.15, mode: 0.21, max: 0.30)
 /// // Most likely: 21%, range: 15% to 30%
 /// // Probability decreases linearly from mode to extremes
 /// ```

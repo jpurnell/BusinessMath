@@ -22,7 +22,7 @@ import Numerics
 ///
 /// ```swift
 /// let prices = [100.0, 102.5, 99.0, 105.0]
-/// let entity = Entity(name: "Acme Corp", ticker: "ACME")
+/// let entity = Entity(id: "ACME", name: "Acme Corp")
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 ///
@@ -146,7 +146,7 @@ public func marketCapitalization<T: Real>(
 /// ```swift
 /// let sharesOutstanding = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let dilutedShares = TimeSeries(periods: Period.documentationQuarters, values: [1050, 1050, 1050, 1050])
-/// let basicShares = 1_000_000.0
+/// let basicShares = TimeSeries(periods: Period.documentationQuarters, values: [1000, 1000, 1000, 1000])
 /// let marketPrice = TimeSeries(periods: Period.documentationQuarters, values: [45, 47, 49, 51])
 /// let incomeStatement = try IncomeStatement<Double>.documentationFixture
 /// // Basic P/E
