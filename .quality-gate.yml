@@ -26,7 +26,11 @@ excludePatterns:
   - "**/.claude/worktrees/**"
 
 consistency:
-  corpusPath: /Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/org-judgement-corpus
+  # `corpusPath` is deliberately absent. It is an absolute path to a checkout that exists
+  # on one machine, and this file is tracked — so naming it here would publish a home
+  # directory layout and still be wrong everywhere else. Without it the checker reports
+  # "IJS corpus not configured — consistency check skipped" and passes. Set it locally
+  # (uncommitted) if you want the consistency check to run.
   projectID: BusinessMath
   consistencyThreshold: 0.7
   defaultRiskTier: 2
