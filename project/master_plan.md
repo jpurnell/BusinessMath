@@ -70,6 +70,14 @@ hygiene, and the first two are not in this repository.
    `recursion` came never to run, and how a crashable parser reached a release candidate.
    Proposals for both are filed in the quality-gate repository.
 3. **154 commits unpushed.**
+4. **`doc-run`'s 30-second deadline is wall-clock, and the checker pool is concurrent.**
+   `2.5-ModelValidationGuide.md` runs in **5.7 seconds** on its own and was killed at the
+   deadline during a `--check all` run — the same invocation in which `doc-run` itself took
+   121s rather than its usual 43s. Nothing is wrong with the article. A gate that fails on
+   contention rather than on content is the flake that teaches people to re-run rather than
+   read, so this is worth a fix upstream: measure CPU time, or give the runner a share of
+   the pool rather than competing with 42 other checkers for it. Filed alongside the other
+   quality-gate proposals.
 4. ~~`5.10-ParallelOptimization.md` hangs under `doc-run`.~~ **Resolved.** Both articles
    run, and all 73 in the catalogue now run cleanly and reproducibly. The hang was an
    arithmetic explosion rather than a loop — `ParallelOptimizer` forwards `maxIterations`
