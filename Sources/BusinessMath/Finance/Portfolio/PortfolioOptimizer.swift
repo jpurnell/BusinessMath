@@ -187,7 +187,13 @@ public enum OptimizationStrategy {
 ///
 /// ## Algorithm Selection
 /// ```swift
-/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+/// let returns = VectorN<Double>([0.09, 0.07, 0.06])
+/// let covariance: [[Double]] = [
+///     [0.040, 0.010, 0.005],
+///     [0.010, 0.030, 0.008],
+///     [0.005, 0.008, 0.020]
+/// ]
+///
 /// // Use adaptive algorithm selection
 /// let adaptiveOptimizer = PortfolioOptimizer(strategy: .adaptive)
 /// let portfolio = try adaptiveOptimizer.minimumVariancePortfolio(

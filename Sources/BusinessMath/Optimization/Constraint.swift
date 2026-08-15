@@ -137,8 +137,8 @@ public enum MultivariateConstraint<V: VectorSpace>: Sendable where V.Scalar: Rea
 ///     .linearEquality(coefficients: [1.0], rhs: 5.0)
 	///
 	/// // x - y = 0 (balance constraint)
-	/// let equality: MultivariateConstraint<VectorN<Double>> =
-///     .linearEquality(coefficients: [1.0, -1.0], rhs: 0.0)
+	/// let balance: MultivariateConstraint<VectorN<Double>> =
+	///     .linearEquality(coefficients: [1.0, -1.0], rhs: 0.0)
 	/// ```
 	///
 	/// - Parameters:
@@ -366,7 +366,13 @@ public extension MultivariateConstraint where V == VectorN<Double> {
 	/// let constraints: [MultivariateConstraint<VectorN<Double>>] = [
 	///     .budgetConstraint
 	/// ]
-	/// let result = optimizer.minimize(objective, from: initial, subjectTo: constraints)
+	/// let optimizer = ConstrainedOptimizer<VectorN<Double>>()
+	/// let initial = VectorN<Double>([0.33, 0.33, 0.34])
+	/// let objective: @Sendable (VectorN<Double>) -> Double = { v in
+	///     (0..<v.dimension).reduce(0.0) { $0 + v[$1] * v[$1] }
+	/// }
+	///
+	/// let result = try optimizer.minimize(objective, from: initial, subjectTo: constraints)
 	/// ```
 	static var budgetConstraint: MultivariateConstraint<VectorN<Double>> {
 		.equality(

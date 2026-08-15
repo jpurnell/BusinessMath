@@ -28,10 +28,12 @@ enum FinancialStatementHelpers {
 	/// - Returns: A `TimeSeries` containing the sum of all account values, or zeros if empty
 	///
 	/// ## Example
+	/// This helper is internal. Callers reach the same aggregation through the statement
+	/// totals, each of which sums the accounts carrying the matching role:
+	///
 	/// ```swift
-	/// let periods = Period.documentationQuarters
-	/// let accounts = [revenueAccount1, revenueAccount2, revenueAccount3]
-	/// let totalRevenue = FinancialStatementHelpers.aggregateAccounts(accounts, periods: periods)
+	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
+	/// let totalAssets = balanceSheet.totalAssets
 	/// ```
 	static func aggregateAccounts<T: Real & Sendable & Codable>(
 		_ accounts: [Account<T>],

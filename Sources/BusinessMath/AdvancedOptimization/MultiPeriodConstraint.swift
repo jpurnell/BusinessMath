@@ -21,7 +21,7 @@ import Numerics
 /// ```swift
 /// let constraints: [MultiPeriodConstraint<VectorN<Double>>] = [
 ///     // Budget constraint each period: Σw = 1
-///     .eachPeriod { t, x in x.sum() - 1.0 },
+///     .eachPeriod { t, x in x.sum - 1.0 },
 ///
 ///     // Transaction cost constraint: turnover ≤ 20%
 ///     .transition { t, xₜ, xₜ₊₁ in
@@ -31,7 +31,9 @@ import Numerics
 ///
 ///     // Terminal condition: final value ≥ target
 ///     .terminal { xₜ in
-///         targetValue - xₜ.dot(expectedReturns)
+///         let targetValue = 1.10
+///         let expectedReturns = VectorN<Double>([0.08, 0.05, 0.11])
+///         return targetValue - xₜ.dot(expectedReturns)
 ///     }
 /// ]
 /// ```

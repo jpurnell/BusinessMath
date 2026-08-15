@@ -118,7 +118,9 @@ public struct ExpressionFunction: Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let tax = calculateTax.call(revenue, taxRate)
+    /// let builder = ExpressionBuilder()
+    /// let calculateTax = ExpressionFunction(inputs: 2) { b in b[0] * b[1] }
+    /// let tax = calculateTax.call(builder[0], builder[1])
     /// ```
     public func call(_ args: ExpressionProxy...) -> ExpressionProxy {
         guard args.count == inputCount else {
@@ -276,7 +278,8 @@ public enum FinancialFunctions {
     ///
     /// ## Example
     /// ```swift
-    /// let diffusion = FinancialFunctions.blackScholesDiffusion.call(vol, time, randomNormal)
+    /// let builder = ExpressionBuilder()
+    /// let diffusion = FinancialFunctions.blackScholesDiffusion.call(builder[0], builder[1], builder[2])
     /// ```
     public static let blackScholesDiffusion = ExpressionFunction(inputs: 3) { builder in
         let volatility = builder[0]

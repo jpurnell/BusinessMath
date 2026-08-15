@@ -116,7 +116,7 @@ public struct ScenarioConfig: Sendable {
     ///
     /// Example:
     /// ```swift
-    /// let scenario = FinancialScenario.documentationFixture
+    /// let scenario = ScenarioConfig(name: "Base Case")
     /// let growthRate = scenario["Revenue Growth"] ?? 0.10
     /// ```
     public subscript(parameterName: String) -> Double? {
@@ -415,7 +415,7 @@ public func adjust(_ name: String, by percentage: Double) -> ScenarioParameter {
 /// let scenario = buildScenario {
 ///     Name("Base Case")
 ///     Description("Expected performance")
-///     Driver("Revenue Growth", value: 0.15)
+///     ScenarioDriver("Revenue Growth", value: 0.15)
 /// }
 /// ```
 public func buildScenario(@ScenarioConfigBuilder builder: () -> [ScenarioParameter]) -> ScenarioConfig {

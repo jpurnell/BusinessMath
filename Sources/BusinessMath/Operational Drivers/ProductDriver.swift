@@ -21,11 +21,11 @@ import Numerics
 ///
 /// ```swift
 /// // Revenue = Quantity × Price
-/// let quantity = ProbabilisticDriver(
+/// let quantity = ProbabilisticDriver<Double>(
 ///     name: "Units Sold",
 ///     distribution: DistributionNormal(1000.0, 100.0)
 /// )
-/// let price = ProbabilisticDriver(
+/// let price = ProbabilisticDriver<Double>(
 ///     name: "Price per Unit",
 ///     distribution: DistributionTriangular(low: 95.0, high: 105.0, base: 100.0)
 /// )

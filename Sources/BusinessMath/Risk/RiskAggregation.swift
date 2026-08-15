@@ -57,7 +57,7 @@ import Numerics
 ///     individualVaRs: individualVaRs,
 ///     correlations: correlations
 /// )
-/// print("Portfolio VaR: \(portfolioVaR..currency(0))")
+/// print("Portfolio VaR: \(portfolioVaR.currency(0))")
 /// // Portfolio VaR: $212,803 (less than sum of $300,000 due to diversification)
 ///
 /// // Calculate marginal contribution of desk 1
@@ -75,7 +75,7 @@ import Numerics
 ///     weights: weights,
 ///     correlations: correlations
 /// )
-/// print("Component VaRs: \(components.map { $0.number(0)) })")
+/// print("Component VaRs: \(components.map { $0.number(0) })")
 /// // Components sum to portfolio VaR
 /// ```
 ///

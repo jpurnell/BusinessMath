@@ -33,7 +33,8 @@ import Numerics
 /// ## Example: Comparing Strategies
 ///
 /// ```swift
-/// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+/// let returnsA = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+/// let returnsB = [0.06, 0.04, -0.05, -0.02, 0.09, 0.03]
 /// let strategyA = SharpeRatio.calculate(values: returnsA, riskFreeRate: 0.02)  // 1.8
 /// let strategyB = SharpeRatio.calculate(values: returnsB, riskFreeRate: 0.02)  // 1.2
 ///

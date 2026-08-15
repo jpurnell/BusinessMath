@@ -46,7 +46,7 @@ import Numerics
 ///     if riskTolerance > 0.5 {
 ///         return MultivariateGradientDescent(learningRate: 0.01, maxIterations: 1000)
 ///     } else {
-///         return MultivariateNewtonRaphson(tolerance: 0.0001, maxIterations: 100)
+///         return MultivariateNewtonRaphson(maxIterations: 100, tolerance: 0.0001)
 ///     }
 /// }
 /// ```
@@ -174,7 +174,7 @@ public protocol MultivariateOptimizer<V> {
     /// ```swift
     /// extension MultivariateGradientDescent: MultivariateOptimizer {
     ///     public func minimize(
-    ///         _ objective: @escaping (V) -> V.Scalar,
+    ///         _ objective: @escaping @Sendable (V) -> V.Scalar,
     ///         from initialGuess: V,
     ///         constraints: [MultivariateConstraint<V>] = []
     ///     ) throws -> MultivariateOptimizationResult<V> {

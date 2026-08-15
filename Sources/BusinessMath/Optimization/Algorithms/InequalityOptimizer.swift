@@ -57,12 +57,16 @@ import Numerics
 /// let optimizer = InequalityOptimizer<VectorN<Double>>()
 ///
 /// // Portfolio optimization: minimize variance, Σw=1, w≥0
+/// let portfolioVariance: @Sendable (VectorN<Double>) -> Double = { w in
+///     (0..<w.dimension).reduce(0.0) { $0 + w[$1] * w[$1] }
+/// }
+/// let constraints: [MultivariateConstraint<VectorN<Double>>] =
+///     [.budgetConstraint] + MultivariateConstraint.nonNegativity(dimension: 3)
+///
 /// let result = try optimizer.minimize(
 ///     portfolioVariance,
-///     from: VectorN([0.33, 0.33, 0.34]),
-///     subjectTo: [
-///         .budgetConstraint,  // Σw = 1
-///     ] + .nonNegativity(dimension: 3)  // w ≥ 0
+///     from: VectorN<Double>([0.33, 0.33, 0.34]),
+///     subjectTo: constraints
 /// )
 /// ```
 public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {

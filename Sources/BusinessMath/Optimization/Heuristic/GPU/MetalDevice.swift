@@ -21,13 +21,17 @@ import Foundation
 ///
 /// ## Usage
 ///
-/// ```swift
-/// guard let device = MetalDevice.shared else {
-///     // Metal not available - fall back to CPU
-///     return
-/// }
+/// This type is internal. Callers reach it by running a population heuristic, which
+/// selects the GPU when one is available and falls back to the CPU when it is not —
+/// the fallback is silent by design and needs no handling at the call site.
 ///
-/// let pipeline = try device.getCrossoverPipeline()
+/// ```swift
+/// let optimizer = GeneticAlgorithm<VectorN<Double>>(
+/// 	config: .default,
+/// 	searchSpace: Array(repeating: (lower: -10.0, upper: 10.0), count: 10)
+/// )
+/// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+/// let result = try optimizer.optimizeDetailed(objective: sphere)
 /// ```
 // Justification: All stored properties are immutable (let) after init; pipeline caches are protected by pipelineLock (NSLock).
 internal final class MetalDevice: @unchecked Sendable {

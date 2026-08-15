@@ -20,6 +20,11 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let optimizer = MultivariateGradientDescent<VectorN<Double>>(learningRate: 0.01, maxIterations: 1000)
+/// let f: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
+/// let g: (VectorN<Double>) throws -> VectorN<Double> = { v in 2.0 * v }
+/// let x0 = VectorN<Double>([5.0, 5.0])
+///
 /// let result = try optimizer.minimize(function: f, gradient: g, initialGuess: x0)
 /// switch result.terminationReason {
 /// case .converged:
@@ -710,13 +715,13 @@ extension MultivariateGradientDescent: MultivariateOptimizer {
 	///
 	/// ```swift
 	/// // Use as protocol type for algorithm flexibility
-	/// let optimizer: any MultivariateOptimizer = MultivariateGradientDescent<VectorN<Double>>(
+	/// let optimizer = MultivariateGradientDescent<VectorN<Double>>(
 	///     learningRate: 0.01,
 	///     maxIterations: 1000
 	/// )
 	///
 	/// let objective = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
-	/// let result = try optimizer.minimize(objective, from: VectorN([5.0, 5.0]))
+	/// let result = try optimizer.minimize(objective, from: VectorN<Double>([5.0, 5.0]), constraints: [])
 	/// ```
 	///
 	/// - Note: For algorithm-specific methods like `minimizeAdam()` or `minimizeMomentum()`,
