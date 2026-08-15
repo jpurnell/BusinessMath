@@ -85,9 +85,12 @@ public struct NelsonSiegelParameters: Sendable, Codable {
 /// ## Usage Example
 ///
 /// ```swift
-/// let prices = [100.0, 102.5, 99.0, 105.0]
 /// // Calibrate to market bond prices
-/// let bonds: [BondMarketData] = loadMarketData()
+/// let bonds: [BondMarketData] = [
+///     BondMarketData(maturity: 2.0, couponRate: 0.04, faceValue: 100.0, marketPrice: 99.0),
+///     BondMarketData(maturity: 5.0, couponRate: 0.045, faceValue: 100.0, marketPrice: 100.5),
+///     BondMarketData(maturity: 10.0, couponRate: 0.05, faceValue: 100.0, marketPrice: 102.5)
+/// ]
 /// let curve = try NelsonSiegelYieldCurve.calibrate(to: bonds)
 ///
 /// // Get yields at any maturity
@@ -95,7 +98,7 @@ public struct NelsonSiegelParameters: Sendable, Codable {
 /// let yield10Y = curve.yield(maturity: 10.0)
 ///
 /// // Price a bond using the fitted curve
-/// let bond = Bond(faceValue: 100, couponRate: 0.05, maturity: 10.0)
+/// let bond = BondMarketData(maturity: 10.0, couponRate: 0.05, faceValue: 100.0, marketPrice: 102.5)
 /// let price = curve.price(bond: bond)
 /// ```
 public struct NelsonSiegelYieldCurve: Sendable, Codable {

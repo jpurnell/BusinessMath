@@ -193,6 +193,7 @@ public enum PeriodType: Int, Codable, Comparable, CaseIterable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
+	/// let periodType = PeriodType.quarterly
 	/// if let days = periodType.daysApproximate {
 	///     // A ladder type, with a fixed duration.
 	/// }

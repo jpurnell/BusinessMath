@@ -118,7 +118,7 @@ public func growthRate<T: Real>(from: T, to: T) throws -> T {
 /// **Investment Growth:**
 /// ```swift
 /// // Investment grows from $10,000 to $15,000 over 5 years
-/// let cagr = cagr(beginningValue: 10_000.0, endingValue: 15_000.0, years: 5.0)
+/// let annualGrowth = cagr(beginningValue: 10_000.0, endingValue: 15_000.0, years: 5.0)
 /// // Result: ~0.0845 (8.45% annual growth)
 /// ```
 ///

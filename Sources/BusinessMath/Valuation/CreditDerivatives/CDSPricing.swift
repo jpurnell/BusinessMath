@@ -43,6 +43,11 @@ import Numerics
 ///     paymentFrequency: .quarterly
 /// )
 ///
+/// let discountCurve = TimeSeries(
+///     periods: Period.documentationQuarters,
+///     values: [0.99, 0.98, 0.97, 0.96]
+/// )
+///
 /// let fairSpread = cds.fairSpread(
 ///     discountCurve: discountCurve,
 ///     hazardRate: 0.02

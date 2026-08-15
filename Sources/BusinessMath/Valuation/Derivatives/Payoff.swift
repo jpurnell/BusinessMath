@@ -18,11 +18,19 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
+/// let path: [(price: Double, time: Double)] = [
+///     (price: 100.0, time: 0.25),
+///     (price: 104.0, time: 0.50),
+///     (price: 98.0, time: 0.75),
+///     (price: 107.0, time: 1.00)
+/// ]
+///
 /// var payoff = AsianPayoff(strike: 100.0, optionType: .call)
 /// for (price, time) in path {
 ///     payoff.observe(value: price, time: time)
 /// }
-/// let result = payoff.terminalValue(finalSpot: path.last!.price)
+/// let finalSpot = path.last?.price ?? 0.0
+/// let result = payoff.terminalValue(finalSpot: finalSpot)
 /// payoff.reset()  // Ready for next path
 /// ```
 public protocol Payoff: Sendable {
