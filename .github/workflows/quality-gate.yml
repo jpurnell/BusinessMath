@@ -11,8 +11,16 @@ on:
   # reported four green jobs.
   workflow_dispatch:
 
+# A called workflow cannot hold more permission than its caller grants, and the
+# reusable gate declares `issues: write` so it can file a failure alert. Granting
+# only `contents: read` here made GitHub reject the file at parse time — a 0-second
+# run titled by path rather than by name, which is what a workflow that never
+# started looks like. Almost certainly why this workflow was disabled rather than
+# fixed: the failure says "workflow file issue" and points at the caller, while the
+# missing permission is named in the callee.
 permissions:
   contents: read
+  issues: write
 
 jobs:
   quality-gate:
