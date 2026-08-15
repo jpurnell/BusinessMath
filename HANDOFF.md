@@ -216,36 +216,35 @@ Two open questions: what to do with the orphan, and whether the gate should scan
 
 ## Open, beyond the fence work
 
-0. **The macro fences are mostly ordinary defects, and 8 of 51 are now fixed.** The
-   "not author-fixable" verdict was wrong: it assumed every error in
-   `Sources/BusinessMathMacros/` was the missing-plugin problem. The plugin loads fine.
-   What was there instead: peer macros applied at global scope (illegal in Swift when the
-   macro declares `names: arbitrary`), three uses of `@OptimizationProblem`, a macro this
-   package does not declare, undefined fixtures, and a constraint returning `Void` where
-   `Bool` was required. Upgrading quality-gate to HEAD changes nothing — the error set is
-   byte-identical, so this is not a tooling gap.
+0. **Macro errors: 51 to 5. The remaining 5 are two macros that cannot work.**
+   The "not author-fixable" verdict was wrong on every count. The plugin loads fine, and
+   upgrading quality-gate to HEAD changes nothing — the error set was byte-identical, so
+   this was never a tooling gap. What was actually there:
 
-   **43 remain, with three root causes, and two of them are defects in the macros rather
-   than in the documentation:**
+   - **35 — `@Validated` threw a type nothing could see.** `ValidationError` was declared
+     in `BusinessMathMacrosImpl`, a `.macro` target: a compiler plugin that vends no types
+     to compiled code. Every generated `throw` named a type that could not resolve in any
+     module. Fixed by moving it to `BusinessMathMacros` as ``MacroValidationError``.
+   - **3 — `@Range` generated `if !0...1.contains(x)`**, which parses as
+     `(!0)...(1.contains(x))`. Then, once parenthesised, the literal arrives as source text
+     and re-infers as `ClosedRange<Int>` against a `Double` property. Both fixed.
+   - **8 — ordinary fence defects**: peer macros at global scope (illegal when the macro
+     declares `names: arbitrary`), `@OptimizationProblem` used three times without existing,
+     a `@Constraint` returning `Void` where `Bool` was required, undefined fixtures.
 
-   - **35 — `@Validated` and its attribute family expand to members typed
-     `ValidationError`, which lives in `BusinessMath`.** `BusinessMathMacros` depends only
-     on `BusinessMathMacrosImpl`, and cannot depend on `BusinessMath` because the
-     dependency runs the other way. So the generated code names a type the declaring
-     module cannot see. A *consumer* importing both is fine; a fence inside the macro
-     module never can be. Fixing it means moving `ValidationError` somewhere both modules
-     can see, or moving these examples into a module that can see it.
-   - **3 — `@MCPTool` cannot be applied anywhere legal.** It is
-     `@attached(peer, names: arbitrary)`, which Swift forbids at global scope; nested
-     inside a type, its expansion reports `declaration is only valid at file scope`. Both
-     placements fail, which is a defect in the macro's own design, not its example.
-   - **5 — expansion artefacts**: `integer literal '0' cannot be used as a boolean` from
-     the `@Range`/`@Validated` expansion, `unknown attribute 'PortfolioBuilder'` naming a
-     symbol that exists nowhere in the package, and `unknown attribute 'MCPTool'` in
-     `BusinessMathMacrosImpl`, which does not import the module declaring it.
+   **The 5 that remain need a design decision, not a repair.** Both macros are public API
+   with zero callers and zero tests, and neither has ever worked:
 
-   None of this blocks 2.6.0 — the non-macro count is 0 either way. It is a real bug list
-   for the macro package, found by pointing the checker at code that had been written off.
+   - **`@MCPTool` (4).** It generates `extension <functionName>` — an extension on a
+     function, which is not a type — and references `ToolDefinition`, `MCPSchema` and
+     `MCPSchemaProperty`, none of which exist anywhere in the package. It is also
+     `@attached(peer, names: arbitrary)`, which Swift forbids at global scope, while its
+     expansion requires file scope. There is no placement that compiles.
+   - **`@BuilderInitializable` (1).** It generates `@<Type>Builder`, a result-builder
+     attribute it never emits and nothing defines.
+
+   Either write the missing types and fix the attachment, or remove them. Both are
+   reasonable; neither is a documentation change, which is why they are left here.
 
 1. **`project/plans/upcoming/v3.0.0_SCOPE.md`.** Three places where the correct behaviour is
    refusal and the signature cannot refuse: DE and PSO's `optimizeDetailed`,
