@@ -274,20 +274,6 @@ public enum FinancialFunctions {
         return (riskFreeRate - volatility * volatility * 0.5) * time
     }
 
-    /// Black-Scholes diffusion term: σ * √t * Z
-    ///
-    /// ## Example
-    /// ```swift
-    /// let builder = ExpressionBuilder()
-    /// let diffusion = FinancialFunctions.blackScholesDiffusion.call(builder[0], builder[1], builder[2])
-    /// ```
-    public static let blackScholesDiffusion = ExpressionFunction(inputs: 3) { builder in
-        let volatility = builder[0]
-        let time = builder[1]
-        let randomNormal = builder[2]
-        return volatility * time.sqrt() * randomNormal
-    }
-
     /// Calculate Sharpe ratio: (return - riskFree) / volatility
     ///
     /// ## Example
