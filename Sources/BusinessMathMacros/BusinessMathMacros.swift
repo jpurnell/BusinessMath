@@ -5,76 +5,6 @@
 //  Created by Justin Purnell on 2025-12-29.
 //
 
-/// Generates Model Context Protocol (MCP) tool definitions from functions.
-///
-/// This macro automatically creates the boilerplate needed to expose a function
-/// as an MCP tool, including JSON schema generation, argument validation,
-/// and result formatting.
-///
-/// ## Usage Example
-///
-/// ```swift
-/// enum Tools {
-///     @MCPTool(description: "Calculate net present value")
-///     static func npv(rate: Double, cashFlows: [Double]) -> Double {
-///         cashFlows.enumerated().reduce(0.0) { sum, pair in
-///             sum + pair.element / pow(1.0 + rate, Double(pair.offset))
-///         }
-///     }
-/// }
-/// ```
-///
-/// The macro generates:
-/// - Tool definition with name "npv"
-/// - JSON schema for parameters
-/// - Argument extraction and validation
-/// - Result formatting
-/// - Error handling
-///
-/// ## Parameters
-/// - description: Human-readable description of what the tool does
-///
-/// ## Requirements
-/// - Must be applied to a function declaration
-/// - Function must have a return value
-/// - Parameters must be JSON-serializable types
-///
-/// ## Supported Parameter Types
-/// - Numbers: `Int`, `Double`, `Float`
-/// - Strings: `String`
-/// - Booleans: `Bool`
-/// - Arrays: `[Int]`, `[Double]`, `[String]`
-///
-/// ## Optional Parameters
-/// Functions with default parameter values are automatically handled:
-///
-/// ```swift
-/// enum Tools {
-///     @MCPTool(description: "Calculate IRR")
-///     static func irr(cashFlows: [Double], guess: Double = 0.1) throws -> Double {
-///         guess
-///     }
-/// }
-/// ```
-///
-/// ## Error Handling
-/// Throwing functions are automatically wrapped with try-catch:
-///
-/// ```swift
-/// enum Tools {
-///     @MCPTool(description: "May fail")
-///     static func riskyOperation(x: Double) throws -> Double {
-///         // Errors automatically formatted in tool result
-///         x
-///     }
-/// }
-/// ```
-@attached(peer, names: arbitrary)
-public macro MCPTool(description: String) = #externalMacro(
-    module: "BusinessMathMacrosImpl",
-    type: "MCPToolMacro"
-)
-
 // MARK: - Validation Macros
 
 /// Adds validation logic to struct properties based on property-level validation attributes.
@@ -278,23 +208,6 @@ public macro Constraint() = #externalMacro(
 public macro Objective() = #externalMacro(
     module: "BusinessMathMacrosImpl",
     type: "ObjectiveMacro"
-)
-
-/// Generates builder initialization methods for structs.
-///
-/// ## Usage Example
-///
-/// ```swift
-/// @BuilderInitializable
-/// struct Portfolio {
-///     var stocks: Double
-///     var bonds: Double
-/// }
-/// ```
-@attached(member, names: arbitrary)
-public macro BuilderInitializable() = #externalMacro(
-    module: "BusinessMathMacrosImpl",
-    type: "BuilderInitializableMacro"
 )
 
 /// Generates async wrapper for synchronous functions.

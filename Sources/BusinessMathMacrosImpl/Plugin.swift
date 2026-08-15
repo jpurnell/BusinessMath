@@ -16,9 +16,6 @@ import Foundation
 @main
 struct BusinessMathMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        // MCP and Tool Macros
-        MCPToolMacro.self,
-
         // Validation Macros
         ValidatedMacro.self,
         PositiveMacro.self,
@@ -34,7 +31,6 @@ struct BusinessMathMacrosPlugin: CompilerPlugin {
         ObjectiveMacro.self,
 
         // Utility Macros
-        BuilderInitializableMacro.self,
         AsyncWrapperMacro.self
     ]
 }
