@@ -38,7 +38,7 @@ suite depends on it.
 
 ## Current Status
 
-Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 154 commits since the tag, of which 35 are not yet on `origin`.
+Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 159 commits since the tag, all pushed.
 
 | | |
 |---|---|
@@ -69,7 +69,7 @@ hygiene, and the first two are not in this repository.
    rather than `enabledCheckers:`), and unknown keys are discarded silently. That is how
    `recursion` came never to run, and how a crashable parser reached a release candidate.
    Proposals for both are filed in the quality-gate repository.
-3. **35 commits not yet on `origin`.** (154 since the tag; the rest are already there.)
+3. ~~Commits not yet on `origin`.~~ **Pushed.** `main` and `origin/main` agree.
 4. **`doc-run`'s 30-second deadline is wall-clock, and the checker pool is concurrent.**
    `2.5-ModelValidationGuide.md` runs in **5.7 seconds** on its own and was killed at the
    deadline during a `--check all` run — the same invocation in which `doc-run` itself took
