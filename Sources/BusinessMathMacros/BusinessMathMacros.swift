@@ -14,9 +14,13 @@
 /// ## Usage Example
 ///
 /// ```swift
-/// @MCPTool(description: "Calculate net present value")
-/// func npv(rate: Double, cashFlows: [Double]) -> Double {
-///     // Implementation
+/// enum Tools {
+///     @MCPTool(description: "Calculate net present value")
+///     static func npv(rate: Double, cashFlows: [Double]) -> Double {
+///         cashFlows.enumerated().reduce(0.0) { sum, pair in
+///             sum + pair.element / pow(1.0 + rate, Double(pair.offset))
+///         }
+///     }
 /// }
 /// ```
 ///
@@ -45,9 +49,11 @@
 /// Functions with default parameter values are automatically handled:
 ///
 /// ```swift
-/// @MCPTool(description: "Calculate IRR")
-/// func irr(cashFlows: [Double], guess: Double = 0.1) throws -> Double {
-///     // Implementation
+/// enum Tools {
+///     @MCPTool(description: "Calculate IRR")
+///     static func irr(cashFlows: [Double], guess: Double = 0.1) throws -> Double {
+///         guess
+///     }
 /// }
 /// ```
 ///
@@ -55,9 +61,12 @@
 /// Throwing functions are automatically wrapped with try-catch:
 ///
 /// ```swift
-/// @MCPTool(description: "May fail")
-/// func riskyOperation(x: Double) throws -> Double {
-///     // Errors automatically formatted in tool result
+/// enum Tools {
+///     @MCPTool(description: "May fail")
+///     static func riskyOperation(x: Double) throws -> Double {
+///         // Errors automatically formatted in tool result
+///         x
+///     }
 /// }
 /// ```
 @attached(peer, names: arbitrary)
@@ -91,9 +100,9 @@ public macro MCPTool(description: String) = #externalMacro(
 ///
 /// let loan = LoanCalculation(principal: -1000, interestRate: 0.05, years: 5, description: "")
 /// loan.isValid  // false
-/// loan.validationError  // ValidationError: principal must be positive
+/// loan.validationError  // the first failure: principal must be positive
 ///
-/// try loan.validate()  // throws ValidationError
+/// try loan.validate()  // throws on the first failure
 /// ```
 ///
 /// ## Supported Validation Attributes
@@ -197,6 +206,8 @@ public macro Max(_ maximum: Double) = #externalMacro(
 /// ## Usage Example
 ///
 /// ```swift
+/// struct Stock { let symbol: String }
+///
 /// @Validated
 /// struct Portfolio {
 ///     @NonEmpty var holdings: [Stock]
@@ -216,7 +227,6 @@ public macro NonEmpty() = #externalMacro(
 /// ## Usage Example
 ///
 /// ```swift
-/// @OptimizationProblem
 /// struct Portfolio {
 ///     @Variable(bounds: 0...1)
 ///     var stockAllocation: Double
@@ -233,10 +243,12 @@ public macro Variable(bounds: ClosedRange<Double>) = #externalMacro(
 /// ## Usage Example
 ///
 /// ```swift
-/// @OptimizationProblem
 /// struct Portfolio {
+///     var stocks: Double
+///     var bonds: Double
+///
 ///     @Constraint
-///     func sumToOne() {
+///     func sumToOne() -> Bool {
 ///         stocks + bonds == 1.0
 ///     }
 /// }
@@ -252,8 +264,10 @@ public macro Constraint() = #externalMacro(
 /// ## Usage Example
 ///
 /// ```swift
-/// @OptimizationProblem
 /// struct Portfolio {
+///     var expectedReturn: Double
+///     var volatility: Double
+///
 ///     @Objective
 ///     func sharpeRatio() -> Double {
 ///         return expectedReturn / volatility
@@ -288,9 +302,11 @@ public macro BuilderInitializable() = #externalMacro(
 /// ## Usage Example
 ///
 /// ```swift
-/// @AsyncWrapper
-/// func calculate(x: Double) -> Double {
-///     return x * 2
+/// struct Calculations {
+///     @AsyncWrapper
+///     func calculate(x: Double) -> Double {
+///         return x * 2
+///     }
 /// }
 /// // Generates: func calculateAsync(x: Double) async -> Double
 /// ```

@@ -156,3 +156,18 @@ extension AsyncSequence where Element: Sendable {
         AsyncTimestampedSequence(base: self)
     }
 }
+
+// MARK: - Sendable
+
+/// `AsyncTimestampedSequence` is sendable exactly when the sequence it wraps is.
+///
+/// The only stored property is the base sequence, held by `let`, so the wrapper adds no
+/// mutable state of its own and carries nothing across an isolation boundary that the base
+/// did not already carry. The conformance is conditional rather than a constraint on the
+/// generic parameter so that timestamping a non-sendable sequence keeps working — that use
+/// simply does not get a sendable result.
+///
+/// Without this, `timestamped()` could not feed ``AsyncSequence/aligned(with:strategy:)``,
+/// which requires `Secondary: AsyncSequence & Sendable`. The composition the documentation
+/// described had therefore never compiled.
+extension AsyncTimestampedSequence: Sendable where Base: Sendable {}
