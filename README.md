@@ -19,7 +19,7 @@ tail to cancellation, `DriverProjection.percentile(0.10)` returned the p5 value,
 `correctedStdErr` had never executed in any released version. The CHANGELOG opens with a table of
 every result that moved and by how much; read that before upgrading.
 
-**It also breaks source compatibility in three places**, each small and each worth knowing
+**It also breaks compatibility in four places**, each small and each worth knowing
 before you upgrade rather than after:
 
 - `FormulaError` gains a case, `nestingTooDeep(limit:)`. A switch over it that was
@@ -32,6 +32,10 @@ before you upgrade rather than after:
 - The validation macros throw `MacroValidationError` from `BusinessMathMacros`. They
   previously threw a type declared inside the compiler plugin, which vends nothing to
   compiled code, so `@Validated` could not be used by anyone in any module.
+- `VectorN` arithmetic on mismatched dimensions returns `NaN` instead of a vector of
+  zeros, and `VectorN.zero` is now the additive identity rather than an annihilator —
+  `zero + v` was `[0, 0]`, which made `var sum = VectorN.zero` silently drop the first
+  element it was given.
 
 | | |
 |---|---|
