@@ -303,21 +303,53 @@ struct VectorSpaceTests {
 		#expect(abs(norm - expectedNorm) < 1e-10)
 	}
 	
-	@Test("VectorN operations with mismatched dimensions")
-	func vectorNOperationsMismatchedDimensions() {
-		let v1 = VectorN<Double>([1.0, 2.0])
-		let v2 = VectorN<Double>([3.0, 4.0, 5.0])
-		
-			// Addition with mismatch returns zero vector
-		let sum = v1 + v2
-		#expect(sum.count == 3)  // Max dimension
-		#expect(abs(sum[0] - 0.0) < 1e-6)
-		#expect(abs(sum[1] - 0.0) < 1e-6)
-		#expect(abs(sum[2] - 0.0) < 1e-6)
+	@Test("The empty vector is the additive identity, not an annihilator")
+	func vectorNZeroIsAnIdentity() {
+		// This test previously asserted the opposite — that adding vectors of unequal
+		// dimension returns a zero vector of the larger dimension. That behaviour was
+		// deliberate and tested, and it was wrong in the way this package's rules name
+		// directly: a plausible answer nothing downstream can distinguish from a real one.
+		//
+		// It reached documentation. `5.4-VectorOperations.md` seeded an accumulator with
+		// `VectorN.zero` — the obvious thing to write — and summed customer locations from
+		// a dictionary. `zero` has dimension 0, so the first addition mismatched and
+		// returned `[0, 0]`, discarding that customer. Dictionary order varies per process,
+		// so a *different* customer was dropped on each run and the article printed a
+		// different warehouse location every time: (5.09, 4.67) then (6.30, 4.36).
+		let v = VectorN<Double>([3.0, 4.0])
+		let zero = VectorN<Double>.zero
 
-			// Dot product with mismatch returns 0
-		let dot = v1.dot(v2)
-		#expect(abs(dot - 0.0) < 1e-6)
+		// Bit-identical, not approximate: an additive identity that perturbed a single bit
+		// would not be one.
+		func identical(_ a: [Double], _ b: [Double]) -> Bool {
+			a.count == b.count && zip(a, b).allSatisfy { $0.bitPattern == $1.bitPattern }
+		}
+
+		#expect(identical((zero + v).toArray(), v.toArray()))
+		#expect(identical((v + zero).toArray(), v.toArray()))
+		#expect(identical((v - zero).toArray(), v.toArray()))
+		#expect(identical((zero - v).toArray(), [-3.0, -4.0]))
+
+		// The accumulator idiom the article used, which now sums every element.
+		var sum = VectorN<Double>.zero
+		for element in [VectorN<Double>([1, 1]), VectorN<Double>([2, 2]), VectorN<Double>([3, 3])] {
+			sum = sum + element
+		}
+		#expect(identical(sum.toArray(), [6.0, 6.0]))
+
+		// The empty vector contributes nothing to a sum of products.
+		#expect(v.dot(zero) == 0.0)
+
+		// A genuine mismatch has no answer, and now says so. Zeros were indistinguishable
+		// from a real result; NaN propagates and is detectable through `isFinite`, which
+		// `VectorSpace` already requires. It is not a `precondition`, because this package
+		// does not ship one that can crash a release build.
+		let short = VectorN<Double>([1.0, 2.0])
+		let long = VectorN<Double>([3.0, 4.0, 5.0])
+
+		#expect((short + long).isFinite == false)
+		#expect((short - long).isFinite == false)
+		#expect(short.dot(long).isNaN)
 	}
 	
 	@Test("VectorN subscript access")
