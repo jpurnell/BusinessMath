@@ -195,15 +195,15 @@ The gate is at **0 errors, 0 warnings across 37 checkers**. What follows is not 
 
 ## Current Priorities
 
-**2.6.0 is written and deliberately unshipped**, and the reason has narrowed. The checkers have
-largely landed; what remains is clearing this codebase under them. The original reasoning still
-holds: the work that produced this release found defects in documentation nothing was checking — a
-runtime trap in `4.2` inherited from `ScenarioRunner`'s own `///` comments, two published figures
+**2.6.0 shipped 2026-08-15**, after being written and deliberately held. The hold was never about
+the code: the work that produced this release found defects in documentation nothing was checking —
+a runtime trap in `4.2` inherited from `ScenarioRunner`'s own `///` comments, two published figures
 that were simply wrong, and a headline percentage computed off the wrong array. Shipping before the
-codebase is clean means shipping whatever else is in that class.
+codebase was clean would have meant shipping whatever else was in that class. The bar was clearing
+this codebase under the new checkers, and it was met: `doc-comment-code` went 1,515 → **0** with no
+`docs:illustrative` marker added to any `///` fence, and `--check all` passes **43 of 43**.
 
-Until then the CHANGELOG heading reads `[2.6.0] — unreleased` and the README advertises `2.5.2`.
-Both revert at tag time. `release-readiness` passes on that basis.
+The CHANGELOG heading and the README's `from:` pin both moved to `2.6.0` in the release commit.
 
 1. **~~Land the four `doc-*` checkers~~ — 3 of 4 done.** `doc-comment-code`, `doc-generated` and
    `doc-claims` have landed, joining `doc-run`. **`doc-symbol-link` is still outstanding.** The
