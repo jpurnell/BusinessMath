@@ -571,11 +571,24 @@ public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vecto
 	/// Vector addition.
 	/// If dimensions don't match, returns a zero vector of maximum dimension.
 	public static func + (lhs: VectorN<T>, rhs: VectorN<T>) -> VectorN<T> {
+		// ``zero`` is the empty vector, which is the additive identity at *every* dimension
+		// — so it has to return the other operand rather than be treated as a mismatch.
+		// It previously fell into the branch below and annihilated it: `zero + v` was a
+		// zero vector, which made `var sum = VectorN.zero` — the obvious way to seed an
+		// accumulator — silently discard whichever element arrived first.
+		if lhs.components.isEmpty { return rhs }
+		if rhs.components.isEmpty { return lhs }
+
+		// A genuine mismatch has no answer. It previously returned a vector of zeros — a
+		// plausible value nothing downstream could distinguish from a real one, which is
+		// the failure this package's rules name directly. NaN is returned instead: it
+		// propagates through every subsequent operation and is detectable through the
+		// `isFinite` this protocol already requires, without crashing a release build the
+		// way `precondition` would.
 		guard lhs.components.count == rhs.components.count else {
-				// Return zero vector for dimension mismatch
-			return VectorN(repeating: T(0), count: Swift.max(lhs.components.count, rhs.components.count))
+			return VectorN(repeating: T.nan, count: Swift.max(lhs.components.count, rhs.components.count))
 		}
-		
+
 		let result = zip(lhs.components, rhs.components).map { $0 + $1 }
 		return VectorN(result)
 	}
@@ -602,10 +615,15 @@ public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vecto
 	
 	/// Dot product: v₁·w₁ + v₂·w₂ + ... + vₙ·wₙ.
 	public func dot(_ other: VectorN<T>) -> T {
-		guard components.count == other.components.count else {
-			return T(0)
-		}
-		
+		// The empty vector contributes nothing to a sum of products, so zero is the right
+		// answer there. Any other mismatch is a programming error, and a silent zero is
+		// indistinguishable from two genuinely orthogonal vectors.
+		if components.isEmpty || other.components.isEmpty { return T(0) }
+
+		// NaN rather than 0, which would be indistinguishable from two genuinely
+		// orthogonal vectors.
+		guard components.count == other.components.count else { return T.nan }
+
 		return zip(components, other.components).reduce(T(0)) { $0 + $1.0 * $1.1 }
 	}
 	
@@ -898,10 +916,16 @@ extension VectorN: AdditiveArithmetic {
 	/// - Parameters:
 	///   - lhs: Left-hand side vector
 	///   - rhs: Right-hand side vector
-	/// - Returns: Component-wise difference, or zero vector for dimension mismatch
+	/// - Returns: Component-wise difference.
 	public static func - (lhs: VectorN<T>, rhs: VectorN<T>) -> VectorN<T> {
+		// Same reasoning as `+`: the empty vector is the identity, and a genuine mismatch
+		// is a programming error rather than a vector of zeros.
+		if rhs.components.isEmpty { return lhs }
+		if lhs.components.isEmpty { return VectorN(rhs.components.map { T(0) - $0 }) }
+
+		// NaN rather than zeros, for the reason given on `+`.
 		guard lhs.components.count == rhs.components.count else {
-			return VectorN(repeating: T(0), count: Swift.max(lhs.components.count, rhs.components.count))
+			return VectorN(repeating: T.nan, count: Swift.max(lhs.components.count, rhs.components.count))
 		}
 
 		let result = zip(lhs.components, rhs.components).map { $0 - $1 }
