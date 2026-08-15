@@ -11,14 +11,15 @@ import Numerics
 ///
 /// Example:
 /// ```swift
-/// // A person variance component explaining 60% of total variance
-/// let personVar = VarianceComponent<Double>(
-///     source: "p",
-///     variance: 4.5,
-///     percentOfTotal: 60.0,
-///     df: 29,
-///     meanSquare: 15.0
-/// )
+/// // Components are produced by a G-study rather than constructed directly:
+/// // the memberwise initialiser is internal, as the values must agree with
+/// // the ANOVA they came from.
+/// let ratings = [[4.0, 5.0, 4.0], [3.0, 3.0, 4.0], [5.0, 5.0, 5.0], [2.0, 3.0, 2.0]]
+/// let result = try gStudy(ratings, facetLabel: "raters")
+///
+/// for component in result.components {
+///     print("\(component.source): \(component.percentOfTotal)% of total")
+/// }
 /// ```
 public struct VarianceComponent<T: Real & Sendable>: Sendable, Equatable {
 	/// The source of variation (e.g., "p", "raters", "p x raters").

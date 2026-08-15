@@ -12,6 +12,7 @@ import Numerics
 ///
 /// Example:
 /// ```swift
+/// let ratings = [[4.0, 5.0, 4.0], [3.0, 3.0, 4.0], [5.0, 5.0, 5.0], [2.0, 3.0, 2.0]]
 /// let result = try gStudy(ratings, facetLabel: "raters")
 /// print("Person variance: \(result.variancePersons)")
 /// print("Total variance: \(result.totalVariance)")

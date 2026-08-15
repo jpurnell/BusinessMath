@@ -44,6 +44,7 @@ import Foundation
 /// ## Usage
 ///
 /// ```swift
+/// let expression = Expression.binary(.add, .input(0), .constant(1.0))
 /// let bytecode = try BytecodeCompiler.compile(expression)
 /// let optimized = BytecodeOptimizer.optimize(bytecode)
 /// // optimized bytecode is functionally equivalent but more efficient

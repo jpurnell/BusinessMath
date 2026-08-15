@@ -27,7 +27,7 @@ import Numerics
 ///   ```swift
 ///   let xValues: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
 ///   let yValues: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
-///   let result = rSquaredAdjusted(xValues, yValues, .sample, 1)
+///   let result = try rSquaredAdjusted(xValues, yValues, .sample, 1)
 ///   // result should be the adjusted R² value for the datasets `xValues` and `yValues`
 ///   ```
 /// - Throws: `BusinessMathError.mismatchedDimensions` if arrays have different lengths.

@@ -152,7 +152,7 @@ public func calculateNPVDerivative<T: Real>(discountRate: T, cashFlows: [T]) -> 
 ///     Period.quarter(year: 2025, quarter: 4)
 /// ]
 /// let cashFlows = [-10000.0, 3000.0, 4000.0, 5000.0]
-/// let ts = TimeSeries(periods: periods, values: cashFlows, metadata: ...)
+/// let ts = TimeSeries(periods: periods, values: cashFlows)
 ///
 /// let quarterlyRate = 0.10 / 4.0  // Convert annual to quarterly
 /// let presentValue = npv(rate: quarterlyRate, timeSeries: ts)

@@ -19,6 +19,11 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
+/// let appleReturns = TimeSeries(periods: quarters, values: [0.05, -0.02, 0.08, 0.03])
+/// let googleReturns = TimeSeries(periods: quarters, values: [0.04, 0.01, 0.06, 0.02])
+/// let msftReturns = TimeSeries(periods: quarters, values: [0.03, 0.02, 0.05, 0.04])
+///
 /// let portfolio = Portfolio(
 ///     assets: ["AAPL", "GOOGL", "MSFT"],
 ///     returns: [appleReturns, googleReturns, msftReturns],

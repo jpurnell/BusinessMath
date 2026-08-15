@@ -101,7 +101,7 @@ public extension Array where Element == Double {
     /// ## Example
     /// ```swift
     /// let values = [2.9999, 3.0001, 0.75]
-    /// print(values.number())  // "[3, 3, 0.75]"
+    /// print(values.formatted())  // ["3", "3", "0.75"]
     /// ```
     ///
     /// - Parameter strategy: The formatting strategy to use (default: smart rounding)

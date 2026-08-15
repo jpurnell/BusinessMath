@@ -30,7 +30,7 @@ import Numerics
 ///
 /// - Example:
 ///   ```swift
-///   let result = integrate({ x in x * x }, iterations: 10000, seed: 42)
+///   let result = integrate({ (x: Double) in x * x }, iterations: 10000, seed: 42)
 ///   print("Estimated integral: \(result)")   // same value on every run
 ///   ```
 ///

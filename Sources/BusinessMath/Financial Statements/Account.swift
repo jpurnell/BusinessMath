@@ -369,11 +369,10 @@ public struct AccountMetadata: Codable, Equatable, Sendable {
 /// let apple = Entity.documentationFixture
 /// let revenueSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
 /// let entity = Entity.documentationFixture
-/// // Old API (deprecated, but still works)
-/// let oldAccount = try Account(
+/// let account = try Account(
 ///     entity: apple,
 ///     name: "Revenue",
-///     type: .revenue,  // Automatically migrates to .revenue role
+///     incomeStatementRole: .revenue,
 ///     timeSeries: revenueSeries
 /// )
 /// ```

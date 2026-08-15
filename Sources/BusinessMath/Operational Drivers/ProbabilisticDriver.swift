@@ -162,7 +162,7 @@ public struct ProbabilisticDriver<T>: Driver, Sendable where T: Real, T: BinaryF
 	///     name: "Sales Volume",
 	///     distribution: DistributionNormal(1000.0, 100.0)
 	/// )
-	/// #expect(driver.supportsSeeding)
+	/// assert(driver.supportsSeeding)
 	/// ```
 	public init<D: SeedableDistribution & Sendable>(name: String, distribution: D) where D.T == Double {
 		self.name = name

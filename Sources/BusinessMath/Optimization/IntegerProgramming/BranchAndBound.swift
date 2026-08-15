@@ -771,9 +771,11 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///     coefficients: [2.0, 3.0]
     /// )
     ///
+    /// let constraints: [MultivariateConstraint<VectorN<Double>>] = [.budgetConstraint]
+    ///
     /// let result = try solver.solve(
-    ///     objective: objective,
-    ///     from: VectorN([0.5, 0.5]),
+    ///     objective: { point in objective.evaluate(at: point) },
+    ///     from: VectorN<Double>([0.5, 0.5]),
     ///     subjectTo: constraints,
     ///     integerSpec: .allBinary(dimension: 2)
     /// )

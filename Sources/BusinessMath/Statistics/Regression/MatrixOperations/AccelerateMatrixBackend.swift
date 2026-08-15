@@ -26,6 +26,9 @@ import Accelerate
 /// ## Usage Example
 ///
 /// ```swift
+/// let A = [[4.0, 1.0], [1.0, 3.0]]
+/// let B = [[1.0, 0.0], [0.0, 1.0]]
+///
 /// #if canImport(Accelerate)
 /// let backend = AccelerateMatrixBackend()
 /// let result = try backend.multiply(A, B)

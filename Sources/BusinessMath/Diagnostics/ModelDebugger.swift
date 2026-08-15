@@ -253,7 +253,7 @@ public actor ModelDebugger {
     /// ```swift
     /// let debugger = ModelDebugger()
     /// let periods = Period.documentationQuarters
-    /// let trace = await debugger.trace(
+    /// let trace = try await debugger.trace(
     ///     value: "NPV",
     ///     dependencies: ["rate": "0.08", "periods": "10"],
     ///     formula: "PV / (1 + rate)^periods"

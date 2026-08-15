@@ -17,8 +17,8 @@ import Foundation
 /// ## Example
 /// ```swift
 /// let data = [12.0, 15.0, 11.0, 18.0, 14.0]
-/// let populationVariance = variance(data, type: .population)
-/// let sampleVariance = variance(data, type: .sample)  // More common
+/// let populationVariance = variance(data, .population)
+/// let sampleVariance = variance(data, .sample)  // More common
 /// ```
 ///
 /// - Note: Default to `.sample` in most cases, as complete populations are rare in practice

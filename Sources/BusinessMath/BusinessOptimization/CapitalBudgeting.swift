@@ -94,6 +94,13 @@ public enum CapitalBudgetingObjective: Sendable {
 ///
 /// ## Example
 /// ```swift
+/// let optimizer = CapitalBudgetingOptimizer()
+/// let allProjects = [
+///     CapitalProject(name: "Plant upgrade", npv: 2_400_000, cost: 6_000_000),
+///     CapitalProject(name: "Fleet renewal", npv: 900_000, cost: 3_000_000),
+///     CapitalProject(name: "ERP rollout", npv: 1_100_000, cost: 4_500_000)
+/// ]
+///
 /// let result = try optimizer.selectProjects(projects: allProjects, budget: 10_000_000)
 /// print("Selected \(result.selectedProjects.count) projects")
 /// print("Total NPV: $\(result.totalNPV)")

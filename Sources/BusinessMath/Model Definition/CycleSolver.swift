@@ -178,6 +178,8 @@ extension ModelDefinition {
 	///
 	/// ```swift
 	/// // A fee charged on a total that includes the fee — the classic gross-up.
+	/// let base = TimeSeries(periods: Period.documentationQuarters, values: [100.0, 110, 120, 130])
+	///
 	/// let model = ModelDefinition<Double>(inputs: ["base": base])
 	///     .defining("fee", as: "total * 0.10")
 	///     .defining("total", as: "base + fee")

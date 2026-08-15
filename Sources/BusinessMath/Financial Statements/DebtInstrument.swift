@@ -352,7 +352,18 @@ public enum AmortizationType {
 /// ## Usage Example
 ///
 /// ```swift
-/// let periods = Period.documentationQuarters
+/// let start = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date()
+/// let maturity = Calendar.current.date(from: DateComponents(year: 2030, month: 1, day: 1)) ?? Date()
+///
+/// let debtInstrument = DebtInstrument(
+///     principal: 1_000_000.0,
+///     interestRate: 0.06,
+///     startDate: start,
+///     maturityDate: maturity,
+///     paymentFrequency: .quarterly,
+///     amortizationType: .straightLine
+/// )
+///
 /// let schedule = debtInstrument.schedule()
 ///
 /// for period in schedule.periods {

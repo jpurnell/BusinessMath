@@ -44,7 +44,8 @@ import Numerics
 ///
 ///     func next() -> Double {
 ///         // Generate random value from custom distribution
-///         return myRandomAlgorithm()
+///         // Stand-in for the custom sampling algorithm
+///         return Double.random(in: 0...1)
 ///     }
 /// }
 /// ```

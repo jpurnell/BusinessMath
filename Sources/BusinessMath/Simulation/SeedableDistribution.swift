@@ -24,9 +24,18 @@ import Numerics
 /// Implement `next(using:)` by sourcing every uniform draw from the generator:
 ///
 /// ```swift
-/// extension DistributionUniform: SeedableDistribution {
-///     public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-///         Double.random(in: min...max, using: &generator)
+/// // Sketch of the conformance the library provides: every uniform is drawn
+/// // from the caller's generator, so a seeded stream is fully reproducible.
+/// struct MyUniform: SeedableDistribution {
+///     let lower: Double
+///     let upper: Double
+///
+///     func next() -> Double {
+///         Double.random(in: lower...upper)
+///     }
+///
+///     func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+///         Double.random(in: lower...upper, using: &generator)
 ///     }
 /// }
 /// ```

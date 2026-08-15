@@ -20,9 +20,18 @@ import Numerics
 /// (which already provides `Scalar` and `dimension`):
 ///
 /// ```swift
-/// // Scalar process — state is a single number
-/// struct GBM: StochasticProcess {
-///     typealias State = Double  // ProcessState via extension
+/// // Scalar process — state is a single number, conforming to ProcessState
+/// // via the library's extension on Double.
+/// struct SimpleDrift: StochasticProcess {
+///     typealias State = Double
+///
+///     let name = "SimpleDrift"
+///     let allowsNegativeValues = false
+///     let factors = 1
+///
+///     func step(from current: State, dt: State.Scalar, normalDraws: State.NormalDraws) -> State {
+///         current
+///     }
 /// }
 /// ```
 ///

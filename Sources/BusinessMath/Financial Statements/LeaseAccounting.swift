@@ -462,6 +462,7 @@ public struct Lease {
     ///
     /// ## Usage Example
     /// ```swift
+    /// let paymentSeries = [24_000.0, 24_000.0, 24_000.0, 24_000.0, 24_000.0]
     /// let lease = Lease(payments: paymentSeries, discountRate: 0.06)
     /// let totalInterest = lease.totalInterest()
     /// let totalPayments = lease.totalFuturePayments()

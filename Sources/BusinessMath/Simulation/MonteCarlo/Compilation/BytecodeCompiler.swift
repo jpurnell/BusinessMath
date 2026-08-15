@@ -145,6 +145,7 @@ public enum Bytecode: Sendable, Equatable {
 /// ## GPU Integration
 ///
 /// ```swift
+/// let expression = Expression.binary(.add, .input(0), .constant(1.0))
 /// let bytecode = try BytecodeCompiler.compile(expression)
 /// let gpuBytecode = BytecodeCompiler.toGPUFormat(bytecode)
 /// // gpuBytecode = [(4, 0, 0.0), (4, 1, 0.0), (0, 0, 0.0)]

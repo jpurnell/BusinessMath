@@ -25,6 +25,9 @@ import Numerics
 /// ## Example
 ///
 /// ```swift
+/// let gbm = GeometricBrownianMotion(name: "GBM", drift: 0.05, volatility: 0.20)
+/// let call = EuropeanPayoff(strike: 100.0, optionType: .call)
+///
 /// let result = MonteCarloEngine.price(
 ///     process: gbm, payoff: call,
 ///     spot: 100, riskFreeRate: 0.05,

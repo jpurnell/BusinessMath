@@ -40,6 +40,7 @@ import Numerics
 /// produces a meaningless number rather than an error. Sort first:
 ///
 /// ```swift
+/// let sample = [12.0, 15.0, 11.0, 18.0, 14.0]
 /// let q90 = quantile(sorted: sample.sorted(), p: 0.90)
 /// ```
 ///

@@ -25,6 +25,9 @@ import Foundation
 /// ## Usage Example
 ///
 /// ```swift
+/// let A = [[4.0, 1.0], [1.0, 3.0]]
+/// let B = [[1.0, 0.0], [0.0, 1.0]]
+///
 /// #if canImport(Metal)
 /// if let backend = MetalMatrixBackend() {
 ///     let result = try backend.multiply(A, B)

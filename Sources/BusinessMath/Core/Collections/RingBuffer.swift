@@ -16,7 +16,7 @@
 ///
 /// ## Usage
 /// ```swift
-/// let values = [100.0, 110.0, 120.0, 130.0]
+/// let stream = [100.0, 110.0, 120.0, 130.0]
 /// var buffer = RingBuffer<Double>(capacity: 100)
 /// for value in stream {
 ///     buffer.append(value)  // O(1), never grows beyond 100 elements

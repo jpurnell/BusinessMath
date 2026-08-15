@@ -78,7 +78,7 @@ public struct RobustResult<V: VectorSpace> where V.Scalar == Double {
 ///     },
 ///     nominalParameters: [0.10, 0.12, 0.08, 0.04],
 ///     initialSolution: VectorN([0.25, 0.25, 0.25, 0.25]),
-///     constraints: [.budgetConstraint] + .nonNegativity(dimension: 4),
+///     constraints: [.budgetConstraint] + MultivariateConstraint.nonNegativity(dimension: 4),
 ///     minimize: true  // Minimize worst-case (maximize worst-case return)
 /// )
 /// ```

@@ -29,7 +29,7 @@ import Numerics
 ///   ```swift
 ///   let grades = [85.0, 90.0, 78.0]
 ///   let weights = [0.3, 0.5, 0.2]  // Exam 1: 30%, Exam 2: 50%, Exam 3: 20%
-///   let finalGrade = weightedAverage(values: grades, weights: weights)
+///   let finalGrade = try weightedAverage(grades, weights: weights)
 ///   // finalGrade ≈ 86.1
 ///   ```
 ///
