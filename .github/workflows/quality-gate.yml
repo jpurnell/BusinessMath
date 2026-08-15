@@ -5,6 +5,11 @@ on:
     branches: [main]
   schedule:
     - cron: '0 6 * * *'
+  # On demand. Without this the gate can only be observed by pushing, which makes
+  # "is CI actually running the gate?" a question you cannot ask directly — and it
+  # went unasked long enough for this workflow to sit disabled while the repository
+  # reported four green jobs.
+  workflow_dispatch:
 
 permissions:
   contents: read
