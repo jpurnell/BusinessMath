@@ -7,6 +7,7 @@ import Numerics
 ///
 /// Example:
 /// ```swift
+/// let myValues = (0..<24).map { Double($0) + 1.0 }
 /// let data = try CrossedDesignData<Double>(
 ///     values: myValues,
 ///     facetNames: ["p", "raters", "items"],

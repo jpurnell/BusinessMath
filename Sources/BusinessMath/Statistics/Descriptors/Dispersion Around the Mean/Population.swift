@@ -16,6 +16,7 @@ import Foundation
 ///
 /// ## Example
 /// ```swift
+/// let data = [12.0, 15.0, 11.0, 18.0, 14.0]
 /// let populationVariance = variance(data, type: .population)
 /// let sampleVariance = variance(data, type: .sample)  // More common
 /// ```

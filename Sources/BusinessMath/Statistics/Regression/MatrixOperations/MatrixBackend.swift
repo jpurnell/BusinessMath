@@ -31,12 +31,16 @@ import Foundation
 ///
 /// ```swift
 /// // Automatic backend selection
+/// let A = [[4.0, 1.0], [1.0, 3.0]]
+/// let B = [[1.0, 0.0], [0.0, 1.0]]
+/// let b = [1.0, 2.0]
+///
 /// let backend = MatrixBackendSelector.selectBackend(matrixSize: 500)
-/// let result = backend.multiply(A, B)
+/// let product = try backend.multiply(A, B)
 ///
 /// // Explicit backend
 /// let cpuBackend = CPUMatrixBackend()
-/// let result = cpuBackend.solve(A, b)
+/// let solution = try cpuBackend.solve(A, b)
 /// ```
 ///
 /// - Note: All implementations must be thread-safe and conform to `Sendable`.

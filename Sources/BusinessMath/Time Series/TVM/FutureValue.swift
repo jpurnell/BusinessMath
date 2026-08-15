@@ -146,7 +146,10 @@ public func futureValue<T: Real>(presentValue: T, rate: T, periods: Int) -> T {
 ///
 /// Future Value and Present Value are reciprocal:
 /// ```swift
-/// let periods = Period.documentationQuarters
+/// let pv = 1_000.0
+/// let rate = 0.05
+/// let periods = 4
+///
 /// let fv = futureValue(presentValue: pv, rate: rate, periods: periods)
 /// let backToPV = presentValue(futureValue: fv, rate: rate, periods: periods)
 /// // backToPV ≈ pv
