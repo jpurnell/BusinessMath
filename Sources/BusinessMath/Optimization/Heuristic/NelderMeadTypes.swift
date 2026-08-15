@@ -22,7 +22,7 @@ import Numerics
 /// let config = NelderMeadConfig.default
 ///
 /// // High precision configuration
-/// let preciseCon fig = NelderMeadConfig.highPrecision
+/// let preciseConfig = NelderMeadConfig.highPrecision
 ///
 /// // Custom configuration
 /// let customConfig = NelderMeadConfig(
@@ -152,6 +152,7 @@ public struct NelderMeadConfig: Sendable {
 /// ```swift
 /// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in let a = 1.0 - v[0]; let b = v[1] - v[0] * v[0]; return a * a + 100.0 * b * b }
 /// let optimizer = NelderMead<VectorN<Double>>(config: .default)
+/// let guess = VectorN<Double>([-1.2, 1.0])
 /// let result = optimizer.optimizeDetailed(objective: rosenbrock, initialGuess: guess)
 ///
 /// print("Solution: \(result.solution)")

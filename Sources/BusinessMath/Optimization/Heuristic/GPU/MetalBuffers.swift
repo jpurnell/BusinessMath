@@ -23,19 +23,17 @@ import Foundation
 ///
 /// ## Usage
 ///
+/// This type is internal. Buffers are allocated, uploaded and read back by the
+/// heuristics themselves; a caller only chooses the population size and dimension,
+/// which is what determines the buffer geometry described above.
+///
 /// ```swift
-/// let buffers = try MetalBuffers(
-///     device: device.device,
-///     populationSize: 1000,
-///     dimension: 10,
-///     randomSeeds: (0..<1000).map { _ in UInt32(rng.next() & 0xFFFFFFFF) }
+/// let optimizer = GeneticAlgorithm<VectorN<Double>>(
+/// 	config: .default,
+/// 	searchSpace: Array(repeating: (lower: -10.0, upper: 10.0), count: 10)
 /// )
-///
-/// // Upload initial population
-/// buffers.uploadPopulation(data, to: buffers.populationA)
-///
-/// // Download results
-/// let results = buffers.downloadPopulation(from: buffers.populationA)
+/// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+/// let result = try optimizer.optimizeDetailed(objective: sphere)
 /// ```
 internal final class MetalBuffers {
 

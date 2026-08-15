@@ -34,13 +34,22 @@
 /// ## Example
 ///
 /// ```swift
+/// let founders = [
+///     CapTable.Shareholder(
+///         name: "Alice",
+///         shares: 8_000_000,
+///         investmentDate: Date(),
+///         pricePerShare: 0.001
+///     )
+/// ]
+///
 /// // Production: the real clock, supplied by default.
-/// let table = CapTable(shareholders: founders, optionPool: 2_000_000)
+/// let productionTable = CapTable(shareholders: founders, optionPool: 2_000_000)
 ///
 /// // Test: a chosen moment, asserted exactly.
 /// let instant = Date(timeIntervalSince1970: 1_767_225_600)
 /// let table = CapTable(shareholders: founders, optionPool: 0, clock: FixedWallClock(at: instant))
-/// #expect(table.grantOptions(recipient: "Alice", shares: 1_000, strikePrice: 0.01)
+/// assert(table.grantOptions(recipient: "Alice", shares: 1_000, strikePrice: 0.01)
 ///     .shareholders.last?.investmentDate == instant)
 /// ```
 @_exported import protocol SwiftDeterminism.WallClock

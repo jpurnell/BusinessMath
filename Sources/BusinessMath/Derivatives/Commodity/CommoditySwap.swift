@@ -92,13 +92,18 @@ public struct CommoditySwap<T: Real & Sendable>: Sendable where T: Codable {
 	/// ## Example
 	///
 	/// ```swift
-	/// let swap = Period.documentationQuarters
 	/// let periods = Period.documentationQuarters
-	/// let prices = TimeSeries<Double>(
-	///     periods: swap.settlementPeriods,
-	///     values: [70.0, 74.0, 68.0]
+	/// let hedge = CommoditySwap<Double>(
+	///     underlier: "WTI",
+	///     fixedPrice: 70.0,
+	///     notionalVolume: 1_000.0,
+	///     settlementPeriods: periods
 	/// )
-	/// let settlements = swap.settlements(realizedPrices: prices)
+	/// let prices = TimeSeries<Double>(
+	///     periods: hedge.settlementPeriods,
+	///     values: [70.0, 74.0, 68.0, 71.0]
+	/// )
+	/// let settlements = hedge.settlements(realizedPrices: prices)
 	/// // settlements[jan] == 2.0 * volume, etc.
 	/// ```
 	public func settlements(realizedPrices: TimeSeries<T>) -> TimeSeries<T> {

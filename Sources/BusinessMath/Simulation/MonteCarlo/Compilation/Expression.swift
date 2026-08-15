@@ -38,6 +38,7 @@ import Foundation
 /// Expressions can be compiled to GPU bytecode for parallel execution:
 ///
 /// ```swift
+/// let expression = Expression.binary(.add, .input(0), .constant(1.0))
 /// let bytecode = try BytecodeCompiler.compile(expression)
 /// let gpuBytecode = BytecodeCompiler.toGPUFormat(bytecode)
 /// ```
@@ -47,7 +48,8 @@ import Foundation
 /// Expressions can also be evaluated on CPU using ExpressionEvaluator:
 ///
 /// ```swift
-/// let result = ExpressionEvaluator.evaluate(expression, inputs: [10.0, 20.0, 5.0])
+/// let model = try MonteCarloExpressionModel { builder in builder[0] + builder[1] }
+/// let result = try model.evaluate(inputs: [10.0, 20.0])
 /// ```
 public indirect enum Expression: Sendable, Equatable {
 

@@ -47,7 +47,7 @@ import Foundation
 /// let receivablesChangeAccount = try Account(
 ///     entity: myEntity,
 ///     name: "Change in Receivables",
-///     cashFlowRole: .changeInReceivables    // Will auto-calculate diff(),
+///     cashFlowRole: .changeInReceivables,   // Will auto-calculate diff()
 ///     timeSeries: receivablesBalanceData,  // Balance sheet data
 /// )
 /// ```
@@ -124,7 +124,7 @@ public enum CashFlowRole: String, Sendable, Hashable, Codable, CaseIterable, Sta
     /// let salesTaxCF = try Account(
     ///     entity: retailStore,
     ///     name: "Change in Sales Tax Payable",
-    ///     cashFlowRole: .changeInSalesTaxPayable  // Uses diff() automatically,
+    ///     cashFlowRole: .changeInSalesTaxPayable,  // Uses diff() automatically
     ///     timeSeries: salesTaxBalances,  // Same balance data
     /// )
     ///
