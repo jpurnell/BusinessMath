@@ -83,9 +83,9 @@ public macro MCPTool(description: String) = #externalMacro(
 /// and generates a `validate()` method that checks all rules.
 ///
 /// ## Generated Members
-/// - `func validate() throws` - Validates all properties, throws ValidationError on failure
+/// - `func validate() throws` - Validates all properties, throws ``MacroValidationError`` on failure
 /// - `var isValid: Bool` - Returns true if all validation rules pass
-/// - `var validationError: ValidationError?` - Returns the first validation error, or nil if valid
+/// - `var validationError: MacroValidationError?` - Returns the first validation error, or nil if valid
 ///
 /// ## Usage Example
 ///
@@ -100,9 +100,9 @@ public macro MCPTool(description: String) = #externalMacro(
 ///
 /// let loan = LoanCalculation(principal: -1000, interestRate: 0.05, years: 5, description: "")
 /// loan.isValid  // false
-/// loan.validationError  // the first failure: principal must be positive
+/// loan.validationError  // MacroValidationError: principal must be positive
 ///
-/// try loan.validate()  // throws on the first failure
+/// try loan.validate()  // throws MacroValidationError
 /// ```
 ///
 /// ## Supported Validation Attributes
