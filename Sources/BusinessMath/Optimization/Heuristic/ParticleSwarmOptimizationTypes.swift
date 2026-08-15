@@ -285,6 +285,13 @@ public struct ParticleSwarmResult<V: VectorSpace> where V.Scalar: Real {
     ///
     /// Use this to visualize convergence:
     /// ```swift
+    /// let optimizer = ParticleSwarmOptimization<VectorN<Double>>(
+    ///     config: .default,
+    ///     searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
+    /// )
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    ///
     /// for (iter, bestFitness) in result.convergenceHistory.enumerated() {
     ///     print("Iteration \(iter): Best = \(bestFitness)")
     /// }

@@ -233,7 +233,8 @@ public struct IslandModelConfig: Sendable {
 ///     searchSpace: bounds
 /// )
 ///
-/// let result = try optimizer.optimizeDetailed(objective: myFunction)
+/// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+/// let result = try optimizer.optimizeDetailed(objective: sphere)
 ///
 /// print("Best solution: \(result.solution)")
 /// print("Best fitness: \(result.bestFitness)")
@@ -279,6 +280,14 @@ public struct IslandModelResult<V: VectorSpace> where V.Scalar: Real {
     ///
     /// Example:
     /// ```swift
+    /// let optimizer = IslandModel<VectorN<Double>>(
+    ///     gaConfig: .default,
+    ///     islandConfig: .default,
+    ///     searchSpace: [(-10.0, 10.0), (-10.0, 10.0)]
+    /// )
+    /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+    /// let result = try optimizer.optimizeDetailed(objective: sphere)
+    ///
     /// for (i, fitness) in result.islandFitnesses.enumerated() {
     ///     print("Island \(i): fitness = \(fitness)")
     /// }

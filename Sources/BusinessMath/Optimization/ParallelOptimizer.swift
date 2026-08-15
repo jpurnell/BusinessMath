@@ -21,7 +21,7 @@ import Numerics
 /// ## Example
 /// ```swift
 /// let rosenbrock: @Sendable (VectorN<Double>) -> Double = { v in let a = 1.0 - v[0]; let b = v[1] - v[0] * v[0]; return a * a + 100.0 * b * b }
-/// let optimizer = ParallelOptimizer(
+/// let optimizer = ParallelOptimizer<VectorN<Double>>(
 ///     algorithm: .gradientDescent(learningRate: 0.01),
 ///     numberOfStarts: 10,
 ///     maxIterations: 1000,
@@ -31,8 +31,8 @@ import Numerics
 /// let result = try await optimizer.optimize(
 ///     objective: rosenbrock,
 ///     searchRegion: (
-///         lower: VectorN([-5.0, -5.0]),
-///         upper: VectorN([5.0, 5.0])
+///         lower: VectorN<Double>([-5.0, -5.0]),
+///         upper: VectorN<Double>([5.0, 5.0])
 ///     ),
 ///     constraints: []
 /// )

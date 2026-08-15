@@ -73,6 +73,7 @@ import Numerics
 /// Alternatively, provide custom starting points:
 /// ```swift
 /// let customStarts = [0.0, 2.5, 5.0, 7.5, 10.0]
+/// let optimizer = AsyncGradientDescentOptimizer<Double>()
 /// let multiStart = MultiStartOptimizer(
 ///     baseOptimizer: optimizer,
 ///     startingPoints: customStarts

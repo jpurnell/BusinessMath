@@ -53,13 +53,37 @@ public enum ReportingPeriod: String, Sendable {
 /// ## Usage
 ///
 /// ```swift
-/// // A full-service provider conforming to all three
-/// let provider: any MarketDataProvider = AlphaVantageProvider(config: config)
+/// // A full-service provider conforming to all three.
+/// // Concrete providers live in the BusinessMathMarketData package.
+/// struct StubProvider: MarketDataProvider {
+///     func fetchStockPrice(symbol: String, from: Date, to: Date) async throws -> TimeSeries<Double> {
+///         TimeSeries(periods: Period.documentationQuarters, values: [45.0, 47, 49, 51])
+///     }
+///     func fetchIncomeStatement(symbol: String, period: ReportingPeriod) async throws -> IncomeStatement<Double> {
+///         try IncomeStatement<Double>.documentationFixture
+///     }
+///     func fetchBalanceSheet(symbol: String, period: ReportingPeriod) async throws -> BalanceSheet<Double> {
+///         try BalanceSheet<Double>.documentationFixture
+///     }
+///     func fetchCashFlowStatement(symbol: String, period: ReportingPeriod) async throws -> CashFlowStatement<Double> {
+///         try CashFlowStatement<Double>.documentationFixture
+///     }
+///     func fetchMetrics(symbol: String) async throws -> MarketMetrics {
+///         MarketMetrics(symbol: symbol, asOf: Date(), priceToEarnings: 28.4)
+///     }
+/// }
 ///
-/// // Use any individual capability
-/// let prices = try await provider.fetchStockPrice(symbol: "AAPL", from: start, to: end)
-/// let income = try await provider.fetchIncomeStatement(symbol: "AAPL", period: .annual)
-/// let metrics = try await provider.fetchMetrics(symbol: "AAPL")
+/// let provider: any MarketDataProvider = StubProvider()
+/// let start = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1)) ?? Date()
+/// let end = Calendar.current.date(from: DateComponents(year: 2025, month: 12, day: 31)) ?? Date()
+///
+/// Task {
+///     // Use any individual capability
+///     let prices = try await provider.fetchStockPrice(symbol: "AAPL", from: start, to: end)
+///     let income = try await provider.fetchIncomeStatement(symbol: "AAPL", period: .annual)
+///     let metrics = try await provider.fetchMetrics(symbol: "AAPL")
+///     print(prices, income.totalRevenue, metrics.symbol)
+/// }
 /// ```
 ///
 /// ## See Also

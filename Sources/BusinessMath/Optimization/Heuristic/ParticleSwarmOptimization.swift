@@ -91,12 +91,10 @@ import Metal
 ///     searchSpace: bounds
 /// )
 ///
-/// // Verify GPU availability
-/// #if canImport(Metal)
-/// if MetalDevice.shared != nil {
-///     print("GPU acceleration available")
-/// }
-/// #endif
+/// // GPU selection is internal: a large swarm uses it when Metal is present
+/// // and falls back to the CPU when it is not, with no change at the call site.
+/// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
+/// let result = try optimizer.optimizeDetailed(objective: sphere)
 /// ```
 ///
 /// ### Best Practices for GPU

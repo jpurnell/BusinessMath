@@ -36,6 +36,10 @@ import Numerics
 /// )
 ///
 /// // Find where profit(price) = 0 (breakeven)
+/// let profitFunction: @Sendable (Double) -> Double = { price in
+///     price * 1_000.0 - 250.0
+/// }
+///
 /// let result = optimizer.optimize(
 ///     objective: profitFunction,
 ///     constraints: [],

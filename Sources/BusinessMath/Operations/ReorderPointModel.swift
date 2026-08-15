@@ -14,7 +14,7 @@ import Numerics
 /// `L` is lead time, and `SS` is safety stock.
 ///
 /// ```swift
-/// let dailySales = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+/// let dailySales = [100.0, 110.0, 120.0, 130.0, 105.0, 118.0]
 /// let result = try ReorderPointModel<Double>.calculate(
 ///     demandHistory: dailySales,
 ///     leadTime: 7.0,

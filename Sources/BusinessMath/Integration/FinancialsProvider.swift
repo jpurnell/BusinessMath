@@ -20,9 +20,26 @@ import Numerics
 /// ## Usage
 ///
 /// ```swift
-/// let provider: any FinancialsProvider = AlphaVantageProvider(configuration: config)
-/// let income = try await provider.fetchIncomeStatement(symbol: "AAPL", period: .annual)
-/// let revenue = income.totalRevenue
+/// // Concrete providers live in the BusinessMathMarketData package
+/// struct StubProvider: FinancialsProvider {
+///     func fetchIncomeStatement(symbol: String, period: ReportingPeriod) async throws -> IncomeStatement<Double> {
+///         try IncomeStatement<Double>.documentationFixture
+///     }
+///     func fetchBalanceSheet(symbol: String, period: ReportingPeriod) async throws -> BalanceSheet<Double> {
+///         try BalanceSheet<Double>.documentationFixture
+///     }
+///     func fetchCashFlowStatement(symbol: String, period: ReportingPeriod) async throws -> CashFlowStatement<Double> {
+///         try CashFlowStatement<Double>.documentationFixture
+///     }
+/// }
+///
+/// let provider: any FinancialsProvider = StubProvider()
+///
+/// Task {
+///     let income = try await provider.fetchIncomeStatement(symbol: "AAPL", period: .annual)
+///     let revenue = income.totalRevenue
+///     print(revenue)
+/// }
 /// ```
 ///
 /// ## Topics
