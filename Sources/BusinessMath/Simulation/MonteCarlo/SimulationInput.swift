@@ -39,7 +39,7 @@ import Numerics
 ///
 /// let costsInput = SimulationInput(
 ///     name: "OperatingCosts",
-///     distribution: DistributionUniform(min: 50_000, max: 70_000)
+///     distribution: DistributionUniform(50_000, 70_000)
 /// )
 ///
 /// // Using custom sampling logic
@@ -128,7 +128,7 @@ public struct SimulationInput: Sendable {
 	/// ```swift
 	/// let input = SimulationInput(
 	///     name: "ProjectDuration",
-	///     distribution: DistributionTriangular(min: 10, mode: 15, max: 25),
+	///     distribution: DistributionTriangular(low: 10, high: 25, base: 15),
 	///     metadata: ["unit": "days", "type": "PERT"]
 	/// )
 	/// ```

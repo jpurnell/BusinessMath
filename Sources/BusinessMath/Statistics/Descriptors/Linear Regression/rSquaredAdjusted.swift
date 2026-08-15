@@ -29,6 +29,7 @@ import Numerics
 ///   let yValues: [Double] = [2.0, 4.0, 6.0, 8.0, 10.0]
 ///   let result = rSquaredAdjusted(xValues, yValues, .sample, 1)
 ///   // result should be the adjusted R² value for the datasets `xValues` and `yValues`
+///   ```
 /// - Throws: `BusinessMathError.mismatchedDimensions` if arrays have different lengths.
 /// - Throws: `BusinessMathError.divisionByZero` if observations ≤ descriptors + 1 or zero variance.
 public func rSquaredAdjusted<T: Real>(_ x: [T], _ y: [T], _ population: Population = .population, _ descriptors: T = T(1)) throws -> T {

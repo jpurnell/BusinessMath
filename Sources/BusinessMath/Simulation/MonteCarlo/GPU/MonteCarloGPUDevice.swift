@@ -32,12 +32,15 @@ import Foundation
 ///
 /// **Usage**:
 /// ```swift
-/// let device = MonteCarloGPUDevice()
-/// let results = try device.runSimulation(
-///     distributions: [(.normal, (100.0, 15.0, 0.0))],
-///     modelBytecode: [(opcode: 4, arg1: 0, arg2: 0.0)],
-///     iterations: 100_000
-/// )
+/// // `init?` returns nil when no Metal device is present
+/// if let device = MonteCarloGPUDevice() {
+///     let results = try device.runSimulation(
+///         distributions: [(type: 0, params: (100.0, 15.0, 0.0))],
+///         modelBytecode: [(opcode: 4, arg1: 0, arg2: 0.0)],
+///         iterations: 100_000
+///     )
+///     print(results.count)
+/// }
 /// ```
 // Justification: Core Metal objects (device, commandQueue, library) are immutable; mutable pipeline and buffer caches are protected by bufferCacheLock (NSLock).
 @available(macOS 10.15, iOS 13.0, *)

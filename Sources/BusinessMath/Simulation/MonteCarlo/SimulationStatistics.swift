@@ -58,7 +58,7 @@ private nonisolated(unsafe) let globalConfidenceInterval: (Double, [Double]) -> 
 /// print("Mean: \(stats.mean)")
 /// print("StdDev: \(stats.stdDev)")
 /// print("Skewness: \(stats.skewness)")
-/// print("95% CI: [\(stats.ci95.lower), \(stats.ci95.upper)]")
+/// print("95% CI: [\(stats.ci95.low), \(stats.ci95.high)]")
 /// ```
 public struct SimulationStatistics: Sendable {
 
@@ -260,8 +260,9 @@ public struct SimulationStatistics: Sendable {
 	/// ## Example
 	///
 	/// ```swift
+	/// let stats = SimulationStatistics(values: (0..<1_000).map { Double($0) / 10.0 })
 	/// let ci = stats.confidenceInterval(level: 0.95)
-	/// print("95% CI: [\(ci.lower), \(ci.upper)]")
+	/// print("95% CI: [\(ci.low), \(ci.high)]")
 	/// ```
 	public func confidenceInterval(level: Double) -> (low: Double, high: Double) { return globalConfidenceInterval(level, values) }
 

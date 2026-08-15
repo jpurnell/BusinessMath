@@ -15,6 +15,7 @@ import Numerics
 ///
 /// Example:
 /// ```swift
+/// let ratings = [[4.0, 5.0, 4.0], [3.0, 3.0, 4.0], [5.0, 5.0, 5.0], [2.0, 3.0, 2.0]]
 /// let gResult = try gStudy(ratings)
 /// let dResult = try dStudy(gResult, design: ["raters": 5])
 /// print("Generalizability: \(dResult.generalizabilityCoefficient)")

@@ -145,8 +145,7 @@ import Numerics
 ///     let incomeStatement = try IncomeStatement(
 ///         entity: entity,
 ///         periods: periods,
-///         revenueAccounts: [revenueAccount],
-///         expenseAccounts: [cogsAccount, opexAccount]
+///         accounts: [revenueAccount, cogsAccount, opexAccount]
 ///     )
 ///
 ///     // Build balance sheet (simplified: equity = cumulative net income)
