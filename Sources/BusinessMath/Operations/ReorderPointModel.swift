@@ -52,7 +52,7 @@ public struct ReorderPointModel<T: Real & Sendable & Codable>: Sendable {
     ///   - serviceLevel: The target cycle service level, strictly between 0 and 1.
     ///   - leadTimeStdDev: The standard deviation of lead time. Defaults to 0.
     ///   - method: The safety stock calculation method. Defaults to ``SafetyStockModel/Method/demandOnly``.
-    /// - Returns: A ``Result`` containing the reorder point and supporting metrics.
+    /// - Returns: A ``ReorderPointModel/Result`` containing the reorder point and supporting metrics.
     /// - Throws: ``OperationsError/insufficientData(required:got:)`` if `demandHistory` is empty.
     /// - Throws: ``OperationsError/invalidServiceLevel`` if `serviceLevel` is not in the open interval (0, 1).
     public static func calculate(
@@ -109,7 +109,7 @@ public struct ReorderPointModel<T: Real & Sendable & Codable>: Sendable {
     ///   - serviceLevel: The target cycle service level, strictly between 0 and 1.
     ///   - leadTimeStdDev: The standard deviation of lead time. Defaults to 0.
     ///   - method: The safety stock calculation method. Defaults to ``SafetyStockModel/Method/demandOnly``.
-    /// - Returns: A ``Result`` containing the reorder point and supporting metrics.
+    /// - Returns: A ``ReorderPointModel/Result`` containing the reorder point and supporting metrics.
     /// - Throws: ``OperationsError/insufficientData(required:got:)`` if the time series is empty.
     /// - Throws: ``OperationsError/invalidServiceLevel`` if `serviceLevel` is not in the open interval (0, 1).
     public static func calculate(

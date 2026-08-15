@@ -189,4 +189,60 @@ struct FormulaEvaluatorTests {
 			try FormulaEvaluator<Double>.accountNames(in: "[Total Revenue")
 		}
 	}
+
+	// MARK: - Nesting Depth
+
+	@Test("Nesting past the parser's limit is refused rather than crashing")
+	func deeplyNestedFormulaIsRefused() throws {
+		// The grammar is mutually recursive, so nesting depth is stack depth. Before the
+		// bound, this overflowed the stack — a crash no caller could catch, from input that
+		// is merely long rather than malformed.
+		let depth = 5_000
+		let formula = String(repeating: "(", count: depth)
+			+ "revenue"
+			+ String(repeating: ")", count: depth)
+
+		let periods = Period.documentationQuarters
+		let evaluator = FormulaEvaluator(accounts: [
+			"revenue": TimeSeries(periods: periods, values: [100.0, 110, 120, 130])
+		])
+
+		#expect(throws: FormulaError.nestingTooDeep(limit: 256)) {
+			_ = try evaluator.evaluate(formula)
+		}
+	}
+
+	@Test("A run of unary minuses is refused rather than crashing")
+	func deeplyNestedNegationIsRefused() throws {
+		// `factor → "-" factor` re-enters the cycle just as `(` does, so it needs the same
+		// bound. This path was unguarded when only the parenthesis edge was checked.
+		let formula = String(repeating: "-", count: 5_000) + "revenue"
+
+		let periods = Period.documentationQuarters
+		let evaluator = FormulaEvaluator(accounts: [
+			"revenue": TimeSeries(periods: periods, values: [100.0, 110, 120, 130])
+		])
+
+		#expect(throws: FormulaError.nestingTooDeep(limit: 256)) {
+			_ = try evaluator.evaluate(formula)
+		}
+	}
+
+	@Test("Nesting within the limit still evaluates")
+	func shallowNestingStillWorks() throws {
+		// The bound has to be generous enough that no real formula meets it. Ten deep is
+		// already far past anything a person writes by hand.
+		let formula = String(repeating: "(", count: 10)
+			+ "revenue - cogs"
+			+ String(repeating: ")", count: 10)
+
+		let periods = Period.documentationQuarters
+		let evaluator = FormulaEvaluator(accounts: [
+			"revenue": TimeSeries(periods: periods, values: [100.0, 110, 120, 130]),
+			"cogs": TimeSeries(periods: periods, values: [60.0, 64, 70, 75])
+		])
+
+		let result = try evaluator.evaluate(formula)
+		#expect(abs((result[periods[0]] ?? 0) - 40.0) < 1e-12)
+	}
 }
