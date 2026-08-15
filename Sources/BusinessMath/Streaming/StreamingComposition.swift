@@ -889,6 +889,10 @@ public struct AsyncDistinctSequence<Base: AsyncSequence>: AsyncSequence where Ba
 ///     let timestamp: Date
 /// }
 ///
+/// let date1 = Date()
+/// let date2 = date1.addingTimeInterval(60)
+/// let date3 = date2.addingTimeInterval(60)
+///
 /// let readings = AsyncValueStream([
 ///     Reading(value: 100.0, timestamp: date1),
 ///     Reading(value: 100.5, timestamp: date2),  // Within tolerance

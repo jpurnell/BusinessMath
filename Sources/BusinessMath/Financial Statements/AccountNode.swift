@@ -20,6 +20,22 @@ import Numerics
 /// ## Creating a Hierarchy
 ///
 /// ```swift
+/// let entity = Entity.documentationFixture
+/// let jan = Period.month(year: 2025, month: 1)
+///
+/// let productAccount = try Account(
+///     entity: entity,
+///     name: "Product Revenue",
+///     incomeStatementRole: .revenue,
+///     timeSeries: TimeSeries(periods: [jan], values: [120_000.0])
+/// )
+/// let serviceAccount = try Account(
+///     entity: entity,
+///     name: "Service Revenue",
+///     incomeStatementRole: .revenue,
+///     timeSeries: TimeSeries(periods: [jan], values: [45_000.0])
+/// )
+///
 /// // Leaf nodes with actual account data
 /// let productRevenue = AccountNode<Double>(id: "product", account: productAccount)
 /// let serviceRevenue = AccountNode<Double>(id: "service", account: serviceAccount)
@@ -41,6 +57,8 @@ import Numerics
 ///
 /// ```swift
 /// let period = Period.documentationQuarters[0]
+/// let root = AccountNode<Double>(id: "totalRevenue", account: nil, children: [])
+///
 /// if let node = root.find(id: "service") {
 ///     print(node.total(for: period))
 /// }

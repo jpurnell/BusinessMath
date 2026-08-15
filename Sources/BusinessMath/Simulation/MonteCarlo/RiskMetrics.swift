@@ -131,8 +131,7 @@ extension SimulationResults {
 	/// ## Example - Risk Comparison
 	///
 	/// ```swift
-	/// let simulation = try FinancialSimulation.documentationFixture
-	/// let results = try simulation.run()
+	/// let results = SimulationResults(values: [-120.0, -45.0, 10.0, 80.0, 150.0])
 	///
 	/// let var95 = results.valueAtRisk(confidenceLevel: 0.95)
 	/// let cvar95 = results.conditionalValueAtRisk(confidenceLevel: 0.95)
@@ -146,8 +145,8 @@ extension SimulationResults {
 	///
 	/// ```swift
 	/// // Compare risk of two business units
-	/// let results1 = try simulation1.run()
-	/// let results2 = try simulation2.run()
+	/// let results1 = SimulationResults(values: [-120.0, -45.0, 10.0, 80.0, 150.0])
+	/// let results2 = SimulationResults(values: [-300.0, -90.0, 5.0, 60.0, 210.0])
 	///
 	/// let cvar1 = results1.conditionalValueAtRisk(confidenceLevel: 0.99)
 	/// let cvar2 = results2.conditionalValueAtRisk(confidenceLevel: 0.99)

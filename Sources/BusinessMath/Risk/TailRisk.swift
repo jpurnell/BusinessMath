@@ -33,9 +33,9 @@ import Numerics
 /// ## Example: Tail Severity
 ///
 /// ```swift
-/// let var95 = -5%    // VaR threshold
-/// let cvar95 = -7.5% // Average loss beyond VaR
-/// let tailRisk = 7.5 / 5.0 = 1.5
+/// let var95 = -0.05    // VaR threshold, -5%
+/// let cvar95 = -0.075  // Average loss beyond VaR, -7.5%
+/// let tailRisk = cvar95 / var95   // 1.5
 ///
 /// // When losses exceed VaR, they're 50% worse on average
 /// ```
