@@ -52,6 +52,8 @@ Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 154 commits since the ta
 | DocC catalogue | **73 articles**, all compiling as one program under `quality-gate --check doc-code` |
 | `doc-comment-code` | **0 errors** — macro modules included. The tag gate is cleared. |
 | `doc-claims` | **0 errors** — cleared 2026-08-13 |
+| `doc-run` | **0 errors** — 73 of 73 articles run cleanly and reproducibly |
+| `quality-gate --check all` | **0 errors, 0 warnings** across 43 checkers |
 | toolchain | `swift-tools-version: 6.2`, Swift 6 strict concurrency |
 
 **Outstanding before the tag.** None of these is a code defect; all four are release
@@ -68,13 +70,13 @@ hygiene, and the first two are not in this repository.
    `recursion` came never to run, and how a crashable parser reached a release candidate.
    Proposals for both are filed in the quality-gate repository.
 3. **154 commits unpushed.**
-4. **`5.10-ParallelOptimization.md` hangs under `doc-run`** and is killed at the 30-second
-   deadline. `5.9-AdaptiveSelection.md` had the same symptom and is fixed — a
-   200-dimension example running to the default 1,000 iterations, where a numerical
-   gradient costs 400 objective calls a step. 5.10's cause is *not* its optimisation
-   budget: the hang survives reducing every executed run to 6 starts and 200 iterations,
-   so it is neither the work nor compilation (the deadline guards the linked executable,
-   not the build). Unresolved and recorded rather than guessed at.
+4. ~~`5.10-ParallelOptimization.md` hangs under `doc-run`.~~ **Resolved.** Both articles
+   run, and all 73 in the catalogue now run cleanly and reproducibly. The hang was an
+   arithmetic explosion rather than a loop — `ParallelOptimizer` forwards `maxIterations`
+   to the constrained algorithms as their *outer* count, and each outer step runs an inner
+   BFGS solve of up to 1,000 iterations. Chasing it also found that `VectorN.zero`
+   annihilated the vector it was added to, which was giving `5.4-VectorOperations.md` a
+   different answer on every run.
 
 The test figure is measured. A `--bootstrap --check status` run estimates 7,818 by counting
 test-shaped declarations; that heuristic is not the number of tests and should not be quoted.

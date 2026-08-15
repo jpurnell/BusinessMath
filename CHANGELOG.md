@@ -32,6 +32,7 @@ detail, and how each number was measured, is in the entry named beside it.
 | `zScore(fisherR:items:)` | every z-score was too large by `sqrt(1.06)` — **2.956%** — at every `n` and every `r`. |
 | `correlationBreakpoint(_:probability:)` | every breakpoint was **~2.9% too small**, understating the correlation needed to clear the threshold. |
 | `VectorN.random(in:dimension:)` | a random vector on `0...1` was **the zero vector**, every component, every call. |
+| `VectorN` `+`, `-`, `dot` | `VectorN.zero` is the empty vector, and any dimension difference returned a vector of zeros — so **`zero + v` was `[0, 0]`, not `v`**. Seeding an accumulator with `.zero`, which is the obvious way to write one, silently discarded whichever element arrived first. A mismatch now returns `NaN`, and `.zero` is the identity at every dimension. |
 | `distributionPareto(scale:shape:)` | returned **`+infinity`** for a uniform of exactly zero, poisoning the mean and every percentile above it for the whole run. Now finite and `>= scale` for every seed; values for every `u > 1e-7` are bit-for-bit unchanged. |
 | `SimplexResult.dualValues` | every shadow price carried the wrong **sign**. Wyndor Glass: **`(-0, -1.5, -1)` → `(0, 1.5, 1)`**. Magnitudes were always correct. |
 | `HazardRateModel` survival curve | integrated as though every period were a year, whatever its length. A one-year default probability of **1.98% against a true 11.43%** — understating credit risk 5.8×. |
@@ -657,6 +658,72 @@ case and it cannot be written, because the formula language has no cross-period 
 `TimeSeries` has no lag operator, so `openingDebt(t) = closingDebt(t−1)` is inexpressible.
 Documenting new machinery with an example that does not work would be a quieter version of what this
 release removes.
+
+#### Fixed (breaking) — `VectorN.zero` annihilated the vector it was added to
+
+`VectorN.zero` is the empty vector, and `+` treated *any* difference in dimension as a
+mismatch, returning a vector of zeros. The additive identity therefore destroyed its
+operand:
+
+```swift
+let v = VectorN<Double>([3.0, 4.0])
+VectorN<Double>.zero + v        // was [0.0, 0.0] — now [3.0, 4.0]
+```
+
+Which made the obvious way to write an accumulator silently lossy:
+
+```swift
+var sum = VectorN<Double>.zero
+for element in elements { sum = sum + element }   // dropped the first element
+```
+
+It reached published documentation and produced a different answer on every run.
+`5.4-VectorOperations.md` sums customer locations out of a `Dictionary` to site a
+warehouse. The first addition mismatched and discarded that customer, and dictionary
+iteration order varies per process, so a *different* customer was dropped each time: the
+article printed an optimal location of `(5.09, 4.67)` on one run and `(6.30, 4.36)` on the
+next. The print loop directly beneath it sorts its keys, so the ordering hazard was known;
+the summation loop above it did not.
+
+**What changed.** The empty vector is now the additive identity at every dimension, so
+`zero + v == v`, `v - zero == v`, and an accumulator seeded with `.zero` sums every
+element. A *genuine* mismatch — `[1, 2] + [3, 4, 5]` — returns `NaN` rather than zeros:
+`NaN` propagates through everything downstream and is detectable through the `isFinite`
+that ``VectorSpace`` already requires, where a vector of zeros was indistinguishable from a
+real result. `-` and `dot` carried the same silent-zero behaviour and change with it;
+`dot` returns `NaN` for a genuine mismatch and `0` when either side is empty.
+
+It is not a `precondition`. This package does not ship one that can crash a release build,
+and the operators cannot throw — they are ``VectorSpace`` requirements.
+
+**Breaking:** any caller relying on mismatched-dimension arithmetic yielding zeros now
+receives `NaN`. A test in this package asserted exactly that — *"Addition with mismatch
+returns zero vector"* — so the previous behaviour was deliberate and documented. It was
+also a contract that contradicted this package's rule against returning plausible-but-wrong
+results, and it had already produced wrong published output.
+
+#### Fixed — two DocC articles that could not be run
+
+`5.9-AdaptiveSelection.md` and `5.10-ParallelOptimization.md` were killed at the
+documentation runner's deadline, and `5.10` was non-reproducible underneath that.
+
+5.9 ran a 200-variable optimization to the default 1,000 iterations. A numerical gradient
+in 200 dimensions costs 400 objective calls per step, each looping 200 times. The
+dimension is load-bearing — the selector's rule is `problemSize > 100` and the article
+prints the reason it chose gradient descent — so the iteration cap moved instead.
+
+5.10 was three defects. The runtime was an arithmetic explosion rather than a loop:
+``ParallelOptimizer`` forwards `maxIterations` to the constrained algorithms as their
+*outer* augmented-Lagrangian count, and each outer step runs an inner BFGS solve of up to
+1,000 iterations with a numerical gradient and up to 50 line-search backtracks, so
+`numberOfStarts: 25, maxIterations: 400` is roughly 5×10⁸ objective evaluations. The
+article also stated that `ParallelOptimizer.init` "accepts no `seed:`" — it has taken one
+since 2.5.x, with its own test suite — so every optimizer in it is now seeded and the note
+says what is true. The last irreproducible lines were a wall-clock benchmark printing raw
+durations; it reports a bracket now, which is the decision a reader needs, and keeps the
+measurement they can print themselves.
+
+All 73 articles now run cleanly and reproducibly.
 
 #### Removed (breaking) — two macros that could not be applied anywhere
 
