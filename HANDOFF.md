@@ -1,13 +1,13 @@
-# Handoff — 2026-08-14
+# Handoff — 2026-08-15
 
-**2.6.0 is written and unshipped, gated on one number: `doc-comment-code` is at 288.**
-Everything else is clean. Nothing is in flight.
+**`doc-comment-code` is at 0 non-macro. The gate no longer blocks 2.6.0.**
 
-Down from 420 in ten commits (`99f59c8` … `11816c2`). Every 6- and 7-error file is
-clear; six files still hold 5, fifteen hold 4, and the tail is 60 files holding one
-error each. Full suite green after each commit — 6,597 tests in 581 suites, exit 0.
-Method notes from that run are in "What the second pass added" below; the original
-method still stands and is still right.
+420 at the start of the previous session, 0 now, across 27 commits
+(`99f59c8` … `6c0eabd`). 51 errors remain and every one is in
+`Sources/BusinessMathMacros/`, which the checker compiles without the plugin —
+the parked set, unchanged and not author-fixable.
+
+Full suite green after every commit: **6,597 tests in 581 suites, exit 0**.
 
 ## State
 
@@ -19,22 +19,22 @@ method still stands and is still right.
 | gate, worktrees | 53 errors / 24 warnings, all in `.claude/worktrees/` — see "Worktrees" |
 | CI | green, 4/4 jobs |
 | nightly (Release Tests) | green, including Thread Sanitizer |
-| commits since `v2.5.2` | 131 |
-| **`doc-comment-code`** | **288 non-macro**, +51 macro (parked) |
+| commits since `v2.5.2` | 145 |
+| **`doc-comment-code`** | **0 non-macro**, +51 macro (parked) |
 
 ## First action on resume
 
 ```sh
 swift build && swift test                       # 6,597 / 581, exit 0
 quality-gate --no-cache                         # live tree 0/0
-quality-gate --check doc-comment-code --no-cache | grep -c '❌ error:'   # 339 total
+quality-gate --check doc-comment-code --no-cache | grep -c '❌ error:'   # 51, all macro
 ```
 
 The binary is `quality-gate`, the flag is `--check`, and it takes **no positional path**. A
 failed invocation greps as `0 errors`, indistinguishable from a clean run — guard on log
 length before trusting any count.
 
-**Filter the macro errors out of any total.** 51 of the 339 are in
+**Filter the macro errors out of any total.** All 51 remaining are in
 `Sources/BusinessMathMacros/` and are not author-fixable (below). Their count is also
 unstable — it moved 37→50→51 across runs with no edits — so track the non-macro number:
 
@@ -45,33 +45,36 @@ quality-gate --check doc-comment-code --no-cache 2>&1 \
 
 ---
 
-## The remaining 288
+## The remaining 0
 
-**There is no cluster left.** 139 files, worst file has 5 errors, and the tail dominates:
-60 files hold exactly one error. Every mechanical pass has been spent; this is per-file
-reading. What the second pass found is that a single file's errors usually share one
-cause — one missing fixture, one wrong label — so per-file is also the efficient unit.
+Nothing left to fix. The list below is what the work found, kept because the next
+person writing a fence will hit the same things.
 
-Worst files, none of them large:
+**Every category the previous handoff called unfixable turned out to be fixable**,
+and none of them needed `<!-- docs:illustrative -->`. The codebase still contains no
+such marker.
 
-```
- 5  Analysis/DataTable.swift
- 5  Diagnostics/ModelProfiler.swift
- 5  Financial Statements/FinancialPeriodSummary.swift
- 5  Financial Statements/MultiPeriodReport.swift
- 5  Optimization/Algorithms/ConstrainedOptimizer.swift
- 5  Scenario Analysis/FinancialProjection.swift
- 4  Valuation/Equity/EnterpriseValueBridge.swift
- 4  Valuation/Debt/CreditSpreadModel.swift
-    ... 13 more at 4
-```
+- **`internal` and `private` symbols.** A fence compiles as an *external* client, so
+  anything below `public` is invisible — that is real. What was wrong was the
+  conclusion. `MetalDevice`, `MetalBuffers`, `FinancialStatementHelpers` and
+  `averageTimeSeries` are all reached through public API, so their fences now show
+  that route. An example a reader can run beats an example of a constructor they
+  cannot call.
+- **Extracted-package references.** `AlphaVantageProvider` lives in
+  BusinessMathMarketData and cannot be named here. Five Integration fences now define
+  a small conforming stub instead, which is what protocol documentation should show
+  anyway — the point is the protocol, not one vendor's implementation.
+- **`Real` is not in the preamble.** It comes from `Numerics`, which the library
+  imports without re-exporting. Two ways out: write the example concretely against
+  `Double`, or add `import Numerics` to the fence. **A fence may add its own import** —
+  the checker's hint always said so, and `import Metal` proved it.
 
-Regenerate the list with:
+Regenerate the per-file list at any time with:
 
 ```sh
 quality-gate --check doc-comment-code --no-cache 2>&1 \
   | grep -A1 '❌ error:' | grep '→' | grep -v BusinessMathMacros \
-  | sed 's|.*Sources/BusinessMath/||' | cut -d: -f1 | sort | uniq -c | sort -rn
+  | sed 's|.*/Sources/||' | cut -d: -f1 | sort | uniq -c | sort -rn
 ```
 
 ### The method that works
@@ -109,6 +112,26 @@ cannot convert value of type '@Sendable (Double) -> ScenarioParameter'
 
 Seen with `revenue`, `price`, `users`, `npv`, `discountRate`. It looks like a type-inference
 problem and is a missing binding. An explicit `let` shadows it.
+
+### The collision hazard, in full
+
+An unbound identifier in a fence does not fail as undefined when something else of
+that name is in scope. It resolves, and the error names a type nobody wrote. Three
+layers, all hit this session:
+
+| source | seen with | reported as |
+|---|---|---|
+| this library | `revenue`, `price`, `npv`, `covariance`, `portfolioVariance` | wrong argument type, or wrong arity |
+| libc via Foundation | `signal` | `@Sendable (Int32, (@convention(c) …)) -> …` |
+| the standard library | `swap` | `@Sendable (inout T, inout T) -> ()` |
+
+A fourth variant: with nothing named `entry` bound, the compiler reached for a *type*
+and reported `cannot convert value of type 'entry.Type'`. And `Driver(...)` reached the
+`Driver` protocol, reporting "cannot be constructed because it has no accessible
+initializers" — the DSL function is `ScenarioDriver`.
+
+**The tell is always the same: the diagnostic names a type you did not write.**
+`@convention(c)` in a message means libc, not your code.
 
 ### What the second pass added
 
