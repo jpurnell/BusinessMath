@@ -11,7 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
-Nothing yet.
+#### Fixed
+
+- **Three documented XNPV/XIRR figures were not reproducible.** `1.1-GettingStarted` and
+  `1.3-TimeValueOfMoney` built their date arrays from separate `Date()` calls — `Date()`,
+  then `Date(timeIntervalSinceNow: 100 * 86400)`, and so on. Those are separate instants,
+  so the gaps are 100 days *plus* a few microseconds of drift that differs on every run,
+  and each discounted value moved in its low-order digits. All three now anchor to a fixed
+  epoch, the convention `3.10-BondValuationGuide` already used and stated its reasons for.
+
+  Caught by `doc-claims`, which runs each article twice and compares. It shipped in 2.6.0
+  because the failure is probabilistic — the checker only sees it when the two runs happen
+  to straddle a boundary, and it passed three consecutive runs before failing a fourth.
+  Three greens were luck, not evidence. Documentation only; no library behaviour changed.
 
 ### [2.6.0] - 2026-08-15
 
