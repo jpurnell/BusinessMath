@@ -22,6 +22,7 @@ import Foundation
 /// ## Example
 ///
 /// ```swift
+/// let simulationData = (0..<10_000).map { _ in distributionNormal(mean: 1_000.0, stdDev: 50.0) }
 /// let results = SimulationResults(values: simulationData)
 /// let histogram = results.histogram(bins: 20)
 /// let plot = plotHistogram(histogram)
@@ -67,9 +68,8 @@ import Foundation
 /// ## Example
 ///
 /// ```swift
-/// let revenueData = TimeSeries(periods: Period.documentationQuarters, values: [100, 120, 140, 160])
-/// let simulation = try FinancialSimulation.documentationFixture
 /// // Generate histogram from simulation results
+/// let revenueData = (0..<10_000).map { _ in distributionNormal(mean: 1_000.0, stdDev: 50.0) }
 /// let results = SimulationResults(values: revenueData)
 /// let histogram = results.histogram(bins: 20)
 ///

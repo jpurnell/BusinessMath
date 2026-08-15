@@ -76,7 +76,7 @@ public struct ValidationReport: Sendable {
 /// ```swift
 /// let projection = try FinancialProjection.documentationFixture
 /// let validator = ModelValidator<Double>()
-/// let report = validator.validate(projection: financialProjection)
+/// let report = validator.validate(projection: projection)
 ///
 /// if report.isValid {
 ///     print("✅ Validation passed")
@@ -93,12 +93,14 @@ public struct ValidationReport: Sendable {
 ///     let minimumRevenue: Double
 ///
 ///     func validate(_ projection: FinancialProjection) -> ValidationResult {
-///         // Custom validation logic
+///         let revenue = projection.incomeStatement.totalRevenue
+///         let shortfall = revenue.valuesArray.contains { $0 < minimumRevenue }
+///         return shortfall ? .invalid([]) : .valid
 ///     }
 /// }
 ///
 /// let customRule = MinimumRevenueRule(minimumRevenue: 50_000)
-/// let validator = ModelValidator(financialRules: [customRule])
+/// let validator = ModelValidator<Double>(financialRules: [customRule])
 /// ```
 public struct ModelValidator<T> where T: Real & Sendable & Codable & Comparable & FloatingPoint {
 

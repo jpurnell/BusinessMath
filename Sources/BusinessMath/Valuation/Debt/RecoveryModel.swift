@@ -107,7 +107,7 @@ public enum Seniority: Sendable, CaseIterable {
 /// let model = RecoveryModel<Double>()
 ///
 /// // Standard recovery rate for senior unsecured
-/// let recoveryRate = RecoveryModel.standardRecoveryRate(
+/// let recoveryRate = RecoveryModel<Double>.standardRecoveryRate(
 ///     seniority: .seniorUnsecured
 /// )
 /// // Returns 0.50 (50%)

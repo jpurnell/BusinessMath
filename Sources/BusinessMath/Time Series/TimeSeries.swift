@@ -311,6 +311,7 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// ## Example
 	/// ```swift
 	/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+	/// let jan = Period.documentationQuarters[0]
 	/// if let label = ts.label(for: jan) {
 	///     print("Label: \(label)")
 	/// }
