@@ -658,6 +658,104 @@ case and it cannot be written, because the formula language has no cross-period 
 Documenting new machinery with an example that does not work would be a quieter version of what this
 release removes.
 
+#### Removed (breaking) — two macros that could not be applied anywhere
+
+`@MCPTool` and `@BuilderInitializable` are gone. Neither had ever worked, and neither
+could have.
+
+`@MCPTool` expanded to `extension <functionName>` — an extension on a *function*, which is
+not a type — and the generated body referenced `ToolDefinition`, `MCPSchema` and
+`MCPSchemaProperty`, none of which exist anywhere in this package. It was also declared
+`@attached(peer, names: arbitrary)`, which Swift forbids at global scope, while its
+expansion requires file scope. There was no placement that compiled: applied to a
+top-level function it is rejected for the attachment, nested inside a type it is rejected
+for the expansion.
+
+`@BuilderInitializable` generated `@<Type>Builder` — a result-builder attribute it never
+emitted and nothing defines.
+
+Both were public API with no callers and no tests, in this package or its own test target,
+which is why nothing caught it. They were found when the `///` fences in
+`BusinessMathMacros` were first compiled rather than read.
+
+#### Fixed (breaking) — `@Validated` threw an error type nothing could see
+
+`ValidationError` — the type the generated `validate()` throws — was declared in
+`BusinessMathMacrosImpl`, which is a `.macro` target: a compiler plugin that runs during
+compilation and vends no types to compiled code. Every `throw ValidationError(...)` the
+macro generated named a type that could not resolve in any module, including the one that
+declares the macro. `@Validated`, `@Positive`, `@NonNegative`, `@Range`, `@Min`, `@Max` and
+`@NonEmpty` were unusable by anyone, anywhere.
+
+The type now lives in `BusinessMathMacros` — the module a caller imports in order to write
+`@Validated` — as **``MacroValidationError``**. It is named for its origin rather than
+called `ValidationError` because `BusinessMath` already has a `ValidationError`, of a
+different shape, for financial-model validation; a caller importing both modules would
+otherwise disambiguate every mention.
+
+Two further defects in the generated code, both surfaced by the same first compilation:
+
+- `@Range(0...1)` generated `if !0...1.contains(x)`, which parses as
+  `(!0)...(1.contains(x))` — reported as *integer literal '0' cannot be used as a boolean*.
+  The expansion had already bound a `range_` variable and then not used it.
+- With the precedence corrected it still failed. The attribute's argument arrives in the
+  expansion as **source text**, so `0...1` written against a `ClosedRange<Double>` parameter
+  re-infers as `ClosedRange<Int>` once copied into the body and cannot contain a `Double`.
+  The range is now annotated at the binding and the property converted at the call.
+
+#### Fixed (breaking) — a formula long enough to crash the process
+
+``FormulaEvaluator``'s recursive-descent parser had two unbounded paths, and either one
+overflows the stack on input that is merely long rather than malformed:
+
+```swift
+try evaluator.evaluate(String(repeating: "(", count: 5_000) + "revenue" + String(repeating: ")", count: 5_000))
+try evaluator.evaluate(String(repeating: "-", count: 5_000) + "revenue")
+```
+
+A stack overflow is not a throw. It cannot be caught, it takes the process, and formulas
+are configuration — which means they can arrive from a file a user edits. Both paths are
+now bounded, and both have a test that was verified to crash before the fix.
+
+**Breaking:** ``FormulaError`` gains a case, `nestingTooDeep(limit:)`. A consumer switching
+exhaustively over `FormulaError` will not compile until it handles or defaults it.
+
+The bound is counted in cycle entries rather than nesting levels, and is 256 — about 64
+levels of parentheses, which no formula a person writes approaches. It is deliberately not
+larger: a limit of 256 *levels* was measured to overflow before the guard could fire,
+because Swift Testing runs on cooperative-pool threads whose stacks are far smaller than
+the main thread's. A bound has to hold on the thinnest stack the code can run on.
+
+#### Added — `timestamped()` can finally feed `aligned(with:)`
+
+``AsyncTimestampedSequence`` is now `Sendable` when the sequence it wraps is. Its only
+stored property is the base sequence, held by `let`, so the wrapper adds no mutable state
+and carries nothing across an isolation boundary the base did not already carry.
+
+Without it, `a.timestamped().aligned(with: b.timestamped())` did not compile —
+`aligned(with:strategy:)` requires `Secondary: AsyncSequence & Sendable`. Two doc examples
+had described that composition since the alignment operators landed, and the alignment
+tests had routed around it by building streams of already-`Timestamped` values, so nothing
+failed and nothing worked.
+
+The conformance is conditional rather than a constraint on the generic parameter, so
+timestamping a non-sendable sequence keeps working and simply does not yield a sendable
+result.
+
+#### Fixed — the `///` corpus compiles
+
+`doc-comment-code` is at **0**, from 420 non-macro errors at the start of the pass and 51
+in the macro modules. No `<!-- docs:illustrative -->` marker was added to a `///` fence to
+get there; every category previously recorded as unfixable turned out to be reachable
+through public API or expressible with a small conforming stub.
+
+The defects were real and repeat: fixtures that were never built, identifiers that
+silently resolved to a same-named function in this library, in libc through Foundation
+(`signal`) or in the standard library (`swap`), examples that called an API which had
+never existed, and — in `CashFlowStatement` — two operator-precedence errors that compiled
+and taught the wrong arithmetic (`arBalance[q2] ?? 0 / revenue[q2] ?? 0` binds as
+`arBalance[q2] ?? (0 / revenue)`).
+
 #### Removed (breaking) — the two circular-dependency detectors
 
 `ModelDebugger.detectCircularDependencies(in:)` and `ModelInspector.detectCircularReferences()`

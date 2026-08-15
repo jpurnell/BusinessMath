@@ -38,21 +38,43 @@ suite depends on it.
 
 ## Current Status
 
-Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 122 commits since the tag, all pushed.
+Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 154 commits since the tag, **not yet pushed**.
 
 | | |
 |---|---|
-| tests | **6,597 in 581 suites**, 0 known issues, ~35s |
+| tests | **6,610 in 582 suites**, 0 known issues, ~35s |
 | build | **0 warnings**, library and test target |
-| quality gate | **0 errors, 0 warnings** across 37 checkers (`--no-cache`; a cached run executes 10) |
+| quality gate | **0 errors, 0 warnings** — but see the note below: the default run is 35 of 42 checkers, and the worktree exclusion needs a quality-gate build that is not yet installed |
 | CI | green — 4/4 jobs, including `Linux release compile check` |
-| gate, worktrees | 53 errors / 24 warnings, all in `.claude/worktrees/` — stale copies, live tree clean |
+| gate, worktrees | excluded via `excludePatterns` — needs the `gpu-safety` fix that honours it, which is staged in quality-gate and not yet installed |
 | nightly (Release Tests) | green — Ubuntu release, macOS release, and Thread Sanitizer |
-| documentation coverage | 100% — 6,508 of 6,508 public APIs |
+| documentation coverage | 100% — 6,504 of 6,504 public APIs |
 | DocC catalogue | **73 articles**, all compiling as one program under `quality-gate --check doc-code` |
-| `doc-comment-code` | **420 errors** (non-macro; +51 macro, parked) ← the tag gate |
+| `doc-comment-code` | **0 errors** — macro modules included. The tag gate is cleared. |
 | `doc-claims` | **0 errors** — cleared 2026-08-13 |
 | toolchain | `swift-tools-version: 6.2`, Swift 6 strict concurrency |
+
+**Outstanding before the tag.** None of these is a code defect; all four are release
+hygiene, and the first two are not in this repository.
+
+1. **The `gpu-safety` exclusion fix is staged in quality-gate, uncommitted and not
+   installed.** Until it lands, the installed binary reports 53 errors from stale copies
+   under `.claude/worktrees/`, and a release verified on this machine today looks red. The
+   0/0 above is from a local build carrying that fix.
+2. **`--check all` runs 42 checkers; the default run is 35.** The seven it omits are
+   opt-in by convention or by cost, which is a defensible default — but this project's
+   config asked for all of them through a key the schema does not have (`checkers:`
+   rather than `enabledCheckers:`), and unknown keys are discarded silently. That is how
+   `recursion` came never to run, and how a crashable parser reached a release candidate.
+   Proposals for both are filed in the quality-gate repository.
+3. **154 commits unpushed.**
+4. **`5.10-ParallelOptimization.md` hangs under `doc-run`** and is killed at the 30-second
+   deadline. `5.9-AdaptiveSelection.md` had the same symptom and is fixed — a
+   200-dimension example running to the default 1,000 iterations, where a numerical
+   gradient costs 400 objective calls a step. 5.10's cause is *not* its optimisation
+   budget: the hang survives reducing every executed run to 6 starts and 200 iterations,
+   so it is neither the work nor compilation (the deadline guards the linked executable,
+   not the build). Unresolved and recorded rather than guessed at.
 
 The test figure is measured. A `--bootstrap --check status` run estimates 7,818 by counting
 test-shaped declarations; that heuristic is not the number of tests and should not be quoted.
@@ -277,7 +299,7 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-08-13 (evening) — second reconciliation of the day, against the tree
+**Last Updated:** 2026-08-15 — reconciled against the tree after the doc-comment-code pass reached 0
 and the gate. `doc-comment-code` 852 → **420 non-macro**, and `doc-claims` 8 → **0**, so the
 tag now waits on one number rather than two. Tests 6,582 → 6,597; commits since `v2.5.2`
 96 → 122. Added: the `gpu-safety` checker is live and its findings against
