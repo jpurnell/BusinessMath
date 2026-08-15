@@ -25,6 +25,15 @@ public enum FormulaError: Error, Equatable, Sendable {
 
 	/// A character the tokeniser does not recognise.
 	case unexpectedCharacter(Character)
+
+	/// The formula nests parentheses deeper than the parser will descend.
+	///
+	/// The grammar is mutually recursive — an expression may contain a parenthesised
+	/// expression — so nesting depth is stack depth. Without a bound, a formula that is
+	/// merely long rather than malicious (`((((…1…))))`) overflows the stack and takes the
+	/// process with it, which a caller cannot catch. Refused instead, at a depth far beyond
+	/// any formula a person writes.
+	case nestingTooDeep(limit: Int)
 }
 
 extension FormulaError: LocalizedError {
@@ -44,6 +53,8 @@ extension FormulaError: LocalizedError {
 			return "The formula ends mid-expression."
 		case .unexpectedCharacter(let character):
 			return "'\(character)' cannot appear in a formula."
+		case .nestingTooDeep(let limit):
+			return "The formula nests parentheses more than \(limit) deep."
 		}
 	}
 }
@@ -281,14 +292,36 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 
 	/// Recursive descent, one level per precedence tier.
 	struct Parser {
+		/// How deep the grammar may descend before it refuses.
+		///
+		/// `parseExpression` → `parseTerm` → `parseFactor` → `parsePrimary` → `parseExpression`
+		/// is a cycle, and the only thing that ends it is running out of `(`. Nesting depth is
+		/// therefore stack depth, and an unbounded one is a crash a caller cannot catch — the
+		/// input need only be long, not malformed. 256 is far past any formula a person writes
+		/// and far short of the stack.
+		/// Computed rather than stored: `Parser` is nested in a generic type, and Swift does
+		/// not allow static stored properties there.
+		///
+		/// Counted in cycle entries rather than nesting levels, since every participant now
+		/// guards: one parenthesis costs four, one unary minus costs one.
+		///
+		/// 256, because the bound has to hold on the thinnest stack the parser can run on, not
+		/// the main thread's — a cooperative-pool thread is far smaller, and a limit of 256
+		/// *nesting levels* was measured to overflow one before the guard could fire. 256
+		/// entries is about 64 levels of parentheses, which no formula a person writes
+		/// approaches.
+		static var maximumNestingDepth: Int { 256 }
+
 		let tokens: [Token]
 		var position = 0
+		private var depth = 0
 
 		init(tokens: [Token]) {
 			self.tokens = tokens
 		}
 
 		var current: Token? { position < tokens.count ? tokens[position] : nil }
+
 
 		mutating func expectEnd() throws {
 			guard current == nil else {
@@ -297,6 +330,16 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		}
 
 		mutating func parseExpression() throws -> Node {
+			// The cycle's base case. Written out in each participant rather than shared,
+			// because there is more than one unbounded path — `(` re-enters through
+			// `parsePrimary`, unary minus through `parseFactor` — and because a bound behind a
+			// call is a bound a reader of this function cannot see.
+			guard depth < Self.maximumNestingDepth else {
+				throw FormulaError.nestingTooDeep(limit: Self.maximumNestingDepth)
+			}
+			depth += 1
+			defer { depth -= 1 }
+
 			var node = try parseTerm()
 			while let token = current, token == .plus || token == .minus {
 				position += 1
@@ -307,6 +350,16 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		}
 
 		mutating func parseTerm() throws -> Node {
+			// The cycle's base case. Written out in each participant rather than shared,
+			// because there is more than one unbounded path — `(` re-enters through
+			// `parsePrimary`, unary minus through `parseFactor` — and because a bound behind a
+			// call is a bound a reader of this function cannot see.
+			guard depth < Self.maximumNestingDepth else {
+				throw FormulaError.nestingTooDeep(limit: Self.maximumNestingDepth)
+			}
+			depth += 1
+			defer { depth -= 1 }
+
 			var node = try parseFactor()
 			while let token = current, token == .multiply || token == .divide {
 				position += 1
@@ -317,6 +370,16 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		}
 
 		mutating func parseFactor() throws -> Node {
+			// The cycle's base case. Written out in each participant rather than shared,
+			// because there is more than one unbounded path — `(` re-enters through
+			// `parsePrimary`, unary minus through `parseFactor` — and because a bound behind a
+			// call is a bound a reader of this function cannot see.
+			guard depth < Self.maximumNestingDepth else {
+				throw FormulaError.nestingTooDeep(limit: Self.maximumNestingDepth)
+			}
+			depth += 1
+			defer { depth -= 1 }
+
 			if current == .minus {
 				position += 1
 				return .negate(try parseFactor())
@@ -325,6 +388,16 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		}
 
 		mutating func parsePrimary() throws -> Node {
+			// The cycle's base case. Written out in each participant rather than shared,
+			// because there is more than one unbounded path — `(` re-enters through
+			// `parsePrimary`, unary minus through `parseFactor` — and because a bound behind a
+			// call is a bound a reader of this function cannot see.
+			guard depth < Self.maximumNestingDepth else {
+				throw FormulaError.nestingTooDeep(limit: Self.maximumNestingDepth)
+			}
+			depth += 1
+			defer { depth -= 1 }
+
 			guard let token = current else { throw FormulaError.unexpectedEnd }
 
 			switch token {

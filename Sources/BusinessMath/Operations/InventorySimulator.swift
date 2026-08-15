@@ -75,7 +75,7 @@ public struct InventorySimulator: Sendable {
     ///   - strategy: The demand sampling strategy. Defaults to `.empirical`.
     ///   - iterations: The number of simulation paths to run. Defaults to 10,000.
     ///   - seed: An optional seed for reproducible results. When `nil`, uses system randomness.
-    /// - Returns: A ``Result`` containing the simulated reorder point and supporting metrics.
+    /// - Returns: An ``InventorySimulator/Result`` containing the simulated reorder point and supporting metrics.
     /// - Throws: ``OperationsError/insufficientData(required:got:)`` if `demandHistory` is empty.
     /// - Throws: ``OperationsError/invalidServiceLevel`` if `serviceLevel` is not in (0, 1).
     public static func simulate(

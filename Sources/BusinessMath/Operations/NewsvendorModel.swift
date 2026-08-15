@@ -73,7 +73,7 @@ public struct NewsvendorModel<T: Real & Sendable & Codable>: Sendable {
     ///   - demandStdDev: The standard deviation of the normal demand distribution (sigma).
     ///   - underageCost: The per-unit cost of under-stocking (c_u). Must be positive.
     ///   - overageCost: The per-unit cost of over-stocking (c_o). Must be positive.
-    /// - Returns: A ``Result`` containing the optimal quantity and related metrics.
+    /// - Returns: A ``NewsvendorModel/Result`` containing the optimal quantity and related metrics.
     /// - Throws: ``OperationsError/negativeCost`` if either cost is zero or negative.
     public static func optimalQuantity(
         meanDemand: T,
