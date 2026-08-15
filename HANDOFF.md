@@ -216,15 +216,37 @@ Two open questions: what to do with the orphan, and whether the gate should scan
 
 ## Open, beyond the fence work
 
-0. **`AsyncTimestampedSequence` cannot be passed to `aligned(with:)`.** Found while
-   clearing AsyncAlignedSequence's fences. The sequence declares no `Sendable`
-   conformance and `aligned` requires `Secondary: AsyncSequence & Sendable`, so
-   `a.timestamped().aligned(with: b.timestamped())` — which both fences documented —
-   has never compiled. The alignment tests avoid it by building `AsyncValueStream`s of
-   already-`Timestamped` values, and the fences now do the same. A conditional
-   `extension AsyncTimestampedSequence: Sendable where Base: Sendable` looks right (the
-   only stored property is `base`), but it is a concurrency change with a ConcurrencyAuditor
-   in the gate, so it wants a deliberate decision rather than a doc-pass edit.
+0. **The macro fences are mostly ordinary defects, and 8 of 51 are now fixed.** The
+   "not author-fixable" verdict was wrong: it assumed every error in
+   `Sources/BusinessMathMacros/` was the missing-plugin problem. The plugin loads fine.
+   What was there instead: peer macros applied at global scope (illegal in Swift when the
+   macro declares `names: arbitrary`), three uses of `@OptimizationProblem`, a macro this
+   package does not declare, undefined fixtures, and a constraint returning `Void` where
+   `Bool` was required. Upgrading quality-gate to HEAD changes nothing — the error set is
+   byte-identical, so this is not a tooling gap.
+
+   **43 remain, with three root causes, and two of them are defects in the macros rather
+   than in the documentation:**
+
+   - **35 — `@Validated` and its attribute family expand to members typed
+     `ValidationError`, which lives in `BusinessMath`.** `BusinessMathMacros` depends only
+     on `BusinessMathMacrosImpl`, and cannot depend on `BusinessMath` because the
+     dependency runs the other way. So the generated code names a type the declaring
+     module cannot see. A *consumer* importing both is fine; a fence inside the macro
+     module never can be. Fixing it means moving `ValidationError` somewhere both modules
+     can see, or moving these examples into a module that can see it.
+   - **3 — `@MCPTool` cannot be applied anywhere legal.** It is
+     `@attached(peer, names: arbitrary)`, which Swift forbids at global scope; nested
+     inside a type, its expansion reports `declaration is only valid at file scope`. Both
+     placements fail, which is a defect in the macro's own design, not its example.
+   - **5 — expansion artefacts**: `integer literal '0' cannot be used as a boolean` from
+     the `@Range`/`@Validated` expansion, `unknown attribute 'PortfolioBuilder'` naming a
+     symbol that exists nowhere in the package, and `unknown attribute 'MCPTool'` in
+     `BusinessMathMacrosImpl`, which does not import the module declaring it.
+
+   None of this blocks 2.6.0 — the non-macro count is 0 either way. It is a real bug list
+   for the macro package, found by pointing the checker at code that had been written off.
+
 1. **`project/plans/upcoming/v3.0.0_SCOPE.md`.** Three places where the correct behaviour is
    refusal and the signature cannot refuse: DE and PSO's `optimizeDetailed`,
    `EnterpriseValueBridge.valuePerShare`, and `IslandModel` swallowing `GeneticAlgorithm`'s
@@ -235,7 +257,6 @@ Two open questions: what to do with the orphan, and whether the gate should scan
 3. **Seedless wrappers over seeded primitives** — `ScenarioAnalysis`,
    `runFinancialSimulation`, `ReciprocalParameterRecoveryCheck.run`. Two statistical tests
    have now been loosened because of the second one.
-4. **`doc-symbol-link`** is the one checker of the four still not landed.
 
 ---
 

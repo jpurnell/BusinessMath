@@ -90,8 +90,11 @@ private actor AlignmentState {
 ///
 /// ## Usage Example
 /// ```swift
-/// let rrIntervals = AsyncValueStream([832.0, 845.0, 838.0, 851.0].map { Timestamped(value: $0) })
-/// let accelStream = AsyncValueStream([0.12, 0.31, 0.08, 0.44].map { Timestamped(value: $0) })
+/// let rrStream = AsyncValueStream<Double>([832, 845, 838, 851])
+/// let accel = AsyncValueStream<Double>([0.12, 0.31, 0.08, 0.44])
+///
+/// let rrIntervals = rrStream.timestamped()     // ~1 Hz, irregular
+/// let accelStream = accel.timestamped()         // 50 Hz
 /// for try await (rr, accelValue) in rrIntervals.aligned(with: accelStream, strategy: .nearest) {
 ///     print("RR: \(rr), motion: \(accelValue)")
 /// }
@@ -280,8 +283,11 @@ extension AsyncSequence where Self: Sendable, Element: Sendable {
     ///
     /// ## Usage Example
     /// ```swift
-    /// let hrv = AsyncValueStream([832.0, 845.0, 838.0, 851.0].map { Timestamped(value: $0) })
-    /// let motion = AsyncValueStream([0.12, 0.31, 0.08, 0.44].map { Timestamped(value: $0) })
+    /// let rrIntervals = AsyncValueStream<Double>([832, 845, 838, 851])
+    /// let accelerometer = AsyncValueStream<Double>([0.12, 0.31, 0.08, 0.44])
+    ///
+    /// let hrv = rrIntervals.timestamped()       // ~1 Hz
+    /// let motion = accelerometer.timestamped()   // 50 Hz
     /// for try await (rr, accel) in hrv.aligned(with: motion, strategy: .nearest) {
     ///     print("RR: \(rr), accel: \(accel)")
     /// }
