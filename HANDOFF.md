@@ -14,12 +14,12 @@ Full suite green after every commit: **6,597 tests in 581 suites, exit 0**.
 | | |
 |---|---|
 | branch | `main`, clean, **0 ahead of `origin/main`** |
-| tests | **6,597 in 581 suites**, 0 issues, ~35s |
-| quality gate | **live tree clean** — 0 errors, 0 warnings |
-| gate, worktrees | 53 errors / 24 warnings, all in `.claude/worktrees/` — see "Worktrees" |
+| tests | **6,610 in 582 suites**, 0 issues, ~35s |
+| quality gate | **0 errors, 0 warnings** across **43 of 43** checkers, installed binary |
+| gate, worktrees | excluded and honoured — see "Worktrees" |
 | CI | green, 4/4 jobs |
 | nightly (Release Tests) | green, including Thread Sanitizer |
-| commits since `v2.5.2` | 145 |
+| commits since `v2.5.2` | 159, all pushed |
 | **`doc-comment-code`** | **0 non-macro**, +51 macro (parked) |
 
 ## First action on resume
@@ -203,14 +203,21 @@ was 60 lines further down — cost a full round trip. The old lesson, learned ag
 
 ## Worktrees
 
-The gate reports 53 errors and 24 warnings, **all in `.claude/worktrees/`**, from the new
-`gpu-safety` checker reading stale pre-fix kernel source. The live tree is clean.
+**Resolved.** The gate had reported 53 errors and 24 warnings, **all in
+`.claude/worktrees/`**, from the `gpu-safety` checker reading stale pre-fix kernel source
+while the live tree was clean. A finding there is a defect that no longer exists anywhere
+shippable, counted once per worktree, and no edit to this repository could clear it — a
+permanently red gate teaches everyone to read `FAILED` as "fine".
+
+`.quality-gate.yml` now carries `excludePatterns: ["**/.claude/worktrees/**"]`, and
+`gpu-safety` honours it as of quality-gate `4470dfa`. Note that the exclusion was written
+first and did nothing for a day: the checker never consulted `configuration.excludePatterns`.
+A config key that is accepted and ignored is the same failure as `checkers:` above.
 
 - Three registered worktrees carry uncommitted work — 11, 7 and 13 dirty files. Left alone.
 - `agent-a064a9af` is an **orphan** from April 14, not registered with git at all.
 
-Two open questions: what to do with the orphan, and whether the gate should scan
-`.claude/worktrees/` — the same shape as auditing `.metal` files excluded from the build.
+One open question remains: what to do with the orphan.
 
 ---
 

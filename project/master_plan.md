@@ -44,31 +44,41 @@ Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 159 commits since the ta
 |---|---|
 | tests | **6,610 in 582 suites**, 0 known issues, ~35s |
 | build | **0 warnings**, library and test target |
-| quality gate | **0 errors, 0 warnings** — but see the note below: the default run is 35 of 42 checkers, and the worktree exclusion needs a quality-gate build that is not yet installed |
+| quality gate | **0 errors, 0 warnings**, verified against the installed binary |
 | CI | green — 4/4 jobs, including `Linux release compile check` |
-| gate, worktrees | excluded via `excludePatterns` — needs the `gpu-safety` fix that honours it, which is staged in quality-gate and not yet installed |
+| gate, worktrees | excluded via `excludePatterns`, honoured — the `gpu-safety` fix landed in quality-gate `4470dfa` and is installed |
 | nightly (Release Tests) | green — Ubuntu release, macOS release, and Thread Sanitizer |
 | documentation coverage | 100% — 6,504 of 6,504 public APIs |
 | DocC catalogue | **73 articles**, all compiling as one program under `quality-gate --check doc-code` |
 | `doc-comment-code` | **0 errors** — macro modules included. The tag gate is cleared. |
 | `doc-claims` | **0 errors** — cleared 2026-08-13 |
 | `doc-run` | **0 errors** — 73 of 73 articles run cleanly and reproducibly |
-| `quality-gate --check all` | **0 errors, 0 warnings** across 43 checkers |
+| `quality-gate --check all` | **0 errors, 0 warnings** across **43 of 43** checkers |
 | toolchain | `swift-tools-version: 6.2`, Swift 6 strict concurrency |
 
 **Outstanding before the tag.** None of these is a code defect; all four are release
 hygiene, and the first two are not in this repository.
 
-1. **The `gpu-safety` exclusion fix is staged in quality-gate, uncommitted and not
+1. ~~**The `gpu-safety` exclusion fix is staged in quality-gate, uncommitted and not
    installed.** Until it lands, the installed binary reports 53 errors from stale copies
    under `.claude/worktrees/`, and a release verified on this machine today looks red. The
-   0/0 above is from a local build carrying that fix.
-2. **`--check all` runs 42 checkers; the default run is 35.** The seven it omits are
+   0/0 above is from a local build carrying that fix.~~ **Landed** in quality-gate
+   `4470dfa` and installed. Verified against the installed binary: **43 of 43 checkers,
+   0 errors, 0 warnings.** Note that this entry was written while the fix was staged and
+   was still asserting it *after* the commit and install — the claim was carried forward
+   rather than re-checked. Cost of the check: one `git status`.
+2. ~~**`--check all` runs 42 checkers; the default run is 35.** The seven it omits are
    opt-in by convention or by cost, which is a defensible default — but this project's
    config asked for all of them through a key the schema does not have (`checkers:`
    rather than `enabledCheckers:`), and unknown keys are discarded silently. That is how
-   `recursion` came never to run, and how a crashable parser reached a release candidate.
-   Proposals for both are filed in the quality-gate repository.
+   `recursion` came never to run, and how a crashable parser reached a release candidate.~~
+   **Fixed upstream, both halves.** An unknown key is now a **startup refusal** rather
+   than a silent discard — the gate declines to run against a configuration it cannot
+   fully read, on the reasoning that a 35-checker run and a 42-checker run otherwise print
+   an identical `PASSED`. And the summary now states its roster (`43 of 43 checkers`), so
+   the count is visible without inspecting the config. Three of the four proposals filed
+   from this release are implemented; `UnboundedRecursionIsAnError` remains proposed,
+   pending its advisory window.
 3. ~~Commits not yet on `origin`.~~ **Pushed.** `main` and `origin/main` agree.
 4. **`doc-run`'s 30-second deadline is wall-clock, and the checker pool is concurrent.**
    `2.5-ModelValidationGuide.md` runs in **5.7 seconds** on its own and was killed at the
@@ -309,7 +319,9 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-08-15 — reconciled against the tree after the doc-comment-code pass reached 0
+**Last Updated:** 2026-08-15 — reconciled against the tree after the doc-comment-code pass
+reached 0, then again after the quality-gate fixes landed: blockers 1 and 2 are cleared and
+the gate is verified at 43 of 43 against the **installed** binary rather than a local build
 and the gate. `doc-comment-code` 852 → **420 non-macro**, and `doc-claims` 8 → **0**, so the
 tag now waits on one number rather than two. Tests 6,582 → 6,597; commits since `v2.5.2`
 96 → 122. Added: the `gpu-safety` checker is live and its findings against
