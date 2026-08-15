@@ -428,14 +428,17 @@ public func seasonallyAdjust<T: Real & Sendable>(
 /// ```swift
 /// let eightQuarters = (0..<8).map { Period.quarter(year: 2024 + $0 / 4, quarter: $0 % 4 + 1) }
 /// let historical = TimeSeries(periods: eightQuarters, values: [100, 120, 80, 160, 110, 130, 88, 176])
-/// var linearTrend = LinearTrendModel<Double>()
+/// var linearTrend = LinearTrend<Double>()
 /// try linearTrend.fit(to: historical)
 /// // Start with trend-only forecast
-/// let trendForecast = try linearTrend.project(periods: 4)
-///
-/// // Apply historical seasonal pattern
 /// let indices = try seasonalIndices(timeSeries: historical, periodsPerYear: 4)
-/// let seasonalForecast = try applySeasonal(timeSeries: trendForecast, indices: indices)
+///
+/// // project(periods:) is optional — an unfitted model has nothing to project
+/// if let trendForecast = try linearTrend.project(periods: 4) {
+///     // Apply historical seasonal pattern
+///     let seasonalForecast = try applySeasonal(timeSeries: trendForecast, indices: indices)
+///     print(seasonalForecast)
+/// }
 ///
 /// // seasonalForecast now includes realistic seasonal variation
 /// ```

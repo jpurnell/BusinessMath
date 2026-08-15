@@ -60,7 +60,7 @@ import Numerics
 /// ```swift
 /// // Fixed price × uncertain volume
 /// let price = DeterministicDriver(name: "Price", value: 100.0)
-/// let volume = ProbabilisticDriver(name: "Volume", distribution: DistributionNormal(1000.0, 100.0))
+/// let volume = ProbabilisticDriver<Double>(name: "Volume", distribution: DistributionNormal(1000.0, 100.0))
 /// let revenue = ProductDriver(name: "Revenue", lhs: price, rhs: volume)
 /// ```
 public struct DeterministicDriver<T: Real & Sendable>: Driver, Sendable {

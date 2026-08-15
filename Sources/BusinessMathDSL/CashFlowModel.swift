@@ -379,16 +379,20 @@ extension CashFlowModelBuilder {
 /// Use this to create cash flow models with a declarative result builder syntax:
 ///
 /// ```swift
-/// @CashFlowProjection
-/// var projection: CashFlowModel {
-///     Revenue {
-///         Base(1_000_000)
-///         GrowthRate(0.15)
-///     }
-///     Expenses {
-///         Fixed(100_000)
-///         Variable(percentage: 0.40)
-///     }
+/// // The wrapper stores a model, so it attaches to a stored property
+/// // inside a type rather than to a computed one at file scope.
+/// struct Plan {
+///     @CashFlowProjection(builder: {
+///         Revenue {
+///             Base(1_000_000)
+///             GrowthRate(0.15)
+///         }
+///         Expenses {
+///             Fixed(100_000)
+///             Variable(percentage: 0.40)
+///         }
+///     })
+///     var projection: CashFlowModel
 /// }
 /// ```
 @propertyWrapper

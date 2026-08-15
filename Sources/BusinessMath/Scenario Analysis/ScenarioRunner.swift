@@ -160,9 +160,7 @@ import Numerics
 ///     let balanceSheet = try BalanceSheet(
 ///         entity: entity,
 ///         periods: periods,
-///         assetAccounts: [equityAccount],  // Simplified
-///         liabilityAccounts: [],
-///         equityAccounts: [equityAccount]
+///         accounts: [equityAccount]  // Simplified
 ///     )
 ///
 ///     // Build cash flow statement
@@ -176,9 +174,7 @@ import Numerics
 ///     let cashFlowStatement = try CashFlowStatement(
 ///         entity: entity,
 ///         periods: periods,
-///         operatingAccounts: [cashAccount],
-///         investingAccounts: [],
-///         financingAccounts: []
+///         accounts: [cashAccount]
 ///     )
 ///
 ///     return (incomeStatement, balanceSheet, cashFlowStatement)

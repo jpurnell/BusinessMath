@@ -19,7 +19,8 @@ import Foundation
 /// Example:
 /// ```swift
 /// do {
-///     let model = try buildFinancialModel(...)
+///     let statement = try IncomeStatement<Double>.documentationFixture
+///     print(statement.totalRevenue)
 /// } catch let error as BusinessMathError {
 ///     print(error.localizedDescription)
 ///     print("Error Code: \(error.code)")

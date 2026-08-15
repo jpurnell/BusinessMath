@@ -361,10 +361,16 @@ extension Driver where Value: BinaryFloatingPoint {
 /// let period = Period.documentationQuarters[0]
 /// let price = basePrice.validated { value throws -> Double in
 ///     guard value > 0 else {
-///         throw ValidationError.negativePrice
+///         throw ValidationError(
+///             field: "basePrice", value: value,
+///             rule: "positive", message: "Price must be positive"
+///         )
 ///     }
 ///     guard value <= 1000 else {
-///         throw ValidationError.unrealisticPrice
+///         throw ValidationError(
+///             field: "basePrice", value: value,
+///             rule: "ceiling", message: "Price above the plausible range"
+///         )
 ///     }
 ///     return value
 /// }

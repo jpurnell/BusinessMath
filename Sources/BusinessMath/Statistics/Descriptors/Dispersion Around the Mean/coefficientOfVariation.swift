@@ -28,7 +28,7 @@ import Numerics
 ///   ```swift
 ///   let stdDev: Double = 15.0
 ///   let mean: Double = 100.0
-///   let cv = coefficientOfVariation(stdDev, mean)
+///   let cv = try coefficientOfVariation(stdDev, mean: mean)
 ///   print("Coefficient of Variation: \(cv)%")
 ///   ```
 ///

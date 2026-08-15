@@ -38,10 +38,13 @@ import Numerics
 /// let totalAssets = balanceSheet.totalAssets
 /// // Q1: 100, Q2: 120, Q3: 140, Q4: 160
 ///
-/// let avgAssets = averageTimeSeries(totalAssets)
-/// // Q1: 100 (no prior), Q2: 110, Q3: 130, Q4: 150
-///
-/// let assetTurnover = revenue / avgAssets
+/// // averageTimeSeries is internal; the ratios that need a period-average
+/// // balance call it for you.
+/// let incomeStatement = try IncomeStatement<Double>.documentationFixture
+/// let turnover = assetTurnover(
+///     incomeStatement: incomeStatement,
+///     balanceSheet: balanceSheet
+/// )
 /// ```
 ///
 /// - Parameter timeSeries: Balance sheet time series to average

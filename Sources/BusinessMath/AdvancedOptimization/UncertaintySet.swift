@@ -197,7 +197,13 @@ public struct BoxUncertaintySet: UncertaintySet {
 ///
 /// ## Example
 /// ```swift
-/// let uncertainReturns = EllipsoidalUncertaintySet(
+/// let covarianceMatrix: [[Double]] = [
+///     [0.040, 0.010, 0.005],
+///     [0.010, 0.030, 0.008],
+///     [0.005, 0.008, 0.020]
+/// ]
+///
+/// let uncertainReturns = try EllipsoidalUncertaintySet(
 ///     nominal: [0.10, 0.12, 0.08],
 ///     covariance: covarianceMatrix,
 ///     radius: 2.0  // 2-sigma ellipsoid

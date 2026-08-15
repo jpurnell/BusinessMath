@@ -16,8 +16,13 @@
 /// Downstream consumers declare which measure they require:
 ///
 /// ```swift
-/// func price<M: MeasureTag>(context: SimulationContext<M>) -> Double
-///     where M == RiskNeutral
+/// // A measure tag is a phantom type: it constrains an API without being stored.
+/// func price<M: MeasureTag>(under measure: M.Type) -> Double {
+///     0.0
+/// }
+///
+/// // The tag constrains the call without being stored
+/// let value = price(under: RiskNeutral.self)
 /// ```
 ///
 /// Passing a `SimulationContext<Physical>` to this function produces

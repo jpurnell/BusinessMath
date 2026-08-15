@@ -54,6 +54,7 @@ public struct ForecastRegressors<Value: Real & Sendable>: Sendable {
 /// two-argument convenience overload (which forwards `exogenous: nil`).
 ///
 /// ```swift
+/// let history = TimeSeries(periods: Period.documentationQuarters, values: [100.0, 110, 120, 130])
 /// let forecast = try LinearTrend<Double>().trainedForecast(from: history, horizon: 12)
 /// ```
 public protocol Forecaster<Value>: Sendable {

@@ -131,6 +131,7 @@ public enum Seniority: Sendable, CaseIterable {
 ///
 /// ```swift
 /// // Back out implied recovery from observed spread
+/// let model = RecoveryModel<Double>()
 /// let impliedRecovery = model.impliedRecoveryRate(
 ///     spread: 0.020,              // 200 bps spread
 ///     defaultProbability: 0.02,   // 2% PD

@@ -57,6 +57,10 @@ public struct AccountDefinition: Sendable, Hashable, Codable {
 /// computed before what it reads.
 ///
 /// ```swift
+/// let quarters = Period.documentationQuarters
+/// let units = TimeSeries(periods: quarters, values: [1_000.0, 1_100, 1_250, 1_400])
+/// let price = TimeSeries(periods: quarters, values: [95.0, 95, 100, 100])
+///
 /// let model = ModelDefinition<Double>(inputs: ["units": units, "unitPrice": price])
 ///     .defining("revenue", as: "units * unitPrice")
 ///     .defining("cogs", as: "units * 40")

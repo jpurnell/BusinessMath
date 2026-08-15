@@ -17,6 +17,12 @@ import Numerics
 ///
 /// ## Example
 /// ```swift
+/// let integration = StatementIntegration(
+///     incomeStatement: try IncomeStatement<Double>.documentationFixture,
+///     balanceSheet: try BalanceSheet<Double>.documentationFixture,
+///     cashFlowStatement: try CashFlowStatement<Double>.documentationFixture
+/// )
+///
 /// let result = integration.validate(tolerance: 0.01)
 /// if !result.allValid {
 ///     for issue in result.issues {
