@@ -38,7 +38,8 @@ suite depends on it.
 
 ## Current Status
 
-Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 159 commits since the tag, all pushed.
+**2.6.0 shipped 2026-08-15** — tagged `v2.6.0` at `c6e44a7`, 159 commits past `v2.5.2`,
+CI green on the tagged commit. Five commits have landed since; see `HANDOFF.md`.
 
 | | |
 |---|---|
@@ -56,8 +57,13 @@ Cutting **2.6.0** (previous tag `v2.5.2`), from `main`. 159 commits since the ta
 | `quality-gate --check all` | **0 errors, 0 warnings** across **43 of 43** checkers |
 | toolchain | `swift-tools-version: 6.2`, Swift 6 strict concurrency |
 
-**Outstanding before the tag.** None of these is a code defect; all four are release
-hygiene, and the first two are not in this repository.
+**Outstanding before the tag — all cleared; kept for the record.** None was a code defect.
+A fifth item surfaced *after* the tag and is the live one: the quality gate has never run on
+GitHub CI, because a public repository cannot resolve the reusable workflow in the private
+`quality-gate-swift`. Four public repos are affected and have been dead since June. The
+decision between publishing that repo and inlining its clone-and-build steps is recorded in
+`HANDOFF.md`; until it is made, "CI green" in this document means build, test, lint and the
+Linux compile check, and **not** the gate.
 
 1. ~~**The `gpu-safety` exclusion fix is staged in quality-gate, uncommitted and not
    installed.** Until it lands, the installed binary reports 53 errors from stale copies
@@ -319,9 +325,11 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-08-15 — reconciled against the tree after the doc-comment-code pass
-reached 0, then again after the quality-gate fixes landed: blockers 1 and 2 are cleared and
-the gate is verified at 43 of 43 against the **installed** binary rather than a local build
+**Last Updated:** 2026-08-17 — reconciled three times: after `doc-comment-code` reached 0,
+after the quality-gate fixes landed (blockers 1 and 2 cleared, gate verified at 43 of 43
+against the **installed** binary), and after **2.6.0 shipped**. The post-tag finding is that
+the gate has never run on GitHub CI at all; `HANDOFF.md` carries that decision and the four
+claims in these documents that were wrong when committed
 and the gate. `doc-comment-code` 852 → **420 non-macro**, and `doc-claims` 8 → **0**, so the
 tag now waits on one number rather than two. Tests 6,582 → 6,597; commits since `v2.5.2`
 96 → 122. Added: the `gpu-safety` checker is live and its findings against
