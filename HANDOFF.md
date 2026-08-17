@@ -93,6 +93,30 @@ otherwise was wrong, including the ones written this session.
 
 ---
 
+## The pattern behind all of it: a green that means less than it appears
+
+Every defect in this handoff is the same shape. Not a false report — a **true statement about
+a smaller thing than the reader assumed**:
+
+| what it said | what it meant |
+|---|---|
+| `PASSED` (cached run) | 10 of 37 checkers ran |
+| `.quality-gate.yml` names 42 checkers | 35 ran; `checkers:` is not a schema key |
+| `43 of 43` locally, `16 of 43` after a commit | the gate **exits at the first failure** |
+| `isStale: false` | never measured — hardcoded on the SwiftPM path |
+| `Pre-push passed` | the ref did not move |
+| `doc-claims` green ×3 | the two runs happened not to straddle the boundary |
+| CI green, 4/4 jobs | the gate was **`disabled_manually`** and had never run |
+
+None of these was a lie, and none was hard to detect. The checkers could already find them.
+What was missing was any way to **tell a complete answer from a partial one** — which is why
+the fixes that landed upstream this week are about provenance rather than detection: print the
+roster, refuse on an unknown config key, state the index age, verify a push by transfer.
+
+The practical rule that falls out: **when a result would look identical whether the work was
+done or skipped, the result is not evidence.** Ask what the output would look like in the
+failure case. If the answer is "the same", go measure the thing directly.
+
 ## Corrections — read this before trusting anything above
 
 Four claims in this repository's own documents were wrong when committed. They are listed
