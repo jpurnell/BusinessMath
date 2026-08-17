@@ -1,294 +1,155 @@
-# Handoff — 2026-08-15
+# Handoff — 2026-08-17
 
-**`doc-comment-code` is at 0 non-macro. The gate no longer blocks 2.6.0.**
-
-420 at the start of the previous session, 0 now, across 27 commits
-(`99f59c8` … `6c0eabd`). 51 errors remain and every one is in
-`Sources/BusinessMathMacros/`, which the checker compiles without the plugin —
-the parked set, unchanged and not author-fixable.
-
-Full suite green after every commit: **6,597 tests in 581 suites, exit 0**.
+**v2.6.0 is tagged, pushed, and green on CI.** The release that was held for two
+months is out. What follows is what shipped, the one decision waiting on you, and
+the things I got wrong on the way — the last of those being the most useful part.
 
 ## State
 
 | | |
 |---|---|
-| branch | `main`, clean, **0 ahead of `origin/main`** |
-| tests | **6,610 in 582 suites**, 0 issues, ~35s |
-| quality gate | **0 errors, 0 warnings** across **43 of 43** checkers, installed binary |
-| gate, worktrees | excluded and honoured — see "Worktrees" |
-| CI | green, 4/4 jobs |
-| nightly (Release Tests) | green, including Thread Sanitizer |
-| commits since `v2.5.2` | 159, all pushed |
-| **`doc-comment-code`** | **0 non-macro**, +51 macro (parked) |
+| branch | `main`, clean, **0 ahead / 0 behind `origin/main`** |
+| HEAD | `0041e0b` |
+| tag | **`v2.6.0`** → `c6e44a7`, pushed |
+| CI on the tagged commit | **success** (run 2026-08-15T16:49) |
+| tests | **6,610 in 582 suites**, 0 failures, ~42s |
+| build | 0 warnings; CI-parity solver threshold 500ms clean |
+| `quality-gate --check all` | **43 of 43, 0 errors, 0 warnings**, installed binary |
+| nightly Release Tests | green through 2026-08-17 |
+| **gate on GitHub CI** | **still not running** — see the open decision |
 
-## First action on resume
+### Commits after the tag
 
-```sh
-swift build && swift test                       # 6,597 / 581, exit 0
-quality-gate --no-cache                         # live tree 0/0
-quality-gate --check doc-comment-code --no-cache | grep -c '❌ error:'   # 51, all macro
 ```
-
-The binary is `quality-gate`, the flag is `--check`, and it takes **no positional path**. A
-failed invocation greps as `0 errors`, indistinguishable from a clean run — guard on log
-length before trusting any count.
-
-**Filter the macro errors out of any total.** All 51 remaining are in
-`Sources/BusinessMathMacros/` and are not author-fixable (below). Their count is also
-unstable — it moved 37→50→51 across runs with no edits — so track the non-macro number:
-
-```sh
-quality-gate --check doc-comment-code --no-cache 2>&1 \
-  | grep -A1 '❌ error:' | grep '→' | grep -vc BusinessMathMacros
+eaff6ee  fix(docs): three XNPV/XIRR figures the program did not reproduce
+59a66df  ci(gate): re-enable the Quality Gate workflow, runnable on demand
+90d802a  ci(gate): grant issues:write so the gate workflow can start
+3caa230  ci(gate): temporary diagnostic pin      (reverted by the next commit)
+0041e0b  ci(gate): revert the diagnostic pin, and record what it proved
 ```
 
 ---
 
-## The remaining 0
+## The one decision waiting on you
 
-Nothing left to fix. The list below is what the work found, kept because the next
-person writing a fence will hit the same things.
+**The `Quality Gate` workflow cannot run, and the fix is a judgement call, not a patch.**
 
-**Every category the previous handoff called unfixable turned out to be fixable**,
-and none of them needed `<!-- docs:illustrative -->`. The codebase still contains no
-such marker.
+`BusinessMath` is **public**. `jpurnell/quality-gate-swift` is **private**. Three other
+public repos — `businessMathMCP`, `ApplesoftBASIC`, `jpurnell.github.io` — call the same
+private reusable workflow and have been dead the same way since June.
 
-- **`internal` and `private` symbols.** A fence compiles as an *external* client, so
-  anything below `public` is invisible — that is real. What was wrong was the
-  conclusion. `MetalDevice`, `MetalBuffers`, `FinancialStatementHelpers` and
-  `averageTimeSeries` are all reached through public API, so their fences now show
-  that route. An example a reader can run beats an example of a constructor they
-  cannot call.
-- **Extracted-package references.** `AlphaVantageProvider` lives in
-  BusinessMathMarketData and cannot be named here. Five Integration fences now define
-  a small conforming stub instead, which is what protocol documentation should show
-  anyway — the point is the protocol, not one vendor's implementation.
-- **`Real` is not in the preamble.** It comes from `Numerics`, which the library
-  imports without re-exporting. Two ways out: write the example concretely against
-  `Double`, or add `import Numerics` to the fence. **A fence may add its own import** —
-  the checker's hint always said so, and `import Metal` proved it.
+The failure gives you nothing to work with: **0 seconds, no job, no log, no annotation**,
+and the run is titled by file path because GitHub never parsed a `name`.
 
-Regenerate the per-file list at any time with:
+What was ruled out, so nobody repeats it:
 
-```sh
-quality-gate --check doc-comment-code --no-cache 2>&1 \
-  | grep -A1 '❌ error:' | grep '→' | grep -v BusinessMathMacros \
-  | sed 's|.*/Sources/||' | cut -d: -f1 | sort | uniq -c | sort -rn
-```
+- **`245cd20` / `issues: write`.** Pinning the caller to `4f65852` — the last commit before
+  that change — failed *identically*. The cause is constant, not a change in the callee.
+  (`issues: write` was still granted and left in place: the callee does require it, and its
+  absence would break `ApplesoftBASIC` independently, whose default workflow token is read-only.)
+- **Repo permission ceiling.** BusinessMath's default workflow token is already `write`.
+- **The private repo's Actions access policy.** Already `user`.
+- **Inputs and secrets.** Every input we pass exists and is optional; `CORPUS_PUSH_TOKEN` is defined.
+- **SSH/auth.** Authenticates fine; read access works.
 
-### The method that works
+The timeline fits a visibility change: the gate **succeeded** at 2026-06-17 07:53 in two
+public repos and startup-failed the next morning. `245cd20` landing at 14:08 that same day
+is a coincidence that cost most of an investigation. GitHub emits an event when a repo goes
+*public*, not private, so the flip cannot be dated from the API — the timeline is
+corroboration, not proof.
 
-**Read the declaration. Do not infer it from the name.** Every round trip lost this session
-came from guessing an API: `marketPrice` bound to a `Double` when the function takes
-`TimeSeries`, `projection` bound to `FinancialProjection` in a file where it is a
-`DriverProjection`, `.operatingExpense` guessed as an `IncomeStatementRole` case when the
-real ones are `.costOfGoodsSold` and `.generalAndAdministrative`.
+### Two ways forward
 
-**Take the type from usage, not from the identifier.** `.zip` and `.aggregate` are TimeSeries
-methods; `.positive()` and `.sample(for:)` are Driver methods; `searchSpace:` takes bounds;
-`entity:` takes an Entity. The name tells you nothing — `model` named six different types
-across nine files.
+1. **Publish `quality-gate-swift`.** Almost certainly fixes all four repos at once.
+   One-way: content gets fetched and indexed even if reverted. Also note **public repos get
+   unlimited free Actions minutes and private ones bill against quota** — so if the repo went
+   private to reduce CI cost, that reasoning runs backwards.
+2. **Inline the gate steps and keep it private.** The reusable workflow already does
+   `git clone --depth 1 … quality-gate-swift.git && swift build -c release` internally, so it
+   never needed cross-repo `uses:` resolution. Inlining that into each caller, authenticated
+   with a PAT, sidesteps the rule entirely. Costs: the steps duplicate across four repos, and
+   `CORPUS_PUSH_TOKEN` becomes load-bearing rather than incidental — it is dated 2026-06-07
+   and **may be expired; that has not been verified**.
 
-**Drive from the checker's own report.** A pass that inserted bindings wherever a plausible
-name appeared produced **205 bindings and cleared 13 errors**, because `\btimeSeries\b`
-matches the argument label in `Account(..., timeSeries:)`. Parsing the diagnostic and
-inserting only at the fence it names produced **27 bindings and cleared 17**. Fewer edits,
-better result.
-
-**Read the whole fence before inserting.** Twice a binding was added for a name the fence
-already declared — `var entity` in Entity.swift, `let q1` in BalanceSheet.swift. One
-duplicate poisons every later line in its fence, so it costs more than it fixes.
-
-### The trap worth knowing
-
-An unbound identifier that happens to name a library function does **not** fail as
-undefined. It resolves, and the error reads:
-
-```
-cannot convert value of type '@Sendable (Double) -> ScenarioParameter'
-                             to expected argument type 'TimeSeries<Double>'
-```
-
-Seen with `revenue`, `price`, `users`, `npv`, `discountRate`. It looks like a type-inference
-problem and is a missing binding. An explicit `let` shadows it.
-
-### The collision hazard, in full
-
-An unbound identifier in a fence does not fail as undefined when something else of
-that name is in scope. It resolves, and the error names a type nobody wrote. Three
-layers, all hit this session:
-
-| source | seen with | reported as |
-|---|---|---|
-| this library | `revenue`, `price`, `npv`, `covariance`, `portfolioVariance` | wrong argument type, or wrong arity |
-| libc via Foundation | `signal` | `@Sendable (Int32, (@convention(c) …)) -> …` |
-| the standard library | `swap` | `@Sendable (inout T, inout T) -> ()` |
-
-A fourth variant: with nothing named `entry` bound, the compiler reached for a *type*
-and reported `cannot convert value of type 'entry.Type'`. And `Driver(...)` reached the
-`Driver` protocol, reporting "cannot be constructed because it has no accessible
-initializers" — the DSL function is `ScenarioDriver`.
-
-**The tell is always the same: the diagnostic names a type you did not write.**
-`@convention(c)` in a message means libc, not your code.
-
-### What the second pass added
-
-**A `T` inference error is almost never a generics problem.** It is what the checker
-reports when a binding is missing or a generic type is named without its argument.
-Seen three ways: nothing bound at all (`result` in LMEDiagnostics); a bare generic type
-name (`KMeans<VectorN>` where the type is `VectorN<T>`, `[AmortizationPayment]` where it
-is `AmortizationPayment<T>`); and a generic type that cannot infer from a non-generic
-argument (`ProbabilisticDriver<T>` from a `DistributionNormal`, which is Double-only).
-Look for a missing or under-specified binding first. The same holds for
-`cannot infer key path type from context` and `cannot infer contextual base`.
-
-**The colliding name need not be in this library.** The handoff already records that an
-unbound identifier can resolve to a same-named library function. It can also resolve
-into the C standard library through Foundation. `signal` in FFTBackend resolved to POSIX
-`signal(2)` and reported as
-
-```
-cannot convert value of type '@Sendable (Int32, (@convention(c) (Int32) -> Void)?) -> ...'
-```
-
-The tell is a reported type you never wrote. `@convention(c)` in a diagnostic means the C
-library, not your code. `time`, `index`, `remainder`, `div` and `log` are the same hazard.
-
-**The smallest green edit can be the wrong edit.** `DistributionNormal(mean:standardDeviation:)`
-does not exist, and the type offers `init(mean:variance:)` one line from
-`init(_ mean:_ stdDev:)`. Renaming the label to `variance:` compiles, passes, and turns a
-15,000 standard deviation into σ ≈ 122. Nothing downstream catches it — fences are not
-executed. When a label is wrong, read both initialisers before choosing.
-
-**Fences do not share scope, including across `##` headings.** Several fences were written
-as continuations of the one above them (`AccountAdjustment`'s Investor Presentation,
-`Driver`'s projection example, `CreditMetrics`). Each needs its own fixture. Where the
-full preamble is long, a smaller fixture that still demonstrates the point is better than
-a copy.
-
-**Parse errors read as nonsense.** `values: [0.01, 0.03, ...]` reports `expected expression
-after unary operator`, because a literal `...` is a range operator with no operand.
-`guard let x = y else { return }` at fence top level reports `return invalid outside of a
-func`. Neither message mentions the actual problem.
-
-**Prefer the checker's own line numbers, but confirm which fence they name.** Binding
-`currentPeriod` into the fence that already declared it — while the fence that needed it
-was 60 lines further down — cost a full round trip. The old lesson, learned again.
-
-### Categories that cannot be fixed in fences
-
-- **`internal` symbols, same as `private`.** The fence compiles as an *external* client, so
-  anything below `public` is invisible. `MetalBuffers` is `internal final class` and its
-  one fence — 4 errors, the last of the 4-error tier — cannot be made to compile at all.
-  It is the only file left that is blocked rather than unfinished. It wants
-  `<!-- docs:illustrative -->`, which is a human edit by design and was deliberately not
-  applied. The same rule is why `RandomInterceptResult`'s synthesised memberwise init is
-  unreachable and its fences must fit a model instead.
-- **`Real` is not in the fence preamble.** The preamble is Foundation plus this module, and
-  `Real` comes from `Numerics`, which BusinessMath imports without re-exporting. Any fence
-  written `struct Foo<T: Real>` fails with `references 'Real'` followed by
-  `type 'T' does not conform to protocol 'Real'`. Write such examples concretely against
-  `Double`. Hit in `Optimizer` and `FinancialPeriodSummary`.
-- **`private` symbols.** A doc example on a private function cannot compile — nothing can
-  reference it. `generateSteps` in SensitivityAnalysis.swift is one; rewritten to show the
-  equivalent via `stride`.
-- **Macro fences** — 51 errors, all in `Sources/BusinessMathMacros/`. The checker compiles
-  them without the plugin. Proposal written; the user is working this separately.
-- **Extracted-package references** — `AlphaVantageProvider` and friends live in
-  `BusinessMathMarketData` now, so their fences cannot compile against this module.
+Until one of these happens, "CI green" means build, test, lint and the Linux compile check.
+**It has never included the gate.** Every release note in this repository that implied
+otherwise was wrong, including the ones written this session.
 
 ---
 
-## Worktrees
+## Open work, in rough priority order
 
-**Resolved.** The gate had reported 53 errors and 24 warnings, **all in
-`.claude/worktrees/`**, from the `gpu-safety` checker reading stale pre-fix kernel source
-while the live tree was clean. A finding there is a defect that no longer exists anywhere
-shippable, counted once per worktree, and no edit to this repository could clear it — a
-permanently red gate teaches everyone to read `FAILED` as "fine".
-
-`.quality-gate.yml` now carries `excludePatterns: ["**/.claude/worktrees/**"]`, and
-`gpu-safety` honours it as of quality-gate `4470dfa`. Note that the exclusion was written
-first and did nothing for a day: the checker never consulted `configuration.excludePatterns`.
-A config key that is accepted and ignored is the same failure as `checkers:` above.
-
-- Three registered worktrees carry uncommitted work — 11, 7 and 13 dirty files. Left alone.
-- `agent-a064a9af` is an **orphan** from April 14, not registered with git at all.
-
-One open question remains: what to do with the orphan.
+1. **~20 residual `Date()` anchors** across eight DocC articles (`3.14-DebtAndFinancingGuide`,
+   `Part3-Modeling`, `1.2-TimeSeries`, `3.8`, `3.16`, and others). Three were fixed in
+   `eaff6ee`; the rest mostly feed illustrative constructions rather than documented
+   `// Result:` values, which is why `doc-claims` does not flag them. Same latent class.
+2. **`doc-claims` flakiness is a property of the checker's design, not a bug to wait out.**
+   It runs each article twice and compares, so a non-reproducible value is caught only when
+   the two runs straddle whatever boundary moves it. A green is weak evidence; several greens
+   are weak evidence several times. Treat a *single* red as authoritative.
+3. **`UnboundedRecursionIsAnError`** — the fourth proposal from this release, still `proposed`
+   in quality-gate. Needs its advisory window.
+4. **The orphan worktree `agent-a064a9af`**, from April 14, not registered with git.
 
 ---
 
-## Open, beyond the fence work
+## Corrections — read this before trusting anything above
 
-0. **Adversarial-length tests wherever input becomes recursion.** `FormulaEvaluator` shipped
-   two unbounded recursions — `((((…))))` through `parsePrimary` and `-----…1` through
-   `parseFactor` — either of which overflows the stack and takes the process. Both are
-   bounded now, with tests verified to crash before the fix, but neither was found by
-   reasoning about the grammar. They were found by a checker pointing at the file and then
-   trying 5,000 characters.
-   Two things follow, and neither is a gate rule:
-   - Anywhere untrusted text reaches a recursive descent, there should be a test at the
-     bound. The candidates are the formula parser (done) and the DocC articles `doc-run`
-     reports as hanging — `5.9-AdaptiveSelection.md` and `5.10-ParallelOptimization.md`,
-     both killed at the deadline, which is the same family of defect one layer out.
-   - Choose the limit against the **smallest** stack the code can run on. 256 nesting
-     levels was verified by hand and still overflowed under Swift Testing, whose
-     cooperative-pool threads have far smaller stacks than the main thread.
+Four claims in this repository's own documents were wrong when committed. They are listed
+because the pattern matters more than the individual errors.
 
-0. **Macro errors: 51 to 5. The remaining 5 are two macros that cannot work.**
-   The "not author-fixable" verdict was wrong on every count. The plugin loads fine, and
-   upgrading quality-gate to HEAD changes nothing — the error set was byte-identical, so
-   this was never a tooling gap. What was actually there:
+- **"The `gpu-safety` fix is staged, uncommitted, not installed."** It had been committed and
+  installed twenty minutes earlier. The claim was carried across a context boundary and
+  written into `master_plan.md` as blocker #1 without re-checking. Cost of the check: one
+  `git status`.
+- **"154 commits since the tag, not yet pushed."** 119 were already on origin.
+- **"`continue-on-failure: true` means the gate can never fail CI."** It is not GitHub's
+  `continue-on-error` — there is none in the reusable workflow, so a red gate *does* fail the
+  job. It maps to the gate's own flag, "run the remaining checks even if one fails." Removing
+  it would make CI report **less**. It stays.
+- **"The pre-push hook only ran 52 tests."** A misread per-target summary; the log holds 57
+  such lines, one per test target.
 
-   - **35 — `@Validated` threw a type nothing could see.** `ValidationError` was declared
-     in `BusinessMathMacrosImpl`, a `.macro` target: a compiler plugin that vends no types
-     to compiled code. Every generated `throw` named a type that could not resolve in any
-     module. Fixed by moving it to `BusinessMathMacros` as ``MacroValidationError``.
-   - **3 — `@Range` generated `if !0...1.contains(x)`**, which parses as
-     `(!0)...(1.contains(x))`. Then, once parenthesised, the literal arrives as source text
-     and re-infers as `ClosedRange<Int>` against a `Double` property. Both fixed.
-   - **8 — ordinary fence defects**: peer macros at global scope (illegal when the macro
-     declares `names: arbitrary`), `@OptimizationProblem` used three times without existing,
-     a `@Constraint` returning `Void` where `Bool` was required, undefined fixtures.
-
-   **The 5 that remain need a design decision, not a repair.** Both macros are public API
-   with zero callers and zero tests, and neither has ever worked:
-
-   - **`@MCPTool` (4).** It generates `extension <functionName>` — an extension on a
-     function, which is not a type — and references `ToolDefinition`, `MCPSchema` and
-     `MCPSchemaProperty`, none of which exist anywhere in the package. It is also
-     `@attached(peer, names: arbitrary)`, which Swift forbids at global scope, while its
-     expansion requires file scope. There is no placement that compiles.
-   - **`@BuilderInitializable` (1).** It generates `@<Type>Builder`, a result-builder
-     attribute it never emits and nothing defines.
-
-   Either write the missing types and fix the attachment, or remove them. Both are
-   reasonable; neither is a documentation change, which is why they are left here.
-
-1. **`project/plans/upcoming/v3.0.0_SCOPE.md`.** Three places where the correct behaviour is
-   refusal and the signature cannot refuse: DE and PSO's `optimizeDetailed`,
-   `EnterpriseValueBridge.valuePerShare`, and `IslandModel` swallowing `GeneticAlgorithm`'s
-   seed refusal with `try?`.
-2. **Two proposals awaiting the quality-gate repo**, untracked on its `feat/doc-generated`
-   branch: `GPUSafetyChecker.md` (implemented since — the checker is live and found three
-   real defects) and `DocCommentCode_MacroPlugin.md`.
-3. **Seedless wrappers over seeded primitives** — `ScenarioAnalysis`,
-   `runFinancialSimulation`, `ReciprocalParameterRecoveryCheck.run`. Two statistical tests
-   have now been loosened because of the second one.
+The `continue-on-failure` error also explains a thing left parked as "unexplained": local runs
+reporting `16 of 43 checkers · 27 not selected`. Without that flag the gate **exits at the first
+failing checker**. Nothing was being skipped by selection — the run was ending early. An
+anomaly tolerated and a name not verified were the same fact seen from two directions.
 
 ---
 
-## Convention notes
+## Two mechanisms that make a push report success and move nothing
 
-- Run the gate with `--no-cache`. A cached run executes 10 of 37 checkers and prints an
-  identical PASSED summary.
-- **Never chain `swift test` or the gate with `git commit` using `;`.** It happened twice
-  this session and both times the commit went through on a red result. Use `&&`, or verify
-  in a separate call.
-- `--filter` passing proves nothing. Two defects this session were visible only in the full
-  parallel suite and clean in isolation, 4/4 and 6/6.
-- Statistical assertions on unseeded draws fail on schedule: a 3σ bound is 1 run in 370.
-  Two were found this way; seed the stream, or widen and say why.
+Both were hit this session. Either one alone produces a ref that did not move, with a hook
+that printed `Pre-push passed`.
+
+1. **The hook never drained stdin.** Git writes the ref list to the hook's stdin; `swift
+   build`/`swift test` inherited that pipe. Fixed with `cat > /dev/null` and `< /dev/null` on
+   the build commands, in both the live hook and `scripts/install-hooks.sh`.
+2. **The transport idles out.** Git opens the SSH connection *before* running the hook, then
+   leaves it idle for the whole build. The server drops it, and git writes the pack to a closed
+   socket. The defence lives in `~/.ssh/config`, not the hook:
+
+   ```
+   Host github.com
+       ServerAliveInterval 30
+       ServerAliveCountMax 40
+   ```
+
+Keep both — they are complementary, not alternatives.
+
+**And a third way to be fooled:** `git push … | tail` reports *tail's* exit status, so a failed
+push reads as clean. **Verify a push by transfer — `git ls-remote origin <branch>` — never by
+exit status.** I reported a successful push twice on this basis before checking the ref.
+
+---
+
+## Working notes
+
+- **Always `quality-gate --no-cache`.** A cached run silently executes a fraction of the
+  checkers and prints an identical `PASSED`.
+- `.quality-gate.yml` is tracked now. Unknown keys are a **startup refusal** in current
+  quality-gate, not a silent discard — which is how `checkers:` (schema key: `enabledCheckers`)
+  disabled `recursion` for as long as the file existed, in a repository whose parser had two
+  unbounded recursions reachable from public API.
+- Two index stores exist. `.build/out/v5` is what checkers read on Swift 6.4;
+  `.build/index-build` is a derelict. Measure the one that was returned.
