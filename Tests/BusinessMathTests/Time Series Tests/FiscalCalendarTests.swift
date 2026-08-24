@@ -568,10 +568,11 @@ struct FiscalCalendarTests {
 				"day": 30
 			}
 		}
-		""".data(using: .utf8)!
+		"""
+		let jsonData = try #require(json.data(using: .utf8))
 
 		let decoder = JSONDecoder()
-		let fiscalCal = try decoder.decode(FiscalCalendar.self, from: json)
+		let fiscalCal = try decoder.decode(FiscalCalendar.self, from: jsonData)
 
 		#expect(fiscalCal.yearEnd.month == 9)
 		#expect(fiscalCal.yearEnd.day == 30)
