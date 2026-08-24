@@ -210,6 +210,9 @@ Traversal/Components.swift        Connected components, reachability
 Projection/BipartiteProjection.swift  Membership → affinity, weighting schemes
 Centrality/Degree.swift           Degree and strength
 Centrality/PageRank.swift         With convergence refusal
+Centrality/Betweenness.swift      Brandes' algorithm; brokerage, not popularity
+Centrality/Closeness.swift        Harmonic variant, so disconnection is defined
+Centrality/Eigenvector.swift      With the localisation refusal (§3.4)
 Community/Louvain.swift           Modularity maximisation
 Community/Modularity.swift        Scoring a partition
 Markov/TransitionMatrix.swift     Construction, row-stochastic validation
@@ -262,6 +265,9 @@ that way. Marketing draws on it; it does not own it.
 | Bipartite projection | `Marketing/Basket`, segmentation | new |
 | Degree / strength centrality | `Marketing` seeding | new |
 | PageRank | `Marketing` seeding | new |
+| Betweenness (Brandes) | brokerage questions — see below | new |
+| Closeness (harmonic) | diffusion and time-to-reach | new |
+| Eigenvector | hub-structured graphs; refuses on localisation | new |
 | Louvain + modularity | `Marketing/Segmentation` | new |
 | Markov chains + removal effect | **`Marketing/Attribution`** | new |
 
@@ -273,10 +279,30 @@ serves three legs:
   `Valuation/CreditDerivatives/CreditTermStructure.swift`
 - **Operations** — machine-state and queueing models
 
-**Deliberately excluded from 3.0.0**, with reasons, so the module does not become a
-graph-theory grab bag: betweenness and closeness centrality (no committed consumer, and
-§12 argues against them), eigenvector centrality (localisation failure mode, no consumer),
-and everything in §14.
+**The full centrality suite ships.** An earlier draft cut betweenness, closeness, and
+eigenvector on the strength of the downstream finding that degree matched PageRank to
+within noise. That reasoning does not survive examination, and §12.3 now records why:
+**the evidence was about predictive value on one dataset, not about whether the algorithms
+belong in the API.** Those are different claims and the draft conflated them.
+
+Three positive reasons, beyond withdrawing a bad argument:
+
+- **Betweenness measures something degree cannot approximate.** A node with two edges can
+  have maximal betweenness if it is the only bridge between two clusters. Brokerage and
+  popularity are different questions, and in supply-chain, org-network, and counterparty
+  analysis brokerage is usually the one being asked.
+- **The finding may be about that graph's topology rather than about the algorithms.** A
+  co-membership projection is highly clustered and hub-poor, which is exactly the regime
+  where eigenvector methods and degree converge. It says little about a graph with genuine
+  hub structure — a referral network, a citation graph, an exposure network.
+- **Marginal cost is low and the alternative is worse.** Once the graph type and traversal
+  exist, these are bounded textbook algorithms with published test vectors. Omitting them
+  means a user with a brokerage question reaches for a different library and takes their
+  graph construction with them.
+
+**Still deliberately excluded from 3.0.0:** everything in §14 — flow, shortest path,
+CPM/PERT, MST filtering, contagion. Those are separate bodies of work with no 3.0.0
+consumer, not algorithms sharing an engine that already ships.
 
 ### 3.5 Build order
 
@@ -512,8 +538,9 @@ A user who never imports `Marketing` sees only the two deprecations.
 `AssociationRules`; both are namespaced under their types rather than free functions. No
 free function proposed here shares a name with an existing one.
 
-**Non-breaking mitigation available:** the corrected power calculation can ship *additively*
-in a 2.7 while the deprecation waits for 3.0.0. This matters — see §12.1.
+**Non-breaking mitigation — taken.** The corrected power calculation ships additively in
+2.7.0, with the deprecation alongside it and the deletion held for 3.0.0. Scoped in
+`upcoming/v2.7.0_SCOPE.md`. See §12.1.
 
 ---
 
@@ -686,16 +713,16 @@ A reviewer would say: **release 3.0.0 as the correctness release it was scoped t
 ship Marketing as 3.1.** The theme argument in §2 is elegant, but elegance is not a reason
 to delay a fix.
 
-**Response — and this changes the plan.** The mitigation named in §7 should be taken
-regardless of what happens to this proposal: **ship the correct power calculation
-additively in a 2.7**, alongside a documentation correction on `sampleSize`. It is purely
-additive and needs none of this. The deprecation then rides along with 3.0.0 whenever it
-comes, and the defect stops shipping in weeks rather than months. The same should be
-considered for any other defect this work surfaces.
+**Response — and this changed the plan. Adopted 2026-08-23, scoped in
+`upcoming/v2.7.0_SCOPE.md`.** The correct power calculation ships additively in 2.7.0 with
+the deprecation beside it; the deletion waits for the major. It is purely additive and
+needs none of this proposal, so the defect stops shipping in weeks rather than months. The
+same treatment should be considered for any other defect this work surfaces.
 
-That decouples the argument. The remaining question — whether 3.0.0 waits for the whole
-leg — becomes a scheduling preference rather than a correctness one, and the user has
-already answered it.
+That decouples the argument entirely. The remaining question — whether 3.0.0 waits for the
+whole leg — is now a scheduling preference rather than a correctness one, and
+`v3.0.0_SCOPE.md` §0.1 records what actually forces the major so the bundling stays a
+choice rather than hardening into an assumption.
 
 ### 12.2 Where this design is most likely wrong
 
@@ -718,18 +745,31 @@ Real customer data is messy, keyed, and joined across tables. `Analysis/DataTabl
 a single file, and the ergonomics of getting a customer table *into* these functions may
 matter more to adoption than the functions themselves.
 
-### 12.3 The centrality suite contradicts our own evidence
+### 12.3 The centrality argument, and a correction to it
 
 The downstream validation found degree centrality (−0.246) and PageRank (−0.250) within
-noise of each other, and both roughly double the predictive power of raw counting. **The
-finding was that weighting the graph matters and the algorithm does not.**
+noise of each other, both roughly doubling the predictive power of raw counting. The
+finding was that **weighting the graph matters and the algorithm does not** — on that
+graph.
 
-Proposing a centrality suite after establishing that is a design that ignores its own
-best evidence. §3.4 already cuts betweenness, closeness, and eigenvector on these grounds.
-A harder critic would go further and ask why PageRank survives at all when degree performs
-identically and is trivially explainable — the honest answer is that one downstream project
-on one dataset is thin evidence to generalise from, and PageRank is cheap. That is a weak
-answer, and it is worth flagging as a candidate for further cutting.
+An earlier draft treated this as grounds for cutting most of the centrality suite. That was
+an error, and naming it precisely matters more than reversing it: **a finding about
+predictive value on one dataset was used as an API scoping decision.** "PageRank does not
+outperform degree at predicting reunion attendance" and "PageRank does not belong in the
+library" are different claims, and only the first has evidence behind it.
+
+The draft also committed the exact overreach it accused the design of. It criticised
+generalising from thin evidence, then generalised from n=1 — one graph, one domain, one
+outcome variable — to a permanent API exclusion. A co-membership projection is highly
+clustered and hub-poor, the regime where eigenvector methods and degree provably converge;
+it is close to the least informative topology on which to test whether eigenvector methods
+add anything.
+
+**The surviving version of the objection is narrower and still worth honouring:** the
+library should not *market* the centrality suite as predictive machinery, because our own
+evidence says the weighting does the work. The documentation should say so plainly — that
+building the graph correctly matters more than the choice of measure, and that degree is
+the right default. That is an honest claim the library can make and most cannot.
 
 ### 12.4 The graph module's consumers are mostly hypothetical
 
