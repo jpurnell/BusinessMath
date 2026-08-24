@@ -2,7 +2,7 @@
 
 **Author:** Justin Purnell + Claude
 **Date:** 2026-08-23
-**Status:** Draft for adversarial review
+**Status:** Approved 2026-08-24. Promoted to `upcoming/`; build begins with 2.7.0.
 **Supersedes:** the audit draft `MarketingAnalytics.md`, removed here and folded into §2. Its
 full text is at commit `3c7d618` if the evidence trail is wanted separately.
 **Amends:** `proposals/NetworkAnalysis.md` — placement and scope, see §3.4
@@ -223,6 +223,9 @@ Markov/RemovalEffect.swift        Channel removal — attribution's engine
 
 **`Marketing/`** *(new top-level area)* — the marketing-shaped surfaces
 ```
+Ingest/CustomerRecord.swift       The canonical model — see §3.7
+Ingest/CustomerDataSource.swift   Adapter protocol + ConformanceReport
+Ingest/Adapters/                  DataTable, CSV, Codable, tuple-array
 Segmentation/RFM.swift            Recency/frequency/monetary tiers
 Segmentation/BehaviouralSegments.swift  Surface over KMeans and Louvain
 Value/CustomerLifetimeValue.swift Canonical CLV, named variants
@@ -261,7 +264,7 @@ that way. Marketing draws on it; it does not own it.
 |---|---|---|
 | Graph types, deterministic ordering | everything below | new |
 | Topological sort | `Model Definition`; future scheduling | **absent today** |
-| Strongly connected components | `Model Definition` | **exists, unformalised** |
+| Strongly connected components | `Model Definition` | **exists, unformalised — generic on lift, see below** |
 | Bipartite projection | `Marketing/Basket`, segmentation | new |
 | Degree / strength centrality | `Marketing` seeding | new |
 | PageRank | `Marketing` seeding | new |
@@ -278,6 +281,58 @@ serves three legs:
 - **Finance** — credit rating migration matrices, natural neighbours of
   `Valuation/CreditDerivatives/CreditTermStructure.swift`
 - **Operations** — machine-state and queueing models
+
+### The SCC lift is generic, and fixes an unchecked precondition on the way
+
+Today:
+
+```swift
+static func components(of graph: [String: [String]]) -> [[String]]
+```
+
+Lifted:
+
+```swift
+public static func components<Node: Hashable & Comparable & Sendable>(
+    of graph: [Node: [Node]]
+) -> [[Node]]
+```
+
+`Model Definition` consumes it at `Node == String` and is otherwise unchanged.
+
+`Comparable` is not decoration — it is what the determinism guarantee rests on. The current
+implementation iterates `graph.keys.sorted()` precisely so that nothing depends on
+`Dictionary` iteration order, and a generic version keeps that requirement or loses the
+guarantee. The cost is that a node type which is `Hashable` but not `Comparable` — an
+opaque ID struct, say — cannot be used directly. That is the right trade: a graph algorithm
+whose output order varies run to run is not usable in a library that tests for
+reproducibility.
+
+**The lift also has to fix something the current code documents rather than enforces.** Its
+doc comment reads:
+
+> Deterministic: vertices are entered in sorted order and **each adjacency list is assumed
+> already sorted**, so nothing about the result depends on `Set` or `Dictionary` iteration.
+
+Inside `Model Definition` that assumption holds, because `accountNames(in:)` returns sorted
+output and there is exactly one caller. **As a public generic API it becomes a silent
+correctness hazard:** a caller who passes unsorted adjacency gets non-deterministic
+component *ordering* with no error, no warning, and output that looks entirely correct on
+any single run. That is the fail-silent pattern this release exists to remove, arriving
+through the front door.
+
+Two options, and the second is better:
+
+1. Sort adjacency defensively inside the algorithm — `O(E log E)` added, and it makes the
+   guarantee unconditional.
+2. **Make the sortedness a property of the type rather than a precondition on the call.**
+   `Graph.init` sorts once at construction, and `components` takes a `Graph` rather than a
+   raw dictionary. The cost is paid once per graph instead of once per algorithm, every
+   algorithm in the module inherits the guarantee, and the precondition stops being
+   something a doc comment has to ask for.
+
+Option 2 is the design. The raw-dictionary entry point survives as a convenience
+initialiser that sorts.
 
 **The full centrality suite ships.** An earlier draft cut betweenness, closeness, and
 eigenvector on the strength of the downstream finding that degree matched PageRank to
@@ -349,6 +404,75 @@ the remedy.
 
 This is the clearest demonstration of the 3.0.0 theme inside the marketing work, and it is
 the design detail most likely to be quietly dropped under schedule pressure.
+
+---
+
+### 3.7 Getting real data in: a conformance contract, not typed arrays
+
+§12.2 names this as the second-most-likely way this design is wrong — that marketing data
+arrives as clean typed arrays. It does not. Real customer data is messy, keyed, and joined
+across tables, and the ergonomics of getting it *into* these functions plausibly matter
+more to adoption than the functions themselves.
+
+The answer is a canonical model with pluggable adapters: any source conforms its data to
+one clean format, and everything downstream consumes only that.
+
+```swift
+/// The canonical record. Everything in `Marketing/` consumes this and nothing else.
+public struct CustomerRecord<T: Real & Sendable>: Sendable, Identifiable {
+    public let id: String
+    public let acquired: Date?
+    public let attributes: [String: AttributeValue]
+    public let transactions: [Transaction<T>]
+}
+
+/// Any source of customer data. Adapters conform to this; the library ships several.
+public protocol CustomerDataSource: Sendable {
+    associatedtype Value: Real & Sendable
+    func conform() throws -> ConformanceResult<Value>
+}
+```
+
+Adapters ship for `DataTable`, CSV with a column mapping, `Codable` collections, and plain
+arrays of tuples for the simple case. The protocol is public so a caller can write one for
+a warehouse, an API, or a proprietary export without waiting on us.
+
+**The part that matters more than the adapters.**
+
+An adapter's job is to conform imperfect data, which means some rows will not conform. The
+obvious implementation drops them. **A silently dropped row makes every downstream number
+wrong and says nothing** — a CLV computed over 97% of a cohort is not a CLV, and a library
+that returns one anyway has committed exactly the failure this release is named for.
+
+So conformance is reported, never silent:
+
+```swift
+public struct ConformanceResult<T: Real & Sendable>: Sendable {
+    public let records: [CustomerRecord<T>]
+    public let report: ConformanceReport
+}
+
+public struct ConformanceReport: Sendable, Codable {
+    public let rowsRead: Int
+    public let rowsAccepted: Int
+    public let rejections: [Rejection]     // row index, field, reason
+    public var acceptanceRate: Double { get }
+}
+
+public enum ConformancePolicy: Sendable {
+    case strict          // any rejection throws — the default
+    case reporting       // proceed, and the report travels with the result
+}
+```
+
+Under `.reporting`, the report is **carried on every downstream result**, not merely
+returned once at ingestion. `CLVResult` and `LiftTable` hold the report of the data they
+were computed from, so the number and the caveat cannot be separated by the time they reach
+a slide. Under `.strict` — the default — a single unconformable row stops the run.
+
+This is the same principle as §3.6's separation refusal and spine 1's GPU contract, applied
+to the boundary where data enters. It is also, per §12.2, the part most likely to determine
+whether any of the rest gets used.
 
 ---
 
@@ -891,9 +1015,11 @@ Named because §3.4's exclusion list is more credible with the alternatives visi
    what ships to users in the near term, and it is independent of everything else here.
 2. **Does PageRank stay?** §12.3 argues our own evidence undercuts it. Degree is cheaper,
    explainable, and performed identically on the one dataset we have.
-3. **What is the input ergonomics story?** §12.2's second assumption. If getting a customer
-   table into these functions is painful, adoption fails regardless of correctness.
-   `Analysis/DataTable.swift` may need work that is not scoped here.
+3. ~~**What is the input ergonomics story?**~~ **Answered: §3.7.** A canonical
+   `CustomerRecord`, a `CustomerDataSource` adapter protocol, and a `ConformanceReport`
+   that travels with every downstream result so a dropped row can never become a silently
+   wrong number. Remaining sub-question: does `Analysis/DataTable.swift` need work to be a
+   good adapter target, or is it already sufficient?
 4. **Which CLV variants ship as named cases?** §12.5 makes the variant explicit; it does
    not decide the list. Four is the number cited in the audit, but the enumeration needs
    settling before the API freezes.
