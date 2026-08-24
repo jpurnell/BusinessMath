@@ -1,5 +1,9 @@
 # BusinessMath Library Statistics
 
+> Generated 2026-04-14 by tooling removed on 2026-08-24. Kept as the last
+> published snapshot; see `README.md` for what replaced it.
+
+
 **Last Updated**: February 8, 2026
 
 ## Overview
