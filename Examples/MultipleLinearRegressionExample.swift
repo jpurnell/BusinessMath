@@ -106,7 +106,12 @@ do {
     // Residual analysis
     print("\nResidual Analysis:")
     print("  Residual Std Error: \(result.residualStandardError.number(2))")
-    let meanAbsResidual = result.residuals.map(abs).reduce(0, +) / Double(result.residuals.count)
+    // A model fitted with no residuals has no mean residual to report; guarding the
+    // divisor keeps that case from becoming a NaN that reads like a real figure.
+    let residualCount = Double(result.residuals.count)
+    let meanAbsResidual = residualCount > 0
+        ? result.residuals.map(abs).reduce(0, +) / residualCount
+        : 0.0
     print("  Mean Absolute Residual: \(meanAbsResidual.number(2))")
 
     // Check for outliers
