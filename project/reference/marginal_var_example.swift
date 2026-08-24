@@ -91,6 +91,11 @@ func componentVaR(vaRs: [Double], weights: [Double], corr: [[Double]]) -> [Doubl
 	var components = [Double]()
 	let portfolioVaR = aggregateVaR(vaRs, corr)
 
+	// A portfolio with no VaR has nothing to apportion between its components.
+	// Checked once here rather than inside the loop: portfolioVaR does not change,
+	// and a guard the reader can see beats a ternary buried in the accumulation.
+	guard portfolioVaR != 0 else { return Array(repeating: 0.0, count: vaRs.count) }
+
 	for i in 0..<vaRs.count {
 		let v_i = weights[i] * vaRs[i]
 		var Cv_i = 0.0
@@ -98,7 +103,7 @@ func componentVaR(vaRs: [Double], weights: [Double], corr: [[Double]]) -> [Doubl
 			let v_j = weights[j] * vaRs[j]
 			Cv_i += corr[i][j] * v_j
 		}
-		components.append(portfolioVaR == 0 ? 0 : v_i * (Cv_i / portfolioVaR))
+		components.append(v_i * (Cv_i / portfolioVaR))
 	}
 
 	return components
