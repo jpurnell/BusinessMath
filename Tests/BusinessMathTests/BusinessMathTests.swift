@@ -532,20 +532,38 @@ struct UnassortedTests {
 		#expect(resultE < 1.48)
     }
 	
-	@Test("P-value detailed") func testPValueDetailed() {
+	/// Pins the deprecated `pValue`'s actual behaviour: it returns `normSDist(|z|)`,
+	/// the complement of a one-sided p-value, never below 0.5.
+	///
+	/// The variable names here previously read `resultSignificant`, `resultUnlikely` and
+	/// `resultNotSignificant`, which is how the defect survived: the values asserted are
+	/// the complement, and the case called "significant" has a true two-sided p of
+	/// 0.0993 — not significant at all. Renamed to say what is actually being measured.
+	/// True two-sided p-values are asserted alongside so the gap is visible in the test
+	/// rather than only in the release notes.
+	@available(*, deprecated, message: "Exercises the deprecated pValue on purpose.")
+	@Test("Legacy pValue returns normSDist(|z|), pinned with the true p-values beside it")
+	func testPValueDetailed() {
 		let obs = 500
 		let convA = 80
-		let convSig = 100
-		let convUnl = 96
-		let convIns = 80
-		let resultSignificant: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convSig)
-		let resultUnlikely: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convUnl)
-		let resultNotSignificant: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convIns)
-		#expect(abs(resultSignificant - 0.9504) < 0.0001)
-		#expect(abs(resultUnlikely - 0.9082) < 0.0001)
-		#expect(abs(resultNotSignificant - 0.500) < 0.0001)
+		let convLarge = 100
+		let convModerate = 96
+		let convIdentical = 80
+		let largeGap: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convLarge)
+		let moderateGap: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convModerate)
+		let noGap: Double = pValue(obsA: obs, convA: convA, obsB: obs, convB: convIdentical)
+
+		#expect(abs(largeGap - 0.9504) < 0.0001)
+		#expect(abs(moderateGap - 0.9082) < 0.0001)
+		#expect(abs(noGap - 0.500) < 0.0001)
+
+		// What these actually mean. None of the three is significant at 0.05.
+		#expect(abs(2.0 * (1.0 - largeGap) - 0.099260) < 0.0005)
+		#expect(abs(2.0 * (1.0 - moderateGap) - 0.183587) < 0.0005)
+		#expect(2.0 * (1.0 - noGap) > 0.05)
 	}
 	
+	@available(*, deprecated, message: "Exercises the deprecated sampleSize on purpose.")
 	@Test("Sample size calculation") func testSampleSizeCalculation() {
 //		Let's pretend we're sending our first A/B test. Our list has 1,000 people in it and has a 95% deliverability rate. We want to be 95% confident our winning email metrics fall within a 5-point interval of our population metrics. This will calculate the minimum number of people we need to send each variant to in order to determine significance.
 		let ci = 0.95
