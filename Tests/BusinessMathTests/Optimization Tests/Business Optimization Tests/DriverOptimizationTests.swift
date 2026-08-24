@@ -9,6 +9,17 @@ import Foundation
 import Testing
 @testable import BusinessMath
 
+/// Reads a driver the model closure requires.
+///
+/// A `model:` closure cannot throw: `DriverOptimization` calls it from inside the
+/// `@Sendable (VectorN<Double>) -> Double` objective that the numeric optimizer
+/// requires to be non-throwing, so `try #require` is not available here. A missing
+/// driver therefore surfaces as `NaN`, which propagates through the arithmetic and
+/// fails the test's numeric assertions — loudly, and without trapping the process.
+private func driver(_ values: [String: Double], _ key: String) -> Double {
+	values[key] ?? .nan
+}
+
 @Suite("Driver Optimization Tests")
 struct DriverOptimizationTests {
 
@@ -38,7 +49,7 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
+				let price = driver(driverValues, "price")
 				let volume = 1000.0  // Fixed volume
 				return ["revenue": price * volume]
 			}
@@ -81,8 +92,8 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
-				let volume = driverValues["volume"]!
+				let price = driver(driverValues, "price")
+				let volume = driver(driverValues, "volume")
 				return ["revenue": price * volume]
 			}
 		)
@@ -133,8 +144,8 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
-				let cost = driverValues["cost"]!
+				let price = driver(driverValues, "price")
+				let cost = driver(driverValues, "cost")
 				let volume = 1000.0
 				let revenue = price * volume
 				let totalCost = cost * volume
@@ -178,7 +189,7 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
+				let price = driver(driverValues, "price")
 				return ["revenue": price * 1000]
 			}
 		)
@@ -217,7 +228,7 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
+				let price = driver(driverValues, "price")
 				return ["revenue": price * 1000]
 			}
 		)
@@ -252,7 +263,7 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let conversionRate = driverValues["conversion_rate"]!
+				let conversionRate = driver(driverValues, "conversion_rate")
 				let visitors = 10_000.0
 				return ["conversions": conversionRate * visitors]
 			}
@@ -299,8 +310,8 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let a = driverValues["driver_a"]!
-				let b = driverValues["driver_b"]!
+				let a = driver(driverValues, "driver_a")
+				let b = driver(driverValues, "driver_b")
 				return ["sum": a + b]
 			},
 			objective: .minimizeCost(costs)
@@ -341,16 +352,16 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
-				let discount = driverValues["discount"]!
+				let price = driver(driverValues, "price")
+				let discount = driver(driverValues, "discount")
 				let effectivePrice = price * (1.0 - discount)
 				let volume = 1000.0 * (1.0 + discount * 2.0)  // Discount boosts volume
 				return ["revenue": effectivePrice * volume]
 			},
 			objective: .custom({ driverValues in
 				// Prefer higher price, lower discount
-				let price = driverValues["price"]!
-				let discount = driverValues["discount"]!
+				let price = driver(driverValues, "price")
+				let discount = driver(driverValues, "discount")
 				return -(price - 100.0 * discount)  // Negative because we minimize
 			})
 		)
@@ -387,7 +398,7 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
+				let price = driver(driverValues, "price")
 				return ["revenue": price * 1000]
 			}
 		)
@@ -419,7 +430,7 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["price"]!
+				let price = driver(driverValues, "price")
 				return ["revenue": price * 1000]
 			}
 		)
@@ -474,9 +485,9 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let pricePerSeat = driverValues["price_per_seat"]!
-				let churnRate = driverValues["churn_rate"]!
-				let newCustomersMonthly = driverValues["new_customers_monthly"]!
+				let pricePerSeat = driver(driverValues, "price_per_seat")
+				let churnRate = driver(driverValues, "churn_rate")
+				let newCustomersMonthly = driver(driverValues, "new_customers_monthly")
 
 				// Simplified steady-state model
 				let steadyStateCustomers = newCustomersMonthly / churnRate
@@ -541,9 +552,9 @@ struct DriverOptimizationTests {
 			drivers: drivers,
 			targets: targets,
 			model: { driverValues in
-				let price = driverValues["product_price"]!
-				let conversionRate = driverValues["conversion_rate"]!
-				let traffic = driverValues["traffic"]!
+				let price = driver(driverValues, "product_price")
+				let conversionRate = driver(driverValues, "conversion_rate")
+				let traffic = driver(driverValues, "traffic")
 
 				// Price elasticity: higher price reduces conversion
 				let priceImpact = 1.0 - (price - 100) / 200.0

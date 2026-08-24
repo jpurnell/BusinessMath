@@ -52,7 +52,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is SaaSModel)
-        let saasModel = model as! SaaSModel
+        let saasModel = try #require(model as? SaaSModel)
         #expect(abs(saasModel.initialMRR - 10_000.0) < 1e-6)
         #expect(abs(saasModel.churnRate - 0.05) < 1e-6)
     }
@@ -134,7 +134,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is RetailModel)
-        let retailModel = model as! RetailModel
+        let retailModel = try #require(model as? RetailModel)
         #expect(abs(retailModel.initialInventoryValue - 50_000.0) < 1e-6)
         #expect(abs(retailModel.monthlyRevenue - 100_000.0) < 1e-6)
     }
@@ -176,7 +176,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is ManufacturingModel)
-        let mfgModel = model as! ManufacturingModel
+        let mfgModel = try #require(model as? ManufacturingModel)
         #expect(abs(mfgModel.productionCapacity - 10_000.0) < 1e-6)
         #expect(abs(mfgModel.sellingPricePerUnit - 50.0) < 1e-6)
     }
@@ -202,7 +202,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is MarketplaceModel)
-        let marketplaceModel = model as! MarketplaceModel
+        let marketplaceModel = try #require(model as? MarketplaceModel)
         #expect(abs(marketplaceModel.initialBuyers - 1_000.0) < 1e-6)
         #expect(abs(marketplaceModel.takeRate - 0.15) < 1e-6)
     }
@@ -226,7 +226,7 @@ struct StandardTemplatesTests {
         let model = try template.create(parameters: parameters)
 
         #expect(model is SubscriptionBoxModel)
-        let subBoxModel = model as! SubscriptionBoxModel
+        let subBoxModel = try #require(model as? SubscriptionBoxModel)
         #expect(abs(subBoxModel.initialSubscribers - 1_000.0) < 1e-6)
         #expect(abs(subBoxModel.monthlyBoxPrice - 49.99) < 1e-6)
     }

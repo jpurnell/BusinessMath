@@ -802,8 +802,11 @@ struct DebtCovenantsTests {
         let covenant = FinancialCovenant(
             name: "Combined Covenant",
             requirement: .custom { incomeStatement, balanceSheet, period in
-                let ebitda = incomeStatement.operatingIncome[period]! + 0.0 // Simplified
-                let currentRatio = balanceSheet.currentRatio[period]!
+                // `.custom` takes a non-throwing predicate, so `try #require` is not
+                // available here. A missing period yields NaN, whose comparisons are
+                // false — the covenant reads as breached and the assertion fails.
+                let ebitda = (incomeStatement.operatingIncome[period] ?? .nan) + 0.0 // Simplified
+                let currentRatio = (balanceSheet.currentRatio[period] ?? .nan)
                 return ebitda > 400_000.0 && currentRatio > 1.5
             }
         )
