@@ -594,12 +594,13 @@ struct TimeSeriesTests {
 		// MARK: - TimeSeries extras
 
 			@Test("rollingSum window equal to length returns single sum")
-			func rollingSumEqualsTotalWhenWindowIsFull() {
+			func rollingSumEqualsTotalWhenWindowIsFull() throws {
 				let periods = (0..<4).map { Period.month(year: 2025, month: $0+1) }
 				let ts = TimeSeries(periods: periods, values: [1.0, 2.0, 3.0, 4.0])
 				let roll = ts.rollingSum(window: 4)
 				#expect(roll.count == 1)
-				#expect(abs(roll[periods.last!]! - 10.0) < 1e-12)
+				let lastPeriod = try #require(periods.last)
+				#expect(abs(try #require(roll[lastPeriod]) - 10.0) < 1e-12)
 			}
 
 			@Test("Range with start > end returns empty")

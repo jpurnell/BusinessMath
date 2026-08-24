@@ -32,8 +32,8 @@ let discountRate = 0.10  // 10% hurdle rate
 	// STEP 1: Calculate Profitability Metrics
 	// -----------------------------------------------------------------------------
 
-let npvValue = try! calculateNPV(discountRate: discountRate, cashFlows: cashFlows)
-let irrValue = try! irr(cashFlows: cashFlows)
+let npvValue = try #require(try) calculateNPV(discountRate: discountRate, cashFlows: cashFlows)
+let irrValue = try #require(try) irr(cashFlows: cashFlows)
 let pi = profitabilityIndex(rate: discountRate, cashFlows: cashFlows)
 let payback = paybackPeriod(cashFlows: cashFlows)
 
@@ -55,7 +55,7 @@ print("📉 Sensitivity Analysis: NPV vs. Discount Rate")
 let rates = stride(from: 0.05, through: 0.15, by: 0.01)
 
 for rate in rates {
-	let npvAtRate = try! calculateNPV(discountRate: rate, cashFlows: cashFlows)
+	let npvAtRate = try #require(try) calculateNPV(discountRate: rate, cashFlows: cashFlows)
 	let ratePercent = rate.percent(0)
 	let npvFormatted = npvAtRate.currency(0)
 	print("   Rate: \(ratePercent.paddingLeft(toLength: 5)) → NPV: \(npvFormatted)")
@@ -82,7 +82,7 @@ var simulation = MonteCarloSimulation(iterations: 100_000, seed: 42) { inputs in
 	let year3 = 50_000 * (1 + inputs[2])
 	let year4 = 60_000 * (1 + inputs[3])
 	
-	return try! calculateNPV(discountRate: 0.10, cashFlows: [-100_000, year1, year2, year3, year4])
+	return try #require(try) calculateNPV(discountRate: 0.10, cashFlows: [-100_000, year1, year2, year3, year4])
 }
 
 	// Add uncertainty inputs: normal distribution with 20% std dev
@@ -94,7 +94,7 @@ for year in 1...4 {
 }
 
 	// Run simulation and analyze results
-let results = try! simulation.run()
+let results = try #require(try) simulation.run()
 let statistics = results.statistics
 
 	// Risk metrics

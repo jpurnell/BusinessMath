@@ -340,7 +340,7 @@ struct ChiSquaredDistributionTests {
 	}
 	
 	@Test("Chi-squared mode property")
-	func chiSquaredMode() {
+	func chiSquaredMode() throws {
 		// Mode should be max(0, df - 2)
 		let testCases: [(df: Int, expectedMode: Double)] = [
 			(1, 0.0),    // df < 2 → mode = 0
@@ -369,7 +369,8 @@ struct ChiSquaredDistributionTests {
 				histogram[binIndex] += 1
 			}
 
-			let maxBinIndex = histogram.firstIndex(of: histogram.max()!)!
+			let peakValue = try #require(histogram.max())
+			let maxBinIndex = try #require(histogram.firstIndex(of: peakValue))
 			let empiricalMode = Double(maxBinIndex) / Double(binCount) * maxVal
 
 			// For df >= 3, mode should be reasonably close to df-2
