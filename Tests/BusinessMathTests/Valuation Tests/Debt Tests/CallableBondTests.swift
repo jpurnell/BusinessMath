@@ -13,19 +13,19 @@ import Foundation
 struct CallableBondTests {
 
     // Use a fixed reference date to avoid wall-clock dependencies in bond calculations
-    private static let referenceDate: Date = {
+    private static func referenceDate() throws -> Date {
         var components = DateComponents()
         components.year = 2025
         components.month = 1
         components.day = 1
-        return Calendar.current.date(from: components)!
-    }()
+        return try #require(Calendar.current.date(from: components))
+    }
 
     @Test("Callable bond prices less than non-callable")
-    func callablePriceLessThanNonCallable() {
+    func callablePriceLessThanNonCallable() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         // Create underlying bond
         let bond = Bond(
@@ -37,7 +37,7 @@ struct CallableBondTests {
         )
 
         // Callable after 3 years at 1050 (5% premium)
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -60,10 +60,10 @@ struct CallableBondTests {
     }
 
     @Test("Call option value is positive")
-    func callOptionValuePositive() {
+    func callOptionValuePositive() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -73,7 +73,7 @@ struct CallableBondTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -93,10 +93,10 @@ struct CallableBondTests {
     }
 
     @Test("Higher volatility increases call option value")
-    func volatilityImpactOnCallValue() {
+    func volatilityImpactOnCallValue() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -106,7 +106,7 @@ struct CallableBondTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -133,10 +133,10 @@ struct CallableBondTests {
     }
 
     @Test("Call option value with zero volatility is lower")
-    func zeroVolatilityCallValue() {
+    func zeroVolatilityCallValue() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -146,7 +146,7 @@ struct CallableBondTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -173,10 +173,10 @@ struct CallableBondTests {
     }
 
     @Test("Multiple call dates in schedule")
-    func multipleCallDates() {
+    func multipleCallDates() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -187,9 +187,9 @@ struct CallableBondTests {
         )
 
         // Declining call premium schedule
-        let callDate1 = calendar.date(byAdding: .year, value: 3, to: today)!
-        let callDate2 = calendar.date(byAdding: .year, value: 5, to: today)!
-        let callDate3 = calendar.date(byAdding: .year, value: 7, to: today)!
+        let callDate1 = try #require(calendar.date(byAdding: .year, value: 3, to: today))
+        let callDate2 = try #require(calendar.date(byAdding: .year, value: 5, to: today))
+        let callDate3 = try #require(calendar.date(byAdding: .year, value: 7, to: today))
 
         let callSchedule = [
             CallProvision(date: callDate1, callPrice: 1050.0),  // 5% premium
@@ -217,8 +217,8 @@ struct CallableBondTests {
     @Test("OAS calculation")
     func oasCalculation() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -228,7 +228,7 @@ struct CallableBondTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -259,8 +259,8 @@ struct CallableBondTests {
     @Test("OAS is positive for credit risk")
     func oasPositiveForCredit() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -270,7 +270,7 @@ struct CallableBondTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -298,10 +298,10 @@ struct CallableBondTests {
     }
 
     @Test("Callable bond with Float type")
-    func callableBondFloat() {
+    func callableBondFloat() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: Float(1000.0),
@@ -311,7 +311,7 @@ struct CallableBondTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: Float(1050.0))]
 
         let callableBond = CallableBond(
@@ -330,10 +330,10 @@ struct CallableBondTests {
     }
 
     @Test("Callable bond effective duration")
-    func effectiveDuration() {
+    func effectiveDuration() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -343,7 +343,7 @@ struct CallableBondTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
