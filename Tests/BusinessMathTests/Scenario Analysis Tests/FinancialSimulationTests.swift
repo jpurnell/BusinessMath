@@ -595,7 +595,7 @@ struct AdditionalFinancialSimulationTests {
 	private func singlePeriod() -> [Period] {
 		[ .quarter(year: 2025, quarter: 1) ]
 	}
-	private func builder(entity: Entity) -> ScenarioRunner.StatementBuilder {
+	private func builder(entity: Entity) throws -> ScenarioRunner.StatementBuilder {
 		return { drivers, periods in
 				// Use "Revenue" driver; default 1000.0 if missing
 			let value = drivers["Revenue"]?.sample(for: periods[0]) ?? 1000.0

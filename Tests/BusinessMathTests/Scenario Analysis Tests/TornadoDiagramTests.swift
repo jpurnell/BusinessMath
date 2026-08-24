@@ -667,7 +667,7 @@ struct TornadoDiagramAdditionalTests {
 		[ .quarter(year: 2025, quarter: 1) ]
 	}
 
-	private func builder(entity: Entity) -> ScenarioRunner.StatementBuilder {
+	private func builder(entity: Entity) throws -> ScenarioRunner.StatementBuilder {
 		return { drivers, periods in
 			let price = drivers["Price"]?.sample(for: periods[0]) ?? 100.0
 			let volume = drivers["Volume"]?.sample(for: periods[0]) ?? 1000.0

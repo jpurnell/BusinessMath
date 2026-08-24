@@ -174,7 +174,7 @@ struct AsyncDEAInputValidationTests {
 
     @Test("Fewer than 2 DMUs throws insufficientDMUs")
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-    func insufficientDMUs() async {
+    func insufficientDMUs() async throws {
         let solver = AsyncDEASolver()
         let singleDMU = [DMU(name: "Only", inputs: [1], outputs: [1])]
 
@@ -185,7 +185,7 @@ struct AsyncDEAInputValidationTests {
 
     @Test("Non-positive input values throw nonPositiveValues")
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-    func nonPositiveInputValues() async {
+    func nonPositiveInputValues() async throws {
         let solver = AsyncDEASolver()
         let dmus = [
             DMU(name: "A", inputs: [1, 2], outputs: [3]),
@@ -199,7 +199,7 @@ struct AsyncDEAInputValidationTests {
 
     @Test("Non-positive output values throw nonPositiveValues")
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-    func nonPositiveOutputValues() async {
+    func nonPositiveOutputValues() async throws {
         let solver = AsyncDEASolver()
         let dmus = [
             DMU(name: "A", inputs: [1, 2], outputs: [3]),
@@ -213,7 +213,7 @@ struct AsyncDEAInputValidationTests {
 
     @Test("Empty DMU array throws insufficientDMUs")
     @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-    func emptyDMUArray() async {
+    func emptyDMUArray() async throws {
         let solver = AsyncDEASolver()
 
         await #expect(throws: DEAError.self) {

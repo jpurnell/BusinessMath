@@ -25,9 +25,9 @@ struct OperationalMetricsTests {
 		)
 
 		#expect(metrics["units_sold"] == 15_000)
-		#expect(abs(metrics["average_order_value"]! - 85.50) < 1e-6)
+		#expect(abs(try #require(metrics["average_order_value"]) - 85.50) < 1e-6)
 		#expect(metrics["active_customers"] == 12_500)
-		#expect(abs(metrics["conversion_rate"]! - 0.032) < 1e-6)
+		#expect(abs(try #require(metrics["conversion_rate"]) - 0.032) < 1e-6)
 	}
 
 	@Test("Create operational metrics for SaaS company")
@@ -49,7 +49,7 @@ struct OperationalMetricsTests {
 
 		#expect(metrics["monthly_recurring_revenue"] == 2_500_000)
 		#expect(metrics["customer_count"] == 850)
-		#expect(abs(metrics["net_revenue_retention"]! - 1.15) < 1e-6)
+		#expect(abs(try #require(metrics["net_revenue_retention"]) - 1.15) < 1e-6)
 	}
 
 	@Test("Create operational metrics for oil & gas company")
@@ -70,7 +70,7 @@ struct OperationalMetricsTests {
 		)
 
 		#expect(metrics["production_boe_per_day"] == 125_000)
-		#expect(abs(metrics["realized_price_per_boe"]! - 68.50) < 1e-6)
+		#expect(abs(try #require(metrics["realized_price_per_boe"]) - 68.50) < 1e-6)
 		#expect(metrics["wells_drilled"] == 12)
 	}
 
@@ -95,7 +95,7 @@ struct OperationalMetricsTests {
 			denominator: "customer_count"
 		)
 
-		#expect(abs(revenuePerCustomer! - 200.0) < 1e-6, "Revenue per customer should be $200")
+		#expect(abs(try #require(revenuePerCustomer) - 200.0) < 1e-6, "Revenue per customer should be $200")
 	}
 
 	@Test("Calculate derived metric - cost per unit")
@@ -117,7 +117,7 @@ struct OperationalMetricsTests {
 			denominator: "units_produced"
 		)
 
-		#expect(abs(costPerUnit! - 20.0) < 1e-6, "Cost per unit should be $20")
+		#expect(abs(try #require(costPerUnit) - 20.0) < 1e-6, "Cost per unit should be $20")
 	}
 
 	@Test("Derived metric returns nil for division by zero")
@@ -300,11 +300,11 @@ struct OperationalMetricsTests {
 		let growth = try #require(timeSeries.growthRate(metric: "units_sold"))
 
 		// Q1 to Q2: 10% growth
-		let q2Growth = growth[quarters[1]]!
+		let q2Growth = try #require(growth[quarters[1]])
 		#expect(abs(q2Growth - 0.10) < 0.01, "Q2 growth should be ~10%")
 
 		// Q2 to Q3: 10% growth
-		let q3Growth = growth[quarters[2]]!
+		let q3Growth = try #require(growth[quarters[2]])
 		#expect(abs(q3Growth - 0.10) < 0.01, "Q3 growth should be ~10%")
 	}
 

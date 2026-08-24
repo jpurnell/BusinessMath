@@ -155,8 +155,8 @@ struct MonteCarloGPUDeviceTests {
         }
 
         // Execute kernel
-        let commandBuffer = commandQueue.makeCommandBuffer()!
-        let encoder = commandBuffer.makeComputeCommandEncoder()!
+        let commandBuffer = try #require(commandQueue.makeCommandBuffer())
+        let encoder = try #require(commandBuffer.makeComputeCommandEncoder())
         encoder.setComputePipelineState(pipeline)
         encoder.setBuffer(buffer, offset: 0, index: 0)
 
@@ -250,8 +250,8 @@ struct MonteCarloGPUDeviceTests {
 
         // Initialize RNG
         var seed: UInt64 = 12345
-        let commandBuffer1 = commandQueue.makeCommandBuffer()!
-        let encoder1 = commandBuffer1.makeComputeCommandEncoder()!
+        let commandBuffer1 = try #require(commandQueue.makeCommandBuffer())
+        let encoder1 = try #require(commandBuffer1.makeComputeCommandEncoder())
         encoder1.setComputePipelineState(initPipeline)
         encoder1.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder1.setBytes(&seed, length: MemoryLayout<UInt64>.stride, index: 1)
@@ -266,8 +266,8 @@ struct MonteCarloGPUDeviceTests {
         commandBuffer1.waitUntilCompleted()
 
         // Generate samples
-        let commandBuffer2 = commandQueue.makeCommandBuffer()!
-        let encoder2 = commandBuffer2.makeComputeCommandEncoder()!
+        let commandBuffer2 = try #require(commandQueue.makeCommandBuffer())
+        let encoder2 = try #require(commandBuffer2.makeComputeCommandEncoder())
         encoder2.setComputePipelineState(samplePipeline)
         encoder2.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder2.setBuffer(outputBuffer, offset: 0, index: 1)
@@ -337,8 +337,8 @@ struct MonteCarloGPUDeviceTests {
         }
 
         // Execute kernel
-        let commandBuffer = commandQueue.makeCommandBuffer()!
-        let encoder = commandBuffer.makeComputeCommandEncoder()!
+        let commandBuffer = try #require(commandQueue.makeCommandBuffer())
+        let encoder = try #require(commandBuffer.makeComputeCommandEncoder())
         encoder.setComputePipelineState(pipeline)
         encoder.setBuffer(bufferA, offset: 0, index: 0)
         encoder.setBuffer(bufferB, offset: 0, index: 1)

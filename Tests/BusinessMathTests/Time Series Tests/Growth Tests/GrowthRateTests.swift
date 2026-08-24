@@ -192,7 +192,7 @@ struct GrowthRateTests {
 	// MARK: - Compounding Frequency Tests
 
 	@Test("Apply growth with quarterly compounding")
-	func applyGrowthQuarterly() {
+	func applyGrowthQuarterly() throws {
 		let baseValue = 1000.0
 		let annualRate = 0.12  // 12% annual
 		let periods = 4  // 4 quarters = 1 year
@@ -201,11 +201,11 @@ struct GrowthRateTests {
 
 		// Quarterly rate = 0.12 / 4 = 0.03
 		// After 1 year: 1000 * (1.03)^4 ≈ 1125.51
-		#expect(abs(values.last! - 1125.51) < 1.0)
+		#expect(abs(try #require(values.last) - 1125.51) < 1.0)
 	}
 
 	@Test("Apply growth with monthly compounding")
-	func applyGrowthMonthly() {
+	func applyGrowthMonthly() throws {
 		let baseValue = 1000.0
 		let annualRate = 0.12  // 12% annual
 		let periods = 12  // 12 months = 1 year
@@ -214,11 +214,11 @@ struct GrowthRateTests {
 
 		// Monthly rate = 0.12 / 12 = 0.01
 		// After 1 year: 1000 * (1.01)^12 ≈ 1126.83
-		#expect(abs(values.last! - 1126.83) < 1.0)
+		#expect(abs(try #require(values.last) - 1126.83) < 1.0)
 	}
 
 	@Test("Apply growth with daily compounding")
-	func applyGrowthDaily() {
+	func applyGrowthDaily() throws {
 		let baseValue = 1000.0
 		let annualRate = 0.12  // 12% annual
 		let periods = 365  // 365 days = 1 year
@@ -227,11 +227,11 @@ struct GrowthRateTests {
 
 		// Daily rate = 0.12 / 365
 		// After 1 year: 1000 * (1 + 0.12/365)^365 ≈ 1127.47
-		#expect(abs(values.last! - 1127.47) < 1.0)
+		#expect(abs(try #require(values.last) - 1127.47) < 1.0)
 	}
 
 	@Test("Apply growth with continuous compounding")
-	func applyGrowthContinuous() {
+	func applyGrowthContinuous() throws {
 		let baseValue = 1000.0
 		let annualRate = 0.12  // 12% annual
 		let periods = 10  // 10 time units
@@ -240,11 +240,11 @@ struct GrowthRateTests {
 
 		// Continuous: A = P * e^(rt)
 		// For 10 periods at 12% rate: 1000 * e^(0.12 * 10) ≈ 3320.12
-		#expect(abs(values.last! - 3320.12) < 10.0)
+		#expect(abs(try #require(values.last) - 3320.12) < 10.0)
 	}
 
 	@Test("Compounding frequency affects final value")
-	func compoundingFrequencyComparison() {
+	func compoundingFrequencyComparison() throws {
 		let baseValue = 1000.0
 		let annualRate = 0.10
 		let years = 1
@@ -256,14 +256,14 @@ struct GrowthRateTests {
 		let continuous = applyGrowth(baseValue: baseValue, rate: annualRate, periods: years, compounding: .continuous)
 
 		// More frequent compounding = higher final value
-		#expect(annual.last! < quarterly.last!)
-		#expect(quarterly.last! < monthly.last!)
-		#expect(monthly.last! < daily.last!)
-		#expect(daily.last! < continuous.last!)
+		#expect(try #require(annual.last) < (try #require(quarterly.last)))
+		#expect(try #require(quarterly.last) < (try #require(monthly.last)))
+		#expect(try #require(monthly.last) < (try #require(daily.last)))
+		#expect(try #require(daily.last) < (try #require(continuous.last)))
 	}
 
 	@Test("Semiannual compounding")
-	func applyGrowthSemiannual() {
+	func applyGrowthSemiannual() throws {
 		let baseValue = 1000.0
 		let annualRate = 0.08
 		let periods = 2  // 2 half-years = 1 year
@@ -272,13 +272,13 @@ struct GrowthRateTests {
 
 		// Semiannual rate = 0.08 / 2 = 0.04
 		// After 1 year: 1000 * (1.04)^2 = 1081.60
-		#expect(abs(values.last! - 1081.60) < 1.0)
+		#expect(abs(try #require(values.last) - 1081.60) < 1.0)
 	}
 
 	// MARK: - Real-World Scenarios
 
 	@Test("Revenue growth projection")
-	func revenueGrowthScenario() {
+	func revenueGrowthScenario() throws {
 		let currentRevenue = 1_000_000.0
 		let growthRate = 0.15  // 15% annual growth
 		let years = 5
@@ -286,11 +286,11 @@ struct GrowthRateTests {
 		let projections = applyGrowth(baseValue: currentRevenue, rate: growthRate, periods: years, compounding: .annual)
 
 		// Year 5: 1,000,000 * 1.15^5 ≈ 2,011,357
-		#expect(abs(projections.last! - 2_011_357) < 1000)
+		#expect(abs(try #require(projections.last) - 2_011_357) < 1000)
 	}
 
 	@Test("Population growth")
-	func populationGrowthScenario() {
+	func populationGrowthScenario() throws {
 		let currentPopulation = 1_000_000.0
 		let growthRate = 0.02  // 2% annual growth
 		let years = 10
@@ -298,11 +298,11 @@ struct GrowthRateTests {
 		let projections = applyGrowth(baseValue: currentPopulation, rate: growthRate, periods: years, compounding: .annual)
 
 		// Year 10: 1,000,000 * 1.02^10 ≈ 1,218,994
-		#expect(abs(projections.last! - 1_218_994) < 1000)
+		#expect(abs(try #require(projections.last) - 1_218_994) < 1000)
 	}
 
 	@Test("Investment with monthly contributions")
-	func investmentScenario() {
+	func investmentScenario() throws {
 		// Starting with $10,000, growing at 7% annually
 		let principal = 10_000.0
 		let annualRate = 0.07
@@ -311,11 +311,11 @@ struct GrowthRateTests {
 		let values = applyGrowth(baseValue: principal, rate: annualRate, periods: years, compounding: .annual)
 
 		// After 10 years: 10,000 * 1.07^10 ≈ 19,671.51
-		#expect(abs(values.last! - 19_671.51) < 10.0)
+		#expect(abs(try #require(values.last) - 19_671.51) < 10.0)
 	}
 
 	@Test("Inflation adjustment")
-	func inflationScenario() {
+	func inflationScenario() throws {
 		let currentValue = 100.0
 		let inflationRate = 0.03  // 3% annual inflation
 		let years = 20
@@ -323,7 +323,7 @@ struct GrowthRateTests {
 		let values = applyGrowth(baseValue: currentValue, rate: inflationRate, periods: years, compounding: .annual)
 
 		// What costs $100 today will cost ~$180.61 in 20 years
-		#expect(abs(values.last! - 180.61) < 1.0)
+		#expect(abs(try #require(values.last) - 180.61) < 1.0)
 	}
 
 	@Test("Business valuation CAGR")
@@ -341,7 +341,7 @@ struct GrowthRateTests {
 	// MARK: - Edge Cases
 
 	@Test("Growth rate from zero throws divisionByZero error")
-	func growthRateFromZero() {
+	func growthRateFromZero() throws {
 		let from = 0.0
 		let to = 100.0
 
@@ -376,7 +376,7 @@ struct GrowthRateTests {
 	}
 
 	@Test("Apply growth with large periods")
-	func applyGrowthLargePeriods() {
+	func applyGrowthLargePeriods() throws {
 		let baseValue = 100.0
 		let rate = 0.01  // 1% growth
 		let periods = 100
@@ -385,7 +385,7 @@ struct GrowthRateTests {
 
 		#expect(values.count == 101)
 		// 100 * 1.01^100 ≈ 270.48
-		#expect(abs(values.last! - 270.48) < 1.0)
+		#expect(abs(try #require(values.last) - 270.48) < 1.0)
 	}
 
 	@Test("CAGR with very small values")
@@ -415,14 +415,14 @@ struct GrowthRateTests {
 	// MARK: - Consistency Tests
 
 	@Test("CAGR and applyGrowth are consistent")
-	func cagrApplyGrowthConsistency() {
+	func cagrApplyGrowthConsistency() throws {
 		let beginning = 1000.0
 		let years = 5
 		let targetGrowth = 0.08  // 8% CAGR
 
 		// Apply growth
 		let projections = applyGrowth(baseValue: beginning, rate: targetGrowth, periods: years, compounding: .annual)
-		let ending = projections.last!
+		let ending = try #require(projections.last)
 
 		// Calculate CAGR back
 		let calculatedCAGR = cagr(beginningValue: beginning, endingValue: ending, years: Double(years))
@@ -463,12 +463,12 @@ struct GrowthRateTests {
 		}
 
 		@Test("Quarterly vs monthly compounding ordering at same nominal APR")
-		func compoundingMonotonicityAPR() {
+		func compoundingMonotonicityAPR() throws {
 			let base = 10_000.0
 			let apr = 0.12
-			let annual = applyGrowth(baseValue: base, rate: apr, periods: 1, compounding: .annual).last!
-			let quarterly = applyGrowth(baseValue: base, rate: apr, periods: 4, compounding: .quarterly).last!
-			let monthly = applyGrowth(baseValue: base, rate: apr, periods: 12, compounding: .monthly).last!
+			let annual = try #require(applyGrowth(baseValue: base, rate: apr, periods: 1, compounding: .annual).last)
+			let quarterly = try #require(applyGrowth(baseValue: base, rate: apr, periods: 4, compounding: .quarterly).last)
+			let monthly = try #require(applyGrowth(baseValue: base, rate: apr, periods: 12, compounding: .monthly).last)
 			#expect(annual < quarterly)
 			#expect(quarterly < monthly)
 		}

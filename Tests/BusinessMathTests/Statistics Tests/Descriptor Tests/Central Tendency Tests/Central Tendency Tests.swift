@@ -107,7 +107,7 @@ import OSLog
 		#expect(abs(result - x) < 1e-10)
 	}
 
-	@Test("LogarithmicMean throws for non-positive values") func LLogarithmicMeanNonPositive() {
+	@Test("LogarithmicMean throws for non-positive values") func LLogarithmicMeanNonPositive() throws {
 		#expect(throws: BusinessMathError.self) {
 			_ = try logarithmicMean(-1.0, 3.0)
 		}
@@ -156,14 +156,14 @@ import OSLog
 			let h = try harmonicMean(x)
 			let g = geometricMean(x)
 			let a = mean(x)
-			let l = try logarithmicMean(x.first!, x.last!)
+			let l = try logarithmicMean(try #require(x.first), try #require(x.last))
 			let c = try contraharmonicMean(x)
 
 			#expect(h <= g)
 			#expect(g <= a)
 			// Note: logarithmic mean is defined for two arguments; compare against G and A of the two points
-			let g2 = geometricMean([x.first!, x.last!])
-			let a2 = mean([x.first!, x.last!])
+			let g2 = geometricMean([try #require(x.first), try #require(x.last)])
+			let a2 = mean([try #require(x.first), try #require(x.last)])
 			#expect(g2 <= l)
 			#expect(l <= a2)
 
@@ -251,7 +251,7 @@ struct CentralTendencyNaNInfinityTests {
 	}
 
 	@Test("harmonicMean rejects NaN input")
-	func harmonic_mean_rejects_nan() {
+	func harmonic_mean_rejects_nan() throws {
 		let values = [1.0, Double.nan, 3.0]
 		#expect(throws: BusinessMathError.self) {
 			_ = try harmonicMean(values)
@@ -267,7 +267,7 @@ struct CentralTendencyNaNInfinityTests {
 	}
 
 	@Test("harmonicMean throws for zero values")
-	func harmonic_mean_throws_for_zero() {
+	func harmonic_mean_throws_for_zero() throws {
 		let values = [1.0, 0.0, 3.0]
 		#expect(throws: BusinessMathError.self) {
 			_ = try harmonicMean(values)
@@ -289,7 +289,7 @@ struct CentralTendencyNaNInfinityTests {
 	}
 
 	@Test("contraharmonicMean rejects NaN input")
-	func contraharmonic_mean_rejects_nan() {
+	func contraharmonic_mean_rejects_nan() throws {
 		let values = [1.0, Double.nan, 3.0]
 		#expect(throws: BusinessMathError.self) {
 			_ = try contraharmonicMean(values)
@@ -297,7 +297,7 @@ struct CentralTendencyNaNInfinityTests {
 	}
 
 	@Test("contraharmonicMean throws when sum is zero")
-	func contraharmonic_mean_throws_for_zero_sum() {
+	func contraharmonic_mean_throws_for_zero_sum() throws {
 		// When values sum to zero (e.g., x = -y), denominator is 0
 		#expect(throws: BusinessMathError.self) {
 			_ = try contraharmonicMean(3.0, -3.0)
@@ -305,7 +305,7 @@ struct CentralTendencyNaNInfinityTests {
 	}
 
 	@Test("logarithmicMean rejects NaN input")
-	func logarithmic_mean_rejects_nan() {
+	func logarithmic_mean_rejects_nan() throws {
 		#expect(throws: BusinessMathError.self) {
 			_ = try logarithmicMean(Double.nan, 3.0)
 		}
@@ -356,7 +356,7 @@ struct CentralTendencyEmptyArrayTests {
 	}
 
 	@Test("harmonicMean throws on empty array")
-	func harmonic_mean_empty_array() {
+	func harmonic_mean_empty_array() throws {
 		let values: [Double] = []
 		#expect(throws: ArrayError.self) {
 			_ = try harmonicMean(values)
@@ -371,7 +371,7 @@ struct CentralTendencyEmptyArrayTests {
 	}
 
 	@Test("contraharmonicMean throws on empty array")
-	func contraharmonic_mean_empty_array() {
+	func contraharmonic_mean_empty_array() throws {
 		let values: [Double] = []
 		#expect(throws: ArrayError.self) {
 			_ = try contraharmonicMean(values)
@@ -386,7 +386,7 @@ struct CentralTendencyEmptyArrayTests {
 	}
 
 	@Test("arithmeticHarmonicMean throws on empty array")
-	func arithmetic_harmonic_mean_empty_array() {
+	func arithmetic_harmonic_mean_empty_array() throws {
 		let values: [Double] = []
 		#expect(throws: ArrayError.self) {
 			_ = try arithmeticHarmonicMean(values)

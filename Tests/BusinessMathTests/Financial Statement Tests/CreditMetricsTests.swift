@@ -359,14 +359,14 @@ struct CreditMetricsTests {
 		)
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		let z = zScore[q1]!
+		let z = try #require(zScore[q1])
 
 		// Healthy company should have Z-Score > 2.99 (safe zone)
 		#expect(z > 2.99, "Healthy company should be in safe zone (Z > 2.99)")
 
 		// Z-Score should be positive for all periods
 		for period in balanceSheet.periods {
-			#expect(zScore[period]! > 0, "Z-Score should be positive")
+			#expect(try #require(zScore[period]) > 0, "Z-Score should be positive")
 		}
 	}
 
@@ -386,7 +386,7 @@ struct CreditMetricsTests {
 		)
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		let z = zScore[q1]!
+		let z = try #require(zScore[q1])
 
 		// Distressed company should have Z-Score < 1.81 (distress zone)
 		#expect(z < 1.81, "Distressed company should be in danger zone (Z < 1.81)")
@@ -520,7 +520,7 @@ struct CreditMetricsTests {
 		)
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		let z = zScore[q1]!
+		let z = try #require(zScore[q1])
 
 		// Should be in grey zone (1.81 - 2.99)
 		#expect(z >= 1.81 && z <= 2.99, "Company should be in grey zone (1.81 ≤ Z ≤ 2.99)")
@@ -537,13 +537,13 @@ struct CreditMetricsTests {
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 
 		// Calculate components manually
-		let totalAssets = balanceSheet.totalAssets[q1]!
-		let workingCapital = (balanceSheet.currentAssets - balanceSheet.currentLiabilities)[q1]!
-		let retainedEarnings = balanceSheet.retainedEarnings[q1]!
-		let ebit = incomeStatement.operatingIncome[q1]!
-		let totalLiabilities = balanceSheet.totalLiabilities[q1]!
-		let sales = incomeStatement.totalRevenue[q1]!
-		let marketValue = (marketPrice * sharesOutstanding)[q1]!
+		let totalAssets = try #require(balanceSheet.totalAssets[q1])
+		let workingCapital = try #require((balanceSheet.currentAssets - balanceSheet.currentLiabilities)[q1])
+		let retainedEarnings = try #require(balanceSheet.retainedEarnings[q1])
+		let ebit = try #require(incomeStatement.operatingIncome[q1])
+		let totalLiabilities = try #require(balanceSheet.totalLiabilities[q1])
+		let sales = try #require(incomeStatement.totalRevenue[q1])
+		let marketValue = try #require((marketPrice * sharesOutstanding)[q1])
 
 		// Z-Score formula: 1.2×A + 1.4×B + 3.3×C + 0.6×D + 1.0×E
 		let a = workingCapital / totalAssets
@@ -561,7 +561,7 @@ struct CreditMetricsTests {
 			sharesOutstanding: sharesOutstanding
 		)
 
-		let actualZ = zScore[q1]!
+		let actualZ = try #require(zScore[q1])
 
 		#expect(abs(actualZ - expectedZ) < 0.01, "Z-Score calculation should match formula")
 	}
@@ -593,7 +593,7 @@ struct CreditMetricsTests {
 			sharesOutstanding: sharesOutstanding
 		)
 
-		#expect(abs(z - zScores[q1]!) < 0.01, "Single-period and multi-period results should match")
+		#expect(abs(z - (try #require(zScores[q1]))) < 0.01, "Single-period and multi-period results should match")
 	}
 
 	// MARK: - Piotroski F-Score Tests
@@ -725,8 +725,8 @@ struct CreditMetricsTests {
 		#expect(score.signals["increasingAssetTurnover"] == true, "Asset turnover improved")
 
 		// Since the healthy company is improving overall, ROA should be increasing
-		let netIncomeCurrent = incomeStatement.netIncome[currentPeriod]!
-		let netIncomePrior = incomeStatement.netIncome[priorPeriod]!
+		let netIncomeCurrent = try #require(incomeStatement.netIncome[currentPeriod])
+		let netIncomePrior = try #require(incomeStatement.netIncome[priorPeriod])
 
 		if netIncomeCurrent > netIncomePrior {
 			#expect(score.signals["increasingROA"] == true, "ROA should be increasing with higher net income")

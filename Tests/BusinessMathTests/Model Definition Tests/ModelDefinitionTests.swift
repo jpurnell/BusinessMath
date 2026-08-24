@@ -189,7 +189,7 @@ struct ModelDefinitionTests {
 	}
 
 	@Test("Evaluating a cyclic definition set refuses too, rather than partially succeeding")
-	func cycleIsRefusedByEvaluate() {
+	func cycleIsRefusedByEvaluate() throws {
 		var model = ModelDefinition<Double>(inputs: ["Units": series([1, 2, 3])])
 		model.define("Revenue", as: "GrossProfit + Units")
 		model.define("GrossProfit", as: "Revenue - Units")
@@ -237,7 +237,7 @@ struct ModelDefinitionTests {
 	/// zero in `revenue - cogs` returns revenue and calls it gross profit. A definition set has
 	/// the same obligation.
 	@Test("A formula naming an account nothing defines and nothing supplies is refused")
-	func unknownAccountIsRefused() {
+	func unknownAccountIsRefused() throws {
 		var model = ModelDefinition<Double>(inputs: ["revenue": series([100, 200, 300])])
 		model.define("grossProfit", as: "revenue - cogs")
 
@@ -248,7 +248,7 @@ struct ModelDefinitionTests {
 
 	/// Which name is reported cannot depend on hashing either.
 	@Test("The refusal names the first missing account alphabetically, whatever the graph")
-	func unknownAccountIsReportedDeterministically() {
+	func unknownAccountIsReportedDeterministically() throws {
 		var model = ModelDefinition<Double>(inputs: [:])
 		model.define("total", as: "zeta + alpha + middle")
 
@@ -267,7 +267,7 @@ struct ModelDefinitionTests {
 	/// An account that is both supplied and derived is ambiguous — the supplied series would be
 	/// silently shadowed by the formula. Refused rather than picked between.
 	@Test("An account cannot be both an input and a definition")
-	func inputAndDefinitionCollide() {
+	func inputAndDefinitionCollide() throws {
 		var model = ModelDefinition<Double>(inputs: ["revenue": series([100, 200, 300])])
 		model.define("revenue", as: "units * unitPrice")
 
@@ -385,7 +385,7 @@ struct ModelDefinitionTests {
 	}
 
 	@Test("A formula that cannot be tokenised is refused when the order is computed")
-	func unreadableFormulaIsRefused() {
+	func unreadableFormulaIsRefused() throws {
 		let model = ModelDefinition<Double>().defining("broken", as: "revenue $ cogs")
 
 		#expect(throws: FormulaError.unexpectedCharacter("$")) {

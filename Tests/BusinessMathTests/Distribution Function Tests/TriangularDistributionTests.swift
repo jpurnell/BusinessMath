@@ -105,7 +105,7 @@ struct TriangularDistributionTests {
 	}
 
 	@Test("Triangular distribution mode is most frequent value")
-	func triangularMode() {
+	func triangularMode() throws {
 		let low = 0.0
 		let high = 100.0
 		let base = 30.0  // Mode at 30
@@ -128,8 +128,8 @@ struct TriangularDistributionTests {
 		}
 
 		// Find bin with most samples
-		let maxCount = binCounts.max()!
-		let modeIndex = binCounts.firstIndex(of: maxCount)!
+		let maxCount = try #require(binCounts.max())
+		let modeIndex = try #require(binCounts.firstIndex(of: maxCount))
 		let empiricalMode = low + (Double(modeIndex) + 0.5) * binWidth
 
 		// Mode should be close to base
@@ -384,7 +384,7 @@ struct TriangularDistributionTests {
 	}
 
 	@Test("Triangular distribution different ranges")
-	func triangularDifferentRanges() {
+	func triangularDifferentRanges() throws {
 		// Test that wider ranges produce wider spreads
 		let sampleCount = 5000
 		let seeds = Self.seedsForTriangular(count: sampleCount)
@@ -397,8 +397,8 @@ struct TriangularDistributionTests {
 			samplesWide.append(triangularDistribution(low: 0.0, high: 100.0, base: 50.0, seeds[i]))
 		}
 
-		let rangeNarrow = samplesNarrow.max()! - samplesNarrow.min()!
-		let rangeWide = samplesWide.max()! - samplesWide.min()!
+		let rangeNarrow = try #require(samplesNarrow.max()) - (try #require(samplesNarrow.min()))
+		let rangeWide = try #require(samplesWide.max()) - (try #require(samplesWide.min()))
 
 		#expect(rangeWide > 10 * rangeNarrow, "Wider parameter range should produce wider spread")
 	}

@@ -205,7 +205,7 @@ struct TimeVaryingDriverTests {
 	// MARK: - Projection Tests
 
 	@Test("TimeVaryingDriver projection shows different values per period")
-	func projectionShowsVariation() {
+	func projectionShowsVariation() throws {
 		let driver = TimeVaryingDriver<Double>(name: "Seasonal") { period in
 			let multiplier = period.quarter == 4 ? 1.5 : 1.0
 			return 100.0 * multiplier
@@ -216,14 +216,14 @@ struct TimeVaryingDriverTests {
 
 		let timeSeries = projection.project()
 
-		#expect(abs(timeSeries[periods[0]]! - 100.0) < 1e-6)  // Q1
-		#expect(abs(timeSeries[periods[1]]! - 100.0) < 1e-6)  // Q2
-		#expect(abs(timeSeries[periods[2]]! - 100.0) < 1e-6)  // Q3
-		#expect(abs(timeSeries[periods[3]]! - 150.0) < 1e-6)  // Q4
+		#expect(abs(try #require(timeSeries[periods[0]]) - 100.0) < 1e-6)  // Q1
+		#expect(abs(try #require(timeSeries[periods[1]]) - 100.0) < 1e-6)  // Q2
+		#expect(abs(try #require(timeSeries[periods[2]]) - 100.0) < 1e-6)  // Q3
+		#expect(abs(try #require(timeSeries[periods[3]]) - 150.0) < 1e-6)  // Q4
 	}
 
 	@Test("TimeVaryingDriver Monte Carlo shows period-specific statistics")
-	func monteCarloShowsPeriodSpecificStats() {
+	func monteCarloShowsPeriodSpecificStats() throws {
 		// Q1 has low uncertainty, Q4 has high uncertainty
 		let driver = TimeVaryingDriver<Double>(name: "Varying Uncertainty") { period in
 			let mean = 100.0
@@ -238,8 +238,8 @@ struct TimeVaryingDriverTests {
 
 		let results = projection.projectMonteCarlo(iterations: 5000)
 
-		let q1Stats = results.statistics[periods[0]]!
-		let q4Stats = results.statistics[periods[3]]!
+		let q1Stats = try #require(results.statistics[periods[0]])
+		let q4Stats = try #require(results.statistics[periods[3]])
 
 		// Both should have similar means
 		#expect(abs(q1Stats.mean - 100.0) < 5.0)

@@ -91,8 +91,8 @@ struct BenchmarkReplicationTests {
         // Low spectral entropy — structure present.
         #expect(f.verdict == .strong || f.verdict == .moderate)
         // Seasonal-aware methods beat the plain naive forecaster.
-        #expect(mae["SeasonalNaive"]! < mae["Naive"]!)
-        #expect(mae["HoltWinters"]! < mae["Naive"]!)
+        #expect(try #require(mae["SeasonalNaive"]) < (try #require(mae["Naive"])))
+        #expect(try #require(mae["HoltWinters"]) < (try #require(mae["Naive"])))
     }
 
     @Test("Chaotic regime: high entropy, nothing beats naive")
@@ -104,8 +104,8 @@ struct BenchmarkReplicationTests {
         // High spectral entropy — little exploitable structure.
         #expect(f.verdict == .noise || f.verdict == .weak)
         // No forecaster meaningfully beats naive (seasonal structure does not help).
-        let naive = mae["Naive"]!
-        let best = mae.values.min()!
+        let naive = try #require(mae["Naive"])
+        let best = try #require(mae.values.min())
         #expect(best >= naive * 0.75)   // best improvement over naive is modest at most
     }
 

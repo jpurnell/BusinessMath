@@ -207,7 +207,7 @@ struct TimeSeriesOperationsTests {
 	// MARK: - Interpolate Tests
 
 	@Test("interpolate fills gaps with linear interpolation")
-	func interpolateLinear() {
+	func interpolateLinear() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -223,8 +223,8 @@ struct TimeSeriesOperationsTests {
 		let interpolated = sparse.interpolate(over: allPeriods)
 
 		#expect(abs((interpolated[jan] ?? 0) - 100.0) < 1e-6)
-		#expect(abs(interpolated[feb]! - 200.0) < tolerance)  // Linear: 100 + (400-100)/3 * 1
-		#expect(abs(interpolated[mar]! - 300.0) < tolerance)  // Linear: 100 + (400-100)/3 * 2
+		#expect(abs(try #require(interpolated[feb]) - 200.0) < tolerance)  // Linear: 100 + (400-100)/3 * 1
+		#expect(abs(try #require(interpolated[mar]) - 300.0) < tolerance)  // Linear: 100 + (400-100)/3 * 2
 		#expect(abs((interpolated[apr] ?? 0) - 400.0) < 1e-6)
 	}
 
@@ -270,7 +270,7 @@ struct TimeSeriesOperationsTests {
 	}
 
 	@Test("aggregate monthly to quarterly using average")
-	func aggregateMonthlyToQuarterlyAverage() {
+	func aggregateMonthlyToQuarterlyAverage() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -285,7 +285,7 @@ struct TimeSeriesOperationsTests {
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 
 		#expect(quarterly.count == 1)
-		#expect(abs(quarterly[q1]! - 200.0) < tolerance)  // (100 + 200 + 300) / 3
+		#expect(abs(try #require(quarterly[q1]) - 200.0) < tolerance)  // (100 + 200 + 300) / 3
 	}
 
 	@Test("aggregate monthly to annual")

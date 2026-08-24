@@ -150,7 +150,7 @@ struct KernelWeightedAgreementTests {
 		let profile = try cccProfile(x, y, targets: targets, bandwidth: 1000.0)
 		guard profile.count >= 2 else { return }
 		let cccs = profile.map(\.ccc.ccc)
-		let range = cccs.max()! - cccs.min()!
+		let range = try #require(cccs.max()) - (try #require(cccs.min()))
 		#expect(range < 0.05) // All values should be very close
 	}
 

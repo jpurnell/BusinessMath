@@ -110,7 +110,7 @@ struct RegressionProperties {
 	}
 
 	@Test("multiplyVectors throws on length mismatch")
-	func multiplyVectors_length_mismatch_throws() {
+	func multiplyVectors_length_mismatch_throws() throws {
 		do {
 				_ = try multiplyVectors([1.0, 2.0], [10.0])
 				Issue.record("Expected ArrayError.mismatchedLengths")
@@ -130,7 +130,7 @@ struct LinearRegressionNaNInfinityTests {
 		let x = [1.0, Double.nan, 3.0]
 		let y = [2.0, 4.0, 6.0]
 		let result = try? slope(x, y)
-		#expect(result == nil || result!.isNaN)
+		#expect(try result == nil || (try #require(result)).isNaN)
 	}
 
 	@Test("slope propagates NaN from y values")
@@ -138,7 +138,7 @@ struct LinearRegressionNaNInfinityTests {
 		let x = [1.0, 2.0, 3.0]
 		let y = [2.0, Double.nan, 6.0]
 		let result = try? slope(x, y)
-		#expect(result == nil || result!.isNaN)
+		#expect(try result == nil || (try #require(result)).isNaN)
 	}
 
 	@Test("intercept propagates NaN from x values")
@@ -146,7 +146,7 @@ struct LinearRegressionNaNInfinityTests {
 		let x = [1.0, Double.nan, 3.0]
 		let y = [2.0, 4.0, 6.0]
 		let result = try? intercept(x, y)
-		#expect(result == nil || result!.isNaN)
+		#expect(try result == nil || (try #require(result)).isNaN)
 	}
 
 	@Test("intercept propagates NaN from y values")
@@ -154,11 +154,11 @@ struct LinearRegressionNaNInfinityTests {
 		let x = [1.0, 2.0, 3.0]
 		let y = [2.0, Double.nan, 6.0]
 		let result = try? intercept(x, y)
-		#expect(result == nil || result!.isNaN)
+		#expect(try result == nil || (try #require(result)).isNaN)
 	}
 
 	@Test("rSquared rejects NaN inputs")
-	func rSquared_rejects_nan() {
+	func rSquared_rejects_nan() throws {
 		let x1 = [1.0, Double.nan, 3.0]
 		let y1 = [2.0, 4.0, 6.0]
 		#expect(throws: BusinessMathError.self) {
@@ -191,7 +191,7 @@ struct LinearRegressionNaNInfinityTests {
 		let x = [1.0, Double.infinity, 3.0]
 		let y = [2.0, 4.0, 6.0]
 		let result = try? slope(x, y)
-		#expect(result == nil || result!.isInfinite || result!.isNaN)
+		#expect(try result == nil || (try #require(result)).isInfinite || (try #require(result)).isNaN)
 	}
 
 	@Test("intercept handles infinity")
@@ -199,11 +199,11 @@ struct LinearRegressionNaNInfinityTests {
 		let x = [1.0, 2.0, 3.0]
 		let y = [2.0, Double.infinity, 6.0]
 		let result = try? intercept(x, y)
-		#expect(result == nil || result!.isInfinite || result!.isNaN)
+		#expect(try result == nil || (try #require(result)).isInfinite || (try #require(result)).isNaN)
 	}
 
 	@Test("rSquared rejects infinity inputs")
-	func rSquared_rejects_infinity() {
+	func rSquared_rejects_infinity() throws {
 		let x = [1.0, Double.infinity, 3.0]
 		let y = [2.0, 4.0, 6.0]
 		#expect(throws: BusinessMathError.self) {

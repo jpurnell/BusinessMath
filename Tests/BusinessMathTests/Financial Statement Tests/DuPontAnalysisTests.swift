@@ -144,10 +144,10 @@ struct DuPontAnalysisTests {
 		// ROE = 0.0975 × 0.952 × 1.615 = 0.15 (15%)
 		// Or directly: ROE = 97.5 / 650 = 0.15
 
-		let q1Margin = dupont.netMargin[quarters[0]]!
-		let q1Turnover = dupont.assetTurnover[quarters[0]]!
-		let q1Multiplier = dupont.equityMultiplier[quarters[0]]!
-		let q1ROE = dupont.roe[quarters[0]]!
+		let q1Margin = try #require(dupont.netMargin[quarters[0]])
+		let q1Turnover = try #require(dupont.assetTurnover[quarters[0]])
+		let q1Multiplier = try #require(dupont.equityMultiplier[quarters[0]])
+		let q1ROE = try #require(dupont.roe[quarters[0]])
 
 		#expect(abs(q1Margin - 0.0975) < 0.001, "Q1 net margin should be ~9.75%")
 		#expect(abs(q1Turnover - 0.952) < 0.01, "Q1 asset turnover should be ~0.952")
@@ -175,14 +175,14 @@ struct DuPontAnalysisTests {
 		// Strategy 3: Increase leverage (increase multiplier)
 
 		// As the company grows revenue Q1→Q4, check which component drives ROE changes
-		let q1ROE = dupont.roe[quarters[0]]!
-		let q4ROE = dupont.roe[quarters[3]]!
+		let q1ROE = try #require(dupont.roe[quarters[0]])
+		let q4ROE = try #require(dupont.roe[quarters[3]])
 
 		#expect(q4ROE >= q1ROE, "ROE should improve or stay stable as business grows")
 
 		// Net margin should be relatively stable (similar % margins)
-		let q1Margin = dupont.netMargin[quarters[0]]!
-		let q4Margin = dupont.netMargin[quarters[3]]!
+		let q1Margin = try #require(dupont.netMargin[quarters[0]])
+		let q4Margin = try #require(dupont.netMargin[quarters[3]])
 		#expect(abs(q4Margin - q1Margin) < 0.02, "Margins should be relatively stable (within 2%)")
 	}
 
@@ -248,8 +248,8 @@ struct DuPontAnalysisTests {
 		let q1 = quarters[0]
 
 		// High margin business characteristics
-		let netMargin = dupont.netMargin[q1]!
-		let assetTurnover = dupont.assetTurnover[q1]!
+		let netMargin = try #require(dupont.netMargin[q1])
+		let assetTurnover = try #require(dupont.assetTurnover[q1])
 
 		#expect(netMargin > 0.15, "Luxury goods should have high margins (>15%)")
 		#expect(assetTurnover < 0.5, "Luxury goods should have low turnover (<0.5)")
@@ -317,8 +317,8 @@ struct DuPontAnalysisTests {
 		let q1 = quarters[0]
 
 		// Low margin, high turnover business characteristics
-		let netMargin = dupont.netMargin[q1]!
-		let assetTurnover = dupont.assetTurnover[q1]!
+		let netMargin = try #require(dupont.netMargin[q1])
+		let assetTurnover = try #require(dupont.assetTurnover[q1])
 
 		#expect(netMargin < 0.05, "Retail should have low margins (<5%)")
 		#expect(assetTurnover > 5.0, "Retail should have high turnover (>5)")
@@ -351,12 +351,12 @@ struct DuPontAnalysisTests {
 
 		// ROE = 0.75 × 0.867 × 0.15 × 0.952 × 1.615 = 0.15
 
-		let q1TaxBurden = dupont5.taxBurden[quarters[0]]!
-		let q1InterestBurden = dupont5.interestBurden[quarters[0]]!
-		let q1OpMargin = dupont5.operatingMargin[quarters[0]]!
-		let q1Turnover = dupont5.assetTurnover[quarters[0]]!
-		let q1Multiplier = dupont5.equityMultiplier[quarters[0]]!
-		let q1ROE = dupont5.roe[quarters[0]]!
+		let q1TaxBurden = try #require(dupont5.taxBurden[quarters[0]])
+		let q1InterestBurden = try #require(dupont5.interestBurden[quarters[0]])
+		let q1OpMargin = try #require(dupont5.operatingMargin[quarters[0]])
+		let q1Turnover = try #require(dupont5.assetTurnover[quarters[0]])
+		let q1Multiplier = try #require(dupont5.equityMultiplier[quarters[0]])
+		let q1ROE = try #require(dupont5.roe[quarters[0]])
 
 		#expect(abs(q1TaxBurden - 0.75) < 0.01, "Q1 tax burden should be ~0.75")
 		#expect(abs(q1InterestBurden - 0.867) < 0.01, "Q1 interest burden should be ~0.867")
@@ -385,11 +385,11 @@ struct DuPontAnalysisTests {
 		// Financing impact: Tax Burden × Interest Burden × Equity Multiplier
 
 		for quarter in quarters {
-			let taxBurden = dupont5.taxBurden[quarter]!
-			let interestBurden = dupont5.interestBurden[quarter]!
-			let opMargin = dupont5.operatingMargin[quarter]!
-			let turnover = dupont5.assetTurnover[quarter]!
-			let multiplier = dupont5.equityMultiplier[quarter]!
+			let taxBurden = try #require(dupont5.taxBurden[quarter])
+			let interestBurden = try #require(dupont5.interestBurden[quarter])
+			let opMargin = try #require(dupont5.operatingMargin[quarter])
+			let turnover = try #require(dupont5.assetTurnover[quarter])
+			let multiplier = try #require(dupont5.equityMultiplier[quarter])
 
 			// Operating ROA = Operating Margin × Asset Turnover
 			let operatingROA = opMargin * turnover
@@ -399,7 +399,7 @@ struct DuPontAnalysisTests {
 
 			// ROE = Operating ROA × Financing Multiplier
 			let calculatedROE = operatingROA * financingMultiplier
-			let actualROE = dupont5.roe[quarter]!
+			let actualROE = try #require(dupont5.roe[quarter])
 
 			#expect(abs(calculatedROE - actualROE) < 0.001,
 					"ROE should equal operating performance × financing impact")
@@ -419,7 +419,7 @@ struct DuPontAnalysisTests {
 
 		// With interest expense, interest burden should be < 1
 		for quarter in quarters {
-			let interestBurden = dupont5.interestBurden[quarter]!
+			let interestBurden = try #require(dupont5.interestBurden[quarter])
 			#expect(interestBurden < 1.0, "Interest burden should be < 1 when company has interest expense")
 			#expect(interestBurden > 0.5, "Interest burden should be reasonable (> 0.5 for this test company)")
 		}

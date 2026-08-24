@@ -140,8 +140,8 @@ struct ReorderPointModelTests {
 
 	@Test("Accepts TimeSeries input")
 	func timeSeriesInput() throws {
-		let periods = (0..<30).map { i in
-			Period.day(Calendar.current.date(byAdding: .day, value: i, to: Date())!)
+		let periods = try (0..<30).map { i in
+			Period.day(try #require(Calendar.current.date(byAdding: .day, value: i, to: Date())))
 		}
 		let values: [Double] = (0..<30).map { _ in 10.0 }
 		let ts = TimeSeries(periods: periods, values: values)
@@ -157,7 +157,7 @@ struct ReorderPointModelTests {
 	// MARK: - Edge cases
 
 	@Test("Rejects empty demand history")
-	func rejectsEmptyHistory() {
+	func rejectsEmptyHistory() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try ReorderPointModel<Double>.calculate(
 				demandHistory: [],
@@ -168,7 +168,7 @@ struct ReorderPointModelTests {
 	}
 
 	@Test("Rejects invalid service level")
-	func rejectsInvalidServiceLevel() {
+	func rejectsInvalidServiceLevel() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try ReorderPointModel<Double>.calculate(
 				demandHistory: Array(repeating: 10.0, count: 30),

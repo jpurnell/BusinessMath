@@ -218,7 +218,7 @@ struct DistributionSeedingTests {
 	}
 
 	@Test("Deterministic sequence has expected statistical properties")
-	func deterministicSequenceStatistics() {
+	func deterministicSequenceStatistics() throws {
 		let mean = 100.0
 		let stdDev = 15.0
 		let count = 1000
@@ -242,8 +242,8 @@ struct DistributionSeedingTests {
 		let sampleMean = values.reduce(0, +) / Double(values.count)
 		let variance = values.map { pow($0 - sampleMean, 2) }.reduce(0, +) / Double(values.count - 1)
 		let sampleStdDev = sqrt(variance)
-		let minValue = values.min()!
-		let maxValue = values.max()!
+		let minValue = try #require(values.min())
+		let maxValue = try #require(values.max())
 
 		// With deterministic seeding, we get exact reproducible statistics
 		// Regenerate and verify all statistics are identical
@@ -264,8 +264,8 @@ struct DistributionSeedingTests {
 		let sampleMean2 = values2.reduce(0, +) / Double(values2.count)
 		let variance2 = values2.map { pow($0 - sampleMean2, 2) }.reduce(0, +) / Double(values2.count - 1)
 		let sampleStdDev2 = sqrt(variance2)
-		let minValue2 = values2.min()!
-		let maxValue2 = values2.max()!
+		let minValue2 = try #require(values2.min())
+		let maxValue2 = try #require(values2.max())
 
 		// Verify all statistics are exactly identical (not just close)
 		#expect(sampleMean == sampleMean2, "Same seeds should produce identical mean")
@@ -423,12 +423,12 @@ struct DistributionSeedingTests {
 	}
 
 	@Test("seedArray provides uniform coverage of [0,1]")
-	func seedArrayUniformCoverage() {
+	func seedArrayUniformCoverage() throws {
 		let seeds = Self.seedArray(count: 1000)
 
 		// Check bounds
-		#expect(seeds.first! >= 0.001, "First seed should be >= 0.001")
-		#expect(seeds.last! <= 0.999, "Last seed should be <= 0.999")
+		#expect(try #require(seeds.first) >= 0.001, "First seed should be >= 0.001")
+		#expect(try #require(seeds.last) <= 0.999, "Last seed should be <= 0.999")
 
 		// Check all seeds are in valid range
 		for seed in seeds {

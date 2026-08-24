@@ -26,7 +26,7 @@ struct SafetyStockModelTests {
 	}
 
 	@Test("z-score rejects invalid service levels")
-	func zScoreRejectsInvalid() {
+	func zScoreRejectsInvalid() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try SafetyStockModel<Double>.zScore(for: 0.0)
 		}
@@ -162,7 +162,7 @@ struct SafetyStockModelTests {
 	}
 
 	@Test("Forecast error method requires forecastRMSE parameter")
-	func forecastErrorRequiresRMSE() {
+	func forecastErrorRequiresRMSE() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try SafetyStockModel<Double>.safetyStock(
 				method: .forecastError,
@@ -177,7 +177,7 @@ struct SafetyStockModelTests {
 	// MARK: - Edge cases and fault injection
 
 	@Test("Rejects zero demand")
-	func rejectsZeroDemand() {
+	func rejectsZeroDemand() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try SafetyStockModel<Double>.safetyStock(
 				method: .demandOnly,

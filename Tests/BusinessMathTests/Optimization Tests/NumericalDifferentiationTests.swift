@@ -292,7 +292,7 @@ struct NumericalDifferentiationTests {
 	// MARK: - Error Handling Tests
 
 	@Test("Gradient with non-finite values throws")
-	func gradientNonFinite() {
+	func gradientNonFinite() throws {
 		let badFunction: @Sendable (VectorN<Double>) -> Double = { v in
 			v[0] == 0 ? .infinity : v[0]
 		}
@@ -305,7 +305,7 @@ struct NumericalDifferentiationTests {
 	}
 
 	@Test("Singular matrix throws")
-	func singularMatrix() {
+	func singularMatrix() throws {
 		// Singular matrix (rows are linearly dependent)
 		let singular = [[1.0, 2.0],
 						[2.0, 4.0]]

@@ -140,7 +140,7 @@ struct CovarianceCorrelationNaNInfinityTests {
 	}
 
 	@Test("correlationCoefficient rejects NaN inputs")
-	func correlation_rejects_nan() {
+	func correlation_rejects_nan() throws {
 		let x1 = [1.0, Double.nan, 3.0]
 		let y1 = [2.0, 4.0, 6.0]
 		#expect(throws: BusinessMathError.self) {
@@ -165,7 +165,7 @@ struct CovarianceCorrelationNaNInfinityTests {
 	}
 
 	@Test("correlationCoefficient rejects infinity inputs")
-	func correlation_rejects_infinity() {
+	func correlation_rejects_infinity() throws {
 		let x = [1.0, Double.infinity, 3.0, 4.0]
 		let y = [2.0, 4.0, 6.0, 8.0]
 		#expect(throws: BusinessMathError.self) {
@@ -202,7 +202,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 	}
 
 	@Test("correlationCoefficient throws for empty arrays")
-	func correlation_empty_arrays() {
+	func correlation_empty_arrays() throws {
 		#expect(throws: BusinessMathError.self) {
 			_ = try correlationCoefficient([Double](), [Double](), .sample)
 		}
@@ -218,7 +218,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 	}
 
 	@Test("correlationCoefficient throws for single-element arrays")
-	func correlation_single_element() {
+	func correlation_single_element() throws {
 		// Single element has zero variance, so correlation throws
 		#expect(throws: BusinessMathError.self) {
 			_ = try correlationCoefficient([5.0], [10.0], .sample)

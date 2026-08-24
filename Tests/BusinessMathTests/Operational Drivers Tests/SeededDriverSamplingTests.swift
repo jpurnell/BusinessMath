@@ -128,7 +128,7 @@ struct SeededDriverSamplingTests {
 	}
 
 	@Test("A driver over a non-seedable distribution throws rather than losing determinism")
-	func nonSeedableDistributionThrows() {
+	func nonSeedableDistributionThrows() throws {
 		let driver = ProbabilisticDriver<Double>(name: "Opaque", distribution: UnseedableDistribution())
 
 		#expect(!driver.supportsSeeding)
@@ -221,7 +221,7 @@ struct SeededDriverSamplingTests {
 	}
 
 	@Test("A composite over an unseedable leaf throws and names the leaf")
-	func compositeOverUnseedableLeafThrows() {
+	func compositeOverUnseedableLeafThrows() throws {
 		let good = ProbabilisticDriver<Double>.normal(name: "Good", mean: 1.0, stdDev: 0.1)
 		let bad = ProbabilisticDriver<Double>(name: "Bad Leaf", distribution: UnseedableDistribution())
 		let sum = SumDriver(name: "Sum", lhs: good, rhs: bad)
@@ -287,7 +287,7 @@ struct SeededDriverSamplingTests {
 	}
 
 	@Test("A composite containing a TimeVaryingDriver refuses the seed")
-	func compositeOverTimeVaryingRefusesSeed() {
+	func compositeOverTimeVaryingRefusesSeed() throws {
 		let good = ProbabilisticDriver<Double>.normal(name: "Good", mean: 1.0, stdDev: 0.1)
 		let opaque = TimeVaryingDriver<Double>(name: "Opaque") { _ in 0.5 }
 		let product = ProductDriver(name: "Product", lhs: good, rhs: opaque)
@@ -313,14 +313,14 @@ struct SeededDriverSamplingTests {
 		let other = try projection.projectMonteCarlo(iterations: 2_000, seed: 2_027)
 
 		for quarter in quarters {
-			#expect(first.statistics[quarter]!.mean.bitPattern == second.statistics[quarter]!.mean.bitPattern)
-			#expect(first.percentiles[quarter]!.p5.bitPattern == second.percentiles[quarter]!.p5.bitPattern)
-			#expect(first.statistics[quarter]!.mean.bitPattern != other.statistics[quarter]!.mean.bitPattern)
+			#expect(try #require(first.statistics[quarter]).mean.bitPattern == (try #require(second.statistics[quarter])).mean.bitPattern)
+			#expect(try #require(first.percentiles[quarter]).p5.bitPattern == (try #require(second.percentiles[quarter])).p5.bitPattern)
+			#expect(try #require(first.statistics[quarter]).mean.bitPattern != (try #require(other.statistics[quarter])).mean.bitPattern)
 		}
 	}
 
 	@Test("Seeded projection over an unseedable driver throws")
-	func seededProjectionOverUnseedableThrows() {
+	func seededProjectionOverUnseedableThrows() throws {
 		let driver = ProbabilisticDriver<Double>(name: "Opaque", distribution: UnseedableDistribution())
 		let projection = DriverProjection(driver: driver, periods: [q1])
 

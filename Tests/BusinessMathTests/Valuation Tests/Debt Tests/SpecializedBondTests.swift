@@ -14,10 +14,10 @@ import Foundation
 struct ZeroCouponBondTests {
 
     @Test("Zero coupon bond price calculation")
-    func zeroCouponBondPrice() {
+    func zeroCouponBondPrice() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = ZeroCouponBond(
             faceValue: 1000.0,
@@ -35,10 +35,10 @@ struct ZeroCouponBondTests {
     }
 
     @Test("Zero coupon bond at different yields")
-    func zeroCouponBondYields() {
+    func zeroCouponBondYields() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 5, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
         let bond = ZeroCouponBond(
             faceValue: 1000.0,
@@ -58,7 +58,7 @@ struct ZeroCouponBondTests {
     func zeroCouponBondYTM() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = ZeroCouponBond(
             faceValue: 1000.0,
@@ -78,10 +78,10 @@ struct ZeroCouponBondTests {
     }
 
     @Test("Zero coupon bond duration equals maturity")
-    func zeroCouponBondDuration() {
+    func zeroCouponBondDuration() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = ZeroCouponBond(
             faceValue: 1000.0,
@@ -97,10 +97,10 @@ struct ZeroCouponBondTests {
     }
 
     @Test("Zero coupon bond cash flow schedule")
-    func zeroCouponBondCashFlows() {
+    func zeroCouponBondCashFlows() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = ZeroCouponBond(
             faceValue: 1000.0,
@@ -121,10 +121,10 @@ struct ZeroCouponBondTests {
 struct AmortizingBondTests {
 
     @Test("Amortizing bond cash flow schedule")
-    func amortizingBondCashFlows() {
+    func amortizingBondCashFlows() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 3, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 3, to: today))
 
         // 3-year bond with annual payments, 5% coupon, amortizing 1/3 each year
         let bond = AmortizingBond(
@@ -134,9 +134,9 @@ struct AmortizingBondTests {
             paymentFrequency: .annual,
             issueDate: today,
             amortizationSchedule: [
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 1, to: today)!, principalAmount: 333.33),
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 2, to: today)!, principalAmount: 333.33),
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 3, to: today)!, principalAmount: 333.34)
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 1, to: today)), principalAmount: 333.33),
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 2, to: today)), principalAmount: 333.33),
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 3, to: today)), principalAmount: 333.34)
             ]
         )
 
@@ -157,10 +157,10 @@ struct AmortizingBondTests {
     }
 
     @Test("Amortizing bond price calculation")
-    func amortizingBondPrice() {
+    func amortizingBondPrice() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 3, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 3, to: today))
 
         let bond = AmortizingBond(
             faceValue: 1000.0,
@@ -169,9 +169,9 @@ struct AmortizingBondTests {
             paymentFrequency: .annual,
             issueDate: today,
             amortizationSchedule: [
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 1, to: today)!, principalAmount: 333.33),
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 2, to: today)!, principalAmount: 333.33),
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 3, to: today)!, principalAmount: 333.34)
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 1, to: today)), principalAmount: 333.33),
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 2, to: today)), principalAmount: 333.33),
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 3, to: today)), principalAmount: 333.34)
             ]
         )
 
@@ -184,7 +184,7 @@ struct AmortizingBondTests {
     func amortizingBondYTM() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 3, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 3, to: today))
 
         let bond = AmortizingBond(
             faceValue: 1000.0,
@@ -193,9 +193,9 @@ struct AmortizingBondTests {
             paymentFrequency: .annual,
             issueDate: today,
             amortizationSchedule: [
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 1, to: today)!, principalAmount: 333.33),
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 2, to: today)!, principalAmount: 333.33),
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 3, to: today)!, principalAmount: 333.34)
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 1, to: today)), principalAmount: 333.33),
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 2, to: today)), principalAmount: 333.33),
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 3, to: today)), principalAmount: 333.34)
             ]
         )
 
@@ -210,15 +210,15 @@ struct AmortizingBondTests {
     }
 
     @Test("Amortizing bond duration less than maturity")
-    func amortizingBondDuration() {
+    func amortizingBondDuration() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         // 10-year bond with equal annual principal payments
         var amortSchedule: [AmortizationPayment<Double>] = []
         for year in 1...10 {
-            let date = calendar.date(byAdding: .year, value: year, to: today)!
+            let date = try #require(calendar.date(byAdding: .year, value: year, to: today))
             amortSchedule.append(AmortizationPayment(date: date, principalAmount: 100.0))
         }
 
@@ -239,10 +239,10 @@ struct AmortizingBondTests {
     }
 
     @Test("Amortizing bond with semiannual coupons")
-    func amortizingBondSemiannual() {
+    func amortizingBondSemiannual() throws {
         let calendar = Calendar.current
         let today = Date()
-        let maturity = calendar.date(byAdding: .year, value: 2, to: today)!
+        let maturity = try #require(calendar.date(byAdding: .year, value: 2, to: today))
 
         // 2-year bond with semiannual coupons, annual principal payments
         let bond = AmortizingBond(
@@ -252,8 +252,8 @@ struct AmortizingBondTests {
             paymentFrequency: .semiAnnual,
             issueDate: today,
             amortizationSchedule: [
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 1, to: today)!, principalAmount: 500.0),
-                AmortizationPayment(date: calendar.date(byAdding: .year, value: 2, to: today)!, principalAmount: 500.0)
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 1, to: today)), principalAmount: 500.0),
+                AmortizationPayment(date: try #require(calendar.date(byAdding: .year, value: 2, to: today)), principalAmount: 500.0)
             ]
         )
 

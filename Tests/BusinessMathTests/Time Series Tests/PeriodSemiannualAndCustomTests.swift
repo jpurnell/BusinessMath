@@ -352,7 +352,7 @@ struct PeriodSemiannualAndCustomTests {
 	// MARK: - Refusals
 
 	@Test("Distance between two custom periods is refused")
-	func customDistanceRefused() {
+	func customDistanceRefused() throws {
 		let a = Period.custom(start: date(2025, 1, 1), end: date(2025, 6, 30))
 		let b = Period.custom(start: date(2025, 7, 1), end: date(2025, 12, 31))
 		#expect(throws: PeriodError.unsupportedPeriodType(.custom, operation: "distance(to:)")) {
@@ -361,7 +361,7 @@ struct PeriodSemiannualAndCustomTests {
 	}
 
 	@Test("Distance still refuses mismatched types, including custom vs ladder")
-	func customDistanceTypeMismatch() {
+	func customDistanceTypeMismatch() throws {
 		let stub = Period.custom(start: date(2025, 1, 1), end: date(2025, 6, 30))
 		let q = Period.quarter(year: 2025, quarter: 1)
 		#expect(throws: PeriodError.typeMismatch(from: .custom, to: .quarterly)) {
@@ -463,7 +463,7 @@ struct PeriodSemiannualAndCustomTests {
 	}
 
 	@Test("A custom period with no end in the JSON is rejected, not guessed")
-	func decodeCustomWithoutEndThrows() {
+	func decodeCustomWithoutEndThrows() throws {
 		let json = #"{"type":9,"date":757382400}"#
 		#expect(throws: DecodingError.self) {
 			_ = try JSONDecoder().decode(Period.self, from: Data(json.utf8))
@@ -471,7 +471,7 @@ struct PeriodSemiannualAndCustomTests {
 	}
 
 	@Test("A custom period whose end precedes its start is rejected")
-	func decodeCustomWithInvertedIntervalThrows() {
+	func decodeCustomWithInvertedIntervalThrows() throws {
 		let json = #"{"type":9,"date":776908800,"end":757382400}"#
 		#expect(throws: DecodingError.self) {
 			_ = try JSONDecoder().decode(Period.self, from: Data(json.utf8))

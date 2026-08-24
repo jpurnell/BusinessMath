@@ -71,7 +71,7 @@ struct RayleighDistributionTests {
 	}
 
 	@Test("Rayleigh distribution always positive")
-	func rayleighAlwaysPositive() {
+	func rayleighAlwaysPositive() throws {
 		let scale = 5.0
 		let sampleCount = 5000
 		let seeds = Self.seedsForRayleigh(count: sampleCount)
@@ -85,7 +85,7 @@ struct RayleighDistributionTests {
 		#expect(samples.allSatisfy { $0 > 0 }, "Rayleigh is defined only for positive values")
 
 		// Check that minimum is reasonably close to 0
-		let minValue = samples.min()!
+		let minValue = try #require(samples.min())
 		#expect(minValue < 1.0, "Should produce some small values close to 0")
 	}
 
@@ -109,7 +109,7 @@ struct RayleighDistributionTests {
 	}
 
 	@Test("Rayleigh distribution mode")
-	func rayleighMode() {
+	func rayleighMode() throws {
 		// Mode of Rayleigh(σ) = σ
 		let scale = 10.0
 		let sampleCount = 10000
@@ -123,8 +123,8 @@ struct RayleighDistributionTests {
 		// Create histogram to find mode
 		let sorted = samples.sorted()
 		let bins = 50
-		let minVal = sorted.first!
-		let maxVal = sorted.last!
+		let minVal = try #require(sorted.first)
+		let maxVal = try #require(sorted.last)
 		let binWidth = (maxVal - minVal) / Double(bins)
 
 		var binCounts: [Int] = Array(repeating: 0, count: bins)
@@ -134,8 +134,8 @@ struct RayleighDistributionTests {
 		}
 
 		// Find bin with most samples
-		let maxCount = binCounts.max()!
-		let modeIndex = binCounts.firstIndex(of: maxCount)!
+		let maxCount = try #require(binCounts.max())
+		let modeIndex = try #require(binCounts.firstIndex(of: maxCount))
 		let empiricalMode = minVal + (Double(modeIndex) + 0.5) * binWidth
 
 		// Mode should be close to scale
@@ -298,7 +298,7 @@ struct RayleighDistributionTests {
 	}
 
 	@Test("Rayleigh distribution struct stores scale parameter")
-	func rayleighStructParameters() {
+	func rayleighStructParameters() throws {
 		let scale = 12.0
 		let dist = DistributionRayleigh(scale: scale)
 
@@ -312,13 +312,13 @@ struct RayleighDistributionTests {
 		#expect(samples.allSatisfy { $0 > 0 })
 
 		// Should have reasonable spread
-		let maxValue = samples.max()!
-		let minValue = samples.min()!
+		let maxValue = try #require(samples.max())
+		let minValue = try #require(samples.min())
 		#expect(maxValue > minValue * 2, "Should have reasonable spread")
 	}
 
 	@Test("Rayleigh distribution percentiles")
-	func rayleighPercentiles() {
+	func rayleighPercentiles() throws {
 		let σ = 10.0
 		let sampleCount = 10000
 		let seeds = Self.seedsForRayleigh(count: sampleCount)
@@ -337,11 +337,11 @@ struct RayleighDistributionTests {
 		#expect(abs(p50 - theoreticalMedian) < 1.0, "Median should match σ√(2ln2)")
 
 		// All values should be positive
-		#expect(sorted.first! > 0, "Minimum should be positive")
+		#expect(try #require(sorted.first) > 0, "Minimum should be positive")
 	}
 
 	@Test("Rayleigh distribution extreme values")
-	func rayleighExtremeValues() {
+	func rayleighExtremeValues() throws {
 		// Rayleigh has moderate right tail
 		let σ = 10.0
 		let sampleCount = 10000
@@ -353,7 +353,7 @@ struct RayleighDistributionTests {
 		}
 
 		// Should see some values much larger than mode
-		let maxValue = samples.max()!
+		let maxValue = try #require(samples.max())
 		#expect(maxValue > 3 * σ, "Should produce some extreme values")
 
 		// Count values > 2σ

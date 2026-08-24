@@ -586,7 +586,7 @@ struct DEAMatrixFormTests {
     }
 
     @Test("Matrix form throws on mismatched row counts")
-    func matrixFormMismatchedRows() {
+    func matrixFormMismatchedRows() throws {
         let inputs: [[Double]] = [[2, 5], [3, 3], [6, 2]]
         let outputs: [[Double]] = [[1, 4], [2, 2]]
 
@@ -596,7 +596,7 @@ struct DEAMatrixFormTests {
     }
 
     @Test("Matrix form throws on inconsistent column counts")
-    func matrixFormInconsistentColumns() {
+    func matrixFormInconsistentColumns() throws {
         let inputs: [[Double]] = [[2, 5], [3]]
         let outputs: [[Double]] = [[1, 4], [2, 2]]
 
@@ -606,7 +606,7 @@ struct DEAMatrixFormTests {
     }
 
     @Test("Matrix form throws when names array length mismatches")
-    func matrixFormNamesMismatch() {
+    func matrixFormNamesMismatch() throws {
         let inputs: [[Double]] = [[2, 5], [3, 3]]
         let outputs: [[Double]] = [[1, 4], [2, 2]]
 

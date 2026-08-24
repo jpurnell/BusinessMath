@@ -27,7 +27,7 @@ struct AccountValidationTests {
 	// MARK: - Role Requirement Tests
 
 	@Test("Account requires at least one role")
-	func testAccountMustHaveRole() {
+	func testAccountMustHaveRole() throws {
 		#expect(throws: FinancialModelError.accountMustHaveAtLeastOneRole) {
 			try Account<Double>(
 				entity: testEntity,
@@ -39,7 +39,7 @@ struct AccountValidationTests {
 	}
 
 	@Test("Account with nil roles throws error")
-	func testNilRolesThrowsError() {
+	func testNilRolesThrowsError() throws {
 		#expect(throws: FinancialModelError.accountMustHaveAtLeastOneRole) {
 			try Account<Double>(
 				entity: testEntity,
@@ -191,7 +191,7 @@ struct AccountValidationTests {
 	// MARK: - Validation Tests
 
 	@Test("Account name cannot be empty")
-	func testEmptyNameThrowsError() {
+	func testEmptyNameThrowsError() throws {
 		#expect(throws: AccountError.invalidName) {
 			try Account<Double>(
 				entity: testEntity,
@@ -203,7 +203,7 @@ struct AccountValidationTests {
 	}
 
 	@Test("Account name cannot be whitespace only")
-	func testWhitespaceNameThrowsError() {
+	func testWhitespaceNameThrowsError() throws {
 		#expect(throws: AccountError.invalidName) {
 			try Account<Double>(
 				entity: testEntity,
@@ -215,7 +215,7 @@ struct AccountValidationTests {
 	}
 
 	@Test("Account timeSeries cannot be empty")
-	func testEmptyTimeSeriesThrowsError() {
+	func testEmptyTimeSeriesThrowsError() throws {
 		let emptyTimeSeries = TimeSeries<Double>(periods: [], values: [])
 
 		#expect(throws: AccountError.emptyTimeSeries) {

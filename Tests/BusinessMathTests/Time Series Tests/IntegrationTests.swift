@@ -223,11 +223,11 @@ struct IntegrationTests {
 	func investmentAnalysisWorkflow() throws {
 		// Investment opportunity with irregular cash flows
 		let dates = [
-			date(2024, 1, 1),   // Initial investment
-			date(2024, 6, 15),  // First return
-			date(2024, 12, 31), // Second return
-			date(2025, 6, 30),  // Third return
-			date(2025, 12, 31)  // Final return
+			try date(2024, 1, 1),   // Initial investment
+			try date(2024, 6, 15),  // First return
+			try date(2024, 12, 31), // Second return
+			try date(2025, 6, 30),  // Third return
+			try date(2025, 12, 31)  // Final return
 		]
 
 		let cashFlows = [-100_000.0, 20_000.0, 25_000.0, 30_000.0, 50_000.0]
@@ -317,8 +317,8 @@ struct IntegrationTests {
 		// Phase 3: Mature growth (years 7-10)
 
 		let phase1Revenue = applyGrowth(baseValue: 1_000_000.0, rate: 0.50, periods: 3)
-		let phase2Revenue = applyGrowth(baseValue: phase1Revenue.last!, rate: 0.20, periods: 3)
-		let phase3Revenue = applyGrowth(baseValue: phase2Revenue.last!, rate: 0.05, periods: 4)
+		let phase2Revenue = applyGrowth(baseValue: try #require(phase1Revenue.last), rate: 0.20, periods: 3)
+		let phase3Revenue = applyGrowth(baseValue: try #require(phase2Revenue.last), rate: 0.05, periods: 4)
 
 		// Combine all phases
 		let allRevenue = Array(phase1Revenue.dropFirst()) +
@@ -327,8 +327,8 @@ struct IntegrationTests {
 
 		// Calculate overall CAGR
 		let overallCAGR = cagr(
-			beginningValue: allRevenue.first!,
-			endingValue: allRevenue.last!,
+			beginningValue: try #require(allRevenue.first),
+			endingValue: try #require(allRevenue.last),
 			years: Double(allRevenue.count - 1)
 		)
 
@@ -354,7 +354,7 @@ struct IntegrationTests {
 		let explicitPeriodNPV = try calculateNPV(discountRate: wacc, cashFlows: cashFlows)
 
 		// Calculate terminal value
-		let terminalCashFlow = cashFlows.last! * (1 + terminalGrowth)
+		let terminalCashFlow = try #require(cashFlows.last) * (1 + terminalGrowth)
 		let terminalValue = terminalCashFlow / (wacc - terminalGrowth)
 		let pvTerminalValue = terminalValue / pow(1 + wacc, Double(cashFlows.count))
 
@@ -492,12 +492,12 @@ struct IntegrationTests {
 
 	// MARK: - Helper Functions
 
-	func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+	func date(_ year: Int, _ month: Int, _ day: Int) throws -> Date {
 		var components = DateComponents()
 		components.year = year
 		components.month = month
 		components.day = day
 		components.timeZone = TimeZone(secondsFromGMT: 0)
-		return Calendar.current.date(from: components)!
+		return try #require(Calendar.current.date(from: components))
 	}
 }

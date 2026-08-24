@@ -555,12 +555,12 @@ struct TimeSeriesTests {
 	}
 
 	@Test("Daily production time series")
-	func dailyProductionScenario() {
+	func dailyProductionScenario() throws {
 		// 7 days of production
 		let calendar = Calendar.current
 		let today = calendar.startOfDay(for: Date())
-		let periods = (0..<7).map { offset in
-			let date = calendar.date(byAdding: .day, value: offset, to: today)!
+		let periods = try (0..<7).map { offset in
+			let date = try #require(calendar.date(byAdding: .day, value: offset, to: today))
 			return Period.day(date)
 		}
 		let production: [Double] = [1000, 1100, 1050, 1200, 1150, 1100, 1000]
