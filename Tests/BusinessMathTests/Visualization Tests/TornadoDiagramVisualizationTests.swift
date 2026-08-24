@@ -196,7 +196,7 @@ import Testing
 		// When
 		let output = plotTornadoDiagram(tornado)
 		
-		let lines = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
+		let lines = output.split(whereSeparator: \.isNewline).map(String.init)
 
 		// Then
 		// Should have: header, base case line, and one line per input (minimum)
