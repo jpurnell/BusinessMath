@@ -448,7 +448,7 @@ struct ExporterEquivalenceTests {
 
 	private func normalizeCSV(_ s: String) -> String {
 		// Trim whitespace differences to avoid CRLF vs LF or trailing spaces issues
-		s.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
+		s.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
 	}
 	@Test("Optimized CSV export is content-equivalent")
 	func csvOptimizedEquivalence() throws {

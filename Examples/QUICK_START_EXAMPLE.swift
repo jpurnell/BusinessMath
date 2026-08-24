@@ -25,6 +25,7 @@ import Foundation
 print("=== Investment Analysis: New Software Product ===\n")
 
 	// Cash flows: Year 0 = initial investment, Years 1-4 = projected returns
+do {
 let cashFlows = [-100_000.0, 30_000.0, 40_000.0, 50_000.0, 60_000.0]
 let discountRate = 0.10  // 10% hurdle rate
 
@@ -32,8 +33,8 @@ let discountRate = 0.10  // 10% hurdle rate
 	// STEP 1: Calculate Profitability Metrics
 	// -----------------------------------------------------------------------------
 
-let npvValue = try #require(try) calculateNPV(discountRate: discountRate, cashFlows: cashFlows)
-let irrValue = try #require(try) irr(cashFlows: cashFlows)
+let npvValue = try calculateNPV(discountRate: discountRate, cashFlows: cashFlows)
+let irrValue = try irr(cashFlows: cashFlows)
 let pi = profitabilityIndex(rate: discountRate, cashFlows: cashFlows)
 let payback = paybackPeriod(cashFlows: cashFlows)
 
@@ -41,7 +42,8 @@ print("📊 Profitability Metrics:")
 print("   NPV at \(discountRate.percent(0)): \(npvValue.currency(0))")
 print("   IRR: \(irrValue.percent(1))")
 print("   Profitability Index: \(pi.number(2))")
-print("   Payback Period: \(Double(payback!).number(0)) years")
+let paybackText = payback.map { Double($0).number(0) } ?? "not reached"
+print("   Payback Period: \(paybackText) years")
 
 	// Decision rule: NPV > 0, IRR > hurdle rate, PI > 1.0
 let profitable = npvValue > 0 && irrValue > discountRate && pi > 1.0
@@ -55,7 +57,7 @@ print("📉 Sensitivity Analysis: NPV vs. Discount Rate")
 let rates = stride(from: 0.05, through: 0.15, by: 0.01)
 
 for rate in rates {
-	let npvAtRate = try #require(try) calculateNPV(discountRate: rate, cashFlows: cashFlows)
+	let npvAtRate = try calculateNPV(discountRate: rate, cashFlows: cashFlows)
 	let ratePercent = rate.percent(0)
 	let npvFormatted = npvAtRate.currency(0)
 	print("   Rate: \(ratePercent.paddingLeft(toLength: 5)) → NPV: \(npvFormatted)")
@@ -82,7 +84,10 @@ var simulation = MonteCarloSimulation(iterations: 100_000, seed: 42) { inputs in
 	let year3 = 50_000 * (1 + inputs[2])
 	let year4 = 60_000 * (1 + inputs[3])
 	
-	return try #require(try) calculateNPV(discountRate: 0.10, cashFlows: [-100_000, year1, year2, year3, year4])
+	// The simulation's model closure cannot throw, so a failed valuation
+	// surfaces as NaN and shows up in the statistics below rather than
+	// stopping the run.
+	return (try? calculateNPV(discountRate: 0.10, cashFlows: [-100_000, year1, year2, year3, year4])) ?? .nan
 }
 
 	// Add uncertainty inputs: normal distribution with 20% std dev
@@ -94,7 +99,7 @@ for year in 1...4 {
 }
 
 	// Run simulation and analyze results
-let results = try #require(try) simulation.run()
+let results = try simulation.run()
 let statistics = results.statistics
 
 	// Risk metrics
@@ -134,3 +139,7 @@ print("")
 	// - More Examples: EXAMPLES.md
 	// - GPU Acceleration: GPU_ACCELERATION_TUTORIAL.md
 	// =============================================================================
+
+} catch {
+	print("Quick-start example failed: \(error)")
+}

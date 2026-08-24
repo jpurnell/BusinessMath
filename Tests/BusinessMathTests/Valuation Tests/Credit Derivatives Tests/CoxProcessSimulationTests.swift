@@ -172,8 +172,10 @@ struct CoxProcessSimulationTests {
             #expect(earlier.draws <= later.draws,
                     "\(earlier.time)y took \(earlier.draws) draws, \(later.time)y took \(later.draws)")
         }
-        #expect(try #require(sorted.last).draws > (try #require(sorted.first)).draws * 2,
-                "draw counts barely moved across paths of \(sorted.first!.time)y to \(sorted.last!.time)y")
+        let shortestPath = try #require(sorted.first)
+        let longestPath = try #require(sorted.last)
+        #expect(longestPath.draws > shortestPath.draws * 2,
+                "draw counts barely moved across paths of \(shortestPath.time)y to \(longestPath.time)y")
     }
 
     @Test("Volatile paths do not collapse onto a short cycle of intensities")
