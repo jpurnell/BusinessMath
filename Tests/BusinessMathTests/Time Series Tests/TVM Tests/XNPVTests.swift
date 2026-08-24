@@ -15,12 +15,12 @@ struct XNPVTests {
 	let tolerance: Double = 0.01  // $0.01 or 0.01% tolerance
 
 	// Helper to create dates
-	func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+	func date(_ year: Int, _ month: Int, _ day: Int) throws -> Date {
 		var components = DateComponents()
 		components.year = year
 		components.month = month
 		components.day = day
-		return Calendar.current.date(from: components)!
+		return try #require(Calendar.current.date(from: components))
 	}
 
 	// MARK: - XNPV Tests
@@ -29,9 +29,9 @@ struct XNPVTests {
 	func xnpvRegularIntervals() throws {
 		// Annual cash flows on Jan 1
 		let dates = [
-			date(2025, 1, 1),
-			date(2026, 1, 1),
-			date(2027, 1, 1)
+			try date(2025, 1, 1),
+			try date(2026, 1, 1),
+			try date(2027, 1, 1)
 		]
 		let cashFlows = [-1000.0, 600.0, 600.0]
 		let rate = 0.10
@@ -47,10 +47,10 @@ struct XNPVTests {
 	func xnpvIrregularIntervals() throws {
 		// Cash flows at irregular dates
 		let dates = [
-			date(2025, 1, 1),   // Initial investment
-			date(2025, 4, 15),  // ~0.29 years later
-			date(2025, 9, 20),  // ~0.72 years from start
-			date(2026, 3, 10)   // ~1.19 years from start
+			try date(2025, 1, 1),   // Initial investment
+			try date(2025, 4, 15),  // ~0.29 years later
+			try date(2025, 9, 20),  // ~0.72 years from start
+			try date(2026, 3, 10)   // ~1.19 years from start
 		]
 		let cashFlows = [-1000.0, 300.0, 400.0, 500.0]
 		let rate = 0.10
@@ -66,9 +66,9 @@ struct XNPVTests {
 	@Test("XNPV with zero rate")
 	func xnpvZeroRate() throws {
 		let dates = [
-			date(2025, 1, 1),
-			date(2025, 6, 1),
-			date(2026, 1, 1)
+			try date(2025, 1, 1),
+			try date(2025, 6, 1),
+			try date(2026, 1, 1)
 		]
 		let cashFlows = [-1000.0, 500.0, 600.0]
 
@@ -80,7 +80,7 @@ struct XNPVTests {
 
 	@Test("XNPV with all cash flows on same date")
 	func xnpvSameDate() throws {
-		let sameDate = date(2025, 1, 1)
+		let sameDate = try date(2025, 1, 1)
 		let dates = [sameDate, sameDate, sameDate]
 		let cashFlows = [100.0, 200.0, 300.0]
 
@@ -96,10 +96,10 @@ struct XNPVTests {
 	func xirrRegularIntervals() throws {
 		// Annual cash flows
 		let dates = [
-			date(2025, 1, 1),
-			date(2026, 1, 1),
-			date(2027, 1, 1),
-			date(2028, 1, 1)
+			try date(2025, 1, 1),
+			try date(2026, 1, 1),
+			try date(2027, 1, 1),
+			try date(2028, 1, 1)
 		]
 		let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
 
@@ -113,10 +113,10 @@ struct XNPVTests {
 	func xirrIrregularIntervals() throws {
 		// Investment with irregular returns
 		let dates = [
-			date(2025, 1, 1),   // Initial investment
-			date(2025, 5, 15),  // Early return
-			date(2025, 11, 30), // Late return
-			date(2026, 6, 1)    // Final return
+			try date(2025, 1, 1),   // Initial investment
+			try date(2025, 5, 15),  // Early return
+			try date(2025, 11, 30), // Late return
+			try date(2026, 6, 1)    // Final return
 		]
 		let cashFlows = [-1000.0, 200.0, 300.0, 600.0]
 
@@ -131,8 +131,8 @@ struct XNPVTests {
 	@Test("XIRR with monthly cash flows")
 	func xirrMonthlyCashFlows() throws {
 		// Monthly investment returns
-		let dates = (0...12).map { months in
-			Calendar.current.date(byAdding: .month, value: months, to: date(2025, 1, 1))!
+		let dates = try (0...12).map { months in
+			(try #require(Calendar.current.date(byAdding: .month, value: months, to: date(2025, 1, 1))))
 		}
 		var cashFlows = Array(repeating: 100.0, count: 13)
 		cashFlows[0] = -1000.0  // Initial investment
@@ -147,9 +147,9 @@ struct XNPVTests {
 	@Test("XIRR with negative ending cash flow")
 	func xirrNegativeEnding() throws {
 		let dates = [
-			date(2025, 1, 1),
-			date(2025, 6, 1),
-			date(2025, 12, 31)
+			try date(2025, 1, 1),
+			try date(2025, 6, 1),
+			try date(2025, 12, 31)
 		]
 		let cashFlows = [-1000.0, 1500.0, -200.0]  // Profit minus cleanup cost
 
@@ -165,7 +165,7 @@ struct XNPVTests {
 
 	@Test("XNPV with mismatched dates and cash flows should throw")
 	func xnpvMismatchedArrays() throws {
-		let dates = [date(2025, 1, 1), date(2026, 1, 1)]
+		let dates = [try date(2025, 1, 1), try date(2026, 1, 1)]
 		let cashFlows = [-1000.0, 500.0, 600.0]  // One extra
 
 		#expect(throws: XNPVError.self) {
@@ -185,7 +185,7 @@ struct XNPVTests {
 
 	@Test("XIRR with all positive cash flows should throw")
 	func xirrAllPositive() throws {
-		let dates = [date(2025, 1, 1), date(2026, 1, 1)]
+		let dates = [try date(2025, 1, 1), try date(2026, 1, 1)]
 		let cashFlows = [100.0, 200.0]
 
 		#expect(throws: XNPVError.self) {
@@ -195,7 +195,7 @@ struct XNPVTests {
 
 	@Test("XIRR with all negative cash flows should throw")
 	func xirrAllNegative() throws {
-		let dates = [date(2025, 1, 1), date(2026, 1, 1)]
+		let dates = [try date(2025, 1, 1), try date(2026, 1, 1)]
 		let cashFlows = [-100.0, -200.0]
 
 		#expect(throws: XNPVError.self) {
@@ -209,12 +209,12 @@ struct XNPVTests {
 	func realEstateScenario() throws {
 		// Purchase, irregular rent payments, sale
 		let dates = [
-			date(2025, 1, 15),   // Purchase
-			date(2025, 3, 1),    // Rent
-			date(2025, 5, 15),   // Rent
-			date(2025, 8, 1),    // Rent
-			date(2025, 11, 20),  // Rent
-			date(2026, 2, 10)    // Sale + rent
+			try date(2025, 1, 15),   // Purchase
+			try date(2025, 3, 1),    // Rent
+			try date(2025, 5, 15),   // Rent
+			try date(2025, 8, 1),    // Rent
+			try date(2025, 11, 20),  // Rent
+			try date(2026, 2, 10)    // Sale + rent
 		]
 		let cashFlows = [-100000.0, 3000.0, 3000.0, 3000.0, 3000.0, 105000.0]
 
@@ -229,10 +229,10 @@ struct XNPVTests {
 	func businessLoanScenario() throws {
 		// Loan disbursement and irregular repayments
 		let dates = [
-			date(2025, 1, 1),    // Loan received
-			date(2025, 3, 15),   // First payment
-			date(2025, 7, 1),    // Second payment
-			date(2025, 12, 31)   // Final payment
+			try date(2025, 1, 1),    // Loan received
+			try date(2025, 3, 15),   // First payment
+			try date(2025, 7, 1),    // Second payment
+			try date(2025, 12, 31)   // Final payment
 		]
 		let cashFlows = [10000.0, -3500.0, -3500.0, -4000.0]
 
@@ -247,10 +247,10 @@ struct XNPVTests {
 	func ventureCapitalScenario() throws {
 		// Multiple investment rounds, eventual exit
 		let dates = [
-			date(2025, 1, 1),    // Seed round
-			date(2025, 9, 1),    // Series A
-			date(2026, 6, 1),    // Series B
-			date(2028, 3, 1)     // Exit
+			try date(2025, 1, 1),    // Seed round
+			try date(2025, 9, 1),    // Series A
+			try date(2026, 6, 1),    // Series B
+			try date(2028, 3, 1)     // Exit
 		]
 		let cashFlows = [-500000.0, -1000000.0, -2000000.0, 10000000.0]
 
@@ -265,11 +265,11 @@ struct XNPVTests {
 	func stockPortfolioScenario() throws {
 		// Initial investment, irregular dividends, final sale
 		let dates = [
-			date(2025, 1, 5),    // Purchase
-			date(2025, 4, 1),    // Dividend
-			date(2025, 7, 1),    // Dividend
-			date(2025, 10, 1),   // Dividend
-			date(2026, 1, 5)     // Sale
+			try date(2025, 1, 5),    // Purchase
+			try date(2025, 4, 1),    // Dividend
+			try date(2025, 7, 1),    // Dividend
+			try date(2025, 10, 1),   // Dividend
+			try date(2026, 1, 5)     // Sale
 		]
 		let cashFlows = [-10000.0, 150.0, 150.0, 150.0, 11000.0]
 
@@ -285,9 +285,9 @@ struct XNPVTests {
 	@Test("XNPV with dates spanning leap year")
 	func xnpvLeapYear() throws {
 		let dates = [
-			date(2024, 1, 1),   // Leap year
-			date(2024, 7, 1),
-			date(2025, 1, 1)
+			try date(2024, 1, 1),   // Leap year
+			try date(2024, 7, 1),
+			try date(2025, 1, 1)
 		]
 		let cashFlows = [-1000.0, 500.0, 600.0]
 
@@ -302,9 +302,9 @@ struct XNPVTests {
 	func xnpvReverseOrder() throws {
 		// Dates not in chronological order
 		let dates = [
-			date(2025, 1, 1),
-			date(2026, 1, 1),
-			date(2024, 1, 1)   // Out of order
+			try date(2025, 1, 1),
+			try date(2026, 1, 1),
+			try date(2024, 1, 1)   // Out of order
 		]
 		let cashFlows = [-1000.0, 600.0, 500.0]
 
@@ -321,9 +321,9 @@ struct XNPVTests {
 	@Test("XIRR with short time period (days)")
 	func xirrShortPeriod() throws {
 		let dates = [
-			date(2025, 1, 1),
-			date(2025, 1, 8),   // 7 days later
-			date(2025, 1, 15)   // 14 days from start
+			try date(2025, 1, 1),
+			try date(2025, 1, 8),   // 7 days later
+			try date(2025, 1, 15)   // 14 days from start
 		]
 		let cashFlows = [-1000.0, 500.0, 600.0]
 
@@ -337,9 +337,9 @@ struct XNPVTests {
 	@Test("XIRR with long time period (decades)")
 	func xirrLongPeriod() throws {
 		let dates = [
-			date(2025, 1, 1),
-			date(2035, 1, 1),   // 10 years
-			date(2045, 1, 1)    // 20 years
+			try date(2025, 1, 1),
+			try date(2035, 1, 1),   // 10 years
+			try date(2045, 1, 1)    // 20 years
 		]
 		let cashFlows = [-1000.0, 500.0, 2000.0]
 
@@ -353,17 +353,17 @@ struct XNPVTests {
 	@Test("XNPV with duplicate dates aggregates correctly")
 		func xnpvDuplicateDates() throws {
 	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
-			func d(_ y:Int,_ m:Int,_ day:Int) -> Date {
+			func d(_ y:Int,_ m:Int,_ day:Int) throws -> Date {
 				var c = DateComponents()
 				c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)
-				return Calendar(identifier: .gregorian).date(from: c)!
+				return try #require(Calendar(identifier: .gregorian).date(from: c))
 			}
-			let dates = [d(2025,1,1), d(2025,6,1), d(2025,6,1), d(2026,1,1)]
+			let dates = [try d(2025,1,1), try d(2025,6,1), try d(2025,6,1), try d(2026,1,1)]
 			let flows = [-1000.0, 200.0, 300.0, 600.0] // two flows on same day
 			let rate = 0.10
 			let v = try xnpv(rate: rate, dates: dates, cashFlows: flows)
 			// Should equal XNPV of combined flow on that duplicate date (500.0)
-			let dates2 = [d(2025,1,1), d(2025,6,1), d(2026,1,1)]
+			let dates2 = [try d(2025,1,1), try d(2025,6,1), try d(2026,1,1)]
 			let flows2 = [-1000.0, 500.0, 600.0]
 			let v2 = try xnpv(rate: rate, dates: dates2, cashFlows: flows2)
 			#expect(abs(v - v2) < 1e-8)
@@ -377,13 +377,13 @@ struct XNPVTests {
 		// `T(Int(yearsDouble))` fallback. For T == Float the cast failed and the offset
 		// was truncated to whole years — a cash flow at 0.5y was discounted as if at 0y,
 		// and one at 1.5y as if at 1y. It is now converted exactly.
-		func d(_ y: Int, _ m: Int, _ day: Int) -> Date {
+		func d(_ y: Int, _ m: Int, _ day: Int) throws -> Date {
 			var c = DateComponents()
 			c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)
-			return Calendar(identifier: .gregorian).date(from: c)!
+			return try #require(Calendar(identifier: .gregorian).date(from: c))
 		}
 
-		let dates = [d(2025, 1, 1), d(2025, 7, 2)]  // ~0.5 years apart
+		let dates = [try d(2025, 1, 1), try d(2025, 7, 2)]  // ~0.5 years apart
 		let rate: Float = 0.10
 
 		let asFloat = try xnpv(rate: rate, dates: dates, cashFlows: [Float(-1000), Float(1000)])

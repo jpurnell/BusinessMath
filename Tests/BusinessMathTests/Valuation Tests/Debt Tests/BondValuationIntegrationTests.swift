@@ -17,24 +17,24 @@ import Foundation
 struct BondValuationIntegrationTests {
 
     // Use a fixed reference date to avoid wall-clock dependencies in bond calculations
-    private static let referenceDate: Date = {
+    private static func referenceDate() throws -> Date {
         var components = DateComponents()
         components.year = 2025
         components.month = 1
         components.day = 1
-        return Calendar.current.date(from: components)!
-    }()
+        return try #require(Calendar.current.date(from: components))
+    }
 
     // MARK: - Workflow 1: Credit Metrics → Bond Pricing
 
     @Test("Complete workflow: Z-Score → Default Probability → Credit Spread → Bond Price")
-    func creditMetricsToBondPrice() {
+    func creditMetricsToBondPrice() throws {
         // Scenario: Price a 5-year corporate bond for a company
         // with moderate credit quality (grey zone Z-Score)
 
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 5, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
         // Step 1: Start with company credit metrics
         let zScore = 2.3  // Grey zone (moderate risk)
@@ -94,10 +94,10 @@ struct BondValuationIntegrationTests {
     }
 
     @Test("Workflow: Credit deterioration impact on bond value")
-    func creditDeteriorationImpact() {
+    func creditDeteriorationImpact() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -158,8 +158,8 @@ struct BondValuationIntegrationTests {
     @Test("Workflow: Callable bond analysis with OAS decomposition")
     func callableBondOASAnalysis() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         // Create underlying bond
         let bond = Bond(
@@ -171,7 +171,7 @@ struct BondValuationIntegrationTests {
         )
 
         // Make it callable after 3 years at 1040
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1040.0)]
 
         let callableBond = CallableBond(
@@ -235,10 +235,10 @@ struct BondValuationIntegrationTests {
     }
 
     @Test("Workflow: Volatility impact on callable bond pricing")
-    func volatilityImpactAnalysis() {
+    func volatilityImpactAnalysis() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -248,7 +248,7 @@ struct BondValuationIntegrationTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -375,8 +375,8 @@ struct BondValuationIntegrationTests {
     @Test("Workflow: Spread decomposition into credit and option components")
     func spreadDecomposition() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -386,7 +386,7 @@ struct BondValuationIntegrationTests {
             issueDate: today
         )
 
-        let callDate = calendar.date(byAdding: .year, value: 3, to: today)!
+        let callDate = try #require(calendar.date(byAdding: .year, value: 3, to: today))
         let callSchedule = [CallProvision(date: callDate, callPrice: 1050.0)]
 
         let callableBond = CallableBond(
@@ -493,8 +493,8 @@ struct BondValuationIntegrationTests {
     @Test("Workflow: Cross-validate models with round-trip calculations")
     func crossModelValidation() throws {
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 5, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
         let creditModel = CreditSpreadModel<Double>()
         let recoveryModel = RecoveryModel<Double>()
