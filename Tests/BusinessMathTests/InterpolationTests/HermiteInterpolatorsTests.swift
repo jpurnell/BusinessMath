@@ -51,8 +51,8 @@ struct PCHIPTests {
         let xs: [Double] = [0, 1, 2, 3, 4, 5, 6]
         let ys: [Double] = [0, 0.1, 0.2, 5, 5.1, 5.2, 5.3]
         let interp = try PCHIPInterpolator(xs: xs, ys: ys)
-        let dataMin = ys.min()!
-        let dataMax = ys.max()!
+        let dataMin = try #require(ys.min())
+        let dataMax = try #require(ys.max())
         // Densely sample and assert no overshoot
         for i in 0...600 {
             let t = Double(i) / 100.0
@@ -69,7 +69,7 @@ struct PCHIPTests {
     }
 
     @Test("Throws on insufficient points")
-    func throwsOnInsufficient() {
+    func throwsOnInsufficient() throws {
         #expect(throws: InterpolationError.self) {
             _ = try PCHIPInterpolator(xs: [0.0], ys: [0.0])
         }
@@ -141,8 +141,8 @@ struct AkimaTests {
         let xs: [Double] = [0, 1, 2, 3, 4, 5, 6]
         let ys: [Double] = [0, 0.1, 0.2, 5, 5.1, 5.2, 5.3]
         let interp = try AkimaInterpolator(xs: xs, ys: ys, modified: true)
-        let dataMin = ys.min()!
-        let dataMax = ys.max()!
+        let dataMin = try #require(ys.min())
+        let dataMax = try #require(ys.max())
         for i in 0...600 {
             let t = Double(i) / 100.0
             let v = interp(t)
@@ -203,7 +203,7 @@ struct CatmullRomTests {
     }
 
     @Test("Throws when tension is out of [0, 1]")
-    func throwsOnInvalidTension() {
+    func throwsOnInvalidTension() throws {
         #expect(throws: InterpolationError.self) {
             _ = try CatmullRomInterpolator(xs: [0.0, 1.0, 2.0], ys: [0.0, 1.0, 2.0], tension: -0.1)
         }

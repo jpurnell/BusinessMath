@@ -244,7 +244,7 @@ struct GeometricDistributionTests {
 	}
 
 	@Test("Geometric distribution mode is always 1")
-	func geometricModeIsOne() {
+	func geometricModeIsOne() throws {
 		// The most likely outcome is always 1 (success on first trial)
 		let p = 0.3
 		let sampleCount = 5000
@@ -262,8 +262,8 @@ struct GeometricDistributionTests {
 		}
 
 		// Find mode
-		let maxFreq = frequencies.values.max()!
-		let mode = frequencies.filter { $0.value == maxFreq }.keys.min()!
+		let maxFreq = try #require(frequencies.values.max())
+		let mode = try #require(frequencies.filter { $0.value == maxFreq }.keys.min())
 
 		#expect(abs(mode - 1.0) < 1e-6, "Mode should always be 1 for geometric distribution")
 	}

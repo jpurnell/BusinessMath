@@ -70,19 +70,19 @@ struct CashFlowExtensionsTests {
 		#expect(wcComponents[CashFlowRole.capitalExpenditures] == nil)
 
 		// AR changes: Q2 = $1.2M - $1M = $200K (use of cash)
-		#expect(abs(arChanges[periods[1]]! - 200_000.0) < 1e-2)
+		#expect(abs(try #require(arChanges[periods[1]]) - 200_000.0) < 1e-2)
 		// Q3 = $1.4M - $1.2M = $200K (continued use of cash)
-		#expect(abs(arChanges[periods[2]]! - 200_000.0) < 1e-2)
+		#expect(abs(try #require(arChanges[periods[2]]) - 200_000.0) < 1e-2)
 
 		// Inventory changes: Q2 = $900K - $800K = $100K (use of cash)
-		#expect(abs(invChanges[periods[1]]! - 100_000.0) < 1e-2)
+		#expect(abs(try #require(invChanges[periods[1]]) - 100_000.0) < 1e-2)
 		// Q3 = $850K - $900K = -$50K (source of cash - inventory decrease)
-		#expect(abs(invChanges[periods[2]]! - (-50_000.0)) < 1e-2)
+		#expect(abs(try #require(invChanges[periods[2]]) - (-50_000.0)) < 1e-2)
 
 		// AP changes: Q2 = $700K - $600K = $100K (source of cash)
-		#expect(abs(apChanges[periods[1]]! - 100_000.0) < 1e-2)
+		#expect(abs(try #require(apChanges[periods[1]]) - 100_000.0) < 1e-2)
 		// Q3 = $750K - $700K = $50K (continued source of cash)
-		#expect(abs(apChanges[periods[2]]! - 50_000.0) < 1e-2)
+		#expect(abs(try #require(apChanges[periods[2]]) - 50_000.0) < 1e-2)
 	}
 
 	@Test("Working capital components sum equals total working capital changes")
@@ -124,12 +124,12 @@ struct CashFlowExtensionsTests {
 		let totalWC = cashFlowStmt.workingCapitalChanges
 
 		// Sum component changes for Q2
-		let sumOfComponents = components.values.reduce(0.0) { sum, timeSeries in
-			sum + timeSeries[periods[1]]!
+		let sumOfComponents = try components.values.reduce(0.0) { sum, timeSeries in
+			sum + (try #require(timeSeries[periods[1]]))
 		}
 
 		// AR: +$100K, Inv: +$50K, AP: +$50K = $200K total WC change
-		#expect(sumOfComponents == totalWC[periods[1]]!)
+		#expect(sumOfComponents == (try #require(totalWC[periods[1]])))
 	}
 
 	@Test("Working capital components aggregate multiple accounts of same role")
@@ -165,8 +165,8 @@ struct CashFlowExtensionsTests {
 
 		// Should aggregate both AR accounts
 		// Total AR: Q1=$500K, Q2=$570K → Change = $70K
-		let arChanges = components[CashFlowRole.changeInReceivables]!
-		#expect(abs(arChanges[periods[1]]! - 70_000.0) < 1e-2)
+		let arChanges = try #require(components[CashFlowRole.changeInReceivables])
+		#expect(abs(try #require(arChanges[periods[1]]) - 70_000.0) < 1e-2)
 	}
 
 	@Test("Empty components for cash flow with no working capital items")
@@ -205,7 +205,7 @@ struct CashFlowExtensionsTests {
 
 		// Total WC changes should be zero
 		let totalWC = cashFlowStmt.workingCapitalChanges
-		#expect(abs(totalWC[periods[1]]! - 0.0) < 1e-6)
+		#expect(abs(try #require(totalWC[periods[1]]) - 0.0) < 1e-6)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -237,12 +237,12 @@ struct CashFlowExtensionsTests {
 		let components: [CashFlowRole: TimeSeries<Double>] = cashFlowStmt.workingCapitalChangesByComponent
 
 		// AR increased by $300K - use of cash
-		let arChange = components[CashFlowRole.changeInReceivables]![periods[1]]!
+		let arChange = try #require(components[CashFlowRole.changeInReceivables]?[periods[1]])
 		#expect(abs(arChange - 300_000.0) < 1e-2)
 
 		// Total WC changes should match component
 		let totalWC = cashFlowStmt.workingCapitalChanges
-		#expect(abs(totalWC[periods[1]]! - 300_000.0) < 1e-2)
+		#expect(abs(try #require(totalWC[periods[1]]) - 300_000.0) < 1e-2)
 	}
 
 	@Test("AP increase tracked in components")
@@ -270,12 +270,12 @@ struct CashFlowExtensionsTests {
 		let components: [CashFlowRole: TimeSeries<Double>] = cashFlowStmt.workingCapitalChangesByComponent
 
 		// AP increased by $200K - source of cash
-		let apChange = components[CashFlowRole.changeInPayables]![periods[1]]!
+		let apChange = try #require(components[CashFlowRole.changeInPayables]?[periods[1]])
 		#expect(abs(apChange - 200_000.0) < 1e-2)
 
 		// Total WC changes should match component
 		let totalWC = cashFlowStmt.workingCapitalChanges
-		#expect(abs(totalWC[periods[1]]! - 200_000.0) < 1e-2)
+		#expect(abs(try #require(totalWC[periods[1]]) - 200_000.0) < 1e-2)
 	}
 
 	@Test("Inventory build tracked in components")
@@ -303,12 +303,12 @@ struct CashFlowExtensionsTests {
 		let components: [CashFlowRole: TimeSeries<Double>] = cashFlowStmt.workingCapitalChangesByComponent
 
 		// Inventory increased by $500K - use of cash
-		let invChange = components[CashFlowRole.changeInInventory]![periods[1]]!
+		let invChange = try #require(components[CashFlowRole.changeInInventory]?[periods[1]])
 		#expect(abs(invChange - 500_000.0) < 1e-2)
 
 		// Total WC changes should match component
 		let totalWC = cashFlowStmt.workingCapitalChanges
-		#expect(abs(totalWC[periods[1]]! - 500_000.0) < 1e-2)
+		#expect(abs(try #require(totalWC[periods[1]]) - 500_000.0) < 1e-2)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -365,9 +365,9 @@ struct CashFlowExtensionsTests {
 		let components: [CashFlowRole: TimeSeries<Double>] = cashFlowStmt.workingCapitalChangesByComponent
 
 		// Q2 Analysis
-		let q2ARChange = components[CashFlowRole.changeInReceivables]![periods[1]]!
-		let q2InvChange = components[CashFlowRole.changeInInventory]![periods[1]]!
-		let q2APChange = components[CashFlowRole.changeInPayables]![periods[1]]!
+		let q2ARChange = try #require(components[CashFlowRole.changeInReceivables]?[periods[1]])
+		let q2InvChange = try #require(components[CashFlowRole.changeInInventory]?[periods[1]])
+		let q2APChange = try #require(components[CashFlowRole.changeInPayables]?[periods[1]])
 
 		#expect(abs(q2ARChange - 200_000.0) < 1e-2)   // AR up $200K - use of cash
 		#expect(abs(q2InvChange - (-50_000.0)) < 1e-2)  // Inventory down $50K - source of cash
@@ -378,9 +378,9 @@ struct CashFlowExtensionsTests {
 		#expect(abs(q2WCImpact - (-100_000.0)) < 1e-2)  // $100K use of cash
 
 		// Q4 Analysis (operational improvements showing)
-		let q4ARChange = components[CashFlowRole.changeInReceivables]![periods[3]]!
-		let q4InvChange = components[CashFlowRole.changeInInventory]![periods[3]]!
-		let q4APChange = components[CashFlowRole.changeInPayables]![periods[3]]!
+		let q4ARChange = try #require(components[CashFlowRole.changeInReceivables]?[periods[3]])
+		let q4InvChange = try #require(components[CashFlowRole.changeInInventory]?[periods[3]])
+		let q4APChange = try #require(components[CashFlowRole.changeInPayables]?[periods[3]])
 
 		// AR growth slowing (Q3→Q4: $1.9M - $1.85M = $50K vs $200K in Q2)
 		#expect(abs(q4ARChange - 50_000.0) < 1e-2)
@@ -436,8 +436,8 @@ struct CashFlowExtensionsTests {
 		let components: [CashFlowRole: TimeSeries<Double>] = cashFlowStmt.workingCapitalChangesByComponent
 
 		// 2024 (Year 1 post-acquisition): Major WC release
-		let y1ARChange = components[CashFlowRole.changeInReceivables]![periodsPostAcquisition[0]]!
-		let y1InvChange = components[CashFlowRole.changeInInventory]![periodsPostAcquisition[0]]!
+		let y1ARChange = try #require(components[CashFlowRole.changeInReceivables]?[periodsPostAcquisition[0]])
+		let y1InvChange = try #require(components[CashFlowRole.changeInInventory]?[periodsPostAcquisition[0]])
 
 		// AR decreased $1M - source of cash (improved collections)
 		#expect(abs(y1ARChange - (-1_000_000.0)) < 1e-2)
@@ -450,7 +450,7 @@ struct CashFlowExtensionsTests {
 
 		// Total WC changes should be negative (source of cash from WC release)
 		let totalWC = cashFlowStmt.workingCapitalChanges
-		#expect(abs(totalWC[periodsPostAcquisition[0]]! - (-2_000_000.0)) < 1e-2)
+		#expect(abs(try #require(totalWC[periodsPostAcquisition[0]]) - (-2_000_000.0)) < 1e-2)
 	}
 
 	@Test("Tracking DSO improvement through AR changes")
@@ -486,17 +486,17 @@ struct CashFlowExtensionsTests {
 		)
 
 		let components: [CashFlowRole: TimeSeries<Double>] = cashFlowStmt.workingCapitalChangesByComponent
-		let arChanges = components[CashFlowRole.changeInReceivables]!
+		let arChanges = try #require(components[CashFlowRole.changeInReceivables])
 
 		// Each quarter sees AR decrease (source of cash)
-		#expect(abs(arChanges[periods[1]]! - (-100_000.0)) < 1e-2)  // Q2: AR down $100K
-		#expect(abs(arChanges[periods[2]]! - (-100_000.0)) < 1e-2)  // Q3: AR down $100K
-		#expect(abs(arChanges[periods[3]]! - (-100_000.0)) < 1e-2)  // Q4: AR down $100K
+		#expect(abs(try #require(arChanges[periods[1]]) - (-100_000.0)) < 1e-2)  // Q2: AR down $100K
+		#expect(abs(try #require(arChanges[periods[2]]) - (-100_000.0)) < 1e-2)  // Q3: AR down $100K
+		#expect(abs(try #require(arChanges[periods[3]]) - (-100_000.0)) < 1e-2)  // Q4: AR down $100K
 
 		// Total AR reduction over 3 quarters: $300K cash released
-		let q2 = -arChanges[periods[1]]!
-		let q3 = -arChanges[periods[2]]!
-		let q4 = -arChanges[periods[3]]!
+		let q2 = -(try #require(arChanges[periods[1]]))
+		let q3 = -(try #require(arChanges[periods[2]]))
+		let q4 = -(try #require(arChanges[periods[3]]))
 		let totalARRelease: Double = Double(q2) + Double(q3) + Double(q4)
 		#expect(abs(totalARRelease - 300_000.0) < 1e-2)
 	}
@@ -549,9 +549,9 @@ struct CashFlowExtensionsTests {
 		let components: [CashFlowRole: TimeSeries<Double>] = cashFlowStmt.workingCapitalChangesByComponent
 
 		// Q2 working capital changes
-		let arChange = components[CashFlowRole.changeInReceivables]![periods[1]]!
-		let invChange = components[CashFlowRole.changeInInventory]![periods[1]]!
-		let apChange = components[CashFlowRole.changeInPayables]![periods[1]]!
+		let arChange = try #require(components[CashFlowRole.changeInReceivables]?[periods[1]])
+		let invChange = try #require(components[CashFlowRole.changeInInventory]?[periods[1]])
+		let apChange = try #require(components[CashFlowRole.changeInPayables]?[periods[1]])
 
 		// Small AR increase
 		#expect(abs(arChange - 10_000.0) < 1e-2)

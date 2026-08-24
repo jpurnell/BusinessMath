@@ -19,14 +19,14 @@ struct DEAInputValidationTests {
     // MARK: - Insufficient DMUs
 
     @Test("Empty DMU array throws insufficientDMUs")
-    func emptyDMUArray() {
+    func emptyDMUArray() throws {
         #expect(throws: DEAError.self) {
             _ = try solver.solve(dmus: [])
         }
     }
 
     @Test("Single DMU throws insufficientDMUs")
-    func singleDMU() {
+    func singleDMU() throws {
         let dmu = DMU(name: "A", inputs: [1.0], outputs: [1.0])
         #expect(throws: DEAError.self) {
             _ = try solver.solve(dmus: [dmu])
@@ -36,7 +36,7 @@ struct DEAInputValidationTests {
     // MARK: - Non-Positive Values
 
     @Test("Zero input value throws nonPositiveValues")
-    func zeroInput() {
+    func zeroInput() throws {
         let dmus = [
             DMU(name: "A", inputs: [0.0, 5.0], outputs: [1.0]),
             DMU(name: "B", inputs: [3.0, 3.0], outputs: [2.0])
@@ -47,7 +47,7 @@ struct DEAInputValidationTests {
     }
 
     @Test("Negative input value throws nonPositiveValues")
-    func negativeInput() {
+    func negativeInput() throws {
         let dmus = [
             DMU(name: "A", inputs: [-1.0, 5.0], outputs: [1.0]),
             DMU(name: "B", inputs: [3.0, 3.0], outputs: [2.0])
@@ -58,7 +58,7 @@ struct DEAInputValidationTests {
     }
 
     @Test("Zero output value throws nonPositiveValues")
-    func zeroOutput() {
+    func zeroOutput() throws {
         let dmus = [
             DMU(name: "A", inputs: [2.0], outputs: [0.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
@@ -69,7 +69,7 @@ struct DEAInputValidationTests {
     }
 
     @Test("Negative output value throws nonPositiveValues")
-    func negativeOutput() {
+    func negativeOutput() throws {
         let dmus = [
             DMU(name: "A", inputs: [2.0], outputs: [-1.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
@@ -82,7 +82,7 @@ struct DEAInputValidationTests {
     // MARK: - Dimension Mismatches
 
     @Test("Mismatched input dimensions throws dimensionMismatch")
-    func mismatchedInputDimensions() {
+    func mismatchedInputDimensions() throws {
         let dmus = [
             DMU(name: "A", inputs: [2.0, 5.0], outputs: [1.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
@@ -93,7 +93,7 @@ struct DEAInputValidationTests {
     }
 
     @Test("Mismatched output dimensions throws dimensionMismatch")
-    func mismatchedOutputDimensions() {
+    func mismatchedOutputDimensions() throws {
         let dmus = [
             DMU(name: "A", inputs: [2.0], outputs: [1.0, 4.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
@@ -106,7 +106,7 @@ struct DEAInputValidationTests {
     // MARK: - Empty Dimensions
 
     @Test("Empty inputs throws emptyDimension")
-    func emptyInputs() {
+    func emptyInputs() throws {
         let dmus = [
             DMU(name: "A", inputs: [], outputs: [1.0]),
             DMU(name: "B", inputs: [], outputs: [2.0])
@@ -117,7 +117,7 @@ struct DEAInputValidationTests {
     }
 
     @Test("Empty outputs throws emptyDimension")
-    func emptyOutputs() {
+    func emptyOutputs() throws {
         let dmus = [
             DMU(name: "A", inputs: [2.0], outputs: []),
             DMU(name: "B", inputs: [3.0], outputs: [])

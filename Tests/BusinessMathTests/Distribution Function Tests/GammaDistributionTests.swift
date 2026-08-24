@@ -278,7 +278,7 @@ struct GammaDistributionTests {
 	}
 
 	@Test("Gamma distribution mode for r > 1")
-	func gammaMode() {
+	func gammaMode() throws {
 		// Mode = (r-1)/λ for r >= 1
 		let r = 5
 		let λ = 2.0
@@ -294,8 +294,8 @@ struct GammaDistributionTests {
 		// Create histogram to find mode
 		let sorted = samples.sorted()
 		let bins = 50
-		let minVal = sorted.first!
-		let maxVal = sorted.last!
+		let minVal = try #require(sorted.first)
+		let maxVal = try #require(sorted.last)
 		let binWidth = (maxVal - minVal) / Double(bins)
 
 		var binCounts: [Int] = Array(repeating: 0, count: bins)
@@ -305,8 +305,8 @@ struct GammaDistributionTests {
 		}
 
 		// Find bin with most samples
-		let maxCount = binCounts.max()!
-		let modeIndex = binCounts.firstIndex(of: maxCount)!
+		let maxCount = try #require(binCounts.max())
+		let modeIndex = try #require(binCounts.firstIndex(of: maxCount))
 		let empiricalMode = minVal + (Double(modeIndex) + 0.5) * binWidth
 
 		// Mode should be close to (r-1)/λ

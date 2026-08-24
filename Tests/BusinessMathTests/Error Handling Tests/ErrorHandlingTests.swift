@@ -73,7 +73,7 @@ import RealModule
         }
     }
 
-    @Test("BusinessMathError_EmptyCashFlows") func businessMathErrorEmptyCashFlows() {
+    @Test("BusinessMathError_EmptyCashFlows") func businessMathErrorEmptyCashFlows() throws {
         // Given: An investment with no cash flows
         // When: Calculating NPV
         // Then: Should throw BusinessMathError.invalidInput
@@ -119,7 +119,7 @@ import RealModule
 
     // MARK: - Calculation Failure Tests
 
-    @Test("BusinessMathError_IRRNonConvergence") func businessMathErrorIRRNonConvergence() {
+    @Test("BusinessMathError_IRRNonConvergence") func businessMathErrorIRRNonConvergence() throws {
         // Given: Cash flows that don't converge to IRR
         // When: Calculating IRR
         // Then: Should throw BusinessMathError.calculationFailed
@@ -142,7 +142,7 @@ import RealModule
         }
     }
 
-    @Test("BusinessMathError_DivisionByZero") func businessMathErrorDivisionByZero() {
+    @Test("BusinessMathError_DivisionByZero") func businessMathErrorDivisionByZero() throws {
         // Given: A calculation that would divide by zero
         // When: Performing calculation
         // Then: Should throw BusinessMathError.divisionByZero
@@ -162,7 +162,7 @@ import RealModule
         }
     }
 
-    @Test("BusinessMathError_NumericalInstability") func businessMathErrorNumericalInstability() {
+    @Test("BusinessMathError_NumericalInstability") func businessMathErrorNumericalInstability() throws {
         // Given: A calculation with numerical instability
         // When: Performing calculation
         // Then: Should throw BusinessMathError.numericalInstability
@@ -288,7 +288,7 @@ import RealModule
 		}
     }
 
-    @Test("Error_ProvidesInterpolateSuggestion") func errorProvidesInterpolateSuggestion() {
+    @Test("Error_ProvidesInterpolateSuggestion") func errorProvidesInterpolateSuggestion() throws {
         // Given: A time series with gaps
         // When: Validation identifies gaps
         // Then: Should suggest interpolation as recovery option
@@ -298,10 +298,10 @@ import RealModule
 
         let gapWarning = validationResult.warnings.first { $0.message.contains("gap") }
         // gapWarning already checked in if-let
-        #expect(gapWarning!.suggestions.contains { $0.contains("interpolate") || $0.contains("interpolation") })
+        #expect(try #require(gapWarning).suggestions.contains { $0.contains("interpolate") || $0.contains("interpolation") })
     }
 
-    @Test("Error_ProvidesAlternativeMethodSuggestion") func errorProvidesAlternativeMethodSuggestion() {
+    @Test("Error_ProvidesAlternativeMethodSuggestion") func errorProvidesAlternativeMethodSuggestion() throws {
         // Given: IRR calculation that fails to converge
         // When: Error is thrown
         // Then: Should suggest alternative calculation methods
@@ -550,7 +550,7 @@ struct ErrorHandlingAdditionalTests {
 	}
 
 	@Test("Initial cost of zero is invalid and reports value")
-	func initialCost_ZeroIsInvalid() {
+	func initialCost_ZeroIsInvalid() throws {
 		do {
 			_ = try createInvestmentWithInitialCost(0.0)
 			Issue.record("Expected invalidInput error for zero cost")
@@ -610,7 +610,7 @@ struct ErrorHandlingAdditionalTests {
 	// MARK: - Stronger Context Assertions
 
 	@Test("Empty cash flows exposes count in context")
-	func emptyCashFlows_ContextIncludesCount() {
+	func emptyCashFlows_ContextIncludesCount() throws {
 		do {
 			_ = try calculateNPVWithEmptyCashFlows()
 			Issue.record("Expected invalidInput error for empty cash flows")
@@ -627,7 +627,7 @@ struct ErrorHandlingAdditionalTests {
 	}
 
 	@Test("Mismatched dimensions context carries numeric expected/actual")
-	func mismatchedDimensions_ContextNumericValues() {
+	func mismatchedDimensions_ContextNumericValues() throws {
 		do {
 			_ = try combineTimeSeriesWithMismatchedPeriods()
 			Issue.record("Expected mismatchedDimensions error")
@@ -650,7 +650,7 @@ struct ErrorHandlingAdditionalTests {
 	}
 
 	@Test("Division by zero includes denominator and operation in context")
-	func divisionByZero_IncludesContext() {
+	func divisionByZero_IncludesContext() throws {
 		do {
 			_ = try calculateMetricWithZeroDenominator()
 			Issue.record("Expected divisionByZero error")
@@ -733,7 +733,7 @@ struct ErrorHandlingAdditionalTests {
 	}
 
 	@Test("IRR non-convergence description includes operation and iteration hint")
-	func irrNonConvergence_DescriptionContainsHints() {
+	func irrNonConvergence_DescriptionContainsHints() throws {
 		do {
 			_ = try calculateIRRForNonConvergentCashFlows()
 			Issue.record("Expected calculationFailed error")

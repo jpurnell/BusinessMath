@@ -67,14 +67,14 @@ struct LinearRegressionConvenienceTests {
     }
 
     @Test("Linear regression throws on empty data")
-    func linearRegressionEmptyData() {
+    func linearRegressionEmptyData() throws {
         #expect(throws: RegressionError.self) {
             try linearRegression(x: [], y: [])
         }
     }
 
     @Test("Linear regression throws on dimension mismatch")
-    func linearRegressionDimensionMismatch() {
+    func linearRegressionDimensionMismatch() throws {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0]
 
@@ -84,7 +84,7 @@ struct LinearRegressionConvenienceTests {
     }
 
     @Test("Linear regression throws on insufficient data")
-    func linearRegressionInsufficientData() {
+    func linearRegressionInsufficientData() throws {
         let x = [1.0]
         let y = [2.0]
 
@@ -192,7 +192,7 @@ struct LinearRegressionConvenienceTests {
     }
 
     @Test("Polynomial regression throws on zero degree")
-    func polynomialZeroDegree() {
+    func polynomialZeroDegree() throws {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0, 3.0]
 
@@ -202,7 +202,7 @@ struct LinearRegressionConvenienceTests {
     }
 
     @Test("Polynomial regression throws on negative degree")
-    func polynomialNegativeDegree() {
+    func polynomialNegativeDegree() throws {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0, 3.0]
 
@@ -212,7 +212,7 @@ struct LinearRegressionConvenienceTests {
     }
 
     @Test("Polynomial regression throws on degree ≥ sample size")
-    func polynomialDegreeTooHigh() {
+    func polynomialDegreeTooHigh() throws {
         let x = [1.0, 2.0, 3.0, 4.0]
         let y = [1.0, 2.0, 3.0, 4.0]
 
@@ -222,14 +222,14 @@ struct LinearRegressionConvenienceTests {
     }
 
     @Test("Polynomial regression throws on empty data")
-    func polynomialEmptyData() {
+    func polynomialEmptyData() throws {
         #expect(throws: RegressionError.self) {
             try polynomialRegression(x: [], y: [], degree: 2)
         }
     }
 
     @Test("Polynomial regression throws on dimension mismatch")
-    func polynomialDimensionMismatch() {
+    func polynomialDimensionMismatch() throws {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0]
 

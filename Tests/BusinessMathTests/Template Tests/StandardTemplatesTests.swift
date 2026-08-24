@@ -58,7 +58,7 @@ struct StandardTemplatesTests {
     }
 
     @Test("SaaS template validates parameters")
-    func saasTemplateValidation() {
+    func saasTemplateValidation() throws {
         let template = SaaSTemplate()
 
         // Invalid: negative MRR
@@ -140,7 +140,7 @@ struct StandardTemplatesTests {
     }
 
     @Test("Retail template validation")
-    func retailTemplateValidation() {
+    func retailTemplateValidation() throws {
         let template = RetailTemplate()
 
         // Invalid: COGS > 1

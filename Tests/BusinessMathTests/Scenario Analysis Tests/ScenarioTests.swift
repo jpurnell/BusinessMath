@@ -188,7 +188,7 @@ struct FinancialScenarioTests {
 	// MARK: - Scenario Comparison Tests
 
 	@Test("Different scenarios have different characteristics")
-	func scenarioComparison() {
+	func scenarioComparison() throws {
 		// Base case
 		let baseOverrides: [String: AnyDriver<Double>] = [
 			"Price": AnyDriver(DeterministicDriver(name: "Price", value: 100.0)),
@@ -234,8 +234,8 @@ struct FinancialScenarioTests {
 		#expect(abs((pessimisticPrice ?? 0) - 90.0) < 1e-6)
 
 		// Verify ordering
-		#expect(pessimisticPrice! < basePrice!)
-		#expect(basePrice! < optimisticPrice!)
+		#expect(try #require(pessimisticPrice) < (try #require(basePrice)))
+		#expect(try #require(basePrice) < (try #require(optimisticPrice)))
 	}
 
 	// MARK: - Edge Cases

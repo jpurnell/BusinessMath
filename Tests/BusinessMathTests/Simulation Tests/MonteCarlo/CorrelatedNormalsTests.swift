@@ -33,7 +33,7 @@ struct CorrelatedNormalsTests {
 	}
 
 	@Test("CorrelatedNormals rejects mismatched dimensions")
-	func rejectMismatchedDimensions() {
+	func rejectMismatchedDimensions() throws {
 		let means = [0.0, 0.0, 0.0]  // 3 elements
 		let correlationMatrix = [  // 2x2 matrix
 			[1.0, 0.5],
@@ -46,7 +46,7 @@ struct CorrelatedNormalsTests {
 	}
 
 	@Test("CorrelatedNormals rejects invalid correlation matrix")
-	func rejectInvalidCorrelationMatrix() {
+	func rejectInvalidCorrelationMatrix() throws {
 		let means = [0.0, 0.0]
 		let invalidMatrix = [  // Not symmetric
 			[1.0, 0.5],

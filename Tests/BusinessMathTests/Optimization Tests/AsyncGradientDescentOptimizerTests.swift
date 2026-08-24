@@ -163,8 +163,8 @@ struct AsyncGradientDescentOptimizerTests {
 
         // Objective value should decrease over time (generally)
         if progressUpdates.count > 1 {
-            let first = progressUpdates.first!.objectiveValue
-            let last = progressUpdates.last!.objectiveValue
+            let first = try #require(progressUpdates.first).objectiveValue
+            let last = try #require(progressUpdates.last).objectiveValue
             #expect(last < first)
         }
     }

@@ -60,7 +60,7 @@ struct MonteCarloRNGTests {
     /// Compiling a trivial kernel first is what separates "no shader compiler here,
     /// skip" from "our source is broken, fail". Without that split every assertion
     /// below would be reported as a shader bug on a machine that simply has no GPU.
-    private func gpuContext() -> GPUContext? {
+    private func gpuContext() throws -> GPUContext? {
         guard let device = MTLCreateSystemDefaultDevice() else { return nil }
         let trivial = """
         #include <metal_stdlib>
@@ -93,7 +93,7 @@ struct MonteCarloRNGTests {
     /// thread is slow by GPU standards and deliberately so: the point is the order
     /// of the draws, which a parallel dispatch destroys.
     private func streamUniforms(count: Int, seed: UInt64) throws -> [Float]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>
@@ -122,7 +122,7 @@ struct MonteCarloRNGTests {
 
     /// `count` successive normal variates from **one** thread's stream.
     private func streamNormals(count: Int, mean: Float, stdDev: Float, seed: UInt64) throws -> [Float]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>
@@ -162,7 +162,7 @@ struct MonteCarloRNGTests {
     /// read back in thread order. It is a sample across streams, not along one, and
     /// only the cross-thread tests interpret it.
     private func firstDrawPerThread(count: Int, seed: UInt64) throws -> [Float]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>
@@ -219,7 +219,7 @@ struct MonteCarloRNGTests {
     /// assert on `(0, 0)` directly. Inferring it from output would not: a thread stuck
     /// in the absorbing state emits `0.0f`, and `0.0f` is also a legitimate draw.
     private func seededStates(count: Int, seed: UInt64) throws -> [SIMD2<UInt64>]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>

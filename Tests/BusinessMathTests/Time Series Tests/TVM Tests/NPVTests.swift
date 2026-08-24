@@ -252,7 +252,7 @@ struct NPVTests {
 	}
 
 	@Test("Discounted payback longer than regular payback")
-	func discountedPaybackLongerTest() {
+	func discountedPaybackLongerTest() throws {
 		let cashFlows = [-1000.0, 500.0, 500.0, 500.0]
 		let rate = 0.10
 
@@ -263,7 +263,7 @@ struct NPVTests {
 		// Discounted payback should be >= regular payback
 		#expect(regularPayback == 2)
 		if let dp = discountedPayback {
-			#expect(dp >= regularPayback!)
+			#expect(dp >= (try #require(regularPayback)))
 		}
 	}
 

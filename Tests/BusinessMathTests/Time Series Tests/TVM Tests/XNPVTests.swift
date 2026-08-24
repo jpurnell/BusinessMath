@@ -164,7 +164,7 @@ struct XNPVTests {
 	// MARK: - Error Cases
 
 	@Test("XNPV with mismatched dates and cash flows should throw")
-	func xnpvMismatchedArrays() {
+	func xnpvMismatchedArrays() throws {
 		let dates = [date(2025, 1, 1), date(2026, 1, 1)]
 		let cashFlows = [-1000.0, 500.0, 600.0]  // One extra
 
@@ -174,7 +174,7 @@ struct XNPVTests {
 	}
 
 	@Test("XNPV with empty arrays should throw")
-	func xnpvEmpty() {
+	func xnpvEmpty() throws {
 		let dates: [Date] = []
 		let cashFlows: [Double] = []
 
@@ -184,7 +184,7 @@ struct XNPVTests {
 	}
 
 	@Test("XIRR with all positive cash flows should throw")
-	func xirrAllPositive() {
+	func xirrAllPositive() throws {
 		let dates = [date(2025, 1, 1), date(2026, 1, 1)]
 		let cashFlows = [100.0, 200.0]
 
@@ -194,7 +194,7 @@ struct XNPVTests {
 	}
 
 	@Test("XIRR with all negative cash flows should throw")
-	func xirrAllNegative() {
+	func xirrAllNegative() throws {
 		let dates = [date(2025, 1, 1), date(2026, 1, 1)]
 		let cashFlows = [-100.0, -200.0]
 

@@ -124,7 +124,7 @@ struct CapitalAllocationTests {
 
 		// Verify each project is either fully funded or not at all
 		for (projectName, capital) in result.allocations {
-			let project = projects.first { $0.name == projectName }!
+			let project = try #require(projects.first { $0.name == projectName })
 			#expect(capital == project.capitalRequired || capital == 0)
 		}
 	}

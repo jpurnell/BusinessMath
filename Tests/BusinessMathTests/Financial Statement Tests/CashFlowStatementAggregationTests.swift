@@ -72,7 +72,7 @@ struct CashFlowStatementAggregationTests {
 
 		#expect(cfs.accounts.count == 0)
 		// Should have zero cash flows
-		#expect(abs(cfs.operatingCashFlow[testPeriods[0]]! - 0.0) < 1e-6)
+		#expect(abs(try #require(cfs.operatingCashFlow[testPeriods[0]]) - 0.0) < 1e-6)
 	}
 
 	// MARK: - Role Validation Tests
@@ -147,8 +147,8 @@ struct CashFlowStatementAggregationTests {
 		)
 
 		// Operating cash flow = net income + depreciation + SBC
-		#expect(abs(cfs.operatingCashFlow[testPeriods[0]]! - 1150.0) < 1e-2)  // 1000 + 100 + 50
-		#expect(abs(cfs.operatingCashFlow[testPeriods[1]]! - 1265.0) < 1e-2)  // 1100 + 110 + 55
+		#expect(abs(try #require(cfs.operatingCashFlow[testPeriods[0]]) - 1150.0) < 1e-2)  // 1000 + 100 + 50
+		#expect(abs(try #require(cfs.operatingCashFlow[testPeriods[1]]) - 1265.0) < 1e-2)  // 1100 + 110 + 55
 	}
 
 	@Test("CashFlowStatement aggregates investing cash flow items")
@@ -174,9 +174,9 @@ struct CashFlowStatementAggregationTests {
 		)
 
 		// Investing cash flow = capex + acquisitions (both are outflows/negative)
-		#expect(abs(cfs.investingCashFlow[testPeriods[0]]! - (-700.0)) < 1e-2)  // -200 + (-500)
-		#expect(abs(cfs.investingCashFlow[testPeriods[1]]! - (-220.0)) < 1e-2)  // -220 + 0
-		#expect(abs(cfs.investingCashFlow[testPeriods[2]]! - (-990.0)) < 1e-2)  // -240 + (-750)
+		#expect(abs(try #require(cfs.investingCashFlow[testPeriods[0]]) - (-700.0)) < 1e-2)  // -200 + (-500)
+		#expect(abs(try #require(cfs.investingCashFlow[testPeriods[1]]) - (-220.0)) < 1e-2)  // -220 + 0
+		#expect(abs(try #require(cfs.investingCashFlow[testPeriods[2]]) - (-990.0)) < 1e-2)  // -240 + (-750)
 	}
 
 	@Test("CashFlowStatement aggregates financing cash flow items")
@@ -210,7 +210,7 @@ struct CashFlowStatementAggregationTests {
 
 		// Financing cash flow = issuance - repayment - dividends
 		// Q1: 1000 - 100 - 50 = 850 (but they all add since values are already signed)
-		#expect(abs(cfs.financingCashFlow[testPeriods[0]]! - 1150.0) < 1e-2)  // 1000 + 100 + 50
+		#expect(abs(try #require(cfs.financingCashFlow[testPeriods[0]]) - 1150.0) < 1e-2)  // 1000 + 100 + 50
 	}
 
 	// MARK: - Working Capital Change Tests
@@ -235,7 +235,7 @@ struct CashFlowStatementAggregationTests {
 		// The CFS should automatically calculate changes: 100, 100, 100
 		// (because receivables.cashFlowRole!.usesChangeInBalance == true)
 		// Change in receivables = current - previous
-		let changes = cfs.workingCapitalChanges[testPeriods[1]]!  // Q2
+		let changes = try #require(cfs.workingCapitalChanges[testPeriods[1]])  // Q2
 		#expect(abs(changes - 100.0) < 1e-6)  // 1100 - 1000
 	}
 
@@ -279,7 +279,7 @@ struct CashFlowStatementAggregationTests {
 		// Inventory: +50 (550 - 500) = -50 cash impact
 		// Payables: +30 (330 - 300) = +30 cash impact
 		// Net: -100 - 50 + 30 = -120 (cash decreased by 120)
-		let totalWCChange = cfs.workingCapitalChanges[testPeriods[1]]!
+		let totalWCChange = try #require(cfs.workingCapitalChanges[testPeriods[1]])
 		#expect(abs(totalWCChange - 180.0) < 1e-6)  // 100 + 50 + 30 (absolute changes)
 	}
 
@@ -378,8 +378,8 @@ struct CashFlowStatementAggregationTests {
 		)
 
 		// Operating cash flow = net income + depreciation
-		#expect(abs(cfs.operatingCashFlow[testPeriods[0]]! - 1100.0) < 1e-2)  // 1000 + 100
-		#expect(abs(cfs.operatingCashFlow[testPeriods[1]]! - 1210.0) < 1e-2)  // 1100 + 110
+		#expect(abs(try #require(cfs.operatingCashFlow[testPeriods[0]]) - 1100.0) < 1e-2)  // 1000 + 100
+		#expect(abs(try #require(cfs.operatingCashFlow[testPeriods[1]]) - 1210.0) < 1e-2)  // 1100 + 110
 	}
 
 	@Test("CashFlowStatement computes investing cash flow correctly")
@@ -398,8 +398,8 @@ struct CashFlowStatementAggregationTests {
 		)
 
 		// Investing cash flow = capex (negative/outflow)
-		#expect(abs(cfs.investingCashFlow[testPeriods[0]]! - (-200.0)) < 1e-6)
-		#expect(abs(cfs.investingCashFlow[testPeriods[1]]! - (-220.0)) < 1e-6)
+		#expect(abs(try #require(cfs.investingCashFlow[testPeriods[0]]) - (-200.0)) < 1e-6)
+		#expect(abs(try #require(cfs.investingCashFlow[testPeriods[1]]) - (-220.0)) < 1e-6)
 	}
 
 	@Test("CashFlowStatement computes financing cash flow correctly")
@@ -425,8 +425,8 @@ struct CashFlowStatementAggregationTests {
 		)
 
 		// Financing cash flow = issuance - dividends
-		#expect(abs(cfs.financingCashFlow[testPeriods[0]]! - 1050.0) < 1e-2)  // 1000 + 50
-		#expect(abs(cfs.financingCashFlow[testPeriods[1]]! - 55.0) < 1e-6)    // 0 + 55
+		#expect(abs(try #require(cfs.financingCashFlow[testPeriods[0]]) - 1050.0) < 1e-2)  // 1000 + 50
+		#expect(abs(try #require(cfs.financingCashFlow[testPeriods[1]]) - 55.0) < 1e-6)    // 0 + 55
 	}
 
 	@Test("CashFlowStatement computes free cash flow correctly")
@@ -460,9 +460,9 @@ struct CashFlowStatementAggregationTests {
 
 		// Free Cash Flow = Operating Cash Flow + Investing Cash Flow
 		// Q1: (1000 + 100) + (-200) = 900
-		#expect(abs(cfs.freeCashFlow[testPeriods[0]]! - 900.0) < 1e-2)
+		#expect(abs(try #require(cfs.freeCashFlow[testPeriods[0]]) - 900.0) < 1e-2)
 		// Q2: (1100 + 110) + (-220) = 990
-		#expect(abs(cfs.freeCashFlow[testPeriods[1]]! - 990.0) < 1e-2)
+		#expect(abs(try #require(cfs.freeCashFlow[testPeriods[1]]) - 990.0) < 1e-2)
 	}
 
 	// MARK: - Entity and Period Validation Tests

@@ -221,7 +221,7 @@ struct LogisticDistributionTests {
 	}
 
 	@Test("Logistic distribution range is unbounded")
-	func logisticUnbounded() {
+	func logisticUnbounded() throws {
 		// Logistic can produce any real value (unlike some bounded distributions)
 		let mean = 0.0
 		let stdDev = 1.0
@@ -241,7 +241,7 @@ struct LogisticDistributionTests {
 		#expect(negativeCount > 0, "Should produce negative values")
 
 		// Should see some extreme values
-		let maxAbs = samples.map { abs($0) }.max()!
+		let maxAbs = try #require(samples.map { abs($0) }.max())
 		#expect(maxAbs > 5.0, "Should produce some extreme values")
 	}
 

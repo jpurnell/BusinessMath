@@ -157,8 +157,8 @@ struct MonteCarloModelEvaluatorTests {
         var numInputsVar = Int32(numInputs)
         var numOpsVar = Int32(bytecode.count)
 
-        let commandBuffer = commandQueue.makeCommandBuffer()!
-        let encoder = commandBuffer.makeComputeCommandEncoder()!
+        let commandBuffer = try #require(commandQueue.makeCommandBuffer())
+        let encoder = try #require(commandBuffer.makeComputeCommandEncoder())
         encoder.setComputePipelineState(evalPipeline)
         encoder.setBuffer(inputBuffer, offset: 0, index: 0)
         encoder.setBuffer(opBuffer, offset: 0, index: 1)
@@ -188,11 +188,11 @@ struct MonteCarloModelEvaluatorTests {
     // MARK: - Helper: CPU Model Evaluator (Reference Implementation)
 
     /// Evaluate model on CPU for comparison
-    private func evaluateModelCPU(inputs: [Float], bytecode: [ModelOp]) -> Float {
+    private func evaluateModelCPU(inputs: [Float], bytecode: [ModelOp]) throws -> Float {
         var stack: [Float] = []
 
         for op in bytecode {
-            switch Opcode(rawValue: op.opcode)! {
+            switch (try #require(Opcode(rawValue: op.opcode))) {
             case .add:
                 let b = stack.removeLast()
                 let a = stack.removeLast()
@@ -244,7 +244,7 @@ struct MonteCarloModelEvaluatorTests {
 
         // Evaluate on CPU and compare
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001, "Addition: CPU=\(cpuResult) should match GPU=\(gpuResult)")
         }
@@ -269,7 +269,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001)
         }
@@ -295,7 +295,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001)
         }
@@ -321,7 +321,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001)
         }
@@ -346,7 +346,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001, "Expected \(inputs[0]) + 100 = \(cpuResult), got \(gpuResult)")
         }
@@ -375,7 +375,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001,
                    "For inputs \(inputs): CPU=\(cpuResult) should match GPU=\(gpuResult)")
@@ -404,7 +404,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001)
         }
@@ -431,7 +431,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001)
         }
@@ -482,7 +482,7 @@ struct MonteCarloModelEvaluatorTests {
         guard !gpuResults.isEmpty else { return }
 
         for (i, inputs) in testInputs.enumerated() {
-            let cpuResult = evaluateModelCPU(inputs: inputs, bytecode: bytecode)
+            let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
             let gpuResult = gpuResults[i]
             #expect(abs(cpuResult - gpuResult) < 0.001)
         }

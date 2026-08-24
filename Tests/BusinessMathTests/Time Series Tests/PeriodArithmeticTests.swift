@@ -180,13 +180,13 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Add 1 day to a date")
-	func addOneDay() {
+	func addOneDay() throws {
 		var components = DateComponents()
 		components.year = 2025
 		components.month = 1
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let day1 = Period.day(date)
 		let day2 = day1 + 1
@@ -198,13 +198,13 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Add days across month boundary")
-	func addDaysAcrossMonth() {
+	func addDaysAcrossMonth() throws {
 		var components = DateComponents()
 		components.year = 2025
 		components.month = 1
 		components.day = 31
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let jan31 = Period.day(date)
 		let feb1 = jan31 + 1
@@ -290,13 +290,13 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Subtract 1 day from a date")
-	func subtractOneDay() {
+	func subtractOneDay() throws {
 		var components = DateComponents()
 		components.year = 2025
 		components.month = 1
 		components.day = 16
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let day2 = Period.day(date)
 		let day1 = day2 - 1
@@ -308,13 +308,13 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Subtract days across month boundary")
-	func subtractDaysAcrossMonth() {
+	func subtractDaysAcrossMonth() throws {
 		var components = DateComponents()
 		components.year = 2025
 		components.month = 2
 		components.day = 1
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let feb1 = Period.day(date)
 		let jan31 = feb1 - 1
@@ -413,10 +413,10 @@ struct PeriodArithmeticTests {
 		components.month = 1
 		components.day = 1
 		let calendar = Calendar.current
-		let date1 = calendar.date(from: components)!
+		let date1 = try #require(calendar.date(from: components))
 
 		components.day = 10
-		let date2 = calendar.date(from: components)!
+		let date2 = try #require(calendar.date(from: components))
 
 		let day1 = Period.day(date1)
 		let day10 = Period.day(date2)
@@ -580,7 +580,7 @@ struct PeriodArithmeticTests {
 	}
 
 	@Test("Leap year handling in arithmetic")
-	func leapYearArithmetic() {
+	func leapYearArithmetic() throws {
 		// Feb 29, 2024 (leap year) + 12 months = Feb 29, 2025?
 		// No, 2025 is not a leap year, so should go to Feb 28, 2025
 		var components = DateComponents()
@@ -588,7 +588,7 @@ struct PeriodArithmeticTests {
 		components.month = 2
 		components.day = 29
 		let calendar = Calendar.current
-		let leapDay = calendar.date(from: components)!
+		let leapDay = try #require(calendar.date(from: components))
 
 		let feb29_2024 = Period.day(leapDay)
 		let oneYearLater = feb29_2024 + 365

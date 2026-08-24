@@ -121,7 +121,7 @@ struct BranchAndCutRobustnessTests {
             integerSpec: .allInteger(dimension: 1)
         )
 
-        #expect(result.cuttingPlaneStats!.totalCutsGenerated < 5)
+        #expect(try #require(result.cuttingPlaneStats).totalCutsGenerated < 5)
     }
 
     // MARK: Tier 3 — Numerical Robustness
@@ -149,7 +149,7 @@ struct BranchAndCutRobustnessTests {
             integerSpec: .allInteger(dimension: 1)
         )
 
-        #expect(result.cuttingPlaneStats!.maxRoundsAtNode <= solver.maxCuttingRounds)
+        #expect(try #require(result.cuttingPlaneStats).maxRoundsAtNode <= solver.maxCuttingRounds)
     }
 
     @Test("Numerical tolerance does not reject near-integer solutions")

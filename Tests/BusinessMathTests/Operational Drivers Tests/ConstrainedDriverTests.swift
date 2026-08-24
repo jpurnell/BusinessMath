@@ -56,7 +56,7 @@ struct ConstrainedDriverTests {
 	}
 
 	@Test("Clamped values affect Monte Carlo statistics")
-	func clampedAffectsStatistics() {
+	func clampedAffectsStatistics() throws {
 		// Normal(0, 10) clamped to [0, ∞) will have positive bias
 		let base = ProbabilisticDriver<Double>.normal(name: "Value", mean: 0.0, stdDev: 10.0)
 		let clamped = base.positive()
@@ -65,7 +65,7 @@ struct ConstrainedDriverTests {
 		let projection = DriverProjection(driver: clamped, periods: periods)
 		let results = projection.projectMonteCarlo(iterations: 10_000)
 
-		let stats = results.statistics[periods[0]]!
+		let stats = try #require(results.statistics[periods[0]])
 
 		// Mean should be positive (not 0) due to clamping
 		#expect(stats.mean > 1.0, "Clamped mean should be biased positive")
@@ -74,7 +74,7 @@ struct ConstrainedDriverTests {
 		#expect(stats.min >= 0.0, "Minimum should be non-negative")
 
 		// No negative values
-		#expect(results.percentiles[periods[0]]!.p5 >= 0.0)
+		#expect(try #require(results.percentiles[periods[0]]).p5 >= 0.0)
 	}
 
 	// MARK: - Positive Tests
@@ -213,7 +213,7 @@ struct ConstrainedDriverTests {
 	}
 
 	@Test("Utilization rate bounded to [0, 1]")
-	func utilizationRateBounded() {
+	func utilizationRateBounded() throws {
 		let utilization = ProbabilisticDriver<Double>.normal(name: "Utilization", mean: 0.75, stdDev: 0.2)
 			.clamped(min: 0.0, max: 1.0)
 
@@ -221,13 +221,13 @@ struct ConstrainedDriverTests {
 		let projection = DriverProjection(driver: utilization, periods: periods)
 		let results = projection.projectMonteCarlo(iterations: 5000)
 
-		let stats = results.statistics[periods[0]]!
+		let stats = try #require(results.statistics[periods[0]])
 
 		// All values should be in [0, 1]
 		#expect(stats.min >= 0.0)
 		#expect(stats.max <= 1.0)
-		#expect(results.percentiles[periods[0]]!.p5 >= 0.0)
-		#expect(results.percentiles[periods[0]]!.p95 <= 1.0)
+		#expect(try #require(results.percentiles[periods[0]]).p5 >= 0.0)
+		#expect(try #require(results.percentiles[periods[0]]).p95 <= 1.0)
 	}
 
 	@Test("Headcount must be positive integer")
@@ -322,7 +322,7 @@ struct ConstrainedDriverTests {
 	// MARK: - Monte Carlo Integration
 
 	@Test("Constrained drivers in full Monte Carlo projection")
-	func fullMonteCarloWithConstraints() {
+	func fullMonteCarloWithConstraints() throws {
 		// Model: Profit = (Quantity × Price) - (Fixed + Variable × Quantity)
 		// All constrained appropriately
 
@@ -348,7 +348,7 @@ struct ConstrainedDriverTests {
 
 		// Expected profit: (1000 × 100) - (10,000 + 60 × 1000) = 30,000
 		for period in periods {
-			let stats = results.statistics[period]!
+			let stats = try #require(results.statistics[period])
 			print("Stats:\n\(stats.formattedDescription)")
 			#expect(abs(stats.mean - 30_000.0) < 5000.0)
 		}
@@ -394,7 +394,7 @@ struct ConstrainedDriverAdditionalTests {
 	}
 
 	@Test("Percentiles consistent with min/max after clamping")
-	func percentilesWithinBounds() {
+	func percentilesWithinBounds() throws {
 		let drv = ProbabilisticDriver<Double>.normal(name: "Util", mean: 0.5, stdDev: 0.4)
 			.clamped(min: 0.0, max: 1.0)
 
@@ -403,8 +403,8 @@ struct ConstrainedDriverAdditionalTests {
 		let results = proj.projectMonteCarlo(iterations: 5000)
 
 		let p = periods[0]
-		let s = results.statistics[p]!
-		let q = results.percentiles[p]!
+		let s = try #require(results.statistics[p])
+		let q = try #require(results.percentiles[p])
 		#expect(s.min >= 0.0)
 		#expect(s.max <= 1.0)
 		#expect(q.p5 >= s.min && q.p95 <= s.max)

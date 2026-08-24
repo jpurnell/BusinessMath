@@ -167,7 +167,7 @@ struct StreamingCompositionTests {
         #expect(combinations.count >= 2)
 
         // Last combination should be (3.0, 20.0)
-        let last = combinations.last!
+        let last = try #require(combinations.last)
         #expect(abs(last.0 - 3.0) < 1e-6 && abs(last.1 - 20.0) < 1e-6)
     }
 

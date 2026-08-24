@@ -201,7 +201,7 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// Asset turnover is always available
-				#expect(efficiency.assetTurnover[q1]! > 0.0)
+				#expect(try #require(efficiency.assetTurnover[q1]) > 0.0)
 
 				// With our test data, all optional metrics should be present
 				#expect(efficiency.inventoryTurnover?[q1]?.isFinite == true)
@@ -372,19 +372,19 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// Market cap should be shares × price
-				#expect(valuation.marketCap[q1]! == 50_000_000)
+				#expect(try #require(valuation.marketCap[q1]) == 50_000_000)
 
 				// Verify all ratios are present
-				#expect(valuation.priceToEarnings[q1]! > 0.0)
-				#expect(valuation.priceToBook[q1]! > 0.0)
-				#expect(valuation.priceToSales[q1]! > 0.0)
-				#expect(valuation.enterpriseValue[q1]! > 0.0)
-				#expect(valuation.evToEbitda[q1]! > 0.0)
-				#expect(valuation.evToSales[q1]! > 0.0)
+				#expect(try #require(valuation.priceToEarnings[q1]) > 0.0)
+				#expect(try #require(valuation.priceToBook[q1]) > 0.0)
+				#expect(try #require(valuation.priceToSales[q1]) > 0.0)
+				#expect(try #require(valuation.enterpriseValue[q1]) > 0.0)
+				#expect(try #require(valuation.evToEbitda[q1]) > 0.0)
+				#expect(try #require(valuation.evToSales[q1]) > 0.0)
 
 				// EV should be Market Cap + interest-bearing debt - Cash
 				let expectedEV: Double = 50_000_000 + 1_000_000 - 500_000
-				#expect(abs(valuation.enterpriseValue[q1]! - expectedEV) < 1.0)
+				#expect(abs(try #require(valuation.enterpriseValue[q1]) - expectedEV) < 1.0)
 		}
 
 		@Test("piotroskiFScore() alias works correctly")
@@ -444,11 +444,11 @@ struct RatioConvenienceFunctionsTests {
 				let q2 = periods[1]
 
 				// Both periods should have valid ratios
-				#expect(profitability.grossMargin[q1]! > 0.0)
-				#expect(profitability.grossMargin[q2]! > 0.0)
+				#expect(try #require(profitability.grossMargin[q1]) > 0.0)
+				#expect(try #require(profitability.grossMargin[q2]) > 0.0)
 
 				// Margins should be relatively stable (within 10%)
-				let marginRatio = profitability.grossMargin[q2]! / profitability.grossMargin[q1]!
+				let marginRatio = try #require(profitability.grossMargin[q2]) / (try #require(profitability.grossMargin[q1]))
 				#expect(marginRatio > 0.9)
 				#expect(marginRatio < 1.1)
 		}
@@ -536,7 +536,7 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// Asset turnover should always be available
-				#expect(efficiency.assetTurnover[q1]! > 0.0)
+				#expect(try #require(efficiency.assetTurnover[q1]) > 0.0)
 
 				// Optional metrics should be nil
 				#expect(efficiency.inventoryTurnover == nil, "No inventory account, should be nil")
@@ -554,10 +554,10 @@ struct RatioConvenienceFunctionsTests {
 
 				// Leverage ratios should be available
 				// Debt-to-equity will be low since we only have accrued expenses (no long-term debt)
-				#expect(solvency.debtToEquity[q1]! >= 0.0)
-				#expect(solvency.debtToAssets[q1]! >= 0.0)
-				#expect(solvency.debtToAssets[q1]! < 1.0)
-				#expect(solvency.equityRatio[q1]! > 0.0)
+				#expect(try #require(solvency.debtToEquity[q1]) >= 0.0)
+				#expect(try #require(solvency.debtToAssets[q1]) >= 0.0)
+				#expect(try #require(solvency.debtToAssets[q1]) < 1.0)
+				#expect(try #require(solvency.equityRatio[q1]) > 0.0)
 
 				// Interest coverage should be nil (no interest expense)
 				#expect(solvency.interestCoverage == nil, "No interest expense, should be nil")
@@ -704,10 +704,10 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let expectedCash = 500_000 / currentLiabilitiesQ1 // 3.333...
 								let expectedWC = currentAssetsQ1 - currentLiabilitiesQ1 // 850,000
 
-								#expect(abs(liquidity.currentRatio[q1]! - expectedCurrent) < 1e-9)
-								#expect(abs(liquidity.quickRatio[q1]! - expectedQuick) < 1e-9)
-								#expect(abs(liquidity.cashRatio[q1]! - expectedCash) < 1e-9)
-								#expect(abs(liquidity.workingCapital[q1]! - expectedWC) < 1e-6)
+								#expect(abs(try #require(liquidity.currentRatio[q1]) - expectedCurrent) < 1e-9)
+								#expect(abs(try #require(liquidity.quickRatio[q1]) - expectedQuick) < 1e-9)
+								#expect(abs(try #require(liquidity.cashRatio[q1]) - expectedCash) < 1e-9)
+								#expect(abs(try #require(liquidity.workingCapital[q1]) - expectedWC) < 1e-6)
 
 								// Also check both periods are present
 								let q2 = periods[1]
@@ -750,9 +750,9 @@ struct RatioConvenienceFunctionsAdditionalTests {
 
 								let marketCap = try #require(valuation.marketCap[q1])
 								#expect(identical(marketCap, marketCapQ1))
-								#expect(abs(valuation.priceToEarnings[q1]! - peExpected) < 1e-6)
-								#expect(abs(valuation.priceToSales[q1]! - psExpected) < 1e-9)
-								#expect(abs(valuation.priceToBook[q1]! - pbExpected) < 1e-9)
+								#expect(abs(try #require(valuation.priceToEarnings[q1]) - peExpected) < 1e-6)
+								#expect(abs(try #require(valuation.priceToSales[q1]) - psExpected) < 1e-9)
+								#expect(abs(try #require(valuation.priceToBook[q1]) - pbExpected) < 1e-9)
 				}
 
 				@Test("Profitability: gross and net margin exact Q1 values; both periods present")
@@ -774,8 +774,8 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let netIncomeQ1 = revenueQ1 - cogsQ1 - opexQ1 - depQ1 - interestQ1 - taxQ1
 								let netMarginExpected = netIncomeQ1 / revenueQ1 // 0.17775
 
-								#expect(abs(ratios.grossMargin[q1]! - grossMarginExpected) < 1e-12)
-								#expect(abs(ratios.netMargin[q1]! - netMarginExpected) < 1e-12)
+								#expect(abs(try #require(ratios.grossMargin[q1]) - grossMarginExpected) < 1e-12)
+								#expect(abs(try #require(ratios.netMargin[q1]) - netMarginExpected) < 1e-12)
 
 								// Ensure both periods are populated
 								#expect(ratios.grossMargin[q2]?.isFinite == true)

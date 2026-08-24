@@ -11,7 +11,7 @@ let sourcesDir = "\(packageRoot)/Sources/BusinessMath"
 
 // MARK: - Helper Functions
 
-func runCommand(_ command: String) -> (output: String, exitCode: Int32) {
+func runCommand(_ command: String) throws -> (output: String, exitCode: Int32) {
 	let task = Process()
 	task.launchPath = "/bin/bash"
 	task.arguments = ["-c", command]
@@ -168,7 +168,7 @@ for dataEntry in data {
 						}
 					} else if count > 0 && currentUncoveredStart != nil {
 						// End of uncovered region
-						uncoveredRegions.append((startLine: currentUncoveredStart!, endLine: line - 1, count: 0))
+						uncoveredRegions.append((startLine: try #require(currentUncoveredStart), endLine: line - 1, count: 0))
 						currentUncoveredStart = nil
 					}
 				}

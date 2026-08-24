@@ -269,10 +269,10 @@ struct ScenarioAnalysisBuilderTests {
         let results = analysis.evaluate(with: evaluateYear1NetIncome)
 
         // Conservative: 800k * 0.35 * 0.79 = 221,200
-        #expect(abs(results["Conservative"]! - 221_200) < 1)
+        #expect(abs(try #require(results["Conservative"]) - 221_200) < 1)
 
         // Aggressive: 1.5M * 0.45 * 0.79 = 533,250
-        #expect(abs(results["Aggressive"]! - 533_250) < 1)
+        #expect(abs(try #require(results["Aggressive"]) - 533_250) < 1)
     }
 
     @Test("Monte Carlo scenario generation")

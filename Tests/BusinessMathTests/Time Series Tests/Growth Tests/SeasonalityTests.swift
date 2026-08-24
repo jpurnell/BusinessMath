@@ -132,8 +132,8 @@ struct SeasonalityTests {
 		let adjustedValues = adjusted.valuesArray
 
 		// Check that adjustment reduces the range
-		let originalRange = data.valuesArray.max()! - data.valuesArray.min()!
-		let adjustedRange = adjustedValues.max()! - adjustedValues.min()!
+		let originalRange = try #require(data.valuesArray.max()) - (try #require(data.valuesArray.min()))
+		let adjustedRange = try #require(adjustedValues.max()) - (try #require(adjustedValues.min()))
 
 		// Adjusted range should be smaller than original (seasonality removed)
 		#expect(adjustedRange < originalRange)

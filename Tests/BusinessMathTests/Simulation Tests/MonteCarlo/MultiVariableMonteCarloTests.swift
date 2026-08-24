@@ -178,7 +178,7 @@ struct MultiVariableMonteCarloTests {
 	}
 
 	@Test("Multi-variable simulation rejects mismatched dimensions")
-	func rejectMismatchedDimensions() {
+	func rejectMismatchedDimensions() throws {
 		let input1 = SimulationInput(
 			name: "Var1",
 			distribution: DistributionNormal(100.0, 10.0)
@@ -215,7 +215,7 @@ struct MultiVariableMonteCarloTests {
 	}
 
 	@Test("Multi-variable simulation rejects invalid correlation matrix")
-	func rejectInvalidCorrelationMatrix() {
+	func rejectInvalidCorrelationMatrix() throws {
 		let input1 = SimulationInput(
 			name: "Var1",
 			distribution: DistributionNormal(100.0, 10.0)

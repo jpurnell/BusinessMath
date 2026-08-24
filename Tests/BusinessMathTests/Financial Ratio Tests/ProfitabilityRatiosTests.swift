@@ -32,21 +32,21 @@ struct ProfitabilityRatiosTests {
     }
 
     @Test("ROE throws on zero equity")
-    func testROEThrows() {
+    func testROEThrows() throws {
         #expect(throws: BusinessMathError.self) {
             _ = try roe(netIncome: 1000.0, shareholderEquity: 0.0)
         }
     }
 
     @Test("ROI throws on zero cost")
-    func testROIThrows() {
+    func testROIThrows() throws {
         #expect(throws: BusinessMathError.self) {
             _ = try roi(gainFromInvestment: 500.0, costOfInvestment: 0.0)
         }
     }
 
     @Test("Profit margin throws on zero revenue")
-    func testProfitMarginThrows() {
+    func testProfitMarginThrows() throws {
         #expect(throws: BusinessMathError.self) {
             _ = try profitMargin(netIncome: 300.0, revenue: 0.0)
         }

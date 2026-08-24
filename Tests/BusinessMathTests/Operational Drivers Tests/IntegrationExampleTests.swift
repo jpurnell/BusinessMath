@@ -91,7 +91,7 @@ struct IntegrationExampleTests {
 	// MARK: - Deterministic Projection
 
 	@Test(.disabled("Project deterministic path over multiple periods"))
-	func deterministicProjection() {
+	func deterministicProjection() throws {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
@@ -119,41 +119,41 @@ struct IntegrationExampleTests {
 		// For consistent comparisons, we should use the expected values from Monte Carlo.
 		// Here we just verify the structure and that values are reasonable.
 
-		let usersTS = projections["users"]!
-		let q1Users = usersTS[quarters[0]]!
-		let q4Users = usersTS[quarters[3]]!
+		let usersTS = try #require(projections["users"])
+		let q1Users = try #require(usersTS[quarters[0]])
+		let q4Users = try #require(usersTS[quarters[3]])
 		
 		// Verify users are in reasonable ranges
 		#expect(q1Users >= 800.0 && q1Users <= 1200.0, "Q1 users should be around 1000 ± uncertainty")
 		#expect(q4Users >= 920.0 && q4Users <= 1380.0, "Q4 users should be around 1150 (1000 × 1.15) ± uncertainty")
 
 		// Verify growth in fixed costs (inflation) - this IS deterministic
-		let fixedCostsTS = projections["fixedCosts"]!
-		let q1Fixed = fixedCostsTS[quarters[0]]!
-		let q4Fixed = fixedCostsTS[quarters[3]]!
+		let fixedCostsTS = try #require(projections["fixedCosts"])
+		let q1Fixed = try #require(fixedCostsTS[quarters[0]])
+		let q4Fixed = try #require(fixedCostsTS[quarters[3]])
 		#expect(q4Fixed >= q1Fixed, "Fixed costs should grow with inflation")
 
 		// Verify profit varies across quarters
-		let profitTS = projections["profit"]!
-		let q1Profit = profitTS[quarters[0]]!
-		let q4Profit = profitTS[quarters[3]]!
+		let profitTS = try #require(projections["profit"])
+		let q1Profit = try #require(profitTS[quarters[0]])
+		let q4Profit = try #require(profitTS[quarters[3]])
 		// Profit will vary based on revenue (seasonal) vs costs (more stable)
 		// Just verify both are finite
 		#expect(q1Profit.isFinite && q4Profit.isFinite, "Profits should be finite")
 	}
 
 	@Test("Verify Q4 seasonal boost in expected values")
-	func verifyQ4SeasonalBoostInExpectedValues() {
+	func verifyQ4SeasonalBoostInExpectedValues() throws {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
 		// Run Monte Carlo to get expected values (which eliminates random variation)
 		let results = model.projectMonteCarlo(periods: quarters, iterations: 5_000)
-		let usersResults = results["users"]!
+		let usersResults = try #require(results["users"])
 
 		// Use expected values (mean) for comparison
-		let q1UsersMean = usersResults.statistics[quarters[0]]!.mean
-		let q4UsersMean = usersResults.statistics[quarters[3]]!.mean
+		let q1UsersMean = try #require(usersResults.statistics[quarters[0]]).mean
+		let q4UsersMean = try #require(usersResults.statistics[quarters[3]]).mean
 
 		// Q4 should have 15% more users than Q1 (seasonal boost)
 		// Expected Q1: 1000, Expected Q4: 1150
@@ -179,8 +179,8 @@ struct IntegrationExampleTests {
 		let profitResults = try #require(results["profit"])
 		let _ = try #require(results["revenue"])
 		let _ = try #require(results["totalCosts"])
-		let profitStats = profitResults.statistics[q1]!
-		let profitPctiles = profitResults.percentiles[q1]!
+		let profitStats = try #require(profitResults.statistics[q1])
+		let profitPctiles = try #require(profitResults.percentiles[q1])
 
 		// Verify statistics are reasonable
 		#expect(profitStats.mean.isFinite, "Mean should be finite")
@@ -200,18 +200,18 @@ struct IntegrationExampleTests {
 	// MARK: - Uncertainty Analysis
 
 	@Test("Analyze profit uncertainty across quarters")
-	func profitUncertainty() {
+	func profitUncertainty() throws {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
 		// Run Monte Carlo
 		let results = model.projectMonteCarlo(periods: quarters, iterations: 5_000)
-		let profitResults = results["profit"]!
+		let profitResults = try #require(results["profit"])
 
 		// Compare uncertainty across quarters
 		var stdDevs: [Double] = []
 		for quarter in quarters {
-			let stats = profitResults.statistics[quarter]!
+			let stats = try #require(profitResults.statistics[quarter])
 			stdDevs.append(stats.stdDev)
 		}
 
@@ -364,18 +364,18 @@ struct IntegrationExampleTests {
 	// MARK: - Real-World Scenario Testing
 
 	@Test("Model statistics are reasonable")
-	func modelStatisticsReasonable() {
+	func modelStatisticsReasonable() throws {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
 		// Run Monte Carlo
 		let results = model.projectMonteCarlo(periods: quarters, iterations: 5_000)
-		let profitResults = results["profit"]!
+		let profitResults = try #require(results["profit"])
 
 		// Check each quarter produces finite statistics
 		for quarter in quarters {
-			let stats = profitResults.statistics[quarter]!
-			let pctiles = profitResults.percentiles[quarter]!
+			let stats = try #require(profitResults.statistics[quarter])
+			let pctiles = try #require(profitResults.percentiles[quarter])
 
 			// Verify all statistics are finite
 			#expect(stats.mean.isFinite, "\(quarter.label) mean should be finite")
@@ -388,21 +388,21 @@ struct IntegrationExampleTests {
 	}
 
 	@Test("Revenue grows faster than costs")
-	func revenueGrowthVsCostGrowth() {
+	func revenueGrowthVsCostGrowth() throws {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
 		// Run Monte Carlo to get expected values (not random samples)
 		let results = model.projectMonteCarlo(periods: quarters, iterations: 5_000)
 
-		let revenueResults = results["revenue"]!
-		let costsResults = results["totalCosts"]!
+		let revenueResults = try #require(results["revenue"])
+		let costsResults = try #require(results["totalCosts"])
 
 		// Use expected values (mean) for growth comparison
-		let q1RevenueMean = revenueResults.statistics[quarters[0]]!.mean
-		let q4RevenueMean = revenueResults.statistics[quarters[3]]!.mean
-		let q1CostsMean = costsResults.statistics[quarters[0]]!.mean
-		let q4CostsMean = costsResults.statistics[quarters[3]]!.mean
+		let q1RevenueMean = try #require(revenueResults.statistics[quarters[0]]).mean
+		let q4RevenueMean = try #require(revenueResults.statistics[quarters[3]]).mean
+		let q1CostsMean = try #require(costsResults.statistics[quarters[0]]).mean
+		let q4CostsMean = try #require(costsResults.statistics[quarters[3]]).mean
 
 		let revenueGrowth = (q4RevenueMean - q1RevenueMean) / q1RevenueMean
 		let costGrowth = (q4CostsMean - q1CostsMean) / q1CostsMean
@@ -439,13 +439,13 @@ struct IntegrationExampleTests {
 	// MARK: - Time Series Extraction
 
 	@Test("Extract time series at different confidence levels")
-	func extractTimeSeries() {
+	func extractTimeSeries() throws {
 		let model = SaaSFinancialModel()
 		let quarters = Period.year(2025).quarters()
 
 		// Run Monte Carlo
 		let results = model.projectMonteCarlo(periods: quarters, iterations: 5_000)
-		let profitResults = results["profit"]!
+		let profitResults = try #require(results["profit"])
 
 		// Extract different scenarios
 		let expectedProfit = profitResults.expected()
@@ -461,10 +461,10 @@ struct IntegrationExampleTests {
 
 		// Verify ordering for Q1
 		let q1 = quarters[0]
-		let q1P5 = p5Profit[q1]!
-		let q1Median = medianProfit[q1]!
-		let q1Mean = expectedProfit[q1]!
-		let q1P95 = p95Profit[q1]!
+		let q1P5 = try #require(p5Profit[q1])
+		let q1Median = try #require(medianProfit[q1])
+		let q1Mean = try #require(expectedProfit[q1])
+		let q1P95 = try #require(p95Profit[q1])
 
 		#expect(q1P5 < q1Median, "P5 should be less than median")
 		#expect(q1Median < q1P95, "Median should be less than P95")
@@ -474,7 +474,7 @@ struct IntegrationExampleTests {
 	// MARK: - Documentation Example
 
 	@Test("Run complete example from documentation")
-	func documentationExample() {
+	func documentationExample() throws {
 		// Create the model
 		let model = SaaSFinancialModel()
 
@@ -487,8 +487,8 @@ struct IntegrationExampleTests {
 
 		// Analyze uncertainty for each quarter
 		for quarter in quarters {
-			let stats = results.statistics[quarter]!
-			let pctiles = results.percentiles[quarter]!
+			let stats = try #require(results.statistics[quarter])
+			let pctiles = try #require(results.percentiles[quarter])
 
 			// Verify we can access all the data
 			#expect(stats.mean.isFinite)

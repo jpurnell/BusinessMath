@@ -171,7 +171,7 @@ struct KMeansTests {
 	// MARK: - Error Handling Tests
 
 	@Test("Empty dataset throws error")
-	func emptyDatasetThrows() {
+	func emptyDatasetThrows() throws {
 		let data: [Vector2D<Double>] = []
 		// Seeded for reproducibility only: `fit` rejects the empty dataset before any
 		// centroid is initialized, so no draw is taken and the assertion cannot vary.
@@ -183,7 +183,7 @@ struct KMeansTests {
 	}
 
 	@Test("Invalid k throws error")
-	func invalidKThrows() {
+	func invalidKThrows() throws {
 		let data: [Vector2D<Double>] = [
 			Vector2D(x: 1.0, y: 1.0),
 			Vector2D(x: 2.0, y: 2.0)
@@ -205,7 +205,7 @@ struct KMeansTests {
 	}
 
 	@Test("Too many clusters throws error")
-	func tooManyClustersThrows() {
+	func tooManyClustersThrows() throws {
 		let data: [Vector2D<Double>] = [
 			Vector2D(x: 1.0, y: 1.0),
 			Vector2D(x: 2.0, y: 2.0),

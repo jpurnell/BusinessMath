@@ -127,7 +127,7 @@ struct TemplateRegistryTests {
     }
 
     @Test("Cannot register template with empty name")
-    func registerWithEmptyName() async {
+    func registerWithEmptyName() async throws {
         let registry = TemplateRegistry()
         let template = TestTemplate()
 
@@ -151,7 +151,7 @@ struct TemplateRegistryTests {
     }
 
     @Test("Cannot register template with empty version")
-    func registerWithEmptyVersion() async {
+    func registerWithEmptyVersion() async throws {
         let registry = TemplateRegistry()
         let template = TestTemplate()
 
@@ -459,7 +459,7 @@ struct TemplateRegistryTests {
     }
 
     @Test("Export non-existent template throws error")
-    func exportNonExistent() async {
+    func exportNonExistent() async throws {
         let registry = TemplateRegistry()
 
         var caughtError: Error?
