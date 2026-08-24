@@ -164,8 +164,8 @@ extension Experiment {
 		let effect = try validatedEffect()
 
 		let zAlpha = criticalValue(alpha: alpha, tails: tails)
-		let n = T(perArm)
-		let rootN = T.sqrt(n)
+		let armSize = T(perArm)
+		let rootN = T.sqrt(armSize)
 
 		switch kind {
 		case let .proportion(baseline):
@@ -187,7 +187,7 @@ extension Experiment {
 			guard standardDeviation > T(0) else {
 				throw ExperimentError.nonPositiveStandardDeviation(Double(standardDeviation))
 			}
-			let half = n / T(2)
+			let half = armSize / T(2)
 			let scale = T.sqrt(half)
 			let standardised = scale * effect / standardDeviation
 			return normSDist(zScore: standardised - zAlpha)
@@ -213,7 +213,7 @@ extension Experiment {
 
 		let zAlpha = criticalValue(alpha: alpha, tails: .two)
 		let zBeta = normSInv(probability: power)
-		let n = T(perArm)
+		let armSize = T(perArm)
 
 		switch kind {
 		case let .mean(_, standardDeviation):
@@ -221,7 +221,7 @@ extension Experiment {
 				throw ExperimentError.nonPositiveStandardDeviation(Double(standardDeviation))
 			}
 			let zSum = zAlpha + zBeta
-			let ratio = T(2) / n
+			let ratio = T(2) / armSize
 			return zSum * standardDeviation * T.sqrt(ratio)
 
 		case let .proportion(baseline):
@@ -231,7 +231,7 @@ extension Experiment {
 				throw ExperimentError.invalidProportion(Double(baseline))
 			}
 			return Self.bisectEffect(
-				baseline: baseline, target: n, zAlpha: zAlpha, zBeta: zBeta
+				baseline: baseline, target: armSize, zAlpha: zAlpha, zBeta: zBeta
 			)
 		}
 	}
