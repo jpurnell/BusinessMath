@@ -49,3 +49,6 @@ RELEASE_NOTES_*.md
 CLAUDE.md
 /.claude/skills/
 /development-guidelines.pre-v2/
+
+# Generated context bundle for NotebookLM — rebuild with project/tools/build-notebooklm-bundle.sh
+project/notebooklm/
