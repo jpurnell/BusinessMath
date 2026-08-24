@@ -45,6 +45,7 @@ struct TwoProportionPowerTests {
 
 	// MARK: - The defect this release exists to fix
 
+	@available(*, deprecated, message: "Exercises the deprecated sampleSize on purpose.")
 	@Test("The corrected sizing is ~4.07x the legacy Cochran survey formula")
 	func correctedSizingExceedsLegacyByTheDocumentedFactor() throws {
 		let design = Experiment<Double>.twoProportion(baseline: 0.50, minimumDetectableEffect: 0.05)
@@ -227,6 +228,7 @@ struct ExperimentAnalysisTests {
 	/// always at least 0.5 — so the `p < 0.05` test its own documentation prescribes
 	/// can never be true. Pinned here so 2.7.0 cannot change it by accident, and so
 	/// the defect is asserted rather than described.
+	@available(*, deprecated, message: "Exercises the deprecated pValue on purpose.")
 	@Test("Legacy pValue returns the complement, not a p-value — pinned")
 	func legacyPValueReturnsTheComplementOfAOneSidedP() throws {
 		// The library's own documented usage example: 120/1000 against 145/1000.

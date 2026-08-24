@@ -99,6 +99,10 @@ import Glibc
     }
 
     // Test 3: AB Test P-Value
+    /// Previously asserted only `result > 0.0 && result < 1.0`, which cannot fail for any
+    /// probability-like output and is exactly the "no specific expected value" pattern the
+    /// coding rules forbid. That is part of why the inverted return convention survived.
+    @available(*, deprecated, message: "Exercises the deprecated pValue on purpose.")
     @Test("ABTestPValue") func LABTestPValue() {
         // Example: Test conversion rates
         let obsA = 1000
@@ -108,12 +112,19 @@ import Glibc
 
         let result: Double = pValue(obsA: obsA, convA: convA, obsB: obsB, convB: convB)
 
-        // B should have significantly higher conversion (p-value should indicate significance)
-        #expect(result > 0.0)
-        #expect(result < 1.0)
+        // The legacy function returns normSDist(|z|), not a p-value.
+        #expect(abs(result - 0.970365) < 0.0001)
+        #expect(result >= 0.5, "normSDist(|z|) can never fall below 0.5")
+
+        // The true two-sided p-value is 0.0593 — B is NOT significantly higher at 0.05,
+        // contrary to what this test's original comment asserted.
+        let twoSided = 2.0 * (1.0 - result)
+        #expect(abs(twoSided - 0.059270) < 0.0001)
+        #expect(twoSided > 0.05)
     }
 
     // Test 4: Sample Size Calculation
+    @available(*, deprecated, message: "Exercises the deprecated sampleSize on purpose.")
     @Test("SampleSizeCalculation") func LSampleSizeCalculation() {
         // Example: Calculate required sample size for 95% confidence, 5% margin of error
         let confidence = 0.95
