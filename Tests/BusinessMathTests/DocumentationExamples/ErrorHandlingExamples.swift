@@ -336,7 +336,7 @@ extension ErrorHandlingExamples {
             try ts.validateAndThrow()
             print("TimeSeries is valid")
         } catch let error as BusinessMathError {
-            print("Validation failed: \(error.errorDescription!)")
+            print("Validation failed: \(error.errorDescription ?? String(describing: error))")
         } catch {
             print("Unexpected error: \(error)")
         }
