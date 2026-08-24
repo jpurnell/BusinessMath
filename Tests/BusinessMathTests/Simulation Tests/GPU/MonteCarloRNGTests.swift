@@ -46,6 +46,16 @@ import Metal
 @Suite("Monte Carlo GPU RNG Quality Tests")
 struct MonteCarloRNGTests {
 
+	/// Little-endian byte encoding of a `Float`, for the GPU's parameter buffer.
+	///
+	/// Written arithmetically rather than through `withUnsafeBytes`, so no pointer
+	/// is handed to a closure and none can outlive the block it came from.
+	private static func littleEndianBytes(_ value: Float) -> [UInt8] {
+		let bits = value.bitPattern
+		return (0..<4).map { UInt8(truncatingIfNeeded: bits >> (8 * UInt32($0))) }
+	}
+
+
     #if canImport(Metal)
 
     // MARK: - Device Access
@@ -149,8 +159,8 @@ struct MonteCarloRNGTests {
         }
         """
 
-        let meanBytes = withUnsafeBytes(of: mean) { Array($0) }
-        let stdDevBytes = withUnsafeBytes(of: stdDev) { Array($0) }
+        let meanBytes = Self.littleEndianBytes(mean)
+        let stdDevBytes = Self.littleEndianBytes(stdDev)
         return try runSingleThread(gpu, source: source, function: "streamNormals",
                                    count: count, seed: seed,
                                    extraBytes: [meanBytes, stdDevBytes])

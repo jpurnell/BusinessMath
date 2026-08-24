@@ -31,6 +31,7 @@ fileprivate func deterministicUniforms(seed: UInt64, count: Int) -> [Double] {
 /// Marked @unchecked Sendable because tests run single-threaded;
 /// the sampler closure is @Sendable and only calls next(), avoiding
 /// captured var mutation warnings.
+// Justification: `index` is mutated only by next(), which this test calls sequentially from a single task; the feed is never shared across concurrent contexts.
 fileprivate final class SamplerFeed: @unchecked Sendable {
 	private let values: [Double]
 	private var index = 0

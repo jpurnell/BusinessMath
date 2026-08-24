@@ -22,6 +22,7 @@ import Testing
 /// let results = collector.getItems()
 /// #expect(results.count > 0)
 /// ```
+// Justification: The mutable items array is protected by an NSLock on every read and write; no property is accessed unguarded.
 public final class ProgressCollector<T: Sendable>: @unchecked Sendable {
     private var items: [T] = []
     private let lock = NSLock()
