@@ -182,6 +182,19 @@ public final class CalculationCache: @unchecked Sendable {
 	private let seenKeysCap: Int
 	
 	private let lock = NSLock()
+
+	/// How long a follower waits for the in-flight leader to publish a result.
+	///
+	/// `DispatchGroup.wait()` with no deadline parks the caller until `leave()` is
+	/// called. A leader whose `calculation()` traps, or whose thread dies, never
+	/// calls it — and every later reader of that key then waits forever, with no
+	/// symptom beyond a stalled pipeline. The bound turns a hang into a slow path:
+	/// on timeout the follower computes the value itself, which is the branch
+	/// already taken when the leader produced nothing reusable.
+	///
+	/// Sized well above any legitimate cached calculation, so it is reached only
+	/// when the leader has genuinely failed to publish.
+	private static let singleFlightWaitLimit: DispatchTimeInterval = .seconds(30)
 	private let maxSize: Int
 	private let ttl: TimeInterval
 	private var nextAccessId: UInt64 = 0
@@ -285,7 +298,9 @@ public final class CalculationCache: @unchecked Sendable {
 		if let inFlight = inflight[key] {
 			// Take a strong ref while we unlock
 			lock.unlock()
-			inFlight.group.wait()
+			// Bounded: see `singleFlightWaitLimit`. A timeout is not an error here —
+			// the checks below simply find nothing to reuse and the compute path runs.
+			_ = inFlight.group.wait(timeout: .now() + Self.singleFlightWaitLimit)
 			
 			// After wait, try to get from cache first
 			lock.lock()
