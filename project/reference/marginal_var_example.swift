@@ -51,6 +51,9 @@ func marginalVaR(entity: Int, vaRs: [Double], corr: [[Double]]) -> Double {
 	for j in 0..<vaRs.count {
 		Cv_i += corr[entity][j] * vaRs[j]
 	}
+	// A portfolio with no VaR has no marginal contribution to apportion; guarding
+	// the divisor keeps that case from becoming a NaN that reads like a ratio.
+	guard portfolioVaR != 0 else { return 0 }
 	return Cv_i / portfolioVaR  // Returns a RATIO!
 }
 
@@ -65,10 +68,10 @@ for i in 0..<portfolioVaRs.count {
 
 	print("Portfolio \(portfolioName):")
 	print("  Individual VaR: $\(Int(portfolioVaRs[i]))")
-	print("  Marginal VaR: \(String(format: "%.4f", marginal)) (RATIO, not dollars!)")
+	print("  Marginal VaR: \((marginal).formatted(.number.precision(.fractionLength(4)))) (RATIO, not dollars!)")
 	print("  Interpretation: Each $1 increase in Portfolio \(portfolioName)")
-	print("                  increases total VaR by $\(String(format: "%.2f", marginal))")
-	print("  Risk contribution: \(String(format: "%.1f", marginal * 100))%")
+	print("                  increases total VaR by $\((marginal).formatted(.number.precision(.fractionLength(2))))")
+	print("  Risk contribution: \((marginal * 100).formatted(.number.precision(.fractionLength(1))))%")
 	print("")
 }
 
@@ -95,7 +98,7 @@ func componentVaR(vaRs: [Double], weights: [Double], corr: [[Double]]) -> [Doubl
 			let v_j = weights[j] * vaRs[j]
 			Cv_i += corr[i][j] * v_j
 		}
-		components.append(v_i * (Cv_i / portfolioVaR))
+		components.append(portfolioVaR == 0 ? 0 : v_i * (Cv_i / portfolioVaR))
 	}
 
 	return components
@@ -112,7 +115,8 @@ for i in 0..<portfolioVaRs.count {
 	print("Portfolio \(portfolioName):")
 	print("  Weight: \(Int(weights[i] * 100))%")
 	print("  Component VaR: $\(Int(component)) (DOLLARS!)")
-	print("  Contribution to total: \(String(format: "%.1f", (component / aggregatedVaR) * 100))%")
+	let contributionShare = aggregatedVaR == 0 ? 0 : (component / aggregatedVaR) * 100
+	print("  Contribution to total: \(contributionShare.formatted(.number.precision(.fractionLength(1))))%")
 	print("")
 }
 
