@@ -651,11 +651,11 @@
 - [ ] Integration tests passing
 - [ ] Performance benchmarks acceptable
 - [ ] Documentation published
-- [ ] **Library metrics generated** - Run library statistics tool to capture baseline metrics
+- [ ] **Library metrics generated** - Capture baseline metrics for the release
   ```bash
-  swift "project/summaries/generate_library_metrics.swift"
+  quality-gate generate-pulse
   ```
-- [ ] **Health score acceptable** - Overall health score ≥ 80% (Grade B or better)
+- [ ] **Gate clean** - `quality-gate --check all --strict` reports 0 errors, 0 warnings
   - Check `library_metrics.json` for overall health score
   - Review documentation coverage (target: ≥ 70%)
   - Verify test-to-code ratio (target: ≥ 1.0)
