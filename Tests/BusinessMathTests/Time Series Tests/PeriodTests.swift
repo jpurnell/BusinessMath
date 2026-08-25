@@ -372,14 +372,14 @@ struct PeriodTests {
 	}
 
 	@Test("Daily period label uses compact format")
-	func dailyLabel() {
+	func dailyLabel() throws {
 		// Create a specific date: Jan 15, 2025
 		var components = DateComponents()
 		components.year = 2025
 		components.month = 1
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 //		print(date)
 		let period = Period.day(date)
 //		print(period)
@@ -721,73 +721,73 @@ struct PeriodTests {
 	// MARK: - Period Subdivision: hours()
 
 	@Test("Can subdivide day into hours")
-	func dayToHours() {
+	func dayToHours() throws {
 		let day = Period.day(Date(timeIntervalSince1970: 1738195200)) // 2025-01-30
 		let hours = day.hours()
 		#expect(hours.count == 24)
-		#expect(hours.first!.type == .hourly)
+		#expect(try #require(hours.first).type == .hourly)
 	}
 
 	@Test("Can subdivide hour into itself")
-	func hourToHours() {
+	func hourToHours() throws {
 		let hour = Period.hour(year: 2025, month: 1, day: 29, hour: 14)
 		let hours = hour.hours()
 		#expect(hours.count == 1)
-		#expect(hours.first! == hour)
+		#expect(try #require(hours.first) == hour)
 	}
 
 	// MARK: - Period Subdivision: minutes()
 
 	@Test("Can subdivide hour into minutes")
-	func hourToMinutes() {
+	func hourToMinutes() throws {
 		let hour = Period.hour(year: 2025, month: 1, day: 29, hour: 14)
 		let minutes = hour.minutes()
 		#expect(minutes.count == 60)
-		#expect(minutes.first!.type == .minute)
+		#expect(try #require(minutes.first).type == .minute)
 	}
 
 	@Test("Can subdivide minute into itself")
-	func minuteToMinutes() {
+	func minuteToMinutes() throws {
 		let minute = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 30)
 		let minutes = minute.minutes()
 		#expect(minutes.count == 1)
-		#expect(minutes.first! == minute)
+		#expect(try #require(minutes.first) == minute)
 	}
 
 	// MARK: - Period Subdivision: seconds()
 
 	@Test("Can subdivide minute into seconds")
-	func minuteToSeconds() {
+	func minuteToSeconds() throws {
 		let minute = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 30)
 		let seconds = minute.seconds()
 		#expect(seconds.count == 60)
-		#expect(seconds.first!.type == .second)
+		#expect(try #require(seconds.first).type == .second)
 	}
 
 	@Test("Can subdivide second into itself")
-	func secondToSeconds() {
+	func secondToSeconds() throws {
 		let second = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45)
 		let seconds = second.seconds()
 		#expect(seconds.count == 1)
-		#expect(seconds.first! == second)
+		#expect(try #require(seconds.first) == second)
 	}
 
 	// MARK: - Period Subdivision: milliseconds()
 
 	@Test("Can subdivide second into milliseconds")
-	func secondToMilliseconds() {
+	func secondToMilliseconds() throws {
 		let second = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45)
 		let milliseconds = second.milliseconds()
 		#expect(milliseconds.count == 1000)
-		#expect(milliseconds.first!.type == .millisecond)
+		#expect(try #require(milliseconds.first).type == .millisecond)
 	}
 
 	@Test("Can subdivide millisecond into itself")
-	func millisecondToMilliseconds() {
+	func millisecondToMilliseconds() throws {
 		let ms = Period.millisecond(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45, millisecond: 123)
 		let milliseconds = ms.milliseconds()
 		#expect(milliseconds.count == 1)
-		#expect(milliseconds.first! == ms)
+		#expect(try #require(milliseconds.first) == ms)
 	}
 
 	// MARK: - Edge Cases

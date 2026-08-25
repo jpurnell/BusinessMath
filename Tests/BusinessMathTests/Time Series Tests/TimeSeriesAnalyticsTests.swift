@@ -17,40 +17,40 @@ struct TimeSeriesAnalyticsTests {
 		// MARK: - Growth Rate Tests
 	
 	@Test("growthRate with lag 1 calculates period-over-period growth")
-	func growthRateLag1() {
+	func growthRateLag1() throws {
 		let periods = (1...4).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 121.0, 133.1])
 		
 		let growth = ts.growthRate(lag: 1)
 		
 		#expect(growth.count == 3)  // First period has no prior value
-		#expect(abs(growth[periods[1]]! - 0.10) < tolerance)  // 10% growth
-		#expect(abs(growth[periods[2]]! - 0.10) < tolerance)  // 10% growth
-		#expect(abs(growth[periods[3]]! - 0.10) < tolerance)  // 10% growth
+		#expect(abs(try #require(growth[periods[1]]) - 0.10) < tolerance)  // 10% growth
+		#expect(abs(try #require(growth[periods[2]]) - 0.10) < tolerance)  // 10% growth
+		#expect(abs(try #require(growth[periods[3]]) - 0.10) < tolerance)  // 10% growth
 	}
 	
 	@Test("growthRate with lag 2")
-	func growthRateLag2() {
+	func growthRateLag2() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 121.0, 133.1, 146.41])
 		
 		let growth = ts.growthRate(lag: 2)
 		
 		#expect(growth.count == 3)  // First 2 periods have no 2-period-ago value
-		#expect(abs(growth[periods[2]]! - 0.21) < tolerance)  // (121-100)/100 = 21%
-		#expect(abs(growth[periods[3]]! - 0.21) < tolerance)  // (133.1-110)/110 ≈ 21%
+		#expect(abs(try #require(growth[periods[2]]) - 0.21) < tolerance)  // (121-100)/100 = 21%
+		#expect(abs(try #require(growth[periods[3]]) - 0.21) < tolerance)  // (133.1-110)/110 ≈ 21%
 	}
 	
 	@Test("growthRate handles negative values")
-	func growthRateNegative() {
+	func growthRateNegative() throws {
 		let periods = (1...3).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 90.0, 81.0])
 		
 		let growth = ts.growthRate(lag: 1)
 		
 		#expect(growth.count == 2)
-		#expect(abs(growth[periods[1]]! - (-0.10)) < tolerance)  // -10% growth
-		#expect(abs(growth[periods[2]]! - (-0.10)) < tolerance)  // -10% growth
+		#expect(abs(try #require(growth[periods[1]]) - (-0.10)) < tolerance)  // -10% growth
+		#expect(abs(try #require(growth[periods[2]]) - (-0.10)) < tolerance)  // -10% growth
 	}
 	
 		// MARK: - CAGR Tests
@@ -88,16 +88,16 @@ struct TimeSeriesAnalyticsTests {
 		// MARK: - Moving Average Tests
 	
 	@Test("movingAverage with window 3")
-	func movingAverageWindow3() {
+	func movingAverageWindow3() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 120.0, 130.0, 140.0])
 		
 		let ma = ts.movingAverage(window: 3)
 		
 		#expect(ma.count == 3)  // First 2 periods don't have enough data
-		#expect(abs(ma[periods[2]]! - 110.0) < tolerance)  // (100+110+120)/3
-		#expect(abs(ma[periods[3]]! - 120.0) < tolerance)  // (110+120+130)/3
-		#expect(abs(ma[periods[4]]! - 130.0) < tolerance)  // (120+130+140)/3
+		#expect(abs(try #require(ma[periods[2]]) - 110.0) < tolerance)  // (100+110+120)/3
+		#expect(abs(try #require(ma[periods[3]]) - 120.0) < tolerance)  // (110+120+130)/3
+		#expect(abs(try #require(ma[periods[4]]) - 130.0) < tolerance)  // (120+130+140)/3
 	}
 	
 	@Test("movingAverage with window 1 returns original")
@@ -116,7 +116,7 @@ struct TimeSeriesAnalyticsTests {
 		// MARK: - Exponential Moving Average Tests
 	
 	@Test("exponentialMovingAverage with alpha 0.5")
-	func emaAlpha05() {
+	func emaAlpha05() throws {
 		let periods = (1...4).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 105.0, 115.0])
 		
@@ -125,9 +125,9 @@ struct TimeSeriesAnalyticsTests {
 		#expect(ema.count == 4)
 		#expect(abs((ema[periods[0]] ?? 0) - 100.0) < 1e-6)  // First value unchanged
 										   // EMA = alpha * current + (1-alpha) * previous_EMA
-		#expect(abs(ema[periods[1]]! - 105.0) < tolerance)  // 0.5*110 + 0.5*100 = 105
-		#expect(abs(ema[periods[2]]! - 105.0) < tolerance)  // 0.5*105 + 0.5*105 = 105
-		#expect(abs(ema[periods[3]]! - 110.0) < tolerance)  // 0.5*115 + 0.5*105 = 110
+		#expect(abs(try #require(ema[periods[1]]) - 105.0) < tolerance)  // 0.5*110 + 0.5*100 = 105
+		#expect(abs(try #require(ema[periods[2]]) - 105.0) < tolerance)  // 0.5*105 + 0.5*105 = 105
+		#expect(abs(try #require(ema[periods[3]]) - 110.0) < tolerance)  // 0.5*115 + 0.5*105 = 110
 	}
 	
 	@Test("exponentialMovingAverage with alpha 1.0 equals original")
@@ -189,42 +189,42 @@ struct TimeSeriesAnalyticsTests {
 	}
 	
 	@Test("diff with lag 2")
-	func diffLag2() {
+	func diffLag2() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 121.0, 133.0, 146.0])
 		
 		let diff = ts.diff(lag: 2)
 		
 		#expect(diff.count == 3)
-		#expect(abs(diff[periods[2]]! - 21.0) < tolerance)  // 121 - 100
-		#expect(abs(diff[periods[3]]! - 23.0) < tolerance)  // 133 - 110
-		#expect(abs(diff[periods[4]]! - 25.0) < tolerance)  // 146 - 121
+		#expect(abs(try #require(diff[periods[2]]) - 21.0) < tolerance)  // 121 - 100
+		#expect(abs(try #require(diff[periods[3]]) - 23.0) < tolerance)  // 133 - 110
+		#expect(abs(try #require(diff[periods[4]]) - 25.0) < tolerance)  // 146 - 121
 	}
 	
 		// MARK: - Percent Change Tests
 	
 	@Test("percentChange with lag 1")
-	func percentChangeLag1() {
+	func percentChangeLag1() throws {
 		let periods = (1...4).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 121.0, 133.1])
 		
 		let pctChange = ts.percentChange(lag: 1)
 		
 		#expect(pctChange.count == 3)
-		#expect(abs(pctChange[periods[1]]! - 0.1) < tolerance)  // 10% change
-		#expect(abs(pctChange[periods[2]]! - 0.1) < tolerance)  // 10% change
-		#expect(abs(pctChange[periods[3]]! - 0.1) < tolerance)  // 10% change
+		#expect(abs(try #require(pctChange[periods[1]]) - 0.1) < tolerance)  // 10% change
+		#expect(abs(try #require(pctChange[periods[2]]) - 0.1) < tolerance)  // 10% change
+		#expect(abs(try #require(pctChange[periods[3]]) - 0.1) < tolerance)  // 10% change
 	}
 	
 	@Test("percentChange with negative change")
-	func percentChangeNegative() {
+	func percentChangeNegative() throws {
 		let periods = (1...3).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 90.0, 81.0])
 		
 		let pctChange = ts.percentChange(lag: 1)
 		
-		#expect(abs(pctChange[periods[1]]! - (-0.1)) < tolerance)  // -10%
-		#expect(abs(pctChange[periods[2]]! - (-0.1)) < tolerance)  // -10%
+		#expect(abs(try #require(pctChange[periods[1]]) - (-0.1)) < tolerance)  // -10%
+		#expect(abs(try #require(pctChange[periods[2]]) - (-0.1)) < tolerance)  // -10%
 	}
 	
 		// MARK: - Rolling Sum Tests
@@ -366,14 +366,14 @@ struct TimeSeriesAnalyticsTests {
 	}
 		// EMA edge case
 			@Test("EMA with alpha = 0.0 equals flat line at first value")
-			func emaAlphaZero() {
+			func emaAlphaZero() throws {
 				let periods = (0..<5).map { Period.month(year: 2025, month: $0 + 1) }
 				let ts = TimeSeries(periods: periods, values: [100.0, 90.0, 110.0, 95.0, 105.0])
 				let ema = ts.exponentialMovingAverage(alpha: 0.0)
 				#expect(ema.count == 5)
 				for (i, p) in periods.enumerated() {
 					let expected = 100.0 // first value propagated
-					#expect(abs(ema[p]! - expected) < 1e-12, "EMA at index \(i) mismatch")
+					#expect(abs(try #require(ema[p]) - expected) < 1e-12, "EMA at index \(i) mismatch")
 				}
 			}
 	

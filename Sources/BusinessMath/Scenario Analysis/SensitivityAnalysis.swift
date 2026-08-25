@@ -450,7 +450,7 @@ public func runSensitivity(
 	inputRange: ClosedRange<Double>,
 	steps: Int,
 	builder: @escaping ScenarioRunner.StatementBuilder,
-	outputExtractor: @Sendable @escaping (FinancialProjection) -> Double
+	outputExtractor: @Sendable @escaping (FinancialProjection) throws -> Double
 ) throws -> ScenarioSensitivityAnalysis {
 	guard steps >= 1 else {
 		preconditionFailure("Steps must be at least 1")
@@ -504,7 +504,7 @@ public func runSensitivity(
 		)
 
 		// Extract output
-		let output = outputExtractor(projection)
+		let output = try outputExtractor(projection)
 		outputValues.append(output)
 	}
 
@@ -593,7 +593,7 @@ public func runTwoWaySensitivity(
 	inputRange2: ClosedRange<Double>,
 	steps2: Int,
 	builder: @escaping ScenarioRunner.StatementBuilder,
-	outputExtractor: @Sendable @escaping (FinancialProjection) -> Double
+	outputExtractor: @Sendable @escaping (FinancialProjection) throws -> Double
 ) throws -> TwoWayScenarioSensitivityAnalysis {
 	guard steps1 >= 1, steps2 >= 1 else {
 		preconditionFailure("Steps must be at least 1 for both dimensions")
@@ -662,7 +662,7 @@ public func runTwoWaySensitivity(
 			)
 
 			// Extract output
-			let output = outputExtractor(projection)
+			let output = try outputExtractor(projection)
 			results[i][j] = output
 		}
 	}
@@ -909,7 +909,7 @@ public func runTornadoAnalysis(
 	variationPercent: Double,
 	steps: Int,
 	builder: @escaping ScenarioRunner.StatementBuilder,
-	outputExtractor: @Sendable @escaping (FinancialProjection) -> Double
+	outputExtractor: @Sendable @escaping (FinancialProjection) throws -> Double
 ) throws -> TornadoDiagramAnalysis {
 	// Reject unknown driver names before doing any work. Every name is checked, so a
 	// caller with several typos learns about all of them from one run rather than one
@@ -934,7 +934,7 @@ public func runTornadoAnalysis(
 		periods: periods,
 		builder: builder
 	)
-	let baseCaseOutput = outputExtractor(baseProjection)
+	let baseCaseOutput = try outputExtractor(baseProjection)
 
 	// Run sensitivity analysis for each input
 	var impacts: [String: Double] = [:]

@@ -44,9 +44,9 @@ struct MultiWayANOVATests {
         #expect(multi.degreesOfFreedom[Set(["p", "r"])] == twoWay.dfError)
 
         // Compare MS
-        #expect(abs(multi.meanSquares[Set(["p"])]! - twoWay.msSubjects) < 1e-10)
-        #expect(abs(multi.meanSquares[Set(["r"])]! - twoWay.msRaters) < 1e-10)
-        #expect(abs(multi.meanSquares[Set(["p", "r"])]! - twoWay.msError) < 1e-10)
+        #expect(abs(try #require(multi.meanSquares[Set(["p"])]) - twoWay.msSubjects) < 1e-10)
+        #expect(abs(try #require(multi.meanSquares[Set(["r"])]) - twoWay.msRaters) < 1e-10)
+        #expect(abs(try #require(multi.meanSquares[Set(["p", "r"])]) - twoWay.msError) < 1e-10)
     }
 
     // MARK: - Degrees of Freedom

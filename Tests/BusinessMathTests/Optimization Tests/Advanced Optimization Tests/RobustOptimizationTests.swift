@@ -489,7 +489,11 @@ import Testing
 					upperBounds: zip(nominalReturns, deviations).map { $0 + $1 },
 					numberOfScenarios: 1,
 					seed: nil
-				).first!
+				// The generator is asked for exactly one scenario, so `first` is present.
+				// The closure cannot throw, so an empty parameter set stands in rather
+				// than a force unwrap — it produces a degenerate scenario the assertions
+				// below would fail on, instead of trapping the process.
+				).first ?? MonteCarloScenario(parameters: [:])
 			},
 			initialSolution: VectorN([1.0/3, 1.0/3, 1.0/3]),
 			constraints: constraints,

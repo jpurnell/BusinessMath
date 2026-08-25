@@ -505,7 +505,7 @@ struct ExponentialDistributionTests {
 	}
 	
 	@Test("Exponential order statistics")
-	func exponentialOrderStatistics() {
+	func exponentialOrderStatistics() throws {
 		// For exponential, the order statistics have nice properties
 		let λ = 1.0
 		let sampleCount = 5000
@@ -519,7 +519,7 @@ struct ExponentialDistributionTests {
 			for j in 0..<n {
 				sample.append(distributionExponential(λ: λ, seed: seeds[i * n + j]))
 			}
-			minValues.append(sample.min()!)
+			minValues.append(try #require(sample.min()))
 		}
 
 		// Minimum of n exponentials should be Exponential(nλ)

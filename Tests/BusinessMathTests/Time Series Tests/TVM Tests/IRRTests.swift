@@ -135,7 +135,7 @@ struct IRRTests {
 	// MARK: - Error Cases
 
 	@Test("IRR with all positive cash flows should throw")
-	func irrAllPositive() {
+	func irrAllPositive() throws {
 		let cashFlows = [100.0, 200.0, 300.0]
 
 		#expect(throws: BusinessMathError.self) {
@@ -144,7 +144,7 @@ struct IRRTests {
 	}
 
 	@Test("IRR with all negative cash flows should throw")
-	func irrAllNegative() {
+	func irrAllNegative() throws {
 		let cashFlows = [-100.0, -200.0, -300.0]
 
 		#expect(throws: BusinessMathError.self) {
@@ -153,7 +153,7 @@ struct IRRTests {
 	}
 
 	@Test("IRR with empty cash flows should throw")
-	func irrEmpty() {
+	func irrEmpty() throws {
 		let cashFlows: [Double] = []
 
 		#expect(throws: BusinessMathError.self) {
@@ -162,7 +162,7 @@ struct IRRTests {
 	}
 
 	@Test("IRR with single cash flow should throw")
-	func irrSingle() {
+	func irrSingle() throws {
 		let cashFlows = [-1000.0]
 
 		#expect(throws: BusinessMathError.self) {
@@ -171,7 +171,7 @@ struct IRRTests {
 	}
 
 	@Test("IRR convergence failure with max iterations = 1")
-	func irrConvergenceFailure() {
+	func irrConvergenceFailure() throws {
 		let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
 
 		#expect(throws: BusinessMathError.self) {

@@ -62,8 +62,8 @@ struct AuditTrailTests {
 		let manager = AuditTrailManager()
 
 		let now = Date()
-		let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now)!
-		let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now)!
+		let yesterday = try #require(Calendar.current.date(byAdding: .day, value: -1, to: now))
+		let tomorrow = try #require(Calendar.current.date(byAdding: .day, value: 1, to: now))
 
 		manager.record(AuditEntry(
 			timestamp: yesterday,

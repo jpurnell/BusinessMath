@@ -244,7 +244,7 @@ struct NonlinearRegressionTests {
 
 		// Check that tolerance logic is correctly applied
 		for (param, withinTol) in report.withinTolerance {
-			let relError = report.relativeErrors[param]!
+			let relError = try #require(report.relativeErrors[param])
 			if withinTol {
 				#expect(relError <= report.tolerance, "\(param) marked as passing but error > tolerance")
 			} else {

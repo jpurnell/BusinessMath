@@ -2,6 +2,11 @@
 
 **Date**: February 10, 2026
 **Status**: Phase 1 Complete (File & Documentation Analysis)
+**Superseded 2026-08-24**: the tooling described below was removed. It wrote to
+pre-v2 paths (`Instruction Set/05_SUMMARIES`, `development-guidelines/05_SUMMARIES`)
+that the v2 migration deleted, so it had not run since April. `quality-gate`'s
+`doc-coverage` and `generate-pulse` cover the same ground. Kept as a record of
+what was built and why.
 
 ---
 

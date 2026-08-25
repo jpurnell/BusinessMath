@@ -249,7 +249,7 @@ struct ChesapeakeEnergyTests {
 		// Verify Q1 2025 metrics
 		let q1 = quarters[0]
 		#expect(incomeStatements[0].totalRevenue[q1] == 2_730)
-		#expect(incomeStatements[0].netIncome[q1]! > 0, "Should be profitable")
+		#expect(try #require(incomeStatements[0].netIncome[q1]) > 0, "Should be profitable")
 	}
 
 	@Test("Create Chesapeake operational metrics")
@@ -261,12 +261,12 @@ struct ChesapeakeEnergyTests {
 		// Verify Q1 production and pricing
 		let q1Metrics = operationalMetrics[0]
 		#expect(q1Metrics["production_boe_per_day"] == 488_000)
-		#expect(abs(q1Metrics["realized_price_per_boe"]! - 62.50) < 1e-6)
-		#expect(abs(q1Metrics["lifting_cost_per_boe"]! - 12.80) < 1e-6)
+		#expect(abs(try #require(q1Metrics["realized_price_per_boe"]) - 62.50) < 1e-6)
+		#expect(abs(try #require(q1Metrics["lifting_cost_per_boe"]) - 12.80) < 1e-6)
 
 		// Verify production growth over year
-		let q1Production = operationalMetrics[0]["production_boe_per_day"]!
-		let q4Production = operationalMetrics[3]["production_boe_per_day"]!
+		let q1Production = try #require(operationalMetrics[0]["production_boe_per_day"])
+		let q4Production = try #require(operationalMetrics[3]["production_boe_per_day"])
 		#expect(q4Production > q1Production, "Production should grow")
 	}
 
@@ -316,7 +316,7 @@ struct ChesapeakeEnergyTests {
 		#expect(q1Summary.debt > 0)
 		#expect(q1Summary.debtToEBITDARatio > 0)
 		#expect(q1Summary.debtToEBITDARatio < 3.0, "Debt/EBITDA should be reasonable for E&P")
-		#expect(q1Summary.interestCoverageRatio! > 5.0, "Should have strong interest coverage")
+		#expect(try #require(q1Summary.interestCoverageRatio) > 5.0, "Should have strong interest coverage")
 	}
 
 	@Test("Verify Chesapeake liquidity ratios")
@@ -445,7 +445,7 @@ struct ChesapeakeEnergyTests {
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: operationalMetrics)
 		let production = try #require(timeSeries.timeSeries(for: "production_boe_per_day"))
 
-		let productionValues = quarters.map { production[$0]! }
+		let productionValues = try quarters.map { try #require(production[$0]) }
 		#expect(productionValues.count == 4)
 
 		// Verify production grows each quarter
@@ -464,7 +464,7 @@ struct ChesapeakeEnergyTests {
 
 		// All growth rates should be positive
 		for period in growth.periods {
-			let rate = growth[period]!
+			let rate = try #require(growth[period])
 			#expect(rate > 0, "Production growth should be positive")
 		}
 	}
@@ -475,12 +475,12 @@ struct ChesapeakeEnergyTests {
 
 		let timeSeries = try OperationalMetricsTimeSeries(metrics: operationalMetrics)
 
-		let realizedPrice = timeSeries.timeSeries(for: "realized_price_per_boe")!
-		let liftingCost = timeSeries.timeSeries(for: "lifting_cost_per_boe")!
+		let realizedPrice = try #require(timeSeries.timeSeries(for: "realized_price_per_boe"))
+		let liftingCost = try #require(timeSeries.timeSeries(for: "lifting_cost_per_boe"))
 
 		// Extract values for each quarter
-		let prices = quarters.map { realizedPrice[$0]! }
-		let costs = quarters.map { liftingCost[$0]! }
+		let prices = try quarters.map { try #require(realizedPrice[$0]) }
+		let costs = try quarters.map { try #require(liftingCost[$0]) }
 
 		// Prices should increase
 		#expect(prices[3] > prices[0], "Realized prices should increase")
@@ -522,8 +522,8 @@ struct ChesapeakeEnergyTests {
 
 		// 5. Verify comprehensive analysis
 		#expect(revenueGrowth.allSatisfy { $0 > 0 }, "All quarters should show revenue growth")
-		#expect(marginTrend.last! > marginTrend.first!, "Margins should expand")
-		#expect(leverageTrend.last! < leverageTrend.first!, "Leverage should decrease")
+		#expect(try #require(marginTrend.last) > (try #require(marginTrend.first)), "Margins should expand")
+		#expect(try #require(leverageTrend.last) < (try #require(leverageTrend.first)), "Leverage should decrease")
 
 		// 6. Access specific period data
 		let q1 = report[0]

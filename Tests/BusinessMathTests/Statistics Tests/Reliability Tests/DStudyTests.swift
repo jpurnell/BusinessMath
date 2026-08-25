@@ -87,8 +87,8 @@ struct DStudyTests {
 
 		// Extract components
 		let sigmaP = g.variancePersons
-		let sigmaR = g.components.first { $0.source == "raters" }!.variance
-		let sigmaE = g.components.first { $0.source == "p x raters" }!.variance
+		let sigmaR = try #require(g.components.first { $0.source == "raters" }).variance
+		let sigmaE = try #require(g.components.first { $0.source == "p x raters" }).variance
 
 		// sigma_delta^2 = sigma_e^2 / n_r'
 		let expectedRelative = sigmaE / Double(nrPrime)
@@ -116,7 +116,7 @@ struct DStudyTests {
 		let d = try dStudy(g, design: ["raters": 1])
 
 		let sigmaP = g.variancePersons
-		let sigmaE = g.components.first { $0.source == "p x raters" }!.variance
+		let sigmaE = try #require(g.components.first { $0.source == "p x raters" }).variance
 
 		// With single rater, relative error = sigma_e^2 / 1 = sigma_e^2
 		#expect(abs(d.relativeErrorVariance - sigmaE) < 1e-10)
@@ -162,13 +162,13 @@ struct DStudyTests {
 		let d = try dStudy(g, design: ["raters": nrPrime, "items": niPrime])
 
 		// Extract variance components
-		let sigmaP = g.components.first { $0.source == "p" }!.variance
-		let sigmaR = g.components.first { $0.source == "raters" }!.variance
-		let sigmaI = g.components.first { $0.source == "items" }!.variance
-		let sigmaPR = g.components.first { $0.source == "p x raters" }!.variance
-		let sigmaPI = g.components.first { $0.source == "p x items" }!.variance
-		let sigmaRI = g.components.first { $0.source == "raters x items" }!.variance
-		let sigmaE = g.components.first { $0.source == "p x raters x items" }!.variance
+		let sigmaP = try #require(g.components.first { $0.source == "p" }).variance
+		let sigmaR = try #require(g.components.first { $0.source == "raters" }).variance
+		let sigmaI = try #require(g.components.first { $0.source == "items" }).variance
+		let sigmaPR = try #require(g.components.first { $0.source == "p x raters" }).variance
+		let sigmaPI = try #require(g.components.first { $0.source == "p x items" }).variance
+		let sigmaRI = try #require(g.components.first { $0.source == "raters x items" }).variance
+		let sigmaE = try #require(g.components.first { $0.source == "p x raters x items" }).variance
 
 		// sigma_delta^2 = sigma_pr/n_r' + sigma_pi/n_i' + sigma_e/(n_r'*n_i')
 		let expectedRelative = sigmaPR / Double(nrPrime)

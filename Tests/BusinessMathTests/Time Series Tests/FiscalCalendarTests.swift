@@ -56,7 +56,7 @@ struct FiscalCalendarTests {
 	}
 
 	@Test("Standard calendar: fiscal year equals calendar year")
-	func standardCalendarFiscalYear() {
+	func standardCalendarFiscalYear() throws {
 		let standard = FiscalCalendar.standard
 
 		// January 15, 2025 is in FY2025
@@ -65,14 +65,14 @@ struct FiscalCalendarTests {
 		components.month = 1
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = standard.fiscalYear(for: date)
 		#expect(fy == 2025)
 	}
 
 	@Test("Standard calendar: December is in same fiscal year")
-	func standardCalendarDecember() {
+	func standardCalendarDecember() throws {
 		let standard = FiscalCalendar.standard
 
 		// December 15, 2025 is in FY2025
@@ -81,7 +81,7 @@ struct FiscalCalendarTests {
 		components.month = 12
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = standard.fiscalYear(for: date)
 		#expect(fy == 2025)
@@ -97,7 +97,7 @@ struct FiscalCalendarTests {
 	}
 
 	@Test("Apple fiscal year: October starts new fiscal year")
-	func appleFiscalYearOctober() {
+	func appleFiscalYearOctober() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		// October 1, 2024 starts FY2025
@@ -106,14 +106,14 @@ struct FiscalCalendarTests {
 		components.month = 10
 		components.day = 1
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: date)
 		#expect(fy == 2025)
 	}
 
 	@Test("Apple fiscal year: September is in current calendar year's fiscal year")
-	func appleFiscalYearSeptember() {
+	func appleFiscalYearSeptember() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		// September 30, 2024 is end of FY2024
@@ -122,14 +122,14 @@ struct FiscalCalendarTests {
 		components.month = 9
 		components.day = 30
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: date)
 		#expect(fy == 2024)
 	}
 
 	@Test("Apple fiscal year: January is in next fiscal year")
-	func appleFiscalYearJanuary() {
+	func appleFiscalYearJanuary() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		// January 15, 2025 is in FY2025 (which started Oct 1, 2024)
@@ -138,7 +138,7 @@ struct FiscalCalendarTests {
 		components.month = 1
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: date)
 		#expect(fy == 2025)
@@ -147,7 +147,7 @@ struct FiscalCalendarTests {
 	// MARK: - Fiscal Quarters
 
 	@Test("Standard calendar: Q1 is January-March")
-	func standardCalendarQ1() {
+	func standardCalendarQ1() throws {
 		let standard = FiscalCalendar.standard
 
 		// January 15 is Q1
@@ -156,18 +156,18 @@ struct FiscalCalendarTests {
 		components.month = 1
 		components.day = 15
 		let calendar = Calendar.current
-		let jan = calendar.date(from: components)!
+		let jan = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: jan) == 1)
 
 		// March 31 is Q1
 		components.month = 3
 		components.day = 31
-		let mar = calendar.date(from: components)!
+		let mar = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: mar) == 1)
 	}
 
 	@Test("Standard calendar: Q2 is April-June")
-	func standardCalendarQ2() {
+	func standardCalendarQ2() throws {
 		let standard = FiscalCalendar.standard
 
 		var components = DateComponents()
@@ -175,17 +175,17 @@ struct FiscalCalendarTests {
 		components.month = 4
 		components.day = 1
 		let calendar = Calendar.current
-		let apr = calendar.date(from: components)!
+		let apr = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: apr) == 2)
 
 		components.month = 6
 		components.day = 30
-		let jun = calendar.date(from: components)!
+		let jun = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: jun) == 2)
 	}
 
 	@Test("Standard calendar: Q3 is July-September")
-	func standardCalendarQ3() {
+	func standardCalendarQ3() throws {
 		let standard = FiscalCalendar.standard
 
 		var components = DateComponents()
@@ -193,17 +193,17 @@ struct FiscalCalendarTests {
 		components.month = 7
 		components.day = 1
 		let calendar = Calendar.current
-		let jul = calendar.date(from: components)!
+		let jul = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: jul) == 3)
 
 		components.month = 9
 		components.day = 30
-		let sep = calendar.date(from: components)!
+		let sep = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: sep) == 3)
 	}
 
 	@Test("Standard calendar: Q4 is October-December")
-	func standardCalendarQ4() {
+	func standardCalendarQ4() throws {
 		let standard = FiscalCalendar.standard
 
 		var components = DateComponents()
@@ -211,17 +211,17 @@ struct FiscalCalendarTests {
 		components.month = 10
 		components.day = 1
 		let calendar = Calendar.current
-		let oct = calendar.date(from: components)!
+		let oct = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: oct) == 4)
 
 		components.month = 12
 		components.day = 31
-		let dec = calendar.date(from: components)!
+		let dec = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: dec) == 4)
 	}
 
 	@Test("Apple fiscal calendar: Q1 is October-December")
-	func appleFiscalQ1() {
+	func appleFiscalQ1() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -229,17 +229,17 @@ struct FiscalCalendarTests {
 		components.month = 10
 		components.day = 1
 		let calendar = Calendar.current
-		let oct = calendar.date(from: components)!
+		let oct = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: oct) == 1)
 
 		components.month = 12
 		components.day = 31
-		let dec = calendar.date(from: components)!
+		let dec = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: dec) == 1)
 	}
 
 	@Test("Apple fiscal calendar: Q2 is January-March")
-	func appleFiscalQ2() {
+	func appleFiscalQ2() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -247,17 +247,17 @@ struct FiscalCalendarTests {
 		components.month = 1
 		components.day = 15
 		let calendar = Calendar.current
-		let jan = calendar.date(from: components)!
+		let jan = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: jan) == 2)
 
 		components.month = 3
 		components.day = 31
-		let mar = calendar.date(from: components)!
+		let mar = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: mar) == 2)
 	}
 
 	@Test("Apple fiscal calendar: Q3 is April-June")
-	func appleFiscalQ3() {
+	func appleFiscalQ3() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -265,17 +265,17 @@ struct FiscalCalendarTests {
 		components.month = 4
 		components.day = 15
 		let calendar = Calendar.current
-		let apr = calendar.date(from: components)!
+		let apr = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: apr) == 3)
 
 		components.month = 6
 		components.day = 30
-		let jun = calendar.date(from: components)!
+		let jun = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: jun) == 3)
 	}
 
 	@Test("Apple fiscal calendar: Q4 is July-September")
-	func appleFiscalQ4() {
+	func appleFiscalQ4() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -283,19 +283,19 @@ struct FiscalCalendarTests {
 		components.month = 7
 		components.day = 15
 		let calendar = Calendar.current
-		let jul = calendar.date(from: components)!
+		let jul = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: jul) == 4)
 
 		components.month = 9
 		components.day = 30
-		let sep = calendar.date(from: components)!
+		let sep = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: sep) == 4)
 	}
 
 	// MARK: - Fiscal Months
 
 	@Test("Standard calendar: fiscal month equals calendar month")
-	func standardCalendarFiscalMonth() {
+	func standardCalendarFiscalMonth() throws {
 		let standard = FiscalCalendar.standard
 
 		var components = DateComponents()
@@ -305,14 +305,14 @@ struct FiscalCalendarTests {
 
 		for month in 1...12 {
 			components.month = month
-			let date = calendar.date(from: components)!
+			let date = try #require(calendar.date(from: components))
 			let fiscalMonth = standard.fiscalMonth(for: date)
 			#expect(fiscalMonth == month)
 		}
 	}
 
 	@Test("Apple fiscal calendar: October is fiscal month 1")
-	func appleFiscalMonth1() {
+	func appleFiscalMonth1() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -320,14 +320,14 @@ struct FiscalCalendarTests {
 		components.month = 10
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fiscalMonth = apple.fiscalMonth(for: date)
 		#expect(fiscalMonth == 1)
 	}
 
 	@Test("Apple fiscal calendar: September is fiscal month 12")
-	func appleFiscalMonth12() {
+	func appleFiscalMonth12() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -335,14 +335,14 @@ struct FiscalCalendarTests {
 		components.month = 9
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fiscalMonth = apple.fiscalMonth(for: date)
 		#expect(fiscalMonth == 12)
 	}
 
 	@Test("Apple fiscal calendar: January is fiscal month 4")
-	func appleFiscalMonth4() {
+	func appleFiscalMonth4() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -350,7 +350,7 @@ struct FiscalCalendarTests {
 		components.month = 1
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fiscalMonth = apple.fiscalMonth(for: date)
 		#expect(fiscalMonth == 4)
@@ -439,7 +439,7 @@ struct FiscalCalendarTests {
 	// MARK: - Other Common Fiscal Year-Ends
 
 	@Test("June 30 fiscal year-end (Australian government)")
-	func june30FiscalYear() {
+	func june30FiscalYear() throws {
 		let june30 = FiscalCalendar(yearEnd: MonthDay(month: 6, day: 30))
 
 		// July 1, 2024 starts FY2025
@@ -448,14 +448,14 @@ struct FiscalCalendarTests {
 		components.month = 7
 		components.day = 1
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = june30.fiscalYear(for: date)
 		#expect(fy == 2025)
 	}
 
 	@Test("March 31 fiscal year-end (UK government)")
-	func march31FiscalYear() {
+	func march31FiscalYear() throws {
 		let march31 = FiscalCalendar(yearEnd: MonthDay(month: 3, day: 31))
 
 		// April 1, 2024 starts FY2025
@@ -464,7 +464,7 @@ struct FiscalCalendarTests {
 		components.month = 4
 		components.day = 1
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = march31.fiscalYear(for: date)
 		#expect(fy == 2025)
@@ -473,7 +473,7 @@ struct FiscalCalendarTests {
 	// MARK: - Edge Cases
 
 	@Test("Leap year February 29 handling")
-	func leapYearFeb29() {
+	func leapYearFeb29() throws {
 		let standard = FiscalCalendar.standard
 
 		// Feb 29, 2024 (leap year)
@@ -482,7 +482,7 @@ struct FiscalCalendarTests {
 		components.month = 2
 		components.day = 29
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let fy = standard.fiscalYear(for: date)
 		#expect(fy == 2024)
@@ -495,7 +495,7 @@ struct FiscalCalendarTests {
 	}
 
 	@Test("Year-end boundary: exact year-end date")
-	func yearEndBoundary() {
+	func yearEndBoundary() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		// September 30, 2024 at 23:59:59 should be FY2024
@@ -507,14 +507,14 @@ struct FiscalCalendarTests {
 		components.minute = 59
 		components.second = 59
 		let calendar = Calendar.current
-		let endDate = calendar.date(from: components)!
+		let endDate = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: endDate)
 		#expect(fy == 2024)
 	}
 
 	@Test("Year-end boundary: day after year-end")
-	func dayAfterYearEnd() {
+	func dayAfterYearEnd() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		// October 1, 2024 at 00:00:00 should be FY2025
@@ -526,14 +526,14 @@ struct FiscalCalendarTests {
 		components.minute = 0
 		components.second = 0
 		let calendar = Calendar.current
-		let nextDate = calendar.date(from: components)!
+		let nextDate = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: nextDate)
 		#expect(fy == 2025)
 	}
 
 	@Test("Daily periods map to correct fiscal month")
-	func dailyPeriodFiscalMonth() {
+	func dailyPeriodFiscalMonth() throws {
 		let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 
 		var components = DateComponents()
@@ -541,7 +541,7 @@ struct FiscalCalendarTests {
 		components.month = 10
 		components.day = 15
 		let calendar = Calendar.current
-		let date = calendar.date(from: components)!
+		let date = try #require(calendar.date(from: components))
 
 		let day = Period.day(date)
 		let fiscalPeriod = apple.periodInFiscalYear(day)
@@ -568,10 +568,11 @@ struct FiscalCalendarTests {
 				"day": 30
 			}
 		}
-		""".data(using: .utf8)!
+		"""
+		let jsonData = try #require(json.data(using: .utf8))
 
 		let decoder = JSONDecoder()
-		let fiscalCal = try decoder.decode(FiscalCalendar.self, from: json)
+		let fiscalCal = try decoder.decode(FiscalCalendar.self, from: jsonData)
 
 		#expect(fiscalCal.yearEnd.month == 9)
 		#expect(fiscalCal.yearEnd.day == 30)

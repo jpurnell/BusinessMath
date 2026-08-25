@@ -307,14 +307,14 @@ extension ErrorHandlingExamples {
 
     /// Complete working example for NPV error handling
     /// Source tag: npvErrorHandlingExample
-    static func npvErrorHandlingExample() {
+    static func npvErrorHandlingExample() throws {
         do {
             // Use calculateNPV which validates inputs and throws errors
             let result = try calculateNPV(discountRate: 0.10, cashFlows: [-1000, 300, 400, 500])
 			print("NPV: \(result.currency())")
         } catch let error as BusinessMathError {
-            print(error.errorDescription!)
-            print(error.recoverySuggestion!)
+            print(try #require(error.errorDescription))
+            print(try #require(error.recoverySuggestion))
             print("Error Code: \(error.code)")
         } catch {
             print("Unexpected error: \(error)")
@@ -323,7 +323,7 @@ extension ErrorHandlingExamples {
 
     /// Complete working example for TimeSeries validation
     /// Source tag: timeSeriesValidationExample
-    static func timeSeriesValidationExample() {
+    static func timeSeriesValidationExample() throws {
         let periods = [
             Period.month(year: 2025, month: 1),
             Period.month(year: 2025, month: 2),
@@ -336,7 +336,7 @@ extension ErrorHandlingExamples {
             try ts.validateAndThrow()
             print("TimeSeries is valid")
         } catch let error as BusinessMathError {
-            print("Validation failed: \(error.errorDescription!)")
+            print("Validation failed: \(error.errorDescription ?? String(describing: error))")
         } catch {
             print("Unexpected error: \(error)")
         }
@@ -344,7 +344,7 @@ extension ErrorHandlingExamples {
 
     /// Complete working example for model getValue
     /// Source tag: modelGetValueExample
-    static func modelGetValueExample() {
+    static func modelGetValueExample() throws {
         let model = FinancialModel {
             RevenueAmount("Product Sales", 100_000)
             CostAmount("COGS", 60_000)

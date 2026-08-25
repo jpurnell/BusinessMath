@@ -134,7 +134,7 @@ extension ReidsRaisinsModel {
 	}
 
 	/// Calculate profit with detailed breakdown
-	func profitBreakdown() -> (revenue: Double, costs: [String: Double], profit: Double) {
+	func profitBreakdown() throws -> (revenue: Double, costs: [String: Double], profit: Double) {
 		let demand = calculateDemand(price: raisinPrice)
 		let totalGrapes = grapesNeeded(demand: demand)
 
@@ -362,9 +362,9 @@ print(tornadoPlot)
 // Also print detailed breakdown
 print("\nDetailed Impact Analysis:")
 for (index, input) in tornadoAnalysis.inputs.enumerated() {
-	let impact = tornadoAnalysis.impacts[input]!
-	let low = tornadoAnalysis.lowValues[input]!
-	let high = tornadoAnalysis.highValues[input]!
+	let impact = try #require(tornadoAnalysis.impacts[input])
+	let low = try #require(tornadoAnalysis.lowValues[input])
+	let high = try #require(tornadoAnalysis.highValues[input])
 	let percentImpact = (impact / abs(profit))
 
 	print("\n\(index + 1). \(input)")

@@ -15,22 +15,22 @@ import Numerics
 struct BondPricingTests {
 
     // Use a fixed reference date to avoid wall-clock dependencies in bond calculations
-    private static let referenceDate: Date = {
+    private static func referenceDate() throws -> Date {
         var components = DateComponents()
         components.year = 2025
         components.month = 1
         components.day = 1
-        return Calendar.current.date(from: components)!
-    }()
+        return try #require(Calendar.current.date(from: components))
+    }
 
     // MARK: - Basic Price Calculation Tests
 
     @Test("Bond price at par - coupon rate = yield")
-    func bondPriceAtPar() {
+    func bondPriceAtPar() throws {
         // Given: 5% coupon bond, 5% yield, 10 years to maturity
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -48,11 +48,11 @@ struct BondPricingTests {
     }
 
     @Test("Bond price at premium - yield < coupon rate")
-    func bondPriceAtPremium() {
+    func bondPriceAtPremium() throws {
         // Given: 6% coupon bond, 4% yield, 10 years to maturity
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -71,11 +71,11 @@ struct BondPricingTests {
     }
 
     @Test("Bond price at discount - yield > coupon rate")
-    func bondPriceAtDiscount() {
+    func bondPriceAtDiscount() throws {
         // Given: 4% coupon bond, 6% yield, 10 years to maturity
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -94,11 +94,11 @@ struct BondPricingTests {
     }
 
     @Test("Bond price with annual coupons")
-    func bondPriceAnnualCoupons() {
+    func bondPriceAnnualCoupons() throws {
         // Given: Bond with annual coupon payments
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 5, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -116,11 +116,11 @@ struct BondPricingTests {
     }
 
     @Test("Bond price with quarterly coupons")
-    func bondPriceQuarterlyCoupons() {
+    func bondPriceQuarterlyCoupons() throws {
         // Given: Bond with quarterly coupon payments
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 5, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -138,11 +138,11 @@ struct BondPricingTests {
     }
 
     @Test("Bond price between coupon payments")
-    func bondPriceBetweenCoupons() {
+    func bondPriceBetweenCoupons() throws {
         // Given: Bond issued 6 months ago with semiannual coupons
         let calendar = Calendar.current
-        let issueDate = calendar.date(byAdding: .month, value: -6, to: Date())!
-        let maturityDate = calendar.date(byAdding: .year, value: 10, to: issueDate)!
+        let issueDate = try #require(calendar.date(byAdding: .month, value: -6, to: Date()))
+        let maturityDate = try #require(calendar.date(byAdding: .year, value: 10, to: issueDate))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -165,8 +165,8 @@ struct BondPricingTests {
     func ytmAtPar() throws {
         // Given: Bond trading at par
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -187,8 +187,8 @@ struct BondPricingTests {
     func ytmAtPremium() throws {
         // Given: Bond trading at premium
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -210,8 +210,8 @@ struct BondPricingTests {
     func ytmAtDiscount() throws {
         // Given: Bond trading at discount
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -233,8 +233,8 @@ struct BondPricingTests {
     func roundTripPriceYTM() throws {
         // Given: Bond with specific parameters
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -257,11 +257,11 @@ struct BondPricingTests {
     // MARK: - Current Yield Tests
 
     @Test("Current yield calculation")
-    func currentYield() {
+    func currentYield() throws {
         // Given: Bond with 6% coupon
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -285,11 +285,11 @@ struct BondPricingTests {
     // MARK: - Duration Tests
 
     @Test("Macaulay duration calculation")
-    func macaulayDuration() {
+    func macaulayDuration() throws {
         // Given: 5-year bond with 5% coupon
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 5, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -308,11 +308,11 @@ struct BondPricingTests {
     }
 
     @Test("Modified duration calculation")
-    func modifiedDuration() {
+    func modifiedDuration() throws {
         // Given: Bond
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -333,11 +333,11 @@ struct BondPricingTests {
     }
 
     @Test("Duration as price sensitivity")
-    func durationAsPriceSensitivity() {
+    func durationAsPriceSensitivity() throws {
         // Given: Bond
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -364,11 +364,11 @@ struct BondPricingTests {
     // MARK: - Convexity Tests
 
     @Test("Convexity calculation")
-    func convexityCalculation() {
+    func convexityCalculation() throws {
         // Given: Bond
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -387,11 +387,11 @@ struct BondPricingTests {
     }
 
     @Test("Convexity improves duration approximation")
-    func convexityImprovesDurationApproximation() {
+    func convexityImprovesDurationApproximation() throws {
         // Given: Bond
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -426,11 +426,11 @@ struct BondPricingTests {
     // MARK: - Edge Cases
 
     @Test("Zero coupon bond approximation")
-    func zeroCouponBondApproximation() {
+    func zeroCouponBondApproximation() throws {
         // Given: Bond with very low coupon (approximates zero coupon)
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -449,11 +449,11 @@ struct BondPricingTests {
     }
 
     @Test("Short maturity bond (1 year)")
-    func shortMaturityBond() {
+    func shortMaturityBond() throws {
         // Given: 1-year bond
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 1, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 1, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -471,11 +471,11 @@ struct BondPricingTests {
     }
 
     @Test("Long maturity bond (30 years)")
-    func longMaturityBond() {
+    func longMaturityBond() throws {
         // Given: 30-year bond
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 30, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 30, to: today))
 
         let bond = Bond(
             faceValue: 1000.0,
@@ -499,11 +499,11 @@ struct BondPricingTests {
     // MARK: - Generic Type Tests
 
     @Test("Bond with Float type")
-    func bondWithFloat() {
+    func bondWithFloat() throws {
         // Given: Bond using Float
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let bond = Bond<Float>(
             faceValue: 1000.0,
@@ -523,11 +523,11 @@ struct BondPricingTests {
     // MARK: - Comparison Tests
 
     @Test("Higher coupon → higher price (same yield)")
-    func higherCouponHigherPrice() {
+    func higherCouponHigherPrice() throws {
         // Given: Two bonds, same maturity and yield, different coupons
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let maturity = calendar.date(byAdding: .year, value: 10, to: today)!
+        let today = try Self.referenceDate()
+        let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
         let lowCouponBond = Bond(
             faceValue: 1000.0,
@@ -554,12 +554,12 @@ struct BondPricingTests {
     }
 
     @Test("Longer maturity → higher duration")
-    func longerMaturityHigherDuration() {
+    func longerMaturityHigherDuration() throws {
         // Given: Two bonds, same coupon, different maturities
         let calendar = Calendar.current
-        let today = Self.referenceDate
-        let shortMaturity = calendar.date(byAdding: .year, value: 5, to: today)!
-        let longMaturity = calendar.date(byAdding: .year, value: 20, to: today)!
+        let today = try Self.referenceDate()
+        let shortMaturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
+        let longMaturity = try #require(calendar.date(byAdding: .year, value: 20, to: today))
 
         let shortBond = Bond(
             faceValue: 1000.0,

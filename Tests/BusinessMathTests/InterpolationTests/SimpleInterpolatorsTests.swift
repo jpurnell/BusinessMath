@@ -74,28 +74,28 @@ struct NearestNeighborTests {
     }
 
     @Test("Throws on empty input")
-    func throwsOnEmpty() {
+    func throwsOnEmpty() throws {
         #expect(throws: InterpolationError.self) {
             _ = try NearestNeighborInterpolator(xs: [Double](), ys: [Double]())
         }
     }
 
     @Test("Throws on mismatched sizes")
-    func throwsOnMismatched() {
+    func throwsOnMismatched() throws {
         #expect(throws: InterpolationError.self) {
             _ = try NearestNeighborInterpolator(xs: [0.0, 1.0], ys: [0.0])
         }
     }
 
     @Test("Throws on unsorted xs")
-    func throwsOnUnsorted() {
+    func throwsOnUnsorted() throws {
         #expect(throws: InterpolationError.self) {
             _ = try NearestNeighborInterpolator(xs: [0.0, 2.0, 1.0], ys: [0.0, 4.0, 1.0])
         }
     }
 
     @Test("Throws on duplicate xs")
-    func throwsOnDuplicate() {
+    func throwsOnDuplicate() throws {
         #expect(throws: InterpolationError.self) {
             _ = try NearestNeighborInterpolator(xs: [0.0, 1.0, 1.0], ys: [0.0, 1.0, 2.0])
         }
@@ -154,7 +154,7 @@ struct PreviousValueTests {
     }
 
     @Test("Throws on empty input")
-    func throwsOnEmpty() {
+    func throwsOnEmpty() throws {
         #expect(throws: InterpolationError.self) {
             _ = try PreviousValueInterpolator(xs: [Double](), ys: [Double]())
         }
@@ -251,7 +251,7 @@ struct LinearInterpolatorTests {
     }
 
     @Test("Throws on insufficient points")
-    func throwsOnInsufficientPoints() {
+    func throwsOnInsufficientPoints() throws {
         #expect(throws: InterpolationError.self) {
             _ = try LinearInterpolator(xs: [0.0], ys: [0.0])
         }

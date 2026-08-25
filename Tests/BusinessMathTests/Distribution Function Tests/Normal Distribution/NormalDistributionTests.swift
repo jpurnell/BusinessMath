@@ -243,7 +243,7 @@ struct NormalDistributionTests {
 	}
 
 	@Test("Normal distribution with different standard deviations")
-	func normalDifferentStdDevs() {
+	func normalDifferentStdDevs() throws {
 		let mean = 100.0
 		let sampleCount = 5000
 		let seeds = Self.seedsForNormal(count: sampleCount)
@@ -257,8 +257,8 @@ struct NormalDistributionTests {
 		}
 
 		// Calculate spreads
-		let range5 = samplesStdDev5.max()! - samplesStdDev5.min()!
-		let range20 = samplesStdDev20.max()! - samplesStdDev20.min()!
+		let range5 = try #require(samplesStdDev5.max()) - (try #require(samplesStdDev5.min()))
+		let range20 = try #require(samplesStdDev20.max()) - (try #require(samplesStdDev20.min()))
 
 		// Larger stdDev should have larger range
 		#expect(range20 > range5, "Larger stdDev should produce wider spread")
@@ -266,7 +266,7 @@ struct NormalDistributionTests {
 	}
 
 	@Test("Normal distribution with extreme parameters")
-	func normalExtremeParameters() {
+	func normalExtremeParameters() throws {
 		// Very small standard deviation
 		let seeds1 = Self.seedsForNormal(count: 1000)
 		var samplesSmallStdDev: [Double] = []
@@ -274,7 +274,7 @@ struct NormalDistributionTests {
 			samplesSmallStdDev.append(distributionNormal(mean: 100.0, stdDev: 0.1, seeds1[i].u1, seeds1[i].u2))
 		}
 
-		let range = samplesSmallStdDev.max()! - samplesSmallStdDev.min()!
+		let range = try #require(samplesSmallStdDev.max()) - (try #require(samplesSmallStdDev.min()))
 		#expect(range < 2.0, "Small stdDev should produce tightly clustered values")
 
 		// Very large standard deviation
@@ -284,7 +284,7 @@ struct NormalDistributionTests {
 			samplesLargeStdDev.append(distributionNormal(mean: 0.0, stdDev: 100.0, seeds2[i].u1, seeds2[i].u2))
 		}
 
-		let range2 = samplesLargeStdDev.max()! - samplesLargeStdDev.min()!
+		let range2 = try #require(samplesLargeStdDev.max()) - (try #require(samplesLargeStdDev.min()))
 		#expect(range2 > 400.0, "Large stdDev should produce widely spread values")
 	}
 

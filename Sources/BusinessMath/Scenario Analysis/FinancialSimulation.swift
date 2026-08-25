@@ -158,11 +158,11 @@ extension FinancialSimulation {
 	///     return projection.incomeStatement.netIncome[q1]!
 	/// }
 	/// ```
-	public func mean(metric: (FinancialProjection) -> Double) -> Double {
+	public func mean(metric: (FinancialProjection) throws -> Double) rethrows -> Double {
 		// Optimization: compute sum without intermediate array
 		var sum = 0.0
 		for projection in projections {
-			sum += metric(projection)
+			sum += try metric(projection)
 		}
 		return sum / Double(projections.count) // fp-safety:disable — projections nonempty (FinancialSimulation requires projections)
 	}
@@ -191,8 +191,8 @@ extension FinancialSimulation {
 	/// The empirical quantile with linear interpolation between order statistics
 	/// (type 7), computed by ``quantile(sorted:p:)`` — the same function behind
 	/// ``Percentiles`` and ``ProjectionResults/percentile(_:)``.
-	public func percentile(_ p: Double, metric: (FinancialProjection) -> Double) -> Double {
-		let sortedValues = projections.map(metric).sorted()
+	public func percentile(_ p: Double, metric: (FinancialProjection) throws -> Double) rethrows -> Double {
+		let sortedValues = try projections.map(metric).sorted()
 		return percentileFromSorted(p, values: sortedValues)
 	}
 
@@ -234,10 +234,10 @@ extension FinancialSimulation {
 	/// For a 95% confidence interval, returns the 2.5th and 97.5th percentiles.
 	public func confidenceInterval(
 		_ level: Double,
-		metric: (FinancialProjection) -> Double
-	) -> (lowerBound: Double, upperBound: Double) {
+		metric: (FinancialProjection) throws -> Double
+	) rethrows -> (lowerBound: Double, upperBound: Double) {
 		// Optimization: sort once and reuse for both bounds
-		let sortedValues = projections.map(metric).sorted()
+		let sortedValues = try projections.map(metric).sorted()
 		let tail = (1.0 - level) / 2.0
 		let lowerBound = percentileFromSorted(tail, values: sortedValues)
 		let upperBound = percentileFromSorted(1.0 - tail, values: sortedValues)
@@ -274,8 +274,8 @@ extension FinancialSimulation {
 	/// print("VaR (95%): \(var95)")
 	/// print("There's a 5% chance net income will be below \(var95)")
 	/// ```
-	public func valueAtRisk(_ confidence: Double, metric: (FinancialProjection) -> Double) -> Double {
-		return percentile(1.0 - confidence, metric: metric)
+	public func valueAtRisk(_ confidence: Double, metric: (FinancialProjection) throws -> Double) rethrows -> Double {
+		return try percentile(1.0 - confidence, metric: metric)
 	}
 
 	/// Calculates Conditional Value at Risk (CVaR) for a metric.
@@ -307,10 +307,10 @@ extension FinancialSimulation {
 	/// Calculates the average of all values below the VaR threshold.
 	public func conditionalValueAtRisk(
 		_ confidence: Double,
-		metric: (FinancialProjection) -> Double
-	) -> Double {
+		metric: (FinancialProjection) throws -> Double
+	) rethrows -> Double {
 		// Optimization: sort once and reuse for both VaR and tail calculation
-		let sortedValues = projections.map(metric).sorted()
+		let sortedValues = try projections.map(metric).sorted()
 
 		// Calculate the tail size (e.g., 5% for 95% confidence)
 		let tailSize = Int(ceil(Double(sortedValues.count) * (1.0 - confidence)))
@@ -345,11 +345,11 @@ extension FinancialSimulation {
 	///
 	/// print("Probability of negative net income: \(probLoss * 100)%")
 	/// ```
-	public func probabilityOfLoss(metric: (FinancialProjection) -> Double) -> Double {
+	public func probabilityOfLoss(metric: (FinancialProjection) throws -> Double) rethrows -> Double {
 		// Optimization: count directly without intermediate arrays
 		var lossCount = 0
 		for projection in projections {
-			if metric(projection) < 0.0 {
+			if try metric(projection) < 0.0 {
 				lossCount += 1
 			}
 		}
@@ -377,12 +377,12 @@ extension FinancialSimulation {
 	/// ```
 	public func probabilityBelow(
 		_ threshold: Double,
-		metric: (FinancialProjection) -> Double
-	) -> Double {
+		metric: (FinancialProjection) throws -> Double
+	) rethrows -> Double {
 		// Optimization: count directly without intermediate arrays
 		var belowCount = 0
 		for projection in projections {
-			if metric(projection) < threshold {
+			if try metric(projection) < threshold {
 				belowCount += 1
 			}
 		}
@@ -410,9 +410,9 @@ extension FinancialSimulation {
 	/// ```
 	public func probabilityAbove(
 		_ threshold: Double,
-		metric: (FinancialProjection) -> Double
-	) -> Double {
-		return 1.0 - probabilityBelow(threshold, metric: metric)
+		metric: (FinancialProjection) throws -> Double
+	) rethrows -> Double {
+		return try 1.0 - probabilityBelow(threshold, metric: metric)
 	}
 }
 

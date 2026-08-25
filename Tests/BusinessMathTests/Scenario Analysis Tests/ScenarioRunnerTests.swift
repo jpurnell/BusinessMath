@@ -83,8 +83,8 @@ struct ScenarioRunnerTests {
 			periods: periods
 		) { drivers, periods in
 			// Simple builder: revenue becomes revenue account, no expenses
-			let revenueValues = periods.map { period in
-				drivers["Revenue"]!.sample(for: period)
+			let revenueValues = try periods.map { period in
+				(try #require(drivers["Revenue"])).sample(for: period)
 			}
 
 			let revenueSeries = TimeSeries<Double>(
@@ -172,8 +172,8 @@ struct ScenarioRunnerTests {
 
 		// Simple builder function
 		let builder: ScenarioRunner.StatementBuilder = { drivers, periods in
-			let revenueValues = periods.map { period in
-				drivers["Revenue"]!.sample(for: period)
+			let revenueValues = try periods.map { period in
+				(try #require(drivers["Revenue"])).sample(for: period)
 			}
 
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
@@ -207,8 +207,8 @@ struct ScenarioRunnerTests {
 
 		// Verify different scenarios produce different results
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		let baseRevenue = baseProjection.incomeStatement.totalRevenue[q1]!
-		let optimisticRevenue = optimisticProjection.incomeStatement.totalRevenue[q1]!
+		let baseRevenue = try #require(baseProjection.incomeStatement.totalRevenue[q1])
+		let optimisticRevenue = try #require(optimisticProjection.incomeStatement.totalRevenue[q1])
 
 		#expect(abs(baseRevenue - 800.0) < 1e-2)
 		#expect(abs(optimisticRevenue - 1500.0) < 1e-2)
@@ -242,8 +242,8 @@ struct ScenarioRunnerTests {
 			periods: periods
 		) { drivers, periods in
 			// Build statements from both drivers
-			let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
-			let costValues = periods.map { drivers["Costs"]!.sample(for: $0) }
+			let revenueValues = try periods.map { try #require(drivers["Revenue"]).sample(for: $0) }
+			let costValues = try periods.map { try #require(drivers["Costs"]).sample(for: $0) }
 
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 			let costSeries = TimeSeries<Double>(periods: periods, values: costValues)
@@ -276,9 +276,9 @@ struct ScenarioRunnerTests {
 
 		// Verify both drivers were used
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		let revenue = projection.incomeStatement.totalRevenue[q1]!
-		let expenses = projection.incomeStatement.totalExpenses[q1]!
-		let netIncome = projection.incomeStatement.netIncome[q1]!
+		let revenue = try #require(projection.incomeStatement.totalRevenue[q1])
+		let expenses = try #require(projection.incomeStatement.totalExpenses[q1])
+		let netIncome = try #require(projection.incomeStatement.netIncome[q1])
 
 		#expect(abs(revenue - 1000.0) < 1e-2)
 		#expect(abs(expenses - 600.0) < 1e-2)
@@ -315,7 +315,7 @@ struct ScenarioRunnerTests {
 				entity: entity,
 				periods: periods
 			) { drivers, periods in
-				let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
+				let revenueValues = try periods.map { try #require(drivers["Revenue"]).sample(for: $0) }
 				let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 				let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
 
@@ -342,7 +342,7 @@ struct ScenarioRunnerTests {
 			}
 
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			revenues.append(projection.incomeStatement.totalRevenue[q1]!)
+			revenues.append(try #require(projection.incomeStatement.totalRevenue[q1]))
 		}
 
 		// Verify we got different values (probabilistic)
@@ -433,7 +433,7 @@ struct ScenarioRunnerTests {
 			entity: entity,
 			periods: periods
 		) { drivers, periods in
-			let revenueValues = periods.map { drivers["Revenue"]!.sample(for: $0) }
+			let revenueValues = try periods.map { try #require(drivers["Revenue"]).sample(for: $0) }
 			let revenueSeries = TimeSeries<Double>(periods: periods, values: revenueValues)
 			let revenueAccount = try Account(entity: entity, name: "Revenue", incomeStatementRole: .revenue, timeSeries: revenueSeries)
 
@@ -481,7 +481,7 @@ struct ScenarioRunnerErrorPropagationTests {
 	}
 
 	@Test("Builder errors are propagated by ScenarioRunner")
-	func builderErrorPropagation() {
+	func builderErrorPropagation() throws {
 		let e = entity()
 		let ps = periods()
 

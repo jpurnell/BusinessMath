@@ -45,7 +45,7 @@ struct LjungBoxTests {
     }
 
     @Test("dof ≤ 0 (lags ≤ fittedParameters) throws")
-    func invalidDof() {
+    func invalidDof() throws {
         #expect(throws: (any Error).self) {
             _ = try self.series((1...10).map(Double.init)).ljungBox(lags: 2, fittedParameters: 2)
         }

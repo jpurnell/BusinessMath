@@ -158,10 +158,10 @@ struct ContributionMarginTests {
 		// Q4: $130K - $78K = $52K
 		let cm = incomeStmt.contributionMargin
 
-		#expect(abs(cm[incomeStmt.periods[0]]! - 40_000.0) < 1e-2)
-		#expect(abs(cm[incomeStmt.periods[1]]! - 44_000.0) < 1e-2)
-		#expect(abs(cm[incomeStmt.periods[2]]! - 48_000.0) < 1e-2)
-		#expect(abs(cm[incomeStmt.periods[3]]! - 52_000.0) < 1e-2)
+		#expect(abs(try #require(cm[incomeStmt.periods[0]]) - 40_000.0) < 1e-2)
+		#expect(abs(try #require(cm[incomeStmt.periods[1]]) - 44_000.0) < 1e-2)
+		#expect(abs(try #require(cm[incomeStmt.periods[2]]) - 48_000.0) < 1e-2)
+		#expect(abs(try #require(cm[incomeStmt.periods[3]]) - 52_000.0) < 1e-2)
 	}
 
 	@Test("Contribution margin percentage calculated correctly")
@@ -195,10 +195,10 @@ struct ContributionMarginTests {
 		// All quarters: 40% contribution margin
 		let cmPercent = incomeStmt.contributionMarginPercent
 
-		#expect(abs(cmPercent[incomeStmt.periods[0]]! - 0.40) < 1e-6)
-		#expect(abs(cmPercent[incomeStmt.periods[1]]! - 0.40) < 1e-6)
-		#expect(abs(cmPercent[incomeStmt.periods[2]]! - 0.40) < 1e-6)
-		#expect(abs(cmPercent[incomeStmt.periods[3]]! - 0.40) < 1e-6)
+		#expect(abs(try #require(cmPercent[incomeStmt.periods[0]]) - 0.40) < 1e-6)
+		#expect(abs(try #require(cmPercent[incomeStmt.periods[1]]) - 0.40) < 1e-6)
+		#expect(abs(try #require(cmPercent[incomeStmt.periods[2]]) - 0.40) < 1e-6)
+		#expect(abs(try #require(cmPercent[incomeStmt.periods[3]]) - 0.40) < 1e-6)
 	}
 
 	@Test("Total variable costs aggregates correctly")
@@ -242,10 +242,10 @@ struct ContributionMarginTests {
 		// Q2: $55K + $5.5K = $60.5K
 		let totalVC = incomeStmt.totalVariableCosts
 
-		#expect(abs(totalVC[incomeStmt.periods[0]]! - 55_000.0) < 1e-2)
-		#expect(abs(totalVC[incomeStmt.periods[1]]! - 60_500.0) < 1e-2)
-		#expect(abs(totalVC[incomeStmt.periods[2]]! - 66_000.0) < 1e-2)
-		#expect(abs(totalVC[incomeStmt.periods[3]]! - 71_500.0) < 1e-2)
+		#expect(abs(try #require(totalVC[incomeStmt.periods[0]]) - 55_000.0) < 1e-2)
+		#expect(abs(try #require(totalVC[incomeStmt.periods[1]]) - 60_500.0) < 1e-2)
+		#expect(abs(try #require(totalVC[incomeStmt.periods[2]]) - 66_000.0) < 1e-2)
+		#expect(abs(try #require(totalVC[incomeStmt.periods[3]]) - 71_500.0) < 1e-2)
 	}
 
 	@Test("Total fixed costs aggregates correctly")
@@ -287,10 +287,10 @@ struct ContributionMarginTests {
 		// Total Fixed Costs = Rent + Salaries = $30K per quarter
 		let totalFC = incomeStmt.totalFixedCosts
 
-		#expect(abs(totalFC[incomeStmt.periods[0]]! - 30_000.0) < 1e-2)
-		#expect(abs(totalFC[incomeStmt.periods[1]]! - 30_000.0) < 1e-2)
-		#expect(abs(totalFC[incomeStmt.periods[2]]! - 30_000.0) < 1e-2)
-		#expect(abs(totalFC[incomeStmt.periods[3]]! - 30_000.0) < 1e-2)
+		#expect(abs(try #require(totalFC[incomeStmt.periods[0]]) - 30_000.0) < 1e-2)
+		#expect(abs(try #require(totalFC[incomeStmt.periods[1]]) - 30_000.0) < 1e-2)
+		#expect(abs(try #require(totalFC[incomeStmt.periods[2]]) - 30_000.0) < 1e-2)
+		#expect(abs(try #require(totalFC[incomeStmt.periods[3]]) - 30_000.0) < 1e-2)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -340,10 +340,10 @@ struct ContributionMarginTests {
 		// Operating Leverage = $40K / $10K = 4.0
 		let leverage = incomeStmt.operatingLeverage()
 
-		#expect(abs(leverage[incomeStmt.periods[0]]! - 4.0) < 1e-6)
+		#expect(abs(try #require(leverage[incomeStmt.periods[0]]) - 4.0) < 1e-6)
 
 		// Q2: CM = $44K, OI = $14K, Leverage = ~3.14
-		#expect(abs(leverage[incomeStmt.periods[1]]! - 3.142857) < 0.001)
+		#expect(abs(try #require(leverage[incomeStmt.periods[1]]) - 3.142857) < 0.001)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -393,10 +393,10 @@ struct ContributionMarginTests {
 		let cm = incomeStmt.contributionMargin
 		let cmPercent = incomeStmt.contributionMarginPercent
 
-		#expect(abs(totalVC[incomeStmt.periods[0]]! - 0.0) < 1e-6)
-		#expect(abs(totalFC[incomeStmt.periods[0]]! - 0.0) < 1e-6)
-		#expect(abs(cm[incomeStmt.periods[0]]! - 100_000.0) < 1e-2)  // Equals revenue
-		#expect(abs(cmPercent[incomeStmt.periods[0]]! - 1.0) < 1e-6)  // 100%
+		#expect(abs(try #require(totalVC[incomeStmt.periods[0]]) - 0.0) < 1e-6)
+		#expect(abs(try #require(totalFC[incomeStmt.periods[0]]) - 0.0) < 1e-6)
+		#expect(abs(try #require(cm[incomeStmt.periods[0]]) - 100_000.0) < 1e-2)  // Equals revenue
+		#expect(abs(try #require(cmPercent[incomeStmt.periods[0]]) - 1.0) < 1e-6)  // 100%
 	}
 
 	@Test("Partial cost classification handled correctly")
@@ -436,15 +436,15 @@ struct ContributionMarginTests {
 
 		// Only COGS should be counted as variable cost
 		let totalVC = incomeStmt.totalVariableCosts
-		#expect(abs(totalVC[incomeStmt.periods[0]]! - 60_000.0) < 1e-2)
+		#expect(abs(try #require(totalVC[incomeStmt.periods[0]]) - 60_000.0) < 1e-2)
 
 		// No fixed costs since rent is unclassified
 		let totalFC = incomeStmt.totalFixedCosts
-		#expect(abs(totalFC[incomeStmt.periods[0]]! - 0.0) < 1e-6)
+		#expect(abs(try #require(totalFC[incomeStmt.periods[0]]) - 0.0) < 1e-6)
 
 		// Contribution margin = Revenue - Variable Costs = $40K
 		let cm = incomeStmt.contributionMargin
-		#expect(abs(cm[incomeStmt.periods[0]]! - 40_000.0) < 1e-2)
+		#expect(abs(try #require(cm[incomeStmt.periods[0]]) - 40_000.0) < 1e-2)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -487,13 +487,13 @@ struct ContributionMarginTests {
 		)
 
 		// Verify existing properties work identically
-		#expect(abs(incomeStmt.totalRevenue[incomeStmt.periods[0]]! - 100_000.0) < 1e-2)
-		#expect(abs(incomeStmt.totalExpenses[incomeStmt.periods[0]]! - 70_000.0) < 1e-2)
-		#expect(abs(incomeStmt.netIncome[incomeStmt.periods[0]]! - 30_000.0) < 1e-2)
-		#expect(abs(incomeStmt.grossProfit[incomeStmt.periods[0]]! - 40_000.0) < 1e-2)
+		#expect(abs(try #require(incomeStmt.totalRevenue[incomeStmt.periods[0]]) - 100_000.0) < 1e-2)
+		#expect(abs(try #require(incomeStmt.totalExpenses[incomeStmt.periods[0]]) - 70_000.0) < 1e-2)
+		#expect(abs(try #require(incomeStmt.netIncome[incomeStmt.periods[0]]) - 30_000.0) < 1e-2)
+		#expect(abs(try #require(incomeStmt.grossProfit[incomeStmt.periods[0]]) - 40_000.0) < 1e-2)
 
 		// Gross margin should be 40% (unchanged by cost classification)
-		#expect(abs(incomeStmt.grossMargin[incomeStmt.periods[0]]! - 0.40) < 1e-6)
+		#expect(abs(try #require(incomeStmt.grossMargin[incomeStmt.periods[0]]) - 0.40) < 1e-6)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -540,19 +540,19 @@ struct ContributionMarginTests {
 
 		// Contribution Margin = $450K (90% margin)
 		let cm = incomeStmt.contributionMargin
-		#expect(abs(cm[incomeStmt.periods[0]]! - 450_000.0) < 1e-2)
+		#expect(abs(try #require(cm[incomeStmt.periods[0]]) - 450_000.0) < 1e-2)
 
 		// Contribution Margin % = 90%
 		let cmPercent = incomeStmt.contributionMarginPercent
-		#expect(abs(cmPercent[incomeStmt.periods[0]]! - 0.90) < 1e-6)
+		#expect(abs(try #require(cmPercent[incomeStmt.periods[0]]) - 0.90) < 1e-6)
 
 		// Operating Income = $150K
 		// Operating Leverage = $450K / $150K = 3.0
 		let leverage = incomeStmt.operatingLeverage()
-		#expect(abs(leverage[incomeStmt.periods[0]]! - 3.0) < 1e-6)
+		#expect(abs(try #require(leverage[incomeStmt.periods[0]]) - 3.0) < 1e-6)
 
 		// High contribution margin = scalable business model
-		#expect(cmPercent[incomeStmt.periods[0]]! > 0.70)  // >70% is excellent
+		#expect(try #require(cmPercent[incomeStmt.periods[0]]) > 0.70)  // >70% is excellent
 	}
 
 	@Test("Real-world scenario: Retail business with moderate margins")
@@ -595,18 +595,18 @@ struct ContributionMarginTests {
 
 		// Contribution Margin = $60K (30% margin)
 		let cm = incomeStmt.contributionMargin
-		#expect(abs(cm[incomeStmt.periods[0]]! - 60_000.0) < 1e-2)
+		#expect(abs(try #require(cm[incomeStmt.periods[0]]) - 60_000.0) < 1e-2)
 
 		// Contribution Margin % = 30%
 		let cmPercent = incomeStmt.contributionMarginPercent
-		#expect(abs(cmPercent[incomeStmt.periods[0]]! - 0.30) < 1e-6)
+		#expect(abs(try #require(cmPercent[incomeStmt.periods[0]]) - 0.30) < 1e-6)
 
 		// Operating Income = $20K
 		// Operating Leverage = $60K / $20K = 3.0
 		let leverage = incomeStmt.operatingLeverage()
-		#expect(abs(leverage[incomeStmt.periods[0]]! - 3.0) < 1e-6)
+		#expect(abs(try #require(leverage[incomeStmt.periods[0]]) - 3.0) < 1e-6)
 
 		// Typical retail margins (25-35%)
-		#expect(cmPercent[incomeStmt.periods[0]]! >= 0.25 && cmPercent[incomeStmt.periods[0]]! <= 0.35)
+		#expect(try #require(cmPercent[incomeStmt.periods[0]]) >= 0.25 && (try #require(cmPercent[incomeStmt.periods[0]])) <= 0.35)
 	}
 }

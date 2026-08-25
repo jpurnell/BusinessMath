@@ -155,7 +155,7 @@ struct LogNormalDistributionTests {
 	}
 
 	@Test("LogNormal distribution right-skewed property")
-	func logNormalRightSkewed() {
+	func logNormalRightSkewed() throws {
 		let mean = 0.0
 		let stdDev = 1.0
 		let sampleCount = 10000
@@ -174,7 +174,7 @@ struct LogNormalDistributionTests {
 		#expect(empiricalMean > median, "LogNormal is right-skewed")
 
 		// Should also have some very large values (long right tail)
-		let maxValue = samples.max()!
+		let maxValue = try #require(samples.max())
 		let q99 = sorted[Int(Double(sorted.count) * 0.99)]
 		#expect(maxValue > 2 * q99, "Should have extreme values in right tail")
 	}
@@ -259,7 +259,7 @@ struct LogNormalDistributionTests {
 	}
 
 	@Test("LogNormal distribution increasing variance increases spread")
-	func logNormalVarianceEffect() {
+	func logNormalVarianceEffect() throws {
 		let mean = 0.0
 		let sampleCount = 5000
 		let seeds = Self.seedsForLogNormal(count: sampleCount)
@@ -273,8 +273,8 @@ struct LogNormalDistributionTests {
 		}
 
 		// Higher variance should produce wider range
-		let rangeLow = samplesLowVar.max()! - samplesLowVar.min()!
-		let rangeHigh = samplesHighVar.max()! - samplesHighVar.min()!
+		let rangeLow = try #require(samplesLowVar.max()) - (try #require(samplesLowVar.min()))
+		let rangeHigh = try #require(samplesHighVar.max()) - (try #require(samplesHighVar.min()))
 
 		#expect(rangeHigh > rangeLow, "Higher variance should produce wider spread")
 	}
@@ -329,7 +329,7 @@ struct LogNormalDistributionTests {
 	}
 
 	@Test("LogNormal distribution extreme values")
-	func logNormalExtremeValues() {
+	func logNormalExtremeValues() throws {
 		// LogNormal can produce very large values
 		let mean = 0.0
 		let stdDev = 2.0  // High volatility
@@ -342,7 +342,7 @@ struct LogNormalDistributionTests {
 		}
 
 		// Should see some very large values
-		let maxValue = samples.max()!
+		let maxValue = try #require(samples.max())
 		let median = samples.sorted()[samples.count / 2]
 
 		#expect(maxValue > 20 * median, "Should produce extreme values with high stdDev")

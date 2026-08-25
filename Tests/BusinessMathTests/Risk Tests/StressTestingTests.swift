@@ -207,8 +207,8 @@ struct StressTestingAdditionalTests {
 		]
 
 		// Identify worst (most negative impact) and best (least negative or positive)
-		let worst = results.min(by: { $0.impact < $1.impact })!
-		let best = results.max(by: { $0.impact < $1.impact })!
+		let worst = try #require(results.min(by: { $0.impact < $1.impact }))
+		let best = try #require(results.max(by: { $0.impact < $1.impact }))
 
 		#expect(worst.scenario.name == "Severe")
 		#expect(best.scenario.name == "Base")

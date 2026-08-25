@@ -133,7 +133,7 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 		var netIncomes: [Double] = []
 		for projection in simulation.projections {
-			let netIncome = projection.incomeStatement.netIncome[q1]!
+			let netIncome = try #require(projection.incomeStatement.netIncome[q1])
 			netIncomes.append(netIncome)
 		}
 
@@ -180,16 +180,16 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// Calculate percentiles for net income
-		let p10 = simulation.percentile(0.10) { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let p10 = try simulation.percentile(0.10) { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
-		let p50 = simulation.percentile(0.50) { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let p50 = try simulation.percentile(0.50) { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
-		let p90 = simulation.percentile(0.90) { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let p90 = try simulation.percentile(0.90) { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
 		// Percentiles should be ordered
@@ -229,9 +229,9 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// All percentiles should be the same for deterministic case
-		let p10 = simulation.percentile(0.10) { $0.incomeStatement.netIncome[q1]! }
-		let p50 = simulation.percentile(0.50) { $0.incomeStatement.netIncome[q1]! }
-		let p90 = simulation.percentile(0.90) { $0.incomeStatement.netIncome[q1]! }
+		let p10 = try simulation.percentile(0.10) { try #require($0.incomeStatement.netIncome[q1]) }
+		let p50 = try simulation.percentile(0.50) { try #require($0.incomeStatement.netIncome[q1]) }
+		let p90 = try simulation.percentile(0.90) { try #require($0.incomeStatement.netIncome[q1]) }
 
 		#expect(abs(p10 - p50) < 0.01)
 		#expect(abs(p50 - p90) < 0.01)
@@ -272,8 +272,8 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// Calculate 90% confidence interval for net income
-		let ci = simulation.confidenceInterval(0.90) { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let ci = try simulation.confidenceInterval(0.90) { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
 		// Lower bound should be less than upper bound
@@ -284,8 +284,8 @@ struct FinancialSimulationTests {
 		#expect(abs(mean - 1000.0) < 100.0)
 
 		// For 90% CI, bounds should be roughly at 5th and 95th percentiles
-		let p05 = simulation.percentile(0.05) { $0.incomeStatement.netIncome[q1]! }
-		let p95 = simulation.percentile(0.95) { $0.incomeStatement.netIncome[q1]! }
+		let p05 = try simulation.percentile(0.05) { try #require($0.incomeStatement.netIncome[q1]) }
+		let p95 = try simulation.percentile(0.95) { try #require($0.incomeStatement.netIncome[q1]) }
 
 		#expect(abs(ci.lowerBound - p05) < 10.0)
 		#expect(abs(ci.upperBound - p95) < 10.0)
@@ -323,8 +323,8 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// 50% CI should be narrower than 90% CI
-		let ci50 = simulation.confidenceInterval(0.50) { $0.incomeStatement.netIncome[q1]! }
-		let ci90 = simulation.confidenceInterval(0.90) { $0.incomeStatement.netIncome[q1]! }
+		let ci50 = try simulation.confidenceInterval(0.50) { try #require($0.incomeStatement.netIncome[q1]) }
+		let ci90 = try simulation.confidenceInterval(0.90) { try #require($0.incomeStatement.netIncome[q1]) }
 
 		let width50 = ci50.upperBound - ci50.lowerBound
 		let width90 = ci90.upperBound - ci90.lowerBound
@@ -366,12 +366,12 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// Calculate 95% VaR (value at risk)
-		let var95 = simulation.valueAtRisk(0.95) { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let var95 = try simulation.valueAtRisk(0.95) { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
 		// VaR at 95% should be the 5th percentile
-		let p05 = simulation.percentile(0.05) { $0.incomeStatement.netIncome[q1]! }
+		let p05 = try simulation.percentile(0.05) { try #require($0.incomeStatement.netIncome[q1]) }
 
 		#expect(abs(var95 - p05) < 1.0)
 	}
@@ -408,12 +408,12 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// Calculate CVaR (conditional value at risk) - expected loss given we're in the worst 5%
-		let cvar95 = simulation.conditionalValueAtRisk(0.95) { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let cvar95 = try simulation.conditionalValueAtRisk(0.95) { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
-		let var95 = simulation.valueAtRisk(0.95) { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let var95 = try simulation.valueAtRisk(0.95) { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
 		// CVaR should be worse (lower) than VaR
@@ -453,8 +453,8 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// Calculate probability of negative net income
-		let probLoss = simulation.probabilityOfLoss { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let probLoss = try simulation.probabilityOfLoss { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
 		// Should be between 0 and 1
@@ -498,8 +498,8 @@ struct FinancialSimulationTests {
 
 		let q1 = periods[0]
 
-		let probLoss = simulation.probabilityOfLoss { projection in
-			projection.incomeStatement.netIncome[q1]!
+		let probLoss = try simulation.probabilityOfLoss { projection in
+			(try #require(projection.incomeStatement.netIncome[q1]))
 		}
 
 		// Should be essentially zero
@@ -543,7 +543,7 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// Percentile should return the single value
-		let p50 = simulation.percentile(0.50) { $0.incomeStatement.netIncome[q1]! }
+		let p50 = try simulation.percentile(0.50) { try #require($0.incomeStatement.netIncome[q1]) }
 		#expect(p50 > 0.0)
 	}
 
@@ -582,7 +582,7 @@ struct FinancialSimulationTests {
 		let q1 = periods[0]
 
 		// With many iterations, statistics should converge
-		let mean = simulation.mean { $0.incomeStatement.netIncome[q1]! }
+		let mean = try simulation.mean { try #require($0.incomeStatement.netIncome[q1]) }
 		#expect(abs(mean - 1000.0) < 20.0)  // Should be very close to true mean
 	}
 }
@@ -595,7 +595,7 @@ struct AdditionalFinancialSimulationTests {
 	private func singlePeriod() -> [Period] {
 		[ .quarter(year: 2025, quarter: 1) ]
 	}
-	private func builder(entity: Entity) -> ScenarioRunner.StatementBuilder {
+	private func builder(entity: Entity) throws -> ScenarioRunner.StatementBuilder {
 		return { drivers, periods in
 				// Use "Revenue" driver; default 1000.0 if missing
 			let value = drivers["Revenue"]?.sample(for: periods[0]) ?? 1000.0
@@ -625,7 +625,7 @@ struct AdditionalFinancialSimulationTests {
 			let quantiles: [Double] = [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
 			var last: Double? = nil
 			for quantile in quantiles {
-				let value = sim.percentile(quantile) { $0.incomeStatement.netIncome[q]! }
+				let value = try sim.percentile(quantile) { try #require($0.incomeStatement.netIncome[q]) }
 				if let prev = last {
 					#expect(value >= prev)
 				}
@@ -645,7 +645,7 @@ struct AdditionalFinancialSimulationTests {
 			let n = 5000
 			let sim = try runFinancialSimulation(scenario: scenario, entity: e, periods: ps, iterations: n, builder: builder(entity: e))
 			let p = ps[0]
-			let values = sim.projections.map { $0.incomeStatement.netIncome[p]! }
+			let values = try sim.projections.map { try #require($0.incomeStatement.netIncome[p]) }
 
 			let sd = stdDev(values)
 
@@ -674,8 +674,8 @@ struct AdditionalFinancialSimulationTests {
 			let sim = try runFinancialSimulation(scenario: scenario, entity: e, periods: ps, iterations: 4000, builder: builder(entity: e))
 			let p = ps[0]
 
-			let cvar90 = sim.conditionalValueAtRisk(0.90) { $0.incomeStatement.netIncome[p]! }
-			let cvar95 = sim.conditionalValueAtRisk(0.95) { $0.incomeStatement.netIncome[p]! }
+			let cvar90 = try sim.conditionalValueAtRisk(0.90) { try #require($0.incomeStatement.netIncome[p]) }
+			let cvar95 = try sim.conditionalValueAtRisk(0.95) { try #require($0.incomeStatement.netIncome[p]) }
 
 			// With lower tail on income, a higher alpha (95%) uses a smaller, more severe tail; CVaR95 <= CVaR90
 			#expect(cvar95 <= cvar90)

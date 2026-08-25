@@ -26,28 +26,28 @@ struct ProjectionResultsPercentileTests {
 	}
 
 	@Test("percentile(_:) equals the R-7 quantile of the retained sample")
-	func matchesCanonicalQuantile() {
+	func matchesCanonicalQuantile() throws {
 		let (res, periods) = results()
 		for p in [0.01, 0.05, 0.10, 0.30, 0.40, 0.50, 0.60, 0.90, 0.95, 0.99] {
 			let series = res.percentile(p)
 			for period in periods {
-				let expected = res.percentiles[period]!.percentile(p)
-				#expect(series[period]! == expected,
+				let expected = try #require(res.percentiles[period]).percentile(p)
+				#expect(try #require(series[period]) == expected,
 						"ProjectionResults.percentile(\(p)) is not the empirical quantile")
 			}
 		}
 	}
 
 	@Test("percentile(0.30) is no longer p25 and percentile(0.40) is no longer the median")
-	func noLongerSnapsToSummaryPercentiles() {
+	func noLongerSnapsToSummaryPercentiles() throws {
 		// The defect this pins: with a continuous driver the 30th percentile
 		// lies strictly between p25 and p50, and the 40th strictly between p25
 		// and p50 as well — neither can equal a summary percentile.
 		let (res, periods) = results()
 		for period in periods {
-			let pctiles = res.percentiles[period]!
-			let p30 = res.percentile(0.30)[period]!
-			let p40 = res.percentile(0.40)[period]!
+			let pctiles = try #require(res.percentiles[period])
+			let p30 = try #require(res.percentile(0.30)[period])
+			let p40 = try #require(res.percentile(0.40)[period])
 
 			#expect(p30 != pctiles.p25, "percentile(0.30) still snaps to p25")
 			#expect(p30 > pctiles.p25 && p30 < pctiles.p50)
@@ -58,12 +58,12 @@ struct ProjectionResultsPercentileTests {
 	}
 
 	@Test("percentile(_:) is monotone non-decreasing in p")
-	func monotoneInP() {
+	func monotoneInP() throws {
 		let (res, periods) = results(iterations: 5_000)
 		for period in periods {
 			var previous = -Double.infinity
 			for i in 0...100 {
-				let value = res.percentile(Double(i) / 100.0)[period]!
+				let value = try #require(res.percentile(Double(i) / 100.0)[period])
 				#expect(value >= previous, "percentile is not monotone at p = \(Double(i) / 100.0)")
 				previous = value
 			}
@@ -71,28 +71,28 @@ struct ProjectionResultsPercentileTests {
 	}
 
 	@Test("The five summary percentiles are still exactly reproduced")
-	func summaryPercentilesStillAgree() {
+	func summaryPercentilesStillAgree() throws {
 		// p5/p25/p50/p75/p95 remain a documented part of the API; asking for
 		// them by probability must return exactly the stored value.
 		let (res, periods) = results()
 		for period in periods {
-			let pctiles = res.percentiles[period]!
-			#expect(res.percentile(0.05)[period]! == pctiles.p5)
-			#expect(res.percentile(0.25)[period]! == pctiles.p25)
-			#expect(res.percentile(0.50)[period]! == pctiles.p50)
-			#expect(res.percentile(0.75)[period]! == pctiles.p75)
-			#expect(res.percentile(0.95)[period]! == pctiles.p95)
-			#expect(res.median()[period]! == pctiles.p50)
+			let pctiles = try #require(res.percentiles[period])
+			#expect(try #require(res.percentile(0.05)[period]) == pctiles.p5)
+			#expect(try #require(res.percentile(0.25)[period]) == pctiles.p25)
+			#expect(try #require(res.percentile(0.50)[period]) == pctiles.p50)
+			#expect(try #require(res.percentile(0.75)[period]) == pctiles.p75)
+			#expect(try #require(res.percentile(0.95)[period]) == pctiles.p95)
+			#expect(try #require(res.median()[period]) == pctiles.p50)
 		}
 	}
 
 	@Test("p outside [0, 1] clamps to the sample extremes")
-	func clampsOutOfRange() {
+	func clampsOutOfRange() throws {
 		let (res, periods) = results(iterations: 2_000)
 		for period in periods {
-			let pctiles = res.percentiles[period]!
-			#expect(res.percentile(-1.0)[period]! == pctiles.min)
-			#expect(res.percentile(2.0)[period]! == pctiles.max)
+			let pctiles = try #require(res.percentiles[period])
+			#expect(try #require(res.percentile(-1.0)[period]) == pctiles.min)
+			#expect(try #require(res.percentile(2.0)[period]) == pctiles.max)
 		}
 	}
 }

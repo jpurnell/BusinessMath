@@ -287,8 +287,8 @@ struct TrendModelConfidenceIntervalTests {
 		#expect(forecastWithCI.forecast.periods == forecastWithCI.upperBound.periods)
 
 		// Periods should be contiguous and after historical data
-		let lastHistoricalPeriod = historical.periods.last!
-		let firstForecastPeriod = forecastWithCI.forecast.periods.first!
+		let lastHistoricalPeriod = try #require(historical.periods.last)
+		let firstForecastPeriod = try #require(forecastWithCI.forecast.periods.first)
 		#expect(firstForecastPeriod == lastHistoricalPeriod.next())
 	}
 }

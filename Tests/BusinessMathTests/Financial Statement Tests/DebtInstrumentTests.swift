@@ -24,25 +24,26 @@ struct DebtInstrumentTests {
         let schedule = instrument.schedule()
 
         // First payment
-        let firstPeriod = schedule.periods.first!
-        let firstInterest = schedule.interest[firstPeriod]!
-        let firstPrincipal = schedule.principal[firstPeriod]!
-        let firstPayment = schedule.payment[firstPeriod]!
+        let firstPeriod = try #require(schedule.periods.first)
+        let firstInterest = try #require(schedule.interest[firstPeriod])
+        let firstPrincipal = try #require(schedule.principal[firstPeriod])
+        let firstPayment = try #require(schedule.payment[firstPeriod])
 
         // Expected monthly rate: 0.06 / 12 = 0.005
         // Expected interest: 100,000 * 0.005 = 500
         #expect(abs(firstInterest - 500.0) < 1.0)
 
         // Payment should be constant
-        let lastPayment = schedule.payment[schedule.periods.last!]!
+        let lastPeriod = try #require(schedule.periods.last)
+        let lastPayment = try #require(schedule.payment[lastPeriod])
         #expect(abs(firstPayment - lastPayment) < 0.01)
 
         // Principal should increase over time
-        let lastPrincipal = schedule.principal[schedule.periods.last!]!
+        let lastPrincipal = try #require(schedule.principal[lastPeriod])
         #expect(lastPrincipal > firstPrincipal)
 
         // Ending balance should be zero
-        let finalBalance = schedule.endingBalance[schedule.periods.last!]!
+        let finalBalance = try #require(schedule.endingBalance[lastPeriod])
         #expect(abs(finalBalance) < 1.0)
     }
 
@@ -64,13 +65,14 @@ struct DebtInstrumentTests {
             principal: principal,
             interestRate: annualRate,
             startDate: Date(timeIntervalSince1970: 0),
-            maturityDate: Calendar.current.date(byAdding: .year, value: years, to: Date(timeIntervalSince1970: 0))!,
+            maturityDate: try #require(Calendar.current.date(byAdding: .year, value: years, to: Date(timeIntervalSince1970: 0))),
             paymentFrequency: .monthly,
             amortizationType: .levelPayment
         )
 
         let schedule = instrument.schedule()
-        let actualPayment = schedule.payment[schedule.periods.first!]!
+        let firstPeriod = try #require(schedule.periods.first)
+        let actualPayment = try #require(schedule.payment[firstPeriod])
 
         // Should match formula within $0.01
         #expect(abs(actualPayment - expectedPayment) < 0.01)
@@ -91,13 +93,13 @@ struct DebtInstrumentTests {
         let schedule = instrument.schedule()
 
         // Sum all interest payments
-        let totalInterest = schedule.periods.reduce(0.0) { sum, period in
-            sum + schedule.interest[period]!
+        let totalInterest = try schedule.periods.reduce(0.0) { sum, period in
+            sum + (try #require(schedule.interest[period]))
         }
 
         // Sum all principal payments should equal original principal
-        let totalPrincipal = schedule.periods.reduce(0.0) { sum, period in
-            sum + schedule.principal[period]!
+        let totalPrincipal = try schedule.periods.reduce(0.0) { sum, period in
+            sum + (try #require(schedule.principal[period]))
         }
 
         #expect(abs(totalPrincipal - principal) < 1.0)
@@ -128,7 +130,7 @@ struct DebtInstrumentTests {
 
         // All principal payments should be equal
         for period in schedule.periods {
-            let principalPayment = schedule.principal[period]!
+            let principalPayment = try #require(schedule.principal[period])
             #expect(abs(principalPayment - expectedPrincipalPerPayment) < 0.01)
         }
     }
@@ -149,7 +151,7 @@ struct DebtInstrumentTests {
         // Interest should decline each period
         var previousInterest = Double.infinity
         for period in schedule.periods {
-            let interest = schedule.interest[period]!
+            let interest = try #require(schedule.interest[period])
             #expect(interest < previousInterest)
             previousInterest = interest
         }
@@ -171,7 +173,7 @@ struct DebtInstrumentTests {
         // Total payment (principal + interest) should decline
         var previousPayment = Double.infinity
         for period in schedule.periods {
-            let payment = schedule.payment[period]!
+            let payment = try #require(schedule.payment[period])
             #expect(payment < previousPayment)
             previousPayment = payment
         }
@@ -195,12 +197,13 @@ struct DebtInstrumentTests {
 
         // All periods except last should have zero principal payment
         for period in schedule.periods.dropLast() {
-            let principalPayment = schedule.principal[period]!
+            let principalPayment = try #require(schedule.principal[period])
             #expect(abs(principalPayment) < 0.01)
         }
 
         // Last period should have full principal
-        let lastPrincipalPayment = schedule.principal[schedule.periods.last!]!
+        let lastPeriod = try #require(schedule.periods.last)
+        let lastPrincipalPayment = try #require(schedule.principal[lastPeriod])
         #expect(abs(lastPrincipalPayment - principal) < 1.0)
     }
 
@@ -224,7 +227,7 @@ struct DebtInstrumentTests {
 
         // All periods except last should have same interest
         for period in schedule.periods.dropLast() {
-            let interest = schedule.interest[period]!
+            let interest = try #require(schedule.interest[period])
             #expect(abs(interest - expectedInterest) < 1.0)
         }
     }
@@ -245,12 +248,13 @@ struct DebtInstrumentTests {
 
         // Ending balance should equal principal for all periods except last
         for period in schedule.periods.dropLast() {
-            let endingBalance = schedule.endingBalance[period]!
+            let endingBalance = try #require(schedule.endingBalance[period])
             #expect(abs(endingBalance - principal) < 1.0)
         }
 
         // Last period should have zero balance
-        let finalBalance = schedule.endingBalance[schedule.periods.last!]!
+        let lastPeriod = try #require(schedule.periods.last)
+        let finalBalance = try #require(schedule.endingBalance[lastPeriod])
         #expect(abs(finalBalance) < 1.0)
     }
 
@@ -272,7 +276,7 @@ struct DebtInstrumentTests {
 
         // Payments should match custom schedule
         for (index, period) in schedule.periods.enumerated() {
-            let payment = schedule.payment[period]!
+            let payment = try #require(schedule.payment[period])
             #expect(abs(payment - customPayments[index]) < 0.01)
         }
     }
@@ -292,7 +296,8 @@ struct DebtInstrumentTests {
         let schedule = instrument.schedule()
 
         // Final balance should be zero (or close)
-        let finalBalance = schedule.endingBalance[schedule.periods.last!]!
+        let lastPeriod = try #require(schedule.periods.last)
+        let finalBalance = try #require(schedule.endingBalance[lastPeriod])
         #expect(abs(finalBalance) < 100.0) // Allow small rounding
     }
 
@@ -369,8 +374,8 @@ struct DebtInstrumentTests {
             let currentPeriod = schedule.periods[i]
             let nextPeriod = schedule.periods[i + 1]
 
-            let endingBalance = schedule.endingBalance[currentPeriod]!
-            let nextBeginningBalance = schedule.beginningBalance[nextPeriod]!
+            let endingBalance = try #require(schedule.endingBalance[currentPeriod])
+            let nextBeginningBalance = try #require(schedule.beginningBalance[nextPeriod])
 
             #expect(abs(endingBalance - nextBeginningBalance) < 0.01)
         }
@@ -390,9 +395,9 @@ struct DebtInstrumentTests {
         let schedule = instrument.schedule()
 
         for period in schedule.periods {
-            let beginning = schedule.beginningBalance[period]!
-            let principal = schedule.principal[period]!
-            let ending = schedule.endingBalance[period]!
+            let beginning = try #require(schedule.beginningBalance[period])
+            let principal = try #require(schedule.principal[period])
+            let ending = try #require(schedule.endingBalance[period])
 
             // Ending = Beginning - Principal
             #expect(abs((beginning - principal) - ending) < 0.01)
@@ -417,14 +422,14 @@ struct DebtInstrumentTests {
 
         // All interest should be zero
         for period in schedule.periods {
-            let interest = schedule.interest[period]!
+            let interest = try #require(schedule.interest[period])
             #expect(abs(interest) < 0.01)
         }
 
         // Principal should be evenly divided
         let expectedPrincipal = principal / Double(schedule.periods.count)
         for period in schedule.periods {
-            let principalPayment = schedule.principal[period]!
+            let principalPayment = try #require(schedule.principal[period])
             #expect(abs(principalPayment - expectedPrincipal) < 0.01)
         }
     }
@@ -445,9 +450,9 @@ struct DebtInstrumentTests {
         let schedule = instrument.schedule()
 
         // First payment should be mostly interest
-        let firstPeriod = schedule.periods.first!
-        let firstInterest = schedule.interest[firstPeriod]!
-        let firstPrincipal = schedule.principal[firstPeriod]!
+        let firstPeriod = try #require(schedule.periods.first)
+        let firstInterest = try #require(schedule.interest[firstPeriod])
+        let firstPrincipal = try #require(schedule.principal[firstPeriod])
 
         #expect(firstInterest > firstPrincipal)
     }
@@ -471,7 +476,8 @@ struct DebtInstrumentTests {
         #expect(schedule.periods.count == 1)
 
         // Single payment should include full principal plus interest
-        let payment = schedule.payment[schedule.periods.first!]!
+        let firstPeriod = try #require(schedule.periods.first)
+        let payment = try #require(schedule.payment[firstPeriod])
         #expect(payment > principal)
     }
 
@@ -493,7 +499,8 @@ struct DebtInstrumentTests {
 
         // Should pay principal + 1 month interest
         let expectedInterest = principal * 0.12 / 12.0
-        let interest = schedule.interest[schedule.periods.first!]!
+        let firstPeriod = try #require(schedule.periods.first)
+        let interest = try #require(schedule.interest[firstPeriod])
         #expect(abs(interest - expectedInterest) < 1.0)
     }
 
@@ -512,8 +519,8 @@ struct DebtInstrumentTests {
         let schedule = instrument.schedule()
 
         // Should handle large numbers without overflow
-        let totalPrincipal = schedule.periods.reduce(0.0) { sum, period in
-            sum + schedule.principal[period]!
+        let totalPrincipal = try schedule.periods.reduce(0.0) { sum, period in
+            sum + (try #require(schedule.principal[period]))
         }
 
         #expect(abs(totalPrincipal - principal) < 10.0)
@@ -560,8 +567,8 @@ struct DebtInstrumentTests {
         // Calculate principal ratio (principal / payment) for each period
         var previousRatio = 0.0
         for period in schedule.periods {
-            let principal = schedule.principal[period]!
-            let payment = schedule.payment[period]!
+            let principal = try #require(schedule.principal[period])
+            let payment = try #require(schedule.payment[period])
             let ratio = principal / payment
 
             // Ratio should increase over time
@@ -582,7 +589,8 @@ struct DebtInstrumentTests {
 		)
 
 		let schedule = instrument.schedule()
-		let finalBalance = schedule.endingBalance[schedule.periods.last!]!
+		let lastPeriod = try #require(schedule.periods.last)
+		let finalBalance = try #require(schedule.endingBalance[lastPeriod])
 		#expect(finalBalance > 0, "Underpaying custom schedule should leave a positive residual balance")
 	}
 }

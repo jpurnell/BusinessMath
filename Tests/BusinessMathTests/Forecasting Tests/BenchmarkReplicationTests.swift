@@ -21,6 +21,17 @@ import Foundation
 import Numerics
 @testable import BusinessMath
 
+/// Pads `text` to `width`, left-aligned by default.
+///
+/// Replaces `String(format: "%-14@", …)`, whose `%@` bridges through `NSString`
+/// and is undefined on Linux. Plain Swift keeps the table aligned everywhere.
+private func pad(_ text: String, _ width: Int, right: Bool = false) -> String {
+	guard text.count < width else { return text }
+	let fill = String(repeating: " ", count: width - text.count)
+	return right ? fill + text : text + fill
+}
+
+
 @Suite("Article benchmark replication (BusinessMath only)")
 struct BenchmarkReplicationTests {
 
@@ -69,15 +80,14 @@ struct BenchmarkReplicationTests {
         let config = BacktestConfig(initialTrainSize: 36, horizon: 6, step: 6, seasonLength: 12)
         let f = try series.forecastability()
         print("\n=== \(name) ===")
-        print(String(format: "spectral entropy = %.3f  →  verdict: %@",
-                     Double(f.spectralEntropy), f.verdict.rawValue))
-        print(String(format: "%-14@  %10@  %8@", "model", "OOS MAE", "MASE"))
+        print("spectral entropy = \(Double(f.spectralEntropy).number(3))  →  verdict: \(f.verdict.rawValue)")
+        print("\(pad("model", 14))  \(pad("OOS MAE", 10, right: true))  \(pad("MASE", 8, right: true))")
         var maeByModel: [String: Double] = [:]
         for (label, model) in forecasters() {
             let report = try series.backtest(model, config: config)
             maeByModel[label] = Double(report.mae)
-            let maseStr = report.mase.map { String(format: "%.3f", Double($0)) } ?? "  —  "
-            print(String(format: "%-14@  %10.4f  %8@", label, Double(report.mae), maseStr))
+            let maseStr = report.mase.map { Double($0).number(3) } ?? "—"
+            print("\(pad(label, 14))  \(pad(Double(report.mae).number(4), 10, right: true))  \(pad(maseStr, 8, right: true))")
         }
         return maeByModel
     }
@@ -91,8 +101,8 @@ struct BenchmarkReplicationTests {
         // Low spectral entropy — structure present.
         #expect(f.verdict == .strong || f.verdict == .moderate)
         // Seasonal-aware methods beat the plain naive forecaster.
-        #expect(mae["SeasonalNaive"]! < mae["Naive"]!)
-        #expect(mae["HoltWinters"]! < mae["Naive"]!)
+        #expect(try #require(mae["SeasonalNaive"]) < (try #require(mae["Naive"])))
+        #expect(try #require(mae["HoltWinters"]) < (try #require(mae["Naive"])))
     }
 
     @Test("Chaotic regime: high entropy, nothing beats naive")
@@ -104,8 +114,8 @@ struct BenchmarkReplicationTests {
         // High spectral entropy — little exploitable structure.
         #expect(f.verdict == .noise || f.verdict == .weak)
         // No forecaster meaningfully beats naive (seasonal structure does not help).
-        let naive = mae["Naive"]!
-        let best = mae.values.min()!
+        let naive = try #require(mae["Naive"])
+        let best = try #require(mae.values.min())
         #expect(best >= naive * 0.75)   // best improvement over naive is modest at most
     }
 

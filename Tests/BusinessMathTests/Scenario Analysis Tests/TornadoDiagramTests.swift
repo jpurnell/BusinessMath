@@ -115,7 +115,7 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 //		logger.info("Tornado diagram - Basic Test:\n\n\(plotTornadoDiagram(tornado))")
 
@@ -127,8 +127,8 @@ struct TornadoDiagramTests {
 
 		// Verify inputs are ranked by impact (descending)
 		for i in 0..<(tornado.inputs.count - 1) {
-			let currentImpact = tornado.impacts[tornado.inputs[i]]!
-			let nextImpact = tornado.impacts[tornado.inputs[i + 1]]!
+			let currentImpact = try #require(tornado.impacts[tornado.inputs[i]])
+			let nextImpact = try #require(tornado.impacts[tornado.inputs[i + 1]])
 			#expect(currentImpact >= nextImpact)
 		}
 	}
@@ -162,7 +162,7 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 //		logger.info("Tornado diagram - Diagram Ranking:\n\n\(plotTornadoDiagram(tornado))")
 
@@ -171,12 +171,12 @@ struct TornadoDiagramTests {
 		// So Volume should have the largest impact, then Price and Cost should be equal
 
 		// Get the top input (should be Volume)
-		let topInput = tornado.inputs.first!
+		let topInput = try #require(tornado.inputs.first)
 		#expect(topInput == "Volume" || topInput == "Price")
 
 		// Verify impacts are positive (ranges are positive)
 		for input in tornado.inputs {
-			let impact = tornado.impacts[input]!
+			let impact = try #require(tornado.impacts[input])
 			#expect(impact > 0.0)
 		}
 	}
@@ -209,14 +209,14 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 //		logger.info("Tornado diagram - Low/High Values Test:\n\n\(plotTornadoDiagram(tornado))")
 
 		// Verify we have low and high values for each input
 		for input in tornado.inputs {
-			let lowValue = tornado.lowValues[input]!
-			let highValue = tornado.highValues[input]!
+			let lowValue = try #require(tornado.lowValues[input])
+			let highValue = try #require(tornado.highValues[input])
 			#expect(lowValue < highValue)
 
 			// Low should be about 80% of base, high should be about 120% of base
@@ -253,13 +253,13 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 //		logger.info("Tornado diagram - Single Inputs Test:\n\n\(plotTornadoDiagram(tornado))")
 
 		#expect(tornado.inputs.count == 1)
 		#expect(tornado.inputs.first == "Price")
-		#expect(tornado.impacts["Price"]! > 0.0)
+		#expect(try #require(tornado.impacts["Price"]) > 0.0)
 	}
 
 	@Test("Tornado diagram with different variation percentages")
@@ -291,7 +291,7 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 //		logger.info("Tornado diagram - 10% Variation:\n\n\(plotTornadoDiagram(tornado10))")
 
@@ -306,17 +306,17 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 //		logger.info("Tornado diagram - 30% Variation:\n\n\(plotTornadoDiagram(tornado30))")
 		// Larger variation should produce larger impacts
-		let price10Impact = tornado10.impacts["Price"]!
-		let price30Impact = tornado30.impacts["Price"]!
+		let price10Impact = try #require(tornado10.impacts["Price"])
+		let price30Impact = try #require(tornado30.impacts["Price"])
 		#expect(price30Impact > price10Impact)
 
-		let volume10Impact = tornado10.impacts["Volume"]!
-		let volume30Impact = tornado30.impacts["Volume"]!
+		let volume10Impact = try #require(tornado10.impacts["Volume"])
+		let volume30Impact = try #require(tornado30.impacts["Volume"])
 		#expect(volume30Impact > volume10Impact)
 	}
 
@@ -348,7 +348,7 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 //		logger.info("Tornado diagram - Base Case Test:\n\n\(plotTornadoDiagram(tornado))")
 
@@ -357,8 +357,8 @@ struct TornadoDiagramTests {
 
 		// For each input, base case should be between low and high
 		for input in tornado.inputs {
-			let low = tornado.lowValues[input]!
-			let high = tornado.highValues[input]!
+			let low = try #require(tornado.lowValues[input])
+			let high = try #require(tornado.highValues[input])
 			#expect(low <= tornado.baseCaseOutput)
 			#expect(tornado.baseCaseOutput <= high)
 		}
@@ -394,12 +394,12 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 //		logger.info("Tornado diagram - Zero Variation:\n\n\(plotTornadoDiagram(tornado))")
 
 		// Impact should be zero (no variation)
-		#expect(abs(tornado.impacts["Price"]! - 0.0) < 1e-6)
+		#expect(abs(try #require(tornado.impacts["Price"]) - 0.0) < 1e-6)
 	}
 
 	@Test("Tornado diagram with many inputs")
@@ -482,7 +482,7 @@ struct TornadoDiagramTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 //		logger.info("Tornado diagram - Many Inputs Test:\n\n\(plotTornadoDiagram(tornado))")
@@ -492,19 +492,19 @@ struct TornadoDiagramTests {
 
 		// All impacts should be non-negative (Tax Rate won't affect net income since we're extracting from income statement, not after-tax calculation)
 		for input in tornado.inputs {
-			#expect(tornado.impacts[input]! >= 0.0)
+			#expect(try #require(tornado.impacts[input]) >= 0.0)
 		}
 
 		// Price, Volume, Cost, and OpEx should have positive impacts
-		#expect(tornado.impacts["Price"]! > 0.0)
-		#expect(tornado.impacts["Volume"]! > 0.0)
-		#expect(tornado.impacts["Cost"]! > 0.0)
-		#expect(tornado.impacts["OpEx"]! > 0.0)
+		#expect(try #require(tornado.impacts["Price"]) > 0.0)
+		#expect(try #require(tornado.impacts["Volume"]) > 0.0)
+		#expect(try #require(tornado.impacts["Cost"]) > 0.0)
+		#expect(try #require(tornado.impacts["OpEx"]) > 0.0)
 
 		// Verify ranking is correct (descending order)
 		for i in 0..<(tornado.inputs.count - 1) {
-			let currentImpact = tornado.impacts[tornado.inputs[i]]!
-			let nextImpact = tornado.impacts[tornado.inputs[i + 1]]!
+			let currentImpact = try #require(tornado.impacts[tornado.inputs[i]])
+			let nextImpact = try #require(tornado.impacts[tornado.inputs[i + 1]])
 			#expect(currentImpact >= nextImpact)
 		}
 	}
@@ -542,7 +542,7 @@ struct TornadoDiagramTests {
 				steps: 3,
 				builder: builder
 			) { projection in
-				projection.incomeStatement.netIncome[periods[0]]!
+				(try #require(projection.incomeStatement.netIncome[periods[0]]))
 			}
 			Issue.record("Expected runTornadoAnalysis to reject the unknown driver name")
 		} catch let error as BusinessMathError {
@@ -588,7 +588,7 @@ struct TornadoDiagramTests {
 				steps: 3,
 				builder: builder
 			) { projection in
-				projection.incomeStatement.netIncome[periods[0]]!
+				(try #require(projection.incomeStatement.netIncome[periods[0]]))
 			}
 			Issue.record("Expected runTornadoAnalysis to reject the unknown driver names")
 		} catch let error as BusinessMathError {
@@ -637,7 +637,7 @@ struct TornadoDiagramTests {
 				steps: 3,
 				builder: refusingBuilder
 			) { projection in
-				projection.incomeStatement.netIncome[periods[0]]!
+				(try #require(projection.incomeStatement.netIncome[periods[0]]))
 			}
 			Issue.record("Expected runTornadoAnalysis to throw")
 		} catch is BuilderRan {
@@ -667,7 +667,7 @@ struct TornadoDiagramAdditionalTests {
 		[ .quarter(year: 2025, quarter: 1) ]
 	}
 
-	private func builder(entity: Entity) -> ScenarioRunner.StatementBuilder {
+	private func builder(entity: Entity) throws -> ScenarioRunner.StatementBuilder {
 		return { drivers, periods in
 			let price = drivers["Price"]?.sample(for: periods[0]) ?? 100.0
 			let volume = drivers["Volume"]?.sample(for: periods[0]) ?? 1000.0
@@ -721,7 +721,7 @@ struct TornadoDiagramAdditionalTests {
 			steps: 3,
 			builder: builder(entity: e)
 		) { projection in
-			projection.incomeStatement.netIncome[ps[0]]!
+			(try #require(projection.incomeStatement.netIncome[ps[0]]))
 		}
 
 		// Explicitly assert Tax Rate has no impact since output is pre-tax income

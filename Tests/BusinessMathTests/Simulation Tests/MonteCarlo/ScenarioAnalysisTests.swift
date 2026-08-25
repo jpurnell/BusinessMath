@@ -518,7 +518,7 @@ struct ScenarioAnalysisTests {
 	}
 
 	@Test("ScenarioAnalysis error - missing input configuration")
-	func scenarioAnalysisMissingInput() {
+	func scenarioAnalysisMissingInput() throws {
 		let model: @Sendable ([Double]) -> Double = { inputs in
 			inputs[0] - inputs[1]
 		}

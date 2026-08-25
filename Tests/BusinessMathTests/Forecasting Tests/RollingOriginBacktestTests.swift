@@ -121,11 +121,11 @@ struct RollingOriginBacktestTests {
     }
 
     @Test("MASE == 1 when error magnitude equals the naive scale")
-    func maseUnity() {
+    func maseUnity() throws {
         let actual = monthly([10, 20])
         let forecast = monthly([11, 21])          // errors [1,1] → MAE 1
         let training = monthly([1, 2, 3, 4])      // scale mean|Δ| = 1
-        #expect(abs(actual.mase(against: forecast, training: training, seasonLength: 1)! - 1.0) < 1e-9)
+        #expect(abs(try #require(actual.mase(against: forecast, training: training, seasonLength: 1)) - 1.0) < 1e-9)
     }
 
     @Test("MASE is nil when the naive scale is zero (constant training)")
@@ -149,7 +149,7 @@ struct RollingOriginBacktestTests {
     // MARK: - Validation
 
     @Test("Series too short throws")
-    func tooShort() {
+    func tooShort() throws {
         #expect(throws: BacktestError.self) {
             _ = try self.indexSeries(4).backtest(
                 NaiveForecaster<Double>(),
@@ -158,7 +158,7 @@ struct RollingOriginBacktestTests {
     }
 
     @Test("Invalid config throws")
-    func invalidConfig() {
+    func invalidConfig() throws {
         #expect(throws: BacktestError.self) {
             _ = try self.indexSeries(10).backtest(
                 NaiveForecaster<Double>(),

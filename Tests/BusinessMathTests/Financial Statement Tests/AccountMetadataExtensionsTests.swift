@@ -214,7 +214,7 @@ struct AccountMetadataExtensionsTests {
         """
 
         let decoder = JSONDecoder()
-        let data = oldJSON.data(using: .utf8)!
+        let data = try #require(oldJSON.data(using: .utf8))
         let metadata = try decoder.decode(AccountMetadata.self, from: data)
 
         // Existing fields should work

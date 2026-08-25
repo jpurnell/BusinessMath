@@ -120,7 +120,7 @@ struct CubicSplineTests {
     // MARK: - Errors
 
     @Test("Throws on insufficient points for natural")
-    func throwsOnInsufficientNatural() {
+    func throwsOnInsufficientNatural() throws {
         #expect(throws: InterpolationError.self) {
             _ = try CubicSplineInterpolator(xs: [0.0, 1.0], ys: [0.0, 1.0], boundary: .natural)
         }
@@ -135,7 +135,7 @@ struct CubicSplineTests {
     }
 
     @Test("Periodic throws when ys.first != ys.last")
-    func periodicThrowsOnMismatch() {
+    func periodicThrowsOnMismatch() throws {
         #expect(throws: InterpolationError.self) {
             _ = try CubicSplineInterpolator(
                 xs: [0.0, 1.0, 2.0, 3.0],

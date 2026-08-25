@@ -314,7 +314,7 @@ struct DependencyReportTests {
 	/// The one thing detection does throw for. A formula that will not tokenise has no
 	/// dependencies to report — reporting none would claim it was a leaf.
 	@Test("An unreadable formula is refused rather than reported as having no dependencies")
-	func unreadableFormulaIsRefused() {
+	func unreadableFormulaIsRefused() throws {
 		let model = ModelDefinition<Double>().defining("broken", as: "revenue $ cogs")
 
 		#expect(throws: FormulaError.unexpectedCharacter("$")) {

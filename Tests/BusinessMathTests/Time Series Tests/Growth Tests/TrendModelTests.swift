@@ -35,7 +35,7 @@ struct TrendModelTests {
 		try model.fit(to: data)
 
 		// Project 3 periods
-		let projection = try model.project(periods: 3)!
+		let projection = try #require((try model.project(periods: 3)))
 
 		#expect(projection.count == 3)
 		// Should continue the trend: 20, 22, 24
@@ -52,7 +52,7 @@ struct TrendModelTests {
 		var model = LinearTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 2)!
+		let projection = try #require((try model.project(periods: 2)))
 
 		// Should continue declining: 50, 40
 		#expect(abs(projection.valuesArray[0] - 50.0) < tolerance)
@@ -66,7 +66,7 @@ struct TrendModelTests {
 		var model = LinearTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 3)!
+		let projection = try #require((try model.project(periods: 3)))
 
 		// Should stay flat
 		for value in projection.valuesArray {
@@ -84,7 +84,7 @@ struct TrendModelTests {
 		var model = ExponentialTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 2)!
+		let projection = try #require((try model.project(periods: 2)))
 
 		// Should continue exponential growth
 		#expect(projection.valuesArray[0] > 207.36)
@@ -98,7 +98,7 @@ struct TrendModelTests {
 		var model = ExponentialTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 1)!
+		let projection = try #require((try model.project(periods: 1)))
 
 		// Should be around 1.4641 (1.1^4)
 		#expect(abs(projection.valuesArray[0] - 1.4641) < 0.01)
@@ -114,7 +114,7 @@ struct TrendModelTests {
 		var model = LogisticTrend<Double>(capacity: 1000.0)
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 5)!
+		let projection = try #require((try model.project(periods: 5)))
 
 		// All projections should be below capacity
 		for value in projection.valuesArray {
@@ -122,8 +122,8 @@ struct TrendModelTests {
 		}
 
 		// Should approach capacity asymptotically
-		#expect(projection.valuesArray.last! < 1000.0)
-		#expect(projection.valuesArray.last! > 980.0)
+		#expect(try #require(projection.valuesArray.last) < 1000.0)
+		#expect(try #require(projection.valuesArray.last) > 980.0)
 	}
 
 	@Test("LogisticTrend with early growth phase")
@@ -134,7 +134,7 @@ struct TrendModelTests {
 		var model = LogisticTrend<Double>(capacity: 1000.0)
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 3)!
+		let projection = try #require((try model.project(periods: 3)))
 
 		// Should continue growing but below capacity
 		#expect(projection.valuesArray[0] > 16.0)
@@ -151,7 +151,7 @@ struct TrendModelTests {
 		var model = CustomTrend<Double> { _ in 100.0 }
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 5)!
+		let projection = try #require((try model.project(periods: 5)))
 
 		// All values should be 100
 		for value in projection.valuesArray {
@@ -170,7 +170,7 @@ struct TrendModelTests {
 		try model.fit(to: data)
 
 		// Fitted data uses indices 0-3, so projection uses indices 4, 5, 6
-		let projection = try model.project(periods: 3)!
+		let projection = try #require((try model.project(periods: 3)))
 
 		// Should be 16 (4^2), 25 (5^2), 36 (6^2)
 		#expect(abs(projection.valuesArray[0] - 16.0) < tolerance)
@@ -187,7 +187,7 @@ struct TrendModelTests {
 		var model = LinearTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 0)!
+		let projection = try #require((try model.project(periods: 0)))
 
 		#expect(projection.count == 0)
 	}
@@ -199,11 +199,11 @@ struct TrendModelTests {
 		var model = LinearTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 100)!
+		let projection = try #require((try model.project(periods: 100)))
 
 		#expect(projection.count == 100)
 		// Should continue linear trend
-		#expect(projection.valuesArray.last! > projection.valuesArray.first!)
+		#expect(try #require(projection.valuesArray.last) > (try #require(projection.valuesArray.first)))
 	}
 
 	// MARK: - Model Comparison Tests
@@ -221,8 +221,8 @@ struct TrendModelTests {
 
 		// For linear data, linear model should fit better
 		// We'd need R-squared or similar metric to compare formally
-		let linearProj = try linear.project(periods: 1)!
-		let expProj = try exponential.project(periods: 1)!
+		let linearProj = try #require((try linear.project(periods: 1)))
+		let expProj = try #require((try exponential.project(periods: 1)))
 
 		// Both should be positive and reasonable
 		#expect(linearProj.valuesArray[0] > 0)
@@ -239,12 +239,12 @@ struct TrendModelTests {
 		try linear.fit(to: data)
 		try exponential.fit(to: data)
 
-		let linearProj = try linear.project(periods: 5)!
-		let expProj = try exponential.project(periods: 5)!
+		let linearProj = try #require((try linear.project(periods: 5)))
+		let expProj = try #require((try exponential.project(periods: 5)))
 
 		// Should produce different results
-		let linearLast = linearProj.valuesArray.last!
-		let expLast = expProj.valuesArray.last!
+		let linearLast = try #require(linearProj.valuesArray.last)
+		let expLast = try #require(expProj.valuesArray.last)
 
 		#expect(abs(linearLast - expLast) > 1.0)
 	}
@@ -252,7 +252,7 @@ struct TrendModelTests {
 	// MARK: - Edge Cases
 
 	@Test("Fit with single data point throws insufficientData")
-	func fitSinglePoint() {
+	func fitSinglePoint() throws {
 		let data = createTimeSeries(values: [100.0])
 
 		var model = LinearTrend<Double>()
@@ -270,7 +270,7 @@ struct TrendModelTests {
 		var model = LinearTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 2)!
+		let projection = try #require((try model.project(periods: 2)))
 
 		// Should extrapolate: 30, 40
 		#expect(abs(projection.valuesArray[0] - 30.0) < tolerance)
@@ -284,7 +284,7 @@ struct TrendModelTests {
 		var model = LinearTrend<Double>()
 		try model.fit(to: data)
 
-		let projection = try model.project(periods: 3)!
+		let projection = try #require((try model.project(periods: 3)))
 
 		// Should project constant values
 		for value in projection.valuesArray {
@@ -293,7 +293,7 @@ struct TrendModelTests {
 	}
 
 	@Test("ExponentialTrend with zero values throws error")
-	func exponentialTrendZeroValues() {
+	func exponentialTrendZeroValues() throws {
 		// Exponential trend requires positive values (uses log of values)
 		let data = createTimeSeries(values: [0.0, 1.0, 2.0, 3.0])
 
@@ -316,7 +316,7 @@ struct TrendModelTests {
 		try model.fit(to: revenue)
 
 		// Forecast next 4 quarters
-		let forecast = try model.project(periods: 4)!
+		let forecast = try #require((try model.project(periods: 4)))
 
 		// Should continue upward trend
 		#expect(forecast.valuesArray[0] > 140.0)
@@ -332,7 +332,7 @@ struct TrendModelTests {
 		try model.fit(to: users)
 
 		// Project next 3 periods
-		let projection = try model.project(periods: 3)!
+		let projection = try #require((try model.project(periods: 3)))
 
 		// Exponential growth should accelerate
 		let growth1 = projection.valuesArray[1] - projection.valuesArray[0]
@@ -351,7 +351,7 @@ struct TrendModelTests {
 		try model.fit(to: marketShare)
 
 		// Project next 10 periods
-		let projection = try model.project(periods: 10)!
+		let projection = try #require((try model.project(periods: 10)))
 
 		// Should approach but never exceed 80%
 		for value in projection.valuesArray {
@@ -359,7 +359,7 @@ struct TrendModelTests {
 		}
 
 		// Growth should slow as it approaches capacity
-		let lastValue = projection.valuesArray.last!
+		let lastValue = try #require(projection.valuesArray.last)
 		#expect(lastValue > 70.0)  // Close to capacity
 		#expect(lastValue < 80.0)  // But not exceeding
 	}
@@ -369,17 +369,17 @@ struct TrendModelTests {
 	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 			let base = [10.0, 12.0, 14.0, 16.0]
 			let shift = 100.0
-			func ts(_ vals: [Double]) -> TimeSeries<Double> {
+			func ts(_ vals: [Double]) throws -> TimeSeries<Double> {
 				let periods = (0..<vals.count).map { Period.year(2020 + $0) }
 				return TimeSeries(periods: periods, values: vals)
 			}
 			var m1 = LinearTrend<Double>()
 			try m1.fit(to: ts(base))
-			let p1 = try m1.project(periods: 3)!
+			let p1 = try #require((try m1.project(periods: 3)))
 
 			var m2 = LinearTrend<Double>()
 			try m2.fit(to: ts(base.map { $0 + shift }))
-			let p2 = try m2.project(periods: 3)!
+			let p2 = try #require((try m2.project(periods: 3)))
 
 			#expect(p1.count == p2.count)
 			for (a,b) in zip(p1.valuesArray, p2.valuesArray) {
@@ -392,17 +392,17 @@ struct TrendModelTests {
 		    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 			let base = [100.0, 120.0, 144.0, 172.8]
 			let scale = 5.0
-			func ts(_ vals: [Double]) -> TimeSeries<Double> {
+			func ts(_ vals: [Double]) throws -> TimeSeries<Double> {
 				let periods = (0..<vals.count).map { Period.year(2020 + $0) }
 				return TimeSeries(periods: periods, values: vals)
 			}
 			var m1 = ExponentialTrend<Double>()
 			try m1.fit(to: ts(base))
-			let f1 = try m1.project(periods: 1)!.valuesArray[0]
+			let f1 = try #require((try m1.project(periods: 1))).valuesArray[0]
 
 			var m2 = ExponentialTrend<Double>()
 			try m2.fit(to: ts(base.map { $0 * scale }))
-			let f2 = try m2.project(periods: 1)!.valuesArray[0]
+			let f2 = try #require((try m2.project(periods: 1))).valuesArray[0]
 
 			#expect(abs((f1 * scale) - f2) / f2 < 1e-3)
 		}

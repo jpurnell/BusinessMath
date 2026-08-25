@@ -154,18 +154,18 @@ struct ValuationMetricsTests {
 		// Q1: Net Income = 100K - 40K - 30K - 5K - 1K - 6K = 18K
 		// EPS = 18K / 1000 = 18
 		// P/E = 150 / 18 = 8.33
-		let q1PE = pe[quarters[0]]!
+		let q1PE = try #require(pe[quarters[0]])
 		#expect(abs(q1PE - 8.33) < 0.1, "Q1 P/E should be ~8.33")
 
 		// Q4: Net Income = 130K - 52K - 36K - 5K - 1K - 9K = 27K
 		// EPS = 27K / 1000 = 27
 		// P/E = 180 / 27 = 6.67
-		let q4PE = pe[quarters[3]]!
+		let q4PE = try #require(pe[quarters[3]])
 		#expect(abs(q4PE - 6.67) < 0.1, "Q4 P/E should be ~6.67")
 
 		// P/E should be positive for profitable company
 		for quarter in quarters {
-			#expect(pe[quarter]! > 0, "P/E should be positive for profitable company")
+			#expect(try #require(pe[quarter]) > 0, "P/E should be positive for profitable company")
 		}
 	}
 
@@ -185,17 +185,17 @@ struct ValuationMetricsTests {
 
 		// Q1: Book Value = 120K / 1000 shares = 120 per share
 		// P/B = 150 / 120 = 1.25
-		let q1PB = pb[quarters[0]]!
+		let q1PB = try #require(pb[quarters[0]])
 		#expect(abs(q1PB - 1.25) < 0.01, "Q1 P/B should be ~1.25")
 
 		// Q4: Book Value = 166K / 1000 = 166 per share
 		// P/B = 180 / 166 = 1.084
-		let q4PB = pb[quarters[3]]!
+		let q4PB = try #require(pb[quarters[3]])
 		#expect(abs(q4PB - 1.084) < 0.01, "Q4 P/B should be ~1.084")
 
 		// P/B typically above 1 for growth companies
 		for quarter in quarters {
-			#expect(pb[quarter]! > 1.0, "P/B should be above 1 for this growth company")
+			#expect(try #require(pb[quarter]) > 1.0, "P/B should be above 1 for this growth company")
 		}
 	}
 
@@ -216,18 +216,18 @@ struct ValuationMetricsTests {
 		// Q1: Market Cap = 150 * 1000 = 150K
 		// Revenue = 100K
 		// P/S = 150K / 100K = 1.5
-		let q1PS = ps[quarters[0]]!
+		let q1PS = try #require(ps[quarters[0]])
 		#expect(abs(q1PS - 1.5) < 0.01, "Q1 P/S should be ~1.5")
 
 		// Q4: Market Cap = 180 * 1000 = 180K
 		// Revenue = 130K
 		// P/S = 180K / 130K = 1.385
-		let q4PS = ps[quarters[3]]!
+		let q4PS = try #require(ps[quarters[3]])
 		#expect(abs(q4PS - 1.385) < 0.01, "Q4 P/S should be ~1.385")
 
 		// P/S should be positive
 		for quarter in quarters {
-			#expect(ps[quarter]! > 0, "P/S should be positive")
+			#expect(try #require(ps[quarter]) > 0, "P/S should be positive")
 		}
 	}
 
@@ -249,12 +249,12 @@ struct ValuationMetricsTests {
 		// Debt = 50K
 		// Cash = 50K
 		// EV = 150K + 50K - 50K = 150K
-		let q1EV = ev[quarters[0]]!
+		let q1EV = try #require(ev[quarters[0]])
 		#expect(abs(q1EV - 150_000) < 1, "Q1 EV should be ~150K")
 
 		// Q4: Market Cap = 180K, Debt = 44K, Cash = 65K
 		// EV = 180K + 44K - 65K = 159K
-		let q4EV = ev[quarters[3]]!
+		let q4EV = try #require(ev[quarters[3]])
 		#expect(abs(q4EV - 159_000) < 1, "Q4 EV should be ~159K")
 	}
 
@@ -274,18 +274,18 @@ struct ValuationMetricsTests {
 
 		// Calculate market cap: price * shares = 200 * 1000 = 200,000
 		let marketCap = marketCapitalization(marketPrice: marketPrice, sharesOutstanding: sharesOutstanding)
-		let q4MarketCap = marketCap[quarters[3]]!
+		let q4MarketCap = try #require(marketCap[quarters[3]])
 
 		// By Q4, cash (65K) exceeds debt (44K), making this a net cash company
 		// EV should be less than market cap in Q4
-		let q4EV = ev[quarters[3]]!
+		let q4EV = try #require(ev[quarters[3]])
 		#expect(q4EV < q4MarketCap, "EV should be less than market cap when cash > debt")
 
 		// As cash grows and debt shrinks, EV should approach market cap - net cash
 		// Q1: Cash=50K, Debt=50K -> EV = 200K (no net cash)
 		// Q4: Cash=65K, Debt=44K -> EV = 179K (21K net cash)
-		let q1EV = ev[quarters[0]]!
-		let q1MarketCap = marketCap[quarters[0]]!
+		let q1EV = try #require(ev[quarters[0]])
+		let q1MarketCap = try #require(marketCap[quarters[0]])
 		#expect(q1EV <= q1MarketCap, "EV should be at most equal to market cap when debt = cash")
 		#expect(q4EV < q1EV, "EV should decrease as company becomes more cash-rich")
 	}
@@ -309,12 +309,12 @@ struct ValuationMetricsTests {
 		// Operating Income (EBIT) = Revenue - COGS - OpEx - D&A = 100K - 40K - 30K - 5K = 25K
 		// EBITDA = Operating Income + D&A = 25K + 5K = 30K
 		// EV/EBITDA = 150K / 30K = 5.0
-		let q1EVtoEBITDA = evEbitda[quarters[0]]!
+		let q1EVtoEBITDA = try #require(evEbitda[quarters[0]])
 		#expect(abs(q1EVtoEBITDA - 5.0) < 0.1, "Q1 EV/EBITDA should be ~5.0")
 
 		// Typical range is 8-15x, but this is a very profitable company with low debt
 		for quarter in quarters {
-			#expect(evEbitda[quarter]! > 0, "EV/EBITDA should be positive")
+			#expect(try #require(evEbitda[quarter]) > 0, "EV/EBITDA should be positive")
 		}
 	}
 
@@ -335,12 +335,12 @@ struct ValuationMetricsTests {
 
 		// Q1: EV = 150K, Revenue = 100K
 		// EV/Sales = 150K / 100K = 1.5
-		let q1EVtoSales = evSales[quarters[0]]!
+		let q1EVtoSales = try #require(evSales[quarters[0]])
 		#expect(abs(q1EVtoSales - 1.5) < 0.01, "Q1 EV/Sales should be ~1.5")
 
 		// Q4: EV = 159K, Revenue = 130K
 		// EV/Sales = 159K / 130K = 1.223
-		let q4EVtoSales = evSales[quarters[3]]!
+		let q4EVtoSales = try #require(evSales[quarters[3]])
 		#expect(abs(q4EVtoSales - 1.223) < 0.01, "Q4 EV/Sales should be ~1.223")
 	}
 
@@ -369,8 +369,8 @@ struct ValuationMetricsTests {
 		// - EBITDA > Net Income (doesn't include interest, tax, D&A)
 		// - EV accounts for debt which P/E doesn't
 		for quarter in quarters {
-			let peValue = pe[quarter]!
-			let evEbitdaValue = evEbitda[quarter]!
+			let peValue = try #require(pe[quarter])
+			let evEbitdaValue = try #require(evEbitda[quarter])
 
 			// For this company, P/E should be higher than EV/EBITDA
 			#expect(peValue > evEbitdaValue, "P/E typically higher than EV/EBITDA for leveraged company")
@@ -392,7 +392,7 @@ struct ValuationMetricsTests {
 		// Earnings Yield = E/P = 1 / (P/E)
 		// Should be in reasonable range (5-20%)
 		for quarter in quarters {
-			let earningsYield = 1.0 / pe[quarter]!
+			let earningsYield = 1.0 / (try #require(pe[quarter]))
 			#expect(earningsYield > 0.05, "Earnings yield should be > 5%")
 			#expect(earningsYield < 0.30, "Earnings yield should be < 30%")
 		}

@@ -16,7 +16,7 @@ import Numerics
 		#expect(result == 1)
 	}
 
-	@Test("CoefficientOfSkew throws on zero stdDev") func LCoefficientOfSkewThrowsOnZeroStdDev() {
+	@Test("CoefficientOfSkew throws on zero stdDev") func LCoefficientOfSkewThrowsOnZeroStdDev() throws {
 		#expect(throws: BusinessMathError.self) {
 			_ = try coefficientOfSkew(mean: 1.0, median: 0.0, stdDev: 0.0)
 		}
@@ -70,7 +70,7 @@ struct SkewnessNaNInfinityTests {
 	}
 
 	@Test("coefficientOfSkew rejects NaN stdDev")
-	func coefficient_of_skew_rejects_nan_stdDev() {
+	func coefficient_of_skew_rejects_nan_stdDev() throws {
 		// NaN stdDev is treated as invalid (zero-like) and throws divisionByZero
 		#expect(throws: BusinessMathError.self) {
 			_ = try coefficientOfSkew(mean: 2.0, median: 1.0, stdDev: Double.nan)
