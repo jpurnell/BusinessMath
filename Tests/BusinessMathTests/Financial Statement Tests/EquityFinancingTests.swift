@@ -25,7 +25,7 @@ struct EquityFinancingTests {
         let ownership = capTable.ownership()
 
         // Alice owns 100%
-        #expect(abs(ownership["Alice"]! - 1.0) < 0.0001)
+        #expect(abs(try #require(ownership["Alice"]) - 1.0) < 0.0001)
     }
 
     @Test("Cap table - multiple founders")
@@ -52,8 +52,8 @@ struct EquityFinancingTests {
         let ownership = capTable.ownership()
 
         // Alice: 60%, Bob: 40%
-        #expect(abs(ownership["Alice"]! - 0.6) < 0.0001)
-        #expect(abs(ownership["Bob"]! - 0.4) < 0.0001)
+        #expect(abs(try #require(ownership["Alice"]) - 0.6) < 0.0001)
+        #expect(abs(try #require(ownership["Bob"]) - 0.4) < 0.0001)
     }
 
     @Test("Cap table with option pool")
@@ -74,7 +74,7 @@ struct EquityFinancingTests {
         let ownership = capTable.ownership()
 
         // Founder: 90%, Option Pool: 10%
-        #expect(abs(ownership["Founder"]! - 0.9) < 0.0001)
+        #expect(abs(try #require(ownership["Founder"]) - 0.9) < 0.0001)
         #expect(abs(capTable.optionPoolPercentage - 0.1) < 0.0001)
     }
 
@@ -106,10 +106,10 @@ struct EquityFinancingTests {
         let postOwnership = postRound.ownership()
 
         // Founder diluted to 75%
-        #expect(abs(postOwnership["Founder"]! - 0.75) < 0.01)
+        #expect(abs(try #require(postOwnership["Founder"]) - 0.75) < 0.01)
 
         // Investor owns 25%
-        #expect(abs(postOwnership["Series A Investor"]! - 0.25) < 0.01)
+        #expect(abs(try #require(postOwnership["Series A Investor"]) - 0.25) < 0.01)
     }
 
     @Test("Series A with option pool expansion")
@@ -137,8 +137,8 @@ struct EquityFinancingTests {
 
         // Founder: diluted by both investment and option pool
         // Should be around 67.5% (75% of 90%)
-        #expect(postOwnership["Founder"]! < 0.75)
-        #expect(postOwnership["Founder"]! > 0.65)
+        #expect(try #require(postOwnership["Founder"]) < 0.75)
+        #expect(try #require(postOwnership["Founder"]) > 0.65)
 
         // Option pool: 10%
         #expect(abs(postRound.optionPoolPercentage - 0.10) < 0.01)
@@ -166,7 +166,7 @@ struct EquityFinancingTests {
             optionPoolIncrease: 0.10
         )
 
-        let postSeed = capTable.ownership()["Founder"]!
+        let postSeed = try #require(capTable.ownership()["Founder"])
 
         // Series A: $5M at $15M pre-money
         capTable = capTable.modelRound(
@@ -175,7 +175,7 @@ struct EquityFinancingTests {
             optionPoolIncrease: 0.05
         )
 
-        let postSeriesA = capTable.ownership()["Founder"]!
+        let postSeriesA = try #require(capTable.ownership()["Founder"])
 
         // Founder should be diluted through both rounds
         #expect(postSeriesA < postSeed)
@@ -306,8 +306,8 @@ struct EquityFinancingTests {
         )
 
         // Pre-round timing dilutes founders more
-        let preOwnership = preRoundPool.ownership()["Founder"]!
-        let postOwnership = postRoundPool.ownership()["Founder"]!
+        let preOwnership = try #require(preRoundPool.ownership()["Founder"])
+        let postOwnership = try #require(postRoundPool.ownership()["Founder"])
 
         #expect(preOwnership < postOwnership)
     }
@@ -390,8 +390,8 @@ struct EquityFinancingTests {
         // But investor takes preference ($5M) > pro-rata ($2.5M)
         // So: Investor: $5M, Founder: $5M
 
-        #expect(abs(waterfall["Investor"]! - 5_000_000.0) < 1000.0)
-        #expect(abs(waterfall["Founder"]! - 5_000_000.0) < 1000.0)
+        #expect(abs(try #require(waterfall["Investor"]) - 5_000_000.0) < 1000.0)
+        #expect(abs(try #require(waterfall["Founder"]) - 5_000_000.0) < 1000.0)
     }
 
     @Test("Liquidation preference - 1x participating")
@@ -425,8 +425,8 @@ struct EquityFinancingTests {
         // Then $5M remaining split 25/75: Investor $1.25M, Founder $3.75M
         // Total: Investor $6.25M, Founder $3.75M
 
-        #expect(abs(waterfall["Investor"]! - 6_250_000.0) < 1000.0)
-        #expect(abs(waterfall["Founder"]! - 3_750_000.0) < 1000.0)
+        #expect(abs(try #require(waterfall["Investor"]) - 6_250_000.0) < 1000.0)
+        #expect(abs(try #require(waterfall["Founder"]) - 3_750_000.0) < 1000.0)
     }
 
     @Test("Liquidation preference - 2x preference")
@@ -459,8 +459,8 @@ struct EquityFinancingTests {
         // Investor gets $10M (2x $5M)
         // Founder gets $5M
 
-        #expect(abs(waterfall["Investor"]! - 10_000_000.0) < 1000.0)
-        #expect(abs(waterfall["Founder"]! - 5_000_000.0) < 1000.0)
+        #expect(abs(try #require(waterfall["Investor"]) - 10_000_000.0) < 1000.0)
+        #expect(abs(try #require(waterfall["Founder"]) - 5_000_000.0) < 1000.0)
     }
 
     @Test("Down round - pay-to-play protection")
@@ -495,7 +495,7 @@ struct EquityFinancingTests {
         // Series A should be diluted significantly
         let postOwnership = capTable.ownership()
 
-        #expect(postOwnership["Series A"]! < 0.25)
+        #expect(try #require(postOwnership["Series A"]) < 0.25)
     }
 
     // MARK: - Employee Option Grants

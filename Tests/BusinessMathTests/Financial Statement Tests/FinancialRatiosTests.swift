@@ -135,18 +135,18 @@ struct FinancialRatiosTests {
 		// Q1: Net Income = 1,000k - 400k - 50k = 550k
 		//     Average Assets = 5,000k (no prior period)
 		//     ROA = 550k / 5,000k = 11%
-		let q1ROA = roa[quarters[0]]!
+		let q1ROA = try #require(roa[quarters[0]])
 		#expect(abs(q1ROA - 0.11) < 0.001, "Q1 ROA should be ~11%")
 
 		// Q2: Net Income = 1,100k - 400k - 50k = 650k
 		//     Average Assets = (5,000k + 5,100k) / 2 = 5,050k
 		//     ROA = 650k / 5,050k = 12.87%
-		let q2ROA = roa[quarters[1]]!
+		let q2ROA = try #require(roa[quarters[1]])
 		#expect(abs(q2ROA - 0.1287) < 0.001, "Q2 ROA should be ~12.87%")
 
 		// Verify ROA is positive for all quarters
 		for quarter in quarters {
-			#expect(roa[quarter]! > 0, "ROA should be positive")
+			#expect(try #require(roa[quarter]) > 0, "ROA should be positive")
 		}
 	}
 
@@ -205,7 +205,7 @@ struct FinancialRatiosTests {
 
 		// Net Income = 100k - 200k = -100k
 		// ROA = -100k / 1,000k = -10%
-		let q1ROA = roa[periods[0]]!
+		let q1ROA = try #require(roa[periods[0]])
 		#expect(q1ROA < 0, "ROA should be negative with losses")
 		#expect(abs(q1ROA - (-0.10)) < 0.001, "ROA should be -10%")
 	}
@@ -238,13 +238,13 @@ struct FinancialRatiosTests {
 		// Q1: Net Income = 550k
 		//     Average Equity = 3,000k (no prior period)
 		//     ROE = 550k / 3,000k = 18.33%
-		let q1ROE = roe[quarters[0]]!
+		let q1ROE = try #require(roe[quarters[0]])
 		#expect(abs(q1ROE - 0.1833) < 0.001, "Q1 ROE should be ~18.33%")
 
 		// Q2: Net Income = 650k
 		//     Average Equity = (3,000k + 3,100k) / 2 = 3,050k
 		//     ROE = 650k / 3,050k = 21.31%
-		let q2ROE = roe[quarters[1]]!
+		let q2ROE = try #require(roe[quarters[1]])
 		#expect(abs(q2ROE - 0.2131) < 0.001, "Q2 ROE should be ~21.31%")
 	}
 
@@ -271,8 +271,8 @@ struct FinancialRatiosTests {
 		// With leverage (debt), ROE should be higher than ROA
 		// This company has $2M debt, so ROE > ROA
 		for quarter in quarters {
-			let roaValue = roa[quarter]!
-			let roeValue = roe[quarter]!
+			let roaValue = try #require(roa[quarter])
+			let roeValue = try #require(roe[quarter])
 			#expect(roeValue > roaValue, "ROE should exceed ROA when company has debt")
 		}
 	}
@@ -340,7 +340,7 @@ struct FinancialRatiosTests {
 		let roe = returnOnEquity(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 
 		// With negative equity, ROE is negative even with positive income
-		let q1ROE = roe[periods[0]]!
+		let q1ROE = try #require(roe[periods[0]])
 		#expect(q1ROE < 0, "ROE should be negative with negative equity")
 	}
 
@@ -378,7 +378,7 @@ struct FinancialRatiosTests {
 		//     Current Liabilities = 0 (no "Current" category set)
 		//     Invested Capital = Total Assets - Current Liabilities = 5,000k - 0 = 5,000k
 		//     ROIC = 474k / 5,000k (per quarter, not annualized)
-		let q1ROIC = roic[quarters[0]]!
+		let q1ROIC = try #require(roic[quarters[0]])
 		#expect(q1ROIC > 0, "ROIC should be positive")
 		#expect(q1ROIC < 0.20, "ROIC should be reasonable (< 20% per quarter)")
 	}
@@ -403,7 +403,7 @@ struct FinancialRatiosTests {
 
 		// Higher tax rate should result in lower ROIC
 		for quarter in quarters {
-			#expect(roic21[quarter]! > roic35[quarter]!, "Lower tax rate should yield higher ROIC")
+			#expect(try #require(roic21[quarter]) > (try #require(roic35[quarter])), "Lower tax rate should yield higher ROIC")
 		}
 	}
 
@@ -434,15 +434,15 @@ struct FinancialRatiosTests {
 
 		// All three should be positive
 		for quarter in quarters {
-			#expect(roa[quarter]! > 0, "ROA should be positive")
-			#expect(roe[quarter]! > 0, "ROE should be positive")
-			#expect(roic[quarter]! > 0, "ROIC should be positive")
+			#expect(try #require(roa[quarter]) > 0, "ROA should be positive")
+			#expect(try #require(roe[quarter]) > 0, "ROE should be positive")
+			#expect(try #require(roic[quarter]) > 0, "ROIC should be positive")
 		}
 
 		// With leverage, typically ROE > ROA
 		// ROIC may be between them depending on capital structure
 		for quarter in quarters {
-			#expect(roe[quarter]! > roa[quarter]!, "ROE should exceed ROA with leverage")
+			#expect(try #require(roe[quarter]) > (try #require(roa[quarter])), "ROE should exceed ROA with leverage")
 		}
 	}
 
@@ -472,12 +472,12 @@ struct FinancialRatiosTests {
 
 		// Q1: Revenue = 1,000k, Assets = 5,000k
 		//     Asset Turnover = 1,000k / 5,000k = 0.20
-		let q1Turnover = assetTurnover[quarters[0]]!
+		let q1Turnover = try #require(assetTurnover[quarters[0]])
 		#expect(abs(q1Turnover - 0.20) < 0.01, "Q1 asset turnover should be ~0.20")
 
 		// Asset turnover should be positive for all periods
 		for quarter in quarters {
-			#expect(assetTurnover[quarter]! > 0, "Asset turnover should be positive")
+			#expect(try #require(assetTurnover[quarter]) > 0, "Asset turnover should be positive")
 		}
 	}
 
@@ -551,12 +551,12 @@ struct FinancialRatiosTests {
 
 		// Q1: COGS = 600k, Inventory = 200k
 		//     Turnover = 600k / 200k = 3.0
-		let q1Turnover = turnover[quarters[0]]!
+		let q1Turnover = try #require(turnover[quarters[0]])
 		#expect(abs(q1Turnover - 3.0) < 0.1, "Q1 inventory turnover should be ~3.0")
 
 		// All periods should have positive turnover
 		for quarter in quarters {
-			#expect(turnover[quarter]! > 0, "Inventory turnover should be positive")
+			#expect(try #require(turnover[quarter]) > 0, "Inventory turnover should be positive")
 		}
 	}
 
@@ -619,13 +619,13 @@ struct FinancialRatiosTests {
 		// Q1: COGS = 400k, Inventory = 50k
 		//     Turnover = 400k / 50k = 8
 		//     DIO = 365 / 8 = 45.625 days
-		let q1DIO = dio[quarters[0]]!
+		let q1DIO = try #require(dio[quarters[0]])
 		#expect(abs(q1DIO - 45.625) < 1.0, "Q1 DIO should be ~45.6 days")
 
 		// Lower DIO is better (faster inventory movement)
 		for quarter in quarters {
-			#expect(dio[quarter]! > 0, "DIO should be positive")
-			#expect(dio[quarter]! < 365, "DIO should be less than a year")
+			#expect(try #require(dio[quarter]) > 0, "DIO should be positive")
+			#expect(try #require(dio[quarter]) < 365, "DIO should be less than a year")
 		}
 	}
 
@@ -688,7 +688,7 @@ struct FinancialRatiosTests {
 
 		// Q1: Revenue = 1,000k, Receivables = 200k
 		//     Turnover = 1,000k / 200k = 5.0
-		let q1Turnover = turnover[quarters[0]]!
+		let q1Turnover = try #require(turnover[quarters[0]])
 		#expect(abs(q1Turnover - 5.0) < 0.1, "Q1 receivables turnover should be ~5.0")
 	}
 
@@ -751,13 +751,13 @@ struct FinancialRatiosTests {
 		// Q1: Revenue = 365k, Receivables = 30k
 		//     Turnover = 365k / 30k ≈ 12.17
 		//     DSO = 365 / 12.17 ≈ 30 days
-		let q1DSO = dso[quarters[0]]!
+		let q1DSO = try #require(dso[quarters[0]])
 		#expect(abs(q1DSO - 30.0) < 1.0, "Q1 DSO should be ~30 days")
 
 		// DSO should be reasonable (< 120 days for most businesses)
 		for quarter in quarters {
-			#expect(dso[quarter]! > 0, "DSO should be positive")
-			#expect(dso[quarter]! < 120, "DSO should be reasonable")
+			#expect(try #require(dso[quarter]) > 0, "DSO should be positive")
+			#expect(try #require(dso[quarter]) < 120, "DSO should be reasonable")
 		}
 	}
 
@@ -832,18 +832,18 @@ struct FinancialRatiosTests {
 		// Q1: Operating Income = Revenue - OpEx = 1,000k - 400k = 600k
 		//     Interest Expense = 50k
 		//     Coverage = 600k / 50k = 12.0x
-		let q1Coverage = coverage[quarters[0]]!
+		let q1Coverage = try #require(coverage[quarters[0]])
 		#expect(abs(q1Coverage - 12.0) < 0.1, "Q1 interest coverage should be ~12.0x")
 
 		// Q2: Operating Income = 1,100k - 400k = 700k
 		//     Interest Expense = 50k
 		//     Coverage = 700k / 50k = 14.0x
-		let q2Coverage = coverage[quarters[1]]!
+		let q2Coverage = try #require(coverage[quarters[1]])
 		#expect(abs(q2Coverage - 14.0) < 0.1, "Q2 interest coverage should be ~14.0x")
 
 		// All quarters should have healthy coverage (> 3.0)
 		for quarter in quarters {
-			#expect(coverage[quarter]! > 3.0, "Interest coverage should be healthy (> 3.0)")
+			#expect(try #require(coverage[quarter]) > 3.0, "Interest coverage should be healthy (> 3.0)")
 		}
 	}
 
@@ -891,7 +891,7 @@ struct FinancialRatiosTests {
 		// Operating Income = 100k - 70k = 30k
 		// Interest Expense = 25k
 		// Coverage = 30k / 25k = 1.2x (risky)
-		let q1Coverage = coverage[quarters[0]]!
+		let q1Coverage = try #require(coverage[quarters[0]])
 		#expect(abs(q1Coverage - 1.2) < 0.1, "Low interest coverage should be ~1.2x")
 		#expect(q1Coverage < 2.0, "Coverage should be below healthy threshold")
 	}
@@ -961,12 +961,12 @@ struct FinancialRatiosTests {
 		// Q1: Operating Income = 600k
 		//     Total Debt Service = 100k + 50k = 150k
 		//     DSCR = 600k / 150k = 4.0x
-		let q1DSCR = dscr[quarters[0]]!
+		let q1DSCR = try #require(dscr[quarters[0]])
 		#expect(abs(q1DSCR - 4.0) < 0.1, "Q1 DSCR should be ~4.0x")
 
 		// All quarters should have strong coverage (> 1.5)
 		for quarter in quarters {
-			#expect(dscr[quarter]! > 1.5, "DSCR should be strong (> 1.5)")
+			#expect(try #require(dscr[quarter]) > 1.5, "DSCR should be strong (> 1.5)")
 		}
 	}
 
@@ -1017,7 +1017,7 @@ struct FinancialRatiosTests {
 		// Operating Income = 500k - 350k = 150k
 		// Total Debt Service = 100k + 30k = 130k
 		// DSCR = 150k / 130k ≈ 1.15x (tight)
-		let q1DSCR = dscr[quarters[0]]!
+		let q1DSCR = try #require(dscr[quarters[0]])
 		#expect(abs(q1DSCR - 1.15) < 0.05, "DSCR should be ~1.15x")
 		#expect(q1DSCR > 1.0, "DSCR should be above 1.0 (can service debt)")
 		#expect(q1DSCR < 1.25, "DSCR should be below 1.25 (tight coverage)")
@@ -1070,7 +1070,7 @@ struct FinancialRatiosTests {
 		// Operating Income = 200k - 150k = 50k
 		// Total Debt Service = 60k + 20k = 80k
 		// DSCR = 50k / 80k = 0.625 (insufficient!)
-		let q1DSCR = dscr[quarters[0]]!
+		let q1DSCR = try #require(dscr[quarters[0]])
 		#expect(abs(q1DSCR - 0.625) < 0.05, "DSCR should be ~0.625")
 		#expect(q1DSCR < 1.0, "DSCR < 1.0 indicates insufficient coverage")
 	}

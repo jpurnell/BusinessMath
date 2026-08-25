@@ -98,7 +98,7 @@ import Foundation
 		// Then
 		// The bin with count=100 should have the longest bar
 		// Verify output structure: should have 3 lines for 3 bins
-		let lines = output.components(separatedBy: "\n").filter { !$0.isEmpty && $0.contains("[") }
+		let lines = output.split(whereSeparator: \.isNewline).map(String.init).filter { !$0.isEmpty && $0.contains("[") }
 		#expect(lines.count == 3, "Should have 3 bin lines")
 		// Verify percentages sum to approximately 100%
 		#expect(output.contains("%"), "Should show percentages")
@@ -218,7 +218,7 @@ import Foundation
 		// When
 		let output = plotHistogram(histogram)
 		print(output)
-		let lines = output.components(separatedBy: "\n").filter { !$0.isEmpty }
+		let lines = output.split(whereSeparator: \.isNewline).map(String.init)
 
 		// Then
 		// Should have header + 3 bin lines (at minimum)

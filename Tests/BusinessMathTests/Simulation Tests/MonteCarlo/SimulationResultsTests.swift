@@ -193,7 +193,7 @@ struct SimulationResultsTests {
 	}
 
 	@Test("SimulationResults histogram with extreme values")
-	func simulationResultsHistogramExtremeValues() {
+	func simulationResultsHistogramExtremeValues() throws {
 		// Dataset with outliers
 		let values = [1.0, 2.0, 3.0, 4.0, 5.0, 100.0, 200.0]
 		let results = SimulationResults(values: values)
@@ -205,7 +205,7 @@ struct SimulationResultsTests {
 		#expect(totalCount == 7, "All values should be in histogram")
 
 		// Most values should be in first bins, outliers in last bins
-		#expect(histogram.first!.count >= 5, "Most values in first bins")
+		#expect(try #require(histogram.first).count >= 5, "Most values in first bins")
 	}
 
 	@Test("SimulationResults integration with real simulation")
@@ -263,17 +263,17 @@ struct SimulationResultsTests {
 	}
 
 	@Test("SimulationResults histogram coverage")
-	func simulationResultsHistogramCoverage() {
+	func simulationResultsHistogramCoverage() throws {
 		let values = (0..<1_000).map { _ in distributionNormal(mean: 50.0, stdDev: 10.0) }
 		let results = SimulationResults(values: values)
 
 		let histogram = results.histogram(bins: 20)
 //		logger.info("Simulation Results - Histogram Coverage Test:\n\n\(plotHistogram(histogram))")
 		// First bin should start at or below min
-		#expect(histogram.first!.range.lowerBound <= results.statistics.min)
+		#expect(try #require(histogram.first).range.lowerBound <= results.statistics.min)
 
 		// Last bin should end at or above max
-		#expect(histogram.last!.range.upperBound >= results.statistics.max)
+		#expect(try #require(histogram.last).range.upperBound >= results.statistics.max)
 	}
 
 	@Test("SimulationResults automatic bin calculation")
@@ -365,7 +365,7 @@ struct SimulationResultsTests {
 	}
 
 	@Test("SimulationResults automatic bins with outliers")
-	func simulationResultsAutoBinsWithOutliers() {
+	func simulationResultsAutoBinsWithOutliers() throws {
 		// Dataset with outliers - FD rule should be robust
 		var values: [Double] = (0..<1_000).map { _ in distributionNormal(mean: 50.0, stdDev: 5.0) }
 		// Add outliers
@@ -383,8 +383,8 @@ struct SimulationResultsTests {
 		#expect(histogram.map { $0.count }.reduce(0, +) == 1_004)
 
 		// Verify outliers are in the bins
-		#expect(histogram.first!.range.lowerBound <= 1.0)
-		#expect(histogram.last!.range.upperBound >= 250.0)
+		#expect(try #require(histogram.first).range.lowerBound <= 1.0)
+		#expect(try #require(histogram.last).range.upperBound >= 250.0)
 	}
 
 	@Test("SimulationResults automatic bins with constant values")
@@ -457,7 +457,7 @@ struct SimulationResultsAdditionalTests {
 	}
 
 	@Test("Histogram bin coverage at exact bounds")
-	func histogramBoundsCoverage() {
+	func histogramBoundsCoverage() throws {
 		let values = [0.0, 1.0, 2.0, 3.0]  // exact integers
 		let results = SimulationResults(values: values)
 		let hist = results.histogram(bins: 4)
@@ -466,7 +466,7 @@ struct SimulationResultsAdditionalTests {
 		#expect(total == values.count, "All values should be in bins")
 
 		// The last bin's upper bound should include the max exactly (implementation-dependent)
-		#expect(hist.last!.range.upperBound >= results.statistics.max)
-		#expect(hist.first!.range.lowerBound <= results.statistics.min)
+		#expect(try #require(hist.last).range.upperBound >= results.statistics.max)
+		#expect(try #require(hist.first).range.lowerBound <= results.statistics.min)
 	}
 }

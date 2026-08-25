@@ -123,7 +123,7 @@ struct ScenarioSensitivityAnalysisTests {
 		) { projection in
 			// Output metric: Q1 net income
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 		// Verify sensitivity structure
@@ -167,7 +167,7 @@ struct ScenarioSensitivityAnalysisTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 		#expect(sensitivity.inputValues.count == 11)
@@ -228,7 +228,7 @@ struct ScenarioSensitivityAnalysisTests {
 			builder: builder
 		) { projection in
 			let q4 = Period.quarter(year: 2025, quarter: 4)
-			return projection.incomeStatement.netIncome[q4]!
+			return try #require(projection.incomeStatement.netIncome[q4])
 		}
 
 		#expect(q4Sensitivity.inputValues.count == 3)
@@ -262,7 +262,7 @@ struct ScenarioSensitivityAnalysisTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 		// Base case (1000.0) should be one of the input values
@@ -342,7 +342,7 @@ struct ScenarioSensitivityAnalysisTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 		// Verify structure
@@ -432,7 +432,7 @@ struct ScenarioSensitivityAnalysisTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 		#expect(sensitivity.results.count == 4)
@@ -471,7 +471,7 @@ struct ScenarioSensitivityAnalysisTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 		#expect(sensitivity.inputValues.count == 1)
@@ -507,7 +507,7 @@ struct ScenarioSensitivityAnalysisTests {
 			builder: builder
 		) { projection in
 			let q1 = Period.quarter(year: 2025, quarter: 1)
-			return projection.incomeStatement.netIncome[q1]!
+			return try #require(projection.incomeStatement.netIncome[q1])
 		}
 
 		#expect(sensitivity.inputValues.count == 5)
@@ -515,7 +515,7 @@ struct ScenarioSensitivityAnalysisTests {
 		#expect(abs((sensitivity.inputValues.last ?? 0) - 1010.0) < 1e-2)
 
 		// Verify range is narrow
-		let range = sensitivity.inputValues.last! - sensitivity.inputValues.first!
+		let range = try #require(sensitivity.inputValues.last) - (try #require(sensitivity.inputValues.first))
 		#expect(abs(range - 20.0) < 1e-6)
 	}
 
@@ -554,7 +554,7 @@ struct ScenarioSensitivityAnalysisTests {
 				builder: builder
 			) { projection in
 				let q1 = Period.quarter(year: 2025, quarter: 1)
-				return projection.incomeStatement.netIncome[q1]!
+				return try #require(projection.incomeStatement.netIncome[q1])
 			}
 			// If this ever stops throwing, at minimum it must not have produced the
 			// silent flat curve that motivated the check.
@@ -606,7 +606,7 @@ struct ScenarioSensitivityAnalysisTests {
 				steps: 5,
 				builder: refusingBuilder
 			) { projection in
-				projection.incomeStatement.netIncome[periods[0]]!
+				(try #require(projection.incomeStatement.netIncome[periods[0]]))
 			}
 			Issue.record("Expected runSensitivity to throw")
 		} catch is SensitivityBuilderRan {
@@ -646,7 +646,7 @@ struct ScenarioSensitivityAnalysisTests {
 			steps: 9,
 			builder: builder
 		) { projection in
-			projection.incomeStatement.netIncome[periods[0]]!
+			(try #require(projection.incomeStatement.netIncome[periods[0]]))
 		}
 
 		// The counterpart to the flat-curve check: a driver the builder does read
@@ -684,7 +684,7 @@ struct ScenarioSensitivityAnalysisTests {
 				steps2: 3,
 				builder: builder
 			) { projection in
-				projection.incomeStatement.netIncome[periods[0]]!
+				(try #require(projection.incomeStatement.netIncome[periods[0]]))
 			}
 			Issue.record("Expected runTwoWaySensitivity to reject the unknown driver name")
 		} catch let error as BusinessMathError {
@@ -732,7 +732,7 @@ struct ScenarioSensitivityAnalysisTests {
 				steps2: 3,
 				builder: refusingBuilder
 			) { projection in
-				projection.incomeStatement.netIncome[periods[0]]!
+				(try #require(projection.incomeStatement.netIncome[periods[0]]))
 			}
 			Issue.record("Expected runTwoWaySensitivity to reject the unknown driver names")
 		} catch is SensitivityBuilderRan {

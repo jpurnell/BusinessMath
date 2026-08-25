@@ -199,8 +199,8 @@ struct MonteCarloDistributionTests {
         // A fixed seed makes each of those a fixed quantity that either holds or does not.
         var seed: UInt64 = 0x9E37_79B9_7F4A_7C15
 
-        let commandBuffer1 = commandQueue.makeCommandBuffer()!
-        let encoder1 = commandBuffer1.makeComputeCommandEncoder()!
+        let commandBuffer1 = try #require(commandQueue.makeCommandBuffer())
+        let encoder1 = try #require(commandBuffer1.makeComputeCommandEncoder())
         encoder1.setComputePipelineState(initPipeline)
         encoder1.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder1.setBytes(&seed, length: MemoryLayout<UInt64>.stride, index: 1)
@@ -222,8 +222,8 @@ struct MonteCarloDistributionTests {
         var params = (param1, param2, param3)
         var distTypeVar = Int32(distType)
 
-        let commandBuffer2 = commandQueue.makeCommandBuffer()!
-        let encoder2 = commandBuffer2.makeComputeCommandEncoder()!
+        let commandBuffer2 = try #require(commandQueue.makeCommandBuffer())
+        let encoder2 = try #require(commandBuffer2.makeComputeCommandEncoder())
         encoder2.setComputePipelineState(samplePipeline)
         encoder2.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder2.setBytes(&params, length: MemoryLayout<(Float, Float, Float)>.stride, index: 1)

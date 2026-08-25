@@ -254,7 +254,7 @@ struct DispersionNaNInfinityTests {
 	func coefficient_of_variation_propagates_nan() throws {
 		// NaN stdDev
 		let result1 = try? coefficientOfVariation(Double.nan, mean: 5.0)
-		#expect(result1 == nil || result1!.isNaN)
+		#expect(try result1 == nil || (try #require(result1)).isNaN)
 
 		// NaN mean should throw
 		#expect(throws: BusinessMathError.self) {
@@ -266,7 +266,7 @@ struct DispersionNaNInfinityTests {
 	func index_of_dispersion_propagates_nan() throws {
 		let values = [1.0, Double.nan, 3.0]
 		let result = try? indexOfDispersion(values)
-		#expect(result == nil || result!.isNaN)
+		#expect(try result == nil || (try #require(result)).isNaN)
 	}
 }
 

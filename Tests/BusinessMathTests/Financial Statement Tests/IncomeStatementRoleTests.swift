@@ -155,7 +155,7 @@ struct IncomeStatementRoleTests {
 
 	@Test("IncomeStatementRole decodes from string")
 	func testDecodeFromString() throws {
-		let json = "\"costOfGoodsSold\"".data(using: .utf8)!
+		let json = try #require("\"costOfGoodsSold\"".data(using: .utf8))
 		let decoded = try JSONDecoder().decode(IncomeStatementRole.self, from: json)
 
 		#expect(decoded == IncomeStatementRole.costOfGoodsSold)

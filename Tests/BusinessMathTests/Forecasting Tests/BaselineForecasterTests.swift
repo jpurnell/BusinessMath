@@ -31,7 +31,7 @@ struct BaselineForecasterTests {
     func naivePeriods() throws {
         let history = monthly([10, 11, 12, 13])
         let f = try NaiveForecaster<Double>().trainedForecast(from: history, horizon: 2)
-        #expect(f.periods.first! > history.periods.last!)
+        #expect(try #require(f.periods.first) > (try #require(history.periods.last)))
         #expect(f.count == 2)
     }
 
@@ -54,7 +54,7 @@ struct BaselineForecasterTests {
     }
 
     @Test("Seasonal-naive requires at least one full season")
-    func seasonalNaiveInsufficient() {
+    func seasonalNaiveInsufficient() throws {
         #expect(throws: (any Error).self) {
             _ = try SeasonalNaiveForecaster<Double>(seasonLength: 4)
                 .trainedForecast(from: monthly([1, 2, 3]), horizon: 2)

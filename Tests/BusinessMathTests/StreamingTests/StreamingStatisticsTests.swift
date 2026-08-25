@@ -424,8 +424,8 @@ struct StreamingStatisticsTests {
         // Verify each mean is bounded by its window's min and max
         for i in 0..<means.count {
             let windowSlice = Array(values[(i)..<(i + window)])
-            let windowMin = windowSlice.min()!
-            let windowMax = windowSlice.max()!
+            let windowMin = try #require(windowSlice.min())
+            let windowMax = try #require(windowSlice.max())
             #expect(means[i] >= windowMin - 1e-10)
             #expect(means[i] <= windowMax + 1e-10)
         }

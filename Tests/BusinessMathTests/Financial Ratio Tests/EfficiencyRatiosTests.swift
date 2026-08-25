@@ -22,14 +22,14 @@ struct EfficiencyRatiosTests {
     }
 
     @Test("Inventory turnover throws on zero inventory")
-    func testInventoryTurnoverThrows() {
+    func testInventoryTurnoverThrows() throws {
         #expect(throws: BusinessMathError.self) {
             _ = try inventoryTurnover(costOfGoodsSold: 24000.0, averageInventory: 0.0)
         }
     }
 
     @Test("Asset turnover throws on zero assets")
-    func testAssetTurnoverThrows() {
+    func testAssetTurnoverThrows() throws {
         #expect(throws: BusinessMathError.self) {
             _ = try assetTurnover(netSales: 100000.0, averageTotalAssets: 0.0)
         }

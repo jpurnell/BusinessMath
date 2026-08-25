@@ -255,8 +255,8 @@ struct AsyncOptimizationTests {
         // Objective values should generally decrease (for minimization)
         #expect(objectiveValues.count > 0)
         if objectiveValues.count > 1 {
-            let first = objectiveValues.first!
-            let last = objectiveValues.last!
+            let first = try #require(objectiveValues.first)
+            let last = try #require(objectiveValues.last)
             #expect(last <= first) // Should improve or stay same
         }
     }

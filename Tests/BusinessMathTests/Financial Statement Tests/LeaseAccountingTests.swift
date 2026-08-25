@@ -105,7 +105,7 @@ struct LeaseAccountingTests {
         let liabilitySchedule = lease.liabilitySchedule()
 
         // Initial liability = PV of all payments
-        let initialLiability = liabilitySchedule[q1]!
+        let initialLiability = try #require(liabilitySchedule[q1])
         let expectedPV = lease.presentValueOfPayments()
 
         #expect(abs(initialLiability - expectedPV) < 10.0)
@@ -129,9 +129,9 @@ struct LeaseAccountingTests {
         let liabilitySchedule = lease.liabilitySchedule()
 
         // Liability should decrease each period
-        let liability1 = liabilitySchedule[q1]!
-        let liability2 = liabilitySchedule[q1 + 1]!
-        let liability3 = liabilitySchedule[q1 + 2]!
+        let liability1 = try #require(liabilitySchedule[q1])
+        let liability2 = try #require(liabilitySchedule[q1 + 1])
+        let liability3 = try #require(liabilitySchedule[q1 + 2])
 
         #expect(liability1 > liability2)
         #expect(liability2 > liability3)
@@ -208,7 +208,7 @@ struct LeaseAccountingTests {
             discountRate: 0.06
         )
 
-        let payment = payments[q1]!
+        let payment = try #require(payments[q1])
         let interest = lease.interestExpense(period: q1)
         let principal = lease.principalReduction(period: q1)
 
@@ -259,7 +259,7 @@ struct LeaseAccountingTests {
         )
 
         for period in periods {
-            let payment = payments[period]!
+            let payment = try #require(payments[period])
             let interest = lease.interestExpense(period: period)
             let principal = lease.principalReduction(period: period)
 
@@ -409,7 +409,7 @@ struct LeaseAccountingTests {
             discountRate: 0.08
         )
 
-        let originalLiability = lease.liabilitySchedule()[q1]!
+        let originalLiability = try #require(lease.liabilitySchedule()[q1])
 
         // Negotiate rent reduction
         let reducedPayments = TimeSeries(
@@ -419,7 +419,7 @@ struct LeaseAccountingTests {
 
         lease = lease.modify(newPayments: reducedPayments, atPeriod: q1)
 
-        let newLiability = lease.liabilitySchedule()[q1]!
+        let newLiability = try #require(lease.liabilitySchedule()[q1])
 
         // New liability should be lower
         #expect(newLiability < originalLiability)
@@ -450,7 +450,7 @@ struct LeaseAccountingTests {
         // If elected, no ROU asset or liability recognized
         if lease.applyShortTermExemption {
             #expect(abs(lease.rightOfUseAsset() - 0.0) < 1e-6)
-            #expect(abs(lease.liabilitySchedule()[q1]! - 0.0) < 1e-6)
+            #expect(abs(try #require(lease.liabilitySchedule()[q1]) - 0.0) < 1e-6)
         }
     }
 
@@ -660,7 +660,7 @@ struct LeaseAccountingTests {
         )
 
         // Old standard (Operating Lease): Expense payments as incurred
-        let oldStandardExpense = payments[q1]! // Just current period
+        let oldStandardExpense = try #require(payments[q1]) // Just current period
 
         // New standard (IFRS 16): Recognize ROU asset and liability
         let lease = Lease(
@@ -682,7 +682,7 @@ struct LeaseAccountingTests {
         var totalNewStandard = 0.0
         
         for period in periods {
-            totalOldStandard += payments[period]!
+            totalOldStandard += (try #require(payments[period]))
             totalNewStandard += lease.depreciation(period: period) + lease.interestExpense(period: period)
         }
         

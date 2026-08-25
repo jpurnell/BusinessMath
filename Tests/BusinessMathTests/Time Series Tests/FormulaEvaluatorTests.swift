@@ -85,7 +85,7 @@ struct FormulaEvaluatorTests {
 	}
 
 	@Test("A name opened with a bracket must be closed")
-	func unterminatedName() {
+	func unterminatedName() throws {
 		#expect(throws: FormulaError.unterminatedAccountName) {
 			try evaluator().evaluate("[Total Revenue - cogs")
 		}
@@ -142,7 +142,7 @@ struct FormulaEvaluatorTests {
 	/// An account nobody supplied is refused, not defaulted. Treating it as zero would make
 	/// `revenue - cogs` return revenue and call it gross profit.
 	@Test("An unknown account is refused")
-	func unknownAccount() {
+	func unknownAccount() throws {
 		#expect(throws: FormulaError.unknownAccount("opex")) {
 			try evaluator().evaluate("revenue - opex")
 		}
@@ -151,7 +151,7 @@ struct FormulaEvaluatorTests {
 	@Test("Malformed formulas are refused", arguments: [
 		"revenue -", "(revenue - cogs", "revenue - cogs)", "* revenue", "revenue $ cogs"
 	])
-	func malformed(formula: String) {
+	func malformed(formula: String) throws {
 		#expect(throws: (any Error).self) { try evaluator().evaluate(formula) }
 	}
 
@@ -184,7 +184,7 @@ struct FormulaEvaluatorTests {
 	}
 
 	@Test("Reading the names of a malformed formula still refuses")
-	func accountNamesOfMalformed() {
+	func accountNamesOfMalformed() throws {
 		#expect(throws: FormulaError.unterminatedAccountName) {
 			try FormulaEvaluator<Double>.accountNames(in: "[Total Revenue")
 		}

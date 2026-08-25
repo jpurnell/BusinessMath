@@ -71,7 +71,7 @@ struct ForecastabilityTests {
     }
 
     @Test("requireForecastable throws unforecastableSeries for noise")
-    func requireThrows() {
+    func requireThrows() throws {
         #expect(throws: BacktestError.self) {
             _ = try self.impulse(n: 16).requireForecastable(maxSpectralEntropy: 0.9)
         }
@@ -88,7 +88,7 @@ struct ForecastabilityTests {
     }
 
     @Test("Strict backtest refuses a noise-like series")
-    func strictBacktestRefuses() {
+    func strictBacktestRefuses() throws {
         #expect(throws: BacktestError.self) {
             _ = try self.impulse(n: 20).backtest(
                 NaiveForecaster<Double>(),

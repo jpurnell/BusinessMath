@@ -297,7 +297,7 @@ struct MultipleLinearRegressionTests {
     }
 
     @Test("Single observation throws error")
-    func singleObservation() {
+    func singleObservation() throws {
         let X = [[1.0]]
         let y = [3.0]
 
@@ -307,7 +307,7 @@ struct MultipleLinearRegressionTests {
     }
 
     @Test("More predictors than observations throws error")
-    func morePredictorsThanObservations() {
+    func morePredictorsThanObservations() throws {
         let X = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]  // 2 observations, 3 predictors
         let y = [10.0, 20.0]
 
@@ -317,7 +317,7 @@ struct MultipleLinearRegressionTests {
     }
 
     @Test("Empty data throws error")
-    func emptyData() {
+    func emptyData() throws {
         let X: [[Double]] = []
         let y: [Double] = []
 
@@ -327,7 +327,7 @@ struct MultipleLinearRegressionTests {
     }
 
     @Test("Mismatched dimensions throw error")
-    func mismatchedDimensions() {
+    func mismatchedDimensions() throws {
         let X = [[1.0], [2.0], [3.0]]
         let y = [3.0, 5.0]  // Wrong length
 
@@ -337,7 +337,7 @@ struct MultipleLinearRegressionTests {
     }
 
     @Test("Jagged predictor matrix throws error")
-    func jaggedPredictorMatrix() {
+    func jaggedPredictorMatrix() throws {
         let X = [[1.0, 2.0], [3.0]]  // Inconsistent row lengths
         let y = [3.0, 5.0]
 
@@ -347,7 +347,7 @@ struct MultipleLinearRegressionTests {
     }
 
     @Test("Constant y values (no variance)")
-    func constantYValues() {
+    func constantYValues() throws {
         let X = [[1.0], [2.0], [3.0], [4.0], [5.0]]
         let y = [5.0, 5.0, 5.0, 5.0, 5.0]  // No variance
 

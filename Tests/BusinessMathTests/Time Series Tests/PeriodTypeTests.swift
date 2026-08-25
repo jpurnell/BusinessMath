@@ -316,7 +316,7 @@ struct PeriodTypeTests {
 
 	@Test("Period type can be decoded from JSON")
 	func decodingFromJSON() throws {
-		let json = "6".data(using: .utf8)!  // 6 = quarterly
+		let json = try #require("6".data(using: .utf8))  // 6 = quarterly
 		let decoder = JSONDecoder()
 		let periodType = try decoder.decode(PeriodType.self, from: json)
 
@@ -337,8 +337,8 @@ struct PeriodTypeTests {
 	}
 
 	@Test("Decoding invalid JSON fails gracefully")
-	func decodingInvalidJSON() {
-		let json = "99".data(using: .utf8)!  // Invalid raw value
+	func decodingInvalidJSON() throws {
+		let json = try #require("99".data(using: .utf8))  // Invalid raw value
 		let decoder = JSONDecoder()
 
 		#expect(throws: Error.self) {

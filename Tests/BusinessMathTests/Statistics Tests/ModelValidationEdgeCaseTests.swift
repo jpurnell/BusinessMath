@@ -157,7 +157,7 @@ struct ModelValidationEdgeCaseTests {
 		// With generous tolerance, should typically pass
 		// But we're mainly testing that tolerance checking logic works
 		for (param, withinTol) in report.withinTolerance {
-			let relError = report.relativeErrors[param]!
+			let relError = try #require(report.relativeErrors[param])
 			if withinTol {
 				#expect(relError <= report.tolerance,
 					"\(param) marked as within tolerance but error exceeds it")
@@ -187,7 +187,7 @@ struct ModelValidationEdgeCaseTests {
 
 		// Check that failed parameters actually have error > tolerance
 		for (param, withinTol) in report.withinTolerance where !withinTol {
-			#expect(report.relativeErrors[param]! > 0.01,
+			#expect(try #require(report.relativeErrors[param]) > 0.01,
 				"Failed parameter should have error > tolerance")
 		}
 	}
@@ -272,7 +272,7 @@ struct ModelValidationEdgeCaseTests {
 	}
 
 	@Test("Reciprocal simulation with very wide x range")
-	func reciprocalSimulation_VeryWideXRange() {
+	func reciprocalSimulation_VeryWideXRange() throws {
 		// X values spanning large range - tests numerical stability
 		let simulator = ReciprocalRegressionSimulator<Double>(a: 0.2, b: 0.3, sigma: 0.05)
 		let data = simulator.simulate(n: 100, xRange: 1.0...100.0, seed: 20260812)
@@ -287,8 +287,8 @@ struct ModelValidationEdgeCaseTests {
 		// Expected means vary from ~1/(0.2+0.3*1) = 2.0 to ~1/(0.2+0.3*100) ≈ 0.033
 		// So there should be substantial variation in y values
 		let yValues = data.map(\.y)
-		let yMax = yValues.max()!
-		let yMin = yValues.min()!
+		let yMax = try #require(yValues.max())
+		let yMin = try #require(yValues.min())
 
 		// With low noise (sigma=0.05), y values should roughly span from ~0.03 to ~2
 		// Use conservative bound: 100 uniform samples in [1,100] almost always yield x < 10

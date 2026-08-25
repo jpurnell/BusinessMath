@@ -39,12 +39,12 @@ struct ProFormaAdjustmentTests {
 		let adjustedLegal = try legalExpense.applying(adjustment: settlement)
 
 		// Q1 should be reduced by $250K (addback reduces expense)
-		#expect(abs(adjustedLegal.timeSeries[periods[0]]! - 750_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedLegal.timeSeries[periods[0]]) - 750_000.0) < 1e-2)
 		// Q2 unchanged (no adjustment for that period)
-		#expect(abs(adjustedLegal.timeSeries[periods[1]]! - 100_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedLegal.timeSeries[periods[1]]) - 100_000.0) < 1e-2)
 
 		// Original account unchanged
-		#expect(abs(legalExpense.timeSeries[periods[0]]! - 500_000.0) < 1e-2)
+		#expect(abs(try #require(legalExpense.timeSeries[periods[0]]) - 500_000.0) < 1e-2)
 	}
 
 	@Test("Multiple adjustments applied to account")
@@ -89,13 +89,13 @@ struct ProFormaAdjustmentTests {
 		let adjustedGNA = try gnaExpense.applying(adjustments: adjustments)
 
 		// Q1: $800K + $100K (relocation) + $25K (comp) = $925K
-		#expect(abs(adjustedGNA.timeSeries[periods[0]]! - 925_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedGNA.timeSeries[periods[0]]) - 925_000.0) < 1e-2)
 		// Q2: $750K + $25K (comp only) = $775K
-		#expect(abs(adjustedGNA.timeSeries[periods[1]]! - 775_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedGNA.timeSeries[periods[1]]) - 775_000.0) < 1e-2)
 		// Q3: $750K + $25K (comp only) = $775K
-		#expect(abs(adjustedGNA.timeSeries[periods[2]]! - 775_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedGNA.timeSeries[periods[2]]) - 775_000.0) < 1e-2)
 		// Q4: $900K + $25K (comp) + $150K (acquisition) = $1,075K
-		#expect(abs(adjustedGNA.timeSeries[periods[3]]! - 1_075_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedGNA.timeSeries[periods[3]]) - 1_075_000.0) < 1e-2)
 	}
 
 	@Test("Empty adjustments returns unchanged account")
@@ -112,7 +112,7 @@ struct ProFormaAdjustmentTests {
 
 		let adjusted = try expense.applying(adjustments: [])
 
-		#expect(abs(adjusted.timeSeries[periods[0]]! - 100_000.0) < 1e-2)
+		#expect(abs(try #require(adjusted.timeSeries[periods[0]]) - 100_000.0) < 1e-2)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -159,7 +159,7 @@ struct ProFormaAdjustmentTests {
 
 		// Reported EBITDA: Revenue - COGS - OpEx = $1M - $400K - $300K = $300K (Q1)
 		let reportedEBITDA = incomeStmt.ebitda
-		#expect(abs(reportedEBITDA[periods[0]]! - 300_000.0) < 1e-2)
+		#expect(abs(try #require(reportedEBITDA[periods[0]]) - 300_000.0) < 1e-2)
 
 		// Add back one-time legal settlement in Q1
 		let adjustments = [
@@ -173,12 +173,12 @@ struct ProFormaAdjustmentTests {
 		let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: adjustments)
 
 		// Adjusted EBITDA: $300K + $50K = $350K (Q1)
-		#expect(abs(adjustedEBITDA[periods[0]]! - 350_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[0]]) - 350_000.0) < 1e-2)
 		// Q2 unchanged (no adjustments)
-		#expect(abs(adjustedEBITDA[periods[1]]! - 350_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[1]]) - 350_000.0) < 1e-2)
 
 		// Original EBITDA unchanged
-		#expect(abs(reportedEBITDA[periods[0]]! - 300_000.0) < 1e-2)
+		#expect(abs(try #require(reportedEBITDA[periods[0]]) - 300_000.0) < 1e-2)
 	}
 
 	@Test("Empty adjustments returns unadjusted EBITDA")
@@ -209,7 +209,7 @@ struct ProFormaAdjustmentTests {
 		let reportedEBITDA = incomeStmt.ebitda
 		let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: [])
 
-		#expect(reportedEBITDA[periods[0]]! == adjustedEBITDA[periods[0]]!)
+		#expect(try #require(reportedEBITDA[periods[0]]) == (try #require(adjustedEBITDA[periods[0]])))
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -256,7 +256,7 @@ struct ProFormaAdjustmentTests {
 
 		// Reported EBITDA 2024: $5.5M - $2.2M - $2.6M = $700K
 		let reportedEBITDA = incomeStmt.ebitda
-		#expect(abs(reportedEBITDA[periods[1]]! - 700_000.0) < 1e-2)
+		#expect(abs(try #require(reportedEBITDA[periods[1]]) - 700_000.0) < 1e-2)
 
 		// Quality of earnings adjustments
 		let adjustments = [
@@ -278,9 +278,9 @@ struct ProFormaAdjustmentTests {
 		let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: adjustments)
 
 		// Adjusted EBITDA 2023: $500K + $150K (owner) + $100K (facility) = $750K
-		#expect(abs(adjustedEBITDA[periods[0]]! - 750_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[0]]) - 750_000.0) < 1e-2)
 		// Adjusted EBITDA 2024: $700K + $150K (owner) = $850K
-		#expect(abs(adjustedEBITDA[periods[1]]! - 850_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[1]]) - 850_000.0) < 1e-2)
 	}
 
 	@Test("Quality of earnings: Multiple one-time charges")
@@ -317,7 +317,7 @@ struct ProFormaAdjustmentTests {
 
 		// Reported EBITDA: $10M - $4M - $4.5M = $1.5M
 		let reportedEBITDA = incomeStmt.ebitda
-		#expect(abs(reportedEBITDA[periods[0]]! - 1_500_000.0) < 1e-2)
+		#expect(abs(try #require(reportedEBITDA[periods[0]]) - 1_500_000.0) < 1e-2)
 
 		// Multiple addbacks
 		let adjustments = [
@@ -344,11 +344,11 @@ struct ProFormaAdjustmentTests {
 		let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: adjustments)
 
 		// Adjusted EBITDA: $1.5M + $250K + $150K + $300K = $2.2M
-		#expect(abs(adjustedEBITDA[periods[0]]! - 2_200_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[0]]) - 2_200_000.0) < 1e-2)
 
 		// Verify bridge calculation
 		let totalAdjustments = 250_000.0 + 150_000.0 + 300_000.0
-		#expect(adjustedEBITDA[periods[0]]! == reportedEBITDA[periods[0]]! + totalAdjustments)
+		#expect(try #require(adjustedEBITDA[periods[0]]) == (try #require(reportedEBITDA[periods[0]])) + totalAdjustments)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -390,7 +390,7 @@ struct ProFormaAdjustmentTests {
 
 		// Reported EBITDA: $50M - $20M - $18M = $12M
 		let reportedEBITDA = incomeStmt.ebitda
-		#expect(abs(reportedEBITDA[periods[0]]! - 12_000_000.0) < 1e-2)
+		#expect(abs(try #require(reportedEBITDA[periods[0]]) - 12_000_000.0) < 1e-2)
 
 		// Pro forma adjustments for LBO
 		let adjustments = [
@@ -418,16 +418,16 @@ struct ProFormaAdjustmentTests {
 		let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: adjustments)
 
 		// Adjusted EBITDA: $12M + $500K + $750K + $1.25M = $14.5M
-		#expect(abs(adjustedEBITDA[periods[0]]! - 14_500_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[0]]) - 14_500_000.0) < 1e-2)
 
 		// LBO pricing at 6.0× adjusted EBITDA multiple
 		let valuationMultiple = 6.0
-		let enterpriseValue = adjustedEBITDA[periods[0]]! * valuationMultiple
+		let enterpriseValue = try #require(adjustedEBITDA[periods[0]]) * valuationMultiple
 
 		#expect(abs(enterpriseValue - 87_000_000.0) < 1e-2)  // $14.5M × 6.0× = $87M
 
 		// Verify adjustment impact on valuation
-		let unadjustedEV = reportedEBITDA[periods[0]]! * valuationMultiple
+		let unadjustedEV = try #require(reportedEBITDA[periods[0]]) * valuationMultiple
 		let adjustmentImpact = enterpriseValue - unadjustedEV
 
 		#expect(abs(unadjustedEV - 72_000_000.0) < 1e-2)  // $12M × 6.0× = $72M
@@ -484,19 +484,19 @@ struct ProFormaAdjustmentTests {
 		let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: adjustments)
 
 		// Q1: ($12M - $5M - $5.5M) + $250K = $1.75M
-		#expect(abs(adjustedEBITDA[periods[0]]! - 1_750_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[0]]) - 1_750_000.0) < 1e-2)
 		// Q4: ($15M - $6.2M - $5.8M) + $250K = $3.25M
-		#expect(abs(adjustedEBITDA[periods[3]]! - 3_250_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[3]]) - 3_250_000.0) < 1e-2)
 
 		// Covenant test: Senior leverage ratio < 4.0×
 		// (Assuming $8M total debt)
 		let totalDebt = 8_000_000.0
 
 		// Calculate trailing 4-quarter adjusted EBITDA
-		let q1EBITDA = adjustedEBITDA[periods[0]]!
-		let q2EBITDA = adjustedEBITDA[periods[1]]!
-		let q3EBITDA = adjustedEBITDA[periods[2]]!
-		let q4EBITDA = adjustedEBITDA[periods[3]]!
+		let q1EBITDA = try #require(adjustedEBITDA[periods[0]])
+		let q2EBITDA = try #require(adjustedEBITDA[periods[1]])
+		let q3EBITDA = try #require(adjustedEBITDA[periods[2]])
+		let q4EBITDA = try #require(adjustedEBITDA[periods[3]])
 		let ttmAdjustedEBITDA = q1EBITDA + q2EBITDA + q3EBITDA + q4EBITDA
 
 		let seniorLeverageRatio = totalDebt / ttmAdjustedEBITDA
@@ -557,7 +557,7 @@ struct ProFormaAdjustmentTests {
 		#expect(decoded.description == "One-time legal settlement")
 		#expect(decoded.metadata["approvedBy"] == "Investment Committee")
 		#expect(decoded.metadata["confidence"] == "high")
-		#expect(abs(decoded.amount[periods[0]]! - 250_000.0) < 1e-2)
+		#expect(abs(try #require(decoded.amount[periods[0]]) - 250_000.0) < 1e-2)
 	}
 
 	// ═══════════════════════════════════════════════════════════
@@ -591,7 +591,7 @@ struct ProFormaAdjustmentTests {
 
 		// Reported EBITDA: $600K
 		let reportedEBITDA = incomeStmt.ebitda
-		#expect(abs(reportedEBITDA[periods[0]]! - 600_000.0) < 1e-2)
+		#expect(abs(try #require(reportedEBITDA[periods[0]]) - 600_000.0) < 1e-2)
 
 		// Negative adjustment (e.g., non-recurring revenue to exclude)
 		let adjustments = [
@@ -605,7 +605,7 @@ struct ProFormaAdjustmentTests {
 		let adjustedEBITDA = incomeStmt.adjustedEBITDA(adjustments: adjustments)
 
 		// Adjusted EBITDA: $600K - $100K = $500K
-		#expect(abs(adjustedEBITDA[periods[0]]! - 500_000.0) < 1e-2)
+		#expect(abs(try #require(adjustedEBITDA[periods[0]]) - 500_000.0) < 1e-2)
 	}
 
 	@Test("Adjustment with empty metadata")

@@ -183,7 +183,7 @@ struct InventorySimulatorTests {
 	// MARK: - Edge cases
 
 	@Test("Rejects empty demand history")
-	func rejectsEmptyHistory() {
+	func rejectsEmptyHistory() throws {
 		#expect(throws: OperationsError.self) {
 			// Seeded for reproducibility only: the empty history is rejected before any
 			// path is drawn, so the assertion cannot vary.
@@ -197,7 +197,7 @@ struct InventorySimulatorTests {
 	}
 
 	@Test("Rejects invalid service level")
-	func rejectsInvalidServiceLevel() {
+	func rejectsInvalidServiceLevel() throws {
 		#expect(throws: OperationsError.self) {
 			// Seeded for reproducibility only: the invalid service level is rejected
 			// before any path is drawn, so the assertion cannot vary.

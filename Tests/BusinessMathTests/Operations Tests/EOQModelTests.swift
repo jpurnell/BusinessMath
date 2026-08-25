@@ -121,7 +121,7 @@ struct EOQModelTests {
 	// MARK: - Edge cases
 
 	@Test("Rejects zero annual demand")
-	func rejectsZeroDemand() {
+	func rejectsZeroDemand() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try EOQModel<Double>.calculate(
 				annualDemand: 0.0,
@@ -132,7 +132,7 @@ struct EOQModelTests {
 	}
 
 	@Test("Rejects negative ordering cost")
-	func rejectsNegativeOrderingCost() {
+	func rejectsNegativeOrderingCost() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try EOQModel<Double>.calculate(
 				annualDemand: 936.0,
@@ -143,7 +143,7 @@ struct EOQModelTests {
 	}
 
 	@Test("Rejects zero holding cost")
-	func rejectsZeroHoldingCost() {
+	func rejectsZeroHoldingCost() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try EOQModel<Double>.calculate(
 				annualDemand: 936.0,

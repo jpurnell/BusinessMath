@@ -33,7 +33,7 @@ struct MetalShaderSourceTests {
 	/// that has nothing to do with the text under test. Compiling a trivial kernel
 	/// first separates the two, so a skip means "no compiler" and a failure means
 	/// "our source is broken".
-	private func compiler() -> MTLDevice? {
+	private func compiler() throws -> MTLDevice? {
 		guard let device = MTLCreateSystemDefaultDevice() else { return nil }
 		let trivial = """
 		#include <metal_stdlib>
@@ -48,7 +48,7 @@ struct MetalShaderSourceTests {
 
 	@Test("The shared RNG source compiles")
 	func sharedSourceCompiles() throws {
-		guard let device = compiler() else { return }
+		guard let device = try compiler() else { return }
 
 		let source = """
 		#include <metal_stdlib>
@@ -80,7 +80,7 @@ struct MetalShaderSourceTests {
 	/// radius is 0, so both variates are exactly the mean.
 	@Test("The pole guard holds on the GPU")
 	func poleGuardHoldsOnDevice() throws {
-		guard let device = compiler() else { return }
+		guard let device = try compiler() else { return }
 
 		let source = """
 		#include <metal_stdlib>
@@ -140,7 +140,7 @@ struct MetalShaderSourceTests {
 	/// package reads that `nil` as "no GPU here" and passes.
 	@Test("Both production kernel libraries still build")
 	func productionKernelsCompile() throws {
-		guard compiler() != nil else { return }
+		guard try compiler() != nil else { return }
 
 		// Compiling is necessary but not sufficient: a library that builds and then
 		// exposes none of the entry points the package dispatches to is the same silent

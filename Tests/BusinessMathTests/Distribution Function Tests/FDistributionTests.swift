@@ -316,7 +316,7 @@ struct FDistributionTests {
 	}
 	
 	@Test("F-distribution mode property")
-	func fModeProperty() {
+	func fModeProperty() throws {
 		// Mode = [df1 * (df2 - 2)] / [df2 * (df1 + 2)] for df1 > 2
 		let df1 = 5
 		let df2 = 10
@@ -341,7 +341,8 @@ struct FDistributionTests {
 			histogram[binIndex] += 1
 		}
 
-		let maxBinIndex = histogram.firstIndex(of: histogram.max()!)!
+		let peakValue = try #require(histogram.max())
+		let maxBinIndex = try #require(histogram.firstIndex(of: peakValue))
 		let empiricalMode = Double(maxBinIndex) / Double(binCount) * maxVal
 
 		let tolerance = 0.3

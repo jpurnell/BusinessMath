@@ -82,7 +82,7 @@ struct AccountTests {
 	// MARK: - Validation Tests
 
 	@Test("Account creation fails with empty name")
-	func accountCreationEmptyName() {
+	func accountCreationEmptyName() throws {
 		let entity = makeEntity()
 		let timeSeries = makeTimeSeries()
 
@@ -97,7 +97,7 @@ struct AccountTests {
 	}
 
 	@Test("Account creation fails with whitespace-only name")
-	func accountCreationWhitespaceName() {
+	func accountCreationWhitespaceName() throws {
 		let entity = makeEntity()
 		let timeSeries = makeTimeSeries()
 
@@ -112,7 +112,7 @@ struct AccountTests {
 	}
 
 	@Test("Account creation fails with empty time series")
-	func accountCreationEmptyTimeSeries() {
+	func accountCreationEmptyTimeSeries() throws {
 		let entity = makeEntity()
 		let emptyTimeSeries = TimeSeries<Double>(periods: [], values: [])
 

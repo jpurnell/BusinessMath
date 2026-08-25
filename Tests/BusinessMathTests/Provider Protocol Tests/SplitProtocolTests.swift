@@ -10,6 +10,7 @@ struct SplitProtocolTests {
 	// MARK: - Mock Providers
 
 	/// A provider that only provides stock prices — no financials, no metrics.
+	// Justification: A test double whose callCount is incremented and read from a single task within one test; it is never shared concurrently.
 	final class MockStockPriceOnly: StockPriceProvider, @unchecked Sendable {
 		var callCount = 0
 
@@ -26,6 +27,7 @@ struct SplitProtocolTests {
 	}
 
 	/// A provider that provides financial statements.
+	// Justification: A test double whose call counters are incremented and read from a single task within one test; they are never shared concurrently.
 	final class MockFinancialsOnly: FinancialsProvider, @unchecked Sendable {
 		var incomeCallCount = 0
 		var balanceCallCount = 0
@@ -93,6 +95,7 @@ struct SplitProtocolTests {
 	}
 
 	/// A provider that provides market metrics.
+	// Justification: A metrics stub whose callCount is bumped by fetchMetrics and read by the same test body; no second task ever touches it.
 	final class MockMetricsOnly: MarketMetricsProvider, @unchecked Sendable {
 		var callCount = 0
 
@@ -116,6 +119,7 @@ struct SplitProtocolTests {
 	}
 
 	/// A full provider conforming to all three protocols (satisfies MarketDataProvider typealias).
+	// Justification: All stored properties are immutable (let) after init and delegate to test doubles used from a single task.
 	final class MockFullProvider: StockPriceProvider, FinancialsProvider, MarketMetricsProvider, @unchecked Sendable {
 		private let stockProvider = MockStockPriceOnly()
 		private let financialsProvider = MockFinancialsOnly()

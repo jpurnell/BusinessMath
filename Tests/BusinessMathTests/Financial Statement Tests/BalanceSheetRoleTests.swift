@@ -178,7 +178,7 @@ struct BalanceSheetRoleTests {
 
 	@Test("BalanceSheetRole decodes from string")
 	func testDecodeFromString() throws {
-		let json = "\"longTermDebt\"".data(using: .utf8)!
+		let json = try #require("\"longTermDebt\"".data(using: .utf8))
 		let decoded = try JSONDecoder().decode(BalanceSheetRole.self, from: json)
 
 		#expect(decoded == BalanceSheetRole.longTermDebt)

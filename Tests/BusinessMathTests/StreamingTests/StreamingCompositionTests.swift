@@ -167,7 +167,7 @@ struct StreamingCompositionTests {
         #expect(combinations.count >= 2)
 
         // Last combination should be (3.0, 20.0)
-        let last = combinations.last!
+        let last = try #require(combinations.last)
         #expect(abs(last.0 - 3.0) < 1e-6 && abs(last.1 - 20.0) < 1e-6)
     }
 
@@ -374,6 +374,7 @@ struct StreamingCompositionTests {
 // MARK: - Helper Types
 
 /// AsyncSequence that emits values with a delay
+// Justification: All stored properties are immutable (let) after init; the type only vends iterators and holds no mutable state itself.
 struct AsyncDelayedStream<Element: Sendable>: AsyncSequence, @unchecked Sendable {
     typealias AsyncIterator = Iterator
 
@@ -389,6 +390,7 @@ struct AsyncDelayedStream<Element: Sendable>: AsyncSequence, @unchecked Sendable
         Iterator(values: values, delay: delay)
     }
 
+    // Justification: The mutable index is confined to next(), which the async for-in protocol calls serially on a single iterator instance.
     struct Iterator: AsyncIteratorProtocol, @unchecked Sendable {
         private var index: Int = 0
         private let values: [Element]

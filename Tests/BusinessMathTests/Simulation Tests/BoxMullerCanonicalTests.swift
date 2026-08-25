@@ -235,7 +235,7 @@ struct BoxMullerCanonicalTests {
 	@Test("The radius entry point consumes exactly one uniform")
 	func radiusDrawsOneUniform() {
 		// A counting generator: the pair takes two words, the radius one.
-		final class Counter: @unchecked Sendable { var count = 0 } // Justification: test-local, single-threaded
+		final class Counter: @unchecked Sendable { var count = 0 } // Justification: A test-local counter mutated and read from one task inside a single test body; never shared across concurrent contexts.
 		struct CountingRNG: RandomNumberGenerator {
 			let counter: Counter
 			func next() -> UInt64 {

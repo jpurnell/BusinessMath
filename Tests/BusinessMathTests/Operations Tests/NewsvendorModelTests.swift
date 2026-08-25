@@ -40,7 +40,7 @@ struct NewsvendorModelTests {
 	}
 
 	@Test("Critical fractile rejects negative costs")
-	func criticalFractileRejectsNegative() {
+	func criticalFractileRejectsNegative() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try NewsvendorModel<Double>.criticalFractile(
 				underageCost: -1.0,
@@ -56,7 +56,7 @@ struct NewsvendorModelTests {
 	}
 
 	@Test("Critical fractile rejects zero costs")
-	func criticalFractileRejectsZero() {
+	func criticalFractileRejectsZero() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try NewsvendorModel<Double>.criticalFractile(
 				underageCost: 0.0,
@@ -170,7 +170,7 @@ struct NewsvendorModelTests {
 	}
 
 	@Test("Rejects negative underage cost")
-	func rejectsNegativeUnderageCost() {
+	func rejectsNegativeUnderageCost() throws {
 		#expect(throws: OperationsError.self) {
 			_ = try NewsvendorModel<Double>.optimalQuantity(
 				meanDemand: 100.0,

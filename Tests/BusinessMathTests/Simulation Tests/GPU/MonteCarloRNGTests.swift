@@ -46,6 +46,16 @@ import Metal
 @Suite("Monte Carlo GPU RNG Quality Tests")
 struct MonteCarloRNGTests {
 
+	/// Little-endian byte encoding of a `Float`, for the GPU's parameter buffer.
+	///
+	/// Written arithmetically rather than through `withUnsafeBytes`, so no pointer
+	/// is handed to a closure and none can outlive the block it came from.
+	private static func littleEndianBytes(_ value: Float) -> [UInt8] {
+		let bits = value.bitPattern
+		return (0..<4).map { UInt8(truncatingIfNeeded: bits >> (8 * UInt32($0))) }
+	}
+
+
     #if canImport(Metal)
 
     // MARK: - Device Access
@@ -60,7 +70,7 @@ struct MonteCarloRNGTests {
     /// Compiling a trivial kernel first is what separates "no shader compiler here,
     /// skip" from "our source is broken, fail". Without that split every assertion
     /// below would be reported as a shader bug on a machine that simply has no GPU.
-    private func gpuContext() -> GPUContext? {
+    private func gpuContext() throws -> GPUContext? {
         guard let device = MTLCreateSystemDefaultDevice() else { return nil }
         let trivial = """
         #include <metal_stdlib>
@@ -93,7 +103,7 @@ struct MonteCarloRNGTests {
     /// thread is slow by GPU standards and deliberately so: the point is the order
     /// of the draws, which a parallel dispatch destroys.
     private func streamUniforms(count: Int, seed: UInt64) throws -> [Float]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>
@@ -122,7 +132,7 @@ struct MonteCarloRNGTests {
 
     /// `count` successive normal variates from **one** thread's stream.
     private func streamNormals(count: Int, mean: Float, stdDev: Float, seed: UInt64) throws -> [Float]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>
@@ -149,8 +159,8 @@ struct MonteCarloRNGTests {
         }
         """
 
-        let meanBytes = withUnsafeBytes(of: mean) { Array($0) }
-        let stdDevBytes = withUnsafeBytes(of: stdDev) { Array($0) }
+        let meanBytes = Self.littleEndianBytes(mean)
+        let stdDevBytes = Self.littleEndianBytes(stdDev)
         return try runSingleThread(gpu, source: source, function: "streamNormals",
                                    count: count, seed: seed,
                                    extraBytes: [meanBytes, stdDevBytes])
@@ -162,7 +172,7 @@ struct MonteCarloRNGTests {
     /// read back in thread order. It is a sample across streams, not along one, and
     /// only the cross-thread tests interpret it.
     private func firstDrawPerThread(count: Int, seed: UInt64) throws -> [Float]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>
@@ -219,7 +229,7 @@ struct MonteCarloRNGTests {
     /// assert on `(0, 0)` directly. Inferring it from output would not: a thread stuck
     /// in the absorbing state emits `0.0f`, and `0.0f` is also a legitimate draw.
     private func seededStates(count: Int, seed: UInt64) throws -> [SIMD2<UInt64>]? {
-        guard let gpu = gpuContext() else { return nil }
+        guard let gpu = try gpuContext() else { return nil }
 
         let source = """
         #include <metal_stdlib>

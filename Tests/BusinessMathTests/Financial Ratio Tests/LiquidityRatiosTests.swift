@@ -26,14 +26,14 @@ struct LiquidityRatiosTests {
     }
 
     @Test("Current ratio throws on zero liabilities")
-    func testCurrentRatioThrows() {
+    func testCurrentRatioThrows() throws {
         #expect(throws: BusinessMathError.self) {
             _ = try currentRatio(currentAssets: 15000.0, currentLiabilities: 0.0)
         }
     }
 
     @Test("Quick ratio throws on zero liabilities")
-    func testQuickRatioThrows() {
+    func testQuickRatioThrows() throws {
         #expect(throws: BusinessMathError.self) {
             _ = try quickRatio(currentAssets: 20000.0, inventory: 5000.0, currentLiabilities: 0.0)
         }

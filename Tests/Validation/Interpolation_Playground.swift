@@ -546,7 +546,7 @@ let pchipMono = buildPCHIP(xs: xsMono, ys: ysMono)
 let akimaMono = buildAkima(xs: xsMono, ys: ysMono, modified: false)
 let makimaMono = buildAkima(xs: xsMono, ys: ysMono, modified: true)
 
-func minMaxOver(samples: Int, eval: (Double) -> Double) -> (Double, Double) {
+func minMaxOver(samples: Int, eval: (Double) throws -> Double) -> (Double, Double) {
     var lo = Double.infinity
     var hi = -Double.infinity
     for i in 0...samples {
@@ -558,8 +558,8 @@ func minMaxOver(samples: Int, eval: (Double) -> Double) -> (Double, Double) {
     return (lo, hi)
 }
 
-let dataMin = ysMono.min()!
-let dataMax = ysMono.max()!
+let dataMin = try #require(ysMono.min())
+let dataMax = try #require(ysMono.max())
 print("  Data range: [\(dataMin), \(dataMax)]")
 
 let (csMin, csMax) = minMaxOver(samples: 600) { evalNaturalCubicSpline(csMono, at: $0) }

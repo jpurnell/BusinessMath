@@ -26,7 +26,7 @@ struct ArticleRestorationProbe {
 	static func time<T>(_ label: String, _ body: () throws -> T) rethrows -> T {
 		let t0 = Date()
 		let r = try body()
-		print("[\(label)] \(String(format: "%.2f", Date().timeIntervalSince(t0)))s")
+		print("[\(label)] \(Date().timeIntervalSince(t0).number(2))s")
 		return r
 	}
 

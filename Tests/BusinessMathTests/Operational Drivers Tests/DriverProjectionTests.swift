@@ -48,7 +48,7 @@ struct DriverProjectionTests {
 	// MARK: - Monte Carlo Projection Tests
 
 	@Test("Monte Carlo projection with deterministic driver")
-	func monteCarloProjectionDeterministic() {
+	func monteCarloProjectionDeterministic() throws {
 		let driver = DeterministicDriver(name: "Rent", value: 10_000.0)
 		let periods = Period.year(2025).quarters()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -57,7 +57,7 @@ struct DriverProjectionTests {
 
 		// Check statistics for each period
 		for period in periods {
-			let stats = results.statistics[period]!
+			let stats = try #require(results.statistics[period])
 
 			// Mean should equal the deterministic value
 			#expect(abs(stats.mean - 10_000.0) < 0.01)
@@ -68,7 +68,7 @@ struct DriverProjectionTests {
 	}
 
 	@Test("Monte Carlo projection with probabilistic driver")
-	func monteCarloProjectionProbabilistic() {
+	func monteCarloProjectionProbabilistic() throws {
 		let driver = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 		let periods = Period.year(2025).quarters()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -77,7 +77,7 @@ struct DriverProjectionTests {
 
 		// Check statistics for each period
 		for period in periods {
-			let stats = results.statistics[period]!
+			let stats = try #require(results.statistics[period])
 
 			// Mean should be close to 1000
 			#expect(abs(stats.mean - 1000.0) < 30.0, "Mean should be close to 1000")
@@ -88,7 +88,7 @@ struct DriverProjectionTests {
 	}
 
 	@Test("Monte Carlo projection statistics consistency")
-	func monteCarloStatisticsConsistency() {
+	func monteCarloStatisticsConsistency() throws {
 		let driver = ProbabilisticDriver<Double>.normal(name: "Value", mean: 50.0, stdDev: 10.0)
 		let periods = [Period.month(year: 2025, month: 1)]
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -96,8 +96,8 @@ struct DriverProjectionTests {
 		let results = projection.projectMonteCarlo(iterations: 10_000)
 
 		let period = periods[0]
-		let stats = results.statistics[period]!
-		let pctiles = results.percentiles[period]!
+		let stats = try #require(results.statistics[period])
+		let pctiles = try #require(results.percentiles[period])
 
 		// Basic sanity checks
 		#expect(pctiles.p5 < pctiles.p25)
@@ -112,7 +112,7 @@ struct DriverProjectionTests {
 	// MARK: - Time Series Extraction Tests
 
 	@Test("Extract expected (mean) time series")
-	func extractExpectedTimeSeries() {
+	func extractExpectedTimeSeries() throws {
 		let driver = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 		let periods = Period.year(2025).quarters()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -124,13 +124,13 @@ struct DriverProjectionTests {
 
 		// All values should be close to 1000
 		for period in periods {
-			let value = expectedSeries[period]!
+			let value = try #require(expectedSeries[period])
 			#expect(abs(value - 1000.0) < 50.0)
 		}
 	}
 
 	@Test("Extract median time series")
-	func extractMedianTimeSeries() {
+	func extractMedianTimeSeries() throws {
 		let driver = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 		let periods = Period.year(2025).quarters()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -142,13 +142,13 @@ struct DriverProjectionTests {
 
 		// All values should be close to 1000
 		for period in periods {
-			let value = medianSeries[period]!
+			let value = try #require(medianSeries[period])
 			#expect(abs(value - 1000.0) < 50.0)
 		}
 	}
 
 	@Test("Extract percentile time series")
-	func extractPercentileTimeSeries() {
+	func extractPercentileTimeSeries() throws {
 		let driver = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 		let periods = Period.year(2025).quarters()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -161,9 +161,9 @@ struct DriverProjectionTests {
 
 		// Check ordering: P5 < P50 < P95
 		for period in periods {
-			let p5 = p5Series[period]!
-			let p50 = p50Series[period]!
-			let p95 = p95Series[period]!
+			let p5 = try #require(p5Series[period])
+			let p50 = try #require(p50Series[period])
+			let p95 = try #require(p95Series[period])
 
 			#expect(p5 < p50)
 			#expect(p50 < p95)
@@ -171,7 +171,7 @@ struct DriverProjectionTests {
 	}
 
 	@Test("Extract standard deviation time series")
-	func extractStdDevTimeSeries() {
+	func extractStdDevTimeSeries() throws {
 		let driver = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 		let periods = Period.year(2025).quarters()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -183,7 +183,7 @@ struct DriverProjectionTests {
 
 		// All std devs should be close to 100
 		for period in periods {
-			let stdDev = stdDevSeries[period]!
+			let stdDev = try #require(stdDevSeries[period])
 			print("Std Dev: \(stdDev)")
 			#expect(abs(stdDev - 100.0) < 20.0)
 		}
@@ -192,7 +192,7 @@ struct DriverProjectionTests {
 	// MARK: - Integration Tests
 
 	@Test("Revenue projection with uncertainty")
-	func revenueProjectionWithUncertainty() {
+	func revenueProjectionWithUncertainty() throws {
 		let quantity = ProbabilisticDriver<Double>.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
 		let price = ProbabilisticDriver<Double>.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
 		let revenue = quantity * price
@@ -204,7 +204,7 @@ struct DriverProjectionTests {
 
 		// Expected revenue ≈ 1000 × 100 = 100,000 per quarter
 		for period in periods {
-			let stats = results.statistics[period]!
+			let stats = try #require(results.statistics[period])
 			#expect(abs(stats.mean - 100_000.0) < 10_000.0)
 		}
 
@@ -215,13 +215,13 @@ struct DriverProjectionTests {
 
 		// Verify ordering
 		for period in periods {
-			#expect(downside[period]! < expected[period]!)
-			#expect(expected[period]! < upside[period]!)
+			#expect(try #require(downside[period]) < (try #require(expected[period])))
+			#expect(try #require(expected[period]) < (try #require(upside[period])))
 		}
 	}
 
 	@Test("Profit projection with full Monte Carlo")
-	func profitProjectionMonteCarlo() {
+	func profitProjectionMonteCarlo() throws {
 		// Revenue = Quantity × Price (both uncertain)
 		let quantity = ProbabilisticDriver<Double>.normal(name: "Quantity", mean: 1000.0, stdDev: 100.0)
 		let price = ProbabilisticDriver<Double>.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
@@ -243,7 +243,7 @@ struct DriverProjectionTests {
 
 		// Expected profit ≈ (1000 × 100) - (20,000 + 50 × 1000) = 100,000 - 70,000 = 30,000
 		for period in periods {
-			let stats = results.statistics[period]!
+			let stats = try #require(results.statistics[period])
 			#expect(abs(stats.mean - 30_000.0) < 5000.0, "Expected profit around 30,000")
 		}
 
@@ -254,13 +254,13 @@ struct DriverProjectionTests {
 
 		// Verify we have uncertainty range
 		for period in periods {
-			#expect(worstCase[period]! < expectedProfit[period]!)
-			#expect(expectedProfit[period]! < bestCase[period]!)
+			#expect(try #require(worstCase[period]) < (try #require(expectedProfit[period])))
+			#expect(try #require(expectedProfit[period]) < (try #require(bestCase[period])))
 		}
 	}
 
 	@Test("Multi-period projection maintains independent samples")
-	func multiPeriodIndependence() {
+	func multiPeriodIndependence() throws {
 		let driver = ProbabilisticDriver<Double>.normal(name: "Sales", mean: 1000.0, stdDev: 100.0)
 		let periods = Period.year(2025).months()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -268,8 +268,8 @@ struct DriverProjectionTests {
 		let results = projection.projectMonteCarlo(iterations: 1000)
 
 		// Each period should have similar statistics (independent sampling)
-		let firstPeriodMean = results.statistics[periods[0]]!.mean
-		let lastPeriodMean = results.statistics[periods[11]]!.mean
+		let firstPeriodMean = try #require(results.statistics[periods[0]]).mean
+		let lastPeriodMean = try #require(results.statistics[periods[11]]).mean
 
 		#expect(abs(firstPeriodMean - lastPeriodMean) < 100.0, "Periods should have similar means")
 	}
@@ -279,7 +279,7 @@ struct DriverProjectionTests {
 struct DriverProjectionAdditionalTests {
 
 	@Test("Expected time series equals statistics.mean")
-	func expectedEqualsMean() {
+	func expectedEqualsMean() throws {
 		let drv = ProbabilisticDriver<Double>.normal(name: "X", mean: 100.0, stdDev: 15.0)
 		let periods = Period.year(2025).quarters()
 		let proj = DriverProjection(driver: drv, periods: periods)
@@ -288,21 +288,21 @@ struct DriverProjectionAdditionalTests {
 		let expected = res.expected()
 
 		for p in periods {
-			let m = res.statistics[p]!.mean
-			#expect(abs(expected[p]! - m) < 1e-6)
+			let m = try #require(res.statistics[p]).mean
+			#expect(abs(try #require(expected[p]) - m) < 1e-6)
 		}
 	}
 
 	@Test("Percentiles are within min/max for all periods")
-	func percentilesWithinExtremes() {
+	func percentilesWithinExtremes() throws {
 		let drv = ProbabilisticDriver<Double>.normal(name: "N", mean: 0.0, stdDev: 1.0)
 		let periods = Period.year(2025).months()
 		let proj = DriverProjection(driver: drv, periods: periods)
 		let res = proj.projectMonteCarlo(iterations: 2000)
 
 		for p in periods {
-			let s = res.statistics[p]!
-			let q = res.percentiles[p]!
+			let s = try #require(res.statistics[p])
+			let q = try #require(res.percentiles[p])
 			#expect(s.min <= q.p5 && q.p5 <= q.p25 && q.p25 <= q.p50 && q.p50 <= q.p75 && q.p75 <= q.p95)
 			#expect(q.p95 <= s.max)
 		}

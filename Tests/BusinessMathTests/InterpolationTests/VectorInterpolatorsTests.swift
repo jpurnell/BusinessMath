@@ -82,7 +82,7 @@ struct VectorInterpolatorsTests {
     }
 
     @Test("Mismatched vector dimensions throws")
-    func mismatchedVectorDimensions() {
+    func mismatchedVectorDimensions() throws {
         let xs: [Double] = [0, 1, 2]
         let ys: [VectorN<Double>] = [
             VectorN([0.0, 10.0]),

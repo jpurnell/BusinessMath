@@ -1,5 +1,13 @@
 # BusinessMath Library Summaries & Metrics
 
+> **Metrics tooling removed, 2026-08-24.** The generator scripts this file used to
+> index wrote to pre-v2 paths (`Instruction Set/05_SUMMARIES`,
+> `development-guidelines/05_SUMMARIES`) that the v2 migration deleted, so they had
+> not run since April 2026. Their output is preserved in `library_metrics.json` and
+> `history/`. `quality-gate generate-pulse` and the `doc-coverage` checker cover the
+> same ground and are actually run.
+
+
 This directory contains tools for tracking and reporting on the BusinessMath library's health and statistics.
 
 ## Quick Start

@@ -23,7 +23,7 @@ struct OptimizationErrorPrecisionTests {
 	/// Two dimensions that disagree. Distinct from "a dimension is absent or nonsensical",
 	/// which remains `invalidInput`.
 	@Test("A right-hand side of the wrong length is a dimension mismatch")
-	func vectorLengthMismatch() {
+	func vectorLengthMismatch() throws {
 		let matrix: [[Double]] = [[2, 1], [1, 3]]
 		let tooShort: [Double] = [1]
 
@@ -34,7 +34,7 @@ struct OptimizationErrorPrecisionTests {
 	}
 
 	@Test("A non-square matrix is a dimension mismatch")
-	func nonSquareMatrix() {
+	func nonSquareMatrix() throws {
 		let ragged: [[Double]] = [[1, 2, 3], [4, 5, 6]]
 
 		#expect(isDimensionMismatch(try invertMatrix(ragged)))
@@ -43,7 +43,7 @@ struct OptimizationErrorPrecisionTests {
 	/// A row whose length disagrees with the matrix's own row count — the mismatch is internal
 	/// to the argument, not between two arguments.
 	@Test("An internally ragged matrix is a dimension mismatch, not merely invalid")
-	func raggedRows() {
+	func raggedRows() throws {
 		let ragged: [[Double]] = [[1, 2], [3]]
 		let vector: [Double] = [1, 2]
 
@@ -52,7 +52,7 @@ struct OptimizationErrorPrecisionTests {
 
 	/// The condition that is *not* a mismatch: nothing disagrees, the input is simply empty.
 	@Test("An empty matrix stays invalidInput — nothing disagrees with anything")
-	func emptyIsNotAMismatch() {
+	func emptyIsNotAMismatch() throws {
 		let empty: [[Double]] = []
 		let noValues: [Double] = []
 
@@ -70,7 +70,7 @@ struct OptimizationErrorPrecisionTests {
 	/// `[[1e-12, 1], [1, 1]]` solves perfectly well: the guard fires on the largest available
 	/// pivot, not on the diagonal entry as written.
 	@Test("A near-zero pivot is instability, not singularity")
-	func nearlySingularIsInstability() {
+	func nearlySingularIsInstability() throws {
 		let nearlySingular: [[Double]] = [[1e-12, 1], [1e-13, 2]]
 		let vector: [Double] = [1, 2]
 
@@ -80,7 +80,7 @@ struct OptimizationErrorPrecisionTests {
 	/// And the genuinely singular case must keep saying so — the split is only worth making if
 	/// both sides stay accurate.
 	@Test("An exactly singular matrix is still singularMatrix")
-	func exactlySingularStaysSingular() {
+	func exactlySingularStaysSingular() throws {
 		let singular: [[Double]] = [[0, 0], [1, 1]]
 		let vector: [Double] = [1, 2]
 

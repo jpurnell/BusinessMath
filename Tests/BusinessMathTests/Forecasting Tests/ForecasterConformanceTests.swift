@@ -74,7 +74,7 @@ struct ForecasterConformanceTests {
         let history = monthly([1, 2, 3, 4, 5])
         let forecast = try LinearTrend<Double>().trainedForecast(from: history, horizon: 2)
         // First forecast period must be strictly after the last training period.
-        #expect(forecast.periods.first! > history.periods.last!)
+        #expect(try #require(forecast.periods.first) > (try #require(history.periods.last)))
     }
 
     // MARK: - Holt-Winters & Moving-Average conformance

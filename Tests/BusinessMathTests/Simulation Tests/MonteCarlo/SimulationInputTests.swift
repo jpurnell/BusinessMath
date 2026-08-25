@@ -12,6 +12,7 @@ import Numerics
 @testable import BusinessMath
 
 /// Thread-safe sequential sampler for testing purposes
+// Justification: The single mutable stored property (index) is protected by an NSLock; there is no unguarded access.
 final class SequentialSampler: @unchecked Sendable {
 	private let values: [Double]
 	private var index = 0

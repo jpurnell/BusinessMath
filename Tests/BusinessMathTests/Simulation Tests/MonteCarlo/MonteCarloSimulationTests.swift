@@ -31,6 +31,7 @@ fileprivate func deterministicUniforms(seed: UInt64, count: Int) -> [Double] {
 /// Marked @unchecked Sendable because tests run single-threaded;
 /// the sampler closure is @Sendable and only calls next(), avoiding
 /// captured var mutation warnings.
+// Justification: `index` is mutated only by next(), which this test calls sequentially from a single task; the feed is never shared across concurrent contexts.
 fileprivate final class SamplerFeed: @unchecked Sendable {
 	private let values: [Double]
 	private var index = 0
@@ -221,7 +222,7 @@ struct MonteCarloSimulationTests {
 	}
 	
 	@Test("MonteCarloSimulation error handling - no inputs")
-	func monteCarloSimulationNoInputs() {
+	func monteCarloSimulationNoInputs() throws {
 		let simulation = MonteCarloSimulation(iterations: 100, seed: 0x6FB5_D248) { inputs in
 			return 42.0
 		}
@@ -233,7 +234,7 @@ struct MonteCarloSimulationTests {
 	}
 	
 	@Test("MonteCarloSimulation error handling - zero iterations")
-	func monteCarloSimulationZeroIterations() {
+	func monteCarloSimulationZeroIterations() throws {
 		var simulation = MonteCarloSimulation(iterations: 0, seed: 0x70C6_E359) { inputs in
 			return inputs[0]
 		}
@@ -472,7 +473,7 @@ struct MonteCarloSimulationAdditionalTests {
 	}
 	
 	@Test("runCorrelated rejects ρ=1 (singular) for two normals")
-	func correlatedRejectsPerfectPositive() {
+	func correlatedRejectsPerfectPositive() throws {
 		let x = SimulationInput(name: "X", distribution: DistributionNormal(0.0, 1.0))
 		let y = SimulationInput(name: "Y", distribution: DistributionNormal(0.0, 1.0))
 		let corr = [

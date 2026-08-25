@@ -9,7 +9,7 @@ import Foundation
 import BusinessMath
 
 /// Examples demonstrating the linearRegression and polynomialRegression convenience functions.
-public func runLinearRegressionConvenienceExamples() {
+public func runLinearRegressionConvenienceExamples() throws {
     print("\n========================================")
     print("Linear Regression Convenience Examples")
     print("========================================\n")

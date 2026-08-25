@@ -307,7 +307,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Current Assets: 80k, Current Liabilities: 20k, Ratio: 4.0
-		#expect(abs(ratio[q1]! - 4.0) < 1e-6)
+		#expect(abs(try #require(ratio[q1]) - 4.0) < 1e-6)
 	}
 
 	@Test("Debt to equity is interest-bearing debt divided by total equity")
@@ -330,7 +330,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Interest-bearing debt: 80k, Equity: 80k, Ratio: 1.0
-		#expect(abs(ratio[q1]! - 1.0) < 1e-6)
+		#expect(abs(try #require(ratio[q1]) - 1.0) < 1e-6)
 	}
 
 	@Test("Equity ratio is total equity divided by total assets")
@@ -358,7 +358,7 @@ struct BalanceSheetTests {
 
 		// Assets: 180k, Equity: 80k, Ratio: 0.444...
 		let expectedRatio = 80_000.0 / 180_000.0
-		#expect(abs(ratio[q1]! - expectedRatio) < 0.001)
+		#expect(abs(try #require(ratio[q1]) - expectedRatio) < 0.001)
 	}
 
 	@Test("Working capital is current assets minus current liabilities")
@@ -491,8 +491,8 @@ struct BalanceSheetTests {
 		#expect(materialized.totalEquity[q1] == 80_000)
 		#expect(materialized.currentAssets[q1] == 80_000)
 		#expect(materialized.currentLiabilities[q1] == 20_000)
-		#expect(abs(materialized.currentRatio[q1]! - 4.0) < 1e-6)
-		#expect(abs(materialized.debtToEquity[q1]! - 1.0) < 1e-6)  // Interest-bearing debt (80k) / Equity (80k)
+		#expect(abs(try #require(materialized.currentRatio[q1]) - 4.0) < 1e-6)
+		#expect(abs(try #require(materialized.debtToEquity[q1]) - 1.0) < 1e-6)  // Interest-bearing debt (80k) / Equity (80k)
 		#expect(materialized.workingCapital[q1] == 60_000)
 	}
 
@@ -534,11 +534,11 @@ struct BalanceSheetTests {
 		// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
 		// = (50k + 30k + 20k - 20k) / 20k
 		// = 80k / 20k = 4.0
-		#expect(abs(quickRatio[q1]! - 4.0) < 1e-6, "Quick ratio should be 4.0")
+		#expect(abs(try #require(quickRatio[q1]) - 4.0) < 1e-6, "Quick ratio should be 4.0")
 
 		// Quick ratio should be lower than current ratio (due to inventory exclusion)
 		let currentRatio = balanceSheet.currentRatio
-		#expect(quickRatio[q1]! < currentRatio[q1]!, "Quick ratio should be less than current ratio when inventory exists")
+		#expect(try #require(quickRatio[q1]) < (try #require(currentRatio[q1])), "Quick ratio should be less than current ratio when inventory exists")
 	}
 
 	@Test("Quick Ratio - no inventory")
@@ -564,7 +564,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Without inventory, quick ratio should equal current ratio
-		#expect(quickRatio[q1]! == currentRatio[q1]!, "Quick ratio should equal current ratio when no inventory")
+		#expect(try #require(quickRatio[q1]) == (try #require(currentRatio[q1])), "Quick ratio should equal current ratio when no inventory")
 	}
 
 	@Test("Cash Ratio - basic calculation")
@@ -594,13 +594,13 @@ struct BalanceSheetTests {
 
 		// Cash Ratio = Cash / Current Liabilities
 		// = 50k / 20k = 2.5
-		#expect(abs(cashRatio[q1]! - 2.5) < 1e-6, "Cash ratio should be 2.5")
+		#expect(abs(try #require(cashRatio[q1]) - 2.5) < 1e-6, "Cash ratio should be 2.5")
 
 		// Cash ratio should be lower than both current and quick ratios
 		let currentRatio = balanceSheet.currentRatio
 		let quickRatio = balanceSheet.quickRatio
-		#expect(cashRatio[q1]! < quickRatio[q1]!, "Cash ratio should be less than quick ratio")
-		#expect(cashRatio[q1]! < currentRatio[q1]!, "Cash ratio should be less than current ratio")
+		#expect(try #require(cashRatio[q1]) < (try #require(quickRatio[q1])), "Cash ratio should be less than quick ratio")
+		#expect(try #require(cashRatio[q1]) < (try #require(currentRatio[q1])), "Cash ratio should be less than current ratio")
 	}
 
 	@Test("Cash Ratio - with marketable securities")
@@ -632,7 +632,7 @@ struct BalanceSheetTests {
 
 		// Cash Ratio = (Cash + Marketable Securities) / Current Liabilities
 		// = (50k + 10k) / 20k = 3.0
-		#expect(abs(cashRatio[q1]! - 3.0) < 1e-6, "Cash ratio should include marketable securities")
+		#expect(abs(try #require(cashRatio[q1]) - 3.0) < 1e-6, "Cash ratio should include marketable securities")
 	}
 
 	@Test("Cash Ratio - no cash accounts")
@@ -655,7 +655,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// With no cash, cash ratio should be 0
-		#expect(abs(cashRatio[q1]! - 0.0) < 1e-6, "Cash ratio should be 0 when no cash accounts exist")
+		#expect(abs(try #require(cashRatio[q1]) - 0.0) < 1e-6, "Cash ratio should be 0 when no cash accounts exist")
 	}
 
 	// MARK: - Leverage Ratios (Debt Ratio)
@@ -686,7 +686,7 @@ struct BalanceSheetTests {
 		// Total Liabilities = 20k + 80k = 100k
 		// Debt Ratio = 100k / 150k = 0.6667
 		let expectedDebtRatio = 100_000.0 / 150_000.0
-		#expect(abs(debtRatio[q1]! - expectedDebtRatio) < 0.001, "Debt ratio should be ~0.667")
+		#expect(abs(try #require(debtRatio[q1]) - expectedDebtRatio) < 0.001, "Debt ratio should be ~0.667")
 	}
 
 	@Test("Debt Ratio - no debt")
@@ -708,7 +708,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Debt Ratio = 0 / 50k = 0
-		#expect(abs(debtRatio[q1]! - 0.0) < 1e-6, "Debt ratio should be 0 with no liabilities")
+		#expect(abs(try #require(debtRatio[q1]) - 0.0) < 1e-6, "Debt ratio should be 0 with no liabilities")
 	}
 
 	@Test("Debt Ratio - high leverage")
@@ -746,8 +746,8 @@ struct BalanceSheetTests {
 		// Total Assets = 50k + 100k = 150k
 		// Total Liabilities = 120k
 		// Debt Ratio = 120k / 150k = 0.80 (high leverage)
-		#expect(abs(debtRatio[q1]! - 0.80) < 0.01, "Debt ratio should be ~0.80")
-		#expect(debtRatio[q1]! > 0.6, "Should indicate high leverage")
+		#expect(abs(try #require(debtRatio[q1]) - 0.80) < 0.01, "Debt ratio should be ~0.80")
+		#expect(try #require(debtRatio[q1]) > 0.6, "Should indicate high leverage")
 	}
 
 	@Test("Debt Ratio vs Equity Ratio")
@@ -777,7 +777,7 @@ struct BalanceSheetTests {
 		let q1 = Period.quarter(year: 2024, quarter: 1)
 
 		// Debt Ratio + Equity Ratio should equal 1.0
-		let sum = debtRatio[q1]! + equityRatio[q1]!
+		let sum = try #require(debtRatio[q1]) + (try #require(equityRatio[q1]))
 		#expect(abs(sum - 1.0) < 0.001, "Debt ratio + equity ratio should equal 1.0")
 	}
 

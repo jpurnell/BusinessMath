@@ -262,9 +262,9 @@ struct FinancialProjectionTests {
 
 		// Verify accounting equation: Assets = Liabilities + Equity
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		let assets = totalAssets[q1]!
-		let liabilities = totalLiabilities[q1]!
-		let equity = totalEquity[q1]!
+		let assets = try #require(totalAssets[q1])
+		let liabilities = try #require(totalLiabilities[q1])
+		let equity = try #require(totalEquity[q1])
 
 		#expect(abs(assets - (liabilities + equity)) < 0.01)
 	}
@@ -363,8 +363,8 @@ struct FinancialProjectionTests {
 
 		// Compare net income
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		let baseNetIncome = baseProjection.incomeStatement.netIncome[q1]!
-		let optimisticNetIncome = optimisticProjection.incomeStatement.netIncome[q1]!
+		let baseNetIncome = try #require(baseProjection.incomeStatement.netIncome[q1])
+		let optimisticNetIncome = try #require(optimisticProjection.incomeStatement.netIncome[q1])
 
 		// Base: 1000 - 600 = 400
 		// Optimistic: 1500 - 600 = 900
@@ -476,9 +476,9 @@ struct FinancialProjectionAdditionalTests {
 		let incomeStmt = try incomeStatement()
 		let ps = periods()
 		for (i, p) in ps.enumerated() {
-			let totalRev = incomeStmt.totalRevenue[p]!
-			let exp = incomeStmt.totalExpenses[p]!
-			let net = incomeStmt.netIncome[p]!
+			let totalRev = try #require(incomeStmt.totalRevenue[p])
+			let exp = try #require(incomeStmt.totalExpenses[p])
+			let net = try #require(incomeStmt.netIncome[p])
 				// totalRev = 1000+100, 1100+100, ...
 			#expect(identical(totalRev, Double(1100 + 100 * i)))
 			#expect(net == totalRev - exp)
@@ -488,9 +488,9 @@ struct FinancialProjectionAdditionalTests {
 		func accountingEquationAllPeriods() throws {
 			let bs = try balanceSheet()
 			for p in bs.periods {
-				let a = bs.totalAssets[p]!
-				let l = bs.totalLiabilities[p]!
-				let e = bs.totalEquity[p]!
+				let a = try #require(bs.totalAssets[p])
+				let l = try #require(bs.totalLiabilities[p])
+				let e = try #require(bs.totalEquity[p])
 				#expect(abs(a - (l + e)) < 1e-6)
 			}
 		}
@@ -498,9 +498,9 @@ struct FinancialProjectionAdditionalTests {
 		func fcfEqualsOperatingPlusInvesting() throws {
 			let c = try cfs()
 			for p in c.periods {
-				let fcf = c.freeCashFlow[p]!
-				let op = c.operatingCashFlow[p]!
-				let inv = c.investingCashFlow[p]!
+				let fcf = try #require(c.freeCashFlow[p])
+				let op = try #require(c.operatingCashFlow[p])
+				let inv = try #require(c.investingCashFlow[p])
 				#expect(abs(fcf - (op + inv)) < 1e-9)
 			}
 		}
