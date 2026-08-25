@@ -11,7 +11,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Added
+
+- **`Statistics/Experiment/` — two-arm experiment design.** `Experiment.twoProportion` and
+  `.twoMean`, with `sampleSizePerArm(power:alpha:tails:)`, `achievedPower(perArm:alpha:tails:)`,
+  `minimumDetectableEffect(perArm:power:alpha:)` and `analyze(_:alpha:)`. Sizing matches R's
+  `power.prop.test` at 1,565 / 8,158 / 5,142 per arm for the three reference designs, and
+  `achievedPower` round-trips to 0.800082 at n = 1,565.
+
+  `analyze` returns the confidence interval first and the p-value second. *"Is it significant"*
+  and *"is it worth shipping"* are different questions and only the interval answers the second.
+  Degenerate designs — power of 0 or 1, alpha outside (0,1), a non-positive effect — throw
+  rather than returning a plausible integer.
+
+  Domain-neutral: experiment design is used in medicine and agriculture, not only marketing.
+
+#### Deprecated
+
+- **`sampleSize(ci:proportion:n:error:)` does not compute what its documentation says.** Its
+  summary claimed "the minimum number of observations for each variant of an A/B test"; its
+  body is Cochran's finite-population *survey* formula. There is no power term, no second
+  arm's variance, and `error` is a margin of error around one proportion rather than a
+  difference to detect. At 95% confidence, p = 0.5, e = 0.05 it returns **384** per arm where
+  detecting 0.50 → 0.55 at 80% power needs **1,565** — understated by **4.1×**. A test sized
+  this way fails to reach significance and reads as "no difference."
+
+- **`pValue(obsA:convA:obsB:convB:)` returns `normSDist(|z|)`, not a p-value.** That is
+  `1 − oneSidedP`, and because the z statistic is made absolute first the result is **never
+  below 0.5** — so the `p < 0.05` test its own documentation prescribed can never be true.
+  For its documented example the code returns 0.950526, the documentation claimed 0.043, and
+  the true two-sided p is 0.098948, which is *not* significant.
+
+  Neither behaviour is corrected in place: changing what they return would be a silent change
+  for every existing caller, which is worse than a compile error. Both are deleted in 3.0.0.
+  Both doc comments are corrected now, since they described behaviour the code never had.
+
+#### Changed
+
+- **Metric closures may now throw.** `FinancialSimulation`'s `mean`, `percentile`,
+  `confidenceInterval`, `valueAtRisk`, `conditionalValueAtRisk`, `probabilityOfLoss`,
+  `probabilityBelow` and `probabilityAbove` take `(FinancialProjection) throws -> Double` and
+  are `rethrows`. `runSensitivity`, `runTwoWaySensitivity` and `runTornadoAnalysis` accept
+  throwing `outputExtractor`s. Non-breaking — `rethrows` propagates only when the closure it
+  was given actually throws, so existing non-throwing callers are unaffected.
+
 #### Fixed
+
+- **`CalculationCache`'s single-flight wait was unbounded.** `DispatchGroup.wait()` with no
+  deadline parks the caller until `leave()` is called, and a leader whose `calculation()`
+  traps never calls it — so every later reader of that key waited forever, with no symptom
+  beyond a stalled pipeline. Now bounded at 30 seconds, falling through to the compute path
+  that already existed for the case where the leader published nothing reusable. A hang
+  becomes a slow path.
+
 
 - **Three documented XNPV/XIRR figures were not reproducible.** `1.1-GettingStarted` and
   `1.3-TimeValueOfMoney` built their date arrays from separate `Date()` calls — `Date()`,
@@ -24,6 +76,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   because the failure is probabilistic — the checker only sees it when the two runs happen
   to straddle a boundary, and it passed three consecutive runs before failing a fourth.
   Three greens were luck, not evidence. Documentation only; no library behaviour changed.
+
+#### Removed
+
+- **Nine pre-v2 metrics and coverage scripts**, with their instruction docs. They wrote to
+  `Instruction Set/05_SUMMARIES` and `development-guidelines/05_SUMMARIES`, both deleted by
+  the v2 migration, so a run wrote into directories that do not exist; the newest output they
+  ever produced is dated 2026-04-14. Each also set `standardError` to a pipe it never drained
+  while calling `waitUntilExit()` before reading, so any command producing enough stderr to
+  fill the buffer would have deadlocked them. `quality-gate`'s `doc-coverage` and
+  `generate-pulse` cover the same ground. Their output — `library_metrics.json` and eighteen
+  `history/` snapshots — is kept, as is the dated audit record of what was built and why.
+
+#### Repository
+
+- **The quality gate is enforced again.** Blocking findings went from **1,187 to 0** and
+  warnings from 45 to 0, with all 6,632 tests passing throughout. 1,111 force unwraps in the
+  suite became `try #require`, which names the nil value and fails the test rather than
+  trapping the process.
+
+  The count had gone unnoticed because nothing was running the gate: this repository had no
+  pre-commit hook, and CI could not run one — `quality-gate.yml` failed at startup in 0
+  seconds because BusinessMath is public and `jpurnell/quality-gate-swift` is private, so the
+  reusable workflow could not be called. The hook is now installed. Note that
+  `--exclude test` excludes the test *runner*, not test *files*, which is why the suite's
+  force unwraps were in scope all along.
 
 ### [2.6.0] - 2026-08-15
 

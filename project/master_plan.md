@@ -111,7 +111,21 @@ The honest list. Sources: `project/plans/TrustPlan.md`, and the gate's own outpu
 
 **In the gate**
 
-The gate is at **0 errors, 0 warnings across 37 checkers**. What follows is not currently firing.
+The gate is at **0 errors, 0 warnings across 44 of 45 checkers** (2026-08-24). What follows is
+not currently firing.
+
+- **Nothing was running the gate between June and August 2026.** This repository had no
+  pre-commit hook, and CI could not supply one: `.github/workflows/quality-gate.yml` failed at
+  startup in 0 seconds on every scheduled run, because BusinessMath is public and
+  `jpurnell/quality-gate-swift` is private, so a public repo cannot call its reusable workflow.
+  The count had reached **1,187 blocking findings** before anyone looked. The hook is installed
+  now; **CI is still dead**, and stays that way until `quality-gate` is published somewhere a
+  public repo can reach — the `swift-vigil` release-tarball-plus-Homebrew-tap pattern already
+  works in this ecosystem.
+- **`--exclude test` excludes the test *runner*, not test *files*.** The command in the project
+  guidelines skips executing the suite, which is what it is for, but `safety` still scans
+  `Tests/`. The suite's 1,111 force unwraps were in scope the whole time; the flag's name is
+  what hid them.
 
 - **A cached run executes 10 of 37 checkers and prints the same summary line.** Measured. Only
   `--no-cache` reaches `unreachable`, `doc-coverage`, `recursion`, `concurrency` and
@@ -325,7 +339,13 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-08-17 — reconciled three times: after `doc-comment-code` reached 0,
+**Last Updated:** 2026-08-24 — reconciled after driving the gate from 1,187 blocking
+findings to 0. Updated: the gate's checker count and status; a Known Issues entry recording
+that nothing had been running the gate since June, and that CI still cannot; and the
+`--exclude test` misreading that kept the suite's force unwraps out of view. Added
+`upcoming/v2.7.0_SCOPE.md` and promoted `MarketingLeg.md` to `upcoming/`.
+
+Previously: 2026-08-17 — reconciled three times: after `doc-comment-code` reached 0,
 after the quality-gate fixes landed (blockers 1 and 2 cleared, gate verified at 43 of 43
 against the **installed** binary), and after **2.6.0 shipped**. The post-tag finding is that
 the gate has never run on GitHub CI at all; `HANDOFF.md` carries that decision and the four
