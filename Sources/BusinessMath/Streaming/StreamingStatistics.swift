@@ -7,6 +7,7 @@
 
 import Foundation
 import Collections
+import DequeModule
 
 // MARK: - Statistics Result Types
 

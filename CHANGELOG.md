@@ -57,6 +57,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 
+- **`Deque` properties warned in every downstream build.** `Streaming/StreamingStatistics.swift`
+  and `Streaming/AsyncTimeWindowedSequence.swift` import the `Collections` umbrella, which
+  re-exports `Deque` but is not the module that declares it. Seven stored properties typed
+  `Deque<…>` therefore drew *"cannot use generic struct 'Deque' in a property declaration
+  member of a type not marked '@_implementationOnly'; 'DequeModule' was not imported by this
+  file"* — fourteen warnings once the two files were compiled twice in a dependent's build.
+
+  This repository's own gate never showed them; they surfaced in BusinessMathPro, which
+  builds BusinessMath from a local path. A warning that only appears downstream is one
+  nobody who could fix it was seeing. Adding an explicit `import DequeModule` alongside the
+  umbrella import clears all fourteen. No behavioural change.
+
 - **`CalculationCache`'s single-flight wait was unbounded.** `DispatchGroup.wait()` with no
   deadline parks the caller until `leave()` is called, and a leader whose `calculation()`
   traps never calls it — so every later reader of that key waited forever, with no symptom
