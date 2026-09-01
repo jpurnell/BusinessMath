@@ -34,6 +34,17 @@ public enum FormulaError: Error, Equatable, Sendable {
 	/// process with it, which a caller cannot catch. Refused instead, at a depth far beyond
 	/// any formula a person writes.
 	case nestingTooDeep(limit: Int)
+
+	/// A formula named a function the evaluator does not have.
+	///
+	/// Thrown rather than resolved to zero. A model that quietly substitutes a
+	/// number for a function it could not evaluate produces a plausible wrong
+	/// answer, which is the one failure mode this package exists to prevent, and
+	/// the Excel recognizer upstream reports this as an unregistered function.
+	case unknownFunction(String)
+
+	/// A function was called with a number of arguments it does not accept.
+	case wrongArgumentCount(function: String, expected: String, got: Int)
 }
 
 extension FormulaError: LocalizedError {
@@ -53,6 +64,10 @@ extension FormulaError: LocalizedError {
 			return "The formula ends mid-expression."
 		case .unexpectedCharacter(let character):
 			return "'\(character)' cannot appear in a formula."
+		case .unknownFunction(let name):
+			return "There is no function called '\(name)'"
+		case .wrongArgumentCount(let function, let expected, let got):
+			return "'\(function)' takes \(expected) arguments, but was given \(got)"
 		case .nestingTooDeep(let limit):
 			return "The formula nests parentheses more than \(limit) deep."
 		}
@@ -173,6 +188,9 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		case .negate(let operand):
 			return constant(T.zero) - (try resolve(operand))
 
+		case .function(let name, let arguments):
+			return try call(name, arguments)
+
 		case .binary(let op, let lhs, let rhs):
 			// Delegated rather than reimplemented, so a formula cannot come to disagree with
 			// the same expression written in Swift — including about missing periods.
@@ -193,6 +211,20 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 	/// expression it touched — `revenue * 2` would come back empty. It therefore takes the
 	/// union of the supplied accounts' periods, which is the widest set any subexpression can
 	/// produce.
+	/// Dispatches a function call.
+	///
+	/// - Parameters:
+	///   - name: The function's name, already upper-cased.
+	///   - arguments: Its unevaluated arguments.
+	/// - Returns: The resulting series.
+	/// - Throws: ``FormulaError/unknownFunction(_:)`` when nothing is registered
+	///   under that name. Never a default value: a formula that names a function
+	///   we do not have is a formula we cannot evaluate, and saying so is the
+	///   whole point.
+	private func call(_ name: String, _ arguments: [Node]) throws -> TimeSeries<T> {
+		throw FormulaError.unknownFunction(name)
+	}
+
 	private func constant(_ value: T) -> TimeSeries<T> {
 		let periods = accounts.values
 			.reduce(into: Set<Period>()) { $0.formUnion($1.periods) }
@@ -207,6 +239,7 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		case name(String)
 		case plus, minus, multiply, divide
 		case leftParen, rightParen
+		case comma
 	}
 
 	static func tokenise(_ formula: String) throws -> [Token] {
@@ -271,6 +304,7 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			case "/": tokens.append(.divide)
 			case "(": tokens.append(.leftParen)
 			case ")": tokens.append(.rightParen)
+			case ",": tokens.append(.comma)
 			default: throw FormulaError.unexpectedCharacter(character)
 			}
 			index = formula.index(after: index)
@@ -286,6 +320,7 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		case name(String)
 		case negate(Node)
 		case binary(Operator, Node, Node)
+		case function(String, [Node])
 
 		enum Operator: Sendable { case add, subtract, multiply, divide }
 	}
@@ -410,7 +445,12 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 
 			case .name(let name):
 				position += 1
-				return .name(name)
+				// A name followed by `(` is a call; a name alone is an account.
+				// Nothing else distinguishes them, which is also how Excel reads a
+				// formula, so an account may share a spelling with a function it
+				// never calls.
+				guard current == .leftParen else { return .name(name) }
+				return .function(name.uppercased(), try parseArguments())
 
 			case .leftParen:
 				position += 1
@@ -424,7 +464,60 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 
 			case .plus, .minus, .multiply, .divide:
 				throw FormulaError.invalidSyntax("an operator with nothing to its left")
+
+			case .comma:
+				throw FormulaError.invalidSyntax("a comma outside a function call")
 			}
+		}
+
+		/// Parses `( a, b, c )`, positioned on the opening parenthesis.
+		///
+		/// Each argument is a full expression, so `MAX(revenue - cogs, 0)` works and
+		/// nesting falls out of the existing recursion. An empty list is allowed —
+		/// a zero-argument function is a legitimate shape — but a trailing comma is
+		/// not, since it promises an argument that never arrives.
+		///
+		/// - Returns: The parsed arguments, in order.
+		/// - Throws: ``FormulaError/unbalancedParentheses`` if the call is unclosed,
+		///   or ``FormulaError/invalidSyntax(_:)`` for a trailing comma.
+		mutating func parseArguments() throws -> [Node] {
+			guard depth < Self.maximumNestingDepth else {
+				throw FormulaError.nestingTooDeep(limit: Self.maximumNestingDepth)
+			}
+			depth += 1
+			defer { depth -= 1 }
+
+			position += 1  // consume `(`
+
+			if current == .rightParen {
+				position += 1
+				return []
+			}
+
+			// The loop ends on the closing parenthesis or by throwing. Stated as a
+			// condition rather than `while true` so the exit is visible at the top:
+			// every path through the body either consumes a token or throws, and a
+			// parser loop that forgot to is precisely how one spins forever.
+			var arguments: [Node] = []
+			var closed = false
+			while !closed {
+				arguments.append(try parseExpression())
+
+				switch current {
+				case .comma:
+					position += 1
+					guard current != .rightParen else {
+						throw FormulaError.invalidSyntax(
+							"a trailing comma in a function call's arguments")
+					}
+				case .rightParen:
+					position += 1
+					closed = true
+				default:
+					throw FormulaError.unbalancedParentheses
+				}
+			}
+			return arguments
 		}
 	}
 }

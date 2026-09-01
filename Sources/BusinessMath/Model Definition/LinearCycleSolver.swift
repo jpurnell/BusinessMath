@@ -210,6 +210,15 @@ struct LinearCycleSolver<T: Real & Sendable & LosslessStringConvertible> {
 				coefficients: [:]
 			)
 
+		case .function(let name, _):
+			// Unreachable by construction: `CycleForm.degree` reports any call
+			// touching a member as nonlinear, so such a cycle never reaches the
+			// linear solver. Checked anyway, for the reason the rest of this
+			// function checks what it already knows — a classifier and an extractor
+			// that disagreed would produce a confident wrong number, which is worse
+			// than a refusal.
+			throw notLinear("the cycle passes through the function '\(name)'")
+
 		case .name(let name):
 			if members.contains(name) {
 				return AffineForm(constant: zero, coefficients: [name: ones])
