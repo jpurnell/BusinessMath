@@ -1,15 +1,17 @@
 //
-//  WaterfallBuilderTests.swift
+//  WaterfallTests.swift
 //  BusinessMath
 //
 //  Created by Justin Purnell on 2025-12-29.
+//  Moved from BusinessMathDSL to core on 2026-09-01; expectations unchanged so the
+//  move is provably behaviour-preserving. Initializers that validate now throw
+//  rather than trap, so construction sites carry `try`.
 //
 
 import Testing
 import Foundation
 import Numerics
 @testable import BusinessMath
-@testable import BusinessMathDSL
 
 /// Tests for Waterfall Distribution Result Builder
 ///
@@ -17,16 +19,16 @@ import Numerics
 /// - RED: Write failing tests first
 /// - GREEN: Implement to make tests pass
 /// - REFACTOR: Clean up implementation
-@Suite("Waterfall Distribution Builder Tests")
-struct WaterfallBuilderTests {
+@Suite("Liquidation Waterfall Tests")
+struct WaterfallTests {
 
     // MARK: - Basic Tier Tests
 
     @Test("Single tier with capital return only")
     func singleTierCapitalReturn() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Senior Debt", priority: 1) {
-                CapitalReturn(500_000)
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Senior Debt", priority: 1) {
+                try CapitalReturn(500_000)
             }
         }
 
@@ -49,10 +51,10 @@ struct WaterfallBuilderTests {
 
     @Test("Tier with capital and preferred return")
     func tierWithPreferredReturn() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Preferred Equity", priority: 1) {
-                CapitalReturn(1_000_000)
-                PreferredReturn(0.08, years: 3)  // 8% for 3 years
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Preferred Equity", priority: 1) {
+                try CapitalReturn(1_000_000)
+                try PreferredReturn(0.08, years: 3)  // 8% for 3 years
             }
         }
 
@@ -76,12 +78,12 @@ struct WaterfallBuilderTests {
 
     @Test("Two tiers in priority order")
     func twoTierWaterfall() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Senior Debt", priority: 1) {
-                CapitalReturn(500_000)
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Senior Debt", priority: 1) {
+                try CapitalReturn(500_000)
             }
-            Tier("Preferred Equity", priority: 2) {
-                CapitalReturn(300_000)
+            try Tier("Preferred Equity", priority: 2) {
+                try CapitalReturn(300_000)
             }
         }
 
@@ -104,17 +106,17 @@ struct WaterfallBuilderTests {
 
     @Test("Three tier waterfall with preferred returns")
     func threeTierWithPreferred() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Senior Debt", priority: 1) {
-                CapitalReturn(500_000)
-                PreferredReturn(0.12, years: 2)  // 120k
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Senior Debt", priority: 1) {
+                try CapitalReturn(500_000)
+                try PreferredReturn(0.12, years: 2)  // 120k
             }
-            Tier("Preferred Equity", priority: 2) {
-                CapitalReturn(300_000)
-                PreferredReturn(0.15, years: 2)  // 90k
+            try Tier("Preferred Equity", priority: 2) {
+                try CapitalReturn(300_000)
+                try PreferredReturn(0.15, years: 2)  // 90k
             }
-            Tier("Common Equity", priority: 3) {
-                CapitalReturn(200_000)
+            try Tier("Common Equity", priority: 3) {
+                try CapitalReturn(200_000)
             }
         }
 
@@ -136,16 +138,16 @@ struct WaterfallBuilderTests {
 
     @Test("GP catch-up after preferred return")
     func catchUpProvision() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("LP Capital + Preferred", priority: 1) {
-                CapitalReturn(1_000_000)
-                PreferredReturn(0.08, years: 3)  // 240k
+        let waterfall = try LiquidationWaterfall {
+            try Tier("LP Capital + Preferred", priority: 1) {
+                try CapitalReturn(1_000_000)
+                try PreferredReturn(0.08, years: 3)  // 240k
             }
-            Tier("GP Catch-Up", priority: 2) {
-                CatchUp(to: 0.20)  // GP gets 20% of total profits
+            try Tier("GP Catch-Up", priority: 2) {
+                try CatchUp(to: 0.20)  // GP gets 20% of total profits
             }
-            Tier("Residual", priority: 3) {
-                ProRata([
+            try Tier("Residual", priority: 3) {
+                try ProRata([
                     ("LP", 0.80),
                     ("GP", 0.20)
                 ])
@@ -183,12 +185,12 @@ struct WaterfallBuilderTests {
 
     @Test("Pro-rata split in residual tier")
     func proRataSplit() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Capital Return", priority: 1) {
-                CapitalReturn(1_000_000)
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Capital Return", priority: 1) {
+                try CapitalReturn(1_000_000)
             }
-            Tier("Residual", priority: 2) {
-                ProRata([
+            try Tier("Residual", priority: 2) {
+                try ProRata([
                     ("LP", 0.70),
                     ("GP", 0.30)
                 ])
@@ -206,9 +208,9 @@ struct WaterfallBuilderTests {
 
     @Test("Multiple participants in pro-rata")
     func multiParticipantProRata() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Distribution", priority: 1) {
-                ProRata([
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Distribution", priority: 1) {
+                try ProRata([
                     ("Investor A", 0.40),
                     ("Investor B", 0.35),
                     ("Investor C", 0.25)
@@ -227,11 +229,11 @@ struct WaterfallBuilderTests {
 
     @Test("Residual captures all remaining")
     func residualCapture() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Senior", priority: 1) {
-                CapitalReturn(500_000)
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Senior", priority: 1) {
+                try CapitalReturn(500_000)
             }
-            Tier("Junior", priority: 2) {
+            try Tier("Junior", priority: 2) {
                 Residual()
             }
         }
@@ -246,20 +248,20 @@ struct WaterfallBuilderTests {
 
     @Test("Complete waterfall with all components")
     func completeWaterfall() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Senior Debt", priority: 1) {
-                CapitalReturn(500_000)
-                PreferredReturn(0.12, years: 2)  // 120k
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Senior Debt", priority: 1) {
+                try CapitalReturn(500_000)
+                try PreferredReturn(0.12, years: 2)  // 120k
             }
-            Tier("Mezzanine Debt", priority: 2) {
-                CapitalReturn(300_000)
-                PreferredReturn(0.15, years: 2)  // 90k
+            try Tier("Mezzanine Debt", priority: 2) {
+                try CapitalReturn(300_000)
+                try PreferredReturn(0.15, years: 2)  // 90k
             }
-            Tier("Preferred Equity", priority: 3) {
-                CapitalReturn(200_000)
-                PreferredReturn(0.20, years: 2)  // 80k
+            try Tier("Preferred Equity", priority: 3) {
+                try CapitalReturn(200_000)
+                try PreferredReturn(0.20, years: 2)  // 80k
             }
-            Tier("Common Equity", priority: 4) {
+            try Tier("Common Equity", priority: 4) {
                 Residual()
             }
         }
@@ -285,18 +287,18 @@ struct WaterfallBuilderTests {
 
     @Test("Real estate waterfall example")
     func realEstateWaterfall() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("LP Capital Return", priority: 1) {
-                CapitalReturn(5_000_000)
+        let waterfall = try LiquidationWaterfall {
+            try Tier("LP Capital Return", priority: 1) {
+                try CapitalReturn(5_000_000)
             }
-            Tier("LP Preferred Return", priority: 2) {
-                PreferredReturn(0.08, years: 5)  // 8% annually for 5 years
+            try Tier("LP Preferred Return", priority: 2) {
+                try PreferredReturn(0.08, years: 5)  // 8% annually for 5 years
             }
-            Tier("GP Catch-Up", priority: 3) {
-                CatchUp(to: 0.20)
+            try Tier("GP Catch-Up", priority: 3) {
+                try CatchUp(to: 0.20)
             }
-            Tier("Remaining", priority: 4) {
-                ProRata([
+            try Tier("Remaining", priority: 4) {
+                try ProRata([
                     ("LP", 0.80),
                     ("GP", 0.20)
                 ])
@@ -322,12 +324,12 @@ struct WaterfallBuilderTests {
     @Test("Venture capital liquidation preference")
     func vcLiquidationPreference() async throws {
         // 1x liquidation preference with participation
-        let waterfall = LiquidationWaterfall {
-            Tier("Series A Preference", priority: 1) {
-                CapitalReturn(2_000_000)  // 1x preference
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Series A Preference", priority: 1) {
+                try CapitalReturn(2_000_000)  // 1x preference
             }
-            Tier("Remaining to All", priority: 2) {
-                ProRata([
+            try Tier("Remaining to All", priority: 2) {
+                try ProRata([
                     ("Series A", 0.30),
                     ("Common", 0.70)
                 ])
@@ -351,6 +353,7 @@ struct WaterfallBuilderTests {
 
     @Test("Empty waterfall handles zero distribution")
     func emptyWaterfall() async throws {
+        // No tiers, so nothing here can throw.
         let waterfall = LiquidationWaterfall {}
 
         let result = waterfall.distribute(1_000_000)
@@ -360,9 +363,9 @@ struct WaterfallBuilderTests {
 
     @Test("Zero proceeds distribution")
     func zeroProceeds() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Senior", priority: 1) {
-                CapitalReturn(500_000)
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Senior", priority: 1) {
+                try CapitalReturn(500_000)
             }
         }
 
@@ -373,9 +376,9 @@ struct WaterfallBuilderTests {
 
     @Test("Negative proceeds treated as zero")
     func negativeProceeds() async throws {
-        let waterfall = LiquidationWaterfall {
-            Tier("Senior", priority: 1) {
-                CapitalReturn(500_000)
+        let waterfall = try LiquidationWaterfall {
+            try Tier("Senior", priority: 1) {
+                try CapitalReturn(500_000)
             }
         }
 
