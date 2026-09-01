@@ -3,7 +3,24 @@ name: CI
 on:
   push:
     branches: [ main ]
+    # macOS runners bill at 10x, and this matrix takes 16-19 minutes. The 2.7.0 release
+    # commit changed CHANGELOG.md, README.md and project/ — not one line of Swift — and
+    # still cost a full macOS run. Nothing listed here can change what `swift build`
+    # produces. `*.md` is deliberately root-only: `**.md` would also exclude the .docc
+    # catalogue, and an article that stops compiling is a real failure.
+    paths-ignore:
+      - '*.md'
+      - 'project/**'
+      - 'development-guidelines/**'
+      - 'LICENSE'
+      - '.gitignore'
   pull_request:
+    paths-ignore:
+      - '*.md'
+      - 'project/**'
+      - 'development-guidelines/**'
+      - 'LICENSE'
+      - '.gitignore'
   workflow_dispatch:
 
 concurrency:
