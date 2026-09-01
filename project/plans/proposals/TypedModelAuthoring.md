@@ -1,7 +1,7 @@
 # Design Proposal: typed, unit-checked authoring over `ModelDefinition` — and the removal of `BusinessMathDSL`
 
 **Date:** 2026-09-01
-**Status:** Approved 2026-09-01 — phases 1–2d scoped as 2.8.0; see the release mapping under Proposed Phasing
+**Status:** Approved 2026-09-01 — phases 1–2d, 6, and 7 scoped as 2.8.0; see the release mapping under Proposed Phasing
 **Supersedes:** `DSLExpressiveness.md` (same day, not implemented — kept for its prior-art audit)
 **Companion:** `BusinessMathExcel/project/plans/proposals/PROPOSAL_excel_to_model_recognizer.md`
 
@@ -567,9 +567,11 @@ Justification: zero external consumers, verified by consumer search across every
 The only importers are four of its own test files. This is as close to a free removal as a public
 product gets, but it *is* a public product, so:
 
-- **Deprecate in the next minor** — `@available(*, deprecated, message:)` on every public DSL
-  type, with a CHANGELOG entry naming `ModelDefinition` + `Account`/`Expr` as the replacement.
-- **Remove in the next major.**
+- ~~**Deprecate in the next minor.**~~ ~~**Remove in the next major.**~~
+  **Superseded 2026-09-01: removed outright in 2.8.0.** A deprecation pass warns nobody, and the
+  major it was waiting for is not scheduled. This is a semver deviation, taken knowingly, with
+  an empty consumer population as the justification and a CHANGELOG that states it outright
+  rather than letting a minor version number imply compatibility. See §15 Q1.
 - **Exception — `Tier`/`LiquidationWaterfall` migrate rather than die.** They are deprecated at
   the old location with a `renamed:` pointer so the fix-it is automatic.
 
@@ -854,9 +856,18 @@ means degrading to a weaker check, not abandoning units.
    duplicates core (`Scenario`, `ScenarioAnalysis`, the valuation types) and whose types are not
    `Sendable` while `StrictConcurrency` is enabled package-wide.
 
-   **This does not change what version the removal lands in.** Removing a public product is
-   breaking whether or not it was deprecated first, so it is 3.0.0 either way — §7 is explicit
-   about that. Removing outright skips the intermediate *release*, not the major bump.
+   **Amended later the same day: the removal lands in 2.8.0, not 3.0.0.** Deferring it to a
+   major that is not scheduled means carrying the module indefinitely — duplicating core, failing
+   `Sendable` under package-wide `StrictConcurrency`, and holding a `preconditionFailure`-based
+   API that crashes on caller data. Waiting for a release that is not coming is not conservatism.
+
+   This is a **deliberate semver deviation and is documented as one**, not glossed. Removing a
+   public product in a minor means a consumer pinning `from: "2.x"` gets a compile error rather
+   than a deprecation warning. What makes it defensible rather than reckless is that the
+   population is empty: a consumer search across every sibling package found the only importers
+   to be four of `BusinessMathDSL`'s own test files, and `BusinessMathExcel` — the one downstream
+   package under active development — imports `BusinessMath` only. The CHANGELOG says plainly
+   that 2.8.0 is breaking despite the minor number.
 
    Phase 5 (the deprecation pass) is therefore **dropped**, and Phase 6 becomes the whole of the
    removal. `Tier`/`TierComponents`/`LiquidationWaterfall` still migrate rather than die, per
@@ -913,9 +924,10 @@ placed after the work that does not depend on it.
 
 | Release | Phases | Why |
 |---|---|---|
-| **2.8.0** | 1, 2a, 2b, 2c, 2d | Purely additive. This is the gate `BusinessMathExcel` Phase 3 waits on, so it ships on its own rather than behind Phase 3's compile-time risk |
+| **2.8.0** | 1, 2a, 2b, 2c, 2d, 6, 7 | The gate `BusinessMathExcel` Phase 3 waits on, plus the `BusinessMathDSL` removal. Phases 1–2d are additive; phase 6 is not, and the deviation is documented rather than hidden — see §15 Q1 |
 | *later minor* | 3, 4 | Additive, but Phase 3 is gated on the compile-time budget in §15 Q5, which has not been measured |
-| **3.0.0** | 6, 7 | Removing a public product is breaking regardless of deprecation. Phase 5 is dropped |
+| ~~3.0.0~~ | — | No longer holds the removal. Phase 5 was dropped; phase 6 moved forward |
 
-Phase 1 migrates `Tier`/`TierComponents`/`LiquidationWaterfall` into core **before** 3.0.0
-deletes their old home, leaving a `renamed:` pointer at the old location for anyone on 2.8.x.
+Phase 1 migrates `Tier`/`TierComponents`/`LiquidationWaterfall` into core **before** phase 6
+deletes their old home. Since both now land in the same release, the ordering within it is what
+matters: the material worth keeping must be in core and green before anything is removed.

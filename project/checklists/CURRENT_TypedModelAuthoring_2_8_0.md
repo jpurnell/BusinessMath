@@ -5,8 +5,16 @@
 **Unblocks:** `BusinessMathExcel` Phase 3 — its `FormulaTranslator` cannot emit a formula the
 evaluator has no way to parse, and its rollforward decomposition needs `PeriodDriver`
 
-Everything here is **additive**. Nothing in this release removes or renames a public API, which
-is what lets it be a minor and ship ahead of the riskier typed layer.
+Tasks 1–7 are **additive**. Task 8 is not: it removes the `BusinessMathDSL` product outright.
+
+**2.8.0 is therefore a breaking release behind a minor version number**, taken deliberately —
+the major it would otherwise wait for is not scheduled, and the consumer population is empty
+(the only importers are four of the module's own test files). The deviation is documented in the
+proposal §15 Q1 and must be stated plainly at the top of the CHANGELOG entry. A minor number
+must not be left to imply a compatibility that does not hold.
+
+**Ordering matters within the release:** Task 1 migrates the waterfall types into core and Task 8
+deletes their old home, so Task 1 must be green before Task 8 begins.
 
 **TDD per project rules: failing test first, minimum code, refactor. Commit at each green state.**
 
@@ -93,16 +101,41 @@ carries a balance across periods.
       solve from a model that broke the cycle by timing.
 - [ ] Commit.
 
+## Task 8 — Delete `BusinessMathDSL` (proposal Phase 6)
+
+**Do not start until Task 1 is green.** The waterfall types must be living in core before their
+old home is removed.
+
+- [ ] Confirm the consumer search still holds: no importer outside the module's own tests.
+- [ ] Delete `Sources/BusinessMathDSL/` and the three obsolete `Result Builder Tests` files.
+- [ ] Remove the product and target from `Package.swift`.
+- [ ] Confirm the duplication this resolves is actually resolved: `Scenario` and
+      `ScenarioAnalysis` exist in both the DSL and `Simulation/MonteCarlo/ScenarioAnalysis.swift`,
+      and the valuation types duplicate `Valuation/Equity/`. Core's versions are the survivors.
+- [ ] **Record what dies with it.** `CashFlowModel.freeCashFlow(year:)` returns
+      `netIncome + depreciation` with no capex and feeds `DCFModel.calculateEnterpriseValue()`,
+      overstating enterprise value by PV(capex). Deletion is the fix, and that is worth saying in
+      the CHANGELOG rather than letting a real bug vanish silently with its module.
+- [ ] Commit.
+
+## Task 9 — Documentation (proposal Phase 7)
+
+- [ ] `1.7-TypedModelAuthoringGuide.md` covering the grammar functions and the rollforward driver.
+- [ ] Reconcile `1.4-FluentAPIGuide.md`, which references DSL types that will no longer exist.
+- [ ] CHANGELOG entry leading with the breaking removal, not burying it under the additions.
+- [ ] Commit.
+
 ---
 
 ## Done when
 
-- [ ] All seven tasks green, committed individually.
+- [ ] All nine tasks green, committed individually.
 - [ ] `swift build && swift test` clean.
 - [ ] **Quality gate 0 errors / 0 warnings**, counted rather than read off the verdict line.
 - [ ] CHANGELOG entry; `project/master_plan.md` reconciled; capability map reviewed.
 - [ ] Release checklist followed **before** tagging: `release-readiness`, capability map, README
       metrics, CHANGELOG section renamed, atomic `--follow-tags` push.
+- [ ] CHANGELOG leads with the breaking removal under a minor version number.
 - [ ] Tagged `v2.8.0`.
 - [ ] Move this file to `project/checklists/completed/`.
 
@@ -112,7 +145,5 @@ carries a balance across periods.
   which has not been measured. It is deliberately after this work so the Excel gate does not
   wait on it.
 - **Phase 4** (`validateUnits()`), which depends on Phase 3.
-- **Deleting `BusinessMathDSL`.** Removal is outright and lands in 3.0.0 — breaking regardless of
-  deprecation. Phase 5 is dropped entirely; see §15 Q1.
 - Reimplementing any financial mathematics. Registry entries dispatch to canonical
   implementations; core already has 616 public functions (decision D4).
