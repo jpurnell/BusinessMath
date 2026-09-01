@@ -103,7 +103,7 @@ struct SplitProtocolTests {
 			callCount += 1
 			return MarketMetrics(
 				symbol: symbol,
-				asOf: Date(),
+				asOf: Date(timeIntervalSince1970: 1_704_067_200),  // 2024-01-01, fixed
 				priceToEarnings: 15.5,
 				priceToBook: 2.3,
 				priceToSales: 4.1,
@@ -329,7 +329,7 @@ struct SplitProtocolTests {
 	func marketMetricsEmptySymbol() {
 		let metrics = MarketMetrics(
 			symbol: "",
-			asOf: Date(),
+			asOf: Date(timeIntervalSince1970: 1_704_067_200),  // 2024-01-01, fixed
 			priceToEarnings: nil,
 			priceToBook: nil,
 			priceToSales: nil,
@@ -349,7 +349,7 @@ struct SplitProtocolTests {
 	func marketMetricsLargeValues() throws {
 		let metrics = MarketMetrics(
 			symbol: "BRK.A",
-			asOf: Date(),
+			asOf: Date(timeIntervalSince1970: 1_704_067_200),  // 2024-01-01, fixed
 			priceToEarnings: 8.5,
 			priceToBook: 1.5,
 			priceToSales: 2.3,
