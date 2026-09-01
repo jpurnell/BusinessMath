@@ -18,16 +18,31 @@ is what lets it be a minor and ship ahead of the riskier typed layer.
 no equivalent in core. They move to `Financial Statements/Waterfall/` **before** 3.0.0 deletes
 their old home, so nothing worth keeping leaves with the module.
 
-- [ ] **RED** — move `WaterfallBuilderTests` to the new location; they fail to compile.
-- [ ] **GREEN** — move the three types into `Sources/BusinessMath/Financial Statements/Waterfall/`.
-- [ ] Add `Sendable` conformance. None of the DSL types have it today, while
+- [x] **RED** — move `WaterfallBuilderTests` to the new location; they fail to compile.
+- [x] **GREEN** — move the three types into `Sources/BusinessMath/Financial Statements/Waterfall/`.
+- [x] Add `Sendable` conformance. None of the DSL types have it today, while
       `StrictConcurrency` is enabled package-wide.
-- [ ] Replace trapping initializers with throwing ones. `Tier.init` and friends
+- [x] Replace trapping initializers with throwing ones. Also required splitting `TierTerms` out
+      of `Tier`: a result builder's `buildBlock` cannot throw, because the compiler generates that
+      call and has nowhere to write `try`. Returning a `Tier` from it would have meant carrying a
+      placeholder name and priority through an invalid state — which the original did. Removing
+      that was a by-product of the migration rather than a goal of it.
+- [x] Replace trapping initializers with throwing ones. `Tier.init` and friends
       `preconditionFailure` on out-of-range input, which crashes the process on data a caller
       may not control — the specific hazard that forced the recognizer's plan/materialize split.
-- [ ] Leave `@available(*, deprecated, renamed:)` pointers at the old location so 2.8.x callers
-      get a fix-it rather than a break.
-- [ ] Commit.
+- [x] ~~Leave `@available(*, deprecated, renamed:)` pointers at the old location.~~
+      **Tried and reverted.** Annotating the DSL originals produced **72 warnings** from the
+      module's own internal use — the types reference each other, and deprecating all of them
+      does not stop Swift warning at every use site. Against the zero-warning bar that is not a
+      trade worth making for a module with no consumers that is deleted wholesale in 3.0.0.
+
+      `renamed:` was wrong on its own terms too: the core versions throw where these trap, so the
+      automatic fix-it it promises would produce code that does not compile. A pointer that
+      misleads is worse than none.
+
+      What replaces it: the CHANGELOG names the move and the new location, and the 3.0.0 removal
+      is already recorded in the proposal. Nobody is left without a map.
+- [x] Commit.
 
 ## Task 2 — `FormulaEvaluator` call machinery (proposal Phase 2a, part 1)
 
