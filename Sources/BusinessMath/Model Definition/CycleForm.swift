@@ -127,6 +127,19 @@ extension FormulaEvaluator {
 		case .negate(let operand):
 			return degree(of: operand, in: members)
 
+		case .function(_, let arguments):
+			// A function of a cycle member is not linear in it, and the safe answer
+			// is the conservative one. `MIN` and `MAX` are piecewise linear, `ABS`
+			// is not linear at all, and a registry that grows will not stay
+			// analysable by inspection. Reporting nonlinear sends the system to the
+			// iterative solver, which is slower and correct; reporting linear when
+			// it is not would produce a confident wrong answer from a linear solve.
+			//
+			// A call whose arguments avoid the members entirely is a fixed value as
+			// far as the cycle is concerned, so it stays constant.
+			let involvesMember = arguments.contains { degree(of: $0, in: members) != .constant }
+			return involvesMember ? .nonlinear : .constant
+
 		case .binary(let op, let lhs, let rhs):
 			let left = degree(of: lhs, in: members)
 			let right = degree(of: rhs, in: members)

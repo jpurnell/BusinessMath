@@ -49,14 +49,30 @@ their old home, so nothing worth keeping leaves with the module.
 The evaluator has **no functions at all**: its token set is `number`, `name`, `+ - * / ( )`.
 Verified at `Time Series/FormulaEvaluator.swift:205-208`. This task builds dispatch from nothing.
 
-- [ ] **RED** — `SUM(a, b)` fails to tokenise today; assert it parses.
-- [ ] **GREEN** — comma token, `Node.function(String, [Node])`, parser support for a call.
-- [ ] **GREEN** — a dispatch table keyed by upper-cased name, with arity checking.
-- [ ] **Decide:** what an unknown function does. It must not evaluate to zero — the fail-silent
+- [x] **RED** — `SUM(a, b)` fails to tokenise today; assert it parses.
+- [x] **GREEN** — comma token, `Node.function(String, [Node])`, parser support for a call.
+- [x] ~~a dispatch table keyed by upper-cased name, with arity checking.~~ **Moved to Task 3.**
+      Arity is a property of a registered function, so a table with no entries has no arity to
+      check. Task 2 lands the call site and the refusal; Task 3 lands the table and its arities
+      together, where they can be tested rather than asserted.
+- [x] **Decided: throws `FormulaError.unknownFunction`, naming the function.** It must not evaluate to zero — the fail-silent
       principle in `CLAUDE.md` and the recognizer's `.unregisteredFunction` both depend on this
       surfacing. Throw, and name the function.
-- [ ] Edge: wrong arity, nested calls, a call as an operand (`1 + MAX(a, b)`).
-- [ ] Commit.
+- [x] Edge: wrong arity, nested calls, a call as an operand (`1 + MAX(a, b)`).
+- [x] Commit.
+
+
+**Found while doing it.** Adding a `Node` case broke two exhaustive switches, and neither wanted
+the same answer:
+
+- `CycleForm.degree` now reports any call touching a cycle member as **nonlinear**. `MIN` and
+  `MAX` are piecewise linear and `ABS` is not linear at all, and a registry that grows will not
+  stay analysable by inspection. Nonlinear sends the system to the iterative solver — slower and
+  correct. Linear would have been a confident wrong answer out of a linear solve.
+- `LinearCycleSolver.affineForm` **throws** on a call. It is unreachable, since the classifier
+  above never sends one here, and it is checked anyway for the reason the rest of that function
+  checks what it already knows: a classifier and an extractor that disagreed would produce a
+  confident wrong number.
 
 ## Task 3 — Arithmetic primitives (proposal Phase 2a, part 2)
 
