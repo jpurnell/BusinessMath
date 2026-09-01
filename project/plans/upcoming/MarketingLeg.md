@@ -664,7 +664,7 @@ free function proposed here shares a name with an existing one.
 
 **Non-breaking mitigation — taken.** The corrected power calculation ships additively in
 2.7.0, with the deprecation alongside it and the deletion held for 3.0.0. Scoped in
-`upcoming/v2.7.0_SCOPE.md`. See §12.1.
+`completed/v2.7.0_SCOPE.md` (shipped in 2.7.0). See §12.1.
 
 ---
 
@@ -838,7 +838,7 @@ ship Marketing as 3.1.** The theme argument in §2 is elegant, but elegance is n
 to delay a fix.
 
 **Response — and this changed the plan. Adopted 2026-08-23, scoped in
-`upcoming/v2.7.0_SCOPE.md`.** The correct power calculation ships additively in 2.7.0 with
+`completed/v2.7.0_SCOPE.md`.** The correct power calculation shipped additively in 2.7.0 with
 the deprecation beside it; the deletion waits for the major. It is purely additive and
 needs none of this proposal, so the defect stops shipping in weeks rather than months. The
 same treatment should be considered for any other defect this work surfaces.

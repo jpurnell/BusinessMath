@@ -10,7 +10,21 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.6.0
+## Latest release: 2.7.0
+
+2.7.0 is additive: no signature changes, no deletions, no behaviour changes to existing calls.
+It adds `Statistics/Experiment/` — two-arm experiment design with `sampleSizePerArm`,
+`achievedPower`, `minimumDetectableEffect` and `analyze` — and completes `Sendable` on nine
+distribution types.
+
+It also **deprecates two functions in `AB Test.swift`**, both of which were wrong rather than
+merely dated. `pValue` returned `normSDist(|z|)`, always ≥ 0.5, so a `p < 0.05` test could
+never be true; `sampleSize` is Cochran's single-sample survey formula, which understates a
+two-arm A/B test by roughly 4.1×. Each carries a migration message naming its replacement.
+Deprecations are warnings, not errors — but a consumer building with warnings-as-errors that
+calls either function will need to migrate before upgrading.
+
+### Previous release: 2.6.0
 
 2.6.0 is a correctness release. It changes very few signatures and a great many *numbers* —
 `poissonCDF` returned `P(X ≤ k−1)` at every integer argument, `normalCDF` lost its entire lower
@@ -176,7 +190,7 @@ Add BusinessMath to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.6.0")
+    .package(url: "https://github.com/jpurnell/BusinessMath.git", from: "2.7.0")
 ]
 ```
 
