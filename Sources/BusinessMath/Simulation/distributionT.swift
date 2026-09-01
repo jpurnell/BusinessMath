@@ -137,7 +137,7 @@ public func distributionT<T: Real, G: RandomNumberGenerator>(degreesOfFreedom: I
 /// let nearNormal = DistributionT(degreesOfFreedom: 30)
 /// let value = nearNormal.next()
 /// ```
-public struct DistributionT: DistributionRandom {
+public struct DistributionT: DistributionRandom, Sendable {
 	/// The degrees of freedom parameter (df > 0)
 	let degreesOfFreedom: Int
 

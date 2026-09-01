@@ -79,7 +79,7 @@ public func distributionRayleigh<T: Real>(scale: T, seed: Double? = nil) -> T wh
 /// The parameter is the scale σ, not the mean; the mean is `σ√(π/2)`. See
 /// ``distributionRayleigh(scale:seed:)`` for the conversion and for why the parameter
 /// was renamed.
-public struct DistributionRayleigh: DistributionRandom {
+public struct DistributionRayleigh: DistributionRandom, Sendable {
     /// The scale parameter σ of the Rayleigh distribution. The mean is `σ√(π/2)`.
     let scale: Double
 

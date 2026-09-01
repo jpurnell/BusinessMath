@@ -80,7 +80,7 @@ public func distributionGeometric<T: Real, G: RandomNumberGenerator>(_ p: T, usi
 ///
 /// The geometric distribution models scenarios like: number of coin flips until heads,
 /// number of attempts until success, or waiting time in discrete trials.
-public struct DistributionGeometric: DistributionRandom {
+public struct DistributionGeometric: DistributionRandom, Sendable {
 	let p: Double
 
 	/// Creates a geometric distribution generator.

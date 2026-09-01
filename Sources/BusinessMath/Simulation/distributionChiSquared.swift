@@ -182,7 +182,7 @@ public func distributionChiSquaredThrowing<T: Real, G: RandomNumberGenerator>(de
 /// let sample = varianceTest.next()
 /// ```
 @available(macOS 11.0, *)
-public struct DistributionChiSquared: DistributionRandom {
+public struct DistributionChiSquared: DistributionRandom, Sendable {
 	/// The degrees of freedom parameter (df > 0)
 	let degreesOfFreedom: Int
 

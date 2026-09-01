@@ -131,7 +131,7 @@ public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil)
 /// let value = customerValue.next()
 /// print("Customer LTV: $\(value)")
 /// ```
-public struct DistributionPareto: DistributionRandom {
+public struct DistributionPareto: DistributionRandom, Sendable {
 	/// The scale parameter xₘ (minimum value, xₘ > 0)
 	let scale: Double
 
