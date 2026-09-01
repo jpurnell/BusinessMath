@@ -187,7 +187,7 @@ public func gammaVariate<T: Real, G: RandomNumberGenerator>(shape: T, scale: T, 
 ///
 /// The Gamma distribution is useful for modeling waiting times and is a generalization
 /// of the exponential distribution. Common in queuing theory and reliability analysis.
-public struct DistributionGamma: DistributionRandom {
+public struct DistributionGamma: DistributionRandom, Sendable {
 	var r: Int
 	var λ: Double
 

@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Fixed
+
+- **Nine distribution types now conform to `Sendable`.** `DistributionLogNormal`,
+  `DistributionTriangular`, `DistributionUniform`, `DistributionExponential` and
+  `DistributionNormal` already did; `DistributionT`, `DistributionBeta`,
+  `DistributionGeometric`, `DistributionGamma`, `DistributionRayleigh`,
+  `DistributionPareto`, `DistributionF`, `DistributionChiSquared` and
+  `DistributionLogistic` did not, so passing them across an isolation boundary warned.
+  All are value types holding only numbers; the conformance was simply unfinished.
+  Surfaced by `businessMathMCP`, which builds nine such warnings when constructing
+  simulation inputs.
+
 #### Added
 
 - **`Statistics/Experiment/` — two-arm experiment design.** `Experiment.twoProportion` and

@@ -128,7 +128,7 @@ public func distributionBeta<T: Real, G: RandomNumberGenerator>(alpha: T, beta: 
 /// let symmetric = DistributionBeta(alpha: 5.0, beta: 5.0)
 /// let value = symmetric.next()
 /// ```
-public struct DistributionBeta: DistributionRandom {
+public struct DistributionBeta: DistributionRandom, Sendable {
 	/// The first shape parameter (α > 0)
 	let alpha: Double
 

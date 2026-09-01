@@ -154,7 +154,7 @@ public func distributionF<T: Real, G: RandomNumberGenerator>(df1: Int, df2: Int,
 /// let ratio = varianceTest.next()
 /// ```
 @available(macOS 11.0, *)
-public struct DistributionF: DistributionRandom {
+public struct DistributionF: DistributionRandom, Sendable {
 	/// The first degrees of freedom (numerator, df1 > 0)
 	let df1: Int
 

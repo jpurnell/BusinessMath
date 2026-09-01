@@ -48,7 +48,7 @@ public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: 
 ///
 /// The logistic distribution is similar to the normal distribution but has heavier tails.
 /// Commonly used in logistic regression and growth modeling.
-public struct DistributionLogistic: DistributionRandom {
+public struct DistributionLogistic: DistributionRandom, Sendable {
 	let mean: Double
 	let stdDev: Double
 
