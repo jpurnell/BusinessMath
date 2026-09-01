@@ -1,7 +1,7 @@
 # Design Proposal: typed, unit-checked authoring over `ModelDefinition` — and the removal of `BusinessMathDSL`
 
 **Date:** 2026-09-01
-**Status:** Proposed
+**Status:** Approved 2026-09-01 — phases 1–2d scoped as 2.8.0; see the release mapping under Proposed Phasing
 **Supersedes:** `DSLExpressiveness.md` (same day, not implemented — kept for its prior-art audit)
 **Companion:** `BusinessMathExcel/project/plans/proposals/PROPOSAL_excel_to_model_recognizer.md`
 
@@ -843,10 +843,24 @@ means degrading to a weaker check, not abandoning units.
 
 ## 15. Open Questions
 
-1. **Deprecate-then-remove across two releases, or remove outright?** With zero consumers,
-   outright removal in the next major is defensible and is the stated preference. The
-   conservative path costs one release cycle. **Recommend: deprecate in the next minor, remove in
-   the next major** — the product is public, and the cycle is cheap insurance.
+1. ~~**Deprecate-then-remove across two releases, or remove outright?**~~
+   **Resolved 2026-09-01: remove outright, in 3.0.0. No deprecation release.**
+
+   The recommendation here was the two-release path, and it was overruled deliberately. The
+   argument for insurance was that the product is public; the argument against paying for it is
+   that the insurance covers nobody. A consumer search across every sibling package found the
+   only importers of `BusinessMathDSL` to be four of its own test files. A deprecation cycle
+   warns an empty room, and the cost is not just a release — it is carrying a module that
+   duplicates core (`Scenario`, `ScenarioAnalysis`, the valuation types) and whose types are not
+   `Sendable` while `StrictConcurrency` is enabled package-wide.
+
+   **This does not change what version the removal lands in.** Removing a public product is
+   breaking whether or not it was deprecated first, so it is 3.0.0 either way — §7 is explicit
+   about that. Removing outright skips the intermediate *release*, not the major bump.
+
+   Phase 5 (the deprecation pass) is therefore **dropped**, and Phase 6 becomes the whole of the
+   removal. `Tier`/`TierComponents`/`LiquidationWaterfall` still migrate rather than die, per
+   Phase 1, so the material worth keeping is in core before anything is deleted.
 2. **Do `Money * Money` and other blocked combinations need an escape hatch** for a caller with a
    legitimate exotic case? An explicit `Expr<U>.reinterpret(as:)` would provide one at the cost
    of a hole. Recommend deferring until someone needs it.
@@ -887,10 +901,21 @@ CHANGELOG entry for the deprecation and the removed product, and an update to
 | **2d** | `Rollforward` + `PeriodDriver` (Part 2.5) | Debt rollforward across 7 periods matches an Excel fixture; within-period cycle still resolves via `CycleSolver`; cross-period cycle diagnosed as `rollforwardCycle` |
 | **3** | `Unit`, `Account<U>`, `Expr<U>`, operator algebra, `defining` overloads | Negative compile tests fail to compile; **compile-time budget met** (§15 Q5) — if not, fall back to Alternative 3 |
 | **4** | `validateUnits()` + rate-basis checking | `rateBasisMismatch` thrown for annual-rate-on-monthly-period |
-| **5** | Deprecate every remaining `BusinessMathDSL` public type with `renamed:`/`message:` | Package builds with warnings only; CHANGELOG entry |
+| ~~**5**~~ | ~~Deprecate every remaining `BusinessMathDSL` public type~~ **Dropped 2026-09-01** — removal is outright, so there is no deprecation release; see §15 Q1 | — |
 | **6** | Delete `Sources/BusinessMathDSL/` + the three obsolete `Result Builder Tests` files; remove product and target from `Package.swift` | Package builds clean; no reference to `BusinessMathDSL` remains |
 | **7** | `1.7-TypedModelAuthoringGuide.md`, migration guide, `1.4-FluentAPIGuide.md` reconciliation, master plan | Quality gate 0/0 |
 
 Phases 1–2 are pure additions and unblock the Excel importer's Wharton work regardless of what
 happens to Phase 3. Phase 3 is the one with genuine technical risk, and it is deliberately
 placed after the work that does not depend on it.
+
+### Release mapping, decided 2026-09-01
+
+| Release | Phases | Why |
+|---|---|---|
+| **2.8.0** | 1, 2a, 2b, 2c, 2d | Purely additive. This is the gate `BusinessMathExcel` Phase 3 waits on, so it ships on its own rather than behind Phase 3's compile-time risk |
+| *later minor* | 3, 4 | Additive, but Phase 3 is gated on the compile-time budget in §15 Q5, which has not been measured |
+| **3.0.0** | 6, 7 | Removing a public product is breaking regardless of deprecation. Phase 5 is dropped |
+
+Phase 1 migrates `Tier`/`TierComponents`/`LiquidationWaterfall` into core **before** 3.0.0
+deletes their old home, leaving a `renamed:` pointer at the old location for anyone on 2.8.x.
