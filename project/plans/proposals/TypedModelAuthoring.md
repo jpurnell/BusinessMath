@@ -253,6 +253,9 @@ extension FormulaEvaluator {
         // Arithmetic primitives — implemented locally.
         case min = "MIN", max = "MAX", abs = "ABS", sum = "SUM"
 
+        // Conditional — implemented locally. See "Conditionals" below.
+        case ifThenElse = "IF"
+
         // Financial — delegated. Canonical implementation named per case.
         case npv   = "NPV"    // → npvExcel(rate:cashFlows:)        NPV.swift:237
         case irr   = "IRR"    // → irr(cashFlows:guess:)            IRR.swift:87
@@ -308,6 +311,57 @@ kind that produce plausible wrong numbers:
 Each registered name therefore ships with a documented semantics assertion and an Excel-derived
 fixture (§10). That is the unit of work, and it parallelises cleanly across names.
 
+### Conditionals — `IF` and comparison operators
+
+`FormulaEvaluator` has **no comparison operators today**: its token set is `number`, `name`,
+`+ - * / ( )`. So `IF` is not a dispatch-table entry — it needs comparison tokens
+(`> < >= <= = <>`), a comparison production in the parser, and a decision about what a truth
+value means over a `TimeSeries`.
+
+**Representation.** A comparison evaluates period-wise to `1` or `0`, matching Excel's
+`TRUE`/`FALSE` numeric coercion, so there is one value type throughout and no `Bool` series to
+thread. `IF(condition, then, else)` selects period-wise.
+
+**The units make this safer than Excel.** A fifth marker joins the four in §4:
+
+```swift
+/// The result of a comparison. Cannot be combined arithmetically with anything.
+public enum Condition: Unit { public static var symbol: String { "condition" } }
+
+// Comparisons require matching units — money against money, never money against a ratio.
+public func >  <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+public func <  <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+public func >= <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+public func <= <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+
+/// Both branches must share a unit, so a conditional cannot smuggle a ratio
+/// into a money-valued account.
+public func ifThen<U: Unit>(_ c: Expr<Condition>, _ then: Expr<U>, else: Expr<U>) -> Expr<U>
+```
+
+`Condition` has no arithmetic overloads at all, so `revenue + (a > b)` does not compile — a
+mistake Excel makes silently, since there `TRUE` is just `1`.
+
+### When *not* to reach for `IF`
+
+`IF` exists for genuine conditional logic — a covenant test, a sweep that only triggers above a
+cash floor, a tier that pays only once a hurdle clears. It is **not** the preferred way to encode
+a schedule.
+
+A balloon payment in period 5 is a *fact about the timeline*, not a decision the model makes.
+Encoding it as `IF([Period Index] = 5, [Debt], 0)` buries a date inside a formula, where it
+cannot be inspected, varied, or recognized as data. Encoding it as an indicator input series
+`[0, 0, 0, 0, 1, 0]` multiplied through keeps the formula uniform and puts the schedule where
+schedules belong — in the inputs, alongside every other assumption.
+
+**Rule of thumb: if the condition is answerable from the timeline alone, it is data. If it
+depends on a computed value, it is `IF`.** Both are supported; the first is preferred, and the
+DocC guide (§16) leads with it.
+
+This also matters for the importer: a recognized `IF` whose test reads only period position
+should be re-expressed as an indicator series rather than transcribed literally. See
+`PROPOSAL_excel_to_model_recognizer.md`.
+
 **Seeding the registry.** `BusinessMathExcel`'s `FormulaMapper` already carries curated Excel
 name lists — `financialFunctions` (`PMT`, `IPMT`, `PPMT`, `FV`, `PV`, `NPV`, `IRR`, `XIRR`,
 `XNPV`, `RATE`, `NPER`, `SLN`, `DB`, `DDB`) and `statisticalFunctions` (`AVERAGE`, `STDEV`,
@@ -346,6 +400,96 @@ let results = try model.evaluate()      // cycle resolution unchanged, via Cycle
 ```
 
 `fcf.expr + interestRate.expr` would not compile. Neither would `min(fcf.expr, ratio(0.4))`.
+
+### Part 2.5 — the rollforward driver (added after review)
+
+**Finding: prior-period references are deliberately absent, and this is documented twice.**
+
+`FormulaEvaluator.swift:119-124`:
+
+> **What it deliberately does not have**
+> No functions, no aggregation, no references to other periods. A formula reads accounts in the
+> period it is evaluating and combines them arithmetically. Anything that needs to look across
+> periods — a moving average, a prior-year comparison — is a time series operation and belongs
+> in one, where it can be named and tested.
+
+`CycleSolver.swift:222-226`:
+
+> **What it cannot express**
+> The same thing `evaluate()` cannot: a reference to another period. A cycle here is a cycle
+> *within* one period. **An opening balance is supplied as data and the roll-forward that
+> carries a closing balance into the next period stays the caller's loop.**
+
+This is not an oversight; it is a boundary the architecture drew on purpose, and it assigns the
+rollforward to the caller. **But no reusable caller exists.** Every consumer would write the same
+period loop, and the Excel importer cannot ship without one — a workbook is rollforwards almost
+end to end.
+
+**Why this is not a grammar change.** `evaluate()` resolves whole `TimeSeries` in *account*
+dependency order (`ModelDefinition.swift:264-274`). A formula `revenue = revenue.prior * 1.1`
+makes `revenue` depend on itself at the account level, so the account-level DAG reports a cycle
+and refuses the model — even though the reference is perfectly well-founded at the
+(account, period) level. Supporting prior-period references *inside the grammar* means moving the
+dependency graph from per-account to **per-(account, period)** — which is what Excel does with
+cells and what orcaset does with `get_at(rule, key)`. That is a rewrite of the evaluation core,
+not an addition to the tokeniser.
+
+**Proposed instead: make the caller's loop a first-class, reusable component.** Formulas stay
+period-local; cross-period carry is explicit data.
+
+```swift
+/// Carries one account's closing value into another account's opening value,
+/// one period later.
+public struct Rollforward: Sendable, Equatable {
+    /// The account that receives the prior period's value.
+    public let opening: String
+    /// The account whose value is carried forward.
+    public let closing: String
+    /// The opening account's value in the first period, where there is no prior.
+    public let seed: Double
+
+    public init(opening: String, closing: String, seed: Double)
+}
+
+/// Runs a period-local `ModelDefinition` across a timeline, carrying rollforwards.
+///
+/// Each period: seed opening accounts from the prior period's closing values, slice
+/// inputs to that period, `solve()`, and collect. Within-period cycles are resolved by
+/// `CycleSolver`; cross-period carry is this type's job. The two never mix.
+public struct PeriodDriver<T: Real & Sendable & LosslessStringConvertible>: Sendable {
+    public init(
+        definition: ModelDefinition<T>,
+        rollforwards: [Rollforward]
+    )
+
+    /// - Throws: ``PeriodDriverError`` for a rollforward naming an unknown account or
+    ///   forming a cross-period cycle; plus anything `solve()` throws, annotated with
+    ///   the period it failed in.
+    public func run(
+        over periods: [Period],
+        settings: IterationSettings<T> = IterationSettings()
+    ) throws -> [String: TimeSeries<T>]
+}
+
+public enum PeriodDriverError: Error, Sendable, Equatable {
+    case unknownAccount(String, inRollforward: String)
+    case rollforwardCycle([String])
+    case periodFailure(Period, underlying: String)
+    case emptyTimeline
+}
+```
+
+This respects the documented boundary rather than reversing it, and it yields a clean split that
+is easy to test: **within-period cycles → `CycleSolver`; cross-period carry → `PeriodDriver`.**
+
+Typed sugar, once Part 3 lands:
+
+```swift
+extension Account {
+    /// Declares that this account opens at another's prior close.
+    public func opening(from closing: Account<U>, seed: Double) -> Rollforward
+}
+```
 
 ### Part 3 — waterfall migration
 
@@ -561,6 +705,15 @@ Floating-point assertions use accuracy-based comparison per the TDD contract.
   The typed layer is deletable without breaking the model layer, and the string API stays
   first-class for callers (notably the Excel importer) that cannot type their input.
 
+- **Title:** Cross-period carry is a driver, not a formula reference
+- **Category:** architecture
+- **Key decision:** Formulas stay period-local, as `FormulaEvaluator.swift:119-124` and
+  `CycleSolver.swift:222-226` deliberately specify. The rollforward the docs assign to "the
+  caller's loop" becomes a reusable `PeriodDriver` rather than a grammar feature, because
+  prior-period references inside the grammar would require moving the dependency graph from
+  per-account to per-(account, period) — a rewrite of the evaluation core. Within-period cycles
+  resolve via `CycleSolver`; cross-period carry is `PeriodDriver`'s job; the two never mix.
+
 - **Title:** `FormulaEvaluator` implements no financial mathematics
 - **Category:** architecture
 - **Key decision:** Every financial function in formula text dispatches to the canonical
@@ -728,9 +881,10 @@ CHANGELOG entry for the deprecation and the removed product, and an update to
 | Phase | Scope | Gate |
 |---|---|---|
 | **1** | Migrate `Tier`/`TierComponents`/`LiquidationWaterfall` to `Financial Statements/Waterfall/`; add `Sendable`, throwing inits | `WaterfallBuilderTests` green at the new location |
-| **2a** | `FormulaEvaluator` call machinery: comma token, `Node.function`, arity checking, dispatch table; arithmetic primitives `MIN`/`MAX`/`ABS`/`SUM` | Sweep expressible as a string formula |
+| **2a** | `FormulaEvaluator` call machinery: comma token, `Node.function`, arity checking, dispatch table; arithmetic primitives `MIN`/`MAX`/`ABS`/`SUM`; **comparison operators (`> < >= <= = <>`) and `IF`**, with the `Condition` unit | Sweep expressible as a string formula; `IF` selects period-wise and matches Excel's `TRUE`=1 coercion; `Expr<Money> + Expr<Condition>` does not compile |
 | **2b** | Register the TVM tranche (`NPV`→`npvExcel`, `IRR`, `XIRR`, `XNPV`, `PMT`, `IPMT`, `PPMT`, `PV`, `FV`, `CUMIPMT`, `CUMPRINC`) — one Excel-semantics fixture per name | Delegation-equivalence tests green; `NPV`≠`npv()` test pins the binding |
 | **2c** | Register the statistical tranche seeded from `FormulaMapper.statisticalFunctions` | One Excel fixture per name; `STDEV`/`STDEVP` and `VAR`/`VARP` denominators pinned |
+| **2d** | `Rollforward` + `PeriodDriver` (Part 2.5) | Debt rollforward across 7 periods matches an Excel fixture; within-period cycle still resolves via `CycleSolver`; cross-period cycle diagnosed as `rollforwardCycle` |
 | **3** | `Unit`, `Account<U>`, `Expr<U>`, operator algebra, `defining` overloads | Negative compile tests fail to compile; **compile-time budget met** (§15 Q5) — if not, fall back to Alternative 3 |
 | **4** | `validateUnits()` + rate-basis checking | `rateBasisMismatch` thrown for annual-rate-on-monthly-period |
 | **5** | Deprecate every remaining `BusinessMathDSL` public type with `renamed:`/`message:` | Package builds with warnings only; CHANGELOG entry |
