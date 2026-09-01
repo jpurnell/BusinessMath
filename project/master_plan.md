@@ -38,12 +38,28 @@ suite depends on it.
 
 ## Current Status
 
+**2.7.0 shipped 2026-09-01** — tagged `v2.7.0` on the release commit, 33 commits of code
+past `v2.6.0`. The last code change is `44d3774`; the release commit itself is documentation
+only, so the tagged tree compiles identically to the state the tests and sibling builds below
+were measured against.
+Additive by construction: `Statistics/Experiment/` (two-arm design and power analysis),
+`Sendable` completed on nine distribution types, and deprecations on the two `AB Test.swift`
+defects. No signature changes. `plans/completed/v2.7.0_SCOPE.md` is the release's scope
+document, and every item in it shipped.
+
+Its one pre-tag open question — *do the sibling packages break on the deprecation?* — was
+answered before tagging: `BusinessMathPro` (local path dependency, so it compiles this
+working tree) and `businessMathMCP` (resolved at `44d37741`) both build clean with zero
+deprecation warnings. Neither still calls the deprecated functions. That result holds for
+consumers built with warnings-as-warnings; `v3.0.0_SCOPE.md` §230 correctly notes a
+warnings-as-errors consumer must migrate first.
+
 **2.6.0 shipped 2026-08-15** — tagged `v2.6.0` at `c6e44a7`, 159 commits past `v2.5.2`,
-CI green on the tagged commit. Five commits have landed since; see `HANDOFF.md`.
+CI green on the tagged commit.
 
 | | |
 |---|---|
-| tests | **6,610 in 582 suites**, 0 known issues, ~35s |
+| tests | **6,632 in 585 suites**, 0 known issues, ~30s (measured 2026-09-01 at `44d3774`) |
 | build | **0 warnings**, library and test target |
 | quality gate | **0 errors, 0 warnings**, verified against the installed binary |
 | CI | green — 4/4 jobs, including `Linux release compile check` |
@@ -339,11 +355,18 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-08-24 — reconciled after driving the gate from 1,187 blocking
+**Last Updated:** 2026-09-01 — reconciled for the 2.7.0 release. Current Status now leads
+with 2.7.0 and records how its pre-tag open question was answered; `v2.7.0_SCOPE.md` moved
+to `plans/completed/` with its inbound references repointed; the CHANGELOG's `[Unreleased]`
+heading became `[2.7.0] - 2026-09-01`; README's latest-release section and `from:` pin moved
+to 2.7.0, with the deprecations called out because they are the one thing that can bite a
+consumer on upgrade.
+
+Previously: 2026-08-24 — reconciled after driving the gate from 1,187 blocking
 findings to 0. Updated: the gate's checker count and status; a Known Issues entry recording
 that nothing had been running the gate since June, and that CI still cannot; and the
 `--exclude test` misreading that kept the suite's force unwraps out of view. Added
-`upcoming/v2.7.0_SCOPE.md` and promoted `MarketingLeg.md` to `upcoming/`.
+`v2.7.0_SCOPE.md` (now `completed/`, shipped 2026-09-01) and promoted `MarketingLeg.md` to `upcoming/`.
 
 Previously: 2026-08-17 — reconciled three times: after `doc-comment-code` reached 0,
 after the quality-gate fixes landed (blockers 1 and 2 cleared, gate verified at 43 of 43
