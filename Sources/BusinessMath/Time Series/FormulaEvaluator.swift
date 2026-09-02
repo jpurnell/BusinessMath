@@ -191,6 +191,11 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		case .function(let name, let arguments):
 			return try call(name, arguments)
 
+		case .comparison(let comparison, let lhs, let rhs):
+			let left = try resolve(lhs)
+			let right = try resolve(rhs)
+			return left.zip(with: right) { Self.compare(comparison, $0, $1) ? 1 : 0 }
+
 		case .binary(let op, let lhs, let rhs):
 			// Delegated rather than reimplemented, so a formula cannot come to disagree with
 			// the same expression written in Swift — including about missing periods.
@@ -211,6 +216,28 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 	/// expression it touched — `revenue * 2` would come back empty. It therefore takes the
 	/// union of the supplied accounts' periods, which is the widest set any subexpression can
 	/// produce.
+	/// Whether a comparison holds between two values.
+	///
+	/// Equality is IEEE comparison, deliberately: a sheet's `=` is exact, and
+	/// widening it to a tolerance here would make this evaluator disagree with the
+	/// workbook a formula came from.
+	///
+	/// - Parameters:
+	///   - comparison: The comparison to apply.
+	///   - lhs: The left value.
+	///   - rhs: The right value.
+	/// - Returns: Whether it holds.
+	private static func compare(_ comparison: Node.Comparison, _ lhs: T, _ rhs: T) -> Bool {
+		switch comparison {
+		case .greaterThan: return lhs > rhs
+		case .lessThan: return lhs < rhs
+		case .greaterOrEqual: return lhs >= rhs
+		case .lessOrEqual: return lhs <= rhs
+		case .equal: return lhs.isEqual(to: rhs)
+		case .notEqual: return !lhs.isEqual(to: rhs)
+		}
+	}
+
 	/// Dispatches a function call.
 	///
 	/// - Parameters:
@@ -243,6 +270,18 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			return try reduce(operands, function: name) { Swift.max($0, $1) }
 		case .sum:
 			return try reduce(operands, function: name) { $0 + $1 }
+		case .ifThenElse:
+			// All three arms are evaluated before selection. Safe because the
+			// grammar has no effects: the only cost is computing a value that is
+			// then discarded, and the division a guard is protecting produces an
+			// infinity that never gets selected.
+			guard operands.count == 3 else {
+				throw FormulaError.wrongArgumentCount(
+					function: name, expected: function.arityDescription, got: operands.count)
+			}
+			return select(
+				condition: operands[0], whenTrue: operands[1], whenFalse: operands[2])
+
 		case .abs:
 			guard let operand = operands.first else {
 				throw FormulaError.wrongArgumentCount(
@@ -250,6 +289,39 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			}
 			return operand.mapValues { $0.magnitude }
 		}
+	}
+
+	/// Chooses between two series period by period.
+	///
+	/// Written as a three-way walk rather than two `zip`s. Chaining `zip` would
+	/// need a sentinel to carry "the condition was false" between passes, and any
+	/// sentinel is a value the true branch might legitimately hold — a `NaN` from a
+	/// division inside it would then silently select the false branch.
+	///
+	/// Only periods present in all three survive, which is the rule `+` follows.
+	///
+	/// - Parameters:
+	///   - condition: Non-zero selects `whenTrue`, matching Excel's coercion.
+	///   - whenTrue: The value for periods where the condition holds.
+	///   - whenFalse: The value for the rest.
+	/// - Returns: The selected series.
+	private func select(
+		condition: TimeSeries<T>,
+		whenTrue: TimeSeries<T>,
+		whenFalse: TimeSeries<T>
+	) -> TimeSeries<T> {
+		var periods: [Period] = []
+		var values: [T] = []
+
+		for period in condition.periods {
+			guard let flag = condition[period],
+				  let ifTrue = whenTrue[period],
+				  let ifFalse = whenFalse[period] else { continue }
+			periods.append(period)
+			values.append(flag.isEqual(to: 0) ? ifFalse : ifTrue)
+		}
+
+		return TimeSeries(periods: periods, values: values)
 	}
 
 	/// Folds a variadic function's operands period by period.
@@ -294,6 +366,7 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		case plus, minus, multiply, divide
 		case leftParen, rightParen
 		case comma
+		case greaterThan, lessThan, greaterOrEqual, lessOrEqual, equal, notEqual
 	}
 
 	static func tokenise(_ formula: String) throws -> [Token] {
@@ -351,7 +424,32 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 				continue
 			}
 
+			// Two-character operators first: `<` alone is a comparison, but `<=`
+			// and `<>` are different ones, and reading a single character would
+			// silently turn `a <> b` into `a < (>b)`.
+			let next = formula.index(after: index) < formula.endIndex
+				? formula[formula.index(after: index)]
+				: nil
+			if character == ">", next == "=" {
+				tokens.append(.greaterOrEqual)
+				index = formula.index(index, offsetBy: 2)
+				continue
+			}
+			if character == "<", next == "=" {
+				tokens.append(.lessOrEqual)
+				index = formula.index(index, offsetBy: 2)
+				continue
+			}
+			if character == "<", next == ">" {
+				tokens.append(.notEqual)
+				index = formula.index(index, offsetBy: 2)
+				continue
+			}
+
 			switch character {
+			case ">": tokens.append(.greaterThan)
+			case "<": tokens.append(.lessThan)
+			case "=": tokens.append(.equal)
 			case "+": tokens.append(.plus)
 			case "-": tokens.append(.minus)
 			case "*": tokens.append(.multiply)
@@ -375,8 +473,14 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 		case negate(Node)
 		case binary(Operator, Node, Node)
 		case function(String, [Node])
+		case comparison(Comparison, Node, Node)
 
 		enum Operator: Sendable { case add, subtract, multiply, divide }
+
+		/// The comparisons a formula can express, spelled as a sheet spells them.
+		enum Comparison: Sendable {
+			case greaterThan, lessThan, greaterOrEqual, lessOrEqual, equal, notEqual
+		}
 	}
 
 	/// Recursive descent, one level per precedence tier.
@@ -418,7 +522,46 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			}
 		}
 
+		/// Parses a full expression, comparisons included.
+		///
+		/// Comparisons bind loosest, so `revenue - 50 > 100` reads as
+		/// `(revenue - 50) > 100` — the way it reads in a sheet. They do not chain:
+		/// `a < b < c` is a syntax error rather than quietly meaning `(a < b) < c`,
+		/// which would compare a flag against a quantity.
 		mutating func parseExpression() throws -> Node {
+			guard depth < Self.maximumNestingDepth else {
+				throw FormulaError.nestingTooDeep(limit: Self.maximumNestingDepth)
+			}
+			depth += 1
+			defer { depth -= 1 }
+
+			let left = try parseAdditive()
+			guard let token = current, let comparison = Self.comparison(for: token) else {
+				return left
+			}
+			position += 1
+			let right = try parseAdditive()
+
+			if let following = current, Self.comparison(for: following) != nil {
+				throw FormulaError.invalidSyntax("comparisons do not chain")
+			}
+			return .comparison(comparison, left, right)
+		}
+
+		/// The comparison a token denotes, or `nil` if it is not one.
+		static func comparison(for token: Token) -> Node.Comparison? {
+			switch token {
+			case .greaterThan: return .greaterThan
+			case .lessThan: return .lessThan
+			case .greaterOrEqual: return .greaterOrEqual
+			case .lessOrEqual: return .lessOrEqual
+			case .equal: return .equal
+			case .notEqual: return .notEqual
+			default: return nil
+			}
+		}
+
+		mutating func parseAdditive() throws -> Node {
 			// The cycle's base case. Written out in each participant rather than shared,
 			// because there is more than one unbounded path — `(` re-enters through
 			// `parsePrimary`, unary minus through `parseFactor` — and because a bound behind a
@@ -516,7 +659,8 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			case .rightParen:
 				throw FormulaError.unbalancedParentheses
 
-			case .plus, .minus, .multiply, .divide:
+			case .plus, .minus, .multiply, .divide,
+				 .greaterThan, .lessThan, .greaterOrEqual, .lessOrEqual, .equal, .notEqual:
 				throw FormulaError.invalidSyntax("an operator with nothing to its left")
 
 			case .comma:

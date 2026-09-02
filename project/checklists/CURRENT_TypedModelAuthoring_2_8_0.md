@@ -97,13 +97,28 @@ recorded in the proposal under "Which functions, measured rather than assumed".
 
 ## Task 4 — Comparisons and `IF` (proposal Phase 2a, part 3)
 
-- [ ] **RED** — `IF(a > b, a, b)` does not parse today.
-- [ ] **GREEN** — comparison operators `>`, `<`, `>=`, `<=`, `=`, `<>` and the `IF` function.
-- [ ] **Excel's coercion, pinned by test:** `TRUE` is 1 and `FALSE` is 0 in arithmetic. The
+- [x] **RED** — `IF(a > b, a, b)` does not parse today.
+- [x] **GREEN** — comparison operators `>`, `<`, `>=`, `<=`, `=`, `<>` and the `IF` function.
+- [x] **Excel's coercion, pinned by test:** `TRUE` is 1 and `FALSE` is 0 in arithmetic. The
       downstream `NodeFormula` layer already made this choice; the two must agree or a
       round-tripped model changes meaning.
-- [ ] `IF` selects **period-wise** over a `TimeSeries`, not once for the whole series.
-- [ ] Commit.
+- [x] `IF` selects **period-wise** over a `TimeSeries`, not once for the whole series.
+- [x] Commit.
+
+
+**Decisions made while doing it.**
+
+- **Comparisons bind loosest**, so `revenue - 50 > 100` reads as `(revenue - 50) > 100`, the way
+  a sheet reads it. They **do not chain**: `a < b < c` is a syntax error rather than quietly
+  meaning `(a < b) < c`, which would compare a flag against a quantity.
+- **Equality is IEEE, deliberately.** A sheet's `=` is exact, and widening it to a tolerance here
+  would make this evaluator disagree with the workbook a formula came from.
+- **`IF` evaluates all three arms, then selects.** Safe because the grammar has no effects: the
+  guarded division still produces an infinity, and that infinity is simply never chosen.
+- **Selection is a three-way walk, not two `zip`s.** Chaining `zip` needs a sentinel to carry
+  "the condition was false" between passes, and any sentinel is a value the true branch might
+  legitimately hold — a `NaN` from a division inside it would then silently select the false
+  branch. Caught while writing it, not by a test.
 
 ## Task 5 — TVM function tranche (proposal Phase 2b)
 

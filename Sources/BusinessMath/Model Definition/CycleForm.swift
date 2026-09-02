@@ -140,6 +140,15 @@ extension FormulaEvaluator {
 			let involvesMember = arguments.contains { degree(of: $0, in: members) != .constant }
 			return involvesMember ? .nonlinear : .constant
 
+		case .comparison(_, let lhs, let rhs):
+			// A comparison of a cycle member is a step function of it, which no
+			// linear system expresses. Same conservative answer as a call, for the
+			// same reason: nonlinear routes to the iterative solver, which is
+			// correct, where claiming linear would produce a confident wrong number.
+			let left = degree(of: lhs, in: members)
+			let right = degree(of: rhs, in: members)
+			return left == .constant && right == .constant ? .constant : .nonlinear
+
 		case .binary(let op, let lhs, let rhs):
 			let left = degree(of: lhs, in: members)
 			let right = degree(of: rhs, in: members)
