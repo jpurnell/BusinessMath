@@ -136,11 +136,25 @@ work that `ISERROR`/`ISNA` would.
 
 ## Task 6 — TVM function tranche (proposal Phase 2c)
 
-- [ ] Seed the list from `BusinessMathExcel`'s `FormulaMapper.statisticalFunctions`, which is
-      already a survey of what workbooks actually use.
-- [ ] Pin `STDEV`/`STDEVP` and `VAR`/`VARP` denominators — sample versus population is the
-      classic silent-wrong-answer in this tranche.
-- [ ] Commit.
+- [x] `NPV`, `IRR`, `PMT`, `IPMT`, `PPMT` registered, delegating to the canonical implementations.
+- [x] **`NPV` binds to `npvExcel`, not `npv`** (decision D5), pinned by a test asserting the two
+      *differ* so the binding cannot be quietly changed.
+- [x] **Two argument shapes, distinguished.** `NPV` and `IRR` consume a whole series and give one
+      number, broadcast across the periods it came from — a formula pointed at a range.
+      `PMT`/`IPMT`/`PPMT` take scalars and compute independently in each period — a formula
+      filled across a row. The checklist had not separated these; they are not interchangeable.
+- [x] **`PMT`/`IPMT`/`PPMT` are negated to Excel's sign convention.** `payment()` returns the
+      size of the instalment; Excel returns what leaves the payer's pocket. Same magnitude,
+      opposite sign — the exact shape of plausible-wrong-number this tranche exists to catch.
+- [x] **`FV` deliberately not registered.** Excel's `FV(rate, nper, pmt, [pv], [type])` is an
+      annuity's future value; this library's `futureValue(presentValue:rate:periods:)` grows a
+      lump sum. Same name, different function. A test pins it as *unknown* so the gap is
+      deliberate and visible rather than an oversight waiting to be "fixed" wrongly.
+- [x] **`XNPV`, `XIRR`, `MIRR`, `CUMIPMT`, `CUMPRINC` deferred.** The first two need per-cash-flow
+      dates, which a period-indexed series does not carry; the last two need a period *range*
+      argument, which the grammar has no way to express. Each needs machinery, not a binding, and
+      none appears in either reference workbook.
+- [x] Commit.
 
 ## Task 7 — Statistical function tranche (proposal Phase 2d)
 

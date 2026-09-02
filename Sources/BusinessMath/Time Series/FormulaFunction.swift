@@ -51,6 +51,35 @@ extension FormulaEvaluator {
 		/// One when the argument is zero.
 		case not = "NOT"
 
+		// MARK: Time value of money
+		//
+		// Delegated, never reimplemented. Each case names the canonical function it
+		// binds to, so the binding is readable here rather than inferred from the
+		// dispatch below.
+
+		/// Net present value, Excel's definition. Binds to `npvExcel(rate:cashFlows:)`.
+		case npv = "NPV"
+
+		/// Internal rate of return. Binds to `irr(cashFlows:guess:tolerance:maxIterations:)`.
+		case irr = "IRR"
+
+		/// Loan payment. Binds to `payment(presentValue:rate:periods:)`.
+		case pmt = "PMT"
+
+		/// The interest part of one payment. Binds to `interestPayment(...)`.
+		case ipmt = "IPMT"
+
+		/// The principal part of one payment. Binds to `principalPayment(...)`.
+		case ppmt = "PPMT"
+
+		// `FV` is deliberately absent. Excel's is `FV(rate, nper, pmt, [pv], [type])`
+		// — an annuity's future value — while this library's
+		// `futureValue(presentValue:rate:periods:)` is simple growth of a lump sum.
+		// Same name, different function. Registering it would give a formula copied
+		// out of a sheet a different meaning here, silently, which is the failure
+		// this whole tranche exists to prevent. It goes in when the Excel signature
+		// does.
+
 		/// The argument counts this function accepts.
 		///
 		/// Checked before evaluation, so a miscall is reported as a miscall rather
@@ -64,10 +93,29 @@ extension FormulaEvaluator {
 				return 1...Int.max
 			case .abs, .not:
 				return 1...1
-			case .round:
+			case .round, .npv:
 				return 2...2
+			case .irr:
+				return 1...1
+			case .pmt:
+				return 3...3
+			case .ipmt, .ppmt:
+				return 4...4
 			case .ifThenElse:
 				return 3...3
+			}
+		}
+
+		/// Whether this function consumes an entire series rather than acting period
+		/// by period.
+		///
+		/// `NPV` and `IRR` are pointed at a range in a sheet and give back one
+		/// number. Everything else takes scalars and gives a scalar, so it computes
+		/// independently in each period — a formula filled across a row.
+		public var aggregates: Bool {
+			switch self {
+			case .npv, .irr: return true
+			default: return false
 			}
 		}
 
@@ -75,8 +123,10 @@ extension FormulaEvaluator {
 		public var arityDescription: String {
 			switch self {
 			case .min, .max, .sum, .average, .and, .or: return "1 or more"
-			case .abs, .not: return "exactly 1"
-			case .round: return "exactly 2"
+			case .abs, .not, .irr: return "exactly 1"
+			case .round, .npv: return "exactly 2"
+			case .pmt: return "exactly 3"
+			case .ipmt, .ppmt: return "exactly 4"
 			case .ifThenElse: return "exactly 3"
 			}
 		}
