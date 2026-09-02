@@ -936,9 +936,10 @@ CHANGELOG entry for the deprecation and the removed product, and an update to
 |---|---|---|
 | **1** | Migrate `Tier`/`TierComponents`/`LiquidationWaterfall` to `Financial Statements/Waterfall/`; add `Sendable`, throwing inits | `WaterfallBuilderTests` green at the new location |
 | **2a** | `FormulaEvaluator` call machinery: comma token, `Node.function`, arity checking, dispatch table; arithmetic primitives `MIN`/`MAX`/`ABS`/`SUM`; **comparison operators (`> < >= <= = <>`) and `IF`**, with the `Condition` unit | Sweep expressible as a string formula; `IF` selects period-wise and matches Excel's `TRUE`=1 coercion; `Expr<Money> + Expr<Condition>` does not compile |
-| **2b** | Register the TVM tranche (`NPV`→`npvExcel`, `IRR`, `XIRR`, `XNPV`, `PMT`, `IPMT`, `PPMT`, `PV`, `FV`, `CUMIPMT`, `CUMPRINC`) — one Excel-semantics fixture per name | Delegation-equivalence tests green; `NPV`≠`npv()` test pins the binding |
-| **2c** | Register the statistical tranche seeded from `FormulaMapper.statisticalFunctions` | One Excel fixture per name; `STDEV`/`STDEVP` and `VAR`/`VARP` denominators pinned |
-| **2d** | `Rollforward` + `PeriodDriver` (Part 2.5) | Debt rollforward across 7 periods matches an Excel fixture; within-period cycle still resolves via `CycleSolver`; cross-period cycle diagnosed as `rollforwardCycle` |
+| **2b** | Register the **logical and aggregation** tranche — `AVERAGE`, `ROUND`, `AND`, `OR`, `NOT`. Moved ahead of TVM on the function census: these appear in real workbooks and TVM does not | One Excel-semantics fixture per name; `ROUND` pinned at half-away-from-zero |
+| **2c** | Register the TVM tranche (`NPV`→`npvExcel`, `IRR`, `XIRR`, `XNPV`, `PMT`, `IPMT`, `PPMT`, `PV`, `FV`, `CUMIPMT`, `CUMPRINC`) — one Excel-semantics fixture per name | Delegation-equivalence tests green; `NPV`≠`npv()` test pins the binding |
+| **2d** | Register the statistical tranche seeded from `FormulaMapper.statisticalFunctions` | One Excel fixture per name; `STDEV`/`STDEVP` and `VAR`/`VARP` denominators pinned |
+| **2e** | `Rollforward` + `PeriodDriver` (Part 2.5) | Debt rollforward across 7 periods matches an Excel fixture; within-period cycle still resolves via `CycleSolver`; cross-period cycle diagnosed as `rollforwardCycle` |
 | **3** | `Unit`, `Account<U>`, `Expr<U>`, operator algebra, `defining` overloads | Negative compile tests fail to compile; **compile-time budget met** (§15 Q5) — if not, fall back to Alternative 3 |
 | **4** | `validateUnits()` + rate-basis checking | `rateBasisMismatch` thrown for annual-rate-on-monthly-period |
 | ~~**5**~~ | ~~Deprecate every remaining `BusinessMathDSL` public type~~ **Dropped 2026-09-01** — removal is outright, so there is no deprecation release; see §15 Q1 | — |
@@ -953,7 +954,7 @@ placed after the work that does not depend on it.
 
 | Release | Phases | Why |
 |---|---|---|
-| **2.8.0** | 1, 2a, 2b, 2c, 2d | Purely additive. This is the gate `BusinessMathExcel` Phase 3 waits on, so it ships on its own rather than behind Phase 3's compile-time risk |
+| **2.8.0** | 1, 2a, 2b, 2c, 2d, 2e | Purely additive. This is the gate `BusinessMathExcel` Phase 3 waits on, so it ships on its own rather than behind Phase 3's compile-time risk |
 | *later minor* | 3, 4 | Additive, but Phase 3 is gated on the compile-time budget in §15 Q5, which has not been measured |
 | **3.0.0** | 6, 7 | Removing a public product is breaking regardless of deprecation. Phase 5 is dropped |
 

@@ -282,6 +282,37 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			return select(
 				condition: operands[0], whenTrue: operands[1], whenFalse: operands[2])
 
+		case .average:
+			let total = try reduce(operands, function: name) { $0 + $1 }
+			let count = T(exactly: operands.count) ?? 1
+			return total.mapValues { $0 / count }
+
+		case .and:
+			return try reduce(operands, function: name) { lhs, rhs in
+				lhs.isEqual(to: 0) || rhs.isEqual(to: 0) ? 0 : 1
+			}
+
+		case .or:
+			return try reduce(operands, function: name) { lhs, rhs in
+				lhs.isEqual(to: 0) && rhs.isEqual(to: 0) ? 0 : 1
+			}
+
+		case .not:
+			guard let operand = operands.first else {
+				throw FormulaError.wrongArgumentCount(
+					function: name, expected: function.arityDescription, got: 0)
+			}
+			return operand.mapValues { $0.isEqual(to: 0) ? 1 : 0 }
+
+		case .round:
+			guard operands.count == 2 else {
+				throw FormulaError.wrongArgumentCount(
+					function: name, expected: function.arityDescription, got: operands.count)
+			}
+			return operands[0].zip(with: operands[1]) { value, digits in
+				Self.round(value, toDigits: digits)
+			}
+
 		case .abs:
 			guard let operand = operands.first else {
 				throw FormulaError.wrongArgumentCount(
@@ -289,6 +320,29 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			}
 			return operand.mapValues { $0.magnitude }
 		}
+	}
+
+	/// Rounds a value to a number of decimal places, half away from zero.
+	///
+	/// Excel rounds `.5` away from zero — 2.5 becomes 3, −2.5 becomes −3 — where
+	/// the IEEE default is banker's rounding, which would send 2.5 to 2 and
+	/// disagree with every sheet. The rule is named explicitly here because the
+	/// wrong one is the one a reader assumes.
+	///
+	/// Negative digits round to tens, hundreds and beyond: `ROUND(1234, -2)` is
+	/// 1200, as in Excel.
+	///
+	/// - Parameters:
+	///   - value: The value to round.
+	///   - digits: The decimal places, truncated toward zero if fractional.
+	/// - Returns: The rounded value.
+	private static func round(_ value: T, toDigits digits: T) -> T {
+		// A real exponent rather than an integer one, so negative digits need no
+		// separate branch: 10 to the −2 is 0.01, and scaling by it rounds to
+		// hundreds exactly as scaling by 100 rounds to hundredths.
+		let scale = T.pow(10, digits.rounded(.towardZero))
+		guard scale.isFinite, !scale.isEqual(to: 0) else { return value }
+		return (value * scale).rounded(.toNearestOrAwayFromZero) / scale
 	}
 
 	/// Chooses between two series period by period.
