@@ -69,6 +69,30 @@ extension FormulaEvaluator {
 		/// The interest part of one payment. Binds to `interestPayment(...)`.
 		case ipmt = "IPMT"
 
+		// MARK: Statistics
+		//
+		// Each pair differs only in its denominator, and both answers look
+		// reasonable. The binding is named here so the choice is readable rather
+		// than buried in dispatch.
+
+		/// Sample standard deviation, dividing by n − 1. Binds to `stdDevS(_:)`.
+		case stdev = "STDEV"
+
+		/// Population standard deviation, dividing by n. Binds to `stdDevP(_:)`.
+		case stdevp = "STDEVP"
+
+		/// Sample variance. Binds to `variance(_:_:)` with `.sample`.
+		case variance = "VAR"
+
+		/// Population variance. Binds to `variance(_:_:)` with `.population`.
+		case variancep = "VARP"
+
+		/// The middle value. Binds to `median(_:)`.
+		case median = "MEDIAN"
+
+		/// How many periods the series holds.
+		case count = "COUNT"
+
 		/// The principal part of one payment. Binds to `principalPayment(...)`.
 		case ppmt = "PPMT"
 
@@ -95,7 +119,7 @@ extension FormulaEvaluator {
 				return 1...1
 			case .round, .npv:
 				return 2...2
-			case .irr:
+			case .irr, .stdev, .stdevp, .variance, .variancep, .median, .count:
 				return 1...1
 			case .pmt:
 				return 3...3
@@ -114,7 +138,8 @@ extension FormulaEvaluator {
 		/// independently in each period — a formula filled across a row.
 		public var aggregates: Bool {
 			switch self {
-			case .npv, .irr: return true
+			case .npv, .irr, .stdev, .stdevp, .variance, .variancep, .median, .count:
+				return true
 			default: return false
 			}
 		}
@@ -123,7 +148,8 @@ extension FormulaEvaluator {
 		public var arityDescription: String {
 			switch self {
 			case .min, .max, .sum, .average, .and, .or: return "1 or more"
-			case .abs, .not, .irr: return "exactly 1"
+			case .abs, .not, .irr, .stdev, .stdevp, .variance, .variancep, .median, .count:
+				return "exactly 1"
 			case .round, .npv: return "exactly 2"
 			case .pmt: return "exactly 3"
 			case .ipmt, .ppmt: return "exactly 4"
