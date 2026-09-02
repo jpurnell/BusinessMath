@@ -311,6 +311,46 @@ kind that produce plausible wrong numbers:
 Each registered name therefore ships with a documented semantics assertion and an Excel-derived
 fixture (§10). That is the unit of work, and it parallelises cleanly across names.
 
+### Which functions, measured rather than assumed (2026-09-01)
+
+**Not all of Excel.** Excel has roughly 500 functions. Two real models were counted — the Wharton
+LBO Practice Model and a production credit model — and between them they call **31 distinct
+names**:
+
+| Workbook | Distinct | Heaviest use |
+|---|---|---|
+| Wharton LBO | **4** | `SUM` ×14, `IF` ×2, `AVERAGE` ×2, `IRR` ×1 |
+| Credit model | **30** | `IF` ×3170, `ISERROR` ×2145, `SUM` ×1786, `OFFSET` ×852, `ISBLANK` ×386, `MATCH` ×360 |
+
+**This contradicts the tranche order above, and the tranches should move.** Phase 2b registers
+the TVM set — `PMT`, `IPMT`, `PPMT`, `XIRR`, `XNPV`, `MIRR`, `FV` — and *none of them appears in
+either workbook*. `NPV` and `PV` appear; `IRR` appears once. Phase 2c's statistical tranche fares
+no better: `AVERAGE` twice, and nothing else.
+
+Where the volume actually is:
+
+| Family | Names | Calls |
+|---|---|---|
+| Logical and error | `IF`, `ISERROR`, `ISBLANK`, `ISNA`, `ISNUMBER`, `OR`, `AND`, `NOT` | ~6,100 |
+| Aggregation | `SUM`, `AVERAGE` | ~1,800 |
+| Reference | `OFFSET`, `MATCH`, `INDIRECT`, `ADDRESS`, `INDEX`, `ROW`, `COLUMN` | ~1,900 |
+| Date and text | `YEAR`, `MONTH`, `DAY`, `NOW`, `RIGHT`, `LEFT`, `TEXT`, `ROUND` | ~350 |
+
+Two consequences worth stating plainly. **The TVM tranche is not the unblocking work it was
+assumed to be** — it is worth registering because the library already has the implementations and
+the Excel-semantics verification is the real cost, but it should not be sequenced ahead of the
+logical family, which is where every real formula lives. And **`ISERROR`/`ISNA` are not
+functions in the ordinary sense**: they ask whether evaluating their argument *failed*, and this
+evaluator has no error value to inspect — it throws. Registering them needs a decision about
+whether the grammar gains an error value at all, which is a design question and not a name
+binding.
+
+The reference family is separately covered by the dynamic-reference tiers in
+`BusinessMathExcel`'s recognizer proposal, and does not belong in this grammar.
+
+**How the set should grow:** by `.unregisteredFunction` diagnostics from real workbooks, which
+are a ranked worklist of what to register next. Not by working through Excel's index.
+
 ### Conditionals — `IF` and comparison operators
 
 `FormulaEvaluator` has **no comparison operators today**: its token set is `number`, `name`,
