@@ -158,10 +158,17 @@ work that `ISERROR`/`ISNA` would.
 
 ## Task 7 — Statistical function tranche (proposal Phase 2d)
 
-- [ ] Seed the list from `BusinessMathExcel`'s `FormulaMapper.statisticalFunctions`.
-- [ ] Pin `STDEV`/`STDEVP` and `VAR`/`VARP` denominators — sample versus population is the
-      classic silent-wrong-answer in this tranche.
-- [ ] Commit.
+- [x] `STDEV`, `STDEVP`, `VAR`, `VARP`, `MEDIAN`, `COUNT`, delegating to `stdDevS`, `stdDevP`,
+      `variance(_:_:)` and `median(_:)`.
+- [x] **Both denominator pairs pinned against each other**, not merely against a fixture. A test
+      asserts `STDEV` and `STDEVP` *differ*, and that the sample estimate is the larger — so a
+      binding swapped in either direction fails rather than producing a number that passes every
+      eye test.
+- [x] `MODE`, `PERCENTILE` and `COUNTIF` deferred: `MODE` has no single answer for a multimodal
+      series and Excel's choice would need verifying, `PERCENTILE` needs an interpolation rule
+      matched to Excel's, and `COUNTIF` takes a criteria *string*, which the grammar has no way
+      to express.
+- [x] Commit.
 
 ## Task 8 — `Rollforward` and `PeriodDriver` (proposal Phase 2e)
 

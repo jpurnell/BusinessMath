@@ -300,6 +300,30 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			let rate = try irr(cashFlows: flows.valuesArray)
 			return constant(rate, over: flows)
 
+		case .stdev:
+			let series = operands[0]
+			return constant(stdDevS(series.valuesArray), over: series)
+
+		case .stdevp:
+			let series = operands[0]
+			return constant(stdDevP(series.valuesArray), over: series)
+
+		case .variance:
+			let series = operands[0]
+			return constant(BusinessMath.variance(series.valuesArray, .sample), over: series)
+
+		case .variancep:
+			let series = operands[0]
+			return constant(BusinessMath.variance(series.valuesArray, .population), over: series)
+
+		case .median:
+			let series = operands[0]
+			return constant(BusinessMath.median(series.valuesArray), over: series)
+
+		case .count:
+			let series = operands[0]
+			return constant(T(series.count), over: series)
+
 		case .pmt:
 			// Negated to Excel's sign convention. `payment` returns the size of the
 			// instalment; Excel returns what leaves your pocket, so a positive loan
