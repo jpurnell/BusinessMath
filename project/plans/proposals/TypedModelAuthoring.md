@@ -909,6 +909,29 @@ means degrading to a weaker check, not abandoning units.
    They model different things today; the overlap may still confuse.
 5. **What is the compile-time budget number?** Needs measuring on the §4 example before Phase 3
    can be gated on it.
+6. **`Account` is already taken, and Phase 3 cannot land as written.** *(Found 2026-09-01 while
+   scoping what core still owes the Excel work.)*
+
+   `Financial Statements/Account.swift:395` declares
+   `public struct Account<T: Real & Sendable>` — generic over the **numeric** type, and used
+   throughout the financial-statement surface. §4 proposes
+   `public struct Account<U: Unit>` in `Model Definition/Account.swift` — generic over a
+   **unit**. Same module, same name, same arity, incompatible parameters. `Account<Double>` and
+   `Account<Money>` cannot both exist, and the proposal even places them in two files with the
+   same basename.
+
+   This is a harder blocker than Q5. The compile-time budget might come back acceptable; a name
+   collision comes back the same way every time. Options, none yet chosen:
+
+   - **Rename the typed handle** — `Line<U>`, `Item<U>`, `Quantity<U>`. Cheapest, and arguably
+     more accurate: the typed thing is a line in a model, not an account in a statement.
+   - **Rename the existing type.** It is public and used across the statement surface, so this
+     is a breaking change that would have to wait for 3.0.0 — which would put Phase 3 behind the
+     major it was deliberately placed ahead of.
+   - **Separate module.** Restores the two-module split this proposal exists to remove.
+
+   Recommend the first. Whichever is taken, it should be decided before Phase 3 starts rather
+   than discovered at the first `swift build`.
 
 ## 16. Documentation Strategy
 
