@@ -36,19 +36,36 @@ extension FormulaEvaluator {
 		/// Selects between two values in each period.
 		case ifThenElse = "IF"
 
+		/// The mean of the arguments in each period.
+		case average = "AVERAGE"
+
+		/// Rounds to a number of decimal places, half away from zero.
+		case round = "ROUND"
+
+		/// One when every argument is non-zero.
+		case and = "AND"
+
+		/// One when any argument is non-zero.
+		case or = "OR"
+
+		/// One when the argument is zero.
+		case not = "NOT"
+
 		/// The argument counts this function accepts.
 		///
 		/// Checked before evaluation, so a miscall is reported as a miscall rather
 		/// than as whatever the arguments happened to produce.
 		public var arity: ClosedRange<Int> {
 			switch self {
-			case .min, .max, .sum:
+			case .min, .max, .sum, .average, .and, .or:
 				// Excel caps these at 255. The cap is Excel's own limit rather than
 				// a property of the operation, and refusing a 256th argument would
 				// reject a formula that means something perfectly clear.
 				return 1...Int.max
-			case .abs:
+			case .abs, .not:
 				return 1...1
+			case .round:
+				return 2...2
 			case .ifThenElse:
 				return 3...3
 			}
@@ -57,8 +74,9 @@ extension FormulaEvaluator {
 		/// The accepted argument count, phrased for an error message.
 		public var arityDescription: String {
 			switch self {
-			case .min, .max, .sum: return "1 or more"
-			case .abs: return "exactly 1"
+			case .min, .max, .sum, .average, .and, .or: return "1 or more"
+			case .abs, .not: return "exactly 1"
+			case .round: return "exactly 2"
 			case .ifThenElse: return "exactly 3"
 			}
 		}

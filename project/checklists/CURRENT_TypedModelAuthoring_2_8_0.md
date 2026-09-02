@@ -120,17 +120,21 @@ recorded in the proposal under "Which functions, measured rather than assumed".
   legitimately hold — a `NaN` from a division inside it would then silently select the false
   branch. Caught while writing it, not by a test.
 
-## Task 5 — TVM function tranche (proposal Phase 2b)
+## Task 5 — Logical and aggregation tranche (proposal Phase 2b)
 
-- [ ] `NPV`, `IRR`, `XIRR`, `XNPV`, `PMT`, `IPMT`, `PPMT`, `PV`, `FV`, `CUMIPMT`, `CUMPRINC`.
-- [ ] **`NPV` binds to `npvExcel`, not `npv`** (decision D5). `NPV.swift:215-217` documents the
-      one-period discounting difference. A test asserts the two *differ*, so the binding cannot
-      be quietly changed.
-- [ ] One Excel-semantics fixture per name, with the expected value computed in Excel and
-      recorded — never inferred from our own implementation.
-- [ ] Commit.
+**Reordered ahead of TVM on the function census.** `AVERAGE` and `ROUND` appear in real
+workbooks; `PMT`, `IPMT`, `PPMT`, `XIRR`, `XNPV`, `MIRR` and `FV` appear in neither. `AND`, `OR`
+and `NOT` complete the logical family `IF` opened, and none of them needs the error-value design
+work that `ISERROR`/`ISNA` would.
 
-## Task 6 — Statistical function tranche (proposal Phase 2c)
+- [x] `AVERAGE`, `ROUND`, `AND`, `OR`, `NOT`, period-wise like everything else.
+- [x] **`ROUND` is half away from zero**, which is Excel's rule and not the banker's rounding a
+      naive implementation lands on. Pinned by a test on `.5` cases in both directions.
+- [x] `ROUND` accepts negative digits — `ROUND(1234, -2)` is 1200 in Excel.
+- [x] `AND`/`OR` are variadic and return 1 or 0, so they compose with `IF` and with arithmetic.
+- [x] Commit.
+
+## Task 6 — TVM function tranche (proposal Phase 2c)
 
 - [ ] Seed the list from `BusinessMathExcel`'s `FormulaMapper.statisticalFunctions`, which is
       already a survey of what workbooks actually use.
@@ -138,7 +142,14 @@ recorded in the proposal under "Which functions, measured rather than assumed".
       classic silent-wrong-answer in this tranche.
 - [ ] Commit.
 
-## Task 7 — `Rollforward` and `PeriodDriver` (proposal Phase 2d)
+## Task 7 — Statistical function tranche (proposal Phase 2d)
+
+- [ ] Seed the list from `BusinessMathExcel`'s `FormulaMapper.statisticalFunctions`.
+- [ ] Pin `STDEV`/`STDEVP` and `VAR`/`VARP` denominators — sample versus population is the
+      classic silent-wrong-answer in this tranche.
+- [ ] Commit.
+
+## Task 8 — `Rollforward` and `PeriodDriver` (proposal Phase 2e)
 
 The piece `BusinessMathExcel` needs most: `ModelDefinition` formulas are period-local by design
 (`FormulaEvaluator.swift:119-124`, `CycleSolver.swift:222-226`), and this is the caller that
@@ -157,7 +168,7 @@ carries a balance across periods.
 
 ## Done when
 
-- [ ] All seven tasks green, committed individually.
+- [ ] All eight tasks green, committed individually.
 - [ ] `swift build && swift test` clean.
 - [ ] **Quality gate 0 errors / 0 warnings**, counted rather than read off the verdict line.
 - [ ] CHANGELOG entry; `project/master_plan.md` reconciled; capability map reviewed.
