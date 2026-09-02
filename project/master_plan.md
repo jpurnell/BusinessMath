@@ -38,6 +38,31 @@ suite depends on it.
 
 ## Current Status
 
+**2.8.0 shipped 2026-09-01** — the formula grammar gained functions, and a balance can move
+between periods. Together those close the gap that made a cash sweep inexpressible as
+configuration: a debt paydown whose interest depends on the repayment that depends on the
+interest.
+
+Seventeen function names are registered, each binding to a canonical implementation rather than
+a second one written inside the evaluator, and where Excel's definition differs from the
+textbook's the grammar means Excel's — `NPV` to `npvExcel`, `PMT` negative for money leaving,
+`STDEV` and `STDEVP` by their denominators. Each is pinned by a test asserting the *difference*.
+
+`PeriodDriver` and `Rollforward` make the caller's loop reusable, keeping within-period cycles
+with the solver and cross-period carry separate from them. Year-one interest on a 120 draw at
+10% is 11.75 — the average-balance figure, requiring a cyclic solve, where beginning-balance
+accrual gives 12.00 with no cycle at all.
+
+The waterfall types migrated into `Financial Statements/Waterfall/` with `Sendable` conformance
+and throwing initializers, ahead of `BusinessMathDSL`'s removal in 3.0.0.
+
+One defect fixed that had been latent: `accountNames(in:)` walked tokens, so a function name was
+counted as a required account. It was correct before functions existed and silently wrong the
+moment they did.
+
+Additive throughout — no signature changes, nothing removed. 6,716 tests in 592 suites.
+Scope and decisions: `plans/proposals/TypedModelAuthoring.md`, phases 1 and 2a–2e.
+
 **2.7.0 shipped 2026-09-01** — tagged `v2.7.0` on the release commit, 33 commits of code
 past `v2.6.0`. The last code change is `44d3774`; the release commit itself is documentation
 only, so the tagged tree compiles identically to the state the tests and sibling builds below
@@ -355,7 +380,7 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-01 — reconciled for the 2.7.0 release. Current Status now leads
+**Last Updated:** 2026-09-01 — reconciled for the 2.8.0 release: Current Status leads with the formula functions and the period driver, and `project/capability_map.md` now exists, which the release checklist requires and which no prior release had. Previously reconciled for 2.7.0. Current Status now leads
 with 2.7.0 and records how its pre-tag open question was answered; `v2.7.0_SCOPE.md` moved
 to `plans/completed/` with its inbound references repointed; the CHANGELOG's `[Unreleased]`
 heading became `[2.7.0] - 2026-09-01`; README's latest-release section and `from:` pin moved

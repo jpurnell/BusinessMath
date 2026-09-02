@@ -171,11 +171,23 @@ public struct LiquidationWaterfallBuilder {
 /// Declares a waterfall as a stored property.
 ///
 /// ```swift
-/// @WaterfallDistribution(builder: {
+/// let senior = try LiquidationWaterfall {
 ///     try Tier("Senior Debt", priority: 1) { try CapitalReturn(500_000) }
-/// })
-/// var waterfall: LiquidationWaterfall
+/// }
+///
+/// struct Fund {
+///     @WaterfallDistribution var waterfall: LiquidationWaterfall
+/// }
+///
+/// let fund = Fund(waterfall: senior)
 /// ```
+///
+/// Build the waterfall first and wrap it, rather than building it inside the
+/// attribute. Validation throws, and an attribute has nowhere to write `try` —
+/// so ``init(builder:)`` is reachable as a direct call but not in attribute
+/// position. That is the cost of validating rather than trapping, and it is
+/// worth paying: the amounts reaching a waterfall are frequently not the
+/// programmer's.
 @propertyWrapper
 public struct WaterfallDistribution: Sendable {
 
