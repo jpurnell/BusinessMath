@@ -218,11 +218,65 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 	///   - arguments: Its unevaluated arguments.
 	/// - Returns: The resulting series.
 	/// - Throws: ``FormulaError/unknownFunction(_:)`` when nothing is registered
-	///   under that name. Never a default value: a formula that names a function
-	///   we do not have is a formula we cannot evaluate, and saying so is the
-	///   whole point.
+	///   under that name, or ``FormulaError/wrongArgumentCount(function:expected:got:)``
+	///   when the count is wrong. Never a default value: a formula that names a
+	///   function we do not have is a formula we cannot evaluate, and saying so is
+	///   the whole point.
 	private func call(_ name: String, _ arguments: [Node]) throws -> TimeSeries<T> {
-		throw FormulaError.unknownFunction(name)
+		guard let function = Function(rawValue: name) else {
+			throw FormulaError.unknownFunction(name)
+		}
+		guard function.arity.contains(arguments.count) else {
+			throw FormulaError.wrongArgumentCount(
+				function: name,
+				expected: function.arityDescription,
+				got: arguments.count
+			)
+		}
+
+		let operands = try arguments.map { try resolve($0) }
+
+		switch function {
+		case .min:
+			return try reduce(operands, function: name) { Swift.min($0, $1) }
+		case .max:
+			return try reduce(operands, function: name) { Swift.max($0, $1) }
+		case .sum:
+			return try reduce(operands, function: name) { $0 + $1 }
+		case .abs:
+			guard let operand = operands.first else {
+				throw FormulaError.wrongArgumentCount(
+					function: name, expected: function.arityDescription, got: 0)
+			}
+			return operand.mapValues { $0.magnitude }
+		}
+	}
+
+	/// Folds a variadic function's operands period by period.
+	///
+	/// Uses `TimeSeries.zip`, so only periods present in every operand survive —
+	/// the same rule `+` already follows. A model whose accounts disagree about
+	/// their span should not have values invented for the gap.
+	///
+	/// - Parameters:
+	///   - operands: The evaluated arguments, at least one.
+	///   - function: The function's name, for the error.
+	///   - combine: The pairwise operation.
+	/// - Returns: The folded series.
+	/// - Throws: ``FormulaError/wrongArgumentCount(function:expected:got:)`` if empty.
+	private func reduce(
+		_ operands: [TimeSeries<T>],
+		function: String,
+		_ combine: (T, T) -> T
+	) throws -> TimeSeries<T> {
+		guard var result = operands.first else {
+			throw FormulaError.wrongArgumentCount(
+				function: function, expected: "1 or more", got: 0)
+		}
+		for operand in operands.dropFirst() {
+			result = result.zip(with: operand, combine)
+		}
+		return result
 	}
 
 	private func constant(_ value: T) -> TimeSeries<T> {

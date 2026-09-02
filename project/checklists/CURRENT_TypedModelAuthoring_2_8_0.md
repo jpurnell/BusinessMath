@@ -76,10 +76,24 @@ the same answer:
 
 ## Task 3 — Arithmetic primitives (proposal Phase 2a, part 2)
 
-- [ ] **RED/GREEN** — `MIN`, `MAX`, `ABS`, `SUM`, each delegating to a canonical implementation
+- [x] **RED/GREEN** — `MIN`, `MAX`, `ABS`, `SUM`, each delegating to a canonical implementation
       rather than being reimplemented here (decision D4).
-- [ ] `SUM` over a name that resolves to a series, not just scalars.
-- [ ] Commit.
+- [x] `SUM` over a name that resolves to a series, not just scalars.
+- [x] **Decided: every function is period-wise**, which is what `MIN(A2, B2)` filled across a row
+      does in a sheet. Aggregating *down* a column is a different operation and stays
+      inexpressible — this grammar is period-local by design, and a `SUM` that reached across
+      periods would smuggle a rollforward inside a formula, which is the caller's loop.
+- [x] **Period alignment follows `+`:** only periods present in every operand survive, via
+      `TimeSeries.zip`. A model whose accounts disagree about their span should not have values
+      invented for the gap.
+- [x] Arity checking, moved here from Task 2, where the table it checks did not yet exist.
+- [x] Commit.
+
+
+**Measured before choosing what to register.** Counting the functions two real workbooks actually
+call: Wharton uses **4** distinct names, the credit model **30**, against Excel's ~500. `SUM` is
+second by volume across both. That check also showed the *later* tranches are aimed wrongly —
+recorded in the proposal under "Which functions, measured rather than assumed".
 
 ## Task 4 — Comparisons and `IF` (proposal Phase 2a, part 3)
 
