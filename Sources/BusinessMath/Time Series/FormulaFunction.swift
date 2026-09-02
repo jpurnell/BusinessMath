@@ -33,6 +33,9 @@ extension FormulaEvaluator {
 		/// The total of the arguments in each period.
 		case sum = "SUM"
 
+		/// Selects between two values in each period.
+		case ifThenElse = "IF"
+
 		/// The argument counts this function accepts.
 		///
 		/// Checked before evaluation, so a miscall is reported as a miscall rather
@@ -46,6 +49,8 @@ extension FormulaEvaluator {
 				return 1...Int.max
 			case .abs:
 				return 1...1
+			case .ifThenElse:
+				return 3...3
 			}
 		}
 
@@ -54,6 +59,7 @@ extension FormulaEvaluator {
 			switch self {
 			case .min, .max, .sum: return "1 or more"
 			case .abs: return "exactly 1"
+			case .ifThenElse: return "exactly 3"
 			}
 		}
 	}

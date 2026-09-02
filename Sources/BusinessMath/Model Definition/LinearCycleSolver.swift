@@ -210,6 +210,11 @@ struct LinearCycleSolver<T: Real & Sendable & LosslessStringConvertible> {
 				coefficients: [:]
 			)
 
+		case .comparison:
+			// Unreachable for the same reason as a call below: the classifier marks
+			// any comparison touching a member nonlinear. Checked anyway.
+			throw notLinear("the cycle passes through a comparison")
+
 		case .function(let name, _):
 			// Unreachable by construction: `CycleForm.degree` reports any call
 			// touching a member as nonlinear, so such a cycle never reaches the
