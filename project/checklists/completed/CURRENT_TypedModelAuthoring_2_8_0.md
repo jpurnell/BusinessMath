@@ -1,4 +1,4 @@
-# CURRENT: TypedModelAuthoring phases 1–2d — release 2.8.0
+# COMPLETED: TypedModelAuthoring phases 1 and 2a–2e — released as v2.8.0
 
 **Started:** 2026-09-01
 **Proposal:** `project/plans/proposals/TypedModelAuthoring.md` (approved 2026-09-01)
@@ -194,14 +194,14 @@ work that `ISERROR`/`ISNA` would.
 
 ## Done when
 
-- [ ] All eight tasks green, committed individually.
-- [ ] `swift build && swift test` clean.
-- [ ] **Quality gate 0 errors / 0 warnings**, counted rather than read off the verdict line.
-- [ ] CHANGELOG entry; `project/master_plan.md` reconciled; capability map reviewed.
-- [ ] Release checklist followed **before** tagging: `release-readiness`, capability map, README
+- [x] All eight tasks green, committed individually.
+- [x] `swift build && swift test` clean.
+- [x] **Quality gate 0 errors / 0 warnings**, counted rather than read off the verdict line.
+- [x] CHANGELOG entry; `project/master_plan.md` reconciled; capability map reviewed.
+- [x] Release checklist followed **before** tagging: `release-readiness`, capability map, README
       metrics, CHANGELOG section renamed, atomic `--follow-tags` push.
-- [ ] Tagged `v2.8.0`.
-- [ ] Move this file to `project/checklists/completed/`.
+- [x] Tagged `v2.8.0`.
+- [x] Move this file to `project/checklists/completed/`.
 
 ## Do NOT do in this release
 

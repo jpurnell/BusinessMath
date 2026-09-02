@@ -101,7 +101,7 @@ separate target for 300 lines is precisely the mistake this proposal unwinds.
 | File | Role |
 |---|---|
 | `Model Definition/Units.swift` | `Unit` protocol; `Money`, `Rate`, `Ratio`, `Duration` markers |
-| `Model Definition/Account.swift` | `Account<U: Unit>` — typed handle |
+| `Model Definition/LineItem.swift` | `LineItem<U: Unit>` — typed handle (renamed from `Account<U>`; see §15 Q6) |
 | `Model Definition/Expr.swift` | `Expr<U: Unit>` tree + rendering + operator algebra |
 | `Model Definition/TypedModel.swift` | `ModelDefinition.defining(_:as:)` typed overloads |
 | `Financial Statements/Waterfall/` | `Tier`, `TierComponents`, `LiquidationWaterfall` migrated from the DSL |
@@ -930,8 +930,13 @@ means degrading to a weaker check, not abandoning units.
      major it was deliberately placed ahead of.
    - **Separate module.** Restores the two-module split this proposal exists to remove.
 
-   Recommend the first. Whichever is taken, it should be decided before Phase 3 starts rather
-   than discovered at the first `swift build`.
+   **Resolved 2026-09-01: the typed handle is `LineItem<U>`.** The existing `Account<T>` keeps
+   its name and its meaning. `LineItem` is the term the domain already uses for exactly this
+   thing — a named quantity in a model — and it cannot be misread as a row index the way `Line`
+   can. The vocabulary does split slightly, since `ModelDefinition` speaks of accounts and the
+   typed layer will speak of line items, but that is a smaller cost than either renaming a
+   public type used across the statement surface or carrying two `Account`s distinguished only
+   by qualification.
 
 ## 16. Documentation Strategy
 

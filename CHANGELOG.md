@@ -9,6 +9,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.8.0] - 2026-09-01
+
+Formulas can call functions, and a balance can move between periods. Together those close the
+gap that made a cash sweep — a debt paydown whose interest depends on the repayment that depends
+on the interest — inexpressible as configuration.
+
+#### Added
+
+- **Functions in the formula grammar.** The evaluator previously had none: its tokens were a
+  number, a name, four operators and two parentheses. It now parses calls and dispatches
+  seventeen names, each **binding to the canonical implementation** rather than to a second one
+  written inside the evaluator.
+
+  | Family | Names |
+  |---|---|
+  | Arithmetic | `MIN`, `MAX`, `ABS`, `SUM`, `AVERAGE`, `ROUND` |
+  | Logical | `IF`, `AND`, `OR`, `NOT`, and the six comparison operators |
+  | Time value | `NPV`, `IRR`, `PMT`, `IPMT`, `PPMT` |
+  | Statistical | `STDEV`, `STDEVP`, `VAR`, `VARP`, `MEDIAN`, `COUNT` |
+
+  Every function acts period by period, as a spreadsheet formula does when filled across a row,
+  except `NPV`, `IRR` and the statistical names, which consume a whole series and give one
+  number.
+
+  **Where Excel's definition differs from the textbook's, the grammar means Excel's** — a formula
+  string came out of a sheet. `NPV` binds to ``npvExcel(rate:cashFlows:)``, which discounts every
+  flow by at least one period; `PMT`, `IPMT` and `PPMT` are negative for money leaving; `STDEV`
+  and `STDEVP` differ in their denominator as their names promise. Each is pinned by a test
+  asserting the *difference*, so a binding cannot be quietly changed.
+
+  An unregistered name throws ``FormulaError/unknownFunction(_:)``. It is never a zero: a model
+  that substitutes a plausible number for a function it cannot evaluate is the failure this
+  library exists to avoid.
+
+- **``PeriodDriver`` and ``Rollforward``.** A formula is period-local by design and cannot read
+  another period; the roll-forward that carries a closing balance into the next period was
+  documented as the caller's loop, and no reusable caller existed. `PeriodDriver` is that loop,
+  and `Rollforward` is the carry written as data — readable, listable, refusable — rather than
+  hidden inside a formula.
+
+  The two kinds of circularity stay separate: a cycle **within** a period is resolved by
+  ``ModelDefinition/solve(settings:)``, a carry **across** periods by `PeriodDriver`. Year-one
+  interest on a 120 draw at 10% with 16.75 of cash for debt service is 11.75 — the average-balance
+  figure, requiring a cyclic solve. Beginning-balance accrual gives 12.00 with no cycle at all,
+  and the test asserts the answer is not that.
+
+- **``Tier``, ``LiquidationWaterfall`` and the tier components migrated into core**, at
+  `Financial Statements/Waterfall/`. They gained `Sendable` conformance, which nothing in
+  `BusinessMathDSL` had despite package-wide `StrictConcurrency`, and throwing initializers in
+  place of `preconditionFailure` — the values reaching a waterfall are often not the
+  programmer's, and trapping on caller data takes the process down with no way to intervene.
+  The originals remain in `BusinessMathDSL` until it is removed in 3.0.0.
+
+#### Fixed
+
+- **``FormulaEvaluator/accountNames(in:)`` counted function names as accounts.** It walked
+  tokens, and a function's name is a name token, so `MIN(a, b)` reported `MIN` as an account the
+  model must supply. Correct before functions existed and silently wrong the moment they did: it
+  makes every function look like a missing input and corrupts the dependency graph built from
+  it. It now walks the parse tree.
+
+- Test mocks in `SplitProtocolTests` stamped wall-clock `Date()` into `asOf:`, so identical
+  inputs produced a different result on every run.
+
 ### [2.7.0] - 2026-09-01
 
 #### Fixed
