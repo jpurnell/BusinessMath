@@ -282,6 +282,59 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			return select(
 				condition: operands[0], whenTrue: operands[1], whenFalse: operands[2])
 
+		case .npv:
+			// Excel's definition, not the textbook one. `npv()` leaves the first
+			// flow undiscounted and `npvExcel()` discounts it, so the two differ by
+			// a period of compounding. A formula string came out of a sheet, so it
+			// means Excel's — binding it to the textbook version would mis-discount
+			// every imported model by one period, and the number would look
+			// entirely plausible.
+			let flows = operands[1]
+			let rate = try scalar(of: operands[0], for: name)
+			return constant(npvExcel(rate: rate, cashFlows: flows.valuesArray), over: flows)
+
+		case .irr:
+			let flows = operands[0]
+			// Propagates the solver's own failure rather than substituting a rate.
+			// A returned zero here would be a rate, and a wrong one.
+			let rate = try irr(cashFlows: flows.valuesArray)
+			return constant(rate, over: flows)
+
+		case .pmt:
+			// Negated to Excel's sign convention. `payment` returns the size of the
+			// instalment; Excel returns what leaves your pocket, so a positive loan
+			// gives a negative payment. Same magnitude, opposite sign — a formula
+			// that summed these would be wrong in a way that looked entirely fine.
+			return try periodWise(operands, function: name) { arguments in
+				-payment(
+					presentValue: arguments[2],
+					rate: arguments[0],
+					periods: Self.periodCount(arguments[1])
+				)
+			}
+
+		case .ipmt:
+			// Negated to Excel's sign convention, as `PMT` above.
+			return try periodWise(operands, function: name) { arguments in
+				-interestPayment(
+					rate: arguments[0],
+					period: Self.periodCount(arguments[1]),
+					totalPeriods: Self.periodCount(arguments[2]),
+					presentValue: arguments[3]
+				)
+			}
+
+		case .ppmt:
+			// Negated to Excel's sign convention, as `PMT` above.
+			return try periodWise(operands, function: name) { arguments in
+				-principalPayment(
+					rate: arguments[0],
+					period: Self.periodCount(arguments[1]),
+					totalPeriods: Self.periodCount(arguments[2]),
+					presentValue: arguments[3]
+				)
+			}
+
 		case .average:
 			let total = try reduce(operands, function: name) { $0 + $1 }
 			let count = T(exactly: operands.count) ?? 1
@@ -320,6 +373,88 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 			}
 			return operand.mapValues { $0.magnitude }
 		}
+	}
+
+	/// Reads a scalar argument from a series.
+	///
+	/// Excel's `NPV` takes a single rate, and a formula-level argument is a series.
+	/// The first period's value is used, which is right for the constant a rate
+	/// almost always is and stated here because a varying one would otherwise be
+	/// silently truncated.
+	///
+	/// - Parameters:
+	///   - series: The argument.
+	///   - function: The function's name, for the error.
+	/// - Returns: The first period's value.
+	/// - Throws: ``FormulaError/wrongArgumentCount(function:expected:got:)`` when empty.
+	private func scalar(of series: TimeSeries<T>, for function: String) throws -> T {
+		guard let first = series.periods.first, let value = series[first] else {
+			throw FormulaError.wrongArgumentCount(
+				function: function, expected: "a non-empty series", got: 0)
+		}
+		return value
+	}
+
+	/// Broadcasts one number across the periods it was computed from.
+	///
+	/// An aggregate has no period of its own — it is a property of the whole
+	/// series — so it spans the same periods as the series it came from rather
+	/// than being placed arbitrarily.
+	///
+	/// - Parameters:
+	///   - value: The aggregate.
+	///   - series: The series it was computed from.
+	/// - Returns: A constant series over those periods.
+	private func constant(_ value: T, over series: TimeSeries<T>) -> TimeSeries<T> {
+		TimeSeries(
+			periods: series.periods,
+			values: Array(repeating: value, count: series.periods.count)
+		)
+	}
+
+	/// Applies a scalar function period by period across aligned operands.
+	///
+	/// Only periods present in every operand survive, as everywhere else.
+	///
+	/// - Parameters:
+	///   - operands: The evaluated arguments.
+	///   - function: The function's name, for the error.
+	///   - compute: The scalar function, given one period's arguments in order.
+	/// - Returns: The resulting series.
+	/// - Throws: ``FormulaError/wrongArgumentCount(function:expected:got:)`` when empty.
+	private func periodWise(
+		_ operands: [TimeSeries<T>],
+		function: String,
+		_ compute: ([T]) -> T
+	) throws -> TimeSeries<T> {
+		guard let first = operands.first else {
+			throw FormulaError.wrongArgumentCount(
+				function: function, expected: "1 or more", got: 0)
+		}
+
+		var periods: [Period] = []
+		var values: [T] = []
+		for period in first.periods {
+			let arguments = operands.compactMap { $0[period] }
+			guard arguments.count == operands.count else { continue }
+			periods.append(period)
+			values.append(compute(arguments))
+		}
+		return TimeSeries(periods: periods, values: values)
+	}
+
+	/// A period count read from a formula value.
+	///
+	/// Counts are whole numbers, and a formula carries them as reals. Truncating
+	/// toward zero matches Excel, which ignores the fractional part of a period
+	/// argument rather than rounding it.
+	///
+	/// - Parameter value: The value to read.
+	/// - Returns: The whole number of periods.
+	private static func periodCount(_ value: T) -> Int {
+		let truncated = value.rounded(.towardZero)
+		guard truncated.isFinite, truncated.magnitude < T(Int.max) else { return 0 }
+		return Int("\(truncated)".split(separator: ".").first.map(String.init) ?? "0") ?? 0
 	}
 
 	/// Rounds a value to a number of decimal places, half away from zero.
