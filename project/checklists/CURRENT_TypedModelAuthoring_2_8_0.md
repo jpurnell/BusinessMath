@@ -172,18 +172,23 @@ work that `ISERROR`/`ISNA` would.
 
 ## Task 8 — `Rollforward` and `PeriodDriver` (proposal Phase 2e)
 
-The piece `BusinessMathExcel` needs most: `ModelDefinition` formulas are period-local by design
-(`FormulaEvaluator.swift:119-124`, `CycleSolver.swift:222-226`), and this is the caller that
-carries a balance across periods.
-
-- [ ] **RED** — a debt rollforward across 7 periods, against an Excel fixture.
-- [ ] **GREEN** — `Rollforward(opening:closing:seed:)` and the `PeriodDriver` loop.
-- [ ] A **within-period** cycle still resolves through `CycleSolver`.
-- [ ] A **cross-period** cycle is diagnosed as `rollforwardCycle`, not silently iterated.
-- [ ] Year-1 interest on a 120 draw at 10% with full sweep is **11.75** — the average-balance
-      figure. Beginning-balance gives 12.00, so this one number distinguishes a correct cyclic
-      solve from a model that broke the cycle by timing.
-- [ ] Commit.
+- [x] `Rollforward(opening:closing:seed:)` and the `PeriodDriver` loop.
+- [x] A within-period cycle still resolves through `CycleSolver`.
+- [x] A cross-period carry loop is refused as `rollforwardCycle` before any period runs.
+- [x] **Year-one interest is 11.75 on a 120 draw at 10%**, with closing 115 and a sweep of 5 —
+      the average-balance figure. Beginning-balance accrual gives 12.00 with no cycle at all, and
+      the test asserts the result is *not* that, so the two cannot be confused.
+- [x] A failure names the period it happened in.
+- [x] **Deviation from the sketch:** `Rollforward` is generic over `T`, not `Double`. There is no
+      total conversion from `Double` into an arbitrary `Real`, and the alternatives were a
+      failable string round-trip or a silent fallback to zero — a seed that quietly becomes zero
+      is a balance sheet that quietly starts empty.
+- [x] **Bug found and fixed:** `accountNames(in:)` walked *tokens*, so a function name was
+      collected as a required account. Correct before functions existed, silently wrong after —
+      it made every function look like a missing input and corrupted the dependency graph built
+      from it. Now walks the parse tree. This is public API and was found only because
+      `PeriodDriver` was the first thing to call a function from inside a `ModelDefinition`.
+- [x] Commit.
 
 ---
 

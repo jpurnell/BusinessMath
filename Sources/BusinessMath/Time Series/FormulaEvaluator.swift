@@ -168,10 +168,35 @@ public struct FormulaEvaluator<T: Real & Sendable & LosslessStringConvertible>: 
 	/// - Returns: Every name the formula reads, in no particular order.
 	/// - Throws: ``FormulaError`` when the formula cannot be tokenised.
 	public static func accountNames(in formula: String) throws -> Set<String> {
-		Set(try tokenise(formula).compactMap { token in
-			if case .name(let name) = token { return name }
-			return nil
-		})
+		// Walks the parse tree rather than the tokens. A function's name is a
+		// `.name` token too, so a token-level scan reports `MIN` in `MIN(a, b)` as
+		// an account the model must supply — which makes every function look like a
+		// missing input, and corrupts the dependency graph built from this.
+		var names: Set<String> = []
+		collectNames(in: try parseTree(of: formula), into: &names)
+		return names
+	}
+
+	/// Collects the account names a parse tree reads.
+	///
+	/// - Parameters:
+	///   - node: The tree to walk.
+	///   - names: The set to add to.
+	private static func collectNames(in node: Node, into names: inout Set<String>) {
+		switch node {
+		case .name(let name):
+			names.insert(name)
+		case .number:
+			break
+		case .negate(let operand):
+			collectNames(in: operand, into: &names)
+		case .binary(_, let lhs, let rhs), .comparison(_, let lhs, let rhs):
+			collectNames(in: lhs, into: &names)
+			collectNames(in: rhs, into: &names)
+		case .function(_, let arguments):
+			// The function's own name is not an account; its arguments may be.
+			for argument in arguments { collectNames(in: argument, into: &names) }
+		}
 	}
 
 	// MARK: - Evaluation
