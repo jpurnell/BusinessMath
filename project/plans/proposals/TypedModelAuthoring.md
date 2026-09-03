@@ -121,7 +121,7 @@ are being removed.
 ### Part 1 — units
 
 ```swift
-/// A dimensional marker for an account or expression.
+/// A dimensional marker for a line item or expression.
 public protocol Unit: Sendable {
     static var symbol: String { get }
 }
@@ -142,27 +142,27 @@ public enum Duration: Unit { public static var symbol: String { "duration" } }
 ### Part 1 — accounts and expressions
 
 ```swift
-/// A typed handle to a named account. Its existence as a Swift value is the guarantee:
+/// A typed handle to a named line item. Its existence as a Swift value is the guarantee:
 /// a misspelled reference does not compile, and rename/find-usages work.
-public struct Account<U: Unit>: Sendable, Hashable {
+public struct LineItem<U: Unit>: Sendable, Hashable {
     public let name: String
-    /// For `Rate` accounts, the period the rate is expressed per. Validated at model
+    /// For `Rate` items, the period the rate is expressed per. Validated at model
     /// build time — see §12 for why this is a value and not a second type parameter.
     public let basis: PeriodType?
 
     public init(_ name: String, basis: PeriodType? = nil)
 }
 
-/// An expression over accounts, carrying its unit.
+/// An expression over line items, carrying its unit.
 public struct Expr<U: Unit>: Sendable {
     /// The rendered formula in `FormulaEvaluator` grammar.
     public var formula: String { get }
 
-    public static func account(_ a: Account<U>) -> Expr<U>
+    public static func item(_ i: LineItem<U>) -> Expr<U>
     public static func constant(_ value: Double) -> Expr<U>
 }
 
-extension Account { public var expr: Expr<U> { .account(self) } }
+extension LineItem { public var expr: Expr<U> { .item(self) } }
 ```
 
 ### Part 1 — the unit algebra
@@ -203,6 +203,12 @@ Literals are **explicit by construction**, not `ExpressibleByFloatLiteral`:
 public func money(_ v: Double) -> Expr<Money>
 public func ratio(_ v: Double) -> Expr<Ratio>
 public func rate(_ v: Double, per basis: PeriodType) -> Expr<Rate>
+
+/// One plus a rate: the growth factor `(1 + g)`.
+///
+/// `1 + g` cannot be written directly, because a dimensionless `1` and a per-period
+/// rate are not the same dimension and no overload adds them. See §15 Q7.
+public func factor(_ r: Expr<Rate>) -> Expr<Ratio>
 ```
 
 Bare float literals would infer their unit from context, which reintroduces exactly the
@@ -214,10 +220,10 @@ worst at reporting. `revenue * ratio(0.4)` is three characters longer and unambi
 ```swift
 extension ModelDefinition {
     /// Typed overload. Delegates to the existing string API; nothing below is modified.
-    public func defining<U: Unit>(_ account: Account<U>, as expr: Expr<U>) -> ModelDefinition<T>
+    public func defining<U: Unit>(_ item: LineItem<U>, as expr: Expr<U>) -> ModelDefinition<T>
 
     /// Reads a typed result out of an evaluation.
-    public func series<U: Unit>(for account: Account<U>,
+    public func series<U: Unit>(for item: LineItem<U>,
                                 in results: [String: TimeSeries<T>]) -> TimeSeries<T>?
 
     /// Validates rate bases and account bindings before evaluation.
@@ -423,12 +429,12 @@ overload.
 ### Worked example — a cash sweep, which is currently inexpressible
 
 ```swift
-let fcf            = Account<Money>("Free Cash Flow")
-let openingDebt    = Account<Money>("Opening Debt")
-let interestRate   = Account<Rate>("Interest Rate", basis: .annual)
-let interest       = Account<Money>("Interest")
-let sweep          = Account<Money>("Sweep Paydown")
-let closingDebt    = Account<Money>("Closing Debt")
+let fcf            = LineItem<Money>("Free Cash Flow")
+let openingDebt    = LineItem<Money>("Opening Debt")
+let interestRate   = LineItem<Rate>("Interest Rate", basis: .annual)
+let interest       = LineItem<Money>("Interest")
+let sweep          = LineItem<Money>("Sweep Paydown")
+let closingDebt    = LineItem<Money>("Closing Debt")
 
 let model = ModelDefinition<Double>(periods: periods)
     .defining(interest,    as: openingDebt.expr * interestRate.expr)
@@ -527,7 +533,7 @@ Typed sugar, once Part 3 lands:
 ```swift
 extension Account {
     /// Declares that this account opens at another's prior close.
-    public func opening(from closing: Account<U>, seed: Double) -> Rollforward
+    public func opening(from closing: LineItem<U>, seed: Double) -> Rollforward
 }
 ```
 
@@ -698,7 +704,7 @@ performance is `ModelDefinition`'s, unchanged.
 
 **Validation Trace (REQUIRED):**
 
-> **Rendering.** `Account<Money>("Sales & Marketing").expr - Account<Money>("A/P").expr`
+> **Rendering.** `LineItem<Money>("Sales & Marketing").expr - LineItem<Money>("A/P").expr`
 > must render exactly `([Sales & Marketing] - [A/P])`, and
 > `FormulaEvaluator.tokenise` of that string must yield
 > `[.name("Sales & Marketing"), .minus, .name("A/P")]` wrapped in parens — proving the
@@ -715,7 +721,7 @@ performance is `ModelDefinition`'s, unchanged.
 > `Free Cash Flow = 10` and `Opening Debt = 120`, `Sweep Paydown` = **10**, and
 > `Closing Debt` = **110**.
 >
-> **Negative unit test.** `Account<Money>("Cash").expr + Account<Ratio>("Margin").expr` must
+> **Negative unit test.** `LineItem<Money>("Cash").expr + LineItem<Ratio>("Margin").expr` must
 > produce a compile diagnostic. This is the proposal's central claim; if it compiles, the units
 > are decorative.
 
@@ -875,7 +881,7 @@ means degrading to a weaker check, not abandoning units.
   could be reimplemented over `ModelDefinition` + `Account`, leaving one debt engine.
 - **More grammar functions**, demand-driven from importer residue: `IF` first, then lookups.
 - **Unit inference in the Excel recognizer.** A cell formatted as a percentage is a `Ratio`; a
-  row labelled "growth" is a `Rate`. Recognized units could populate `Account<U>` directly.
+  row labelled "growth" is a `Rate`. Recognized units could populate `LineItem<U>` directly.
 - **Additional units** — `Share`, `FX` — if the four-unit taxonomy proves too coarse (§12).
 - **Convergence of the two waterfalls** — tiered distribution vs `CapTable` liquidation
   preferences (§15 Q4).
@@ -907,8 +913,40 @@ means degrading to a weaker check, not abandoning units.
 3. **Is `Duration` the right unit for share counts,** or does a `Share` unit pull its weight?
 4. **Should `CapTable.liquidationWaterfall` and the migrated `LiquidationWaterfall` converge?**
    They model different things today; the overlap may still confuse.
-5. **What is the compile-time budget number?** Needs measuring on the §4 example before Phase 3
-   can be gated on it.
+5. ~~**What is the compile-time budget number?**~~
+   **Resolved 2026-09-02: measured, and the budget passes with a large margin.**
+
+   A throwaway spike of the exact §4 surface — `Unit`, `LineItem<U>`, `Expr<U>`, all fourteen
+   operator overloads, the three literal constructors and `min`/`max` — compiled against the §4
+   worked example plus a stress file whose expressions nest up to twenty terms and mix all four
+   units in both operand orders.
+
+   | Threshold | Expressions exceeding it |
+   |---|---|
+   | 10 ms | **0** |
+   | 20 ms | 0 |
+   | 50 ms | 0 |
+   | 100 ms | 0 |
+
+   Whole-file compile, three runs: 0.59 s each. Nothing came close to a budget worth setting.
+
+   The reason is the decision §4 made for readability. Because literals are **explicit by
+   construction** — `ratio(1.0)`, never a bare `1.0` — the solver never has to infer a literal's
+   type across an overload set, which is the case Swift is genuinely slow at. Every operand type
+   is known before overload resolution starts, and the overloads are concrete on unit pairs
+   rather than generic. The choice made so `revenue * ratio(0.4)` reads unambiguously is also
+   what keeps it cheap.
+
+   The negative cases fail as intended and, contrary to §12's concern, with legible errors that
+   name the units:
+
+   ```
+   error: cannot convert value of type 'Expr<Ratio>' to expected argument type 'Expr<Money>'
+   error: binary operator '*' cannot be applied to two 'Expr<Money>' operands
+   error: binary operator '*' cannot be applied to operands of type 'Expr<Money>' and 'Double'
+   ```
+
+   **Alternative 3 (runtime unit checking) is therefore not needed**, and Phase 3 is unblocked.
 6. **`Account` is already taken, and Phase 3 cannot land as written.** *(Found 2026-09-01 while
    scoping what core still owes the Excel work.)*
 
@@ -937,6 +975,35 @@ means degrading to a weaker check, not abandoning units.
    typed layer will speak of line items, but that is a smaller cost than either renaming a
    public type used across the statement surface or carrying two `Account`s distinguished only
    by qualification.
+
+7. **The growth-factor idiom is inexpressible, and it is the commonest formula in modelling.**
+   *(Found 2026-09-02 by the Q5 spike, which is what a spike is for.)*
+
+   `Revenue_t = Revenue_{t-1} × (1 + g)`. Written against §4's algebra that is
+   `revenue.expr * (ratio(1) + growth.expr)`, and it does not compile: `ratio(1)` is an
+   `Expr<Ratio>`, `growth.expr` is an `Expr<Rate>`, and no overload adds them. The error is
+   correct — a margin and a per-period rate are not the same dimension — and the consequence is
+   that the single most common line in any financial model cannot be written.
+
+   Three ways out:
+
+   - **An overload `Expr<Ratio> + Expr<Rate> -> Expr<Ratio>`.** Cheapest, and wrong: it also
+     admits `margin + growth`, which means nothing, so it buys the idiom by giving up the
+     property the units exist for.
+   - **Make growth a `Ratio`.** Then it adds freely and loses its period basis, which is exactly
+     what Phase 4's `rateBasisMismatch` needs in order to catch an annual rate applied monthly.
+   - **A named constructor**, `factor(_ r: Expr<Rate>) -> Expr<Ratio>`, meaning *one plus this
+     rate*: `revenue.expr * factor(growth.expr)`.
+
+   **Recommend the third.** It is the same decision §4 already made about literals — explicit by
+   construction, because the alternative infers a unit from context and reintroduces the
+   ambiguity the units exist to prevent. `factor(growth)` also says what the quantity *is*, which
+   `1 + g` never did; a growth factor is a distinct thing from the rate it is built from, and
+   naming it is a gain rather than a tax.
+
+   A compounding form, `factor(_ r: Expr<Rate>, over n: Expr<Duration>)` for `(1 + r)ⁿ`, is the
+   obvious sibling and is **not** proposed here: no measured workbook has needed it yet, and §14
+   is where speculative surface belongs.
 
 ## 16. Documentation Strategy
 
@@ -968,7 +1035,7 @@ CHANGELOG entry for the deprecation and the removed product, and an update to
 | **2c** | Register the TVM tranche (`NPV`→`npvExcel`, `IRR`, `XIRR`, `XNPV`, `PMT`, `IPMT`, `PPMT`, `PV`, `FV`, `CUMIPMT`, `CUMPRINC`) — one Excel-semantics fixture per name | Delegation-equivalence tests green; `NPV`≠`npv()` test pins the binding |
 | **2d** | Register the statistical tranche seeded from `FormulaMapper.statisticalFunctions` | One Excel fixture per name; `STDEV`/`STDEVP` and `VAR`/`VARP` denominators pinned |
 | **2e** | `Rollforward` + `PeriodDriver` (Part 2.5) | Debt rollforward across 7 periods matches an Excel fixture; within-period cycle still resolves via `CycleSolver`; cross-period cycle diagnosed as `rollforwardCycle` |
-| **3** | `Unit`, `Account<U>`, `Expr<U>`, operator algebra, `defining` overloads | Negative compile tests fail to compile; **compile-time budget met** (§15 Q5) — if not, fall back to Alternative 3 |
+| **3** | `Unit`, `LineItem<U>`, `Expr<U>`, operator algebra, `defining` overloads | Negative compile tests fail to compile; **compile-time budget met** (§15 Q5) — if not, fall back to Alternative 3 |
 | **4** | `validateUnits()` + rate-basis checking | `rateBasisMismatch` thrown for annual-rate-on-monthly-period |
 | ~~**5**~~ | ~~Deprecate every remaining `BusinessMathDSL` public type~~ **Dropped 2026-09-01** — removal is outright, so there is no deprecation release; see §15 Q1 | — |
 | **6** | Delete `Sources/BusinessMathDSL/` + the three obsolete `Result Builder Tests` files; remove product and target from `Package.swift` | Package builds clean; no reference to `BusinessMathDSL` remains |
@@ -983,7 +1050,7 @@ placed after the work that does not depend on it.
 | Release | Phases | Why |
 |---|---|---|
 | **2.8.0** | 1, 2a, 2b, 2c, 2d, 2e | Purely additive. This is the gate `BusinessMathExcel` Phase 3 waits on, so it ships on its own rather than behind Phase 3's compile-time risk |
-| *later minor* | 3, 4 | Additive, but Phase 3 is gated on the compile-time budget in §15 Q5, which has not been measured |
+| **2.9.0** | 3, 4 | Additive. Phase 3's compile-time gate was measured 2026-09-02 and passes with a large margin — see §15 Q5, now resolved. Phase 4 rides with it because `validateUnits()` is already in Phase 3's binding surface and a unit layer that cannot check a rate basis is half a feature |
 | **3.0.0** | 6, 7 | Removing a public product is breaking regardless of deprecation. Phase 5 is dropped |
 
 Phase 1 migrates `Tier`/`TierComponents`/`LiquidationWaterfall` into core **before** 3.0.0
