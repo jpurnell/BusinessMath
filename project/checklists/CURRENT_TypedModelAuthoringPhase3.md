@@ -42,10 +42,10 @@ applied over monthly periods, and `BusinessMathExcel` can consume the layer.**
 
 ## Task 4 — `validateUnits()` and rate basis (Phase 4)
 
-- [ ] **RED** — `missingRateBasis` for a `Rate` item used where a basis is required.
-- [ ] **RED** — `rateBasisMismatch` for an annual rate applied over monthly periods.
-- [ ] **RED** — `conflictingUnits` when two items share a name and differ in unit.
-- [ ] Commit.
+- [x] **RED** — `missingRateBasis` for a `Rate` item used where a basis is required.
+- [x] **RED** — `rateBasisMismatch` for an annual rate applied over monthly periods.
+- [x] **RED** — `conflictingUnits` when two items share a name and differ in unit.
+- [x] Commit.
 
 ## Task 5 — Release 2.9.0
 

@@ -41,12 +41,22 @@ public struct Expr<U: ModelUnit>: Sendable, Equatable {
     /// The rendered formula, in ``FormulaEvaluator`` grammar.
     public let formula: String
 
+    /// Every line item this expression reads, with the unit it was read at.
+    ///
+    /// Rendering to a string is lossy: `[Interest Rate]` says nothing about
+    /// whether that account is money or a rate, or what period a rate is per. The
+    /// checks in ``ModelDefinition/validateUnits()`` need exactly that, so an
+    /// expression carries it alongside the string rather than discarding it at the
+    /// first operator.
+    public let declarations: [UnitDeclaration]
+
     /// Creates an expression from an already-rendered formula.
     ///
     /// Internal: the public way to make one is from a ``LineItem`` or a literal
     /// constructor, so that every `Expr` carries a unit something vouched for.
-    init(_ formula: String) {
+    init(_ formula: String, _ declarations: [UnitDeclaration] = []) {
         self.formula = formula
+        self.declarations = declarations
     }
 
     /// An expression reading one line item.
@@ -57,7 +67,7 @@ public struct Expr<U: ModelUnit>: Sendable, Equatable {
         // Bracketed always. The grammar reads `&`, `/` and spaces as operators and
         // separators, so `Sales & Marketing` unbracketed arrives as three tokens
         // and `A/P` becomes a division.
-        Expr("[\(item.name)]")
+        Expr("[\(item.name)]", [UnitDeclaration(item)])
     }
 
     /// An expression holding a constant of this unit.
@@ -118,7 +128,7 @@ public func count(_ value: Double) -> Expr<Count> { .constant(value) }
 /// - Parameter rate: The rate to build a factor from.
 /// - Returns: `1 + rate`, as a dimensionless ratio.
 public func factor(_ rate: Expr<Rate>) -> Expr<Ratio> {
-    Expr("(1.0 + \(rate.formula))")
+    Expr("(1.0 + \(rate.formula))", rate.declarations)
 }
 
 // MARK: - Same-unit arithmetic
@@ -130,7 +140,7 @@ public func factor(_ rate: Expr<Rate>) -> Expr<Ratio> {
 ///   - rhs: The right operand.
 /// - Returns: Their sum.
 public func + <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U> {
-    Expr("(\(lhs.formula) + \(rhs.formula))")
+    Expr("(\(lhs.formula) + \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Subtracts two quantities of the same unit.
@@ -140,7 +150,7 @@ public func + <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U> {
 ///   - rhs: The right operand.
 /// - Returns: Their difference.
 public func - <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U> {
-    Expr("(\(lhs.formula) - \(rhs.formula))")
+    Expr("(\(lhs.formula) - \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Negates a quantity.
@@ -148,7 +158,7 @@ public func - <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U> {
 /// - Parameter operand: The quantity.
 /// - Returns: Its negation.
 public prefix func - <U: ModelUnit>(operand: Expr<U>) -> Expr<U> {
-    Expr("(0.0 - \(operand.formula))")
+    Expr("(0.0 - \(operand.formula))", operand.declarations)
 }
 
 // MARK: - Scaling
@@ -160,7 +170,7 @@ public prefix func - <U: ModelUnit>(operand: Expr<U>) -> Expr<U> {
 ///   - rhs: The proportion.
 /// - Returns: The scaled amount.
 public func * (lhs: Expr<Money>, rhs: Expr<Ratio>) -> Expr<Money> {
-    Expr("(\(lhs.formula) * \(rhs.formula))")
+    Expr("(\(lhs.formula) * \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Scales money by a dimensionless proportion.
@@ -170,7 +180,7 @@ public func * (lhs: Expr<Money>, rhs: Expr<Ratio>) -> Expr<Money> {
 ///   - rhs: The amount.
 /// - Returns: The scaled amount.
 public func * (lhs: Expr<Ratio>, rhs: Expr<Money>) -> Expr<Money> {
-    Expr("(\(lhs.formula) * \(rhs.formula))")
+    Expr("(\(lhs.formula) * \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Applies a per-period rate to an amount.
@@ -180,7 +190,7 @@ public func * (lhs: Expr<Ratio>, rhs: Expr<Money>) -> Expr<Money> {
 ///   - rhs: The rate.
 /// - Returns: The resulting amount.
 public func * (lhs: Expr<Money>, rhs: Expr<Rate>) -> Expr<Money> {
-    Expr("(\(lhs.formula) * \(rhs.formula))")
+    Expr("(\(lhs.formula) * \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Applies a per-period rate to an amount.
@@ -190,7 +200,7 @@ public func * (lhs: Expr<Money>, rhs: Expr<Rate>) -> Expr<Money> {
 ///   - rhs: The amount.
 /// - Returns: The resulting amount.
 public func * (lhs: Expr<Rate>, rhs: Expr<Money>) -> Expr<Money> {
-    Expr("(\(lhs.formula) * \(rhs.formula))")
+    Expr("(\(lhs.formula) * \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Composes two dimensionless proportions.
@@ -200,7 +210,7 @@ public func * (lhs: Expr<Rate>, rhs: Expr<Money>) -> Expr<Money> {
 ///   - rhs: The right operand.
 /// - Returns: Their product.
 public func * (lhs: Expr<Ratio>, rhs: Expr<Ratio>) -> Expr<Ratio> {
-    Expr("(\(lhs.formula) * \(rhs.formula))")
+    Expr("(\(lhs.formula) * \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 // MARK: - Division
@@ -212,7 +222,7 @@ public func * (lhs: Expr<Ratio>, rhs: Expr<Ratio>) -> Expr<Ratio> {
 ///   - rhs: The denominator.
 /// - Returns: The proportion.
 public func / (lhs: Expr<Money>, rhs: Expr<Money>) -> Expr<Ratio> {
-    Expr("(\(lhs.formula) / \(rhs.formula))")
+    Expr("(\(lhs.formula) / \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Divides an amount by a count, giving an amount per unit.
@@ -222,7 +232,7 @@ public func / (lhs: Expr<Money>, rhs: Expr<Money>) -> Expr<Ratio> {
 ///   - rhs: The count.
 /// - Returns: The amount per unit.
 public func / (lhs: Expr<Money>, rhs: Expr<Count>) -> Expr<Money> {
-    Expr("(\(lhs.formula) / \(rhs.formula))")
+    Expr("(\(lhs.formula) / \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Grosses an amount up by a proportion.
@@ -232,7 +242,7 @@ public func / (lhs: Expr<Money>, rhs: Expr<Count>) -> Expr<Money> {
 ///   - rhs: The proportion.
 /// - Returns: The grossed-up amount.
 public func / (lhs: Expr<Money>, rhs: Expr<Ratio>) -> Expr<Money> {
-    Expr("(\(lhs.formula) / \(rhs.formula))")
+    Expr("(\(lhs.formula) / \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// Divides one proportion by another.
@@ -242,7 +252,7 @@ public func / (lhs: Expr<Money>, rhs: Expr<Ratio>) -> Expr<Money> {
 ///   - rhs: The denominator.
 /// - Returns: The proportion.
 public func / (lhs: Expr<Ratio>, rhs: Expr<Ratio>) -> Expr<Ratio> {
-    Expr("(\(lhs.formula) / \(rhs.formula))")
+    Expr("(\(lhs.formula) / \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 // MARK: - Functions
@@ -254,7 +264,7 @@ public func / (lhs: Expr<Ratio>, rhs: Expr<Ratio>) -> Expr<Ratio> {
 ///   - rhs: The right operand.
 /// - Returns: The smaller.
 public func min<U: ModelUnit>(_ lhs: Expr<U>, _ rhs: Expr<U>) -> Expr<U> {
-    Expr("MIN(\(lhs.formula), \(rhs.formula))")
+    Expr("MIN(\(lhs.formula), \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// The larger of two quantities of the same unit.
@@ -264,7 +274,7 @@ public func min<U: ModelUnit>(_ lhs: Expr<U>, _ rhs: Expr<U>) -> Expr<U> {
 ///   - rhs: The right operand.
 /// - Returns: The larger.
 public func max<U: ModelUnit>(_ lhs: Expr<U>, _ rhs: Expr<U>) -> Expr<U> {
-    Expr("MAX(\(lhs.formula), \(rhs.formula))")
+    Expr("MAX(\(lhs.formula), \(rhs.formula))", lhs.declarations + rhs.declarations)
 }
 
 /// The magnitude of a quantity, keeping its unit.
@@ -272,5 +282,5 @@ public func max<U: ModelUnit>(_ lhs: Expr<U>, _ rhs: Expr<U>) -> Expr<U> {
 /// - Parameter operand: The quantity.
 /// - Returns: Its magnitude.
 public func abs<U: ModelUnit>(_ operand: Expr<U>) -> Expr<U> {
-    Expr("ABS(\(operand.formula))")
+    Expr("ABS(\(operand.formula))", operand.declarations)
 }
