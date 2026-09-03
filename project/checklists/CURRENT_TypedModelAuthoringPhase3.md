@@ -34,11 +34,11 @@ applied over monthly periods, and `BusinessMathExcel` can consume the layer.**
 
 ## Task 3 — Binding to `ModelDefinition`
 
-- [ ] **RED** — `defining(_:as:)` delegates to the string API and changes nothing beneath it.
-- [ ] **RED** — `series(for:in:)` reads a typed result out of an evaluation.
-- [ ] **RED** — the §4 cash sweep builds, validates, and evaluates to the same numbers the
+- [x] **RED** — `defining(_:as:)` delegates to the string API and changes nothing beneath it.
+- [x] **RED** — `series(for:in:)` reads a typed result out of an evaluation.
+- [x] **RED** — the §4 cash sweep builds, validates, and evaluates to the same numbers the
       string form produces. The typed layer must be a spelling, not a second engine.
-- [ ] Commit.
+- [x] Commit.
 
 ## Task 4 — `validateUnits()` and rate basis (Phase 4)
 
