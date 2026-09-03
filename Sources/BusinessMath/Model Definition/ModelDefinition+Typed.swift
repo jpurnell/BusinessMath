@@ -25,7 +25,9 @@ extension ModelDefinition {
     public func defining<U: ModelUnit>(
         _ item: LineItem<U>, as expr: Expr<U>
     ) -> ModelDefinition<T> {
-        defining(item.name, as: expr.formula)
+        var copy = self
+        copy.define(item, as: expr)
+        return copy
     }
 
     /// Adds or replaces a derivation, written in typed form.
@@ -35,6 +37,11 @@ extension ModelDefinition {
     ///   - expr: The expression producing it, of the same unit.
     public mutating func define<U: ModelUnit>(_ item: LineItem<U>, as expr: Expr<U>) {
         define(item.name, as: expr.formula)
+        // Both sides. The item being defined is as much a declaration as the ones
+        // its formula reads, and a conflict between the two is exactly the kind
+        // this catches: defining a `Money` account from a `Ratio` of the same name.
+        declare(UnitDeclaration(item))
+        for declaration in expr.declarations { declare(declaration) }
     }
 
     /// The formula defining a line item, if it is derived rather than supplied.

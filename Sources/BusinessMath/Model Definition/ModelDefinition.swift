@@ -129,6 +129,22 @@ public struct ModelDefinition<T: Real & Sendable & LosslessStringConvertible>: S
 	/// The supplied data: accounts that are given rather than derived.
 	public var inputs: [String: TimeSeries<T>]
 
+	/// What the typed API declared about the units in this model.
+	///
+	/// Populated only by the typed overloads of `define` and `defining`. A model written
+	/// with strings declares nothing and this stays empty, which is what
+	/// ``validateUnits()`` has to work with — and why a clean validation of an
+	/// untyped model means only that nothing was known, not that nothing is wrong.
+	public private(set) var unitDeclarations: [UnitDeclaration] = []
+
+	/// Records what the typed API knows about a line item.
+	///
+	/// - Parameter declaration: What was declared.
+	mutating func declare(_ declaration: UnitDeclaration) {
+		guard !unitDeclarations.contains(declaration) else { return }
+		unitDeclarations.append(declaration)
+	}
+
 	/// Creates a definition set.
 	///
 	/// - Parameters:
