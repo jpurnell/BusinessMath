@@ -5,14 +5,22 @@ import Foundation
 /// A unit is a **phantom** type: it exists to be checked and is never
 /// instantiated, carries no storage, and costs nothing at runtime. Its whole
 /// purpose is to make `revenue * margin` compile and `revenue + margin` not.
-public protocol Unit: Sendable {
+///
+/// ## Why not simply `Unit`
+///
+/// `Foundation.Unit` exists — the base class of the `Measurement` API — and
+/// essentially every consumer imports Foundation. Inside this module a local
+/// declaration would shadow it and everything would look fine; from outside,
+/// `Unit` becomes ambiguous at every use site. That is the worst shape a naming
+/// problem can take, because the module that owns the name never sees it.
+public protocol ModelUnit: Sendable {
 
     /// The unit's name, for diagnostics and generated source.
     static var symbol: String { get }
 }
 
 /// A currency amount: revenue, cost, a balance, a cash flow.
-public enum Money: Unit {
+public enum Money: ModelUnit {
 
     /// The unit's name.
     public static var symbol: String { "money" }
@@ -22,14 +30,14 @@ public enum Money: Unit {
 ///
 /// Carries a period basis on the ``LineItem`` rather than in the type — see
 /// ``LineItem/basis``.
-public enum Rate: Unit {
+public enum Rate: ModelUnit {
 
     /// The unit's name.
     public static var symbol: String { "rate" }
 }
 
 /// A dimensionless ratio: a margin, a multiple, a percentage.
-public enum Ratio: Unit {
+public enum Ratio: ModelUnit {
 
     /// The unit's name.
     public static var symbol: String { "ratio" }
@@ -43,7 +51,7 @@ public enum Ratio: Unit {
 /// shadow it module-wide — a landmine for every file written afterwards rather
 /// than a set of call sites to fix. `Count` is also the more accurate word for
 /// something that counts shares as readily as periods.
-public enum Count: Unit {
+public enum Count: ModelUnit {
 
     /// The unit's name.
     public static var symbol: String { "count" }
@@ -77,7 +85,7 @@ public enum Count: Unit {
 /// in this module, and `Account<Double>` and `Account<Money>` cannot coexist.
 /// `LineItem` is what the domain calls a named quantity in a model, and unlike
 /// `Line` it cannot be misread as a row index.
-public struct LineItem<U: Unit>: Sendable, Hashable {
+public struct LineItem<U: ModelUnit>: Sendable, Hashable {
 
     /// The name the model knows this item by.
     public let name: String
