@@ -17,12 +17,12 @@ applied over monthly periods, and `BusinessMathExcel` can consume the layer.**
 
 ## Task 1 — Units and the typed handle
 
-- [ ] **RED** — `Unit`, `Money`, `Rate`, `Ratio`, `Duration`; `LineItem<U>` with its optional
+- [x] **RED** — `Unit`, `Money`, `Rate`, `Ratio`, `Duration`; `LineItem<U>` with its optional
       `basis`. `LineItem<Money>("Revenue") != LineItem<Ratio>("Revenue")` at the type level.
-- [ ] **RED** — the existing `Account<T: Real>` on the statement surface still compiles and is
+- [x] **RED** — the existing `Account<T: Real>` on the statement surface still compiles and is
       untouched. This is the collision §15 Q6 exists to prevent, so it gets a test rather than
       an assumption.
-- [ ] Commit.
+- [x] Commit.
 
 ## Task 2 — `Expr<U>` and the unit algebra
 
