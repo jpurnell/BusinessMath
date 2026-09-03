@@ -26,11 +26,11 @@ applied over monthly periods, and `BusinessMathExcel` can consume the layer.**
 
 ## Task 2 — `Expr<U>` and the unit algebra
 
-- [ ] **RED** — every legal combination in §4 renders the formula the string API expects.
-- [ ] **RED** — `money()`, `ratio()`, `rate(_:per:)`, and `factor(_:)` for the growth idiom.
-- [ ] **RED** — negative cases *fail to compile*. Verified by a build that must fail, not by an
+- [x] **RED** — every legal combination in §4 renders the formula the string API expects.
+- [x] **RED** — `money()`, `ratio()`, `rate(_:per:)`, and `factor(_:)` for the growth idiom.
+- [x] **RED** — negative cases *fail to compile*. Verified by a build that must fail, not by an
       assertion that cannot see a compile error.
-- [ ] Commit.
+- [x] Commit.
 
 ## Task 3 — Binding to `ModelDefinition`
 

@@ -122,21 +122,21 @@ are being removed.
 
 ```swift
 /// A dimensional marker for a line item or expression.
-public protocol Unit: Sendable {
+public protocol ModelUnit: Sendable {  // not `Unit` — see §15 Q9
     static var symbol: String { get }
 }
 
 /// A currency amount: revenue, cost, a balance, a cash flow.
-public enum Money: Unit { public static var symbol: String { "money" } }
+public enum Money: ModelUnit { public static var symbol: String { "money" } }
 
 /// A per-period rate: growth, interest, decay. Carries a period basis (see below).
-public enum Rate: Unit { public static var symbol: String { "rate" } }
+public enum Rate: ModelUnit { public static var symbol: String { "rate" } }
 
 /// A dimensionless ratio: a margin, a multiple, a percentage.
-public enum Ratio: Unit { public static var symbol: String { "ratio" } }
+public enum Ratio: ModelUnit { public static var symbol: String { "ratio" } }
 
 /// A count of periods, units, or shares. Not `Duration` — see §15 Q8.
-public enum Count: Unit { public static var symbol: String { "count" } }
+public enum Count: ModelUnit { public static var symbol: String { "count" } }
 ```
 
 ### Part 1 — accounts and expressions
@@ -144,7 +144,7 @@ public enum Count: Unit { public static var symbol: String { "count" } }
 ```swift
 /// A typed handle to a named line item. Its existence as a Swift value is the guarantee:
 /// a misspelled reference does not compile, and rename/find-usages work.
-public struct LineItem<U: Unit>: Sendable, Hashable {
+public struct LineItem<U: ModelUnit>: Sendable, Hashable {
     public let name: String
     /// For `Rate` items, the period the rate is expressed per. Validated at model
     /// build time — see §12 for why this is a value and not a second type parameter.
@@ -154,7 +154,7 @@ public struct LineItem<U: Unit>: Sendable, Hashable {
 }
 
 /// An expression over line items, carrying its unit.
-public struct Expr<U: Unit>: Sendable {
+public struct Expr<U: ModelUnit>: Sendable {
     /// The rendered formula in `FormulaEvaluator` grammar.
     public var formula: String { get }
 
@@ -172,9 +172,9 @@ they fail to compile.
 
 ```swift
 // Same-unit addition and subtraction.
-public func + <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U>
-public func - <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U>
-public prefix func - <U: Unit>(operand: Expr<U>) -> Expr<U>
+public func + <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U>
+public func - <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<U>
+public prefix func - <U: ModelUnit>(operand: Expr<U>) -> Expr<U>
 
 // Scaling money by a dimensionless quantity.
 public func * (lhs: Expr<Money>, rhs: Expr<Ratio>) -> Expr<Money>
@@ -220,10 +220,10 @@ worst at reporting. `revenue * ratio(0.4)` is three characters longer and unambi
 ```swift
 extension ModelDefinition {
     /// Typed overload. Delegates to the existing string API; nothing below is modified.
-    public func defining<U: Unit>(_ item: LineItem<U>, as expr: Expr<U>) -> ModelDefinition<T>
+    public func defining<U: ModelUnit>(_ item: LineItem<U>, as expr: Expr<U>) -> ModelDefinition<T>
 
     /// Reads a typed result out of an evaluation.
-    public func series<U: Unit>(for item: LineItem<U>,
+    public func series<U: ModelUnit>(for item: LineItem<U>,
                                 in results: [String: TimeSeries<T>]) -> TimeSeries<T>?
 
     /// Validates rate bases and account bindings before evaluation.
@@ -375,14 +375,14 @@ thread. `IF(condition, then, else)` selects period-wise.
 public enum Condition: Unit { public static var symbol: String { "condition" } }
 
 // Comparisons require matching units — money against money, never money against a ratio.
-public func >  <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
-public func <  <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
-public func >= <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
-public func <= <U: Unit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+public func >  <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+public func <  <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+public func >= <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
+public func <= <U: ModelUnit>(lhs: Expr<U>, rhs: Expr<U>) -> Expr<Condition>
 
 /// Both branches must share a unit, so a conditional cannot smuggle a ratio
 /// into a money-valued account.
-public func ifThen<U: Unit>(_ c: Expr<Condition>, _ then: Expr<U>, else: Expr<U>) -> Expr<U>
+public func ifThen<U: ModelUnit>(_ c: Expr<Condition>, _ then: Expr<U>, else: Expr<U>) -> Expr<U>
 ```
 
 `Condition` has no arithmetic overloads at all, so `revenue + (a > b)` does not compile — a
@@ -419,8 +419,8 @@ matters.
 Typed surface:
 
 ```swift
-public func min<U: Unit>(_ a: Expr<U>, _ b: Expr<U>) -> Expr<U>
-public func max<U: Unit>(_ a: Expr<U>, _ b: Expr<U>) -> Expr<U>
+public func min<U: ModelUnit>(_ a: Expr<U>, _ b: Expr<U>) -> Expr<U>
+public func max<U: ModelUnit>(_ a: Expr<U>, _ b: Expr<U>) -> Expr<U>
 ```
 
 Note the unit discipline carries: `min` of two `Money` is `Money`; `min(money, ratio)` has no
@@ -1029,6 +1029,25 @@ means degrading to a weaker check, not abandoning units.
    by trying to build rather than by review, which is worth recording: a design document cannot
    see a namespace.
 
+9. **`Unit` is taken as well, by Foundation — and this one is invisible from inside the module.**
+   *(Found 2026-09-02 by the first test that imported the module from outside.)*
+
+   `Foundation.Unit` is the base class of the `Measurement` API, and essentially every consumer
+   imports Foundation. Within `BusinessMath` a local `Unit` shadows it and everything compiles;
+   from outside — the test module, and every downstream package — `Unit` is ambiguous at every
+   use site.
+
+   That is the worst shape a naming problem can take, because the module that owns the name never
+   sees the damage. `Account` and `Duration` both broke this package's own build immediately.
+   This one built clean and would have shipped, breaking `BusinessMathExcel` on the first
+   `import`.
+
+   **Resolved 2026-09-02: the protocol is `ModelUnit`.** The four concrete units — `Money`,
+   `Rate`, `Ratio`, `Count` — are unambiguous and keep their names.
+
+   Three collisions in one small surface is a pattern rather than bad luck. All three were found
+   by compiling, none by review, and the third needed compiling *from another module*.
+
 ## 16. Documentation Strategy
 
 **Documentation Type:** Narrative Article Required
@@ -1059,7 +1078,7 @@ CHANGELOG entry for the deprecation and the removed product, and an update to
 | **2c** | Register the TVM tranche (`NPV`→`npvExcel`, `IRR`, `XIRR`, `XNPV`, `PMT`, `IPMT`, `PPMT`, `PV`, `FV`, `CUMIPMT`, `CUMPRINC`) — one Excel-semantics fixture per name | Delegation-equivalence tests green; `NPV`≠`npv()` test pins the binding |
 | **2d** | Register the statistical tranche seeded from `FormulaMapper.statisticalFunctions` | One Excel fixture per name; `STDEV`/`STDEVP` and `VAR`/`VARP` denominators pinned |
 | **2e** | `Rollforward` + `PeriodDriver` (Part 2.5) | Debt rollforward across 7 periods matches an Excel fixture; within-period cycle still resolves via `CycleSolver`; cross-period cycle diagnosed as `rollforwardCycle` |
-| **3** | `Unit`, `LineItem<U>`, `Expr<U>`, operator algebra, `defining` overloads | Negative compile tests fail to compile; **compile-time budget met** (§15 Q5) — if not, fall back to Alternative 3 |
+| **3** | `ModelUnit`, `LineItem<U>`, `Expr<U>`, operator algebra, `defining` overloads | Negative compile tests fail to compile; **compile-time budget met** (§15 Q5) — if not, fall back to Alternative 3 |
 | **4** | `validateUnits()` + rate-basis checking | `rateBasisMismatch` thrown for annual-rate-on-monthly-period |
 | ~~**5**~~ | ~~Deprecate every remaining `BusinessMathDSL` public type~~ **Dropped 2026-09-01** — removal is outright, so there is no deprecation release; see §15 Q1 | — |
 | **6** | Delete `Sources/BusinessMathDSL/` + the three obsolete `Result Builder Tests` files; remove product and target from `Package.swift` | Package builds clean; no reference to `BusinessMathDSL` remains |
