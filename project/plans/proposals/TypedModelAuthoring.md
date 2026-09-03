@@ -135,8 +135,8 @@ public enum Rate: Unit { public static var symbol: String { "rate" } }
 /// A dimensionless ratio: a margin, a multiple, a percentage.
 public enum Ratio: Unit { public static var symbol: String { "ratio" } }
 
-/// A count of periods, units, or shares.
-public enum Duration: Unit { public static var symbol: String { "duration" } }
+/// A count of periods, units, or shares. Not `Duration` — see §15 Q8.
+public enum Count: Unit { public static var symbol: String { "count" } }
 ```
 
 ### Part 1 — accounts and expressions
@@ -187,7 +187,7 @@ public func * (lhs: Expr<Ratio>, rhs: Expr<Ratio>) -> Expr<Ratio>
 
 // Division derives dimension.
 public func / (lhs: Expr<Money>, rhs: Expr<Money>)    -> Expr<Ratio>     // margin
-public func / (lhs: Expr<Money>, rhs: Expr<Duration>) -> Expr<Money>     // per period
+public func / (lhs: Expr<Money>, rhs: Expr<Count>)    -> Expr<Money>     // per unit
 public func / (lhs: Expr<Money>, rhs: Expr<Ratio>)    -> Expr<Money>     // gross-up
 public func / (lhs: Expr<Ratio>, rhs: Expr<Ratio>)    -> Expr<Ratio>
 
@@ -910,7 +910,9 @@ means degrading to a weaker check, not abandoning units.
 2. **Do `Money * Money` and other blocked combinations need an escape hatch** for a caller with a
    legitimate exotic case? An explicit `Expr<U>.reinterpret(as:)` would provide one at the cost
    of a hole. Recommend deferring until someone needs it.
-3. **Is `Duration` the right unit for share counts,** or does a `Share` unit pull its weight?
+3. ~~**Is `Duration` the right unit for share counts,** or does a `Share` unit pull its weight?~~
+   **Resolved 2026-09-02 by Q8:** the unit is `Count`, which covers shares as naturally as
+   periods. No separate `Share` unit is proposed.
 4. **Should `CapTable.liquidationWaterfall` and the migrated `LiquidationWaterfall` converge?**
    They model different things today; the overlap may still confuse.
 5. ~~**What is the compile-time budget number?**~~
@@ -1001,9 +1003,31 @@ means degrading to a weaker check, not abandoning units.
    `1 + g` never did; a growth factor is a distinct thing from the rate it is built from, and
    naming it is a gain rather than a tax.
 
-   A compounding form, `factor(_ r: Expr<Rate>, over n: Expr<Duration>)` for `(1 + r)ⁿ`, is the
+   A compounding form, `factor(_ r: Expr<Rate>, over n: Expr<Count>)` for `(1 + r)ⁿ`, is the
    obvious sibling and is **not** proposed here: no measured workbook has needed it yet, and §14
    is where speculative surface belongs.
+
+8. **`Duration` is taken too, by the standard library.**
+   *(Found 2026-09-02 by compiling Phase 3 Task 1, which is the only way this kind of thing is
+   ever found.)*
+
+   §4 proposed `public enum Duration: Unit`. `BusinessMath` uses `Duration` unqualified in eight
+   files — `AsyncOptimization`, `ElapsedTimeSource`, `PerformanceBenchmark`, `SimulationResults`,
+   the branch-and-bound solvers — and `Determinism/ElapsedTime.swift` *extends* it. Declaring
+   another `Duration` in the module shadows the standard library's for every one of them, and the
+   build fails in six files that have nothing to do with units.
+
+   Fixing the call sites would be the wrong repair: it leaves a name that means one thing in this
+   module and another everywhere else, so the next file written here inherits the trap.
+
+   **Resolved 2026-09-02: the unit is `Count`.** It is also the more accurate word. §4 defined it
+   as *a count of periods, units, or shares*, and `Count` covers a share count as naturally as a
+   period count — which answers Q3 as well: no separate `Share` unit is needed, because counting
+   shares is what this unit does.
+
+   This is the second name collision in Phase 3's surface, after `Account` in Q6. Both were found
+   by trying to build rather than by review, which is worth recording: a design document cannot
+   see a namespace.
 
 ## 16. Documentation Strategy
 
