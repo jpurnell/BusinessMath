@@ -69,6 +69,7 @@ This documentation is organized like a book with five main parts:
 - <doc:1.2-TimeSeries>
 - <doc:1.3-TimeValueOfMoney>
 - <doc:1.9-FormulaEvaluation>
+- <doc:1.10-TypedModelAuthoring>
 
 ### API Patterns & Developer Tools
 

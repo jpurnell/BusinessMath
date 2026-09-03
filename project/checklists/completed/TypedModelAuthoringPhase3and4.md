@@ -49,12 +49,12 @@ applied over monthly periods, and `BusinessMathExcel` can consume the layer.**
 
 ## Task 5 — Release 2.9.0
 
-- [ ] `1.7-TypedModelAuthoringGuide.md` (§16 requires a narrative article), indexed in the DocC
+- [x] `1.7-TypedModelAuthoringGuide.md` (§16 requires a narrative article), indexed in the DocC
       catalogue — checked by listing the directory, not by assuming the slot is free.
-- [ ] CHANGELOG, `master_plan.md`, capability map.
-- [ ] Quality gate `--check all`, 0 errors / 0 warnings, counted.
-- [ ] Tag `v2.9.0`, push.
-- [ ] Move this file to `project/checklists/completed/`.
+- [x] CHANGELOG, `master_plan.md`, capability map.
+- [x] Quality gate `--check all`, 0 errors / 0 warnings, counted.
+- [x] Tag `v2.9.0`, push.
+- [x] Move this file to `project/checklists/completed/`.
 
 ---
 

@@ -9,6 +9,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.9.0] - 2026-09-03
+
+A model can be written in a vocabulary that says what its numbers mean, and the compiler checks
+it. `revenue * margin` compiles; `revenue + margin` does not; `revenu` does not exist. Nothing
+beneath changes — a typed model **is** a `ModelDefinition`, evaluated by the same engine,
+producing the same numbers. It is a spelling, not a second implementation.
+
+### Added
+- `ModelUnit` and the four units — `Money`, `Rate`, `Ratio`, `Count`. Phantom types: checked at
+  compile time, never instantiated, no storage, no runtime cost.
+- `LineItem<U>` — the name a model knows an account by, held in a Swift value so a typo does not
+  compile and rename works. `LineItem<Money>("Revenue")` and `LineItem<Ratio>("Revenue")` name
+  the same account and are different Swift types.
+- `Expr<U>` and the unit algebra: fourteen operator overloads for the combinations that mean
+  something, and none for the ones that do not. `min`, `max` and `abs` keep the unit they are
+  given.
+- `money(_:)`, `ratio(_:)`, `rate(_:per:)`, `count(_:)` — literals name their own unit. There is
+  deliberately no `ExpressibleByFloatLiteral`: a bare `0.4` would take its unit from context,
+  which is the ambiguity units exist to remove. Measured, it is also what keeps type-checking
+  fast — nothing in the §4 example or a twenty-term stress file exceeds 10 ms.
+- `factor(_:)` — `1 + g`. A dimensionless one and a per-period rate are not the same dimension,
+  so the growth-factor idiom needed a name rather than an overload that would also admit
+  `margin + growth`.
+- `ModelDefinition.defining(_:as:)` / `define(_:as:)` / `formula(for:)` / `series(for:in:)` —
+  typed overloads that delegate to the string API immediately below them.
+- `validateUnits()` and `TypedModelError` — the checks a compiler cannot make because they
+  depend on the model: `conflictingUnits` (one name, two meanings), `missingRateBasis`, and
+  `rateBasisMismatch` (an annual rate on a monthly timeline, off by twelve, evaluating without
+  complaint and entirely plausible in a report).
+- `UnitDeclaration` and `ModelDefinition.unitDeclarations` — what the typed API declared. A
+  model written with strings declares nothing, so `validateUnits()` succeeds without checking
+  anything; `unitDeclarations` says how much was known.
+- `1.10-TypedModelAuthoring.md` — the guide, indexed in the DocC catalogue.
+
+### Notes
+Three name collisions were found while building this, all by compiling and none by review:
+`Account` was taken by the financial-statement surface (the typed handle became `LineItem`),
+`Duration` by the standard library, and `Unit` by Foundation. The last is the one worth
+remembering — inside the module a local `Unit` shadows Foundation's and everything compiles, so
+it would have shipped clean and broken every consumer on the first `import`. The protocol is
+`ModelUnit`; `Money`, `Rate`, `Ratio` and `Count` keep their names.
+
+`Count` also settles whether share counts need a unit of their own: they do not.
+
+The proposal named the guide `1.7-TypedModelAuthoringGuide.md`. That slot belongs to the error
+handling guide, so the article is `1.10-`, which also puts it directly after
+`1.9-FormulaEvaluation` — the layer it builds on.
+
 ### [2.8.0] - 2026-09-01
 
 Formulas can call functions, and a balance can move between periods. Together those close the
