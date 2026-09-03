@@ -38,6 +38,21 @@ suite depends on it.
 
 ## Current Status
 
+**2.9.0 shipped 2026-09-03** — a model can be written in a vocabulary that says what its numbers
+mean, and the compiler checks it. `revenue * margin` compiles, `revenue + margin` does not, and
+`revenu` is not a variable that exists. A typed model **is** a `ModelDefinition`: same engine,
+same numbers, a spelling rather than a second implementation.
+
+`validateUnits()` adds the checks a compiler cannot make because they depend on the model — one
+name meaning two things, a rate with no period basis, and an annual rate applied to a monthly
+timeline. That last is what the layer is worth building for: off by twelve, evaluating without
+complaint, entirely plausible in a report.
+
+The compile-time budget §15 Q5 left open was measured before any of it was written, and passes
+with a wide margin: nothing in the worked example or a twenty-term stress file exceeds 10 ms to
+type-check. Three name collisions were found by compiling — `Account`, `Duration`, and `Unit`,
+the last belonging to Foundation and invisible from inside the module.
+
 **2.8.0 shipped 2026-09-01** — the formula grammar gained functions, and a balance can move
 between periods. Together those close the gap that made a cash sweep inexpressible as
 configuration: a debt paydown whose interest depends on the repayment that depends on the
@@ -380,38 +395,4 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-01 — reconciled for the 2.8.0 release: Current Status leads with the formula functions and the period driver, and `project/capability_map.md` now exists, which the release checklist requires and which no prior release had. Previously reconciled for 2.7.0. Current Status now leads
-with 2.7.0 and records how its pre-tag open question was answered; `v2.7.0_SCOPE.md` moved
-to `plans/completed/` with its inbound references repointed; the CHANGELOG's `[Unreleased]`
-heading became `[2.7.0] - 2026-09-01`; README's latest-release section and `from:` pin moved
-to 2.7.0, with the deprecations called out because they are the one thing that can bite a
-consumer on upgrade.
-
-Previously: 2026-08-24 — reconciled after driving the gate from 1,187 blocking
-findings to 0. Updated: the gate's checker count and status; a Known Issues entry recording
-that nothing had been running the gate since June, and that CI still cannot; and the
-`--exclude test` misreading that kept the suite's force unwraps out of view. Added
-`v2.7.0_SCOPE.md` (now `completed/`, shipped 2026-09-01) and promoted `MarketingLeg.md` to `upcoming/`.
-
-Previously: 2026-08-17 — reconciled three times: after `doc-comment-code` reached 0,
-after the quality-gate fixes landed (blockers 1 and 2 cleared, gate verified at 43 of 43
-against the **installed** binary), and after **2.6.0 shipped**. The post-tag finding is that
-the gate has never run on GitHub CI at all; `HANDOFF.md` carries that decision and the four
-claims in these documents that were wrong when committed
-and the gate. `doc-comment-code` 852 → **420 non-macro**, and `doc-claims` 8 → **0**, so the
-tag now waits on one number rather than two. Tests 6,582 → 6,597; commits since `v2.5.2`
-96 → 122. Added: the `gpu-safety` checker is live and its findings against
-`.claude/worktrees/` are stale copies rather than live defects; the 51 macro errors are
-recorded as not author-fixable so they are not counted against the gate. The method for the
-remaining 420, and the traps that cost round trips, are in `HANDOFF.md` rather than here —
-they are resume notes, not plan.
-
-**Previously, 2026-08-13 (morning):** — reconciled against the tree and against CI, not against the
-previous revision. Counts corrected throughout: 6,520→**6,582** tests in 579 suites, 36→**37**
-checkers, 6,471→**6,508** documented APIs, and "64 commits unpushed"→**0** (96 past `v2.5.2`,
-all pushed). Closed as done: three of the four `doc-*` checkers landed (`doc-comment-code`,
-`doc-claims`, `doc-generated`), so Priority 1 and three Phase 3 items are struck; the `.timeLimit`
-sizing defect (`22d22a0`). Added: `doc-comment-code` at 852 and `doc-claims` at 8 as the concrete
-tag gate, `doc-symbol-link` as the one checker still outstanding, the v3.0.0 scope as Priority 6,
-CI and nightly status rows, and "A recurring shape" above. Corrected: the documentation section
-claimed `doc-comment-code` "does not exist yet" and `doc-claims` was "in build"; both shipped.
+**Last Updated:** 2026-09-03 — reconciled for the 2.9.0 release: Current Status leads with the typed authoring layer and `validateUnits()`, `project/capability_map.md` gains a Typed Model Authoring section, and `1.10-TypedModelAuthoring.md` is written and indexed. Recorded that Phase 3's compile-time gate was measured and passed, and that three name collisions were found by compiling rather than by review. Counts refreshed to 6760 tests.

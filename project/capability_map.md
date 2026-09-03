@@ -19,6 +19,26 @@ Formulas are period-local by design. Seventeen registered functions bind to cano
 implementations rather than reimplementations, and where Excel's definition differs from the
 textbook's the grammar means Excel's. An unregistered name throws rather than evaluating to zero.
 
+## Typed Model Authoring
+
+**Key types:** `ModelUnit`, `Money`, `Rate`, `Ratio`, `Count`, `LineItem`, `Expr`, `UnitDeclaration`, `TypedModelError`
+**Interfaces:** `LineItem.expr`, `defining(_:as:)`, `series(for:in:)`, `validateUnits()`, `factor(_:)`, `money(_:)`, `ratio(_:)`, `rate(_:per:)`, `count(_:)`
+**Applications:** Writing a model in Swift where the compiler checks that its quantities combine into something meaningful, and catching the model-dependent errors a compiler cannot see
+**Dependencies:** `Models as Configuration` — every typed binding delegates to the string API
+
+A spelling of ``ModelDefinition``, not a second engine: a typed model evaluates through the same
+path and produces the same numbers. Units are phantom types — checked before a model is built,
+leaving nothing behind in it.
+
+The algebra rejects what is wrong for any model: `money + ratio`, `money * money`, a bare float
+literal with no unit. `validateUnits()` catches what depends on the model — one name meaning two
+things, a rate with no period basis, and an annual rate applied to a monthly timeline. The last
+is the one worth the layer: it is off by twelve, evaluates without complaint, and looks entirely
+plausible in a report.
+
+What validation cannot see is stated rather than implied. A model written with strings declares
+nothing, so a clean `validateUnits()` there means only that nothing was known.
+
 ## Circularity
 
 **Key types:** `DependencyReport`, `DependencyCycle`, `CycleForm`, `CycleSolverError`, `IterationSettings`
