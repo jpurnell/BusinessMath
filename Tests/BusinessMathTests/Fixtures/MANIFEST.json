@@ -1,0 +1,28 @@
+{
+  "fixtures": {
+    "inverseRegularizedIncompleteBeta.json": {
+      "cases": 104,
+      "reference": "scipy.special.betaincinv(a, b, p)",
+      "sha256": "4f15f096a46e7110bca985305301a5518b1a920514e73d805825beb434f75119"
+    },
+    "inverseRegularizedLowerIncompleteGamma.json": {
+      "cases": 104,
+      "reference": "scipy.special.gammaincinv(a, p)",
+      "sha256": "d5ea4f5d096b8fe7c40ca547a9527331f56a1ecf50d209d3ab1208765df8eb15"
+    },
+    "regularizedIncompleteBeta.json": {
+      "cases": 72,
+      "reference": "scipy.special.betainc(a, b, x)",
+      "sha256": "f593857221cec408e0417ecdc78da4e3e8fdcf56561257198e3de3d5e1f4c1fa"
+    },
+    "regularizedLowerIncompleteGamma.json": {
+      "cases": 64,
+      "reference": "scipy.special.gammainc(a, x)",
+      "sha256": "54fd7f8608e70cdac5625fec5a6ce0cdc520f4c535a3c0a8a3ffce6df53d7f25"
+    }
+  },
+  "generated": "2026-09-04T23:31:53.294287+00:00",
+  "numpy": "2.5.2",
+  "python": "3.14.7",
+  "scipy": "1.17.1"
+}
