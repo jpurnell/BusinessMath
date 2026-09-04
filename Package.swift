@@ -153,6 +153,11 @@ var targets: [Target] = [
 		exclude: [
 			"DocumentationExamples/README.md"
 		],
+		resources: [
+			// Reference values generated once by Scripts/reference-fixtures/generate.py
+			// and committed. CI never runs Python; the suite reads this JSON.
+			.copy("Fixtures")
+		],
 		swiftSettings: [
 			.enableUpcomingFeature("StrictConcurrency")
 		]

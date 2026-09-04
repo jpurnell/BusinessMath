@@ -45,22 +45,23 @@ given uniform.**
 Between them these supply quantiles for Gamma, Erlang, Chi-squared, Beta, F, Pearson V, Pearson VI
 and the Johnson family.
 
-- [ ] RED — tests for `regularizedLowerIncompleteGamma` as public API (currently `private` at `chiSquaredCDF.swift:56`)
-- [ ] GREEN — promote it; new home `Statistics/SpecialFunctions/`
+- [x] RED — tests for `regularizedLowerIncompleteGamma` as public API (currently `private` at `chiSquaredCDF.swift:56`)
+- [x] GREEN — promote it; new home `Statistics/SpecialFunctions/`
 - [ ] Move `regularizedIncompleteBeta` into `SpecialFunctions/` — **separate commit**, pure file move of a public symbol
-- [ ] RED — `inverseRegularizedLowerIncompleteGamma` against SciPy `gammaincinv`
-- [ ] GREEN — Newton with bisection fallback; bounded iteration, no unbounded `while`
-- [ ] RED — `inverseRegularizedIncompleteBeta` against SciPy `betaincinv`
-- [ ] GREEN — same shape
-- [ ] Verify `chiSquaredCDF` still passes unchanged — it is the existing caller
+- [x] RED — `inverseRegularizedLowerIncompleteGamma` against SciPy `gammaincinv`
+- [x] GREEN — Newton with bisection fallback; bounded iteration, no unbounded `while`
+- [x] RED — `inverseRegularizedIncompleteBeta` against SciPy `betaincinv`
+- [x] GREEN — same shape
+- [x] Verify `chiSquaredCDF` still passes unchanged — it is the existing caller
 
-### 1. The SciPy harness
+### 1. The SciPy harness  — *generator + 344 special-function cases done; distribution fixtures added per row*
 
-- [ ] `Scripts/reference-fixtures/{generate.py,spec.py,requirements.txt}` — pin scipy==1.17.1, numpy==2.5.2
-- [ ] Fixture JSON schema: Frontline **and** SciPy parameters, plus the conversion as data
-- [ ] `Tests/BusinessMathTests/Fixtures/` + `MANIFEST.json` with versions, date, sha256 per fixture
-- [ ] `Package.swift` — `resources: [.copy("Fixtures")]` on the test target (first use of `resources:`)
-- [ ] Swift-side fixture loader + the shared assertion template of §10.1
+- [x] `Scripts/reference-fixtures/{generate.py,spec.py,requirements.txt}` — pin scipy==1.17.1, numpy==2.5.2
+- [x] Fixture JSON schema: Frontline **and** SciPy parameters, plus the conversion as data
+- [x] `Tests/BusinessMathTests/Fixtures/` + `MANIFEST.json` with versions, date, sha256 per fixture
+- [x] `Package.swift` — `resources: [.copy("Fixtures")]` on the test target (first use of `resources:`)
+- [x] Swift-side fixture loader (`Tests/BusinessMathTests/Support/ReferenceFixture.swift`)
+- [ ] The shared assertion template of §10.1 — lands with the protocols in step 2
 
 ### 2. The protocols
 
@@ -105,6 +106,30 @@ and the Johnson family.
 - [ ] `quality-gate --no-cache` — 0 errors / 0 warnings, no overrides
 
 ---
+
+## Traps found while building (2026-09-04)
+
+- **A safeguarded root-finder must test convergence *before* it bisects.** On the final
+  iteration the step is zero, so `candidate == x`, and `x` has just become a bracket
+  endpoint — which fails a strict `candidate > low` test. Bisecting first replaced an
+  exact root with the midpoint of the remaining bracket and then broke, returning
+  68.969 where the answer was 67.903. Both inverses had it. The fixtures caught it; a
+  smoke test would not have.
+- **`P(a, x) − p` is worthless above the median.** At `p = 1 − 1e-10` both terms are
+  within 1e-10 of 1 and the residual keeps about six digits. `regularizedUpperIncompleteGamma`
+  now exists so the iteration can work on whichever tail is small; the beta inverse
+  reflects through `I_x(a,b) = 1 − I_{1−x}(b,a)` for the same reason.
+- **Wilson–Hilferty takes *minus* the deviate.** The rational approximation returns the
+  lower-tail normal deviate, so a probability above the median arrives negative. The
+  sign error put the initial estimate at 35.0 instead of 67.9.
+- **A round-trip tolerance near a bounded support is a conditioning question, not a
+  quality one.** For the arcsine case at `p = 1 − 1e-8` the root sits one ulp below 1,
+  so `1 − x` carries a single significant digit and one ulp is worth 2.4e-9 in `p`.
+  SciPy's own round-trip error there is 5.1e-10. The test now asserts
+  `density(x) · ulp(x)`, which states the limit instead of hiding it.
+- **`Real` has no `ExpressibleByFloatLiteral`.** `T(0.5)` resolves to `init(_: Int)` and
+  fails to compile. `decimal(_:over:)` — promoted out of `inverseNormalCDF.swift`, where
+  it was private — is the existing answer.
 
 ## Traps recorded during design
 
