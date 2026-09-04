@@ -41,6 +41,34 @@ disagree with the first.
 | `sampling` | 4 | How the sampler *chooses* points, not what it draws. Applies across every distribution. |
 | `excel-financial` | 10 | Time-value and depreciation. Excel is the reference. |
 
+### 1.3 Corrections — the work list checked against the code, 2026-09-04
+
+Six claims in this document were checked against the tree. Four do not hold as written. They are
+recorded here rather than edited into `businessmath_work.tsv`, because that file is generated and a
+hand-edit would be lost on the next regeneration; fold these in when it is next produced.
+
+| # | Where | What the document says | What the code says |
+|---|---|---|---|
+| 1 | §1.2, `distribution` | "Conform to `DistributionRandom`" | **Insufficient.** `MonteCarloSimulation` throws `SimulationError.seedingUnsupported` for any input that cannot honour a seed (`MonteCarloSimulation.swift:620`). A distribution conforming only to `DistributionRandom` is unusable in a seeded run. **Conform to `SeedableDistribution`.** |
+| 2 | §2.1 | Test "the CDF at several quantiles" and round-trip the quantile function | **Not expressible today.** `DistributionRandom` requires `next()` and nothing else (`DistributionRandom.swift:52`); quantile coverage in the whole package is three functions under three spellings. Addressed by `PROPOSAL_distribution_contract_and_sampling.md`, which is Phase 0 for this list. |
+| 3 | `ACCRINT` row | "Depends on `DayCountConvention`, which exists here" | **It exists with three cases** — ACT/365, ACT/360, 30/360 (`DayCountConvention.swift:81,89,103`). Excel's `basis` takes five: US 30/360, ACT/ACT, ACT/360, ACT/365, European 30/360. **Actual/actual and 30E/360 are missing** and are a prerequisite, not part of `ACCRINT`. |
+| 4 | `SLN` row, §2.3 | "Generalise one and have the others call it" | **Neither existing implementation takes a salvage value.** `RealEstateModel.swift:163` is `depreciableValue / depreciationPeriodYears`; `BusinessMathDSL`'s is `StraightLine(asset:years:)`. Excel is `(cost - salvage) / life`, so the general function is genuinely new and the two existing sites become callers with `salvage: 0`. Behaviour-preserving refactor across a target boundary — its own commit. |
+| 5 | §1.2, `process` | "`DistributionRandom` is the wrong protocol" — but says nothing about the right one | **`StochasticProcess<State>` already exists** (`Sources/BusinessMath/Stochastic/StochasticProcess.swift:36`) with `ProcessState`, and GBM, OU, ABM, JumpDiffusion, Heston and HullWhite conform. AR/MA/ARMA/ARCH/GARCH belong there. No new protocol. |
+| 6 | §3, item 5 | Sampling methods as four work-list rows | **Under-sized.** `SimulationInput` erases each distribution to a per-input closure (`SimulationInput.swift:95`); a quasi-random point set is joint across inputs and has no seam. This is an architecture change to `MonteCarloSimulation`, designed in the Phase 0 proposal. |
+
+**One consequence worth stating on its own,** because it decides which distributions can participate
+in quasi-random sampling at all: a point set supplies exactly one coordinate per input per
+iteration, but `DistributionNormal` samples by Box–Muller (two uniforms,
+`distributionNormal.swift:34`) and `DistributionGamma` by Marsaglia–Tsang rejection (unbounded,
+`distributionGamma.swift:141`). **Latin hypercube and Sobol are available only to one-uniform
+inverse transforms.** The Phase 0 proposal enforces this by throwing rather than silently reverting
+to pseudo-random.
+
+Two claims checked and **confirmed**: all three `maths-no-sampler` rows are accurate — `poissonCDF`,
+`hypergeometric`, `meanDiscrete`/`varianceDiscrete` all exist as stated; and §4's `FormulaEvaluator.Function`
+is indeed a 21-name Excel registry (`Time Series/FormulaFunction.swift:22`). Narrowing it removes
+public enum cases, which is source-breaking against 2.9.0 and belongs in a 3.0, not here.
+
 ---
 
 ## 2. How to verify each item
@@ -100,8 +128,13 @@ reproduced against another tool is not much use for the thing quasi-random seque
 `excel-coverage/corpus_usage.tsv` gives measured frequency across 79 real workbooks. It says what
 gets *used*; it never says what exists, and it must not be used to decide scope.
 
-Ordered by what the corpus actually calls:
+Ordered by what the corpus actually calls — with **Phase 0 inserted ahead of all of it** per §1.3:
 
+0. **The distribution contract and the sampling seam.** `PROPOSAL_distribution_contract_and_sampling.md`.
+   Nothing below can be verified the way §2 requires until `cdf`/`quantile` exist, and item 5 has
+   nowhere to live at all. The Excel financial ten (item 2) are the exception — they depend on none
+   of it and can run in parallel on their own branch, together with the two missing
+   `DayCountConvention` cases §1.3 identifies.
 1. **`PsiPoisson`, `PsiHyperGeo`, `PsiDiscrete`** — samplers only, on mathematics already here. The
    cheapest items on the list.
 2. **The Excel financial ten.** Small, exactly specified, and Excel settles every question.
