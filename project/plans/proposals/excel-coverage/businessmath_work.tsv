@@ -1,0 +1,50 @@
+NAME	KIND	STATUS	SIGNATURE	REFERENCE	NOTE
+PsiCauchy	distribution	absent	loc, lambda	scipy.stats.cauchy(loc, scale)	Quantile loc+scale*tan(pi*(u-0.5)). Frontline's own prose contradicts its signature about whether arg 1 is location or scale; the signature is authoritative.
+PsiLaplace	distribution	absent	loc, beta	scipy.stats.laplace(loc, scale)	Quantile has a closed form in two branches around the median. Same prose/signature contradiction as PsiCauchy, in reverse.
+PsiLevy	distribution	absent	loc, scale	scipy.stats.levy(loc, scale)	Stable with alpha=1/2, beta=1. Heavy tailed; mean undefined.
+PsiErlang	distribution	absent	k, beta	scipy.stats.erlang(a=k, scale=beta)	Gamma with integer shape. Can delegate to this package's existing distributionGamma rather than be written fresh.
+PsiFrechet	distribution	absent	loc, scale, shape	scipy.stats.invweibull(c=shape, loc, scale)	Extreme value type II. scipy names it invweibull.
+PsiMaxExtreme	distribution	absent	m, s	scipy.stats.gumbel_r(loc=m, scale=s)	Gumbel, right-skewed.
+PsiMinExtreme	distribution	absent	m, s	scipy.stats.gumbel_l(loc=m, scale=s)	Gumbel, left-skewed. Distinct from PsiMaxExtreme; do not implement one and negate.
+PsiLogLogistic	distribution	absent	gamma, beta, alpha	scipy.stats.fisk(c=alpha, loc=gamma, scale=beta)	scipy names it fisk. Note Frontline's argument order is location, scale, shape.
+PsiInvNormal	distribution	absent	mu, lambda	scipy.stats.invgauss(mu/lambda, scale=lambda)	Inverse Gaussian, a.k.a. Wald. scipy's parameterisation differs from Frontline's; convert explicitly.
+PsiNegBinomial	distribution	absent	s, p	scipy.stats.nbinom(n=s, p)	Number of failures before the s-th success. Check which side Frontline counts.
+PsiLogarithmic	distribution	absent	p	scipy.stats.logser(p)	Logarithmic series, discrete.
+PsiHypSecant	distribution	absent	loc, scale	scipy.stats.hypsecant(loc, scale)	Closed-form quantile: loc + scale*(2/pi)*ln(tan(pi*u/2)).
+PsiFatigueLife	distribution	absent	loc, scale, shape	scipy.stats.fatiguelife(c=shape, loc, scale)	Birnbaum-Saunders.
+PsiReciprocal	distribution	absent	min, max	scipy.stats.loguniform(min, max)	Log-uniform. scipy renamed reciprocal to loguniform.
+PsiPearson5	distribution	absent	alpha, beta	scipy.stats.invgamma(a=alpha, scale=beta)	Pearson type V is the inverse gamma.
+PsiPearson6	distribution	absent	alpha1, alpha2, beta	scipy.stats.betaprime(a=alpha1, b=alpha2, scale=beta)	Pearson type VI is the beta prime. Frontline documents PsiPearson6Alt with two parameters against this one's three; likely their error, recorded as published.
+PsiBurr12	distribution	absent	loc, scale, shape1, shape2	scipy.stats.burr12(c=shape1, d=shape2, loc, scale)	Burr type XII.
+PsiDagum	distribution	absent	loc, scale, shape1, shape2	scipy.stats.burr(c, d, loc, scale)	Dagum is Burr type III. scipy's burr is type III and burr12 is type XII; confirm which shape maps to which before binding.
+PsiKumaraswamy	distribution	absent	shape1, shape2, min, max	closed form	CDF on [0,1] is 1-(1-x^a)^b, quantile (1-(1-u)^(1/b))^(1/a), then scaled to [min,max]. No standard reference implementation needed.
+PsiJohnsonSB	distribution	absent	shape1, shape2, min, max	scipy.stats.johnsonsb(a, b, loc, scale)	Bounded Johnson.
+PsiJohnsonSU	distribution	absent	shape1, shape2, loc, scale	scipy.stats.johnsonsu(a, b, loc, scale)	Unbounded Johnson.
+PsiDblTriang	distribution	absent	min, likely, max, p	closed form	Two triangular pieces meeting at the mode, with p the probability mass below it.
+PsiMyerson	distribution	absent	a, b, c, t	Frontline reference guide	Three-point quantile-parameterised distribution. No standard library equivalent; the guide's definition is the only authority.
+PsiMetalog	distribution	absent	min, max, coefficients, prop_fcns	Keelin (2016), The Metalog Distributions	Quantile-parameterised. Leading arguments are optional AND first, which needs care in any binding.
+PsiMetalogFit	distribution	absent	num_coef, x_values, y_values	Keelin (2016)	Least-squares fit of metalog coefficients to data.
+PsiCumul	distribution	absent	a, b, {x}, {p}	closed form	Piecewise-linear CDF through the given points.
+PsiGeneral	distribution	absent	a, b, {x}, {w}	closed form	Piecewise-linear density through weighted points.
+PsiDisUniform	distribution	absent	{x1..xn}	closed form	Uniform over an explicit set. Trivial over this package's existing uniform draw.
+PsiShuffle	distribution	absent	data	closed form	Sampling without replacement — a permutation. Distinct from PsiResample, which is with replacement.
+PsiMVLogNormal	distribution	absent	mu, sigma	exp of a multivariate normal	Delegate to this package's CorrelatedNormals and exponentiate.
+PsiMomentFit	distribution	absent	mean, stdev, skew, kurtosis	Frontline reference guide	Fits a distribution to four moments.
+PsiAR1	process	absent	mean, volatility, coef1, val0	standard AR(1)	Time-series process, not an i.i.d. draw. PsiAR2, PsiMA1, PsiMA2, PsiARMA11 follow the same pattern and should share one implementation.
+PsiGARCH11	process	absent	mean, volatility, err_coef, ar_coef, val0, stdev0	Bollerslev (1986)	PsiARCH1, PsiEGARCH11 and PsiAPARCH11 are the same family. Lowest priority: 0 occurrences in the measured corpus.
+PsiPoisson	distribution	maths-no-sampler	lambda	scipy.stats.poisson(mu)	poissonCDF and the PMF exist here; a random draw does not. Add the sampler only.
+PsiHyperGeo	distribution	maths-no-sampler	n, D, M	scipy.stats.hypergeom	hypergeometric PMF exists here; a random draw does not.
+PsiDiscrete	distribution	maths-no-sampler	{x1..xn}, {p1..pn}	closed form	meanDiscrete and varianceDiscrete exist; a draw from an explicit pmf does not.
+LatinHypercube	sampling	absent	n, dimensions	scipy.stats.qmc.LatinHypercube	Stratified sampling. Frontline ships it; this package samples pseudo-randomly only.
+Sobol	sampling	absent	n, dimensions	Joe and Kuo (2008) direction numbers	CRITICAL: Sobol sequences differ between implementations by their direction numbers. State which set is used, or results are unreproducible against any other tool.
+Halton	sampling	absent	n, dimensions	scipy.stats.qmc.Halton	Note whether scrambling is applied; unscrambled Halton correlates badly in high dimensions.
+ImportanceSampling	sampling	absent	—	standard	Requires a proposal distribution and weight bookkeeping in SimulationResults.
+RATE	excel-financial	absent	nper, pmt, pv, [fv], [type], [guess]	Excel	Solves the annuity identity for the rate. Iterative; Excel's own default guess is 10%.
+NPER	excel-financial	absent	rate, pmt, pv, [fv], [type]	Excel	Closed form from the same identity.
+PDURATION	excel-financial	absent	rate, pv, fv	Excel	ln(fv/pv)/ln(1+rate).
+NOMINAL	excel-financial	absent	effect_rate, npery	Excel	Inverse of EFFECT, which exists here as DebtInstrument.effectiveAnnualRate.
+SLN	excel-financial	present-elsewhere	cost, salvage, life	Excel	Straight-line exists only inside RealEstateModel and BusinessMathDSL. Needs a general form.
+DDB	excel-financial	absent	cost, salvage, life, period, [factor]	Excel	Double-declining balance, factor defaulting to 2.
+SYD	excel-financial	absent	cost, salvage, life, per	Excel	Sum-of-years-digits.
+VDB	excel-financial	absent	cost, salvage, life, start, end, [factor], [no_switch]	Excel	Variable declining balance, switching to straight-line unless told not to.
+ACCRINT	excel-financial	absent	issue, first_interest, settlement, rate, par, frequency, [basis]	Excel	Accrued interest. Depends on DayCountConvention, which exists here.

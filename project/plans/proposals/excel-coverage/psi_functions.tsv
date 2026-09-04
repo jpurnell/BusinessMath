@@ -1,0 +1,295 @@
+PsiAbsDev	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiAPARCH11	distribution	mean, volatility, delta, gamma, err_coef, ar_coef, val0, stdev0	confirmed
+PsiAR1	distribution	mean, volatility, coef1, val0	confirmed
+PsiAR2	distribution	mean, volatility, coef1, coef2, val0, val1	confirmed
+PsiARCH1	distribution	mean, volatility, err_coef, val0	confirmed
+PsiARMA11	distribution	mean, volatility, ar_coef, ma_coef, val0, err0	confirmed
+PsiBaseCase	property	value	confirmed
+PsiBernoulli	distribution	p	confirmed
+PsiBeta	distribution	alpha1, alpha2	confirmed
+PsiBetaGen	distribution	alpha1, alpha2, a, b	confirmed
+PsiBetaGenAlt	distribution	4 name/value or percentile/value pairs, chosen from: percentile1, percentile2, percentile3, percentile4, shape1, shape2, min, max	confirmed
+PsiBetaSubj	distribution	a (min), c (likely), mean, b (max)	confirmed
+PsiBinomial	distribution	n, p	confirmed
+PsiBoxFunction	other	table_range, Arg1, Arg2	confirmed
+PsiBoxIterator	other	table_range	confirmed
+PsiBurr12	distribution	loc, scale, shape1, shape2	confirmed
+PsiBVar	statistic	cell, percentile, simulation, struc_format, param_slice	confirmed
+PsiCalcParam	other	values_or_lower, upper, base_case	confirmed
+PsiCalcValue	other	Output_cell, paramidx	confirmed
+PsiCategory	property	string	confirmed
+PsiCauchy	distribution	loc, lambda	confirmed
+PsiCauchyAlt	distribution	2 percentile/value pairs: percentile1, value1, percentile2, value2	confirmed
+PsiCensor	property	min, max, type	confirmed
+PsiCertified	distribution	name, sipname	confirmed
+PsiCertify	property	name, default_value, short_description, full_description, version, author, copyright, trademark, history	confirmed
+PsiChiSquare	distribution	df	confirmed
+PsiChiSquareAlt	distribution	1 parameter, chosen from: percentile or var	confirmed
+PsiCITrials	statistic	cell, confidence_level, tolerance, simulation, struc_format, param_slice	confirmed
+PsiClassifyCT	other	UNCONFIRMED	confirmed
+PsiClassifyCTEnsemble	other	UNCONFIRMED	confirmed
+PsiClassifyDA	other	UNCONFIRMED	confirmed
+PsiClassifyLR	other	UNCONFIRMED	confirmed
+PsiClassifyNB	other	UNCONFIRMED	confirmed
+PsiClassifyNN	other	UNCONFIRMED	confirmed
+PsiClassifyNNEnsemble	other	UNCONFIRMED	confirmed
+PsiCoeffVar	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiCollect	property	UNCONFIRMED	inferred
+PsiCompound	property	number_cell, deduction, limit	confirmed
+PsiCon	annotation	LHS, relation, RHS, active, chance_type, chance_measure, comment, model_name, critical	confirmed
+PsiConverged	statistic	output_cell, [simulation]	confirmed
+PsiConvergence	property	tol, type, level, mean, stdev, perc, val	confirmed
+PsiCopula	property	type, param, reflection, instance	confirmed
+PsiCopulaGauss	property	number_range, position, instance	confirmed
+PsiCopulaStudent	property	number_range, position, df, instance	confirmed
+PsiCorrDepen	property	corrname, coefficient	confirmed
+PsiCorrelation	statistic	cell1, cell2, simulation	confirmed
+PsiCorrIndep	property	corrname	confirmed
+PsiCorrMatrix	property	matrix_cell_range, position, instance	confirmed
+PsiCount	statistic	cell, type, simulation	confirmed
+PsiCube	other	range_with_values, dim1, dim2, dim3	confirmed
+PsiCubeData	other	output_cell, struc_format	confirmed
+PsiCubeOutput	other	output_cell	confirmed
+PsiCumul	distribution	a, b, {x1..xn}, {p1..pn}	confirmed
+PsiCumulD	distribution	min, max, {x1..xn}, {p1..pn}	confirmed
+PsiCurrentOpt	other	(none)	inferred
+PsiCVaR	statistic	cell, percentile, simulation, struc_format, param_slice	confirmed
+PsiDagum	distribution	loc, scale, shape1, shape2	confirmed
+PsiData	statistic	cell, trial, simulation, struc_format, param_slice	confirmed
+PsiDataSrc	other	src_name, val_col_names, data, idx1_name, idx1_elem, idx2_name, idx2_elem	confirmed
+PsiDblTriang	distribution	min, likely, max, p	confirmed
+PsiDecTable	other	table_range, output, ret_header, input_val1, input_val2	confirmed
+PsiDim	other	name, range_or_array	confirmed
+PsiDimActive	property	opt, sim, sen	confirmed
+PsiDimLock	property	elem_or_index	confirmed
+PsiDiscrete	distribution	{x1..xn}, {p1..pn}	confirmed
+PsiDistInfo	statistic	cell, [info]	confirmed
+PsiDisUniform	distribution	{x1..xn}	confirmed
+PsiDualLower	other	cell, optimization	confirmed
+PsiDualUpper	other	cell, optimization	confirmed
+PsiDualValue	other	cell, optimization, upper	confirmed
+PsiEGARCH11	distribution	mean, volatility, theta, gamma, err_coef, ar_coef, val0, stdev0	confirmed
+PsiEngine	annotation	engine_name, model_name	confirmed
+PsiErf	distribution	h	confirmed
+PsiErfAlt	distribution	1 parameter, chosen from: percentile or var	confirmed
+PsiErlang	distribution	k, beta	confirmed
+PsiExpGain	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiExpGainRatio	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiExpLoss	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiExpLossRatio	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiExponential	distribution	beta	confirmed
+PsiExponentialAlt	distribution	1 parameter, chosen from: percentile or var	confirmed
+PsiExport	other	src_name, src_type, connection, data_range, result	confirmed
+PsiExpValMargin	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiFatigueLife	distribution	loc, scale, shape	confirmed
+PsiFatigueLifeAlt	distribution	3 name/value pairs, names chosen from: loc, scale, shape, or a percentile (0-1); e.g. PsiFatigueLifeAlt(5%, 1.5, 50%, 2.5, 95%, 4.5)	confirmed
+PsiFDist	distribution	df1, df2	confirmed
+PsiFinalValue	other	cell, optimization	confirmed
+PsiFit	distribution	data	confirmed
+PsiFitInfo	property	name, criterion	confirmed
+PsiForecast	other	Model, Input_Data, Simulate, Num_Forecasts, Header	confirmed
+PsiForecastARIMA	other	UNCONFIRMED	confirmed
+PsiForecastDoubleExp	other	UNCONFIRMED	confirmed
+PsiForecastETS	other	target_date, values, timeline, seasonality, data_completion, aggregation, simulate	confirmed
+PsiForecastExp	other	UNCONFIRMED	confirmed
+PsiForecastHoltWinters	other	UNCONFIRMED	confirmed
+PsiForecastLinear	other	X, known_ys, known_xs, simulate	confirmed
+PsiForecastMovingAvg	other	UNCONFIRMED	confirmed
+PsiFrechet	distribution	loc, scale, shape	confirmed
+PsiFrechetAlt	distribution	3 name/value pairs, names chosen from: loc, scale, shape, or a percentile (0-1)	confirmed
+PsiFrequency	statistic	cell, freq_type, bin_bounds, simulation	confirmed
+PsiGamma	distribution	alpha, beta	confirmed
+PsiGammaAlt	distribution	2 parameters, chosen from: percentile1, percentile2, mean, var, shape, scale	confirmed
+PsiGARCH11	distribution	mean, volatility, err_coef, ar_coef, val0, stdev0	confirmed
+PsiGeneral	distribution	a, b, {x1..xn}, {w1..wn}	confirmed
+PsiGeometric	distribution	p	confirmed
+PsiHistogram	distribution	a, b, {w1..wn}	confirmed
+PsiHyperGeo	distribution	n, D, M	confirmed
+PsiHypSecant	distribution	loc, scale	confirmed
+PsiHypSecantAlt	distribution	2 parameters: two different percentiles, or percentile and loc, or percentile and scale	confirmed
+PsiInitialValue	other	cell, optimization	confirmed
+PsiInput	annotation	cell_or_name	confirmed
+PsiIntUniform	distribution	a, b	confirmed
+PsiInvNormal	distribution	mu, lambda	confirmed
+PsiInvNormalAlt	distribution	2 parameters, chosen from: two different percentiles, mean, var, scale	confirmed
+PsiJohnsonSB	distribution	shape1, shape2, min, max	confirmed
+PsiJohnsonSU	distribution	shape1, shape2, loc, scale	confirmed
+PsiJoin	other	Table1, Table2, Clause, Return_table	confirmed
+PsiKendallTau	statistic	cell1, cell2	confirmed
+PsiKumaraswamy	distribution	shape1, shape2, min, max	confirmed
+PsiKurtosis	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiLaplace	distribution	loc, beta (scale)	confirmed
+PsiLaplaceAlt	distribution	2 parameters, chosen from: two different percentiles or the standard deviation	confirmed
+PsiLevy	distribution	loc, scale	confirmed
+PsiLevyAlt	distribution	2 parameters: two different percentiles, or percentile and loc, or percentile and scale	confirmed
+PsiLock	property	value	confirmed
+PsiLogarithmic	distribution	p	confirmed
+PsiLogistic	distribution	mu, s	confirmed
+PsiLogisticAlt	distribution	2 parameters, chosen from: 2 different percentiles, mean, var, scale	confirmed
+PsiLogLogistic	distribution	gamma, beta, alpha	confirmed
+PsiLogLogisticAlt	distribution	3 parameters, chosen from: 3 different percentiles, loc, scale, shape	confirmed
+PsiLogNorm2	distribution	mu, sigma (log-scale: mean/stdev of the underlying Normal)	confirmed
+PsiLogNormal	distribution	mu, sigma (arithmetic mean/stdev of the lognormal itself)	confirmed
+PsiLogNormalAlt	distribution	2 parameters: 2 different percentiles, or percentile and mean, or percentile and stdev	confirmed
+PsiMA1	distribution	mean, volatility, coef1, err0	confirmed
+PsiMA2	distribution	mean, volatility, coef1, coef2, err0, err1	confirmed
+PsiMakeInput	distribution	freq, expr, deduct, limit	confirmed
+PsiMax	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiMaxExtreme	distribution	m, s	confirmed
+PsiMaxExtremeAlt	distribution	2 parameters, chosen from: 2 different percentiles, mean, var, mode, scale	confirmed
+PsiMean	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiMeanCI	statistic	cell, confidence_level, simulation, struc_format, param_slice	confirmed
+PsiMeanCIB	statistic	cell, confidence_level, [lowerbound], [simulation], [strucformat], [paramslice]	confirmed
+PsiMedian	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiMetalog	distribution	min, max, coefficients, prop_fcns	confirmed
+PsiMetalog2	distribution	coefficients	confirmed
+PsiMetalog2Fit	distribution	num_coef, x_values, y_values	confirmed
+PsiMetalogFit	distribution	num_coef, x_values, y_values	confirmed
+PsiMetalogSPT	distribution	min, max, quantiles, prob, prop_fcns	confirmed
+PsiMin	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiMinExtreme	distribution	m, s	confirmed
+PsiMinExtremeAlt	distribution	2 parameters, chosen from: 2 different percentiles, mean, var, mode, scale	confirmed
+PsiMode	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiModel	annotation	option_name, value, model_name	confirmed
+PsiModelDesc	annotation	cell_or_name	confirmed
+PsiModelSrc	other	src_name, data_name	confirmed
+PsiMomentFit	distribution	mean, stdev, skew, kurtosis	confirmed
+PsiMVLogNormal	distribution	mu, sigma	confirmed
+PsiMVNormal	distribution	mu, sigma	confirmed
+PsiMVResample	distribution	data	confirmed
+PsiMVShuffle	distribution	data	confirmed
+PsiMyerson	distribution	a, b, c, t	confirmed
+PsiName	property	name	confirmed
+PsiNegBinomial	distribution	s, p	confirmed
+PsiNormal	distribution	mu (mean), sigma (stdev)	confirmed
+PsiNormalAlt	distribution	2 parameters: 2 different percentiles, or percentile and mean, or percentile and stdev	confirmed
+PsiNormalSkew	distribution	a (lower bound), b (upper bound), c (skew)	confirmed
+PsiObj	annotation	objective_cell, sense, valueof, chance_type, chance_measure, comment, model_name, critical	confirmed
+PsiOptData	other	output_cell, optimization, struc_format, param_slice	confirmed
+PsiOption	annotation	option_name, value, model_name	confirmed
+PsiOptParam	annotation	values_or_lower, upper, base_case	confirmed
+PsiOptStatus	other	UNCONFIRMED	inferred
+PsiOptValue	other	cell_or_name, optimization, model	confirmed
+PsiOutput	annotation	cell_or_name, [instance], [PsiSixSigma]	confirmed
+PsiParamDim	other	name, range_or_array	confirmed
+PsiPareto	distribution	theta, a	confirmed
+PsiPareto2	distribution	b, q	confirmed
+PsiPareto2Alt	distribution	2 parameters, chosen from: 2 different percentiles, scale, shape	confirmed
+PsiParetoAlt	distribution	2 parameters, chosen from: 2 different percentiles, shape, scale	confirmed
+PsiPearson5	distribution	alpha, beta	confirmed
+PsiPearson5Alt	distribution	2 parameters, chosen from: 2 different percentiles, shape, scale	confirmed
+PsiPearson6	distribution	alpha1, alpha2, beta	confirmed
+PsiPearson6Alt	distribution	2 parameters, chosen from: 2 different percentiles, shape, scale	confirmed
+PsiPercentile	statistic	cell, percentile, simulation, struc_format, param_slice	confirmed
+PsiPercentileCI	statistic	cell, percentile, confidence_level, [simulation]	confirmed
+PsiPercentileD	statistic	cell, percentile, simulation	confirmed
+PsiPercentiles	statistic	cell, [simulation], [struc_format], [param_slice]	confirmed
+PsiPert	distribution	a (min), c (likely), b (max)	confirmed
+PsiPertAlt	distribution	3 parameters, chosen from: 3 different percentiles, mean, var, min, likely, max	confirmed
+PsiPivotCube	other	cell_within_pivot	confirmed
+PsiPivotDim	other	cell_within_pivot, dim_name, dim_type	confirmed
+PsiPoisson	distribution	lambda	confirmed
+PsiPosteriors	other	Model, Input_Data, Header	confirmed
+PsiPredict	other	Model, Input_Data, Header	confirmed
+PsiPredictMLR	other	UNCONFIRMED	confirmed
+PsiPredictNN	other	UNCONFIRMED	confirmed
+PsiPredictNNEnsemble	other	UNCONFIRMED	confirmed
+PsiPredictRT	other	UNCONFIRMED	confirmed
+PsiPredictRTEnsemble	other	UNCONFIRMED	confirmed
+PsiPtoX	statistic	cell, percentile, simulation, struc_format, param_slice	confirmed
+PsiQtoX	statistic	cell, percentile, simulation	confirmed
+PsiRange	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiRayleigh	distribution	beta	confirmed
+PsiRayleighAlt	distribution	1 parameter, chosen from: percentile, var, mean	confirmed
+PsiReciprocal	distribution	min, max	confirmed
+PsiReduce	other	cube_expression, aggregation, dimension	confirmed
+PsiResample	distribution	data	confirmed
+PsiSample	property	array_or_dist	confirmed
+PsiSeed	property	value	confirmed
+PsiSemiDev	statistic	cell, q, target, simulation, struc_format, param_slice	confirmed
+PsiSemiDev2	statistic	cell, [lowerdata], [simulation], [strucformat], [paramslice]	confirmed
+PsiSemiVar	statistic	cell, q, target, simulation, struc_format, param_slice	confirmed
+PsiSemiVar2	statistic	cell, [lowerdata], [simulation], [strucformat], [paramslice]	confirmed
+PsiSenParam	annotation	values_or_lower, upper, base_case	confirmed
+PsiSenValue	other	cell_or_name	confirmed
+PsiShift	property	shift	confirmed
+PsiShuffle	distribution	data	confirmed
+PsiSigmaCP	statistic	cell, lower_limit, upper_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaCPK	statistic	cell, lower_limit, upper_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaCPKLower	statistic	cell, lower_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaCPKUpper	statistic	cell, upper_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaCPM	statistic	cell, lower_limit, upper_limit, target, simulation, struc_format, param_slice	confirmed
+PsiSigmaDefectPPM	statistic	cell, lower_limit, upper_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaDefectShiftPPM	statistic	cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaDefectShiftPPMLower	statistic	cell, lower_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaDefectShiftPPMUpper	statistic	cell, upper_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaK	statistic	cell, lower_limit, upper_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaLowerBound	statistic	cell, number_stdev, simulation, struc_format, param_slice	confirmed
+PsiSigmaProbDefectShift	statistic	cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaProbDefectShiftLower	statistic	cell, lower_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaProbDefectShiftUpper	statistic	cell, upper_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaSigmaLevel	statistic	cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaUpperBound	statistic	cell, number_stdev, simulation, struc_format, param_slice	confirmed
+PsiSigmaYield	statistic	cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice	confirmed
+PsiSigmaZLower	statistic	cell, lower_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaZMin	statistic	cell, lower_limit, upper_limit, simulation, struc_format, param_slice	confirmed
+PsiSigmaZUpper	statistic	cell, upper_limit, simulation, struc_format, param_slice	confirmed
+PsiSimData	statistic	cell, trial, simulation, struc_format, param_slice	confirmed
+PsiSimOutput	annotation	[cell_range]	confirmed
+PsiSimParam	annotation	values, upper, base_case	confirmed
+PsiSip	distribution	sip	confirmed
+PsiSixSigma	property	p1, p2, p3, p4, p5	confirmed
+PsiSkewness	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiSlackValue	other	cell, optimization, upper	confirmed
+PsiSlurp	distribution	slurp, j	confirmed
+PsiSpearmanRho	statistic	cell1, cell2	confirmed
+PsiStatic	property	static_val	confirmed
+PsiStdDev	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiStdDevCI	statistic	cell, confidence_level, simulation, struc_format, param_slice	confirmed
+PsiStdErr	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiStudent	distribution	df	confirmed
+PsiStudentAlt	distribution	1 percentile parameter	confirmed
+PsiTableCube	other	table_description, table_values	confirmed
+PsiTarget	statistic	cell, target_value, simulation, struc_format, param_slice	confirmed
+PsiTargetCI	statistic	cell, target_value, confidence_level, [simulation]	confirmed
+PsiTargetD	statistic	cell_or_name, target_value, simulation	confirmed
+PsiTheoKurtosis	statistic	cell_or_name	confirmed
+PsiTheoMax	statistic	cell_or_name	confirmed
+PsiTheoMean	statistic	cell_or_name	confirmed
+PsiTheoMedian	statistic	cell_or_name	confirmed
+PsiTheoMin	statistic	cell_or_name	confirmed
+PsiTheoMode	statistic	cell_or_name	confirmed
+PsiTheoPercentile	statistic	cell_or_name, percentile	confirmed
+PsiTheoPercentileD	statistic	cell_or_name, percentile	confirmed
+PsiTheoPtoX	statistic	cell_or_name, percentile	confirmed
+PsiTheoQtoX	statistic	cell_or_name, percentile	confirmed
+PsiTheoRange	statistic	cell_or_name	confirmed
+PsiTheoSkewness	statistic	cell_or_name	confirmed
+PsiTheoStdDev	statistic	cell_or_name	confirmed
+PsiTheoTarget	statistic	cell_or_name, target	confirmed
+PsiTheoTargetD	statistic	cell_or_name, target	confirmed
+PsiTheoVariance	statistic	cell_or_name	confirmed
+PsiTheoXtoP	statistic	cell_or_name, target	confirmed
+PsiTheoXtoQ	statistic	cell_or_name, target	confirmed
+PsiTheoXtoY	statistic	cell_or_name, value	confirmed
+PsiTransform	other	Model, Input_Data, Header	confirmed
+PsiTriangGen	distribution	ap, m, br, p, r	confirmed
+PsiTriangular	distribution	a (min), c (likely), b (max)	confirmed
+PsiTriangularAlt	distribution	3 parameters combining native args (min, likely, max) with percentiles, e.g. (min, percentile1, percentile2) or (percentile1, likely, percentile2)	confirmed
+PsiTruncate	property	[min], [max], [type]	confirmed
+PsiTruncateP	property	[min], [max]	confirmed
+PsiTSIntegrate	property	order, c1, c2	confirmed
+PsiTSLen	property	length	confirmed
+PsiTSSeasonality	property	order, period, terms, index	confirmed
+PsiTSSip	distribution	tssip	confirmed
+PsiTSTransform	property	type, shift	confirmed
+PsiUniform	distribution	a (min), b (max)	confirmed
+PsiUniformAlt	distribution	2 parameters combining native args (lower, upper) with percentiles, e.g. (lower, percentile1) or (percentile1, upper) or (percentile1, percentile2)	confirmed
+PsiUnits	property	string	confirmed
+PsiVar	annotation	cell_range, type, active, comment, model_name, critical	confirmed
+PsiVariance	statistic	cell, simulation, struc_format, param_slice	confirmed
+PsiVary	distribution	base, min, max, [range_type], [dist_name]	confirmed
+PsiWeibull	distribution	alpha, beta	confirmed
+PsiWeibullAlt	distribution	1 percentile parameter	confirmed
+PsiXtoP	statistic	cell, target_value, simulation, struc_format, param_slice	confirmed
+PsiXtoQ	statistic	cell_or_name, target_value, simulation	confirmed
