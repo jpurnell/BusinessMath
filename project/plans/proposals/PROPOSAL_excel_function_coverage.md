@@ -1,4 +1,156 @@
-# Proposal — Excel and Risk Solver function coverage
+# Proposal — Excel and Risk Solver coverage: the mathematics
+
+**Status:** specification, 2026-09-04.
+**Scope:** what this package must implement. Nothing about Excel names, argument order, sign
+conventions or error semantics — those belong to
+[SwiftExcelFunctions](https://github.com/jpurnell/SwiftExcelFunctions) and are specified there.
+
+---
+
+## 1. The work list
+
+**`excel-coverage/businessmath_work.tsv` is the specification.** 49 items, one per row:
+
+```
+NAME  KIND  STATUS  SIGNATURE  REFERENCE  NOTE
+```
+
+Everything needed to implement an item is in its row. Read that file first; this document explains
+how to use it and how to know when an item is done.
+
+### 1.1 What STATUS means
+
+| Status | Count | Meaning |
+|---|---|---|
+| `absent` | 43 | Not in this package in any form. Implement it. |
+| `maths-no-sampler` | 3 | The distribution's CDF or PMF is here; a **random draw** is not. Add only the sampler, on top of what exists. |
+| `present-elsewhere` | 1 | Exists, but buried inside a model type rather than available as a function. Generalise it. |
+
+The distinction between the first two matters and the earlier draft of this proposal missed it.
+`PsiPoisson`, `PsiHyperGeo` and `PsiDiscrete` already have their mathematics here — `poissonCDF`,
+`hypergeometric`, `meanDiscrete`/`varianceDiscrete`. What they lack is a `DistributionRandom`
+conformer. Writing those distributions from scratch would produce a second Poisson that could
+disagree with the first.
+
+### 1.2 What KIND means
+
+| Kind | Count | Notes |
+|---|---|---|
+| `distribution` | 33 | An i.i.d. draw. Conform to `DistributionRandom`, matching the sixteen already here. |
+| `process` | 2 rows, 8 functions | AR/MA/ARMA/ARCH/GARCH/EGARCH/APARCH. **Not** i.i.d. — each draw depends on the last, so `DistributionRandom` is the wrong protocol. One implementation covers the family. |
+| `sampling` | 4 | How the sampler *chooses* points, not what it draws. Applies across every distribution. |
+| `excel-financial` | 10 | Time-value and depreciation. Excel is the reference. |
+
+---
+
+## 2. How to verify each item
+
+The `REFERENCE` column names the authority for that row. Three kinds appear, and they are checked
+differently.
+
+### 2.1 `scipy.stats.<name>` — cross-check against a reference implementation
+
+Generate expected values from SciPy and assert against them. Record the SciPy version in the test
+file, because distribution parameterisations have changed between releases — `reciprocal` became
+`loguniform`, and that is exactly the kind of change that silently invalidates a fixture.
+
+Test at minimum:
+- **The CDF at several quantiles**, including the tails, to at least 1e-10.
+- **The quantile function**, by round-tripping: `quantile(cdf(x)) == x`.
+- **The sampler's distribution**, not individual draws: a Kolmogorov–Smirnov statistic against the
+  reference CDF over a large fixed-seed sample. Assert the statistic, never a specific draw.
+
+**The parameterisation is where the errors are, not the arithmetic.** SciPy's convention differs
+from Frontline's for several of these — `PsiInvNormal` and `PsiLogLogistic` both need explicit
+conversion, and the `NOTE` column says so. A test that passes because both sides were converted
+wrongly in the same direction proves nothing, so assert against values from the reference's own
+documentation where it gives them.
+
+### 2.2 `closed form` — the formula is the reference
+
+Seven rows have a quantile function in closed form. `PsiKumaraswamy` is `(1-(1-u)^(1/b))^(1/a)`;
+`PsiHypSecant` is `loc + scale*(2/pi)*ln(tan(pi*u/2))`. No external tool is needed, and none should
+be used: implement the stated formula and test the round trip.
+
+### 2.3 `Excel` — the spreadsheet is the reference
+
+The ten financial functions are defined by what Excel computes. Build a small workbook, put the
+expected values in it, and assert against those. This is the same discipline BusinessMathExcel uses
+for its whole recognition suite, where Excel's own cached values are the oracle.
+
+**`SLN` is the trap.** Straight-line depreciation exists here twice already — inside
+`RealEstateModel` and in `BusinessMathDSL` — and neither is callable as a general function. Adding
+a third would be the failure this project keeps naming: a second implementation that can disagree
+with the first. Generalise one and have the others call it.
+
+### 2.4 Sobol needs its direction numbers stated
+
+`Sobol` is the one item where "correct" is ambiguous. Sobol sequences differ between
+implementations by their **direction numbers**, so a sequence generated here will not match SciPy's
+or Frontline's unless the same set is used. Joe and Kuo (2008) is the usual choice and is what
+SciPy uses.
+
+State the choice in the implementation's documentation. A quasi-random sequence that cannot be
+reproduced against another tool is not much use for the thing quasi-random sequences are for.
+
+---
+
+## 3. Priority
+
+`excel-coverage/corpus_usage.tsv` gives measured frequency across 79 real workbooks. It says what
+gets *used*; it never says what exists, and it must not be used to decide scope.
+
+Ordered by what the corpus actually calls:
+
+1. **`PsiPoisson`, `PsiHyperGeo`, `PsiDiscrete`** — samplers only, on mathematics already here. The
+   cheapest items on the list.
+2. **The Excel financial ten.** Small, exactly specified, and Excel settles every question.
+3. **The closed-form distributions** — Kumaraswamy, HypSecant, DblTriang, Cumul, General,
+   DisUniform, Shuffle. No reference implementation needed.
+4. **The SciPy-checkable distributions** — the bulk of the list.
+5. **Sampling methods.** Latin hypercube first; it is the one most often wanted.
+6. **The AR/GARCH family, last.** Eight functions, **zero occurrences** in the measured corpus. They
+   are on the list because Frontline documents them, not because anything asks for them.
+
+---
+
+## 4. What is deliberately not here
+
+**Excel names and bindings.** `SwiftExcelFunctions` owns the registry, argument order, coercion and
+error semantics. This package should gain no Excel-facing names.
+
+**The 51 statistical functions this package already computes.** `NORM.DIST`, `T.DIST`,
+`CHISQ.DIST`, `CORREL`, `LINEST`, `TREND`, `SKEW` and the dotted `STDEV`/`VAR`/`COVARIANCE` family
+are all implemented here and reachable from no formula. That is a **binding** gap, and binding is
+not this package's job.
+
+**One thing to remove rather than add.** `FormulaEvaluator.Function` is an Excel-named registry of
+21 functions. With `SwiftExcelFunctions` as the Excel authority, it is a second registry in the same
+dependency chain — two tables that can disagree about `AVERAGE` or `NPV`, which is the failure its
+own documentation names. Narrow it to the period-local `ModelDefinition` grammar it exists for.
+
+---
+
+## 5. Where this came from
+
+Measured, not assumed. Frontline's 295 PSI functions and Microsoft's 519 worksheet functions were
+fetched from their own documentation; this package was inventoried at symbol level; and 79 real
+workbooks supplied frequency. The full coverage matrix and the architecture that scoped this live in
+BusinessMathExcel at `project/plans/proposals/`.
+
+The earlier draft of this document was corpus-derived and named about 6% of Frontline's surface. It
+also pointed at a matrix file that was not in this repository. Both are fixed: the enumeration is
+now complete, and the data sits in `excel-coverage/` beside this file.
+
+---
+
+## 6. Appendix — the superseded corpus-first draft
+
+Kept because it records how the list was arrived at, including where the first pass was wrong: a
+substring join once claimed `NOMINAL` was covered by `minimize` and `PRICE` by
+`CommodityCollar.payoff`, and prose describing *"Excel FV(rate,nper,pmt,…)"* leaked `RATE` and
+`NPER` as though they were implemented. Requiring explicit evidence cut the bindable count from 148
+to 84 and moved `RATE` and `NPER` onto the work list, where they belong.
 
 **Status:** draft, 2026-09-04.
 **Origin:** measured in BusinessMathExcel against 79 real workbooks — teaching models, a production
