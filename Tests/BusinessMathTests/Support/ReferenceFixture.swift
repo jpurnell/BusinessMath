@@ -28,11 +28,20 @@ struct ReferenceFixture: Sendable {
 	/// One dictionary per case: every parameter, plus `value` for the expected result.
 	let cases: [[String: Double]]
 
+	/// For a fixture covering several functions, their names in the order the numeric
+	/// `function` marker on each case indexes.
+	///
+	/// A case dictionary is `[String: Double]` so a new fixture needs no new Swift type,
+	/// which means a function *name* cannot live inside one. The marker plus this list
+	/// carries it without giving that up.
+	let functionOrder: [String]?
+
 	private struct Payload: Decodable {
 		let name: String
 		let reference: String
 		let note: String
 		let cases: [[String: Double]]
+		let functionOrder: [String]?
 	}
 
 	/// Loads a fixture by file basename, without the `.json`.
@@ -52,7 +61,8 @@ struct ReferenceFixture: Sendable {
 		return ReferenceFixture(name: payload.name,
 								reference: payload.reference,
 								note: payload.note,
-								cases: payload.cases)
+								cases: payload.cases,
+								functionOrder: payload.functionOrder)
 	}
 
 	enum FixtureError: Error, CustomStringConvertible {

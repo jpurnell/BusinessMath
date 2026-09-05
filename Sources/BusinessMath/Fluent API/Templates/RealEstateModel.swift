@@ -6,6 +6,11 @@
 //
 
 import Foundation
+#if canImport(os)
+import os
+
+private let logger = Logger(subsystem: "com.businessmath", category: "RealEstateModel")
+#endif
 import Numerics
 
 /// A financial model template for real estate investments
@@ -158,9 +163,32 @@ public struct RealEstateModel: Sendable {
         purchasePrice * 0.80
     }
 
-    /// Annual depreciation deduction
+    /// Annual depreciation deduction.
+    ///
+    /// Straight line with **no salvage value**: for tax purposes a building is written
+    /// down to zero over its recovery period, so the whole depreciable basis is
+    /// deducted. That is the assumption this model makes, and passing `salvage: 0` to
+    /// ``straightLineDepreciation(cost:salvage:life:)`` states it rather than leaving
+    /// it implicit in a bare division.
+    ///
+    /// Returns `nan` for a non-positive recovery period. The comment this replaced
+    /// justified an unguarded division on the grounds that `depreciationPeriodYears`
+    /// "defaults to 27.5, always > 0" — but the default says nothing about what a
+    /// caller passed, and the initializer does not validate it. A zero used to give
+    /// infinity and a negative used to give a negative deduction, both of which flow
+    /// into a tax figure without complaint.
     public var annualDepreciation: Double {
-        depreciableValue / depreciationPeriodYears // fp-safety:disable — depreciationPeriodYears defaults to 27.5, always > 0
+        do {
+            return try straightLineDepreciation(
+                cost: depreciableValue, salvage: 0, life: depreciationPeriodYears)
+        } catch {
+            // Not discarded: a nan appearing in a tax figure is otherwise very hard to
+            // trace back to the recovery period that caused it.
+            #if canImport(os)
+            logger.error("Depreciation unavailable, returning nan: \(error, privacy: .public)")
+            #endif
+            return Double.nan
+        }
     }
 
     // MARK: - Cash Flow Calculations

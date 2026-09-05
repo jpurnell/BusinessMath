@@ -6,7 +6,13 @@
 //
 
 import Foundation
+#if canImport(os)
+import os
+
+private let logger = Logger(subsystem: "com.businessmath", category: "Depreciation")
+#endif
 import Numerics
+import BusinessMath
 
 /// # Depreciation Components
 ///
@@ -75,25 +81,54 @@ public struct StraightLine {
     /// The number of years over which to depreciate the asset.
     public let years: Int
 
+    /// What the asset is still worth when its life ends, and which is therefore not
+    /// depreciated.
+    ///
+    /// Defaults to zero, which is what this type assumed before it could be stated.
+    public let salvageValue: Double
+
     /// Creates a straight-line depreciation schedule.
     ///
     /// - Parameters:
     ///   - asset: The original asset value (must be non-negative).
     ///   - years: The depreciation period in years (must be positive).
-    public init(asset: Double, years: Int) {
+    ///   - salvage: What the asset is worth at the end of that period. Defaults to
+    ///     zero, so existing callers are unaffected; must not exceed the asset value.
+    public init(asset: Double, years: Int, salvage: Double = 0) {
         guard asset >= 0 else {
             preconditionFailure("Asset value cannot be negative: \(asset)")
         }
         guard years > 0 else {
             preconditionFailure("Depreciation years must be positive: \(years)")
         }
+        guard salvage >= 0, salvage <= asset else {
+            preconditionFailure("Salvage value \(salvage) must be between zero and the asset value \(asset)")
+        }
         self.assetValue = asset
         self.years = years
+        self.salvageValue = salvage
     }
 
     /// Calculate annual depreciation
+    /// The charge in each year: `(asset − salvage) / years`.
+    ///
+    /// Delegates to ``BusinessMath/straightLineDepreciation(cost:salvage:life:)`` rather
+    /// than dividing here, so this schedule and the general function cannot disagree
+    /// about what straight line means. `years` is positive by the precondition in the
+    /// initializer, so the shared function cannot fail.
     public var annualDepreciation: Double {
-        assetValue / Double(years) // fp-safety:disable — years > 0 from precondition in init
+        do {
+            return try straightLineDepreciation(
+                cost: assetValue, salvage: salvageValue, life: Double(years))
+        } catch {
+            // Unreachable: `years` is positive by the initializer's precondition. The
+            // branch reports rather than returns a plausible number, so that if the
+            // precondition is ever relaxed the consequence is visible.
+            #if canImport(os)
+            logger.error("Depreciation unavailable, returning nan: \(error, privacy: .public)")
+            #endif
+            return Double.nan
+        }
     }
 
     /// Calculate depreciation for a specific year

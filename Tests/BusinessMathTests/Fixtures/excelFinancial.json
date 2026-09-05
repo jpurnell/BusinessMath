@@ -1,0 +1,993 @@
+{
+  "cases": [
+    {
+      "cost": 10000,
+      "function": 6.0,
+      "life": 5,
+      "salvage": 1000,
+      "value": 1800.0
+    },
+    {
+      "cost": 30000,
+      "function": 6.0,
+      "life": 10,
+      "salvage": 7500,
+      "value": 2250.0
+    },
+    {
+      "cost": 1000,
+      "function": 6.0,
+      "life": 3,
+      "salvage": 0,
+      "value": 333.333333333333
+    },
+    {
+      "cost": 5000,
+      "function": 6.0,
+      "life": 4,
+      "salvage": 5000,
+      "value": 0.0
+    },
+    {
+      "cost": 2750,
+      "function": 6.0,
+      "life": 27.5,
+      "salvage": 250,
+      "value": 90.9090909090909
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 5,
+      "per": 1,
+      "salvage": 7500,
+      "value": 7500.0
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 5,
+      "per": 2,
+      "salvage": 7500,
+      "value": 6000.0
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 5,
+      "per": 3,
+      "salvage": 7500,
+      "value": 4500.0
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 5,
+      "per": 4,
+      "salvage": 7500,
+      "value": 3000.0
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 5,
+      "per": 5,
+      "salvage": 7500,
+      "value": 1500.0
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 1,
+      "salvage": 7500,
+      "value": 4090.90909090909
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 2,
+      "salvage": 7500,
+      "value": 3681.81818181818
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 3,
+      "salvage": 7500,
+      "value": 3272.72727272727
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 4,
+      "salvage": 7500,
+      "value": 2863.63636363636
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 5,
+      "salvage": 7500,
+      "value": 2454.54545454545
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 6,
+      "salvage": 7500,
+      "value": 2045.45454545455
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 7,
+      "salvage": 7500,
+      "value": 1636.36363636364
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 8,
+      "salvage": 7500,
+      "value": 1227.27272727273
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 9,
+      "salvage": 7500,
+      "value": 818.181818181818
+    },
+    {
+      "cost": 30000,
+      "function": 7.0,
+      "life": 10,
+      "per": 10,
+      "salvage": 7500,
+      "value": 409.090909090909
+    },
+    {
+      "cost": 1000,
+      "function": 7.0,
+      "life": 3,
+      "per": 3,
+      "salvage": 0,
+      "value": 166.666666666667
+    },
+    {
+      "cost": 10000,
+      "factor": 1,
+      "function": 1.0,
+      "life": 5,
+      "period": 1,
+      "salvage": 1000,
+      "value": 2000.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1,
+      "function": 1.0,
+      "life": 5,
+      "period": 2,
+      "salvage": 1000,
+      "value": 1600.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1,
+      "function": 1.0,
+      "life": 5,
+      "period": 3,
+      "salvage": 1000,
+      "value": 1280.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1,
+      "function": 1.0,
+      "life": 5,
+      "period": 4,
+      "salvage": 1000,
+      "value": 1024.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1,
+      "function": 1.0,
+      "life": 5,
+      "period": 5,
+      "salvage": 1000,
+      "value": 819.2
+    },
+    {
+      "cost": 10000,
+      "factor": 1.5,
+      "function": 1.0,
+      "life": 5,
+      "period": 1,
+      "salvage": 1000,
+      "value": 3000.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1.5,
+      "function": 1.0,
+      "life": 5,
+      "period": 2,
+      "salvage": 1000,
+      "value": 2100.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1.5,
+      "function": 1.0,
+      "life": 5,
+      "period": 3,
+      "salvage": 1000,
+      "value": 1470.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1.5,
+      "function": 1.0,
+      "life": 5,
+      "period": 4,
+      "salvage": 1000,
+      "value": 1029.0
+    },
+    {
+      "cost": 10000,
+      "factor": 1.5,
+      "function": 1.0,
+      "life": 5,
+      "period": 5,
+      "salvage": 1000,
+      "value": 720.3
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 1,
+      "salvage": 1000,
+      "value": 4000.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 2,
+      "salvage": 1000,
+      "value": 2400.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 3,
+      "salvage": 1000,
+      "value": 1440.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 4,
+      "salvage": 1000,
+      "value": 864.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 5,
+      "salvage": 1000,
+      "value": 296.0
+    },
+    {
+      "cost": 10000,
+      "factor": 3,
+      "function": 1.0,
+      "life": 5,
+      "period": 1,
+      "salvage": 1000,
+      "value": 6000.0
+    },
+    {
+      "cost": 10000,
+      "factor": 3,
+      "function": 1.0,
+      "life": 5,
+      "period": 2,
+      "salvage": 1000,
+      "value": 2400.0
+    },
+    {
+      "cost": 10000,
+      "factor": 3,
+      "function": 1.0,
+      "life": 5,
+      "period": 3,
+      "salvage": 1000,
+      "value": 600.0
+    },
+    {
+      "cost": 10000,
+      "factor": 3,
+      "function": 1.0,
+      "life": 5,
+      "period": 4,
+      "salvage": 1000,
+      "value": 0.0
+    },
+    {
+      "cost": 10000,
+      "factor": 3,
+      "function": 1.0,
+      "life": 5,
+      "period": 5,
+      "salvage": 1000,
+      "value": 0.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 1,
+      "salvage": 9000,
+      "value": 1000.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 2,
+      "salvage": 9000,
+      "value": 0.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 3,
+      "salvage": 9000,
+      "value": 0.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 4,
+      "salvage": 9000,
+      "value": 0.0
+    },
+    {
+      "cost": 10000,
+      "factor": 2,
+      "function": 1.0,
+      "life": 5,
+      "period": 5,
+      "salvage": 9000,
+      "value": 0.0
+    },
+    {
+      "cost": 10000,
+      "end": 1,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 0,
+      "salvage": 1000,
+      "start": 0,
+      "value": 4000.0
+    },
+    {
+      "cost": 10000,
+      "end": 5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 0,
+      "salvage": 1000,
+      "start": 0,
+      "value": 9000.0
+    },
+    {
+      "cost": 10000,
+      "end": 3,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 0,
+      "salvage": 1000,
+      "start": 1,
+      "value": 3840.0
+    },
+    {
+      "cost": 10000,
+      "end": 5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 0,
+      "salvage": 1000,
+      "start": 3,
+      "value": 1160.0
+    },
+    {
+      "cost": 10000,
+      "end": 2.5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 0,
+      "salvage": 1000,
+      "start": 0,
+      "value": 7120.0
+    },
+    {
+      "cost": 10000,
+      "end": 3.5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 0,
+      "salvage": 1000,
+      "start": 1.5,
+      "value": 3072.0
+    },
+    {
+      "cost": 10000,
+      "end": 5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 0,
+      "salvage": 1000,
+      "start": 4,
+      "value": 296.0
+    },
+    {
+      "cost": 10000,
+      "end": 1,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 1,
+      "salvage": 1000,
+      "start": 0,
+      "value": 4000.0
+    },
+    {
+      "cost": 10000,
+      "end": 5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 1,
+      "salvage": 1000,
+      "start": 0,
+      "value": 9000.0
+    },
+    {
+      "cost": 10000,
+      "end": 3,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 1,
+      "salvage": 1000,
+      "start": 1,
+      "value": 3840.0
+    },
+    {
+      "cost": 10000,
+      "end": 5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 1,
+      "salvage": 1000,
+      "start": 3,
+      "value": 1160.0
+    },
+    {
+      "cost": 10000,
+      "end": 2.5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 1,
+      "salvage": 1000,
+      "start": 0,
+      "value": 7120.0
+    },
+    {
+      "cost": 10000,
+      "end": 3.5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 1,
+      "salvage": 1000,
+      "start": 1.5,
+      "value": 3072.0
+    },
+    {
+      "cost": 10000,
+      "end": 5,
+      "factor": 2,
+      "function": 8.0,
+      "life": 5,
+      "noSwitch": 1,
+      "salvage": 1000,
+      "start": 4,
+      "value": 296.0
+    },
+    {
+      "cost": 2400,
+      "end": 1,
+      "factor": 1.5,
+      "function": 8.0,
+      "life": 10,
+      "noSwitch": 0,
+      "salvage": 300,
+      "start": 0,
+      "value": 360.0
+    },
+    {
+      "function": 4.0,
+      "fv": 2200,
+      "pv": 2000,
+      "rate": 0.025,
+      "value": 3.85986616262265
+    },
+    {
+      "function": 4.0,
+      "fv": 2000,
+      "pv": 1000,
+      "rate": 0.1,
+      "value": 7.27254089734172
+    },
+    {
+      "function": 4.0,
+      "fv": 501,
+      "pv": 500,
+      "rate": 0.005,
+      "value": 0.400598703439524
+    },
+    {
+      "function": 4.0,
+      "fv": 100000,
+      "pv": 10000,
+      "rate": 0.07,
+      "value": 34.0323838109948
+    },
+    {
+      "effectRate": 0.053543,
+      "function": 2.0,
+      "periodsPerYear": 4,
+      "value": 0.052500319868356
+    },
+    {
+      "effectRate": 0.1,
+      "function": 2.0,
+      "periodsPerYear": 12,
+      "value": 0.0956896851468452
+    },
+    {
+      "effectRate": 0.05,
+      "function": 2.0,
+      "periodsPerYear": 1,
+      "value": 0.05
+    },
+    {
+      "effectRate": 0.2,
+      "function": 2.0,
+      "periodsPerYear": 365,
+      "value": 0.182367100198829
+    },
+    {
+      "effectRate": 0.01,
+      "function": 2.0,
+      "periodsPerYear": 2,
+      "value": 0.0099751242241779
+    },
+    {
+      "function": 3.0,
+      "fv": 10000,
+      "pmt": -100,
+      "pv": -1000,
+      "rate": 0.01,
+      "type": 0,
+      "value": 60.0821228537617
+    },
+    {
+      "function": 3.0,
+      "fv": 0,
+      "pmt": -250,
+      "pv": 20000,
+      "rate": 0.005,
+      "type": 0,
+      "value": 102.420325251502
+    },
+    {
+      "function": 3.0,
+      "fv": 0,
+      "pmt": -1000,
+      "pv": 5000,
+      "rate": 0.08,
+      "type": 0,
+      "value": 6.6374572930016
+    },
+    {
+      "function": 3.0,
+      "fv": 0,
+      "pmt": -500,
+      "pv": 10000,
+      "rate": 0.0,
+      "type": 0,
+      "value": 20.0
+    },
+    {
+      "function": 3.0,
+      "fv": 10000,
+      "pmt": -100,
+      "pv": -1000,
+      "rate": 0.01,
+      "type": 1,
+      "value": 59.6738656742946
+    },
+    {
+      "function": 3.0,
+      "fv": 0,
+      "pmt": -250,
+      "pv": 20000,
+      "rate": 0.005,
+      "type": 1,
+      "value": 101.756418736373
+    },
+    {
+      "function": 3.0,
+      "fv": 0,
+      "pmt": -1000,
+      "pv": 5000,
+      "rate": 0.08,
+      "type": 1,
+      "value": 6.01113907918458
+    },
+    {
+      "function": 3.0,
+      "fv": 0,
+      "pmt": -500,
+      "pv": 10000,
+      "rate": 0.0,
+      "type": 1,
+      "value": 20.0
+    },
+    {
+      "function": 5.0,
+      "fv": 0,
+      "nper": 48,
+      "pmt": -200,
+      "pv": 8000,
+      "type": 0,
+      "value": 0.00770147248823326
+    },
+    {
+      "function": 5.0,
+      "fv": 0,
+      "nper": 10,
+      "pmt": -1000,
+      "pv": 7000,
+      "type": 0,
+      "value": 0.0707282083663163
+    },
+    {
+      "function": 5.0,
+      "fv": 0,
+      "nper": 360,
+      "pmt": -1500,
+      "pv": 250000,
+      "type": 0,
+      "value": 0.00500582500676247
+    },
+    {
+      "function": 5.0,
+      "fv": 600,
+      "nper": 5,
+      "pmt": -100,
+      "pv": 0,
+      "type": 0,
+      "value": 0.0912806233094393
+    },
+    {
+      "function": 5.0,
+      "fv": 0,
+      "nper": 48,
+      "pmt": -200,
+      "pv": 8000,
+      "type": 1,
+      "value": 0.00805298192393902
+    },
+    {
+      "function": 5.0,
+      "fv": 0,
+      "nper": 10,
+      "pmt": -1000,
+      "pv": 7000,
+      "type": 1,
+      "value": 0.0898051031100071
+    },
+    {
+      "function": 5.0,
+      "fv": 0,
+      "nper": 360,
+      "pmt": -1500,
+      "pv": 250000,
+      "type": 1,
+      "value": 0.0050450040458465
+    },
+    {
+      "function": 5.0,
+      "fv": 600,
+      "nper": 5,
+      "pmt": -100,
+      "pv": 0,
+      "type": 1,
+      "value": 0.0614024115365256
+    },
+    {
+      "basis": 0,
+      "firstInterest": 45535,
+      "frequency": 1,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 0,
+      "firstInterest": 45535,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 0,
+      "firstInterest": 45535,
+      "frequency": 4,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 1,
+      "firstInterest": 45535,
+      "frequency": 1,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 1,
+      "firstInterest": 45535,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 1,
+      "firstInterest": 45535,
+      "frequency": 4,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 2,
+      "firstInterest": 45535,
+      "frequency": 1,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.9444444444444
+    },
+    {
+      "basis": 2,
+      "firstInterest": 45535,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.9444444444444
+    },
+    {
+      "basis": 2,
+      "firstInterest": 45535,
+      "frequency": 4,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.9444444444444
+    },
+    {
+      "basis": 3,
+      "firstInterest": 45535,
+      "frequency": 1,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.7123287671233
+    },
+    {
+      "basis": 3,
+      "firstInterest": 45535,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.7123287671233
+    },
+    {
+      "basis": 3,
+      "firstInterest": 45535,
+      "frequency": 4,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.7123287671233
+    },
+    {
+      "basis": 4,
+      "firstInterest": 45535,
+      "frequency": 1,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 4,
+      "firstInterest": 45535,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 4,
+      "firstInterest": 45535,
+      "frequency": 4,
+      "function": 0.0,
+      "issue": 45352,
+      "par": 1000,
+      "rate": 0.1,
+      "settlement": 45413,
+      "value": 16.6666666666667
+    },
+    {
+      "basis": 0,
+      "firstInterest": 45626,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45260,
+      "par": 10000,
+      "rate": 0.0625,
+      "settlement": 45382,
+      "value": 210.069444444444
+    },
+    {
+      "basis": 1,
+      "firstInterest": 45626,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45260,
+      "par": 10000,
+      "rate": 0.0625,
+      "settlement": 45382,
+      "value": 208.904109589041
+    },
+    {
+      "basis": 2,
+      "firstInterest": 45626,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45260,
+      "par": 10000,
+      "rate": 0.0625,
+      "settlement": 45382,
+      "value": 211.805555555556
+    },
+    {
+      "basis": 3,
+      "firstInterest": 45626,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45260,
+      "par": 10000,
+      "rate": 0.0625,
+      "settlement": 45382,
+      "value": 208.904109589041
+    },
+    {
+      "basis": 4,
+      "firstInterest": 45626,
+      "frequency": 2,
+      "function": 0.0,
+      "issue": 45260,
+      "par": 10000,
+      "rate": 0.0625,
+      "settlement": 45382,
+      "value": 210.069444444444
+    }
+  ],
+  "functionOrder": [
+    "ACCRINT",
+    "DDB",
+    "NOMINAL",
+    "NPER",
+    "PDURATION",
+    "RATE",
+    "SLN",
+    "SYD",
+    "VDB"
+  ],
+  "name": "excelFinancial",
+  "note": "Excel-compatible financial functions, evaluated by LibreOffice rather than transcribed. Values carry about fifteen significant digits, which is what sets the tolerance on the Swift side. Dates are Excel serials, because that is what the functions receive. Each case carries its arguments under the names the Swift signature uses; the `function` field says which function produced it.",
+  "reference": "LibreOffice Calc (LibreOffice 26.2.5.2 cd7284b4cbbfeb507e630c1aac019f4157393acb)"
+}
