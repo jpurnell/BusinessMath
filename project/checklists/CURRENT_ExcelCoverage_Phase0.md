@@ -79,18 +79,18 @@ and the Johnson family.
 - [x] Root-found quantile on the new inverses: `Beta`, `ChiSquared`, `Gamma`
 - [x] `gammaCDF` / `erlangCDF` from the promoted incomplete gamma
 
-### 4. Sampling
+### 4. Sampling — **done**
 
-- [ ] `QuasiRandomPointSet` protocol, `SamplingMethod` enum
-- [ ] `LatinHypercubeSampler` — seed required
-- [ ] `SobolSequence` + generated Joe & Kuo direction numbers, 256 dimensions, throwing `init`
-- [ ] `OwenScramble` — hash-based nested uniform scrambling
-- [ ] `HaltonSequence` — record the high-dimension correlation rather than asserting quality
-- [ ] `AliasTable` — Vose's method
-- [ ] `SimulationError.quasiRandomUnsupported(inputName:details:)`
-- [ ] `MonteCarloSimulation.samplingMethod` + the QMC branch in `run()` and `run() async`
-- [ ] QMC runs skip GPU and say so in `executionNotes`
-- [ ] LHS + `runCorrelated` — Iman–Conover composes; verify the marginal stays stratified
+- [x] `QuasiRandomPointSet` protocol, `SamplingMethod` enum
+- [x] `LatinHypercubeSampler` — seed required
+- [x] `SobolSequence` + generated Joe & Kuo direction numbers, 256 dimensions, throwing `init`
+- [x] `OwenScramble` — hash-based nested uniform scrambling
+- [x] `HaltonSequence` — record the high-dimension correlation rather than asserting quality
+- [x] `AliasTable` — Vose's method
+- [x] `SimulationError.quasiRandomUnsupported(inputName:details:)`
+- [x] `MonteCarloSimulation.samplingMethod` + the QMC branch in `run()` and `run() async`
+- [x] QMC runs skip GPU and say so in `executionNotes`
+- [x] LHS + `runCorrelated` — Iman–Conover composes; verify the marginal stays stratified
 
 ### 5. Documentation
 
@@ -101,11 +101,25 @@ and the Johnson family.
 
 ### 6. Verify
 
-- [ ] `swift build -Xswiftc -Xfrontend -Xswiftc -solver-expression-time-threshold=500` — the `PsiHypSecant` quantile is the 5-operator CI-timeout shape
+- [x] `swift build -Xswiftc -Xfrontend -Xswiftc -solver-expression-time-threshold=500` — the `PsiHypSecant` quantile is the 5-operator CI-timeout shape
 - [ ] Full `swift test` — not `--filter`; capture the real exit code
 - [ ] `quality-gate --no-cache` — 0 errors / 0 warnings, no overrides
 
 ---
+
+## Decision revised: Sobol keeps the origin (2026-09-04)
+
+Decision #7 was "skip the origin", because every coordinate of it is zero and zero
+inverse-transforms to −infinity. The half-cell offset — added later, from the
+open-interval requirement — already lifts it to 2⁻³³, so the reason had evaporated;
+and keeping the skip cost the balance property, which is the entire point of using
+Sobol. Over 2^m points starting from the second you hold all but one of one block plus
+one of the next, leaving one dyadic interval empty and another doubled. The
+`sobolIsBalanced` test found it.
+
+**Our point *i* is now SciPy's point *i*, plus 2⁻³³ in every coordinate.** Halton still
+starts at index 1, because its radical inverse carries no offset and index 0 really is
+the origin.
 
 ## Standing rule: no magic numbers, and derive what can be derived
 

@@ -1,5 +1,10 @@
 {
   "fixtures": {
+    "haltonPoints.json": {
+      "cases": 352,
+      "reference": "scipy.stats.qmc.Halton(d, scramble=False).random(n+1)[1:]",
+      "sha256": "ada77b9953984376737c2a38202868bcc580e622782ca8a49cadae80403b5b4a"
+    },
     "inverseRegularizedIncompleteBeta.json": {
       "cases": 104,
       "reference": "scipy.special.betaincinv(a, b, p)",
@@ -19,9 +24,14 @@
       "cases": 64,
       "reference": "scipy.special.gammainc(a, x)",
       "sha256": "54fd7f8608e70cdac5625fec5a6ce0cdc520f4c535a3c0a8a3ffce6df53d7f25"
+    },
+    "sobolPoints.json": {
+      "cases": 1984,
+      "reference": "scipy.stats.qmc.Sobol(d, scramble=False).random(n)",
+      "sha256": "4e24044ac46d58eb5b46e136b1a3869c8f46313075fe739fde31ea70c20e7deb"
     }
   },
-  "generated": "2026-09-04T23:31:53.294287+00:00",
+  "generated": "2026-09-05T02:52:15.103138+00:00",
   "numpy": "2.5.2",
   "python": "3.14.7",
   "scipy": "1.17.1"

@@ -94,6 +94,15 @@ public struct SimulationInput: Sendable {
 	/// `nil` for custom-closure inputs and non-seedable distributions.
 	internal let seededSampler: (@Sendable (inout Xoshiro256StarStar) -> Double)?
 
+	/// The type-erased quantile, when the distribution can state one.
+	///
+	/// Non-nil only for a distribution conforming to ``ContinuousDistribution`` or
+	/// ``DiscreteDistribution``. This is what a quasi-random point set needs: it hands
+	/// each input one coordinate of a jointly chosen point, and only an inverse
+	/// transform turns a *chosen* uniform into a draw. A sampler can only be asked for
+	/// its next value, which is not the same thing.
+	internal let quantile: (@Sendable (Double) -> Double)?
+
 	/// Whether this input can participate in seeded (deterministic) simulation runs.
 	///
 	/// `true` when the input was created from a ``SeedableDistribution``-conforming
@@ -150,6 +159,8 @@ public struct SimulationInput: Sendable {
 
 		// Only the SeedableDistribution overload can honor a seed
 		self.seededSampler = nil
+		// Only a Continuous/DiscreteDistribution can state a quantile
+		self.quantile = nil
 	}
 
 	/// Creates a SimulationInput from a distribution that supports seeded sampling.
@@ -182,6 +193,59 @@ public struct SimulationInput: Sendable {
 		// Seeded sampling: every draw flows from the caller's generator
 		self.seededSampler = { generator in
 			distribution.next(using: &generator)
+		}
+		self.quantile = nil
+	}
+
+	/// Creates an input from a distribution that can state its quantile.
+	///
+	/// Preferred over the ``SeedableDistribution`` overload wherever it applies,
+	/// because it is the only one that makes the input eligible for
+	/// ``SamplingMethod/latinHypercube``, ``SamplingMethod/sobol(scrambled:)`` and
+	/// ``SamplingMethod/halton(scrambled:)``. Swift selects it automatically when the
+	/// distribution conforms.
+	///
+	/// - Parameters:
+	///   - name: A label for the input, used in errors and results.
+	///   - distribution: Any ``ContinuousDistribution`` producing `Double`.
+	///   - metadata: Free-form annotations carried through to the results.
+	public init<D: ContinuousDistribution & Sendable>(
+		name: String,
+		distribution: D,
+		metadata: [String: String] = [:]
+	) where D.T == Double {
+		self.name = name
+		self.metadata = metadata
+		self.sampler = { distribution.next() }
+		self.originalDistribution = distribution
+		self.seededSampler = { generator in
+			distribution.next(using: &generator)
+		}
+		self.quantile = { probability in
+			distribution.quantile(probability)
+		}
+	}
+
+	/// Creates an input from a discrete distribution that can state its quantile.
+	///
+	/// - Parameters:
+	///   - name: A label for the input, used in errors and results.
+	///   - distribution: Any ``DiscreteDistribution`` producing `Double`.
+	///   - metadata: Free-form annotations carried through to the results.
+	public init<D: DiscreteDistribution & Sendable>(
+		name: String,
+		distribution: D,
+		metadata: [String: String] = [:]
+	) where D.T == Double {
+		self.name = name
+		self.metadata = metadata
+		self.sampler = { distribution.next() }
+		self.originalDistribution = distribution
+		self.seededSampler = { generator in
+			distribution.next(using: &generator)
+		}
+		self.quantile = { probability in
+			Double(distribution.quantile(probability))
 		}
 	}
 
@@ -233,6 +297,8 @@ public struct SimulationInput: Sendable {
 		self.sampler = sampler
 		self.originalDistribution = nil  // Custom samplers are not GPU-compatible
 		self.seededSampler = nil         // Custom samplers cannot honor a seed
+		// A bare closure has no quantile, so it cannot be sampled quasi-randomly.
+		self.quantile = nil
 	}
 
 	// MARK: - Sampling
