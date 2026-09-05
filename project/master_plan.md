@@ -38,6 +38,28 @@ suite depends on it.
 
 ## Current Status
 
+**2.11.0 shipped 2026-09-05** — the ten Excel financial functions and the three day-count
+conventions they needed. `SLN`, `SYD`, `DDB`, `VDB`, `RATE`, `NPER`, `PDURATION`,
+`NOMINAL`, `ACCRINT`, and `actualActual` / `isdaActualActual` / `thirty360European`.
+
+Verified against a spreadsheet rather than against our own arithmetic: §2.3 of the
+coverage proposal asked for a workbook whose values are the oracle, and
+`Scripts/reference-fixtures/generate_excel_financial.py` is that workbook, evaluated by
+LibreOffice Calc. 191 committed cases.
+
+**Doing that found a defect in `thirty360`, which had shipped for some time.** It omitted
+the NASD February end-of-month rule, counting 153 days from 28 February to 31 July where
+a spreadsheet counts 151. The convention had only ever been checked against its own
+definition; nothing downstream broke when it was fixed, because the bond and hazard-curve
+tests happen never to use a February-end date — which is the same reason nobody noticed.
+
+That is the argument for the next piece of work. The coverage matrix marks 86 Excel
+functions **bindable**: computed by this package and reachable from no formula, and
+therefore never compared to a spreadsheet. `PRICE`, `YIELD`, `DURATION` and `MDURATION`
+are among them, and SwiftExcelFunctions has 28 cells carrying Excel's own cached values
+for exactly those. "Computed but never compared" is now the highest-yield category we
+have.
+
 **2.10.0 shipped 2026-09-04** — a distribution can say what value sits at a given uniform, and a
 simulation can choose where its sample points go. Those turned out to be one requirement rather
 than two: a stratified or low-discrepancy point set hands each input a coordinate and asks what
@@ -355,7 +377,9 @@ The CHANGELOG heading and the README's `from:` pin both moved to `2.6.0` in the 
 - [x] The `MonteCarloSimulation` seam, refusing rather than downgrading when an input has no
       quantile
 - [x] Reference-fixture harness against SciPy, committed and version-pinned (ADR-004)
-- [ ] **Next: the Excel financial ten** — `RATE`, `NPER`, `PDURATION`, `NOMINAL`, `SLN`, `DDB`,
+- [x] **The Excel financial ten** — done in 2.11.0, along with the two `DayCountConvention`
+      cases they needed and a third. Original note follows.
+- [ ] ~~**Next: the Excel financial ten**~~ — `RATE`, `NPER`, `PDURATION`, `NOMINAL`, `SLN`, `DDB`,
       `SYD`, `VDB`, `ACCRINT`, plus the two `DayCountConvention` cases they need. Independent of
       the distribution work; measured as the higher priority after SwiftExcelFunctions found all
       3,425 corpus `YEARFRAC` calls use the default basis, which BusinessMath already covers.
@@ -434,7 +458,13 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-04 — reconciled for the 2.10.0 release: Current Status leads with the
+**Last Updated:** 2026-09-05 — reconciled for the 2.11.0 release: Current Status leads
+with the financial ten and the `thirty360` February defect, and names "computed but never
+compared" as the next category. `project/checklists/CURRENT_ExcelFinancialTen.md` carries
+the detail, including why `ACCRINT` is the one function not verified by the reference
+workbook. Counts refreshed to 6,867 tests / 607 suites.
+
+**Previously:** 2026-09-04 — reconciled for the 2.10.0 release: Current Status leads with the
 distribution contract and quasi-random sampling, the Roadmap gains a Phase 0 section for the Excel
 coverage work with the financial ten named as next, and five ADRs (001–005) were written into
 `project/decisions/architecture_decisions.md`, which had no entries before. `4.6-QuasiRandomSamplingGuide.md`

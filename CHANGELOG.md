@@ -9,6 +9,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.11.0] - 2026-09-05
+
+The ten Excel financial functions the coverage work list called "small, exactly
+specified, and Excel settles every question", plus the three day-count conventions they
+needed. And a defect in a convention that has shipped for some time, found by comparing
+to a spreadsheet for the first time.
+
+### Added
+- **Depreciation**: `straightLineDepreciation(cost:salvage:life:)`,
+  `sumOfYearsDigitsDepreciation(cost:salvage:life:period:)`,
+  `decliningBalanceDepreciation(cost:salvage:life:period:factor:)`,
+  `variableDecliningBalanceDepreciation(cost:salvage:life:start:end:factor:switchToStraightLine:)`
+  — Excel's `SLN`, `SYD`, `DDB` and `VDB`.
+- **Solving the annuity**: `periodicRate(…)`, `numberOfPeriods(…)`, `periodsToGrow(…)`,
+  `nominalRate(…)` — `RATE`, `NPER`, `PDURATION` and `NOMINAL`. These take cash flows
+  **signed by direction**, unlike the neighbouring `payment(…)` which takes magnitudes:
+  solving for a rate or a term cannot work with magnitudes, because nothing ever gets
+  repaid.
+- `accruedInterest(issue:firstInterest:settlement:rate:par:frequency:basis:)` — `ACCRINT`.
+- **Three day counts.** `DayCountConvention.actualActual` is the rule `YEARFRAC`'s basis 1
+  applies; `.isdaActualActual` is the standard, which differs from it by about a third of
+  a percent on any period spanning a leap February; `.thirty360European` is 30E/360.
+  `hasFixedYearLength` says which conventions `daysInYear` can answer for — neither
+  actual/actual can.
+- `StraightLine` in BusinessMathDSL takes a `salvage:` parameter, defaulting to zero.
+- A LibreOffice-backed reference workbook,
+  `Scripts/reference-fixtures/generate_excel_financial.py`, and 191 committed cases.
+
+### Fixed
+- **`DayCountConvention.thirty360` omitted the NASD February end-of-month rule.**
+  28 February to 31 July counted 153 days where a spreadsheet counts 151; four of eight
+  February cases were wrong. Two details, neither obvious: the last day of February counts
+  as a 30th, and the pull-back of an end date on the 31st tests the start day **before**
+  that February adjustment rather than after. Confirmed against a value Excel itself
+  cached in a real workbook — `YEARFRAC(2020-02-29, 2020-12-31)` is 301/360 — which
+  discriminates between all three candidate orderings.
+- **Straight-line depreciation ignored salvage in both places it existed.**
+  `RealEstateModel` divided the depreciable basis by the recovery period and
+  `BusinessMathDSL` divided the asset by the years; both are correct only at zero salvage
+  and both overstated the deduction otherwise. Both now delegate to the general function.
+- `RealEstateModel.annualDepreciation` carried
+  `fp-safety:disable — depreciationPeriodYears defaults to 27.5, always > 0`. The default
+  says nothing about what a caller passed and the initializer does not validate it: a zero
+  gave infinity and a negative gave a negative deduction, both flowing into a tax figure.
+  It now reports and returns `nan`.
+- One performance budget widened from 10ms to 100ms after the quality gate caught it
+  flipping fail→pass against a byte-identical package.
+
+### Notes
+- **`DayCountConvention` gained three cases.** Additive, but a source break for an
+  exhaustive switch over it. That is the only source-compatibility cost in the release.
+- **The `thirty360` fix changes numbers.** Any accrual whose start date falls on a
+  February month end now differs from 2.10.1 — by one or two days out of a few hundred.
+  The new answer is the spreadsheet's.
+- **`ACCRINT` is the one function here not verified by the workbook.** LibreOffice is
+  wrong for it, twice over: it implies a 30/360 day count that contradicts its own
+  `DAYS360`, `YEARFRAC` and `COUPDAYBS`, and its basis 1 divides actual days by the length
+  of the year containing the *issue* date. Excel returns 208.333333 where LibreOffice
+  returns 210.069444 for the documented case; ours matches Excel. Its twenty cases were
+  removed from the fixture rather than corrected — wrong values in a committed fixture
+  read as reference truth.
+
 ### [2.10.1] - 2026-09-05
 
 Student's t and F now answer in their tails. The follow-up 2.10.0 recorded rather than
