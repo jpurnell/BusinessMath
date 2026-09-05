@@ -121,6 +121,39 @@ one of the next, leaving one dyadic interval empty and another doubled. The
 starts at index 1, because its radical inverse carries no offset and index 0 really is
 the origin.
 
+## Follow-up closed: t and F tail accuracy (2026-09-04)
+
+Recorded at 2.10.0 rather than fixed: `tQuantile` and `fQuantile` were accurate to
+about 1e-5 and 1e-6 relative at p = 1e-8, so their conformance grid stopped at 1e-4.
+
+Both bisected on their own CDFs against an **absolute** tolerance of 2⁻⁴⁰, which at a
+probability of 1e-8 is 9e-5 relative — not a tolerance to tighten but a method to
+replace. Both distributions invert in closed form through the beta, which the phase had
+just made accurate:
+
+- `ν/(ν+T²) ~ Beta(ν/2, ½)`, so `t = ±√(ν(1−x)/x)` with `x = I⁻¹(2·tail, ν/2, ½)`.
+- `d₁F/(d₁F+d₂) ~ Beta(d₁/2, d₂/2)`, so `f = d₂x/(d₁(1−x))`; above the median the
+  mirrored `I⁻¹(1−p, d₂/2, d₁/2)` gives `1−x` directly instead of subtracting from one.
+
+Both now hold the **default** 1e-9 round-trip tolerance, not the root-found relaxation,
+and the tail-limited grid is deleted.
+
+Two things found on the way:
+
+- **`fCDF` had the same cancellation.** It computed `1 − I_{d₂/(d₂+d₁f)}(d₂/2, d₁/2)`,
+  whose argument rounds to within an ulp of 1 for small `f` — at f = 1.65e-16 with
+  (1, 10) degrees of freedom it returned exactly zero where the answer is 1e-8. The
+  direct form subtracts nothing.
+- **We are now more accurate than the reference in one place.** At f = 4.05e19 with
+  (1, 1), `scipy.stats.f.cdf` saturates to exactly 1.0; the true value is
+  1 − 1.0000000827e-10, which is what we return.
+
+And a testing trap worth keeping: **an identity between `p` and `1 − p` can only be
+tested where those two are actually complementary.** `1 − (1 − 1e-8)` recovers
+1.0000000050e-08, a 5e-9 error in the argument before any function runs — which is
+exactly the asymmetry the symmetry test reported. Negative powers of two have exact
+complements and reach further into the tail anyway (2⁻⁴⁰ ≈ 9e-13).
+
 ## Standing rule: no magic numbers, and derive what can be derived
 
 Stated by the user 2026-09-04, and it changed the code rather than just its comments.

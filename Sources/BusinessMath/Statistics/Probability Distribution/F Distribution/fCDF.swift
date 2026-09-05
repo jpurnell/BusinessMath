@@ -33,8 +33,15 @@ public func fCDF<T: Real>(f: T, df1: Int, df2: Int) throws -> T {
 
 	let d1 = T(df1)
 	let d2 = T(df2)
-	let x = d2 / (d2 + d1 * f)
 
-	let ibeta = try regularizedIncompleteBeta(x: x, a: d2 / T(2), b: d1 / T(2))
-	return T(1) - ibeta
+	// d₁F/(d₁F + d₂) ~ Beta(d₁/2, d₂/2), so the CDF is that beta evaluated directly.
+	//
+	// The complementary route — `1 − I_{d₂/(d₂+d₁f)}(d₂/2, d₁/2)` — is the same
+	// quantity and is unusable for small `f`: the argument `d₂/(d₂+d₁f)` rounds to
+	// within an ulp of 1 and carries none of the information the answer needs. At
+	// f = 1.65e-16 with (1, 10) degrees of freedom it returned exactly zero where the
+	// answer is 1e-8. This form subtracts nothing anywhere.
+	let scaled: T = d1 * f
+	let x: T = scaled / (scaled + d2)
+	return try regularizedIncompleteBeta(x: x, a: d1 / T(2), b: d2 / T(2))
 }

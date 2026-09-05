@@ -1,5 +1,10 @@
 {
   "fixtures": {
+    "fDistribution.json": {
+      "cases": 136,
+      "reference": "scipy.stats.f.ppf(p, df1, df2) and .cdf(x, df1, df2)",
+      "sha256": "c6a9ad2a95ffc442859c500d302a4ef05665fdb8811dc42f23461235acb10028"
+    },
     "haltonPoints.json": {
       "cases": 352,
       "reference": "scipy.stats.qmc.Halton(d, scramble=False).random(n+1)[1:]",
@@ -29,9 +34,14 @@
       "cases": 1984,
       "reference": "scipy.stats.qmc.Sobol(d, scramble=False).random(n)",
       "sha256": "4e24044ac46d58eb5b46e136b1a3869c8f46313075fe739fde31ea70c20e7deb"
+    },
+    "studentT.json": {
+      "cases": 136,
+      "reference": "scipy.stats.t.ppf(p, df) and .cdf(x, df)",
+      "sha256": "e8cd5a3ae77bed89a4900047f899bc330345a63fe96ceb255a9f8a41903634b0"
     }
   },
-  "generated": "2026-09-05T02:52:15.103138+00:00",
+  "generated": "2026-09-05T03:46:12.487738+00:00",
   "numpy": "2.5.2",
   "python": "3.14.7",
   "scipy": "1.17.1"

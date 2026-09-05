@@ -28,34 +28,35 @@ public func fQuantile<T: Real>(p: T, df1: Int, df2: Int) throws -> T {
 			value: "\(df2)", expectedRange: "(0, ∞)")
 	}
 
-	// Bisection search
-	var lo = T(1) / T(10000)
-	var hi = T(1000)
-	let tolerance = T(sign: .plus, exponent: -40, significand: T(1))
+	let d1 = T(df1)
+	let d2 = T(df2)
+	let shape1: T = d1 / T(2)
+	let shape2: T = d2 / T(2)
+	let half: T = T(1) / T(2)
 
-	// Expand upper bound if needed
-	while (try fCDF(f: hi, df1: df1, df2: df2)) < p {
-		hi *= T(2)
+	// d₁F/(d₁F + d₂) ~ Beta(d₁/2, d₂/2), so with x that beta's quantile,
+	// f = d₂x / (d₁(1 − x)).
+	//
+	// Above the median that (1 − x) is a subtraction of two numbers near one, and it
+	// takes the answer's digits with it. The beta's own symmetry gives the complement
+	// directly instead: I⁻¹(1 − p, d₂/2, d₁/2) *is* 1 − x, computed in its own small
+	// tail, so the same formula is written with the roles exchanged.
+	if p <= half {
+		let x: T = try inverseRegularizedIncompleteBeta(p: p, a: shape1, b: shape2)
+		guard x > T.zero, x < T(1) else { return x <= T.zero ? T.zero : T.infinity }
+
+		let complement: T = T(1) - x
+		let numerator: T = d2 * x
+		let denominator: T = d1 * complement
+		return numerator / denominator
 	}
 
-	for _ in 0..<100 {
-		let mid = (lo + hi) / T(2)
-		let cdf: T = try fCDF(f: mid, df1: df1, df2: df2)
+	let upperTail: T = T(1) - p
+	let y: T = try inverseRegularizedIncompleteBeta(p: upperTail, a: shape2, b: shape1)
+	guard y > T.zero, y < T(1) else { return y <= T.zero ? T.infinity : T.zero }
 
-		if abs(cdf - p) < tolerance {
-			return mid
-		}
-
-		if cdf < p {
-			lo = mid
-		} else {
-			hi = mid
-		}
-
-		if (hi - lo) < tolerance * mid {
-			return mid
-		}
-	}
-
-	return (lo + hi) / T(2)
+	let complement: T = T(1) - y
+	let numerator: T = d2 * complement
+	let denominator: T = d1 * y
+	return numerator / denominator
 }

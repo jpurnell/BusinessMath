@@ -115,31 +115,21 @@ struct DistributionRetrofitTests {
 		#expect(report16.samplerMatchesCDF, "\(report16.description)")
 	}
 
-	/// `tQuantile` and `fQuantile` predate this work and are not accurate in the far
-	/// tail: at p = 1e-8 they round-trip to about 1e-5 and 1e-6 relative respectively,
-	/// against the 1e-9 a closed form manages.
-	///
-	/// The grid stops at 1e-4 rather than the tolerance being loosened to cover the
-	/// failure, because the two are different claims. A loose bound would say "this is
-	/// fine"; a narrower grid says "this is verified here and not there", which is
-	/// true, and leaves the gap visible. Improving those two quantiles is recorded as
-	/// follow-up work in the Phase 0 checklist.
-	static let tailLimitedGrid: [Double] = [1e-4, 0.001, 0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 0.999, 1 - 1e-4]
-
-	@Test("Student's t conforms, away from the far tail")
+	// Student's t and F hold the *default* tolerance, not the root-found relaxation
+	// above. Their quantiles used to bisect on their own CDFs against an absolute
+	// bound, which at p = 1e-8 stopped about 1e-5 relative from the answer; they are
+	// now a closed-form map of the beta inverse and inherit its accuracy. The grid no
+	// longer stops short of the tail either — see `TAndFQuantileTests`.
+	@Test("Student's t conforms")
 	func studentT() {
-		let report17 = assertConformance(DistributionT(degreesOfFreedom: 8), name: "StudentT",
-						  probabilities: Self.tailLimitedGrid,
-						  roundTripTolerance: Self.rootFoundTolerance)
-		#expect(report17.samplerMatchesCDF, "\(report17.description)")
+		let report = assertConformance(DistributionT(degreesOfFreedom: 8), name: "StudentT")
+		#expect(report.samplerMatchesCDF, "\(report.description)")
 	}
 
-	@Test("F conforms, away from the far tail")
+	@Test("F conforms")
 	func fDistribution() {
-		let report18 = assertConformance(DistributionF(df1: 5, df2: 9), name: "F",
-						  probabilities: Self.tailLimitedGrid,
-						  roundTripTolerance: Self.rootFoundTolerance)
-		#expect(report18.samplerMatchesCDF, "\(report18.description)")
+		let report = assertConformance(DistributionF(df1: 5, df2: 9), name: "F")
+		#expect(report.samplerMatchesCDF, "\(report.description)")
 	}
 
 	// MARK: - Discrete
