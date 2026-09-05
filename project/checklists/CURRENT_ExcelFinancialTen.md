@@ -12,7 +12,8 @@ prerequisite.
 
 | Item | Function | Reference cases |
 |---|---|---|
-| `DayCountConvention.actualActual` | ISDA ACT/ACT | derived, 11 tests |
+| `DayCountConvention.actualActual` | the spreadsheet's rule — `YEARFRAC` basis 1 | 105 YEARFRAC cases |
+| `DayCountConvention.isdaActualActual` | ISDA ACT/ACT | derived, 15 tests |
 | `DayCountConvention.thirty360European` | 30E/360 | derived, 11 tests |
 | `SLN` | `straightLineDepreciation(cost:salvage:life:)` | 5 |
 | `SYD` | `sumOfYearsDigitsDepreciation(cost:salvage:life:period:)` | 16 |
@@ -80,6 +81,35 @@ agreement about the easy cases; the 5 that do not are precisely the ones a bond
 calculation gets wrong.
 
 ---
+
+## The naming, and a bug the naming exposed
+
+**`actualActual` is the spreadsheet's rule; ISDA is `isdaActualActual`.** The plain name
+goes to the convention a caller coming from a spreadsheet means, because binding
+`YEARFRAC` basis 1 to ISDA would disagree with the sheet it came from by about a third
+of a percent — silently, in a function whose output prices things. ISDA is still here and
+still correct; it just says which standard it is.
+
+Verified against `YEARFRAC(…, 1)` over a grid built to separate the branches of its rule:
+inside one year, crossing one boundary with and without a 29 February in range, exactly a
+year, and several years. 16 of 16 matched the published Excel algorithm before a line was
+written.
+
+**Adding that grid found a defect in `thirty360`, which has shipped for some time.** It
+omitted the NASD February end-of-month rule entirely, so 28 February to 31 July counted
+153 days against the spreadsheet's 151. Four of eight February cases were wrong. Two
+details matter and neither is obvious:
+
+- The last day of February is treated as a 30th — the 28th in a common year, the 29th in
+  a leap one.
+- The end-of-month pull-back on a 31st tests the start day **before** that February
+  adjustment, not after. That ordering is the whole difference between 151 and 150.
+
+The European rule has no February case, and needed no change.
+
+The bug survived because the convention had only ever been checked against its own
+definition. Nothing downstream broke when it was fixed: the existing bond and hazard-curve
+tests happen never to use a February-end date, which is the same reason nobody noticed.
 
 ## Notes worth keeping
 

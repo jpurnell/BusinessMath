@@ -104,6 +104,10 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 
 	/// Actual days elapsed, each calendar year divided by its own length — ISDA ACT/ACT.
 	///
+	/// Named for the standard rather than left as the plain `actualActual`, because
+	/// there are two conventions by that name and the other one is what a spreadsheet
+	/// means. See ``actualActual``.
+	///
 	/// The only convention in this enum with no fixed divisor. An interval is split at
 	/// every 1 January and each piece is divided by the length of the year it falls in,
 	/// 365 or 366, then the pieces are added:
@@ -117,11 +121,36 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// instrument whose coupon is defined per calendar year rather than per fixed
 	/// day-count, this is the convention that does not drift.
 	///
-	/// The ISDA definition is the one used here and the one most government bond markets
-	/// quote. Note that **Excel's `YEARFRAC` basis 1 is not this**: Excel applies its own
-	/// rule for the denominator, which for a period inside a single year depends on
-	/// whether that period contains a 29 February, and for longer periods averages the
-	/// years it spans. A binding to Excel should not assume the two agree.
+	/// Most government bond markets quote on this. **A spreadsheet does not** — see
+	/// ``actualActual`` for the rule `YEARFRAC`'s basis 1 applies, which differs from
+	/// this by about a third of a percent on a period spanning a leap February.
+	///
+	/// - Note: ``daysInYear`` cannot answer for this case; see ``hasFixedYearLength``.
+	case isdaActualActual = "ACT/ACT (ISDA)"
+
+	/// Actual days elapsed over a year length chosen by the spreadsheet's rule — what
+	/// `YEARFRAC`'s basis 1 computes.
+	///
+	/// The plain name goes to this one because it is the convention a caller coming from
+	/// a spreadsheet means, and because binding a spreadsheet's basis 1 to
+	/// ``isdaActualActual`` would disagree with the sheet it came from — silently, in a
+	/// function whose output prices things. ISDA is available and is explicitly named.
+	///
+	/// ## The rule
+	///
+	/// The numerator is always the actual number of days. The denominator depends on the
+	/// span:
+	///
+	/// | Span | Denominator |
+	/// |---|---|
+	/// | inside one calendar year | that year's length, 365 or 366 |
+	/// | at most a year, crossing one boundary | 366 if a 29 February falls in the interval, else 365 |
+	/// | longer than a year | the mean length of the calendar years it touches |
+	///
+	/// It is not ISDA's rule and it is not `ACT/365` either. Where ISDA splits the
+	/// interval at 1 January and divides each piece by its own year, this picks a single
+	/// denominator for the whole span — so a year spanning a leap February comes to
+	/// exactly one here and to 1.001377 under ISDA.
 	///
 	/// - Note: ``daysInYear`` cannot answer for this case; see ``hasFixedYearLength``.
 	case actualActual = "ACT/ACT"
@@ -162,7 +191,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 		case .actual360: return 360
 		case .thirty360: return 360
 		case .thirty360European: return 360
-		case .actualActual: return 365
+		case .actualActual, .isdaActualActual: return 365
 		}
 	}
 
@@ -176,7 +205,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	public var hasFixedYearLength: Bool {
 		switch self {
 		case .actual365, .actual360, .thirty360, .thirty360European: return true
-		case .actualActual: return false
+		case .actualActual, .isdaActualActual: return false
 		}
 	}
 
@@ -220,10 +249,16 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// - Returns: ``days(from:to:)`` divided by ``daysInYear``. Negative when `end`
 	///   precedes `start`.
 	public func yearFraction<T: Real>(from start: Date, to end: Date) -> T {
-		// ACT/ACT has no single denominator, so it cannot go through the shared path
-		// below: the divisor changes at every 1 January the interval crosses.
-		if case .actualActual = self {
-			return Self.actualActualYearFraction(from: start, to: end)
+		// Neither actual/actual has a single denominator, so neither can go through the
+		// shared path below — one changes divisor at every 1 January the interval
+		// crosses, the other chooses a divisor from the span as a whole.
+		switch self {
+		case .isdaActualActual:
+			return Self.isdaYearFraction(from: start, to: end)
+		case .actualActual:
+			return Self.spreadsheetYearFraction(from: start, to: end)
+		default:
+			break
 		}
 
 		let counted = countedDays(from: start, to: end)
@@ -287,7 +322,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// `Double`-to-`T` conversion in the path.
 	private func countedDays(from start: Date, to end: Date) -> (days: Int, seconds: Int) {
 		switch self {
-		case .actual365, .actual360, .actualActual:
+		case .actual365, .actual360, .actualActual, .isdaActualActual:
 			let calendar = cachedCalendar
 			let wholeDays = calendar.dateComponents([.day], from: start, to: end).day ?? 0
 			guard let boundary = calendar.date(byAdding: .day, value: wholeDays, to: start) else {
@@ -309,6 +344,20 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// the first date, and on the second date only when the first has already been
 	/// pulled back. That second condition is the part that is easy to get wrong: it
 	/// is what stops a 30 January to 31 March interval from losing a day.
+	/// Whether `date` is the last day of February — the 28th in a common year, the 29th
+	/// in a leap year.
+	///
+	/// Only the US 30/360 rule cares. Derived from the following day rather than from a
+	/// month-length table, so the leap rule is applied by the calendar rather than
+	/// restated here.
+	private static func isLastDayOfFebruary(_ date: Date) -> Bool {
+		let calendar = cachedCalendar
+		let parts = calendar.dateComponents([.month], from: date)
+		guard parts.month == 2 else { return false }
+		guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) else { return false }
+		return calendar.dateComponents([.month], from: tomorrow).month == 3
+	}
+
 	/// ISDA actual/actual: split the interval at every 1 January and divide each piece
 	/// by the length of the year it falls in.
 	///
@@ -320,11 +369,11 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	///
 	/// Whole intervening years contribute exactly one each, which is why a span of
 	/// calendar years comes out as an exact integer rather than accumulating rounding.
-	private static func actualActualYearFraction<T: Real>(from start: Date, to end: Date) -> T {
+	private static func isdaYearFraction<T: Real>(from start: Date, to end: Date) -> T {
 		// Antisymmetric by construction rather than by a separate backwards path, so the
 		// two directions cannot drift apart.
 		if end < start {
-			let forward: T = actualActualYearFraction(from: end, to: start)
+			let forward: T = isdaYearFraction(from: end, to: start)
 			return -forward
 		}
 
@@ -353,6 +402,80 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 		let trailing: T = trailingDays / T(daysInYear(of: endYear))
 
 		return leading + wholeYears + trailing
+	}
+
+	/// The spreadsheet's actual/actual: actual days over one denominator chosen for the
+	/// whole span.
+	///
+	/// Three cases, and the awkward one is the middle. Inside a single calendar year the
+	/// denominator is that year's length. Across more than a year it is the mean length
+	/// of the years touched. In between — at most a year but crossing one 1 January —
+	/// the denominator is 366 exactly when a 29 February falls in the interval, and 365
+	/// otherwise, which is the rule that makes 2023-07-01 → 2024-07-01 come to exactly
+	/// one where ISDA gives 1.001377.
+	///
+	/// Verified against `YEARFRAC(…, 1)` over a grid chosen to separate the branches;
+	/// see `DayCountConventionAdditionsTests`.
+	private static func spreadsheetYearFraction<T: Real>(from start: Date, to end: Date) -> T {
+		if end < start {
+			let forward: T = spreadsheetYearFraction(from: end, to: start)
+			return -forward
+		}
+
+		let calendar = cachedCalendar
+		let startParts = calendar.dateComponents([.year, .month, .day], from: start)
+		let endParts = calendar.dateComponents([.year, .month, .day], from: end)
+		guard let startYear = startParts.year, let endYear = endParts.year,
+			  let startMonth = startParts.month, let endMonth = endParts.month,
+			  let startDay = startParts.day, let endDay = endParts.day else {
+			return T.zero
+		}
+
+		let elapsed: T = actualDays(from: start, to: end)
+
+		// "At most a year" the way the spreadsheet counts it: the same calendar year, or
+		// the next one at a month-and-day that has not yet passed the start's.
+		let sameYear = startYear == endYear
+		let nextYear = endYear == startYear + 1
+		let notPastTheAnniversary = (endMonth, endDay) <= (startMonth, startDay)
+		let withinOneYear = sameYear || (nextYear && notPastTheAnniversary)
+
+		if sameYear {
+			return elapsed / T(daysInYear(of: startYear))
+		}
+
+		if withinOneYear {
+			let containsLeapDay = Self.intervalContainsLeapDay(from: start, to: end,
+															   startYear: startYear,
+															   endYear: endYear)
+			return elapsed / T(containsLeapDay ? 366 : 365)
+		}
+
+		var totalDays = 0
+		var year = startYear
+		while year <= endYear {
+			totalDays += daysInYear(of: year)
+			year += 1
+		}
+		let yearCount: T = T(endYear - startYear + 1)
+		let averageYear: T = T(totalDays) / yearCount
+		return elapsed / averageYear
+	}
+
+	/// Whether a 29 February falls within `start...end`, endpoints included.
+	///
+	/// Only the two years the interval touches need checking, because this is only asked
+	/// of a span of at most a year.
+	private static func intervalContainsLeapDay(
+		from start: Date, to end: Date, startYear: Int, endYear: Int
+	) -> Bool {
+		let calendar = cachedCalendar
+		for year in [startYear, endYear] where daysInYear(of: year) == 366 {
+			let components = DateComponents(year: year, month: 2, day: 29)
+			guard let leapDay = calendar.date(from: components) else { continue }
+			if leapDay >= start && leapDay <= end { return true }
+		}
+		return false
 	}
 
 	/// Actual elapsed days, carrying any sub-day remainder as a fraction.
@@ -389,12 +512,34 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 			return 0
 		}
 
-		// Both rules pull a start date on the 31st back to the 30th. They differ only on
-		// the end date: the European rule does it unconditionally, the US rule only when
-		// the start was itself pulled back.
-		let adjustedStartDay = startDay == 31 ? 30 : startDay
-		let endIsPulledBack = european ? (endDay == 31) : (endDay == 31 && adjustedStartDay == 30)
-		let adjustedEndDay = endIsPulledBack ? 30 : endDay
+		// The two rules share one adjustment and differ in two.
+		//
+		// Shared: a start date on the 31st becomes the 30th.
+		//
+		// The end date. European pulls a 31st back unconditionally. The US rule pulls it
+		// back only when the start day was *already* 30 or 31 — and "already" means
+		// before the February adjustment below, not after. That ordering is the whole
+		// difference between 151 and 150 days for 28 February to 31 July.
+		//
+		// February. The US rule treats the last day of February as a 30th, and when both
+		// ends are the last day of February it makes the end a 30th too. The European
+		// rule has no February case at all. Omitting this was a defect: it made
+		// 28 February to 31 July count 153 days against the spreadsheet's 151, and it
+		// went unnoticed because the convention had only ever been checked against its
+		// own definition.
+		let startIsFebruaryEnd = Self.isLastDayOfFebruary(start)
+		let endIsFebruaryEnd = Self.isLastDayOfFebruary(end)
+
+		var adjustedStartDay = startDay
+		var adjustedEndDay = endDay
+
+		if !european, startIsFebruaryEnd, endIsFebruaryEnd { adjustedEndDay = 30 }
+		if !european, startIsFebruaryEnd { adjustedStartDay = 30 }
+
+		let endIsPulledBack = european ? (endDay == 31) : (endDay == 31 && startDay >= 30)
+		if endIsPulledBack { adjustedEndDay = 30 }
+
+		if adjustedStartDay == 31 { adjustedStartDay = 30 }
 
 		return 360 * (endYear - startYear)
 			+ 30 * (endMonth - startMonth)

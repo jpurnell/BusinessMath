@@ -757,6 +757,741 @@
     },
     {
       "basis": 0,
+      "end": 45839,
+      "function": 9.0,
+      "start": 45658,
+      "value": 0.5
+    },
+    {
+      "basis": 1,
+      "end": 45839,
+      "function": 9.0,
+      "start": 45658,
+      "value": 0.495890410958904
+    },
+    {
+      "basis": 2,
+      "end": 45839,
+      "function": 9.0,
+      "start": 45658,
+      "value": 0.502777777777778
+    },
+    {
+      "basis": 3,
+      "end": 45839,
+      "function": 9.0,
+      "start": 45658,
+      "value": 0.495890410958904
+    },
+    {
+      "basis": 4,
+      "end": 45839,
+      "function": 9.0,
+      "start": 45658,
+      "value": 0.5
+    },
+    {
+      "basis": 0,
+      "end": 45778,
+      "function": 9.0,
+      "start": 45717,
+      "value": 0.166666666666667
+    },
+    {
+      "basis": 1,
+      "end": 45778,
+      "function": 9.0,
+      "start": 45717,
+      "value": 0.167123287671233
+    },
+    {
+      "basis": 2,
+      "end": 45778,
+      "function": 9.0,
+      "start": 45717,
+      "value": 0.169444444444444
+    },
+    {
+      "basis": 3,
+      "end": 45778,
+      "function": 9.0,
+      "start": 45717,
+      "value": 0.167123287671233
+    },
+    {
+      "basis": 4,
+      "end": 45778,
+      "function": 9.0,
+      "start": 45717,
+      "value": 0.166666666666667
+    },
+    {
+      "basis": 0,
+      "end": 46037,
+      "function": 9.0,
+      "start": 45823,
+      "value": 0.583333333333333
+    },
+    {
+      "basis": 1,
+      "end": 46037,
+      "function": 9.0,
+      "start": 45823,
+      "value": 0.586301369863014
+    },
+    {
+      "basis": 2,
+      "end": 46037,
+      "function": 9.0,
+      "start": 45823,
+      "value": 0.594444444444444
+    },
+    {
+      "basis": 3,
+      "end": 46037,
+      "function": 9.0,
+      "start": 45823,
+      "value": 0.586301369863014
+    },
+    {
+      "basis": 4,
+      "end": 46037,
+      "function": 9.0,
+      "start": 45823,
+      "value": 0.583333333333333
+    },
+    {
+      "basis": 0,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45292,
+      "value": 0.5
+    },
+    {
+      "basis": 1,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45292,
+      "value": 0.497267759562842
+    },
+    {
+      "basis": 2,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45292,
+      "value": 0.505555555555556
+    },
+    {
+      "basis": 3,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45292,
+      "value": 0.498630136986301
+    },
+    {
+      "basis": 4,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45292,
+      "value": 0.5
+    },
+    {
+      "basis": 0,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45323,
+      "value": 0.0833333333333333
+    },
+    {
+      "basis": 1,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45323,
+      "value": 0.0792349726775956
+    },
+    {
+      "basis": 2,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45323,
+      "value": 0.0805555555555556
+    },
+    {
+      "basis": 3,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45323,
+      "value": 0.0794520547945206
+    },
+    {
+      "basis": 4,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45323,
+      "value": 0.0833333333333333
+    },
+    {
+      "basis": 0,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45261,
+      "value": 0.25
+    },
+    {
+      "basis": 1,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45261,
+      "value": 0.248633879781421
+    },
+    {
+      "basis": 2,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45261,
+      "value": 0.252777777777778
+    },
+    {
+      "basis": 3,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45261,
+      "value": 0.249315068493151
+    },
+    {
+      "basis": 4,
+      "end": 45352,
+      "function": 9.0,
+      "start": 45261,
+      "value": 0.25
+    },
+    {
+      "basis": 0,
+      "end": 45689,
+      "function": 9.0,
+      "start": 45352,
+      "value": 0.916666666666667
+    },
+    {
+      "basis": 1,
+      "end": 45689,
+      "function": 9.0,
+      "start": 45352,
+      "value": 0.923287671232877
+    },
+    {
+      "basis": 2,
+      "end": 45689,
+      "function": 9.0,
+      "start": 45352,
+      "value": 0.936111111111111
+    },
+    {
+      "basis": 3,
+      "end": 45689,
+      "function": 9.0,
+      "start": 45352,
+      "value": 0.923287671232877
+    },
+    {
+      "basis": 4,
+      "end": 45689,
+      "function": 9.0,
+      "start": 45352,
+      "value": 0.916666666666667
+    },
+    {
+      "basis": 0,
+      "end": 45658,
+      "function": 9.0,
+      "start": 45292,
+      "value": 1.0
+    },
+    {
+      "basis": 1,
+      "end": 45658,
+      "function": 9.0,
+      "start": 45292,
+      "value": 1.0
+    },
+    {
+      "basis": 2,
+      "end": 45658,
+      "function": 9.0,
+      "start": 45292,
+      "value": 1.01666666666667
+    },
+    {
+      "basis": 3,
+      "end": 45658,
+      "function": 9.0,
+      "start": 45292,
+      "value": 1.0027397260274
+    },
+    {
+      "basis": 4,
+      "end": 45658,
+      "function": 9.0,
+      "start": 45292,
+      "value": 1.0
+    },
+    {
+      "basis": 0,
+      "end": 45292,
+      "function": 9.0,
+      "start": 44927,
+      "value": 1.0
+    },
+    {
+      "basis": 1,
+      "end": 45292,
+      "function": 9.0,
+      "start": 44927,
+      "value": 1.0
+    },
+    {
+      "basis": 2,
+      "end": 45292,
+      "function": 9.0,
+      "start": 44927,
+      "value": 1.01388888888889
+    },
+    {
+      "basis": 3,
+      "end": 45292,
+      "function": 9.0,
+      "start": 44927,
+      "value": 1.0
+    },
+    {
+      "basis": 4,
+      "end": 45292,
+      "function": 9.0,
+      "start": 44927,
+      "value": 1.0
+    },
+    {
+      "basis": 0,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45108,
+      "value": 1.0
+    },
+    {
+      "basis": 1,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45108,
+      "value": 1.0
+    },
+    {
+      "basis": 2,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45108,
+      "value": 1.01666666666667
+    },
+    {
+      "basis": 3,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45108,
+      "value": 1.0027397260274
+    },
+    {
+      "basis": 4,
+      "end": 45474,
+      "function": 9.0,
+      "start": 45108,
+      "value": 1.0
+    },
+    {
+      "basis": 0,
+      "end": 46023,
+      "function": 9.0,
+      "start": 44927,
+      "value": 3.0
+    },
+    {
+      "basis": 1,
+      "end": 46023,
+      "function": 9.0,
+      "start": 44927,
+      "value": 3.00068446269678
+    },
+    {
+      "basis": 2,
+      "end": 46023,
+      "function": 9.0,
+      "start": 44927,
+      "value": 3.04444444444444
+    },
+    {
+      "basis": 3,
+      "end": 46023,
+      "function": 9.0,
+      "start": 44927,
+      "value": 3.0027397260274
+    },
+    {
+      "basis": 4,
+      "end": 46023,
+      "function": 9.0,
+      "start": 44927,
+      "value": 3.0
+    },
+    {
+      "basis": 0,
+      "end": 45915,
+      "function": 9.0,
+      "start": 43905,
+      "value": 5.5
+    },
+    {
+      "basis": 1,
+      "end": 45915,
+      "function": 9.0,
+      "start": 43905,
+      "value": 5.50182481751825
+    },
+    {
+      "basis": 2,
+      "end": 45915,
+      "function": 9.0,
+      "start": 43905,
+      "value": 5.58333333333333
+    },
+    {
+      "basis": 3,
+      "end": 45915,
+      "function": 9.0,
+      "start": 43905,
+      "value": 5.50684931506849
+    },
+    {
+      "basis": 4,
+      "end": 45915,
+      "function": 9.0,
+      "start": 43905,
+      "value": 5.5
+    },
+    {
+      "basis": 0,
+      "end": 38944,
+      "function": 9.0,
+      "start": 35810,
+      "value": 8.58333333333333
+    },
+    {
+      "basis": 1,
+      "end": 38944,
+      "function": 9.0,
+      "start": 35810,
+      "value": 8.58107696988135
+    },
+    {
+      "basis": 2,
+      "end": 38944,
+      "function": 9.0,
+      "start": 35810,
+      "value": 8.70555555555556
+    },
+    {
+      "basis": 3,
+      "end": 38944,
+      "function": 9.0,
+      "start": 35810,
+      "value": 8.58630136986301
+    },
+    {
+      "basis": 4,
+      "end": 38944,
+      "function": 9.0,
+      "start": 35810,
+      "value": 8.58333333333333
+    },
+    {
+      "basis": 0,
+      "end": 45382,
+      "function": 9.0,
+      "start": 45260,
+      "value": 0.333333333333333
+    },
+    {
+      "basis": 1,
+      "end": 45382,
+      "function": 9.0,
+      "start": 45260,
+      "value": 0.333333333333333
+    },
+    {
+      "basis": 2,
+      "end": 45382,
+      "function": 9.0,
+      "start": 45260,
+      "value": 0.338888888888889
+    },
+    {
+      "basis": 3,
+      "end": 45382,
+      "function": 9.0,
+      "start": 45260,
+      "value": 0.334246575342466
+    },
+    {
+      "basis": 4,
+      "end": 45382,
+      "function": 9.0,
+      "start": 45260,
+      "value": 0.333333333333333
+    },
+    {
+      "basis": 0,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45322,
+      "value": 0.0805555555555556
+    },
+    {
+      "basis": 1,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45322,
+      "value": 0.0792349726775956
+    },
+    {
+      "basis": 2,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45322,
+      "value": 0.0805555555555556
+    },
+    {
+      "basis": 3,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45322,
+      "value": 0.0794520547945206
+    },
+    {
+      "basis": 4,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45322,
+      "value": 0.0805555555555556
+    },
+    {
+      "basis": 0,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45169,
+      "value": 0.497222222222222
+    },
+    {
+      "basis": 1,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45169,
+      "value": 0.497267759562842
+    },
+    {
+      "basis": 2,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45169,
+      "value": 0.505555555555556
+    },
+    {
+      "basis": 3,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45169,
+      "value": 0.498630136986301
+    },
+    {
+      "basis": 4,
+      "end": 45351,
+      "function": 9.0,
+      "start": 45169,
+      "value": 0.497222222222222
+    },
+    {
+      "basis": 0,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46037,
+      "value": 0.211111111111111
+    },
+    {
+      "basis": 1,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46037,
+      "value": 0.205479452054795
+    },
+    {
+      "basis": 2,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46037,
+      "value": 0.208333333333333
+    },
+    {
+      "basis": 3,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46037,
+      "value": 0.205479452054795
+    },
+    {
+      "basis": 4,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46037,
+      "value": 0.208333333333333
+    },
+    {
+      "basis": 0,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46052,
+      "value": 0.166666666666667
+    },
+    {
+      "basis": 1,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46052,
+      "value": 0.164383561643836
+    },
+    {
+      "basis": 2,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46052,
+      "value": 0.166666666666667
+    },
+    {
+      "basis": 3,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46052,
+      "value": 0.164383561643836
+    },
+    {
+      "basis": 4,
+      "end": 46112,
+      "function": 9.0,
+      "start": 46052,
+      "value": 0.166666666666667
+    },
+    {
+      "basis": 0,
+      "end": 46081,
+      "function": 9.0,
+      "start": 46053,
+      "value": 0.0777777777777778
+    },
+    {
+      "basis": 1,
+      "end": 46081,
+      "function": 9.0,
+      "start": 46053,
+      "value": 0.0767123287671233
+    },
+    {
+      "basis": 2,
+      "end": 46081,
+      "function": 9.0,
+      "start": 46053,
+      "value": 0.0777777777777778
+    },
+    {
+      "basis": 3,
+      "end": 46081,
+      "function": 9.0,
+      "start": 46053,
+      "value": 0.0767123287671233
+    },
+    {
+      "basis": 4,
+      "end": 46081,
+      "function": 9.0,
+      "start": 46053,
+      "value": 0.0777777777777778
+    },
+    {
+      "basis": 0,
+      "end": 46081,
+      "function": 9.0,
+      "start": 45900,
+      "value": 0.494444444444444
+    },
+    {
+      "basis": 1,
+      "end": 46081,
+      "function": 9.0,
+      "start": 45900,
+      "value": 0.495890410958904
+    },
+    {
+      "basis": 2,
+      "end": 46081,
+      "function": 9.0,
+      "start": 45900,
+      "value": 0.502777777777778
+    },
+    {
+      "basis": 3,
+      "end": 46081,
+      "function": 9.0,
+      "start": 45900,
+      "value": 0.495890410958904
+    },
+    {
+      "basis": 4,
+      "end": 46081,
+      "function": 9.0,
+      "start": 45900,
+      "value": 0.494444444444444
+    },
+    {
+      "basis": 0,
+      "end": 46234,
+      "function": 9.0,
+      "start": 46081,
+      "value": 0.419444444444444
+    },
+    {
+      "basis": 1,
+      "end": 46234,
+      "function": 9.0,
+      "start": 46081,
+      "value": 0.419178082191781
+    },
+    {
+      "basis": 2,
+      "end": 46234,
+      "function": 9.0,
+      "start": 46081,
+      "value": 0.425
+    },
+    {
+      "basis": 3,
+      "end": 46234,
+      "function": 9.0,
+      "start": 46081,
+      "value": 0.419178082191781
+    },
+    {
+      "basis": 4,
+      "end": 46234,
+      "function": 9.0,
+      "start": 46081,
+      "value": 0.422222222222222
+    },
+    {
+      "basis": 0,
       "firstInterest": 45535,
       "frequency": 1,
       "function": 0.0,
@@ -985,7 +1720,8 @@
     "RATE",
     "SLN",
     "SYD",
-    "VDB"
+    "VDB",
+    "YEARFRAC"
   ],
   "name": "excelFinancial",
   "note": "Excel-compatible financial functions, evaluated by LibreOffice rather than transcribed. Values carry about fifteen significant digits, which is what sets the tolerance on the Swift side. Dates are Excel serials, because that is what the functions receive. Each case carries its arguments under the names the Swift signature uses; the `function` field says which function produced it.",
