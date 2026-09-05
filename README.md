@@ -10,7 +10,7 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.10.1
+## Latest release: 2.11.0
 
 2.7.0 is additive: no signature changes, no deletions, no behaviour changes to existing calls.
 It adds `Statistics/Experiment/` — two-arm experiment design with `sampleSizePerArm`,
