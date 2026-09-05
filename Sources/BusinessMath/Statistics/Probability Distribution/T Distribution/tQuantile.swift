@@ -22,40 +22,24 @@ public func tQuantile<T: Real>(p: T, df: Int) throws -> T {
 			value: "\(df)", expectedRange: "(0, ∞)")
 	}
 
-	// Use symmetry: if p < 0.5, compute -tQuantile(1-p, df)
-	if p < T(1) / T(2) {
-		let upper = try tQuantile(p: T(1) - p, df: df)
-		return -upper
-	}
+	let half: T = T(1) / T(2)
+	if p == half { return T.zero }
 
-	// Bisection for p >= 0.5 (result is non-negative)
-	var lo = T.zero
-	var hi = T(100)
-	let tolerance = T(sign: .plus, exponent: -40, significand: T(1))
+	let nu = T(df)
+	let shape: T = nu / T(2)
 
-	// Expand upper bound if needed
-	while (try tCDF(t: hi, df: df)) < p {
-		hi *= T(2)
-	}
+	// The two-sided tail probability, P(|T| > |t|). Taking it from whichever side is
+	// small keeps the argument away from 1, where the beta inverse would be inverting
+	// a quantity that has lost its digits to the subtraction.
+	let twoSidedTail: T = p < half ? T(2) * p : T(2) * (T(1) - p)
 
-	for _ in 0..<100 {
-		let mid = (lo + hi) / T(2)
-		let cdf: T = try tCDF(t: mid, df: df)
+	let x: T = try inverseRegularizedIncompleteBeta(p: twoSidedTail, a: shape, b: half)
+	guard x > T.zero, x <= T(1) else { return T.nan }
 
-		if abs(cdf - p) < tolerance {
-			return mid
-		}
+	// x = ν/(ν + t²), so t² = ν(1 − x)/x.
+	let complement: T = T(1) - x
+	let ratio: T = complement / x
+	let magnitude: T = T.sqrt(nu * ratio)
 
-		if cdf < p {
-			lo = mid
-		} else {
-			hi = mid
-		}
-
-		if (hi - lo) < tolerance {
-			return mid
-		}
-	}
-
-	return (lo + hi) / T(2)
+	return p < half ? -magnitude : magnitude
 }

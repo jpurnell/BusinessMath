@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.10.1] - 2026-09-04
+
+Student's t and F now answer in their tails. The follow-up 2.10.0 recorded rather than
+fixed.
+
+### Fixed
+- **`tQuantile` and `fQuantile` are accurate across the full probability range.** Both
+  bisected on their own CDFs against an *absolute* tolerance of 2⁻⁴⁰, which at a
+  probability of 1e-8 is 9e-5 relative — not a tolerance to tighten but a method to
+  replace. Both distributions invert in closed form through the beta, which 2.10.0 had
+  just made accurate: `ν/(ν+T²) ~ Beta(ν/2, ½)` and `d₁F/(d₁F+d₂) ~ Beta(d₁/2, d₂/2)`.
+  Above the median the F quantile uses the mirrored beta, which yields `1 − x` directly
+  rather than subtracting a value near one. Measured against `scipy.stats` across 272
+  new fixture cases spanning 1e-10 to 1 − 1e-10.
+- **`fCDF` had the same cancellation.** It computed `1 − I_{d₂/(d₂+d₁f)}(d₂/2, d₁/2)`,
+  whose argument rounds to within an ulp of 1 for small `f`: at f = 1.65e-16 with
+  (1, 10) degrees of freedom it returned exactly zero where the answer is 1e-8. Now the
+  direct form, which subtracts nothing.
+
+### Changed
+- `DistributionT` and `DistributionF` now hold the **default** conformance tolerance
+  rather than the root-found relaxation, and their conformance grid no longer stops
+  short of the tail.
+
+### Notes
+- At f = 4.05e19 with (1, 1) degrees of freedom, `scipy.stats.f.cdf` saturates to
+  exactly 1.0; the true value is 1 − 1.0000000827e-10, which is what this now returns.
+  The fixture comparison asserts the derived value there rather than the reference's.
+
 ### [2.10.0] - 2026-09-04
 
 A distribution can now say what value sits at a given uniform, and a simulation can choose
