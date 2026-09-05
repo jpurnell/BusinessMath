@@ -61,15 +61,15 @@ and the Johnson family.
 - [x] `Tests/BusinessMathTests/Fixtures/` + `MANIFEST.json` with versions, date, sha256 per fixture
 - [x] `Package.swift` — `resources: [.copy("Fixtures")]` on the test target (first use of `resources:`)
 - [x] Swift-side fixture loader (`Tests/BusinessMathTests/Support/ReferenceFixture.swift`)
-- [ ] The shared assertion template of §10.1 — lands with the protocols in step 2
+- [x] The shared assertion template of §10.1 — lands with the protocols in step 2
 
 ### 2. The protocols
 
-- [ ] RED — protocol conformance tests using the shared template
-- [ ] `ContinuousDistribution` + default `next(using:)` via inverse transform
-- [ ] `DiscreteDistribution` with `pmf` / `cdf(Int)` / `quantile -> Int`
-- [ ] `Double.openUnitRandom(using:)` — **open** interval; `quantile(0)` is −∞ for most of these
-- [ ] Regression test pinning existing seeded streams of `DistributionNormal` and `DistributionGamma` (§10.4) — **write this before any retrofit lands**
+- [x] RED — protocol conformance tests using the shared template
+- [x] `ContinuousDistribution` + default `next(using:)` via inverse transform
+- [x] `DiscreteDistribution` with `pmf` / `cdf(Int)` / `quantile -> Int`
+- [x] `Double.openUnitRandom(using:)` — **open** interval; `quantile(0)` is −∞ for most of these
+- [x] Regression test pinning existing seeded streams of `DistributionNormal` and `DistributionGamma` (§10.4) — **write this before any retrofit lands**
 
 ### 3. Retrofit the fifteen (§3.4a audit)
 
@@ -108,6 +108,22 @@ and the Johnson family.
 ---
 
 ## Traps found while building (2026-09-04)
+
+- **Defaulting both samplers costs you associated-type inference.** With `next()` and
+  `next(using:)` both supplied by the extension, `T` has little left to be inferred
+  from and the diagnostic names the associated type rather than the confusing line.
+  Conformers state `typealias T = Double`; the protocol's doc example says why.
+- **`next()` cannot take a generator — it is the protocol requirement.** Both the
+  `SystemRandomNumberGenerator` and the `.random()` spellings trip the stochastic
+  checker, and no code change removes the need for an unseeded entry point that
+  `DistributionRandom` itself requires. Marked with the project's established
+  `// stochastic:exempt — the documented unseeded path`, matching the wording at the
+  ten existing sites. The marker must sit **inline on the call line**, not the
+  signature line.
+- **DocC will not link an extension member of a protocol.** ``next(using:)`` resolves
+  to nothing from inside `ContinuousDistribution`'s own documentation; single
+  backticks are correct there, and the Topics section keeps real links only for the
+  requirements.
 
 - **A safeguarded root-finder must test convergence *before* it bisects.** On the final
   iteration the step is zero, so `candidate == x`, and `x` has just become a bracket
