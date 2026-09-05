@@ -1,37 +1,62 @@
+# Quality Gate — daily audit + push-triggered checks
+#
+# Prerequisites:
+#   1. Repository secret CORPUS_DEPLOY_KEY — the SSH private key whose public
+#      half is registered as a write-enabled deploy key on
+#      jpurnell/org-judgement-corpus. Set it with:
+#          gh secret set CORPUS_DEPLOY_KEY --repo jpurnell/<repo> < ~/.ssh/qg-corpus-deploy
+#   2. A .quality-gate.yml in your project root
+#   3. Repository secret holding a read-scoped PAT, passed as `dependency-token`.
+#      This is NOT optional for most repos, and it is the requirement most
+#      easily missed: the reusable workflow builds the gate by cloning
+#      jpurnell/quality-gate-swift over HTTPS, and THAT REPO IS PRIVATE. Without
+#      a token granting it read access, the build step fails for every consumer.
+#      Grant the same token read on any private SPM dependencies the project
+#      resolves. It needs no write anywhere, and no corpus access at all.
+#
+# BEFORE ENABLING, read the runner economics in Phase2_CIParity.md §3b.
+# The reusable workflow runs on `macos-latest`. GitHub bills hosted macOS at a
+# 10x multiplier on PRIVATE repos — roughly 200 macOS-minutes a month on the
+# free tier, which this portfolio has exhausted in a single day's first pass.
+# The June 2026 fleet-wide shutdown was that bill arriving. So:
+#
+#   Public repo   -> hosted macos-latest is free. Enable freely.
+#   Private repo  -> register a self-hosted runner FIRST (§3c), or leave this
+#                    workflow disabled and rely on local hooks, which are the
+#                    primary gate on solo repos anyway (§3b).
+#
+# Enrollment is per-repo opt-in, not a blanket rollout: switch CI on when a
+# repo gains a second contributor, which is when the §4b tripwire fires.
+
 name: Quality Gate
 
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 6 * * *'
-  # On demand. Without this the gate can only be observed by pushing, which makes
-  # "is CI actually running the gate?" a question you cannot ask directly — and it
-  # went unasked long enough for this workflow to sit disabled while the repository
-  # reported four green jobs.
+    - cron: '0 6 * * *'  # daily at 6am UTC
+  # On demand — without this the gate can only be observed by pushing, which
+  # makes "is CI actually running the gate?" a question you cannot ask.
   workflow_dispatch:
 
-# A called workflow cannot hold more permission than its caller grants, and the
-# reusable gate declares `issues: write` so it can file a failure alert. Granting
-# only `contents: read` here made GitHub reject the file at parse time — a 0-second
-# run titled by path rather than by name, which is what a workflow that never
-# started looks like. Almost certainly why this workflow was disabled rather than
-# fixed: the failure says "workflow file issue" and points at the caller, while the
-# missing permission is named in the callee.
+# A caller must grant at least what the callee declares, and the reusable gate
+# declares `issues: write` so it can file a failure alert. Granting only
+# `contents: read` here makes GitHub reject the file at parse time — a 0-second
+# run titled by path rather than by name. That failure reports as "workflow file
+# issue" and points at THIS file, while the missing permission is named in the
+# callee, which is why it went undiagnosed across the fleet for months.
 permissions:
   contents: read
   issues: write
 
 jobs:
   quality-gate:
-    # NOTE: this reference is why the workflow fails at startup in 0s. BusinessMath
-    # is public; jpurnell/quality-gate-swift is private. A pin to 4f65852 — the last
-    # commit before `issues: write` was added to the callee — failed identically, so
-    # the cause is constant rather than a change in the callee. See HANDOFF.md.
     uses: jpurnell/quality-gate-swift/.github/workflows/quality-gate-reusable.yml@main
     with:
       checks: "all"
       continue-on-failure: true
       corpus-repo: jpurnell/org-judgement-corpus
     secrets:
-      corpus-token: ${{ secrets.CORPUS_PUSH_TOKEN }}
+      corpus-deploy-key: ${{ secrets.CORPUS_DEPLOY_KEY }}
+      # Required while quality-gate-swift is private — see prerequisite 3.
+      dependency-token: ${{ secrets.SPM_PRIVATE_DEPS_TOKEN }}
