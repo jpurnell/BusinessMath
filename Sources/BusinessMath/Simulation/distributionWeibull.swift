@@ -185,3 +185,27 @@ extension DistributionWeibull: SeedableDistribution {
 								   seed: Double.random(in: 0...1, using: &generator))
 	}
 }
+
+
+extension DistributionWeibull: ContinuousDistribution {
+	/// P(X ≤ x) = 1 − exp(−(x/scale)^shape).
+	public func cdf(_ x: Double) -> Double {
+		guard shape > 0, scale > 0 else { return Double.nan }
+		guard x > 0 else { return 0 }
+		let ratio = x / scale
+		let raised = Double.pow(ratio, shape)
+		// expMinusOne, not `1 - exp`: see ``exponentialCDF(_:λ:)``.
+		return -Double.expMinusOne(-raised)
+	}
+
+	/// The value at which the CDF equals `p`: scale · (−ln(1 − p))^(1/shape).
+	public func quantile(_ p: Double) -> Double {
+		guard shape > 0, scale > 0 else { return Double.nan }
+		guard p < 1 else { return Double.infinity }
+		// log(onePlus: -p), not log(1 - p): for small p the subtraction rounds the
+		// argument to 1 and the log to zero.
+		let negativeLog = -Double.log(onePlus: -p)
+		let exponent = 1 / shape
+		return scale * Double.pow(negativeLog, exponent)
+	}
+}

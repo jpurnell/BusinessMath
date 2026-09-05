@@ -183,3 +183,25 @@ extension DistributionT: SeedableDistribution {
 		return distributionT(degreesOfFreedom: degreesOfFreedom, using: &generator)
 	}
 }
+
+
+extension DistributionT: ContinuousDistribution {
+	/// P(X ≤ x) for Student's *t* with this many degrees of freedom.
+	///
+	/// The underlying `tCDF(t:df:)` throws on a non-positive `df`. That cannot
+	/// happen for a constructed distribution, and `Double.nan` is returned rather
+	/// than trapping if it somehow does — the same signal the free-function
+	/// distributions use for invalid input.
+	public func cdf(_ x: Double) -> Double {
+		totalizedResult { try tCDF(t: x, df: degreesOfFreedom) }
+	}
+
+	/// The value at which the CDF equals `p`.
+	public func quantile(_ p: Double) -> Double {
+		totalizedResult { try tQuantile(p: p, df: degreesOfFreedom) }
+	}
+
+	// Keeps its own `next(using:)`: a *t* variate is a normal over the root of a
+	// scaled chi-squared, which draws many uniforms. See the note on
+	// ``DistributionNormal``.
+}

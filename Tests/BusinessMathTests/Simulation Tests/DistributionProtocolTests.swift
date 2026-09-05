@@ -168,4 +168,34 @@ struct DistributionProtocolTests {
 		let second = try simulation.run()
 		#expect(first.values == second.values)
 	}
+
+	// MARK: - The critical values the battery uses are derived, so they get checked
+
+	@Test("The derived Kolmogorov–Smirnov critical values match the published table")
+	func kolmogorovCriticalValuesMatchTheTable() {
+		// Published asymptotic coefficients of √n·D. Any statistics text carries these;
+		// they are the check on the derivation, never an input to it.
+		let published: [(significance: Double, coefficient: Double)] = [
+			(0.10, 1.22), (0.05, 1.36), (0.02, 1.52), (0.01, 1.63), (0.001, 1.95)
+		]
+		for entry in published {
+			// The function returns λ/√n, so a sample of one recovers λ itself.
+			let derived = kolmogorovSmirnovCriticalValue(count: 1, significance: entry.significance)
+			#expect(abs(derived - entry.coefficient) < 0.005,
+				"λ at \(entry.significance) derived as \(derived), table says \(entry.coefficient)")
+		}
+	}
+
+	@Test("The derived χ² critical values match the published table")
+	func chiSquareCriticalValuesMatchTheTable() throws {
+		// Published upper 1% points of χ². Same role: a check, not an input.
+		let published: [(df: Int, value: Double)] = [
+			(1, 6.635), (2, 9.210), (4, 13.277), (8, 20.090), (16, 32.000), (30, 50.892)
+		]
+		for entry in published {
+			let derived = try chiSquareCriticalValue(degreesOfFreedom: entry.df)
+			#expect(abs(derived - entry.value) < 0.01,
+				"χ²(\(entry.df)) at 1% derived as \(derived), table says \(entry.value)")
+		}
+	}
 }

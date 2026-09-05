@@ -101,4 +101,24 @@ extension DistributionUniform: SeedableDistribution {
 }
 
 
+extension DistributionUniform: ContinuousDistribution {
+	/// P(X ≤ x): zero below the lower bound, one above the upper, linear between.
+	public func cdf(_ x: Double) -> Double {
+		let lower = Swift.min(min, max)
+		let upper = Swift.max(min, max)
+		if x <= lower { return 0 }
+		if x >= upper { return 1 }
 
+		let span = upper - lower
+		guard span > 0 else { return 1 }
+		return (x - lower) / span
+	}
+
+	/// The value at which the CDF equals `p`.
+	public func quantile(_ p: Double) -> Double {
+		let lower = Swift.min(min, max)
+		let upper = Swift.max(min, max)
+		let span = upper - lower
+		return lower + p * span
+	}
+}

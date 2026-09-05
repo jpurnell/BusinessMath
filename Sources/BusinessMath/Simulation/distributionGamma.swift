@@ -226,3 +226,29 @@ extension DistributionGamma: SeedableDistribution {
 		return distributionGamma(r: r, λ: λ, using: &generator)
 	}
 }
+
+extension DistributionGamma: ContinuousDistribution {
+	/// P(X ≤ x) for Gamma(shape `r`, **rate** `λ`).
+	///
+	/// This type is rate-parameterised, so the scale handed to
+	/// ``gammaCDF(_:shape:scale:)`` is `1/λ`.
+	public func cdf(_ x: Double) -> Double {
+		guard λ > 0 else { return Double.nan }
+		return gammaCDF(x, shape: Double(r), scale: 1 / λ)
+	}
+
+	/// The value at which the CDF equals `p`.
+	///
+	/// Root-found, through ``inverseRegularizedLowerIncompleteGamma(p:a:)``, so it is
+	/// held to a relative rather than absolute tolerance in the conformance battery.
+	public func quantile(_ p: Double) -> Double {
+		guard λ > 0 else { return Double.nan }
+		return totalizedResult { try gammaQuantile(p: p, shape: Double(r), scale: 1 / λ) }
+	}
+
+	// Keeps its own `next(using:)`: Marsaglia–Tsang rejection, which draws an
+	// unbounded number of uniforms. `SeededStreamRegressionTests` pins the stream.
+	//
+	// That makes this distribution ineligible for nothing — quasi-random sampling
+	// reads `quantile(_:)`, which is a one-uniform inverse transform by construction.
+}

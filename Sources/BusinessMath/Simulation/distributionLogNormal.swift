@@ -85,3 +85,24 @@ extension DistributionLogNormal: SeedableDistribution {
 									 Double.random(in: 0...1, using: &generator))
 	}
 }
+
+
+extension DistributionLogNormal: ContinuousDistribution {
+	/// P(X ≤ x) for this log-normal.
+	///
+	/// `mean` and `stdDev` are the parameters of the *underlying normal* — the
+	/// distribution is `exp(Normal(mean, stdDev))`, not a variate whose arithmetic
+	/// mean is `mean`. Frontline's `PsiLogNormal` states its parameters the other
+	/// way; a binding must convert, and this is the side of that conversion the
+	/// mathematics lives on.
+	public func cdf(_ x: Double) -> Double {
+		logNormalCDF(x, mean: mean, stdDev: stdDev)
+	}
+
+	/// The value at which the CDF equals `p`: `exp` of the normal quantile.
+	public func quantile(_ p: Double) -> Double {
+		Double.exp(inverseNormalCDF(p: p, mean: mean, stdDev: stdDev))
+	}
+
+	// Keeps its own `next(using:)`: `exp` of a Box–Muller draw, two uniforms.
+}

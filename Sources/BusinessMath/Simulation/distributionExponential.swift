@@ -73,3 +73,20 @@ extension DistributionExponential: SeedableDistribution {
 		return distributionExponential(λ: λ, seed: Double.random(in: 0...1, using: &generator))
 	}
 }
+
+
+extension DistributionExponential: ContinuousDistribution {
+	/// P(X ≤ x) = 1 − e^(−λx), zero for negative `x`.
+	public func cdf(_ x: Double) -> Double {
+		exponentialCDF(x, λ: λ)
+	}
+
+	/// The value at which the CDF equals `p`: −ln(1 − p) / λ.
+	public func quantile(_ p: Double) -> Double {
+		guard λ > 0 else { return Double.nan }
+		guard p < 1 else { return Double.infinity }
+		// log(onePlus: -p), not log(1 - p): for small p the subtraction rounds the
+		// argument to 1 and the log to zero.
+		return -Double.log(onePlus: -p) / λ
+	}
+}

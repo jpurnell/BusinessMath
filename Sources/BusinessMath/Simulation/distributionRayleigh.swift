@@ -47,28 +47,28 @@ import Numerics
 ///   already reached this conclusion on their own — they name the argument `scale` and
 ///   `σ` and assert `mean ≈ σ√(π/2)` — so only the label and the prose were wrong.
 public func distributionRayleigh<T: Real>(scale: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
-	// Validate parameters - return NaN for invalid inputs
-	guard scale > T(0), !scale.isNaN, scale.isFinite else { return T.nan }
+    // Validate parameters - return NaN for invalid inputs
+    guard scale > T(0), !scale.isNaN, scale.isFinite else { return T.nan }
 
-	// Two things this used to do for itself and no longer needs to.
-	//
-	// It ran the seed through `distributionUniform`, which quantizes to multiples
-	// of 1e-7. That is what made the `log(0)` pole a real event rather than a
-	// vanishing one: every seed below 1e-7 — one draw in ten million — landed on
-	// exactly zero and returned `+infinity`. Seeds now reach the transform at full
-	// precision, so a seed of 1e-9 is the legitimate 6.07-sigma radius it should
-	// always have been, and only an exact zero is degenerate.
-	//
-	// And it folded the uniform as `1 - u`, which was the right guard for a
-	// quantized [0, 1] with a fat atom at the bottom. With the quantization gone
-	// the shared rule applies instead: only the single point `u = 0` moves, to 1,
-	// which is a set of measure zero mapped onto another. The seeded *values*
-	// change because a seed now indexes the distribution the other way round; the
-	// distribution itself is identical.
-	if let seed {
-		return scale * boxMullerRadius(seed)
-	}
-	return scale * boxMullerRadius()
+    // Two things this used to do for itself and no longer needs to.
+    //
+    // It ran the seed through `distributionUniform`, which quantizes to multiples
+    // of 1e-7. That is what made the `log(0)` pole a real event rather than a
+    // vanishing one: every seed below 1e-7 — one draw in ten million — landed on
+    // exactly zero and returned `+infinity`. Seeds now reach the transform at full
+    // precision, so a seed of 1e-9 is the legitimate 6.07-sigma radius it should
+    // always have been, and only an exact zero is degenerate.
+    //
+    // And it folded the uniform as `1 - u`, which was the right guard for a
+    // quantized [0, 1] with a fat atom at the bottom. With the quantization gone
+    // the shared rule applies instead: only the single point `u = 0` moves, to 1,
+    // which is a set of measure zero mapped onto another. The seeded *values*
+    // change because a seed now indexes the distribution the other way round; the
+    // distribution itself is identical.
+    if let seed {
+    	return scale * boxMullerRadius(seed)
+    }
+    return scale * boxMullerRadius()
 }
 
 /// A type that represents a Rayleigh distribution.
@@ -119,5 +119,28 @@ extension DistributionRayleigh: SeedableDistribution {
         // generator path draws `1 - Double.random(in: 0..<1)`, which is exact on
         // (0, 1] and never has to remap anything.
         return scale * boxMullerRadius(using: &generator)
+    }
+}
+
+
+extension DistributionRayleigh: ContinuousDistribution {
+    /// P(X ≤ x) = 1 − exp(−x² / 2σ²).
+    public func cdf(_ x: Double) -> Double {
+        guard scale > 0 else { return Double.nan }
+        guard x > 0 else { return 0 }
+        let ratio = x / scale
+        let exponent = ratio * ratio / 2
+        // expMinusOne, not `1 - exp`: see ``exponentialCDF(_:λ:)``.
+        return -Double.expMinusOne(-exponent)
+    }
+
+    /// The value at which the CDF equals `p`: σ·√(−2 ln(1 − p)).
+    public func quantile(_ p: Double) -> Double {
+        guard scale > 0 else { return Double.nan }
+        guard p < 1 else { return Double.infinity }
+        // log(onePlus: -p), not log(1 - p): for small p the subtraction rounds the
+        // argument to 1 and the log to zero.
+        let negativeLog = -Double.log(onePlus: -p)
+        return scale * (2 * negativeLog).squareRoot()
     }
 }

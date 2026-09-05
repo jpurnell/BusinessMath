@@ -184,3 +184,31 @@ extension DistributionPareto: SeedableDistribution {
 								  seed: Double.random(in: 0...1, using: &generator))
 	}
 }
+
+
+extension DistributionPareto: ContinuousDistribution {
+	/// P(X ≤ x) = 1 − (scale/x)^shape, zero below `scale`.
+	///
+	/// `scale` is the minimum of the support — Pareto's *x*ₘ — and `shape` is the
+	/// tail index α.
+	public func cdf(_ x: Double) -> Double {
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard x > scale else { return 0 }
+		// Just above the lower bound the power is within an ulp of 1, so the same
+		// cancellation applies as in ``exponentialCDF(_:λ:)``. Going through the log
+		// keeps the digits: 1 − r^s = −expMinusOne(s·ln r).
+		// (x − scale)/scale is exact for x near scale, where scale/x is not: the
+		// ratio lands within an ulp of 1 and takes the answer's digits with it.
+		let relative = (x - scale) / scale
+		let exponent = -shape * Double.log(onePlus: relative)
+		return -Double.expMinusOne(exponent)
+	}
+
+	/// The value at which the CDF equals `p`: scale / (1 − p)^(1/shape).
+	public func quantile(_ p: Double) -> Double {
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard p < 1 else { return Double.infinity }
+		let logComplement = Double.log(onePlus: -p)
+		return scale * Double.exp(-logComplement / shape)
+	}
+}

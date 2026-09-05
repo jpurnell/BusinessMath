@@ -182,3 +182,20 @@ extension DistributionBeta: SeedableDistribution {
 		return distributionBeta(alpha: alpha, beta: beta, using: &generator)
 	}
 }
+
+extension DistributionBeta: ContinuousDistribution {
+	/// P(X ≤ x) = I_x(α, β), the regularized incomplete beta.
+	public func cdf(_ x: Double) -> Double {
+		totalizedResult { try regularizedIncompleteBeta(x: x, a: alpha, b: beta) }
+	}
+
+	/// The value at which the CDF equals `p`.
+	///
+	/// Root-found, through ``inverseRegularizedIncompleteBeta(p:a:b:)``.
+	public func quantile(_ p: Double) -> Double {
+		totalizedResult { try inverseRegularizedIncompleteBeta(p: p, a: alpha, b: beta) }
+	}
+
+	// Keeps its own `next(using:)`: a ratio of two gamma variates, each of which is
+	// itself rejection-sampled.
+}

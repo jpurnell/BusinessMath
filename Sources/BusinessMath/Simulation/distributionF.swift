@@ -209,3 +209,18 @@ extension DistributionF: SeedableDistribution {
 		return distributionF(df1: df1, df2: df2, using: &generator)
 	}
 }
+
+
+extension DistributionF: ContinuousDistribution {
+	/// P(X ≤ x) for this F distribution.
+	public func cdf(_ x: Double) -> Double {
+		totalizedResult { try fCDF(f: x, df1: df1, df2: df2) }
+	}
+
+	/// The value at which the CDF equals `p`.
+	public func quantile(_ p: Double) -> Double {
+		totalizedResult { try fQuantile(p: p, df1: df1, df2: df2) }
+	}
+
+	// Keeps its own `next(using:)`: a ratio of two chi-squared variates.
+}

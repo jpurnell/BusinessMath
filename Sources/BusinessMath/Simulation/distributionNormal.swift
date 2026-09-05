@@ -116,3 +116,24 @@ extension DistributionNormal: SeedableDistribution {
 								  Double.random(in: 0...1, using: &generator))
 	}
 }
+
+
+extension DistributionNormal: ContinuousDistribution {
+	/// P(X ≤ x) for this normal.
+	public func cdf(_ x: Double) -> Double {
+		normalCDF(x: x, mean: mean, stdDev: stdDev)
+	}
+
+	/// The value at which the CDF equals `p`.
+	public func quantile(_ p: Double) -> Double {
+		inverseNormalCDF(p: p, mean: mean, stdDev: stdDev)
+	}
+
+	// `next(using:)` is deliberately *not* inherited from the protocol. This type
+	// samples by Box–Muller, which consumes two uniforms, and adopting the
+	// inverse-transform default would change the stream for a given seed.
+	// `SeededStreamRegressionTests` fails if that ever happens.
+	//
+	// It costs nothing here: quasi-random sampling reads `quantile(_:)` directly and
+	// never consults `next(using:)`, so this distribution stays eligible.
+}

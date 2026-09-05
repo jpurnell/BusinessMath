@@ -116,4 +116,43 @@ extension DistributionGeometric: SeedableDistribution {
 }
 
 
+extension DistributionGeometric: DiscreteDistribution {
+	/// P(X = k) = (1 − p)^(k−1) · p, for k ≥ 1.
+	///
+	/// This is the *trial-count* form: the support starts at 1 and counts the trial
+	/// on which the first success occurs, matching the sampler at the top of this
+	/// file. The failure-count form used by `scipy.stats.geom` shifted by one, and by
+	/// Frontline's `PsiGeometric`, is this minus one — a binding must not assume.
+	public func pmf(_ k: Int) -> Double {
+		guard p > 0, p <= 1, k >= 1 else { return 0 }
+		if p == 1 { return k == 1 ? 1 : 0 }
+		let failures = Double(k - 1)
+		let survival = Double.pow(1 - p, failures)
+		return survival * p
+	}
 
+	/// P(X ≤ k) = 1 − (1 − p)^k.
+	public func cdf(_ k: Int) -> Double {
+		guard p > 0, p <= 1 else { return Double.nan }
+		guard k >= 1 else { return 0 }
+		if p == 1 { return 1 }
+		let survival = Double.pow(1 - p, Double(k))
+		return 1 - survival
+	}
+
+	/// The smallest `k` with `cdf(k) >= q`: ⌈ln(1 − q) / ln(1 − p)⌉.
+	public func quantile(_ q: Double) -> Int {
+		guard p > 0, p <= 1 else { return 0 }
+		if p == 1 { return 1 }
+		let complement = 1 - q
+		guard complement > 0 else { return Int.max }
+
+		let numerator = Double.log(complement)
+		let denominator = Double.log(1 - p)
+		guard denominator < 0 else { return 1 }
+		let raw = numerator / denominator
+		return Swift.max(1, Int(raw.rounded(.up)))
+	}
+
+	// Keeps its own `next(using:)`, which is already a one-uniform inverse transform.
+}
