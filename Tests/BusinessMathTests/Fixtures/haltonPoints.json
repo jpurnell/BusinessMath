@@ -1,0 +1,2119 @@
+{
+  "cases": [
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 0.0,
+      "value": 0.5
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 1.0,
+      "value": 0.25
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 2.0,
+      "value": 0.75
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 3.0,
+      "value": 0.125
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 4.0,
+      "value": 0.625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 5.0,
+      "value": 0.375
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 6.0,
+      "value": 0.875
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 7.0,
+      "value": 0.0625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 8.0,
+      "value": 0.5625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 9.0,
+      "value": 0.3125
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 10.0,
+      "value": 0.8125
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 11.0,
+      "value": 0.1875
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 12.0,
+      "value": 0.6875
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 13.0,
+      "value": 0.4375
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 14.0,
+      "value": 0.9375
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 15.0,
+      "value": 0.03125
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 16.0,
+      "value": 0.53125
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 17.0,
+      "value": 0.28125
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 18.0,
+      "value": 0.78125
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 19.0,
+      "value": 0.15625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 20.0,
+      "value": 0.65625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 21.0,
+      "value": 0.40625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 22.0,
+      "value": 0.90625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 23.0,
+      "value": 0.09375
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 24.0,
+      "value": 0.59375
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 25.0,
+      "value": 0.34375
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 26.0,
+      "value": 0.84375
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 27.0,
+      "value": 0.21875
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 28.0,
+      "value": 0.71875
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 29.0,
+      "value": 0.46875
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 30.0,
+      "value": 0.96875
+    },
+    {
+      "axis": 0.0,
+      "dimension": 1.0,
+      "index": 31.0,
+      "value": 0.015625
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 0.0,
+      "value": 0.5
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 0.0,
+      "value": 0.3333333333333333
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 1.0,
+      "value": 0.25
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 1.0,
+      "value": 0.6666666666666666
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 2.0,
+      "value": 0.75
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 2.0,
+      "value": 0.1111111111111111
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 3.0,
+      "value": 0.125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 3.0,
+      "value": 0.4444444444444444
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 4.0,
+      "value": 0.625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 4.0,
+      "value": 0.7777777777777777
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 5.0,
+      "value": 0.375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 5.0,
+      "value": 0.2222222222222222
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 6.0,
+      "value": 0.875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 6.0,
+      "value": 0.5555555555555556
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 7.0,
+      "value": 0.0625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 7.0,
+      "value": 0.8888888888888888
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 8.0,
+      "value": 0.5625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 8.0,
+      "value": 0.037037037037037035
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 9.0,
+      "value": 0.3125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 9.0,
+      "value": 0.37037037037037035
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 10.0,
+      "value": 0.8125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 10.0,
+      "value": 0.7037037037037037
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 11.0,
+      "value": 0.1875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 11.0,
+      "value": 0.14814814814814814
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 12.0,
+      "value": 0.6875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 12.0,
+      "value": 0.48148148148148145
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 13.0,
+      "value": 0.4375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 13.0,
+      "value": 0.8148148148148147
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 14.0,
+      "value": 0.9375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 14.0,
+      "value": 0.25925925925925924
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 15.0,
+      "value": 0.03125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 15.0,
+      "value": 0.5925925925925926
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 16.0,
+      "value": 0.53125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 16.0,
+      "value": 0.9259259259259258
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 17.0,
+      "value": 0.28125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 17.0,
+      "value": 0.07407407407407407
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 18.0,
+      "value": 0.78125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 18.0,
+      "value": 0.4074074074074074
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 19.0,
+      "value": 0.15625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 19.0,
+      "value": 0.7407407407407407
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 20.0,
+      "value": 0.65625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 20.0,
+      "value": 0.18518518518518517
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 21.0,
+      "value": 0.40625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 21.0,
+      "value": 0.5185185185185185
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 22.0,
+      "value": 0.90625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 22.0,
+      "value": 0.8518518518518517
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 23.0,
+      "value": 0.09375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 23.0,
+      "value": 0.2962962962962963
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 24.0,
+      "value": 0.59375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 24.0,
+      "value": 0.6296296296296297
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 25.0,
+      "value": 0.34375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 25.0,
+      "value": 0.9629629629629629
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 26.0,
+      "value": 0.84375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 26.0,
+      "value": 0.012345679012345678
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 27.0,
+      "value": 0.21875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 27.0,
+      "value": 0.345679012345679
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 28.0,
+      "value": 0.71875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 28.0,
+      "value": 0.6790123456790123
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 29.0,
+      "value": 0.46875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 29.0,
+      "value": 0.12345679012345678
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 30.0,
+      "value": 0.96875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 30.0,
+      "value": 0.4567901234567901
+    },
+    {
+      "axis": 0.0,
+      "dimension": 2.0,
+      "index": 31.0,
+      "value": 0.015625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 2.0,
+      "index": 31.0,
+      "value": 0.7901234567901234
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 0.0,
+      "value": 0.5
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 0.0,
+      "value": 0.3333333333333333
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 0.0,
+      "value": 0.2
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 1.0,
+      "value": 0.25
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 1.0,
+      "value": 0.6666666666666666
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 1.0,
+      "value": 0.4
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 2.0,
+      "value": 0.75
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 2.0,
+      "value": 0.1111111111111111
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 2.0,
+      "value": 0.6000000000000001
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 3.0,
+      "value": 0.125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 3.0,
+      "value": 0.4444444444444444
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 3.0,
+      "value": 0.8
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 4.0,
+      "value": 0.625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 4.0,
+      "value": 0.7777777777777777
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 4.0,
+      "value": 0.04
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 5.0,
+      "value": 0.375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 5.0,
+      "value": 0.2222222222222222
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 5.0,
+      "value": 0.24000000000000002
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 6.0,
+      "value": 0.875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 6.0,
+      "value": 0.5555555555555556
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 6.0,
+      "value": 0.44
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 7.0,
+      "value": 0.0625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 7.0,
+      "value": 0.8888888888888888
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 7.0,
+      "value": 0.6400000000000001
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 8.0,
+      "value": 0.5625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 8.0,
+      "value": 0.037037037037037035
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 8.0,
+      "value": 0.8400000000000001
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 9.0,
+      "value": 0.3125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 9.0,
+      "value": 0.37037037037037035
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 9.0,
+      "value": 0.08
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 10.0,
+      "value": 0.8125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 10.0,
+      "value": 0.7037037037037037
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 10.0,
+      "value": 0.28
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 11.0,
+      "value": 0.1875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 11.0,
+      "value": 0.14814814814814814
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 11.0,
+      "value": 0.48000000000000004
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 12.0,
+      "value": 0.6875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 12.0,
+      "value": 0.48148148148148145
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 12.0,
+      "value": 0.68
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 13.0,
+      "value": 0.4375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 13.0,
+      "value": 0.8148148148148147
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 13.0,
+      "value": 0.88
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 14.0,
+      "value": 0.9375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 14.0,
+      "value": 0.25925925925925924
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 14.0,
+      "value": 0.12
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 15.0,
+      "value": 0.03125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 15.0,
+      "value": 0.5925925925925926
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 15.0,
+      "value": 0.32
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 16.0,
+      "value": 0.53125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 16.0,
+      "value": 0.9259259259259258
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 16.0,
+      "value": 0.52
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 17.0,
+      "value": 0.28125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 17.0,
+      "value": 0.07407407407407407
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 17.0,
+      "value": 0.7200000000000001
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 18.0,
+      "value": 0.78125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 18.0,
+      "value": 0.4074074074074074
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 18.0,
+      "value": 0.92
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 19.0,
+      "value": 0.15625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 19.0,
+      "value": 0.7407407407407407
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 19.0,
+      "value": 0.16
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 20.0,
+      "value": 0.65625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 20.0,
+      "value": 0.18518518518518517
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 20.0,
+      "value": 0.36
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 21.0,
+      "value": 0.40625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 21.0,
+      "value": 0.5185185185185185
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 21.0,
+      "value": 0.56
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 22.0,
+      "value": 0.90625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 22.0,
+      "value": 0.8518518518518517
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 22.0,
+      "value": 0.7600000000000001
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 23.0,
+      "value": 0.09375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 23.0,
+      "value": 0.2962962962962963
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 23.0,
+      "value": 0.9600000000000001
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 24.0,
+      "value": 0.59375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 24.0,
+      "value": 0.6296296296296297
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 24.0,
+      "value": 0.008
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 25.0,
+      "value": 0.34375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 25.0,
+      "value": 0.9629629629629629
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 25.0,
+      "value": 0.20800000000000002
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 26.0,
+      "value": 0.84375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 26.0,
+      "value": 0.012345679012345678
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 26.0,
+      "value": 0.40800000000000003
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 27.0,
+      "value": 0.21875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 27.0,
+      "value": 0.345679012345679
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 27.0,
+      "value": 0.6080000000000001
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 28.0,
+      "value": 0.71875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 28.0,
+      "value": 0.6790123456790123
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 28.0,
+      "value": 0.808
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 29.0,
+      "value": 0.46875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 29.0,
+      "value": 0.12345679012345678
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 29.0,
+      "value": 0.048
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 30.0,
+      "value": 0.96875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 30.0,
+      "value": 0.4567901234567901
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 30.0,
+      "value": 0.24800000000000003
+    },
+    {
+      "axis": 0.0,
+      "dimension": 3.0,
+      "index": 31.0,
+      "value": 0.015625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 3.0,
+      "index": 31.0,
+      "value": 0.7901234567901234
+    },
+    {
+      "axis": 2.0,
+      "dimension": 3.0,
+      "index": 31.0,
+      "value": 0.448
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 0.0,
+      "value": 0.5
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 0.0,
+      "value": 0.3333333333333333
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 0.0,
+      "value": 0.2
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 0.0,
+      "value": 0.14285714285714285
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 0.0,
+      "value": 0.09090909090909091
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 1.0,
+      "value": 0.25
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 1.0,
+      "value": 0.6666666666666666
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 1.0,
+      "value": 0.4
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 1.0,
+      "value": 0.2857142857142857
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 1.0,
+      "value": 0.18181818181818182
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 2.0,
+      "value": 0.75
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 2.0,
+      "value": 0.1111111111111111
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 2.0,
+      "value": 0.6000000000000001
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 2.0,
+      "value": 0.42857142857142855
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 2.0,
+      "value": 0.2727272727272727
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 3.0,
+      "value": 0.125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 3.0,
+      "value": 0.4444444444444444
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 3.0,
+      "value": 0.8
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 3.0,
+      "value": 0.5714285714285714
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 3.0,
+      "value": 0.36363636363636365
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 4.0,
+      "value": 0.625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 4.0,
+      "value": 0.7777777777777777
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 4.0,
+      "value": 0.04
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 4.0,
+      "value": 0.7142857142857142
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 4.0,
+      "value": 0.4545454545454546
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 5.0,
+      "value": 0.375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 5.0,
+      "value": 0.2222222222222222
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 5.0,
+      "value": 0.24000000000000002
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 5.0,
+      "value": 0.8571428571428571
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 5.0,
+      "value": 0.5454545454545454
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 6.0,
+      "value": 0.875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 6.0,
+      "value": 0.5555555555555556
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 6.0,
+      "value": 0.44
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 6.0,
+      "value": 0.02040816326530612
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 6.0,
+      "value": 0.6363636363636364
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 7.0,
+      "value": 0.0625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 7.0,
+      "value": 0.8888888888888888
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 7.0,
+      "value": 0.6400000000000001
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 7.0,
+      "value": 0.16326530612244897
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 7.0,
+      "value": 0.7272727272727273
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 8.0,
+      "value": 0.5625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 8.0,
+      "value": 0.037037037037037035
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 8.0,
+      "value": 0.8400000000000001
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 8.0,
+      "value": 0.30612244897959184
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 8.0,
+      "value": 0.8181818181818182
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 9.0,
+      "value": 0.3125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 9.0,
+      "value": 0.37037037037037035
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 9.0,
+      "value": 0.08
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 9.0,
+      "value": 0.4489795918367347
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 9.0,
+      "value": 0.9090909090909092
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 10.0,
+      "value": 0.8125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 10.0,
+      "value": 0.7037037037037037
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 10.0,
+      "value": 0.28
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 10.0,
+      "value": 0.5918367346938775
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 10.0,
+      "value": 0.008264462809917356
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 11.0,
+      "value": 0.1875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 11.0,
+      "value": 0.14814814814814814
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 11.0,
+      "value": 0.48000000000000004
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 11.0,
+      "value": 0.7346938775510203
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 11.0,
+      "value": 0.09917355371900827
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 12.0,
+      "value": 0.6875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 12.0,
+      "value": 0.48148148148148145
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 12.0,
+      "value": 0.68
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 12.0,
+      "value": 0.8775510204081632
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 12.0,
+      "value": 0.19008264462809918
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 13.0,
+      "value": 0.4375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 13.0,
+      "value": 0.8148148148148147
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 13.0,
+      "value": 0.88
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 13.0,
+      "value": 0.04081632653061224
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 13.0,
+      "value": 0.28099173553719003
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 14.0,
+      "value": 0.9375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 14.0,
+      "value": 0.25925925925925924
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 14.0,
+      "value": 0.12
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 14.0,
+      "value": 0.18367346938775508
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 14.0,
+      "value": 0.371900826446281
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 15.0,
+      "value": 0.03125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 15.0,
+      "value": 0.5925925925925926
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 15.0,
+      "value": 0.32
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 15.0,
+      "value": 0.32653061224489793
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 15.0,
+      "value": 0.4628099173553719
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 16.0,
+      "value": 0.53125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 16.0,
+      "value": 0.9259259259259258
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 16.0,
+      "value": 0.52
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 16.0,
+      "value": 0.4693877551020408
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 16.0,
+      "value": 0.5537190082644627
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 17.0,
+      "value": 0.28125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 17.0,
+      "value": 0.07407407407407407
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 17.0,
+      "value": 0.7200000000000001
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 17.0,
+      "value": 0.6122448979591837
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 17.0,
+      "value": 0.6446280991735537
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 18.0,
+      "value": 0.78125
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 18.0,
+      "value": 0.4074074074074074
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 18.0,
+      "value": 0.92
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 18.0,
+      "value": 0.7551020408163265
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 18.0,
+      "value": 0.7355371900826446
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 19.0,
+      "value": 0.15625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 19.0,
+      "value": 0.7407407407407407
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 19.0,
+      "value": 0.16
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 19.0,
+      "value": 0.8979591836734694
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 19.0,
+      "value": 0.8264462809917356
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 20.0,
+      "value": 0.65625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 20.0,
+      "value": 0.18518518518518517
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 20.0,
+      "value": 0.36
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 20.0,
+      "value": 0.061224489795918366
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 20.0,
+      "value": 0.9173553719008265
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 21.0,
+      "value": 0.40625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 21.0,
+      "value": 0.5185185185185185
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 21.0,
+      "value": 0.56
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 21.0,
+      "value": 0.2040816326530612
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 21.0,
+      "value": 0.01652892561983471
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 22.0,
+      "value": 0.90625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 22.0,
+      "value": 0.8518518518518517
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 22.0,
+      "value": 0.7600000000000001
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 22.0,
+      "value": 0.3469387755102041
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 22.0,
+      "value": 0.10743801652892562
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 23.0,
+      "value": 0.09375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 23.0,
+      "value": 0.2962962962962963
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 23.0,
+      "value": 0.9600000000000001
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 23.0,
+      "value": 0.4897959183673469
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 23.0,
+      "value": 0.19834710743801653
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 24.0,
+      "value": 0.59375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 24.0,
+      "value": 0.6296296296296297
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 24.0,
+      "value": 0.008
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 24.0,
+      "value": 0.6326530612244897
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 24.0,
+      "value": 0.2892561983471074
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 25.0,
+      "value": 0.34375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 25.0,
+      "value": 0.9629629629629629
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 25.0,
+      "value": 0.20800000000000002
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 25.0,
+      "value": 0.7755102040816325
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 25.0,
+      "value": 0.38016528925619836
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 26.0,
+      "value": 0.84375
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 26.0,
+      "value": 0.012345679012345678
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 26.0,
+      "value": 0.40800000000000003
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 26.0,
+      "value": 0.9183673469387754
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 26.0,
+      "value": 0.4710743801652893
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 27.0,
+      "value": 0.21875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 27.0,
+      "value": 0.345679012345679
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 27.0,
+      "value": 0.6080000000000001
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 27.0,
+      "value": 0.08163265306122448
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 27.0,
+      "value": 0.5619834710743801
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 28.0,
+      "value": 0.71875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 28.0,
+      "value": 0.6790123456790123
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 28.0,
+      "value": 0.808
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 28.0,
+      "value": 0.22448979591836732
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 28.0,
+      "value": 0.6528925619834711
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 29.0,
+      "value": 0.46875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 29.0,
+      "value": 0.12345679012345678
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 29.0,
+      "value": 0.048
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 29.0,
+      "value": 0.36734693877551017
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 29.0,
+      "value": 0.743801652892562
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 30.0,
+      "value": 0.96875
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 30.0,
+      "value": 0.4567901234567901
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 30.0,
+      "value": 0.24800000000000003
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 30.0,
+      "value": 0.5102040816326531
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 30.0,
+      "value": 0.834710743801653
+    },
+    {
+      "axis": 0.0,
+      "dimension": 5.0,
+      "index": 31.0,
+      "value": 0.015625
+    },
+    {
+      "axis": 1.0,
+      "dimension": 5.0,
+      "index": 31.0,
+      "value": 0.7901234567901234
+    },
+    {
+      "axis": 2.0,
+      "dimension": 5.0,
+      "index": 31.0,
+      "value": 0.448
+    },
+    {
+      "axis": 3.0,
+      "dimension": 5.0,
+      "index": 31.0,
+      "value": 0.6530612244897959
+    },
+    {
+      "axis": 4.0,
+      "dimension": 5.0,
+      "index": 31.0,
+      "value": 0.9256198347107438
+    }
+  ],
+  "name": "haltonPoints",
+  "note": "Radical inverse in the first d primes. Origin dropped; our sequence starts at index 1, so no offset is needed.",
+  "reference": "scipy.stats.qmc.Halton(d, scramble=False).random(n+1)[1:]"
+}

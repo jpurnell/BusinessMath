@@ -69,6 +69,19 @@ public enum SimulationError: Error, Sendable {
 	///   - inputName: The name of the offending input, or a configuration label
 	///   - details: Why the seed cannot be honored
 	case seedingUnsupported(inputName: String, details: String)
+
+	/// An input cannot supply a quantile, so a quasi-random run is impossible.
+	///
+	/// Latin hypercube, Sobol and Halton hand each input one coordinate of a jointly
+	/// chosen point, which only an inverse transform can turn into a draw. An input
+	/// whose distribution does not conform to ``ContinuousDistribution`` or
+	/// ``DiscreteDistribution`` — or which was built from a bare closure — has no
+	/// quantile to evaluate.
+	///
+	/// The run throws rather than reverting to ``SamplingMethod/pseudoRandom``.
+	/// Reverting would produce numbers that are individually plausible and are not the
+	/// sampling scheme that was asked for, and nothing downstream could tell.
+	case quasiRandomUnsupported(inputName: String, details: String)
 }
 
 extension SimulationError: LocalizedError {
@@ -87,6 +100,8 @@ extension SimulationError: LocalizedError {
 			return "Correlation matrix is not valid (must be symmetric, positive semi-definite, with unit diagonal)"
 		case .seedingUnsupported(let inputName, let details):
 			return "Seeded run cannot honor the seed for '\(inputName)': \(details)"
+		case .quasiRandomUnsupported(let inputName, let details):
+			return "Input '\(inputName)' cannot be sampled quasi-randomly: \(details)"
 		}
 	}
 }

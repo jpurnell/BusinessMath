@@ -191,6 +191,42 @@ public struct MonteCarloSimulation: Sendable {
 	/// seeded generator, so the induced correlation is reproduced along with the values.
 	public var seed: UInt64?
 
+	/// How sample points are placed. Defaults to ``SamplingMethod/pseudoRandom``.
+	///
+	/// Pseudo-random draws clump, and the clumping is what holds Monte Carlo error at
+	/// `1/√n`. A stratified or low-discrepancy method removes it by construction and
+	/// can converge substantially faster for the same iteration count.
+	///
+	/// ## What a quasi-random run requires
+	///
+	/// Every input must be able to state a quantile — that is, its distribution must
+	/// conform to ``ContinuousDistribution`` or ``DiscreteDistribution``. A point set
+	/// hands each input one coordinate of a jointly chosen point, and only an inverse
+	/// transform turns a chosen coordinate into a draw; a sampler can only be asked for
+	/// its next value.
+	///
+	/// A run that cannot honour the request throws
+	/// ``SimulationError/quasiRandomUnsupported(inputName:details:)`` naming the input.
+	/// It never reverts to pseudo-random, because the numbers would look right and be
+	/// the wrong scheme.
+	///
+	/// ``SamplingMethod/latinHypercube`` and the scrambled sequences also require
+	/// ``seed``, and throw ``SimulationError/seedingUnsupported(inputName:details:)``
+	/// without one.
+	///
+	/// Quasi-random runs execute on the CPU. The GPU kernels generate their own
+	/// randomness on-device and have no way to consume a host-supplied point set; the
+	/// reason is recorded in ``SimulationResults/executionNotes``.
+	public var samplingMethod: SamplingMethod = .pseudoRandom
+
+	/// How often the asynchronous quasi-random loop yields and checks for cancellation.
+	///
+	/// Yielding on every iteration would dominate the run; never yielding would let a
+	/// long simulation monopolise a cooperative thread. Matching the existing async
+	/// path, this is a batch size rather than a tuned constant — any value in the low
+	/// thousands trades the same way.
+	private static let cooperativeYieldInterval = 1_000
+
 	#if canImport(Metal)
 	/// GPU device manager for Metal acceleration
 	private let gpuDevice: MonteCarloGPUDevice?
@@ -487,6 +523,20 @@ public struct MonteCarloSimulation: Sendable {
 
 		var executionNotes: [String] = []
 
+		if samplingMethod.isQuasiRandom {
+			let plan = try resolveQuantilePlan()
+			let grid = try quasiRandomPoints(count: iterations)
+			executionNotes.append("Sampled with \(samplingMethod); GPU not used because quasi-random points are generated on the host.")
+
+			var outcomes: [Double] = []
+			outcomes.reserveCapacity(iterations)
+			for (iteration, point) in grid.enumerated() {
+				let sampledValues = zip(plan, point).map { $0($1) }
+				outcomes.append(try validatedOutcome(from: sampledValues, iteration: iteration))
+			}
+			return SimulationResults(values: outcomes, usedGPU: false, executionNotes: executionNotes)
+		}
+
 		#if canImport(Metal)
 		if let gpuResults = attemptGPUExecution(notes: &executionNotes) {
 			return gpuResults
@@ -553,6 +603,27 @@ public struct MonteCarloSimulation: Sendable {
 
 		var executionNotes: [String] = []
 
+		if samplingMethod.isQuasiRandom {
+			let plan = try resolveQuantilePlan()
+			let grid = try quasiRandomPoints(count: iterations)
+			executionNotes.append("Sampled with \(samplingMethod); GPU not used because quasi-random points are generated on the host.")
+
+			var outcomes: [Double] = []
+			outcomes.reserveCapacity(iterations)
+			for (iteration, point) in grid.enumerated() {
+				// The synchronous path is a tight loop; this one yields so a long run
+				// cannot monopolise the cooperative pool, and honours cancellation.
+				if iteration % Self.cooperativeYieldInterval == 0 {
+					try Task.checkCancellation()
+					await Task.yield()
+				}
+				let sampledValues = zip(plan, point).map { $0($1) }
+				outcomes.append(try validatedOutcome(from: sampledValues, iteration: iteration))
+			}
+			return SimulationResults(values: outcomes, usedGPU: false, executionNotes: executionNotes)
+		}
+
+
 		#if canImport(Metal)
 		if let gpuResults = try await attemptGPUExecutionAsync(notes: &executionNotes) {
 			return gpuResults
@@ -601,6 +672,49 @@ public struct MonteCarloSimulation: Sendable {
 			)
 		}
 		return outcome
+	}
+
+	/// The per-input quantile functions a quasi-random run evaluates.
+	///
+	/// Throws on the *first* input that cannot supply one, naming it. The alternative —
+	/// dropping back to pseudo-random for that input, or for the whole run — would
+	/// produce a result nothing downstream could distinguish from the one that was
+	/// asked for.
+	private func resolveQuantilePlan() throws -> [@Sendable (Double) -> Double] {
+		try inputs.map { input in
+			guard let quantile = input.quantile else {
+				throw SimulationError.quasiRandomUnsupported(
+					inputName: input.name,
+					details: "its distribution does not conform to ContinuousDistribution or DiscreteDistribution, so it has no quantile to evaluate at a chosen point")
+			}
+			return quantile
+		}
+	}
+
+	/// The point set for this run's ``samplingMethod``.
+	///
+	/// One point per iteration, one coordinate per input.
+	private func quasiRandomPoints(count: Int) throws -> [[Double]] {
+		if samplingMethod.requiresSeed, seed == nil {
+			throw SimulationError.seedingUnsupported(
+				inputName: "\(samplingMethod)",
+				details: "this sampling method randomises its point set, so without a seed the run is reproducible in its coverage but not in its values — which reads as reproducible and is not")
+		}
+
+		let pointSet: any QuasiRandomPointSet
+		switch samplingMethod {
+		case .pseudoRandom:
+			return []
+		case .latinHypercube:
+			pointSet = LatinHypercubeSampler(dimension: inputs.count, seed: seed ?? 0)
+		case .sobol(let scrambled):
+			pointSet = try SobolSequence(dimension: inputs.count,
+										 scrambleSeed: scrambled ? seed : nil)
+		case .halton(let scrambled):
+			pointSet = try HaltonSequence(dimension: inputs.count,
+										  scrambleSeed: scrambled ? seed : nil)
+		}
+		return pointSet.points(count: count)
 	}
 
 	/// Resolves every input's seeded sampler, throwing when any input cannot honor the seed.
