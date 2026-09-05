@@ -30,6 +30,10 @@ import Numerics
 
 public func exponentialCDF<T: Real>(_ x: T, λ: T) -> T {
 	guard x >= 0 else { return 0 }
-	return T(1) - T.exp(T(-1) * λ * x)
+	// `1 - exp(-λx)` loses every significant digit for small λx, where the
+	// exponential is within an ulp of 1: at λx = 4e-9 the naive form is wrong in the
+	// 9th digit of the answer. `expMinusOne` computes the difference directly.
+	let exponent: T = T(-1) * λ * x
+	return T(-1) * T.expMinusOne(exponent)
 }
 

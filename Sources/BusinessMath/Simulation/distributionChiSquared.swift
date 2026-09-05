@@ -235,3 +235,29 @@ extension DistributionChiSquared: SeedableDistribution {
 		return sumOfSquares
 	}
 }
+
+extension DistributionChiSquared: ContinuousDistribution {
+	/// P(X ≤ x) = P(ν/2, x/2).
+	///
+	/// Calls ``regularizedLowerIncompleteGamma(a:x:)`` directly rather than
+	/// ``chiSquaredCDF(x:df:)``. The two compute the same thing, but the latter throws
+	/// on a non-positive `df` and this method cannot propagate that — so the shorter
+	/// route has no error to discard in the first place.
+	public func cdf(_ x: Double) -> Double {
+		guard degreesOfFreedom > 0 else { return Double.nan }
+		guard x >= 0 else { return 0 }
+		let shape = Double(degreesOfFreedom) / 2
+		return regularizedLowerIncompleteGamma(a: shape, x: x / 2)
+	}
+
+	/// The value at which the CDF equals `p`: 2·P⁻¹(p, ν/2).
+	public func quantile(_ p: Double) -> Double {
+		let shape = Double(degreesOfFreedom) / 2
+		let unitScale = totalizedResult {
+			try inverseRegularizedLowerIncompleteGamma(p: p, a: shape)
+		}
+		return 2 * unitScale
+	}
+
+	// Keeps its own `next(using:)`: a sum of ν squared normals, so 2ν uniforms.
+}

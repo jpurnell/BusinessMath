@@ -22,30 +22,34 @@ import Numerics
 ///
 /// ## Method
 ///
-/// A closed-form initial estimate followed by **Newton's method**, each step
-/// safeguarded by a bracket that bisection tightens whenever a Newton step would
-/// leave `(0, 1)` or leave the bracket. The estimate is the Abramowitz & Stegun
-/// 26.5.22 normal approximation for shapes above 1, and a power-law guess from the
-/// density's endpoint behaviour otherwise.
+/// Newton's method inside a bracket, with bisection whenever a Newton step would leave
+/// it.
 ///
-/// The bracket is not optional. I is flat to many digits near 0 and 1 for skewed
-/// shape pairs — `I⁻¹(1e-10, 2, 50)` and `I⁻¹(1 − 1e-10, 50, 2)` are both in regions
-/// where an unguarded Newton step overshoots the unit interval on the first move.
+/// **Every quantity here is derived.** The textbook opening — Abramowitz & Stegun
+/// 26.5.22, a normal approximation in a transformed variable — needs a rational fit to
+/// the normal quantile and a handful of fitted constants besides. None of them can be
+/// derived; they are curve-fit output.
+///
+/// None of them is needed either. The support of a Beta variate is `[0, 1]` by
+/// definition, so the bracket requires no search whatsoever, and the iteration starts
+/// at the distribution's own **mean, `a/(a+b)`** — which follows from the definition in
+/// one line. What the fitted estimate buys is a few iterations, and what it costs is
+/// several numbers a reader has to take on trust.
 ///
 /// ## Accuracy
 ///
-/// Agrees with `scipy.special.betaincinv` to better than 1e-9 relative across the
-/// shape pairs and probabilities in `SpecialFunctionsTests`, tails included. Held to
-/// a relative tolerance as a root-found quantity, per §15.1 of the
-/// distribution-contract proposal.
+/// Agrees with `scipy.special.betaincinv` to better than 1e-9 relative across the shape
+/// pairs and probabilities in `SpecialFunctionsTests`, tails included. Held to a
+/// relative tolerance as a root-found quantity, per §15.1 of the distribution-contract
+/// proposal.
 ///
 /// - Parameters:
 ///   - p: The probability, in the open interval (0, 1).
 ///   - a: First shape parameter. Must be positive.
 ///   - b: Second shape parameter. Must be positive.
 /// - Returns: The `x` in [0, 1] for which `I_x(a, b) == p`.
-/// - Throws: `BusinessMathError.invalidInput` if `p` is outside (0, 1) or either
-///   shape is not positive.
+/// - Throws: `BusinessMathError.invalidInput` if `p` is outside (0, 1) or either shape
+///   is not positive.
 ///
 /// ## See Also
 /// - ``regularizedIncompleteBeta(x:a:b:)``
@@ -67,66 +71,64 @@ public func inverseRegularizedIncompleteBeta<T: Real>(p: T, a: T, b: T) throws -
 	}
 
 	// Above the median, solve the mirrored problem. I is symmetric under
-	// `I_x(a, b) = 1 − I_{1−x}(b, a)`, so inverting the small tail and reflecting
-	// gives the same root while keeping the residual away from the cancellation that
-	// destroys `I_x(a, b) − p` when both are within 1e-10 of 1. The recursion is one
-	// level deep by construction: the mirrored probability is below the median, so
-	// this guard cannot be taken twice.
-	if p > decimal(5, over: 10) {
+	// `I_x(a, b) = 1 − I_{1−x}(b, a)`, so inverting the small tail and reflecting gives
+	// the same root while keeping the residual away from the cancellation that destroys
+	// `I_x(a, b) − p` when both are within 1e-10 of 1. The recursion is one level deep
+	// by construction: the mirrored probability is below the median, so this guard
+	// cannot be taken twice.
+	let median: T = T(1) / T(2)
+	if p > median {
 		let complementProbability: T = T(1) - p
 		let mirrored: T = try inverseRegularizedIncompleteBeta(p: complementProbability,
 															   a: b, b: a)
 		return T(1) - mirrored
 	}
 
+	// The support is [0, 1], so the bracket is the support and needs no search. The
+	// iteration starts at the distribution's mean.
 	var low: T = T.zero
 	var high: T = T(1)
-	var x: T = initialBetaQuantileEstimate(p: p, a: a, b: b)
+	var x: T = a / (a + b)
 
-	let epsilon = T(sign: .plus, exponent: -50, significand: T(1))
+	// Convergence is measured in ulps of the running estimate, so the same code is
+	// right for Float and for Double. The factor of four is the slack a safeguarded
+	// iteration needs: the residual, the density and the division each cost up to half
+	// an ulp, so demanding a step below one ulp would loop until the cap without ever
+	// improving the answer.
+	let relativeTolerance: T = T.ulpOfOne * T(4)
 	let logBeta: T = betaLogNormalization(a: a, b: b)
 	let aMinusOne: T = a - T(1)
 	let bMinusOne: T = b - T(1)
+	let iterationLimit = bisectionStepsToFullPrecision(of: T.self)
 
-	for _ in 0..<200 {
-		if x <= low || x >= high {
-			let span: T = high - low
-			let half: T = span / T(2)
-			x = low + half
-		}
-
+	for _ in 0..<iterationLimit {
 		let value: T = try regularizedIncompleteBeta(x: x, a: a, b: b)
 		let error: T = value - p
 		if error > T.zero { high = x } else { low = x }
 
-		// The Beta density: x^(a-1) (1-x)^(b-1) / B(a, b), in log space so that a
-		// shape of 50 against an x of 1e-8 does not underflow before the division.
+		// The Beta density: x^(a−1)(1−x)^(b−1) / B(a, b), in log space so that a shape
+		// of 50 against an x of 1e-8 does not underflow before the division.
 		let complement: T = T(1) - x
 		let logLeft: T = aMinusOne * T.log(x)
 		let logRight: T = bMinusOne * T.log(complement)
 		let logDensity: T = logLeft + logRight - logBeta
 		let density: T = T.exp(logDensity)
 
-		guard density > T.zero, density.isFinite else {
-			let span: T = high - low
-			let half: T = span / T(2)
-			x = low + half
-			if span < epsilon { break }
-			continue
+		var step: T = T.nan
+		if density > T.zero, density.isFinite {
+			step = error / density
 		}
 
-		let step: T = error / density
 		let candidate: T = x - step
 		let insideBracket = candidate > low && candidate < high
-		let tolerance: T = epsilon * Swift.max(x, epsilon)
+		let tolerance: T = relativeTolerance * Swift.max(x, T.ulpOfOne)
 
 		// Convergence before bisection — see the note in
 		// ``inverseRegularizedLowerIncompleteGamma(p:a:)``. An exact hit makes
-		// `candidate == x == low`, which the strict comparison rejects; bisecting
-		// first would throw the answer away on the one iteration that found it.
-		if abs(step) < tolerance {
-			if insideBracket { x = candidate }
-			break
+		// `candidate == x == low`, which the strict comparison rejects; bisecting first
+		// would throw the answer away on the one iteration that found it.
+		if insideBracket, abs(step) < tolerance {
+			return candidate
 		}
 
 		if insideBracket {
@@ -135,6 +137,7 @@ public func inverseRegularizedIncompleteBeta<T: Real>(p: T, a: T, b: T) throws -
 			let span: T = high - low
 			let half: T = span / T(2)
 			x = low + half
+			if span < tolerance { break }
 		}
 	}
 
@@ -147,83 +150,4 @@ private func betaLogNormalization<T: Real>(a: T, b: T) -> T {
 	let logB: T = T.logGamma(b)
 	let logSum: T = T.logGamma(a + b)
 	return logA + logB - logSum
-}
-
-/// A closed-form starting point for the Newton iteration.
-///
-/// Abramowitz & Stegun 26.5.22 for shapes above 1 — a normal approximation in a
-/// transformed variable — and the endpoint power law otherwise, where the density
-/// diverges and the normal approximation is worthless. As with the gamma inverse,
-/// the estimate only has to land inside `(0, 1)`; the bracket handles the rest.
-private func initialBetaQuantileEstimate<T: Real>(p: T, a: T, b: T) -> T {
-	if a >= T(1), b >= T(1) {
-		let tail: T = p < decimal(5, over: 10) ? p : T(1) - p
-		let logTail: T = T.log(tail)
-		let t: T = T.sqrt(T(-2) * logTail)
-
-		let numerator: T = decimal(230_753, over: 100_000) + t * decimal(27_061, over: 100_000)
-		let innerDenominator: T = decimal(99_229, over: 100_000) + t * decimal(4_481, over: 100_000)
-		let denominator: T = T(1) + t * innerDenominator
-		var z: T = numerator / denominator - t
-		if p < decimal(5, over: 10) { z = -z }
-
-		// A&S 26.5.22: λ = (z² − 3)/6, then a symmetric correction in the two shapes.
-		let zSquared: T = z * z
-		let lambda: T = (zSquared - T(3)) / T(6)
-
-		let twoAMinusOne: T = T(2) * a - T(1)
-		let twoBMinusOne: T = T(2) * b - T(1)
-		let reciprocalA: T = T(1) / twoAMinusOne
-		let reciprocalB: T = T(1) / twoBMinusOne
-
-		let harmonic: T = reciprocalA + reciprocalB
-		let h: T = T(2) / harmonic
-
-		let difference: T = reciprocalA - reciprocalB
-		let lambdaTerm: T = lambda + T(5) / T(6) - T(2) / (T(3) * h)
-		let correction: T = difference * lambdaTerm
-
-		let hOffset: T = h + T(1) / T(3)
-		let zRoot: T = z * T.sqrt(hOffset)
-		let exponent: T = T(2) * (zRoot - correction)
-
-		let ratio: T = a / (a + b * T.exp(exponent))
-		return clampToUnitInterior(ratio)
-	}
-
-	// One shape below 1: the density diverges at that endpoint, so the normal
-	// approximation is worthless. Match the leading term of I instead.
-	//
-	//   near 0:  I_x(a, b) ≈ x^a / (a · B(a, b))
-	//   near 1:  1 − I_x(a, b) ≈ (1−x)^b / (b · B(a, b))
-	//
-	// Inverting whichever tail `p` sits in. Which side is chosen matters little —
-	// the bracket corrects a poor guess — but it must land inside (0, 1).
-	let logBetaTerm: T = betaLogNormalization(a: a, b: b)
-	let completeBeta: T = T.exp(logBetaTerm)
-
-	if p < decimal(5, over: 10) {
-		let scaled: T = p * a
-		let target: T = scaled * completeBeta
-		let reciprocalShape: T = T(1) / a
-		return clampToUnitInterior(T.pow(target, reciprocalShape))
-	}
-
-	let complementProbability: T = T(1) - p
-	let scaled: T = complementProbability * b
-	let target: T = scaled * completeBeta
-	let reciprocalShape: T = T(1) / b
-	let fromTop: T = T.pow(target, reciprocalShape)
-	return clampToUnitInterior(T(1) - fromTop)
-}
-
-
-/// Keeps an estimate strictly inside `(0, 1)`, where the density is defined.
-private func clampToUnitInterior<T: Real>(_ x: T) -> T {
-	let floor = T(sign: .plus, exponent: -40, significand: T(1))
-	let ceiling: T = T(1) - floor
-	if !x.isFinite || x.isNaN { return decimal(5, over: 10) }
-	if x < floor { return floor }
-	if x > ceiling { return ceiling }
-	return x
 }

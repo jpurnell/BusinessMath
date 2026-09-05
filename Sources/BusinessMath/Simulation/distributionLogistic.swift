@@ -8,6 +8,18 @@
 import Foundation
 import Numerics
 
+/// √3⁄π — the factor relating a logistic distribution's standard deviation to its
+/// scale parameter *s*.
+///
+/// A logistic variate has variance `s²π²/3`, so `s = σ√3/π`. This is not a tuning
+/// constant and not an approximation: it is that identity solved for *s*, and it is
+/// named because it appeared twice in this file — once in the sampler as
+/// `magicNumber`, once in the CDF — and two copies are two chances to disagree about
+/// what `stdDev` means.
+internal func logisticScaleFactor<T: Real>() -> T {
+	T.sqrt(3) / T.pi
+}
+
 /// Generates a logistic distribution value based on the specified mean and standard deviation.
 ///
 /// The logistic distribution is useful for modeling growth and logistic regression. It's similar to the normal distribution but has heavier tails.
@@ -40,8 +52,9 @@ public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: 
 	} else {
 		p = distributionUniform()
 	}
-	let magicNumber = T.sqrt(3) / T.pi
-	return mean + magicNumber * stdDev * T.log(p / (1 - p))
+	let scaleFactor: T = logisticScaleFactor()
+	let odds: T = p / (1 - p)
+	return mean + scaleFactor * stdDev * T.log(odds)
 }
 
 /// A logistic distribution generator for producing random values.
@@ -94,5 +107,38 @@ extension DistributionLogistic: SeedableDistribution {
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
 		return distributionLogistic(mean, stdDev,
 									seed: Double.random(in: 0...1, using: &generator))
+	}
+}
+
+
+extension DistributionLogistic: ContinuousDistribution {
+	/// The logistic scale parameter *s*, derived from the standard deviation.
+	///
+	/// A logistic distribution has variance `s²π²/3`, so `s = σ√3/π`. This type is
+	/// parameterised by σ, and the sampler at the top of this file uses the same
+	/// factor — it calls it `magicNumber`.
+	private var logisticScale: Double {
+		let factor: Double = logisticScaleFactor()
+		return factor * stdDev
+	}
+
+	/// P(X ≤ x) = 1 / (1 + exp(−(x − μ)/s)).
+	public func cdf(_ x: Double) -> Double {
+		let scale = logisticScale
+		guard scale > 0 else { return x < mean ? 0 : 1 }
+		let z = (x - mean) / scale
+		return 1 / (1 + Double.exp(-z))
+	}
+
+	/// The value at which the CDF equals `p`: μ + s·ln(p / (1 − p)).
+	public func quantile(_ p: Double) -> Double {
+		let scale = logisticScale
+		guard scale > 0 else { return mean }
+		let complement = 1 - p
+		guard p > 0, complement > 0 else {
+			return p <= 0 ? -Double.infinity : Double.infinity
+		}
+		let odds = p / complement
+		return mean + scale * Double.log(odds)
 	}
 }

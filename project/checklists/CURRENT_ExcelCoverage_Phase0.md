@@ -71,13 +71,13 @@ and the Johnson family.
 - [x] `Double.openUnitRandom(using:)` — **open** interval; `quantile(0)` is −∞ for most of these
 - [x] Regression test pinning existing seeded streams of `DistributionNormal` and `DistributionGamma` (§10.4) — **write this before any retrofit lands**
 
-### 3. Retrofit the fifteen (§3.4a audit)
+### 3. Retrofit the fifteen (§3.4a audit) — **done**
 
-- [ ] Already complete, declaration only: `Normal`, `T`, `F`
-- [ ] Trivial quantile: `Uniform`, `Exponential`, `LogNormal` (`exp(inverseNormalCDF(p))`)
-- [ ] Extract the inlined quantile, derive the CDF: `Triangular`, `Weibull`, `Pareto`, `Rayleigh`, `Logistic`, `Geometric`
-- [ ] Root-found quantile on the new inverses: `Beta`, `ChiSquared`, `Gamma`
-- [ ] `gammaCDF` / `erlangCDF` from the promoted incomplete gamma
+- [x] Already complete, declaration only: `Normal`, `T`, `F`
+- [x] Trivial quantile: `Uniform`, `Exponential`, `LogNormal` (`exp(inverseNormalCDF(p))`)
+- [x] Extract the inlined quantile, derive the CDF: `Triangular`, `Weibull`, `Pareto`, `Rayleigh`, `Logistic`, `Geometric`
+- [x] Root-found quantile on the new inverses: `Beta`, `ChiSquared`, `Gamma`
+- [x] `gammaCDF` / `erlangCDF` from the promoted incomplete gamma
 
 ### 4. Sampling
 
@@ -107,7 +107,45 @@ and the Johnson family.
 
 ---
 
+## Standing rule: no magic numbers, and derive what can be derived
+
+Stated by the user 2026-09-04, and it changed the code rather than just its comments.
+
+- **Fitted constants that only seed a root-finder get deleted, not named.** Both
+  special-function inverses opened with a textbook initial estimate — Wilson–Hilferty
+  over a rational fit to the normal quantile, and Abramowitz & Stegun 26.5.22 — which
+  between them carried nine decimal coefficients that cannot be derived from anything.
+  They exist to start the iteration somewhere good. A bracket does that job with a
+  number the distribution supplies itself: its mean. Both are gone, all 344 SciPy
+  reference cases still pass, and the cost is a few iterations nobody measures.
+- **A test's critical value is derived too.** The KS bound is found by solving
+  Kolmogorov's series for λ; the χ² bound is `2·P⁻¹(1−α, ν/2)` through the library's
+  own gamma inverse. Both are then *checked against* the published tables in a test —
+  the table is the check on the derivation, never an input to it.
+- **Format constants come from the format.** `>> 11` is
+  `UInt64.bitWidth − (significandBitCount + 1)`; `0x1p-53` is `ulpOfOne / 2`; iteration
+  caps are the exponent range plus the significand width. The same code is then right
+  for `Float`.
+- Where a constant genuinely is the algorithm — Acklam's minimax fit inside
+  `inverseNormalCDF` — it stays, and `decimal(_:over:)` stays private beside it.
+
 ## Traps found while building (2026-09-04)
+
+- **`1 - exp(-y)` keeps no digits in the lower tail.** It cost every one of
+  Exponential, Weibull and Rayleigh their round trip at p = 1e-8; `expMinusOne` is
+  exact there. The same cancellation was already in the shipped `exponentialCDF`, now
+  fixed. Pareto needed `log(onePlus:)` on the relative offset for the same reason.
+- **Triangular cancelled twice.** `1 − (b−x)²/(W·R)` computes near-zero values as one
+  minus one when the mode sits at the lower bound; `R·L + e(2R − e)` is the same
+  quantity with no subtraction. Its quantile had the mirror problem — `b − √(…)` built
+  the answer down from `b` when it needed to build up from `a`.
+- **A single-seed χ² test fails one time in a hundred by construction.** Seed 4242 put
+  Geometric at 21.75 against a critical 20.09 and looked exactly like a broken sampler;
+  thirty seeds averaged 7.64 against a theoretical 8.0 and 2,000,000 draws gave 6.92.
+  The test now requires two failures out of nine.
+- **`try?` is not a way to satisfy a total contract.** Twenty-three of them became one
+  `totalizedResult` bridge that logs what it discards, and ChiSquared's CDF lost its
+  error path entirely by calling the non-throwing function underneath.
 
 - **Defaulting both samplers costs you associated-type inference.** With `next()` and
   `next(using:)` both supplied by the extension, `T` has little left to be inferred

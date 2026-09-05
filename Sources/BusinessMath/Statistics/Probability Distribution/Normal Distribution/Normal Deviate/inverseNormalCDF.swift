@@ -131,7 +131,21 @@ private func guardedQuotient<T: Real>(_ numerator: T, _ denominator: T, fallback
     return numerator / denominator
 }
 
-// `decimal(_:over:)` lives in SpecialFunctions/DecimalConstant.swift.
+/// Builds a decimal constant from an exact integer mantissa and a power of ten.
+///
+/// `Real` does not refine `ExpressibleByFloatLiteral` — only `BinaryFloatingPoint`
+/// does — so decimal coefficients cannot be written as literals in a function generic
+/// over `Real`. Every mantissa below is under `2^53` and every divisor is a power of
+/// ten under `10^22`, so both operands convert exactly in binary floating point and
+/// each constant costs a single correct rounding.
+///
+/// The coefficients this serves are Acklam's minimax fit, which is the *algorithm*
+/// here rather than a disposable starting guess — there is nothing to derive them
+/// from. Where a fitted constant is only seeding a bracketed root-finder, prefer
+/// deriving the start instead; see ``inverseRegularizedLowerIncompleteGamma(p:a:)``.
+private func decimal<T: Real>(_ mantissa: Int, over scale: Int) -> T {
+    return T(mantissa) / T(scale)
+}
 
 /// Acklam's (2000) two-branch rational approximation to the lower-tail quantile.
 ///

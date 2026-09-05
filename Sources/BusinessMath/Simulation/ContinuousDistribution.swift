@@ -7,6 +7,11 @@
 
 import Foundation
 import Numerics
+#if canImport(os)
+import os
+
+private let logger = Logger(subsystem: "com.businessmath", category: "ContinuousDistribution")
+#endif
 
 /// A distribution whose law is stated as a CDF and its inverse.
 ///
@@ -145,8 +150,8 @@ extension Double {
 	/// - Parameter generator: The random source.
 	/// - Returns: A uniform value strictly between 0 and 1.
 	public static func openUnitRandom<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		// The top 53 bits are the well-mixed ones in every generator we use.
-		return openUnitValue(from: generator.next() >> 11)
+		// The high bits are the well-mixed ones in every generator we use.
+		return openUnitValue(from: generator.next() >> Double.discardedRandomBits)
 	}
 
 	/// A uniform draw from the open interval (0, 1), taken from the system source.
@@ -157,7 +162,7 @@ extension Double {
 	///
 	/// - Returns: A uniform value strictly between 0 and 1.
 	public static func openUnitRandom() -> Double {
-		return openUnitValue(from: UInt64.random(in: 0...UInt64.max) >> 11) // stochastic:exempt — the documented unseeded path; pass `using:` for reproducibility
+		return openUnitValue(from: UInt64.random(in: 0...UInt64.max) >> Double.discardedRandomBits) // stochastic:exempt — the documented unseeded path; pass `using:` for reproducibility
 	}
 
 	/// Maps a 53-bit integer onto the open interval as `(k + ½) / 2⁵³`.
@@ -165,7 +170,63 @@ extension Double {
 	/// Shared by both entry points so the two cannot drift apart in range or in the
 	/// half-ulp offset that keeps them off the endpoints.
 	private static func openUnitValue(from bits: UInt64) -> Double {
-		let offset = Double(bits) + 0.5
-		return offset * 0x1p-53
+		// Centre the value in its cell — the half is what keeps both endpoints out of
+		// reach, symmetrically — then scale the cell index down to the unit interval.
+		let half = Double(1) / Double(2)
+		let offset = Double(bits) + half
+		return offset * Double.randomCellWidth
+	}
+
+	/// How many bits of a 64-bit word are surplus to a significand.
+	///
+	/// A `Double` carries `significandBitCount` explicit bits plus the implicit
+	/// leading one, so a draw uses that many of the word's high bits and discards the
+	/// rest. Derived rather than written as 11, so the same code is right for any
+	/// binary floating-point width.
+	fileprivate static let discardedRandomBits =
+		UInt64.bitWidth - (Double.significandBitCount + 1)
+
+	/// The width of one cell of the unit interval, `2^−precision`.
+	///
+	/// `ulpOfOne` is `2^−(precision−1)` by definition, so half of it is the cell width
+	/// for a full-precision significand.
+	fileprivate static let randomCellWidth = Double.ulpOfOne / 2
+}
+
+// MARK: - Bridging the throwing special functions
+
+/// Evaluates a throwing distribution function, reporting invalid parameters as `nan`.
+///
+/// `cdf` and `quantile` are **total** by contract: they are called from sampling
+/// loops and from the quasi-random path, neither of which can propagate an error, and
+/// both are documented to answer for every input. Several of the functions they
+/// delegate to — `tCDF`, `fQuantile`, `regularizedIncompleteBeta` and the two
+/// special-function inverses — throw instead, because their own callers *can* act on
+/// a bad shape parameter.
+///
+/// The two contracts meet here, once, rather than at each of the twenty-odd
+/// conformances. Concentrating it means there is a single place to read what happens
+/// to a discarded error, and a single place to change it.
+///
+/// A thrown error means the distribution's parameters are invalid — a non-positive
+/// degrees of freedom, a shape that is zero. `nan` is the signal every free-function
+/// distribution in this package already uses for exactly that, it propagates rather
+/// than being mistaken for a result, and it is what `assertConformance` checks for at
+/// the endpoints.
+///
+/// - Parameter compute: The throwing evaluation.
+/// - Returns: Its result, or `T.nan` if it threw.
+internal func totalizedResult<T: Real>(_ compute: () throws -> T) -> T {
+	do {
+		return try compute()
+	} catch {
+		// The error is not discarded — it is the only account of *why* a nan
+		// appeared, and a nan that propagates into a simulation result is otherwise
+		// very hard to trace back to its parameters. This branch runs only on invalid
+		// parameters, so it is off the sampling path entirely.
+		#if canImport(os)
+		logger.error("Distribution function failed; returning nan: \(error, privacy: .public)")
+		#endif
+		return T.nan
 	}
 }

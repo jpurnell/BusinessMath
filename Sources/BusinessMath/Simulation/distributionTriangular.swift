@@ -104,3 +104,72 @@ extension DistributionTriangular: SeedableDistribution {
 		return triangularDistribution(low: low, high: high, base: base, Double.random(in: 0...1, using: &generator))
 	}
 }
+
+
+extension DistributionTriangular: ContinuousDistribution {
+	/// P(X ≤ x) for the triangle on `[low, high]` with its mode at `base`.
+	///
+	/// Two parabolic arcs meeting at the mode, where the CDF equals
+	/// `(base − low) / (high − low)`.
+	public func cdf(_ x: Double) -> Double {
+		let a = low, b = high, c = base
+		guard b > a, c >= a, c <= b else { return Double.nan }
+		if x <= a { return 0 }
+		if x >= b { return 1 }
+
+		let width = b - a
+		if x < c {
+			let leftSpan = c - a
+			guard leftSpan > 0 else { return 0 }
+			let numerator = (x - a) * (x - a)
+			return numerator / (width * leftSpan)
+		}
+
+		let rightSpan = b - c
+		guard rightSpan > 0 else { return 1 }
+
+		// Not `1 - (b−x)²/(W·R)`. With the mode at the lower bound the right arc
+		// covers the whole support, so that form is asked for values near zero and
+		// computes them as one minus something near one — no digits survive.
+		//
+		// Writing e = x − c and L = c − a, the same quantity is
+		//     W·R − (R−e)²  =  R·L + e(2R − e)
+		// which is a sum of non-negative terms and cancels nowhere.
+		let leftSpan = c - a
+		let above = x - c
+		let base = rightSpan * leftSpan
+		let arc = above * (2 * rightSpan - above)
+		return (base + arc) / (width * rightSpan)
+	}
+
+	/// The value at which the CDF equals `p`.
+	///
+	/// Exact, where ``next(using:)`` quantises its uniform to a millionth. The two
+	/// therefore differ in the last few digits — both are correct triangular draws,
+	/// and this one is the better of the two. The sampler keeps its quantisation so
+	/// that existing seeded streams are unchanged.
+	public func quantile(_ p: Double) -> Double {
+		let a = low, b = high, c = base
+		guard b > a, c >= a, c <= b else { return Double.nan }
+
+		let width = b - a
+		let modeFraction = (c - a) / width
+
+		if p < modeFraction {
+			let area = p * width
+			return a + (area * (c - a)).squareRoot()
+		}
+
+		// Not `b − √((1−p)·W·R)`. With the mode at the lower bound this branch has to
+		// return values near `a`, and it computes them as b minus something near b.
+		//
+		// Rationalising the difference removes it. With s = √((1−p)·W·R),
+		//     W − s = (W² − s²)/(W + s) = W(L + pR)/(W + s)
+		// so the answer is built up from `a` rather than down from `b`.
+		let rightSpan = b - c
+		let leftSpan = c - a
+		let root = ((1 - p) * width * rightSpan).squareRoot()
+		let numerator = width * (leftSpan + p * rightSpan)
+		return a + numerator / (width + root)
+	}
+}
