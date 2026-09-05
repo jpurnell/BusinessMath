@@ -28,6 +28,7 @@ Uncertainty isn't something to fear or ignore—it's information. By quantifying
 
 ### Reproducibility & Concurrency
 - <doc:4.5-DeterministicSimulationGuide>
+- <doc:4.6-QuasiRandomSamplingGuide>
 
 ## Prerequisites
 
