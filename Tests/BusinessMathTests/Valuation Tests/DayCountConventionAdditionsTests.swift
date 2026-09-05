@@ -226,6 +226,34 @@ struct DayCountConventionAdditionsTests {
 		#expect(abs(forward + backward) < 1e-15)
 	}
 
+	@Test("The February rule matches a value Excel itself cached in a real workbook")
+	func februaryRuleMatchesExcelsOwnCachedValue() {
+		// Not from LibreOffice and not derived here: this is Excel's own answer, cached
+		// in `Long Acre Team 2013 Probabilistic All.xlsx`, sheet `Lease Renewal`, cell
+		// L77, found by SwiftExcelFunctions scanning 2,236 workbooks for a YEARFRAC whose
+		// start argument lands on a February month end.
+		//
+		// It is the best oracle available for this rule, and it discriminates between
+		// all three candidate orderings — which is why it is worth a test of its own
+		// rather than a line in the grid:
+		//
+		//   adjust February first, then test the pull-back  → 300   wrong
+		//   no February rule at all                         → 302   wrong (what shipped)
+		//   test the pull-back on the unadjusted start day  → 301   Excel
+		//
+		// The 28 February → 31 July case in the grid above fails differently, at 153
+		// against 151, and the same ordering fixes both.
+		let start = Self.date(2020, 2, 29)
+		let end = Self.date(2020, 12, 31)
+
+		let days = DayCountConvention.thirty360.days(from: start, to: end)
+		#expect(days.isEqual(to: 301), "counted \(days) days, Excel counts 301")
+
+		let fraction: Double = DayCountConvention.thirty360.yearFraction(from: start, to: end)
+		#expect(abs(fraction - 0.83611111111111114) < 1e-15,
+			"got \(fraction), Excel cached 0.83611111111111114")
+	}
+
 	// MARK: - The whole enum, against the spreadsheet
 
 	@Test("Every convention agrees with the YEARFRAC basis it corresponds to")

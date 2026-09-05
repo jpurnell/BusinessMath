@@ -335,8 +335,15 @@ import RealModule
         let elapsed = Date().timeIntervalSince(start)
 
         #expect(abs(totalProfit - 2_475_000.0) < 1e-6)
+        // 100ms rather than the 10ms this asked for originally. At 10ms the budget was
+        // ~100µs per calculation, which the work fits comfortably but a scheduler under
+        // load does not — the quality gate runs its checkers concurrently and caught this
+        // flipping fail→pass against a byte-identical package. A benchmark exists to
+        // notice an algorithmic regression, and a 10× headroom still notices one; what it
+        // stops noticing is which other process happened to be running. The sibling
+        // budgets in this file are 0.1s for comparable work.
         // TIMING: intentional wall-clock perf benchmark
-        #expect(elapsed < 0.01, "Should complete 100 calculations in < 10ms (got \((elapsed * 1000).number(2))ms)")
+        #expect(elapsed < 0.1, "Should complete 100 calculations in < 100ms (got \((elapsed * 1000).number(2))ms)")
     }
     // MARK: - Summary Generation Performance
 
