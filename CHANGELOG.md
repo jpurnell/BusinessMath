@@ -9,6 +9,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.10.0] - 2026-09-04
+
+A distribution can now say what value sits at a given uniform, and a simulation can choose
+where its sample points go. The two turn out to be the same requirement: a stratified or
+low-discrepancy point set hands each input one coordinate and asks what value is there,
+which only an inverse transform can answer.
+
+Phase 0 of the Excel and Risk Solver coverage work — 42 of the 49 items on that list were
+blocked on this contract existing.
+
+### Added
+- `ContinuousDistribution` and `DiscreteDistribution` — `cdf` and `quantile` on top of
+  `SeedableDistribution`. A conformer states two functions and a typealias; both samplers
+  are supplied, by inverse transform. Overriding the sampler does **not** forfeit
+  quasi-random eligibility, because that path calls `quantile` directly.
+- `SamplingMethod` on `MonteCarloSimulation`, defaulting to `.pseudoRandom` — every
+  existing run behaves identically. `.latinHypercube`, `.sobol(scrambled:)` and
+  `.halton(scrambled:)` place points deliberately instead.
+- `QuasiRandomPointSet`, `LatinHypercubeSampler`, `SobolSequence`, `HaltonSequence` —
+  public and usable without a simulation around them, for a design of experiments or a
+  quadrature. Every coordinate is strictly inside (0, 1), because these feed quantile
+  functions and an endpoint is an infinity.
+- `AliasTable` — Vose's method, O(1) discrete draws. Deliberately not wired into any
+  `quantile`: it is not monotone in its uniform, so under a low-discrepancy sequence it
+  gives the right distribution with none of the variance reduction.
+- `Double.openUnitRandom(using:)` and `openUnitRandom()` — a uniform on the **open**
+  interval. Neither obvious spelling is open on both sides, and either endpoint through a
+  quantile is an infinity that surfaces as a NaN somewhere unrelated. Consumes exactly one
+  64-bit word, which is what lets a point set stay aligned with the inputs it feeds.
+- `regularizedUpperIncompleteGamma(a:x:)`, `inverseRegularizedLowerIncompleteGamma(p:a:)`,
+  `inverseRegularizedIncompleteBeta(p:a:b:)`, `gammaCDF`, `gammaQuantile`, `erlangCDF`,
+  `erlangQuantile`.
+- `SimulationError.quasiRandomUnsupported(inputName:details:)`.
+- Reference-fixture harness (`Scripts/reference-fixtures/`) — 2,680 committed cases against
+  SciPy 1.17.1, version-pinned in a manifest. CI never runs Python.
+- DocC article <doc:4.6-QuasiRandomSamplingGuide>.
+
+### Changed
+- **`regularizedLowerIncompleteGamma(a:x:)` is now public.** It was a `private` function
+  inside `chiSquaredCDF.swift` — correct, complete, and reachable by nothing.
+- **`exponentialCDF(_:λ:)` is more accurate in the lower tail.** It computed
+  `1 - exp(-λx)`, which keeps no significant digits when λx is small: at λx = 4e-9 it was
+  wrong in the ninth digit of the answer. Now uses `expMinusOne`.
+- All fifteen existing distributions gained `cdf` and `quantile`. Their samplers are
+  unchanged — `DistributionNormal` keeps Box–Muller, `DistributionGamma` keeps
+  Marsaglia–Tsang rejection — so no seeded stream moves.
+- `SimulationInput` gained initializer overloads for the two new protocols. Swift selects
+  them automatically; they are what make an input eligible for quasi-random sampling.
+
+### Fixed
+- `DistributionTriangular`'s CDF and quantile both cancelled catastrophically when the mode
+  sits at a bound. The CDF computed near-zero values as one minus one; the quantile built
+  the answer down from the upper bound when the answer was near the lower.
+- `DistributionWeibull`, `DistributionRayleigh` and `DistributionPareto` lost their
+  lower-tail accuracy to the same `1 - exp(…)` cancellation.
+
+### Notes
+- **`SimulationError` gained a case.** Additive, but a source break for an exhaustive
+  switch over it. This is the only source-compatibility cost in the release.
+- Quasi-random runs execute on the CPU. The Metal kernels generate randomness on-device and
+  cannot consume a host-supplied point set; the reason is recorded in
+  `SimulationResults.executionNotes`.
+- `tQuantile` and `fQuantile` are not accurate in the far tail (about 1e-5 and 1e-6 relative
+  at p = 1e-8). Their conformance grid stops at 1e-4 rather than the tolerance being
+  loosened — a loose bound would claim the gap is fine; a narrower grid leaves it visible.
+- Sobol matches `scipy.stats.qmc.Sobol` exactly, plus a documented 2⁻³³ half-cell offset in
+  every coordinate that keeps the origin off zero.
+
 ### [2.9.0] - 2026-09-03
 
 A model can be written in a vocabulary that says what its numbers mean, and the compiler checks

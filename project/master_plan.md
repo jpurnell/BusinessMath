@@ -38,6 +38,27 @@ suite depends on it.
 
 ## Current Status
 
+**2.10.0 shipped 2026-09-04** — a distribution can say what value sits at a given uniform, and a
+simulation can choose where its sample points go. Those turned out to be one requirement rather
+than two: a stratified or low-discrepancy point set hands each input a coordinate and asks what
+value is there, which only an inverse transform answers.
+
+`ContinuousDistribution` and `DiscreteDistribution` add `cdf` and `quantile`; `SamplingMethod`
+adds Latin hypercube, Sobol and Halton, with Sobol matching `scipy.stats.qmc` against a committed
+fixture. All fifteen existing distributions were retrofitted, and doing so found four numerical
+defects — three distributions and the shipped `exponentialCDF` all lost their lower tail to
+`1 - exp(-y)`, which keeps no digits when `y` is small.
+
+This is **Phase 0 of the Excel/Risk Solver coverage work**: 42 of the 49 items on
+`project/plans/proposals/excel-coverage/businessmath_work.tsv` were blocked on the contract
+existing. See `project/checklists/CURRENT_ExcelCoverage_Phase0.md`.
+
+A standing rule came out of it and is recorded as ADR-005: constants are derived where they can
+be derived and deleted where they cannot. Both special-function inverses opened with fitted
+initial estimates carrying nine decimal coefficients between them; the estimates only seeded a
+bracketed root-finder, so they were removed in favour of starting from the distribution's mean,
+and all 344 SciPy reference cases still pass.
+
 **2.9.0 shipped 2026-09-03** — a model can be written in a vocabulary that says what its numbers
 mean, and the compiler checks it. `revenue * margin` compiles, `revenue + margin` does not, and
 `revenu` is not a variable that exists. A typed model **is** a `ModelDefinition`: same engine,
@@ -323,6 +344,24 @@ The CHANGELOG heading and the README's `from:` pin both moved to `2.6.0` in the 
 - [ ] `negativeValue`, `outOfRange`, `resourceExhausted` — with the validation-vocabulary consolidation
 - [ ] The remaining `IntendedSurface.md` §2 items: build or retract
 
+### Phase 0 of Excel coverage — the distribution contract (done, 2.10.0)
+
+- [x] Promote `regularizedLowerIncompleteGamma` out of `private`, and write the two
+      special-function inverses that eight-plus distributions need — Gamma, Erlang, Chi-squared,
+      Beta, F, Pearson V, Pearson VI, Johnson
+- [x] `ContinuousDistribution` / `DiscreteDistribution`, with inverse-transform sampling supplied
+- [x] Retrofit all fifteen existing distributions and verify them through one shared battery
+- [x] Latin hypercube, Sobol (Joe & Kuo, vendored), Halton, Owen scrambling, Vose alias table
+- [x] The `MonteCarloSimulation` seam, refusing rather than downgrading when an input has no
+      quantile
+- [x] Reference-fixture harness against SciPy, committed and version-pinned (ADR-004)
+- [ ] **Next: the Excel financial ten** — `RATE`, `NPER`, `PDURATION`, `NOMINAL`, `SLN`, `DDB`,
+      `SYD`, `VDB`, `ACCRINT`, plus the two `DayCountConvention` cases they need. Independent of
+      the distribution work; measured as the higher priority after SwiftExcelFunctions found all
+      3,425 corpus `YEARFRAC` calls use the default basis, which BusinessMath already covers.
+- [ ] Then the 33 distributions and the AR/GARCH family, which now have a contract to be written
+      against
+
 ### Phase 2 — say when a number is inexact (in progress)
 
 - [x] `normalCDF` in the lower tail — `erfc(-x/√2)/2`, 2.2e-5 → 5.3e-15 at p = 1e-12
@@ -395,4 +434,11 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-03 — reconciled for the 2.9.0 release: Current Status leads with the typed authoring layer and `validateUnits()`, `project/capability_map.md` gains a Typed Model Authoring section, and `1.10-TypedModelAuthoring.md` is written and indexed. Recorded that Phase 3's compile-time gate was measured and passed, and that three name collisions were found by compiling rather than by review. Counts refreshed to 6760 tests.
+**Last Updated:** 2026-09-04 — reconciled for the 2.10.0 release: Current Status leads with the
+distribution contract and quasi-random sampling, the Roadmap gains a Phase 0 section for the Excel
+coverage work with the financial ten named as next, and five ADRs (001–005) were written into
+`project/decisions/architecture_decisions.md`, which had no entries before. `4.6-QuasiRandomSamplingGuide.md`
+is written and indexed in `Part4-Simulation.md`. README's "Latest release" was three versions
+stale at 2.7.0 and now reads 2.10.0. Counts refreshed to 6,818 tests / 602 suites.
+
+**Previously:** 2026-09-03 — reconciled for the 2.9.0 release: Current Status leads with the typed authoring layer and `validateUnits()`, `project/capability_map.md` gains a Typed Model Authoring section, and `1.10-TypedModelAuthoring.md` is written and indexed. Recorded that Phase 3's compile-time gate was measured and passed, and that three name collisions were found by compiling rather than by review. Counts refreshed to 6760 tests.
