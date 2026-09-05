@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [2.10.1] - 2026-09-04
+### [2.10.1] - 2026-09-05
 
 Student's t and F now answer in their tails. The follow-up 2.10.0 recorded rather than
 fixed.
