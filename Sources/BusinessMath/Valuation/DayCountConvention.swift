@@ -102,6 +102,55 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// 1 August to 31 December stub counts 150 days here against 152 actual.
 	case thirty360 = "30/360"
 
+	/// Actual days elapsed, each calendar year divided by its own length — ISDA ACT/ACT.
+	///
+	/// The only convention in this enum with no fixed divisor. An interval is split at
+	/// every 1 January and each piece is divided by the length of the year it falls in,
+	/// 365 or 366, then the pieces are added:
+	///
+	/// ```
+	/// 2023-07-01 → 2024-07-01  =  184/365  +  182/366  ≈  1.001377
+	/// ```
+	///
+	/// That is what makes a calendar year worth **exactly** one, leap or not — ``actual365``
+	/// gives 366/365 across a leap year and ``actual360`` gives 366/360. For an
+	/// instrument whose coupon is defined per calendar year rather than per fixed
+	/// day-count, this is the convention that does not drift.
+	///
+	/// The ISDA definition is the one used here and the one most government bond markets
+	/// quote. Note that **Excel's `YEARFRAC` basis 1 is not this**: Excel applies its own
+	/// rule for the denominator, which for a period inside a single year depends on
+	/// whether that period contains a 29 February, and for longer periods averages the
+	/// years it spans. A binding to Excel should not assume the two agree.
+	///
+	/// - Note: ``daysInYear`` cannot answer for this case; see ``hasFixedYearLength``.
+	case actualActual = "ACT/ACT"
+
+	/// Every month treated as 30 days, divided by 360, with the European end-of-month rule.
+	///
+	/// Identical to ``thirty360`` except in one place, and the difference is worth stating
+	/// exactly because it is easy to describe wrongly. Both pull a start date on the 31st
+	/// back to the 30th. They differ on the *end* date:
+	///
+	/// | | End date on the 31st becomes the 30th |
+	/// |---|---|
+	/// | ``thirty360`` (US, NASD) | only when the start date was itself pulled back to a 30th |
+	/// | ``thirty360European`` (30E/360) | always |
+	///
+	/// So they agree whenever neither end is a 31st, and whenever the start is. They part
+	/// company when the end is a 31st and the start is not:
+	///
+	/// ```
+	/// 2026-01-15 → 2026-03-31    US: 30·2 + (31 − 15) = 76
+	///                            EU: 30·2 + (30 − 15) = 75
+	/// ```
+	///
+	/// One day in seventy-six is a 1.3% error in an accrual, which is the kind of
+	/// difference that prices something before anyone notices. Eurobonds and most
+	/// continental European issues quote on 30E/360; US corporates and municipals on the
+	/// US rule.
+	case thirty360European = "30E/360"
+
 	// MARK: - Denominator
 
 	/// The number of days this convention calls a year — the divisor.
@@ -112,6 +161,22 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 		case .actual365: return 365
 		case .actual360: return 360
 		case .thirty360: return 360
+		case .thirty360European: return 360
+		case .actualActual: return 365
+		}
+	}
+
+	/// Whether ``daysInYear`` is the whole story for this convention.
+	///
+	/// `false` only for ``actualActual``, which divides each calendar year's portion by
+	/// that year's own length and therefore has no single divisor. The 365 it reports
+	/// from ``daysInYear`` is a nominal figure and is **wrong for any interval touching a
+	/// leap year** — check this property before using that one, or call
+	/// ``yearFraction(from:to:)``, which is correct for every case.
+	public var hasFixedYearLength: Bool {
+		switch self {
+		case .actual365, .actual360, .thirty360, .thirty360European: return true
+		case .actualActual: return false
 		}
 	}
 
@@ -155,6 +220,12 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// - Returns: ``days(from:to:)`` divided by ``daysInYear``. Negative when `end`
 	///   precedes `start`.
 	public func yearFraction<T: Real>(from start: Date, to end: Date) -> T {
+		// ACT/ACT has no single denominator, so it cannot go through the shared path
+		// below: the divisor changes at every 1 January the interval crosses.
+		if case .actualActual = self {
+			return Self.actualActualYearFraction(from: start, to: end)
+		}
+
 		let counted = countedDays(from: start, to: end)
 		// The divisor is 360 or 365 — a positive constant of the convention, so the
 		// quotient is always defined.
@@ -216,7 +287,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// `Double`-to-`T` conversion in the path.
 	private func countedDays(from start: Date, to end: Date) -> (days: Int, seconds: Int) {
 		switch self {
-		case .actual365, .actual360:
+		case .actual365, .actual360, .actualActual:
 			let calendar = cachedCalendar
 			let wholeDays = calendar.dateComponents([.day], from: start, to: end).day ?? 0
 			guard let boundary = calendar.date(byAdding: .day, value: wholeDays, to: start) else {
@@ -226,7 +297,9 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 			return (wholeDays, Int(exactly: leftover) ?? 0)
 
 		case .thirty360:
-			return (Self.thirty360Days(from: start, to: end), 0)
+			return (Self.thirty360Days(from: start, to: end, european: false), 0)
+		case .thirty360European:
+			return (Self.thirty360Days(from: start, to: end, european: true), 0)
 		}
 	}
 
@@ -236,7 +309,77 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// the first date, and on the second date only when the first has already been
 	/// pulled back. That second condition is the part that is easy to get wrong: it
 	/// is what stops a 30 January to 31 March interval from losing a day.
-	private static func thirty360Days(from start: Date, to end: Date) -> Int {
+	/// ISDA actual/actual: split the interval at every 1 January and divide each piece
+	/// by the length of the year it falls in.
+	///
+	/// ```
+	/// ─────┬──── 2023 ────┬──── 2024 ────┬─────
+	///    start           Jan 1         Jan 1   end
+	///      └── 184/365 ───┴──── 1.0 ────┴─ d/366
+	/// ```
+	///
+	/// Whole intervening years contribute exactly one each, which is why a span of
+	/// calendar years comes out as an exact integer rather than accumulating rounding.
+	private static func actualActualYearFraction<T: Real>(from start: Date, to end: Date) -> T {
+		// Antisymmetric by construction rather than by a separate backwards path, so the
+		// two directions cannot drift apart.
+		if end < start {
+			let forward: T = actualActualYearFraction(from: end, to: start)
+			return -forward
+		}
+
+		let calendar = cachedCalendar
+		guard let startYear = calendar.dateComponents([.year], from: start).year,
+			  let endYear = calendar.dateComponents([.year], from: end).year else {
+			return T.zero
+		}
+
+		if startYear == endYear {
+			let elapsed: T = actualDays(from: start, to: end)
+			return elapsed / T(daysInYear(of: startYear))
+		}
+
+		guard let firstBoundary = calendar.date(from: DateComponents(year: startYear + 1, month: 1, day: 1)),
+			  let lastBoundary = calendar.date(from: DateComponents(year: endYear, month: 1, day: 1)) else {
+			return T.zero
+		}
+
+		let leadingDays: T = actualDays(from: start, to: firstBoundary)
+		let leading: T = leadingDays / T(daysInYear(of: startYear))
+
+		let wholeYears = T(endYear - startYear - 1)
+
+		let trailingDays: T = actualDays(from: lastBoundary, to: end)
+		let trailing: T = trailingDays / T(daysInYear(of: endYear))
+
+		return leading + wholeYears + trailing
+	}
+
+	/// Actual elapsed days, carrying any sub-day remainder as a fraction.
+	private static func actualDays<T: Real>(from start: Date, to end: Date) -> T {
+		let calendar = cachedCalendar
+		let wholeDays = calendar.dateComponents([.day], from: start, to: end).day ?? 0
+		guard let boundary = calendar.date(byAdding: .day, value: wholeDays, to: start) else {
+			return T(wholeDays)
+		}
+		let leftover = end.timeIntervalSince(boundary).rounded()
+		guard let seconds = Int(exactly: leftover), seconds != 0 else { return T(wholeDays) }
+		return T(wholeDays) + T(seconds) / T(86_400) // fp-safety:disable — seconds per day, a positive literal
+	}
+
+	/// 366 in a leap year, 365 otherwise.
+	///
+	/// The Gregorian rule, derived rather than looked up: every fourth year, except
+	/// centuries, except every fourth century. 2000 is a leap year and 2100 is not.
+	private static func daysInYear(of year: Int) -> Int {
+		let divisibleByFour = year % 4 == 0
+		let divisibleByHundred = year % 100 == 0
+		let divisibleByFourHundred = year % 400 == 0
+		let isLeap = divisibleByFour && (!divisibleByHundred || divisibleByFourHundred)
+		return isLeap ? 366 : 365
+	}
+
+	private static func thirty360Days(from start: Date, to end: Date, european: Bool) -> Int {
 		let calendar = cachedCalendar
 		let from = calendar.dateComponents([.year, .month, .day], from: start)
 		let to = calendar.dateComponents([.year, .month, .day], from: end)
@@ -246,8 +389,12 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 			return 0
 		}
 
+		// Both rules pull a start date on the 31st back to the 30th. They differ only on
+		// the end date: the European rule does it unconditionally, the US rule only when
+		// the start was itself pulled back.
 		let adjustedStartDay = startDay == 31 ? 30 : startDay
-		let adjustedEndDay = (endDay == 31 && adjustedStartDay == 30) ? 30 : endDay
+		let endIsPulledBack = european ? (endDay == 31) : (endDay == 31 && adjustedStartDay == 30)
+		let adjustedEndDay = endIsPulledBack ? 30 : endDay
 
 		return 360 * (endYear - startYear)
 			+ 30 * (endMonth - startMonth)
